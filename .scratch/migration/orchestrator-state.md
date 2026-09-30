@@ -29,22 +29,6 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 
 ```yaml
 dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
-- step: X3d
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch and again at 15:02: 47 of 47 assistant messages)
-  session_id: ab6d7c7cab135b864 (continuation builder on Z104 (a), launched 2026-09-30 19:22 local, served claude-sonnet-5-5 by the transcript's message.model; the first builder a11909a88a5a84663 was stopped by Axel at 17:27 and not resumed by the runner)
-  worktree: .agents/worktrees/X3d
-  base_copy: .agents/worktrees/X3d-base (detached at 4fe6ce93, for the first run of the cases; removed at landing)
-  base: 4fe6ce93
-  launched: 2026-09-30 15:01 local
-  report: agents/reviews/X3d-report.md
-  builder_usage: first builder a11909a88a5a84663 stopped at 17:27 with no completion notice, so no usage; continuation builder 79,680 tokens, 245 tool uses, 63.4 min (report at 20:26); repair round 1 (same builder ab6d7c7cab135b864, resumed) 126,557 tokens, 165 tool uses, 37.0 min (report at 21:31)
-  reviewer_report: agents/reviews/X3d-refuter.md (reviewer a2a724fb5c78af633, launched 20:28, served claude-opus-5-5; 168,282 tokens, 144 tool uses, 24.9 min); round 1 reviewer ac8f66eda09c032d1, launched 21:33, served claude-opus-5-5; 253,519 tokens, 88 tool uses, 17.8 min, its run appended to the same file
-  brief_check: agents/reviews/X3d-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 52 tool uses, 301,056 tokens, 12.4 min
-  diagnosis: agents/reviews/X3d-diagnosis.md (`/diagnose oculus/migration X3d red line`, agent a960e7fd2f6310fd5, launched 22:13, served claude-opus-5-5; 342,901 tokens, 172 tool uses, 120.5 min; cause found, in X3d's Step 0; the route to main is open item Z129)
-  landing: backed-out (2026-09-30 22:10: the TEST page hung with the Repositories view on screen, main with the step staged; saved as agents/reviews/X3d-landing-attempt.patch with the landing fixes; see Step 0)
-  round: 1 (sent 20:53: agents/briefs/X3d-round1.md, ten rulings; round base diff shasum 3c86229caf49784e2f051b5d065e39562631a4b7)
 - step: U2
   executor: agent
   worker: claude:sonnet
@@ -66,10 +50,23 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   report: agents/reviews/Q107-report.md (with agents/reviews/Q107-probe.mjs)
   brief_check: agents/reviews/Q107-brief-check.md, every finding closed in the brief (its "Closed" heading), the layout path's fix waiting on Z115 and Attach to Session's place on Z116; claude-opus-5-5, 223,547 tokens, 87 tool uses, 12.3 min
   shared_paths: DESIGN.md with E3 and Q111 (Q107 writes line 361, E3 236-327, Q111 140 and 376); HELP.md with Q111 (Q107 writes 127, Q111 254); no two change the same line
-  builder_usage: 233,656 tokens, 208 tool uses, 87.1 min (report read at 23:45)
-  reviewer_report: agents/reviews/Q107-refuter.md (reviewer ad54a4d0f4137b7ba, launched 23:46, served claude-opus-5-5; 259,978 tokens, 59 tool uses, 22.2 min)
+  builder_usage: 233,656 tokens, 208 tool uses, 87.1 min (report read at 23:45); repair round 1 (same builder, resumed) 332,448 tokens, 48 tool uses, 36.1 min (report read at 00:47; diff since base shasum e3cbf0efca9a246778e4924855ef432c8499ac17, 38 paths)
+  reviewer_report: agents/reviews/Q107-refuter.md (reviewer ad54a4d0f4137b7ba, launched 23:46, served claude-opus-5-5; 259,978 tokens, 59 tool uses, 22.2 min); round 1 reviewer a498a23d465b6bf60, launched 00:48, served claude-opus-5-5, running
   landing: not-started
   round: 1 (sent 00:10: agents/briefs/Q107-round1.md, four rulings; round base diff shasum 81aaa5e6cb5618eb779f397beb076440d7684369, 33 paths; the Z115 (a) layout fix was sent at 22:42 inside item 2, not a round)
+- step: S3a
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 00:52)
+  session_id: a52442ea29934cb41 (launched 2026-10-01 00:51 local)
+  worktree: .agents/worktrees/S3a
+  base: 2ac1a5cb
+  launched: 2026-10-01 00:51 local
+  report: agents/reviews/S3a-report.md
+  brief_check: agents/reviews/S3a-brief-check.md, every finding closed in the brief (its Closed heading)
+  shared_paths: HELP.md with Q107 (S3a writes 214-230, Q107 127 and 146); DESIGN.md with Q107 (S3a writes 44 and 85, Q107 154 and 361); no two change the same line
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -134,7 +131,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z129 (raised 2026-10-01 00:30, from X3d's diagnosis). The Graph's commit press hangs the page on main, not only with X3d: a commit row pressed in the Repositories view sends the renderer to 100% of a core, and a commit kept open in the saved state hangs the page again on reload (the TEST tab crashed at 00:14 and hung again on reload; a new tab loaded at 00:22 with no commit open). The cause and a proven fix are in X3d's Step 0 (`ui/tree/virtual.ts`, `VirtualRows.svelte`, one test). (a) The fix is the first item of X3d's rebuild, as the no-tiny-steps demand says, since X3d touches the Repositories view. For: no new step. Against: the hang stays on main, on Axel's page as well as TEST, until the whole X3d rebuild lands, hours away with its parity inventory. (b) A step of its own for the fix and its test, prepared now and landing within the hour; X3d's brief then leaves it out. For: the page stops hanging today. Against: one small step, which the no-tiny-steps demand rules out when a step covers the files. Recommendation: (b), since a hang on every commit press is a defect on main that no rebuild should wait for; it is Axel's, since it departs from his standing demand. The lazy option is (a).
+- None.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -157,6 +154,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The looks owed by Q81, Q82, Q86 and Q96, taken on TEST 2026-09-29. Seen and passing: Q96's rail list, icon dropdown and one tooltip at a time (the pick not made, since it writes `rail:`); Q81's pane menu with Home, End, type-ahead "sp" and its submenu (ArrowRight opens it to the side, ArrowLeft and Escape give the keyboard back to "Move tab to page...", no console error), Tab out of a menu to the next stop (a dispatched Tab moved the focus from "Close pane" to "Theme" and closed the menu), the palette's fuzzy rows with the match in the accent, a status-bar tooltip kept inside the window at the bottom edge, the tray and its Close with no tooltip; Q82's Files tree with the `a` type-ahead and the Repositories rows and Graph; Q86's neato picture. Fixed on main after the look: a menu with a submenu did not open (`MenuList.svelte`, bits-ui refused `bind:ref` to an undefined record entry), the palette input named no active row (`Palette.svelte`, the rows now in bits-ui's `Command.Viewport`), a change row cut the file name before its folder (`TreeItem.svelte`), the bell's tooltip said "1 new notifications" (`statusbar.bell_unread_one`). Booked in Q86b: labels drawn across circles and edges, and the central pillars left unlabelled by the label rule's order. Still owed, since the tab was hidden (`document.visibilityState` "hidden", `document.hasFocus()` false) and the focus cannot be read there: whether a pointer open focuses the list, the key sheet's focus, the tray's Close taking the focus, the focus given back after each dialog, a Confirm over the tray taking the first Escape, the Memories overlay holding the keyboard, and Q82's Cmd+A, Cmd+Enter, Tab to a scrolled-away stop, the focus through a wheel scroll and the Graph's Left and Right; taken with the tab in front at the next landing on TEST.
 
 ## Closed items (kept as the log of what was raised and how it ended)
+- Z129 (raised 2026-10-01 00:30, from X3d's diagnosis). The Graph's commit press hangs the page on main, not only with X3d: a commit row pressed in the Repositories view sends the renderer to 100% of a core, and a commit kept open in the saved state hangs the page again on reload (the TEST tab crashed at 00:14 and hung again on reload; a new tab loaded at 00:22 with no commit open). The cause and a proven fix are in X3d's Step 0 (`ui/tree/virtual.ts`, `VirtualRows.svelte`, one test). (a) The fix is the first item of X3d's rebuild, as the no-tiny-steps demand says, since X3d touches the Repositories view. For: no new step. Against: the hang stays on main, on Axel's page as well as TEST, until the whole X3d rebuild lands, hours away with its parity inventory. (b) A step of its own for the fix and its test, prepared now and landing within the hour; X3d's brief then leaves it out. For: the page stops hanging today. Against: one small step, which the no-tiny-steps demand rules out when a step covers the files. Recommendation: (b), since a hang on every commit press is a defect on main that no rebuild should wait for; it is Axel's, since it departs from his standing demand. The lazy option is (a). Ruled 2026-10-01 00:33 by Axel: (a). (b) was a small step, which the no-tiny-steps demand booked minutes before rules out, so it should not have been offered, let alone recommended; the lazy option was (b), not (a).
 - Z128 (raised 2026-10-01 00:10, step Q107, its review's Behaviour 1). Two browser tabs each write the ui store's whole value under `oculus.ui.v1` (`ui.svelte.ts:359-364`), so one tab's save drops the instance records the other wrote, while Q107's HELP.md:146 says a tab changed in one shows in the others. (a) Q107's repair round: `save` reads the saved value and lays its changed records over the saved `instances`, and the store follows another tab's save of the key for `instances`, the appearance staying each browser tab's own; the docs say so. For: no browser tab loses another's records, which is what Z115 (a) meant by sharing. Against: a larger round. (b) Only the docs corrected, the loss left. Recommendation: (a). The lazy option is (b).
   - Closed (a) by the orchestrator, automode, 00:10: ruling 4 of `agents/briefs/Q107-round1.md`. Booked in `choices.md` and `plan.md` Rulings.
 - Z127 (raised 2026-10-01 00:08, on Axel's question whether other steps are too tiny). Q85a2 to Q85a5, the zod sweep over the rest of `src/lib/server`, are four steps under your Z96 split: Q85a2 `edit` (14 files, 189 check lines), Q85a3 `sessions` and `transcripts` (13, 105), Q85a4 `machine` and `accounts` (22, 116), Q85a5 `files`, `content` and `git` (21, 103), each line in `plan.md`. Q85a1 (10 files) cost its builder 23.5 min and 200,240 tokens, with a repair round of 23.7 min, and each step carries about 600,000 tokens of brief check and reviews whatever its size (`agents/reviews/Q85a1-landing.md:56-58`). (a) Two steps: Q85a2 with Q85a3 (27 files, 294 check lines) and Q85a4 with Q85a5 (43 files, 219). For: half the fixed cost, each step about two and a half times Q85a1. Against: a longer repair round when one goes wrong. (b) One step of all four (70 files, 513 check lines). For: one cycle. Against: the size the brief check judged too large for one builder when you split it under Z96. (c) Four steps as ruled. For: small reviews. Against: four fixed costs for a mechanical sweep. Recommendation: (a). The lazy option is (c). Why this is not closed in automode: it changes Z96, your ruling.
@@ -625,6 +623,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 00:52. S3a's builder launched (claude-sonnet-5-5). X3d prepared again at /spec: its brief rewritten with items 15 to 19 (the Graph hang fix, the full-width action button, the Seti file icons, lanes under Outgoing and Incoming, the builder's own look); its worktree and builder next. Q107's round review runs. Open: none.
+- 2026-10-01 00:33. Z129 ruled (a) by Axel: the Graph hang fix is X3d's first item. In flight: Q107 (repair round 1). Next: S3a's builder; /spec X3d into the third slot. Open: none.
 - 2026-10-01 00:30. Q106 landed (the look on TEST taken in a new tab). X3d's diagnosis in: the Graph's commit press hangs the page on main; open item Z129 on how the fix reaches main. In flight: Q107 (repair round 1). Next: /spec S3a's worktree and builder into the freed slot. Open: Z129.
 - 2026-10-01 00:10. Z127 ruled (a): the Q85a steps are two. Q107's repair round 1 sent (four rulings, Z128 in automode). Q106's round refuted: one comment clause, fixed at landing. In flight: X3d (its diagnosis), Q107 (repair round 1), Q106 (landing next). Open: none.
 - 2026-10-01 00:08. Five small steps folded (Z126, automode); Z127 raised (the Q85a steps as two). Q107's review in: one Spec, two Proof, one Standards and one Behaviour finding. In flight: X3d (its diagnosis), Q106 (its round review), Q107 (repair round 1 next). Open: Z127.

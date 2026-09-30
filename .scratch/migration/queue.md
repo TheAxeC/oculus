@@ -1,10 +1,10 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); diagnosed: the hang is on main (a Graph commit press); the fix's route waits on Z129.
-- Q107 (a Terminal tab closing itself; Attach to Session), repair round 1 running.
-- S3a (the options catalog), its builder launching.
-Open items: Z129 (how the Graph hang fix reaches main). Choices made in automode, for review: `choices.md`.
+- X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); diagnosed: the hang is on main (a Graph commit press); prepared again with the Graph hang fix, the full-width button, the Seti icons, lanes under Outgoing and the builder's own look; its builder launching.
+- Q107 (a Terminal tab closing itself; Attach to Session), repair round 1 done; its review runs.
+- S3a (the options catalog), its builder running.
+Open items: none. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
 - Q109 (the terminal: name, icon and colour; a sole terminal renamed; four terminal options), once Q107 has landed.

@@ -17,7 +17,7 @@
 // gives them: after a reload (first list, `held` every terminal the restored tabs hold, `seen`
 // empty) and after a reconnect without a reload (`seen` carried over from the earlier lists). A
 // scenario is RED when endedTerminals answers a terminal that tmux still lists. The exit code is 1
-// when any scenario ran RED.
+// when any scenario ran RED. `noserverhidden` takes two minutes and runs only when named.
 
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync, renameSync } from 'node:fs';
@@ -235,6 +235,38 @@ function judge(ended, before, after, initial, running, killed) {
     return report;
 }
 
+/** A list read that fails as "no server" with a page attached, the socket away for `awayMs`. */
+async function attachedOutage(ctx, awayMs, [first, second]) {
+    const page = new WebSocket(`ws://127.0.0.1:${PORT}/ws`, { headers: { Origin: ORIGIN } });
+    await new Promise((done, fail) => {
+        page.once('open', () => {
+            page.send(JSON.stringify({ type: 'subscribe', channels: [`pty:${ctx.started[0]}`], token: ctx.token }));
+            done();
+        });
+        page.once('error', fail);
+    });
+    await sleep(2500);
+    const mine = spawn('tmux', ['-S', SOCKET, '-C', 'attach-session', '-t', `oculus-${ctx.started[1]}`], {
+        stdio: ['pipe', 'pipe', 'ignore']
+    });
+    await sleep(1000);
+    const away = `${SOCKET}.away`;
+    renameSync(SOCKET, away);
+    const probe = tmux('list-sessions');
+    ctx.note = `while the socket is away (${awayMs} ms) tmux says: ${probe.stderr.trim().replace(SCRATCH, '<scratch>')}`;
+    mine.stdin.write(`new-session -d -s oculus-${first}-shell\n`);
+    ctx.started.push(`${first}-shell`);
+    await sleep(awayMs);
+    renameSync(away, SOCKET);
+    await sleep(1500);
+    tmux('new-session', '-d', '-s', `oculus-${second}-shell`);
+    ctx.started.push(`${second}-shell`);
+    await sleep(3500);
+    mine.kill();
+    page.terminate();
+    return { keepRecording: true };
+}
+
 const scenarios = {
     // The dev server loads channel.ts again after a save: the file is rewritten with its own bytes.
     async save(ctx) {
@@ -276,13 +308,25 @@ const scenarios = {
         }
         return { keepRecording: true };
     },
-    // One list read fails as "no server" while sessions run. A page is attached to a terminal, so the
-    // server holds a control client; the probe holds one of its own, opened before the socket file is
-    // moved away for 400 ms. A session created through the probe's connection (which needs no socket
-    // path) makes the server's control client report `%sessions-changed`, and the server reads the
-    // list by path while the path is gone. The socket is then given back and a second session is
-    // created, which is the next read.
+    // One list read fails as "no server" while sessions run, the socket away for 2000 ms. A page is
+    // attached to a terminal, so the server holds a control client; the probe holds one of its own,
+    // opened before the socket file is moved away. A session created through the probe's connection
+    // (which needs no socket path) makes the server's control client report `%sessions-changed`, and
+    // the server reads the list by path while the path is gone. The socket is then given back and a
+    // second session is created, which is the next read.
     async noserver(ctx) {
+        return attachedOutage(ctx, 2000, ['f1e2d3', 'f1e2d4']);
+    },
+    // The same with the socket away for 400 ms, which lies inside the server's confirming reads.
+    async noserver400(ctx) {
+        return attachedOutage(ctx, 400, ['f1e2d5', 'f1e2d6']);
+    },
+    // The same outage with no page attached: the page that was attached to a terminal is gone for
+    // longer than the server's IDLE_MS, so its control client is closed and nothing says tmux runs.
+    // The list is then read only by the idle poll, which re-armed at the detach and ticks every
+    // IDLE_POLL_MS (both 60000 in channel.ts); the socket is away across the second tick. Takes
+    // about two minutes, and is left out of a run that names no scenario.
+    async noserverhidden(ctx) {
         const page = new WebSocket(`ws://127.0.0.1:${PORT}/ws`, { headers: { Origin: ORIGIN } });
         await new Promise((done, fail) => {
             page.once('open', () => {
@@ -292,24 +336,17 @@ const scenarios = {
             page.once('error', fail);
         });
         await sleep(2500);
-        const mine = spawn('tmux', ['-S', SOCKET, '-C', 'attach-session', '-t', `oculus-${ctx.started[1]}`], {
-            stdio: ['pipe', 'pipe', 'ignore']
-        });
-        await sleep(1000);
+        const detached = Date.now();
+        page.terminate();
+        const tick = 60000;
+        await sleep(detached + 2 * tick - 1000 - Date.now());
         const away = `${SOCKET}.away`;
         renameSync(SOCKET, away);
         const probe = tmux('list-sessions');
         ctx.note = `while the socket is away tmux says: ${probe.stderr.trim().replace(SCRATCH, '<scratch>')}`;
-        mine.stdin.write('new-session -d -s oculus-f1e2d3-shell\n');
-        ctx.started.push('f1e2d3-shell');
-        await sleep(400);
+        await sleep(2000);
         renameSync(away, SOCKET);
-        await sleep(1500);
-        tmux('new-session', '-d', '-s', 'oculus-f1e2d4-shell');
-        ctx.started.push('f1e2d4-shell');
         await sleep(3500);
-        mine.kill();
-        page.terminate();
         return { keepRecording: true };
     },
     // A terminal that really ends: its tmux session is killed on the probe's socket while the page is
@@ -417,7 +454,7 @@ let red = false;
 const loader = await loadEnded();
 try {
     await startServer();
-    for (const name of only.length > 0 ? only : Object.keys(scenarios)) {
+    for (const name of only.length > 0 ? only : Object.keys(scenarios).filter((one) => one !== 'noserverhidden')) {
         const { report, running, note } = await run(name, loader.ended);
         for (const [shape, { wrong, missed, killed, lists }] of Object.entries(report)) {
             const bad = wrong.length > 0 || missed;

@@ -10,7 +10,25 @@ X3d the Repositories view and the diff rebuilt to look and work as VS Code's Sou
 
 Axel's ruling (2026-09-30): X3b brought the features of VS Code's Source Control but not its UI, which is worse.
 
-## What is on the tree (read on main at 64275504)
+## Where this step stands
+
+The step was built once. Its whole change, with the fixes its landing made, is `agents/reviews/X3d-landing-attempt.patch`; this preparation applies it in the worktree (the section "The patch as applied" below says what applied and how). Items 1 to 14 below are what that build did; they stand, and the build is checked against them again.
+
+It was taken back out of main at its look on TEST, for two reasons, and this rebuild ends both:
+
+1. The page hung. The cause is on main, not in the patch (`agents/reviews/X3d-diagnosis.md`): pressing a commit row of the Graph starts a cycle with no fixed point. `CommitFiles`' rows effect hands a new array to the Graph's `fileRows`; the Graph's `commitAt`, handed to `VirtualRows` as `owns`, reads `fileRows`; `VirtualRows`' `configure` then writes `windowed = rowWindow(virtualizer)`, a new object even when the window has not moved; the rows drawn from it run again, and the cycle repeats. A commit kept open in the saved state hangs the page again on reload. Item 15 is the fix (ruling Z129).
+2. Axel's look, in his words: "It doesnt look very polished", "Commit is a very short button too" (VS Code's spans the view), "File icons are not drawn like in vscode either", "The problems are like 99% visual", and the outgoing commits are listed without lanes. Items 16 to 19 end each, and item 19 makes the builder see what it draws, since the first build never looked at its own page.
+
+## What is on the tree
+
+Read on main at 2ac1a5cb for items 15 to 19:
+
+- `src/lib/ui/tree/virtual.ts` (67 lines) holds `rowWindow(virtualizer)`, which builds a new `RowWindow` on every call; `src/lib/ui/tree/VirtualRows.svelte` (270 lines) writes `windowed = rowWindow(virtualizer)` in its `onChange` and in `configure`; `tests/ui/tree/virtual.test.ts` is 134 lines (`wc -l`).
+- `src/lib/ui/controls/ToolButton.svelte:151-155` draws every button inside `<Tooltip ... block={rail || cell}>`. `src/lib/ui/menu/Tooltip.svelte:300-308`: the wrapper `.tip` is `display: inline-flex`, as wide as its content, and only `.tip.block` is `display: flex; width: 100%`. The patch gives the primary button `width: 100%` and, joined, `flex: 1 1 auto`, and does not change `block` (`grep -n "block={" agents/reviews/X3d-landing-attempt.patch` prints nothing), so the button's width resolves against the content-wide wrapper and the Commit button is as wide as its words. This is why it is short.
+- In the patch, `graph/CommitRow.svelte`'s props say "The lanes of the row; the rows under Incoming and Outgoing have none" (patch line 5046), and `Graph.svelte` draws `<GraphHead kind="outgoing" ...>` with its commits after it as plain rows.
+- Oculus draws no file-type icon anywhere (`grep -rn "seti" src` prints nothing). `seti-ui` 1.11.0 (MIT, jesseweed/seti-ui, last published 2024-10-12, `npm view seti-ui`) ships the font `styles/_fonts/seti/seti.woff` and the table `styles/components/icons/mapping.less`, which maps file names and extensions to a glyph and a colour; VS Code's default icon theme, `extensions/theme-seti/icons/vs-seti-icon-theme.json` in the installed app, is generated from those two files. `src/lib/ui/display` holds eight items (`ls`).
+
+Read on main at 64275504, when the step was first prepared:
 
 - VS Code 1.137.0 is installed (`grep -m1 '"version"' "/Applications/Visual Studio Code.app/Contents/Resources/app/package.json"`). Every rule of its stylesheet that names the Source Control view is saved, one rule per line, in `.scratch/migration/agents/reviews/X3d-vscode-scm.css` (130 lines, extracted from `out/vs/workbench/workbench.desktop.main.css`). The numbers under "VS Code's measures" are read from that file, from `out/vs/workbench/workbench.desktop.main.js` and from `extensions/git/package.json`. They are VS Code's default look: `workbench.experimental.modernUI` is off by default and is not set in the user's settings, so the rules under `.modern-ui` (saved lines 127-130) are not taken.
 - The view is `src/lib/views/sources/repositories/` (19 files, 3915 lines, `find src/lib/views/sources/repositories -type f | xargs wc -l`; the folder itself holds ten items): `Repositories.svelte` (365, the pane, its `...` menu, the questions), `RepoList.svelte` (140, the Repositories section), `Repo.svelte` (294, the branch line, the path line, the commit box, the sections), `Changes.svelte` (378), `graph/Graph.svelte` (447), `graph/Lanes.svelte` (69), `graph/CommitFiles.svelte` (107), `refs/Stashes.svelte`, `refs/Tags.svelte`, `refs/Branches.svelte`, `Worktrees.svelte`, `diff/Diff.svelte` (505), `diff/DiffSection.svelte` (344), `merge/`, `menus/`. A component over 540 lines and any file over 900 fail `tests/checks/tree/size.test.ts`.
@@ -55,6 +73,14 @@ Sizes are CSS pixels at VS Code's default zoom.
 | A file of a diff of several files | a header row per file: a chevron that folds the file, the name, the folder muted after it, for a rename the status and the old path, Open File at the right; the header stays at the top of the pane while its file scrolls under it |
 
 ## What to build
+
+Build items 15 to 19 first. Then check items 1 to 14 against the patch as applied, and finish whatever the apply left (the section "The patch as applied").
+
+15. **The Graph hang (ruling Z129).** In `src/lib/ui/tree/virtual.ts`, `rowWindow(virtualizer, held?)`: when `held` is given and `sameWindow(held, next)` holds, it returns `held` itself; `sameWindow(one, two)` is true when `after`, `total` and the rows' count are equal and each row's `index` and `gap` are equal. Its doc comment says a window read again for rows that did not move is the same object, so the list writes nothing and the rows drawn from it do not run again. In `VirtualRows.svelte` both writes become `windowed = rowWindow(virtualizer, untrack(() => windowed))`. The test (case 28) goes in `tests/ui/tree/virtual.test.ts` under `describe('a window read again')`.
+16. **The action button spans the view.** `ToolButton.svelte` passes `block={rail || cell || primary}` to its `Tooltip`, so the wrapper of a primary button is as wide as its container; with `joined`, the wrapper takes `flex: 1 1 auto` in `.acts` and the dropdown part keeps its own width at the right end. The button, with its dropdown, then spans the commit box's width, 11 px in from the row's left and 12 px from its right, as VS Code's does, in all three states (Commit, Sync Changes, Publish Branch) and in the session panel's box.
+17. **File icons as VS Code draws them (the Seti set, Axel's ruling of 2026-09-25).** Add `seti-ui` 1.11.0 as a dependency. A module `src/lib/ui/display/file-icons.ts` reads `seti-ui`'s own table (`styles/components/icons/mapping.less`) and answers, for a file name, the Seti glyph and its colour as the table gives them, the name matched before the extension and the longest extension first, as the table orders them, and the table's default for a name it does not know. A component `src/lib/ui/display/FileIcon.svelte` draws that glyph from `seti.woff` (loaded through an `@font-face` whose source is the package's font imported by Vite), 16 px wide, the glyph's size and colour as VS Code's theme draws them (`vs-seti-icon-theme.json`: its `fontSize` and the colour of the entry). It is drawn before the name of every file row of this step: a change row (list and tree mode), a file row of an open commit, and a diff file header. A folder row draws no icon, as the Seti theme draws none. The Files view is X3a's and is not changed here.
+18. **Outgoing and Incoming commits with their lanes.** The commits under Outgoing and under Incoming are drawn through `CommitRow.svelte` with their lanes as every graph row is: each list's lane rows come from `laneRows()` over that list's commits in order, and `Lanes.svelte` draws them. The Outgoing and Incoming head rows keep their dashed circle. The "have none" sentence and the code behind it go.
+19. **The builder sees what it draws.** The builder runs a server of its own worktree on port 8796, never 8787 or 8790, with `HOME` and `TMUX_TMPDIR` under a scratch folder of its own and an `ssh` on `PATH` that exits 255 (so no poll reaches the cluster), and a headless Chrome with a fresh profile under that folder. It makes a scratch repository there that shows every state this step draws: an upstream set through `git update-ref refs/remotes/origin/main <commit>` and `git branch --set-upstream-to` (no push of any kind, no remote host), commits ahead of it and behind it, a merge commit, a branch and a tag, staged, changed, deleted, renamed and untracked files of several types (`.ts`, `.svelte`, `.md`, `.py`, `.json`, `package.json`, a file Seti does not know), and a stash of several files. For every element of "VS Code's measures" and every item 15 to 18, in each state the item names and in the light and the dark theme, it takes a screenshot and reads the drawn size, padding, font, weight and colour role (`getComputedStyle`, `getBoundingClientRect`), compares each with VS Code's value, fixes every difference, and takes the screenshot again. It stops its server and Chrome and removes its scratch folder at the end. The report carries, per element, VS Code's value, the drawn value after the fixes, and the screenshot's path under `.scratch/migration/agents/reviews/X3d-shots/`.
 
 Oculus's own colours stay: every colour comes from a token of `themes/tokens.css`, by the role VS Code gives the element, through the mapping `ui/controls/editor/kit/colours.ts` already holds. No hex value of VS Code's themes is copied.
 
@@ -111,11 +137,24 @@ State cases are tests of pure functions in new files under `tests/state/sources/
 25. An audit, read from the source since the suite renders no style: `TreeItem.svelte`'s heading rule holds `text-transform: uppercase` and no `small-caps`. The look on TEST is what judges it.
 26. The session panel (`ChangesRepo.svelte`) drawn for a branch ahead of its upstream with nothing to commit: the action button says Sync Changes, and the panel holds no Push button of its own.
 27. A branch name longer than the row: the Branch control's name is cut and its hover words hold it whole.
+28. `rowWindow(virtualizer, held)` over a virtualizer whose rows did not move returns `held` itself (`toBe`); over one scrolled by a row, and over one whose row heights changed, it returns a new window. The first fails on the unchanged tree (the diagnosis record quotes it: `expected {...} to be {...} // Object.is equality`).
+29. The Graph of a repository with commits, drawn in the builder's own server: a press on a commit row lists its files and the page still answers (`Runtime.evaluate('1')` within 1 s); a reload with that commit open loads and answers. On the unchanged tree this hangs (the diagnosis record's red command).
+30. The commit box's action button, drawn in the builder's own server in a view 300 px and 600 px wide: its right edge, with the dropdown, is 12 px from the row's right and its left edge 11 px from the row's left, in the Commit, Sync Changes and Publish Branch states. On the unchanged tree with the patch it is as wide as its words.
+31. `fileIcon` for `a.ts`, `App.svelte`, `README.md`, `run.py`, `package.json`, `Dockerfile`, `.gitignore` and `unknown.zzz`: the glyph and colour `mapping.less` gives each, the last the table's default; `package.json` takes its name's entry over `.json`'s. A drawn change row, commit file row and file header each hold the icon before the name; a folder row holds none.
+32. A branch two commits ahead of its upstream: the two rows under Outgoing each carry a lanes SVG (`Lanes.svelte`) with the commit's circle; the same for rows under Incoming.
+33. The builder's look (item 19): every element of "VS Code's measures" and items 15 to 18 has a screenshot in each named state and theme and a row with VS Code's value and the drawn value; no row is left with a difference unless the report names why VS Code's value cannot apply.
 
 The builder's first task, before any change, is the first run of every case above on the unchanged tree, each as a test, with each case's result noted. When the first run finds a case the brief's own rules get wrong, the builder stops there, before changing any code, and hands back the first run and that case, with the rule and the result it gives.
 
 ## Paths this step writes
 
+- `src/lib/ui/tree/virtual.ts`
+- `src/lib/ui/tree/VirtualRows.svelte`
+- `tests/ui/tree/virtual.test.ts`
+- `src/lib/ui/display/file-icons.ts` (new)
+- `src/lib/ui/display/FileIcon.svelte` (new)
+- `tests/ui/display/` a new test file for `file-icons.ts` and `FileIcon.svelte`
+- `package.json` and `package-lock.json` (`seti-ui`)
 - `src/lib/themes/tokens.css`
 - `src/lib/ui/tree/TreeItem.svelte`
 - `src/lib/ui/tree/TreeSection.svelte`
@@ -161,6 +200,7 @@ The builder's first task, before any change, is the first run of every case abov
 - `HELP.md`
 - `docs/diagrams/` as `npm run diagrams` regenerates it
 - `.scratch/migration/agents/reviews/X3d-report.md`
+- `.scratch/migration/agents/reviews/X3d-shots/` (the look's screenshots)
 
 The step writes these paths and nothing else. A path outside them that the work turns out to need is reported before it is written. A further new component under `graph/`, `diff/`, `changes/`, `menus/` or `refs/` that a size limit forces is allowed and named in the report.
 
@@ -170,8 +210,8 @@ The step writes these paths and nothing else. A path outside them that the work 
 2. Colours come from oculus's tokens by VS Code's role, through the mapping `colours.ts` holds; sizes, spacing, structure and interactions come from VS Code.
 3. The short hash and the time leave the graph row for its hover words, as in VS Code.
 4. The list or tree mode is the view's instance state with the list as the start, as VS Code's own default; no config key is added.
-5. Change rows draw no file-type icon, since oculus has none yet; the Files view's step (X3a) brings the icons and this view takes them then.
-6. Incoming and Outgoing stay head rows above the graph's commits, drawn with VS Code's dashed circle.
+5. File rows draw the Seti icon from `seti-ui` (item 17); `file-icons.ts` and `FileIcon.svelte` are shared primitives, so X3a's Files view takes them as they are.
+6. Incoming and Outgoing stay head rows above the graph's commits, drawn with VS Code's dashed circle, and the commits under each carry their lanes (item 18).
 7. The placeholder words the chord as `Ctrl+Enter`, as the catalog words every chord today.
 8. A file header draws no line counts, as VS Code's draws none and `DiffSides` carries none.
 9. Not built, with the reason: Stage All on the merge group (it would stage files that still hold conflict markers; oculus keeps Mark Resolved per file, after its merge editor); the graph head's Refresh (the state is pushed) and its repository and ref pickers (the view shows one repository and its checked-out branch's history, which is X3b's scope and not a matter of look).
@@ -180,7 +220,7 @@ The step writes these paths and nothing else. A path outside them that the work 
 
 ## Libraries checked
 
-None found that fits: the view is drawn with oculus's own tree primitives, which are on `@zag-js/tree-view` (Q82), the menus on bits-ui (Q81) and the diff on Monaco (D13b), all already in the tree and all kept. VS Code's own Source Control view is not a library that can be installed. The step adds no dependency.
+`seti-ui` 1.11.0 for the file icons, ruled by Axel on 2026-09-25 for oculus's file icons (`plan.md` Rulings, "the Seti set (`seti-ui`) with its own table and colours"): MIT, maintainer jesseweed, last published 2024-10-12, no runtime dependencies used here (the step reads its `.less` table and its `.woff` font as files); it replaces a hand-made name-to-icon table; what stays hand-written is the reader of the table and the component. For the rest, none found that fits: the view is drawn with oculus's own tree primitives, which are on `@zag-js/tree-view` (Q82), the menus on bits-ui (Q81) and the diff on Monaco (D13b), all already in the tree and all kept. VS Code's own Source Control view is not a library that can be installed. The step adds no other dependency.
 
 The builder adds no dependency this brief does not name. A library the builder finds that would cover its work is reported, not installed.
 
@@ -211,8 +251,8 @@ Run from `tools/oculus` in the worktree, each must hold:
 3. `grep -rn "px" src/lib/views/sources/repositories src/lib/views/shared/changes/CommitBox.svelte` lists every pixel literal left in those components; the report gives the list and, for each, the rule of item 1 it falls under.
 4. Each new or changed test of a behaviour the change adds or changes fails on the unchanged tree, in the form it has after its last change, and the report quotes that failure from the cases' first run; each new or changed test of a behaviour the change preserves passes after the change and on the unchanged tree, and the report quotes those runs. A test that would still pass with the behaviour it is written for taken out of the code is an audit and carries "audit" in its name; cases 15 (its second half) and 25 are audits.
 
-The look, side by side with VS Code on TEST, is the landing's and is not the builder's: the builder opens no browser.
+5. The look of item 19, in the builder's own server and headless Chrome, done before the report and after the last change. The landing's look on TEST, side by side with VS Code, is the orchestrator's check after that.
 
 ## Report
 
-Write it to `.scratch/migration/agents/reviews/X3d-report.md` in the worktree. First line: anything NOT done, or "Everything in the brief is done". Then the open items of the state file, verbatim. Then the cases' first run on the unchanged tree. Then the DONE / NOT DONE table with the checks above and their output verbatim. Then files with line counts, every judgment call the brief left open, and every user-visible change with its before and after. Then, for the look, one row per element of the plan line (the title bar, a repository row, the commit box and its button in each of its three states, a change group and a change row, tree mode, the graph's lanes, a graph row with pills, Incoming and Outgoing, the diff bar, a file header) with the state a repository on TEST must be in to show it (ahead and behind, a merge in progress, a commit open in the graph, a stash diff of several files, a rename, one long line in the message in a narrow pane, a folder closed while its file holds the focus) and the file and line where oculus sets each measure of "VS Code's measures". Last, anything in the brief that was wrong or impossible, with the evidence.
+Write it to `.scratch/migration/agents/reviews/X3d-report.md` in the worktree. First line: anything NOT done, or "Everything in the brief is done". Then the open items of the state file, verbatim. Then the cases' first run on the unchanged tree. Then the DONE / NOT DONE table with the checks above and their output verbatim. Then files with line counts, every judgment call the brief left open, and every user-visible change with its before and after. Then the look of item 19: one row per element and state, with VS Code's value, the drawn value and the screenshot's path. Then, for the landing's look, one row per element of the plan line (the title bar, a repository row, the commit box and its button in each of its three states, a change group and a change row, tree mode, the graph's lanes, a graph row with pills, Incoming and Outgoing, the diff bar, a file header) with the state a repository on TEST must be in to show it (ahead and behind, a merge in progress, a commit open in the graph, a stash diff of several files, a rename, one long line in the message in a narrow pane, a folder closed while its file holds the focus) and the file and line where oculus sets each measure of "VS Code's measures". Last, anything in the brief that was wrong or impossible, with the evidence.

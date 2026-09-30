@@ -943,3 +943,269 @@ $ ls $TMPDIR | grep q107
 ```
 
 The probe ends each run by stopping its server, running `tmux -S <its socket> kill-server` on its own socket, and removing `$TMPDIR/q107s`; the listing above is after the last run. No other socket was named in any tmux command.
+
+## Repair round 1
+
+Nothing in the four rulings is left undone. One case the rulings did not cover is RED and stands: with no page attached and the socket unreachable for longer than the confirming reads at an idle poll tick, the server still publishes the empty list (the hidden-tab run in ruling 1, quoted verbatim). No control client runs then, so nothing in the process says tmux runs, and a tmux that exited normally answers the same words.
+
+Sections 4, 6 and 8 above are amended by this section where they say the confirming reads alone end the false empty list, and where they say "no code can tell the two apart from `list-sessions` alone": a running control client is the second fact, and the pages share the ui store's instance records as well as the pages.
+
+### Ruling 1: a "no server" read while a control client runs
+
+Change: `#read` of `src/lib/server/machine/pty/channel.ts:375` still reads a "no server" answer again `NO_SERVER_CONFIRMS` times, `NO_SERVER_CONFIRM_MS` apart, and at the last answer takes the empty list only `if (!this.#driver.live())` (`:383`); with a control client running it gives the read up and the last list stands. The doc comment of `#read` says both cases and why (a control client's process ends with the tmux server, `tmux.ts` sets `alive = false` on its `exit` and `error`). The decision is at the last answer, so a control client that stops during the confirming reads leaves the empty list (the brief's case (c)), and one that runs at the end keeps the list (case (a)).
+
+Tests, `tests/server/machine/pty/channel-list.test.ts:250`, "a no-server answer while a control client runs", on the fake driver whose `live()` the case sets:
+- (a) `:272` "is never the empty list, however long every read says it: the last list stands": live true, every read answering "no server" in both wordings, four times the confirmation span: no empty list published, the list stays `[A]`.
+- (b) `:284` "is the empty list again once the control client has stopped, after the confirming reads".
+- (c) `:293` "is the empty list when the control client stops during the confirming reads".
+
+First run on the tree before the change, `npx vitest run tests/server/machine/pty/channel-list.test.ts`: (a) fails, (b) and (c) pass (they pin the behaviour that stays):
+
+```
+FAIL is never the empty list, however long every read says it: the last list stands 7ms
+FAIL  tests/server/machine/pty/channel-list.test.ts > a no-server answer while a control client runs > is never the empty list, however long every read says it: the last list stands
+AssertionError: expected [] to deeply equal [ 'a1b2c3-shell' ]
+Test Files  1 failed (1)
+Tests  1 failed | 13 passed (14)
+```
+Probe: `noserver` runs with the socket away for 2000 ms (`Q107-probe.mjs:317`, through `attachedOutage` at `:239`), `noserver400` keeps the 400 ms run (`:321`); the two use separate session names so one invocation can hold both. `noserverhidden` (`:329`) is new and runs only when named.
+
+Before this round's change (tree of the report above), `node .scratch/migration/agents/reviews/Q107-probe.mjs noserver noserver400`:
+
+```
+RED noserver / page shape reload: 2 lists, endedTerminals answers 2 terminal(s) tmux still lists (4 running)
+    answered 447126-shell at list 0; that list held []
+    answered 49e604-shell at list 0; that list held []
+RED noserver / page shape reconnect: 4 lists, endedTerminals answers 2 terminal(s) tmux still lists (4 running)
+    answered 447126-shell at list 2; that list held []
+    answered 49e604-shell at list 2; that list held []
+    while the socket is away (2000 ms) tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+green noserver400 / page shape reload: 2 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+green noserver400 / page shape reconnect: 4 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+    while the socket is away (400 ms) tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+RESULT: RED
+exit=1
+```
+
+After, final tree, `node .scratch/migration/agents/reviews/Q107-probe.mjs noserver`:
+
+```
+green noserver / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+green noserver / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+    while the socket is away (2000 ms) tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+RESULT: green
+exit=0
+```
+
+After, final tree, `node .scratch/migration/agents/reviews/Q107-probe.mjs noserver400`:
+
+```
+green noserver400 / page shape reload: 2 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+green noserver400 / page shape reconnect: 4 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+    while the socket is away (400 ms) tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+RESULT: green
+exit=0
+```
+
+After, final tree, the whole default run (`node .scratch/migration/agents/reviews/Q107-probe.mjs`):
+
+```
+green save / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green save / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+    the socket of the open client closed, so the dev server restarted
+green restart / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green restart / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green reconnect / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green reconnect / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green burst / page shape reload: 6 lists, endedTerminals answers 0 terminal(s) tmux still lists (62 running)
+green burst / page shape reconnect: 8 lists, endedTerminals answers 0 terminal(s) tmux still lists (62 running)
+green noserver / page shape reload: 2 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+green noserver / page shape reconnect: 4 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+    while the socket is away (2000 ms) tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+green noserver400 / page shape reload: 2 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+green noserver400 / page shape reconnect: 4 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+    while the socket is away (400 ms) tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+green ended / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (1 running); the killed terminal was answered
+green ended / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (1 running); the killed terminal was answered
+green usage / page shape reload: 0 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green usage / page shape reconnect: 2 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green oddcwd / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (3 running)
+green oddcwd / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (3 running)
+green oddname / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (3 running)
+green oddname / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (3 running)
+RESULT: green
+exit=0
+```
+
+The hidden-tab run, `node .scratch/migration/agents/reviews/Q107-probe.mjs noserverhidden`, verbatim: the page attached to a terminal is gone for longer than `IDLE_MS`, so no control client is live, and the socket is away for 2000 ms across the second idle poll tick:
+
+```
+RED noserverhidden / page shape reload: 1 lists, endedTerminals answers 2 terminal(s) tmux still lists (2 running)
+    answered 6b2122-shell at list 0; that list held []
+    answered 3f06ee-shell at list 0; that list held []
+RED noserverhidden / page shape reconnect: 3 lists, endedTerminals answers 2 terminal(s) tmux still lists (2 running)
+    answered 3f06ee-shell at list 2; that list held []
+    answered 6b2122-shell at list 2; that list held []
+    while the socket is away tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+RESULT: RED
+exit=1
+```
+
+This is the case that remains. The server reads the list at the idle poll with no control client, three "no server" answers follow within 0.6 s, and the empty list is published while two shells run. It is the case the ruling expected to be RED; the run was not made on the tree before this round.
+### Ruling 2: Attach joins the tab it is chosen from
+
+Change: two tests of `tests/state/client/terminal/terminal-tabs.test.ts`, "attaching a terminal no tab owns":
+- `:350` "puts the chosen terminal at the end of the tab it is chosen from, the second Terminal tab of the page, shows it in the row and activates the tab; no other tab changes": the page holds a first Terminal tab owning C and a second owning A and B; D is attached from the second; it joins the second (`[A, B, D]`, shown alone, activated) and the first is byte-identical.
+- `:431` "joins the tab it is chosen from, the only Terminal tab of the second page, and not the first Terminal tab of the first page": page one holds a tab owning A, page two a tab owning C; D is attached from the page-two tab and joins it (`[C, D]`), the page-one tab stays `[A]`.
+
+First run on the tree before this round (the behaviour is already right, so both pass), `npx vitest run tests/state/client/terminal/terminal-tabs.test.ts`:
+
+```
+Test Files  1 passed (1)
+Tests  36 passed (36)
+```
+
+Both failing on a scratch copy of `src/lib/state/sessions/terminals.svelte.ts` where `:412` reads `const target = terminalTabs()[0];` (the first Terminal tab of any page) in place of `terminalTabs().find((one) => one.id === tab)`, same command:
+
+```
+FAIL puts the chosen terminal at the end of the tab it is chosen from, the second Terminal tab of the page, shows it in the row and activates the tab; no other tab changes 5ms
+FAIL joins the tab it is chosen from, the only Terminal tab of the second page, and not the first Terminal tab of the first page 1ms
+FAIL  tests/state/client/terminal/terminal-tabs.test.ts > attaching a terminal no tab owns > puts the chosen terminal at the end of the tab it is chosen from, the second Terminal tab of the page, shows it in the row and activates the tab; no other tab changes
+AssertionError: expected { ...(7) } to match object { terminals: [ ...(3) ], ...(3) }
+FAIL  tests/state/client/terminal/terminal-tabs.test.ts > attaching a terminal no tab owns > joins the tab it is chosen from, the only Terminal tab of the second page, and not the first Terminal tab of the first page
+AssertionError: expected [ 'c3c3c3-claude' ] to deeply equal [ 'c3c3c3-claude', 'd4d4d4-shell' ]
+Test Files  1 failed (1)
+Tests  2 failed | 34 passed (36)
+```
+
+The file is byte-identical to its state before the copy (`cmp`), and `:412` reads the `find` again.
+### Ruling 3: the test head
+
+`tests/server/machine/pty/channel-list.test.ts:1-14` says "What this does NOT cover: a real tmux server failing to be reached, which no unit test can make happen, and the page closing a Terminal tab on an empty list, which is tests/state/client/terminal/terminal-tabs.test.ts." It names no ledger file and no step; it also says the stub's control client is live or not as the case says. `grep -n "scratch\|Q107\|probe" tests/server/machine/pty/channel-list.test.ts` prints nothing.
+### Ruling 4: what browser tabs share
+
+Change, `src/lib/state/workbench/ui.svelte.ts`:
+- `save` (`:442`) writes `mergedInstances` (`:414`): the records the storage holds, with the records this tab changed or added (compared by JSON text with `synced`, `:173`, the records as last read or written) laid over them, and the ones this tab removed taken out. Where the storage holds nothing readable every record this tab holds is written. `synced` is updated only after the write succeeds, so a refused write leaves the records to be written at the next save.
+- `loadUi(storage, source)` (`:317`) follows the window through `followKey` and `takeSavedInstances` (`:433`) takes the saved `instances` into `store.current.instances` while theme, CRT, wallpaper, icons, text scale, terminal font, code theme and the status bar items stay the tab's own; it writes nothing back. `stopFollowing` (`:526`) ends it. `savedHeld` (`:368`) is the one reader of the saved envelope, used by `loadUi`, the merge and the follow.
+- `followKey` (`src/lib/state/shared/stores/storage-events.ts:8`) is the listener of the `storage` event for one key; `follow` of `src/lib/state/workbench/layout/saved/storage.ts:89` now calls it for `LAYOUT_KEY`.
+- `src/routes/+page.svelte:209-214` passes `window` to `loadUi` and stops the follow on unmount.
+
+Tests, the new `tests/state/workbench/ui-shared.test.ts` (10 cases, two stores on one fake storage and an `EventTarget` for each window):
+- both records kept after both save, and the merged record visible in the tab that saves last;
+- a record both held and one tab changed kept next to another tab's new record;
+- a record removed in one tab stays removed after the other saves, and is gone from that tab;
+- a record a tab removed itself is removed from the storage;
+- an unreadable stored value: the tab writes its own records;
+- a storage event gives this tab the other's record and leaves its theme; a record the other removed is dropped; nothing is written back; another key, no value, an unparseable value change nothing; no follow without a window, after `stopFollowing`, or for the older of two windows;
+- a refused write keeps the records in memory and writes them again at the next save.
+
+First run on the tree before this round's change (the new cases of the first nine that need the merge or the follow), `npx vitest run tests/state/workbench/ui-shared.test.ts`:
+
+```
+FAIL keep the record each one changed when both have saved 9ms
+FAIL keep the change of a record both held when the other saves another record later 1ms
+FAIL do not bring back a record the other removed, and drop it in the tab that saves 1ms
+FAIL remove the record they removed themselves 1ms
+FAIL takes the records the other saved and keeps its own appearance 1ms
+FAIL drops a record the other removed 0ms
+FAIL writes nothing back, and hears no other key, no value and no value that parses 0ms
+FAIL follows nothing when loaded without a window, after it stops following, or on a second load for the older window 0ms
+FAIL  tests/state/workbench/ui-shared.test.ts > two browser tabs saving the state their views remember > keep the record each one changed when both have saved
+AssertionError: expected { b: { draft: 'text' } } to deeply equal { a: { filter: 'active' }, ...(1) }
+FAIL  tests/state/workbench/ui-shared.test.ts > two browser tabs saving the state their views remember > keep the change of a record both held when the other saves another record later
+AssertionError: expected { a: 1, b: 3 } to deeply equal { a: 2, b: 3 }
+FAIL  tests/state/workbench/ui-shared.test.ts > two browser tabs saving the state their views remember > do not bring back a record the other removed, and drop it in the tab that saves
+AssertionError: expected { x: 'gone', y: 'kept', a: 1 } to deeply equal { y: 'kept', a: 1 }
+FAIL  tests/state/workbench/ui-shared.test.ts > two browser tabs saving the state their views remember > remove the record they removed themselves
+AssertionError: expected {} to deeply equal { b: 2 }
+FAIL  tests/state/workbench/ui-shared.test.ts > a browser tab told that another one saved > takes the records the other saved and keeps its own appearance
+AssertionError: expected undefined to deeply equal { draft: 'text' }
+FAIL  tests/state/workbench/ui-shared.test.ts > a browser tab told that another one saved > drops a record the other removed
+AssertionError: expected 1 to be undefined // Object.is equality
+FAIL  tests/state/workbench/ui-shared.test.ts > a browser tab told that another one saved > writes nothing back, and hears no other key, no value and no value that parses
+AssertionError: expected undefined to be 1 // Object.is equality
+FAIL  tests/state/workbench/ui-shared.test.ts > a browser tab told that another one saved > follows nothing when loaded without a window, after it stops following, or on a second load for the older window
+TypeError: stopped.ui.stopFollowing is not a function
+Test Files  1 failed (1)
+Tests  8 failed | 1 passed (9)
+```
+
+The refused-write case was added after the change and was not run on the tree before it; it fails on a scratch copy of `ui.svelte.ts` where `synced` is updated before the write (the file is restored byte-identical, `cmp`):
+
+```
+FAIL keeps every record it holds in memory and writes them again at the next save 3ms
+FAIL  tests/state/workbench/ui-shared.test.ts > a browser tab whose storage refuses a write > keeps every record it holds in memory and writes them again at the next save
+AssertionError: expected { a: 1, c: 3 } to deeply equal { a: 1, b: 2, c: 3 }
+Test Files  1 failed (1)
+Tests  1 failed | 9 passed (10)
+```
+
+`HELP.md:146` (the `pages` row) and `DESIGN.md:154` say what is shared: the arrangement and each tab's own state, with the appearance each browser tab's own; `DESIGN.md:361` says that the empty list needs no control client running.
+### Verification
+
+`npm run diagrams` exit 0. `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` exit 0:
+
+```
+$ npm test
+ Test Files  353 passed | 19 skipped (372)
+      Tests  5401 passed | 559 skipped (5960)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+$ npm run build
+$ npm run format:check
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+`npx vitest run tests/state/sessions tests/state/client/terminal tests/views/sessions tests/server/machine/pty tests/ui/menu tests/state/workbench` exit 0:
+
+```
+ Test Files  65 passed (65)
+      Tests  1156 passed (1156)
+```
+
+The ASCII gate over `src tests config` prints nothing (exit 0). The name grep of the new names (matches per file, `--exclude=local.yml`, `src tests config HELP.md DESIGN.md README.md`):
+
+```
+== followKey
+   1 DESIGN.md
+   1 src/lib/state/shared/stores/storage-events.ts
+   2 src/lib/state/workbench/layout/saved/storage.ts
+   2 src/lib/state/workbench/ui.svelte.ts
+== takeSavedInstances
+   1 DESIGN.md
+   3 src/lib/state/workbench/ui.svelte.ts
+== mergedInstances
+   1 DESIGN.md
+   2 src/lib/state/workbench/ui.svelte.ts
+== savedHeld
+   4 src/lib/state/workbench/ui.svelte.ts
+== stopFollowing
+   2 src/lib/state/workbench/layout.svelte.ts
+   3 src/lib/state/workbench/ui.svelte.ts
+   4 src/routes/+page.svelte
+   1 tests/state/workbench/layout/saved/layout-shared.test.ts
+   1 tests/state/workbench/ui-shared.test.ts
+== storage-events
+   1 DESIGN.md
+   1 src/lib/state/workbench/layout/saved/storage.ts
+   1 src/lib/state/workbench/ui.svelte.ts
+== noserver400
+== noserverhidden
+```
+
+After the last probe run: `lsof -iTCP:8797 -sTCP:LISTEN` exit 1, `ls $TMPDIR/q107s` "No such file or directory".
+
+What the green results do not cover: no browser was opened, so a second browser tab taking the ui records at once, and the Terminal tab's composer surviving a reload, are for the look at landing. The probe moves the socket file, which is one way tmux becomes unreachable.
+
+### User-visible changes
+
+| Change | Before | After |
+|---|---|---|
+| tmux unreachable while a page is attached to a terminal | After 0.6 s the list was published empty and the pages ended their terminals. | The last list stands however long it lasts; it is read again at the next change tmux reports. |
+| tmux unreachable with no page attached to a terminal | The empty list after 0.6 s at an idle poll tick. | The same: the hidden-tab run above is RED. |
+| Two browser tabs and a view's own state (a Terminal tab's composer record, a view's forms and filters) | Each tab wrote the whole record set, so one tab's save dropped the records the other wrote, and the other tab never saw them. | A save keeps the records another tab saved, and each tab takes the other's records when it saves; theme, CRT, wallpaper, icons, text size, terminal font, code theme and status bar stay each browser tab's own. Two tabs changing the same record at once end with the last write. |
+| `HELP.md:146` `pages` row | Said pages, tabs and Terminal tabs are shared. | Says the arrangement and each tab's own state are shared, and the appearance is not. |
