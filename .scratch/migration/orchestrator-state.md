@@ -28,7 +28,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q102 in repair round 1; Q84's round 1 under review; D23 stopped on Z72; Q88b waits for Q102's and Q84's landings; X3c and X3a wait for Q88b's.
+dispatch:      # Q102 in repair round 1; Q84 refuted over round 1, landing next; E1 building; D23 stopped on Z72; Q88b waits for Q102's and Q84's landings; X3c and X3a wait for Q88b's.
 - step: Q102
   executor: agent
   worker: claude:sonnet
@@ -56,9 +56,22 @@ dispatch:      # Q102 in repair round 1; Q84's round 1 under review; D23 stopped
   brief_check: agents/reviews/Q84-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 63 tool uses, 261k tokens, 11 min
   shared_paths: README.md line 13 (Q102 adds @xterm/addon-serialize, Q84 @tanstack/query-core, one sentence naming each dependency, both kept by hand); package.json and package-lock.json (each adds one dependency, npm install run again on main at the second landing); src/lib/state/client/context.ts (Q102 the terminals and layout wiring around 170-196, Q84 the query client and the store constructors); DESIGN.md (D13c the Appearance text, Q102 the Terminal text, Q84 the paragraph at 192); docs/diagrams/ (regenerated on main); tests/views/sessions/sessions.test.ts (Q102 its audits at 352-362, Q84 no assertion). Each is a hand merge of named places or a mechanical rerun.
   builder_usage: 173 tool uses, 251,916 tokens, 55.6 min (3,334,579 ms), from its completion notice; report saved 2026-09-30; round 1: 47 tool uses, 324,827 tokens, 15.2 min (909,519 ms), report section saved
-  reviewer_report: agents/reviews/Q84-refuter.md; claude-opus-5-5, 56 tool uses, 269,913 tokens, 17.5 min (1,050,888 ms), from its completion notice
+  reviewer_report: agents/reviews/Q84-refuter.md; claude-opus-5-5, 56 tool uses, 269,913 tokens, 17.5 min (1,050,888 ms), from its completion notice; over round 1: claude-opus-5-5, 46 tool uses, 194,899 tokens, 11.6 min (698,225 ms)
   landing: not-started
   round: 1 (sent 2026-09-30: item 4 built as a WritesStore method, the helper moved to state/client/queries.svelte.ts with its types in shapes.ts, the three behaviour fixes, cases 18, 20 and 21, the docs sentences on state/shared/stores, the comment wrap)
+- step: E1
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch)
+  session_id: a47c8e362c522c5fb
+  worktree: .agents/worktrees/E1
+  base: 9023d17d
+  launched: 2026-09-30 09:49 local
+  report: agents/reviews/E1-report.md
+  brief_check: agents/reviews/E1-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 54 tool uses, 161,730 tokens, 8.4 min
+  shared_paths: DESIGN.md (E1 inserts a new section between "## Hot reload" and "## Relationship to the cockpit"; Q102 changes the Terminal text and Q84 the paragraphs at 174 and 192, all in other sections, so the merge keeps each side's lines by hand); docs/diagrams/ (no source change in E1; regenerated on main at landing).
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

@@ -3,6 +3,7 @@
 In flight:
 - Q102 (the terminal working as VS Code's, seen working in the page; Z69 (a)), builder on Sonnet 5.5 since 2026-09-30 01:29.
 - Q84 (the fetch-and-hold stores on @tanstack/query-core; Z56 (a)), builder on Sonnet 5.5 since 2026-09-30 01:48.
+- E1 (the design section for apps added while oculus runs, for Axel's ruling), builder on Sonnet 5.5 since 2026-09-30 09:49.
 Queued, in order:
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`; and once Q84 has landed, since Q84 rewrites `state/sources/fs.svelte.ts`, which Q88b's Files write client extends.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
@@ -12,10 +13,10 @@ Queued, in order:
 - Q85 (checking untyped input with zod).
 - Q66 and Q35 (a hidden tab defers its work; the session views).
 - D11 and D14 (the debug client for rite; LaTeX everywhere).
-- D23, D15 and D17 (language servers in the Monaco editor; PDF reading, once D14 has landed; project commands).
+- D23, D15 and D17 (language servers in the Monaco editor, stopped on Z72 until Axel rules; PDF reading, once D14 has landed; project commands).
 - D18, D20 and D24 (the Processes view; an agent started on a task; the Personal board).
 - A1, A2 and A3 (review with feedback; a session in a new worktree; scheduled runs, once D17 has landed).
-- M3, E1 and M4 (the resources registry; apps added while oculus runs; the Present view's equations drawn live from LaTeX).
+- M3 and M4 (the resources registry; the Present view's equations drawn live from LaTeX).
 - Q72 (the architecture re-read before the release).
 - R2 (release readiness).
 - O29 and O30 (retiring the cockpit; the native window).

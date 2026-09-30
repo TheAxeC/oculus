@@ -148,3 +148,143 @@ The first run on the unchanged tree is **not verifiable**, since the tree has ch
 - The builder's red runs other than the two I repeated. I did not rerun them.
 
 Scratch files, all under `scratchpad/Q84-refute/`: `checks.log`, `src.patch`, `copy/` (the new tree plus `tests/probe/probe.test.ts`) and `base/` (the rebuilt base tree plus the same probe). Nothing in the worktree was changed.
+
+## Repair round 1, refuted
+
+All nine round items are closed, and the verify list is green. No behaviour finding remains. What remains is one Proof finding and three Standards findings. The main one: the report's first line and its main tables still describe the tree as it was before this round.
+
+## Verification lines
+
+I ran `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` from tools/oculus in the worktree. It exited 0. I did not run `npm run diagrams`. The full log is at scratchpad/Q84-refute-r1/checks.log.
+
+```
+$ npm test
+ Test Files  338 passed | 19 skipped (357)
+      Tests  5157 passed | 557 skipped (5714)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  360 passed | 9 skipped (369)
+$ npm run check
+1790754151910 COMPLETED 2355 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+Other checks:
+- The spec's perl ASCII gate over src, tests and config printed nothing. There is no `bin` folder, so find reported that path as missing.
+- `LC_ALL=C grep -n '[^ -~]'` over DESIGN.md, HELP.md, README.md and the report printed nothing.
+- `git status --short` gave 46 lines both before and after the checks.
+
+## The nine round items
+
+Every revert below was run on a copy at scratchpad/Q84-refute-r1/copy, never in the worktree. Each named test failed alone under its revert, and the copy was restored after each run.
+
+1. **postCommand folded into WritesStore: closed.**
+   - `PostFailure` and `Posted` are in shapes.ts. `postCommand` is on `WritesStore` and implemented in writes.svelte.ts with its own token.
+   - `accounts`, `calendar` and `inbox` call `writes.postCommand(...)`. post.ts is deleted and no constructor changed.
+   - `grep -rn "stores/post" src tests` printed nothing (exit 1).
+   - Case 18 is in writes.test.ts. I reproduced all three reverts: `ok: true` failed "is answered with the body and the status ...", unreachable->unreadable failed "is answered as unreachable ...", and unreadable->'' failed "is answered as unreadable ...". Each run showed 1 failed, 6 passed.
+2. **Helper at state/client/queries.svelte.ts: closed.**
+   - The types are in shapes.ts, and `inBrowser` is in `state/shared/stores/in-browser.ts`.
+   - `grep -rn queueMicrotask src/lib/state` prints only `src/lib/state/client/queries.svelte.ts:168`.
+   - order.test.ts and readable.test.ts pass inside test:checks.
+   - No check was loosened. The only change to order.ts is its head comment.
+3. **latex skips a sessions version already heard: closed.** latex.svelte.ts:83 reads `if (message.channel !== 'sessions' || message.version === heard) return;`.
+   - With the version test removed, "asks once for two sessions messages at one version" failed (1 failed, 7 passed).
+   - The first reviewer's probe now prints `2 2`, as it did on the base.
+   - The count of requests during a build matches the base. I traced it by hand against the base's `settle(id, at)`: two requests when the list moves mid-flight.
+4. **saveNote marks the note stale after the hold: closed.** fs.svelte.ts:656 has `queries.mark([...NOTE, id], 'drop');`.
+   - With it removed, the queries.test.ts note test failed (1 failed, 17 passed).
+   - The probe prints `["POST /api/fs","GET /api/fs?note=n1"]` and `body:"disk", modified:42`, the base result.
+   - The mark's `'drop'` cannot lose to a fetch in flight. The earlier `notesChanged` marks NOTE with `'replace'`, and query-core's cancel reverts to idle synchronously (`onCancel` in query.js).
+5. **docs keeps held?.file on a network error: closed.** docs.svelte.ts:244-248 passes `held?.file ?? ''`, and the tag is cleared as the base cleared it.
+   - With `''` put back, "keeps the file of an error answer through a network error ..." failed (1 failed, 30 passed).
+   - The probe prints `2 2`, the base result.
+6. **Case 20's cache check for every keyed store: closed.** A spy on `QueryCache.prototype.build` covers the reads of docs, hubDocument, files, latex, deposit, transcripts, and fs listing, fileText, note and readListing.
+   - I removed six guards one at a time: files, latex, deposit, transcript, fs note and fs fileText. Each turned the test red.
+   - agents has no empty-key guard, in the base or now, so it does not apply.
+7. **writes.svelte.ts deposit comment rewrapped: closed** (writes.svelte.ts:372-378).
+8. **state/shared/stores described truly: closed on content, with a prose defect** (see Standards). DESIGN.md:174, HELP.md:260 and order.ts:10-12 now name the shapes, the shell action and the browser test, which is what the folder holds (`ls`: in-browser.ts, shapes.ts, shell.ts).
+9. **The helper's head comment on fetch against derived: closed.** queries.svelte.ts:21-22 reads "`fetch` builds the query on the caller's stack, so it is for handlers and effects, never for a `$derived`; `read` is the one a derived calls."
+
+Each fix changes only what its finding named.
+
+## Verdicts, What to build (whole diff since f7ab9b6a)
+
+1. **Dependency: holds.** package.json:45 has `"^5.104.0"`, and README.md:13 names `@tanstack/query-core` (MIT).
+2. **One query client and one helper: holds.**
+   - It is at the briefed path, with the defaults at queries.svelte.ts:39-43.
+   - `createClientState` builds it first (context.ts:144) and it is not a key of `ClientState`.
+   - `read` only reads a tick and `getQueryState`, and schedules on a microtask.
+   - There is one cache subscription (71-76) and `forget` calls `removeQueries`.
+   - The four `WhileFetching` modes were already judged in the first review.
+3. **The ten stores: holds.**
+   - Each holds its answers in the query client through the `Queries` shape, with no record of answers, no in-flight set and no microtask of its own.
+   - `grep -rln "Queries" src/lib/state` lists all ten, plus context.ts, queries.svelte.ts and shapes.ts.
+   - fs.svelte.ts is 711 lines.
+4. **post.ts folded into writes: holds**, in the form the round asked for (a `WritesStore` method, with its types in shapes.ts).
+5. **Duplication list: holds.** Both rows are gone and duplication.test.ts passes.
+6. **Docs and comments: holds**, apart from the Standards findings below.
+
+No assertion, stub or expected value of an existing test changed. Every `^-` line of `git diff f7ab9b6a -- tests/` is one of these:
+- a comment;
+- an allow-list row;
+- the agents `settle()` helper;
+- a constructor line;
+- an import;
+- a revert comment.
+
+## Verdicts, Cases
+
+- **Case 1: met.** It is an audit, named as one.
+- **Cases 2 to 17: met.** The suites are green. The reverts the first review repeated still apply, and the round touched none of these cases apart from the latex one added under case 16's store.
+- **Case 18: met.**
+- **Case 19: met.**
+- **Case 20: met.**
+- **Case 21: met.** Its second grep has a caveat, below under Proof.
+
+## Findings
+
+**Spec**
+- None.
+
+**Proof**
+- **The report still describes the tree before the round.** In .scratch/migration/agents/reviews/Q84-report.md:
+  - Line 1 still says "NOT DONE: item 4 ... is not built ... needs a ruling (below)".
+  - The DONE / NOT DONE table has "4 ... NOT DONE, see Q84-R1" and "2 ... DONE, at `state/shared/stores/queries.svelte.ts` (320 lines)".
+  - The files table still lists `post.ts` at 38 lines.
+  - The red-run table still cites tests in `post.test.ts`, a file that no longer exists.
+  - The "Repair round 1" section only says the Q84-R1 section "is superseded".
+
+  The spec requires the first line to state what is NOT done, and here it is false. Failure scenario: the orchestrator or Axel reads line 1, books item 4 as not done, and treats Q84-R1 as a ruling still to make, although nothing is left to rule.
+- **Case 21's second grep is met only through comments.** `grep -rln "createQueries\|queries.svelte" src/lib/state` lists the ten stores only because their head comments name `state/client/queries.svelte.ts` (for example memories.svelte.ts:6). No store imports that module, since the folder order forbids it. The fact the grep was meant to prove, that each store uses the helper, is shown by `grep -rln "Queries" src/lib/state` and by context.ts passing `queries` to ten constructors. The report quotes the grep as if it proved the use. Failure scenario: a store could drop the helper, keep its comment, and still pass the quoted grep.
+
+**Standards**
+- **The sentences on `state/shared/stores/` are missing a separator, so they misread.**
+  - DESIGN.md:174: "its `stores/` with the shapes of the stores other stores are handed the shell action (`shell.ts`) and the test of whether a fetch is the page's own (`in-browser.ts`),"
+  - HELP.md:260: "its `stores/` holding the shapes of the stores other stores are handed (so a store that is handed one does not depend on the module that builds it) the shell action and the test of whether a fetch is the page's own,"
+  - A comma or "and" is missing after "handed" in DESIGN.md and after the parenthesis in HELP.md. Both read as "other stores are handed the shell action".
+  - Failure scenario: a reader concludes that stores are handed `shell.ts` and `in-browser.ts` as shapes, when they are three separate kinds of thing sitting in one folder.
+- **The head comment of writes.svelte.ts (lines 1-13) was not carried to postCommand.**
+  - It still calls the module "The page's end of the write endpoint". It also says a 403 "reloads the page data and retries once" and that "Every write that does not land ... is also said to whatever registered through onUnwritten".
+  - `postCommand` (writes.svelte.ts:110-134) posts to /api/mail, /api/calendar and the account endpoints. It does neither the retry nor the onUnwritten call. Its behaviour is unchanged from the base `post.ts`, so only the comment is wrong.
+  - Failure scenario: a maintainer reading the head comment expects a refused mail command to ring the status bell or to retry on a stale token, and it does neither.
+- **Two type imports from one module (nit).** latex.svelte.ts:21-22 and docs.svelte.ts:29-30 each have two `import type` lines from `../shared/stores/shapes.ts`. Lint and Prettier pass.
+
+**Behaviour**
+- None. All three behaviour findings of the first review reproduce as fixed. The first reviewer's probe, run on the repaired copy, prints the same three results the base printed (`2 2`; POST then GET with disk/42; `2 2`).
+- No new file-scope mutable. queries.svelte.ts keeps all its state inside `createQueries`, and in-browser.ts has none.
+- No file over the size limit (fs.test.ts 900, fs.svelte.ts 711). The largest folders are src/lib/state/client with 9 items and tests/state/client with 8.
+
+## Declined to judge
+
+- **Whether the committed docs/diagrams match the source.** `npm run diagrams` was outside what I was told to run. Only readable.test.ts inside test:checks speaks to them, and it passes.
+- **Whether a store read inside a mounted `$derived` is free of `state_unsafe_mutation`.** That needs the look on TEST at landing.
+- **The writeToken doc comment (writes.svelte.ts, "for the one reader that is not a fetch").** It was already false on the base, because hpc, usage-refresh, terminals and search call `writeToken()` for fetches. This diff removed three such callers and made nothing newly false, so it is outside this step.
+- **The builder's red runs other than the round's.** I reran only the round's reverts and six case-20 guard reverts.
+
+Scratch files are under scratchpad/Q84-refute-r1/: checks.log, and copy/ (the repaired tree plus tests/probe/probe.test.ts). Nothing in the worktree was changed, and I ran no git command other than `git diff f7ab9b6a` and `git status --short`.
