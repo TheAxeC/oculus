@@ -2,12 +2,12 @@
 
 In flight:
 - X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); its diagnosis runs.
-- Q111 (Undo gives a cleared field's lines back), repair round 1 built; its review runs.
+- Q106 (Close pane on two tabs), its builder runs.
 - Q107 (a Terminal tab closing itself; Attach to Session), its builder runs.
+Landed last: Q111 (Undo gives a cleared field's lines back), 23:17.
 Open items: none. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
-- Q106 (Close pane on two tabs), cause found, Z113 ruled; /spec running.
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.
 - S3 (the Settings view as VS Code's), /spec when a slot frees.
 - Q85a2 to Q85a5 (zod in the other server folders), /spec when a slot frees; then Q85b and Q85c, then Q85d.
