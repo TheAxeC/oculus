@@ -51,14 +51,14 @@ All rows are DONE. Commands run from `tools/oculus` in the worktree with `PATH=$
 | 2 vitest `unit` and `client` projects in `vite.config.ts` | `npx vitest list --filesOnly --exclude 'tests/checks/**'` prints 370 lines, 369 tagged `[unit]` and 1 tagged `[client]` (`tests/ui/frame/give-back.client.test.ts`); with the project tags stripped and sorted, `diff` against the base list (369 lines) shows only `> tests/ui/frame/give-back.client.test.ts` (case 6); `grep -c tests/checks` over it prints 0 |
 | 3 `client-runtime.ts`, `give-back.svelte.ts`, `give-back.client.test.ts` | `npx vitest run tests/ui/frame/give-back.client.test.ts --reporter=verbose` prints 11 rows `pass \|client\| ...` and `Tests  11 passed (11)`: cases 1 to 5 and 11 to 16 |
 | 4 docs | `DESIGN.md` lines 218 and 402, `README.md` line 15, `HELP.md` lines 90 and 296 edited; `grep -rnI "focusQuietly\|giveBackQuietly\|client\.test\|environment" src tests README.md HELP.md DESIGN.md` read in full: the remaining hits are the new code, unrelated uses of the word, and `tests/ui/html.test.ts:6` and `tests/ui/display/glyph.test.ts:7`, whose sentence "vite.config.ts sets `environment: 'node'`" is still true (the `unit` project sets it); `Tooltip.svelte:26` and `:140` say a dialog's focus is marked through `focusQuietly`, which `giveBackQuietly` still calls |
-| 5 Tabs, ActivityRail, NoticeCentre on `focusIsFree()` | `Tabs.svelte:157` `if (!focusIsFree()) return;`, `ActivityRail.svelte` `if (focusIsFree()) focusStop(id);`, `NoticeCentre.svelte:44` `if (held.isConnected && focusIsFree()) held.focus();`; `npx vitest run tests/ui/primitives.test.ts tests/shell/rail tests/shell/keys tests/ui/tabs tests/ui/frame tests/shell/status --reporter=dot` prints `Test Files  13 passed (13)`, `Tests  253 passed (253)` |
+| 5 Tabs, ActivityRail, NoticeCentre on `focusIsFree()` | `Tabs.svelte:157` `if (!focusIsFree()) return;`, `ActivityRail.svelte:229` `if (focusIsFree()) focusStop(id);`, `NoticeCentre.svelte:44` `if (held.isConnected && focusIsFree()) held.focus();`; by reading |
 | 6 palette landing in `Palette.svelte` (`choose` and `landOn`, lines 160 to 181) | by reading; needs a DOM, so it is seen at the look (case 10, case 19) |
 | Case 6 | base 369 files, after 370; the extra is the client file, run in `client` only; `tests/checks` 0 |
 | Case 7 | `npx vitest list --filesOnly tests/checks`: 29 before, 29 after (`npm run test:checks`: `Test Files  27 passed \| 2 skipped (29)`); `npx vitest list --filesOnly --tagsFilter slow`: 398 before, 399 after, the extra being the client file. `npm run test:slow` was not run (the rules file forbids it); the scoped `npx vitest run tests/ui/frame/give-back.client.test.ts --tagsFilter slow` prints `Test Files  1 skipped (1)`, `Tests  11 skipped (11)` |
 | Case 8 | scratch file `tests/ui/frame/zz-probe.client.test.ts` with `// @module-tag slow`, deleted after: `npx vitest run --tagsFilter '!slow' --exclude 'tests/checks/**' tests/ui/frame/zz-probe.client.test.ts` prints `Test Files  1 skipped (1)`, `Tests  1 skipped (1)`; under `--tagsFilter slow` it prints `pass |client| tests/ui/frame/zz-probe.client.test.ts > probe` |
 | Case 18 | scratch file `tests/checks/zz-probe.client.test.ts` (asserting `typeof document` is `'undefined'`), deleted after: with `npm test`'s flags `No test files found, exiting with code 1`; with `npm run test:checks`'s flags `pass |client| tests/checks/zz-probe.client.test.ts > probe`, `Test Files  1 passed (1)` |
 | Case 9 | by reading, above |
-| Case 17 | the four affected suites above pass unchanged; NoticeCentre now also takes the focus back when `document.activeElement` is a control taken off the page (no test drives NoticeCentre; by reading only) |
+| Case 17 | met by reading: `Tabs.svelte:157` and `ActivityRail.svelte:229` keep their predicate exactly, and `NoticeCentre.svelte:44` keeps `held.isConnected` and adds the disconnected case. The four affected suites (13 files, 253 tests) pass but do not reach the three give-backs; `focusIsFree` itself is tested by cases 12 and 16. No test drives the three callers |
 | Verify 1 | `npm run diagrams` then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`, exit 0, printing: `$ npm test` / ` Test Files  351 passed \| 19 skipped (370)` / `      Tests  5358 passed \| 559 skipped (5917)`; `$ npm run test:checks` / ` Test Files  27 passed \| 2 skipped (29)` / `      Tests  365 passed \| 9 skipped (374)`; `$ npm run check` / `1790803310720 COMPLETED 2478 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`; `$ npm run build` / `pass built in 16.07s`, `pass built in 28.23s`; `$ npm run format:check` / `All matched files use Prettier code style!`; `$ npm run lint` (no output); `$ ! LC_ALL=C grep -rna '[^ -~]' src tests` (no output); `checks: 7 commands passed` |
 | Verify 2 | `npx vitest run tests/ui/frame/give-back.client.test.ts --reporter=verbose`: 11 passed, each row `\|client\|` |
 | ASCII gate | the spec's `perl` gate over `src tests config` prints nothing; `LC_ALL=C grep -n '[^ -~]' README.md HELP.md DESIGN.md vite.config.ts` prints nothing |
@@ -74,15 +74,16 @@ The first full run of the list failed once in `tests/checks/source/comment-width
 | Cmd+K, then Escape; Escape or Cancel on a Confirm | the keyboard went back to the control that held it | the same, one microtask later, and only where no other control holds it (look, case 10) |
 | Dialog answered by a view that focuses itself | the view kept the focus because the give-back ran first | the same: the give-back finds the focus held and gives nothing |
 | Notification centre after a Clear that removes the focused button | the centre took the keyboard back only when the document held it | it also takes it back when the focus sits on a control taken off the page |
-| Cmd+K then an editor action | the keyboard went back to the editor | unchanged (see the deviation below) |
+| Cmd+K then an editor action | the keyboard went back to the editor | unchanged: an editor action shows no tab, and the keyboard stays where the give-back puts it (see the deviation below) |
+| Any palette choice that shows a tab (a result, `:tab`, `:goto`) | nothing was focused after the dialog, so the focus handler of the control the reader was on ran inside the dialog's teardown | the dialog's give-back focuses the control the reader was on, then the landing focuses the chosen tab's head, both in microtasks before the next paint; the saved arrangement is written for each of the two focus moves |
 
 What the look should show on TEST: a pane of two tabs, Close pane, Confirm, reload: the pane is gone; Escape and Cancel on that Confirm leave the pane and its tabs, the keyboard on the pane menu's opener with no tooltip; Cmd+K then Deposit: Deposit shown and active, the keyboard on its head; Cmd+K then Escape: the keyboard where it was; a pane of one tab closes at once.
 
 ## Anything in the brief that was wrong or impossible
 
 1. **Item 6 as written moves the keyboard off the editor for an editor action, which the brief's own ruling Z117 does not ask for.** `openPaletteItem` returns the source tab's instance for an `editor` item (`palette-open.ts:24-30`, `return instance;`), so "when it is not empty" is true for Add Line Comment, Fold All and the other Cmd+K chords of the editor, and the keyboard would land on the tab head instead of returning to the editor the reader was typing in. Z117 (a) speaks of "a tab chosen in the palette". `choose` therefore calls `landOn(id)` only when `item.kind !== 'editor'`; for an editor action the dialog's give-back returns the keyboard to the editor as before. Reversible by removing `&& item.kind !== 'editor'` (`Palette.svelte:168`). Not seen in a browser.
-2. **The palette's `:tab <view>` command still goes through the plain give-back.** `run` (`Palette.svelte`, the branch `command.name === 'tab'`) calls `openView(argument)` and the brief leaves `run` unchanged, so the tab it opens is shown but the keyboard goes back to the control the reader was on, and that control's pane becomes the active one again. By reading only, not reproduced. It is the same shape as Z117's question for a different palette path; it is a decision for the orchestrator (extend the landing to `run`'s `tab` and `goto` branches, or leave them), not something the brief lets me change.
-3. **Order of the give-back and the landing, argued and not run in a browser.** `choose` calls `onclose()`, then `openPaletteItem`, then `await tick()` in `landOn`. The dialog's cleanup runs in the flush `tick()` ends with and queues the give-back microtask before `landOn` continues, so the give-back runs first and focuses the old control (its pane's focus handler runs now outside any teardown), and `landOn` then focuses the chosen head, whose pane's handler makes the chosen tab the page's active one. If the chosen head is not yet drawn after one `tick()`, `querySelector` finds nothing and the give-back stands, which is the brief's stated fallback. Whether one `tick()` is enough for a tab that `openView` just created is the point for case 19 at the look.
+2. **The palette's `:tab <view>` and `:goto <project>` commands.** `run` left them on the plain give-back, where the keyboard returns to the control the reader was on and that control's pane becomes the active one again. Repair round 1 (ruling 1) extends the landing to both branches.
+3. **Order of the give-back and the landing.** `choose` calls `onclose()`, then `openPaletteItem`, then `await tick()` in `landOn`. The dialog's cleanup runs in the flush `tick()` ends with and queues the give-back microtask before `landOn` continues, so the give-back runs first and focuses the old control (its pane's focus handler runs now outside any teardown), and `landOn` then focuses the chosen head, whose pane's handler makes the chosen tab the page's active one. The doc comment of `choose` states this order. If the chosen head is not yet drawn after one `tick()`, `querySelector` finds nothing and the give-back stands, which is the brief's stated fallback. Whether one `tick()` is enough for a tab that `openView` just created is the point for case 19 at the look.
 4. **The record's case 2 asserted `activeInstance(id)?.id === 'c'` after the give-back.** That is the behaviour Z117 (a) replaces (the old control's pane becoming the page's active one again), and the brief's case 2 asks only for `"active":"a"` in the tree and in the saved layout. The test asserts exactly that, plus that the opener was focused once.
 5. **Collection count on this base is 369, not the diagnosis record's 370.** The record counted on an earlier base; case 6 is worded relative to the base and holds (369 to 370, the extra file the client file).
 
@@ -118,3 +119,41 @@ What the look should show on TEST: a pane of two tabs, Close pane, Confirm, relo
 - The test stands in for Modal's cleanup; it would pass with `Modal.svelte` unchanged. Modal's cleanup is checked by reading (`Modal.svelte:71`).
 - `document` and `HTMLElement` are stubs; bits-ui's focus scope is not reached. The test file's head says so.
 - The landing in `Palette.svelte` has no test (it needs a DOM); it is seen at the look.
+
+## Repair round 1
+
+Rulings of `briefs/Q106-round1.md`, one row each. Changed files: `src/lib/shell/keys/Palette.svelte`, `DESIGN.md` lines 218 and 402, and this report.
+
+| Ruling | What changed | Evidence |
+|---|---|---|
+| 1 `:tab` and `:goto` | `run` in `Palette.svelte` keeps the id `openView` returns in the `tab` and `goto` branches (`let shown = ''`, `shown = openView(...)`) and, after `onclose()`, calls `if (shown !== '') void landOn(shown);`. `theme`, `crt`, `update`, `language` and the line and language commands are unchanged. No test changes, so there is no failing-first run; the landing needs a DOM and is seen at the look | `grep -n "landOn" src/lib/shell/keys/Palette.svelte` lists `choose` and `run`; `npx eslint src/lib/shell/keys/Palette.svelte` prints nothing; `npx prettier --write` left it `(unchanged)` |
+| 2 `choose` doc comment | rewritten to say the dialog's give-back runs first and hands the keyboard to the control the reader was on (its pane's focus handler runs), `landOn` then moves it to the chosen tab's head (whose pane's focus handler makes that tab the page's active tab), an editor action shows no tab and the keyboard stays where the give-back puts it, and that it covers `run`'s `tab` and `goto` | `Palette.svelte:161-168` |
+| 3 user-visible row | row added to "User-visible changes": before, a palette choice focused nothing after the dialog; after, it focuses the control the reader was on and then the chosen tab's head, both before the next paint, and the saved arrangement is written for each | "User-visible changes" table |
+| 4 DESIGN.md | lines 218 and 402 now say a tab chosen in the palette, by a result or by the `:tab` and `:goto` commands, takes the keyboard on its tab head, while an editor action leaves the keyboard in its editor; `HELP.md` line 90 is unchanged | `grep -n 'an editor action leaves the keyboard in its editor' DESIGN.md` prints lines 218 and 402 |
+| 5 case 17 row | corrected in place in the DONE / NOT DONE table: met by reading (Tabs and ActivityRail keep their predicate exactly, NoticeCentre adds the disconnected case), `focusIsFree` tested by cases 12 and 16, no test added; the item 5 row no longer quotes the 13-file run as evidence | DONE / NOT DONE table |
+| 6 item 6 deviation | stands, nothing changed | |
+
+Also corrected in place: "Anything in the brief that was wrong or impossible" items 2 and 3 now state the end state (the `:tab` and `:goto` landing, the order in `choose`'s comment), and "Not verified in a browser" at the top is unchanged.
+
+Verify list, from `tools/oculus` in the worktree, `npm run diagrams` (exit 0) then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` (exit 0), printing:
+
+```
+$ npm test
+ Test Files  351 passed | 19 skipped (370)
+      Tests  5358 passed | 559 skipped (5917)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790804908195 COMPLETED 2478 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+built in 11.48s
+built in 27.98s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+`npx vitest run tests/ui/frame/give-back.client.test.ts --reporter=verbose`: `Test Files  1 passed (1)`, `Tests  11 passed (11)`. `LC_ALL=C grep -c '[^ -~]'` over `DESIGN.md` and `Palette.svelte` prints 0 for each.

@@ -2,14 +2,16 @@
 
 In flight:
 - X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); its diagnosis runs.
-- Q106 (Close pane on two tabs), built; its review runs.
-- Q107 (a Terminal tab closing itself; Attach to Session), its builder runs.
+- Q106 (Close pane on two tabs), repair round 1 done; its review runs.
+- Q107 (a Terminal tab closing itself; Attach to Session), built; its review runs.
 Landed last: Q111 (Undo gives a cleared field's lines back), 23:17.
-Open items: Z120 (`focus_label_mode` has no reader). Choices made in automode, for review: `choices.md`.
+Open items: none. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
 - Q109 (a terminal's name, icon and colour), once Q107 has landed.
-- S3a (the options catalog) and S3b (the `config-key` write), /spec next, side by side.
+- S3a (the options catalog), its brief check runs; its builder launches when a slot frees.
+- Q112 (the Focus board's cards take `focus_label_mode`), /spec when a slot frees.
+- S3b (the `config-key` write), /spec once S3a has landed (its writer reads S3a's catalog module).
 - S3c (the Settings editor), once S3a and S3b have landed.
 - Q85a2 to Q85a5 (zod in the other server folders), /spec when a slot frees; then Q85b and Q85c, then Q85d.
 - Q88b (the right-click menus' new capabilities), once X3d has landed.
@@ -38,7 +40,8 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- E3 (the apps section's text), 2026-09-30, this landing's commit.
+- Q111 (Undo gives a cleared field's lines back), 2026-09-30, 3b437d63.
+- E3 (the apps section's text), 2026-09-30, 439f9680.
 - Q110 (an undo gives a replaced value back), 2026-09-30, e8f4c010.
 - Q108 (the four kept fixes as a step), 2026-09-30, 3ae6b03f.
 - Q85a1 (zod at the `core` and `root` inputs), 2026-09-30, 42259e30.
