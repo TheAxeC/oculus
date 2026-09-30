@@ -284,6 +284,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Ruled 2026-09-29 by Axel: Z56 (a).
   - Booked 2026-09-30: landed on main at 556dcaf2; the booking in full in `agents/briefs/Q84.md`.
 - Q85a runtime validation of untyped input on `zod` in the server (`src/lib/server`, 80 files with hand checks, counted at /spec 2026-09-30), with the `data/model` types kept as the facade through `satisfies`, the hand checks the schemas make redundant deleted (LA7 a; Axel 2026-09-26, library audit; split by Z73 (b)) (ruling The queue) (ruling Z73)
+  - Step 0, stopped at /spec 2026-09-30: the brief check finds the 80 files too large for one builder (23,210 lines, 549 check lines decided one by one); how Q85a is split is Axel's, open item Z96 in `orchestrator-state.md`; the check is `agents/reviews/Q85a-brief-check.md`.
 - Q85b the same in the state layer (`src/lib/state`, 70 files), after Q85a (ruling The queue) (ruling Z73)
 - Q85c the same in `src/lib/data` (26 files), after Q85a (ruling The queue) (ruling Z73)
 - Q85d the same in the views, `ui/`, `shell/` and the routes (33 files), after Q85b (ruling The queue) (ruling Z73)
@@ -325,6 +326,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Carried to Q72 (2026-09-29, Q96's review): `ui/forms/choice/GlyphSelect.svelte`'s trigger repeats the `.select` rules of `ui/forms/choice/Select.svelte`; folding them needs a global stylesheet or a wrapper that changes the native select's markup in eight views, a design choice outside Q96's brief.
 - O33 oculus extracted into its own GitHub repository, after X2 and last: what moves, what the hub keeps (its config, the ledger), and how the hub then runs it; Axel pushes (Axel 2026-09-25; Step 0 at dispatch) (ruling The queue)
 - Q66 a hidden tab defers its work: a tab the pane hides takes no re-read and follows nothing until it is shown, then catches up once; a Terminal keeps its stream so no output is lost (Axel 2026-09-23; after L3; brief `agents/briefs/Q66.md`) (ruling The queue)
+  - Step 0, /spec 2026-09-30: waits for X3d's landing, since the step also gates the direct re-reads of `diff/Diff.svelte` and `graph/Graph.svelte`, which X3d rewrites; the premises for its brief are `agents/reviews/Q66-premises.md`.
   - Step 0, ruled 2026-09-23 by Axel: (a) on Q65's open item, measured in `agents/reviews/Q65-report.md`, round 1, item 9.
 - ✅ R18 oculus's diagrams generated from the source: the layer graph, the watchers to channels to views, the write chain, with a test that fails when they are stale (Axel 2026-09-22; after Q58; brief `agents/briefs/R18.md`; one repair round; reviews `agents/reviews/R18-refuter.md`; seen on TEST; landing `agents/reviews/R18-landing.md`); landed 2026-09-23
 - M3 `registries/resources.yml`: clusters, machines and storage, each an entry `{ key, name, kind: cluster|machine|storage, host, access, links }`; `slurm.resource: <key>` in place of `slurm.host`, and a manifest's `compute:` a list of entry keys (Axel 2026-09-16 00:40; after D8; brief at dispatch) (ruling The queue) (ruling M3)
