@@ -83,7 +83,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   patch: agents/reviews/X3d-landing-attempt.patch applied with --3way at the base, 76 files clean
   shared_paths: DESIGN.md and HELP.md with Q107 (Q107 writes DESIGN 154 and 361, HELP 127 and 146) and S3a (DESIGN 44 and 85, HELP 214-230); X3d writes DESIGN 373 and 389, HELP 112, 130, 176, 180 and 198; no two change the same line
   landing: not-started
-  round: 0
+  builder_usage: the first run, handed back at case 31 (report read at 01:11; usage from its completion notice to follow)
+  round: 0 (sent 01:12: agents/briefs/X3d-cases.md, six rulings on the cases under Axel's Seti ruling of 2026-09-25)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -641,6 +642,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 01:12. X3d's first run handed back case 31 (no `package.json` entry in Seti's table) and four gaps in item 17; ruled at round 0 under Axel's Seti ruling (its own table, font and colours, the colours as `--seti-*` tokens) and the builder resumed. In flight: X3d, S3a, Q107 (round 2). Open: none.
 - 2026-10-01 01:09. S3a's first run handed back case 17; ruled at round 0 (Z130 (a), automode: the three unread config keys removed) and the builder resumed. In flight: X3d, S3a, Q107 (round 2). Open: none.
 - 2026-10-01 01:08. Q107's round 1 refuted: item 2 unbuilt with no control client (tmux's server pid separates the cases), one untested branch, the report's first line; round 2 sent under the round cap. In flight: X3d, S3a, Q107 (round 2). Open: none.
 - 2026-10-01 00:52. S3a's builder launched (claude-sonnet-5-5). X3d prepared again at /spec: its brief rewritten with items 15 to 19 (the Graph hang fix, the full-width action button, the Seti file icons, lanes under Outgoing and Incoming, the builder's own look); its builder launched at 00:53 (claude-sonnet-5-5) on base 6dc78524 with the patch applied. Q107's round review runs. Three steps in flight: X3d, S3a, Q107. Open: none.
