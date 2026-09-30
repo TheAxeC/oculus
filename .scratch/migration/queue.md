@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- X3d (Source Control as VS Code's), built; its review runs.
+- X3d (Source Control as VS Code's), repair round 1 sent (ten rulings).
 Open items: Z107 (what closes `config/local.yml` to apps), for E3.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.

@@ -40,10 +40,10 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   launched: 2026-09-30 15:01 local
   report: agents/reviews/X3d-report.md
   builder_usage: first builder a11909a88a5a84663 stopped at 17:27 with no completion notice, so no usage; continuation builder 79,680 tokens, 245 tool uses, 63.4 min (report at 20:26)
-  reviewer_report: agents/reviews/X3d-refuter.md (reviewer a2a724fb5c78af633, launched 20:28, served claude-opus-5-5; running)
+  reviewer_report: agents/reviews/X3d-refuter.md (reviewer a2a724fb5c78af633, launched 20:28, served claude-opus-5-5; 168,282 tokens, 144 tool uses, 24.9 min)
   brief_check: agents/reviews/X3d-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 52 tool uses, 301,056 tokens, 12.4 min
   landing: not-started
-  round: 0
+  round: 1 (sent 20:53: agents/briefs/X3d-round1.md, ten rulings; round base diff shasum 3c86229caf49784e2f051b5d065e39562631a4b7)
 - step: U2
   executor: agent
   worker: claude:sonnet
