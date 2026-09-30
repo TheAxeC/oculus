@@ -5,13 +5,13 @@ In flight:
 - E2 (the apps section of DESIGN.md rewritten to the rulings of Z93), reviewed; its builder has answered repair round 1; `/refute` over the round and `/land` wait for Axel's go.
 - Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), repair round 1 refuted 2026-09-30 with two findings for the landing; `/land` waits for Axel's go.
 - Nothing is dispatched, prepared or landed until Axel says go.
-Open items: Z101 (a terminal's name, icon and colour not drawn when set), Z102 (Undo of an empty list removes the field).
+Open items: none.
 Queued, in order:
 - Q108 (the four fixes kept as `agents/reviews/inline-fixes-2026-09-30.patch`: the merge editor's bars, the Live HPC empty line, the slow workbench case, the two kit tests moved; ruling (d)), `/spec` on Axel's go.
-- Q110, if Z102 is ruled (a) (Undo gives an empty list back as an empty list).
+- Q110 (Undo gives an empty list back as an empty list; Z102 (a)), `/spec` on Axel's go.
 - Q106 (Close pane on a pane of two tabs; Z98 (a)), /spec when a slot frees.
 - Q107 (a Terminal tab closing itself, and terminals no tab owns; Z99 (a)), /spec when a slot frees.
-- Q109, if Z101 is ruled (a), once Q107 has landed (a terminal's name, icon and colour drawn the moment they are set, and its lines drawn after its tab moves to another pane).
+- Q109, once Q107 has landed; Z101 (a) (a terminal's name, icon and colour drawn the moment they are set, and its lines drawn after its tab moves to another pane).
 - S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a), Z94 ruled), /spec next.
 - U2 (the audit of every other view's look against VS Code's visual language): queued for `/spec` like any step, its brief saying who does the audit (ruling 6 (a)); the notes on 31 views in `agents/reviews/U2-audit-notes.md` are its input.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`; Q102 landed 2026-09-30, so it is free. Waits for X3d's landing as well: its Source Control items go into `Repositories.svelte`, `RepoList.svelte`, `graph/Graph.svelte`, `Changes.svelte` and `menus/`, which X3d redraws, so the later landing would be a hand merge of whole components.
