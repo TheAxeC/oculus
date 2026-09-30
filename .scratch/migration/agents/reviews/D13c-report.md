@@ -169,3 +169,40 @@ Paths outside the brief's list that the step had to write (a named thing is its 
 ## Anything in the brief wrong or impossible
 
 Nothing was impossible. Two points of the brief needed more than it said: the tests of the step touch three files outside its path list (`tones.test.ts`, `repositories.test.ts`, `config/text/views/system/config.yml`, listed above), and the builder cases sit under a folder whose tree check forces the "audits" name (sharp edge 3).
+
+## Repair round 1
+
+All six findings are fixed. Sharp edge 2 above (an unhandled rejection from a failed code theme import) no longer holds; finding 1 replaces it.
+
+1. Failed import: `paintCode(kit, code, failed)` in `src/lib/ui/controls/editor/kit/look.ts:38` calls `kit.paint`, catches a rejection, calls `failed()` and always resolves. `repaint` (look.ts:51-60) now takes `done(painted: boolean)` and calls `done(true)` before the paint and `done(false)` through `paintCode` when it fails. Both mount calls (`Editor.svelte:197`, `DiffEditor.svelte:174`) use `paintCode` with `() => (painted = null)`, and both repaint effects (`Editor.svelte:371`, `DiffEditor.svelte:295`) pass `(ok) => (painted = ok ? wanted : null)`, so the next change of the look or of the code theme paints again; a second pick of the same theme changes neither and does not repaint. No words, no status line. New test file `tests/ui/controls/editor/look.test.ts` (2 cases, stand-in kit whose paint rejects). Red runs, one revert each:
+   - Revert: drop the try/catch in `paintCode`. Failing line: `AssertionError: promise rejected "Error: import failed" instead of resolving` at `look.test.ts:20:69` ("resolves when the paint rejects, and tells the editor to forget what it painted").
+   - Revert: call `failed()` after a successful paint. Failing line: `AssertionError: expected null to be 'look' // Object.is equality` at `look.test.ts:33:25` ("leaves the painted key alone when the paint succeeds, and passes the code theme on"); the first case fails too, at line 20 as above.
+   - `repaint`'s frame and the effects are not unit-tested (no DOM); they are for the look.
+2. `isCodeTheme` reads `codeThemeIds()` (`src/lib/data/helpers/code-themes.ts:32`). The list copy in `kit/load.ts` stays. Covered by the existing `theme.test.ts` `codeThemeDefault` cases and `ui.test.ts` pick cases (both pass); no new test.
+3. `paint.test.ts` "leaves the last asked paint in force when an earlier load is in flight" now waits (`Promise.race` of the dark-plus paint and a 500 ms timer) before releasing nord's gate, so under the revert dark-plus has settled and nord's late load lands last. Awaiting the dark-plus paint alone would deadlock under the correct code, since the queue holds it behind nord; the timer ends that wait. Red under `queue = paintNow(read, code)`: `AssertionError: expected undefined to be 'd4d4d4' // Object.is equality` at `paint.test.ts:292:59`.
+4. `HELP.md:145` (`settings` row) now says the appearance values (theme, code theme, text size, CRT, wallpaper, icons) are each kept per browser, and the rail list is edited and saved to `config/layout.yml`. `tests/views/system/help.test.ts` passes (in `npm test`).
+5. `DESIGN.md:85` now reads "which the Settings view's Code theme menu overrides per browser, just as its CRT toggle overrides `crt.default`".
+6. User-visible change added: once a code theme is picked in the Settings view, the browser keeps that pick, and "From the theme" saves `tokens` as a pick. Before the pick a browser follows `code_theme:` in `config/appearance.yml` live; after it, an edit of `code_theme:` no longer reaches that browser (it reaches browsers that have not picked). Red-run assertion lines of the round's tests are quoted in items 1 and 3; the tests changed in the main round have their failing test names in the revert table above, and the lines of the ones this round touches are the two quoted here.
+
+Checks after the round (`npm run diagrams`, then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`):
+
+```
+$ npm test
+ Test Files  339 passed | 19 skipped (358)
+      Tests  5149 passed | 557 skipped (5706)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790727742415 COMPLETED 2346 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+built in 3.72s
+built in 9.30s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+An earlier run of the list this round was red in `tests/checks/tree/duplication.test.ts` (the two repaint effects held the same 14 lines after formatting); collapsing the two callbacks into `done` fixed it and the list above is the rerun.

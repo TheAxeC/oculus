@@ -15,6 +15,11 @@
 //
 // A bare `meta` scope wraps whole functions and classes in the grammars, so the meta hue goes to
 // the preprocessor, directive and tag scopes alone, and to punctuation and variables.
+//
+// Under a code theme (a Shiki theme the reader chose in place of the tokens) only the TextMate
+// rules change: `codeRules` takes the theme's own scoped rules for the syntax colours, while the
+// colour map, the type and the base foreground and background stay built from the tokens, so the
+// editor's background and chrome follow the UI theme either way.
 
 import { wcagLuminance } from 'culori';
 import type { ThemeRegistration } from 'shiki';
@@ -64,6 +69,9 @@ const RULES: ScopeRule[] = [
     { scopes: ['markup.inserted'], token: '--c-green-txt' },
     { scopes: ['markup.deleted'], token: '--c-red-txt' }
 ];
+
+/** The rules of a TextMate theme, as the registration Shiki takes holds them. */
+type TokenColors = NonNullable<ThemeRegistration['tokenColors']>;
 
 /** The editor's theme: Monaco's colours, Shiki's TextMate theme and the tokens that were no hex. */
 export type EditorTheme = {
@@ -147,4 +155,22 @@ export function editorTheme(read: (token: string) => string, name = 'oculus'): E
         ...(panel === null ? {} : { bg: panel })
     };
     return { colors, textmate, bad };
+}
+
+/**
+ * The syntax rules of a Shiki theme for painting over the tokens' background: its scoped rules,
+ * each without a `background`. A rule with no scope is the theme's own foreground and background
+ * for all text, which the tokens set instead, and a rule left with no setting after its background
+ * is removed does nothing.
+ */
+export function codeRules(theme: ThemeRegistration): TokenColors {
+    const rules: TokenColors = [];
+    for (const rule of theme.tokenColors ?? []) {
+        if (rule.scope === undefined) continue;
+        const settings = Object.fromEntries(
+            Object.entries(rule.settings).filter(([key]) => key !== 'background')
+        );
+        if (Object.keys(settings).length > 0) rules.push({ ...rule, settings });
+    }
+    return rules;
 }

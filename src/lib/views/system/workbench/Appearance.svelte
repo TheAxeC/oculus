@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial. The appearance controls of the Settings view: the theme list, the
-    // text-size steps, and the toggles for the CRT overlay, the wallpaper and the glyph vocabulary.
-    // Each writes the ui store, which saves the six values together, so what the page looks like
-    // comes back whole after a reload whichever control set it.
+    // code theme menu, the text-size steps, and the toggles for the CRT overlay, the wallpaper and
+    // the glyph vocabulary. Each writes the ui store, which saves the seven values together, so
+    // what the page looks like comes back whole after a reload whichever control set it.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -10,11 +10,14 @@
     import { t } from '$lib/state/shared/words/text';
     import { themes as themeList, wallpaperOnTheme } from '$lib/state/shared/words/appearance';
     import { useState } from '$lib/state/client/use';
+    import { codeThemeLabel, codeThemeMenu } from './code-theme-menu';
 
     const {
         ui: {
+            codeTheme,
             crt,
             icons,
+            setCodeTheme,
             setCrt,
             setIcons,
             setTextScale,
@@ -41,6 +44,9 @@
     const current = $derived(
         themes.find((entry) => entry.active) ?? { label: theme(), glyph: undefined }
     );
+
+    /** The code theme menu's choices, the one in force marked. */
+    const codeThemes = $derived(codeThemeMenu(codeTheme(), t));
 
     /**
      * The wallpaper toggle is drawn only where there is one to switch: it is config and a theme.
@@ -69,6 +75,16 @@
             {/if}
             {current.label}
         </span>
+    </div>
+    <div class="row">
+        <Menu
+            label={t('ui.code_theme')}
+            glyph="code"
+            placement="down"
+            items={codeThemes}
+            onpick={(id: string) => setCodeTheme(id)}
+        />
+        <span class="value" data-code-theme>{codeThemeLabel(codeTheme(), t)}</span>
     </div>
     <div class="row" role="group" aria-label={t('app.text')}>
         <span class="caption">{t('app.text')}</span>

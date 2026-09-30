@@ -100,6 +100,33 @@ describe('the appearance half', () => {
         expect(shown).not.toMatch(/[^\t\n\r\x20-\x7E]/);
     });
 
+    /** The words drawn in the code theme's value span. */
+    function codeThemeShown(body: string): string {
+        const from = body.indexOf('data-code-theme');
+        const start = body.indexOf('>', from) + 1;
+        return body
+            .slice(start, body.indexOf('</span>', start))
+            .replace(/<[^>]*>/g, '')
+            .trim();
+    }
+
+    // Revert: leave the Code theme menu out of Appearance.svelte; no opener and no value.
+    it('draws the code theme menu and the theme in force, From the theme under tokens', () => {
+        const body = draw();
+        expect(buttonNamed(body, catalog['ui.code_theme'])).not.toBe('');
+        expect(codeThemeShown(body)).toBe(catalog['ui.code_theme_tokens']);
+    });
+
+    // Revert: show the id instead of the theme's displayName.
+    it('draws a picked code theme under its own display name', () => {
+        client.ui.setCodeTheme('nord');
+        expect(codeThemeShown(draw())).toBe('Nord');
+        client.ui.setCodeTheme('dark-plus');
+        expect(codeThemeShown(draw())).toBe('Dark Plus');
+        client.ui.setCodeTheme('tokens');
+        expect(codeThemeShown(draw())).toBe(catalog['ui.code_theme_tokens']);
+    });
+
     it('draws a theme whose glyph the vocabulary lacks with its words alone, and does not throw', () => {
         setAppearance({
             ...config,

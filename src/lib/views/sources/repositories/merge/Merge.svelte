@@ -63,7 +63,7 @@
 
     const {
         repositories,
-        ui: { theme, textScale }
+        ui: { codeTheme, theme, textScale }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -211,6 +211,7 @@
                     {path}
                     {language}
                     {look}
+                    codeTheme={codeTheme()}
                     onchoose={choose}
                 />
                 <MergeSide
@@ -221,6 +222,7 @@
                     {path}
                     {language}
                     {look}
+                    codeTheme={codeTheme()}
                     onchoose={choose}
                 />
             </div>
@@ -233,6 +235,7 @@
                         model={`${instance.id}:result`}
                         {path}
                         {look}
+                        codeTheme={codeTheme()}
                         onchange={typed}
                     />
                 </div>

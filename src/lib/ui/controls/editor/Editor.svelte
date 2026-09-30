@@ -16,9 +16,10 @@
     // and the text it gives is handed back as a change, as a conversion of the indentation is.
     //
     // Theme and font are values Monaco holds, so they are read off the computed tokens of the body
-    // when the editor mounts and again whenever `look` changes, one frame later, after the body has
-    // taken the new theme's class; the parent hands in a value that changes with the theme and the
-    // text size, as the terminal follows them.
+    // when the editor mounts and again whenever `look` or `codeTheme` changes, one frame later,
+    // after the body has taken the new theme's class; the parent hands in a `look` that changes
+    // with the theme and the text size, as the terminal follows them, and the code theme (`tokens`
+    // or a Shiki theme id) whose syntax colours the theme is painted with.
     //
     // The keyboard reaches the quick diff marks through three editor actions, which the palette
     // lists while the text holds a mark (gutter.ts `changeActions`): Next, Previous, Open Change.
@@ -34,7 +35,7 @@
     import { eolOf, keyCode, modelUri, type EditorKit } from './kit/load';
     import { buildWhenHosted } from './kit/built.svelte';
     import { shikiId } from './kit/grammars';
-    import { font, repaint, token } from './kit/look';
+    import { font, paintCode, repaint } from './kit/look';
     import { chordActions } from './chords';
     import {
         blameDecorations,
@@ -78,6 +79,8 @@
         path: string;
         /** A value that changes whenever the tokens or the text size do. */
         look?: string;
+        /** The code theme the syntax is coloured with: `tokens`, or the id of a Shiki theme. */
+        codeTheme?: string;
         marks?: EditorMark[];
         blame?: EditorBlame[];
         /** The lines a breakpoint sits on. */
@@ -109,6 +112,7 @@
         model: name,
         path,
         look = '',
+        codeTheme = 'tokens',
         marks = [],
         blame = [],
         breakpoints = [],
@@ -138,8 +142,10 @@
     /** The asks made before the editor loaded, performed once it has. */
     let waiting: EditorCommand[] = [];
     let alive = true;
-    /** The look the editor's theme and font were last read under. */
+    /** The look and code theme the editor's theme and font were last read under. */
     let painted: string | null = null;
+    /** What the paint depends on besides the tokens: the look and the code theme. */
+    const painting = $derived(JSON.stringify([look, codeTheme]));
     const listeners: Monaco.IDisposable[] = [];
     let collections: {
         marks: Monaco.editor.IEditorDecorationsCollection;
@@ -187,8 +193,8 @@
         editor = made;
         kit = loaded;
         mounted = true;
-        painted = look;
-        void loaded.paint(token);
+        painted = painting;
+        void paintCode(loaded, codeTheme, () => (painted = null));
     }
 
     /** Whether the text holds a mark, which is when the actions over the marks are there. */
@@ -353,14 +359,16 @@
         );
     });
 
-    // The theme and the font again whenever the look changes from the one the editor was built
-    // or last painted under, on the next frame, once the body carries the new theme's tokens.
+    // The theme and the font again whenever the look or the code theme changes from the one the
+    // editor was built or last painted under, on the next frame, once the body carries the new
+    // theme's tokens.
     $effect(() => {
-        const wanted = look;
+        const wanted = painting;
+        const code = codeTheme;
         const loaded = kit;
         const made = editor;
         if (loaded === null || made === null || wanted === painted) return;
-        return repaint(loaded, made, host, () => (painted = wanted));
+        return repaint(loaded, made, host, code, (ok) => (painted = ok ? wanted : null));
     });
 
     /** Perform what the parent asks; an ask made before the editor loaded waits for it. */

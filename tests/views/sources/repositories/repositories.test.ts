@@ -701,6 +701,7 @@ function section(file: DiffSides, key: string): string {
             model: `diff-one:${key}`,
             mode: 'side',
             look: 'dark 1',
+            codeTheme: 'tokens',
             several: false,
             headed: true,
             scroller: undefined,

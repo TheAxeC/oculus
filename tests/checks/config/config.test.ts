@@ -3,7 +3,7 @@
 
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 import type { MockInstance } from 'vitest';
 import {
@@ -16,7 +16,8 @@ import {
     loadConfig,
     loadLocal,
     textCatalog,
-    themeFindings
+    themeFindings,
+    vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { ENGINE_ROOT, engineRoot, rootsFile } from '../../../src/lib/server/files/files.ts';
@@ -425,6 +426,25 @@ describe('loadConfig', () => {
         ]);
     });
 
+    // Revert: none; loadConfig treats every key alike, so this holds a fact of the merge for the
+    // new key and would only go red if the merge started to special-case keys (audit).
+    it('audit: reports code_theme defined in two files like any other key', () => {
+        const engine = scratch();
+        withSentences(engine);
+        writeConfig(engine, 'a-first.yml', 'code_theme: tokens\n');
+        const later = writeConfig(engine, 'b-later.yml', 'code_theme: nord\n');
+
+        const { config, findings } = loadConfig(engine);
+        expect(config.code_theme).toBe('nord');
+        expect(findings).toEqual([
+            {
+                file: later,
+                key: 'code_theme',
+                message: 'key code_theme is already defined in a-first.yml; b-later.yml wins'
+            }
+        ]);
+    });
+
     it('reports a catalog key two owner files define and takes the later value', () => {
         const engine = scratch();
         withSentences(engine);
@@ -658,6 +678,49 @@ describe('themeFindings', () => {
         ).toEqual(['themes[2]: a second theme row names a; only the first is offered']);
     });
 
+    /** The findings over this `code_theme` value, each as its file's name, key and sentence. */
+    function codeSaid(config: Record<string, unknown>): string[] {
+        return themeFindings(scratch(), { ...BASE, ...config }).map(
+            (one) => `${basename(one.file)} ${one.key}: ${one.message}`
+        );
+    }
+
+    const CODE = (shown: string): string =>
+        `appearance.yml code_theme: code_theme is ${shown}, which is neither tokens nor the id of a Shiki theme; the editor colours code from the tokens instead`;
+
+    // Revert: drop the code_theme check from themeFindings; no finding is raised for any value.
+    it('names a code theme that is no listed id, one finding per value, case included', () => {
+        expect(codeSaid({ code_theme: 'not-a-theme' })).toEqual([CODE('"not-a-theme"')]);
+        expect(codeSaid({ code_theme: 5 })).toEqual([CODE('5')]);
+        expect(codeSaid({ code_theme: '' })).toEqual([CODE('""')]);
+        expect(codeSaid({ code_theme: null })).toEqual([CODE('null')]);
+        expect(codeSaid({ code_theme: 'Dark-Plus' })).toEqual([CODE('"Dark-Plus"')]);
+        expect(codeSaid({ code_theme: 'TOKENS' })).toEqual([CODE('"TOKENS"')]);
+        expect(codeSaid({ code_theme: 'constructor' })).toEqual([CODE('"constructor"')]);
+    });
+
+    // Revert: move the check after the early return for a config with no `themes:` list.
+    it('names a bad code theme in a config that has no themes list', () => {
+        expect(codeSaid({ themes: undefined, code_theme: 'nope' })).toEqual([CODE('"nope"')]);
+        expect(
+            codeSaid({
+                themes: [
+                    { name: 'a', glyph: 'sun' },
+                    { name: 'a', glyph: 'box' }
+                ],
+                code_theme: 'nope'
+            })
+        ).toHaveLength(2);
+    });
+
+    // Revert: raise a finding for the absent key or a listed value.
+    it('says nothing for an absent code_theme, tokens or a listed id', () => {
+        expect(codeSaid({})).toEqual([]);
+        expect(codeSaid({ code_theme: 'tokens' })).toEqual([]);
+        expect(codeSaid({ code_theme: 'dark-plus' })).toEqual([]);
+        expect(codeSaid({ code_theme: 'github-light' })).toEqual([]);
+    });
+
     it('says nothing about the shipped list, a row with no name, or a config with no list', () => {
         expect(themeFindings(scratch(), loadConfig(engineDir()).config)).toEqual([]);
         expect(said([{ glyph: 'sun' }, 'light'])).toEqual([]);
@@ -670,3 +733,15 @@ describe('themeFindings', () => {
 
 // The root files and owner catalog fragments that ship with the tool, read as the server reads
 // them.
+
+describe('vocabCatalog', () => {
+    // Revert: leave code_theme out of VOCAB_KEYS; the first frame then carries no code theme.
+    it('carries code_theme with the other appearance keys, and only when the config holds it', () => {
+        const config = loadConfig(engineDir()).config;
+        expect(vocabCatalog({ ...config, code_theme: 'nord' }).code_theme).toBe('nord');
+        expect(vocabCatalog(config).code_theme).toBe(config.code_theme);
+        const bare = { ...config };
+        delete bare.code_theme;
+        expect('code_theme' in vocabCatalog(bare)).toBe(false);
+    });
+});

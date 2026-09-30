@@ -27,7 +27,7 @@
     import { modelUri, type EditorKit } from './kit/load';
     import { buildWhenHosted } from './kit/built.svelte';
     import { shikiId } from './kit/grammars';
-    import { font, repaint, token } from './kit/look';
+    import { font, paintCode, repaint } from './kit/look';
     import { chordActions } from './chords';
     import { lineBars } from './zones';
     import LineBars from './LineBars.svelte';
@@ -59,6 +59,8 @@
         hideUnchanged?: boolean;
         /** A value that changes whenever the tokens or the text size do. */
         look?: string;
+        /** The code theme the syntax is coloured with: `tokens`, or the id of a Shiki theme. */
+        codeTheme?: string;
         /** Whether to grow to the content's height rather than fill the box. */
         sized?: boolean;
         /** A view state kept from before, restored once the first diff is drawn. */
@@ -82,6 +84,7 @@
         context,
         hideUnchanged = true,
         look = '',
+        codeTheme = 'tokens',
         sized = false,
         view = null,
         bars = [],
@@ -104,6 +107,8 @@
     let height = $state(0);
     let alive = true;
     let painted: string | null = null;
+    /** What the paint depends on besides the tokens: the look and the code theme. */
+    const painting = $derived(JSON.stringify([look, codeTheme]));
     /** The view state to put back after the next diff: the one handed in, then one carried over. */
     let restore: object | null = null;
     /** The side the reader last worked in, where a palette action runs. */
@@ -165,8 +170,8 @@
         models = pair;
         kit = loaded;
         mounted = true;
-        painted = look;
-        void loaded.paint(token);
+        painted = painting;
+        void paintCode(loaded, codeTheme, () => (painted = null));
         onactions?.(chordActions(made.getModifiedEditor(), loaded.mac));
         grown(made);
     }
@@ -282,11 +287,12 @@
     });
 
     $effect(() => {
-        const wanted = look;
+        const wanted = painting;
+        const code = codeTheme;
         const loaded = kit;
         const made = diff;
         if (loaded === null || made === null || wanted === painted) return;
-        return repaint(loaded, made, host, () => (painted = wanted));
+        return repaint(loaded, made, host, code, (ok) => (painted = ok ? wanted : null));
     });
 
     /** Do what the parent asks: run a palette action where the reader last was, or show a line. */

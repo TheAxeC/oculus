@@ -205,8 +205,11 @@ describe('a vocabulary that is missing or wrongly shaped', () => {
 describe('the real config/catalogs/vocab.yml', () => {
     const vocab = vocabCatalog(REAL_CONFIG);
 
-    it('carries all ten keys the client state reads at first load', () => {
+    // Revert: remove 'code_theme' from VOCAB_KEYS in data/sources/config/catalogs.ts; the first
+    // frame then lacks the key.
+    it('carries all eleven keys the client state reads at first load', () => {
         expect(Object.keys(vocab).sort()).toEqual([
+            'code_theme',
             'crt',
             'data_access',
             'domains',

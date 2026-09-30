@@ -1,18 +1,23 @@
 // Layer 3, primitive. Loading the editor: Monaco, the Shiki grammars of the eighteen coloured
 // languages, the bridge between them, the workers, and the keys the editor gives up. Each editor on
 // a page awaits the one promise this module holds, so the load runs once per page, the first time
-// an editor mounts.
+// an editor mounts. A code theme's file is loaded the first time it is painted, from Shiki's
+// bundled themes, each in a chunk of its own.
 //
 // Monaco needs a DOM, so it is imported inside the promise, which only an editor's `$effect`
 // starts. The page renders no component on the server (`ssr = false` in src/routes/+layout.ts);
 // until Monaco has loaded, the editor draws its text as a plain block, which is also what the unit
 // suite's server render draws. The dynamic import keeps Monaco and Shiki in chunks of their own,
-// loaded when the first editor mounts. Monaco finds its workers through `self.MonacoEnvironment`,
-// the one hook its worker loading reads.
+// loaded when the first editor mounts. The list of Shiki's bundled themes (`shiki/themes`) is read
+// with the page's first chunk, since the appearance store checks a saved code theme against it; the
+// theme files it points at are not. Monaco finds its workers through `self.MonacoEnvironment`, the
+// one hook its worker loading reads.
 //
 // Monaco holds one theme for the whole page, and so does this module: `paint` builds the theme
-// from the tokens in force and sets it on every editor, doing nothing when the tokens have not
-// moved, so each editor may call it on every theme change. Shiki's bridge (`shikiToMonaco`)
+// from the tokens in force and the code theme chosen (`tokens`, or the id of a Shiki theme whose
+// scoped syntax rules replace the tokens' rules, kit/theme.ts's `codeRules`) and sets it on every
+// editor, doing nothing when neither has moved, so each editor may call it on every theme change.
+// Shiki's bridge (`shikiToMonaco`)
 // defines a Monaco theme for each theme a highlighter holds, wraps Monaco's `setTheme` and `create`
 // to keep its tokens coloured by the theme set, and gives each language a tokens provider over that
 // highlighter. Shiki caches a theme by its name inside one highlighter, so a changed theme under
@@ -20,7 +25,9 @@
 // one theme `oculus` and the grammars, bridges it over the calls as Monaco made them (so the wraps
 // never stack), and disposes the highlighter before it. Monaco's `defineTheme` replaces the theme
 // of that name and redraws it where it is in force, and each language's new provider replaces its
-// old one, so a session of theme switches holds one theme and one highlighter.
+// old one, so a session of theme switches holds one theme and one highlighter. A paint of a code
+// theme awaits its file, so the paints are queued and the last one asked is the one in force; a
+// file that fails to load rejects that paint and leaves the theme before it in force.
 //
 // Monaco's TypeScript service checks a file against the files of its project, which an editor
 // holding one file has none of, so its semantic check is off and its syntax check stays on.
@@ -28,9 +35,16 @@
 import type * as Monaco from 'monaco-editor';
 import { SHIKI_LANGUAGES } from './grammars';
 import { freedKeys, type KeyPress } from '../chords';
-import { editorTheme } from './theme';
+import { codeRules, editorTheme } from './theme';
 import type { EditorEnding } from '../types';
-import type { ThemeRegistration } from 'shiki';
+import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
+import type { BundledTheme, ThemeRegistration } from 'shiki';
+
+/**
+ * Paint the page's theme from a reading of the tokens and a code theme (`tokens`, the default, or
+ * a Shiki theme id), answering the theme's name once it is in force.
+ */
+export type Paint = (read: (token: string) => string, code?: string) => Promise<string>;
 
 /** What an editor needs of the loaded page: Monaco, and the one call that sets its theme. */
 export type EditorKit = {
@@ -38,10 +52,10 @@ export type EditorKit = {
     /** Whether the page runs on macOS, which is what Cmd and Ctrl+K mean there. */
     mac: boolean;
     /**
-     * Build the theme from a reading of the tokens and set it on every editor of the page; the
-     * theme's name, `oculus`.
+     * Build the theme from a reading of the tokens and the code theme, and set it on every editor
+     * of the page; the theme's name, `oculus`.
      */
-    paint: (read: (token: string) => string) => Promise<string>;
+    paint: Paint;
 };
 
 /** The one load of the page, started by the first editor that mounts. */
@@ -116,7 +130,9 @@ async function start(): Promise<EditorKit> {
         monaco,
         createHighlighter: shiki.createHighlighter,
         shikiToMonaco: bridge.shikiToMonaco,
-        langs: SHIKI_LANGUAGES
+        langs: SHIKI_LANGUAGES,
+        codeIds: bundledThemesInfo.map((info) => info.id),
+        loadTheme: async (id) => (await bundledThemes[id as BundledTheme]()).default
     });
     return { monaco, mac, paint };
 }
@@ -136,28 +152,56 @@ export type PaintParts<H extends Held> = {
     createHighlighter: (options: { themes: ThemeRegistration[]; langs: string[] }) => Promise<H>;
     shikiToMonaco: (highlighter: H, monaco: never) => void;
     langs: readonly string[];
+    /** The ids of the Shiki themes a paint may be asked for; any other paints as `tokens`. */
+    codeIds: readonly string[];
+    /** One Shiki theme's registration, loaded from its file. */
+    loadTheme: (id: string) => Promise<ThemeRegistration>;
 };
 
 /**
- * The page's paint: each call builds the theme from a reading of the tokens and, when it differs
- * from the one in force, sets it through a new highlighter holding it alone, disposing the one
- * before. The calls run in the order they were made, so two editors never set half a theme each,
- * and a paint that failed leaves the theme before it in force while the next still runs.
+ * The page's paint: each call builds the theme from a reading of the tokens and the code theme
+ * asked for and, when it differs from the one in force, sets it through a new highlighter holding
+ * it alone, disposing the one before. The code theme's file is loaded once and kept, a load that
+ * failed is asked again by the next paint, and an id the list does not hold paints as `tokens`.
+ * The calls run in the order they were made, so two editors never set half a theme each and the
+ * last one asked is the one in force, and a paint that failed leaves the theme before it in force
+ * while the next still runs.
  */
-export function painter<H extends Held>(
-    parts: PaintParts<H>
-): (read: (token: string) => string) => Promise<string> {
+export function painter<H extends Held>(parts: PaintParts<H>): Paint {
     const editor = parts.monaco.editor;
     const made = { setTheme: editor.setTheme, create: editor.create };
+    const known = new Set(parts.codeIds);
+    const rules = new Map<string, ReturnType<typeof codeRules>>();
     let painted = '';
     let held: H | null = null;
     let queue: Promise<string> = Promise.resolve(THEME);
 
-    async function paintNow(read: (token: string) => string): Promise<string> {
+    /**
+     * A code theme's syntax rules, from the file the first time and from the store after. Shiki
+     * normalises the registration it is handed in place, adding a rule of the base colours, so
+     * each paint gets a copy and the store keeps the rules as the file gave them.
+     */
+    async function rulesOf(id: string): Promise<ReturnType<typeof codeRules>> {
+        let kept = rules.get(id);
+        if (kept === undefined) {
+            kept = codeRules(await parts.loadTheme(id));
+            rules.set(id, kept);
+        }
+        return structuredClone(kept);
+    }
+
+    async function paintNow(read: (token: string) => string, code: string): Promise<string> {
         const { textmate } = editorTheme(read, THEME);
-        const signature = JSON.stringify([textmate.type, textmate.colors, textmate.tokenColors]);
+        const id = known.has(code) ? code : '';
+        const signature = JSON.stringify([
+            id,
+            textmate.type,
+            textmate.colors,
+            textmate.tokenColors
+        ]);
         if (signature === painted) return THEME;
-        const next = await parts.createHighlighter({ themes: [textmate], langs: [...parts.langs] });
+        const theme = id === '' ? textmate : { ...textmate, tokenColors: await rulesOf(id) };
+        const next = await parts.createHighlighter({ themes: [theme], langs: [...parts.langs] });
         Object.assign(editor, made);
         parts.shikiToMonaco(next, parts.monaco as never);
         held?.dispose();
@@ -166,8 +210,8 @@ export function painter<H extends Held>(
         return THEME;
     }
 
-    return (read) => {
-        queue = queue.catch(() => THEME).then(() => paintNow(read));
+    return (read, code = '') => {
+        queue = queue.catch(() => THEME).then(() => paintNow(read, code));
         return queue;
     };
 }

@@ -160,3 +160,220 @@ No other standards finding:
 ## Usage
 
 claude-opus-5-5 (the transcript's message.model), 44 tool uses, 187,353 tokens, 13.2 min (789,527 ms), from its completion notice.
+
+## Repair round 1, refuted
+
+Refutation of D13c, repair round 1
+
+Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D13c/tools/oculus`, base `dc2ffdc3`. I edited nothing in the tree. Git use was limited to `git diff dc2ffdc3` and `git status --short`.
+
+My only writes went to `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/D13c-refute2/`:
+- `checks.log`
+- `load-real.ts`, a copy of `kit/load.ts` with its relative imports made absolute
+- `load-revert.ts`, the same copy with the queue line replaced by `queue = paintNow(read, code);`
+- `p8.test.ts`
+- a `node_modules` symlink to the worktree's
+
+**Summary:**
+- The verify list is green, and all six rulings are carried out in the code.
+- The P8 test is red under its revert in 20 of 20 runs. It still rests on a 500 ms wall-clock margin, and a deterministic form with no timer exists; I ran it both ways.
+- **One new behaviour note:** the cleared `painted` key does not make a second pick of the same theme retry. The report and the comment at `look.ts:35` say more than the code does.
+- **One citation slip in the report:** it gives `code-themes.ts:34`, but the file has 33 lines.
+
+## Verification lines
+
+Command: `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`, run from `tools/oculus` in the worktree. It printed `exit 0`.
+
+The lines below were filtered from `checks.log` with `grep -E '^\$ |Test Files|  Tests |ERRORS|built in|Prettier|checks:'`. In the two build lines, the tool's check-mark glyph is written "(check)" to keep this report ASCII.
+
+```
+$ npm test
+ Test Files  339 passed | 19 skipped (358)
+      Tests  5149 passed | 557 skipped (5706)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790728089906 COMPLETED 2346 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+(check) built in 4.12s
+(check) built in 10.91s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+These counts match the report's "Checks after the round" block.
+
+Other commands I ran:
+- **The rules file's perl ASCII gate** over `src`, `tests` and `config` printed nothing.
+- **`LC_ALL=C grep -n '[^ -~]'`** over `DESIGN.md`, `HELP.md` and `D13c-report.md` printed nothing.
+- **The round's test files together:** `npx vitest run` over look, theme, ui, help, settings, code-theme-menu and config printed `Test Files 7 passed (7)`, `Tests 145 passed (145)`.
+
+## Closure checks
+
+### Ruling 1 (the helper in `kit/look.ts`): closed
+
+- **The helper.** `paintCode(kit, code, failed)` at `src/lib/ui/controls/editor/kit/look.ts:38-44` wraps `kit.paint` in try/catch, calls `failed()` on a rejection and always resolves.
+- **Its callers.** `grep -rn "paintCode\|repaint(" src` shows it at:
+  - both mount calls (`Editor.svelte:197` and `DiffEditor.svelte:174`, each `void paintCode(loaded, codeTheme, () => (painted = null))`);
+  - inside `repaint` (`look.ts:60`), which both effects reach (`Editor.svelte:371`, `DiffEditor.svelte:295`).
+- **The unit test.** `tests/ui/controls/editor/look.test.ts` has two cases with a stand-in kit. Case 1 asserts both halves of the ruling: `.resolves.toBeUndefined()` and `painted` null. Case 2 guards against a helper that clears the key on success.
+- **No new words.** The only text-catalog additions in `git diff dc2ffdc3 -- config` are the main round's `code_theme`, `code_theme_tokens` and `findings.appearance.code_theme`. No status line was added.
+- **The fix removed no check.** The change to `repaint`'s signature (`done(painted: boolean)` in place of a success callback) is what the ruling asked, since `repaint` uses the helper. It does not reach beyond the finding.
+- **What the cleared key does in practice.** `painted` is a plain `let` (`Editor.svelte:146`, `DiffEditor.svelte:109`), so clearing it does not re-run the effect. That is correct, because a reactive key would retry a failing import in a loop. See Behaviour 1 for what this means for a reader.
+- **Not a finding.** When a queued paint X fails after a later paint Y's frame has already set `painted` to Y, X's closure sets `painted` to null although Y painted. The only consequence is one extra repaint on the next effect run, and the painter's signature check makes that cheap (`load.ts:195-202`).
+
+### Ruling 2 (`isCodeTheme` reads `codeThemeIds()`): closed
+
+- `code-themes.ts:32` now reads `codeThemeIds().includes(value)`.
+- `grep -rn "codeThemeIds" src tests` shows its definition at :17 and this reader at :32.
+- The list copy in `kit/load.ts` stays, which the layer rule forces, as the first refutation said.
+
+### Ruling 3 (the P8 test deterministic under its revert): closed in effect, but not deterministic by construction
+
+The test is at `tests/ui/controls/editor/paint.test.ts:274-293`.
+
+**Timing.** `npx vitest run tests/ui/controls/editor/paint.test.ts --reporter=verbose` reported:
+- this test at `503ms`;
+- every other test in the file between 2 and 50 ms;
+- the file at `Duration 1.06s (... tests 609ms ...)`.
+
+So the timer is 500 of the file's 609 ms, and it is paid in full on every run of the correct code, because the queue holds dark-plus behind the gated nord.
+
+**Red under the revert.** I ran the test's form 20 times against the reverted copy of the painter and 20 times against the real one, in `p8.test.ts` (`npx vitest run --root <scratch> --dir <scratch> --reporter=verbose --silent=false p8.test.ts`). It printed:
+- `timer revert 0 green of 20 ms per run 2.2`
+- `timer real 20 / 20 ms per run 509.0`
+
+Under the revert, dark-plus settles in about 2 ms, well inside the 500 ms window, so the test is red every time I ran it.
+
+**Is the fixed wait acceptable under the rules file?** The rules file (`agents/spec.md`) has no rule that names timers. Two of its rules bear on it:
+- "several suites run on this machine at once" (Verify section);
+- "Pick a check by asking whether it would fail if the risk were real."
+
+Under the correct code the test cannot fail, so it has no flaky red. The risk is on the other side: a false green under the revert if a loaded machine takes more than 500 ms to settle the dark-plus paint. That paint is Shiki's `createHighlighter` plus a dynamic theme import. That is a wall-clock dependency in a check whose job is to catch the revert, and it costs 500 ms on every `npm test`. I judge it acceptable but not the best form. The builder's reason for the timer holds: awaiting the dark-plus paint alone deadlocks under the correct code.
+
+**A deterministic form with no fixed timer exists.** Under the revert, `paint(read, 'dark-plus')` calls `paintNow` synchronously, and `rulesOf` calls `parts.loadTheme('dark-plus')` before its first await (`load.ts:184-188`, `:193-214`). So the loader has been asked for dark-plus at once. Under the queue it has not been asked, because nord is gated. The form keeps the test's `asked` record in the loader and replaces the race:
+
+```ts
+const asked: string[] = [];
+const { defined, paint } = counted(async (id) => {
+    asked.push(id);
+    if (id === 'nord') await gate;
+    return shipped(id);
+});
+const read = distinct(1);
+const first = paint(read, 'nord');
+const second = paint(read, 'dark-plus');
+// Without the queue the loader was asked for dark-plus at once and its paint settles while
+// nord is gated; with the queue dark-plus has not started, and nord is released at once.
+await new Promise((resolve) => setTimeout(resolve, 0));
+if (asked.includes('dark-plus')) await second;
+release();
+await Promise.all([first, second]);
+```
+
+Same scratch run, same 20 repetitions:
+- `proposed real 20 / 20 ms per run 2.8`
+- `proposed revert 0 green of 20 ms per run 2.1`
+
+The revert is red by construction, because dark-plus has fully settled before nord is released. The correct code passes with no wait.
+
+The Shiki "N instances have been created" warnings on stderr in that run come from my scratch loop making 20 painters. They are not a defect of the step.
+
+### Ruling 4 (`HELP.md:145`): closed
+
+The row now reads: "The appearance values (the theme, the code theme, text size, CRT, wallpaper and icons), each kept per browser, and the rail list, edited and saved to `config/layout.yml`."
+- "each kept per browser" is true: all six values are fields of `Ui` saved under `oculus.ui.v1` (`ui.svelte.ts`).
+- The row is still one sentence rather than two. The appositive makes the per-browser point clear enough, so I do not raise it as a finding.
+
+### Ruling 5 (`DESIGN.md:85`): closed
+
+It now reads "which the Settings view's Code theme menu overrides per browser, just as its CRT toggle overrides `crt.default`". The ambiguity is gone.
+
+### Ruling 6 (the report): closed
+
+- Item 6 of the report's "Repair round 1" states the user-visible change: a pick, "From the theme" included, stops a later `code_theme:` edit from reaching that browser.
+- The failing assertion lines of the round's red runs are quoted:
+  - `look.test.ts:20:69` and `:33:25` for the two `paintCode` reverts;
+  - `paint.test.ts:292:59` (`expected undefined to be 'd4d4d4'`) for the queue revert.
+- I did not rerun the look.test reverts, which would need an edit. By reading, each would turn its test red as quoted.
+- The report's closing sentence about an earlier red run of `duplication.test.ts` is a red line of the list and its rerun, which the rules file's Verify section asks to be named. It is not narration.
+
+## Verdicts ("What to build")
+
+I re-read the whole diff since the base for these. The files outside the round's changes are unchanged from what the first refutation read.
+
+1. **`config/appearance.yml`: holds.** The section comes after `crt:` and the head comment names the code theme.
+2. **`VOCAB_KEYS`: holds.** `code_theme` is in the list at `catalogs.ts:31`.
+3. **The list of code themes: holds.** `code-themes.ts` exports `CODE_TOKENS`, `codeThemeIds()`, `codeThemeInfo()` and `isCodeTheme`, and `codeThemeIds()` now has its reader. The ALLOWED row in `boundaries.test.ts` and the DESIGN.md:169 state row are both present.
+4. **`themeFindings`: holds.** The check sits before the early return, uses `Object.hasOwn`, and goes through `isCodeTheme`, so it is case-sensitive through `codeThemeIds()`.
+5. **`appearance.ts`: holds.** The variable, `setAppearance`, `codeThemeDefault()` with `configGeneration()`, the re-export and the allow-list entry are all there.
+6. **`ui.svelte.ts`: holds.** `codeTheme: string | null` defaults to null; `codeTheme()` falls back; `setCodeTheme` and `loadUi` go through `isCodeTheme`; the envelope stays at version 2; the counts say "seven".
+7. **The control: holds.** The pure builder `codeThemeMenu` and `codeThemeLabel` are in `code-theme-menu.ts`. The `Menu` in `Appearance.svelte` comes after the theme menu, and the value span carries `data-code-theme`.
+8. **The paint: holds.** `PaintParts.loadTheme` and `codeIds` are there; a fulfilled load is cached and a rejected one is not; the theme stays named `oculus`; `codeRules` drops scope-less entries and backgrounds; the queue runs in order; the signature includes the id; `repaint` passes the code theme.
+9. **The editors: holds.** Both editors take `codeTheme` (default `tokens`), use the combined `painting` key, and now paint through `paintCode`. All five parents pass it.
+10. **Docs: holds.** DESIGN.md :85, :169 and :289, and HELP.md :23, :145 and :220, are as ruled.
+11. **Tests: holds.** Every case has its test in the named file. `look.test.ts` was added under ruling 1.
+
+## Case verdicts
+
+- **Cases 1 to 20: Met**, as in the first refutation.
+  - Case 4 is met for the store; the repaint of open editors is owed at the look on TEST.
+  - Case 14 is met by reading.
+  - Case 20 is an audit, named as one.
+- **Case 21: Met.** Red under its revert 20 of 20 in my scratch run. It relies on the 500 ms margin described under ruling 3.
+- **Cases 22 to 26: Met.**
+
+## Spec
+
+None. Each fix stays inside its ruling, and no path outside the brief's list was added this round. `look.test.ts` is a test of `look.ts`, which is on the list, and ruling 1 asked for it.
+
+## Proof
+
+1. **The P8 test holds its red on a wall-clock margin.**
+   - **Where:** `tests/ui/controls/editor/paint.test.ts:288`: `await Promise.race([second, new Promise((resolve) => setTimeout(resolve, 500))]);`
+   - **What is wrong:** it is red under the revert only while the dark-plus paint settles within 500 ms, and it costs 500 ms on every run of the correct code (`503ms` measured).
+   - **Failure scenario:** on a machine running several suites at once, a Shiki `createHighlighter` plus theme import that takes more than 500 ms lets nord be released before dark-plus lands. The reverted code then passes this test.
+   - **Fix:** the zero-delay macrotask with the `asked.includes('dark-plus')` form under ruling 3, which I verified red 20 of 20 under the revert and green 20 of 20 on the real painter, at about 2 to 3 ms a run. It can be applied at landing.
+2. **The report's item 2 cites `src/lib/data/helpers/code-themes.ts:34`.**
+   - `wc -l` gives 33 lines, and the `codeThemeIds()` call is at :32.
+   - **Failure scenario:** a reader following the citation lands past the end of the file.
+   - **Fix:** change the citation to :32 at landing.
+
+No test asserts a known defect, and no threshold was loosened.
+
+## Standards
+
+None. The head comments of `look.ts` and `look.test.ts` state what the code does and why, with no history. `look.test.ts` carries its "What this does NOT cover" line. The ASCII gates are clean, and every file stays under its size limit (`look.ts` 64 lines, `code-themes.ts` 33).
+
+## Behaviour
+
+1. **Clearing the painted key does not make a second pick of the same theme retry, yet the comment and the report say "the next look or pick paints again".**
+   - **Where:** `look.ts:33-36`: "`failed` is told, so the editor forgets what it painted and the next look or pick paints again". The report's item 1 says the same: "so the next effect run or pick paints again".
+   - **What happens:**
+     - `painted` is not `$state` (`Editor.svelte:146`, `DiffEditor.svelte:109`).
+     - `setCodeTheme('nord')` while `nord` is already the pick leaves `codeTheme()` equal, so the derived `painting` string is unchanged and the repaint effect does not run.
+     - A pick of a different theme repaints whether or not the key was cleared, since `wanted` differs anyway.
+     - So the clearing takes effect only when the effect re-runs with the same `wanted` for another reason: a change of `host`, `kit` or `editor`.
+   - **Failure scenario:** a theme chunk 404s after a rebuild, and the Settings view reads "Nord" while the editors keep the previous colours. The reader clicks Nord again in the menu and nothing happens. Picking another theme and then Nord does retry.
+   - **This is not a defect of the ruling.** A reactive key would turn a lasting import failure into a retry loop, one attempt per frame. The ruling's words are met.
+   - **Fix at landing:** word the comment and the report to say what holds. The paint's rejection no longer escapes; the key is cleared; a later change of the look or the code theme paints again; a second pick of the same theme does not.
+   - **Decision for the orchestrator:** whether a same-theme pick should retry is a user-visible behaviour no ruling names.
+
+## Declined to judge
+
+- **How the editors look on screen after a failed or successful pick:** this is DOM and effect behaviour, owed at the landing's look on TEST. I open no browser.
+- **The builder's quoted red lines for the two `paintCode` reverts in `look.test.ts`:** reproducing them needs an edit to `look.ts` in the tree, which I may not make. I checked them by reading. I did reproduce the P8 revert's red, through a scratch copy of the painter, but I checked only its outcome, not the quoted message text.
+- **Whether `npm run diagrams` output matches the source:** I was told not to run it. This round changed no import edge between modules; `look.ts` already imported from `./load`.
+
+Usage: claude-opus-5-5 (the transcript's message.model), 26 tool uses, 150,434 tokens, 10.4 min (623,483 ms), from its completion notice.
+
+## Closed
+
+- First refutation, six findings: closed by the builder in repair round 1 (the report's "Repair round 1" section), each closure checked by the refutation over the round.
+- Round 1, Proof 1 (the P8 test's 500 ms race): fixed at landing on main with the reviewer's deterministic form (a zero-delay macrotask and the loader's record of what it was asked).
+- Round 1, Proof 2 (the report's citation `code-themes.ts:34`): fixed at landing in the report (:32).
+- Round 1, Behaviour 1 (the comment and the report say a second pick of the same theme repaints; it does not): the comment at `kit/look.ts:33-36` and the report's item 1 reworded at landing to what the code does. Whether a same-theme pick should retry after a failed load is not raised as an open item: the failure needs a theme chunk missing after a rebuild, which a page reload ends, and a pick of any other theme repaints; noted in the landing report.

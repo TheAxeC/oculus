@@ -6,6 +6,8 @@ text:
         bookmarks_none_tip: The star on a file in the Files view adds one.
         close_glyph: dismiss
         close_tab: Close tab
+        code_theme: Code theme
+        code_theme_tokens: From the theme
         confirm_cancel: Cancel
         confirm_ok: Confirm
         confirm_stop: Confirm

@@ -22,6 +22,7 @@ import {
 } from '../../../src/lib/ui/theme.ts';
 import { engineDir, glyphCatalog, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
+    codeThemeDefault,
     setAppearance,
     terminalFontPx,
     themeClass,
@@ -209,6 +210,30 @@ describe('terminalFontPx', () => {
         expect(terminalFontPx()).toBeNull();
         setAppearance({ terminal: {} });
         expect(terminalFontPx()).toBeNull();
+    });
+});
+
+describe('codeThemeDefault', () => {
+    // Revert: set `codeTheme = String(config.code_theme ?? CODE_TOKENS)` in setAppearance; a value
+    // that is no listed id then comes back as it was written.
+    it('is tokens with no key, and for a value that is no listed id, case included', () => {
+        setAppearance({});
+        expect(codeThemeDefault()).toBe('tokens');
+        for (const value of ['not-a-theme', 5, '', null, ['nord'], 'Dark-Plus', 'TOKENS']) {
+            setAppearance({ code_theme: value });
+            expect(codeThemeDefault(), String(value)).toBe('tokens');
+        }
+    });
+
+    // Revert: leave `code_theme` unread in setAppearance; the configured value never arrives.
+    it('is the configured value: tokens, or the id of a listed theme', () => {
+        expect(codeThemeDefault()).toBe('tokens');
+        setAppearance({ code_theme: 'dark-plus' });
+        expect(codeThemeDefault()).toBe('dark-plus');
+        setAppearance({ code_theme: 'tokens' });
+        expect(codeThemeDefault()).toBe('tokens');
+        setAppearance({ ...APPEARANCE, code_theme: 'nord' });
+        expect(codeThemeDefault()).toBe('nord');
     });
 });
 

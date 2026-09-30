@@ -7,9 +7,10 @@
 // asserted against that file rather than against a literal: the first theme of its list, its
 // `crt.default`, and a wallpaper wherever it configures one the starting theme shows it under.
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
+    codeThemeDefault,
     crtDefault,
     defaultTheme,
     setAppearance,
@@ -36,6 +37,8 @@ let theme: ClientState['ui']['theme'];
 let textScale: ClientState['ui']['textScale'];
 let terminalFont: ClientState['ui']['terminalFont'];
 let icons: ClientState['ui']['icons'];
+let codeTheme: ClientState['ui']['codeTheme'];
+let setCodeTheme: ClientState['ui']['setCodeTheme'];
 let cardMoveRequested: ClientState['ui']['cardMoveRequested'];
 let requestCardMove: ClientState['ui']['requestCardMove'];
 let updateTrayRequested: ClientState['ui']['updateTrayRequested'];
@@ -60,6 +63,8 @@ beforeEach(() => {
         textScale,
         terminalFont,
         icons,
+        codeTheme,
+        setCodeTheme,
         cardMoveRequested,
         requestCardMove,
         updateTrayRequested,
@@ -108,7 +113,9 @@ describe('the appearance store', () => {
         expect(instanceState('a')).toBe(undefined);
     });
 
-    it('saves the six appearance values and one blob per instance under the one key', () => {
+    // Revert: save the pick without its field (`save({ ...store.current })` in setCodeTheme); the
+    // envelope then holds codeTheme null.
+    it('saves the seven appearance values and one blob per instance under the one key', () => {
         const storage = fakeStorage();
         loadUi(storage);
         setTheme('mocha');
@@ -117,6 +124,7 @@ describe('the appearance store', () => {
         setIcons(true);
         setTextScale(1.3);
         setTerminalFont(14.5);
+        setCodeTheme('nord');
         setInstanceState('a', { filter: 'active' });
         setInstanceState('b', 3);
 
@@ -129,6 +137,7 @@ describe('the appearance store', () => {
             icons: true,
             textScale: 1.3,
             terminalFont: 14.5,
+            codeTheme: 'nord',
             statusHidden: [],
             statusQuiet: false,
             instances: { a: { filter: 'active' }, b: 3 }
@@ -490,5 +499,143 @@ describe('the keyboard reorder request', () => {
         requestCardMove('collection-one', 'alpha', -1);
         const second = cardMoveRequested('collection-one')?.seq ?? 0;
         expect(second).toBe(first + 1);
+    });
+});
+
+describe('the code theme', () => {
+    /** The configured code theme, put in place for one case and restored after. */
+    function configured(value: unknown): void {
+        setAppearance({ ...loadConfig(engineDir()).config, code_theme: value });
+    }
+
+    afterEach(() => {
+        setAppearance(loadConfig(engineDir()).config);
+    });
+
+    // Revert: answer `store.current.codeTheme ?? 'tokens'` in codeTheme(); the configured default
+    // is then never reached.
+    it('is the configured default for a browser that saved nothing, before and after a load', () => {
+        configured('dark-plus');
+        expect(codeTheme()).toBe('dark-plus');
+        loadUi(fakeStorage());
+        expect(codeTheme()).toBe('dark-plus');
+        expect(codeTheme()).toBe(codeThemeDefault());
+    });
+
+    // Revert: freeze the default into the envelope at the first save; the case then answers
+    // dark-plus although the config moved on, and the envelope holds it.
+    it('follows a live edit of the key in a browser that has not picked, through any other save', () => {
+        configured('tokens');
+        const storage = fakeStorage();
+        loadUi(storage);
+        setTheme('mocha');
+        setCrt(true);
+        expect(saved(storage).codeTheme).toBeNull();
+        configured('nord');
+        expect(codeTheme()).toBe('nord');
+    });
+
+    // Revert: load codeTheme with a fallback to the default instead of null; the pick then
+    // freezes at the first save of any field.
+    it('keeps the config default reaching a browser with a saved theme and instance state', () => {
+        configured('tokens');
+        const storage = fakeStorage({
+            version: UI_VERSION,
+            theme: 'mocha',
+            instances: { a: { filter: 'active' } }
+        });
+        loadUi(storage);
+        setTextScale(1.2);
+        configured('dark-plus');
+        expect(codeTheme()).toBe('dark-plus');
+        expect(theme()).toBe('mocha');
+        expect(instanceState('a')).toEqual({ filter: 'active' });
+    });
+
+    // Revert: read no codeTheme in loadUi (`codeTheme: null`); the pick is lost on the reload.
+    it('saves a pick under the one key and reads it back from the same storage', () => {
+        const storage = fakeStorage();
+        loadUi(storage);
+        setCodeTheme('nord');
+        expect(Object.keys(storage.held)).toEqual([UI_KEY]);
+        expect(saved(storage).codeTheme).toBe('nord');
+        expect(saved(storage).version).toBe(UI_VERSION);
+        const again = createClientState();
+        again.ui.loadUi(storage);
+        expect(again.ui.codeTheme()).toBe('nord');
+    });
+
+    // Revert: treat tokens as no pick; a pick of tokens then falls back to the config default.
+    it('keeps a pick of tokens over a configured code theme', () => {
+        configured('dark-plus');
+        const storage = fakeStorage();
+        loadUi(storage);
+        setCodeTheme('nord');
+        setCodeTheme('tokens');
+        expect(codeTheme()).toBe('tokens');
+        expect(saved(storage).codeTheme).toBe('tokens');
+        const again = createClientState();
+        again.ui.loadUi(storage);
+        expect(again.ui.codeTheme()).toBe('tokens');
+    });
+
+    // Revert: save the id given whatever it is; the empty string and an unlisted id are then kept.
+    it('saves no pick for the empty string or an id the list does not hold', () => {
+        configured('dark-plus');
+        const storage = fakeStorage();
+        loadUi(storage);
+        for (const value of ['', 'gone', 'Nord', 'constructor']) {
+            setCodeTheme('nord');
+            setCodeTheme(value);
+            expect(saved(storage).codeTheme, value).toBeNull();
+            expect(codeTheme(), value).toBe('dark-plus');
+        }
+    });
+
+    // Revert: keep whatever string an envelope holds; a saved id the list lost is then painted.
+    it('reads a saved id the list does not hold as no pick', () => {
+        configured('dark-plus');
+        for (const value of ['gone', '', 5, null, ['nord']]) {
+            const again = createClientState();
+            again.ui.loadUi(
+                fakeStorage({ version: UI_VERSION, theme: DEFAULT_THEME, codeTheme: value })
+            );
+            expect(again.ui.codeTheme(), String(value)).toBe('dark-plus');
+        }
+    });
+
+    // Revert: make the field required in loadUi; an envelope from before the field is refused.
+    it('loads an envelope saved before the field, every other value as saved', () => {
+        configured('dark-plus');
+        const before = createClientState();
+        expect(
+            before.ui.loadUi(
+                fakeStorage({
+                    version: UI_VERSION,
+                    theme: 'mocha',
+                    crt: true,
+                    textScale: 1.3,
+                    instances: { a: 1 }
+                })
+            )
+        ).toBe(true);
+        expect(before.ui.codeTheme()).toBe('dark-plus');
+        expect(before.ui.theme()).toBe('mocha');
+        expect(before.ui.crt()).toBe(true);
+        expect(before.ui.textScale()).toBe(1.3);
+        expect(before.ui.instanceState('a')).toBe(1);
+    });
+
+    // Revert: share one field between the code theme and the UI theme; a pick moves both.
+    it('is separate from the UI theme of the same name', () => {
+        loadUi(fakeStorage());
+        setTheme('nord');
+        expect(codeTheme()).toBe(codeThemeDefault());
+        setCodeTheme('dark-plus');
+        expect(theme()).toBe('nord');
+        setTheme('mocha');
+        expect(codeTheme()).toBe('dark-plus');
+        setCodeTheme('nord');
+        expect(theme()).toBe('mocha');
     });
 });

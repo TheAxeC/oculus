@@ -32,10 +32,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/deck`, `data/helpers/editor`,
 // `data/accounts/leads`, `data/helpers/worktrees`, `data/helpers/files/text-kind`,
 // `data/helpers/files/opens-in-program`, `data/helpers/tasks` and `data/helpers/search` and
-// `data/helpers/finding-text` join `data/model` in the state row as pure helpers with no reader and
-// no I/O. `data/accounts/calendar` and `data/accounts/mail` are there because how a connector
-// account is named, and how old a thread is, are read by the server that builds the credential file
-// and reads the mailbox and by the page that presses Connect and draws the age on a card;
+// `data/helpers/finding-text` and `data/helpers/code-themes` join `data/model` in the state row as
+// pure helpers with no reader and no I/O. `data/accounts/calendar` and `data/accounts/mail` are
+// there because how a connector account is named, and how old a thread is, are read by the server
+// that builds the credential file and reads the mailbox and by the page that presses Connect and
+// draws the age on a card;
 // `data/accounts/connect` because the rule a new account's label and a provider's client half are
 // held to is read by the Add form and the setup page before they send and by the server before it
 // writes, and a copy on each side would let them disagree; `data/helpers/deck` because the deck's
@@ -55,7 +56,10 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // Search view refusing a query before it sends it and the search route refusing the same query when
 // it arrives, from one rule and one argument list; and `data/helpers/finding-text`, whose
 // placeholder rule is the one the client's t() fills a catalog string with and the one the server
-// words every finding with before the snapshot carries it; and `data/sources/config/rail`, the rule
+// words every finding with before the snapshot carries it; `data/helpers/code-themes`, the list
+// of Shiki's bundled themes (ids, display names, dark or light), which the server words the
+// finding for a bad `code_theme:` from, the appearance store checks a saved pick against and the
+// Settings view draws as the Code theme menu; and `data/sources/config/rail`, the rule
 // over the `rail:` list of config/layout.yml, which the page drawing the rail, the Settings view
 // editing it and the server writing it and wording its findings all read, so the three agree on
 // which entries are pages; and `data/hub-address`, the rule telling a path of the hub from a web
@@ -123,6 +127,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/tasks',
         'data/helpers/editor',
         'data/helpers/search',
+        'data/helpers/code-themes',
         'data/helpers/finding-text',
         'data/sources/config/rail',
         'data/hub-address',
@@ -268,6 +273,7 @@ const FROZEN = [
     'lib/state/shared/words/appearance.ts:byName',
     'lib/state/shared/words/appearance.ts:paper',
     'lib/state/shared/words/appearance.ts:crt',
+    'lib/state/shared/words/appearance.ts:codeTheme',
     'lib/state/shared/words/appearance.ts:terminalFont',
     'lib/state/shared/words/generation.svelte.ts:held',
     'lib/state/shared/words/glyphmode.svelte.ts:held'

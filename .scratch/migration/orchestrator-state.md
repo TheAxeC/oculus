@@ -28,21 +28,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # D13c, Q102 and Q84 building; Q88b waits for Q102's landing; X3c and X3a wait for Q88b's.
-- step: D13c
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch)
-  session_id: a8b4eb6e79ef8fa63
-  worktree: .agents/worktrees/D13c
-  base: dc2ffdc3
-  launched: 2026-09-30 01:20 local
-  report: agents/reviews/D13c-report.md
-  brief_check: agents/reviews/D13c-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 63 tool uses, 183k tokens, 9 min
-  builder_usage: 89 tool uses, 289,541 tokens, 41.3 min (2,479,306 ms), from its completion notice; report saved 2026-09-30
-  reviewer_report: agents/reviews/D13c-refuter.md; claude-opus-5-5, 44 tool uses, 187k tokens, 13 min
-  landing: not-started
-  round: 1 (sent 2026-09-30: the refutation's six findings)
+dispatch:      # Q102 building; Q84's report in; Q88b waits for Q102's and Q84's landings; X3c and X3a wait for Q88b's.
 - step: Q102
   executor: agent
   worker: claude:sonnet
@@ -137,6 +123,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
 - Q103's look owed: the capacity fold and its inner sinfo fold on TEST, closed, switched away and reloaded, in one and in two Live HPC panes; not taken at the landing since the cluster was unreachable from this machine and the view draws no capacity section without sinfo rows. Taken at the next landing look while the cluster answers.
+- D13c's look owed on TEST with the tab in front: a code theme picked in the Settings view repainting the open source tab, a diff and the merge editor in place, with no reload; the landing read the pick, the menu and the painted colours after a reload from the DOM only (`repaint` runs on `requestAnimationFrame`, which a hidden tab never runs).
 - Q86c's look owed on TEST with the tab in front: a drag pushing and pulling every node, the release, and a link written in link mode placing the Map again; the landing read the settled Map from the DOM only (53 circles, none overlapping, smallest gap 10.8 units).
 - D13b's look owed on TEST with the tab in front: the diff pane drawn (colours, the folded runs, Side by Side and Inline), the merge editor, a conflicted path's bar, a line-endings-only file with every line shown, a type change's two panes, and a page switch keeping the scroll and the caret; the landing's look read the page's DOM only, since the Chrome tab was in the background (`document.visibilityState` "hidden").
 - Q99, the terminal and Pages defects Axel reported on the TEST page (2026-09-28): Claude interrupted by the Escape that `splitKeys` cuts from every xterm escape sequence, an exited terminal's tab left open, a new shell's prompt at the bottom from the capture's blank rows, and the Pages view's 16 px rows. Next in the queue, in the first free slot.
@@ -500,6 +487,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 02:45. D13c landed through /spec, /refute (one repair round, refuted again) and /land (the code theme key and its control, Z46 (a)); three fixes at landing; verify on main `checks: 7 commands passed` (339 files, 5149 tests). In flight: Q102 (builder), Q84 (report in, review next). Q88b waits for Q102 and Q84. Open: Z71.
 - 2026-09-30 01:45. In flight: D13c (builder), Q102 (builder, launched 01:29 at base 64d1354a). Q88b's brief check returned; Q88b waits for Q102's landing, since both change the pane strip's menu and its picks (`pane-view.ts` `stripMenu`, `stripPicked`, `StripDeps`), `PaneView.svelte`'s close handlers and drawing, `layout/instances.ts` and `ui.svelte.ts`, more than a hand merge of a few named functions; its draft brief and the check's report are in the session's scratch folder for the next `/spec` Q88b. Q84's builder launched 01:48 at base f7ab9b6a. Open: Z71.
 - 2026-09-30. Q86c landed through /spec, /refute and /land (the Map's forces back on d3-force, Z60 (a)); one repair round, refuted again; three fixes at landing (an audit's name, the report's two pointers, README.md's dependency sentence naming every runtime dependency). Verify on main: `checks: 7 commands passed` (Test Files 337 passed, Tests 5121 passed). Q88b stopped at `/spec` on Z70. In flight: none. Next: `/spec` Q84, then the next unblocked steps (D13c and X3c run alone; X3a, Q91 after X3a); Q102 waits on Z69, Q88b on Z70.
 - 2026-09-30. D13b landed through /spec, /refute and /land (the diffs and the merge on Monaco); cases ruled at round 0, one repair round with Z59 (a), refuted again; twelve fixes at landing, the refutation of round 1's seven findings among them (a conflicted path offers no partial action, a symlink target read as bytes, `hunks-git.test.ts` over `git diff --no-index`, the redo case, the documents, the keeper's close keeping the view state of a tab still open, the NUL key separator) and three references to the moved editor files. Verify on main: `checks: 7 commands passed` (Test Files 336 passed, Tests 5118 passed). The look read the DOM only (the tab in the background); the pane's blocks differ from git's hunks where the diff algorithms align a deletion differently, carried to Q72. In flight: Q86c (the refutation over round 1). Next: `/spec` Q88b and Q84 into the free slots; Q102 waits on Z69; Q103's look waits on the cluster.

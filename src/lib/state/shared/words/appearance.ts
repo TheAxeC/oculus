@@ -1,6 +1,7 @@
 // Layer 2, client state. config/appearance.yml as the page reads it: the picker's order, the class
 // string each theme puts on the body, the words it is offered under and the glyph drawn before
-// them, the wallpaper's numbers and what the CRT overlay and terminal text size start as. It is
+// them, the wallpaper's numbers, what the CRT overlay and terminal text size start as, and the code
+// theme the editors start on. It is
 // installed the way the tone vocabulary is - the server ships the `themes` key as the page's data
 // at first load, and every later edit of config/appearance.yml arrives on the `config` channel - so
 // a theme is added by editing YAML and nothing else.
@@ -15,7 +16,10 @@
 
 import { configGeneration } from './generation.svelte.ts';
 import { hasGlyph } from './text.ts';
+import { CODE_TOKENS, isCodeTheme } from '../../../data/helpers/code-themes.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
+
+export { CODE_TOKENS, codeThemeInfo, isCodeTheme } from '../../../data/helpers/code-themes.ts';
 
 /**
  * One theme of the picker: the name the store saves, the body class, the glyph name drawn before
@@ -53,6 +57,7 @@ let list: Theme[] = [];
 let byName: Record<string, Theme | undefined> = {};
 let paper: Wallpaper | null = null;
 let crt = false;
+let codeTheme = CODE_TOKENS;
 let terminalFont: number | null = null;
 
 /** The string at `key` of a record, or nothing. */
@@ -118,6 +123,7 @@ export function setAppearance(config: Record<string, unknown>): void {
     byName = {};
     paper = readWallpaper(config);
     crt = isMap(config.crt) && config.crt.default === true;
+    codeTheme = isCodeTheme(config.code_theme) ? config.code_theme : CODE_TOKENS;
     terminalFont = readTerminalFont(config);
     const rows = config.themes;
     if (!Array.isArray(rows)) return;
@@ -167,6 +173,16 @@ export function defaultTheme(): string {
 export function crtDefault(): boolean {
     configGeneration();
     return crt;
+}
+
+/**
+ * The code theme a browser that has picked none starts on: the `code_theme` of
+ * config/appearance.yml when it is `tokens` or the id of a Shiki theme, otherwise `tokens`, which
+ * data/sources/config/themes.ts reports.
+ */
+export function codeThemeDefault(): string {
+    configGeneration();
+    return codeTheme;
 }
 
 /** The terminal grid's configured CSS pixel size, or null when it follows the page's type scale. */

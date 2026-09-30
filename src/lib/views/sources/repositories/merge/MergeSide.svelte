@@ -29,10 +29,12 @@
         path: string;
         language: string;
         look: string;
+        codeTheme: string;
         onchoose: (region: number, choice: Choice) => void;
     };
 
-    let { side, text, conflicts, model, path, language, look, onchoose }: Props = $props();
+    let { side, text, conflicts, model, path, language, look, codeTheme, onchoose }: Props =
+        $props();
 
     /** Each conflict's bar, above its first line here (a span counts lines from 0). */
     const bars = $derived(
@@ -102,6 +104,7 @@
             {model}
             {path}
             {look}
+            {codeTheme}
             {highlights}
             {bars}
             bar={conflictBar}

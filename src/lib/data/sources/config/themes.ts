@@ -1,11 +1,14 @@
-// Layer 1, data. What is wrong with the `themes:` list of config/appearance.yml that the theme
-// picker cannot put right, as findings of that file. Each row names the glyph drawn before its
-// words; a row whose glyph is missing, empty or not a name of config/catalogs/glyphs.yml is still
-// offered, with its words alone, and a second row naming a theme already listed is not offered at
-// all, since the picker keys its entries by the name. state/shared/words/appearance.ts draws by the
-// same rules, so a row the finding names is drawn as the finding says.
+// Layer 1, data. What is wrong with the `themes:` list and the `code_theme:` key of
+// config/appearance.yml that the page cannot put right, as findings of that file. Each row names
+// the glyph drawn before its words; a row whose glyph is missing, empty or not a name of
+// config/catalogs/glyphs.yml is still offered, with its words alone, and a second row naming a
+// theme already listed is not offered at all, since the picker keys its entries by the name.
+// state/shared/words/appearance.ts draws by the same rules, so a row the finding names is drawn as
+// the finding says. A `code_theme:` that is neither `tokens` nor the id of a Shiki theme
+// (case-sensitive) is named too, since the editor then colours code from the tokens.
 
 import { join } from 'node:path';
+import { isCodeTheme } from '../../helpers/code-themes.ts';
 import { findingText } from '../../helpers/finding-text.ts';
 import type { Finding } from '../../model/index.ts';
 import { glyphCatalog } from './catalogs.ts';
@@ -21,17 +24,29 @@ function rowOf(row: unknown): Record<string, unknown> | null {
 
 /**
  * One finding per theme row whose glyph the picker cannot draw and per row that repeats a theme's
- * name. A row with no name is dropped by the picker and says nothing here; a config with no
- * `themes:` list has nothing to report.
+ * name, and one for a `code_theme:` that is no code theme. A row with no name is dropped by the
+ * picker and says nothing here; a config with no `themes:` list has no row to report, and an
+ * absent `code_theme:` says nothing.
  */
 export function themeFindings(engine: string, config: Record<string, unknown>): Finding[] {
-    const rows = config.themes;
-    if (!Array.isArray(rows)) return [];
     const file = join(configDir(engine), 'appearance.yml');
     const catalog = textCatalog(config);
+    const findings: Finding[] = [];
+    if (Object.hasOwn(config, 'code_theme') && !isCodeTheme(config.code_theme)) {
+        findings.push({
+            file,
+            key: 'code_theme',
+            message: findingText(
+                catalog,
+                'findings.appearance.code_theme',
+                JSON.stringify(config.code_theme)
+            )
+        });
+    }
+    const rows = config.themes;
+    if (!Array.isArray(rows)) return findings;
     const glyphs = glyphCatalog(config);
     const seen = new Set<string>();
-    const findings: Finding[] = [];
     rows.forEach((raw, index) => {
         const row = rowOf(raw);
         const name = row?.name;

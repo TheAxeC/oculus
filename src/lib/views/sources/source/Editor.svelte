@@ -9,7 +9,8 @@
     // editor does not colour, as does any file before the configuration has delivered the limit.
     //
     // The editor holds the theme and the font as values, so it is handed the theme and the text
-    // size in force, and builds its look again whenever either changes.
+    // size in force, and builds its look again whenever either changes. It is also handed the code
+    // theme, whose syntax colours the editor paints its text with.
     //
     // A Markdown file is written and read at once: the row splits into the editor and the rendered
     // half, with the handle between them, and the rendered half follows how far the editor is
@@ -43,7 +44,7 @@
 
     const {
         selectors: { paintLimit },
-        ui: { theme, textScale }
+        ui: { codeTheme, theme, textScale }
     } = useState();
 
     type Props = {
@@ -160,6 +161,7 @@
                 {indent}
                 {ending}
                 {look}
+                codeTheme={codeTheme()}
                 {marks}
                 {blame}
                 {oncaret}

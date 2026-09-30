@@ -1,17 +1,24 @@
 // Layer 2, client state. What the page looks like and what each open view remembers: the theme, the
-// CRT overlay, the wallpaper, the glyph mode, the app and terminal sizes, and one blob of state per
-// view instance, keyed by the instance id the layout gives it. Two instances of the same view
-// therefore remember different things.
+// CRT overlay, the wallpaper, the glyph mode, the app and terminal sizes, the code theme of the
+// editors, and one blob of state per view instance, keyed by the instance id the layout gives it.
+// Two instances of the same view therefore remember different things.
 //
-// The six appearance values save together under the one key, so what a browser was left looking
+// The seven appearance values save together under the one key, so what a browser was left looking
 // like comes back whole, and so do the status bar's own two: the items the reader hid from it and
-// whether its notifications are kept quiet. What the six start as is config/appearance.yml's, read
-// through state/shared/words/appearance.ts, and never a literal here.
+// whether its notifications are kept quiet. What the seven start as is config/appearance.yml's,
+// read through state/shared/words/appearance.ts, and never a literal here.
 //
 // It saves the same way the layout store does, under its own key and through the same small slice
 // of Storage, so a test hands it a plain object and no test touches localStorage.
 
-import { crtDefault, defaultTheme, themes, wallpaperOnTheme } from '../shared/words/appearance.ts';
+import {
+    codeThemeDefault,
+    crtDefault,
+    defaultTheme,
+    isCodeTheme,
+    themes,
+    wallpaperOnTheme
+} from '../shared/words/appearance.ts';
 
 /** The key the appearance and the per-instance state are saved under. */
 export const UI_KEY = 'oculus.ui.v1';
@@ -38,6 +45,12 @@ type Ui = {
     icons: boolean;
     textScale: number | null;
     terminalFont: number | null;
+    /**
+     * The code theme the viewer picked (`tokens` or a listed Shiki theme id), or null until they
+     * pick one, so a save of any other field never freezes config/appearance.yml's `code_theme:`
+     * into the envelope and an edit of that key reaches a browser that has not picked.
+     */
+    codeTheme: string | null;
     /** The status bar items the reader hid, by the id the bar gives each. */
     statusHidden: string[];
     /** Whether Do Not Disturb is on: a notification goes into the list and shows no toast. */
@@ -61,6 +74,7 @@ export type UiStore = {
     icons: () => boolean;
     textScale: () => number | null;
     terminalFont: () => number | null;
+    codeTheme: () => string;
     statusHidden: () => string[];
     statusQuiet: () => boolean;
     instanceState: (id: string) => unknown;
@@ -78,6 +92,7 @@ export type UiStore = {
     setTextScale: (scale: number | null) => void;
     stepTextScale: (by: -1 | 1) => void;
     setTerminalFont: (size: number | null) => void;
+    setCodeTheme: (id: string) => void;
     setStatusHidden: (item: string, hidden: boolean) => void;
     setStatusQuiet: (on: boolean) => void;
     setInstanceState: (id: string, state: unknown) => void;
@@ -86,12 +101,14 @@ export type UiStore = {
 
 export function createUi(): UiStore {
     /**
-     * What a browser that has saved nothing starts on. Two of the six come from
+     * What a browser that has saved nothing starts on. Two of the seven come from
      * config/appearance.yml rather than from a literal here: the theme is the first of its list and
      * the overlay is its `crt.default`. The wallpaper starts on none, which wallpaper() answers
      * from the theme in force, so it shows wherever one is configured until the toggle says
-     * otherwise. The glyphs start as the theme's own, which is the ASCII stand-ins on a terminal
-     * palette; `icons` is what turns that off and keeps the icons.
+     * otherwise, and the code theme starts on none the same way, answered by codeTheme() from the
+     * config's `code_theme:` until a pick is made. The glyphs start as the theme's own, which is
+     * the ASCII stand-ins on a terminal palette; `icons` is what turns that off and keeps the
+     * icons.
      */
     function defaultUi(): Ui {
         const theme = defaultTheme();
@@ -102,6 +119,7 @@ export function createUi(): UiStore {
             icons: false,
             textScale: null,
             terminalFont: null,
+            codeTheme: null,
             statusHidden: [],
             statusQuiet: false,
             instances: {}
@@ -156,6 +174,11 @@ export function createUi(): UiStore {
     /** The terminal grid size chosen by the viewer, or null when the config default is in force. */
     function terminalFont(): number | null {
         return store.current.terminalFont;
+    }
+
+    /** The code theme of the editors: the viewer's pick, else the config's `code_theme:`. */
+    function codeTheme(): string {
+        return store.current.codeTheme ?? codeThemeDefault();
     }
 
     /** The status bar items the reader hid. */
@@ -259,6 +282,7 @@ export function createUi(): UiStore {
                 typeof held.terminalFont === 'number' && Number.isFinite(held.terminalFont)
                     ? Math.min(40, Math.max(6, held.terminalFont))
                     : null,
+            codeTheme: isCodeTheme(held.codeTheme) ? held.codeTheme : null,
             statusHidden: Array.isArray(held.statusHidden)
                 ? [
                       ...new Set(
@@ -337,6 +361,15 @@ export function createUi(): UiStore {
         save({ ...store.current, terminalFont: bounded });
     }
 
+    /**
+     * Pick the code theme of the editors: `tokens` or the id of a Shiki theme. The only writer of
+     * the field, so the value saved is a choice; anything else, the empty string included, clears
+     * the pick and the config's `code_theme:` answers again.
+     */
+    function setCodeTheme(id: string): void {
+        save({ ...store.current, codeTheme: isCodeTheme(id) ? id : null });
+    }
+
     /** Hide one status bar item, or show it again. */
     function setStatusHidden(item: string, hidden: boolean): void {
         if (item === '') return;
@@ -372,6 +405,7 @@ export function createUi(): UiStore {
         icons,
         textScale,
         terminalFont,
+        codeTheme,
         statusHidden,
         statusQuiet,
         instanceState,
@@ -389,6 +423,7 @@ export function createUi(): UiStore {
         setTextScale,
         stepTextScale,
         setTerminalFont,
+        setCodeTheme,
         setStatusHidden,
         setStatusQuiet,
         setInstanceState,

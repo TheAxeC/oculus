@@ -53,6 +53,7 @@
         model: string;
         mode: DiffMode;
         look: string;
+        codeTheme: string;
         /** Whether the diff holds several files: the editor grows to its content and waits. */
         several: boolean;
         /** Whether to draw the path above the file. */
@@ -81,6 +82,7 @@
         model,
         mode,
         look,
+        codeTheme,
         several,
         headed,
         scroller,
@@ -261,6 +263,7 @@
                 context={CONTEXT}
                 hideUnchanged={!endings}
                 {look}
+                {codeTheme}
                 sized={several}
                 {view}
                 {bars}

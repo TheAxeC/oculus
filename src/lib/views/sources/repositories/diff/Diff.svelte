@@ -79,7 +79,7 @@
         selectors: { gitFor },
         editorStatus: { asked: askedOf, forget, publish },
         layout: { instanceView },
-        ui: { instanceState, setInstanceState, theme, textScale }
+        ui: { codeTheme, instanceState, setInstanceState, theme, textScale }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -419,6 +419,7 @@
                         model={`${instance.id}:${keys[index]}`}
                         mode={view.mode}
                         {look}
+                        codeTheme={codeTheme()}
                         {several}
                         headed={several || !acts}
                         scroller={box}
