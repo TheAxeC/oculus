@@ -2,7 +2,7 @@
 
 In flight:
 - X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), builder on `claude-sonnet-5-5` since 2026-09-30 15:01, base 4fe6ce93.
-- Two slots are free: /spec next for Q85a1 and S3, whose landings merge simply onto X3d's.
+- Two slots are free: /spec now for E2 (the apps section of DESIGN.md rewritten to the rulings of Z93) and Q85a1; S3 and L4 as slots free.
 Queued, in order:
 - S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a), Z94 ruled), /spec next.
 - U2 (the audit of every other view's look against VS Code's visual language), beside X3d, waiting for a Chrome tab in front (the tab opened on 8790 reads `document.visibilityState` hidden, so no screenshot can be taken); its build steps once Axel rules on its grouping.
