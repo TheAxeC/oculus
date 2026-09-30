@@ -2,10 +2,9 @@
 
 In flight:
 - X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); its diagnosis runs.
-- E3 (the apps section's text to Z103 (b), Z106 (a) and Z107 (b2)), round 1 reviewed; landing next.
 - Q111 (Undo gives a cleared field's lines back), built; its review runs.
 - Q107 (a Terminal tab closing itself; Attach to Session), its builder runs.
-Open items: Z113 (a test run in Svelte's client runtime, for Q106), Z115 (two browser tabs sharing one workbench, for Q107), Z116 (where Attach to Session sits, for Q107).
+Open items: Z113 (a test run in Svelte's client runtime, for Q106), Z115 (two browser tabs sharing one workbench, for Q107).
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
 - Q106 (Close pane on two tabs), cause found; its brief is written once Z113 is ruled.
@@ -38,7 +37,8 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
-- Q110 (an undo gives a replaced value back), 2026-09-30, this landing's commit.
+- E3 (the apps section's text), 2026-09-30, this landing's commit.
+- Q110 (an undo gives a replaced value back), 2026-09-30, e8f4c010.
 - Q108 (the four kept fixes as a step), 2026-09-30, 3ae6b03f.
 - Q85a1 (zod at the `core` and `root` inputs), 2026-09-30, 42259e30.
 - E2 (the apps section rewritten), 2026-09-30, ef10430b.

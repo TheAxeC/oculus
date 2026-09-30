@@ -189,12 +189,12 @@ Shapes the section states that neither the rulings nor the brief name, each chos
 
 | # | Shape as written (line) | Alternative considered |
 |---|---|---|
-| 18 | The `apps` row gains `connects`, `kept`, `store` and `storeFile`, and the channel payload gains `folders` (262). The store value rides in the row, so `getStore()` and `onStore` are answered from the pushed row. | A `GET` route that returns one store: no store value in every push and in the first frame (up to `apps.store_max_kb` per app), at the price of a route and a second fetch after each notice |
+| 18 | The `apps` row gains `connects`, `kept`, `storeBytes`, `storeVersion` and `storeFile`, and the channel payload gains `folders` (264). The row holds no store value; the page reads one app's store by `GET /api/app-store?view=<view id>` when that app's `storeVersion` differs from the version the page holds and a frame of the app is mounted, and the first frame carries no store value (266, 311). | The store value in every row: a channel publish sends the whole payload to every subscriber, so every store write of any app would send up to `apps.store_max_kb` per app to every page and into every first frame |
 | 19 | `onStore` is called in the tab that wrote as well (309) | Calling only the other tabs: the writing tab would then hold its own value and every other value would arrive by another path |
-| 20 | The body of an `app-store` write is `{ store: <value> }`; the handler writes by rename and reads back (311) | A body carrying the app's view id: an app could then name another app's store |
+| 20 | The body of an `app-store` write is `{ store: <value> }`; the handler finds the store from the header's view id, writes nothing when the file already holds an equal value, and otherwise writes by rename and reads back (313) | A body carrying the app's view id: an app could then name another app's store |
 | 21 | `.undo/<time>.json` holds the values before and after, named by the record's `at`, deleted when the record leaves `changes.keep`; a record whose file is gone answers `nothing` (311) | Keeping only the value before, as the brief says: the undo could not check that the store still holds what the write left |
 | 22 | Refusal words `missing` and `refused:<reason>` (294 to 305) | `refused` alone, as the brief words it; the reason is the word the route answers in `error`, never an errno text that carries a path |
-| 23 | `open` of an id no registration holds, of a project no portfolio holds, of a root the file browser does not show and of a file that does not exist rejects `missing`; a root app naming another root rejects `closed` (313) | `closed` for every refusal |
+| 23 | `open` of a path that breaks the segment rule or starts with a `closed_paths` folder (compared without regard to letter case) rejects `closed` before anything is looked for; then `engine` rejects `closed`; then, for a root app, a root other than its own rejects `closed`; then a root the file browser does not show rejects `missing`; then the checks on the real path reject `closed`; then a file that does not exist rejects `missing`, the checks after the key checks run on the server by `GET /api/app-open`; an id no registration holds and a project no portfolio holds reject `missing` (307, 315) | `missing` for every file not found, hidden ones included |
 | 24 | `POST /api/approve` carries `keep: true`; the keeping holds the manifest hash approved with it (319) | A second action `keep` |
 | 25 | The strip mark while kept is the glyph `edit` with the words `apps.editing_mark`, and `Registration.badgeMark` accepts a function of the badge client (266, 319) | A second registration field |
 | 26 | The Document rule is held twice: the page tests the file's folder and path against `folders` and opens the source tab; the file route answers a file of an apps folder as `text/plain` with `nosniff` (321) | The page test alone, which a link inside a root that points into an apps folder defeats since the page does not see real paths |
@@ -203,17 +203,17 @@ Shapes the section states that neither the rulings nor the brief name, each chos
 | 29 | The watcher reads `browserRoots`, polls the workspaces file with `pollFile`, watches the store folders non-recursively, and one two-second timer looks again at every missing folder (262) | Its own copy of the root list (the file `roots.ts` says no caller holds one) |
 | 30 | The catalogue order: machine apps by name, then each root's apps by name in the order the file browser shows the roots (266) | All apps sorted by view id |
 | 31 | `http:` to a local address on oculus's own port is `connect_shape`; `https:` to it is not (260) | Refusing both schemes |
-| 32 | A `wss:` origin is refused (258) | Admitting it with a `wss:` source in the policy |
+| 32 | A `wss:` origin is refused, and whether `connect-src https://host` admits `wss://host` is measured by the build step (260, 262, 325) | Admitting `wss:` with a `wss:` source in the policy |
 | 33 | `approvals.json` stays at `"version": 1` (315) | Version 2 for the field rename: the file is not built yet, so no file of version 1 holds an `app` entry |
-| 34 | A write of the value the store file already holds changes nothing and calls nothing (309) | Recording a change of zero bytes and calling `onStore` |
+| 34 | A write of a value equal to the one the file holds, as JSON values with object keys in any order, writes nothing, records nothing in History and answers success, so the page is told nothing (311, 313) | Recording a change of zero bytes and calling `onStore` |
 | 35 | `setStore` rejects a value that is not JSON with no refusal word of its own, as `setState` does (309) | A word such as `not_json` |
-| 36 | A machine app may name any root shown in the file browser in `open({ file })`, the root `engine` included, so it can put `config/local.yml` in a source tab in front of the reader (313) | Every root but `engine` |
+| 36 | A machine app names any root shown in the file browser except `engine`; a path that breaks the segment rule of line 284, a file inside oculus's own `config/` folder by real path, and a file under a `closed_paths` folder reject `closed` for every app (315) | Any root, `engine` included, and hidden files opened |
 | 37 | `open` is limited per frame per minute, in the form line 311 uses for writes (313) | A limit per app or one for the whole page |
 | 38 | The Keep control also writes the content approval to `approvals.json` (319) | Keeping without an entry, so that a restart asks at once |
 | 39 | The header carries the root key percent-encoded and the body's `view` carries it as it is, since a header value cannot carry every character a root key can and a JSON string can (242, 315) | Encoding both |
 | 40 | A target of none of the three forms rejects `closed` (313) | A word of its own |
 | 41 | History draws the two sizes for a store write (311) | Drawing the values from `~/.oculus/app-data/.undo/` |
-| 42 | WebRTC and DNS prefetch are measured and stated by the build step, and only the download link is closed if it sends a request (323) | Closing all three |
+| 42 | WebRTC, DNS prefetch and `wss:` under `connect-src https://host` are measured and stated by the build step, and only the download link is closed if it sends a request (325) | Closing all |
 
 
 ## Every sentence removed or reworded, and why it was false (base line numbers; the new text has each replacement)

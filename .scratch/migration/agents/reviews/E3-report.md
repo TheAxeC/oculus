@@ -100,7 +100,7 @@ The exit status of the `checks.sh` run was 0 (`echo "exit=$?"` printed `exit=0`)
 | 262 | `app-store`, which every app is granted for its own store; `wss:` included | The write kind, unchanged; `connect_shape` text kept (item 6) |
 | 264 | watcher watches roots "except `engine`"; the row with `storeBytes, storeVersion, storeFile`; the definitions; `GET /api/app-store` | Items 1 and 2 |
 | 284 | "a root shown in the file browser other than `engine`" | The app file server's rule, unchanged |
-| 311 | kind `app-store`; `storeBytes` and `storeVersion` in the row; `GET /api/app-store?view=<view id>`; the version comparison | Items 1 and 2 |
+| 311 | kind `app-store`; `storeVersion` in the row, compared alone; `GET /api/app-store?view=<view id>`; the version comparison | Items 1 and 2 |
 | 313 | kind `app-store` (three hits) | The write kind; the handler sentence gains the equal-value clause |
 | 315 | `except engine`; `Engine`, `game-engine`; `engine` with `local.yml`; the order of checks | Items 4 and 5 |
 | 325 | `wss://host` in the measurement sentence | Item 6 |
@@ -127,7 +127,7 @@ The absence check, `grep -n 'does not admit\|measures both\|`store` is the parse
 
 ## Per item, the line that carries it
 
-1. The row: line 264. The reread list ends "and the store file's size and version (read, not parsed)"; the row definition carries `storeBytes, storeVersion, storeFile`; the definitions, the folder and unreadable path, the oversize version from `<size>:<modification time in ms>`, the empty file (`e3b0c44298fc1c14`), and the one-clause reason with the `channels.ts:103-110` citation. A KB is defined on line 311 at `apps.store_max_kb`.
+1. The row: line 264. The reread list ends "and the store file's size and version (computed without parsing the file)"; the row definition carries `storeBytes, storeVersion, storeFile`; the definitions, the folder and unreadable path, the oversize version from `<size>:<modification time in ms>`, the empty file (`e3b0c44298fc1c14`), and the one-clause reason with the `channels.ts:103-110` citation. A KB is defined on line 311 at `apps.store_max_kb`.
 2. The route: line 311, and one clause on line 313 (the handler writes nothing when the file holds an equal value). Line 307 gives `missing` for a store of an app removed since the last push.
 3. The first frame: line 266, one sentence after the seeding sentence.
 4. `engine`, the config folder, `closed_paths`: line 315; the key list: line 327.
@@ -148,7 +148,7 @@ Row 23:
 
 | # | Shape as written (line) | Alternative considered |
 |---|---|---|
-| 23 | `open` of a path that breaks the segment rule rejects `closed` before anything is looked for, `engine` rejects `closed`, a root the file browser does not show and a file that does not exist reject `missing`, in that order; an id no registration holds and a project no portfolio holds reject `missing`, and a root app naming another root rejects `closed` (307, 315) | `missing` for every file not found, hidden ones included |
+| 23 | `open` of a path that breaks the segment rule or starts with a `closed_paths` folder (compared without regard to letter case) rejects `closed` before anything is looked for; then `engine` rejects `closed`; then, for a root app, a root other than its own rejects `closed`; then a root the file browser does not show rejects `missing`; then the checks on the real path reject `closed`; then a file that does not exist rejects `missing`, the checks after the key checks run on the server by `GET /api/app-open`; an id no registration holds and a project no portfolio holds reject `missing` (307, 315) | `missing` for every file not found, hidden ones included |
 
 Row 32:
 
@@ -160,7 +160,7 @@ Row 36:
 
 | # | Shape as written (line) | Alternative considered |
 |---|---|---|
-| 36 | A machine app names any root shown in the file browser except `engine`; a path that breaks the segment rule of line 284, a file inside the engine's config folder by real path, and a file under a `closed_paths` folder reject `closed` for every app (315) | Any root, `engine` included, and hidden files opened |
+| 36 | A machine app names any root shown in the file browser except `engine`; a path that breaks the segment rule of line 284, a file inside oculus's own `config/` folder by real path, and a file under a `closed_paths` folder reject `closed` for every app (315) | Any root, `engine` included, and hidden files opened |
 
 Row 42:
 
@@ -196,11 +196,11 @@ Each is a name, key, form or default the section now states that the rulings do 
 | S6 | The page fetches once per app per version per loaded oculus page, one fetch in flight per app, versions compared for equality (311) | A fetch per tab; ordering versions by comparison |
 | S7 | A 404 leaves the page holding nothing and a waiting `getStore()` rejects `missing` (307, 311) | A new refusal word |
 | S8 | An equal store write writes nothing and records nothing in History, compared as JSON values with object keys in any order (311, 313) | Comparing the file's bytes: a reformatted file would then be rewritten and recorded |
-| S9 | The key `engine` and the engine's config folder reject `closed` for every app, by real path whichever root names the folder (315) | Closing `local.yml` alone: the rest of the config folder stays readable through `hub` |
+| S9 | The key `engine` and oculus's own `config/` folder reject `closed` for every app, by real path whichever root names the folder (315) | Closing `local.yml` alone: the rest of the config folder stays readable through `hub` |
 | S10 | `closed_paths`, a list of folder paths relative to a root, applied to every root, compared by segment, default `[secrets]`, checked on the given and the real path (315, 327) | A list of absolute folders; a list per root |
 | S11 | The segment rule of line 284 applies to `open` for machine apps and root apps alike, on the exact string given and on the real path under the root (315) | The rule for machine apps only |
 | S12 | A link whose target lies outside the root rejects `closed`, whether or not the target exists (315) | `missing` for a dangling link |
-| S13 | Order of the checks: segment rule and `closed_paths`, `engine`, root shown (`missing`), real-path checks, existence (`missing`) (315) | The disk first |
+| S13 | Order of the checks: segment rule and `closed_paths` on the given path, `engine`, for a root app a root other than its own (`closed`), root shown (`missing`), real-path checks, existence (`missing`), all after the key checks run by `GET /api/app-open` (315) | The disk first |
 | S14 | A KB in this section is 1024 bytes (311) | 1000 bytes; the tree's `humanSize` divides by 1024 (`src/lib/state/boards/board/stats.ts:134`) |
 | S15 | The page compares a row's `storeVersion` with the held version when a frame of the app mounts as well as on a push (311) | Comparing on a push only: `getStore()` would answer from a held value made stale by a push that arrived while no frame was mounted |
 

@@ -55,35 +55,6 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/U2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 70 tool uses, 160,458 tokens, 9.9 min
   landing: not-started
   round: 0
-- step: E3
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 21:09)
-  session_id: a3e7a56b3ea50f13c (launched 2026-09-30 21:07 local)
-  worktree: .agents/worktrees/E3
-  base_copy: .agents/worktrees/E3-base-DESIGN.md (DESIGN.md at the base, for case 16; removed at landing)
-  base: 1c95c890
-  launched: 2026-09-30 21:07 local
-  report: agents/reviews/E3-report.md
-  builder_usage: 182,505 tokens, 48 tool uses, 10.9 min (report at 21:18; one read-only `git diff --stat` run against the no-git rule, stated in its report); repair round 1 (same builder, resumed) 218,205 tokens, 13 tool uses, 7.9 min (report at 21:44)
-  reviewer_report: agents/reviews/E3-refuter.md (reviewer ac1301d307cfb017c, launched 21:19, served claude-opus-5-5; 205,911 tokens, 30 tool uses, 14.7 min); round 1 reviewer abc7e9011cf0039bd, launched 21:45, served claude-opus-5-5; 186,912 tokens, 41 tool uses, 11.6 min; its run appended under "Repair round 1, refuted"
-  brief_check: agents/reviews/E3-brief-check.md, every finding closed in the brief (its "Brief check, closed" heading), finding 4 by Z107 (b2); claude-opus-5-5, 44 tool uses, 177,191 tokens, 8.9 min
-  shared_paths: DESIGN.md with X3d; E3 writes lines 236-327 (the apps section) and X3d the Source Control lines near 373 and 389, sections apart, so the cherry-pick merges without a conflict
-  landing: not-started
-  round: 1 (sent 21:36: agents/briefs/E3-round1.md, eleven rulings; Spec 4 waits on Z112 and is added at landing)
-- step: Q107
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 22:18)
-  session_id: a47f5dbf141e5a482 (launched 2026-09-30 22:17 local)
-  worktree: .agents/worktrees/Q107
-  base: dcef00c9
-  launched: 2026-09-30 22:17 local
-  report: agents/reviews/Q107-report.md (with agents/reviews/Q107-probe.mjs)
-  brief_check: agents/reviews/Q107-brief-check.md, every finding closed in the brief (its "Closed" heading), the layout path's fix waiting on Z115 and Attach to Session's place on Z116; claude-opus-5-5, 223,547 tokens, 87 tool uses, 12.3 min
-  shared_paths: DESIGN.md with E3 and Q111 (Q107 writes line 361, E3 236-327, Q111 140 and 376); HELP.md with Q111 (Q107 writes 127, Q111 254); no two change the same line
-  landing: not-started
-  round: 0
 - step: Q111
   executor: agent
   worker: claude:sonnet
@@ -171,12 +142,6 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
   - (c) One saved workbench per browser tab (a tab id in the key). For: no tab touches another. Against: a new browser tab starts from the default workbench, not yours; the saved workbenches pile up.
   - (d) Nothing built for this path. Against: a Terminal tab (or any tab) added in one browser tab is lost whenever the other saves; the closing Z99 saw can recur. This is the lazy option.
   - Recommendation: (a), since the workbench is already one saved value and (a) makes every browser tab agree with it instead of overwriting it.
-- Z116 (raised 2026-09-30 22:16, step Q107, its brief check, `agents/reviews/Q107-brief-check.md` "Item 3 against the existing code"). Z99 (a) rules that a Terminal tab offers the running terminals no tab owns, and names no place, words or label; the brief takes them as reversible decisions, and the builder builds them now; a different ruling is fixed at Q107's landing. The Sessions view already lists such terminals and takes one in on a press (`TerminalRows.svelte:2-6`, `HELP.md:125`).
-  - (a) A submenu "Attach to Session" (VS Code's command name) in the Terminal bar's kinds dropdown and in the terminal list's empty-area menu, beside New Terminal, like Join Terminals; each entry labelled as the Sessions row labels it (title, or name when the title is empty); the chosen terminal joins this tab at the end and is shown alone, as the Sessions view's press shows it. For: reachable from inside the tab where the terminals went missing; same words as VS Code; same label and placement rule the Sessions view already uses. Against: two menus grow by one item.
-  - (b) As (a), but the chosen terminal is shown beside the terminals on screen, as Join Terminals does. For: nothing on screen is hidden. Against: a narrow pane splits further with every pick.
-  - (c) No menu item; the Sessions view's list stays the only offer. Against: Z99 (a) asks for the offer in the Terminal tab; this is the lazy option.
-  - Recommendation: (a).
-
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
 - Q77c (the first step under the rules of 2026-09-27: known fixes only, scoped checks, one sampled review), from its dispatch (09:24 UTC) to its booking (10:29 UTC), 1 h 5 min of wall time. Builder 33.8 minutes (revert-check 15.3, scoped unit runs 10.1, reading and writing 8.2), no repair round. Reviewer 10.0 minutes (revert-check 3.0, scoped unit 1.7, other checks 1.3, reading 3.7). Landing: `land.sh` 15.4 minutes (the whole unit suite, the checks and the browser suite, 10.3 minutes of it), the three landing fixes with revert-check over their two files 2.6 minutes. Q78 before it took 3 h 52 min. From `steptime.py` over each agent's transcript and `/usr/bin/time` on `land.sh`.
@@ -198,6 +163,12 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The looks owed by Q81, Q82, Q86 and Q96, taken on TEST 2026-09-29. Seen and passing: Q96's rail list, icon dropdown and one tooltip at a time (the pick not made, since it writes `rail:`); Q81's pane menu with Home, End, type-ahead "sp" and its submenu (ArrowRight opens it to the side, ArrowLeft and Escape give the keyboard back to "Move tab to page...", no console error), Tab out of a menu to the next stop (a dispatched Tab moved the focus from "Close pane" to "Theme" and closed the menu), the palette's fuzzy rows with the match in the accent, a status-bar tooltip kept inside the window at the bottom edge, the tray and its Close with no tooltip; Q82's Files tree with the `a` type-ahead and the Repositories rows and Graph; Q86's neato picture. Fixed on main after the look: a menu with a submenu did not open (`MenuList.svelte`, bits-ui refused `bind:ref` to an undefined record entry), the palette input named no active row (`Palette.svelte`, the rows now in bits-ui's `Command.Viewport`), a change row cut the file name before its folder (`TreeItem.svelte`), the bell's tooltip said "1 new notifications" (`statusbar.bell_unread_one`). Booked in Q86b: labels drawn across circles and edges, and the central pillars left unlabelled by the label rule's order. Still owed, since the tab was hidden (`document.visibilityState` "hidden", `document.hasFocus()` false) and the focus cannot be read there: whether a pointer open focuses the list, the key sheet's focus, the tray's Close taking the focus, the focus given back after each dialog, a Confirm over the tray taking the first Escape, the Memories overlay holding the keyboard, and Q82's Cmd+A, Cmd+Enter, Tab to a scrolled-away stop, the focus through a wheel scroll and the Graph's Left and Right; taken with the tab in front at the next landing on TEST.
 
 ## Closed items (kept as the log of what was raised and how it ended)
+- Z116 (raised 2026-09-30 22:16, step Q107, its brief check, `agents/reviews/Q107-brief-check.md` "Item 3 against the existing code"). Z99 (a) rules that a Terminal tab offers the running terminals no tab owns, and names no place, words or label; the brief takes them as reversible decisions, and the builder builds them now; a different ruling is fixed at Q107's landing. The Sessions view already lists such terminals and takes one in on a press (`TerminalRows.svelte:2-6`, `HELP.md:125`).
+  - (a) A submenu "Attach to Session" (VS Code's command name) in the Terminal bar's kinds dropdown and in the terminal list's empty-area menu, beside New Terminal, like Join Terminals; each entry labelled as the Sessions row labels it (title, or name when the title is empty); the chosen terminal joins this tab at the end and is shown alone, as the Sessions view's press shows it. For: reachable from inside the tab where the terminals went missing; same words as VS Code; same label and placement rule the Sessions view already uses. Against: two menus grow by one item.
+  - (b) As (a), but the chosen terminal is shown beside the terminals on screen, as Join Terminals does. For: nothing on screen is hidden. Against: a narrow pane splits further with every pick.
+  - (c) No menu item; the Sessions view's list stays the only offer. Against: Z99 (a) asks for the offer in the Terminal tab; this is the lazy option.
+  - Recommendation: (a).
+  - Withdrawn by the orchestrator at 22:26: Z99 (a) already rules the offer, and a menu's place and words are no stop under the hub's rules (a manifest or config key, a vocabulary, a wire format or a public API); built as (a), the brief's decisions 2 and 3.
 - Z114, environment variables for Q107's own server (raised 2026-09-30 21:45, step Q107 "a Terminal tab never closes while its terminals run", its /spec; the brief is written and its brief check runs, and the builder is not launched before this is ruled). Z99 (a) gives the builder a server with a tmux socket of its own, and the standing demands say no environment variables are used. No server module takes a tmux socket (`tmux.ts:31-47`, `socketArgs` is called with no socket anywhere in `src/lib/server`), and the server's `~/.oculus` follows Node's `homedir()`, so on today's code the only way to give the builder's server its own tmux server and its own `~/.oculus` is `HOME` and `TMUX_TMPDIR` set on that one process.
   - (a) `HOME` and `TMUX_TMPDIR` on the builder's server process only, nothing else in the environment, as the brief's item 1 says. For: no code or configuration added for a test harness; the user's tmux server and `~/.oculus` cannot be reached. Against: environment variables are used, on one process of the builder's.
   - (b) The step first adds a way to name the tmux socket and the state folder without the environment (a flag of the dev server or a key in the local configuration). For: no environment variable. Against: a user-visible key or flag added only so a builder can test, and the state folder moved by configuration is a new shape of its own.
@@ -615,6 +586,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 22:24. E3 landed (the apps section to Z103 (b), Z106 (a), Z107 (b2) and Z112 (a)); eight fixes at landing. X3d taken back out of main at its look (22:10); its diagnosis runs. In flight: Q111 (its review), Q107 (its builder). Next: /spec S3 into the free slot. Open: Z113, Z115.
 - 2026-09-30 20:35. Q110 landed (an undo gives a replaced manifest value back as the file held it); two fixes at landing (the pure `coerce` cases moved to a file `npm test` runs, report line 88). Z106 ruled (a), booked as E3. In flight: X3d (its review). Next: /spec E3 and /spec Q106 into the free slots; Q111 after Q110. Open: none.
 - 2026-09-30 20:22. Q108 landed (the merge editor's bars, the empty HPC queue through `Empty`, the drop-mark count, the kit tests moved); one fix at landing in its report; looks on TEST taken. In flight: X3d, Q110 (its round review). U2 prepared, waits for X3d. Next: /spec Q106 into the free slot. Open: Z106.
 - 2026-09-30 20:04. Z103 ruled (b); Z106 raised; Q108 and Q110 each sent one repair round; U2 prepared at 7e8eec33. Open: Z106.
