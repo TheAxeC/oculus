@@ -1,15 +1,17 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), builder on `claude-sonnet-5-5` since 2026-09-30 15:01, base 4fe6ce93.
-- E2 (the apps section of DESIGN.md rewritten to the rulings of Z93), reviewed; repair round 1 running since 2026-09-30 17:14.
-- Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), repair round 1 done by its builder 2026-09-30 17:10; the review of the round is next, then /land.
-- No slot is free. S3 and L4 go through /spec as slots free.
+- X3d (the Repositories view and the diff rebuilt to look and work as VS Code's Source Control), base 4fe6ce93: its builder was stopped by Axel 2026-09-30; it is resumed or continued only on his word.
+- E2 (the apps section of DESIGN.md rewritten to the rulings of Z93), reviewed; its builder has answered repair round 1; `/refute` over the round and `/land` wait for Axel's go.
+- Q85a1 (zod at the server's `core` and `root` inputs; Z96 (a)), repair round 1 refuted 2026-09-30 with two findings for the landing; `/land` waits for Axel's go.
+- Nothing is dispatched, prepared or landed until Axel says go.
+Open items: Z101 (a terminal's name, icon and colour not drawn when set), Z102 (Undo of an empty list removes the field).
 Queued, in order:
 - Q106 (Close pane on a pane of two tabs; Z98 (a)), /spec when a slot frees.
 - Q107 (a Terminal tab closing itself, and terminals no tab owns; Z99 (a)), /spec when a slot frees.
 - S3 (the Settings view as VS Code's Settings editor with the options catalog; Z75 (a), Z94 ruled), /spec next.
-- U2 (the audit of every other view's look against VS Code's visual language), beside X3d, the orchestrator's own work on TEST, next after the looks on a temporary repository; its build steps once Axel rules on its grouping.
+- The step that carries `agents/reviews/inline-fixes-2026-09-30.patch` (the merge editor's bars, the Live HPC empty line, the slow workbench case, the two kit tests moved; ruling (d)): `/spec` on Axel's go.
+- U2 (the audit of every other view's look against VS Code's visual language): queued for `/spec` like any step, its brief saying who does the audit (ruling 6 (a)); the notes on 31 views in `agents/reviews/U2-audit-notes.md` are its input.
 - Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`; Q102 landed 2026-09-30, so it is free. Waits for X3d's landing as well: its Source Control items go into `Repositories.svelte`, `RepoList.svelte`, `graph/Graph.svelte`, `Changes.svelte` and `menus/`, which X3d redraws, so the later landing would be a hand merge of whole components.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
 - X3a (the Files view as VS Code's Explorer, its look and behaviour included, the roots as Z76 rules), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.

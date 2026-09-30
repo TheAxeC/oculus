@@ -136,3 +136,163 @@ On the builder's statement about `append`: my read confirms it. `changes.ts` `ap
 - The existing cases named for 14 and 16 were not run alone; they ran inside `npm test`, which passed.
 
 Reviewer usage: tokens and minutes not measured by the reviewer (the runner's completion notice holds them); 17 tool uses.
+
+## Repair round 1, refuted
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams      (from tools/oculus; listed docs/diagrams/*.dot and *.svg, last lines channels.dot, channels.svg, writes.dot, writes.svg)
+$ git status --short                (after it: the 12 modified paths of the diff stat and the untracked report; no path under docs/diagrams)
+
+$ PATH=... sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   -> exit 0
+$ npm test
+ Test Files  348 passed | 19 skipped (367)
+      Tests  5318 passed | 563 skipped (5881)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+1790781594844 COMPLETED 2472 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+(the run took more than ten minutes; the harness moved it to the background at its 600 s limit and it finished there with exit 0; no test timed out)
+
+$ npx vitest run tests/server/core/changes.test.ts tests/server/root/hooks.test.ts tests/server/root/socket.test.ts
+ Test Files  3 passed (3)
+      Tests  70 passed (70)
+
+$ npx vitest run tests/server/core/changes.test.ts --reporter=verbose     (tagged slow, not inside checks.sh)
+ pass ... > reading a line of the log > answers a line with its keys in the order they were written and its own __proto__ keys
+ pass ... > reading a line of the log > skips a line that is no change and reads the lines around it
+ pass ... > reading a line of the log > skips a line whose at is no string or that has no field, and reads empty strings
+ pass ... > reading a line of the log > takes the last of a key given twice, so a number then a string is read
+ pass ... > reading a line of the log > reads a line with an unknown undo word or a numeric undoes as it is
+ pass ... > reading a line of the log > keeps the good lines and stamps a later moment when the last line was cut off
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+
+$ grep -n "safeParse" socket.ts hooks.ts changes.ts      -> socket.ts:70, hooks.ts:66, hooks.ts:138, hooks.ts:254, changes.ts:168
+$ grep -c "satisfies z.ZodType"                          -> socket.ts:1, changes.ts:1, hooks.ts:1
+$ grep -nE "\.issues|prettifyError|treeifyError"         -> nothing
+$ grep -nE "\.error"                                     -> hooks.ts:194 and hooks.ts:202, console.error and the osascript error.message; no parse result's .error
+$ grep -nE "^const [a-zA-Z]+ = z"                        -> subscriptionShape (socket.ts:56), changeLineShape (changes.ts:149), filledTextShape (hooks.ts:45), hookBodyShape (hooks.ts:51), notifyShape (hooks.ts:119)
+$ grep -n '"zod"' package.json package-lock.json         -> package.json:82: "zod": "4.6.5"   package-lock.json:50: "zod": "4.6.5"   node_modules/zod/package.json version 4.6.5
+$ the loop of the brief's "What is on the tree"          -> 3 core/json.ts, 1 core/file-poll.ts, 3 core/changes.ts, 1 root/hooks.ts, 3 core/git.ts, 1 root/watch/portfolio.ts, 1 core/auth.ts, 3 root/watch/git.ts, 4 root/watch/sessions.ts; no line for root/socket.ts
+$ grep -rn "seven session\|the helper .str\|eleven modules" src tests config HELP.md DESIGN.md README.md   -> nothing
+$ grep -n "<the six removed titles>\|from 'yaml'\|changeAt\|handleChanges" on the three test files        -> only changes.test.ts:20 import { parse } from 'yaml' (used by deckTarget at :131)
+$ grep -n "by mistake\|removed again\|failed with exit\|probe\|git status" on the builder's report          -> nothing
+$ LC_ALL=C grep -n '[^ -~]' over the three readers, json.ts, the three test files, the report, DESIGN.md, README.md -> nothing
+$ ls tests/server/root | wc -l      -> 10
+$ wc -l                             -> socket.ts 140, hooks.ts 284, changes.ts 267, json.ts 134 (the report says 135; no decision rests on it), socket.test.ts 261, hooks.test.ts 558, changes.test.ts 592
+$ cmp of the worktree's report and the ledger's copy -> identical
+```
+
+One more run, by the reviewer: a `node --input-type=module -e` script from `tools/oculus` that imports the worktree's `src/lib/server/core/changes.ts` and calls `logChanges`, then `readChanges`, over log files written in the reviewer's scratchpad (outside the repository), with one record and with two. For every starting file below, every new record was read back, the file still began with its old text, it ended in a newline, and the earlier good line, where there was one, was still read:
+
+```
+absent file | empty file | "\n" | "\n\n" | good line + "\n" | good line with no newline | good line + "\r\n" | good line + "\r" | good line, "\n", cut-off line | the same + "\r" | "   " | good line, "\n", "  " | a BOM alone
+joint printed for "good, no LF":   d"}\n{"at":"      for "good + CRLF":  }\r\n{"at":"2      for "good LF cut":  0.0\n{"at":"      for "only newline":  \n{"at":"2   (no newline added)
+rewrite keep 2 | lines ["{\"at\":\"9999-01-01T00:00:00.0", "{\"at\":\"2026-09-30T15:23:58.849Z\",...", ""] | rows read [ 'a.yml' ]
+rewrite keep 1 | lines ["{\"at\":\"2026-09-30T15:23:58.867Z\",...", ""] | rows read [ 'a.yml' ]
+case 11 parsed keys at,kind,file,key,field,__proto__,before,after,undo,more | own __proto__ true
+case 11 .data keys  at,kind,file,field,key,before,after,undo,more | own __proto__ false
+base hand reader on the case 11 line: keys at,kind,file,key,field,__proto__,before,after,undo,more | own __proto__ true | before own __proto__ true | more 2
+```
+
+### The nine round items
+
+- 1 (case 11): closed. `tests/server/core/changes.test.ts:377-396` uses the ruled line and asserts the ten keys in the written order, `Object.hasOwn(change, '__proto__')`, the `before` own `__proto__` and `more`. It would fail with the behaviour taken out: my run of `changeLineShape`'s shape on that line gives `.data` keys `at,kind,file,field,key,before,after,undo,more` with no own `__proto__`, so both `toEqual` on the keys and the `hasOwn` assertion fail. The report quotes the failing run and its diff matches mine (`key` moved after `field`, `__proto__` gone). `changes.ts:168` answers `parsed as Change` on the tree. The case's title changed from "...__proto__ key" to "...__proto__ keys"; see Proof 1.
+- 2 (six cases): closed as ruled. The six titles and the `yaml`, `changeAt` and `handleChanges` imports are gone; 76 cases became 70. Three inputs of case 24 remain inside kept cases; see Spec 1.
+- 3 (hooks head comment): closed. `src/lib/server/root/hooks.ts:15-17` holds the ruled sentence.
+- 4 (DESIGN.md paragraph): closed. The paragraph in the diff is the ruled text, one line, between `**Auth.**` and `**Processes.**`. Its four readers are the four schemas-with-reader on the tree.
+- 5 (json.ts comment): closed. `src/lib/server/core/json.ts:91-92` holds the ruled sentence with no count.
+- 6 (subscriptionShape comment): closed. `src/lib/server/root/socket.ts:52-55` opens "The subscribe message a page sends."; the rest is unchanged.
+- 7 (exact pin): closed. `package.json:82` and the lock file's root entry both hold `"zod": "4.6.5"`.
+- 8 (cut-off last line): closed, and nothing found that it gets wrong.
+  - The code: `changes.ts:216-218` reads the text once (`textOf`), takes the lines from it (`linesIn`) and sets `closing` to a newline when the text is not empty and does not end in one; `:236` writes it before the first record. `linesOf` (`:141`) answers what it answered, and its one remaining caller is `allOf` (`:173`).
+  - Callers: the log is written only by `append`, reached through `logChanges`, whose one caller in `src` is `server/edit/writes.ts:532`; it is read by `readChanges` (`handleChanges`) and `changeAt` (`writes.ts:497`). None changed its call shape. The read and the append are both synchronous inside one `chained` call, so no other write of this process falls between them.
+  - Inputs, from the run above: an empty file and a file of only a newline get no added newline; a file ending in `\r\n` gets none; a whole good line with no newline after it now keeps that line and the new record on separate lines (on the base both were glued into one unreadable line); a lone `\r`, spaces or a BOM at the end get a closing newline and the record is read.
+  - The rewrite branch (`:231-234`) is not changed by the round. With a cut-off last line among the lines, it writes that line on a line of its own and the new record after it, and the record is read back. The cut-off line takes one of the `keep` places there, as it does on the base.
+  - The test (`changes.test.ts:439-453`) would fail with the behaviour taken out: without `closing` the record is glued to the cut text, `rows.find(... 'a.yml')` is undefined so `expect(added?.field).toBe('f')` fails, and the `split('\n')` of the file no longer contains the cut text alone. The log's `keep` is 500 (`tests/routes/edit/write-fixture.ts:238`), so the case goes through the append branch. The report quotes the failing run at `added?.field`, which is the assertion my reading says fails first.
+  - Nothing removed: no check was dropped to close it, and the head comment gained the ruled sentence (`changes.ts:21-22`).
+- 9 (report): closed. The three narrations are gone (grep above), the heading "Repair round 1" carries the nine rows, both failing runs, the final `checks.sh` lines and the slow file's own run. My reruns reproduce its counts: 5318 passed and 563 skipped, 365 passed and 9 skipped, 70 passed in the three files, 21 passed in `changes.test.ts`.
+
+No finding was closed by removing a check, and no fix reaches beyond its ruling.
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: holds. `package.json:82` `"zod": "4.6.5"`, the lock's root entry and `node_modules/zod` 4.6.5 MIT; README.md line 13 names `zod` (MIT).
+- 2: holds. Each schema is a `const` in its reader's file; the three greps for zod's error text print nothing; the readers' code is unchanged by the round, and the first review's 179-input comparison stands for their answers.
+- 3: holds. `socket.ts:70-73`, `hooks.ts:66-81` and `hooks.ts:138-139` read `.data`; `changes.ts:168` answers `parsed`, and case 11's test now fails if it answered `.data`.
+- 4: holds. `socket.ts:56-60`.
+- 5: holds. `hooks.ts:45-58`, `:66-81`, `:254-257`; `logFirstPayload` receives `body`.
+- 6: holds. `hooks.ts:119-134`, `:138-139`.
+- 7: holds. `changes.ts:149-154`, `:168`.
+- 8: holds. The five names of the grep.
+- 9: holds. The diff stat holds no file of `core/auth.ts`, `core/git.ts`, `core/git-parse.ts`, `core/file-poll.ts`, `root/context.ts` or `root/watch/`; `core/json.ts` changes in its comment only.
+- 10: holds. One line removed from `tests/checks/tree/allow-duplication.txt`; `npm run test:checks` passes.
+- 11: holds. The DESIGN.md paragraph, the README sentence, the `json.ts` comment and the three head comments, each as the round ruled; none carries a step id or a date; `history.test.ts` passed inside `test:checks`.
+- 12: holds. The test diff is additions and one reflowed import in `socket.test.ts`; no test file added; `changes.test.ts` builds its logs through `target`, `logOf`, `logHolding` and `lineOf`; no allowlist line added.
+
+Cases of the brief's "Cases":
+
+- 1: met, `socket.test.ts` "answers the channels and an absent token for a plain subscribe message".
+- 2: met, "answers null for everything that is not a subscribe message", the nine inputs present.
+- 3: met, "keeps the token when it is a string and drops it otherwise, with no other key".
+- 4: met, "refuses a message whose own __proto__ key holds the fields".
+- 5: met, `hooks.test.ts` "answers null for a body that is not an object or holds no usable name and session", the ten inputs present.
+- 6: met, "drops a field of the wrong type or empty and leaves its key absent".
+- 7: met, "keeps a blank string as a value and drops only the empty one".
+- 8: met, "answers the default for a notify value that is no map" and "takes the default for a field of the wrong type and keeps the others".
+- 9: met, "reads quiet_seconds from zero up, infinity included, and refuses the rest".
+- 10: met, "answers exactly the three fields of a notify map with more keys".
+- 11: met, `changes.test.ts:377-396`; the test fails when `parseLine` answers `.data` (run above). The quoted first run is of the earlier line: Proof 1.
+- 12: met, "skips a line that is no change and reads the lines around it".
+- 13: met, "skips a line whose at is no string or that has no field, and reads empty strings".
+- 14: met by the read: the 413 answers come before `JSON.parse` and before `hooks.ts:254`; the existing file passed inside `npm test`.
+- 15: met by the diff: the `String(data)` line of `socket.ts` is not in it.
+- 16: met by the diff: `core/auth.ts` is not in it.
+- 17: met, "logs the first body of a name as it was sent and never the second".
+- 18: met, "logs nothing for a body without a usable name, and answers 200", the eight bodies present.
+- 19: met, the `session_id: ' '` line of "keeps a blank string..." and "leaves the key of a list or a map field absent".
+- 20: met, `Object.is(seconds(-0), -0)` and `-Infinity` in the `quiet_seconds` case.
+- 21: met, "keeps the good lines and stamps a later moment when the last line was cut off": both good lines read, the new record read with a later `at`, the cut text on a line of its own.
+- 22: met, "takes the last of a key given twice, so a number then a string is read".
+- 23: met, "reads a line with an unknown undo word or a numeric undoes as it is".
+- 24: met by the read and the verify list; no case is written for it, apart from the three inputs of Spec 1.
+
+### Findings
+
+Spec
+
+1. `tests/server/root/socket.test.ts:117-118` and `tests/server/root/hooks.test.ts:364`: "'',", "'<BOM>{"type":"subscribe","channels":[]}'," and "expect(notifyConfig({ notify: { events: new Set(['a']) } }).events).toEqual(DEFAULT.events);"; what is wrong: these three inputs are case 24's (`parseSubscription('')`, a text starting with a BOM, `events` a YAML `!!set`), which the brief heads "held by the verify list, not by a new case"; they sit as assertions inside the kept cases for 2 and 8. The round's item 2 named six cases by title and the builder removed exactly those, so the remainder is outside the ruling's wording and inside the first review's Spec 1. The first two assert what `JSON.parse` does before any schema runs. Failure scenario: a runtime whose `JSON.parse` accepts a leading BOM turns the case for 2 red, and a builder spends a round on an input no item asks to hold. Verdict: none changed; cases 2 and 8 are met by their own inputs.
+
+Proof
+
+1. The builder's report, section "The cases' first run on the unchanged tree": "pass tests/server/core/changes.test.ts > reading a line of the log > answers a line with its keys in the order they were written and its own __proto__ key"; what is wrong: that run is of the earlier line of case 11. The rewritten case (title ending "keys", the ruled line) has a passing run after the change and a failing run against `.data`, and no run on the unchanged tree, which the brief's "Verify before you report" item 5 asks the report to quote for each new case. The round's brief did not ask for it again. My run of the base's hand reader, copied from the diff's removed lines, on the ruled line printed the ten keys in the written order, the own `__proto__`, `before`'s own `__proto__` and `more: 2`, so the case would pass there. Failure scenario: a reader takes the first-run list as covering every case in its present form; here the gap hides nothing, since the base reader answers the same. Verdict: none changed.
+
+Standards: none.
+
+Behaviour: none. The one change, in `append`, is stated in the report's "Behaviour that changed" with its before and after. It also holds for a whole last line with no newline after it, which on the base was glued to the next record and lost with it; the report's wording "(no trailing newline)" covers that.
+
+### Declined to judge
+
+- The two failing runs the report quotes (item 1 against `.data`, item 8 before the change to `append`): not rerun, since both need an edit and the reviewer changes nothing. Judged by reading and by the script above.
+- The first run of the cases on the unchanged tree (76 passed): not rerun, since it needs a tree at the base.
+- Whether the three inputs of Spec 1 are removed at landing or kept: the orchestrator's, as the rule on which tests may exist is.
+- A log file that exists and cannot be read: `textOf` answers the empty string, so no closing newline is written, and an append that then succeeds could land on an open line. Not reproduced here; it needs a read that fails while the following append succeeds, and the base behaves the same.
+- A second process appending to the same log between the read and the append: outside what one process's write chain holds, and the same on the base.
+- The cut-off line taking one of the `keep` places in the rewrite branch: unchanged code, the same on the base, and the round ruled that the branch stays as it is.
+- The brief's premises about the base tree and its timing figures for `parseLine`: as in the first review, not rerun.
+- The report's line that `docs/diagrams/` was written: `git status --short` shows no change there after `npm run diagrams`; no decision rests on it.
+
+Reviewer usage: tokens and minutes not measured by the reviewer (the runner's completion notice holds them); 21 tool uses.
+
+### Closed
+
+- Spec 1 (three inputs of case 24 inside kept cases) and Proof 1 (no quoted run of the rewritten case 11 on the unchanged tree): both are the findings of the run over the last round, so neither goes to the builder; each is fixed at landing.
