@@ -3,43 +3,44 @@
 //
 // It is state/system/docs.svelte.ts's shape over the reads this endpoint offers, and for the same
 // reason: none of them is in the snapshot, so the first call asks the server and every later call
-// reads what is held. The request is scheduled on a microtask rather than run inside the call, so
-// reading this from a $derived never writes state while a derived is running.
+// reads what is held. Every answer is held in the client state's query client, under a key that
+// opens with `fs` and the kind of the answer, and state/client/queries.svelte.ts schedules
+// the request on a microtask rather than running it inside the call, so reading this from a
+// $derived never writes state while a derived is running.
 //
-// Nothing polls. A write moves the round on, which is what makes the next render ask again for
-// everything held; a bookmark is written through /api/write rather than here, since it is a
-// collection entry, so that write moves the round on too; what is held stays drawn until the fresh
-// answer lands, so a tree does not blink out on every add or removal, and an answer from an earlier
-// round is dropped rather than written in over the newer request's. A folder whose contents changed
-// on disk is re-read by closing it and opening it, since a poller over an open tree would read the
-// disk for a reader who is looking at one line of it.
+// Nothing polls. A write marks everything held, which is what makes the next render ask again; a
+// bookmark is written through /api/write rather than here, since it is a collection entry, so that
+// write marks everything too. What is held stays drawn until the fresh answer lands, so a tree
+// does not blink out on every add or removal, and a request still out when its key is marked is
+// cancelled, so an answer from before the mark is never held and a listing fetched before a
+// removal cannot reappear after it. A folder whose contents changed on disk is re-read by closing
+// it and opening it, since a poller over an open tree would read the disk for a reader who is
+// looking at one line of it.
 //
-// A read of the workspaces, the bookmarks or the notes that ended in an error holds nothing: the
-// round is written by the answer that arrived and not by the one that failed, so the next ask reads
-// again and a sentence saying why goes as soon as one succeeds. What keeps that from being a
-// request per frame while the endpoint is down is the failed round, remembered per key: the ask of
-// the round that failed is made once, and asking again is what clears it. The view's own control
-// clears it, and so does mounting the view, which is the reader coming back to it.
+// A read of the workspaces, the bookmarks or the notes that ended in an error is held as the
+// answer, with the sentence saying why, and a held answer is asked for once until it is marked:
+// what keeps a page whose endpoint is down from sending a request per frame is that the error is
+// the answer of the round. The view's own control marks it again, and so does mounting the view,
+// which is the reader coming back to it.
 //
 // The bookmarks file is also read again when it changes on the disk. The `files` channel carries a
-// message for it, published by the watcher over ~/.oculus, and the round the bookmarks belong to is
-// the shared round plus the version of that message: a bookmark added by hand or by another tool
-// reaches an open page without a write from it.
+// message for it, published by the watcher over ~/.oculus, and that message marks the bookmarks: a
+// bookmark added by hand or by another tool reaches an open page without a write from it.
 //
-// One root alone is re-read by refresh(root, version): the round a key belongs to is the shared
-// round plus the version that root was last refreshed at, so a view watching a channel (the Config
-// view watching the config one) asks again for that root's listings and texts and for nothing under
-// any other root. A refresh at a version already seen writes the same value and moves nothing.
+// One root alone is re-read by refresh(root, version): it marks the listings, texts and file kinds
+// held under that root, so a view watching a channel (the Config view watching the config one) asks
+// again for that root's listings and texts and for nothing under any other root. A refresh at a
+// version already seen marks nothing.
 //
 // A folder can also be read awaited (readListing), which is how the Files view reads the folders on
 // the way to a path it was asked to show, one after the other; that read and a render's read of the
-// same folder in the same round are one request.
+// same folder are one request.
 //
 // A folder is listed under a pair of toggles, whether hidden files and the files git ignores are
 // asked for, and each pair is an answer of its own, held under its own key, since two file
 // browsers may list one folder with two different pairs. A folder not yet answered under the pair
-// asked for draws what another pair holds of it until its answer lands. relist() asks again for
-// every folder held under one pair, which is what flipping a toggle does.
+// asked for draws what another pair holds of it until its answer lands. relist() marks every
+// folder held under one pair, which is what flipping a toggle does.
 //
 // The bookmark forms of every file browser the layout holds are read on each bookmarks answer, and
 // the form over a bookmark the file no longer holds is closed there and then. It is read here
@@ -52,12 +53,14 @@
 // The file text is read through the file route and stopped at the window's limit: the reader is
 // cancelled once the limit is in, so a forty-megabyte file costs two megabytes of transfer and not
 // forty. What a file opens as is read the same way and stops after the rule's window and the one
-// byte it tells a cut by, and the answer is held for the round, so the tree, the tab it opens and a
-// second click on the same row ask the server once.
+// byte it tells a cut by, and the answer is held until it is marked, so the tree, the tab it opens
+// and a second click on the same row ask the server once.
 
 import type { Entry, FilesPayload, SchemaField } from '../../data/model/index.ts';
 import { TEXT_SNIFF_READ } from '../../data/helpers/files/text-kind.ts';
 import type { EntitiesStore, WriteAnswer, WritesStore } from '../shared/stores/shapes.ts';
+import type { Fetcher, Fetching, Queries } from '../shared/stores/shapes.ts';
+import { inBrowser } from '../shared/stores/in-browser.ts';
 import {
     LISTING_FORMS,
     NO_BOOKMARKS,
@@ -70,7 +73,7 @@ import {
     FS_PATH,
     listingAnswer,
     listingForm,
-    listingKey,
+    listingKey as keyOfListing,
     listingUrl,
     noteUrl,
     readCapped,
@@ -135,12 +138,17 @@ export const BOOKMARK_COLLECTION = 'bookmarks';
 /** What a save of a note this page deleted is refused with, in the endpoint's own vocabulary. */
 export const NOTE_GONE = 'no-such-note';
 
-/** The keys the three whole-file answers are held and rounded under; a root key is never one. */
-const WORKSPACES = ':workspaces';
+/** The query keys the three whole-file answers are held under. */
+const WORKSPACES = ['fs', 'workspaces'];
 
-const BOOKMARKS = ':bookmarks';
+const BOOKMARKS = ['fs', 'bookmarks'];
 
-const NOTES = ':notes';
+const NOTES = ['fs', 'notes'];
+
+/** What every key of this store opens with, and the marks the kinds of answer are found by. */
+const ALL = ['fs'];
+
+const NOTE = ['fs', 'note'];
 
 /** The file browser's fetched state, one per client. */
 export type FsStore = {
@@ -221,81 +229,23 @@ export type FsStore = {
 export function createFs(
     writes: WritesStore,
     forms: BookmarkForms,
-    entities: EntitiesStore
+    entities: EntitiesStore,
+    queries: Queries
 ): FsStore {
-    const listings: Record<string, Listing | undefined> = $state({});
-    const texts: Record<string, FileText | undefined> = $state({});
-    const notes: Record<string, NoteState | undefined> = $state({});
-
-    /**
-     * What each file was last answered to open as, for the round it was answered in. A double click
-     * on a row asks three times and the tab it opens asks again, so without this one row would cost
-     * four reads of the same eight kilobytes.
-     */
-    const kinds: Record<string, FileType | undefined> = $state({});
-
-    /** The kind reads in flight, by key, so the asks a double click makes share one request. */
-    const asking = new Map<string, Promise<FileType>>();
-
     /**
      * The notes this page deleted. A deleted note is never asked for again and never written again,
      * which is what keeps a wait that was still running from putting one back on the disk.
      */
     const gone = new Set<string>();
-    const held: {
-        workspaces: WorkspacesState | null;
-        bookmarks: BookmarksState | null;
-        notes: NotesState | null;
-    } = $state({ workspaces: null, bookmarks: null, notes: null });
 
-    /** The round each held answer was fetched in. Not reactive: only requests read it. */
-    const rounds: Record<string, number> = {};
-
-    /**
-     * The round a read of one of the three whole-file keys failed in. A failure writes no round, so
-     * the next round asks again on its own; this says that the ask of the round that failed has
-     * been made, which is what keeps a page whose endpoint is down from sending a request per
-     * frame.
-     *
-     * A rune because the getters read it: clearing a key is what makes the view ask again, and the
-     * control that offers the reader a second read clears it.
-     */
-    const failed: Record<string, number | undefined> = $state({});
-
-    /** The requests in flight, by round and key, so one render does not send two. */
-    const inflight = new Set<string>();
-
-    /** The listing reads in flight, by round and key, so a render and an awaited read send one. */
-    const reading = new Map<string, Promise<Listing>>();
-
-    /**
-     * Which round of answers is current, and which round of notes. A write moves one of them on and
-     * what that round holds is asked again; they are runes because every read of them happens
-     * inside a derived, which has to run again when one moves.
-     *
-     * The notes have a round of their own because a note is saved while it is typed: on the one
-     * round a save would ask for every open listing and every open file's text again, which is
-     * megabytes of transfer per paragraph. A note action moves `notes` alone; anything else moves
-     * `round`, and moves `notes` with it.
-     */
-    const clock: { round: number; notes: number } = $state({ round: 0, notes: 0 });
-
-    /**
-     * The version one root was last refreshed at, by root key. A rune for the same reason the clock
-     * is one: a read of it happens inside the derived that asks for a listing or a text.
-     */
-    const refreshed: Record<string, number | undefined> = $state({});
+    /** The version one root was last refreshed at, by root key. */
+    const refreshed = new Map<string, number>();
 
     /**
      * How many times each file has been said to have been written, by root and path. A rune because
      * the address a view draws a file at is derived from it, so a bump has to redraw that view.
      */
     const written: Record<string, number | undefined> = $state({});
-
-    /** The round one root's answers belong to: the shared round, and what refresh() added to it. */
-    function roundOf(root: string): number {
-        return clock.round + (refreshed[root] ?? 0);
-    }
 
     /** How many times one file has been bumped, which is 0 for a file nothing has written. */
     function fileVersion(root: string, path: string): number {
@@ -310,82 +260,30 @@ export function createFs(
         written[key] = (written[key] ?? 0) + 1;
     }
 
-    /**
-     * Whether this runs where a fetch is the page's own. A server rendering has a global fetch in
-     * Node but no page to resolve a relative address against, so it asks for nothing and every
-     * answer stays pending until the browser's first render.
-     */
-    function online(): boolean {
-        return typeof window !== 'undefined' && typeof fetch === 'function';
-    }
-
-    /** Schedule one request, off the caller's stack so no state is written inside a derived. */
-    function schedule(key: string, at: number, load: () => Promise<void>): void {
-        const ticket = `${at}:${key}`;
-        if (inflight.has(ticket) || !online()) return;
-        inflight.add(ticket);
-        queueMicrotask(() => {
-            void load().finally(() => inflight.delete(ticket));
-        });
-    }
-
-    /**
-     * Schedule one of the three whole-file reads, unless the read this round already made ended in
-     * an error. The failed round is cleared by a retry, and a later round is asked for on its own.
-     */
-    function askShared(key: string, at: number, load: () => Promise<void>): void {
-        if (failed[key] === at) return;
-        schedule(key, at, load);
-    }
-
-    /** Hold the round one answer arrived in, and forget that an earlier read of it failed. */
-    function answered(key: string, at: number): void {
-        rounds[key] = at;
-        if (failed[key] !== undefined) failed[key] = undefined;
-    }
-
-    /** Say that a read failed, which holds no round: the next ask for the key reads again. */
-    function refused(key: string, at: number): void {
-        failed[key] = at;
-    }
-
     /** Ask again for one of the three whole-file reads after a read of it failed. */
-    function retry(key: string): void {
-        if (failed[key] === undefined) return;
-        failed[key] = undefined;
+    function retry(key: string[]): void {
+        const found = queries.peek<{ error: string }>(key).data;
+        if (found !== undefined && found.error !== '') queries.mark(key, 'drop');
     }
 
     /**
      * How far the disk has moved the bookmarks on: the version of the newest `files` message that
      * named the bookmarks file. The channel holds one message, and on a busy hub the next write
      * under a root replaces that one before anything reads the bookmarks, so every message is heard
-     * as it is kept rather than the channel read when the menu opens. It is state, so a message
-     * about the file redraws whoever asked.
+     * as it is kept rather than the channel read when the menu opens. A newer one marks the
+     * bookmarks, and a request still out for them is cancelled.
      */
-    let onDisk = $state(0);
+    let onDisk = 0;
     entities.afterReceive((message) => {
         const named = message.channel === 'files' && (message.payload as FilesPayload).bookmarks;
-        if (named === true && message.version > onDisk) onDisk = message.version;
+        if (named !== true || message.version <= onDisk) return;
+        onDisk = message.version;
+        queries.mark(BOOKMARKS, 'replace');
     });
 
-    /** The round the bookmarks belong to: the shared round, and what the disk has said since. */
-    function bookmarksRound(): number {
-        return clock.round + onDisk;
-    }
-
-    /** Whether an answer from round `at` of the given clock may still be written in. */
-    function fresh(at: number, kind: 'round' | 'notes'): boolean {
-        return at === clock[kind];
-    }
-
-    /** Whether an answer from round `at` may still be written in, for the root it was asked of. */
-    function current(at: number, root: string): boolean {
-        return at === roundOf(root);
-    }
-
-    /** The same for the workspaces, which belong to no root and ride the shared round alone. */
-    function currentShared(at: number): boolean {
-        return at === clock.round;
+    /** The query key of one folder under one pair of toggles. */
+    function listingQuery(root: string, path: string, shown: ListingShown): string[] {
+        return ['fs', 'listing', root, keyOfListing(treeKey(root, path), shown)];
     }
 
     /**
@@ -394,19 +292,21 @@ export function createFs(
      */
     function listing(root: string, path: string, shown = SHOWN_DEFAULT): Listing {
         if (root === '') return { entries: [], error: '', loading: false };
-        const key = listingKey(treeKey(root, path), shown);
-        const found = listings[key];
-        const at = roundOf(root);
-        if (found === undefined || rounds[key] !== at) {
-            schedule(key, at, () => askListing(root, path, at, shown).then(() => undefined));
-        }
-        return found ?? otherForm(treeKey(root, path)) ?? NO_LISTING;
+        const { data } = queries.read(
+            listingQuery(root, path, shown),
+            listingFetcher(root, path, shown),
+            {
+                enabled: inBrowser()
+            }
+        );
+        return data ?? otherForm(root, path) ?? NO_LISTING;
     }
 
     /** What any pair of toggles holds of one folder, for a pair whose answer has not landed. */
-    function otherForm(folder: string): Listing | undefined {
+    function otherForm(root: string, path: string): Listing | undefined {
         for (const form of LISTING_FORMS) {
-            const held = listings[`${form}${folder}`];
+            const key = ['fs', 'listing', root, `${form}${treeKey(root, path)}`];
+            const held = queries.peek<Listing>(key).data;
             if (held !== undefined) return held;
         }
         return undefined;
@@ -414,30 +314,24 @@ export function createFs(
 
     function relist(shown: ListingShown): void {
         const form = listingForm(shown);
-        // No round is ever negative, so the next read of each of them is a request.
-        for (const key of Object.keys(listings)) if (key.startsWith(form)) rounds[key] = -1;
+        // A folder still on its first answer has nothing to mark: its request is the fresh read.
+        for (const one of queries.entries<Listing>(['fs', 'listing'])) {
+            const at = one.key[3];
+            if (one.data !== undefined && typeof at === 'string' && at.startsWith(form)) {
+                queries.mark(one.key, 'drop');
+            }
+        }
     }
 
-    /** The one request of a round for one folder, started or joined. */
-    function askListing(
-        root: string,
-        path: string,
-        at: number,
-        shown: ListingShown
-    ): Promise<Listing> {
-        const ticket = `${at}:${listingKey(treeKey(root, path), shown)}`;
-        const pending = reading.get(ticket);
-        if (pending !== undefined) return pending;
-        const request = loadListing(root, path, at, shown).finally(() => reading.delete(ticket));
-        reading.set(ticket, request);
-        return request;
+    function listingFetcher(root: string, path: string, shown: ListingShown): Fetcher<Listing> {
+        return () => listingAnswer(listingUrl(root, path, shown));
     }
 
     /**
-     * One directory, awaited. A folder held for the round is answered as held; otherwise the
-     * round's request is made or joined, and its answer is what comes back even when a newer round
-     * has begun meanwhile and the store did not keep it. Where there is no page nothing is asked,
-     * and the answer says so.
+     * One directory, awaited. A folder held and not marked is answered as held; otherwise the
+     * request is made or joined, and its answer is what comes back even when the key is marked
+     * meanwhile and the store did not keep it. Where there is no page nothing is asked, and the
+     * answer says so.
      */
     async function readListing(
         root: string,
@@ -445,12 +339,11 @@ export function createFs(
         shown = SHOWN_DEFAULT
     ): Promise<Listing> {
         if (root === '') return { entries: [], error: '', loading: false };
-        const key = listingKey(treeKey(root, path), shown);
-        const at = roundOf(root);
-        const found = listings[key];
-        if (found !== undefined && rounds[key] === at) return found;
-        if (!online()) return { entries: [], error: t('files.read_offline'), loading: false };
-        return askListing(root, path, at, shown);
+        const key = listingQuery(root, path, shown);
+        const found = queries.peek<Listing>(key);
+        if (found.data !== undefined && !found.stale) return found.data;
+        if (!inBrowser()) return { entries: [], error: t('files.read_offline'), loading: false };
+        return queries.fetch(key, listingFetcher(root, path, shown));
     }
 
     /** The entries of one folder, which is what the tree walks. */
@@ -459,38 +352,16 @@ export function createFs(
     }
 
     function heldEntries(root: string, path: string, shown = SHOWN_DEFAULT): FsEntry[] | null {
-        return listings[listingKey(treeKey(root, path), shown)]?.entries ?? null;
+        return queries.peek<Listing>(listingQuery(root, path, shown)).data?.entries ?? null;
     }
 
-    /**
-     * Ask for one directory and hold the answer when its round is still current; return it either
-     * way.
-     */
-    async function loadListing(
-        root: string,
-        path: string,
-        at: number,
-        shown: ListingShown
-    ): Promise<Listing> {
-        const key = listingKey(treeKey(root, path), shown);
-        const answer = await listingAnswer(listingUrl(root, path, shown));
-        if (current(at, root)) {
-            rounds[key] = at;
-            listings[key] = answer;
-        }
-        return answer;
-    }
-
-    /** The workspaces, asked for once a round and held until the next one. */
+    /** The workspaces, asked for once and held until they are marked. */
     function workspaces(): WorkspacesState {
-        const at = clock.round;
-        if (held.workspaces === null || rounds[WORKSPACES] !== at) {
-            askShared(WORKSPACES, at, () => loadWorkspaces(at));
-        }
-        return held.workspaces ?? NO_WORKSPACES;
+        const { data } = queries.read(WORKSPACES, readWorkspaces, { enabled: inBrowser() });
+        return data ?? NO_WORKSPACES;
     }
 
-    async function loadWorkspaces(at: number): Promise<void> {
+    async function readWorkspaces(): Promise<WorkspacesState> {
         try {
             const response = await fetch(FS_PATH);
             const body = (await response.json()) as {
@@ -499,18 +370,14 @@ export function createFs(
                 dropped?: unknown;
                 error?: unknown;
             };
-            if (!currentShared(at)) return;
             if (!response.ok) {
-                refused(WORKSPACES, at);
-                held.workspaces = {
+                return {
                     ...NO_WORKSPACES,
                     error: typeof body.error === 'string' ? body.error : String(response.status),
                     loading: false
                 };
-                return;
             }
-            answered(WORKSPACES, at);
-            held.workspaces = {
+            return {
                 current: typeof body.current === 'string' ? body.current : '',
                 workspaces: Array.isArray(body.workspaces)
                     ? (body.workspaces as { name: string; roots: FsRoot[] }[])
@@ -520,55 +387,49 @@ export function createFs(
                 loading: false
             };
         } catch (error) {
-            if (!currentShared(at)) return;
-            refused(WORKSPACES, at);
-            held.workspaces = { ...NO_WORKSPACES, error: reasonOf(error), loading: false };
+            return { ...NO_WORKSPACES, error: reasonOf(error), loading: false };
         }
     }
 
     /** One file's text, read through the file route and stopped at the window's limit. */
     function fileText(root: string, path: string): FileText {
         if (root === '' || path === '') return { ...NO_TEXT, loading: false };
-        const key = treeKey(root, path);
-        const found = texts[key];
-        const at = roundOf(root);
-        if (found === undefined || rounds[`text:${key}`] !== at) {
-            schedule(`text:${key}`, at, () => loadText(root, path, at));
-        }
-        return found ?? NO_TEXT;
+        const { data } = queries.read(
+            ['fs', 'text', root, treeKey(root, path)],
+            () => readText(root, path),
+            { enabled: inBrowser() }
+        );
+        return data ?? NO_TEXT;
     }
 
-    async function loadText(root: string, path: string, at: number): Promise<void> {
-        const key = treeKey(root, path);
+    async function readText(root: string, path: string): Promise<FileText> {
         try {
             const response = await fetch(fileBytesUrl(root, path));
             if (!response.ok) {
-                if (!current(at, root)) return;
-                rounds[`text:${key}`] = at;
-                texts[key] = { ...NO_TEXT, error: String(response.status), loading: false };
-                return;
+                return { ...NO_TEXT, error: String(response.status), loading: false };
             }
             const body = await readCapped(response, TEXT_LIMIT);
-            if (!current(at, root)) return;
-            rounds[`text:${key}`] = at;
-            texts[key] = { ...body, error: '', loading: false };
+            return { ...body, error: '', loading: false };
         } catch (error) {
-            if (!current(at, root)) return;
-            rounds[`text:${key}`] = at;
-            texts[key] = { ...NO_TEXT, error: reasonOf(error), loading: false };
+            return { ...NO_TEXT, error: reasonOf(error), loading: false };
         }
+    }
+
+    /** The query key of what one file opens as. */
+    function kindKey(root: string, path: string): string[] {
+        return ['fs', 'kind', root, treeKey(root, path)];
     }
 
     /**
      * What one file opens as, as far as it is already known: the name's answer for a format the
-     * browser draws, the answer held from this round for anything else, and null for a file whose
+     * browser draws, the answer held and not marked for anything else, and null for a file whose
      * bytes have not been read yet. It is what a view draws by while readFileKind is running.
      */
     function heldFileKind(root: string, path: string): FileType | null {
         const named = typeOfFile(path);
         if (named.kind !== 'other') return named;
-        const key = treeKey(root, path);
-        return rounds[`kind:${key}`] === roundOf(root) ? (kinds[key] ?? null) : null;
+        const found = queries.peek<FileType>(kindKey(root, path));
+        return found.stale ? null : (found.data ?? null);
     }
 
     /**
@@ -576,63 +437,43 @@ export function createFs(
      * request; anything else is decided by the head of the file, and a file that cannot be read at
      * all is a download, which is what the file view draws for it.
      *
-     * The answer is held for the round, and the asks made while one read is in flight are that one
-     * read: a double click opens a row three times and the tab it opens asks once more, which is
-     * one request between them and none at all on the next click.
+     * The answer is held until it is marked, and the asks made while one read is in flight are that
+     * one read: a double click opens a row three times and the tab it opens asks once more, which
+     * is one request between them and none at all on the next click.
      */
     async function readFileKind(root: string, path: string): Promise<FileType> {
         const named = typeOfFile(path);
         if (named.kind !== 'other') return named;
-        const key = treeKey(root, path);
-        const at = roundOf(root);
         const remembered = heldFileKind(root, path);
         if (remembered !== null) return remembered;
-        const pending = asking.get(key);
-        if (pending !== undefined) return pending;
-        const request = loadKind(root, path, key, at).finally(() => asking.delete(key));
-        asking.set(key, request);
-        return request;
+        return queries.fetch(kindKey(root, path), () => readKind(root, path));
     }
 
     /**
-     * Read one file's head and hold what its bytes say, for the round the read belongs to. A head
-     * the route refuses or a read that fails is held as what the name says, the download, so the
-     * file view stops saying it is reading and draws the link.
+     * Read one file's head and answer what its bytes say. A head the route refuses or a read that
+     * fails is answered as what the name says, the download, so the file view stops saying it is
+     * reading and draws the link.
      */
-    async function loadKind(
-        root: string,
-        path: string,
-        key: string,
-        at: number
-    ): Promise<FileType> {
+    async function readKind(root: string, path: string): Promise<FileType> {
         const named = typeOfFile(path);
-        let found = named;
         try {
             const response = await fetch(fileBytesUrl(root, path));
-            if (response.ok) {
-                const held = await readCappedBytes(response, TEXT_SNIFF_READ);
-                found = typeOfFile(path, held.bytes);
-            }
+            if (!response.ok) return named;
+            const head = await readCappedBytes(response, TEXT_SNIFF_READ);
+            return typeOfFile(path, head.bytes);
         } catch {
-            found = named;
+            return named;
         }
-        if (current(at, root)) {
-            rounds[`kind:${key}`] = at;
-            kinds[key] = found;
-        }
-        return found;
     }
 
-    /** The reader's own bookmarks, asked for once a round and held until the next one. */
+    /** The reader's own bookmarks, asked for once and held until they are marked. */
     function bookmarks(): BookmarksState {
-        const at = bookmarksRound();
-        if (held.bookmarks === null || rounds[BOOKMARKS] !== at) {
-            askShared(BOOKMARKS, at, () => loadBookmarks(at));
-        }
-        return held.bookmarks ?? NO_BOOKMARKS;
+        const { data } = queries.read(BOOKMARKS, readBookmarks, { enabled: inBrowser() });
+        return data ?? NO_BOOKMARKS;
     }
 
-    async function loadBookmarks(at: number): Promise<void> {
+    async function readBookmarks(_held: unknown, fetching: Fetching): Promise<BookmarksState> {
+        let answer: BookmarksState;
         try {
             const response = await fetch(`${FS_PATH}?bookmarks=1`);
             const body = (await response.json()) as {
@@ -640,30 +481,24 @@ export function createFs(
                 schema?: unknown;
                 error?: unknown;
             };
-            if (at !== bookmarksRound()) return;
             if (!response.ok) {
-                refused(BOOKMARKS, at);
-                held.bookmarks = {
+                return {
                     ...NO_BOOKMARKS,
                     error: typeof body.error === 'string' ? body.error : String(response.status),
                     loading: false
                 };
-                return;
             }
-            answered(BOOKMARKS, at);
-            held.bookmarks = {
+            answer = {
                 entries: Array.isArray(body.entries) ? (body.entries as Entry[]) : [],
                 schema: Array.isArray(body.schema) ? (body.schema as SchemaField[]) : [],
                 error: '',
                 loading: false
             };
         } catch (error) {
-            if (at !== bookmarksRound()) return;
-            refused(BOOKMARKS, at);
-            held.bookmarks = { ...NO_BOOKMARKS, error: reasonOf(error), loading: false };
-            return;
+            return { ...NO_BOOKMARKS, error: reasonOf(error), loading: false };
         }
-        closeGoneForms(held.bookmarks);
+        if (!fetching.signal.aborted) closeGoneForms(answer);
+        return answer;
     }
 
     /**
@@ -682,54 +517,46 @@ export function createFs(
         }
     }
 
-    /** Every scratch note, asked for once a notes round and held until the next one. */
+    /** Every scratch note, asked for once and held until the notes are marked. */
     function noteList(): NotesState {
-        const at = clock.notes;
-        if (held.notes === null || rounds[NOTES] !== at) askShared(NOTES, at, () => loadNotes(at));
-        return held.notes ?? NO_NOTES;
+        const { data } = queries.read(NOTES, readNotes, { enabled: inBrowser() });
+        return data ?? NO_NOTES;
     }
 
-    async function loadNotes(at: number): Promise<void> {
+    async function readNotes(): Promise<NotesState> {
         try {
             const response = await fetch(`${FS_PATH}?notes=1`);
             const body = (await response.json()) as { notes?: unknown; error?: unknown };
-            if (!fresh(at, 'notes')) return;
             if (!response.ok) {
-                refused(NOTES, at);
-                held.notes = {
+                return {
                     ...NO_NOTES,
                     error: typeof body.error === 'string' ? body.error : String(response.status),
                     loading: false
                 };
-                return;
             }
-            answered(NOTES, at);
-            held.notes = {
+            return {
                 notes: Array.isArray(body.notes) ? (body.notes as NoteRow[]) : [],
                 error: '',
                 loading: false
             };
         } catch (error) {
-            if (!fresh(at, 'notes')) return;
-            refused(NOTES, at);
-            held.notes = { ...NO_NOTES, error: reasonOf(error), loading: false };
+            return { ...NO_NOTES, error: reasonOf(error), loading: false };
         }
     }
 
     /**
-     * One note's own text, asked for once a notes round. A note that was deleted is not asked for.
+     * One note's own text, asked for once and held until the notes are marked. A note that was
+     * deleted is not asked for.
      */
     function note(id: string): NoteState {
         if (id === '') return { ...NO_NOTE, loading: false };
-        const found = notes[id];
-        const at = clock.notes;
-        if (!gone.has(id) && (found === undefined || rounds[`note:${id}`] !== at)) {
-            schedule(`note:${id}`, at, () => loadNote(id, at));
-        }
-        return found ?? NO_NOTE;
+        const { data } = queries.read([...NOTE, id], () => readNote(id), {
+            enabled: inBrowser() && !gone.has(id)
+        });
+        return data ?? NO_NOTE;
     }
 
-    async function loadNote(id: string, at: number): Promise<void> {
+    async function readNote(id: string): Promise<NoteState> {
         try {
             const response = await fetch(noteUrl(id));
             const body = (await response.json()) as {
@@ -738,18 +565,15 @@ export function createFs(
                 modified?: unknown;
                 error?: unknown;
             };
-            if (!fresh(at, 'notes')) return;
-            rounds[`note:${id}`] = at;
             if (!response.ok) {
-                notes[id] = {
+                return {
                     ...NO_NOTE,
                     id,
                     error: typeof body.error === 'string' ? body.error : String(response.status),
                     loading: false
                 };
-                return;
             }
-            notes[id] = {
+            return {
                 id,
                 title: typeof body.title === 'string' ? body.title : '',
                 body: typeof body.body === 'string' ? body.body : '',
@@ -758,9 +582,7 @@ export function createFs(
                 loading: false
             };
         } catch (error) {
-            if (!fresh(at, 'notes')) return;
-            rounds[`note:${id}`] = at;
-            notes[id] = { ...NO_NOTE, id, error: reasonOf(error), loading: false };
+            return { ...NO_NOTE, id, error: reasonOf(error), loading: false };
         }
     }
 
@@ -770,30 +592,29 @@ export function createFs(
 
     /**
      * Ask the server again for everything held: the workspaces, the bookmarks, every listing, every
-     * file text and the notes. What is held keeps being drawn until each new answer lands, and an
-     * answer from the round before this one is dropped, so a listing fetched before a removal
-     * cannot reappear after it.
+     * file text and the notes. What is held keeps being drawn until each new answer lands, and a
+     * request still out is cancelled, so a listing fetched before a removal cannot reappear after
+     * it.
      */
     function invalidate(): void {
-        clock.round += 1;
-        clock.notes += 1;
+        queries.mark(ALL, 'replace');
     }
 
     /** Ask the server again for the notes and for each note, and for nothing else. */
     function notesChanged(): void {
-        clock.notes += 1;
+        queries.mark(NOTES, 'replace');
+        queries.mark(NOTE, 'replace');
     }
 
     /**
-     * Ask again for the listings and the texts held under one root, and for nothing under any
-     * other. The version is whatever said the root had changed, the config channel's for the
-     * engine's own folder; a version already refreshed at writes the same value and asks for
-     * nothing again. The version never moves backwards: the round is the shared round plus this
-     * one, and a lower value would let an older answer in over a newer one.
+     * Ask again for the listings, the texts and the file kinds held under one root, and for nothing
+     * under any other. The version is whatever said the root had changed, the config channel's for
+     * the engine's own folder; a version already refreshed at marks nothing.
      */
     function refresh(root: string, version: number): void {
-        if (root === '' || refreshed[root] === version) return;
-        refreshed[root] = version;
+        if (root === '' || refreshed.get(root) === version) return;
+        refreshed.set(root, version);
+        for (const kind of ['listing', 'text', 'kind']) queries.mark(['fs', kind, root], 'replace');
     }
 
     /** One workspace action, behind the same token every other write carries. */
@@ -803,7 +624,7 @@ export function createFs(
         return answer;
     }
 
-    /** One note action. It moves the notes on and leaves every other held answer where it is. */
+    /** One note action. It marks the notes and leaves every other held answer where it is. */
     async function noteAct(fields: Record<string, unknown>): Promise<WriteAnswer> {
         const answer = await writes.send(fields, FS_PATH);
         if (answer.ok) notesChanged();
@@ -823,7 +644,16 @@ export function createFs(
         // What was just written is what is held, so a tab opened on this note before the re-read
         // lands is seeded from the text on the disk and not from the text before the save.
         if (answer.ok) {
-            notes[id] = { id, title, body, modified: Date.now(), error: '', loading: false };
+            const saved: NoteState = {
+                id,
+                title,
+                body,
+                modified: Date.now(),
+                error: '',
+                loading: false
+            };
+            queries.hold([...NOTE, id], saved);
+            queries.mark([...NOTE, id], 'drop');
         }
         return answer;
     }

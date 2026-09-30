@@ -14,8 +14,8 @@
     // `showTerminal`), as every start is, so the output is in front of the reader while it runs.
     //
     // The end of a build is the terminal leaving the list, which state/sessions/latex.svelte.ts
-    // watches: it asks for the state again, and the row redraws with the new PDF time and the new
-    // error count.
+    // watches: it marks the held state stale, the next read asks for it again, and the row redraws
+    // with the new PDF time and the new error count.
 
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

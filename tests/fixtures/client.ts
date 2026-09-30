@@ -3,6 +3,7 @@
 // before it and no case resets anything by hand.
 
 import { render } from 'svelte/server';
+import { vi } from 'vitest';
 import { createClientState, type ClientState } from '../../src/lib/state/client/context.ts';
 import { STATE_KEY } from '../../src/lib/state/client/use.ts';
 import { TIP_KEY, createTipIds } from '../../src/lib/ui/menu/tip-ids.ts';
@@ -39,4 +40,51 @@ export function clientContext(client: ClientState): Map<unknown, unknown> {
         [STATE_KEY, client],
         [TIP_KEY, createTipIds()]
     ]);
+}
+
+/** Replace `fetch` with a stub that records each address in `asked` and answers as `answer`. */
+export function stubFetch(
+    asked: string[],
+    answer: (url: string) => Response | Promise<Response>
+): void {
+    vi.stubGlobal('fetch', (url: string) => {
+        asked.push(url);
+        return Promise.resolve(answer(url));
+    });
+}
+
+/**
+ * Replace `fetch` with a stub whose answers wait for the returned release, so a case can act while
+ * a request is out. Every request records its address in `asked` and answers `answer` once
+ * released.
+ */
+export function stubGated(
+    asked: string[],
+    answer: (url: string) => Response
+): { release: () => void } {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    vi.stubGlobal('fetch', async (url: string) => {
+        asked.push(url);
+        await gate;
+        return answer(url);
+    });
+    return { release: () => release() };
+}
+
+/**
+ * Replace `fetch` with a stub whose next request stays out until the returned `land` is called with
+ * its answer. Every request records its address in `asked`.
+ */
+export function stubHeld(asked: string[]): { land: (answer: Response) => void } {
+    let land: (answer: Response) => void = () => undefined;
+    vi.stubGlobal('fetch', (url: string) => {
+        asked.push(url);
+        return new Promise<Response>((done) => {
+            land = done;
+        });
+    });
+    return { land: (answer) => land(answer) };
 }

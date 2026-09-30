@@ -544,8 +544,8 @@ describe("the store's awaited listing read", () => {
         vi.unstubAllGlobals();
     });
 
-    // Revert: in readListing of state/sources/fs.svelte.ts, call loadListing directly rather than
-    // askListing.
+    // Revert: in readListing of state/sources/fs.svelte.ts, call the listing fetcher directly
+    // rather than queries.fetch.
     it("shares one request with a render's read of the same folder, and asks nothing for a folder held", async () => {
         answering([file('a.txt')]);
         expect(client.fs.listing('hub', 'funding').loading).toBe(true);
@@ -557,8 +557,8 @@ describe("the store's awaited listing read", () => {
         expect(client.fs.listing('hub', 'funding').loading).toBe(false);
     });
 
-    // Revert: in loadListing, return nothing when the round moved, so the awaited read answers
-    // empty.
+    // Revert: in fetch of state/client/queries.svelte.ts, return the promise of the query
+    // client rather than the call's own.
     it('answers what the server said even when a newer round began meanwhile', async () => {
         answering([file('b.txt')]);
         const pending = client.fs.readListing('hub', '');
@@ -568,7 +568,7 @@ describe("the store's awaited listing read", () => {
         expect(client.fs.heldEntries('hub', '')).toBeNull();
     });
 
-    // Revert: drop the online() test in readListing.
+    // Revert: in readListing of state/sources/fs.svelte.ts, drop the inBrowser() test.
     it('asks nothing where there is no page, and says so', async () => {
         vi.unstubAllGlobals();
         answering([file('c.txt')]);

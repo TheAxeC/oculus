@@ -6,6 +6,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createLines, type LinesStore } from '../../../src/lib/state/system/lines.svelte.ts';
+import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
+import { stubHeld } from '../../fixtures/client.ts';
 import { COUNT } from '../../server/machine/line-counts.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
@@ -43,7 +45,7 @@ beforeEach(() => {
     answers = [];
     vi.stubGlobal('window', {});
     vi.stubGlobal('fetch', respond);
-    store = createLines();
+    store = createLines(createQueries());
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -75,6 +77,28 @@ describe('the line count store', () => {
         expect(store.lines().loading).toBe(true);
         await settle();
         expect(asked).toEqual(['/api/lines', '/api/lines']);
+        expect(store.lines()).toEqual({ count: later, error: '', loading: false });
+    });
+
+    // Revert: in recount of state/system/lines.svelte.ts, refetch with 'replace' instead of 'drop'.
+    it('sends nothing for a recount pressed while one is out, and keeps the old count showing', async () => {
+        store.lines();
+        await settle();
+        const { land } = stubHeld(asked);
+        store.recount();
+        await settle();
+        expect(asked).toHaveLength(2);
+        const during = store.lines();
+        expect(during).toEqual({ count: COUNT, error: '', loading: true });
+
+        store.recount();
+        await settle();
+        expect(asked).toHaveLength(2);
+        expect(store.lines()).toEqual(during);
+
+        const later = { ...COUNT, counted: '2026-09-28T12:00:00.000Z' };
+        land(Response.json(later));
+        await settle();
         expect(store.lines()).toEqual({ count: later, error: '', loading: false });
     });
 

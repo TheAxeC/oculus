@@ -14,7 +14,6 @@
 
 import type { CalendarPayload } from '../../data/model/index.ts';
 import { remainingToday } from './calendar.ts';
-import { postCommand } from '../shared/stores/post.ts';
 import { t } from '../shared/words/text.ts';
 import type { ClockStore, EntitiesStore, WritesStore } from '../shared/stores/shapes.ts';
 
@@ -42,7 +41,7 @@ export function createCalendar(
 
     /** Post one command to the calendar endpoint, and say what went wrong, or nothing. */
     async function command(body: Record<string, string>): Promise<string> {
-        const answer = await postCommand('/api/calendar', body, writes.writeToken());
+        const answer = await writes.postCommand('/api/calendar', body);
         if (answer.ok) return '';
         const code = answer.body.error;
         if (typeof code === 'string') return t('calendar.refused', code);

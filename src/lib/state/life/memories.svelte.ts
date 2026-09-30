@@ -2,8 +2,9 @@
 //
 // The folder is not in the snapshot: it is a directory of images beside the wallpaper, not
 // portfolio data, so it is fetched from GET /api/memories the first time the wall asks and read
-// again after the wall adds one. The fetch is scheduled on a microtask rather than run inside the
-// call, so reading this from a $derived never writes state while a derived is running, and it is
+// again after the wall adds one. The answer is held in the client state's query client, and the
+// fetch is scheduled on a microtask by state/client/queries.svelte.ts rather than run inside
+// the call, so reading this from a $derived never writes state while a derived is running. It is
 // only ever made in the browser: a server-rendered page holds nothing and asks for nothing.
 //
 // The sizes are what give a tile its shape before its picture has arrived. They are read off the
@@ -14,6 +15,8 @@
 
 import { isMap } from '../../data/helpers/guards.ts';
 import type { Picture } from '../../data/model/index.ts';
+import type { Queries } from '../shared/stores/shapes.ts';
+import { inBrowser } from '../shared/stores/in-browser.ts';
 
 /** What the wall reads: the pictures, what a failed read failed with, and whether one is out. */
 export type Wall = {
@@ -86,60 +89,39 @@ export type MemoriesStore = {
     reload: () => void;
 };
 
-export function createMemories(): MemoriesStore {
-    const held: { wall: Wall | null } = $state({ wall: null });
+/** The query key of the wall. */
+const KEY = ['memories'];
 
-    /** Whether a request is out, so a second render does not send a second one. */
-    let inflight = false;
+/** Ask for the wall, answering what came back as the shape the wall reads. */
+async function ask(): Promise<Wall> {
+    try {
+        const response = await fetch('/api/memories');
+        const body = (await response.json()) as { images?: unknown; error?: string };
+        if (!response.ok) {
+            return { images: [], error: body.error ?? String(response.status), loading: false };
+        }
+        const answer = pictures(body.images);
+        return 'malformed' in answer
+            ? { images: [], error: answer.malformed, loading: false }
+            : { images: answer.images, error: '', loading: false };
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        return { images: [], error: reason, loading: false };
+    }
+}
 
+export function createMemories(queries: Queries): MemoriesStore {
     function wall(): Wall {
-        if (held.wall === null) request();
-        return held.wall ?? PENDING;
+        return queries.read(KEY, ask, { enabled: inBrowser() }).data ?? PENDING;
     }
 
     function hold(images: Picture[], error = ''): void {
-        held.wall = { images, error, loading: false };
+        const held: Wall = { images, error, loading: false };
+        queries.hold(KEY, held);
     }
 
     function reload(): void {
-        request();
-    }
-
-    function request(): void {
-        if (inflight) return;
-        inflight = true;
-        queueMicrotask(() => {
-            void load();
-        });
-    }
-
-    async function load(): Promise<void> {
-        try {
-            // There is no fetch while the page is rendered on the server, and nothing to show there
-            // either: the wall stays pending and the browser asks for it on the first client
-            // render.
-            if (typeof window === 'undefined' || typeof fetch !== 'function') return;
-            const response = await fetch('/api/memories');
-            const body = (await response.json()) as { images?: unknown; error?: string };
-            if (!response.ok) {
-                held.wall = {
-                    images: [],
-                    error: body.error ?? String(response.status),
-                    loading: false
-                };
-                return;
-            }
-            const answer = pictures(body.images);
-            held.wall =
-                'malformed' in answer
-                    ? { images: [], error: answer.malformed, loading: false }
-                    : { images: answer.images, error: '', loading: false };
-        } catch (error) {
-            const reason = error instanceof Error ? error.message : String(error);
-            held.wall = { images: [], error: reason, loading: false };
-        } finally {
-            inflight = false;
-        }
+        if (inBrowser()) queries.refetch(KEY, ask, 'drop');
     }
 
     return { wall, hold, reload };

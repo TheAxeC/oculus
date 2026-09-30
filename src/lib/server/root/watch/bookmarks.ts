@@ -1,8 +1,8 @@
 // Layer 2, server. The bookmark message of the `files` channel: the reader's own bookmarks file,
 // watched so a bookmark added or taken away outside oculus reaches an open page.
 //
-// The page holds the bookmarks for a round and asks for them again when a write from the page moves
-// that round on (state/sources/fs.svelte.ts). A write from anywhere else moves nothing, so without
+// The page holds the bookmarks as a query answer and marks it stale when a write from the page
+// changes them (state/sources/fs.svelte.ts). A write from anywhere else marks nothing, so without
 // this handle a bookmark added by hand, by another tool or by a second oculus page waits for the
 // next write this page happens to make, and the Files view's close of a form over a bookmark that
 // is gone waits with it.

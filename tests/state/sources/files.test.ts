@@ -7,7 +7,7 @@
 // is not run here.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { createClientState, stubGated, type ClientState } from '../../fixtures/client.ts';
 import { matchingFiles } from '../../../src/lib/state/sources/files.svelte.ts';
 
 let client: ClientState;
@@ -112,6 +112,50 @@ describe('the files of a project', () => {
         await settle();
         expect(asked).toHaveLength(1);
         expect(files('charlie').rows.map((row) => row.path)).toEqual(['notes.md']);
+    });
+
+    // Revert: in the files listener of state/sources/files.svelte.ts, take out the queries.mark
+    // call.
+    it('keeps the held rows showing after a files message, asks once on the next read, and shows the new rows', async () => {
+        serving(listing('README.md'));
+        files('golf');
+        await settle();
+
+        asked = [];
+        const { release } = stubGated(
+            asked,
+            () => new Response(JSON.stringify(listing('later.md').body), { status: 200 })
+        );
+        wrote(3);
+        expect(files('golf').rows.map((row) => row.path)).toEqual(['README.md']);
+        files('golf');
+        await settle();
+        expect(files('golf').rows.map((row) => row.path)).toEqual(['README.md']);
+        expect(files('golf').loading).toBe(false);
+        expect(asked).toEqual(['/api/project-files?id=golf']);
+
+        release();
+        await settle();
+        expect(files('golf').rows.map((row) => row.path)).toEqual(['later.md']);
+        expect(asked).toHaveLength(1);
+    });
+
+    // Revert: in the files listener of state/sources/files.svelte.ts, mark with 'drop' or 'replace'
+    // instead of 'wait'.
+    it('shows the answer that was out when a files message came, and asks again on the next read', async () => {
+        asked = [];
+        const { release } = stubGated(
+            asked,
+            () => new Response(JSON.stringify(listing('a.md').body))
+        );
+        files('hotel');
+        await settle();
+        wrote(4);
+        release();
+        await settle();
+        expect(files('hotel').rows.map((row) => row.path)).toEqual(['a.md']);
+        await settle();
+        expect(asked).toEqual(['/api/project-files?id=hotel', '/api/project-files?id=hotel']);
     });
 
     it('holds what the endpoint refused with instead of the rows', async () => {

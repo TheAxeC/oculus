@@ -2,14 +2,15 @@
 // that holds the import graph to it.
 //
 // A folder is the layer and its first sub-folder (`server/core`, `state/boards`, `ui/menu`), and
-// the files that sit in the layer itself are the folder named by the layer alone (`ui`, `shell`).
-// A module may import a folder of its own layer only when that folder is its own or below its own
-// in the layer's list, so every folder imports downward and no two folders import each other. The
+// the files that sit in the layer itself are the folder named by the layer alone (`ui`, `shell`). A
+// module may import a folder of its own layer only when that folder is its own or below its own in
+// the layer's list, so every folder imports downward and no two folders import each other. The
 // composition roots head their layers (`server/root`, `state/client`, `shell`, and `data` itself,
 // whose index.ts builds the portfolio out of every data folder) since they import every folder
 // beside them and none imports them; the modules every folder of a layer shares sit at its foot
-// (`server/core`, `state/shared` with the catalogs in `words/` and the shapes of the shared stores
-// in `stores/`, `data/model` with the facade of every type, the files of `ui`).
+// (`server/core`, `state/shared` with the catalogs in `words/` and, in `stores/`, the shapes of the
+// stores other stores are handed, the shell action and the browser test, `data/model` with the
+// facade of every type, the files of `ui`).
 //
 // A listed folder that holds folders of its own may carry an inner order in INNER, read the same
 // way one level down: a module of one of its sub-folders imports only its own sub-folder or one

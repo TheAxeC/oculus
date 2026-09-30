@@ -6,9 +6,13 @@
 // imported, since the boundary table of DESIGN.md lets `state/` import `data/model` and nothing of
 // `server/`; server/git/deposit.ts holds the same three shapes on its own side.
 //
-// The fetch is scheduled on a microtask rather than run inside the call, so reading this from a
-// $derived never writes state while a derived is running, and it is only ever made in the browser:
-// a server-rendered page holds nothing and asks for nothing.
+// The answer is held in the client state's query client, and the fetch is scheduled on a microtask
+// by state/client/queries.svelte.ts rather than run inside the call, so reading this from a
+// $derived never writes state while a derived is running. It is only ever made in the browser: a
+// server-rendered page holds nothing and asks for nothing.
+
+import type { Queries } from '../shared/stores/shapes.ts';
+import { inBrowser } from '../shared/stores/in-browser.ts';
 
 /** One thing the deposit's scan found. The words are the panel's; this says what and where. */
 export type Finding = { kind: string; path: string; mb: number };
@@ -61,18 +65,32 @@ export type DepositStore = {
     reload: (id: string) => void;
 };
 
-export function createDeposit(): DepositStore {
-    const held: Record<string, Held | undefined> = $state({});
-
-    /** The projects with a request in flight, so a second render does not send a second request. */
-    const inflight = new Set<string>();
+export function createDeposit(queries: Queries): DepositStore {
+    /** Ask for one project's mirror, answering what came back as the panel's held shape. */
+    async function ask(id: string): Promise<Held> {
+        try {
+            const response = await fetch(`/api/deposit?id=${encodeURIComponent(id)}`);
+            const body = (await response.json()) as { state?: MirrorState; error?: string };
+            if (!response.ok) {
+                return {
+                    state: null,
+                    error: body.error ?? String(response.status),
+                    loading: false
+                };
+            }
+            return { state: body.state ?? null, error: '', loading: false };
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            return { state: null, error: reason, loading: false };
+        }
+    }
 
     /** The mirror of one project. The first call for a project asks the server. */
     function mirror(id: string): Held {
         if (id === '') return NOTHING;
-        const one = held[id];
-        if (one === undefined) request(id);
-        return one ?? PENDING;
+        return (
+            queries.read(['deposit', id], () => ask(id), { enabled: inBrowser() }).data ?? PENDING
+        );
     }
 
     /**
@@ -81,47 +99,14 @@ export function createDeposit(): DepositStore {
      * first line and stops.
      */
     function hold(id: string, state: MirrorState | null, error = ''): void {
-        held[id] = { state, error, loading: false };
+        const held: Held = { state, error, loading: false };
+        queries.hold(['deposit', id], held);
     }
 
     /** Ask again for one project, which is what the panel does after every write it makes. */
     function reload(id: string): void {
-        if (id === '') return;
-        request(id);
-    }
-
-    /** Schedule one fetch, off the caller's stack so no state is written inside a derived. */
-    function request(id: string): void {
-        if (inflight.has(id)) return;
-        inflight.add(id);
-        queueMicrotask(() => {
-            void load(id);
-        });
-    }
-
-    async function load(id: string): Promise<void> {
-        try {
-            // There is no fetch while the page is rendered on the server, and nothing to show there
-            // either: the panel stays pending and the browser asks for it on the first client
-            // render.
-            if (typeof window === 'undefined' || typeof fetch !== 'function') return;
-            const response = await fetch(`/api/deposit?id=${encodeURIComponent(id)}`);
-            const body = (await response.json()) as { state?: MirrorState; error?: string };
-            if (!response.ok) {
-                held[id] = {
-                    state: null,
-                    error: body.error ?? String(response.status),
-                    loading: false
-                };
-                return;
-            }
-            held[id] = { state: body.state ?? null, error: '', loading: false };
-        } catch (error) {
-            const reason = error instanceof Error ? error.message : String(error);
-            held[id] = { state: null, error: reason, loading: false };
-        } finally {
-            inflight.delete(id);
-        }
+        if (id === '' || !inBrowser()) return;
+        queries.refetch(['deposit', id], () => ask(id), 'drop');
     }
 
     return { mirror, hold, reload };

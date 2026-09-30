@@ -288,3 +288,13 @@ No assertion, stub or expected value of an existing test changed. Every `^-` lin
 - **The builder's red runs other than the round's.** I reran only the round's reverts and six case-20 guard reverts.
 
 Scratch files are under scratchpad/Q84-refute-r1/: checks.log, and copy/ (the repaired tree plus tests/probe/probe.test.ts). Nothing in the worktree was changed, and I ran no git command other than `git diff f7ab9b6a` and `git status --short`.
+
+## Closed
+
+The findings of the run over repair round 1, each fixed on main at landing (`npm run check` 0 errors over 2360 files, eslint and prettier clean on the changed files, the three store test files 46 tests passed, `LC_ALL=C grep -c '[^ -~]'` 0 on DESIGN.md and HELP.md):
+- The report still describing the tree before the round: `Q84-report.md` line 1 now says every item is done after round 1, that the rows above the round section are superseded, and that case 21's grep matches through the stores' head comments, their use of the helper shown by the `createQueries` handed in through `context.ts`.
+- Case 21's second grep met only through comments: stated in the report's line 1; the stores receive `createQueries` through their constructor arguments, since the folder order forbids the import.
+- The missing separators: DESIGN.md:174 "...other stores are handed, the shell action..."; HELP.md:260 "...builds it), the shell action...".
+- The head comment of `writes.svelte.ts`: a paragraph added saying `postCommand` is the other POST, to the mail, calendar and account endpoints, carrying the same token, answered as `Posted`, neither retrying on a 403 nor telling onUnwritten.
+- The two type imports from one module: merged into one line in `latex.svelte.ts` and `docs.svelte.ts`.
+- Declined point, a store read inside a mounted `$derived`: the look on TEST opened Memories, Deposit, History, the Hub document, Files and Transcript (a session picked and its turns drawn), and `read_console_messages` with only errors reported none.

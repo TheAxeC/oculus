@@ -7,9 +7,14 @@
 // the boundary table of DESIGN.md lets `state/` import `data/model` and nothing of `server/`;
 // server/core/changes.ts holds the same shape on its own side.
 //
-// The fetch is scheduled on a microtask rather than run inside the call, so reading this from a
-// $derived never writes state while a derived is running, and it is only ever made in the browser:
-// a server-rendered page holds nothing and asks for nothing.
+// The answer is held in the client state's query client, and the fetch is scheduled on a microtask
+// by state/client/queries.svelte.ts rather than run inside the call, so reading this from a
+// $derived never writes state while a derived is running. It is only ever made in the browser: a
+// server-rendered page holds nothing and asks for nothing. A page asked for while a request is out
+// is dropped, and the older page is merged into the rows held inside the request.
+
+import type { Fetcher, Queries } from '../shared/stores/shapes.ts';
+import { inBrowser } from '../shared/stores/in-browser.ts';
 
 /** One recorded write, as the endpoint answers it. */
 export type Change = {
@@ -62,102 +67,86 @@ export function matching(rows: Change[], filter: string): Change[] {
 /** One answer of the endpoint. */
 type Answer = { changes?: Change[]; page?: number; error?: string };
 
-export function createChanges(): ChangesStore {
-    const state: { rows: Change[]; loading: boolean; error: string; more: boolean } = $state({
-        rows: [],
-        loading: true,
-        error: '',
-        more: false
-    });
+/** What is held: the rows, whether the first page is still to come, what failed, and more. */
+type Held = { rows: Change[]; loading: boolean; error: string; more: boolean };
 
-    /** True while a request is in flight, so a second render does not send a second request. */
-    let inflight = false;
+/** What the store reads as before its first answer arrives. */
+const PENDING: Held = { rows: [], loading: true, error: '', more: false };
 
-    /** True once a page has been asked for, so the first read asks and the rest do not. */
-    let asked = false;
+/** The query key of the log. */
+const KEY = ['changes'];
+
+/**
+ * The page the endpoint answers for a moment, or the first page when there is none, merged into
+ * what is held: the first page replaces the rows, an older page follows them, and a failure keeps
+ * the rows with the sentence saying why.
+ */
+async function page(held: Held | undefined, before?: string): Promise<Held> {
+    const rows = held?.rows ?? [];
+    const more = held?.more ?? false;
+    try {
+        const query = before === undefined ? '' : `?before=${encodeURIComponent(before)}`;
+        const response = await fetch(`/api/changes${query}`);
+        const body = (await response.json()) as Answer;
+        if (!response.ok) {
+            return { rows, more, error: body.error ?? String(response.status), loading: false };
+        }
+        const next = body.changes ?? [];
+        return {
+            rows: before === undefined ? next : [...rows, ...next],
+            more: body.page !== undefined && next.length >= body.page,
+            error: '',
+            loading: false
+        };
+    } catch (thrown) {
+        const error = thrown instanceof Error ? thrown.message : String(thrown);
+        return { rows, more, error, loading: false };
+    }
+}
+
+export function createChanges(queries: Queries): ChangesStore {
+    const first: Fetcher<Held> = (held) => page(held);
 
     /**
-     * Ask for the first page, once. Every read a view can make first calls it, because a view draws
-     * the waiting line before it draws a row and a derived is only evaluated when it is read: a
-     * store that asked on the rows alone would wait for a read that the waiting line holds back.
+     * What is held, asking for the first page when nothing is. Every read a view can make first
+     * goes through it, because a view draws the waiting line before it draws a row and a derived
+     * is only evaluated when it is read: a store that asked on the rows alone would wait for a
+     * read that the waiting line holds back.
      */
-    function ask(): void {
-        if (asked) return;
-        asked = true;
-        request();
+    function current(): Held {
+        return queries.read(KEY, first, { enabled: inBrowser() }).data ?? PENDING;
     }
 
     function rows(): Change[] {
-        ask();
-        return state.rows;
+        return current().rows;
     }
 
     function loading(): boolean {
-        ask();
-        return state.loading;
+        return current().loading;
     }
 
     function error(): string {
-        return state.error;
+        return (queries.peek<Held>(KEY).data ?? PENDING).error;
     }
 
     function more(): boolean {
-        ask();
-        return state.more;
+        return current().more;
     }
 
     function hold(next: Change[], hasMore = false): void {
-        state.rows = next;
-        state.loading = false;
-        state.error = '';
-        state.more = hasMore;
-        asked = true;
+        const held: Held = { rows: next, loading: false, error: '', more: hasMore };
+        queries.hold(KEY, held);
     }
 
     function reload(): void {
-        asked = true;
-        request();
+        if (inBrowser()) queries.refetch(KEY, first, 'drop');
     }
 
     /** The page before the oldest row held, addressed by that row's own moment. */
     function older(): void {
-        const oldest = state.rows.at(-1);
-        if (oldest === undefined) return;
-        request(oldest.at);
-    }
-
-    function request(before?: string): void {
-        if (inflight) return;
-        inflight = true;
-        queueMicrotask(() => {
-            void load(before);
-        });
-    }
-
-    async function load(before?: string): Promise<void> {
-        try {
-            // There is no fetch while the page is rendered on the server, and nothing to show there
-            // either: the view stays pending and the browser asks on the first client render.
-            if (typeof window === 'undefined' || typeof fetch !== 'function') return;
-            const query = before === undefined ? '' : `?before=${encodeURIComponent(before)}`;
-            const response = await fetch(`/api/changes${query}`);
-            const body = (await response.json()) as Answer;
-            if (!response.ok) {
-                state.error = body.error ?? String(response.status);
-                state.loading = false;
-                return;
-            }
-            const page = body.changes ?? [];
-            state.rows = before === undefined ? page : [...state.rows, ...page];
-            state.more = body.page !== undefined && page.length >= body.page;
-            state.error = '';
-            state.loading = false;
-        } catch (thrown) {
-            state.error = thrown instanceof Error ? thrown.message : String(thrown);
-            state.loading = false;
-        } finally {
-            inflight = false;
-        }
+        const oldest = queries.peek<Held>(KEY).data?.rows.at(-1);
+        if (oldest === undefined || !inBrowser()) return;
+        queries.refetch<Held>(KEY, (held) => page(held, oldest.at), 'drop');
     }
 
     return { rows, loading, error, more, reload, older, hold };

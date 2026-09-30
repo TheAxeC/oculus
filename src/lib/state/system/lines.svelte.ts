@@ -2,8 +2,9 @@
 //
 // The count is not in the snapshot: it runs cloc over oculus's own tracked files, which takes
 // seconds, so it is asked for the first time the view reads it and again on Count again, and held
-// for the page's life in between. The fetch is scheduled on a microtask rather than run inside the
-// read, so reading this from a $derived never writes state while a derived is running, and it is
+// for the page's life in between. The answer is held in the client state's query client, and the
+// fetch is scheduled on a microtask by state/client/queries.svelte.ts rather than run inside
+// the read, so reading this from a $derived never writes state while a derived is running. It is
 // only ever made in the browser: a server-rendered page holds nothing and asks for nothing.
 //
 // An answer the server could not have meant (no list of rows, a row that is not a folder's count,
@@ -12,6 +13,8 @@
 
 import { isMap } from '../../data/helpers/guards.ts';
 import type { FolderLines, LanguageLines, LineCount, LineTally } from '../../data/model/index.ts';
+import type { Queries } from '../shared/stores/shapes.ts';
+import { inBrowser } from '../shared/stores/in-browser.ts';
 import { t } from '../shared/words/text.ts';
 
 export type { LineCount, LineTally };
@@ -94,71 +97,53 @@ export type LinesStore = {
     recount: () => void;
 };
 
-export function createLines(): LinesStore {
-    const held: { lines: Lines | null } = $state({ lines: null });
+/** The query key of the count. */
+const KEY = ['lines'];
 
-    /** Whether a request is out, so a second read or a second press does not send a second one. */
-    let inflight = false;
+/** The answer's body, or null when it is not JSON (a proxy's page, a crashed server). */
+async function bodyOf(response: Response): Promise<unknown> {
+    try {
+        return (await response.json()) as unknown;
+    } catch {
+        return null;
+    }
+}
 
+/**
+ * Ask for the count. A failed count is the sentence over the last table read, which stays on
+ * screen, since a count that failed says nothing about the one before it.
+ */
+async function count(held: Lines | undefined): Promise<Lines> {
+    const failed = (error: string): Lines => ({
+        count: held?.count ?? null,
+        error,
+        loading: false
+    });
+    try {
+        const response = await fetch('/api/lines');
+        const body = await bodyOf(response);
+        if (body === null) return failed(t('status.lines_bad_body', response.status));
+        if (!response.ok) {
+            const said = isMap(body) && typeof body.error === 'string' ? body.error : '';
+            return failed(said === '' ? t('status.lines_bad_status', response.status) : said);
+        }
+        const read = readCount(body);
+        if ('error' in read) return failed(read.error);
+        return { count: read.count, error: '', loading: false };
+    } catch {
+        return failed(t('status.lines_unreachable'));
+    }
+}
+
+export function createLines(queries: Queries): LinesStore {
     function lines(): Lines {
-        if (held.lines === null) request();
-        return held.lines ?? PENDING;
+        const { data, refreshing } = queries.read(KEY, count, { enabled: inBrowser() });
+        if (data === undefined) return PENDING;
+        return refreshing ? { count: data.count, error: '', loading: true } : data;
     }
 
     function recount(): void {
-        if (request()) held.lines = { count: held.lines?.count ?? null, error: '', loading: true };
-    }
-
-    /**
-     * Send the request on a microtask, unless one is out already. A server render has no fetch and
-     * nothing to show a count on, so it asks for nothing and the browser asks on its first render.
-     * Whether a request was sent.
-     */
-    function request(): boolean {
-        if (inflight || typeof window === 'undefined' || typeof fetch !== 'function') return false;
-        inflight = true;
-        queueMicrotask(() => void load());
-        return true;
-    }
-
-    /**
-     * A failed count: the sentence, over the last table read, which stays on screen, since a count
-     * that failed says nothing about the one before it.
-     */
-    function failed(error: string): void {
-        held.lines = { count: held.lines?.count ?? null, error, loading: false };
-    }
-
-    /** The answer's body, or null when it is not JSON (a proxy's page, a crashed server). */
-    async function bodyOf(response: Response): Promise<unknown> {
-        try {
-            return (await response.json()) as unknown;
-        } catch {
-            return null;
-        }
-    }
-
-    async function load(): Promise<void> {
-        try {
-            const response = await fetch('/api/lines');
-            const body = await bodyOf(response);
-            if (body === null) {
-                failed(t('status.lines_bad_body', response.status));
-                return;
-            }
-            if (!response.ok) {
-                const said = isMap(body) && typeof body.error === 'string' ? body.error : '';
-                failed(said === '' ? t('status.lines_bad_status', response.status) : said);
-                return;
-            }
-            const read = readCount(body);
-            if ('error' in read) failed(read.error);
-            else held.lines = { count: read.count, error: '', loading: false };
-        } catch {
-            failed(t('status.lines_unreachable'));
-        } finally {
-            inflight = false;
-        }
+        if (inBrowser()) queries.refetch(KEY, count, 'drop');
     }
 
     return { lines, recount };

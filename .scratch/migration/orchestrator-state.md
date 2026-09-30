@@ -28,7 +28,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:      # Q102 in repair round 1; Q84 refuted over round 1, landing next; E1 building; D23 stopped on Z72; Q88b waits for Q102's and Q84's landings; X3c and X3a wait for Q88b's.
+dispatch:      # Q102 in repair round 1; E1 building; D23 stopped on Z72; Q88b waits for Q102's landing; X3c and X3a wait for Q88b's.
 - step: Q102
   executor: agent
   worker: claude:sonnet
@@ -44,21 +44,6 @@ dispatch:      # Q102 in repair round 1; Q84 refuted over round 1, landing next;
   reviewer_report: agents/reviews/Q102-refuter.md; claude-opus-5-5, 68 tool uses, 285,026 tokens, 12.6 min (753,509 ms), from its completion notice
   landing: not-started
   round: 1 (sent 2026-09-30: the strip tab's icon and colour, the pane's active Terminal tab, the colour list in one place, the row's handles, Clear also resetting the screen, composer starts tracked, the empty hub root, the busy argument required, the TerminalList comments, the audit names, the report's before and after)
-- step: Q84
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read after the launch)
-  session_id: a23e9aa8dc8cabb0c
-  worktree: .agents/worktrees/Q84
-  base: f7ab9b6a
-  launched: 2026-09-30 01:48 local
-  report: agents/reviews/Q84-report.md
-  brief_check: agents/reviews/Q84-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 63 tool uses, 261k tokens, 11 min
-  shared_paths: README.md line 13 (Q102 adds @xterm/addon-serialize, Q84 @tanstack/query-core, one sentence naming each dependency, both kept by hand); package.json and package-lock.json (each adds one dependency, npm install run again on main at the second landing); src/lib/state/client/context.ts (Q102 the terminals and layout wiring around 170-196, Q84 the query client and the store constructors); DESIGN.md (D13c the Appearance text, Q102 the Terminal text, Q84 the paragraph at 192); docs/diagrams/ (regenerated on main); tests/views/sessions/sessions.test.ts (Q102 its audits at 352-362, Q84 no assertion). Each is a hand merge of named places or a mechanical rerun.
-  builder_usage: 173 tool uses, 251,916 tokens, 55.6 min (3,334,579 ms), from its completion notice; report saved 2026-09-30; round 1: 47 tool uses, 324,827 tokens, 15.2 min (909,519 ms), report section saved
-  reviewer_report: agents/reviews/Q84-refuter.md; claude-opus-5-5, 56 tool uses, 269,913 tokens, 17.5 min (1,050,888 ms), from its completion notice; over round 1: claude-opus-5-5, 46 tool uses, 194,899 tokens, 11.6 min (698,225 ms)
-  landing: not-started
-  round: 1 (sent 2026-09-30: item 4 built as a WritesStore method, the helper moved to state/client/queries.svelte.ts with its types in shapes.ts, the three behaviour fixes, cases 18, 20 and 21, the docs sentences on state/shared/stores, the comment wrap)
 - step: E1
   executor: agent
   worker: claude:sonnet
@@ -506,6 +491,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-30 10:15. Q84 landed through /spec, /refute (one repair round, refuted again) and /land (the fetch-and-hold stores on `@tanstack/query-core`, Z56 (a)); five fixes at landing; verify on main `checks: 7 commands passed` (340 files, 5185 tests). In flight: Q102 (repair round 1), E1 (builder). Q88b waits for Q102. Open: Z72, Z71.
 - 2026-09-30 02:45. D13c landed through /spec, /refute (one repair round, refuted again) and /land (the code theme key and its control, Z46 (a)); three fixes at landing; verify on main `checks: 7 commands passed` (339 files, 5149 tests). In flight: Q102 (builder), Q84 (report in, review next). Q88b waits for Q102 and Q84. Open: Z71.
 - 2026-09-30 01:45. In flight: D13c (builder), Q102 (builder, launched 01:29 at base 64d1354a). Q88b's brief check returned; Q88b waits for Q102's landing, since both change the pane strip's menu and its picks (`pane-view.ts` `stripMenu`, `stripPicked`, `StripDeps`), `PaneView.svelte`'s close handlers and drawing, `layout/instances.ts` and `ui.svelte.ts`, more than a hand merge of a few named functions; its draft brief and the check's report are in the session's scratch folder for the next `/spec` Q88b. Q84's builder launched 01:48 at base f7ab9b6a. Open: Z71.
 - 2026-09-30. Q86c landed through /spec, /refute and /land (the Map's forces back on d3-force, Z60 (a)); one repair round, refuted again; three fixes at landing (an audit's name, the report's two pointers, README.md's dependency sentence naming every runtime dependency). Verify on main: `checks: 7 commands passed` (Test Files 337 passed, Tests 5121 passed). Q88b stopped at `/spec` on Z70. In flight: none. Next: `/spec` Q84, then the next unblocked steps (D13c and X3c run alone; X3a, Q91 after X3a); Q102 waits on Z69, Q88b on Z70.

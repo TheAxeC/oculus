@@ -4,9 +4,9 @@
 // DESIGN.md's wire model keeps documents out of the snapshot, so a document is fetched rather than
 // selected: document(id, name) asks api/docs the first time a pair is wanted and holds the answer,
 // and every later call for that pair reads what is held. hubDocument(path) and manual() are the
-// same rule over the other two shapes the endpoint answers. The fetch is scheduled on a microtask
-// rather than run inside the call, so reading this from a $derived never writes state while a
-// derived is running.
+// same rule over the other two shapes the endpoint answers. Each answer is held in the client
+// state's query client through state/client/queries.svelte.ts, which schedules the fetch on
+// a microtask, so reading this from a $derived never writes state while a derived is running.
 //
 // A write is what makes a document stale. The git watcher publishes a `files` message naming the
 // watched root each time it re-reads one, and every answer of api/docs names the absolute file it
@@ -19,13 +19,14 @@
 //
 // A marked document is asked for again on the next call for it, which is the tab still being drawn,
 // and what is held keeps being returned while that answer is in flight: the loading state is what
-// a document reads as before its first answer and never after. The request carries the entity tag
-// of the held answer, a 304 keeps the held object as it is, and an answer equal to the held one
-// keeps the held object too, so an unchanged document rebuilds no markup and reloads no figure.
+// a document reads as before its first answer and never after. A mark that comes while the request
+// is in flight asks again as soon as it lands. The request carries the entity tag of the held
+// answer, a 304 keeps the held object as it is, and an answer equal to the held one keeps the held
+// object too, so an unchanged document rebuilds no markup and reloads no figure.
 
 import { fields } from '../../data/helpers/guards.ts';
 import type { FilesPayload, ManualPart, Message } from '../../data/model/index.ts';
-import type { EntitiesStore } from '../shared/stores/shapes.ts';
+import type { EntitiesStore, Fetcher, Queries } from '../shared/stores/shapes.ts';
 
 export type { ManualPart };
 
@@ -61,6 +62,9 @@ export type DocsStore = {
 
 /** The endpoint every document is read at. */
 const DOCS = '/api/docs';
+
+/** What every document's query key opens with. */
+const KIND = 'docs';
 
 /** What the two documents that are not a project's are held under; a project id holds no bar. */
 const HUB = 'hub';
@@ -112,27 +116,10 @@ function same(one: DocState, other: DocState): boolean {
     );
 }
 
-export function createDocs(entities: EntitiesStore): DocsStore {
-    const held: Record<string, DocState | undefined> = $state({});
+/** What is held under a key: the document, the file the answer named, and its entity tag. */
+type Held = { doc: DocState; file: string; tag: string };
 
-    /**
-     * How many times each key was marked stale. It is state, so a reader drawing a document runs
-     * again when its key is marked, and asks.
-     */
-    const marks: Record<string, number | undefined> = $state({});
-
-    /** The mark each held answer was asked at; a held key whose mark moved since is stale. */
-    const askedAt: Record<string, number | undefined> = {};
-
-    /** The absolute file each answer named, or the empty string when it named none. */
-    const files: Record<string, string | undefined> = {};
-
-    /** The entity tag each answer carried, sent back on the next request for the key. */
-    const tags: Record<string, string | undefined> = {};
-
-    /** The pairs with a request in flight, so a second render does not send a second request. */
-    const inflight = new Set<string>();
-
+export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore {
     /** The version of the last `files` message heard, or null before the first. */
     let heard: number | null = null;
 
@@ -181,21 +168,23 @@ export function createDocs(entities: EntitiesStore): DocsStore {
 
     /** What is held for one address, asking for it when nothing is held or it was marked since. */
     function reading(key: string, url: string): DocState {
-        const doc = held[key];
-        if (doc === undefined || askedAt[key] !== (marks[key] ?? 0)) request(key, url);
-        return doc ?? PENDING;
+        // There is no fetch while the page is rendered on the server, and nothing to show there
+        // either: the pair stays pending and the browser asks for it on the first client render.
+        const { data } = queries.read([KIND, key], fetcherOf(url), {
+            enabled: typeof fetch === 'function'
+        });
+        return data?.doc ?? PENDING;
     }
 
     /**
      * Whether one `files` message can concern the document held under a key: a gap in the versions
      * concerns every document, the empty root none, and a root the ones whose file it holds.
      */
-    function concerns(key: string, root: string, gap: boolean): boolean {
+    function concerns(held: Held | undefined, root: string, gap: boolean): boolean {
         if (gap) return true;
         if (root === '') return false;
-        const file = files[key];
-        if (file === undefined || file === '') return true;
-        return holds(root, file);
+        if (held === undefined || held.file === '') return true;
+        return holds(root, held.file);
     }
 
     /** Mark every held or requested document a `files` message concerns. */
@@ -205,89 +194,70 @@ export function createDocs(entities: EntitiesStore): DocsStore {
         heard = message.version;
         const payload = message.payload as FilesPayload | null;
         const root = typeof payload?.root === 'string' ? payload.root : '';
-        const keys = new Set([...Object.keys(askedAt), ...inflight]);
-        for (const key of keys) {
-            if (concerns(key, root, gap)) marks[key] = (marks[key] ?? 0) + 1;
+        for (const one of queries.entries<Held>([KIND])) {
+            if (concerns(one.data, root, gap)) queries.mark(one.key, 'again');
         }
     }
 
-    /** Schedule one fetch, off the caller's stack so no state is written inside a derived. */
-    function request(key: string, url: string): void {
-        if (inflight.has(key)) return;
-        inflight.add(key);
-        queueMicrotask(() => {
-            void load(key, url);
-        });
-    }
-
-    /** Hold one answer, keeping the held object when the new one draws the same document. */
-    function keep(key: string, next: DocState): void {
-        const before = held[key];
-        if (before !== undefined && same(before, next)) return;
-        held[key] = next;
-    }
-
-    async function load(key: string, url: string): Promise<void> {
-        const mark = marks[key] ?? 0;
-        try {
-            // There is no fetch while the page is rendered on the server, and nothing to show there
-            // either: the pair stays pending and the browser asks for it on the first client
-            // render.
-            if (typeof fetch !== 'function') {
-                askedAt[key] = mark;
-                return;
-            }
-            const tag = held[key] === undefined ? '' : (tags[key] ?? '');
-            const response = await fetch(
-                url,
-                tag === '' ? undefined : { headers: { 'if-none-match': tag } }
-            );
-            askedAt[key] = mark;
-            if (response.status === NOT_MODIFIED && held[key] !== undefined) return;
-            const body = await readBody(response);
-            if (body instanceof Error) {
-                // The server answered, but with a body that is not the endpoint's (a proxy's page,
-                // an empty 5xx): that is news too, so it replaces what is held.
-                files[key] = '';
-                tags[key] = '';
-                const reason = response.ok ? body.message : String(response.status);
-                keep(key, { ...PENDING, error: reason, loading: false });
-                return;
-            }
-            files[key] = typeof body.file === 'string' ? body.file : '';
-            tags[key] = response.ok ? (response.headers.get('etag') ?? '') : '';
-            if (!response.ok) {
-                keep(key, {
-                    ...PENDING,
-                    error: body.error ?? String(response.status),
-                    loading: false
+    /** The query function that asks one address, keeping what is held where the answer says so. */
+    function fetcherOf(url: string): Fetcher<Held> {
+        return async (held, fetching) => {
+            try {
+                const tag = held?.tag ?? '';
+                const response = await fetch(
+                    url,
+                    tag === '' ? undefined : { headers: { 'if-none-match': tag } }
+                );
+                if (response.status === NOT_MODIFIED && held !== undefined) return held;
+                const body = await readBody(response);
+                if (body instanceof Error) {
+                    // The server answered, but with a body that is not the endpoint's (a proxy's
+                    // page, an empty 5xx): that is news too, so it replaces what is held.
+                    const reason = response.ok ? body.message : String(response.status);
+                    return failure(held, reason);
+                }
+                const file = typeof body.file === 'string' ? body.file : '';
+                const tagged = response.ok ? (response.headers.get('etag') ?? '') : '';
+                if (!response.ok) {
+                    return failure(held, body.error ?? String(response.status), file);
+                }
+                return keep(held, {
+                    doc: {
+                        html: typeof body.html === 'string' ? body.html : '',
+                        frontmatter: readFrontmatter(body.frontmatter),
+                        parts: readParts(body.parts),
+                        error: '',
+                        loading: false
+                    },
+                    file,
+                    tag: tagged
                 });
-                return;
+            } catch (error) {
+                // A request that never reached the server (a restart, a dropped connection) says
+                // nothing about the file, so a drawn document stays drawn and stays marked: the
+                // next call for it asks again.
+                if (held?.doc.error === '' && !held.doc.loading) {
+                    fetching.leaveStale();
+                    return held;
+                }
+                return failure(
+                    held,
+                    error instanceof Error ? error.message : String(error),
+                    held?.file ?? ''
+                );
             }
-            keep(key, {
-                html: typeof body.html === 'string' ? body.html : '',
-                frontmatter: readFrontmatter(body.frontmatter),
-                parts: readParts(body.parts),
-                error: '',
-                loading: false
-            });
-        } catch (error) {
-            // A request that never reached the server (a restart, a dropped connection) says
-            // nothing about the file, so a drawn document stays drawn and its mark stays
-            // unconsumed: the next message that concerns it asks again.
-            const before = held[key];
-            if (before?.error === '' && !before.loading) return;
-            askedAt[key] = mark;
-            tags[key] = '';
-            const reason = error instanceof Error ? error.message : String(error);
-            keep(key, { ...PENDING, error: reason, loading: false });
-        } finally {
-            inflight.delete(key);
-            // A mark that came while the request was in flight may be a write the answer predates.
-            // The reader that ran again on it found the request in flight and asked nothing, and an
-            // answer that kept the held object runs no reader, so the key is asked for again here.
-            if ((marks[key] ?? 0) !== mark) request(key, url);
-        }
+        };
+    }
+
+    /** An answer that says the request failed, replacing what is held. */
+    function failure(held: Held | undefined, error: string, file = ''): Held {
+        return keep(held, { doc: { ...PENDING, error, loading: false }, file, tag: '' });
+    }
+
+    /** Hold one answer, keeping the held document when the new one draws the same. */
+    function keep(held: Held | undefined, next: Held): Held {
+        if (held !== undefined && same(held.doc, next.doc)) return { ...next, doc: held.doc };
+        return next;
     }
 
     /** The endpoint's JSON body, or the error its parse threw when the body is not JSON. */

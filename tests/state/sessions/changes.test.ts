@@ -7,6 +7,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createChanges, matching } from '../../../src/lib/state/sessions/changes.svelte.ts';
 import type { Change, ChangesStore } from '../../../src/lib/state/sessions/changes.svelte.ts';
+import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
+import { stubHeld } from '../../fixtures/client.ts';
 
 /** One change, with whatever the case cares about over the rest. */
 function change(at: string, over: Partial<Change> = {}): Change {
@@ -44,7 +46,7 @@ beforeEach(() => {
             json: () => Promise.resolve(next.body)
         } as Response);
     });
-    store = createChanges();
+    store = createChanges(createQueries());
 });
 
 afterEach(() => {
@@ -110,6 +112,37 @@ describe('the change store', () => {
             '2026-09-15T12:00:00.000Z',
             '2026-09-15T11:00:00.000Z'
         ]);
+    });
+
+    // Revert: in older of state/sessions/changes.svelte.ts, refetch with 'replace' instead of
+    // 'drop'.
+    it('sends nothing for an older page while a request is out, and adds the page once it can', async () => {
+        answers = [
+            { ok: true, body: { changes: [change('2026-09-15T12:00:00.000Z')], page: 1 } },
+            { ok: true, body: { changes: [change('2026-09-15T11:00:00.000Z')], page: 1 } }
+        ];
+        store.rows();
+        await settle();
+        expect(store.more()).toBe(true);
+
+        const { land } = stubHeld(asked);
+        store.reload();
+        await settle();
+        store.older();
+        store.older();
+        await settle();
+        expect(asked).toEqual(['/api/changes', '/api/changes']);
+
+        land(
+            Response.json(
+                { changes: [change('2026-09-15T12:00:00.000Z')], page: 1 },
+                { status: 200 }
+            )
+        );
+        await settle();
+        store.older();
+        await settle();
+        expect(asked).toHaveLength(3);
     });
 
     it('asks for nothing when there is no oldest row to walk back from', async () => {

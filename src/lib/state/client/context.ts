@@ -83,6 +83,7 @@ import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
 import { createTranscripts, type TranscriptsStore } from '../sessions/transcript.svelte.ts';
 import { createUi, type UiStore } from '../workbench/ui.svelte.ts';
 import { createUsageRefresh, type UsageRefreshStore } from '../system/usage-refresh.svelte.ts';
+import { createQueries } from './queries.svelte.ts';
 import { createWrites, type WritesStore } from './writes.svelte.ts';
 import { createGraphviz, type GraphvizLoader } from '../boards/structure/layout.ts';
 
@@ -139,6 +140,8 @@ export type ClientState = {
  * handed those instances here. Nothing else wires one store to another.
  */
 export function createClientState(): ClientState {
+    // Every store that fetches an answer holds it in this one query client.
+    const queries = createQueries();
     const entities = createEntities();
     const writes = createWrites(() => entities.config()?.config ?? null);
     const socket = createSocket(entities, writes);
@@ -160,7 +163,7 @@ export function createClientState(): ClientState {
     });
     const drag = createDrag(layout);
     const clock = createClock();
-    const changes = createChanges();
+    const changes = createChanges(queries);
     const selection = createSelection();
     // A terminal belongs to exactly one Terminal tab, on whichever page it is, and a hidden page
     // mounts no view, so the terminals store is handed every page's Terminal tabs and the layout's
@@ -194,8 +197,8 @@ export function createClientState(): ClientState {
         selected: selection.selected,
         select: selection.select
     });
-    const agents = createAgents();
-    const files = createFiles(entities);
+    const agents = createAgents(queries);
+    const files = createFiles(entities, queries);
     // The file browser's bookmark forms are the fs store's to close: it is what learns that a
     // bookmark has left the file, and a form over one that is gone has nothing to draw and nothing
     // to save into. Which file browsers there are, what each one has open and how one is moved are
@@ -223,12 +226,13 @@ export function createClientState(): ClientState {
                 ui.setInstanceState(owner, patchedFilesView(ui.instanceState(owner), next));
             }
         },
-        entities
+        entities,
+        queries
     );
-    const docs = createDocs(entities);
-    const latex = createLatex(entities, terminals, fs);
-    const deposit = createDeposit();
-    const transcripts = createTranscripts();
+    const docs = createDocs(entities, queries);
+    const latex = createLatex(entities, terminals, fs, queries);
+    const deposit = createDeposit(queries);
+    const transcripts = createTranscripts(queries);
     const source = createSource(writes, ui);
     // The pane asks the instance id whether a tab holds unsaved text before it closes it, and asks
     // the ui store rather than the source store, which the shell may not read.
@@ -240,8 +244,8 @@ export function createClientState(): ClientState {
     const inbox = createInbox(entities, writes);
     const accounts = createAccounts(entities, writes, (view) => void layout.openView(view));
     const audit = createAudit(entities);
-    const memories = createMemories();
-    const lines = createLines();
+    const memories = createMemories(queries);
+    const lines = createLines(queries);
     const present = createPresent(entities);
     // The Source Control views open a repository's file in a source tab by the root the file routes
     // serve it under, and point the Repositories view at a commit through its remembered state.

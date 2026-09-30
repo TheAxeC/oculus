@@ -179,6 +179,41 @@ describe('the documents of a project', () => {
     });
 });
 
+describe('the requests a read makes', () => {
+    // Revert: none turns it red, since the query client joins a request already out for the key; it
+    // audits one request per key.
+    it('audit: sends one request for two reads of a pair in the same tick', async () => {
+        serving({ status: 200, body: { html: '<p>once</p>', frontmatter: null } });
+
+        document('kilo', 'README.md');
+        document('kilo', 'README.md');
+        hubDocument('notes/two.md');
+        hubDocument('notes/two.md');
+        await settle();
+
+        expect(asked).toEqual([
+            '/api/docs?project=kilo&name=README.md',
+            '/api/docs?hub=notes%2Ftwo.md'
+        ]);
+        expect(document('kilo', 'README.md').html).toBe('<p>once</p>');
+    });
+
+    // Revert: in reading of state/system/docs.svelte.ts, pass enabled: true to the read.
+    it('asks nothing where there is no fetch, reads as pending, and asks once a fetch exists', async () => {
+        vi.stubGlobal('fetch', undefined);
+
+        expect(document('lima', 'README.md').loading).toBe(true);
+        await settle();
+        expect(document('lima', 'README.md')).toMatchObject({ loading: true, html: '', error: '' });
+
+        serving({ status: 200, body: { html: '<p>now</p>', frontmatter: null } });
+        document('lima', 'README.md');
+        await settle();
+        expect(asked).toEqual(['/api/docs?project=lima&name=README.md']);
+        expect(document('lima', 'README.md').html).toBe('<p>now</p>');
+    });
+});
+
 describe('the documents that belong to no project', () => {
     it('asks for one hub document by its path and holds the answer', async () => {
         serving({ status: 200, body: { html: '<h1>Approach</h1>', frontmatter: null } });
@@ -449,6 +484,30 @@ describe('a re-read that fails', () => {
         await settle();
         expect(hubDocument('docs/RESEARCH-APPROACH.md').error).toBe('document does not exist');
     });
+    // Revert: in fetcherOf of state/system/docs.svelte.ts, answer a network error over an error
+    // answer without the held file.
+    it('keeps the file of an error answer through a network error, so a write elsewhere asks nothing', async () => {
+        serving({ status: 500, body: { error: 'broken', file: APPROACH } });
+        hubDocument('docs/RESEARCH-APPROACH.md');
+        await settle();
+        asked = [];
+        vi.stubGlobal('fetch', (url: string) => {
+            asked.push(url);
+            return Promise.reject(new TypeError('Failed to fetch'));
+        });
+        wrote(HUB);
+        hubDocument('docs/RESEARCH-APPROACH.md');
+        await settle();
+        expect(hubDocument('docs/RESEARCH-APPROACH.md').error).toBe('Failed to fetch');
+        expect(asked).toHaveLength(1);
+
+        asked = [];
+        wrote('/other');
+        hubDocument('docs/RESEARCH-APPROACH.md');
+        await settle();
+        expect(asked).toEqual([]);
+    });
+
     it("replaces a drawn document with the status of an answer whose body is not the endpoint's", async () => {
         serving({ status: 200, body: { html: '<h1>One</h1>', frontmatter: null, file: APPROACH } });
         hubDocument('docs/RESEARCH-APPROACH.md');

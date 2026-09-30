@@ -146,6 +146,29 @@ describe('the build the store is waiting on', () => {
         expect(asks).toBe(4);
     });
 
+    // Revert: in the sessions listener of state/sessions/latex.svelte.ts, take out the test of the
+    // version heard.
+    it('asks once for two sessions messages at one version', async () => {
+        const { state, watch } = client.latex;
+        state('alpha');
+        await settle();
+        watch('alpha', 'aabbcc-shell');
+        sessions(1, ['aabbcc-shell']);
+        state('alpha');
+        await settle();
+        expect(asks).toBe(2);
+
+        sessions(2, ['aabbcc-shell']);
+        state('alpha');
+        await settle();
+        expect(asks).toBe(3);
+
+        sessions(2, ['aabbcc-shell']);
+        state('alpha');
+        await settle();
+        expect(asks).toBe(3);
+    });
+
     it('asks again when the terminals list moved while a request was out', async () => {
         const { state, watch } = client.latex;
         let count = 0;

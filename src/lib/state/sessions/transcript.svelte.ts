@@ -2,16 +2,20 @@
 //
 // DESIGN.md's wire model keeps the turn text out of the snapshot, so the conversation is fetched
 // rather than selected: turnsFor(id) asks api/transcript the first time a session is wanted and
-// holds the answer, the way state/system/docs.svelte.ts asks api/docs for a document. The fetch is
-// scheduled on a microtask rather than run inside the call, so reading this from a $derived never
-// writes state while a derived is running.
+// holds the answer, the way state/system/docs.svelte.ts asks api/docs for a document. The answer is
+// held in the client state's query client, and the fetch is scheduled on a microtask by
+// state/client/queries.svelte.ts rather than run inside the call, so reading this from a
+// $derived never writes state while a derived is running.
 //
 // Nothing polls. The `sessions` payload changes whenever a transcript is written, so the record's
 // lastActivity moving is the signal that there are bytes to read, and follow() asks for the tail
-// from the offset the last read returned. A tool call whose result arrives in that tail is patched
-// in place, since the call's own turn was read before the result existed.
+// from the offset the last read returned. The tail is merged into the turns held inside the
+// request, which reads what is held first. A tool call whose result arrives in that tail is
+// patched on a copy of its turn, since the call's own turn was read before the result existed.
 
 import type { Turn } from '../../data/model/index.ts';
+import type { Queries } from '../shared/stores/shapes.ts';
+import { inBrowser } from '../shared/stores/in-browser.ts';
 
 // The views read a turn's shape through this module, as they read a session's through
 // state/client/selectors.svelte.ts: the boundary table of DESIGN.md gives `views/` no import of
@@ -43,19 +47,63 @@ export type TranscriptsStore = {
     hold: (id: string, turns: Turn[], offset?: number) => void;
 };
 
-export function createTranscripts(): TranscriptsStore {
-    const held: Record<string, TurnsState | undefined> = $state({});
+/** The query key of one session's turns. */
+function keyOf(id: string): string[] {
+    return ['transcript', id];
+}
 
-    /** The lastActivity each session was last asked at. Not reactive: only requests read it. */
+/** Append what was read to the turns held and fill in the outcome of every call already held. */
+function merged(
+    held: TurnsState | undefined,
+    from: number,
+    turns: Turn[],
+    offset: number,
+    results: Record<string, boolean | undefined>
+): TurnsState {
+    const base = from === 0 ? [] : (held?.turns ?? []);
+    const whole = [...base, ...turns].map((turn) => {
+        const tool = turn.tool;
+        if (tool === null || tool.id === '') return turn;
+        const ok = results[tool.id];
+        return ok === undefined || ok === tool.ok ? turn : { ...turn, tool: { ...tool, ok } };
+    });
+    return { turns: whole, offset, pending: false, error: '' };
+}
+
+/**
+ * Ask for the session's bytes from the offset held, or from the start when nothing is held, and
+ * answer the turns held with what came back. A failed read keeps the turns and says why.
+ */
+async function tail(id: string, held: TurnsState | undefined): Promise<TurnsState> {
+    const from = held?.offset ?? 0;
+    const kept = held?.turns ?? [];
+    try {
+        const url = `/api/transcript?id=${encodeURIComponent(id)}&from=${from}`;
+        const response = await fetch(url);
+        const body = (await response.json()) as {
+            turns?: Turn[];
+            offset?: number;
+            results?: Record<string, boolean>;
+            error?: string;
+        };
+        if (!response.ok) {
+            return {
+                turns: kept,
+                offset: from,
+                pending: false,
+                error: body.error ?? String(response.status)
+            };
+        }
+        return merged(held, from, body.turns ?? [], body.offset ?? from, body.results ?? {});
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        return { turns: kept, offset: from, pending: false, error: reason };
+    }
+}
+
+export function createTranscripts(queries: Queries): TranscriptsStore {
+    /** The lastActivity each session was last asked at. */
     const marks: Record<string, string | undefined> = {};
-
-    /** The sessions with a request in flight, so a second render does not send a second request. */
-    const inflight = new Set<string>();
-
-    /**
-     * The sessions whose tail was wanted while a request was in flight, asked again when it lands.
-     */
-    const again = new Set<string>();
 
     /**
      * The turns of one session. The first call for a session asks the server for the whole file;
@@ -63,16 +111,19 @@ export function createTranscripts(): TranscriptsStore {
      */
     function turnsFor(id: string): TurnsState {
         if (id === '') return NOTHING;
-        const state = held[id];
-        if (state === undefined) request(id, 0);
-        return state ?? PENDING;
+        // Nothing is fetched while the page is rendered on the server: there is no window to draw
+        // it in, and the browser asks for it on the first client render.
+        const { data } = queries.read<TurnsState>(keyOf(id), (held) => tail(id, held), {
+            enabled: inBrowser()
+        });
+        return data ?? PENDING;
     }
 
     /**
      * Read what has been appended since the last read, when the record says there is something.
      * Called from the view's effect with the record's lastActivity: the first call for a session
      * only notes the stamp, since the read turnsFor() scheduled already carries everything written
-     * up to it.
+     * up to it. A stamp that moves while a request is out asks again when it lands.
      */
     function follow(id: string, lastActivity: string | null): void {
         if (id === '') return;
@@ -81,9 +132,8 @@ export function createTranscripts(): TranscriptsStore {
         if (marks[id] === mark) return;
         marks[id] = mark;
         if (first) return;
-        const state = held[id];
-        if (state === undefined) return;
-        request(id, state.offset);
+        if (queries.peek<TurnsState>(keyOf(id)).data === undefined || !inBrowser()) return;
+        queries.refetch<TurnsState>(keyOf(id), (held) => tail(id, held), 'again');
     }
 
     /**
@@ -117,92 +167,20 @@ export function createTranscripts(): TranscriptsStore {
                 viewers[id] = left;
                 return;
             }
-            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-            delete viewers[id];
             forget(id);
         };
     }
 
     /**
      * Drop everything held for one session, so the next call for it fetches from the start again.
+     * A request still out for it is cancelled, so its answer is not held.
      */
     function forget(id: string): void {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete viewers[id];
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-        delete held[id];
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete marks[id];
-        inflight.delete(id);
-        again.delete(id);
-    }
-
-    /** Schedule one fetch, off the caller's stack so no state is written inside a derived. */
-    function request(id: string, from: number): void {
-        if (inflight.has(id)) {
-            again.add(id);
-            return;
-        }
-        inflight.add(id);
-        queueMicrotask(() => {
-            void load(id, from);
-        });
-    }
-
-    async function load(id: string, from: number): Promise<void> {
-        try {
-            // Nothing is fetched while the page is rendered on the server: there is no window to
-            // draw it in, and the browser asks for it on the first client render.
-            if (typeof window === 'undefined' || typeof fetch !== 'function') return;
-            const url = `/api/transcript?id=${encodeURIComponent(id)}&from=${from}`;
-            const response = await fetch(url);
-            const body = (await response.json()) as {
-                turns?: Turn[];
-                offset?: number;
-                results?: Record<string, boolean>;
-                error?: string;
-            };
-            if (!response.ok) {
-                held[id] = {
-                    turns: held[id]?.turns ?? [],
-                    offset: held[id]?.offset ?? from,
-                    pending: false,
-                    error: body.error ?? String(response.status)
-                };
-                return;
-            }
-            merge(id, from, body.turns ?? [], body.offset ?? from, body.results ?? {});
-        } catch (error) {
-            const reason = error instanceof Error ? error.message : String(error);
-            held[id] = {
-                turns: held[id]?.turns ?? [],
-                offset: from,
-                pending: false,
-                error: reason
-            };
-        } finally {
-            inflight.delete(id);
-            if (again.delete(id)) request(id, held[id]?.offset ?? 0);
-        }
-    }
-
-    /** Append what was read and fill in the outcome of every call whose turn is already held. */
-    function merge(
-        id: string,
-        from: number,
-        turns: Turn[],
-        offset: number,
-        results: Record<string, boolean | undefined>
-    ): void {
-        const base = from === 0 ? [] : (held[id]?.turns ?? []);
-        const whole = [...base, ...turns];
-        for (const turn of whole) {
-            const tool = turn.tool;
-            if (tool === null || tool.id === '') continue;
-            const ok = results[tool.id];
-            if (ok !== undefined) tool.ok = ok;
-        }
-        held[id] = { turns: whole, offset, pending: false, error: '' };
+        queries.forget(keyOf(id));
     }
 
     /**
@@ -211,7 +189,8 @@ export function createTranscripts(): TranscriptsStore {
      * nothing in the application calls it.
      */
     function hold(id: string, turns: Turn[], offset = 0): void {
-        held[id] = { turns, offset, pending: false, error: '' };
+        const held: TurnsState = { turns, offset, pending: false, error: '' };
+        queries.hold(keyOf(id), held);
     }
 
     return { turnsFor, follow, showing, forget, hold };

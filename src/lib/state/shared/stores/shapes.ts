@@ -1,12 +1,14 @@
-// Layer 2, client state, types only. The shapes of the client's shared stores that other stores
-// are handed: the payload of every channel, the minute clock, the socket, the write endpoint, and
-// what a store needs of one view instance's remembered state. The client object
-// (state/client/context.ts) builds each store and hands it to the stores that read it; the stores
-// in state/client and state/workbench/ui.svelte.ts satisfy these shapes, and a store that is
-// handed one names it from here rather than from the module that builds it, so it depends on what
-// it reads and not on how that store is made. Nothing here runs, and nothing here reads any module
-// but the data model's types.
+// Layer 2, client state, types only. The shapes of the client's shared stores that other stores are
+// handed: the payload of every channel, the minute clock, the socket, the write endpoint, and what
+// a store needs of one view instance's remembered state, and the query helper the fetch-and-hold
+// stores are handed. The client object (state/client/context.ts) builds each store and hands it to
+// the stores that read it; the stores in state/client (the query helper included) and
+// state/workbench/ui.svelte.ts satisfy these shapes, and a store that is handed one names it from
+// here rather than from the module that builds it, so it depends on what it reads and not on how
+// that store is made. Nothing here runs, and nothing here reads any module but the data model's
+// types and the query client's types.
 
+import type { QueryClient, QueryKey } from '@tanstack/query-core';
 import type {
     AuditPayload,
     CalendarPayload,
@@ -107,10 +109,21 @@ export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
 /** What a caller says about one write it sends: `said` when it words a failure itself. */
 export type SendOptions = { said?: boolean };
 
+/**
+ * What went wrong before the endpoint's answer could be read: no answer came, or the answer was not
+ * JSON. The empty string when the answer was read.
+ */
+export type PostFailure = '' | 'unreachable' | 'unreadable';
+
+/** The endpoint's answer: whether it took the command, and the fields of its body. */
+export type Posted = { ok: boolean; body: Record<string, unknown>; failed: PostFailure };
+
 /** The page's end of the write endpoint, one per client. */
 export type WritesStore = {
     setToken: (next: string) => void;
     writeToken: () => string;
+    /** Post one command to an endpoint of its own with the write token, and read its answer. */
+    postCommand: (path: string, body: unknown) => Promise<Posted>;
     pending: () => boolean;
     lastError: () => string | null;
     writeManifest: (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
@@ -189,4 +202,64 @@ export type InstanceStates = {
     instanceState: (id: string) => unknown;
     setInstanceState: (id: string, state: unknown) => void;
     clearInstanceState: (id: string) => void;
+};
+
+/**
+ * What a query function is handed beside the answer held: the signal that says its fetch was
+ * cancelled, and a way to leave the key stale once the fetch has landed without waking a reader,
+ * for an answer that says nothing about the key's data.
+ */
+export type Fetching = { signal: AbortSignal; leaveStale: () => void };
+
+/**
+ * The function that asks an endpoint for a key. It answers the store's held shape and never
+ * throws.
+ */
+export type Fetcher<T> = (held: T | undefined, fetching: Fetching) => Promise<T>;
+
+/**
+ * What a mark or a reload does to a fetch already in flight. `drop` leaves it alone, `wait` marks
+ * the key again once it lands so that the next read asks, `again` marks it again and asks at once,
+ * and `replace` cancels it so its answer is never held.
+ */
+export type WhileFetching = 'drop' | 'wait' | 'again' | 'replace';
+
+/** What a read answers: the answer held, and whether it is being asked for again. */
+export type Read<T> = { data: T | undefined; refreshing: boolean };
+
+/** What is held under a key without asking: the answer, and whether a mark has made it stale. */
+export type Peek<T> = { data: T | undefined; stale: boolean };
+
+/** One query of the cache: its key and the answer it holds, or undefined before the first. */
+export type Entry<T> = { key: readonly unknown[]; data: T | undefined };
+
+/** The query client of a client state, and what the fetch-and-hold stores ask of it. */
+export type Queries = {
+    /** The query client, for a test to look into the cache. */
+    client: QueryClient;
+    /**
+     * The answer held for a key. It asks, on a microtask, when nothing is held or the held answer
+     * was marked, and only when `enabled` says there is something to ask with.
+     */
+    read: <T>(key: QueryKey, fetcher: Fetcher<T>, options: { enabled: boolean }) => Read<T>;
+    /** The answer held for a key, and whether it is stale, asking for nothing. */
+    peek: <T>(key: QueryKey) => Peek<T>;
+    /**
+     * The answer of a key as an awaited call: what is held when it is fresh, else the answer of
+     * the request made or joined, even when that request is cancelled meanwhile and so not held.
+     */
+    fetch: <T>(key: QueryKey, fetcher: Fetcher<T>) => Promise<T>;
+    /**
+     * Ask for a key at once, on a microtask, and not when a reader next reads it. A request already
+     * out is dealt with as `whileFetching` says.
+     */
+    refetch: <T>(key: QueryKey, fetcher: Fetcher<T>, whileFetching: WhileFetching) => void;
+    /** Put an answer in as though it had been fetched; a mark on the key stays. */
+    hold: (key: QueryKey, data: unknown) => void;
+    /** Mark every query whose key opens with this one, as `whileFetching` says. */
+    mark: (key: QueryKey, whileFetching: WhileFetching) => void;
+    /** Drop the queries whose key opens with this one, so each reads as never asked. */
+    forget: (key: QueryKey) => void;
+    /** The queries whose key opens with this one, with what each holds. */
+    entries: <T>(key: QueryKey) => Entry<T>[];
 };

@@ -32,8 +32,6 @@ src/lib/server/machine/pty/channel.ts src/lib/server/root/socket.ts e5967afe7abb
 src/lib/shell/rail/RailPages.svelte src/lib/views/system/workbench/Catalogue.svelte 3e68f3880de2 the same 10 lines at 205 and 218, to fold into one place
 src/lib/state/feeds/inbox.ts src/lib/state/workbench/rail-badges.ts 21eb92351744 the same 10 lines at 45 and 21, to fold into one place
 src/lib/state/feeds/leads.ts src/lib/state/feeds/radar.ts c0785dd03b7f the same 12 lines at 145 and 82, to fold into one place
-src/lib/state/sessions/latex.svelte.ts src/lib/state/sources/files.svelte.ts d26425ed9e2e the same 9 lines at 125 and 90, to fold into one place
-src/lib/state/sessions/latex.svelte.ts src/lib/state/sources/files.svelte.ts f854163c82d2 the same 12 lines at 141 and 107, to fold into one place
 src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/instances.ts d3d8defb0911 the same 8 lines at 80 and 45, to fold into one place
 src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/instances.ts f126c1015ffd the same 9 lines at 119 and 52, to fold into one place
 src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/open/away.ts ec8245497946 the same 9 lines at 141 and 20, to fold into one place

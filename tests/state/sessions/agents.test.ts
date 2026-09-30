@@ -12,6 +12,7 @@ import {
     scopeQuery,
     type AgentsStore
 } from '../../../src/lib/state/sessions/agents.svelte.ts';
+import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
 
 type Out = { url: string; answer: (status: number, body: unknown) => void; fail: () => void };
 
@@ -20,14 +21,14 @@ let agents: AgentsStore;
 
 const SCOPE = { agent: 'claude' as const, account: 'Uni', workspace: '/w a' };
 
-/** Let the microtask that asks, and the one that reads the answer, run. */
+/** Let the microtask that asks, and the turns that carry the answer into the store, run. */
 async function settle(): Promise<void> {
-    for (let turn = 0; turn < 5; turn += 1) await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 beforeEach(() => {
     asked = [];
-    agents = createAgents();
+    agents = createAgents(createQueries());
     vi.stubGlobal('fetch', (url: string) => {
         return new Promise<Response>((resolve, reject) => {
             asked.push({

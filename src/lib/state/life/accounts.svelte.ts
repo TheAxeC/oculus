@@ -32,7 +32,6 @@ import type {
     ConnectSetup
 } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';
-import { postCommand } from '../shared/stores/post.ts';
 import type { EntitiesStore, WritesStore } from '../shared/stores/shapes.ts';
 
 /** The id the account setup view is registered under, which the Add and the menus open. */
@@ -125,7 +124,7 @@ export function createAccounts(
 
     /** Post one command and read its answer. */
     async function post(url: string, body: Record<string, unknown>): Promise<Answer> {
-        const answer = await postCommand(url, body, writes.writeToken());
+        const answer = await writes.postCommand(url, body);
         const { error, reason } = answer.body;
         return {
             ok: answer.ok,

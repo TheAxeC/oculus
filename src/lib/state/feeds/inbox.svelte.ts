@@ -12,9 +12,8 @@
 
 import type { InboxKind, InboxPayload, InboxThread } from '../../data/model/index.ts';
 import { splitInbox, untriagedActionable, type SplitInbox } from './inbox.ts';
-import { postCommand, type PostFailure } from '../shared/stores/post.ts';
 import { t } from '../shared/words/text.ts';
-import type { EntitiesStore, WritesStore } from '../shared/stores/shapes.ts';
+import type { EntitiesStore, PostFailure, WritesStore } from '../shared/stores/shapes.ts';
 
 /** What one write of the page may set on a thread's note. */
 export type TriageFields = {
@@ -64,7 +63,7 @@ export function createInbox(entities: EntitiesStore, writes: WritesStore): Inbox
 
     /** Post one command to the mail endpoint and read its answer. */
     async function command(body: Record<string, unknown>): Promise<MailAnswer> {
-        const answer = await postCommand('/api/mail', body, writes.writeToken());
+        const answer = await writes.postCommand('/api/mail', body);
         if (answer.ok) return { ok: true };
         return { ok: false, error: refusal(answer.body.error, answer.failed) };
     }

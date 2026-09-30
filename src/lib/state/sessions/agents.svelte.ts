@@ -3,12 +3,14 @@
 // customizations of one agent, account and workspace (GET /api/customizations), one of their files
 // for the viewer, and a session's transcript saved as Markdown.
 //
-// Each answer is held per key and asked for the first time a view reads it, on a microtask, so a
-// read from a $derived never writes state while the derived runs. A key whose answer is still out
-// is not asked twice, and an answer that lands after the key was asked again (refresh) is dropped
-// in favour of the later one by a generation count per key.
+// Each answer is held per key in the client state's query client and asked for the first time a
+// view reads it, on a microtask (state/client/queries.svelte.ts), so a read from a $derived
+// never writes state while the derived runs. A key whose answer is still out is not asked twice,
+// and a refresh cancels the request still out for its key, so an answer that would land after the
+// key was asked again is never held.
 
 import type { AgentsAnswer, CustomizationsAnswer, AgentId } from '../../data/model/index.ts';
+import type { Queries } from '../shared/stores/shapes.ts';
 
 export type {
     AgentAccount,
@@ -60,52 +62,34 @@ export function exportUrl(id: string): string {
     return `/api/transcript?${new URLSearchParams({ id, format: 'markdown' }).toString()}`;
 }
 
-export function createAgents(): AgentsStore {
-    const held: Record<string, Held<unknown> | undefined> = $state({});
-    const generation = new Map<string, number>();
-    const inflight = new Set<string>();
-
-    /** Ask one URL for the key, dropping an answer a later ask has superseded. */
-    function ask(key: string, url: string): void {
-        if (inflight.has(key)) return;
-        inflight.add(key);
-        const mine = (generation.get(key) ?? 0) + 1;
-        generation.set(key, mine);
-        queueMicrotask(() => {
-            void (async () => {
-                let next: Held<unknown>;
-                try {
-                    const response = await fetch(url);
-                    const body = (await response.json()) as { error?: unknown };
-                    next = response.ok
-                        ? { value: body, pending: false, error: '' }
-                        : {
-                              value: null,
-                              pending: false,
-                              error:
-                                  typeof body.error === 'string'
-                                      ? body.error
-                                      : String(response.status)
-                          };
-                } catch (error) {
-                    next = {
-                        value: null,
-                        pending: false,
-                        error: error instanceof Error ? error.message : String(error)
-                    };
-                }
-                if (generation.get(key) !== mine) return;
-                inflight.delete(key);
-                held[key] = next;
-            })();
-        });
+export function createAgents(queries: Queries): AgentsStore {
+    /** Ask one URL, answering what came back as the key's held shape. */
+    async function ask(url: string): Promise<Held<unknown>> {
+        try {
+            const response = await fetch(url);
+            const body = (await response.json()) as { error?: unknown };
+            return response.ok
+                ? { value: body, pending: false, error: '' }
+                : {
+                      value: null,
+                      pending: false,
+                      error: typeof body.error === 'string' ? body.error : String(response.status)
+                  };
+        } catch (error) {
+            return {
+                value: null,
+                pending: false,
+                error: error instanceof Error ? error.message : String(error)
+            };
+        }
     }
 
     /** One key's answer, asked for the first time it is read. */
     function read<T>(key: string, url: string): Held<T> {
-        const found = held[key];
-        if (found === undefined && typeof fetch === 'function') ask(key, url);
-        return (found ?? PENDING) as Held<T>;
+        const { data } = queries.read(['agents', key], () => ask(url), {
+            enabled: typeof fetch === 'function'
+        });
+        return (data ?? PENDING) as Held<T>;
     }
 
     function agentChoices(account = ''): Held<AgentsAnswer> {
@@ -126,9 +110,11 @@ export function createAgents(): AgentsStore {
     /** Ask the scope's rows again; the held rows stay drawn until the new ones land. */
     function refreshCustomizations(scope: CustomizationScope): void {
         const query = scopeQuery(scope);
-        const key = `custom:${query}`;
-        inflight.delete(key);
-        ask(key, `/api/customizations?${query}`);
+        queries.refetch(
+            ['agents', `custom:${query}`],
+            () => ask(`/api/customizations?${query}`),
+            'replace'
+        );
     }
 
     /**

@@ -42,6 +42,7 @@
     "dependencies": {
         "@event-calendar/core": "^5.15.0",
         "@shikijs/monaco": "4.4.3",
+        "@tanstack/query-core": "^5.104.0",
         "@tanstack/virtual-core": "^3.17.11",
         "@viz-js/viz": "3.30.0",
         "@vscode/ripgrep": "^1.18.0",

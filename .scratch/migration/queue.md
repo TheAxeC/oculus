@@ -1,11 +1,10 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q102 (the terminal working as VS Code's, seen working in the page; Z69 (a)), builder on Sonnet 5.5 since 2026-09-30 01:29.
-- Q84 (the fetch-and-hold stores on @tanstack/query-core; Z56 (a)), builder on Sonnet 5.5 since 2026-09-30 01:48.
+- Q102 (the terminal working as VS Code's, seen working in the page; Z69 (a)), repair round 1 running.
 - E1 (the design section for apps added while oculus runs, for Axel's ruling), builder on Sonnet 5.5 since 2026-09-30 09:49.
 Queued, in order:
-- Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`; and once Q84 has landed, since Q84 rewrites `state/sources/fs.svelte.ts`, which Q88b's Files write client extends.
+- Q88b (the right-click menus' new capabilities, and Chrome's own menu blocked): Z70 ruled (a); once Q102 has landed: both change the pane strip's menu and picks (`pane-view.ts`), `PaneView.svelte`, `layout/instances.ts` and `ui.svelte.ts`.
 - X3c (the tab strip as VS Code's editor tabs; Z47 (a)), once Q88b has landed: both change the pane strip (`PaneView.svelte`, `Tabs.svelte`, `pane-view.ts`), Q88b through `show_tabs`, `editor_actions` and its strip items.
 - X3a (the Files view as VS Code's Explorer), once Q88b has landed: X3a's New File, Rename, Delete, Cut, Copy, Paste and Compare rest on the server routes Q88b builds for the same items of the Files row menu.
 - Q91 (the project view and its editor), once X3a has landed.
@@ -26,6 +25,7 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- Q84 (the fetch-and-hold stores on @tanstack/query-core; Z56 (a)), 2026-09-30, pending.
 - D13c (the code theme key; Z46 (a)), 2026-09-30, 5a503e82.
 - Q86c (the Map's forces back on d3-force; Z60 (a)), 2026-09-30, de5f74cd.
 - D13b (the diffs and the merge on Monaco), 2026-09-30, f6403f40.

@@ -15,9 +15,9 @@
     // answered, and every tool it called on the way, oldest first.
     //
     // The turns are not in the snapshot. state/sessions/transcript.svelte.ts fetches them for the
-    // session on screen and follows the file from an effect: the record's lastActivity moving is
-    // the transcript being written, and that is what asks for the bytes appended since the last
-    // read.
+    // session on screen, holds them in the client's query client and follows the file from an
+    // effect: the record's lastActivity moving is the transcript being written, and that is what
+    // asks for the bytes appended since the last read.
     //
     // An assistant turn is rendered Markdown, drawn with {@html} through ui/html.ts's sanitise: the
     // turn is what an agent wrote into a file on disk, so the markup is filtered to that profile

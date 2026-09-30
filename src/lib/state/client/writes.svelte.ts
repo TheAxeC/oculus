@@ -11,14 +11,20 @@
 // whatever registered through onUnwritten, which is the notification the status bar's bell counts,
 // beside the line the view that sent it draws. It is said once per write, after the one retry a
 // stale token gets, and a caller that says it in a notification of its own sends with `said`.
+//
+// `postCommand` is the other POST here: a command to the mail, calendar and account endpoints,
+// carrying the same token, answered as `Posted`. It neither retries on a 403 nor tells
+// onUnwritten; the store that sent it says its failure in its own view.
 
 import { tick } from 'svelte';
+import { fields } from '../../data/helpers/guards.ts';
 import { t } from '../shared/words/text.ts';
 import type {
     SendOptions,
     SessionFields,
     SubtaskAction,
     SubtaskTarget,
+    Posted,
     WriteAnswer,
     WritesStore
 } from '../shared/stores/shapes.ts';
@@ -103,6 +109,32 @@ export function createWrites(
      */
     function writeToken(): string {
         return token;
+    }
+
+    /**
+     * Post one command to an endpoint of its own, which answers a JSON body of its own and not a
+     * write's answer, with the page's token. A fetch that fails and an answer that is not JSON are
+     * answered as what went wrong rather than thrown, so a press whose request did not come back
+     * says so in its view instead of ending in a rejection nobody reads.
+     */
+    async function postCommand(path: string, body: unknown): Promise<Posted> {
+        let response: Response;
+        try {
+            response = await fetch(path, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', 'x-oculus-token': token },
+                body: JSON.stringify(body)
+            });
+        } catch {
+            return { ok: false, body: {}, failed: 'unreachable' };
+        }
+        let parsed: unknown;
+        try {
+            parsed = await response.json();
+        } catch {
+            return { ok: false, body: {}, failed: 'unreadable' };
+        }
+        return { ok: response.ok, body: fields(parsed), failed: '' };
     }
 
     /** Whether a write is in flight. */
@@ -344,8 +376,9 @@ export function createWrites(
     /**
      * One deposit action on one project: adopt, plan, commit, push, snapshot, or a branch. The
      * endpoint is /api/deposit, and what the action did to the mirror is read back by
-     * state/system/deposit.svelte.ts's own GET rather than carried here. An action that can lose
-     * work carries `confirm: true`, which the panel sets only from its dialog.
+     * state/system/deposit.svelte.ts, whose query is asked again by the panel, rather than carried
+     * here. An action that can lose work carries `confirm: true`, which the panel sets only from
+     * its dialog.
      */
     async function writeDeposit(
         action: string,
@@ -433,6 +466,7 @@ export function createWrites(
     return {
         setToken,
         writeToken,
+        postCommand,
         pending,
         lastError,
         writeManifest,

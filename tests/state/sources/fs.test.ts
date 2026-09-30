@@ -250,6 +250,23 @@ describe('the store reading the endpoints', () => {
         expect(client.fs.entries('hub', '').map((entry) => entry.name)).toEqual(['fresh.txt']);
     });
 
+    // Revert: in markOne of state/client/queries.svelte.ts, take out the cancel call.
+    it("never shows a listing fetched before a removal, and shows the removal's own", async () => {
+        const late = deferred();
+        serving((url) => {
+            if (url === FS_PATH) return answering({ ok: true, changed: ['root'], refused: [] });
+            return asked.length === 1 ? late.promise : listingOf(['after.txt']);
+        });
+        client.fs.listing('hub', '');
+        await settle();
+        await client.fs.removeRoot('extra');
+        client.fs.listing('hub', '');
+        await settle();
+        late.land(listingOf(['before.txt']));
+        await settle();
+        expect(client.fs.entries('hub', '').map((entry) => entry.name)).toEqual(['after.txt']);
+    });
+
     it('reads a file again after a write, rather than holding the text it had', async () => {
         let body = 'first';
         serving(() => new Response(body, { status: 200 }));
@@ -477,8 +494,7 @@ describe('the store reading the endpoints', () => {
         expect(asked.filter((url) => url.includes('bookmarks=1'))).toHaveLength(2);
     });
 
-    // Revert: in loadBookmarks of state/sources/fs.svelte.ts, sweep the forms on the branch that
-    // answers a read the server refused, by putting the call back on the line above its return.
+    // Revert: in readBookmarks of state/sources/fs.svelte.ts, sweep the forms on a refused read.
     it('closes no bookmark form over a read the server refused, whatever it said', async () => {
         client.layout.loadLayout(fakeStorage());
         const own = client.layout.openView('files');
@@ -501,8 +517,8 @@ describe('the store reading the endpoints', () => {
         });
     });
 
-    // Revert: in loadBookmarks of state/sources/fs.svelte.ts, let the catch branch fall through to
-    // the tail sweep by taking out its return.
+    // Revert: in readBookmarks of state/sources/fs.svelte.ts, sweep the forms with an empty answer
+    // in the catch branch.
     it('closes no bookmark form over a read that never answered at all', async () => {
         client.layout.loadLayout(fakeStorage());
         const own = client.layout.openView('files');
