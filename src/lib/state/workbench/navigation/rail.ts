@@ -19,6 +19,9 @@ import { t } from '../../shared/words/text.ts';
 export { arrangementKeys, glyphNames, readRail };
 export type { RailEntry, RailProblem, RailRead };
 
+/** One choice of the rail's Bookmarks menu, as the file browser's module defines it. */
+export type { BookmarkRow as Bookmark } from '../../sources/fs.ts';
+
 /** One rail button and the arrangement its page is made from the first time it is pressed. */
 export type RailPage = RailEntry & { node: unknown };
 

@@ -25,8 +25,10 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
+    import { readJson } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import { branchesOf } from '$lib/state/sources/repositories/answers';
     import { repoShape } from '$lib/state/sources/repositories/repositories';
     import ChangesRepo from './ChangesRepo.svelte';
     import ChangesTouched from './ChangesTouched.svelte';
@@ -75,8 +77,7 @@
         let listed: Branch[];
         try {
             const response = await fetch(`/api/git?root=${encodeURIComponent(root)}`);
-            const body = (await response.json()) as { branches?: Branch[] };
-            listed = Array.isArray(body.branches) ? body.branches : [];
+            listed = branchesOf(await readJson(response));
         } catch {
             listed = [];
         }

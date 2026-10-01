@@ -1,3 +1,11 @@
+<script module lang="ts">
+    import { z } from 'zod';
+    import { wordShape } from '$lib/data/shapes/shapes';
+
+    /** The root and the path a bookmark names, each as text and the empty text when it is not. */
+    const whereShape = z.object({ root: wordShape, path: wordShape });
+</script>
+
 <script lang="ts">
     // Layer 3, partial of views/sources/files/Files.svelte. The reader's own bookmarks as a section
     // under the trees: a head that opens and closes it and carries the control that adds one, and
@@ -20,6 +28,7 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { Entry } from '$lib/state/boards/collection';
+    import { readOr } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -50,9 +59,8 @@
 
     /** The root and the path one bookmark names, which is what a row says after its label. */
     function whereOf(entry: Entry): string {
-        const root = entry.fields.root;
-        const path = entry.fields.path;
-        return `${typeof root === 'string' ? root : ''}/${typeof path === 'string' ? path : ''}`;
+        const { root, path } = readOr(whereShape, entry.fields, { root: '', path: '' });
+        return `${root}/${path}`;
     }
 </script>
 

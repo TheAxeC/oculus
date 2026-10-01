@@ -6,23 +6,10 @@
 
 import { nextStop } from '$lib/ui/tree/roving';
 import type { MenuItem } from '$lib/ui/menu/menu-items';
-import type { RailEntry } from '$lib/state/workbench/navigation/rail';
+import type { Bookmark, RailEntry } from '$lib/state/workbench/navigation/rail';
 import { t } from '$lib/state/shared/words/text';
 
-/**
- * One choice of the rail's Bookmarks menu: a file under one of the roots of sources.yml, from the
- * reader's own bookmarks file, which the Files view edits.
- *
- * `view` is which view opens it. A page is a document of its own so that its stylesheets and
- * relative assets resolve, and anything else is the file view; which is which is a question about a
- * file name, which the state layer answers, so the page decides it and the rail is told.
- */
-export type Bookmark = {
-    label: string;
-    root: string;
-    path: string;
-    view: 'document' | 'file';
-};
+export type { Bookmark };
 
 /** The prefix of a bookmark's choice in the Bookmarks menu, before its place in the file. */
 const MARK = 'mark:';

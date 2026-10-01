@@ -12,7 +12,7 @@ import { setAppearance } from '../../../src/lib/state/shared/words/appearance.ts
 import { findView } from '../../../src/lib/state/workbench/layout/index.ts';
 import type { PaletteItem } from '../../../src/lib/state/workbench/palette.ts';
 import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
-import { openPaletteItem } from '../../../src/lib/shell/keys/palette-open.ts';
+import { configuredThemes, openPaletteItem } from '../../../src/lib/shell/keys/palette-open.ts';
 import { fakeStorage, viewsOf } from '../../state/workbench/layout/layout-fixture.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
@@ -109,5 +109,36 @@ describe('an editor action chosen in the palette', () => {
             seq: 1
         });
         expect(viewsOf(layout())).toEqual(before);
+    });
+});
+
+describe('the themes the configuration lists', () => {
+    it('are none when themes is not a list', () => {
+        expect(configuredThemes({ themes: 'x' })).toStrictEqual([]);
+        expect(configuredThemes({})).toStrictEqual([]);
+    });
+
+    it('are the names of the rows that hold one as text', () => {
+        const themes = [3, null, [], { name: 3 }, { name: 'a' }];
+        expect(configuredThemes({ themes })).toStrictEqual(['a']);
+    });
+
+    it('keep an empty name and a repeated one, in the order held', () => {
+        const themes = [{ name: '' }, { name: 'a' }, { name: 'a' }];
+        expect(configuredThemes({ themes })).toStrictEqual(['', 'a', 'a']);
+    });
+});
+
+describe('the state a palette reveal is written over', () => {
+    it('is the instance state as it was when it is a map, and an empty map otherwise', () => {
+        const id = openView('events');
+        for (const held of [null, [], 'x', 3]) {
+            setInstanceState(id, held);
+            openPaletteItem(client.layout, client.ui, entry('k'), client.editorStatus);
+            expect(instanceState(id)).toStrictEqual({ reveal: 'k', search: '' });
+        }
+        setInstanceState(id, { filter: 'open', search: 'old' });
+        openPaletteItem(client.layout, client.ui, entry('k'), client.editorStatus);
+        expect(instanceState(id)).toStrictEqual({ filter: 'open', reveal: 'k', search: '' });
     });
 });

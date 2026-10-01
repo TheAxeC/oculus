@@ -15,6 +15,7 @@ import {
     typeCounts,
     archiveStatuses,
     hasRelationships,
+    labelModeOf,
     lineFilters,
     typeFilters,
     type Graph as MapGraph
@@ -459,5 +460,20 @@ describe('the Map chips, config values of another type', () => {
         for (const order of ['idea', { 0: 'idea' }, null, undefined, [], ['absent']]) {
             expect(types(order)).toStrictEqual(['accepted', 'active', 'idea']);
         }
+    });
+});
+
+describe('the label mode the configuration names', () => {
+    it('is the word map_label_mode holds, and the empty word for anything else', () => {
+        const modes = [3, 'short', 'full', ['full'], undefined, null];
+        expect(modes.map((mode) => labelModeOf({ map_label_mode: mode }))).toStrictEqual([
+            '',
+            'short',
+            'full',
+            '',
+            '',
+            ''
+        ]);
+        expect(labelModeOf({})).toBe('');
     });
 });

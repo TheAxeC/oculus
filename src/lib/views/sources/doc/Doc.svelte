@@ -40,7 +40,7 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { docState, followDoc, readDocs } from '$lib/state/workbench/navigation/catalogue';
-    import { isInstanceOf, tabsOf } from '$lib/state/workbench/layout';
+    import { instanceMap, instanceText, isInstanceOf, tabsOf } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -51,8 +51,8 @@
 
     let { instance }: ViewProps = $props();
 
-    const path = $derived(read(instance.state, 'path'));
-    const label = $derived(read(instance.state, 'label'));
+    const path = $derived(instanceText(instance.state, 'path'));
+    const label = $derived(instanceText(instance.state, 'label'));
     const pushed = $derived(config());
     const followed = $derived(
         pushed === null || path === '' ? null : followDoc(readDocs(pushed.config.docs), path, label)
@@ -67,7 +67,7 @@
         if (followed?.moved !== true || entry === undefined || entry === null) return;
         const open = openElsewhere(entry.path);
         if (open === null) {
-            restateInstance(instance.id, { ...held(instance.state), ...docState(entry) });
+            restateInstance(instance.id, { ...instanceMap(instance.state), ...docState(entry) });
             return;
         }
         // Another tab already shows the entry, so this one goes rather than becoming a second
@@ -84,16 +84,6 @@
             }
         }
         return null;
-    }
-
-    function held(state: unknown): Record<string, unknown> {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return {};
-        return state as Record<string, unknown>;
-    }
-
-    function read(state: unknown, key: string): string {
-        const value = held(state)[key];
-        return typeof value === 'string' ? value : '';
     }
 </script>
 

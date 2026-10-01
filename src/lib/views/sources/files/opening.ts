@@ -9,7 +9,7 @@
 // the rule reads the same whichever client it runs in.
 
 import type { Entry } from '$lib/state/boards/collection';
-import { nameOf, typeOfFile, type TreeRow } from '$lib/state/sources/fs';
+import { bookmarkRef, nameOf, typeOfFile, type TreeRow } from '$lib/state/sources/fs';
 import { documentState } from '$lib/state/workbench/layout';
 import { sourceTabState } from '$lib/state/sessions/source.svelte';
 import type { ClientState } from '$lib/state/client/context';
@@ -60,13 +60,11 @@ export async function openRowBeside(opener: BesideOpener, row: TreeRow): Promise
 
 /** Open the file one bookmark names, under the label the reader gave it. */
 export function openBookmark(opener: Opener, entry: Entry): void {
-    const root = entry.fields.root;
-    const path = entry.fields.path;
-    if (typeof root !== 'string' || typeof path !== 'string') return;
-    const mark = { label: entry.title, root, path };
-    if (typeOfFile(path).kind === 'html') {
-        opener.openView('document', documentState(mark));
+    const ref = bookmarkRef(entry.fields);
+    if (ref === null) return;
+    if (typeOfFile(ref.path).kind === 'html') {
+        opener.openView('document', documentState({ label: entry.title, ...ref }));
         return;
     }
-    opener.openView('file', { root, path, label: entry.title });
+    opener.openView('file', { ...ref, label: entry.title });
 }

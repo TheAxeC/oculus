@@ -8,8 +8,8 @@ import {
     canPublish,
     checkedOutBranch,
     messageRows
-} from '../../../../src/lib/state/sources/repositories/repositories.ts';
-import { git } from '../../../fixtures/sessions-fixture.ts';
+} from '../../../../../src/lib/state/sources/repositories/repositories.ts';
+import { git } from '../../../../fixtures/sessions-fixture.ts';
 
 const CHANGE = { path: 'a.ts', status: 'M', added: 1, deleted: 0 };
 const TRACKING = [{ name: 'main', upstream: 'origin/main', current: true }];

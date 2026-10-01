@@ -44,6 +44,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { Finding, MirrorState, Plan } from '$lib/state/system/deposit.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { instanceText } from '$lib/state/workbench/layout';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -61,7 +62,7 @@
     type Branch = { name: string; upstream: string; current: boolean };
 
     /** The project this instance was opened for, from the state the card handed openView. */
-    const id = $derived(readId(instance.state));
+    const id = $derived(instanceText(instance.state, 'id'));
     const held = $derived(mirror(id));
     // Named `now` rather than `state`: a variable called `state` in a component is read as the
     // store prefix of `$state`, which svelte-check refuses.
@@ -89,12 +90,6 @@
 
     /** Why a write cannot be pressed right now, or the empty string when it can. */
     const why = $derived(reason(now, plan, busy));
-
-    function readId(held_: unknown): string {
-        if (typeof held_ !== 'object' || held_ === null || Array.isArray(held_)) return '';
-        const value = (held_ as Record<string, unknown>).id;
-        return typeof value === 'string' ? value : '';
-    }
 
     function reason(one: MirrorState | null, made: Plan | null, working: boolean): string {
         if (working) return t('deposit.why_busy');
@@ -193,7 +188,7 @@
     async function listBranches(): Promise<void> {
         if (id === '' || busy) return;
         const answer = await writeDeposit('branches', id);
-        rows = Array.isArray(answer.branches) ? answer.branches : [];
+        rows = answer.branches ?? [];
     }
 
     function switchTo(name: string): void {

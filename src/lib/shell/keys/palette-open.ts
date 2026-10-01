@@ -6,10 +6,16 @@
 // An editor action opens nothing: it asks the source tab or diff pane it names to run the action,
 // and answers that tab's instance.
 
+import { z } from 'zod';
+import { readOr, rowsShape } from '$lib/data/shapes/shapes';
+import { instanceMap } from '$lib/state/workbench/layout';
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
 import type { PaletteItem } from '$lib/state/workbench/palette';
 import type { UiStore } from '$lib/state/workbench/ui.svelte';
 import type { EditorStatusStore } from '$lib/state/workbench/navigation/editor-status.svelte';
+
+/** The names of the rows of the configuration's `themes` list that hold one as text. */
+const themeNamesShape = rowsShape(z.object({ name: z.string() }).transform((row) => row.name));
 
 /** Open one result and return the instance the layout activated or created. */
 export function openPaletteItem(
@@ -30,19 +36,11 @@ export function openPaletteItem(
     const id = layout.openView(item.view);
     const reveal = item.state?.reveal;
     if (typeof reveal !== 'string' || reveal === '') return id;
-    const current = ui.instanceState(id);
-    const held =
-        typeof current === 'object' && current !== null && !Array.isArray(current) ? current : {};
-    ui.setInstanceState(id, { ...held, ...item.state, search: '' });
+    ui.setInstanceState(id, { ...instanceMap(ui.instanceState(id)), ...item.state, search: '' });
     return id;
 }
 
 /** The names of the themes the configuration lists, which the `:theme` command accepts. */
 export function configuredThemes(config: Record<string, unknown>): string[] {
-    if (!Array.isArray(config.themes)) return [];
-    return config.themes.flatMap((row) => {
-        if (typeof row !== 'object' || row === null || Array.isArray(row)) return [];
-        const name = (row as Record<string, unknown>).name;
-        return typeof name === 'string' ? [name] : [];
-    });
+    return readOr(themeNamesShape, config.themes, []);
 }

@@ -14,12 +14,12 @@ import {
     prunedCollapsed,
     withoutClosedCommits,
     visibleRows
-} from '../../../../src/lib/state/sources/repositories/change-tree.ts';
+} from '../../../../../src/lib/state/sources/repositories/change-tree.ts';
 import {
     repositoryKeyRows,
     type KeyRow
-} from '../../../../src/lib/state/sources/repositories/repositories.ts';
-import { git } from '../../../fixtures/sessions-fixture.ts';
+} from '../../../../../src/lib/state/sources/repositories/repositories.ts';
+import { git } from '../../../../fixtures/sessions-fixture.ts';
 
 /** The paths as entries, which is all the tree reads of one. */
 function entries(...paths: string[]): { path: string; status: string }[] {

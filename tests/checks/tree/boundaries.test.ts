@@ -74,12 +74,13 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // path's last name, the path under a folder, the deepest folder holding a target) that the file
 // browser, the source tab and the status bar read a root or a repository by, so the three agree on
 // which one holds a file. `data/shapes/shapes` holds the zod helpers (a schema that answers its
-// input, the map and number schemas, the quick path) that the server's readers and the state
-// layer's readers of untyped input share, so both read by one rule. `data/file-ops` holds what a
-// file or folder name may be, the name a copy takes, the sizes of an upload and of a comparison,
-// and the shapes of a file operation and its answer, which the Files view checks while a name is
-// typed and the server checks when the name arrives. The model's own concern modules
-// (`data/model-*`) are reached through the facade only, which is why they are not listed here.
+// input, the map and number schemas, the quick path) that the server's, the state layer's, the
+// views' and the shell's readers of untyped input share, so all four read by one rule.
+// `data/file-ops` holds what a file or folder name may be, the name a copy takes, the sizes of an
+// upload and of a comparison, and the shapes of a file operation and its answer, which the Files
+// view checks while a name is typed and the server checks when the name arrives. The model's own
+// concern modules (`data/model-*`) are reached through the facade only, which is why they are not
+// listed here.
 //
 // `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
@@ -118,9 +119,10 @@ const ALLOWED: Record<string, string[]> = {
         'state/workbench/palette-source',
         'state/workbench/selection',
         'state/workbench/navigation/**',
-        'state/sessions/terminals'
+        'state/sessions/terminals',
+        'data/shapes/shapes'
     ],
-    views: ['ui/**', 'state/**', 'views/shared/**'],
+    views: ['ui/**', 'state/**', 'views/shared/**', 'data/shapes/shapes'],
     state: [
         'state/**',
         'data/model',

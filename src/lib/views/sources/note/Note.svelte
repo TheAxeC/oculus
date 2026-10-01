@@ -44,6 +44,7 @@
         writesNow
     } from '$lib/state/life/notes';
     import { NOTE_GONE, type NoteState } from '$lib/state/sources/fs.svelte';
+    import { instanceFlag, instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -66,9 +67,9 @@
         loading: false
     };
 
-    const id = $derived(read(instance.state, 'id'));
+    const id = $derived(instanceText(instance.state, 'id'));
     /** Whether this tab's note has no file yet: nothing has been typed into it. */
-    const fresh = $derived(flag(instance.state, 'fresh'));
+    const fresh = $derived(instanceFlag(instance.state, 'fresh'));
     const held = $derived(fresh ? BLANK : note(id));
 
     /** What the reader has typed, and which note it belongs to. */
@@ -103,17 +104,6 @@
 
     /** The title the pane draws, which says so for a note that carries none. */
     const title = $derived(written === '' ? t('note.untitled') : written);
-
-    function read(state: unknown, key: string): string {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
-        const value = (state as Record<string, unknown>)[key];
-        return typeof value === 'string' ? value : '';
-    }
-
-    function flag(state: unknown, key: string): boolean {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return false;
-        return (state as Record<string, unknown>)[key] === true;
-    }
 
     /**
      * Put the draft back to nothing, for the note this component is about to draw. A pane keeps
@@ -199,7 +189,7 @@
         const first = writesNow(fresh, touched);
         if (tab === '') {
             tab = instance.id;
-            named = read(instance.state, 'label');
+            named = instanceText(instance.state, 'label');
         }
         draft = { ...draft, id, [part]: value };
         touched = true;

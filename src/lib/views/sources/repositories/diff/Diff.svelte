@@ -51,6 +51,8 @@
     import DiffBar from './DiffBar.svelte';
     import DiffSection from './DiffSection.svelte';
     import { compareSentence } from './compare-words';
+    import { readJson } from '$lib/data/shapes/shapes';
+    import { diffAnswerOf, type DiffAnswer } from '$lib/state/sources/repositories/answers';
     import {
         countsOf,
         diffActions,
@@ -154,30 +156,29 @@
     /** The number of the last read asked for, so an older answer that lands late is dropped. */
     let asked = 0;
 
-    type Answer = {
-        files?: DiffSides[];
-        attributes?: DiffAttributes;
-        conflicted?: boolean;
-        error?: string;
-    };
-
-    /** What one address answered: its body, and whether the server took the request. */
-    async function answer(url: string): Promise<{ ok: boolean; body: Answer }> {
+    /** What one address answered: whether the server took the request, and what its body held. */
+    async function answer(url: string): Promise<DiffAnswer> {
         const response = await fetch(url);
-        return { ok: response.ok, body: (await response.json()) as Answer };
+        return diffAnswerOf(response.ok, await readJson(response));
     }
 
     /** The reads a diff is made of: the one address, or one per path of a group. */
-    async function reads(state: DiffState): Promise<{ ok: boolean; body: Answer }> {
+    async function reads(state: DiffState): Promise<DiffAnswer> {
         const group = state.group;
         if (group === undefined) return answer(diffUrl(state));
         const paths = repo === null ? [] : groupPaths(repo, group);
         const answers = await readAll(paths, GROUP_READS, (path) =>
             answer(fileDiffUrl(state.root, path, group === 'staged'))
         );
-        const bad = answers.find((one) => !one.ok || !Array.isArray(one.body.files));
+        const bad = answers.find((one) => !one.ok || one.files === null);
         if (bad !== undefined) return bad;
-        return { ok: true, body: { files: answers.flatMap((one) => one.body.files ?? []) } };
+        return {
+            ok: true,
+            files: answers.flatMap((one) => one.files ?? []),
+            attributes: null,
+            conflicted: false,
+            error: undefined
+        };
     }
 
     async function load(state: DiffState): Promise<void> {
@@ -186,24 +187,22 @@
         reading = true;
         failure = '';
         try {
-            const { ok, body } = await reads(state);
+            const read = await reads(state);
             if (mine !== asked) return;
-            if (!ok || !Array.isArray(body.files)) {
+            if (!read.ok || read.files === null) {
                 failure =
                     state.against !== undefined
-                        ? compareSentence(body.error, t)
-                        : typeof body.error === 'string'
-                          ? body.error
-                          : t('repositories.diff_failed');
+                        ? compareSentence(read.error, t)
+                        : (read.error ?? t('repositories.diff_failed'));
             } else {
                 // A read that changed nothing keeps the files drawn, and with them the view.
-                if (!sameFiles(files, body.files)) {
-                    files = body.files;
-                    counts = countsOf(body.files);
+                if (!sameFiles(files, read.files)) {
+                    files = read.files;
+                    counts = countsOf(read.files);
                     changes = [];
                 }
-                attributes = body.attributes ?? null;
-                conflicted = body.conflicted === true;
+                attributes = read.attributes;
+                conflicted = read.conflicted;
             }
         } catch {
             if (mine !== asked) return;

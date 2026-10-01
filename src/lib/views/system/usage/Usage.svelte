@@ -1,7 +1,12 @@
 <script module lang="ts">
     // Layer 3, view registration. Usage closes the Focus page's group, a tab beside Live HPC.
+    import { z } from 'zod';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+
+    /** The refresh cadence of the configuration: a finite number above zero, and 0 otherwise. */
+    const cadenceShape = z.number().positive().catch(0);
+
     export const registration: ViewRegistration = {
         id: 'usage',
         label: 'views.usage',
@@ -50,10 +55,7 @@
     const data = $derived(usage());
     const cursor = $derived(cardCursor(instance.state));
     /** Minutes between two refreshes, and 0 until the config channel has delivered the cadence. */
-    const cadence = $derived.by(() => {
-        const held = config()?.config.usage_refresh_min;
-        return typeof held === 'number' && Number.isFinite(held) && held > 0 ? held : 0;
-    });
+    const cadence = $derived(cadenceShape.parse(config()?.config.usage_refresh_min));
 
     const columns: Column[] = [
         { key: 'day', label: t('usage.col_day') },

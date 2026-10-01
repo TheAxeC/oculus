@@ -44,6 +44,7 @@
     import { resumeRefusal, type Terminal } from '$lib/state/sessions/terminals.svelte';
     import { TERMINAL_VIEW, emptyTab } from '$lib/state/sessions/terminal/terminal-tabs';
     import { t } from '$lib/state/shared/words/text';
+    import { instanceMap } from '$lib/state/workbench/layout';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import Customizations from './Customizations.svelte';
     import SessionWorkspace from './SessionWorkspace.svelte';
@@ -92,9 +93,11 @@
     );
 
     function write(next: Partial<ListFilter>): void {
-        const held = instanceState(instance.id);
-        const kept = typeof held === 'object' && held !== null && !Array.isArray(held) ? held : {};
-        setInstanceState(instance.id, { ...kept, ...filter, ...next });
+        setInstanceState(instance.id, {
+            ...instanceMap(instanceState(instance.id)),
+            ...filter,
+            ...next
+        });
     }
 
     function archived(row: GroupedSession): boolean {

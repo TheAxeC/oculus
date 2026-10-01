@@ -45,6 +45,8 @@
     import CommitRow from './CommitRow.svelte';
     import CommitFiles from './CommitFiles.svelte';
     import GraphHead from './GraphHead.svelte';
+    import { readJson } from '$lib/data/shapes/shapes';
+    import { graphPageOf } from '$lib/state/sources/repositories/answers';
     import {
         laneRows,
         lanesBelow,
@@ -58,8 +60,7 @@
         pullWords,
         pushWords,
         upstreamOf,
-        type GitGraphCommit,
-        type GitGraphPage
+        type GitGraphCommit
     } from '$lib/state/sources/repositories/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -223,14 +224,14 @@
         reading = true;
         try {
             const response = await fetch(graphUrl(root, skip));
-            const body = (await response.json()) as { page?: GitGraphPage; error?: string };
+            const read = graphPageOf(response.ok, await readJson(response));
             if (mine !== asked) return;
-            if (!response.ok || body.page === undefined) {
-                failure = body.error ?? t('repositories.graph_failed');
+            if (read.page === null) {
+                failure = read.failure;
                 return;
             }
             failure = '';
-            const page = body.page;
+            const page = read.page;
             commits = skip === 0 ? page.commits : [...commits, ...page.commits];
             if (skip === 0) {
                 incoming = page.incoming;

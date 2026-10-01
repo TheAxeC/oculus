@@ -203,6 +203,38 @@ describe('the search', () => {
     });
 });
 
+describe('the pane state the view reads', () => {
+    const open = finding({ signature: 'aaaaaaaaaaa1', message: 'x open' });
+    const plain = finding({ signature: 'aaaaaaaaaaa2', message: 'plain' });
+    const parked = finding({ signature: 'aaaaaaaaaaa3', message: 'x parked' });
+    const all = [open, plain, parked];
+
+    /** The value of the search box the body drew. */
+    function boxed(body: string): string | undefined {
+        return /<input[^>]*\svalue="([^"]*)"/.exec(body)?.[1];
+    }
+
+    it('reads a search that is no text as empty and a muted flag that is not true as closed', () => {
+        const body = drawn(all, ['aaaaaaaaaaa3'], { search: 3, showMuted: 'yes' });
+        expect(cards(body)).toEqual(['aaaaaaaaaaa1', 'aaaaaaaaaaa2']);
+        expect(sections(body)).toContain('muted');
+        expect(boxed(body)).toBe('');
+    });
+
+    it('reads a text search and a true muted flag as given', () => {
+        const body = drawn(all, ['aaaaaaaaaaa3'], { search: 'x', showMuted: true });
+        expect(cards(body)).toEqual(['aaaaaaaaaaa1', 'aaaaaaaaaaa3']);
+        expect(boxed(body)).toBe('x');
+    });
+
+    it('reads a state that is no map as an empty one', () => {
+        for (const state of [null, [], 'x', 3]) {
+            const body = drawn(all, ['aaaaaaaaaaa3'], state as unknown as Record<string, unknown>);
+            expect(cards(body)).toEqual(['aaaaaaaaaaa1', 'aaaaaaaaaaa2']);
+        }
+    });
+});
+
 describe('an empty scan', () => {
     it('says everything is clear, and points at Findings for the rest', () => {
         const body = drawn([]);

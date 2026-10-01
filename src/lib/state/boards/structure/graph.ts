@@ -13,7 +13,8 @@ import {
     fieldItemsShape,
     mapShape,
     optionalTextShape,
-    readAs
+    readAs,
+    wordShape
 } from '../../../data/shapes/shapes.ts';
 import { personNames } from '../person.ts';
 
@@ -69,6 +70,11 @@ export const LINK_LENGTH = 107;
 
 /** The box the Map draws into, which is the box every layout rule below places nodes in. */
 export const DEFAULT_BOUNDS: Bounds = { width: 1000, height: 680, pad: 48 };
+
+/** The label mode the configuration's `map_label_mode` names, and the empty word for any other. */
+export function labelModeOf(config: Record<string, unknown>): string {
+    return wordShape.parse(config.map_label_mode);
+}
 
 function archived(project: Project): string | undefined {
     return project.tier === 'archive' || project.tier === 'coauthor' ? project.type : undefined;

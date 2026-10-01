@@ -3,6 +3,7 @@
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Radar from '../../../src/lib/views/feeds/radar/Radar.svelte';
+import RadarCard from '../../../src/lib/views/feeds/radar/RadarCard.svelte';
 import { openSourceFile } from '../../../src/lib/views/shared/links/source-file.ts';
 import { findInstance } from '../../../src/lib/state/workbench/layout/instance.ts';
 import {
@@ -433,5 +434,34 @@ describe('the Lit Watch view', () => {
         expect(body).toContain('Could not read feeds/literature-radar.yml: bad YAML');
         // the read failed, which is said with its reason rather than as a file that is not there
         expect(body).not.toContain('No radar file yet');
+    });
+});
+
+describe('a field of an entry the card reads', () => {
+    it('draws a text or a number as its text and any other value as the untitled words', () => {
+        const titled = (value: unknown): string | undefined => {
+            const body = render(RadarCard, {
+                context: clientContext(client),
+                props: {
+                    entry: { title: value },
+                    id: 'r1',
+                    cursor: false,
+                    lastRun: null,
+                    projects: {},
+                    onsaid: noop
+                }
+            }).body.replace(/<!--[\s\S]*?-->/g, '');
+            return /<h3 class="title[^"]*">([^<]*)<\/h3>/.exec(body)?.[1];
+        };
+        const values = [3, 'x', true, null, [], NaN, Infinity];
+        expect(values.map(titled)).toEqual([
+            '3',
+            'x',
+            catalog['radar.untitled'],
+            catalog['radar.untitled'],
+            catalog['radar.untitled'],
+            'NaN',
+            'Infinity'
+        ]);
     });
 });

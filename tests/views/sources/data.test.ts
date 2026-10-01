@@ -5,6 +5,8 @@ import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
 import Data from '../../../src/lib/views/sources/data/Data.svelte';
+import DatasetCard from '../../../src/lib/views/sources/data/DatasetCard.svelte';
+import { noop } from '../../fixtures/doubles.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -407,6 +409,50 @@ describe('the dataset card as a card primitive', () => {
                 `class="words"[^>]*hidden[^>]*>${words.replace(/[.*+?^$()|[\]\\]/g, '\\$&')}<`
             );
             expect(html).toMatch(bubble);
+        }
+    });
+});
+
+describe('the retrieval a dataset card reads', () => {
+    /** What the card drew of one dataset's retrieval: the fetch method and the note. */
+    function drawnFor(retrieval: unknown): { method: boolean; note: string | undefined } {
+        const body = render(DatasetCard, {
+            context: clientContext(client),
+            props: {
+                dataset: {
+                    id: 'd',
+                    name: 'D',
+                    themes: [],
+                    projectIds: [],
+                    retrieval: retrieval as Record<string, unknown> | undefined
+                },
+                cursor: false,
+                projects: [],
+                entry: null,
+                schema: undefined,
+                editing: false,
+                onedit: noop,
+                onsaid: noop
+            }
+        }).body.replace(/<!--[\s\S]*?-->/g, '');
+        return {
+            method: body.includes(`${catalog['data.fetch']} wget`),
+            note: /<div class="note[^"]*">[\s\S]*?<span>([^<]*)<\/span>/.exec(body)?.[1]
+        };
+    }
+
+    it('draws a method that is a text and a note that is a text with its blanks folded', () => {
+        expect(drawnFor({ method: 'wget', notes: '  a\n b ' })).toEqual({
+            method: true,
+            note: 'a b'
+        });
+        expect(drawnFor({ method: 3, notes: '  a\n b ' })).toEqual({ method: false, note: 'a b' });
+        expect(drawnFor({ method: 'wget', notes: 3 })).toEqual({ method: true, note: undefined });
+    });
+
+    it('draws neither for a retrieval that is no map or absent', () => {
+        for (const retrieval of [[], 'x', undefined]) {
+            expect(drawnFor(retrieval)).toEqual({ method: false, note: undefined });
         }
     });
 });

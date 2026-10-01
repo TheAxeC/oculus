@@ -50,6 +50,7 @@
         NOT_WRITTEN,
         type FormField
     } from '$lib/state/forms/schema';
+    import { instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -66,7 +67,7 @@
     const ROWS = 3;
 
     /** The project this instance was opened for, from the state the card handed openView. */
-    const id = $derived(readId(instance.state));
+    const id = $derived(instanceText(instance.state, 'id'));
     const project = $derived(id === '' ? null : projectOf(id));
     const values = $derived(project === null ? {} : fieldValues(project));
     const fields = $derived(manifestFields());
@@ -78,12 +79,6 @@
     let result = $state<string[]>([]);
 
     const dirty = $derived(fields.filter((one) => changed(one.field)));
-
-    function readId(state: unknown): string {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
-        const held = (state as Record<string, unknown>).id;
-        return typeof held === 'string' ? held : '';
-    }
 
     /** The value a control shows: the edit when there is one, the project's value otherwise. */
     function valueOf(field: string): unknown {

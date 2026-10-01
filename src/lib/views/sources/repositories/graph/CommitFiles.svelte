@@ -16,7 +16,9 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import Lanes from './Lanes.svelte';
+    import { readJson } from '$lib/data/shapes/shapes';
     import { nameOf } from '$lib/state/sources/fs';
+    import { commitFilesOf } from '$lib/state/sources/repositories/answers';
     import {
         changeTree,
         dirOf,
@@ -141,9 +143,9 @@
         reading = true;
         try {
             const response = await fetch(commitUrl(from, commit));
-            const body = (await response.json()) as { files?: GitCommitFile[]; error?: string };
-            files = Array.isArray(body.files) ? body.files : [];
-            failure = response.ok ? '' : (body.error ?? t('repositories.graph_failed'));
+            const read = commitFilesOf(response.ok, await readJson(response));
+            files = read.files ?? files;
+            failure = read.failure;
         } catch {
             failure = t('repositories.graph_failed');
         } finally {

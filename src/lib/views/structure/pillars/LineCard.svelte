@@ -17,6 +17,7 @@
         type Venue
     } from '$lib/state/boards/structure/lines';
     import { paletteTone, toneOf } from '$lib/state/shared/words/tones';
+    import { optionalText } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -48,9 +49,7 @@
     }: Props = $props();
     const flight = $derived(inFlight(projects));
     const strip = $derived(tierStrip(projects, venues, tiers));
-    const funding = $derived(
-        typeof entry?.fields.funding === 'string' ? entry.fields.funding : undefined
-    );
+    const funding = $derived(optionalText(entry?.fields.funding));
     const tone = $derived(line.color === undefined ? undefined : paletteTone(line.color));
 </script>
 

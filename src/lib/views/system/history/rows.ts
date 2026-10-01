@@ -1,6 +1,6 @@
 // Layer 3, view partial. What the History view draws one recorded change as: the two values shown
-// beside it, the filter an instance holds, and the sentence an undo is said in. Which rows a filter
-// keeps is state/sessions/changes.svelte.ts's.
+// beside it and the sentence an undo is said in. Which rows a filter keeps is
+// state/sessions/changes.svelte.ts's.
 //
 // It is a fold and reads nothing: the store holds the rows and this says what they look like, so a
 // case states a row and asserts a line without a fetch.
@@ -45,13 +45,6 @@ export function shown(value: unknown): Shown {
     // Nothing a writer records is a symbol or a function; a value that is one says nothing rather
     // than being stringified into a word no reader could act on.
     return { text: '', size: 0, empty: true };
-}
-
-/** The filter one instance of the view is holding, out of whatever its saved state is. */
-export function filterOf(state: unknown): string {
-    if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
-    const held = (state as Record<string, unknown>).filter;
-    return typeof held === 'string' ? held : '';
 }
 
 /** What one undo answered, as much of it as this fold reads. */

@@ -21,13 +21,13 @@ import {
     type Hunk,
     type LineChange,
     type LineSelection
-} from '../../../../src/lib/state/sources/repositories/diff-hunks.ts';
+} from '../../../../../src/lib/state/sources/repositories/diff-hunks.ts';
 import {
     sidesPatch,
     type PatchMode
-} from '../../../../src/lib/state/sources/repositories/diff-patch.ts';
-import type { DiffAttributes, DiffSides } from '../../../../src/lib/data/model/index.ts';
-import { monacoLineChanges } from '../../../ui/controls/editor/monaco-diff.ts';
+} from '../../../../../src/lib/state/sources/repositories/diff-patch.ts';
+import type { DiffAttributes, DiffSides } from '../../../../../src/lib/data/model/index.ts';
+import { monacoLineChanges } from '../../../../ui/controls/editor/monaco-diff.ts';
 
 /** A change of modified lines `from` to `to` against original lines `oldFrom` to `oldTo`. */
 function change(oldFrom: number, oldTo: number, from: number, to: number): LineChange {

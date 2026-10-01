@@ -43,6 +43,7 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { fileUrl } from '../../shared/links/file-url';
+    import { instanceText } from '$lib/state/workbench/layout/instance';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     let { instance }: ViewProps = $props();
@@ -55,19 +56,13 @@
     let menu: MenuItem[] = $state([]);
     let heard: { text: string; image: string | null } = { text: '', image: null };
 
-    const root = $derived(read(instance.state, 'root'));
-    const path = $derived(read(instance.state, 'path'));
-    const label = $derived(read(instance.state, 'label'));
+    const root = $derived(instanceText(instance.state, 'root'));
+    const path = $derived(instanceText(instance.state, 'path'));
+    const label = $derived(instanceText(instance.state, 'label'));
 
     /** The title the pane draws: the bookmark's own words, or the view's name when it has none. */
     const title = $derived(label === '' ? t('views.document') : label);
     const src = $derived(root === '' || path === '' ? '' : fileUrl(root, path));
-
-    function read(state: unknown, key: string): string {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
-        const held = (state as Record<string, unknown>)[key];
-        return typeof held === 'string' ? held : '';
-    }
 
     /**
      * A right-click inside the frame: read there, kept from the browser's own menu, and raised

@@ -128,6 +128,16 @@ describe('Usage', () => {
         expect(draw(payload)).toContain('refresher: ok, last 14:30, next 14:55');
     });
 
+    it('takes no cadence from a value that is not a finite number above zero', () => {
+        const payload = refreshPayload('running', true, undefined, '2026-09-13T12:30:00Z');
+        for (const held of [0, -1, NaN, Infinity, '5']) {
+            cadence(held as number);
+            expect(draw(payload), String(held)).toContain('refresher: ok, last 14:30<');
+        }
+        cadence(5);
+        expect(draw(payload)).toContain('refresher: ok, last 14:30, next 14:35');
+    });
+
     it('names the last refresh alone before the cadence is delivered', () => {
         const html = draw(refreshPayload('running', true, undefined, '2026-09-13T12:30:00Z'));
         expect(html).toContain('refresher: ok, last 14:30<');

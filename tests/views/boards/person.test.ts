@@ -353,3 +353,27 @@ describe('one person as their own tab', () => {
         expect(file?.[0]).toMatch(/\bplain\b/);
     });
 });
+
+describe('the status of a joint-work entry', () => {
+    /** The tags drawn on the joint-work row, from a portfolio whose entry holds this status. */
+    function tagsFor(status: unknown, version: number): string[] {
+        const held = snapshot();
+        const entry = held.entities.collections['joint-work'].entries[0];
+        entry.fields = { ...entry.fields, status };
+        client.entities.receive({ channel: 'portfolio', version, payload: held });
+        const body = drawn(client, { key: 'naesens' }).replace(/<!--[\s\S]*?-->/g, '');
+        const block = body.slice(
+            body.indexOf('data-block="joint-work"'),
+            body.indexOf('data-block="projects"')
+        );
+        return [
+            ...block.matchAll(/<span class="tag[^"]*">\s*<span class="label[^"]*">([^<]*)<\/span>/g)
+        ].map((one) => one[1]);
+    }
+
+    it('draws a tag for a text, an empty one for the empty text, and none for any other value', () => {
+        expect(tagsFor(3, 2)).toEqual([]);
+        expect(tagsFor('', 3)).toEqual(['']);
+        expect(tagsFor('live', 4)).toEqual(['live']);
+    });
+});

@@ -4,6 +4,7 @@
 import { scalar } from '../../../src/lib/data/helpers/guards.ts';
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import LeadCard from '../../../src/lib/views/feeds/leads/LeadCard.svelte';
 import Leads from '../../../src/lib/views/feeds/leads/Leads.svelte';
 import { addFromForm } from '../../../src/lib/views/shared/forms/entry-form.ts';
 import {
@@ -602,5 +603,25 @@ describe('where Position Leads puts its controls', () => {
             expect(button).toMatch(/\bsmall\b/);
             expect(button).not.toMatch(/\bcompact\b/);
         }
+    });
+});
+
+describe('a field of a lead the card reads', () => {
+    it('draws a text or a number as its text and any other value as nothing', () => {
+        const identity = (value: unknown): string | undefined =>
+            /data-lead="([^"]*)"/.exec(
+                render(LeadCard, {
+                    context: clientContext(client),
+                    props: {
+                        entry: { title: value },
+                        vocab: {},
+                        cursor: false,
+                        onsaid: noop,
+                        onapply: noop
+                    }
+                }).body
+            )?.[1];
+        const values = [3, 'x', true, null, [], NaN, Infinity];
+        expect(values.map(identity)).toEqual(['3', 'x', '', '', '', 'NaN', 'Infinity']);
     });
 });

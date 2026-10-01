@@ -45,7 +45,7 @@
     import ProjectCard from '../../shared/card/ProjectCard.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
     import { absentDocs, markdownDocNames, type BoardItem } from '$lib/state/boards/board';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, instanceText } from '$lib/state/workbench/layout/instance';
     import { modelShort, stamp } from '$lib/state/shared/words/format';
     import { PRESENT_DOC } from '$lib/state/life/present';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
@@ -63,7 +63,7 @@
     let { instance }: ViewProps = $props();
 
     /** The project this instance was opened for, from the state the card handed openView. */
-    const id = $derived(readId(instance.state));
+    const id = $derived(instanceText(instance.state, 'id'));
     const cursor = $derived(cardCursor(instance.state));
     const item = $derived(id === '' ? null : boardItemOf(id));
     const folder = $derived(item === null ? '' : folderOf(item));
@@ -75,7 +75,7 @@
      * and api/docs answers with the body alone, the front matter split off.
      */
     const names = $derived(item === null ? [] : markdownDocNames(item.project, PRESENT_DOC));
-    const chosen = $derived(pick(names, readDoc(instanceState(instance.id))));
+    const chosen = $derived(pick(names, instanceText(instanceState(instance.id), 'doc')));
     const shown = $derived(chosen === '' ? null : docFor(id, chosen));
     const lag = $derived(staleLag());
 
@@ -84,21 +84,6 @@
 
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
-
-    function readId(state: unknown): string {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
-        const held = (state as Record<string, unknown>).id;
-        return typeof held === 'string' ? held : '';
-    }
-
-    /**
-     * Which document the tab was left showing, or the empty string when it was left showing none.
-     */
-    function readDoc(state: unknown): string {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
-        const held = (state as Record<string, unknown>).doc;
-        return typeof held === 'string' ? held : '';
-    }
 
     /**
      * The project's absolute folder, which is what the session join matches against: the record

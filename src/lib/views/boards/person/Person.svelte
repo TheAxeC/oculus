@@ -39,6 +39,8 @@
     import { HUB_ROOT } from '$lib/state/sources/fs';
     import { fileEntries } from '$lib/state/sources/fs-transport';
     import { personJoin, type PersonJoin } from '$lib/state/boards/person';
+    import { optionalText } from '$lib/data/shapes/shapes';
+    import { instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -55,7 +57,7 @@
     let { instance }: ViewProps = $props();
 
     /** The person this instance was opened for, from the state the tag handed openView. */
-    const key = $derived(readKey(instance.state));
+    const key = $derived(instanceText(instance.state, 'key'));
     const join = $derived(personJoin(portfolio(), key));
     const folder = $derived(join.folder);
     /**
@@ -100,12 +102,10 @@
             : t('person.organisation_line', held.name, parts.join(t('person.sep')));
     }
 
-    /** Which person the tab was opened for, and the empty string when it was opened for nobody. */
-    function readKey(state: unknown): string {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
-        const held = (state as Record<string, unknown>).key;
-        return typeof held === 'string' ? held : '';
-    }
+    /** The joint-work entries with the status each carries: its text, and nothing for any other. */
+    const jointWork = $derived(
+        join.jointWork.map((entry) => ({ entry, status: optionalText(entry.fields.status) }))
+    );
 
     /** The words on the tab and in the header: the person's name, their key until it is known. */
     const title = $derived(join.person === null ? key : join.person.name);
@@ -170,11 +170,11 @@
                     <Empty message={t('person.no_joint_work')} />
                 {:else}
                     <ul class="rows">
-                        {#each join.jointWork as entry (entry.id)}
+                        {#each jointWork as { entry, status } (entry.id)}
                             <li>
                                 <span class="what">{entry.title}</span>
-                                {#if typeof entry.fields.status === 'string'}
-                                    <Tag label={entry.fields.status} />
+                                {#if status !== undefined}
+                                    <Tag label={status} />
                                 {/if}
                             </li>
                         {/each}

@@ -236,3 +236,43 @@ describe('the Pillars view', () => {
         expect(body.indexOf('Line ten')).toBeLessThan(body.indexOf('Line two'));
     });
 });
+
+describe('the funding a line card reads', () => {
+    /** Whether the card drew a funding line for an entry whose funding field holds this value. */
+    function fundingDrawn(funding: unknown): boolean {
+        const snapshot = fixture();
+        install(client, snapshot);
+        const collection = snapshot.entities.collections.pillars;
+        const entry = present(
+            collection.entries.find((one) => one.id === 'pillar'),
+            'pillar entry'
+        );
+        const body = render(LineCard, {
+            context: clientContext(client),
+            props: {
+                line: snapshot.entities.pillars.pillar,
+                cursor: false,
+                projects: [],
+                venues: [],
+                tiers: [],
+                entry: { ...entry, fields: { ...entry.fields, funding } },
+                schema: collection.schema,
+                editing: false,
+                onedit: noop,
+                onsaid: noop
+            }
+        }).body;
+        return body.includes('<p class="funding');
+    }
+
+    it('draws a funding line for a text and none for any other value', () => {
+        expect(fundingDrawn('NWO')).toBe(true);
+        expect([3, null, ['NWO'], '', undefined].map(fundingDrawn)).toEqual([
+            false,
+            false,
+            false,
+            false,
+            false
+        ]);
+    });
+});

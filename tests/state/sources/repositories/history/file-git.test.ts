@@ -3,7 +3,7 @@
 // of one commit's lines starts, and the gutter mark of each line.
 
 import { describe, expect, it } from 'vitest';
-import type { GitBlameLine } from '../../../../src/lib/data/model/index.ts';
+import type { GitBlameLine } from '../../../../../src/lib/data/model/index.ts';
 import {
     ago,
     blameStarts,
@@ -12,9 +12,9 @@ import {
     marksByLine,
     repoOfFile,
     tabOfFile
-} from '../../../../src/lib/state/sources/repositories/file-git.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
+} from '../../../../../src/lib/state/sources/repositories/file-git.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
 
 // The words are the page's own, so the real catalog is installed as a rendered page installs it.
 setCatalog(textCatalog(loadConfig(engineDir()).config));

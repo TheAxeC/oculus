@@ -7,8 +7,9 @@
 //
 // What this does NOT cover: a step onto a folded file unfolding it and then scrolling to its
 // change, which runs when a file's editor answers with its changes; the rules are the pure
-// `unfolded`, `revealAsked` and `revealDue` of tests/state/sources/repositories/view-state.test.ts,
-// this file reads that the section asks them, and the look on TEST sees the step.
+// `unfolded`, `revealAsked` and `revealDue` of
+// tests/state/sources/repositories/view/view-state.test.ts, this file reads that the section asks
+// them, and the look on TEST sees the step.
 
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

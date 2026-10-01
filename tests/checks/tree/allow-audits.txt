@@ -55,7 +55,6 @@ tests/views/system/help.test.ts :: names every view the catalogue lists, by its 
 tests/views/system/help.test.ts :: names the machine-local file, the checks and where the hub comes from | the case draws nothing and asserts over MANUAL
 tests/views/system/help.test.ts :: writes down every letter a catalogue group is reached by | the case draws nothing and asserts over missing
 tests/views/system/history.test.ts :: has a sentence of its own for every word the endpoint answers, and never the word | the case draws nothing and asserts over outcome
-tests/views/system/history.test.ts :: reads the filter out of whatever the instance state is | the case draws nothing and asserts over filterOf({ filter: 'tasks' })
 tests/views/system/history.test.ts :: says a value is back in part when the writer wrote it but refused a field | the case draws nothing and asserts over partly
 tests/views/system/history.test.ts :: says nothing happened for an answer that named no field, whatever its status | the case draws nothing and asserts over undoSaid({ ok: false, changed: [], error: 'refused' }, 'x')
 tests/views/system/history.test.ts :: says the value is back only when the endpoint named a field it wrote | the case draws nothing and asserts over undoSaid({ ok: true, changed: ['status.line'] }, 'alpha / st

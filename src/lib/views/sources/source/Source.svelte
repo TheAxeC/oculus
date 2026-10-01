@@ -1,6 +1,11 @@
 <script module lang="ts">
     // Layer 3, view registration. A source file opens from another view and is not listed.
+    import { z } from 'zod';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+
+    /** The line a tab was opened at: a finite number above zero, and 0 for anything else. */
+    const openedAtShape = z.object({ line: z.number().positive().catch(0) });
+
     export const registration: ViewRegistration = {
         id: 'source',
         label: 'views.source',
@@ -67,7 +72,10 @@
     import Code from '../../shared/code/Code.svelte';
     import Editor from './Editor.svelte';
     import Gutter from './Gutter.svelte';
+    import { readAs, readJson } from '$lib/data/shapes/shapes';
     import { languageOf, opensInProgram } from '$lib/state/sources/fs';
+    import { listOf } from '$lib/state/sources/repositories/answers';
+    import { instanceText } from '$lib/state/workbench/layout/instance';
     import {
         blameRows,
         blameStatus,
@@ -117,11 +125,11 @@
 
     let { instance }: ViewProps = $props();
 
-    const root = $derived(read(instance.state, 'root'));
-    const path = $derived(read(instance.state, 'path'));
-    const label = $derived(read(instance.state, 'label'));
+    const root = $derived(instanceText(instance.state, 'root'));
+    const path = $derived(instanceText(instance.state, 'path'));
+    const label = $derived(instanceText(instance.state, 'label'));
     /** The line the tab was opened at, and zero for one opened at the file itself. */
-    const line = $derived(number(instance.state, 'line'));
+    const line = $derived(readAs(openedAtShape, instance.state)?.line ?? 0);
     const title = $derived(label === '' ? t('views.source') : label);
     const draft = $derived(sourceDraft(instance.id));
     const blocked = $derived(root === '' || path === '');
@@ -221,15 +229,13 @@
         untrack(() => void readGutter(file, on));
     });
 
-    /** Read one of the gutter's answers, and nothing for a read git refused. */
-    async function readOne<T>(url: string, key: string): Promise<T[]> {
+    /** Read one of the gutter's answers: its status and body, and a refusal when the read threw. */
+    async function readOne(url: string): Promise<{ ok: boolean; body: unknown }> {
         try {
             const response = await fetch(url);
-            const body = (await response.json()) as Record<string, unknown>;
-            const value = body[key];
-            return response.ok && Array.isArray(value) ? (value as T[]) : [];
+            return { ok: response.ok, body: await readJson(response) };
         } catch {
-            return [];
+            return { ok: false, body: undefined };
         }
     }
 
@@ -237,12 +243,12 @@
         reads += 1;
         const mine = reads;
         const [marked, blamed] = await Promise.all([
-            readOne<GitLineMark>(marksUrl(file.root, file.path), 'marks'),
-            on ? readOne<GitBlameLine>(blameUrl(file.root, file.path), 'lines') : null
+            readOne(marksUrl(file.root, file.path)),
+            on ? readOne(blameUrl(file.root, file.path)) : null
         ]);
         if (mine !== reads) return;
-        marks = marked;
-        blame = blamed;
+        marks = listOf(marked.ok, marked.body, 'marks');
+        blame = blamed === null ? null : listOf(blamed.ok, blamed.body, 'lines');
         readAt = Date.now();
     }
 
@@ -294,18 +300,6 @@
         const filePath = path;
         untrack(() => void loadSourceDraft(id, fileRoot, filePath));
     });
-
-    function read(state: unknown, key: string): string {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
-        const value = (state as Record<string, unknown>)[key];
-        return typeof value === 'string' ? value : '';
-    }
-
-    function number(state: unknown, key: string): number {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return 0;
-        const value = (state as Record<string, unknown>)[key];
-        return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0;
-    }
 
     async function save(): Promise<void> {
         await saveSourceDraft(instance.id, root, path);

@@ -15,8 +15,8 @@ import {
     viewKeeper,
     worktreeDiffUrl,
     type DiffView
-} from '../../../../src/lib/state/sources/repositories/repositories.ts';
-import type { DiffSides } from '../../../../src/lib/data/model/index.ts';
+} from '../../../../../src/lib/state/sources/repositories/repositories.ts';
+import type { DiffSides } from '../../../../../src/lib/data/model/index.ts';
 
 /** One entry of a diff at a path, the way git lists it. */
 function entry(oldPath: string, newPath: string): DiffSides {

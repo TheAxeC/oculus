@@ -21,14 +21,14 @@ import {
     syncWords,
     toggleFolded,
     unfolded
-} from '../../../../src/lib/state/sources/repositories/repositories.ts';
+} from '../../../../../src/lib/state/sources/repositories/repositories.ts';
 import {
     revealAsked,
     revealDue
-} from '../../../../src/lib/state/sources/repositories/diff-hunks.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
-import { git } from '../../../fixtures/sessions-fixture.ts';
+} from '../../../../../src/lib/state/sources/repositories/diff-hunks.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
+import { git } from '../../../../fixtures/sessions-fixture.ts';
 
 const catalog = textCatalog(loadConfig(engineDir()).config);
 setCatalog(catalog);

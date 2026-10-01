@@ -1,8 +1,13 @@
 // Layer 3, Map partial helper. What a node of the graph opens and the tone it is drawn in. Both are
 // pure, so the graph component keeps the drawing and the pointer and this module keeps the rules.
 
+import { z } from 'zod';
+import { mapShape, readAs } from '$lib/data/shapes/shapes';
 import type { GraphNode, PointNode } from '$lib/state/boards/structure/graph';
 import { toneOf, typeTone } from '$lib/state/shared/words/tones';
+
+/** A colour word of the configuration's `arch_color` table. */
+const colorShape = z.string();
 
 /** The view a node opens, with the state it opens it with: a project, a pillar line or a person. */
 export function viewOf(node: PointNode): { view: string; state?: Record<string, string> } {
@@ -19,9 +24,6 @@ export function viewOf(node: PointNode): { view: string; state?: Record<string, 
  */
 export function nodeTone(node: GraphNode, archColors: unknown): string {
     if (node.archived === undefined) return typeTone(node.type ?? '');
-    if (typeof archColors !== 'object' || archColors === null || Array.isArray(archColors)) {
-        return 'grey';
-    }
-    const color = (archColors as Record<string, unknown>)[node.archived];
-    return typeof color === 'string' ? toneOf(color) : 'grey';
+    const color = readAs(colorShape, readAs(mapShape, archColors)?.[node.archived]);
+    return color === null ? 'grey' : toneOf(color);
 }

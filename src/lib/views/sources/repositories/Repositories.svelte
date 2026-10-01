@@ -77,6 +77,7 @@
     } from '$lib/state/sources/repositories/repositories';
     import type { StashMode } from '$lib/state/sources/repositories/repositories.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { instanceMap } from '$lib/state/workbench/layout';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -104,9 +105,7 @@
 
     /** Write part of what this instance remembers, keeping the rest of it as it was. */
     function patch(part: Partial<RepositoriesView>): void {
-        const kept = instanceState(instance.id);
-        const keep = typeof kept === 'object' && kept !== null && !Array.isArray(kept) ? kept : {};
-        setInstanceState(instance.id, { ...keep, ...part });
+        setInstanceState(instance.id, { ...instanceMap(instanceState(instance.id)), ...part });
     }
 
     function ask(message: string, detail: string, act: () => void): void {

@@ -1,3 +1,10 @@
+<script module lang="ts">
+    import { anyNumberShape } from '$lib/data/shapes/shapes';
+
+    /** The venue-load threshold of the configuration: any number, and 4 for anything else. */
+    const warnAtShape = anyNumberShape.catch(4);
+</script>
+
 <script lang="ts">
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The command center: the urgency
     // ticker, in two columns under one heading, with the buttons each line can be acted on by.
@@ -24,6 +31,7 @@
     } from '$lib/state/boards/ticker';
     import { attention, refresh } from '$lib/state/feeds/feeds';
     import { t } from '$lib/state/shared/words/text';
+    import { instanceMap } from '$lib/state/workbench/layout';
     import { act, dateTail, openLine, rowMaker } from './rows';
     import CommandCenterView from './CommandCenterView.svelte';
     import { useState } from '$lib/state/client/use';
@@ -59,9 +67,7 @@
     );
 
     /** The threshold the venue-load line quotes, the `venue_conc_warn` of behavior.yml. */
-    const warnAt = $derived(
-        typeof config.venue_conc_warn === 'number' ? config.venue_conc_warn : 4
-    );
+    const warnAt = $derived(warnAtShape.parse(config.venue_conc_warn));
 
     /**
      * The word a collection's own dates are named by. The keys are literal so keys.test.ts sees
@@ -204,13 +210,8 @@
     /** Put transient reveal state on the instance that was activated, never in layout identity. */
     function reveal(view: 'leads' | 'venues', item: string, expiredOpen = false): void {
         const id = openView(view);
-        const current = instanceState(id);
-        const held =
-            typeof current === 'object' && current !== null && !Array.isArray(current)
-                ? current
-                : {};
         setInstanceState(id, {
-            ...held,
+            ...instanceMap(instanceState(id)),
             reveal: item,
             ...(expiredOpen ? { expiredOpen: true } : {}),
             search: ''

@@ -1,13 +1,13 @@
 // Layer 1, data. The zod helpers every reader of an untyped value shares, in the data folder, the
-// server and the state layer: a schema that answers the value it was given, the map, number and
-// filled-text schemas (`mapShape`, `keysOfShape`, `valuesOfShape`, `filledTextShape`,
-// `optionalTextShape`, `textOrNumberOnlyShape`), the whole-number schema `wholeShape`, the list
-// schemas (`itemsShape`, a list of anything, and `optionalItemsShape`, an optional list of
-// strings), the quick path `quickly` builds over a schema full of `.catch` repairs, and the plain
-// readers `readAs`, `readOr`, `filledText`, `optionalText` and `text`. They sit in a folder of
-// their own so every data folder above data/helpers can import them, and apart from the server's
-// json.ts, which can reach the disk: the write diagram draws a module as a writer when anything it
-// imports can write, and a schema helper never does.
+// server, the state layer, the shell, the views and the routes: a schema that answers the value it
+// was given, the map, number and filled-text schemas (`mapShape`, `keysOfShape`, `valuesOfShape`,
+// `filledTextShape`, `optionalTextShape`, `textOrNumberOnlyShape`), the whole-number schema
+// `wholeShape`, the list schemas (`itemsShape`, a list of anything, and `optionalItemsShape`, an
+// optional list of strings), the quick path `quickly` builds over a schema full of `.catch`
+// repairs, and the plain readers `readAs`, `readOr`, `filledText`, `optionalText`, `text` and
+// `textOrNumber`. They sit in a folder of their own so every data folder above data/helpers can
+// import them, and apart from the server's json.ts, which can reach the disk: the write diagram
+// draws a module as a writer when anything it imports can write, and a schema helper never does.
 
 import { z } from 'zod';
 import { strings } from '../helpers/guards.ts';
@@ -69,6 +69,11 @@ export const textOrNumberOnlyShape = z.union([z.string(), anyNumberShape.transfo
 
 /** A string, or any number (`NaN` and the infinities included) written out, else the empty text. */
 export const textOrNumberShape = textOrNumberOnlyShape.catch('');
+
+/** `textOrNumberShape` read once, for a caller that holds a value and wants its text. */
+export function textOrNumber(value: unknown): string {
+    return textOrNumberShape.parse(value);
+}
 
 /**
  * The two fields most tabs keep in their saved state: `search`, the empty text unless it is a

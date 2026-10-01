@@ -6,6 +6,11 @@ import {
     cardCursor,
     findInstance,
     findView,
+    instanceFlag,
+    instanceLabel,
+    instanceMap,
+    instanceNumber,
+    instanceText,
     isInstanceOf,
     newInstance,
     panes,
@@ -267,5 +272,104 @@ describe('the state a card cursor is set on or taken from', () => {
         expect(map).toStrictEqual({ filter: 'open', cursor: 'old' });
         expect(withCardCursor(map, null)).not.toBe(map);
         expect(map).toStrictEqual({ filter: 'open', cursor: 'old' });
+    });
+});
+
+/** A map whose own `__proto__` key holds `{ [key]: 'p' }`, as JSON.parse builds it. */
+function ownProto(key: string): unknown {
+    return JSON.parse(`{"__proto__":{"${key}":"p"},"b":1}`);
+}
+
+describe('the saved state of a tab read as a map', () => {
+    it('is the empty map for anything that is no map', () => {
+        for (const state of [null, undefined, [], 'x', 3]) {
+            expect(instanceMap(state)).toStrictEqual({});
+        }
+    });
+
+    it('is the input itself for a map, a Map and a map with an own __proto__ key', () => {
+        const map = { search: 'a' };
+        const held = new Map([['search', 'a']]);
+        const proto = ownProto('search');
+        expect(instanceMap(map)).toBe(map);
+        expect(instanceMap(held)).toBe(held);
+        expect(instanceMap(proto)).toBe(proto);
+    });
+
+    it('lets a spread copy an own __proto__ key as a key without setting a prototype', () => {
+        const copied = { ...instanceMap(ownProto('search')) };
+        expect(Object.keys(copied)).toContain('__proto__');
+        expect(Object.getPrototypeOf(copied)).toBe(Object.prototype);
+    });
+});
+
+describe('the text a tab holds under a key', () => {
+    const rows: [string, unknown, string][] = [
+        ['undefined', undefined, ''],
+        ['null', null, ''],
+        ['a list', [], ''],
+        ['an empty map', {}, ''],
+        ['a Map holding the key', new Map([['search', 'a']]), ''],
+        ['a number', { search: 3 }, ''],
+        ['null', { search: null }, ''],
+        ['an empty text', { search: '' }, ''],
+        ['a text', { search: 'a' }, 'a'],
+        ['an inherited text', Object.create({ search: 'a' }), 'a'],
+        ['a map with an own __proto__ key', JSON.parse('{"__proto__":{"search":"p"}}'), '']
+    ];
+
+    it.each(rows)('reads %s', (_name, state, expected) => {
+        expect(instanceText(state, 'search')).toBe(expected);
+    });
+
+    it('reads the filter out of whatever the instance state is', () => {
+        expect(instanceText({ filter: 'tasks' }, 'filter')).toBe('tasks');
+        expect(instanceText({}, 'filter')).toBe('');
+        expect(instanceText(null, 'filter')).toBe('');
+        expect(instanceText('not a map', 'filter')).toBe('');
+    });
+});
+
+describe('the flag a tab holds under a key', () => {
+    const rows: [string, unknown, boolean][] = [
+        ['undefined', undefined, false],
+        ['true', { fresh: true }, true],
+        ['the text true', { fresh: 'true' }, false],
+        ['a number', { fresh: 1 }, false],
+        ['a list', [], false]
+    ];
+
+    it.each(rows)('reads %s', (_name, state, expected) => {
+        expect(instanceFlag(state, 'fresh')).toBe(expected);
+    });
+});
+
+describe('the words a tab carries as its label', () => {
+    const rows: [string, unknown, string | null][] = [
+        ['undefined', undefined, null],
+        ['an empty label', { label: '' }, null],
+        ['a number', { label: 3 }, null],
+        ['a text', { label: 'x' }, 'x'],
+        ['null', null, null],
+        ['a list with an own label', Object.assign([], { label: 'x' }), null]
+    ];
+
+    it.each(rows)('reads %s', (_name, state, expected) => {
+        expect(instanceLabel(state)).toBe(expected);
+    });
+});
+
+describe('the number a tab holds under a key', () => {
+    const rows: [string, unknown, number][] = [
+        ['undefined', undefined, 0],
+        ['NaN', { size: NaN }, NaN],
+        ['an infinity', { size: Infinity }, Infinity],
+        ['a negative number', { size: -2 }, -2],
+        ['a text', { size: '5' }, 0],
+        ['a list', [], 0]
+    ];
+
+    it.each(rows)('reads %s', (_name, state, expected) => {
+        expect(instanceNumber(state, 'size')).toStrictEqual(expected);
     });
 });

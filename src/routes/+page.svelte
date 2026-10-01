@@ -25,12 +25,11 @@
     } from '$lib/state/workbench/navigation/status';
     import { repositoriesViewOf } from '$lib/state/sources/repositories/repositories';
     import { configGeneration } from '$lib/state/shared/words/generation.svelte';
-    import { collectionKeys } from '$lib/data/snapshot/normalise';
-    import { typeOfFile, HUB_ROOT } from '$lib/state/sources/fs';
+    import { bookmarkRows, HUB_ROOT } from '$lib/state/sources/fs';
     import { createClientState } from '$lib/state/client/context';
     import { provideState } from '$lib/state/client/use';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
-    import { registerAll, registerCollections } from './views.ts';
+    import { pushedCollections, registerAll, registerCollections } from './views.ts';
     import type { PageData } from './$types';
 
     let { data }: { data: PageData } = $props();
@@ -86,8 +85,8 @@
         const pushed = config()?.config;
         // A push whose `collections:` is missing or malformed names no keys, and registering none
         // would close every collection tab on every page; the registry follows a real list only.
-        if (pushed === undefined || !Array.isArray(pushed.collections)) return;
-        registerCollections(client.registry, collectionKeys(pushed));
+        const keys = pushedCollections(pushed);
+        if (keys !== null) registerCollections(client.registry, keys);
     });
 
     /**
@@ -156,30 +155,7 @@
      * store; the rail is handed what to draw. Which view opens one is a question about a file name,
      * which state/sources/fs.ts answers.
      */
-    const saved = $derived<Bookmark[]>(
-        savedBookmarks().entries.flatMap((entry) => {
-            // An entry with no root or no path names no file, so it is dropped rather than drawn as
-            // a button on nothing.
-            const root = entry.fields.root;
-            const path = entry.fields.path;
-            if (
-                typeof root !== 'string' ||
-                root === '' ||
-                typeof path !== 'string' ||
-                path === ''
-            ) {
-                return [];
-            }
-            return [
-                {
-                    label: entry.title,
-                    root,
-                    path,
-                    view: typeOfFile(path).kind === 'html' ? 'document' : 'file'
-                }
-            ];
-        })
-    );
+    const saved = $derived<Bookmark[]>(bookmarkRows(savedBookmarks().entries));
 
     /**
      * Rewrite the rail's `rail:` list as the rail asks, a page button moved or hidden, through the

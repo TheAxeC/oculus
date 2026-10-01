@@ -2,6 +2,9 @@
 // default component. The route layer owns discovery so the view boundary does not import views.
 
 import type { Component } from 'svelte';
+import { z } from 'zod';
+import { collectionKeys } from '$lib/data/snapshot/normalise';
+import { itemsShape, readAs } from '$lib/data/shapes/shapes';
 import type {
     RegistryStore,
     ViewProps,
@@ -15,6 +18,9 @@ type ViewModule = {
     default: Component<ViewProps>;
     registration?: RegistrationSource;
 };
+
+/** The `collections` field of a pushed configuration, when it holds a list. */
+const pushedShape = z.object({ collections: itemsShape });
 
 /** Read one source as a list, leaving collection factories for registerCollections(). */
 function definitions(source: RegistrationSource, keys?: string[]): ViewRegistration[] {
@@ -39,6 +45,15 @@ export const viewModules = import.meta.glob('$lib/views/**/*.svelte', { eager: t
 /** Fill one client's registry with every discovered view. */
 export function registerAll(registry: RegistryStore): void {
     registerModules(registry, viewModules);
+}
+
+/**
+ * The collection keys a pushed configuration names: those `collectionKeys` reads from its
+ * `collections` list, none for an empty list, and null when the configuration holds no list there.
+ */
+export function pushedCollections(pushed: unknown): string[] | null {
+    const held = readAs(pushedShape, pushed);
+    return held === null ? null : collectionKeys(held);
 }
 
 /**

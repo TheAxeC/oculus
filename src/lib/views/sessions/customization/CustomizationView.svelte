@@ -22,6 +22,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { instanceText } from '$lib/state/workbench/layout';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -35,11 +36,7 @@
     /** The file and the listing it came from, as the section opened the tab. */
     const opened = $derived.by(() => {
         const state = instanceLayoutState(instance.id);
-        const held =
-            typeof state === 'object' && state !== null && !Array.isArray(state)
-                ? (state as Record<string, unknown>)
-                : {};
-        const word = (key: string): string => (typeof held[key] === 'string' ? held[key] : '');
+        const word = (key: string): string => instanceText(state, key);
         return {
             agent: word('agent') === 'codex' ? ('codex' as const) : ('claude' as const),
             account: word('account'),

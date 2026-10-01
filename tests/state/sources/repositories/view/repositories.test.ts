@@ -6,12 +6,12 @@
 // is tests/routes/git/git.test.ts and tests/server/git/git-write.test.ts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { openShell } from '../../../../src/lib/state/shared/stores/shell.ts';
+import { openShell } from '../../../../../src/lib/state/shared/stores/shell.ts';
 
 // The one start-and-show path of a shell, watched so a case sees the store reach it.
-vi.mock('../../../../src/lib/state/shared/stores/shell.ts', { spy: true });
-import type { GitEntry, GitState } from '../../../../src/lib/data/model/index.ts';
-import { git } from '../../../fixtures/sessions-fixture.ts';
+vi.mock('../../../../../src/lib/state/shared/stores/shell.ts', { spy: true });
+import type { GitEntry, GitState } from '../../../../../src/lib/data/model/index.ts';
+import { git } from '../../../../fixtures/sessions-fixture.ts';
 import {
     diffUrl,
     plannedPath,
@@ -29,23 +29,26 @@ import {
     worktreesDir,
     linkedWorktrees,
     workspaceCount
-} from '../../../../src/lib/state/sources/repositories/repositories.ts';
+} from '../../../../../src/lib/state/sources/repositories/repositories.ts';
 import {
     ignoresWorktrees,
     IGNORE_RULE,
     isWorktreePath
-} from '../../../../src/lib/data/helpers/worktrees.ts';
+} from '../../../../../src/lib/data/helpers/worktrees.ts';
 import {
     createRepositories,
     DIFF_VIEW,
     MERGE_VIEW
-} from '../../../../src/lib/state/sources/repositories/repositories.svelte.ts';
-import { createWrites } from '../../../../src/lib/state/client/writes.svelte.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
-import type { LayoutStore } from '../../../../src/lib/state/workbench/layout.svelte.ts';
-import type { TerminalsStore } from '../../../../src/lib/state/sessions/terminals.svelte.ts';
-import type { WriteAnswer, WritesStore } from '../../../../src/lib/state/client/writes.svelte.ts';
+} from '../../../../../src/lib/state/sources/repositories/repositories.svelte.ts';
+import { createWrites } from '../../../../../src/lib/state/client/writes.svelte.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
+import type { LayoutStore } from '../../../../../src/lib/state/workbench/layout.svelte.ts';
+import type { TerminalsStore } from '../../../../../src/lib/state/sessions/terminals.svelte.ts';
+import type {
+    WriteAnswer,
+    WritesStore
+} from '../../../../../src/lib/state/client/writes.svelte.ts';
 import {
     canPublish,
     changeCount,
@@ -57,7 +60,7 @@ import {
     repoShape,
     sameFiles,
     upstreamOf
-} from '../../../../src/lib/state/sources/repositories/repositories.ts';
+} from '../../../../../src/lib/state/sources/repositories/repositories.ts';
 
 const ROOT = '/hub';
 

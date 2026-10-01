@@ -357,6 +357,31 @@ describe('the command center', () => {
     });
 });
 
+describe('the venue-load threshold the command center quotes', () => {
+    let sent = 100;
+
+    /** The threshold the venue-load line of the fixture's venue quotes, or undefined for none. */
+    function quoted(warn: unknown): string | undefined {
+        sent += 1;
+        receive({
+            channel: 'config',
+            version: sent,
+            payload: { config: { ...config, venue_conc_warn: warn }, text: catalog, findings: [] }
+        });
+        const buttons = html(client).match(/<button[\s\S]*?<\/button>/g) ?? [];
+        const venue = buttons.find((button) =>
+            button.includes('data-ticker-id="attention:venue:jbi"')
+        );
+        return /\(>=([^ ]*) in flight/.exec(venue ?? '')?.[1];
+    }
+
+    it('quotes the number the configuration holds and 4 for anything that is not a number', () => {
+        expect(quoted('5')).toBe('4');
+        expect(quoted(NaN)).toBe('NaN');
+        expect(quoted(2)).toBe('2');
+    });
+});
+
 describe('quick add', () => {
     it('draws its label and the two controls that open the form', () => {
         expect(body).toContain(catalog['focus.quick_add']);

@@ -1,8 +1,8 @@
 // Layer 2, state test. The one start-and-show path of a shell (state/shared/stores/shell.ts):
 // a shell started in the folder asked for and shown under the label, or the refusal handed back
 // with nothing shown. That the Repositories store's `shellIn` and the Files row menu both take this
-// path is asserted in their own tests (tests/state/sources/repositories/repositories.test.ts and
-// tests/views/sources/files/files-menu.test.ts).
+// path is asserted in their own tests (tests/state/sources/repositories/view/repositories.test.ts
+// and tests/views/sources/files/files-menu.test.ts).
 
 import { describe, expect, it } from 'vitest';
 import { openShell } from '../../../../src/lib/state/shared/stores/shell.ts';

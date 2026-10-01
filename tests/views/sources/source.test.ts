@@ -499,6 +499,29 @@ describe('a file the source tab may not write', () => {
         return instance;
     }
 
+    it('carries a line only when the tab names a finite number above zero', async () => {
+        const instance = await holding('lines', 'notes.md', 'one\ntwo\nthree\n', false);
+        const lineOf = (line: unknown): string | undefined => {
+            const opened = {
+                ...instance,
+                state: { ...(sourceTabState('hub', 'notes.md') as object), line }
+            };
+            const body = render(Source, {
+                context: clientContext(client),
+                props: { instance: opened }
+            }).body;
+            return /data-source-line="([^"]*)"/.exec(body)?.[1];
+        };
+        expect([NaN, Infinity, -1, 0, '12', 12].map(lineOf)).toEqual([
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            '12'
+        ]);
+    });
+
     it('draws the code window and the sentence for a file this machine locks', async () => {
         const instance = await holding('locked', 'code/run.py', 'print("hello")\n', true);
         const body = render(Source, { context: clientContext(client), props: { instance } }).body;

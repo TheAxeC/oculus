@@ -19,9 +19,10 @@ digraph layer_shell {
         "folder shell/rail to layer ui" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/status to layer state" [label="17", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/status to layer ui" [label="14", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder shell/panes to layer state" [label="25", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/panes to layer state" [label="26", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/panes to layer ui" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder shell/keys to layer state" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/keys to layer data" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/keys to layer state" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/keys to layer ui" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "layer state from folder shell" [label="state", style=dashed];
@@ -32,6 +33,7 @@ digraph layer_shell {
     "layer ui from folder shell/status" [label="ui", style=dashed];
     "layer state from folder shell/panes" [label="state", style=dashed];
     "layer ui from folder shell/panes" [label="ui", style=dashed];
+    "layer data from folder shell/keys" [label="data", style=dashed];
     "layer state from folder shell/keys" [label="state", style=dashed];
     "layer ui from folder shell/keys" [label="ui", style=dashed];
     "folder shell" -> "folder shell/rail" [style=invis, weight=10, minlen=3];
@@ -70,10 +72,13 @@ digraph layer_shell {
     "folder shell/panes" -> "folder shell/panes to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
     "folder shell/panes to layer ui" -> "layer ui from folder shell/panes" [style=dashed];
     { rank=same; "folder shell/panes to layer ui"; "layer ui from folder shell/panes"; }
-    "folder shell/keys" -> "folder shell/keys to layer state" [arrowhead=none, style=dashed];
+    "folder shell/keys" -> "folder shell/keys to layer data" [arrowhead=none, style=dashed];
+    "folder shell/keys to layer data" -> "layer data from folder shell/keys" [style=dashed];
+    { rank=same; "folder shell/keys"; "folder shell/keys to layer data"; "layer data from folder shell/keys"; }
+    "folder shell/keys" -> "folder shell/keys to layer state" [arrowhead=none, style=dashed, minlen=1, weight=10];
     "folder shell/keys to layer state" -> "layer state from folder shell/keys" [style=dashed];
-    { rank=same; "folder shell/keys"; "folder shell/keys to layer state"; "layer state from folder shell/keys"; }
-    "folder shell/keys" -> "folder shell/keys to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
+    { rank=same; "folder shell/keys to layer state"; "layer state from folder shell/keys"; }
+    "folder shell/keys" -> "folder shell/keys to layer ui" [arrowhead=none, style=dashed, minlen=2, weight=10];
     "folder shell/keys to layer ui" -> "layer ui from folder shell/keys" [style=dashed];
     { rank=same; "folder shell/keys to layer ui"; "layer ui from folder shell/keys"; }
 }

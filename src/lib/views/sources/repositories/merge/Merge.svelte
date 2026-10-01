@@ -56,7 +56,10 @@
         type MergeHistory,
         type Region
     } from '$lib/state/sources/repositories/merge-regions';
+    import { readJson } from '$lib/data/shapes/shapes';
+    import { mergeSidesOf } from '$lib/state/sources/repositories/answers';
     import { sidesUrl, type GitMergeSides } from '$lib/state/sources/repositories/repositories';
+    import { instanceText } from '$lib/state/workbench/layout/instance';
     import { languageOf } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -70,8 +73,8 @@
 
     let { instance }: ViewProps = $props();
 
-    const root = $derived(read(instance.state, 'root'));
-    const path = $derived(read(instance.state, 'path'));
+    const root = $derived(instanceText(instance.state, 'root'));
+    const path = $derived(instanceText(instance.state, 'path'));
 
     let sides: GitMergeSides | null = $state(null);
     let failure = $state('');
@@ -92,12 +95,6 @@
     const language = $derived(languageOf(path, languages()));
     const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
 
-    function read(state: unknown, key: string): string {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
-        const value = (state as Record<string, unknown>)[key];
-        return typeof value === 'string' ? value : '';
-    }
-
     $effect(() => {
         const wanted = `${root}\n${path}`;
         if (root === '' || path === '' || wanted === taken) return;
@@ -110,13 +107,13 @@
         done = false;
         try {
             const response = await fetch(sidesUrl(from, file));
-            const body = (await response.json()) as { sides?: GitMergeSides; error?: string };
-            if (!response.ok || body.sides === undefined) {
-                failure = body.error ?? t('repositories.merge_failed');
+            const answer = mergeSidesOf(response.ok, await readJson(response));
+            if (answer.sides === null) {
+                failure = answer.failure;
                 return;
             }
-            sides = body.sides;
-            regions = regionsOf(body.sides.base, body.sides.ours, body.sides.theirs);
+            sides = answer.sides;
+            regions = regionsOf(answer.sides.base, answer.sides.ours, answer.sides.theirs);
             history = historyOf({
                 pieces: initialPieces(regions),
                 choices: regions.map((): Choice => 'open')

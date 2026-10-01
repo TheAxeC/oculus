@@ -128,6 +128,24 @@ describe('the Config view', () => {
         expect(open).toContain('nav_groups');
     });
 
+    it('reads the files the tab was left open on as the text items of its open list', () => {
+        const two = [file('layout.yml'), file('behavior.yml')];
+        /** The files whose raw text the body drew, in the order of the cards. */
+        const opened = (body: string): string[] =>
+            [...body.matchAll(/data-file="([^"]+)"/g)].map((one) => one[1]);
+        const cases: [string, unknown, string[]][] = [
+            ['a text', 'layout.yml', []],
+            ['a number beside a name', [3, 'layout.yml'], ['layout.yml']],
+            ['two names', ['layout.yml', 'behavior.yml'], ['layout.yml', 'behavior.yml']],
+            ['a map', { 0: 'layout.yml' }, []],
+            ['nothing', undefined, []]
+        ];
+        for (const [name, open, expected] of cases) {
+            client.ui.setInstanceState(instance.id, { open });
+            expect(opened(drawn(two)).sort(), name).toEqual([...expected].sort());
+        }
+    });
+
     // The word is the one every view drawn from a file carries over its own file, not a word of the
     // Config view's own, so a card reads the same as the control closing a feed view's toolbar.
     it('offers the shared control naming the file it opens', () => {

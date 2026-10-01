@@ -1,3 +1,17 @@
+<script module lang="ts">
+    import { z } from 'zod';
+    import { optionalTextShape } from '$lib/data/shapes/shapes';
+
+    /** How a dataset is retrieved: the method as text, and the notes with spaces collapsed. */
+    const retrievalShape = z.object({
+        method: optionalTextShape,
+        notes: z
+            .string()
+            .transform((words) => words.replace(/\s+/g, ' ').trim())
+            .catch('')
+    });
+</script>
+
 <script lang="ts">
     // Layer 3, Data view partial. One dataset card, its registry metadata, recovery, project users
     // and edit form. The server supplies the recovery command and working directory.
@@ -13,6 +27,7 @@
     import { accessTone, type Dataset } from '$lib/state/sources/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Entry, Project, SchemaField } from '$lib/state/boards/collection';
+    import { readOr } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -36,14 +51,11 @@
     let { dataset, cursor, projects, entry, schema, editing, onedit, onsaid }: Props = $props();
     let recovering = $state(false);
 
-    const method = $derived(
-        typeof dataset.retrieval?.method === 'string' ? dataset.retrieval.method : undefined
+    const retrieval = $derived(
+        readOr(retrievalShape, dataset.retrieval, { method: undefined, notes: '' })
     );
-    const notes = $derived(
-        typeof dataset.retrieval?.notes === 'string'
-            ? dataset.retrieval.notes.replace(/\s+/g, ' ').trim()
-            : ''
-    );
+    const method = $derived(retrieval.method);
+    const notes = $derived(retrieval.notes);
 
     /**
      * The card's controls, drawn while the card is hovered or holds the focus: the edit form for a

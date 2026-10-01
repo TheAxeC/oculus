@@ -21,6 +21,7 @@ export {
     type FileType
 } from './explorer/file-type.ts';
 import { z } from 'zod';
+import { typeOfFile } from './explorer/file-type.ts';
 import { TEXT_LIMIT } from '../../data/file-ops.ts';
 import { fieldItemsShape, readAs } from '../../data/shapes/shapes.ts';
 import { deepestHolding } from '../../data/helpers/files/paths.ts';
@@ -593,6 +594,40 @@ export function markedKeys(entries: { fields: Record<string, unknown> }[]): stri
     return entries.flatMap((one) => {
         const row = readAs(refShape, one.fields);
         return row === null ? [] : [treeKey(row.root, row.path)];
+    });
+}
+
+/** The root and the path a bookmark's fields name, or null when either is not a text. */
+export function bookmarkRef(fields: Record<string, unknown>): RowRef | null {
+    return readAs(refShape, fields);
+}
+
+/** The root and path of a bookmark that names a file: neither is empty. */
+const namedRefShape = z.object({ root: z.string().min(1), path: z.string().min(1) });
+
+/**
+ * One choice of the rail's Bookmarks menu: a file under one of the roots of sources.yml, from the
+ * reader's own bookmarks file, which the Files view edits.
+ *
+ * `view` is which view opens it. A page is a document of its own so that its stylesheets and
+ * relative assets resolve, and anything else is the file view; which is which is a question about a
+ * file name, so `bookmarkRows` in this module sets it and the page hands the rows to the rail.
+ */
+export type BookmarkRow = { label: string; root: string; path: string; view: 'document' | 'file' };
+
+/**
+ * The bookmarks the rail draws: one row per entry whose root and path are both filled texts, in
+ * the order the file holds them. An entry with either missing names no file and is left out. A
+ * path that is a page opens in the document view and any other in the file view.
+ */
+export function bookmarkRows(
+    entries: { title: string; fields: Record<string, unknown> }[]
+): BookmarkRow[] {
+    return entries.flatMap((entry) => {
+        const ref = readAs(namedRefShape, entry.fields);
+        if (ref === null) return [];
+        const view = typeOfFile(ref.path).kind === 'html' ? 'document' : 'file';
+        return [{ label: entry.title, root: ref.root, path: ref.path, view }];
     });
 }
 

@@ -20,6 +20,7 @@
         type RadarEntry
     } from '$lib/state/feeds/radar';
     import { posting } from '$lib/views/shared/forms/posting';
+    import { textOrNumber } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -41,10 +42,7 @@
     let { entry, id, cursor, lastRun, projects, dismissed = false, onsaid }: Props = $props();
     let spinning = $state(false);
 
-    const text = (field: string): string => {
-        const value = entry[field];
-        return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
-    };
+    const text = (field: string): string => textOrNumber(entry[field]);
     const identity = $derived(text('title'));
     const title = $derived(identity || t('radar.untitled'));
     const relevance = $derived(text('relevance'));

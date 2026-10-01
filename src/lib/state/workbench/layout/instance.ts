@@ -5,7 +5,14 @@
 import { z } from 'zod';
 import type { Instance, Layout, Pane, ViewId } from './index.ts';
 import { isMap, item } from '../../../data/helpers/guards.ts';
-import { filledTextShape, readAs } from '../../../data/shapes/shapes.ts';
+import {
+    anyNumberShape,
+    filledTextShape,
+    mapShape,
+    readAs,
+    readOr,
+    wordShape
+} from '../../../data/shapes/shapes.ts';
 
 /** The field of a view's saved state that holds its keyboard-selected card. */
 const cursorShape = z.object({ cursor: filledTextShape });
@@ -17,6 +24,41 @@ const identityShape = z.object({
     root: filledTextShape,
     path: filledTextShape
 });
+
+/** The field of a view's saved state that holds the words its tab carries. */
+const labelShape = z.object({ label: filledTextShape });
+
+/**
+ * The saved state of a tab as a map, and the empty map for any other value. A map is answered as
+ * it was given, so a view that writes its state back with a field added keeps the others, an own
+ * `__proto__` key among them.
+ */
+export function instanceMap(state: unknown): Record<string, unknown> {
+    return readOr(mapShape, state, {});
+}
+
+/** The text a tab's saved state holds under `key`, and the empty text when it holds none. */
+export function instanceText(state: unknown, key: string): string {
+    return wordShape.parse(readAs(mapShape, state)?.[key]);
+}
+
+/** Whether a tab's saved state holds `true` under `key`; any other value is not a set flag. */
+export function instanceFlag(state: unknown, key: string): boolean {
+    return readAs(mapShape, state)?.[key] === true;
+}
+
+/** The words a tab's saved state carries as its `label`, or null when it carries none. */
+export function instanceLabel(state: unknown): string | null {
+    return readAs(labelShape, state)?.label ?? null;
+}
+
+/**
+ * The number a tab's saved state holds under `key`, `NaN` and the infinities included, and 0 when
+ * it holds none.
+ */
+export function instanceNumber(state: unknown, key: string): number {
+    return readOr(anyNumberShape, readAs(mapShape, state)?.[key], 0);
+}
 
 /** The card id held by an instance, or null when keyboard navigation has selected none. */
 export function cardCursor(state: unknown): string | null {

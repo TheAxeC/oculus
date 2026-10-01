@@ -6,15 +6,13 @@
 import { t as catalogText } from '$lib/state/shared/words/text';
 import { registrationLabel } from '$lib/state/workbench/navigation/registry';
 import type { RegistryStore } from '$lib/state/workbench/navigation/registry';
-import type { Instance } from '$lib/state/workbench/layout';
+import { instanceLabel, type Instance } from '$lib/state/workbench/layout';
 
 /** The words on the active main tab, including the per-instance label when it has one. */
 export function activeLabel(registry: RegistryStore, instance: Instance | null): string {
     if (instance === null) return catalogText('app.title');
-    if (typeof instance.state === 'object' && instance.state !== null) {
-        const held = (instance.state as Record<string, unknown>).label;
-        if (typeof held === 'string' && held !== '') return held;
-    }
+    const held = instanceLabel(instance.state);
+    if (held !== null) return held;
     const registered = registry.viewFor(instance.view);
     return registered === undefined
         ? catalogText('ui.unknown_view', instance.view)

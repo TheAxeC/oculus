@@ -67,6 +67,7 @@
     import { fileBytesUrl } from '$lib/state/sources/fs.svelte';
     import { extensionOf, nameOf, opensInProgram, typeOfFile } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source.svelte';
+    import { instanceNumber, instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -87,9 +88,9 @@
     /** How many times the picture was asked for again, which makes a new element each time. */
     let attempt = $state(0);
 
-    const root = $derived(read(instance.state, 'root'));
-    const path = $derived(read(instance.state, 'path'));
-    const label = $derived(read(instance.state, 'label'));
+    const root = $derived(instanceText(instance.state, 'root'));
+    const path = $derived(instanceText(instance.state, 'path'));
+    const label = $derived(instanceText(instance.state, 'label'));
 
     const title = $derived(label === '' ? t('views.file') : label);
     const src = $derived(
@@ -108,19 +109,7 @@
      */
     const openable = $derived(holds && opensInProgram(path, programApps()));
     /** What the tree knew the file's size to be, which is what an undrawn type reports. */
-    const size = $derived(humanSize(number(instance.state, 'size')));
-
-    function read(state: unknown, key: string): string {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
-        const value = (state as Record<string, unknown>)[key];
-        return typeof value === 'string' ? value : '';
-    }
-
-    function number(state: unknown, key: string): number {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return 0;
-        const value = (state as Record<string, unknown>)[key];
-        return typeof value === 'number' ? value : 0;
-    }
+    const size = $derived(humanSize(instanceNumber(instance.state, 'size')));
 
     /**
      * Hand a text file on to the source tab, which is where every text file is read and written.

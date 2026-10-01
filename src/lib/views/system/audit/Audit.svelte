@@ -38,6 +38,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { auditSearch, findingsOfKind, muteMessage } from '$lib/state/system/audit';
     import { useState } from '$lib/state/client/use';
+    import { instanceFlag, instanceText } from '$lib/state/workbench/layout/instance';
     import type { AuditFinding } from '$lib/state/system/audit.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
@@ -52,13 +53,8 @@
 
     /** The pane's own state: the search the reader typed and whether the muted section is open. */
     const raw = $derived(instanceState(instance.id));
-    const held = $derived(
-        typeof raw === 'object' && raw !== null && !Array.isArray(raw)
-            ? (raw as Record<string, unknown>)
-            : {}
-    );
-    const search = $derived(typeof held.search === 'string' ? held.search : '');
-    const showMuted = $derived(held.showMuted === true);
+    const search = $derived(instanceText(raw, 'search'));
+    const showMuted = $derived(instanceFlag(raw, 'showMuted'));
 
     /** What the last mute failed with, and the empty string when the last one was written. */
     let failed = $state('');

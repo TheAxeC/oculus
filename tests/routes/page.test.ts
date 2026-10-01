@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { load } from '../../src/routes/+page.ts';
 import { load as serverLoad } from '../../src/routes/+page.server.ts';
+import { pushedCollections } from '../../src/routes/views.ts';
 import { Hub } from '../../src/lib/server/core/channels.ts';
 import { configGeneration } from '../../src/lib/state/shared/words/generation.svelte.ts';
 import { defaultTheme } from '../../src/lib/state/shared/words/appearance.ts';
@@ -108,7 +109,8 @@ describe('the page effect that follows a config push', () => {
 
     it('follows a push only when it carries a real collections list, so a malformed one closes no tab', () => {
         const wired = effects(source).filter((body) => body.includes('registerCollections('));
-        expect(wired[0]).toContain('!Array.isArray(pushed.collections)) return;');
+        expect(wired[0]).toContain('pushedCollections(');
+        expect(wired[0]).toContain('if (keys !== null) registerCollections(');
     });
 
     it('leaves the first frame to the untracked call in the script body', () => {
@@ -141,5 +143,23 @@ describe('the page server load', () => {
             seed: { payload?: { host: unknown } };
         };
         expect(data.seed.payload?.host).toBe(host);
+    });
+});
+
+describe('the collections a pushed configuration names', () => {
+    it('are none to register for a configuration without a list of them', () => {
+        expect(pushedCollections(undefined)).toBeNull();
+        expect(pushedCollections({})).toBeNull();
+        expect(pushedCollections({ collections: 'x' })).toBeNull();
+        expect(pushedCollections([])).toBeNull();
+    });
+
+    it('are an empty list for an empty list, which registers none', () => {
+        expect(pushedCollections({ collections: [] })).toStrictEqual([]);
+    });
+
+    it('are the keys of the rows the list holds', () => {
+        const collections = [{ key: 'events' }, { key: 'grants' }];
+        expect(pushedCollections({ collections })).toStrictEqual(['events', 'grants']);
     });
 });

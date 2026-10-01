@@ -27,6 +27,7 @@
         type LeadEntry
     } from '$lib/state/feeds/leads';
     import { posting } from '$lib/views/shared/forms/posting';
+    import { textOrNumber } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { answerWords } from '$lib/views/shared/forms/answer-words';
@@ -49,10 +50,7 @@
     let { entry, vocab, cursor, expired = false, onsaid, onapply }: Props = $props();
     let sure = $state(false);
 
-    const text = (field: string): string => {
-        const value = entry[field];
-        return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
-    };
+    const text = (field: string): string => textOrNumber(entry[field]);
     const title = $derived(text('title'));
     const identity = $derived(leadId(entry));
     const institution = $derived(text('inst'));

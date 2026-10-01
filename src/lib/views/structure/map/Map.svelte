@@ -43,7 +43,7 @@
         typeFilters as typeChips
     } from '$lib/state/boards/structure/graph';
     import { t } from '$lib/state/shared/words/text';
-    import { parseMapState, type MapState } from '$lib/state/boards/structure/graph';
+    import { labelModeOf, parseMapState, type MapState } from '$lib/state/boards/structure/graph';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -71,11 +71,10 @@
      */
     const base = $derived.by(() => {
         if (snapshot === null) return { nodes: [], edges: [] };
-        const mode = configMap().map_label_mode;
         return buildGraph(snapshot, {
             archived: enabled,
             collaborators,
-            labelMode: typeof mode === 'string' ? mode : ''
+            labelMode: labelModeOf(configMap())
         });
     });
     /**

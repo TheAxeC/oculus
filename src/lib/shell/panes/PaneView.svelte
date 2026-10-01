@@ -63,7 +63,7 @@
         registrationLabel
     } from '$lib/state/workbench/navigation/registry';
     import PaneBody from './PaneBody.svelte';
-    import { panes, type Instance, type Layout } from '$lib/state/workbench/layout';
+    import { instanceLabel, panes, type Instance, type Layout } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -144,7 +144,7 @@
             if (found === undefined) {
                 return { id: instance.id, label: t('ui.unknown_view', instance.view) };
             }
-            const own = stateLabel(instance.state);
+            const own = instanceLabel(instance.state);
             const badge = badgeOf(found, client);
             const preview = instance.preview === true;
             return {
@@ -166,13 +166,6 @@
             };
         })
     );
-
-    /** The `label` an instance state carries, or null for a state with none or an empty one. */
-    function stateLabel(state: unknown): string | null {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
-        const held = (state as Record<string, unknown>).label;
-        return typeof held === 'string' && held !== '' ? held : null;
-    }
 
     /**
      * The drag, and where in this pane's own tabs the tab being dragged sits, if it is one of them.

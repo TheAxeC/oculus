@@ -9,7 +9,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import History from '../../../src/lib/views/system/history/History.svelte';
-import { filterOf, shown, undoSaid } from '../../../src/lib/views/system/history/rows.ts';
+import { shown, undoSaid } from '../../../src/lib/views/system/history/rows.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -65,13 +65,6 @@ describe('the rows fold', () => {
         expect(shown({ do: 'read it', done: true })).toMatchObject({ size: 2, empty: false });
         expect(shown(JSON.parse('null'))).toEqual({ text: '', size: 0, empty: true });
         expect(shown('')).toEqual({ text: '', size: 0, empty: true });
-    });
-
-    it('reads the filter out of whatever the instance state is', () => {
-        expect(filterOf({ filter: 'tasks' })).toBe('tasks');
-        expect(filterOf({})).toBe('');
-        expect(filterOf(null)).toBe('');
-        expect(filterOf('not a map')).toBe('');
     });
 });
 

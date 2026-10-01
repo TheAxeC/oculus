@@ -256,3 +256,10 @@ none beyond the six Z179 changes the first report lists. The round changes no an
 - `tests/views/structure/node-view.test.ts` also tests `viewOf`, which the step did not change; harmless extra coverage, not judged as a finding.
 
 Reviewer usage: not available to me.
+
+## Closed
+
+- First run, Spec 1 and 2, Standards 1 to 5: closed in repair round 1 (rulings 1 to 7 of `agents/briefs/Q85d-round1.md`), each closure reproduced by the round's reviewer under "Closure of the seven rulings".
+- First run, Proof 1: closed with no change, as `agents/briefs/Q85d-round1.md:13` rules: the reviewer reproduced the first-run counts by its own runs.
+- Repair round 1, Standards 1 (`src/lib/data/shapes/shapes.ts:1-3` names three of the six places that import it and leaves `textOrNumber` out of its list; `textOrNumber`'s doc comment repeats its schema's): fixed at landing on main. The head comment names the shell, the views and the routes and lists `textOrNumber`; `textOrNumber`'s doc comment says it reads `textOrNumberShape` once.
+- Repair round 1, Standards 2 (`src/lib/state/sources/fs.ts:613` says the page decides a bookmark's view): fixed at landing on main. The comment says `bookmarkRows` in the module sets it and the page hands the rows to the rail (`routes/+page.svelte:158` calls `bookmarkRows`).

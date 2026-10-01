@@ -164,6 +164,11 @@ describe('the workbench', () => {
         }
     });
 
+    it('uses the registered label when the state is a list that carries a label key', () => {
+        const state = Object.assign([], { label: 'x' });
+        expect(activeLabel(client.registry, { id: 'one', view: 'alpha', state })).toBe('Status');
+    });
+
     it('names an unknown view and handles an empty main tree', () => {
         expect(activeLabel(client.registry, { id: 'unknown', view: 'from-2027', state: {} })).toBe(
             'Unknown view: from-2027'
@@ -248,6 +253,27 @@ describe('the workbench', () => {
         expect(body).toMatch(
             /Pinned session.*<span id="tip-\d+" class="words"[^>]*hidden[^>]*>Status</s
         );
+    });
+
+    it('labels a tab with the nonempty text label its state holds and with the view otherwise', () => {
+        const label = (state: unknown): string | undefined => {
+            apply({ root: pane('pinned', 'alpha', state) });
+            const body = render(Workbench, {
+                context: clientContext(client),
+                props: { groups: [] }
+            }).body.replace(/<!--[\s\S]*?-->/g, '');
+            const tab = /<button\b[^>]*role="tab"[^>]*>[\s\S]*?<\/button>/.exec(body)?.[0] ?? '';
+            return /class="label[^"]*">([^<]*)<\/span>/.exec(tab)?.[1];
+        };
+        const rows: [unknown, string | undefined][] = [
+            [{ label: 'x' }, 'x'],
+            [{ label: '' }, 'Status'],
+            [{ label: 3 }, 'Status'],
+            [{}, 'Status'],
+            [null, 'Status'],
+            [Object.assign([], { label: 'x' }), 'Status']
+        ];
+        expect(rows.map(([state]) => label(state))).toEqual(rows.map(([, expected]) => expected));
     });
 
     it('mounts the active instance of every pane', () => {

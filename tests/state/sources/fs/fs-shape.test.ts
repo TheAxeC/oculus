@@ -2,6 +2,8 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    bookmarkRef,
+    bookmarkRows,
     childPath,
     expandedOf,
     extensionOf,
@@ -375,5 +377,48 @@ describe("the rows the reader's bookmarks name", () => {
             marked({ root: 'hub', path: 'a', label: 'x' })
         ];
         expect(markedKeys(entries)).toEqual(['hub:a', ':', 'hub:a']);
+    });
+});
+
+describe('the file a bookmark names', () => {
+    const rows: [string, Record<string, unknown>, { root: string; path: string } | null][] = [
+        ['a root and a path', { root: 'r', path: 'p' }, { root: 'r', path: 'p' }],
+        ['an empty root', { root: '', path: 'p' }, { root: '', path: 'p' }],
+        ['a root that is a number', { root: 3, path: 'p' }, null],
+        ['no root', { path: 'p' }, null],
+        ['a path that is a number', { root: 'r', path: 3 }, null],
+        ['no path', { root: 'r' }, null]
+    ];
+
+    it.each(rows)('is read from %s', (_name, fields, expected) => {
+        expect(bookmarkRef(fields)).toStrictEqual(expected);
+    });
+});
+
+describe('the bookmarks the rail draws', () => {
+    const entry = (title: string, fields: Record<string, unknown>) => ({ title, fields });
+
+    it('keeps only the bookmarks whose root and path are both filled texts, in the order held', () => {
+        const rows = bookmarkRows([
+            entry('A', { root: 'r', path: 'p' }),
+            entry('B', { root: '', path: 'p' }),
+            entry('C', { root: 3, path: 'p' }),
+            entry('D', { path: 'p' }),
+            entry('E', { root: 'r', path: '' }),
+            entry('F', { root: 'r' }),
+            entry('G', { root: 'h', path: 'q', label: 'ignored' })
+        ]);
+        expect(rows).toStrictEqual([
+            { label: 'A', root: 'r', path: 'p', view: 'file' },
+            { label: 'G', root: 'h', path: 'q', view: 'file' }
+        ]);
+    });
+
+    it('opens a page in the document view and any other file in the file view', () => {
+        const rows = bookmarkRows([
+            entry('Page', { root: 'r', path: 'a.html' }),
+            entry('Text', { root: 'r', path: 'a.md' })
+        ]);
+        expect(rows.map((one) => one.view)).toStrictEqual(['document', 'file']);
     });
 });

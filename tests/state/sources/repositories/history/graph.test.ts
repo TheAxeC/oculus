@@ -10,7 +10,7 @@ import {
     lanePaths,
     laneWidth,
     laneX
-} from '../../../../src/lib/state/sources/repositories/graph-lanes.ts';
+} from '../../../../../src/lib/state/sources/repositories/graph-lanes.ts';
 
 /** The path strings of the strokes of row `at` of a history. */
 function pathsOf(history: { hash: string; parents: string[] }[], at: number): string[] {

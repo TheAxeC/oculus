@@ -1,6 +1,11 @@
 <script module lang="ts">
     // Layer 3, view registration. Config follows History in the System page's group.
+    import { z } from 'zod';
+    import { fieldItemsShape } from '$lib/data/shapes/shapes';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+
+    /** The field of the tab's saved state that holds the names of the previews left open. */
+    const openShape = z.object({ open: fieldItemsShape });
 
     export const registration: ViewRegistration = {
         id: 'config',
@@ -44,6 +49,7 @@
         isLocalFile
     } from '$lib/state/system/config/config-files';
     import { descriptionKey } from './files';
+    import { readOr } from '$lib/data/shapes/shapes';
     import { ENGINE_ROOT } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source.svelte';
     import { lookup, t } from '$lib/state/shared/words/text';
@@ -77,14 +83,7 @@
     const names = $derived(configFiles(entries(ENGINE_ROOT, ''), entries(ENGINE_ROOT, CATALOGS)));
 
     /** Which previews the tab was left showing, so a tab switch does not close them. */
-    const open = $derived(readOpen(instanceState(instance.id)));
-
-    function readOpen(state: unknown): string[] {
-        if (typeof state !== 'object' || state === null || Array.isArray(state)) return [];
-        const held = (state as Record<string, unknown>).open;
-        if (!Array.isArray(held)) return [];
-        return held.filter((one): one is string => typeof one === 'string');
-    }
+    const open = $derived(readOr(openShape, instanceState(instance.id), { open: [] }).open);
 
     function toggle(name: string): void {
         const next = open.includes(name) ? open.filter((one) => one !== name) : [...open, name];

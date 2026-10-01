@@ -19,6 +19,7 @@
     import { daysTone } from '$lib/state/boards/ticker';
     import { namedTone, toneOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
+    import { instanceMap } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -69,12 +70,11 @@
     /** Open the collection and ask it to reveal the exact entry this card names. */
     function reveal(item: BandItem): void {
         const instance = openView(item.entry);
-        const current = instanceState(instance);
-        const held =
-            typeof current === 'object' && current !== null && !Array.isArray(current)
-                ? current
-                : {};
-        setInstanceState(instance, { ...held, reveal: item.id, search: '' });
+        setInstanceState(instance, {
+            ...instanceMap(instanceState(instance)),
+            reveal: item.id,
+            search: ''
+        });
     }
 </script>
 

@@ -42,7 +42,8 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { stamp } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
-    import { filterOf, shown, undoSaid } from './rows';
+    import { instanceText } from '$lib/state/workbench/layout';
+    import { shown, undoSaid } from './rows';
     import type { Shown } from './rows';
     import { matching, type Change } from '$lib/state/sessions/changes.svelte';
     import { useState } from '$lib/state/client/use';
@@ -55,7 +56,7 @@
 
     let { instance }: ViewProps = $props();
 
-    const filter = $derived(filterOf(instanceState(instance.id)));
+    const filter = $derived(instanceText(instanceState(instance.id), 'filter'));
     const list = $derived(matching(rows(), filter));
 
     /** What the status region says: the last sentence a press produced. */
