@@ -55,8 +55,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with Q85d, `PaneView.svelte` (Q85d its instance-label reader; L4 the menus), `layout/index.ts` (Q85d five exports beside `cardCursor`; L4 the float exports), `tests/shell/workbench.test.ts` and `tests/shell/panes/paneview.test.ts` (new cases each), different hunks, a simple merge with the export block read at the second landing; `DESIGN.md` (L4 210, 358-365; U4 369, 404, 408; D35 224-235; D27 85, 171, 379; Q85d 148, 323) and `HELP.md` (L4 27-45, 127; U4 100; D35 216, 236; D27 230), different lines; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   builder_usage: the build to the report 134,601 tokens, 314 tool uses, 82.2 min (1 full-list run, passed)
-  reviewer_report: agents/reviews/L4-refuter.md (first run, reviewer aef82904238b07ede, claude-sonnet-5-5, launched 2026-10-02 01:06, the earlier reviewer ac7c886ff3f54f762 stopped at 23:58 without a report; usage on its completion)
-  round: 0
+  reviewer_report: agents/reviews/L4-refuter.md (first run, reviewer aef82904238b07ede, claude-sonnet-5-5, launched 2026-10-02 01:06, 335,496 tokens, 71 tool uses, 30.7 min; 4 Spec, 2 Proof, 3 Standards, 2 Behaviour findings; the earlier reviewer ac7c886ff3f54f762 stopped at 23:58 without a report)
+  round: 1 (agents/briefs/L4-round1.md, sent 01:38)
 - step: Q66
   executor: agent
   worker: claude:sonnet
