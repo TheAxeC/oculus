@@ -74,6 +74,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with Q85d, `PaneView.svelte` (Q85d its instance-label reader; L4 the menus), `layout/index.ts` (Q85d five exports beside `cardCursor`; L4 the float exports), `tests/shell/workbench.test.ts` and `tests/shell/panes/paneview.test.ts` (new cases each), different hunks, a simple merge with the export block read at the second landing; `DESIGN.md` (L4 210, 358-365; U4 369, 404, 408; D35 224-235; D27 85, 171, 379; Q85d 148, 323) and `HELP.md` (L4 27-45, 127; U4 100; D35 216, 236; D27 230), different lines; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   round: 0
+- step: Q66
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 23:03)
+  session_id: a4af80915516453ed (launched 2026-10-01 23:02 local)
+  worktree: .agents/worktrees/Q66
+  base: d6359dcd
+  launched: 2026-10-01 23:02 local
+  report: agents/reviews/Q66-report.md
+  brief_check: agents/reviews/Q66-brief-check.md, every finding closed in the brief (its Closed heading, in automode); claude-sonnet-5-5, 330,279 tokens, 118 tool uses, 18.7 min
+  shared_paths: with Q85d, `Changes.svelte` (Q85d the body read at 77-79; Q66 the effect at 59-70), `Diff.svelte` (Q85d a `typeof` at 333 and readers; Q66 the effects at 216-241), `Graph.svelte` and `Source.svelte` (Q85d the readers; Q66 the gutter and load effects), `File.svelte` (Q85d the instance-state readers at 90-92; Q66 the address at 95-97); with L4, `PaneBody.svelte` (L4 the float body; Q66 the head comment at 8-9) and `File.svelte` (L4 only if its close needs the rule); `tests/shell/panes/` (L4 changed cases in existing files; Q66 two new files, the folder at 6); `DESIGN.md` (Q66 194; others as their entries say), different hunks, a simple merge with Diff.svelte's size read after both; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
