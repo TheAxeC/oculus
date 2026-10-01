@@ -8,15 +8,17 @@ In flight:
 - L4 (floating panes and kept empty panes), building.
 
 
+Three queued steps are kept prepared ahead (Z185).
+
 Queued, in order (31 steps):
 - X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a); problem decorations to D33 and code symbols to D23 by Z182), being prepared: brief written, its brief check running.
 - D32 (replace in Search), once D35 has landed (both change the write target and the undo table); its brief check is in.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), once D27 has landed (both change `config-key.ts`'s single-value refusal).
-- Q88c (the Source Control rows' and the pane strip's new menu items).
+- Q88c (the Source Control rows' and the pane strip's new menu items), being prepared ahead.
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - Q91 (the project view and its editor), once X3a has landed.
-- Q66 (a hidden tab defers its work).
-- Q35 (the session views).
+- Q66 (a hidden tab defers its work), being prepared ahead.
+- Q35 (the session views), being prepared ahead.
 - D11 and D14 (the rite debug client; LaTeX everywhere).
 - D25 (the editor's options), once S4 has landed.
 - D23, D15 and D17 (language servers; PDF reading, once D14 has landed; project commands).

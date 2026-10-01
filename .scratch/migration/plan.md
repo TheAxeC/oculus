@@ -773,6 +773,8 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z182 (2026-10-01): (a), the Explorer's problem decorations in D33 and the Outline's code symbols in D23; X3a builds the Outline with Markdown and LaTeX headings (the orchestrator, automode)
 - Open item Z183 (2026-10-01): (a), Z177 amended so `apps_dir` is read again on a change, as Axel's apps ruling C1 puts it beside the account folders; `DESIGN.md:236` says so, in D35 round 1 (the orchestrator, automode)
 - Open item Z184 (2026-10-01): (a), L4's floats reach saved layouts (the Focus page's HPC and Usage tabs move into the float), a view open in a float is activated there, a kept pane stays on every route, a float takes no attention and has no maximise; in L4 (the orchestrator, automode)
+- Open item Z185 (2026-10-01): three queued steps kept prepared ahead (brief written and checked, worktree made), beside the builders; `workers_at_once` caps builders, as Z109 (a) says (the user)
+- Open item Z186 (2026-10-01): "a configuration file or a rule file" in plan-orchestration's run-alone rule means Ordo's own files (`.agents/plan.yaml`, the rules file), never oculus's `config/` (the user)
 - D35 premise corrected (2026-10-01): the three `notify.*` keys and `notify.stop` are already read at every hook request, so D35 makes the other 13 live and removes the unread start copies.
 
 ## Blocked, and by what
