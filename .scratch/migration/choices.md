@@ -175,3 +175,11 @@ An editor action from the palette (Add Line Comment, Fold All) moves no tab, so 
 
 Where it is built: Q106's brief, item 6 (`Palette.svelte`'s `choose` and `run`) and case 19; `HELP.md:90` and `DESIGN.md:218` say it. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z153 (2026-10-01 13:39, step S3c)
+
+The question: the Terminal text size box and a config number row read a number by one rule; that rule accepts an exponent, so `1e1` is 10.
+
+- Chosen (a): one rule, `1e1` read as 10 in both; `0x10`, `Infinity`, `1,5` and `1x` refused with the config row's message.
+- Not chosen: (b) exponents refused in both, which changes a config row's answer; (c) a second rule only for the box.
+
+Where it is built: S3c's round 1. Booked in the state file's closed log and `plan.md` Rulings.

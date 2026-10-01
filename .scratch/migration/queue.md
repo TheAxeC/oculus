@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- S3c (the Settings editor), repair round 1 running.
+- S3c (the Settings editor), review of repair round 1 running.
 - Q85b (zod in the state layer), building.
 - Q88b (the Files view's file operations), building.
 Queued, in order:

@@ -718,6 +718,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z151 (2026-10-01): (a), Q88b's choices as its brief's Decisions 1 to 11: no History record, `/api/ops`, `{left} vs {right}`, VS Code's name rule, 32 MiB uploads, the delete question always, a page-wide clipboard, keys and multi-select X3a's, local.yml protected, Find in Folder on roots, no writable flag (the orchestrator, automode).
 - Open item Z152 (2026-10-01): Q88c and Q88d merged into one step Q88c, the Source Control rows' and the pane strip's new right-click capabilities with the page-wide handler, after Q88b and S3c; X3c waits for Q88c (the user).
 - Open item Z148 (2026-10-01): (1), Lucide kept and every icon drawn at 16 px; built in the step Z146 makes (the user).
+- Open item Z153 (2026-10-01): (a), one decimal rule for a config number row and the Terminal text size box, `1e1` read as 10 in both (the orchestrator, automode).
 - Open item Z147 (2026-10-01): (c) widened, the cards kept and put on the same scale as everything else: they fit the pane's width, take one chip shape and titles on the type scale, and get groups 2 and 5; links lose the underline; Projects looked at on TEST after the step (the user).
 - Open item Z146 (2026-10-01): U2's seven groups as one step U3, with Z147 (c) widened and Z148 (1) (the user).
 
