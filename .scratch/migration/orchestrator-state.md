@@ -37,9 +37,11 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   worktree: .agents/worktrees/U2
   base: 86e6d8bb (prepared again at main's head after X3d, S3b and Q109 landed; the worktree rebuilt there, its brief's premises rechecked; first prepared at 7e8eec33)
   report: agents/reviews/U2-report.md (with U2-audit.md, U2-vscode.css and U2-shots/, copied to main's ledger on the report)
+  builder_usage: first run 244,358 tokens, 528 tool uses, 98.3 min (95 of the 97 shots copied; `usage-narrow.png` and `usage-wide.png` stay in the worktree, since they show Axel's account email addresses)
+  reviewer_report: agents/reviews/U2-refuter.md (first review, reviewer ad200f3022d402cec on claude-opus-5-5, 89,273 tokens, 212 tool uses, 18.3 min)
   brief_check: agents/reviews/U2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 70 tool uses, 160,458 tokens, 9.9 min
   landing: not-started
-  round: 0
+  round: 1 (`agents/briefs/U2-round1.md`, sent 2026-10-01 08:58)
   launched: 2026-10-01 06:59 local
 - step: Q85a2
   executor: agent
