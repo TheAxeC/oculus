@@ -364,3 +364,10 @@ Where they are built: L4. Booked in the state file's closed log and `plan.md` Ru
 - Not chosen: (b) each finding left for a later step, the lazy option.
 
 Where they are built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z189 (2026-10-01 23:05, step Q35)
+
+- Chosen (a): the Present deck fills its pane as a 16:9 frame at a 1280 by 720 design size, the slide scaled uniformly to the frame and letterboxed on the long side; the slide parts keep their sizes inside the frame; the Overview grid is not scaled.
+- Not chosen: (b) the slide's words sized in container units so the slide reflows to any pane shape (a slide then looks different in every pane and on the projector); (c) the slide left at the UI's type size, the lazy option.
+
+Where it is built: Q35. Booked in the state file's closed log and `plan.md` Rulings.

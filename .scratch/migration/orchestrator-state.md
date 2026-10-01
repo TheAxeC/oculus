@@ -58,9 +58,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/Q85d-brief-check.md, every finding closed in the brief (its Closed heading, Z179 in automode); claude-sonnet-5-5, 311,875 tokens, 104 tool uses, 15.7 min
   shared_paths: with D27, `Source.svelte` and `Merge.svelte` (D27 the lines that make or change a model's language; Q85d the instance-state readers, Merge's body read at 112 and the imports), `state/sources/fs.ts` (D27 the file-type reads; Q85d two exports beside `refShape` at 211), `tests/checks/tree/boundaries.test.ts` (D27 the state row's comment; Q85d the views' and shell's rows and the comment at 73-75), `tests/views/sources/source.test.ts` (D27 494-516; Q85d new cases at the end) and `tests/checks/tree/allow-audits.txt` (one line each), different hunks, a simple merge with the import blocks read at the second landing; no path shared with D35; `docs/diagrams/`, regenerated at each landing
   landing: not-started
-  reviewer_report: agents/reviews/Q85d-refuter.md (first run, reviewer a1869e27b7f463b00, claude-sonnet-5-5, launched 22:28; usage on its completion)
+  reviewer_report: agents/reviews/Q85d-refuter.md (first run, reviewer a1869e27b7f463b00, claude-sonnet-5-5, launched 22:28; 282,135 tokens, 76 tool uses, 25.0 min; 2 Spec, 1 Proof, 5 Standards, 0 Behaviour)
   builder_usage: the build to the report 290,982 tokens, 229 tool uses, 82.8 min (4 full-list runs: the first two failed at npm run test:checks, the third at npm run lint, the fourth passed)
-  round: 0
+  round: 1 (agents/briefs/Q85d-round1.md, sent 22:55)
 - step: L4
   executor: agent
   worker: claude:sonnet
@@ -178,6 +178,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z189, how the Present deck fills its pane (raised 2026-10-01 at /spec Q35): closed by the orchestrator, automode (`choices.md`): a 16:9 frame at 1280 by 720, scaled uniformly and letterboxed; (c), the slide at the UI's type size, was the lazy option.
 - Z188, X3a's brief-check findings other than 6.1 (raised 2026-10-01 22:15 by X3a's brief check): closed by the orchestrator, automode (`choices.md`), each to be written into the brief when X3a is prepared after Z187: the default workspace's Add and Remove write `sources.yml` `roots:` through a new list-edit write, a configured root shown in every workspace as today and removable only in the default workspace; a `history` key in `local.yml` beside `bookmarks` and `notes`; no options-catalog entry for `file-nesting.yml`, named in `DESIGN.md:44` and `config-folder.test.ts`; the listing's entries gain `ignored`; decorations on the existing `--c-scm-*` tokens plus `--c-scm-untracked`, VS Code's letters (`!` for a conflict, `T` a type change); the file log through `server/core/git.ts`'s one call site as `GET /api/git?log=<root>&path=`; no history copy of `config/local.yml`; one copy read by its listed id; Paste into the same folder is Duplicate, with a case; folder rows drag under a type of their own; a light theme is one whose `--bg` is light, the only ones whose Seti colours are derived; every missing path, case and shape of the report added. Not chosen: each finding booked for a later step, the lazy option.
 - Z186, the run-alone rule's "configuration file" (raised 2026-10-01 22:09 by the orchestrator): Axel ruled at 22:12 that it means Ordo's own files (`.agents/plan.yaml`, the rules file), not oculus's `config/`.
 - Z185, steps prepared ahead (raised 2026-10-01 22:09, on Axel's question): (a) three queued steps kept prepared (brief and brief check, worktree), beside the builders; (b) five, more merging at landing; (c) one at a time, the lazy option. Axel ruled (a) at 22:12; `workers_at_once` caps builders (Z109 (a)).

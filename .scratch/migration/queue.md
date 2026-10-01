@@ -2,7 +2,7 @@
 
 In flight:
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), repair round 1 built (12 rulings done, the full list passed); its review over the round running.
-- Q85d (zod in the views, ui, shell and routes), built and its report in; its review (/refute) running.
+- Q85d (zod in the views, ui, shell and routes), reviewed (no red check, 7 findings); repair round 1 building.
 - L4 (floating panes and kept empty panes), building.
 
 
@@ -16,7 +16,7 @@ Queued, in order (31 steps):
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - Q91 (the project view and its editor), once X3a has landed.
 - Q66 (a hidden tab defers its work), brief written; its brief check running.
-- Q35 (the session views), being prepared ahead.
+- Q35 (the Audit view as a list and the Present deck filling its pane; the rest of its line is on the tree or in D25 and S4), brief written; its brief check running.
 - D11 and D14 (the rite debug client; LaTeX everywhere).
 - D25 (the editor's options), once S4 has landed.
 - D23, D15 and D17 (language servers; PDF reading, once D14 has landed; project commands).
