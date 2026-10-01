@@ -5,9 +5,10 @@ In flight:
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), building on its round-0 case rulings.
 - Q85d (zod in the views, ui, shell and routes), building: its builder runs the first run of the cases.
 - U4 (Focus and Sessions brought to the other views' size, the commit dropdown aligned), being prepared: brief written from measurements on TEST, its brief check running.
+- D32 (replace in Search), being prepared: brief written, its brief check running.
 
 
-Queued, in order (32 steps):
+Queued, in order (31 steps):
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), once D27 has landed (both change `config-key.ts`'s single-value refusal).
 - Q88c (the Source Control rows' and the pane strip's new menu items).
 - X3c (the tab strip as VS Code's), once Q88c has landed.
@@ -21,9 +22,9 @@ Queued, in order (32 steps):
 - D23, D15 and D17 (language servers; PDF reading, once D14 has landed; project commands).
 - D23b (more language server features), once D23 has landed.
 - D28 (saving a source file), once D25 has landed.
-- D32 (replace in Search).
 - D33 (the Problems view), once D23 and D17 have landed.
-- D18, D20 and D24 (the Processes view; an agent from a task or in a new worktree; the Personal board).
+- D18 (the Processes view), once D35 has landed (its command patterns are a behaviour key read live through D35's mechanism).
+- D20 and D24 (an agent from a task or in a new worktree; the Personal board).
 - A1 and A3 (review with feedback; scheduled runs, once D17 has landed).
 - M3 and M4 (the resources registry; live equations in Present).
 - Q72 (the architecture re-read).
