@@ -1,8 +1,8 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- S3c (the Settings editor), built; its reviewer (Sonnet) running since 12:30.
-- Q85b (zod in the state layer), builder (Sonnet) resumed 12:44 with its nine cases ruled.
+- S3c (the Settings editor), repair round 1 (19 rulings) sent 12:52.
+- Q85b (zod in the state layer), builder (Sonnet) resumed 12:43 with its nine cases ruled.
 - Q88b (the Files view's file operations), builder (Sonnet) resumed 12:37 with its two cases ruled.
 Open items: Z146 (U2's grouping into build steps), Z147 (collections as rows or cards), Z148 (the icon set), all three Axel's, in `orchestrator-state.md`'s Open items. Choices made in automode, for review: `choices.md`.
 Queued, in order:
