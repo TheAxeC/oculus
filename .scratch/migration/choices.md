@@ -192,3 +192,21 @@ The question: seven answers of the state layer that Q85b's rulings did not name,
 - Not chosen: a schema pass on every read of a payload; partial values whose type says they are whole; the old answers.
 
 Where it is built: Q85b. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z155 (2026-10-01 14:56, step Q85b)
+
+The question: an `/api/agents` answer of 200 whose body lacks the `agents`, `accounts` or `findings` list was handed to the view, which then throws reading `agents.find`.
+
+- Chosen (a): a missing list makes the answer a failed read, as a list of the wrong type already does.
+- Not chosen: (b) keep handing such a body on, which keeps the throw.
+
+Where it is built: Q85b's round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z156 (2026-10-01 14:56, step Q88b)
+
+The question: a search scoped to a folder that is not there showed the route's English text, never the catalog sentence.
+
+- Chosen (a): the 400 body carries the refusal word `refused` beside `error`, and the page says the catalog sentence for a word it knows.
+- Not chosen: (b) the page matching the route's English text.
+
+Where it is built: Q88b, as the builder's report states it. Booked in the state file's closed log and `plan.md` Rulings.

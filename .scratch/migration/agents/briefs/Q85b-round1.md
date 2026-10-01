@@ -1,0 +1,12 @@
+# Q85b, repair round 1
+
+The findings of `agents/reviews/Q85b-refuter.md`, each with its ruling. Every ruling stays inside the brief; the brief, `agents/briefs/Q85b-cases.md` and the rules file hold. Each fix that changes an answer gets a case written failing first, its failure quoted in the report.
+
+1. (Behaviour 1) `state/life/memories.svelte.ts:55`: `sideShape` reads a side as a whole positive number as the hand check did, `z.number().refine(Number.isInteger).positive().nullable().catch(null)` as `saved.ts:47` does, since zod's `multipleOf(1)` accepts `1e-20` and `5e-324`. A case with `width: 1e-20` answers `size: null`, failing on the step's tree before the fix and passing on the unchanged tree.
+2. (Behaviour 2) `state/shared/words/tones.ts:55`: `stringMap` skips a key whose lower-cased form is `__proto__` (a `__PROTO__` key of `palette`, `status_palette`, `type_color`, `domains` or `data_access`), so the map holds no own `__proto__` entry, as `DESIGN.md` "Untyped input" says. A case with a `__PROTO__` domain: the lookup of `__proto__` answers none.
+3. (Behaviour 3, ruled Z155 in automode) `state/sessions/agents.svelte.ts`: the three lists of an agents answer (`agents`, `accounts`, `findings`) and `rows` of a customizations answer are required, as `data/model/model-agents.ts:53-57` declares them, so a 200 body missing one is a failed read with the status, as a wrong-typed list already is (Z154 N2). The test at `tests/state/sessions/agents.test.ts:145` that holds `{}` as the answer asserts a known defect (`Composer.svelte:101` reads `read?.agents.find(...)` and throws on it); it is rewritten to the failed read, and the report lists it with before and after.
+4. (Standards 1) `tests/state/workbench/layout/saved/refusal-fixture.ts:1`: the head tag reads "Layer 4, test fixture", as every other test fixture's does.
+5. (Standards 2) `state/workbench/navigation/arrangement.ts:38`: `arrangementTabShape` is held to `Instance` with `satisfies` in place of the annotation; only the recursive `arrangementNodeShape` keeps an annotation.
+6. (Proof 1) The report's line "Total: 506 -> 59 in these 71 files" is corrected to what the count prints over the changed files under `src/lib/state` that exist (the reviewer's run gives 58 over 78 files), with the command quoted.
+
+Then rerun the whole verify list through `checks.sh` from the worktree's `tools/oculus` and write the report as your hand-back message, with a section "Repair round 1" holding one line per ruling with what changed and its evidence.

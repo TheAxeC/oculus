@@ -1,10 +1,10 @@
-NOT done: everything in items 1 to 15. The builder stopped at the first run, before any change to source code, because two rules of the brief give a result that the brief's own sources contradict: case 31 against item 8 on Copy for a root (VS Code's `fileActions.contribution.ts:548-556`), and the name length rule of item 1, case 4 and case 33, which counts bytes where VS Code counts characters and where this machine's volume accepts names that the rule refuses. The rulings needed are below under "Cases the brief's rules get wrong". The only changes in the tree are `package.json` (`trash`), `package-lock.json`, and the case tests listed under "Files".
+Everything in the brief is done.
 
-## Open items of the state file (verbatim, `.scratch/migration/orchestrator-state.md` lines 125-127)
+Not verified by any command: the drawn behaviour the brief assigns to the look on TEST (no browser and no real Trash are used in this worktree). They are listed under "Audits for the look" with what each must show.
 
-- Z146 (raised 2026-10-01, step U2, its audit's "Proposed grouping", `agents/reviews/U2-audit.md:1126-1138`). How the audit's seven groups become build steps. The groups: 1 the header frame (22 px, one line, title cut with an ellipsis, actions on one line with an overflow menu); 2 control sizes (text button 26 px radius 4px, icon action 20 px with a 16 px glyph and no border, input 26 px, one 1px focus ring); 3 type and row scale (base text 13px, rows 22 px, tree indent 8 px with a 16 px twistie, off-scale sizes removed); 4 icons at 16 px (Z148); 5 row and card actions shown on hover or focus-within; 6 collections as rows (Z147); 7 empty, error and narrow states. The measured footprint of the shared parts: `ui/frame/Pane.svelte` 127 lines and `Toolbar.svelte` 30, used by 51 components; `ToolButton.svelte` 506 lines, used by 137; `ui/frame/Card.svelte` 233 lines, used by 20; 414 of the 442 `font-size` declarations under `src/lib` go through the nine `--fs-*` tokens of `themes/tokens.css`; 13 view files set a fixed px height (`grep -rl`/`grep -rho` over `src/lib`, `wc -l`). (a) One step for groups 1, 2, 3 and 5, which change the shared components and tokens above and so touch the same few files; then group 4 once Z148 is ruled, group 7, and group 6 once Z147 is ruled: four steps. For: no tiny steps; each shared change lands once and is looked at once on TEST. Against: one review covers four kinds of change. (b) Seven steps, one per group, in the order 1, 2, 3, 5, 4, 7, 6. For: each review reads one kind of change. Against: four of them are small edits to the same files. (c) No build steps: the audit stays a record. For: no work. Against: every difference it measured stays. Recommendation: (a). The lazy option is (c). Settings is S3c's, the tab strip X3c's, and the X3d parts of Changes are outside every group.
-- Z147 (raised 2026-10-01, step U2, group 6 and differences 7, 10 and 15 of `agents/reviews/U2-audit.md`). Collections drawn as cards (radius 10px, a 3px coloured left rule for the status, 285 to 352 px wide, 15px titles) where VS Code draws 22 px rows with a 13px label and a count badge; it holds for projects, coauthor, archive, pillars, domains, venues, data, code, statements, funding, events, education, applications, joint-work, tasks, radar, leads, inbox, linkedin, usage, gallery, audit, config and project. (a) Rows everywhere: each collection view a list of 22 px rows with a count badge, links without the underline. For: one look across the workbench, as VS Code's. Against: the status rule of a card and the card's room for several lines of detail are lost; the largest change of the audit. (b) Rows on Projects first, looked at on TEST and shown to you, and the other views follow your ruling on it. For: you judge the change on one real view before it spreads. Against: one more look and ruling before the rest is built. (c) Keep the cards and restyle only their controls (groups 2 and 5). For: the cards keep what they show. Against: the views stay unlike VS Code's lists. Recommendation: (b). The lazy option is (c).
-- Z148 (raised 2026-10-01, step U2, group 4 and difference 19 of `agents/reviews/U2-audit.md:1124`). Icons are Lucide (`DESIGN.md` "Theming"), drawn at 1em of the text beside them, so 9.5 to 15 px, mostly 11.5 px; VS Code's codicons are 16 x 16 px (`U2-vscode.css` css:241, css:252, css:133). (1) Keep Lucide and draw every icon at 16 px. For: DESIGN.md's decision stands and only the size rule changes. Against: the glyph shapes stay Lucide's, unlike VS Code's. (2) Replace the set with codicons through `config/catalogs/icons.yml`. For: glyph for glyph as VS Code. Against: every glyph id is re-mapped, several domain icons have no codicon, and it reverses DESIGN.md's decision. Recommendation: (1). The lazy option is leaving the icons at the size of their text.
+## Open items
+
+None. The "Open items" section of `tools/oculus/.scratch/migration/orchestrator-state.md` in the main checkout (lines 142-147, read at report time with `sed -n 142,147p`) holds no entry, and Z146, Z147 and Z148 are in its closed log (lines 171-173, found with `grep -n "Z146\|Z147\|Z148"`). The copy of that file inside this worktree is older and still lists the three as open at lines 125-127.
 
 ## Cases the brief's rules get wrong (the stop of "Cases")
 
@@ -94,29 +94,189 @@ New tests that pass on the unchanged tree, with why: the three reveal tests of `
 
 Two existing tests were edited so they still hold with the new field: `tests/state/sources/search.test.ts` "opens on every root, no option, and the cap the configuration carries" now lists `under: ''`, and the `query()` helper of `tests/server/files/search.test.ts` carries `under: ''`. The edited one fails on the unchanged tree (it expects `under`).
 
+### Rulings (from `tools/oculus/.scratch/migration/agents/briefs/Q88b-cases.md`, read in the main checkout)
+
+- Case 1, Copy on a root: ruled (A). A root's line offers no Cut, Copy, Rename... or Delete, as item 8 says and as VS Code registers Copy with `when: ExplorerRootContext.toNegated()` (`fileActions.contribution.ts:548-556`). Built that way: the root branch of `rowMenu` in `src/lib/views/sources/files/tree/row-menu.ts` has no cut, copy or modify group, and the test "offers a root the folder items VS Code gives a workspace folder" asserts Cut, Copy, Rename... and Delete absent.
+- Case 2, the name length: ruled (A). A segment longer than 255 UTF-16 units (`name.length > 255`) is `invalid_name`, VS Code's `isValidBasename` (`extpath.ts:197`); the server still maps `ENAMETOOLONG` to `invalid_name`. Built that way: `MAX_NAME_LENGTH = 255` and `validSegment` in `src/lib/data/file-ops.ts`, and `tests/data/file-ops.test.ts` accepts 128 times e-acute and a 100-character CJK name and refuses a 256-character segment.
+
 ## DONE / NOT DONE
 
-| Item | Status | Proof |
-| --- | --- | --- |
-| `trash` 10.1.1 added | DONE | `git diff -- package.json` prints `+        "trash": "^10.1.1",` |
-| First run of the cases as tests | DONE | the tables above; `git status --short` |
-| `grep -n "from 'trash'" tests` prints nothing | DONE | printed nothing, exit 1 |
-| Items 1-15, cases green, `npm run diagrams`, `checks.sh`, `npm run test:checks`, file sizes, ASCII gate | NOT DONE | stopped at the first run |
+Every row names the command that proves it, run from `tools/oculus` with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`, and quotes the last lines of its output. Cases 1-28 carry their number in the test title (`grep -rhoE "\(case [0-9]+\)" tests/server/files/ops.test.ts tests/server/files/ops-paste.test.ts` lists 1 to 28); cases 29-42 are the tests of the files named in the rows.
+
+| Item | Status | Command | Output |
+| --- | --- | --- | --- |
+| Items 1, 2, 3 and cases 1-28, 33: the rules, the server operations, the comparison | DONE | `npx vitest run tests/data/file-ops.test.ts tests/server/files/ops.test.ts tests/server/files/ops-paste.test.ts` | Test Files  3 passed (3) / Tests  65 passed (65) |
+| Items 5, 6 and cases 29, 30, 40: Reveal in Finder, Find in Folder | DONE | `npx vitest run tests/routes/files tests/data/helpers/search.test.ts tests/server/files/search.test.ts tests/state/sources/search.test.ts` | Test Files  10 passed (10) / Tests  211 passed (211) |
+| Items 7, 10 and cases 34-39: the explorer store, the following of moved paths, the diff pane over two files | DONE | `npx vitest run tests/state/sources` | Test Files  21 passed (21) / Tests  409 passed (409) |
+| Items 8, 9, 11, 12, 13 and cases 31, 32, 41, 42: the menu, the name input, the questions, upload, the cut fade | DONE | `npx vitest run tests/views/sources/files tests/views/sources/search tests/views/personal tests/ui/menu tests/ui/theme tests/views/whole/type-scale.test.ts` | Test Files  21 passed (21) / Tests  499 passed (499) |
+| The client state registry and the Memories limit | DONE | `npx vitest run tests/state/client tests/state/life` | Test Files  17 passed (17) / Tests  274 passed (274) |
+| Items 14 and 15: the words and the documents | DONE | `git diff -U0 DESIGN.md HELP.md src/lib/server/core/json.ts \| grep -E "^@@"` and `npm run test:checks` (keys.test.ts: every catalog key has a reader) | DESIGN.md 148, 171, 376, 378, 379, 384, 402; HELP.md 3, 43, 111, 164; json.ts 53; test:checks below |
+| `npm run diagrams` | DONE | `npm run diagrams` | docs/diagrams/writes.svg / diagrams exit 0 |
+| The land checks | DONE | `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` | checks: 7 commands passed / checks.sh exit 0; its `npm test`: Test Files 378 passed / 20 skipped (398) / Tests 6201 passed / 614 skipped (6815) |
+| The checks suite | DONE | `npm run test:checks` | Test Files 29 passed / 2 skipped (31) / Tests 442 passed / 9 skipped (451) |
+| The slow suite | DONE | `npm run test:slow` | Test Files 22 passed / 407 skipped (429) / Tests 623 passed / 6643 skipped (7266) / slow exit 0 |
+| Sizes under 540 | DONE | `wc -l src/lib/views/sources/files/Files.svelte src/lib/views/sources/repositories/diff/Diff.svelte` | 539 src/lib/views/sources/files/Files.svelte /      535 src/lib/views/sources/repositories/diff/Diff.svelte /     1074 total |
+| ASCII gate | DONE | `LC_ALL=C grep -rna "[^ -~]" src tests DESIGN.md HELP.md config/text/views/sources/files.yml config/text/views/sources/search.yml` | nothing printed, exit 1 |
+| Formatting | DONE | `npm run format` and `npm run format:check` | every file reported `(unchanged)`; All matched files use Prettier code style! |
+| No real Trash in a test | DONE | `grep -rn "from 'trash'" tests` | nothing printed, exit 1; the library is mocked at `tests/server/files/ops.test.ts:42` and `tests/server/files/ops-paste.test.ts:30` |
+| Folder item counts | DONE | `sh utils/folder-check.sh` | exit 0  |
+| The drawn behaviour (the audits below) | NOT VERIFIED | none | no browser, no real Trash in this worktree |
+
+The loads while these ran: `uptime` printed `14:52  up 1 day, 15:45, 1 user, load averages: 10.14 13.43 14.89` at the end.
+
+What the green results do not cover: anything drawn (the audits below), the real Trash (every test hands in a spy), a volume without a Trash, and the multi-select Compare Selected path, which the tree cannot reach until X3a.
 
 ## Files
 
-- `package.json` (+1), `package-lock.json` (+708/-8). The 8 deleted lines are `"dev": true` on `cross-spawn`, `is-extglob`, `is-glob`, `isexe`, `path-key`, `shebang-command`, `shebang-regex` and `which`, which `trash` now needs at run time. `trash` also brings in `execa`, `globby`, `move-file`, `mount-point`, `fast-glob`, `micromatch` and about thirty smaller packages as runtime dependencies (`git diff -- package-lock.json | grep '^+        "node_modules/'`).
-- New tests: `tests/data/file-ops.test.ts` (130), `tests/server/files/ops.test.ts` (890, not yet formatted), `tests/state/sources/explorer/ops.test.ts` (553), `tests/views/sources/files/files-ops.test.ts` (326).
-- Edited tests: `tests/routes/files/open-program.test.ts`, `tests/routes/files/open.test.ts`, `tests/data/helpers/search.test.ts`, `tests/server/files/search.test.ts`, `tests/state/sources/search.test.ts`, `tests/state/sources/repositories/diff-view.test.ts`, `tests/views/sources/files/files-menu.test.ts` (appended blocks; `git diff --stat`).
-- Held outside the tree until the rulings: the drafted `src/lib/data/file-ops.ts` (175 lines) at `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/held/file-ops.ts`, written with the byte rule of item 1; it changes to the ruling's rule when restored.
+New files (`wc -l`):
 
-## Anything in the brief that was wrong or impossible
+| File | Lines |
+| --- | --- |
+| `src/lib/data/file-ops.ts` | 181 |
+| `src/lib/server/files/fs/ops.ts` | 562 |
+| `src/lib/state/sources/explorer/file-type.ts` | 96 |
+| `src/lib/state/sources/explorer/follow.ts` | 133 |
+| `src/lib/state/sources/explorer/naming.ts` | 41 |
+| `src/lib/state/sources/explorer/ops.svelte.ts` | 418 |
+| `src/lib/ui/forms/file-data.ts` | 22 |
+| `src/lib/ui/tree/NameField.svelte` | 148 |
+| `src/lib/views/sources/files/Questions.svelte` | 57 |
+| `src/lib/views/sources/files/tree/NameInput.svelte` | 77 |
+| `src/lib/views/sources/files/tree/row-ops.ts` | 286 |
+| `src/lib/views/sources/repositories/diff/compare-words.ts` | 22 |
+| `src/routes/api/(files)/ops/+server.ts` | 32 |
+| `tests/data/file-ops.test.ts` | 137 |
+| `tests/server/files/ops-fixture.ts` | 89 |
+| `tests/server/files/ops-paste.test.ts` | 449 |
+| `tests/server/files/ops.test.ts` | 464 |
+| `tests/state/sources/explorer/explorer.test.ts` | 444 |
+| `tests/state/sources/explorer/naming.test.ts` | 282 |
+| `tests/state/sources/explorer/ops.test.ts` | 602 |
+| `tests/views/sources/files/files-fixture.ts` | 30 |
+| `tests/views/sources/files/files-naming.test.ts` | 228 |
+| `tests/views/sources/files/files-ops.test.ts` | 337 |
 
-- `views/life/memories/Memories.svelte` (item 12 and "Paths this step writes") is `src/lib/views/personal/memories/Memories.svelte`.
-- `tests/state/sources/explorer.test.ts` moves into the new `tests/state/sources/explorer/` as the brief says; `tests/views/sources/repositories/` already holds 10 items, so case 41's test is in the new file beside `files.test.ts`, as the paths list names.
-- Choices the first-run tests carry that the brief leaves open (internal, reversible, to be listed in the final report): the store is `client.explorer` with `clipboard`, `copy`, `cut`, `compareFile`, `selectForCompare`, `paste(target, confirm)`, `rename`, `create`, `trash(items, confirm)`, `upload`; `confirm` is called with `{ kind: 'replace' | 'permanent', name }` (and `upload: true` for an upload); `heldDiff` keeps `against` only when `root` and `path` are both non-empty strings; `searchParams` writes `under` only when it is not empty so the existing request address is unchanged; the compare sentence module is `views/sources/repositories/diff/compare-words.ts`.
-- User-visible text this step changes: the root and folder item "Find in Workspace..." becomes "Find in Folder..." (Decision 10).
+Changed files (`git diff --numstat`, added/removed lines; `docs/diagrams/*` as `npm run diagrams` regenerates them):
+
+| File | + / - |
+| --- | --- |
+| `DESIGN.md` | +7 / -6 |
+| `HELP.md` | +4 / -4 |
+| `config/text/views/sources/files.yml` | +52 / -2 |
+| `config/text/views/sources/search.yml` | +5 / -0 |
+| `package-lock.json` | +707 / -8 |
+| `package.json` | +1 / -0 |
+| `src/lib/data/helpers/search.ts` | +43 / -7 |
+| `src/lib/server/content/memories.ts` | +8 / -7 |
+| `src/lib/server/core/json.ts` | +3 / -3 |
+| `src/lib/server/files/open.ts` | +16 / -6 |
+| `src/lib/server/files/search-routes.ts` | +6 / -4 |
+| `src/lib/server/files/search.ts` | +20 / -1 |
+| `src/lib/server/root/context.ts` | +6 / -0 |
+| `src/lib/state/client/context.ts` | +14 / -0 |
+| `src/lib/state/client/writes.svelte.ts` | +9 / -0 |
+| `src/lib/state/life/memories.ts` | +12 / -9 |
+| `src/lib/state/shared/stores/shapes.ts` | +1 / -0 |
+| `src/lib/state/sources/file-type.ts` (moved to `src/lib/state/sources/explorer/file-type.ts`) | +0 / -96 |
+| `src/lib/state/sources/fs.svelte.ts` | +31 / -0 |
+| `src/lib/state/sources/fs.ts` | +53 / -7 |
+| `src/lib/state/sources/repositories/repositories.ts` | +22 / -3 |
+| `src/lib/state/sources/search.svelte.ts` | +11 / -1 |
+| `src/lib/state/sources/search.ts` | +4 / -1 |
+| `src/lib/themes/tokens.css` | +2 / -0 |
+| `src/lib/views/personal/memories/Memories.svelte` | +1 / -10 |
+| `src/lib/views/sessions/session-list/TerminalRows.svelte` | +1 / -1 |
+| `src/lib/views/sessions/timeline/Timeline.svelte` | +1 / -1 |
+| `src/lib/views/sources/files/Files.svelte` | +11 / -10 |
+| `src/lib/views/sources/files/tree/Tree.svelte` | +236 / -59 |
+| `src/lib/views/sources/files/tree/row-menu.ts` | +98 / -20 |
+| `src/lib/views/sources/repositories/diff/Diff.svelte` | +6 / -1 |
+| `src/lib/views/sources/search/Query.svelte` | +68 / -36 |
+| `src/lib/views/sources/search/Search.svelte` | +2 / -0 |
+| `src/lib/views/system/usage/Usage.svelte` | +1 / -1 |
+| `tests/checks/tree/allow-duplication.txt` | +1 / -1 |
+| `tests/checks/tree/boundaries.test.ts` | +5 / -1 |
+| `tests/data/helpers/search.test.ts` | +48 / -10 |
+| `tests/fixtures/scratch.ts` | +15 / -3 |
+| `tests/routes/files/open-program.test.ts` | +78 / -1 |
+| `tests/routes/files/open.test.ts` | +39 / -1 |
+| `tests/routes/files/search.test.ts` | +10 / -3 |
+| `tests/server/files/search.test.ts` | +102 / -11 |
+| `tests/server/root/context-fixture.ts` | +1 / -0 |
+| `tests/state/client/client-state.test.ts` | +1 / -0 |
+| `tests/state/sources/explorer.test.ts` (moved to `tests/state/sources/explorer/explorer.test.ts`) | +0 / -439 |
+| `tests/state/sources/repositories/diff-view.test.ts` | +61 / -0 |
+| `tests/state/sources/search.test.ts` | +54 / -1 |
+| `tests/ui/menu/menu-words.test.ts` | +14 / -3 |
+| `tests/ui/theme/wall.test.ts` | +1 / -0 |
+| `tests/views/sources/files/files-menu.test.ts` | +304 / -26 |
+| `tests/views/sources/files/files.test.ts` | +2 / -15 |
+| `tests/views/sources/files/tree-window.test.ts` | +1 / -0 |
+| `tests/views/whole/type-scale.test.ts` | +3 / -0 |
+| `docs/diagrams/*` (10 files) | regenerated |
+
+`allow-duplication.txt:154` carries only the moved test's new path. `grep -rn "sources/file-type\|explorer.test" src tests config HELP.md DESIGN.md README.md --exclude=local.yml` prints one line: `tests/checks/tree/allow-duplication.txt:154:tests/state/sources/explorer/explorer.test.ts tests/state/sources/fs-shape.test.ts 20171008d2f9 ...`.
+
+## Every user-visible change, before and after
+
+- A file's right-click menu. Before: Open to the Side, Open in Integrated Terminal, Download..., Copy Path, Copy Relative Path, and Open Preview on Markdown. After, in these groups with a rule between them: Open to the Side; Reveal in Finder, Open in Integrated Terminal; Compare with Selected (only with a file selected for compare) and Select for Compare; Cut, Copy; Download...; Copy Path, Copy Relative Path; Open Preview (Markdown); Rename..., Delete. Asserted by `tests/views/sources/files/files-menu.test.ts`.
+- A folder's menu. Before: Reveal in Finder, Open in Integrated Terminal, Copy Path, Copy Relative Path. After: New File..., New Folder...; Reveal in Finder, Open in Integrated Terminal; Find in Folder...; Cut, Copy, Paste (disabled with an empty clipboard); Upload...; Copy Path, Copy Relative Path; Rename..., Delete.
+- A root's menu. Before: Reveal in Finder, Open in Integrated Terminal, Find in Workspace..., the two copies, Add Folder to Workspace... and, for a root the reader added, Remove Folder from Workspace. After: New File..., New Folder...; Reveal in Finder, Open in Integrated Terminal; Find in Folder...; Paste (disabled with an empty clipboard); Upload...; the two copies; Add Folder to Workspace... and Remove Folder from Workspace as before. No Cut, Copy, Rename... or Delete (ruling 1). "Find in Workspace..." is gone; the word `menu_find` is now "Find in Folder..." on every folder and root row.
+- New File..., New Folder... and Rename... draw a text box in the tree. A new item is a row at the top of its folder (the folder opens first and the filter clears); a rename replaces the row's name, selecting the name without its extension for a file. Enter or leaving the box accepts a valid name, Escape cancels, an empty or unchanged name cancels. The message under the box is one of: "A file or folder name must be provided.", "A file or folder name cannot start with a slash.", "A file or folder '{0}' already exists at this location. Please choose a different name.", "The name '{0}' is not valid as a file or folder name. Please choose a different name.", and the warning "Leading or trailing whitespace detected in file or folder name."
+- A row on the clipboard as Cut is drawn at half opacity (`--tree-cut-opacity: 0.5` in `src/lib/themes/tokens.css`, `data-cut` on the row).
+- Delete asks "Are you sure you want to delete '{0}'?" (a folder: "...'{0}' and its contents?") with the detail "You can restore this file from the Trash." (plus "Your changes will be lost if you don't save them." when a tab holds unsaved text of it) and the button "Move to Trash". When the Trash fails it asks "Failed to delete using the Trash. Do you want to permanently delete instead?" with "This action is irreversible!" and "Delete Permanently". A paste or upload onto a taken name asks "A file or folder with the name '{0}' already exists in the destination folder. Do you want to replace it?" with "Replace", and for an upload the detail "This action is irreversible!".
+- Upload... opens the file dialog (several files), skips a file over 32 MiB with "{0} was not uploaded: That file is larger than an upload may be.", and says "Files uploaded: {0}." plus one such sentence per refused file on the tree's refusal line.
+- A refused operation says a sentence on the tree's refusal line instead of its word: "It is not inside a served root.", "It is not there any more.", "A root cannot be changed here.", "This machine's settings file cannot be changed here.", "That is not a name a file or folder can have.", "A file or folder of that name is already there.", "A folder cannot be put inside itself.", "That is not a folder.", "The folder does not allow that change.", "The Trash could not take it.", "That file is larger than an upload may be.", "The file could not be read correctly.", "The write token was refused; reload the page.", "The server did not recognise that operation.", "The server could not be reached." (`config/text/views/sources/files.yml`, keys `refused_*`).
+- Select for Compare and Compare with Selected open a diff pane titled "{selected file} vs {this file}" (left is the file selected for compare, right the row). A refused comparison says one of "One of the two files is not there.", "A folder cannot be compared with a file.", "One of the two files is not inside a served root.", "One of the two files is too large to compare." in the pane.
+- Reveal in Finder is on a file row (it selects the file in Finder without opening it).
+- Find in Folder... opens the Search view on that folder. The Search view shows a line "In {root}/{folder}" with a control "Search the whole root"; choosing another root clears the folder. A folder is searched whole, hidden and ignored files included. Two new refusals: "A folder is searched under one root, inside it." and "That folder is not there."
+- Documents: `HELP.md` lines 3, 43, 111, 164 and `DESIGN.md` lines 148, 171, 376, 378, 379, 384, 402 say the above (`git diff -U0 DESIGN.md HELP.md` prints those hunks).
+- No visible change: the Memories wall's 32 MiB limit and its picture upload are as before; the limit now comes from `data/file-ops.ts`.
+
+## VS Code's words and groups, with source and line (commit e4f7a6f2, fetched with curl from raw.githubusercontent.com; the lines are those of that file)
+
+- `src/vs/workbench/contrib/files/browser/fileActions.ts`: button "Move to Trash" `:90`; "Your changes will be lost if you don't save them." `:121`; "You can restore this file from the Trash." `:176`; "Failed to delete using the Trash. Do you want to permanently delete instead?" `:227` and "Delete Permanently" `:229`; the delete questions `:278` (folder) and `:281` (file); the replace question and "Replace" `:489-490`; `validateFileName` `:714` with its messages `:721`, `:729`, `:742`, `:753`, `:760`.
+- `fileImportExport.ts`: the upload's replace question with the detail "This action is irreversible!" and "Replace" `:864-866`.
+- `src/vs/base/common/extpath.ts:197`: `if (name.length > 255)`.
+- `fileActions.contribution.ts`: New File `:479-487` and New Folder `:489-497` (group `navigation`, orders 4 and 6, when `ExplorerFolderContext`); the compare items `:517-536` (group `3_compare`); Cut `:538-546` (`5_cutcopypaste` 8, not a root and writable); Copy `:548-556` (10, not a root); Paste `:558-567` (20, `ExplorerFolderContext`); Upload `:586-601` (`5b_importexport` 20); Copy Path `:603-615` (`6_copypath`); Add and Remove Folder `:617-635` (`2_workspace`); Rename `:637-646` (`7_modification` 10, not a root); Delete `:648-669` (`7_modification` 20, not a root).
+- `src/vs/workbench/contrib/files/electron-browser/fileActions.contribution.ts:84-89`: Reveal in Finder, group `navigation`, order 20.
+- `src/vs/workbench/contrib/search/browser/searchActionsFind.ts`: Find in Folder... `:260-285` (group `4_search`, when `ExplorerFolderContext`, so on a root too) and Find in Workspace... `:287-300` (only where `ExplorerRootContext` holds and `ExplorerFolderContext` does not).
+- `src/vs/workbench/contrib/files/browser/media/explorerviewlet.css:39-41`: `.explorer-item.cut { opacity: 0.5; }`; `explorerViewer.ts:997-998` adds the class `cut` when `explorerService.isCut(stat)`.
+
+## Audits for the look (no DOM in the unit suite; not verified by any command)
+
+- The name box: it takes the focus when drawn; a file rename selects the name without its extension and a folder or a new item selects nothing of a stem; Enter accepts a valid name and keeps a refused one with its message; Escape cancels; leaving the box accepts a valid name and cancels an empty or unchanged one; the message draws over the rows below the box and does not move them; the error and the warning read differently.
+- A right-click inside the name box opens the text boxes' editing menu (`TextBoxMenu.svelte`); whether the focus that menu takes counts as leaving the box and accepts a half-typed name is not checked.
+- The cut row: half opacity, and how it reads beside the selected row's highlight and the hover.
+- The questions: the wording and buttons of the delete, permanent-delete and replace questions, Enter and Escape in them, and that a new question cancels the one on screen and that closing the tab cancels it (`asking?.resolve(false)` and `choosing?.([])` in `Tree.svelte`'s `onDestroy`; these two paths have no DOM test).
+- The pending row at the top of its folder in the virtualised tree: it is drawn, focused and scrolled into view when the folder is long.
+- On a scratch root, in the real browser: New File, New Folder, Rename (with a source tab open on the file, restated with its draft), Delete into the real macOS Trash (the one step no test may do), Cut and Paste, Copy and Paste twice (`report copy.md`, `report copy 2.md`), Upload of a file and of a taken name, Select for Compare then Compare with Selected, Reveal in Finder on a file, Find in Folder on a hidden folder.
+
+## Anything in the brief that was wrong or impossible, and the choices to report
+
+- The Memories view is `src/lib/views/personal/memories/Memories.svelte`, not `views/life/memories/` (item 12 and "Paths this step writes"). Case 41's test is in the new `tests/views/sources/files/files-ops.test.ts` beside `files.test.ts`, since `tests/views/sources/repositories/` holds 10 items (both as the first run found; Q88b-cases.md confirms).
+- Item 10 says the "doc views" carry `{ root, path }`. Two views carry a document. The `document` view (an HTML file under a root) has `{ id, root, path, label }` and is followed. The `doc` view (an entry of layout.yml's `docs:`) has `{ id, path, label }` with a path under the hub and no root, and is not followed: `Doc.svelte` restates a tab whose path left the list back to the entry that carries its label (`followDoc`, `src/lib/state/workbench/navigation/catalogue.ts:36-47`), so a restated path would be undone by the view itself. The entry is layout.yml's.
+- The permanent-delete question's detail is "This action is irreversible!" for every item, as item 11 says. VS Code's detail for a single file there is "You can restore this file using the Undo command." and "This action is irreversible!" only for a folder (`fileActions.ts:160-163`, used at `:228`). Oculus has no Undo for a file removed for good, so the brief's text is the true one here.
+- The two name messages that carry the name drop VS Code's `**` bold markers (`fileActions.ts:742`, `:753`): the name is shown in single quotes, because the text catalog has no markup.
+- `GET /api/search` answered a folder that is not there as English text of the route (`the folder is not there`), which the page showed as it came, so the catalog sentence `search.refused_missing` was never reached. The 400 body now carries the word beside the sentence (`{ error, refused }`, `src/lib/server/files/search-routes.ts`), and the page says the catalog sentence for a word it knows (`ask` in `src/lib/state/sources/search.svelte.ts`, `refusalFrom` in `src/lib/data/helpers/search.ts`). The three existing exact-body assertions of `tests/routes/files/search.test.ts` carry the new field. The check that fails without the fix: `tests/state/sources/search.test.ts` "says a folder the server found missing as the search words" (run with the mapping line removed it fails with `expected 'the folder is not there' to be 'That folder is not there.'`). This adds a field to an internal wire the brief did not name; it is listed here for a ruling.
+- Compare Selected is built, tested and in `rowMenu`, and is not reachable in the running view: `rowFacts` gives `selection: 1` until X3a brings multi-select, as item 8 says, and `rowOpsPicker` reads the selected rows through an optional `selected` dependency that `Tree.svelte` supplies as the one selected row.
+- The pending row of a new file or folder is the first row under its folder, and its path is the folder's path with a `/` after it (`pendingPath` in `src/lib/state/sources/explorer/naming.ts`), so it is the key of no real entry. A new item in a root's own line is under `''`, so its row path is `/`.
+- A Cut paste whose request never reached the server (`network`) keeps the clipboard, where item 7 empties it on every failure (VS Code's `finally`, `fileActions.ts:1280-1285`): nothing was moved, so the same Cut can be pasted again. Every answer from the server, ok or refused, empties it, except a cancelled replace question.
+- The pending name is the Files view's own state, so a tab reloaded with a name half typed reopens the input.
+- The reveal is the open endpoint's body `reveal: true` beside `root` and `path` (`src/lib/server/files/open.ts`, `revealPath` in `writes.svelte.ts`), as item 5 says; `DESIGN.md:402` states it.
+- VS Code puts New File..., New Folder..., Open to the Side and Reveal in its `navigation` group (`fileActions.contribution.ts:479-497`, `electron.ts:84-89`). The Q88 menu and the brief keep New File... and New Folder... in a group of their own and Reveal beside the terminal; the groups follow the brief.
+- The brief's verify command `grep -n "from 'trash'" tests` has no `-r`, and `grep` on a directory without it prints `grep: tests: Is a directory` and nothing else, so it passes whatever the tests hold. The row below runs `grep -rn "from 'trash'" tests`.
+- `npm test` excludes the tests tagged slow (`package.json`: `--tagsFilter '!slow'`), so `checks.sh` does not run them. Running `npm run test:slow` found one defect of this step (`.scope` in `Query.svelte` painted `color: var(--muted)`, which `tests/ui/theme/colours.test.ts` refuses), now `var(--muted-txt, var(--muted))`. The slow suite is in the table below.
+- Load on this machine was high while the suites ran (`uptime`: load averages near 15). Under it `tests/server/edit/config-key.test.ts` timed out once at 5000 ms and passed alone twice, and two files of the slow suite failed once (`tests/server/git/git-ops.test.ts`, `tests/server/root/watch/portfolio.test.ts`) and passed in a later run; none of the three touches this step.
+
+## Paths used beyond the brief's list
+
+- `src/lib/ui/tree/NameField.svelte` (the primitive the input is drawn with; eslint forbids a raw input in a view), `src/lib/ui/forms/file-data.ts` (the shared base64 reader, "its new home" in item 12), `src/lib/views/sources/files/Questions.svelte` (the questions component the brief names without a path), `src/lib/state/sources/explorer/follow.ts` and `naming.ts` (beside `ops.svelte.ts`), `src/lib/views/sources/search/Search.svelte` (passes `under` and the clear control to `Query.svelte`).
+- `src/lib/themes/tokens.css` (`--tree-cut-opacity`, the token item 13 names without a path).
+- `tests/server/files/ops-paste.test.ts` and `tests/server/files/ops-fixture.ts` (`ops.test.ts` was 969 lines; the size line is 900), `tests/views/sources/files/files-naming.test.ts`, `tests/views/sources/files/files-fixture.ts` (the tree's props, shared by `files.test.ts` and `files-naming.test.ts` so the duplication check holds), `tests/state/sources/explorer/naming.test.ts`.
+- `tests/fixtures/scratch.ts` (`plantScratch` takes a list of empty folders), `tests/server/root/context-fixture.ts` (`opsWrites`), `tests/state/client/client-state.test.ts` (the `explorer` store in its list), `tests/views/whole/type-scale.test.ts` and `tests/ui/theme/wall.test.ts` (the registry entries for `Questions.svelte`, `NameInput.svelte` and `NameField.svelte`), `tests/ui/menu/menu-words.test.ts` (listed), `tests/views/sources/files/files.test.ts` and `tree-window.test.ts` (the `owner` prop of `Tree`), `tests/routes/files/search.test.ts` (the `refused` field).
+- `docs/diagrams/*` as `npm run diagrams` regenerates it.
 
 ## Next
 
-After the two rulings, the builder restores the drafted `file-ops.ts`, adjusts it and the tests that carry the length rule (case 4, case 33) and the Copy on a root (case 31) to the ruling, and builds items 1-15.
+The orchestrator reads the diff and lands it; the look on TEST then covers the audits above. No step depends on a decision still open in this report except the `refused` field of the search answer, which is listed for a ruling.

@@ -1,8 +1,8 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q85b (zod in the state layer), review in; repair round next.
-- Q88b (the Files view's file operations), building.
+- Q85b (zod in the state layer), repair round 1 running.
+- Q88b (the Files view's file operations), in review.
 Queued, in order:
 - U3 (every view on VS Code's scale, from U2's audit).
 - Q85c (zod in the data folder), once Q85b has landed; then Q85d.
