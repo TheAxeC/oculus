@@ -34,6 +34,7 @@ Owed: the three-way Opus and Sonnet comparison once 15 steps have landed with So
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- Q85a2 (zod in the edit, sessions and transcripts folders), 2026-10-01, 0b38c14c.
 - U2 (every view's look against VS Code), 2026-10-01, e8b517c0.
 - Q85a4 (zod in the other server folders), 2026-10-01, 58b860a0.
 - Q109 (the terminal: lines after a pane move, the watchers' capped debounce, a sole terminal's menu, four terminal options), 2026-10-01, 4148664b.
