@@ -43,8 +43,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with U3, `Source.svelte` (D27 the import and line 133; U3 hunks at 28-30, 56-61, 124 and from 330), `tests/views/sources/source.test.ts` (D27 494-516; U3 up to 314) and `DESIGN.md` (D27 85, 171, 379; U3 158, 216-222, 374-375, 392, 405, 410), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   cases: agents/briefs/D27-cases.md (round 0: R1 the finder kept in FINDERS with two tests, R2 the builder's reading of case 23, R3 Tree.svelte and files-menu.test.ts added; R4 three test paths added after the build)
-  builder_usage: first run of the cases 330,199 tokens, 84 tool uses, 16.4 min (0 full-list runs); the build to its stop on R4 265,047 tokens, 202 tool uses, 34.8 min (0 full-list runs); R4 to the report 343,131 tokens, 32 tool uses, 16.3 min (3 full-list starts: the first from the worktree root, where the R4 message had put it, failed at npm test reading no package.json; the second stopped on help.test.ts, fixed; the third passed)
+  builder_usage: first run of the cases 330,199 tokens, 84 tool uses, 16.4 min (0 full-list runs); the build to its stop on R4 265,047 tokens, 202 tool uses, 34.8 min (0 full-list runs); R4 to the report 343,131 tokens, 32 tool uses, 16.3 min (3 full-list starts: the first from the worktree root, where the R4 message had put it, failed at npm test reading no package.json; the second stopped on help.test.ts, fixed; the third passed); round 1 76,794 tokens, 33 tool uses, 23.0 min (2 full-list runs: the first timed out on one config-key case under load 12.8, the second passed)
   round: 1 (agents/briefs/D27-round1.md, sent 21:43)
+  reviewer_report (round 1): agents/reviews/D27-refuter.md, Repair round 1 (reviewer ae564bfa65fb1cca6, claude-sonnet-5-5, launched 22:08; usage on its completion)
 - step: D35
   executor: agent
   worker: claude:sonnet at ordo-medium (Axel's effort experiment)
@@ -88,6 +89,16 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   landing: not-started
   builder_usage: the build to the report 311,295 tokens, 72 tool uses, 21.2 min (1 full-list run, passed)
   reviewer_report: agents/reviews/U4-refuter.md (first run, reviewer af7ae20aeafc614df, claude-sonnet-5-5, launched 21:55; usage on its completion)
+  round: 0
+- step: L4
+  executor: agent
+  worker: claude:sonnet
+  worktree: .agents/worktrees/L4
+  base: 3a246eca
+  report: agents/reviews/L4-report.md
+  brief_check: agents/reviews/L4-brief-check.md, every finding closed in the brief (its Closed heading, Z184 in automode); claude-sonnet-5-5, 136,054 tokens, 149 tool uses, 20.4 min
+  shared_paths: with Q85d, `PaneView.svelte` (Q85d its instance-label reader; L4 the menus), `layout/index.ts` (Q85d five exports beside `cardCursor`; L4 the float exports), `tests/shell/workbench.test.ts` and `tests/shell/panes/paneview.test.ts` (new cases each), different hunks, a simple merge with the export block read at the second landing; `DESIGN.md` (L4 210, 358-365; U4 369, 404, 408; D35 224-235; D27 85, 171, 379; Q85d 148, 323) and `HELP.md` (L4 27-45, 127; U4 100; D35 216, 236; D27 230), different lines; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
   round: 0
 ```
 
