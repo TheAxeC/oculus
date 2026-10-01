@@ -210,3 +210,30 @@ The question: a search scoped to a folder that is not there showed the route's E
 - Not chosen: (b) the page matching the route's English text.
 
 Where it is built: Q88b, as the builder's report states it. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z157 (2026-10-01 15:03, step U3)
+
+The question: a 22 px header (Z146) cannot hold a 26 px search box or text button, so where do a view's inputs and filters go.
+
+- Chosen (a): the header holds the title and 20 px icon actions, with an overflow opener for what does not fit; a bar under the header holds the search boxes, selects, segments, filter toggles and the text buttons whose words carry state.
+- Not chosen: (b) a header that grows to hold inputs; (c) every control behind the overflow opener.
+
+Where it is built: U3. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z158 (2026-10-01 15:14, step Q88b)
+
+The question: the Delete question of a link to a folder said "and its contents", because the listing could not tell a link from a folder.
+
+- Chosen (a): the listing's entry carries `link: true` for a symbolic link, and a link takes the file message.
+- Not chosen: (b) keep the folder message for a link.
+
+Where it is built: Q88b's round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z159 (2026-10-01 15:14, step Q88b)
+
+The question: whether a Cut paste that never reached the server clears the clipboard.
+
+- Chosen (a): it keeps the Cut, since nothing moved; a paste the server refused clears it.
+- Not chosen: (b) clear it on every failure.
+
+Where it is built: Q88b's round 1. Booked in the state file's closed log and `plan.md` Rulings.

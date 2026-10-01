@@ -325,3 +325,270 @@ Items of a channel payload (`notice-sources.test.ts`, 4; item 3's `listOf` and i
 Helpers in `src/lib/data/shapes/shapes.ts`: `unchanged`, `unchangedAs`, `mapShape`, `anyNumberShape`, `filledTextShape`, `optionalTextShape`, `textOrNumberShape`, `searchRevealShape`, `quickly`, `wholeShape`, `stringItemsShape`, `survivorsShape`, `rowsShape`, `mapOfShape`, `readJson`, `readAs`, `text`, `wordShape`, `keyedRowsShape`, `fieldItemsShape`, `anyValueShape`, `itemsShape`, `listOrOneShape`.
 
 Next: the step lands by cherry-pick of one commit after the orchestrator reads the diff; the commands that must be green on main are the seven of `checks.sh`, and the rulings for N1 to N7 can be given after landing without a rebuild except N1 option (b) or (c) and N5 option (b).
+
+## Repair round 1 (the builder's report after round 1, whole)
+
+Everything in the brief and the six rulings of repair round 1 is done. Seven decisions of mine (section 2) still need your ruling.
+
+The report file was NOT written to `.scratch/`: the Write tool refuses report files for a subagent, so this message is the report. Worktree: `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85b`, commands run from its `tools/oculus` with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`. Nothing was committed; the only git commands run were `git diff` and `git status`.
+
+# 0. Repair round 1 (one line per ruling)
+
+1. `state/life/memories.svelte.ts:55`: `sideShape` is now `z.number().refine(Number.isInteger).positive().nullable().catch(null)`. Case: `memories-message.test.ts`, `reads a picture side of %s pixels as none` for `1e-20`, `5e-324` and `0.5` (answer `{ name: 'a', width: null, height: null }`). Failing first on the step's tree before the fix: `FAIL ... reads a picture side of 1e-20 pixels as none` and `... of 5e-324 pixels as none` (`0.5` already passed). Passing on the unchanged tree: the file copied into the unchanged-source copy (`ff/`) and run with `npx vitest run tests/state/life/memories-message.test.ts` printed `Tests 2 failed | 24 passed (26)`, the 2 failures being the Phase 1 changed rows `reads a refusal whose error is a number as its status` and `reads a body that is JSON null or is not JSON as a failed read carrying the status`; none of the three new rows fails there.
+2. `state/shared/words/tones.ts` `stringMap` drops a key whose lower-cased form is `__proto__`, so the map holds no own `__proto__` entry. Case: `tones.test.ts`, describe `a vocabulary key whose lower-cased form is __proto__`, one row per `palette`, `status_palette`, `type_color`, `domains`, `data_access` with a `__PROTO__` key; every lookup of `__proto__` answers the unknown tone and `domainLabel('__proto__')` answers `'__proto__'`. Failing first: `FAIL ... holds no entry for the key __PROTO__ of type_color`, `... of domains`, `... of data_access` (the `palette` and `status_palette` rows pass before the fix as well, because their lookups do not reach an own `__proto__` entry; they stay as guards).
+3. (Z155) `state/sessions/agents.svelte.ts`: `agents`, `accounts` and `findings` of an agents answer and `rows` of a customizations answer are required (`itemsShape` of `data/shapes/shapes.ts`; the local optional `listShape` is gone); a 200 body missing one is the failed read `{ value: null, pending: false, error: '200' }`. Rewritten case: in `tests/state/sessions/agents.test.ts` the test `hands on a body that carries none of the answer's lists, as it came` (before: `heldAfter('{}')` equals `{ value: {}, pending: false, error: '' }`) became `answers an agents body that carries %s as the failed read with the status` for `{}`, no findings, no accounts and no agents (after: `{ value: null, pending: false, error: '200' }`), plus `answers a customizations body without rows as the failed read with the status`. Failing first: 5 `FAIL` lines of those tests on the tree before the fix. Two more edits follow from it: the full-answer test body `{ agents: [], accounts: [], rows: [], path: 'p', text: 't' }` gained `findings: []`; and the existing case `is pending until it lands, and is asked for once however often it is read` (`agents.test.ts:49`, tracked file) answered `{ agents: [], accounts: [] }` and expected it held; it now answers and expects `{ agents: [], accounts: [], findings: [] }`. That is the one existing case edited, because ruling 3 changes the answer it asserts. `git diff -U0 -- tests/state/sessions/agents.test.ts` shows exactly those two removed lines.
+4. `tests/state/workbench/layout/saved/refusal-fixture.ts:1` head tag is `// Layer 4, test fixture.`
+5. `state/workbench/navigation/arrangement.ts:38`: `const arrangementTabShape = z.union([viewIdShape, stateTabShape]) satisfies z.ZodType<Instance>;`; only `arrangementNodeShape: z.ZodType<Layout>` keeps an annotation (`git diff` shows the line).
+6. The per-file total is corrected in section 6 to 58 over the 80 changed or new files under `src/lib/state` that exist; command quoted there.
+
+Verify list after the six rulings: `npm run diagrams` then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` printed `$ npm test` (`Test Files  387 passed | 21 skipped (408)`, `Tests  10147 passed | 615 skipped (10762)`), `$ npm run test:checks` (`Test Files  29 passed | 2 skipped (31)`, `Tests  442 passed | 9 skipped (451)`), `$ npm run check` (`COMPLETED 2862 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`), `$ npm run build`, `$ npm run format:check`, `$ npm run lint`, `$ ! LC_ALL=C grep -rna '[^ -~]' src tests`, `checks: 7 commands passed`, exit 0. Greps after the round: the brief's cast grep, the `.issues` grep and the `core/shapes|in shapes\.ts` grep each print 0 lines; the non-`Shape` const grep prints 0; non-ASCII prints 0. Slow test by name: `socket-timing: 50000 frames in 244.5 ms`, `Tests  1 passed (1)`. `du -sk .svelte-kit/output/client` prints `30156`.
+
+# 1. Open items of `orchestrator-state.md` (verbatim)
+
+An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
+
+- Z146 (raised 2026-10-01, step U2, its audit's "Proposed grouping", `agents/reviews/U2-audit.md:1126-1138`). How the audit's seven groups become build steps. The groups: 1 the header frame (22 px, one line, title cut with an ellipsis, actions on one line with an overflow menu); 2 control sizes (text button 26 px radius 4px, icon action 20 px with a 16 px glyph and no border, input 26 px, one 1px focus ring); 3 type and row scale (base text 13px, rows 22 px, tree indent 8 px with a 16 px twistie, off-scale sizes removed); 4 icons at 16 px (Z148); 5 row and card actions shown on hover or focus-within; 6 collections as rows (Z147); 7 empty, error and narrow states. The measured footprint of the shared parts: `ui/frame/Pane.svelte` 127 lines and `Toolbar.svelte` 30, used by 51 components; `ToolButton.svelte` 506 lines, used by 137; `ui/frame/Card.svelte` 233 lines, used by 20; 414 of the 442 `font-size` declarations under `src/lib` go through the nine `--fs-*` tokens of `themes/tokens.css`; 13 view files set a fixed px height (`grep -rl`/`grep -rho` over `src/lib`, `wc -l`). (a) One step for groups 1, 2, 3 and 5, which change the shared components and tokens above and so touch the same few files; then group 4 once Z148 is ruled, group 7, and group 6 once Z147 is ruled: four steps. For: no tiny steps; each shared change lands once and is looked at once on TEST. Against: one review covers four kinds of change. (b) Seven steps, one per group, in the order 1, 2, 3, 5, 4, 7, 6. For: each review reads one kind of change. Against: four of them are small edits to the same files. (c) No build steps: the audit stays a record. For: no work. Against: every difference it measured stays. Recommendation: (a). The lazy option is (c). Settings is S3c's, the tab strip X3c's, and the X3d parts of Changes are outside every group.
+- Z147 (raised 2026-10-01, step U2, group 6 and differences 7, 10 and 15 of `agents/reviews/U2-audit.md`). Collections drawn as cards (radius 10px, a 3px coloured left rule for the status, 285 to 352 px wide, 15px titles) where VS Code draws 22 px rows with a 13px label and a count badge; it holds for projects, coauthor, archive, pillars, domains, venues, data, code, statements, funding, events, education, applications, joint-work, tasks, radar, leads, inbox, linkedin, usage, gallery, audit, config and project. (a) Rows everywhere: each collection view a list of 22 px rows with a count badge, links without the underline. For: one look across the workbench, as VS Code's. Against: the status rule of a card and the card's room for several lines of detail are lost; the largest change of the audit. (b) Rows on Projects first, looked at on TEST and shown to you, and the other views follow your ruling on it. For: you judge the change on one real view before it spreads. Against: one more look and ruling before the rest is built. (c) Keep the cards and restyle only their controls (groups 2 and 5). For: the cards keep what they show. Against: the views stay unlike VS Code's lists. Recommendation: (b). The lazy option is (c).
+- Z148 (raised 2026-10-01, step U2, group 4 and difference 19 of `agents/reviews/U2-audit.md:1124`). Icons are Lucide (`DESIGN.md` "Theming"), drawn at 1em of the text beside them, so 9.5 to 15 px, mostly 11.5 px; VS Code's codicons are 16 x 16 px (`U2-vscode.css` css:241, css:252, css:133). (1) Keep Lucide and draw every icon at 16 px. For: DESIGN.md's decision stands and only the size rule changes. Against: the glyph shapes stay Lucide's, unlike VS Code's. (2) Replace the set with codicons through `config/catalogs/icons.yml`. For: glyph for glyph as VS Code. Against: every glyph id is re-mapped, several domain icons have no codicon, and it reverses DESIGN.md's decision. Recommendation: (1). The lazy option is leaving the icons at the size of their text.
+
+# 2. Decisions of mine beyond the rulings (each needs your ruling; the lazy option is named)
+
+N1. Where a channel payload is read (brief item 3 says `entities.payload(...)` answers typed through the schema). Built: `handle` in `state/client/socket.svelte.ts` reads the frame with `frameShape`, then the payload with the channel's schema from `state/client/payloads.ts`, and drops the frame on failure; `entities.payloadOf(message, channel)` reads a message through the schema; `entities.payload(channel)` applies the channel's declared type to a message the socket already accepted, with one documented cast at `state/client/entities.svelte.ts:66` (`held as Payloads[K]`). The brief's cast grep prints nothing. Options: (a) as built. For: one schema pass per frame, none per render. Against: one `as` remains, and a message put in through `receive` directly (as tests do) is not read. (b) Read through the schema in every `payload(channel)` call, as the brief words it. For: no cast. Against: a pass per call on the 600 kB portfolio, and tests that put incomplete payloads straight into the store would fail (item 22 forbids editing them). An access-time version was built earlier in this step and failed existing tests; the count was not recorded and I did not rebuild it in this turn, so that statement is not verified. (c) Type the held messages by channel so that no cast is needed. Not built and not measured; it changes `receive`'s signature, which existing tests call with loose payloads. Recommendation: (a). The lazy option is (a) if its only reason is that it passes the existing tests; I recommend it for the per-frame cost.
+
+N2. `agents.svelte.ts`: a 200 body that is a list, or a map whose `agents`, `accounts`, `findings` or `rows` is missing or not a list, or whose file `text` or `path` is not a string, answers the failed read with the status (before, it was handed to the view as `value`). Ruling 5 says "read as absent", which cannot be done on an answer handed on as the input itself. Since repair ruling 3 (Z155) the missing-list case is ruled; the wrong-typed case stays as built. Options: (a) as built. (b) copy the body and drop the bad lists, so `value.agents` is undefined while the type says it is required. Recommendation (a); (b) is the cheaper reading and breaks the declared type.
+
+N3. `deposit.svelte.ts`: a `state` that is not a whole `MirrorState` (a number, a string, a list, a map with one field, `exists`/`ahead`/`plan` of the wrong type) reads as no state (`state: null`, `error: ''`); before it was held as it came. Tests: `deposit.test.ts`, 7 rows. Options: (a) as built. (b) check only that `state` is a map. Recommendation (a); (b) leaves `state.plan.files.map` to throw in the panel.
+
+N4. `client/selectors.svelte.ts` lookups by a caller's name (`projectOf`, `collectionOf`, the workspace git lookup): a name that is a property of every object (`constructor`, `toString`, `hasOwnProperty`, `__proto__`) answers no project, no collection, no git state; before, `constructor` answered the `Object` function and `__proto__` an object. Tests: `selectors.test.ts`, 4 rows. Options: (a) as built. (b) leave them. Recommendation (a); (b) keeps a returned function where a view reads fields.
+
+N5. `sources/search.svelte.ts`: a 200 whose body is JSON `null` answers `error: 'HTTP 200'`; before it answered the `search.failed` sentence. A 200 with a body that is not JSON answers `HTTP 200` instead of the engine's SyntaxError text, as ruling 2 says. Tests: `search.test.ts`, `says the status of a successful body that is null or not JSON`, 2 rows. Options: (a) as built, one rule for both bodies from the shared `readJson`. (b) a null at 200 keeps `search.failed`; this needs `readJson` to tell null from non-JSON. Recommendation (a); (b) is the literal reading of ruling 2.
+
+N6. `sessions/terminal/pty-io.ts` `readBusy`: an item whose `busy` is not `true` (the string `"yes"`) is no longer named busy; before, any truthy `busy` named the terminal, so a close asked about it. A `null` item is left out (ruled). Test: `pty-io.test.ts`, `are the busy items of a busy item that lacks its command, and one whose busy is a string`. Options: (a) as built, `busy === true`. (b) truthiness, as before. Recommendation (a).
+
+N7. The start answer of `postTerminal` reads only `terminal.id` (or the top-level `id`); a `terminal` that is a string, list or null, or an `id` that is a number, reads as absent: `{ ok: true, id: '', error: '' }` (before `id: 3` leaked through). This follows ruling 5; no option needed unless you want such a body to be a failed start.
+
+# 3. The first run on the unchanged tree (kept verbatim from the saved Phase 1 report)
+
+## The cases' first run on the unchanged tree (run)
+
+Command from `tools/oculus`: `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npx vitest run tests/state tests/views/boards/collection tests/views/system/config.test.ts --reporter=json`. Result: 6150 tests, 6076 passed, 74 failed. All 74 failures are cases written as changed answers (the new answer is asserted); every kept case and every existing test passes. Per file (pass/fail) for the files that carry cases:
+
+- Cases 1 and 2: `client/config-seed.test.ts` 16/4. Cases 3 and 4: `client/writes.test.ts` 22/5. Timing: `client/socket-timing.test.ts` 1/0.
+- Case 5: `sources/fs/fs-answers.test.ts` 113/14. Case 6: `sources/search.test.ts` 99/2. Case 7: `sources/files.test.ts` 44/4. Case 19 venues: `sources/venues.test.ts` 37/0. Also `sources/datasets.test.ts` 17/0, `sources/fs/fs-shape.test.ts` 30/0, `sources/fs/fs.test.ts` 43/0.
+- Case 8: `sessions/latex.test.ts` 18/5. Case 9: `sessions/source.test.ts` 48/0. Case 10: `sessions/terminal/terminal-tabs.test.ts` 57/0. Case 11: `sessions/terminal/composer.test.ts` 42/0. Case 12: `sessions/folds.test.ts` 40/0. Case 21 sessions: `sessions/transcript.test.ts` 18/7, `changes.test.ts` 17/6, `agents.test.ts` 12/2, `terminal/pty-io.test.ts` 22/5, `terminals.test.ts` 61/1, `view-source.test.ts` 9/0.
+- Case 13: `workbench/ui-load.test.ts` 88/2. Case 14: `workbench/layout/saved/layout-refusals.test.ts` 109/0, `layout-parse-refusals.test.ts` 60/0, `layout-parse-root-refusals.test.ts` 56/0, `layout-workbench-refusals.test.ts` 83/0. Case 15: `workbench/layout/instance.test.ts` 55/0, `selection.test.ts` 17/0, `navigation/status.test.ts` 38/0, `pages.test.ts` 62/0, `arrangement.test.ts` 90/0, `rail.test.ts` 70/0. Case 16: `navigation/catalogue.test.ts` 104/0, `rail-badges.test.ts` 103/0. Cases 18 and 19 palette: `palette.test.ts` 51/0.
+- Case 17: `shared/instance-state.test.ts` 473/0, `instance-state-feeds.test.ts` 280/0, `instance-state-files.test.ts` 492/0, `instance-state-sources.test.ts` 342/0.
+- Case 18: `boards/focus/focus-config.test.ts` 51/0, `focus-lanes.test.ts` 45/0, `boards/career.test.ts` 14/0, `boards/board/board.test.ts` 36/0, `board-words.test.ts` 35/0, `boards/structure/lines.test.ts` 12/0, `graph.test.ts` 24/0, `feeds/feeds.test.ts` 25/0, `life/notes.test.ts` 38/0, `life/present.test.ts` 74/3, `shared/words/appearance.test.ts` 123/0, `tones.test.ts` 88/0, `themes.test.ts` 25/0, `system/hpc.test.ts` 80/0, `client/selectors.test.ts` 54/0.
+- Case 19: `boards/collection/collection-fields.test.ts` 56/0, `feeds/leads.test.ts` 60/0, `radar.test.ts` 41/0, `lead-application.test.ts` 26/0, `idents.test.ts` 15/0, `linkedin.test.ts` 17/0, `forms/schema.test.ts` 80/0, `form-values.test.ts` 93/0.
+- Case 20: `forms/form-drafts.test.ts` 121/1. Case 21 others: `system/docs.test.ts` 85/3, `lines.test.ts` 75/0, `deposit.test.ts` 20/4, `usage-refresh.test.ts` 21/0, `life/memories-message.test.ts` 20/2, `accounts-store.test.ts` 32/2, `boards/structure/layout.test.ts` 19/2, `feeds/inbox-store.test.ts` 15/0, `life/calendar-store.test.ts` 10/0, `slides.test.ts` 22/0.
+
+The 74 failing tests (all changed cases): `config-seed`: the four "drops a portfolio / sessions payload" rows; `writes`: JSON null body (200 and 500), not-JSON body (200 and 500), items of a list left out; `form-drafts`: own `__proto__` field of a draft; `accounts-store`: setup body JSON null and not a setup map; `memories-message`: refusal whose error is a number, body null or not JSON; `present`: own `__proto__` key of the themes, framing and summaries maps; `agents`: refusal with a null body and with a not-JSON body; `changes` (6): `changes` a string, a map, a list holding null and 3, `page` a string, `error: 3`, null or not-JSON body; `latex` (5): `error: 3`, null and not-JSON body at 200 and at a refusal; `terminals`: an item of the terminals list that is no terminal; `transcript` (7): `turns` a string, a map, a list holding a null and a number, `offset` a string, a result that is no boolean, `error: 3`, null or not-JSON body; `files`: `error: 3`, `error: ['a']`, refused null body, refused not-JSON body; `search`: successful not-JSON body, refused not-JSON body; `ui-load`: `instances` with an own `__proto__` key holding a map and holding null; `deposit` (4) and `docs` (3): JSON null or not-JSON body; `layout`: a `null` item of `objects` (2); `pty-io` (5): `postTerminal` null and not-JSON body (200 and refusal) and a `null` item of `busy`; `fs-answers` (14): per kind (workspaces, bookmarks, notes, one note, a folder listing) an item that is not an item left out, and a refused null and not-JSON body answering the status.
+
+Second run, after the rulings, before repair round 1: the final tests of `tests/state` and `tests/views` laid over a copy of the unchanged `src` (session scratchpad `ff/`), `npx vitest run tests/state tests/views --tagsFilter '!slow' --reporter=json`: 7671 tests, 7521 passed, 138 failed, in 27 files. The 138 are the changed answers of section 8 (the 74 above plus the cases the rulings added). Every kept case is in the 7521 passed. The same tests pass on the converted tree. This run does not cover `tests/checks`, `tests/server` or the slow-tagged timing test, and was not repeated for the five tests of repair rounds 2 and 3 beyond the lines quoted in section 0.
+
+# 4. Rulings applied (1 to 11)
+
+1. A complete `ConfigPayload` is received and `{}` is a dropped frame; the portfolio example is one whose `findings` is a map (`config-seed.test.ts`).
+2. A non-2xx null or not-JSON body answers the refusal with the status text. A 2xx null or not-JSON body keeps the reader's own failed-read path with the status text in place of the engine message: no bookmark sweep, retry control kept (`fs.svelte.ts`), `readBusy` answers the failed-read list, `postTerminal` answers `ok: false`, `agents.ask` answers its error, `docs` keeps a drawn document and asks again on the next write. One shared `readJson` in `data/shapes/shapes.ts` carries it. N5 names the one reader where the two bodies differ.
+3. A non-string `error` answers the status text in every reader, docs and deposit included. The tests that kept the number are rewritten: `docs.test.ts` `an answer of the wrong shape holds a refusal with an error that is a number` (before `error: 3`, after `'404'`), `deposit.test.ts` `holds a refusal whose error is a number` (before `error: 3`, after the status text).
+4. A memories item without `name` keeps the whole-wall failed read `image_without_name` (`tests/views/personal/memories.test.ts` passes unedited).
+5. A field of the wrong type is read as absent: transcript, changes, the terminals list, accounts' setup body, `layout.ts`'s null `objects` item. `turns: 'x'` answers `{ turns: [], offset: <body offset when a number, else the fallback>, error: '' }`.
+6. `present.ts` themes, framing and summaries, `diffViewOf` views, `parseDrafts` and `mergedInstances` skip an own `__proto__` key; `strings` and `wordsOf` answer as today.
+7. The `parseDrafts` literal input (no `base`) is a kept case; the changed case has a valid `base` on both fields and the draft's prototype is no longer set.
+8. The `pty:` schema is lenient (`bytes` with a `''` fallback); only a payload that is not a map is dropped.
+9. Case 11's record sits under `composer`; `venues.ts:85-88` is an argument check; `datasets.ts:10-14` and `venues.ts:29-33` use `strings`.
+10. The crashes outside the cases are ended as named changed answers with failing-first tests (section 8).
+11. Kept: `changed` item-checked, the refusal-sentence tests (`saved.ts`'s 26 sentences), `socket-stub.ts`, the test placements and moves, and the path-text edits in `allow-duplication.txt` and the four comments.
+
+# 5. DONE / NOT DONE
+
+NOT DONE: nothing in the brief or the round. Not verified: whether every head comment that described a hand check was rewritten (the commands run are the item 7 grep of section 9 and a grep of the comments of `src/lib/state` for "by hand", `typeof`, `isMap`, whose hits are unrelated uses of those words).
+
+| Row | Command that proves it | Output |
+|---|---|---|
+| shapes.ts moved | `ls src/lib/data/shapes`; `git status --short . \| grep "D src"` | `shapes.ts`; ` D src/lib/server/core/shapes.ts` |
+| No stale path to the old module | `grep -rnE "core/shapes\|in shapes\.ts" src tests \| wc -l` | `0` |
+| Cast grep of the brief | `grep -rnE "\.json\(\)\)? as \|\) as \{\|as (Entry\|SchemaField\|NoteRow\|FsEntry\|string)\[\]\)\|as Body\|as Answer\|as ConnectSetup\|as Partial<" src/lib/state \| wc -l` | `0` |
+| No `.issues` | `grep -rnE "\.issues\|prettifyError\|treeifyError" src/lib/state \| wc -l` | `0` |
+| Schema consts end in `Shape` | `grep -rnE "^(export )?const [a-zA-Z]+ = z" src/lib/state src/lib/data/shapes \| grep -vcE "const [a-zA-Z]+Shape = z"` | `0` |
+| Non-ASCII | `LC_ALL=C grep -rna '[^ -~]' src tests \| wc -l` | `0` |
+| All checks | `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` (after `npm run diagrams`) | section 0: `checks: 7 commands passed`, exit 0; `Tests  10147 passed \| 615 skipped (10762)`; `Tests  442 passed \| 9 skipped (451)`; `COMPLETED 2862 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| Slow test by name | `npx vitest run tests/state/client/socket-timing.test.ts --tagsFilter slow --reporter=verbose --disableConsoleIntercept` | `socket-timing: 50000 frames in 244.5 ms`, `Tests  1 passed (1)` |
+| Docs | `git diff --numstat -- DESIGN.md docs` | `DESIGN.md` 2/2 (the `**Untyped input.**` paragraph names `state/`; the `state/` row of the import table adds `data/shapes/shapes`); 10 files of `docs/diagrams` regenerated |
+| Boundaries and order | `git diff --numstat -- tests/checks` | `order.ts` 1/0 (`data/shapes` between `data/accounts` and `data/helpers`), `boundaries.test.ts` 6/2, `allow-duplication.txt` 32/34 |
+
+New source files: `src/lib/data/shapes/shapes.ts`, `src/lib/state/client/payloads.ts`, `src/lib/state/sessions/terminal/terminal-payloads.ts`. Largest files (`wc -l`, before the round; the round changed none by more than a few lines): `boards/collection.ts` 809, `sources/repositories/repositories.ts` 835, `sessions/terminals.svelte.ts` 887.
+
+# 6. Per-file table (71 files of the loop)
+
+Columns: file under `src/lib/state` | check lines before -> after (`grep -cE "typeof |Array\.isArray|isRecord\(|isMap\(" <file>`; before from the brief's loop) | `grep -c "safeParse\|readAs(" <file>` | schemas added.
+
+Total, corrected: 506 -> 58 over the changed or new files under `src/lib/state` that exist. Command: `git status --short src/lib/state | grep -v '^ D'`, directories expanded to their `*.ts`, then `xargs grep -cE "typeof |Array\.isArray|isRecord\(|isMap\("` summed with awk: it printed `80` files and `lines 58` (29 files hold a line). The 71 files of the original loop sum to 59 because they include `workbench/drag.svelte.ts` (1 line, an unchanged file with an environment test); `grep -rnE "typeof |Array\.isArray|isRecord\(|isMap\(" src/lib/state | wc -l` prints 62, the other 3 being `client/clock.svelte.ts:22`, `shared/stores/in-browser.ts:9`, `shared/words/fuzzy.ts:62`, unchanged files outside the 71. The reviewer counted 78 files, I count 80; the line total 58 agrees.
+
+| File | Lines | readAs count | Schemas |
+|---|---|---|---|
+| boards/board/presets.ts | 8 -> 0 | 3 | finiteShape, bucketShape, bucketsShape, authorsShape |
+| boards/board/state.ts | 3 -> 0 | 2 | boardStateShape |
+| boards/board/stats.ts | 1 -> 0 | 0 | none |
+| boards/career.ts | 4 -> 0 | 3 | hostStatusShape, scoreDimShape, scoreDimsShape |
+| boards/collection.ts | 31 -> 9 | 14 | collectionStateShape, stringShape, pairShape, identityShape, subtaskFieldsShape, kindShape, optionShape, optionsShape |
+| boards/focus-lanes.ts | 7 -> 0 | 3 | stageShape, stagesShape, tonesShape, deadlineRowShape, deadlineRowsShape |
+| boards/focus.ts | 8 -> 0 | 4 | laneShape, lanesShape, priorityShape, prioritiesShape |
+| boards/structure/graph.ts | 8 -> 0 | 3 | startShape, mapStateShape |
+| boards/structure/layout.ts | 4 -> 1 | 1 | objectShape, graphvizShape |
+| boards/structure/lines.ts | 7 -> 0 | 2 | revealShape, tierRowShape, tierRowsShape |
+| boards/ticker.ts | 9 -> 0 | 3 | followupShape, followupsShape, subtaskShape |
+| client/selectors.svelte.ts | 4 -> 0 | 3 | staleLagShape, contextWindowShape |
+| client/socket.svelte.ts | 6 -> 1 | 4 | frameShape, stringMapShape |
+| client/writes.svelte.ts | 13 -> 3 | 1 | refusalShape, branchShape, answerShape, refusalsShape, timeoutShape |
+| feeds/feeds.ts | 3 -> 0 | 1 | none |
+| feeds/idents.ts | 4 -> 3 | 1 | none |
+| feeds/inbox.svelte.ts | 1 -> 0 | 1 | none |
+| feeds/inbox.ts | 6 -> 1 | 1 | inboxStateShape |
+| feeds/lead-application.ts | 2 -> 0 | 2 | none |
+| feeds/leads.ts | 8 -> 0 | 6 | fitVocabShape, colorWordShape, leadsStateShape, runLogShape |
+| feeds/linkedin.ts | 4 -> 0 | 2 | linkedinStateShape |
+| feeds/radar.ts | 11 -> 0 | 4 | radarBucketShape, radarStateShape, radarBucketsShape |
+| forms/form-drafts.svelte.ts | 12 -> 0 | 3 | formKeyShape, formValueShape, typedFieldShape, formDraftShape, addedEntryShape |
+| forms/form-values.ts | 13 -> 6 | 5 | metaRowShape, metaRowsShape, wordsShape |
+| forms/manifest-draft.ts | 3 -> 0 | 1 | manifestDraftShape |
+| forms/open-forms.ts | 2 -> 0 | 1 | openFormsShape |
+| forms/schema.ts | 14 -> 1 | 7 | manifestSchemaShape, fieldRowShape, choiceShape, vocabChoicesShape, listShape, linesShape |
+| life/accounts.svelte.ts | 2 -> 0 | 3 | connectSetupShape |
+| life/calendar.ts | 2 -> 1 | 1 | calendarStateShape |
+| life/memories.svelte.ts | 3 -> 0 | 3 | sideShape, pictureShape, answerShape |
+| life/notes.ts | 2 -> 0 | 1 | notesShape |
+| life/present.ts | 10 -> 0 | 3 | presentStateShape, chipShape, chipsShape, metaShape, themeShape, cardShape, framingShape, summaryRowShape, summaryShape, ideaShape, ideasShape, deckShape |
+| life/slides.ts | 5 -> 0 | 1 | slidesStateShape |
+| sessions/agents.svelte.ts | 3 -> 2 | 2 | agentsAnswerShape, customizationsAnswerShape, customizationTextShape, refusalShape |
+| sessions/folds.ts | 6 -> 1 | 2 | listFilterShape, tokensShape |
+| sessions/latex.svelte.ts | 13 -> 1 | 1 | issueShape, issuesShape, mainShape, bodyShape |
+| sessions/source.svelte.ts | 11 -> 0 | 2 | indentShape, draftShape, modeShape |
+| sessions/terminal/composer.ts | 8 -> 2 | 2 | wordsShape, picksShape, composerShape, composerHolderShape, scopeShape, scopeHolderShape |
+| sessions/terminal/pty-io.ts | 2 -> 3 | 3 | startedShape, actionAnswerShape, busyShape, busyItemsShape, busyListShape, busyAnswerShape |
+| sessions/terminal/terminal-tabs.ts | 9 -> 0 | 2 | terminalIdShape, savedTabShape |
+| sessions/terminals.svelte.ts | 5 -> 0 | 0 | none (its readers are in `terminal-payloads.ts`) |
+| sessions/view-source.ts | 3 -> 0 | 4 | pathShape, collectionsShape, collectionShape |
+| shared/words/appearance.ts | 13 -> 1 | 4 | flagShape, terminalShape, wallpaperShape, themeRowShape, themeRowsShape, crtShape |
+| shared/words/themes.ts | 3 -> 0 | 1 | themeRowShape, themeRowsShape |
+| shared/words/tones.ts | 5 -> 0 | 2 | hexShape, colorShape, labelShape, legendRowShape, legendRowsShape |
+| sources/datasets.ts | 6 -> 1 | 1 | dataStateShape |
+| sources/files.svelte.ts | 7 -> 1 | 1 | fileRowShape, filesShape |
+| sources/fs-transport.ts | 2 -> 0 | 2 | refusalShape, fsEntryShape, listingShape |
+| sources/fs.svelte.ts | 14 -> 1 | 4 | fsRootShape, workspaceShape, workspacesShape, bookmarkShape, schemaFieldShape, bookmarksShape, noteRowShape, notesShape, noteShape |
+| sources/fs.ts | 26 -> 4 | 3 | expandedHeldShape, countShape, refShape, askShape, outcomeShape, selectedShape, formShape, filesViewShape |
+| sources/repositories/repositories.ts | 11 -> 1 | 3 | heldDiffShape, diffViewShape, repositoriesViewShape |
+| sources/search.svelte.ts | 2 -> 0 | 0 | none (reads through `readAnswer` of `fs-transport.ts`) |
+| sources/search.ts | 18 -> 0 | 2 | hitShape, fileShape, failureShape, answerShape, searchStateShape |
+| sources/venues.ts | 9 -> 2 | 1 | venuesStateShape |
+| system/docs.svelte.ts | 9 -> 1 | 1 | manualPartShape, bodyShape |
+| system/hpc.ts | 1 -> 0 | 1 | hpcStateShape |
+| system/lines.svelte.ts | 8 -> 0 | 5 | countShape, tallyShape, languageShape, folderShape, countedShape, countHeadShape, refusalShape |
+| system/usage-refresh.svelte.ts | 1 -> 0 | 1 | refusalShape |
+| workbench/drag.svelte.ts | 1 -> 1 | 0 | none (environment test, unchanged file) |
+| workbench/layout/instance.ts | 10 -> 2 | 2 | cursorShape, identityShape |
+| workbench/layout/saved/saved.ts | 24 -> 1 | 17 | listShape, leafPageShape, dirShape, sizesShape, wholeNumberShape, tabIdShape, tabViewShape, activeShape, pathShape, focusShape, dockedFocusShape, workbenchShape, dockedShape, savedPageShape, pagesEnvelopeShape, envelopeShape |
+| workbench/navigation/arrangement.ts | 9 -> 0 | 1 | viewIdShape, stateTabShape, arrangementTabShape, arrangementPaneShape, arrangementSplitShape, arrangementNodeShape, arrangementShape |
+| workbench/navigation/catalogue.ts | 11 -> 1 | 4 | chordShape, navGroupShape, docEntryShape, docsShape, nodeHoldsShape |
+| workbench/navigation/pages.ts | 3 -> 1 | 1 | tabLabelShape |
+| workbench/navigation/rail.ts | 3 -> 2 | 0 | none |
+| workbench/navigation/status.ts | 2 -> 0 | 1 | tabFileShape |
+| workbench/palette.ts | 5 -> 0 | 2 | feedNameShape, themeNamesShape |
+| workbench/rail-badges.svelte.ts | 5 -> 2 | 1 | scanTypeShape, scanTypesShape |
+| workbench/rail-badges.ts | 5 -> 0 | 1 | liveRuleShape |
+| workbench/selection.svelte.ts | 2 -> 0 | 1 | pinShape |
+| workbench/ui.svelte.ts | 11 -> 2 | 4 | savedUiShape, finiteNumberShape, savedRecordsShape |
+
+Files outside the 71 that the step also converts (no check line before): `client/payloads.ts`, `client/entities.svelte.ts`, `sessions/terminal/terminal-payloads.ts`, `sessions/transcript.svelte.ts`, `sessions/changes.svelte.ts`, `system/deposit.svelte.ts`, `life/calendar.svelte.ts`, `workbench/navigation/notice-sources.ts`.
+
+What stays, and why (the 62 lines of the grep above):
+- `typeof` in a type: `forms/schema.ts:80`, `shared/words/appearance.ts:129`, `life/calendar.ts:32`, `feeds/inbox.ts:113`, `sessions/folds.ts:86`, `sessions/terminal/pty-io.ts:60-61` (the output type of a schema transform), `workbench/ui.svelte.ts:72`, `workbench/navigation/pages.ts:149`, `client/clock.svelte.ts:22`, `sources/repositories/repositories.ts:362`, `client/socket.svelte.ts:77`.
+- Environment tests: `shared/stores/in-browser.ts:9`, `system/docs.svelte.ts:191`, `sessions/latex.svelte.ts:136`, `sessions/agents.svelte.ts:120,155`, `sessions/terminal/pty-io.ts:73`, `sources/files.svelte.ts:101`, `workbench/drag.svelte.ts:323`.
+- Argument checks over a value the code already holds (named in the brief or the same kind): `shared/words/fuzzy.ts:62`, `client/writes.svelte.ts:136,317,318`, `sources/venues.ts:83,130`, `sources/datasets.ts:32`, `boards/structure/layout.ts:238`, `workbench/ui.svelte.ts:345`, `workbench/rail-badges.svelte.ts:45`. Not named in the brief, classified by me as the same kind: `forms/form-values.ts:102,107,118,119` (a typed `FormValue` from a control) and `sources/fs.svelte.ts:388` (an element of a query key the code built).
+- Bare map tests kept as `isMap`: `sessions/terminal/composer.ts` (two spreads), `workbench/rail-badges.svelte.ts:195`, `workbench/layout/instance.ts:28,29`, `workbench/layout/saved/saved.ts:149`, `workbench/navigation/catalogue.ts:193`, `workbench/navigation/rail.ts:50,55`, `boards/collection.ts:184,646`, `sources/fs.ts:278,421,682,750`. The spread readers must keep an own `__proto__` key (kept cases of case 17), which `z.looseObject`, `z.record` and `mapShape` would drop.
+- Generic walks defined for every input: `boards/collection.ts:173-175,360-363`, `feeds/idents.ts:11-13`, `forms/form-values.ts:32-35`.
+- Casts outside the brief's grep, none of an outside value: `forms/form-drafts.svelte.ts:319`, `forms/form-values.ts:36`, `sessions/terminals.svelte.ts:466`, `workbench/rail-badges.svelte.ts:141`. The one payload cast is `client/entities.svelte.ts:66` (N1).
+
+# 7. Timing and bundle
+
+Timing (item 13): `tests/state/client/socket-timing.test.ts`. Five alternating rounds (`sh rounds.sh`, the unchanged tree a copy in the scratchpad), run before repair round 1; the round changed `agents`, `tones`, `memories` and `arrangement`, none in `handle` or the terminal chunk path, and the slow test by name afterwards printed `socket-timing: 50000 frames in 244.5 ms`; the five rounds were not repeated (not verified after the round).
+
+| Round | Unchanged tree | Changed tree | Ratio |
+|---|---|---|---|
+| 1 | 280.7 ms | 312.3 ms | 1.11 |
+| 2 | 202.0 ms | 365.3 ms | 1.81 |
+| 3 | 241.5 ms | 343.8 ms | 1.42 |
+| 4 | 230.4 ms | 380.2 ms | 1.65 |
+| 5 | 305.0 ms | 393.5 ms | 1.29 |
+| mean | 251.9 ms | 359.0 ms | 1.43 |
+
+The mean ratio 1.43 is under the bound of 1.5, so no hand narrowing was kept. Rounds 2 and 4 are over 1.5 on their own; other agents ran during the rounds, so the spread is wide and the margin to the bound is 0.07. `quickly` is not used in `handle`.
+
+Bundle (item 14): `du -sk .svelte-kit/output/client` after `npm run build`: unchanged tree `30064`, changed tree `30156` (+92 kB, +0.3 percent; the round-1 build prints `30156` again). Zod sits in one chunk of the page, `nodes/2.*.js`, about 2033 kB (2033179 bytes before the round); the unchanged tree has no file matching `\$ZodType`.
+
+# 8. Changed answers (before -> after), each with its failing-first case
+
+Socket frames and payloads (`config-seed.test.ts`, 7 rows; item 3, rulings 1 and 8):
+- A config payload lacking any of `config`, `text`, `icons`, `host`, `findings` (including `{}`): before held, then `installConfig` threw `TypeError ... reading 'palette'` (`socket.svelte.ts:257`); after the frame is dropped.
+- A portfolio payload lacking `version`, `entities`, `relations` or `findings`, or whose `findings` is a map: before held; after dropped.
+- A sessions payload whose `terminals` is a string or that lacks `records`: before held; after dropped.
+- A files payload whose `root` is a number or whose `bookmarks` flag is a string: before held; after dropped.
+- A `files` message with a null payload: before `TypeError ... reading 'bookmarks'` in `afterReceive` (`fs.svelte.ts:278`); after dropped before it (`fs-answers.test.ts`, `is dropped when its payload is null`).
+- A `pty:` payload that is a map with `bytes` of the wrong type still reaches the listener with no bytes (kept, 12 rows).
+
+Writes (`writes.test.ts`, 5 rows): a body that is JSON null or not JSON, status 200 or 500: before the engine's TypeError or SyntaxError text; after the status text (`HTTP <status>`), a failed read at 200 and the refusal at 500. A `changed` list holding a non-string: before kept whole; after the non-strings are left out.
+
+Server answers (rulings 2, 3, 5):
+- fs readers (workspaces, bookmarks, notes, one note, a folder listing; `fs-answers.test.ts`, 25 rows): an item of a list that is no item before reached the view, after is left out; a null or not-JSON body, refused or successful, before the engine's error text, after the status (`'502'` and so on); at 200 the retry control stays and the bookmark forms are not swept.
+- `files.svelte.ts` (`files.test.ts`, 6): `error: 3` or `['a']` at 404 before held as given, after `'404'`; null or not-JSON body before the engine text, after the status.
+- `search.svelte.ts` (`search.test.ts`, 3): not-JSON at 200 before the SyntaxError text, after `HTTP 200`; null at 200 before `search.failed`, after `HTTP 200` (N5); not-JSON at 502 before the engine text, after `HTTP 502`.
+- `latex.svelte.ts` (5): `error: 3` at 500 before `3`, after `'500'`; null or not-JSON at 200 and 500 before the engine text, after the status.
+- `transcript.svelte.ts` (9): `turns` a string, a map, or a list holding null and 3 before threw inside `merged`, after `{ turns: [], offset: <body offset or fallback>, error: '' }` with the good turns kept; `offset: '4'` before held as the string `'4'`, after the fallback; a turn map without `role` or with a number as `text` or `tool` before reached the view, after left out; `results: { t: 'yes' }` before `tool.ok` was `'yes'`, after stays null; `error: 3` before `3`, after the status; null or not-JSON before the engine text, after the status; a later null or not-JSON read keeps the turns held.
+- `changes.svelte.ts` (7): `changes` a string or a map before `rows: 'x'` or `{}`, after `[]`; a list holding null and 3 before reached the view, after left out; a row missing one of the four fields before kept, after left out; `page: '1'` before `more: true` by coercion, after false; `error: 3` before `3`, after the status; null or not-JSON before the engine text, after the status.
+- `agents.svelte.ts` (5 on the first run, now 8 plus 5 from repair ruling 3): null or not-JSON body, refused or 200, before `{ value: null, error: '' }` or the SyntaxError text, after the failed read with the status; a list, a bad-typed list, a non-string `text`, and (repair ruling 3) a body missing `agents`, `accounts`, `findings` or `rows`, before handed on as `value`, after the failed read with the status `'200'` (N2).
+- `pty-io.ts` (11): `postTerminal` null or not-JSON at 200 before `ok: false` with the engine text, after `ok: false` with the status; at 500 before the engine text, after `'500'`; `id: 3`, `terminal: 'x'`, `terminal` a list or null beside an id before leaked into the answer, after `{ ok: true, id: '', error: '' }` or the valid id (N7); `readBusy` a `null` item before threw, after left out; a `busy` of `"yes"` before named busy, after not (N6).
+- `terminals.svelte.ts` (1): a terminals list holding null, 3, `'x'` or `[]` before reached `attachable()`, which threw `Cannot read properties of null (reading 'foreign')`; after the items are left out.
+- `docs.svelte.ts` (5): `error: 3` before `3`, after the status; JSON null or not JSON before the engine text in the held error, after the status; a 200 whose body is no JSON map, over a document already drawn, before the drawn document was replaced by an empty failed one, after it stays drawn and the next write asks again.
+- `deposit.svelte.ts` (12): `error: 3` before `3`, after the status; JSON null or not JSON before the engine text, after the status; a `state` that is not whole before held, after `null` (N3).
+- `memories.svelte.ts` (2, plus the repair-round rows): `error: 3` before `3`, after the status; JSON null or not JSON before the engine text, after `{ images: [], error: <status>, loading: false }`; an item without `name` keeps the failed read (ruling 4); a side of `1e-20`, `5e-324` or `0.5` answers none, as the hand check did (kept, repair ruling 1).
+- `accounts.svelte.ts` (2): a setup body of null, `[]`, `'x'`, `3`, `{}` or `{ready: 3}` before held as the setup (a later `add` threw `reading 'google'`), after `setup() === null` and `setupFailed` the unreadable text.
+
+Maps built from an outside map's keys (ruling 6):
+- `mergedInstances` (`ui-load.test.ts`, 2): an own `__proto__` key holding a map before set the merged map's prototype, holding null made a null-prototype map; after the key is skipped.
+- `present.ts` themes, framing, summaries (`present.test.ts`, 3): before the key replaced the map's prototype; after skipped.
+- `diffViewOf` views (`view-state.test.ts`, 1): before `views.a === 1` through the prototype; after skipped.
+- `parseDrafts` (`form-drafts.test.ts`, 1): with a valid `base` on both fields before the kept draft's prototype was the `__proto__` field's object; after skipped.
+- `shared/words/tones.ts` legend (`tones.test.ts`, 1): a legend row keyed `__proto__` before an own entry (`chipLabel('__proto__')` answered `'Proto'`), after left out.
+- `shared/words/tones.ts` `stringMap` (repair ruling 2, `tones.test.ts`, 3 failing rows of 5): a `__PROTO__` key of `type_color`, `domains` or `data_access` before lower-cased into an own `__proto__` entry that a lookup of `__proto__` answered, after skipped and the lookup answers none.
+- `shared/words/appearance.ts` (`appearance.test.ts`, 1): before a second theme row named `__proto__` was listed twice (`['a', '__proto__', 'b']`), after no `__proto__` row (`['a', 'b']`).
+
+Ruling 10 crashes ended:
+- `splitPosts([null])` (`linkedin.test.ts`), `sortBucket([null, entry])` (`radar.test.ts`) before `TypeError`, after the null entry is left out; `feedIdentity('radar', null)` (`idents.test.ts`) before `TypeError`, after the kind as the identity and the place in the list as the id.
+- `sortBucket` rank by a relevance named `constructor` or `toString` before an inherited property reordered the list, after no rank (order `[1,3,0,2,4]`).
+- `toneOf`, `paletteTone` of a prototype name (`tones.test.ts`) before `TypeError: token?.startsWith is not a function`; `domainLabel('constructor')` before the `Object` function; after unknown tone, `domainLabel(name)` is the name, `chipLabel` is the name, `chipGlyphName` is `''`.
+- `snapshotEntries('constructor' | '__proto__' | 'toString' | 'hasOwnProperty')` (`form-drafts.test.ts`, 5) before `TypeError: held.entries.find is not a function`, after undefined.
+- `boards/structure/layout.ts` (`layout.test.ts`, 2): a `null` or non-`{name,pos}` item of Graphviz's `objects` before threw at `const { name, pos } = object`, after left out and the node placed from the other items.
+- `client/selectors.svelte.ts` (`selectors.test.ts`, 4) prototype names: N4.
+
+Items of a channel payload (`notice-sources.test.ts`, 4; item 3's `listOf` and items through schemas): a session record that is null before threw `reading 'hook'`, after left out; a record whose `id` is not text before kept (`id: 5`), after left out; a feed run date that is not text before kept, after no run date; an ended job that is no job before threw `reading 'id'`, after left out and the others still told.
+
+# 9. Greps of the brief and test edits
+
+- Item 7, names the step removes (`removed-names.txt`, 40 names, `grep -rnw <name> src tests config HELP.md DESIGN.md README.md --exclude=local.yml`): 31 names print nothing (`Body`, `OUTCOMES`, `askOf`, `bodyOf`, `countOf`, `endedJobs`, `failureOf`, `formOf`, `formValue`, `heldAgents`, `heldStates`, `instancesOf`, `numberAt`, `objectOf`, `rawSizes`, `readArrangement`, `readArrangementPane`, `readArrangementTab`, `readBody`, `readDockedFocus`, `readIssues`, `readMains`, `readParts`, `readPath`, `readRows`, `readTerminalFont`, `readTerminalOptions`, `readWallpaper`, `refOf`, `savedList`, `savedStart`, `stringAt`, `stringList`; the list shows 33 and the command printed 0 hits for each of them). The other 7 names are ordinary words or unrelated properties that were local variables of a removed function: `dock` (36 hits), `foot` (102), `lede` (49), `n` (2344), `objects` (42), `popover` (44), `summaries` (32), `sums` (20), `tagTones` (9). I read the hits of `tagTones`, `sums`, `summaries`, `objects` and `dock`: properties and words (`Deck.summaries`, `Deck.tagTones`, `.git/objects`, the `LineCounts.svelte` prop); `foot`, `lede`, `n` and `popover` hits were counted, not read one by one (not verified).
+- The loop of "What is on the tree" after the change: 28 files, 56 lines; before, 71 files, 506 lines.
+- Existing test files edited (`git diff -U0 -- tests` lists every removed line outside the moved files): imports, file header comments, the stub `WebSocket` moved out of `config-seed.test.ts` into `tests/state/client/socket-stub.ts`, the import and comment in `tests/server/core/json.test.ts`, stale function names in comments of `explorer.test.ts` and `show-in-files.test.ts`, path text in comments of `tests/views/boards/collection/collection.test.ts`, `collection-form.test.ts` and `tests/views/system/config.test.ts`; and the one assertion edited because repair ruling 3 changes its answer, `agents.test.ts:49` (section 0, line 3). Moved with imports adjusted: `fs.test.ts`, `fs-shape.test.ts` into `tests/state/sources/fs/`, `focus.test.ts`, `focus-lanes.test.ts` into `tests/state/boards/focus/`, `collection.test.ts`, `view-reads.test.ts` into `tests/state/boards/collection/`.
+- Duplication allowlist (`tests/checks/tree/allow-duplication.txt`, 32 added, 34 removed): path text of the moved files, two entries removed because the clone no longer exists, one deposit entry re-marked; `npm run test:checks` passes (29 files, 442 tests).
+- New test helpers shared by two files: `tests/state/sources/off-facets.ts`, `tests/state/client/socket-stub.ts`, `tests/state/shared/instance-fixture.ts`, `tests/state/workbench/layout/saved/refusal-fixture.ts`.
+
+# 10. Wrong or unclear in the brief, with evidence
+
+1. Item 3 words reading through `entities.payload(...)`; see N1.
+2. Item 6 says the shared instance-state schema answers `unchanged`; none of case 17's readers answers the input itself (each builds a fresh object, `instance-state.test.ts` checks `not.toBe(input)`), so `unchanged` applies to none of them. `revealAsked`, `patchedFilesView`, `withFollow`, `withFollowPin`, `followRevealed` and `withCardCursor` spread the input and keep an own `__proto__` key, so they stay `isMap` plus spread.
+3. Item 6 says `reveal` is kept only when a non-empty string; that is uniform, but collection's `lead` uses `trim() !== ''` (a `' '` is dropped, `' x '` is kept untrimmed). Both kept as they answer today.
+4. Item 15's list names `strings`, `wordsOf` and `parseAdded` as changed readers; their answers cannot change (ruling 6). It does not name `diffViewOf`, `present.ts`'s three maps or `parseDrafts`'s prototype, which are the real changes.
+5. The brief's `tests/state/sources/fs.test.ts` path is the pre-move path; the files now sit in `tests/state/sources/fs/`.
+6. A bare `z.unknown()` or `stringItemsShape` as an object field refuses an input that lacks the key (zod 4.6.5, "expected nonoptional"); `anyValueShape` and `fieldItemsShape` (both `.optional()`) are the helpers for a field that may be absent. `.optional().catch(undefined)` leaves the key present with `undefined`, so readers that must keep the key absent set it only when defined. zod's `multipleOf(1)` accepts `1e-20` and `5e-324`; `refine(Number.isInteger)` does not.
+
+Helpers in `src/lib/data/shapes/shapes.ts`: `unchanged`, `unchangedAs`, `mapShape`, `anyNumberShape`, `filledTextShape`, `optionalTextShape`, `textOrNumberShape`, `searchRevealShape`, `quickly`, `wholeShape`, `stringItemsShape`, `survivorsShape`, `rowsShape`, `mapOfShape`, `readJson`, `readAs`, `text`, `wordShape`, `keyedRowsShape`, `fieldItemsShape`, `anyValueShape`, `itemsShape`, `listOrOneShape`.
+
+Next: the step lands by cherry-pick of one commit after the orchestrator reads the diff; the seven commands of `checks.sh` must be green on main, and the rulings for N1 to N7 can be given after landing without a rebuild except N1 option (b) or (c) and N5 option (b).
