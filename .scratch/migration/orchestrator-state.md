@@ -59,6 +59,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   cases: agents/briefs/D35-cases.md (round 0: the bounds' tests under tests/data rewritten to Z174, loadLocalOrDefaults' tests removed with it, the signature-following tests in the step)
   builder_usage: first run of the cases 99,350 tokens, 88 tool uses, 19.1 min (0 full-list runs)
   round: 0
+- step: Q85d
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 21:01)
+  session_id: a9259df1ca448b16b (launched 2026-10-01 21:00 local)
+  worktree: .agents/worktrees/Q85d
+  base: c62d2ce3
+  launched: 2026-10-01 21:00 local
+  report: agents/reviews/Q85d-report.md
+  brief_check: agents/reviews/Q85d-brief-check.md, every finding closed in the brief (its Closed heading, Z179 in automode); claude-sonnet-5-5, 311,875 tokens, 104 tool uses, 15.7 min
+  shared_paths: with D27, `Source.svelte` and `Merge.svelte` (D27 the lines that make or change a model's language; Q85d the instance-state readers, Merge's body read at 112 and the imports), `state/sources/fs.ts` (D27 the file-type reads; Q85d two exports beside `refShape` at 211), `tests/checks/tree/boundaries.test.ts` (D27 the state row's comment; Q85d the views' and shell's rows and the comment at 73-75), `tests/views/sources/source.test.ts` (D27 494-516; Q85d new cases at the end) and `tests/checks/tree/allow-audits.txt` (one line each), different hunks, a simple merge with the import blocks read at the second landing; no path shared with D35; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

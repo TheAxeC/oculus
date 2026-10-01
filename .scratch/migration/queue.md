@@ -3,7 +3,7 @@
 In flight:
 - D27 (the editor's languages), building on its round-0 case rulings.
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), building on its round-0 case rulings.
-- Q85d (zod in the views, ui, shell and routes), every brief-check finding closed in the brief (Z179 in automode), its builder being launched.
+- Q85d (zod in the views, ui, shell and routes), building: its builder runs the first run of the cases.
 
 
 Queued, in order (33 steps):
