@@ -1,16 +1,16 @@
 /plan-orchestration oculus/migration
 
+Landed 11:03: U2 (every view's look against VS Code), `agents/reviews/U2-landing.md`.
 Landed 10:42: Q85a4 (zod in the other server folders), `agents/reviews/Q85a4-landing.md`.
 Landed 06:19: X3d (Source Control as VS Code's), `agents/reviews/X3d-landing.md`.
 Landed 06:36: S3b (the `config-key` write), `agents/reviews/S3b-landing.md`.
 Landed 06:55: Q109 (the terminal: lines after a pane move, the five watchers' capped debounce, a sole terminal's menu, four terminal options), `agents/reviews/Q109-landing.md`.
 
 In flight:
-- U2 (every view's look against VS Code's), its review over round 2 in; landing next.
+- S3c (the Settings editor), its brief check (Sonnet) in; the brief's findings closing, then its builder.
 - Q85a2 (zod in the edit, sessions and transcripts folders), repair round 1 done, its review (Sonnet) running since 10:44.
-Open items: none. Z144 ruled (a) by Axel. Z145 ruled (b) by Axel: reviewers and brief checks on Sonnet 5.5. The choices U2's audit raises (its grouping, group 6's rows or cards, and the like) are Axel's once U2 has landed, never automode. Z143 ruled (5) with terminals by Axel, built in L4. Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
+Open items: Z146 (U2's grouping into build steps), Z147 (collections as rows or cards), Z148 (the icon set), all three Axel's, in `orchestrator-state.md`'s Open items. Z144 ruled (a) by Axel. Z145 ruled (b) by Axel: reviewers and brief checks on Sonnet 5.5. The choices U2's audit raises (its grouping, group 6's rows or cards, and the like) are Axel's once U2 has landed, never automode. Z143 ruled (5) with terminals by Axel, built in L4. Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
 Queued, in order:
-- S3c (the Settings editor), S3a and S3b have landed.
 - Q85b and Q85c, then Q85d (zod after Q85a4).
 - Q88b (the right-click menus' new capabilities), X3d has landed.
 - X3c (the tab strip as VS Code's), once Q88b has landed.

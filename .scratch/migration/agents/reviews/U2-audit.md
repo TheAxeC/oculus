@@ -19,12 +19,12 @@ Toolbars and actions: 11 x 9.8 px chevron `.tool` x55 against 16 x 16 px codicon
 Spacing: no row padding; cards padded 6px 8px against row height 22 px (css:1089).
 Type sizes: 11.5px x330, 10.5px x109, 12.5px weight 700 x68 (item titles), 9.5px weight 700 x25 (section labels), 8.5px weight 700 x21 against 13px (css:114, css:1085).
 Icons: svg 11.5 x 11.5 px x121 and 9.5 x 9.5 px x55 against 16 px (css:241, css:252); placed before section headings, colour role accent.
-Hover actions: row hover background transparent, the 57 to 92 px wide status buttons are always drawn at 15 px high, against actions revealed on hover (css:86) and the hover tint a VS Code list gives every row (css:1106).
+Hover actions: row hover background transparent, the 57 to 92 px wide status buttons are always drawn at 15 px high, against actions revealed on hover (css:1109, css:1110) and the hover tint a VS Code list gives every row (css:1106).
 Focus: ring 2px offset -2px against 1px offset -1px (css:368); the item-name buttons show the browser default ring 1px rgb(0,95,204), a second ring style in the same view.
 Empty state: one 12.5px sentence, 39 px high, top left, with a 12.5 x 12.5 px glyph, against centred content with 20px side padding (css:372).
 Error state: none.
 Better and kept: the due-date grouping into lanes with a coloured rule carries status that a 22 px row cannot; the status buttons act in place.
-Counterpart: VS Code has no due-date board. The nearest parts are the Explorer tree and the Problems list (css:949, css:824); the audit measures rows against the tree row (css:1089) and the section labels against the pane header (css:76).
+Counterpart: VS Code has no due-date board. The nearest parts are the Explorer tree and the Problems list (css:949, css:832); the audit measures rows against the tree row (css:1089) and the section labels against the pane header (css:76).
 Re-measure against the notes: note line 3 reads 46 text nodes at 11.5px, the measure is 330 text nodes at 11.5px (narrow and wide), and the DONE buttons are 14.8 px high where the note reads 15 px.
 
 ## projects
@@ -38,7 +38,7 @@ Toolbars and actions: header buttons 25.3 px high, radius 6px, padding 3px 8px a
 Spacing: the path line in each card is 10.5px monospace and wraps mid-word x53.
 Type sizes: card title 15px weight 700 x53, 11.5px x504, 9.5px weight 700 x141 (PILLAR, ELI5 labels), 10.5px x110 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x541 against 16 px (css:252).
-Hover actions: a card hover changes background to rgb(248,250,252) only when hovered and is the same value when not hovered; actions are drawn at rest, against actions revealed on hover or focus (css:86).
+Hover actions: a card hover changes background to rgb(248,250,252) only when hovered and is the same value when not hovered; actions are drawn at rest, against actions revealed on hover or focus (css:1109, css:1110).
 Focus: ring 2px offset -2px against 1px offset -1px (css:368); the title button 92 x 23 px at 15px has no ring change.
 Empty state: none reached.
 Error state: none reached.
@@ -57,7 +57,7 @@ Toolbars and actions: as projects, 26 x 19.6 px icon controls with border 1px an
 Spacing: path lines 10.5px monospace x16 wrap mid-word.
 Type sizes: card title 15px weight 700 x16, 11.5px x121, 9.5px weight 700 x46, 10.5px x33 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x132 at narrow, x149 at wide against 16 px (css:252).
-Hover actions: the card hover background rgb(248,250,252) with cursor auto and no outline; the card tools are drawn at rest (opacity 1), against reveal on hover (css:86).
+Hover actions: the card hover background rgb(248,250,252) with cursor auto and no outline; the card tools are drawn at rest (opacity 1), against reveal on hover (css:1109, css:1110).
 Focus: ring 2px offset -2px against 1px offset -1px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -76,7 +76,7 @@ Toolbars and actions: as coauthor (css:133, css:85, css:255).
 Spacing: as coauthor.
 Type sizes: 11.5px x197, 9.5px weight 700 x80, 10.5px x54, 15px weight 700 x25 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x243 against 16 px (css:252).
-Hover actions: as coauthor (css:86).
+Hover actions: as coauthor (css:1109, css:1110).
 Focus: as coauthor (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -95,7 +95,7 @@ Toolbars and actions: Open file 85 x 25.3 px at 11.5px, radius 6px against a tex
 Spacing: the intro box is 285 px wide at narrow, radius 6px, 3px orange left rule, padding 8px 10px; at narrow its inline fragments (bold, code) each sit on their own line.
 Type sizes: card title 15px weight 700 x11, 12.5px x40, 11.5px x40, 11.5px weight 700 x21 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x30, 12.5 x 12.5 px x21 against 16 px (css:252).
-Hover actions: Edit entry 26 x 20 px and three pills drawn at rest (css:86).
+Hover actions: Edit entry 26 x 20 px and three pills drawn at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -114,7 +114,7 @@ Toolbars and actions: as pillars (css:255, css:133).
 Spacing: intro 285 px, radius 6px, 3px left rule, padding 8px 10px.
 Type sizes: card title 15px weight 700 x9, 12.5px x12, 11.5px x22, 11.5px weight 700 x21 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x30, 12.5 x 12.5 px x20 against 16 px (css:252).
-Hover actions: as pillars (css:86).
+Hover actions: as pillars (css:1109, css:1110).
 Focus: as pillars (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -151,7 +151,7 @@ Toolbars and actions: THEMES row of 13 filled accent chips 25 px high; the secti
 Spacing: intro 285 px, radius 6px, left rule 3px, padding 8px 10px.
 Type sizes: 11.5px x753, 11.5px weight 700 x137, 10.5px x124, 12.5px x70, 15px x68 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x371 against 16 px (css:252).
-Hover actions: Edit entry 26 x 20 px drawn at rest (css:86).
+Hover actions: Edit entry 26 x 20 px drawn at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -170,7 +170,7 @@ Toolbars and actions: the modality filter is a row of filled accent chips about 
 Spacing: the search input fills the pane at wide (1375 px) and 144 px elsewhere, so the same control has two widths across views.
 Type sizes: 11.5px x352, 12.5px x234, 12.5px monospace x106, 15px weight 700 x54 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x210, 12.5 x 12.5 px x101 against 16 px (css:252).
-Hover actions: Edit entry 26 x 20 px and Recover drawn at rest (css:86).
+Hover actions: Edit entry 26 x 20 px and Recover drawn at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -189,7 +189,7 @@ Toolbars and actions: STATUS chips filled in three colours (green, blue, grey), 
 Spacing: a link `A` 264 x 14.5 px accent underlined (css:365).
 Type sizes: 11.5px x110, 12.5px x43, 10.5px x21, 15px weight 700 x20, 9.5px weight 700 x7 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x65, 12.5 x 12.5 px x24, 13.5 x 13.5 px x20 against 16 px (css:252).
-Hover actions: 4 tools (pin to top, edit, delete, + subtask) 26 x 20 px at rest (css:86).
+Hover actions: 4 tools (pin to top, edit, delete, + subtask) 26 x 20 px at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: the SOFTWARE empty sentence is 10.5px with no glyph, where every other empty state is 12.5px with a 12.5 x 12.5 px glyph; VS Code's is centred with 20px padding (css:372).
 Error state: none reached.
@@ -208,7 +208,7 @@ Toolbars and actions: `Show more` 79 x 25 px text button (css:255).
 Spacing: quote block padded inside a card.
 Type sizes: 11.5px x9, 12.5px x5, 15px x2 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x7, 13.5 x 13.5 px x2 against 16 px (css:252).
-Hover actions: three 26 x 20 px tools at rest (css:86).
+Hover actions: three 26 x 20 px tools at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -230,7 +230,7 @@ Icons: 11.5 x 11.5 px against 16 px (css:252).
 Hover actions: none.
 Focus: first Tab lands on the pane opener with a 2px ring offset -2px (css:368).
 Empty state: "Type a pattern and press Enter." 12.5px, top left, glyph 12.5 x 12.5 px; VS Code's message is padded 0 22px 8px (css:782) in a tree view.
-Error state: `error: unclosed group` is a muted 12.5px line with a glyph, top left, in the same `.empty` row as the empty state, replacing the earlier results; there is no retry control. VS Code shows a failed action as a notification item padded 10px 5px with a 22 px message line (css:403, css:406). The message states the cause in the regex engine's words and does not say that the regex toggle is on.
+Error state: `error: unclosed group` is a muted 12.5px line with a glyph, top left, in the same `.empty` row as the empty state, replacing the earlier results; there is no retry control. The nearest VS Code element is the inline validation message under an input (css:286, padding .4em, 12px on 17px lines); what VS Code shows for an invalid regex was not measured. The message states the cause in the regex engine's words and does not say that the regex toggle is on.
 Better and kept: the count line states "500 hits in 102 files, 12693 ms cut at 500" with an accent "cut at 500", which names the cut.
 Counterpart: the VS Code Search view (css:755 to css:809).
 Re-measure against the notes: note line 17 reads the input as 24 px; the measure is 144 x 25.3 px.
@@ -246,7 +246,7 @@ Toolbars and actions: DATE and DEADLINE labels are accent uppercase 9.5px weight
 Spacing: card title 15px wraps to 2 lines at narrow.
 Type sizes: 11.5px x103, 12.5px x53, 9.5px weight 700 x20, 15px weight 700 x12 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x46, 12.5 x 12.5 px x15, 13.5 x 13.5 px x11 against 16 px (css:252).
-Hover actions: four 26 x 20 px tools at rest (css:86).
+Hover actions: four 26 x 20 px tools at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -265,7 +265,7 @@ Toolbars and actions: status chips in four colours; the `Named by` pill is a dis
 Spacing: ROLE, DATE and SNOOZE labels 9.5px weight 700.
 Type sizes: 11.5px x50, 12.5px x33, 9.5px weight 700 x23, 15px weight 700 x7 against 13px (css:1085).
 Icons: link `A` 125 x 14.5 px accent underlined; svg 11.5 x 11.5 px against 16 px (css:252).
-Hover actions: at rest (css:86).
+Hover actions: at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -275,7 +275,7 @@ Re-measure against the notes: note line 13 reads as funding; the measure agrees.
 
 ## education
 
-State: narrow 309 px and wide 1454 px, shots `education-narrow.png`, `education-wide.png`; 21 cards. `education-narrow.png` and `education-wide.png` are cropped to the header, intro and status chips; the cards name students, so their measures are by computed styles only.
+State: narrow 309 px and wide 1454 px, no shot committed (the intro names institutions and evaluation roles, and the cards name students); 21 cards, every measure by computed styles.
 Fixed set: row `div.row` 19.3 px (29.3 px and 69.8 px for taller rows); indent none; header 69.6 px at narrow (title cut `EDUCATION ...`, 92 px of 144 px), 38.3 px at wide; toolbar action `.tool` 26 x 19.6 px x68; text button `.tool` 79, 49 and 85 x 25.3 px; input search 144 x 25.3 px; badge chips 71 and 58 x 19.8 px (10.5px, radius 999px), tag 63 x 19.3 px; empty state none reached; error state none; hover actions none revealed (four tools at rest); focus ring 2px offset -2px.
 Rows: cards 350 px against 22 px rows (css:1089).
 Indents: none (css:1095).
@@ -284,7 +284,7 @@ Toolbars and actions: chips completed (blue) and planned (violet) about 28 px hi
 Spacing: the card left rule is blue; a link with a folder icon is accent underlined.
 Type sizes: 11.5px x85, 12.5px x66, 9.5px weight 700 x36, 15px weight 700 x21 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px against 16 px (css:252).
-Hover actions: at rest (css:86).
+Hover actions: at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -303,7 +303,7 @@ Toolbars and actions: status chips in six fill colours; `Show more` 79 x 25 px (
 Spacing: card left rule green.
 Type sizes: 11.5px x223, 12.5px x127, 9.5px weight 700 x29, 15px weight 700 x25, 12.5px monospace x4 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x103, 12.5 x 12.5 px x50, 13.5 x 13.5 px x25 against 16 px (css:252).
-Hover actions: at rest (css:86).
+Hover actions: at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -334,24 +334,24 @@ Re-measure against the notes: note line 15 reads PERSON as a bordered chip with 
 
 State: narrow 309 px and wide 1454 px, shots `tasks-narrow.png`, `tasks-wide.png` (both cropped to the header and the status chips; the cards list manuscripts under submission, so the card measures are by computed styles only); 3 cards, 11 subtasks.
 Fixed set: row subtask line 25.3 px; indent none; header 69.6 px at narrow (title cut `TA...`, 34 px of 41 px), 38.3 px at wide; toolbar action `.tool` 26 x 20 px (pin, edit and delete); text button per subtask done 45 x 25.3 px, 1w 32, 1mo 40, hide 41, del 35 x 25.3 px; input search 144 x 25.3 px; badge chip 41 x 19.8 px (10.5px), count 35 x 15.8 px; empty state none reached; error state none; hover actions none revealed (28 buttons drawn in the hovered card); focus ring 2px rgb(189,93,56) offset -2px on `+ add`.
-Rows: a subtask is one line of a 13 x 13 px checkbox, text and five bordered 25.3 px buttons; when the text wraps, the checkbox, the text and the buttons take three lines at narrow; VS Code's row is 22 px with actions at the right on hover (css:1089, css:86).
+Rows: a subtask is one line of a 13 x 13 px checkbox, text and five bordered 25.3 px buttons; when the text wraps, the checkbox, the text and the buttons take three lines at narrow; VS Code's row is 22 px with actions at the right on hover (css:1089, css:1109, css:1110).
 Indents: none (css:1095).
 Headers: the view header reads "TASKS" where the tab and HELP read "Tasks & Service"; 69.6 px at narrow against 22 px (css:73).
 Toolbars and actions: five text buttons per subtask at 11.5px against icon actions of 16 px (css:133).
 Spacing: card 350 px.
 Type sizes: 11.5px x58, 12.5px x16, 10.5px x6, 9.5px weight 700 x4, 15px weight 700 x3 against 13px (css:1085).
 Icons: svg 10.5 x 10.5 px x11, 11.5 x 11.5 px x7, 13.5 x 13.5 px x3 against 16 px (css:252); the checkbox is native-like 13 x 13 px against 18 x 18 px (css:275).
-Hover actions: drawn at rest (css:86).
+Hover actions: drawn at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
 Better and kept: each subtask offers snooze (1w, 1mo) in place.
-Counterpart: VS Code has no task board; the nearest is the Problems list rows with 22 px lines (css:826) and the hover actions of tree rows (css:86).
+Counterpart: VS Code has no task board; the nearest is the Problems list rows with 22 px lines (css:832) and the hover actions of tree rows (css:1109, css:1110).
 Re-measure against the notes: note line 16 reads 59 subtask buttons on the screen; the measure at wide is 51 subtask buttons (done 11, 1w 10, 1mo 10, hide 10, del 10) in a 1454 px pane, and 28 buttons in the hovered card.
 
 ## present
 
-State: narrow 309 px and wide 1454 px, shots `present-narrow.png`, `present-wide.png`; slide 1 of 23.
+State: narrow 309 px and wide 1454 px, no shot committed (slide 1 is the portfolio's thesis slide, unpublished research under Z144); slide 1 of 23, every measure by computed styles.
 Fixed set: row none; indent none; header 69.5 px at narrow (tools wrapped to 2 rows, title cut `PRES...`, 44 px of 58 px), 38.3 px at wide (title and tools 307 x 25 px); toolbar action none (all text); text button `.tool` Previous 65, Next 43, Overview 87 and Slides 51 x 25.3 px; input none; badge counter `1 / 23` 38 x 15.8 px (10.5px), tags 79, 103, 64 and 91 x 19.3 px (11.5px, no background at narrow); empty state none reached; error state none; hover actions none; focus ring 2px offset -2px on Previous.
 Rows: none.
 Indents: none.
@@ -378,12 +378,12 @@ Toolbars and actions: the section fold `Pre-emption risk (31)` is a filled accen
 Spacing: the "threatens:" paragraph is red 12.5px under a lone warning glyph line; the intro legend holds inline radio-like circles.
 Type sizes: 12.5px x1821, 11.5px x1312, 15px weight 700 x561, 10.5px x467 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x1312, 12.5 x 12.5 px x688 against 16 px (css:252).
-Hover actions: at rest (css:86).
+Hover actions: at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
 Better and kept: the red rule and the "threatens:" line mark pre-emption risk at once.
-Counterpart: the VS Code Problems panel (css:824 to css:870), whose rows are 22 px lines with a count badge (css:826, css:309).
+Counterpart: the VS Code Problems panel (css:824 to css:870), whose rows are 22 px lines with a count badge (css:832, css:309).
 Re-measure against the notes: note line 18 reads titles of 15px wrapping to three lines; the measure at 309 px is 2 lines in a 274 px card.
 
 ## leads
@@ -393,11 +393,11 @@ Fixed set: row `div.row` n/a (cards); indent none; header 100.8 px at narrow (ti
 Rows: card 486 px wide in a 309 px pane (overflows by 177 px, text cut without an ellipsis at the edge) at narrow, 352 px at wide.
 Indents: none (css:1095).
 Headers: 100.8 px at narrow, with 4 controls on 3 rows, against 22 px (css:73).
-Toolbars and actions: three bordered 25.3 px text buttons per card against icon actions revealed on hover (css:133, css:86).
+Toolbars and actions: three bordered 25.3 px text buttons per card against icon actions revealed on hover (css:133, css:1109, css:1110).
 Spacing: the fit word is coloured (reach grey, strong green, moderate orange).
 Type sizes: 11.5px x59, 12.5px x37, 15px weight 700 x9, 10.5px x9 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px against 16 px (css:252).
-Hover actions: at rest (css:86).
+Hover actions: at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -416,12 +416,12 @@ Toolbars and actions: `.opener` 30 x 23.8 px at 13.5px x2, the only 13.5px contr
 Spacing: sender 15px weight 700, subject 12.5px weight 700, preview 11.5px.
 Type sizes: 15px weight 700 x13, 12.5px weight 700 x12, 11.5px x46, 13.5px x1 against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x49, 13.5 x 13.5 px x2 against 16 px (css:252).
-Hover actions: at rest (css:86).
+Hover actions: at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
 Better and kept: triage actions per thread (Draft reply, Archive, triaged) are on the card.
-Counterpart: the VS Code Timeline pane or the agent sessions list (css:812, css:1067), measured as one row per item.
+Counterpart: the VS Code Timeline pane or the agent sessions list (its section css:811 to css:821, which sets no row height, and css:1067), measured as one row per item against the tree row (css:1089).
 Re-measure against the notes: note line 20 reads two 24 px controls at 13.5px; the measure is `.opener` 30 x 23.8 px at 13.5px x2. Note line 21 reads four 20 px icon buttons; the measure is 26 x 19.6 px.
 
 ## linkedin
@@ -435,7 +435,7 @@ Toolbars and actions: `+ idea` and search stack on two rows at narrow.
 Spacing: a status box with a 3px left rule, padding 8px 10px, 285 px at narrow.
 Type sizes: 11.5px x49, 10.5px x38, 12.5px x20, 15px weight 700 x19, 13.5px weight 700 x2 (the "Ideas (10)" heading) against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x30, 13.5 x 13.5 px x2 against 16 px (css:252).
-Hover actions: at rest (css:86).
+Hover actions: at rest (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -454,7 +454,7 @@ Toolbars and actions: 22 x 22 px icon tools in the header, the nearest oculus ma
 Spacing: workspace group labels RESEARCH-HUB are 10.5px weight 700 uppercase with a plain count at the right; VS Code shows a count badge (css:309).
 Type sizes: 10.5px x369, 12.5px x43, 10.5px weight 700 x18, 13px x7 (Customizations rows) against 13px (css:1085).
 Icons: svg 13.5 x 13.5 px x48 against 16 px (css:252); the status dot is a coloured circle; the selected row has a 3px accent left rule.
-Hover actions: none revealed; the per-row list icon is always drawn (css:86).
+Hover actions: none revealed; the per-row list icon is always drawn (css:1109, css:1110).
 Focus: first Tab lands on the pane opener 22 x 22 px with a 2px ring offset -2px (css:368).
 Empty state: none reached.
 Error state: none reached.
@@ -514,7 +514,7 @@ Focus: ring 2px offset -2px (css:368).
 Empty state: 12.5px sentence with a 12.5 x 12.5 px glyph at the top left (css:372).
 Error state: none reached.
 Better and kept: the turn head carries who, time and name in one line.
-Counterpart: VS Code has no chat transcript in this build; rows are measured against the Timeline pane rows (css:812 to css:821).
+Counterpart: VS Code has no chat transcript in this build; rows are measured against the tree row (css:1089); the Timeline pane (css:811 to css:821) sets no row height of its own.
 
 ## timeline
 
@@ -767,7 +767,7 @@ Toolbars and actions: copy buttons on scope lines are bordered 26 x 19.6 px.
 Spacing: the inputs fill the pane (1420 px) at wide.
 Type sizes: 15px x17, 11.5px monospace x9, 11.5px x8, 10.5px weight 700 x4 (field labels), 13.5px weight 700 x2 (provider headings) against 13px (css:1085).
 Icons: svg 11.5 x 11.5 px x9, 15 x 15 px x6 against 16 px (css:252).
-Hover actions: at rest (css:86).
+Hover actions: at rest (css:1109, css:1110).
 Focus: links take the browser ring; inputs and tools take the 2px ring (css:368).
 Empty state: none.
 Error state: none reached.
@@ -785,7 +785,7 @@ Toolbars and actions: the filter is in the header as a 144 px input.
 Spacing: the empty line sits top left.
 Type sizes: 12.5px against 13px (css:1085).
 Icons: svg 12.5 x 12.5 px against 16 px (css:252).
-Hover actions: none revealed; Undo and the pills are drawn at rest, where VS Code reveals row actions on hover or focus-within (css:86).
+Hover actions: none revealed; Undo and the pills are drawn at rest, where VS Code reveals row actions on hover or focus-within (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: "No writes are recorded yet." with a glyph, 12.5px, top left; the same sentence is shown while the filter hides all 27 rows, so it states a false fact in that case, and it does not name the filter that hides the rows. VS Code's list filter message is centred with 40px top padding at 70% opacity (css:14).
 Error state: none reached.
@@ -841,7 +841,7 @@ Toolbars and actions: three hover tools of 22 x 16 px, radius 6px, border 1px ag
 Spacing: `B.main` 1337 x 22 px (13px, radius 0, border 0).
 Type sizes: 13px, equal to VS Code (css:1085).
 Icons: svg 11.5 x 11.5 px x20 against 16 px (css:252).
-Hover actions: revealed on hover, as VS Code (css:86).
+Hover actions: revealed on hover, as VS Code (css:1109, css:1110).
 Focus: ring 2px offset -2px (css:368).
 Empty state: none.
 Error state: none.
@@ -850,7 +850,7 @@ Counterpart: the VS Code Explorer tree (css:949).
 
 ## customization
 
-State: narrow 309 px and wide 1454 px. Shots `customization-empty-narrow.png`, `customization-empty-wide.png` (the empty state "No file is open here.") and `customization-narrow.png`, `customization-wide.png` (the populated state, cropped to the header and tab strip, because the body is a rule file and its path under the home folder; the body measures are by computed styles only). The populated state was reached with the agent menu of the Customizations block in the Sessions view set to Codex and its Instructions row `~/.codex/AGENTS.md`.
+State: narrow 309 px and wide 1454 px. Shots `customization-empty-narrow.png`, `customization-empty-wide.png` (the empty state "No file is open here.") and `customization-narrow.png` (the populated state, cropped to the header and tab strip, because the body is a rule file and its path under the home folder; the body measures are by computed styles only). No wide shot of the populated state is committed: cropped to the header it is a 16 px strip with nothing to measure. The populated state was reached with the agent menu of the Customizations block in the Sessions view set to Codex and its Instructions row `~/.codex/AGENTS.md`.
 Fixed set: row none (the body is one `pre` block); indent none; header 30.3 px (title 106 px), 11.5px weight 700 uppercase, no tools; toolbar action none; text button none; input none; badge none; populated body `pre` 285 x 641 px at narrow and 1430 x 635 px at wide, 11.5px monospace, line-height 17.25 px, padding 0, white-space pre-wrap; empty state 12.5px, 39 px high, glyph 12.5 x 12.5 px, top left; error state not reached; hover actions none; focus ring not read.
 Rows: the populated body is one text block of 17.25 px lines (11.5px monospace) against the VS Code editor line of 18 px at 12px (css:1104, css:1105).
 Indents: none reached.
@@ -1005,7 +1005,7 @@ Toolbars and actions: the More menu holds Ask, folder, Show in Files, + subtask,
 Spacing: `B.open` 782 x 22.5 px at 15px (the files disclosure).
 Type sizes: 12.5px x70, 11.5px x26, 9.5px weight 700 x8, 19px weight 700 x6 (title), 12.5px weight 700 x4 against 13px (css:1085).
 Icons: svg against 16 px (css:252).
-Hover actions: at rest (css:86).
+Hover actions: at rest (css:1109, css:1110).
 Focus: not read.
 Empty state: 12.5px, 39 px high.
 Error state: none reached.
@@ -1023,7 +1023,7 @@ Toolbars and actions: up and down are text buttons 25.3 px against a text button
 Spacing: intro 285 px.
 Type sizes: 11.5px, 10.5px monospace against 13px (css:1085).
 Icons: drag grip 15 x 15 px against 16 px (css:252).
-Hover actions: at rest (css:86).
+Hover actions: at rest (css:1109, css:1110).
 Focus: not read.
 Empty state: none.
 Error state: none.
@@ -1032,7 +1032,7 @@ Counterpart: the VS Code Explorer tree rows (css:949) for drag handles and row h
 
 ## source
 
-State: narrow 309 px and wide 1454 px, shots `source-narrow.png`, `source-wide.png`, `source-error.png`; a hub `.md` rule file opened through the Files bookmark list, and the error state (479 px pane): a source tab the server refused (`Cannot open: HTTP 404`) because its symlink resolves outside every root. The refusal is booked outside this audit. `source-wide.png` is cropped below the tab strip. `source-theme-dark.png` is a source tab (`build.py`) in the dark theme.
+State: narrow 309 px and wide 1454 px, shot `source-error.png` (no shot of the open file is committed, since it shows the rule file's text; those measures are by computed styles); a Markdown rule file in the home folder (`~/.claude/rules/`), opened through the Files bookmark list, and the error state (479 px pane): a source tab the server refused (`Cannot open: HTTP 404`) because its symlink resolves outside every root. The refusal is booked outside this audit. `source-theme-dark.png` is a source tab (`build.py`) in the dark theme.
 Fixed set: row Monaco line 17 px; indent none; header 100.8 px at narrow (title cut, 102 px of 228 px, tools 175 x 88 px on 3 rows), 38.3 px at wide (full title, tools 392 x 25 px); toolbar action none; text button `.tool` Save 62, Revert 71, Preview 79 and `Take this bookmark out` 163 x 25.3 px (11.5px, radius 6px); input none; badge none; empty state none; error state "Cannot open: HTTP 404", `SPAN.message` 142 x 19 px, 12.5px, colour rgb(95,111,133), a 12.5px warning glyph, placed at y 400 in a 642 px block, left aligned, no retry control; hover actions none; focus ring 2px offset -2px on Save.
 Rows: editor line 17 px at 11.5px monospace; VS Code's editor default is 12px with an 18 px line on macOS (css:1104, css:1105).
 Indents: none.
@@ -1087,7 +1087,7 @@ Each item names the views it holds for. Measures are the ones given in the view 
 
 The project view cuts its title at narrow with no tools (285 of 797 px). Views whose header holds one row of tools at 309 px and do not wrap: pillars, domains, data, audit, history, inbox, memories, slides, document.
 
-2. Live theme switch. No difference: switching the theme in Settings repaints the application and an open Monaco editor on its own, with no other action. Measured with the TEST tab `visibilityState` `visible` and 121 `requestAnimationFrame` callbacks in one second, read before each switch. The theme in force before was light (body rgb(241,245,249); the Settings Appearance row read `Theme light`). The switch was made through the Theme list of Settings (the opener, then the entry), light to dark twice and dark to light twice; a pointerdown-armed `requestAnimationFrame` watcher logged the first frame at which a background changed. The page body changed between rgb(241,245,249) and rgb(11,17,32) 119 ms, 100 ms and 150 ms after the click on the entry. Monaco on the source tab `build.py` (class `vs` in light, `vs-dark` in dark) changed its background between rgb(255,255,255) and rgb(18,26,43) 183 ms, 168 ms and 394 ms after the click, with the first token colour rgb(102,109,122) in light and rgb(138,144,157) in dark and the gutter on the background colour; on the first light to dark switch Monaco was already `vs-dark` at the first read after the click and at every read up to 1.8 s. The populated doc view (the HPC how-to, rendered Markdown) read text rgb(15,23,42) in light and rgb(231,236,243) in dark, and a code block rgb(241,245,249) in light and rgb(27,38,56) in dark. The populated customization view (one `pre`, 455 x 640 px, 11.5px, background transparent) read text rgb(15,23,42) in light and rgb(231,236,243) in dark. Shots: `source-theme-dark.png` and `doc-theme-dark.png`. The theme was set back to light through the same list and confirmed by a read (body rgb(241,245,249), Monaco class `vs` with background rgb(255,255,255), the Appearance row reading `Theme light`). Views that hold Monaco: source only (doc is rendered Markdown and customization is one `pre` block).
+2. Live theme switch. No difference: switching the theme in Settings repaints the application and an open Monaco editor on its own, with no other action. Measured with the TEST tab `visibilityState` `visible` and 121 `requestAnimationFrame` callbacks in one second, read before each switch. The theme in force before was light (body rgb(241,245,249); the Settings Appearance row read `Theme light`). The switch was made through the Theme list of Settings (the opener, then the entry), light to dark twice and dark to light twice; a pointerdown-armed `requestAnimationFrame` watcher logged the first frame at which a background changed. The page body changed between rgb(241,245,249) and rgb(11,17,32) 119 ms, 100 ms and 150 ms after the click on the entry. Monaco on the source tab `build.py` (class `vs` in light, `vs-dark` in dark) changed its background between rgb(255,255,255) and rgb(18,26,43) 183 ms, 168 ms and 394 ms after the click, with the first token colour rgb(102,109,122) in light and rgb(138,144,157) in dark and the gutter on the background colour; on the first light to dark switch Monaco was already `vs-dark` at the first read after the click and at every read up to 1.8 s. The populated doc view (the HPC how-to, rendered Markdown) read text rgb(15,23,42) in light and rgb(231,236,243) in dark, and a code block rgb(241,245,249) in light and rgb(27,38,56) in dark. The populated customization view (one `pre`, 455 x 640 px, 11.5px, background transparent) read text rgb(15,23,42) in light and rgb(231,236,243) in dark. Shots: `source-theme-dark.png` and `doc-theme-dark.png`. The theme was set back to light through the same list and confirmed by a read (body rgb(241,245,249), Monaco class `vs` with background rgb(255,255,255), the Appearance row reading `Theme light`). Views that hold Monaco: the source tab and the diff editor (doc is rendered Markdown and customization is one `pre` block). The diff editor was measured at U2's landing: a side-by-side diff of `U2-audit.md` opened from the Repositories view on TEST (453 x 615 px, both sides class `vs`, background rgb(255,255,255)), the theme switched light to dark and back through the Theme list of Settings with a `requestAnimationFrame` watcher on both sides; each switch changed both sides (`vs-dark` with rgb(18,26,43), then `vs` with rgb(255,255,255)) in the same frame as the page body, and no frame drew a side in the old theme.
 
 3. Control heights. The application has six control heights: `.act` 14.8 px, icon tool 19.6 px, compact tool 22 px, select 23.5 px, input and text tool 25.3 px and `.opener` 27.3 px; VS Code has an action of 20 px (css:133, css:85), a text button of 26 px (css:255, 16 px line plus 4px padding twice plus a 1px border twice) and an input of 26 px in the Search widget (css:764). Holds for focus, search, history, session-detail, timeline, transcript, changes, settings, editor, deposit, present, every collection view.
 
@@ -1095,7 +1095,7 @@ The project view cuts its title at narrow with no tools (285 of 797 px). Views w
 
 5. Bordered icon tools in cards and rows. Icon tools are 26 x 19.6 px with a 1px border, radius 6px and an 11.5 px icon; VS Code's action icon is 16 px, no border, hover outline dashed 1px (css:133, css:252, css:237). Holds for projects (x191), coauthor (x48), archive (x71), pillars (x9), domains (x9), venues (x68), data (x54), code (x60), statements (x6), funding (x39), events (x24), education (x68), applications (x99), joint-work (x39), radar (x746), inbox (x48), settings (x39), account-setup (x9).
 
-6. Hover actions drawn at rest. Card and row actions are opacity 1 with the mouse away; VS Code reveals actions on hover or focus-within (css:86). Holds for projects, coauthor, archive, pillars, domains, venues, data, code, statements, funding, events, education, applications, tasks, radar, leads, inbox, linkedin, focus, session-list (the per-row opener), account-setup. Pages reveals on hover and matches.
+6. Hover actions drawn at rest. Card and row actions are opacity 1 with the mouse away; VS Code reveals actions on hover or focus-within (css:1109, css:1110). Holds for projects, coauthor, archive, pillars, domains, venues, data, code, statements, funding, events, education, applications, tasks, radar, leads, inbox, linkedin, focus, session-list (the per-row opener), account-setup. Pages reveals on hover and matches.
 
 7. Cards and boxes where VS Code has rows. Collections draw cards (radius 10px, a 3px coloured left rule, 285 to 352 px wide) with 15px titles; VS Code lists are 22 px rows with a 13px label (css:1089, css:1085). Holds for projects, coauthor, archive, pillars, domains, venues, data, code, statements, funding, events, education, applications, joint-work, tasks, radar, leads, inbox, linkedin, usage, gallery, audit, config, project.
 
@@ -1109,7 +1109,7 @@ The project view cuts its title at narrow with no tools (285 of 797 px). Views w
 
 12. Empty states. They are one 12.5px sentence with a 12.5 x 12.5 px glyph at the top left (39 to 58 px high), and history shows the same sentence while a filter hides its rows; findings has no header and no glyph; code, changes and `none` lines use 10.5px with no glyph; VS Code's welcome view is centred with padding 0 20px 1em (css:372) and a list message is centred at 70% opacity (css:14). Holds for search, history, deposit, doc, customization, agents, transcript, timeline, findings, code, changes, project, memories.
 
-13. Error states. Errors are red or muted text lines without a box (search draws a 12.5 px glyph before its line) (hpc has a Refresh now button in the body; source and search have no retry control); VS Code uses a notification item padded 10px 5px with a 22 px message line (css:403, css:406) and a Problems message (css:826). Holds for hpc (red monospace), source (muted sentence), search (muted 12.5px line, `error: unclosed group`).
+13. Error states. Errors are red or muted text lines without a box (search draws a 12.5 px glyph before its line) (hpc has a Refresh now button in the body; source and search have no retry control); the nearest VS Code elements are the inline validation message under an input (css:286) and the Problems message box (css:826); what VS Code shows for an invalid search regex was not measured. Holds for hpc (red monospace), source (muted sentence), search (muted 12.5px line, `error: unclosed group`).
 
 14. Narrow overflow. In a 309 px pane, collection cards are 320 px wide and clip 11 px on the right (coauthor, archive, venues, code, statements, funding, events, education, tasks), a lead card is 486 px (leads), the Slides row box is 400 px (slides), the status table scrolls horizontally (status), the usage table is 609 px wide in a 285 px container and scrolls horizontally (usage), and Refresh now is cut at the edge (hpc). VS Code's side bar minimum width is 170 px (css:1100).
 
@@ -1133,6 +1133,6 @@ This is a proposal; no build step exists before Axel's ruling.
 4. Icons (difference 19; every view). One step sets icons to 16 px after Axel's ruling on the set.
 5. Hover reveal (difference 6; collection views, radar, leads, inbox, linkedin, focus, session-list, account-setup). One step reveals row and card actions on hover or focus-within. They belong together because it is one rule in the card and row components.
 6. Collections as lists (differences 7, 10 and 15; collection views, radar, leads, inbox, linkedin, usage, gallery, audit, config, project). One step replaces cards with 22 px rows and a count badge and drops the underline on links; it is the largest change and a decision for Axel, since cards carry the status rule that rows lose. Recommendation: rule on one collection view (projects) first and take the others from that ruling; the lazy option is keeping the cards and restyling only their buttons.
-7. Empty, error and narrow states (differences 12, 13, 14 and 16; the views named there). One step makes the empty state centred with 20px padding, the error state a notification-shaped item with a retry, removes the clipping at 309 px and drops the intro boxes. They belong together because they are what a view shows when it has nothing, fails or is narrow.
+7. Empty, error and narrow states (differences 12, 13, 14 and 16; the views named there). One step makes the empty state centred with 20px padding, the error state a message box with a retry, shaped as VS Code's input message or Problems message box (css:286, css:826), removes the clipping at 309 px and drops the intro boxes. They belong together because they are what a view shows when it has nothing, fails or is narrow.
 
 Settings (S3c) and the X3d parts of changes are outside every group. The tab strip is X3c's.

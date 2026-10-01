@@ -455,3 +455,16 @@ Cases of "Cases":
 - The pre-audit position of the Archive and Files tabs: no earlier read exists.
 
 Reviewer usage: tokens not counted; about 60 tool uses; about 30 minutes (10:27 to 10:35).
+
+## Closed
+
+The findings of the run over repair round 2, each fixed at landing on main (2026-10-01) or stated:
+
+- Spec, `customization-wide.png` (a 16 px strip): not committed; the customization State line (`U2-audit.md:853`) says no wide shot of the populated state is committed and why.
+- Proof, Common differences item 2 measured one Monaco instance: the diff editor was measured at the landing on TEST (a side-by-side diff of `U2-audit.md` from the Repositories view; both sides `vs` to `vs-dark` and back in the same frame as the page body); `U2-audit.md:1090` states it. No difference, so Group 8 stays out of the grouping.
+- Standards 1, `source-narrow.png` and `source-wide.png` show the text of a rule file in the home folder: not committed; the source State line (`U2-audit.md:1035`) names the file as `~/.claude/rules/` and says those measures are by computed styles.
+- Standards 2, `present-narrow.png` and `present-wide.png` show the portfolio thesis slide: not committed; the present State line (`U2-audit.md:354`) says why.
+- Standards 2, lower weight: `education-narrow.png` and `education-wide.png` not committed (the intro names institutions and evaluation roles); the education State line (`U2-audit.md:278`) says so. The portfolio counts in the status, code, radar, archive, coauthor, projects, joint-work and tasks shots are committed: Z144's classes are session or agent titles, task names, account labels and unpublished research, and a count is none of them; the shots were looked at with the Read tool at landing and show no title, name or path.
+- Standards 3: `U2-vscode.css:1107-1115` adds VS Code's own row-action reveal rules (a tree view row, Open Editors, the terminal tabs list, the Problems list), copied from the installed 1.137.0 stylesheet; the 29 cites of `css:86` for row and card actions now cite `css:1109, css:1110`, and `css:86` stays only at `:9` and `:1056`, the header actions; the Problems row cites `css:832` (its 22 px `line-height`) at `:27`, `:349`, `:386`; the Timeline cites at `:424`, `:517` name the tree row `css:1089` and the Timeline section as setting no row height; the search error (`:233`) and difference 13 (`:1112`) cite the input message `css:286` as the nearest element and say VS Code's display of an invalid regex was not measured; group 7's error state names `css:286` and `css:826`.
+- Behaviour 1, the Files tab of TEST's pane 0 reopened last: the cause is not established; stated in the landing report.
+- Behaviour 2, the audit's footprint on TEST (the History filter `transcript`, the Search view's `error: unclosed group`, Customizations expanded): left on TEST, a workbench page; the landing added a diff tab of `U2-audit.md` in pane 1. Stated in the landing report.
