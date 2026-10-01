@@ -37,7 +37,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   worktree: .agents/worktrees/Q85c
   base: 8db30ca2
   launched: 2026-10-01 16:58 local
-  report: agents/reviews/Q85c-report.md
+  report: agents/reviews/Q85c-report.md (saved from the builder's hand-back message; it wrote no report file)
+  builder_usage: 138,304 tokens, 236 tool uses, 69.7 min (1 full-list run)
+  reviewer_report: agents/reviews/Q85c-refuter.md (reviewer a4424239736fa1dee, launched 18:10, claude-sonnet-5-5 read from its transcript; report pending)
   brief_check: agents/reviews/Q85c-brief-check.md, every finding closed in the brief (its Closed heading, Z163 widened in automode); claude-sonnet-5-5, 272,378 tokens, 80 tool uses, 13.3 min
   landing: not-started
   round: 0
@@ -49,9 +51,10 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   worktree: .agents/worktrees/D31
   base: 133ee543
   launched: 2026-10-01 17:26 local
-  report: agents/reviews/D31-report.md
+  report: agents/reviews/D31-report.md (saved from the builder's hand-back message)
+  reviewer_report: agents/reviews/D31-refuter.md (reviewer a8b81aeece3e5b341, launched 18:12, claude-sonnet-5-5 read from its transcript; report pending)
   cases: agents/briefs/D31-cases.md (round 0: case 18 (a); the ssh command git would use kept, with BatchMode appended, read through core/git.ts; paths widened by core/git.ts and its test)
-  builder_usage: first run of the cases 248,113 tokens, 39 tool uses, 10.7 min (0 full-list runs)
+  builder_usage: first run of the cases 248,113 tokens, 39 tool uses, 10.7 min (0 full-list runs); the notice after the resumed build reads 371,242 tokens, 61 tool uses, 33.1 min (5 checks.sh runs: 1 from the wrong folder, 3 red, 1 green)
   brief_check: agents/reviews/D31-brief-check.md, every finding closed in the brief (its Closed heading); claude-sonnet-5-5, 159,546 tokens, 52 tool uses, 5.5 min
   shared_paths: with Q85c and U3, `DESIGN.md` (D31 lines 116, 128 and 344; Q85c line 148; U3 lines 214-222, 405 and the Pane and Toolbar paragraph), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
@@ -167,6 +170,10 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z166, the 16 behaviour keys read only at start (raised 2026-10-01 by Axel's question whether config reloads outside dev mode): `usage_tiers`, `usage_refresh_min`, `usage_refresh_model`, the five `slurm.*`, the three `calendar.*`, the two `mail.*` and the three `notify.*` keys take a restart while the Settings view writes them. Ruled by Axel 2026-10-01: (a), a new step D35 makes them live (pollers and notification settings re-read at every config push, a refused hand edit keeps the old settings and is logged once, the `local.yml` keys say they take a restart). Not chosen: (b) a restart label only, the lazy option.
+- Z167, folder bookmarks (raised 2026-10-01 by Axel's question): bookmarks are files only (`Tree.svelte:10`, `files.yml:6`, `opening.ts:62-72`). Ruled by Axel 2026-10-01: (a), built in X3a: the star on folder rows, opening one reveals the folder expanded and selected, a folder icon in the rail menu, the bookmark shape unchanged. Not chosen: (b) files only, the lazy option.
+- Z168, the Settings entries with no control (raised 2026-10-01 by Axel's question): 7 lists, 5 key/value families, 15 record families and 16 `local.yml` keys show a description and a link. Ruled by Axel 2026-10-01: (b), a new step S4 after U3 with editors for the lists and key/value families and forms for the record families, through a new confirmed write kind whose shape is Axel's at /spec, plus the table of contents reachable below 700 px (`Settings.svelte:78` hides it under that width). `local.yml` stays link-only under Z94 (4) (b) unless Axel widens it. Not chosen: (a) lists and key/value only; (c) all links, the lazy option.
+- Builder effort experiment (raised 2026-10-01 by Axel): D35's builder runs as `ordo-medium` on `claude-sonnet-5-5`; its landing report is compared with the `ordo-high` builders' on tokens, tool uses, time, the first report's bar, the refuter's findings and the fixes at landing.
 - Z146, U2's grouping into build steps (raised 2026-10-01 at U2's audit): ruled by Axel 2026-10-01, one step U3 for all seven groups, since with Z147 (c) every group changes the same shared parts (`Pane.svelte`, `Toolbar.svelte`, `ToolButton.svelte`, `Card.svelte`, `Empty.svelte`, `Glyph.svelte`, the `--fs-*` tokens). Not chosen: four steps, seven steps, no steps. `plan.md` Rulings and U3's line.
 - Z147, collections as rows or cards (raised 2026-10-01 at U2's audit): ruled by Axel 2026-10-01, (c) widened: cards kept, fit to the pane's width (difference 14), one chip shape (difference 10), titles on the type scale (difference 9), groups 2 and 5 applied, links without underline (difference 15); Projects looked at on TEST after U3. Not chosen: (a) rows everywhere, (b) rows on Projects first. `plan.md` Rulings and U3's line.
 - Z148, the icon set (raised 2026-10-01 at U2's audit, difference 19): ruled by Axel 2026-10-01, (1), Lucide kept and every icon drawn at 16 px, the 1em rule of `ui/display/Glyph.svelte:61-66` replaced; built in the step Z146 makes. Not chosen: (2) codicons through `config/catalogs/icons.yml`. `plan.md` Rulings.
@@ -678,6 +685,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 18:15. Axel ruled Z166 (a) (new step D35), Z167 (a) (folder bookmarks in X3a) and Z168 (b) (new step S4 after U3), and set D35's builder as the `ordo-medium` experiment. Q85c and D31 builders done, reports saved, reviewers running (Sonnet). In flight: Q85c (review), D31 (review), U3 (second builder). Next: each review, its repair round, /land; /spec D35 into the first free slot. Open items: none.
 - 2026-10-01 17:12. Z164 closed (b) and Z165 closed (a), both in automode. In flight: Q85c, U3 (second builder since 17:20), D31 (builder since 17:26, base 133ee543). Next: each report, /refute, /land. Open items: none.
 - 2026-10-01 17:05. D31's /spec stopped on a rule clash, open item Z165: no brief, worktree or dispatch entry. Q88c's /spec waits for U3 (its paths are not a simple merge with U3's). In flight: Q85c (builder since 16:58). Open items: Z164, Z165.
 - 2026-10-01 16:55. Q88b landed (the Files view's file operations), report `agents/reviews/Q88b-landing.md`; ten fixes at landing; look on TEST. U3's builder and the six agents it started stopped at 16:37 with no report; how U3 continues is Z164, Axel's. Q85c's brief is closed under Z163. In flight: Q85c (builder since 16:58). Next: /spec Q88c. Open items: Z164.

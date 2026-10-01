@@ -5,10 +5,12 @@ In flight:
 - Q85c (zod in the data folder), building.
 - U3 (every view on VS Code's scale, from U2's audit), building (a second builder took over the worktree).
 Queued, in order:
+- D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment).
 - Q85d (zod in the views, ui, shell and routes).
+- S4 (the Settings editor finished: lists, maps, records and the table of contents), once U3 has landed.
 - Q88c (the Source Control rows' and the pane strip's new menu items).
 - X3c (the tab strip as VS Code's), once Q88c has landed.
-- X3a (the Files view as VS Code's Explorer).
+- X3a (the Files view as VS Code's Explorer, folder bookmarks included).
 - Q91 (the project view and its editor), once X3a has landed.
 - L4 (floating panes).
 - Q66 (a hidden tab defers its work).
