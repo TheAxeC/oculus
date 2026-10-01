@@ -29,6 +29,19 @@ workers_at_once: 5           # Axel, 2026-10-01 18:49: five, to see the impact (
 
 ```yaml
 dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
+- step: D35
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 01:33)
+  session_id: a3a67c98dc6835b4c (launched 2026-10-02 01:32 local)
+  worktree: .agents/worktrees/D35
+  base: bca2c6b3
+  launched: 2026-10-02 01:32 local
+  report: agents/reviews/D35-report.md
+  brief_check: agents/reviews/D35-brief-check.md (the first build's, not run again: the spec skill checks a step once); claude-sonnet-5-5, 279,072 tokens, 70 tool uses, 13.0 min
+  shared_paths: with L4, Q66 and Q35, `DESIGN.md` (L4 210 and 358-365, Q66 194, Q35 367 and 378; D35 224-235), `HELP.md` (L4 27-45 and 127, Q35 120; D35 216 and 236), `options.yml` (L4 the `floats` entry at 336; D35 the behaviour descriptions and 591-622), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
 - step: L4
   executor: agent
   worker: claude:sonnet
