@@ -131,3 +131,128 @@ None beyond what the report states. All six changes (a wrong-shaped list item, a
 Reviewer usage: tokens not available to me; about 95 tool uses; about 55 minutes.
 
 Usage, from the completion notice: reviewer a1869e27b7f463b00, claude-sonnet-5-5, 282,135 tokens, 76 tool uses, 25.0 min.
+
+## Repair round 1, refuted
+
+Reviewer: claude-sonnet-5-5, fresh session. I changed no file. `git status --short | wc -l` printed 93 and `git diff c62d2ce3 --stat | tail -1` printed `86 files changed, 1701 insertions(+), 3819 deletions(-)` both before and after my runs. I did not open or copy `config/local.yml`, touched no port and no browser, and removed my scratch copy (`ls $TMPDIR | grep -c q85d` printed 0).
+
+### Verification lines (verbatim)
+
+`npm run diagrams` exited 0 and printed `docs/diagrams/layer-views.svg`, `channels.dot`, `channels.svg`, `writes.dot`, `writes.svg`. `git diff c62d2ce3 --stat -- docs/diagrams | tail -1` printed `8 files changed, 830 insertions(+), 594 deletions(-)` before and after, so the committed diagrams match the source.
+
+The pass line `checks: 7 commands passed` was NOT reproduced. `checks.sh` stopped at `npm test` both times:
+
+```
+Run 1 (load averages 20.33 19.59 16.74):
+ Test Files  2 failed | 419 passed | 22 skipped (443)
+      Tests  5 failed | 11078 passed | 620 skipped (11703)
+checks: failed with exit 1: npm test
+Run 2 (after the one-file rerun below):
+ Test Files  1 failed | 420 passed | 22 skipped (443)
+      Tests  1 failed | 11082 passed | 620 skipped (11703)
+checks: failed with exit 1: npm test
+```
+
+- Every failure is a 5000 ms timeout in `tests/server/git/autofetch.test.ts` (four cases in run 1, one in run 2) or `tests/server/edit/config-key.test.ts` (one case in run 1).
+- The step changes neither file.
+- Rerun alone, per the instruction: `npx vitest run tests/server/git/autofetch.test.ts tests/server/edit/config-key.test.ts --reporter=dot` printed `Test Files  2 passed (2)  Tests  79 passed (79)`.
+- I also ran `npm test` by itself once more (load 20.63): `Test Files  1 failed | 420 passed | 22 skipped (443)  Tests  1 failed | 11082 passed | 620 skipped (11703)`, one autofetch case ("fetches a clone whose path holds a space") timing out again.
+- The three runs show 11083 tests passing minus the timeouts and 620 skipped, matching the report's run 3 total of 11703.
+
+Because `checks.sh` stops at the first failure, I ran the other six commands one by one with `bash -o pipefail -c`. All exited 0:
+- `npm run test:checks`: `Test Files  29 passed | 2 skipped (31)  Tests  442 passed | 9 skipped (451)`
+- `npm run check`: `COMPLETED 2951 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+- `npm run build`: exit 0
+- `npm run format:check`: `All matched files use Prettier code style!`
+- `npm run lint`: no output
+- `! LC_ALL=C grep -rna '[^ -~]' src tests`: no output
+
+So 6 of the 7 commands are green in my runs. `npm test` is green except for timeouts in files outside the step under a load of 16 to 20. A clean seven-command pass line from this tree has not been seen by me.
+
+Reruns of the round report's evidence, in the same form:
+- `ls tests/state/sources/repositories | wc -l` printed 3 (`diff` 4 items, `history` 3, `view` 4). `ls tests/state/sources/fs | wc -l` printed 3. `tests/state/sources/fs/git-answers.test.ts` is gone.
+- `grep -n registerApps src/routes/views.ts` printed nothing (rc=1).
+- `answers.test.ts` with the two shapes put back as they were, on a scratch copy under `$TMPDIR` (the `unchanged(...)` wrapper removed from `mergeSidesShape`, `graphPageShape` back to the plain `z.object`): `Tests  2 failed | 37 passed (39)`. The two failures are "answers the page it was given, with a field the reader does not name" and "answers the sides it was given, with a field the reader does not name". With the round's source, the report's `39 passed (39)` holds.
+- The brief's greps, rerun after the round:
+  - Check-line count: 35 files, 66 lines (unchanged from the first run). All 66 are E, F, G or H lines.
+  - `z.custom|.refine(` over views, shell, routes and `answers.ts`: nothing.
+  - `.issues|prettifyError|treeifyError`: two hits, `Latex.svelte:226,232`, CSS selectors.
+  - `const ... = z`: only `Shape` names.
+  - Object-test grep: nothing.
+  - `\.json\(\)` over views, shell, routes and `ui/`: nothing.
+  - `as Record<string, unknown>` and similar: only `ui/` lines, outside the brief's areas.
+  - `data/shapes/shapes` is imported by 16 files in views and shell. `data/helpers/guards` by none.
+  - `sed -n 148p DESIGN.md | grep -o ... | sort -u` prints the three areas.
+
+### Verdicts for the whole diff since c62d2ce3
+
+Items of "What to build" (no `Q85d-cases.md` exists):
+- 1 holds. The rule holds in all the new schemas, all `...Shape` consts at module level. Spec 1 of the first report is closed: `mergeSidesOf` and `graphPageOf` answer the input (`answers.ts` `mergeSidesShape = unchanged(...)`, `graphPageShape = z.union([unchanged(...), ...])`; `toBe` tests; failing pre-round form reproduced above).
+- 2 holds. `data/shapes/shapes` is in the `shell` and `views` rows (`boundaries.test.ts:116-122`) and the comment at `:73-75` says four layers. `data/helpers/guards` is imported by no view or shell file.
+- 3 holds. Five readers in `instance.ts`, exported through `layout/index.ts`, local copies deleted, `filterOf` deleted (`grep -rnwE "filterOf|readKey|readId|readDoc|readOpen|stateLabel" src tests` shows only unrelated functions of other names), `allow-audits.txt` line removed.
+- 4 holds. Six readers in `answers.ts` held with `satisfies`; `Deposit.svelte` reads `answer.branches ?? []`; `wasRead` is `body !== undefined` as ruled.
+- 5 holds. `warnAtShape`, `cadenceShape`, `labelModeOf`, `colorShape`/`mapShape`, `themeNamesShape`, `pushedCollections` (`views.ts:50-58`).
+- 6 holds. Spec 2 is closed: `textOrNumber` is exported once from `shapes.ts:74` and imported by `LeadCard.svelte:30` and `RadarCard.svelte:23`. `retrievalShape`, `optionalText` in `LineCard`, `bookmarkRef`/`bookmarkRows`, `whereShape` are as the item says.
+- 7 holds. The 66 remaining check lines are E, F, G and H lines.
+- 8 holds. Four clone lines removed from `allow-duplication.txt`; the duplication check is green in `test:checks`.
+- 9 holds for what it names, with the two small Standards findings below. `DESIGN.md:148`, `:169-170`, `:268`, `:294`, `:323` and `README.md:13` read correctly (see Standards).
+- 10 holds. The answers test is at `tests/state/sources/repositories/view/answers.test.ts`, because the brief's folder held 10 items. Only the three named existing cases are edited.
+- 11 holds. All six changed answers have a case. The `activeLabel` case fails on the unchanged tree per the first refuter. In `answers.test.ts` the graph and merge `: 3` cases and the non-text `error` cases are in place.
+
+Cases of "Cases":
+- 1 met (`instance.test.ts`, "the saved state of a tab read as a map").
+- 2 met (11-row table plus the four moved rows).
+- 3 met.
+- 4 met (the array row answers `null`, the changed answer).
+- 5 met (`source.test.ts`, NaN, Infinity, -1, 0, '12', 12).
+- 6 met (`config.test.ts`).
+- 7 met (`audit.test.ts`).
+- 8 met, with one note. `answers.test.ts` has no `null` body row because ruling 6 states `readJson` never answers null. `branchesOf` and `listOf` take no `ok` where the brief's case reads "over ok true and false", per the item 4 signature the first report accepted.
+- 9 met (`node-view.test.ts`, `palette-open.test.ts`).
+- 10 met (`focus.test.ts`, `usage.test.ts` incl. Infinity, `graph.test.ts`, `page.test.ts`).
+- 11 met.
+- 12 met (`opening.test.ts`, `fs-shape.test.ts`).
+- 13 met: `git diff c62d2ce3 --numstat -- tests` deletions are only in `history.test.ts`, `page.test.ts:111`, `boundaries.test.ts` comment and rows, `palette-open.test.ts` import line, `allow-audits.txt`, `allow-duplication.txt`, plus the ten moved files and two comment edits below.
+- 14 met by reading the 66 lines and the green suites.
+
+### Closure of the seven rulings
+
+1. Spec 1, answer the input: closed. Reproduced above: the two `toBe` tests fail on the pre-round shapes and pass on the round's, and the `survivorsShape` branch still builds a new page when a commit drops (test "answers a new page, not the one given, when a list dropped a commit").
+2. Spec 2, one text reader: closed. Verified by reading: `grep -rnE "readOr\(" src/lib/views src/lib/shell src/routes src/lib/state/workbench/layout/instance.ts` shows `readOr` only over schemas with no top-level `.catch` (Config `openShape`, `retrievalShape`, `whereShape`, `themeNamesShape`, `mapShape`, `anyNumberShape`). The `.catch(<fallback>)` schemas (`warnAtShape`, `cadenceShape`, `wordShape` in `labelModeOf` and `instanceText`, `textOrNumberShape`) are read with `.parse`. One form throughout.
+3. Standards 1: closed. `DESIGN.md:169` (`shell/`) and `:170` (`views/`) list `data/shapes/shapes`.
+4. Standards 2: closed. Read each citation: `views.ts:68-80` (`registerCollections` at 68, `typeof module.registration` at 71), `Document.svelte:103` (contextmenu listener), `:113` (`window.open`), `:134-141` iframe, `:138` sandbox, `+page.svelte:72-74` token effect, `opening.ts:47-70` and `:62-70`. A grep of every `name:digits` citation of a changed file across `DESIGN.md`, `HELP.md`, `README.md` finds no other stale one (`fs.ts:222-233` is the server's file, `index.ts:228` is `data/model`).
+5. Standards 3: closed. The ten moved files differ from base only by one more `../` in import and mock paths and prettier re-wrapping (diffed one by one with `git show c62d2ce3:<path>` against the new file). No case changed. Grep of `src tests docs *.md config utils vite.config.ts` finds no old path left; the two outside comments were updated. `repositories.test.ts` is now 883 lines (limit 900).
+6. Standards 4: closed. `wasRead` is `return body !== undefined;`; the tests pass `undefined`.
+7. Standards 5: closed. `BookmarkRow` is defined once (`fs.ts:615`); `state/workbench/navigation/rail.ts:23` re-exports it as `Bookmark`; `shell/rail/rail.ts:9,12` imports and re-exports it; `npm run check` is clean.
+
+Reach of the round beyond its findings, judged one by one:
+- `shapes.ts` (`textOrNumber`): named by ruling 2 ("the module that holds it"). Inside the round. (Standards 1 below.)
+- `state/workbench/navigation/rail.ts`: needed by ruling 7 ("the state's re-exported under the rail's name") because the shell's boundary row names `state/workbench/navigation` and not `state/sources/fs`. A type-only edge, no runtime import. Inside the round.
+- The two test comments (`diff-pane.test.ts`, `shell.test.ts`): sentences the move made false; corrected. Inside the round.
+- The 10 moved test files plus `answers.test.ts`: ruling 5. Content unchanged as diffed.
+- No finding was closed by removing a check. The `null` rows dropped from the answers tests follow from `readJson` (`shapes.ts` `?? undefined`), as ruling 6 states.
+
+### 1. Spec
+none.
+
+### 2. Proof
+none. No test asserts a known defect; no threshold or predicate widened. The only source-text audit is the one the brief asked for at `page.test.ts:111-113`. The round's one new failing-first claim (Spec 1) was reproduced.
+
+### 3. Standards
+1. `src/lib/data/shapes/shapes.ts:1-3`: "The zod helpers every reader of an untyped value shares, in the data folder, the server and the state layer: ...". The views, the shell and the routes import it now (16 view files, `palette-open.ts`, `routes/views.ts`), so the sentence names three of the six places that read it. The head comment's helper list (`:6-7`, "the plain readers `readAs`, `readOr`, `filledText`, `optionalText` and `text`") omits `textOrNumber`, added at `:73-76`, and `textOrNumber`'s doc comment repeats `textOrNumberShape`'s sentence word for word. Failure scenario: a reader of the head comment concludes views may not import it, which `boundaries.test.ts:119-122` now allows. Low; fix at landing.
+2. `src/lib/state/sources/fs.ts:613`: "which is which is a question about a file name, which this module answers, so the page decides it and the rail is told." After the change `bookmarkRows` in this same module sets `view`, and the page only calls it. Failure scenario: a reader looks for the decision in `+page.svelte` and finds none. Low; reword at landing.
+
+No history in comments (grep over added lines for step ids, "used to", "no longer", "previously": only fixture date strings), no non-ASCII (the lint gate printed nothing; added DESIGN.md and README.md lines have none), no secret in the report, files within the size limits (`fs.ts` 871, `Diff.svelte` 528, `Source.svelte` 469).
+
+### 4. Behaviour
+none beyond the six Z179 changes the first report lists. The round changes no answer: items 2 to 7 are structure, text and types. Item 1 changes an answer from a rebuilt copy to the input itself.
+
+### Declined to judge
+- The look on TEST and the four click handlers (`SessionList.write`, `Band.reveal`, `CommandCenter.reveal`, `Repositories.patch`): they need a DOM and a press, and I use no browser. I read them; each passes `instanceMap(instanceState(...))`, which `instance.test.ts` shows answers the input itself.
+- The effect in `routes/+page.svelte` that follows a config push: read, and covered by `page.test.ts` (source-text audit plus `pushedCollections` cases); not run in a browser.
+- `DESIGN.md:268` still says `registerApps` sits in `routes/views.ts`; `grep -n registerApps src/routes/views.ts` prints nothing. The sentence is from the apps section, was already there and this diff does not make it false. I raise it only so it is not read as closed by Standards 2.
+- Why the first full-list run and the one-file rerun did not give `checks: 7 commands passed`: machine load (16 to 20 on `uptime`) with 5000 ms timeouts in files the step does not change. I cannot say from here whether a quiet machine passes `npm test` clean; the one-file runs say yes.
+- The shell-row claim that naming `state/sources/fs` would also admit the file browser's store: I did not test how the boundary patterns match `fs.svelte.ts`.
+- `tests/views/structure/node-view.test.ts` also tests `viewOf`, which the step did not change; harmless extra coverage, not judged as a finding.
+
+Reviewer usage: not available to me.

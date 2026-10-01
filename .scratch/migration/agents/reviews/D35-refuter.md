@@ -120,3 +120,171 @@ Cases of the brief's "Cases":
 - Gaps in `npm test`, `test:checks` and `check` summary lines: my `tail` cut them off in the single full-list run; the final line `checks: 7 commands passed` covers them.
 
 Reviewer usage: left to the orchestrator.
+
+## Repair round 1, refuted
+
+Everything below was produced by my own runs in this session. I changed nothing in the worktree. The only git I ran was `git diff c44def15` (with `--stat`, `--numstat`, `--name-only` and path arguments) and `git status --short`. `npm run diagrams` and `checks.sh` rewrote generated files in the worktree as the brief told me to; `git status --short | wc -l` printed 68 before and after (66 files at the first review plus `poll-fixture.ts` and `poll-live.test.ts`). `config/local.yml` was never opened, grepped or copied; every `find` and `rsync` excluded it. My scratch copies of the step's tree are removed.
+
+### Open at the top
+
+One test of this round is red and the verify list cannot see it. `tests/server/git/deposit.test.ts` carries `// @module-tag slow`, so `npm test` and `npm run test:checks` leave it out. The case the round wrote for ruling 3 fails on the final tree (Proof 1). Everything else of the 12 rulings reproduces. Minor findings are listed under the four headings.
+
+### Verification (rerun by the reviewer, from tools/oculus in the worktree)
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
+docs/diagrams/layer-views.svg ... channels.dot, channels.svg, writes.dot, writes.svg   (exit 0)
+
+$ PATH=... sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md   (exit 0)
+$ npm test
+ Test Files  417 passed | 22 skipped (439)
+      Tests  10926 passed | 618 skipped (11544)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  442 passed | 9 skipped (451)
+$ npm run check
+1790887992241 COMPLETED 2935 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build            (adapter-node, "built in 13.09s", done)
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+> eslint .
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests     (prints nothing)
+checks: 7 commands passed
+```
+
+Commands from the builder's report, rerun:
+
+```
+ASCII gate of spec.md (perl form over src tests bin config, ! -name local.yml): prints nothing.
+LC_ALL=C grep -n '[^ -~]' over the added lines of DESIGN.md and HELP.md: prints nothing.
+grep -rn "loadLocalOrDefaults|reportedLocal" src tests DESIGN.md HELP.md README.md config --exclude=local.yml: prints nothing.
+
+Proof 1 (first runs), a scratch copy of the step's tree with the 31 base files from scratchpad/D35-base copied over it,
+live-settings.ts deleted (ls | grep -c live-settings: 0), the step's tests kept, each test file run alone:
+  30 of the 31 base files: line counts of "diff base worktree" equal "git diff c44def15 --numstat" (added, removed).
+  config/catalogs/options.yml (30/30 vs git 28/28, a different diff algorithm): `patch -R` of git's diff over the
+  worktree file gives the base file byte for byte (cmp: identical).
+  Result lines, failed/passed: calendar-config 3/15, mail-config 2/15, settings 6/46, memories 2/25, wallpaper 3/15,
+  routes config-key 1/14, file.test 0/24, project-files 1/4, routes compose 0/11, hook 0/4, terminal-actions 0/21,
+  terminal-edit 0/21, terminal 0/17, loop 6/6, images 1/31, server config-key 52/0, deposit 3/29, hpc poll 0/20,
+  pty compose 0/20, refresh 10/29, watch 2/14, context 14/10, hooks 0/38, help 0/20, calendar live 11/0,
+  mail live 10/0, poll-live 15/0, usage-readers 0/10.   Total 601 cases, 142 failed.
+  The builder's table and its list of 142 failing cases agree: same per-file counts, 142 names against 142 names
+  (the two lists differ only in the " > " separator).
+```
+
+Mutation reruns of rulings 2 and 5 to 9, on a scratch copy (each mutation applied to the copy only, the copy's file restored from the worktree and compared after, the test run named):
+
+```
+baseline tests/server/machine/hpc: 70 passed. baseline tests/server/accounts: 195 passed.
+5  poll.ts publishQuota guard (began !== hosts) removed  -> poll-live "drops the meters of a quota read begun under the old host..."  expected [ 75, 75, 25 ] to not include 25   (1 failed)
+5  poll.ts prewarmStep guard removed                     -> poll-live "drops the log paths of a prewarm begun under the old host"   expected [ [ '9', ...], [ '10', ...] ] to deeply equal []   (1 failed)
+5  poll.ts poll guard (try branch) removed               -> 2 failed: "...old host and answers with one follow-up poll", "...old window and answers with one poll at the new one"   expected [ 'old', 'x' ] to not include 'old'
+5  poll.ts poll guard in the catch branch (line 202) removed -> 70 passed, nothing fails (Proof 2 below)
+6  quota guard compares asking, not hosts                -> "lets a quota read in flight land when only the day count changes"   expected [] to deeply equal [ 25 ]
+7  loop.ts setPollMin without `pollMin = minutes;`       -> 7 failed over loop, calendar live and mail live (loop.test.ts 3 of them)
+7  loop.ts takeLoopSettings without the follow-up run    -> 3 failed (loop "runs one follow-up round...", calendar live, mail live)
+7  loop.ts `if (running === null)` removed from setPollMin -> 195 passed (as the builder says; behaviour-neutral, see Judged below)
+7  loop.ts `queued ??=` changed to `queued =`             -> 1 FAILED: calendar/poll.test.ts "runs one round at a time and gives every refresh meanwhile the one follow-up round"   expected Promise to be Promise   (not green, see Proof 3)
+8  takeLoopSettings with the old condition               -> calendar live "publishes the new window and period when no account is configured" and mail live "publishes the new period and reads nothing when no account is configured" fail
+9  live-settings.ts slurm hand-off moved out of its attempt -> context.test.ts "logs a setter that throws once as its group failing, and the next push still reaches the others"   expected [] to deeply equal [ Array(1) ]   (1 failed)
+2  refresh.ts `closed` test after requireRefreshSettings -> "returns for a setting its reader refuses once it is closed" fails (the reader's message is thrown)
+3  knownIds second overload `local?` (optional)          -> npm run check: 0 ERRORS (nothing guards it)
+3  DepositStart member `local?` (optional)               -> npm run check: 1 ERROR, in src deposit.ts:199, none in the test file
+```
+
+Slow-tagged files that exercise changed modules (not in the verify list), run on the scratch copy: `tests/server/core/changes.test.ts`, `tests/server/machine/lines.test.ts`, `tests/server/machine/hpc/ssh.test.ts`, `tests/routes/docs/docs.test.ts`, `tests/routes/edit/write.test.ts` and `tests/server/git/deposit.test.ts`:
+
+```
+ Test Files  1 failed | 5 passed (6)
+      Tests  1 failed | 206 passed (207)
+ FAIL  tests/server/git/deposit.test.ts > the hub the machine values name > is a fault said plainly when the caller names neither a target nor an engine
+ AssertionError: expected [Function] to throw error including 'the engine directory, its configurati…' but got 'Cannot read properties of undefined (…'
+```
+The same file run in the worktree: `Tests 1 failed | 31 passed (32)`, `Received: "Cannot read properties of undefined (reading 'hub')"`, at `tests/server/git/deposit.test.ts:285`. Source and test were byte-identical between worktree and copy (`cmp`).
+
+### Verdicts, for the whole diff since c44def15
+
+Items of the brief's "What to build":
+
+- 1 (live-settings.ts): holds. Read whole; one sink on `config`, replay false, each group inside its own `attempt`, once-per-message logging, non-map refused with the one line, equal values hand nothing on, `close()` removes the sink. Mutation 9 and the context.test.ts push describe (12 cases).
+- 2 (context.ts): holds. `liveSettings` starts after the pollers, `live.close()` first in `close()`, host stays `local.hpcHost ?? slurm.host`, `config` and `stopMessage` left the hook target. The `recordFor` difference is now stated in the report's "Anything in the brief that was wrong" (report line 108), and `hooks.ts:273` reads it.
+- 3 (cadence rule): holds. HPC `set` (poll.ts:304-333), quota (`armQuota(Math.min(quotaAt, ...))`), `setPollMin`, usage refresh `set`; tests cover lower, raise, retry-moves, retry-stands.
+- 4 (watchHpc.set): holds. The three in-flight cases of ruling 5 are tested and fail with their guard out (mutations above). Proof 2 and Behaviour 1 below touch the same function.
+- 5 (accountLoop, calendar, mail): holds. The no-account publish (Behaviour 1 of the first run) is built in `takeLoopSettings`, loop.ts:240-241, and tested.
+- 6 (usage refresh and tiers): holds.
+- 7 (every setter after close does nothing): holds. `refresh.ts` `set` now returns before it reads its argument; the new test fails with the two lines in the old order.
+- 8 (Z174 readers): holds. Unchanged by the round; tests green.
+- 9 (Z177): holds in the modules; `local` is required in `DepositStart` by the type (mutation: making it optional fails `npm run check` in `deposit.ts:199`). The guard on `knownIds` and the test of it are findings (Proof 1).
+- 10 (options.yml): holds (counts from the first review stand; the round did not touch the file).
+- 11 (DESIGN.md): holds, and the round's edit (:236 names `apps_dir`) matches ruling 11; :244 and :266 are untouched.
+- 12 (HELP.md): holds.
+- 13 (tests): violated in one respect: a test the round wrote for ruling 3 is red (Proof 1). Every other test of the step is green on the verify list.
+
+Cases of the brief's "Cases":
+
+- 1 to 3, 5 to 17, 19, 21 to 25: met, by the tests the first review named; those tests still exist under the same names (poll-live.test.ts holds the HPC ones) and pass.
+- 4: met for the queue read, and now for a quota read and a prewarm in flight (poll-live.test.ts, mutations above).
+- 18: met as an audit; the test title and the report say so.
+- 20: met for what a test proves here (the five groups log one line each and keep their settings); the clause "the parse error is a finding on the config channel (existing)" is not exercised by this step's tests, see Declined.
+- 26: met for `target()`, wallpaper, memories, project-files and the portfolio chat start; the terminal and agents cases pass on the unchanged tree and are named as audits by the report; the route lines that pass `locals.server.local` are covered by reading only.
+
+### Closure of the 12 rulings
+
+1. Spec 1, hook target: closed (report line 108 names `recordFor` and `hooks.ts:273`; grep confirms line 273).
+2. Spec 2, set after close: closed; mutation fails the new test.
+3. Spec 3, deposit `local`: types closed; the test written for it is red and its `@ts-expect-error` does not guard `local` (Proof 1).
+4. Proof 1, first runs: closed; reproduced above (601 cases, 142 failed, same per file). Cases that pass on the unchanged tree are named by the report (equal-values audit, hook target split, terminal and agents audits, file.test deletion, usage-readers moved unchanged, help.test passing because the copy holds the new docs).
+5. Proof 2, HPC in flight: closed for the three named cases, all three fail with their guard out. One sibling guard is untested (Proof 2).
+6. Behaviour 2, quota and window: closed; the second counter `hosts` is used only by `publishQuota`; the test fails with the quota guard on `asking`.
+7. Proof 3, loops in flight: closed; both tests fail with the line out. The builder's sentence on two mutations that stay green is half wrong (Proof 3).
+8. Behaviour 1, no account: closed; both tests fail with the old condition.
+9. Behaviour 3, throwing setter: closed for the Live HPC setter, with a test; the other six hand-offs read correctly (all inside their `attempt`) but only the HPC one has a test.
+10. Standards 1, stale comments: closed; `deposit.ts` (`into`, start-values paragraph, `hubTarget` paragraph), `deposit-routes.ts` (`knownIds` paragraph) and `chat.ts` (`engine` field) now say the start `LocalConfig`, with no history.
+11. Standards 2, `apps_dir`: closed; DESIGN.md:236 names it.
+12. Standards 3, hook.test.ts head comment: closed as far as the check lets it: the lines are 83, 97, 97, 95 and 38 columns, and `tests/checks/source/comment-width.test.ts` caps a comment line at 100, so one line per paragraph cannot hold. No check was loosened (`git diff` shows no change under `tests/checks`, `utils`, `eslint.config.js` or any allow list).
+
+No closure removed a check in place of a fix. No fix reached past its finding, with the three moves below judged separately.
+
+### Judged: the files moved beyond the round's path list
+
+- `tests/server/machine/hpc/poll-fixture.ts` and `poll-live.test.ts`: the three new tests would have put `poll.test.ts` past the 900-line cap of `tests/checks/tree/size.test.ts` (453 + 441 + 116 lines now). The helpers removed from `poll.test.ts` appear in `poll-fixture.ts` line for line (compared; the only difference is the `export` keyword), the 20 pre-existing cases still pass (20 passed), the `it` import from `fixtures/scratch.ts` is what `tests/checks/tree/scratch.test.ts` requires of a file reaching `recording`. The folder holds 7 items. This is the widened path list the lazy-option rule asks for, not a loosened check. Accepted.
+- `tests/server/root/context-fixture.ts` (`driver`, `inertConfig`, `inertDependencies` moved out of `context.test.ts`, now 813 lines): the removed lines are the ones added to the fixture, and `inertConfig` gained a `text` block for the three sentences. Accepted; its head comment is now incomplete (Standards 1).
+- `usage-readers.test.ts` (round 0): the removed lines of `refresh.test.ts` are the added lines of the new file apart from imports and closing braces. Accepted.
+
+### Judged: the two mutations the builder says its tests cannot catch
+
+- Dropping `if (running === null)` from `setPollMin`: reproduced green (195 passed). With the guard out the timer armed during a round fires at once and queues a round that finds no account due, publishes nothing and reads nothing, so no result differs. It is an efficiency guard; accepted without a test.
+- `queued ??=` to `queued =`: not reproduced; see Proof 3.
+
+### 1. Spec
+
+none.
+
+### 2. Proof
+
+- Proof 1. `tests/server/git/deposit.test.ts:281-288` with `src/lib/server/git/deposit.ts:193-199`: `if (options.engine === undefined) { throw new Error('a deposit needs either a write target or the engine directory, its configuration and the machine values'); } return target(options.engine, options.config, options.local);`. What is wrong: the test the round added for ruling 3 calls `state('alpha', { engine, mirrors })` and `{ engine, config, mirrors }` and expects the fault message `the engine directory, its configuration and the machine values`; `hubTarget` now refuses only a missing `engine` (the round dropped `|| options.config === undefined`), so both calls reach `target(engine, undefined, undefined)` and throw `Cannot read properties of undefined (reading 'hub')`. The file is slow-tagged and is not in `npm test` or `test:checks`, so `checks: 7 commands passed` does not cover it, and the round's report quotes no run of it on the final tree. The test's single `// @ts-expect-error` is satisfied by the first union member alone (the missing `config`), so it does not show that `local` is required; making `local` optional in `knownIds`' second overload (`deposit-routes.ts`, the `local: LocalConfig` parameter) leaves `npm run check` at 0 errors, so the required `local` of `knownIds`, which ruling 3 names (`deposit-routes.ts:139`), has no guard. Failure scenario: a caller of `state`/`deposit` that names `engine` without `config` or `local` (a cast, or JS) gets a TypeError from `target`, where the plain fault was said before the round and the test says it should be; and the next edit that makes `knownIds`' `local` optional passes every check. Verdict: item 13 violated in this respect; item 9 holds in the types.
+- Proof 2. `src/lib/server/machine/hpc/poll.ts:202`: `if (stopped() || began !== asking) return;` in the `catch` of `poll`. What is wrong: removing the guard leaves all 70 tests of `tests/server/machine/hpc` green, so no test exercises a poll that fails after the host or window changed. Failure scenario: the old host is unreachable (a poll waits out its 40 s timeout), the reader corrects `slurm.host`, and when the old poll rejects it publishes `unreachable` with the old host's error hint under the new host's name before the queued follow-up poll answers. Verdict: item 4 holds; spec.md "Every asynchronous path is exercised in flight" is short for this branch.
+- Proof 3. Report "Repair round 1" item 7: "Two other changes to the loop leave every test green ... `queued ??=` to `queued =`". What is wrong: `queued ??= running` changed to `queued = running` in `loop.ts` fails `tests/server/accounts/calendar/poll.test.ts` "runs one round at a time and gives every refresh meanwhile the one follow-up round" (`expected Promise{…} to be Promise{…}`); the builder ran `loop.test.ts` only. The other half (the `running === null` guard) reproduces. Failure scenario: the orchestrator reads the report as two uncovered lines and books a gap that does not exist. Verdict: none (a claim, no decision rests on it beyond the Not verified line).
+- Proof 4. `tests/server/root/context.test.ts:769-793`: only the Live HPC setter throws. What is wrong: the hand-offs of the calendar, mail, refresh, tiers and the two sentence groups are inside their `attempt` by reading (`live-settings.ts:107-158`), but moving any of them out of its `attempt` leaves every test green (I ran the slurm one; the other five were not mutated). Failure scenario: a later edit moves one hand-off out of its `attempt` and a throwing calendar setter unsubscribes live settings again. Verdict: item 13 holds for the ruling's text ("a test with a setter that throws"); reported because ruling 9 says "each group".
+
+### 3. Standards
+
+- Standards 1. `tests/server/root/context-fixture.ts:1-2`: "Builds a complete inert ServerContext for route tests without opening a watcher, running tmux, reading the real hub, or writing outside a test's own fixture." What is wrong: the file now also exports `driver`, `inertConfig` and `inertDependencies`, which build the dependencies of `createServerContext` for `context.test.ts`; the head comment does not say so (spec.md: a sentence the change makes false is a defect of the change). Failure scenario: a maintainer looking for the inert dependencies of `createServerContext` reads the head and does not look in this file, and writes a second copy.
+- Standards 2. `tests/server/root/context.test.ts:707`: "hands nothing on for a push whose values equal the ones in force (an audit: nothing re-reads on the old code)". What is wrong: "the old code" is a reference to an earlier state of the tree, which spec.md's "No history in code or comments" bars. Failure scenario: in a year no reader knows which code was old; the word "audit" alone says what the brief asked for.
+
+### 4. Behaviour
+
+- Behaviour 1. `src/lib/server/machine/hpc/poll.ts:237-239` with `:329-331`: `for (const id of todo) asked.add(id); const found = await prewarmLogs(...); if (stopped() || began !== asking) return;` and the days branch of `set` (`asking += 1`). What is wrong: a days change drops a prewarm in flight but leaves its ids in `asked`, so the next prewarm filters them out (`!asked.has(job.id)`) and never asks about them again. A host change clears `asked`; a days change does not. I ran a probe on the scratch copy: prewarm gated, `watcher.set({ ...options, days: 14 })`, listing settled, one minute advanced: `PROBE before 2 after 2 paths []` (no further prewarm call, no path). Failure scenario: the reader changes `slurm.days` while the first prewarm after start is running; the finished jobs of that prewarm keep no pre-resolved log path, and the first press on each job's log pays the full resolution cost. Not stated in the report. Verdict: item 4 holds; case 8 and the days cases are met.
+
+### Declined to judge
+
+- The look on TEST and the interleaved A/B against the staged base binaries: the orchestrator's.
+- Case 20's clause "the parse error is a finding on the config channel (existing)": no test of this step exercises it and I did not run it.
+- The full-list run counts the report gives (5 for the step, 2 for the round) and the contents of the failing run 4: they are the builder's account of earlier runs; I reran the list once and it passed.
+- Slow-tagged files other than the six I ran (`git.test.ts`, `git-reads.test.ts`, `paths.test.ts`, `writes.test.ts`, `yaml-edit.test.ts`, `sessions.test.ts`, `portfolio.test.ts`, `git-write.test.ts`, `git-ops.test.ts`, and the view and timing files): they do not call a signature the step changed, apart from the six; svelte-check passes over all 2935 files, so compile-level breakage is excluded and runtime breakage in them is not checked.
+- Whether the three moved test files, taken as a set, leave the folder counts of `utils/folder-check.sh` satisfied beyond what `test:checks` reports: `test:checks` passed, which includes that check.
+- The `ordo-medium` experiment's evaluation (tokens, first-report bar): the orchestrator's.
+
+Reviewer usage: not measured inside the session (no counter is available to me); the completion notice carries tokens, tool uses and minutes.

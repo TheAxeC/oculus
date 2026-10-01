@@ -1,32 +1,34 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), repair round 1 built (12 rulings done, the full list passed); its review over the round running.
-- Q85d (zod in the views, ui, shell and routes), reviewed (no red check, 7 findings); repair round 1 building.
-- L4 (floating panes and kept empty panes), building.
-- Q66 (a hidden tab defers its work: no re-read or follow while hidden, one catch-up on show; a Terminal keeps its stream), building.
-- Q35 (Changes' paths cut at the end and aligned columns, Customizations opening the real file, Audit as a list, Present's slide in a scaled 16:9 frame laid out for it), building.
+- D35 (every configuration file live, `local.yml` included, by Z198), to be taken back out of its landing and prepared again; its patch keeps the reviewed work.
+- Q85d (zod in the views, ui, shell and routes), repair round 1 reviewed (2 Standards findings, fixed at landing); landing next.
+- L4 (floating panes and kept empty panes), built; its review to run on a fresh reviewer.
+- Q66 (a hidden tab defers its work), builder stopped without a report; a fresh builder takes over its worktree.
+- Q35 (Changes, Customizations, Audit, Present), builder stopped mid-build; a fresh builder takes over its worktree.
 
 
 Three queued steps are kept prepared ahead (Z185).
 
-Queued, in order (29 steps):
-- X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a); problem decorations to D33 and code symbols to D23 by Z182), stopped: brief checked; waits for Axel's ruling Z187 (the folder picker), its other findings closed by Z188.
-- D32 (replace in Search), once D35 has landed (both change the write target and the undo table); its brief check is in.
-- S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), stopped at /spec: waits for Axel's ruling Z190 (the shape of the new confirmed write for lists, maps and records).
+Queued, in order (30 steps):
+- X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a); problem decorations to D33 and code symbols to D23 by Z182; Add Folder through macOS's own folder panel by Z187 (f); file operations undone from History, folded in from Q114), /spec again: Z188 redone finding by finding.
+- D32 (replace in Search, and the seven state-layer answers Z154 accepted judged one by one, by Z198), once D35 has landed (both change the write target and the undo table); its brief check is in.
+- S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), Z190 ruled (a); /spec runs again.
 - Q88c (the Source Control rows' and the pane strip's new menu items), brief checked (`agents/reviews/Q88c-brief-check.md`); waits for L4's landing, since both change the `Pane` type and the layout tree's pane literals.
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - Q91 (the project view and its editor), once X3a has landed.
-- D14 (LaTeX on any folder, with build on save, magic comments, outline, word count, lint and hover preview), brief written; its brief check running.
+- D14 (LaTeX on any folder, with build on save, magic comments, outline, word count and hover preview; ChkTeX moves to D36 by Z196), brief checked (`agents/reviews/D14-brief-check.md`); its findings to close in the brief.
 - D25 (the editor's options), once S4 has landed.
-- D17 (project commands).
+- D17 (project commands: `.oculus/commands.yml`, the form, CMake presets, npm scripts and Makefile targets, approval of their text, task terminals with their result), brief checked (`agents/reviews/D17-brief-check.md`); its findings to close in the brief.
 - D23 and D15 (language servers; PDF reading, once D14 has landed).
 - D11 (the rite debug client), once D17 has landed (Z191: its launch configurations' `before` names a command of D17's `commands.yml`).
 - D23b (more language server features), once D23 has landed.
 - D28 (saving a source file), once D25 has landed.
 - D33 (the Problems view), once D23 and D17 have landed.
+- D36 (linters on save, ChkTeX, ruff, eslint and shellcheck, into the editor's marks and D33's Problems view), once D33 has landed (Z196).
 - D18 (the Processes view), once D35 has landed (its command patterns are a behaviour key read live through D35's mechanism).
-- D20 and D24 (an agent from a task or in a new worktree; the Personal board).
+- D24 (the Personal board).
+- D20 (an agent from a task or in a new worktree), once D17 has landed (Z195: a seeded agent runs after the approval D17's store keeps).
 - A1 and A3 (review with feedback; scheduled runs, once D17 has landed).
 - M3 and M4 (the resources registry; live equations in Present).
 - Q72 (the architecture re-read).
@@ -36,7 +38,7 @@ Queued, in order (29 steps):
 - X2 (a new orchestrator resumes from the files).
 - O33, last (oculus in its own repository).
 
-Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers.
+Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers. When the 15th lands, this line becomes "Ready: the three-way Opus and Sonnet comparison can be asked for", and the comparison is written when Axel asks for it.
 
 Landed, newest first:
 - D27 (the editor's languages), 2026-10-01, c431d27f.

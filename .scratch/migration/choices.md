@@ -11,6 +11,8 @@ The question: building the Files view's file operations takes user-visible choic
 
 Where it is built: Q88b's brief, "Decisions taken in this brief". Booked in the state file's closed log and `plan.md` Rulings.
 
+Reviewed 2026-10-02 (Axel's review of every choice): built wrong. VS Code's Explorer undoes its file operations (`explorer.enableUndo`, default true) and puts the delete question behind `explorer.confirmDelete`. Ruled by Axel: file operations go into History with undo and the delete question gets a setting; built in X3a (Z197).
+
 ## Z150 (2026-10-01 11:40, step Q88b)
 
 The question: Q88b's line covers three surfaces, each the size of a step: the Files view's file operations (New File, New Folder, Rename, Delete to the Trash, Cut, Copy, Paste, Upload, Compare Selected, Reveal in Finder, Find in Folder), the Source Control rows' git operations (thirteen, each a new server write or read), and the pane strip (Lock Group, New Text File, the Tab Bar and Editor Actions settings) with the page-wide right-click handler.
@@ -44,6 +46,8 @@ The question: Round-1 ruling 20 said the change row's status letter keeps its mo
 
 - Chosen (1): the interface font, as built. Not chosen: (2) mono with the audit changed.
 
+Reviewed 2026-10-02 (Axel's review of every choice): the outcome is right and the reason given was not one; the reason is VS Code's. VS Code draws the letter as `.monaco-icon-label:after{opacity:.75;font-size:90%;font-weight:600;...}` (its `workbench.desktop.main.css`), with no font family of its own, so the letter is in the label's interface font, as built.
+
 ## Z140 (2026-10-01 05:31, step X3d)
 
 The question: Round-1 ruling 4 asked for one shared declaration of the diff pane's and its file header's wall surface; `tests/ui/theme/colours.test.ts` and `wall.test.ts` accept under `body.wall` only a surface token or the literal `color-mix(in srgb, var(--chip) var(--wall-panel), transparent)`, which 13 components repeat.
@@ -68,6 +72,8 @@ The question: the capped debounce Z135 asks for is a debounce with a maximum wai
 
 - Chosen (a): `es-toolkit`'s `debounce` from `es-toolkit/compat` with `maxWait` in all five watchers, and `perfect-debounce` removed from `package.json`, so the server has one debounce. Not chosen: (b) `lodash-es` (two packages for the same function); (c) a cap written by hand (lazy, code a library already has).
 - Corrected by the orchestrator, automode, at Q109's brief check (`agents/reviews/Q109-brief-check.md`): to (b) `lodash-es` 4.18.1 (MIT, released 2026-04-01) with `@types/lodash-es` 4.17.12, `perfect-debounce` removed. es-toolkit's `maxWait` is checked only when the debounced function is called, so writes every 450 ms publish a change 1150 ms late against a 1000 ms bound; lodash fires on a timer at `maxWait` (1450, 2450 under the same writes) and raises `maxWait` to at least the wait. Not chosen: (a) es-toolkit kept with the bound widened to `maxWait` plus the quiet (lazy, a check loosened); (c) a cap written by hand (code a library already has).
+
+Reviewed 2026-10-02 (Axel's review of every choice): the first choice, es-toolkit, was wrong and is corrected above to lodash-es. `package.json:26` holds `@types/lodash-es` and `:69` `lodash-es`, and neither `es-toolkit` nor `perfect-debounce` is in it; `maxWait` is passed in `usage/watch.ts:141`, `watch/local.ts:49` and `watch/bookmarks.ts:84`.
 
 ## Z131 (2026-10-01 03:08, step S3a)
 
@@ -137,6 +143,8 @@ The question: Z120 (a) had the comment drop the "This week" ticker on the wrong 
 
 - Chosen (a): the cards and the ticker lines both take `focus_label_mode`, and the comment keeps the ticker. Not chosen: (b) cards only, the comment dropping the ticker (lazy).
 
+Reviewed 2026-10-02 (Axel's review of every choice): Z120 (a) first reversed Axel's ruling on the ticker; this entry and Z131 put it back. The ticker reads `focus_label_mode` (`src/lib/state/boards/ticker.ts:195`) and names projects through `focusLabel(project, labelMode)` at lines 215, 337 and 382.
+
 ## Z121 (2026-09-30 23:41, steps S3a and S3b)
 
 The question: four details of the options catalog.
@@ -145,6 +153,8 @@ The question: four details of the options catalog.
 - (2) chosen (a): an option's default is the value the tracked file holds. Corrected 23:58 from S3a's brief check: the clause "`null` where leaving the key out means something" is dropped, since the two keys it named hold values in the tracked file (`terminal.font_px: 12.5`, `wallpaper.popover_opacity: 0.97`); their defaults are those values, and their descriptions say what leaving the key out does. Not chosen: (b) the code's fallback, which most readers do not have (lazy).
 - (3) chosen (a): a number is refused when oculus's own config readers refuse it, so no min or max fields. Not chosen: (b) `min`, `max` and `integer` in each entry.
 - (4) chosen (a): the catalog check fails on a missing or empty description. Not chosen: (b) no such check (lazy).
+
+Reviewed 2026-10-02 (Axel's review of every choice): two reasons were wrong when first given and are corrected above; the built file is right. `grep -c "^options:" config/catalogs/options.yml` prints 1 and the file has 1 top-level key; `config/appearance.yml:32` holds `font_px: 12.5` and `:49` holds `popover_opacity: 0.97`, the defaults the catalog takes.
 
 ## Z119 (2026-09-30 23:41, step S3)
 
@@ -184,6 +194,8 @@ The question: the Terminal text size box and a config number row read a number b
 
 Where it is built: S3c's round 1. Booked in the state file's closed log and `plan.md` Rulings.
 
+Reviewed 2026-10-02 (Axel's review of every choice): the outcome is right and the reason given was not one; the reason is VS Code's. VS Code reads a number setting with `parseFloat` (`static float(o,e){return typeof o=="string"&&(o=parseFloat(o)),...}` in its `workbench.desktop.main.js`), which reads `1e1` as 10. VS Code would read `0x10` as 0; oculus refuses it with the config row's message instead of reading a wrong number.
+
 ## Z154 (2026-10-01 14:12, step Q85b)
 
 The question: seven answers of the state layer that Q85b's rulings did not name, N1 to N7 of its final report.
@@ -192,6 +204,8 @@ The question: seven answers of the state layer that Q85b's rulings did not name,
 - Not chosen: a schema pass on every read of a payload; partial values whose type says they are whole; the old answers.
 
 Where it is built: Q85b. Booked in the state file's closed log and `plan.md` Rulings.
+
+Reviewed 2026-10-02 (Axel's review of every choice): built wrong. The seven answers were accepted as built without judging each, and a search can fail with the words "HTTP 200" (`src/lib/state/sources/search.svelte.ts:127`). Ruled by Axel: each answer judged on its own and the search error made a sentence; built in D32 (Z197, Z198).
 
 ## Z155 (2026-10-01 14:56, step Q85b)
 
@@ -322,6 +336,8 @@ Where it is built: D27. Booked in the state file's closed log and `plan.md` Ruli
 
 Where they are built: D35. Booked in the state file's closed log and `plan.md` Rulings.
 
+Reviewed 2026-10-02 (Axel's review of every choice): built wrong. Axel's question behind Z166 asked whether every YAML file reloads, and the restart exception for `local.yml` was written into Z166's option (a) and chosen again here; D35 then removed the per-request re-reads of `local.yml`. Withdrawn by Z198 and Axel's D35 redo ruling: D35 is taken back out of main and prepared again with every `local.yml` key live and every line of this choice removed.
+
 ## Z178 (2026-10-01 19:44, step D27)
 
 - Chosen (a): the `languages` map sits in a new Settings section named Files, the group VS Code's Settings editor puts `files.associations` under, and the status bar and the language picker show each new language by VS Code's own display name: C, C++, CMake, Lua, Ruby, SCSS, Java, Dart, Fortran, Fortran (Fixed Form), Jinja, Svelte and Rite.
@@ -365,12 +381,16 @@ Where they are built: L4. Booked in the state file's closed log and `plan.md` Ru
 
 Where they are built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
 
+Reviewed 2026-10-02 (Axel's review of every choice): wrong. It closed about twelve findings in one entry and took user-visible decisions in it (the `roots:` of `sources.yml` written by the default workspace, a `history` key in `local.yml`, the route names, the `file-nesting.yml` shape, the `~/.oculus/history` layout). Redone at X3a's /spec, one entry per decision.
+
 ## Z189 (2026-10-01 23:05, step Q35)
 
 - Chosen (a): the Present deck fills its pane as a 16:9 frame at a 1280 by 720 design size, the slide scaled uniformly to the frame and letterboxed on the long side; the slide parts keep their sizes inside the frame; the Overview grid is not scaled.
 - Not chosen: (b) the slide's words sized in container units so the slide reflows to any pane shape (a slide then looks different in every pane and on the projector); (c) the slide left at the UI's type size, the lazy option.
 
 Where it is built: Q35. Booked in the state file's closed log and `plan.md` Rulings.
+
+Reviewed 2026-10-02 (Axel's review of every choice): the first version was wrong (the slide parts kept the interface's sizes inside the frame); Z193 corrected it in Q35's brief (`agents/briefs/Q35.md` items 5 and 6) and the round-0 ruling `agents/briefs/Q35-cases.md` fixed case 8. Built by Q35's builder.
 
 ## Z191 (2026-10-01 23:04, step D11)
 
@@ -386,3 +406,28 @@ Where it is built: D11, after D17. Booked in the state file's closed log and `pl
 
 Where it is built: Q35. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z195 (2026-10-01 23:18, step D20)
+
+- Chosen (a): D20 waits for D17. `DESIGN.md:150` runs "an agent seeded with a task" only after the reader approved that exact text, the approval kept under `~/.oculus/`; no approval store exists (`grep -rn "approval" src/lib` finds none for a command), and D17's brief builds it (`approvals.json`). D20 then seeds its agents through that store.
+- Not chosen: (b) D20 building its own approval store, which D17 then duplicates; (c) D20 seeding agents without approval, against the Processes rule, the lazy option.
+
+Where it is built: D20, after D17. Booked in the state file's closed log and `plan.md` Rulings.
+
+
+## Z197 (2026-10-02 00:45, steps X3a, D32, Q115)
+
+The question: whether Q114 and Q115 stay steps of their own.
+
+- Chosen (a): Q114 folded into X3a, which already builds the Files view's History (`~/.oculus/history`, item 14 of its brief) and whose brief is written again at /spec; the search's "HTTP 200" error (`search.svelte.ts:127`) folded into D32, which changes the Search view's state; Q115 keeps the six other answers, in `socket.svelte.ts`, `agents.svelte.ts`, `deposit.svelte.ts`, `selectors.svelte.ts` and `pty-io.ts`, which no queued step touches.
+- Not chosen: (b) both kept as steps, which builds History twice and touches `search.svelte.ts` in two steps; (c) Q115 folded whole into D32, which puts five files outside the Search view into a Search step.
+
+Where it is built: X3a, D32 and Q115; Q115 folded into D32 by Z198. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z198 (2026-10-02 00:58, steps D35, D32)
+
+The question: Axel's review that D35 was to end the exception that `local.yml` does not reload, and that a small step of its own wastes tokens.
+
+- Chosen (a): D35 taken back out of its landing and prepared again from its patch, with every `local.yml` key made live (`hub` rebuilding the watchers, `port` rebinding, the session files, `claude_bin` and the stores read again when the file changes) and no key taking a restart. The restart exception written into Z166's option (a) and chosen again at Z177, under which D35 removed the per-request re-reads of `local.yml` (`loadLocalOrDefaults`), is withdrawn. Q115 folded whole into D32.
+- Not chosen: (b) D35 landed as built and `local.yml` made live later in S4, which lands a change that makes `local.yml` less live than before; (c) a step of its own for `local.yml`, and Q115 kept as a step, the small steps Axel rejected.
+
+Where it is built: D35 and D32. Booked in the state file's closed log and `plan.md` Rulings.
