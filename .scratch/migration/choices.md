@@ -336,3 +336,17 @@ Where they are built: D27. Booked in the state file's closed log and `plan.md` R
 - Not chosen: (a) today's answers kept, a cast list of unchecked items handed on whole and `DESIGN.md:148` naming the views as an exception, the lazy option, since it leaves the untyped input the step exists to end.
 
 Where they are built: Q85d. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z182 (2026-10-01 21:53, step X3a)
+
+- Chosen (a): the Explorer's problem decorations move to D33, the Problems view, which brings the diagnostics they read, and the Outline section's symbols for code languages move to D23, the language server client, which brings the symbol provider; X3a builds the Outline section with the headings of Markdown and LaTeX files and every other row of the parity inventory.
+- Not chosen: (b) X3a builds a diagnostics source and a symbol provider of its own, which D23 and D33 then replace, two builds of one thing; (c) the two rows dropped, the lazy option, since VS Code's Explorer shows both.
+
+Where they are built: X3a, D23 and D33. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z183 (2026-10-01 21:53, step D35)
+
+- Chosen (a): Z177 amended so `apps_dir` is read again on a change, as Axel's apps ruling C1 (`agents/reviews/E1-rulings.md:7`) puts it beside `calendar_dir` and `mail_dir` and `DESIGN.md:266` has the watcher follow a new `apps_dir`; `DESIGN.md:236` names it among the keys read again. No code, since apps are not built.
+- Not chosen: (b) `apps_dir` read at start only, with `DESIGN.md:244` and `:266` rewritten, which reverses Axel's ruling; (c) the two sentences left contradicting each other, the lazy option.
+
+Where they are built: D35 (repair round 1). Booked in the state file's closed log and `plan.md` Rulings.

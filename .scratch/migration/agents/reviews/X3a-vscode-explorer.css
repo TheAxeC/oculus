@@ -1,0 +1,207 @@
+.monaco-tl-row{display:flex;height:100%;align-items:center;position:relative}
+.monaco-tl-row.disabled{cursor:default}
+.monaco-tl-indent{height:100%;position:absolute;top:0;left:16px;pointer-events:none}
+.hide-arrows .monaco-tl-indent{left:12px}
+.monaco-tl-indent>.indent-guide{display:inline-block;box-sizing:border-box;height:100%;border-left:1px solid transparent;opacity:0}
+.monaco-enable-motion .monaco-tl-indent>.indent-guide{transition:opacity .1s linear}
+.monaco-tl-twistie,.monaco-tl-contents{height:100%}
+.monaco-tl-twistie{font-size:10px;text-align:right;padding-right:6px;flex-shrink:0;width:16px;display:flex!important;align-items:center;justify-content:center;transform:translate(3px)}
+.monaco-tl-contents{flex:1;overflow:hidden}
+.monaco-tl-twistie:before{border-radius:20px}
+.monaco-tl-twistie.collapsed:before{transform:rotate(-90deg)}
+.monaco-tl-twistie.codicon-tree-item-loading:before{animation:codicon-spin 1.25s steps(30) infinite;transform-origin:center center}
+.inline-edits-long-distance-hint-widget.show-file-icons .target-file .file-icon:before{display:inline-block;width:16px;height:16px;vertical-align:text-bottom;background-size:16px;background-position:center;background-repeat:no-repeat}
+.monaco-pane-view .split-view-view:first-of-type>.pane>.pane-header{border-top:none!important}
+.monaco-pane-view .pane>.pane-header{position:relative}
+.monaco-pane-view .pane>.pane-header.not-collapsible .twisty-container{display:none}
+.monaco-pane-view .pane>.pane-header.not-collapsible .title{margin-left:8px}
+.monaco-pane-view .pane>.pane-header>.actions.show-always,.monaco-pane-view .pane.expanded>.pane-header>.actions.show-expanded{display:initial}
+.monaco-pane-view .pane>.pane-header>.icon{display:none;width:16px;height:16px}
+.monaco-pane-view .pane.pane.horizontal:not(.expanded)>.pane-header>.icon{display:inline;margin-top:4px}
+.monaco-pane-view .pane>.pane-header h3.title{white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-size:11px;min-width:3ch;-webkit-margin-before:0;-webkit-margin-after:0}
+.monaco-pane-view .pane>.pane-header .description{display:block;font-weight:400;margin-left:10px;color:var(--vscode-panelTitle-inactiveForeground);overflow:hidden;text-overflow:ellipsis;text-transform:none;white-space:nowrap;flex-shrink:100000}
+.monaco-pane-view .pane>.pane-header .description .codicon{font-size:9px;margin-left:2px}
+.monaco-pane-view .pane>.pane-header:not(.expanded) .description{display:none}
+.monaco-pane-view .pane.horizontal:not(.expanded)>.pane-header h3.title,.monaco-pane-view .pane.horizontal:not(.expanded)>.pane-header .description{display:none}
+.monaco-pane-view .pane>.pane-header{height:var(--pane-header-size);line-height:var(--pane-header-size);font-size:11px;font-weight:700;overflow:hidden;display:flex;cursor:pointer;align-items:center;box-sizing:border-box}
+.monaco-pane-view .pane>.pane-header.not-collapsible{cursor:default}
+.monaco-pane-view .pane>.pane-header>.title{text-transform:uppercase}
+.monaco-pane-view .pane.horizontal:not(.expanded)>.pane-header{flex-direction:column;height:100%;width:var(--pane-header-size)}
+.monaco-pane-view .pane>.pane-header>.codicon:first-of-type{margin:0 2px}
+.monaco-pane-view .pane>.pane-header.expanded>.codicon:first-of-type{transform:translateY(1px)}
+.monaco-pane-view .pane.horizontal:not(.expanded)>.pane-header>.codicon:first-of-type{margin:2px}
+.monaco-pane-view .pane>.pane-header>.actions{display:none;margin-left:auto;margin-right:8px}
+.monaco-pane-view .pane>.pane-header>.actions .action-item{margin-right:4px}
+.monaco-pane-view .pane>.pane-header>.actions .action-label{padding:2px}
+.monaco-pane-view .pane:hover>.pane-header.expanded>.actions,.monaco-pane-view .pane:focus-within>.pane-header.expanded>.actions,.monaco-pane-view .pane>.pane-header.actions-always-visible.expanded>.actions,.monaco-pane-view .pane>.pane-header.focused.expanded>.actions{display:initial}
+.monaco-pane-view .pane>.pane-header .monaco-action-bar .action-item.select-container{cursor:default}
+.monaco-pane-view .pane>.pane-header .action-item .monaco-select-box{cursor:pointer;min-width:110px;min-height:18px;padding:2px 23px 2px 8px}
+.linux .monaco-pane-view .pane>.pane-header .action-item .monaco-select-box,.windows .monaco-pane-view .pane>.pane-header .action-item .monaco-select-box{padding:0 23px 0 8px}
+.monaco-pane-view:lang(zh-Hans) .pane>.pane-header,.monaco-pane-view:lang(zh-Hant) .pane>.pane-header,.monaco-pane-view:lang(ja) .pane>.pane-header,.monaco-pane-view:lang(ko) .pane>.pane-header{font-weight:400}
+.monaco-pane-view .pane>.pane-header.hidden{display:none}
+.quick-input-list .monaco-tl-twistie{display:none!important}
+.quick-input-tree.quick-input-tree-flat .monaco-tl-indent,.quick-input-tree.quick-input-tree-flat .monaco-tl-twistie{display:none!important}
+.file-icon-themable-tree.align-icons-and-twisties .monaco-tl-twistie:not(.force-twistie):not(.collapsible),.file-icon-themable-tree .align-icon-with-twisty .monaco-tl-twistie:not(.force-twistie):not(.collapsible),.file-icon-themable-tree.hide-arrows .monaco-tl-twistie:not(.force-twistie),.file-icon-themable-tree .monaco-tl-twistie.force-no-twistie{background-image:none!important;width:0!important;padding-right:0!important;visibility:hidden}
+.file-icon-themable-tree .monaco-list-row .content .monaco-highlighted-label .highlight,.pane-body .monaco-tl-contents .monaco-highlighted-label .highlight{color:unset!important;background-color:var(--vscode-list-filterMatchBackground);outline:1px dotted var(--vscode-list-filterMatchBorder);outline-offset:-1px}
+.monaco-workbench .tree-explorer-viewlet-tree-view{height:100%}
+.monaco-workbench .tree-explorer-viewlet-tree-view .message{display:flex;padding:4px 12px 4px 18px;user-select:text;-webkit-user-select:text}
+.monaco-workbench .tree-explorer-viewlet-tree-view .message p{margin-top:0;margin-bottom:0;padding-bottom:4px}
+.monaco-workbench .tree-explorer-viewlet-tree-view .message ul{padding-left:24px}
+.monaco-workbench .tree-explorer-viewlet-tree-view .message p>a{color:var(--vscode-textLink-foreground)}
+.monaco-workbench .tree-explorer-viewlet-tree-view .message .rendered-message{width:100%}
+.monaco-workbench .tree-explorer-viewlet-tree-view .message .button-container{width:100%;max-width:300px;margin:auto}
+.monaco-workbench .tree-explorer-viewlet-tree-view .message .button-container:not(:last-child){padding-bottom:8px}
+.monaco-workbench .tree-explorer-viewlet-tree-view .message.hide{display:none}
+.monaco-workbench .tree-explorer-viewlet-tree-view .customview-tree{height:100%}
+.monaco-workbench .tree-explorer-viewlet-tree-view .customview-tree.hide{display:none}
+.monaco-workbench .pane>.pane-body .tree-explorer-viewlet-tree-view>.message .button-container>.monaco-button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.customview-tree .monaco-list-row .monaco-tl-contents.align-icon-with-twisty:before{display:none}
+.customview-tree .monaco-list-row .monaco-tl-contents:not(.align-icon-with-twisty):before{display:inline-block}
+.timeline-tree-view .monaco-list .monaco-list-row .custom-view-tree-node-item>.custom-view-tree-node-item-icon,.customview-tree .monaco-list .monaco-list-row .custom-view-tree-node-item>.custom-view-tree-node-item-resourceLabel>.custom-view-tree-node-item-icon{background-size:16px;background-position:left center;background-repeat:no-repeat;padding-right:6px;width:16px;height:22px;display:flex;align-items:center;justify-content:center;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.pane-header .viewpane-filter-container>.viewpane-filter .monaco-inputbox .monaco-inputbox{height:20px;line-height:18px}
+.monaco-modal-editor-block .modal-editor-sidebar .monaco-tl-twistie.force-no-twistie{width:10px!important;padding-left:0!important;padding-right:0!important}
+.settings-editor.narrow-width>.settings-body .settings-tree-container .monaco-list-row .monaco-tl-contents{padding-left:33px}
+.settings-editor>.settings-body .settings-tree-container .monaco-list-row .monaco-tl-twistie{display:none!important}
+.settings-editor>.settings-body .settings-toc-container .monaco-list-row .monaco-tl-contents{display:flex}
+.settings-editor>.settings-body .settings-tree-container .monaco-list-row .monaco-tl-contents{max-width:min(100%,1400px);margin:auto;box-sizing:border-box;padding-left:24px;padding-right:24px;overflow:visible}
+.settings-editor>.settings-body .settings-tree-container .monaco-list-row .monaco-tl-contents.group-title{max-width:min(100%,1400px)}
+.interactive-list>.monaco-list>.monaco-scrollable-element>.monaco-list-rows>.monaco-list-row>.monaco-tl-row>.monaco-tl-twistie,.interactive-list>.monaco-list>.monaco-scrollable-element>.monaco-tree-sticky-container .monaco-tree-sticky-row>.monaco-tl-row>.monaco-tl-twistie{display:none!important}
+.interactive-response-progress-tree .monaco-list-row:not(.selected) .monaco-tl-row:hover{background-color:var(--vscode-list-hoverBackground)}
+.pane-header .open-editors-dirty-count-container{min-width:fit-content;display:flex;align-items:center}
+.pane.horizontal:not(.expanded) .pane-header .open-editors-dirty-count-container>.dirty-count.monaco-count-badge,.pane-header .open-editors-dirty-count-container>.dirty-count.monaco-count-badge.hidden{display:none}
+.pane-header .open-editors-dirty-count-container>.dirty-count.monaco-count-badge{padding:2px 4px;margin-left:6px;min-height:auto;cursor:pointer}
+.pane-header .open-editors-dirty-count-container>.dirty-count.monaco-count-badge:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:2px}
+.open-editors .monaco-list .monaco-list-row:hover>.monaco-action-bar,.open-editors .monaco-list .monaco-list-row.focused>.monaco-action-bar,.open-editors .monaco-list .monaco-list-row.dirty>.monaco-action-bar,.open-editors .monaco-list .monaco-list-row.sticky>.monaco-action-bar{visibility:visible}
+.open-editors .monaco-list .monaco-list-row>.monaco-action-bar .action-label{display:block;padding:2px}
+.open-editors .monaco-list .monaco-list-row>.monaco-action-bar .codicon{color:inherit}
+.open-editors .monaco-list .monaco-list-row.dirty:not(:hover)>.monaco-action-bar .codicon-pinned:before{content:var(--vscode-icon-pinned-dirty-content);font-family:var(--vscode-icon-pinned-dirty-font-family)}
+.open-editors .monaco-list .monaco-list-row.dirty:not(:hover)>.monaco-action-bar .codicon-close:before{content:var(--vscode-icon-circle-filled-content);font-family:var(--vscode-icon-circle-filled-font-family)}
+.open-editors .monaco-list .monaco-list-row>.monaco-action-bar .action-close-all-files,.open-editors .monaco-list .monaco-list-row>.monaco-action-bar .save-all{width:23px;height:22px}
+.open-editors .monaco-list .monaco-list-row>.open-editor{flex:1}
+.open-editors .monaco-list .monaco-list-row>.editor-group{flex:1}
+.open-editors .monaco-list .monaco-list-row{padding-left:8px;display:flex}
+.open-editors .monaco-list .monaco-list-row>.monaco-action-bar{visibility:hidden;display:flex;align-items:center}
+.open-editors .monaco-list .monaco-list-row .editor-group{font-size:11px;font-weight:700;text-transform:uppercase;cursor:default}
+.composite:lang(zh-Hans) .open-editors .monaco-list .monaco-list-row .editor-group,.composite:lang(zh-Hant) .open-editors .monaco-list .monaco-list-row .editor-group,.composite:lang(ja) .open-editors .monaco-list .monaco-list-row .editor-group,.composite:lang(ko) .open-editors .monaco-list .monaco-list-row .editor-group{font-weight:400}
+.open-editors .open-editor,.open-editors .editor-group{height:22px;line-height:22px}
+.open-editors .open-editor>a,.open-editors .editor-group{text-overflow:ellipsis;overflow:hidden}
+.monaco-workbench.hc-black .open-editors .open-editor,.monaco-workbench.hc-black .open-editors .editor-group,.monaco-workbench.hc-light .open-editors .open-editor,.monaco-workbench.hc-light .open-editors .editor-group{line-height:20px}
+.monaco-workbench .repl .repl-tree .monaco-tl-contents,.monaco-workbench .repl .repl-tree .monaco-tl-twistie{user-select:text;-webkit-user-select:text}
+.monaco-workbench .repl .repl-tree .monaco-tl-contents{white-space:pre}
+.monaco-workbench .repl .repl-tree .monaco-tl-contents .expression{font-family:var(--vscode-repl-font-family);font-size:var(--vscode-repl-font-size);line-height:var(--vscode-repl-line-height)}
+.monaco-workbench .repl .repl-tree .monaco-tl-contents .expression .lazy-button{cursor:pointer}
+.monaco-workbench .repl .repl-tree .monaco-tl-twistie{background-position-y:calc(100% - (var(--vscode-repl-font-size-for-twistie)))}
+.monaco-workbench .repl .repl-tree.word-wrap .monaco-tl-contents{word-wrap:break-word;white-space:pre-wrap;word-break:break-all}
+.monaco-workbench .repl .repl-tree.word-wrap .monaco-tl-contents .expression.nested-variable{white-space:pre}
+.monaco-workbench .repl .repl-tree .monaco-tl-twistie.collapsible+.monaco-tl-contents,.monaco-workbench .repl .repl-tree .monaco-tl-twistie.collapsible{cursor:pointer}
+.monaco-workbench .repl .repl-tree .monaco-tl-contents .arrow{position:absolute;left:2px;pointer-events:none}
+.explorer-item-with-test-coverage{display:flex}
+.explorer-item-with-test-coverage .explorer-item{flex-grow:1}
+.explorer-item-with-test-coverage .monaco-icon-label:after{margin-right:12px}
+.explorer-folders-view{height:100%}
+.explorer-folders-view .explorer-folders-view.highlight .monaco-list .explorer-item:not(.explorer-item-edited),.explorer-folders-view .explorer-folders-view.highlight .monaco-list .monaco-tl-twistie{opacity:.3}
+.explorer-folders-view .explorer-item,.explorer-folders-view .editor-group{height:22px;line-height:22px}
+.explorer-folders-view .explorer-item{display:flex;flex-wrap:nowrap}
+.explorer-folders-view .explorer-item>a,.explorer-folders-view .editor-group{text-overflow:ellipsis;overflow:hidden}
+.explorer-folders-view .explorer-item,.explorer-folders-view .explorer-item .monaco-inputbox{flex:1}
+.explorer-folders-view .explorer-item.cut{opacity:.5}
+.explorer-folders-view .explorer-item.explorer-item-edited .label-name{flex:0}
+.explorer-folders-view .explorer-item.nonexistent-root{opacity:.5}
+.explorer-folders-view .explorer-item .monaco-inputbox{width:100%;line-height:normal}
+.explorer-folders-view .monaco-list-row .explorer-item .monaco-count-badge{margin-left:5px;display:none}
+.explorer-folders-view .explorer-item.highlight-badge>.monaco-icon-label-container{display:flex;align-items:center}
+.explorer-folders-view .explorer-item.highlight-badge .monaco-icon-name-container{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.explorer-folders-view .monaco-list-row[aria-expanded=false] .explorer-item.highlight-badge .monaco-count-badge{display:inline-block}
+.explorer-folders-view .explorer-item .monaco-icon-name-container.multiple>.label-name>.monaco-highlighted-label{border-radius:3px}
+.explorer-folders-view .explorer-item .monaco-icon-name-container.multiple>.label-name:hover>.monaco-highlighted-label,.explorer-folders-view .monaco-list .monaco-list-row.focused .explorer-item .monaco-icon-name-container.multiple>.label-name.active>.monaco-highlighted-label{text-decoration:underline}
+.explorer-folders-view .explorer-item .monaco-icon-name-container.multiple>.label-name.drop-target>.monaco-highlighted-label{background-color:var(--vscode-list-dropBackground)}
+.explorer-folders-view .explorer-item.align-nest-icon-with-parent-icon{margin-left:var(--vscode-explorer-align-offset-margin-left)}
+.monaco-workbench.linux .explorer-folders-view .explorer-item .monaco-inputbox,.monaco-workbench.mac .explorer-folders-view .explorer-item .monaco-inputbox{height:22px}
+.monaco-workbench .explorer-folders-view .explorer-item .monaco-inputbox>.ibwrapper>.input{padding:0;height:20px}
+.monaco-workbench.hc-black .explorer-folders-view .explorer-item,.monaco-workbench.hc-light .explorer-folders-view .explorer-item{line-height:20px}
+.monaco-workbench .explorer-folders-view .explorer-item .monaco-inputbox input[type=text]{outline-width:1px;outline-style:solid;outline-offset:-1px;outline-color:var(--vscode-focusBorder);opacity:1}
+.monaco-workbench.context-menu-visible .explorer-folders-view.highlight .monaco-list-row{outline:none!important}
+.monaco-workbench .bulk-edit-panel .monaco-tl-contents{display:flex}
+.monaco-workbench .bulk-edit-panel .monaco-tl-contents .edit-checkbox{align-self:center}
+.monaco-workbench .bulk-edit-panel .monaco-tl-contents .monaco-icon-label.delete .monaco-icon-label-container{text-decoration:line-through}
+.monaco-workbench .bulk-edit-panel .monaco-tl-contents .details{margin-left:.5em;opacity:.7;font-size:.9em;white-space:pre}
+.monaco-workbench .bulk-edit-panel .monaco-tl-contents.category{display:flex;flex:1;flex-flow:row nowrap;align-items:center}
+.monaco-workbench .bulk-edit-panel .monaco-tl-contents.category .theme-icon,.monaco-workbench .bulk-edit-panel .monaco-tl-contents.textedit .theme-icon{margin-right:4px}
+.monaco-workbench .bulk-edit-panel .monaco-tl-contents.category .uri-icon,.monaco-workbench .bulk-edit-panel .monaco-tl-contents.textedit .uri-icon,.monaco-workbench.hc-light .bulk-edit-panel .monaco-tl-contents.category .uri-icon,.monaco-workbench.hc-light .bulk-edit-panel .monaco-tl-contents.textedit .uri-icon{background-repeat:no-repeat;background-image:var(--background-light);background-position:left center;background-size:contain;margin-right:4px;height:100%;width:16px;min-width:16px}
+.monaco-workbench.vs-dark .bulk-edit-panel .monaco-tl-contents.category .uri-icon,.monaco-workbench.hc-black .bulk-edit-panel .monaco-tl-contents.category .uri-icon,.monaco-workbench.vs-dark .bulk-edit-panel .monaco-tl-contents.textedit .uri-icon,.monaco-workbench.hc-black .bulk-edit-panel .monaco-tl-contents.textedit .uri-icon{background-image:var(--background-dark)}
+.monaco-workbench .bulk-edit-panel .monaco-tl-contents.textedit .monaco-highlighted-label{overflow:hidden;text-overflow:ellipsis}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents{display:flex;line-height:22px;padding-right:10px}
+.monaco-workbench.hc-black .markers-panel .markers-panel-container .tree-container .monaco-tl-contents,.monaco-workbench.hc-light .markers-panel .markers-panel-container .tree-container .monaco-tl-contents{line-height:20px}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .marker-stats{display:inline-block;margin-left:10px}
+.markers-panel:not(.wide) .markers-panel-container .tree-container .monaco-tl-contents .resource-label-container{flex:1}
+.markers-panel.wide .markers-panel-container .tree-container .monaco-tl-contents .count-badge-wrapper{margin-left:10px}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .marker-message-details-container{flex:1;overflow:hidden}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .marker-message-details-container>.marker-message-line{overflow:hidden}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .marker-message-details-container>.marker-message-line>.marker-message{overflow:hidden;text-overflow:ellipsis;white-space:pre}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .marker-message-details-container>.marker-message-line.details-container{display:flex}
+.markers-panel .markers-panel-container .tree-container .monaco-list:focus .monaco-list-row.focused .monaco-tl-contents .details-container a.monaco-link{color:inherit}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .details-container a.monaco-link .monaco-highlighted-label{text-decoration:underline;text-underline-position:under}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .marker-code:before{content:"("}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .marker-code:after{content:")"}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .details-container .multiline-actions,.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .details-container .marker-source,.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .details-container .marker-line{margin-left:6px}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .marker-source,.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .related-info-resource,.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .related-info-resource-separator,.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .marker-line,.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .marker-code{opacity:.7}
+.markers-panel .markers-panel-container .tree-container .monaco-tl-contents .highlight{font-weight:700}
+.markers-panel .monaco-tl-contents .marker-icon{height:22px;margin:0 6px;display:flex;align-items:center;justify-content:center}
+.markers-panel .monaco-tl-contents .actions .monaco-action-bar{display:none}
+.markers-panel .monaco-list-row:hover .monaco-tl-contents>.marker-icon.quickFix,.markers-panel .monaco-list-row.selected .monaco-tl-contents>.marker-icon.quickFix,.markers-panel .monaco-list-row.focused .monaco-tl-contents>.marker-icon.quickFix{display:none}
+.markers-panel .monaco-list-row:hover .monaco-tl-contents .actions .monaco-action-bar,.markers-panel .monaco-list-row.selected .monaco-tl-contents .actions .monaco-action-bar,.markers-panel .monaco-list-row.focused .monaco-tl-contents .actions .monaco-action-bar{display:block}
+.markers-panel .monaco-tl-contents .actions,.markers-panel .monaco-tl-contents .multiline-actions .monaco-action-bar{height:22px}
+.markers-panel .monaco-tl-contents .actions .action-label,.markers-panel .monaco-tl-contents .multiline-actions .monaco-action-bar .action-label{padding:2px}
+.markers-panel .monaco-tl-contents .actions .action-item{margin:0 4px}
+.markers-panel .monaco-tl-contents .multiline-actions .action-item.disabled,.markers-panel .monaco-tl-contents .actions .action-item.disabled{display:none}
+.monaco-workbench .part.sidebar>.title>.title-actions .switch-terminal,.monaco-pane-view .pane>.pane-header .monaco-action-bar .switch-terminal{border-width:1px;border-style:solid}
+.monaco-pane-view .pane>.pane-header .monaco-action-bar .switch-terminal.action-item.select-container{border:none!important}
+.modern-ui .monaco-pane-view .pane>.pane-header .title{font-size:var(--vscode-fontSize-label1);font-weight:var(--vscode-fontWeight-semiBold)}
+.modern-ui.monaco-workbench .part.preserve-merged-workspace-name-case>.title>.title-label h2,.modern-ui .pane.preserve-workspace-name-case>.pane-header>.icon.codicon-explorer-view-icon+.title{text-transform:none}
+.modern-ui.modern-ui-uppercase-view-headers .monaco-pane-view .pane>.pane-header>.title,.modern-ui.modern-ui-uppercase-view-headers.monaco-workbench .part:not(.editor)>.title>.title-label h2,.modern-ui.modern-ui-uppercase-view-headers.monaco-workbench .pane-composite-part>.title>.composite-bar-container>.composite-bar>.monaco-action-bar .action-item .action-label,.modern-ui.modern-ui-uppercase-view-headers.monaco-workbench .pane-composite-part>.header-or-footer>.composite-bar-container>.composite-bar>.monaco-action-bar .action-item .action-label,.modern-ui.modern-ui-uppercase-view-headers .monaco-pane-view .pane>.pane-header>.icon.codicon-explorer-view-icon+.title{text-transform:uppercase}
+.modern-ui.monaco-workbench .monaco-icon-label:after,.modern-ui.monaco-workbench .explorer-folders-view .explorer-item:after{margin-right:var(--vscode-spacing-size80);font-size:var(--vscode-fontSize-label2)}
+background-color:transparent;>.monaco-tl-row{border-radius:var(--vscode-cornerRadius-small)}
+background-color:transparent;outline:none;>.monaco-tl-row{background-color:var(--vscode-list-inactiveFocusBackground)}
+background-color:transparent;outline:none;>.monaco-tl-row{background-color:var(--vscode-list-inactiveSelectionBackground)}
+background-color:transparent;outline:none;>.monaco-tl-row{background-color:var(--vscode-list-hoverBackground)}
+background-color:transparent;outline:none;>.monaco-tl-row{background-color:var(--vscode-list-focusBackground)}
+background-color:transparent;outline:none;>.monaco-tl-row{background-color:var(--vscode-list-activeSelectionBackground)}
+.modern-ui.monaco-workbench .agent-sessions-viewer .monaco-list-row.agent-session-list-row.focused>.monaco-tl-row{outline:var(--vscode-strokeThickness) dotted var(--vscode-list-inactiveFocusOutline);outline-offset:calc(var(--vscode-strokeThickness) * -1)}
+.modern-ui.monaco-workbench .agent-sessions-viewer .monaco-list-row.agent-session-list-row.focused.selected>.monaco-tl-row{outline-color:var(--vscode-contrastActiveBorder, var(--vscode-list-inactiveFocusOutline))}
+.modern-ui.monaco-workbench .agent-sessions-viewer .monaco-list:focus .monaco-list-row.agent-session-list-row.focused>.monaco-tl-row,.context-menu-visible .modern-ui.monaco-workbench .agent-sessions-viewer .monaco-list.last-focused .monaco-list-row.agent-session-list-row.focused>.monaco-tl-row{outline:var(--vscode-strokeThickness) solid var(--vscode-list-focusOutline);outline-offset:calc(var(--vscode-strokeThickness) * -1)}
+.modern-ui.monaco-workbench .agent-sessions-viewer .monaco-list-row.agent-session-list-row.selected:not(.focused)>.monaco-tl-row{outline:var(--vscode-strokeThickness) dotted var(--vscode-contrastActiveBorder);outline-offset:calc(var(--vscode-strokeThickness) * -1)}
+.modern-ui.monaco-workbench .agent-sessions-viewer .monaco-list-row.agent-session-list-row:hover:not(.focused):not(.selected)>.monaco-tl-row{outline:var(--vscode-strokeThickness) dashed var(--vscode-contrastActiveBorder);outline-offset:calc(var(--vscode-strokeThickness) * -1)}
+.modern-ui.monaco-workbench .agent-sessions-viewer .monaco-list:focus .monaco-list-row.agent-session-list-row.focused.selected>.monaco-tl-row{outline-color:var(--vscode-list-focusAndSelectionOutline, var(--vscode-contrastActiveBorder, var(--vscode-list-focusOutline)))}
+.modern-ui.monaco-workbench .monaco-pane-view .pane>.pane-header>.actions{margin-right:0}
+.modern-ui .monaco-pane-view .pane>.pane-header{border:none!important}
+.modern-ui .monaco-pane-view .pane>.pane-header:before{content:"";position:absolute;top:0;left:var(--vscode-spacing-size40);right:var(--vscode-spacing-size40);height:var(--vscode-strokeThickness);pointer-events:none}
+.modern-ui :is(.part.sidebar,.part.auxiliarybar) .monaco-pane-view .pane>.pane-header:before{background-color:var(--vscode-sideBarSectionHeader-border)}
+.modern-ui .part.panel .monaco-pane-view .pane>.pane-header:before{background-color:var(--vscode-panelSectionHeader-border, var(--vscode-panel-border))}
+.modern-ui .monaco-pane-view .split-view-view:first-of-type>.pane>.pane-header:before,.modern-ui .monaco-pane-view .pane.horizontal>.pane-header:before{display:none}
+.modern-ui .monaco-pane-view .pane>.pane-header{border-radius:var(--vscode-cornerRadius-small)}
+.modern-ui :is(.part.sidebar,.part.auxiliarybar) .monaco-pane-view .pane>.pane-header{background-color:var(--vscode-sideBar-background)!important}
+.modern-ui .part.panel .monaco-pane-view .pane>.pane-header{background-color:var(--vscode-panel-background)!important}
+.modern-ui .monaco-pane-view .pane>.pane-header:hover{background-color:var(--vscode-list-hoverBackground)!important}
+.modern-ui .monaco-pane-view .pane>.pane-header:focus:not(:focus-visible){outline:none!important}
+.modern-ui .monaco-pane-view .pane>.pane-header:focus{outline-offset:calc(var(--vscode-spacing-size20) * -1)}
+.modern-ui-tabs .part.editor>.content .editor-group-container>.title.tabs:not(.show-file-icons) .tabs-container>.tab:not(.sticky-compact):not(.tab-actions-left){padding-left:var(--vscode-spacing-size80)!important}
+.remote-help-content .monaco-list .monaco-list-row .monaco-tl-twistie{width:0px!important}
+.file-icons-enabled .show-file-icons .vscode_getting_started_page-name-file-icon.file-icon:before{content:" ";background-image:url("../../media/code-icon.svg")}
+.file-icons-enabled .show-file-icons .vs_code_editor_walkthrough\.md-name-file-icon.md-ext-file-icon.ext-file-icon.markdown-lang-file-icon.file-icon:before{content:" ";background-image:url("../../media/code-icon.svg")}
+.monaco-workbench .outline-pane{display:flex;flex-direction:column}
+.monaco-workbench .outline-pane .outline-progress{width:100%;height:2px;padding-bottom:3px;position:absolute}
+.monaco-workbench .outline-pane .outline-tree{height:100%}
+.monaco-workbench .outline-pane .outline-message{display:none;padding:10px 22px 0;opacity:.5;position:absolute;pointer-events:none}
+.monaco-workbench .outline-pane.message .outline-message{display:inherit}
+.monaco-workbench .outline-pane.message .outline-progress,.monaco-workbench .outline-pane.message .outline-tree{display:none}
+.profiles-editor .contents-container .profile-body .profile-tree .monaco-list-row .profile-content-tree .monaco-list-row .monaco-tl-twistie.collapsible{cursor:pointer}
+.monaco-workbench .timeline-tree-view{position:relative}
+.monaco-workbench .timeline-tree-view .message.timeline-subtle{opacity:.5;padding:10px 22px 0;position:absolute;pointer-events:none;z-index:1}
+.timeline-tree-view .monaco-list .monaco-list-row .custom-view-tree-node-item .monaco-icon-label{flex:1;text-overflow:ellipsis;overflow:hidden}
+.timeline-tree-view .monaco-list .monaco-list-row .custom-view-tree-node-item .timeline-timestamp-container{margin-left:2px;margin-right:4px;opacity:.5;overflow:hidden;text-overflow:ellipsis}
+.timeline-tree-view .monaco-list .monaco-list-row .custom-view-tree-node-item .timeline-timestamp-container.timeline-timestamp--duplicate:before{content:" ";position:absolute;right:10px;border-right:1px solid currentColor;display:block;height:100%;width:1px;opacity:.25}
+.timeline-tree-view .monaco-list .monaco-list-row:hover .custom-view-tree-node-item .timeline-timestamp-container.timeline-timestamp--duplicate:before,.timeline-tree-view .monaco-list .monaco-list-row.selected .custom-view-tree-node-item .timeline-timestamp-container.timeline-timestamp--duplicate:before,.timeline-tree-view .monaco-list .monaco-list-row.focused .custom-view-tree-node-item .timeline-timestamp-container.timeline-timestamp--duplicate:before{display:none}
+.timeline-tree-view .monaco-list .monaco-list-row .custom-view-tree-node-item .timeline-timestamp-container .timeline-timestamp{display:inline-block}
+.timeline-tree-view .monaco-list .monaco-list-row .custom-view-tree-node-item .timeline-timestamp-container.timeline-timestamp--duplicate .timeline-timestamp{visibility:hidden;width:10px}
+.timeline-tree-view .monaco-list .monaco-list-row:hover .custom-view-tree-node-item .timeline-timestamp-container.timeline-timestamp--duplicate .timeline-timestamp,.timeline-tree-view .monaco-list .monaco-list-row.selected .custom-view-tree-node-item .timeline-timestamp-container.timeline-timestamp--duplicate .timeline-timestamp,.timeline-tree-view .monaco-list .monaco-list-row.focused .custom-view-tree-node-item .timeline-timestamp-container.timeline-timestamp--duplicate .timeline-timestamp{visibility:visible!important;width:initial}
+.process-explorer .monaco-tl-twistie.force-no-twistie{background-image:none!important;width:0!important;padding-right:0!important;visibility:hidden}

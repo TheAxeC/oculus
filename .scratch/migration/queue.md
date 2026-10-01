@@ -2,14 +2,14 @@
 
 In flight:
 - D27 (the editor's languages), reviewed (no red check, 13 findings); repair round 1 building.
-- D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), built and its report in; its review (/refute) running.
-- Q85d (zod in the views, ui, shell and routes), building: its builder runs the first run of the cases.
-- U4 (Focus and Sessions brought to the other views' size, the commit dropdown aligned, the Sessions rows two lines a font step smaller by Z180 (b)), building.
+- D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), reviewed (no red check, 12 findings); repair round 1 building.
+- Q85d (zod in the views, ui, shell and routes), building.
+- U4 (Focus and Sessions brought to the other views' size, the commit dropdown aligned, the Sessions rows two lines a font step smaller by Z180 (b)), built and its report in; its review (/refute) running.
 - L4 (floating panes and kept empty panes), being prepared: brief written, its brief check running.
 
 
 Queued, in order (31 steps):
-- X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a)), next into a free slot.
+- X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a); problem decorations to D33 and code symbols to D23 by Z182), being prepared: brief written, its brief check next into a free slot.
 - D32 (replace in Search), once D35 has landed (both change the write target and the undo table); its brief check is in.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), once D27 has landed (both change `config-key.ts`'s single-value refusal).
 - Q88c (the Source Control rows' and the pane strip's new menu items).
