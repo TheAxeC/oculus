@@ -272,11 +272,13 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - Removed by Z150 (the orchestrator, automode, 2026-10-01 11:40): Q88b, split by surface into Q88b, Q88c and Q88d below, which replace it; its lines kept whole in `agents/briefs/Q88b.md`.
 - Q88b the Files view's new right-click capabilities: New File, New Folder, Rename, Delete (to the macOS Trash through `trash`), Cut, Copy and Paste, Upload, Select for Compare and Compare Selected, Reveal in Finder for a file, and Find in Folder, each through a server route writing only under the served roots (ruling Z52) (ruling Z151)
   - Moved to Q102 2026-09-29 (Axel's terminal report): the terminal's Rename, Change Icon, Change Color, Clear and Copy as HTML, so the terminal is finished in one step.
-- Q88c the Source Control rows' new right-click capabilities: Discard Changes on an untracked file (to the Trash), Add to .gitignore, Cherry Pick, Open File (HEAD), Compare with Workspace, Close Repository and Others, opening a worktree, Checkout (Detached), a branch and a tag from a commit, Compare with Remote, Merge Base and with..., Delete Branch; after Q88b (ruling Z52)
+- Q88c the Source Control rows' and the pane strip's new right-click capabilities and the page-wide right-click handler, each item as the two sub-lines below list it; after Q88b and S3c (ruling Z52) (ruling Z55) (ruling Z70) (ruling Z152)
+  - Source Control: Discard Changes on an untracked file (to the Trash), Add to .gitignore, Cherry Pick, Open File (HEAD), Compare with Workspace, Close Repository and Others, opening a worktree, Checkout (Detached), a branch and a tag from a commit, Compare with Remote, Merge Base and with..., Delete Branch.
+  - The pane strip: Lock Group on an empty pane, New Text File, the Tab Bar and Editor Actions Position settings (Z70 (a)), and one page-wide handler that cancels every right click no oculus menu has taken (Z55 (a)).
   - Step 0, carried from Q88's /spec 2026-09-29: the rows the inventory marked "not checked" were checked against the server's git functions; the new ones are this step's, as `agents/briefs/Q88b.md` lists them.
-- Q88d the pane strip's new capabilities: Lock Group on an empty pane, New Text File, the Tab Bar and Editor Actions Position settings (Z70 (a)), and one page-wide handler that cancels every right click no oculus menu has taken (Z55 (a)) (ruling Z52) (ruling Z55) (ruling Z70)
   - Ruled 2026-09-30 by Axel: Z70 (a), `show_tabs: multiple | single | none` (default `multiple`) and `editor_actions: strip | hidden` (default `strip`) in `config/appearance.yml`, each with a control in the Settings view's Appearance section.
   - Ruled 2026-09-29 by Axel: Z55 (a).
+- Removed by Z152 (Axel, 2026-10-01 13:11): Q88d (the pane strip's new capabilities and the page-wide right-click handler), merged into Q88c above.
   - Step 0, stopped at `/spec` 2026-09-30 on Z69 (the orchestrator's state file, Open items): Copy as HTML through `@xterm/addon-serialize` 0.14.0 or by hand; the brief is written once Axel rules.
   - Ruled 2026-09-30 by Axel: Z69 (a), Copy as HTML through `@xterm/addon-serialize` 0.14.0.
   - Premises read at that `/spec`, on main at 9aa39b4e, for the brief after the ruling; in full in `agents/briefs/Q102.md`
@@ -713,6 +715,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z149 (2026-10-01): (a) for all three, `RailEditor` and `PagesReset` drawn as a Settings row leave out their own heading, a "This browser" row is Modified when this browser holds its own value and Reset forgets it, and the terminal text size is a "This browser" row; step S3c (the orchestrator, automode).
 - Open item Z150 (2026-10-01): (a), Q88b split by surface into Q88b (the Files view's file operations), Q88c (the Source Control rows' git operations, after Q88b, which brings `trash`) and Q88d (the pane strip and the page-wide right-click handler); X3c waits for Q88d, X3a for Q88b (the orchestrator, automode).
 - Open item Z151 (2026-10-01): (a), Q88b's choices as its brief's Decisions 1 to 11: no History record, `/api/ops`, `{left} vs {right}`, VS Code's name rule, 32 MiB uploads, the delete question always, a page-wide clipboard, keys and multi-select X3a's, local.yml protected, Find in Folder on roots, no writable flag (the orchestrator, automode).
+- Open item Z152 (2026-10-01): Q88c and Q88d merged into one step Q88c, the Source Control rows' and the pane strip's new right-click capabilities with the page-wide handler, after Q88b and S3c; X3c waits for Q88c (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

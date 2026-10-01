@@ -6,9 +6,8 @@ In flight:
 - Q88b (the Files view's file operations), building.
 Queued, in order:
 - Q85c (zod in the data folder), once Q85b has landed; then Q85d.
-- Q88c (the Source Control rows' git operations), once Q88b has landed.
-- Q88d (the pane strip and the page-wide right-click handler), once S3c has landed.
-- X3c (the tab strip as VS Code's), once Q88d has landed.
+- Q88c (the Source Control rows' and the pane strip's new menu items), once Q88b and S3c have landed.
+- X3c (the tab strip as VS Code's), once Q88c has landed.
 - X3a (the Files view as VS Code's Explorer), once Q88b has landed.
 - Q91 (the project view and its editor), once X3a has landed.
 - L4 (floating panes).

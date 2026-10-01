@@ -18,7 +18,9 @@ The question: Q88b's line covers three surfaces, each the size of a step: the Fi
 - Chosen (a): split by surface into Q88b (Files), Q88c (Source Control, after Q88b, which brings `trash`) and Q88d (the pane strip and the right-click handler), as S3 and X3 were split. X3c waits for Q88d, X3a for Q88b.
 - Not chosen: (b) one step for all three, one builder and one review across three surfaces.
 
-Where it is built: `plan.md`'s Q88b, Q88c and Q88d lines. Booked in the state file's closed log and `plan.md` Rulings.
+Where it is built: `plan.md`'s Q88b and Q88c lines. Booked in the state file's closed log and `plan.md` Rulings.
+
+Axel's review (Z152, 2026-10-01 13:11): Q88c and Q88d merged into one step Q88c, after Q88b and S3c; X3c waits for Q88c. Q88b stays its own step (in flight).
 
 ## Z149 (2026-10-01 11:08, step S3c)
 
