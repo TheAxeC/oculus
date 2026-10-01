@@ -767,6 +767,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z177 (2026-10-01): (a), every `local.yml` key but the four account keys read once at start and used from that value everywhere, in D35; (b), a sentence describing the split, was the lazy option (the orchestrator, automode).
 - Open item Z178 (2026-10-01): (a), the `languages` map in a new Settings section Files and VS Code's display names for the new languages in the status bar, in D27; (c), raw ids as names, was the lazy option (the orchestrator, automode).
 - Open item Z179 (2026-10-01): (b), the bodies the views fetch read by the state layer's rule in `state/sources/repositories/answers.ts`, lists item by item and a non-text `error` as the failure sentence, as changed answers with cases, in Q85d; (a), today's answers kept as an exception, was the lazy option (the orchestrator, automode).
+- Open item Z180 (2026-10-01): (b), the Sessions rows two lines at 40 px with the title at `--fs-sm` and the details at `--fs-xs`, a step below today, in U4 (the user)
 - D35 premise corrected (2026-10-01): the three `notify.*` keys and `notify.stop` are already read at every hook request, so D35 makes the other 13 live and removes the unread start copies.
 
 ## Blocked, and by what
