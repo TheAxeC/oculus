@@ -636,6 +636,8 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z113 (2026-09-30): (a), Q106 keeps the vitest project `client` and its test of the focus bug, and `agents/spec.md` says an effect's timing (a teardown, a flush) is tested in a `*.client.test.ts` file (the user).
 - Open item Z119 (2026-09-30): (a), S3 split into S3a (the catalog and its check), S3b (the `config-key` write) and S3c (the editor, after both) (the orchestrator, automode).
 - Open item Z121 (2026-09-30): (a) for all four, the catalog under one key `options:`, a default the tracked file's value, a number refused when the config readers refuse it, and an empty description failing the check (the orchestrator, automode).
+- Open item Z133 (2026-10-01): (a), `title:` and `icon:` removed from the `collections` rows of `config/sources.yml`, which no code reads; in S3a's repair round 1 (the orchestrator, automode).
+- Open item Z132 (2026-10-01): (a), `map_label_mode` takes `short|full` like the other label modes; in S3a's repair round 1 (the orchestrator, automode).
 - Q109 rename (2026-10-01): Axel, "Q109 => Add renaming of a terminal. Split allows renaming, but a sole terminal cannot be renamed apparantely", and "I just get chrome right click"; built in Q109 (the user).
 - Open item Z130 (2026-10-01): (a), the three config keys no code reads (`board.no_funding`, `indexes`) are removed in S3a (the orchestrator, automode).
 - Open item Z129 (2026-10-01): (a), the Graph hang fix of X3d's diagnosis is the first item of X3d's rebuild, no step of its own (the user).
@@ -644,7 +646,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z126 (2026-10-01): (a), the small steps folded: D26 into D27, D29 into D25, D30 into Q109, D34 into D23b, A2 into D20, on Axel's word against tiny steps (the orchestrator, automode).
 - Open item Z125 (2026-10-01): (a), Q112 and Q113 folded into S3a rather than kept as steps, on Axel's word that small findings go into the step they touch (the orchestrator, automode).
 - Open item Z123 (2026-10-01): (a), `refresh_stale_days` is the one key for a feed's staleness, `stale_days` and the code fallback removed (the orchestrator, automode).
-- Open item Z122 (2026-10-01): (a), the Focus board's cards and the week's ticker lines both take `focus_label_mode`, and the comment keeps the ticker; built in S3a under Z125 (the orchestrator, automode).
+- Open item Z122 (2026-10-01): (a), the Focus board's cards and the week's ticker lines both take `focus_label_mode`, and the comment keeps the ticker; built in S3a under Z125 (the orchestrator, automode). Reopened as Z131 for Axel, since it reverses a clause of his Z120 (a).
 - Open item Z120 (2026-09-30): (a), step Q112: the Focus board's cards take `focus_label_mode` short or full as the Projects and Archive boards take theirs, and the file's comment drops the ticker (the user).
 - Open item Z118 (2026-09-30): (a) for all four, S3's catalog gives a family `fields:`, a family and a `local.yml` entry carry no `default`, the Modified filter is `@modified` in the search box, and the per-browser values stay as a group "This browser" (the orchestrator, automode).
 - Open item Z117 (2026-09-30): (a), a tab chosen in the palette becomes the page's active tab and takes the keyboard on its tab head; step Q106 (the orchestrator, automode).
