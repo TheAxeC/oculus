@@ -2,7 +2,6 @@
 
 In flight:
 - D35 (every configuration file live, `local.yml` included, by Z198), to be taken back out of its landing and prepared again; its patch keeps the reviewed work.
-- Q85d (zod in the views, ui, shell and routes), repair round 1 reviewed (2 Standards findings, fixed at landing); landing next.
 - L4 (floating panes and kept empty panes), built; its review to run on a fresh reviewer.
 - Q66 (a hidden tab defers its work), builder stopped without a report; a fresh builder takes over its worktree.
 - Q35 (Changes, Customizations, Audit, Present), builder stopped mid-build; a fresh builder takes over its worktree.
@@ -41,6 +40,7 @@ Queued, in order (30 steps):
 Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers. When the 15th lands, this line becomes "Ready: the three-way Opus and Sonnet comparison can be asked for", and the comparison is written when Axel asks for it.
 
 Landed, newest first:
+- Q85d (zod in the views, ui, shell and routes), 2026-10-02, e77103dc.
 - D27 (the editor's languages), 2026-10-01, c431d27f.
 - U4 (Focus and Sessions at the other views' size), 2026-10-01, 8adc354c.
 - U3 (every view on VS Code's scale), 2026-10-01, b0a2190e.
