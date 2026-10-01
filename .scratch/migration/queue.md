@@ -5,7 +5,7 @@ In flight:
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), reviewed (no red check, 12 findings); repair round 1 building.
 - Q85d (zod in the views, ui, shell and routes), building.
 - U4 (Focus and Sessions brought to the other views' size, the commit dropdown aligned, the Sessions rows two lines a font step smaller by Z180 (b)), built and its report in; its review (/refute) running.
-- L4 (floating panes and kept empty panes), prepared: brief checked (26 findings, all closed in the brief, Z184 in automode); its builder next into a free slot.
+- L4 (floating panes and kept empty panes), building.
 
 
 Queued, in order (31 steps):

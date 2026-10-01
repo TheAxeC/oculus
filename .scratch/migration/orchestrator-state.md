@@ -93,8 +93,11 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
 - step: L4
   executor: agent
   worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 22:09)
+  session_id: ac513303559f8c8e2 (launched 2026-10-01 22:09 local)
   worktree: .agents/worktrees/L4
   base: 3a246eca
+  launched: 2026-10-01 22:09 local
   report: agents/reviews/L4-report.md
   brief_check: agents/reviews/L4-brief-check.md, every finding closed in the brief (its Closed heading, Z184 in automode); claude-sonnet-5-5, 136,054 tokens, 149 tool uses, 20.4 min
   shared_paths: with Q85d, `PaneView.svelte` (Q85d its instance-label reader; L4 the menus), `layout/index.ts` (Q85d five exports beside `cardCursor`; L4 the float exports), `tests/shell/workbench.test.ts` and `tests/shell/panes/paneview.test.ts` (new cases each), different hunks, a simple merge with the export block read at the second landing; `DESIGN.md` (L4 210, 358-365; U4 369, 404, 408; D35 224-235; D27 85, 171, 379; Q85d 148, 323) and `HELP.md` (L4 27-45, 127; U4 100; D35 216, 236; D27 230), different lines; `docs/diagrams/`, regenerated at each landing
