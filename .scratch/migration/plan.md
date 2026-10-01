@@ -735,6 +735,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z163 (2026-10-01): (a), Q85c's paths gain `src/lib/data/sources/yaml-file.ts` and the rewrite of the moved tests' allowlist lines; its changed answers are `flattenText` and `loadConfig`'s merge skipping an own `__proto__` key (the orchestrator, automode).
 - Open item Z164 (2026-10-01): (b), a fresh builder takes over U3's worktree as it stands and starts no agent; the interrupted builder cannot be resumed (the orchestrator, automode).
 - Open item Z165 (2026-10-01): (a), DESIGN.md:128, :344 and `git-write.ts:40` name one exception, the `git.autofetch_minutes` timer running only `git fetch --prune` (the orchestrator, automode).
+- Repair round kept (2026-10-01): Axel, asked whether the repair round is needed: kept as configured, `repair_rounds: 1` and `refute_after_repair: yes` (the user).
 - Open item Z147 (2026-10-01): (c) widened, the cards kept and put on the same scale as everything else: they fit the pane's width, take one chip shape and titles on the type scale, and get groups 2 and 5; links lose the underline; Projects looked at on TEST after the step (the user).
 - Open item Z146 (2026-10-01): U2's seven groups as one step U3, with Z147 (c) widened and Z148 (1) (the user).
 
