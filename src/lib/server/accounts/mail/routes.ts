@@ -17,8 +17,9 @@
 // No answer of this module carries a token, a secret, an authorization code or a message body.
 
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import { mailKey } from '../../../data/accounts/mail.ts';
-import type { InboxKind, InboxThread, MailAccountConfig } from '../../../data/model/index.ts';
+import type { InboxThread, MailAccountConfig } from '../../../data/model/index.ts';
 import { signIn } from '../connect/loop.ts';
 import type { Fetcher } from '../connect/oauth.ts';
 import { gatedBody } from '../../core/auth.ts';
@@ -32,7 +33,7 @@ import {
 import { archiveGoogle, replyGoogle } from './google.ts';
 import { archiveMicrosoft, replyMicrosoft } from './microsoft.ts';
 import type { MailReadArgs } from './plate.ts';
-import { writeNote, type TriageFields } from './triage.ts';
+import { inboxKindShape, writeNote, type TriageFields } from './triage.ts';
 
 export type { CallbackWords } from '../connect/actions.ts';
 
@@ -50,22 +51,27 @@ export type MailTarget = AccountTarget & {
 
 export type MailCallbackTarget = CallbackTarget;
 
-/** The three words a triage `kind` may be, and nothing when the page sent something else. */
-function kindOf(value: unknown): InboxKind | undefined {
-    return value === 'reply' || value === 'action' || value === 'info' ? value : undefined;
-}
+/**
+ * What a triage write may set: one of the three kinds, two texts and a flag. A field of another
+ * type reads as unset, and the keys the shape does not name are left out.
+ */
+const triageFieldsShape = z.object({
+    kind: inboxKindShape,
+    what: z.string().optional().catch(undefined),
+    draft: z.string().optional().catch(undefined),
+    triaged: z.boolean().optional().catch(undefined)
+}) satisfies z.ZodType<TriageFields>;
 
 /** What a triage write may set, out of whatever the page sent; an unknown field is left out. */
 function triageFields(value: unknown): TriageFields | null {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-    const record = value as Record<string, unknown>;
+    const parsed = triageFieldsShape.safeParse(value);
+    if (!parsed.success) return null;
     const fields: TriageFields = {};
-    const kind = kindOf(record.kind);
+    const { kind, what, draft, triaged } = parsed.data;
     if (kind !== undefined) fields.kind = kind;
-    for (const field of ['what', 'draft'] as const) {
-        if (typeof record[field] === 'string') fields[field] = record[field];
-    }
-    if (typeof record.triaged === 'boolean') fields.triaged = record.triaged;
+    if (what !== undefined) fields.what = what;
+    if (draft !== undefined) fields.draft = draft;
+    if (triaged !== undefined) fields.triaged = triaged;
     return Object.keys(fields).length === 0 ? null : fields;
 }
 

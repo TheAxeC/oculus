@@ -628,3 +628,104 @@ describe('the scratch notes', () => {
         expect(existsSync(join(outside, 'away.md'))).toBe(false);
     });
 });
+
+describe('a workspaces file of the wrong shape', () => {
+    it('keeps the first of two workspaces of a name, and drops a root that is not a pair of text', () => {
+        const file = savedFile();
+        writeFileSync(
+            file,
+            JSON.stringify({
+                current: 'gone',
+                workspaces: [
+                    { name: 'a', roots: [{ key: 'k1', dir: 'd1', extra: 1 }] },
+                    { name: 'a', roots: [{ key: 'k2', dir: 'd2' }] },
+                    { name: 3, roots: [{ key: 'k3', dir: 'd3' }] },
+                    {
+                        name: 'b',
+                        roots: [
+                            { key: 3, dir: 'd' },
+                            { key: 'res', dir: 'd' },
+                            { key: 'res', dir: 'e' },
+                            { key: 'k', dir: 'x' },
+                            { key: 'k', dir: 'y' },
+                            { key: '', dir: 'd' },
+                            { key: 'z', dir: 4 },
+                            { key: '__proto__', dir: 'p' },
+                            []
+                        ]
+                    },
+                    { name: 'c', roots: null },
+                    []
+                ]
+            })
+        );
+        const read = readSaved(file, ['res']);
+        expect(read).toStrictEqual({
+            current: '',
+            workspaces: [
+                { name: 'a', roots: [{ key: 'k1', dir: 'd1' }] },
+                {
+                    name: 'b',
+                    roots: [
+                        { key: 'k', dir: 'x' },
+                        { key: '__proto__', dir: 'p' }
+                    ]
+                },
+                { name: 'c', roots: [] }
+            ],
+            dropped: ['res']
+        });
+        expect(Object.keys(read.workspaces[0].roots[0])).toEqual(['key', 'dir']);
+    });
+
+    it('keeps a current workspace the file holds, and reads one of another type as the default', () => {
+        const file = savedFile();
+        writeFileSync(
+            file,
+            JSON.stringify({ current: 'a', workspaces: [{ name: 'a', roots: [] }] })
+        );
+        expect(readSaved(file).current).toBe('a');
+        writeFileSync(file, JSON.stringify({ current: 3, workspaces: [{ name: 'a', roots: [] }] }));
+        expect(readSaved(file).current).toBe('');
+        writeFileSync(file, JSON.stringify({ current: 'a', workspaces: {} }));
+        expect(readSaved(file)).toStrictEqual({ current: '', workspaces: [], dropped: [] });
+    });
+});
+
+describe('a bookmarks file of the wrong shape', () => {
+    function bookmarksOf(text: string): ReturnType<typeof readBookmarks> {
+        const file = join(scratchDir('oculus-bookmarks-odd-'), 'bookmarks.yml');
+        writeFileSync(file, text);
+        return readBookmarks(file);
+    }
+
+    it('reads entries that are a map as holding none', () => {
+        expect(bookmarksOf('entries:\n  a: 1\n').entries).toStrictEqual([]);
+    });
+
+    it('names a bookmark by its label as text, whatever type the label has, and drops the rest', () => {
+        const read = bookmarksOf(
+            [
+                'entries:',
+                '  - { label: 7, root: hub }',
+                '  - { id: 7 }',
+                '  - { label: "" }',
+                '  - { label: [a] }',
+                '  - plain',
+                '  - { label: ok, path: a/b }',
+                ''
+            ].join('\n')
+        );
+        expect(read.entries.map((one) => [one.id, one.title, one.index])).toEqual([
+            ['7', '7', 0],
+            ['ok', 'ok', 5]
+        ]);
+        expect(read.entries[0].fields).toStrictEqual({ label: 7, root: 'hub' });
+    });
+
+    it('keeps an own __proto__ key of an entry among its fields', () => {
+        const read = bookmarksOf('entries:\n  - label: p\n    __proto__: { a: 1 }\n');
+        expect(read.entries).toHaveLength(1);
+        expect(Object.keys(read.entries[0].fields)).toEqual(['label', '__proto__']);
+    });
+});

@@ -19,6 +19,7 @@
 // read again before it is taken as an empty list, because tmux refuses a connection for a moment
 // and that one answer would otherwise tell every page that all its terminals have ended.
 
+import { z } from 'zod';
 import type {
     Message,
     PtyPayload,
@@ -114,6 +115,30 @@ export function mergeChunks(held: Message, next: Message): Message {
     };
 }
 
+/**
+ * A number of any value, as the page's resize reports it: `typeof` is the whole test, so `NaN` and
+ * the infinite numbers pass as they do for the tmux arguments built from them.
+ */
+const anyNumberShape = z.custom<number>((held) => typeof held === 'number');
+
+/** The channel of a message: the text of a `pty:<id>` channel that names a terminal. */
+const terminalChannelShape = z.string().refine((channel) => channelTerminal(channel) !== null);
+
+/**
+ * The two messages this module knows. A message of another type, a channel that names no terminal
+ * and a field of the wrong type each refuse the whole message; the keys the shape does not name are
+ * left out of the answer.
+ */
+const terminalMessageShape = z.union([
+    z.object({ type: z.literal('input'), channel: terminalChannelShape, bytes: z.string() }),
+    z.object({
+        type: z.literal('resize'),
+        channel: terminalChannelShape,
+        cols: anyNumberShape,
+        rows: anyNumberShape
+    })
+]) satisfies z.ZodType<TerminalInput | TerminalResize>;
+
 /** One inbound message from the page, or null when it is neither of the two this module knows. */
 export function terminalMessage(data: string): TerminalInput | TerminalResize | null {
     let parsed: unknown;
@@ -122,27 +147,8 @@ export function terminalMessage(data: string): TerminalInput | TerminalResize | 
     } catch {
         return null;
     }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
-    const message = parsed as Record<string, unknown>;
-    if (typeof message.channel !== 'string' || channelTerminal(message.channel) === null) {
-        return null;
-    }
-    if (message.type === 'input' && typeof message.bytes === 'string') {
-        return { type: 'input', channel: message.channel, bytes: message.bytes };
-    }
-    if (
-        message.type === 'resize' &&
-        typeof message.cols === 'number' &&
-        typeof message.rows === 'number'
-    ) {
-        return {
-            type: 'resize',
-            channel: message.channel,
-            cols: message.cols,
-            rows: message.rows
-        };
-    }
-    return null;
+    const message = terminalMessageShape.safeParse(parsed);
+    return message.success ? message.data : null;
 }
 
 /**

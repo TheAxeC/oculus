@@ -22,9 +22,9 @@ digraph layer_server {
         "folder server/root to folder server/machine" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/root to folder server/sessions" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/root to layer data" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/git to folder server/core" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/git to folder server/core" [label="15", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/git to folder server/edit" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/git to layer data" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/git to layer data" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/content" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/core" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/files" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -36,17 +36,17 @@ digraph layer_server {
         "folder server/machine to folder server/files" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/machine to folder server/sessions" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/machine to folder server/transcripts" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/machine to layer data" [label="15", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/machine to layer data" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/content to folder server/core" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/content to folder server/files" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/content to layer data" [label="11", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/content to layer data" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/files to folder server/core" [label="14", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/files to layer data" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/sessions to folder server/core" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/sessions to folder server/transcripts" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/sessions to layer data" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/accounts to folder server/core" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/accounts to layer data" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/accounts to layer data" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/transcripts to layer data" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/core to layer data" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }

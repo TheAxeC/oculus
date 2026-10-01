@@ -114,8 +114,8 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
                 id: terminalId,
                 kind: 'claude',
                 cwd,
-                cols: cols as number,
-                rows: rows as number,
+                cols,
+                rows,
                 name: name.slice(0, 80)
             },
             { ...options, command: chatCommand(local.claudeBin, system, chatModel(config), seed) }

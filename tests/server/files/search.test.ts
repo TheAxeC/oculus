@@ -19,6 +19,7 @@ import {
     type SearchRunner
 } from '../../../src/lib/server/files/search.ts';
 import { ALL_ROOTS, type SearchQuery } from '../../../src/lib/data/helpers/search.ts';
+import type { SearchHit } from '../../../src/lib/data/model/index.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
@@ -504,5 +505,98 @@ describe('the binary the dependency carries', () => {
             timeout: TIMEOUT
         });
         expect(outcome.ok && outcome.answer.files.map((one) => one.path)).toEqual(['plain.txt']);
+    });
+});
+
+describe('the JSON stream with records of an odd shape', () => {
+    const begin = JSON.stringify({ type: 'begin', data: { path: { text: './a.ts' } } });
+
+    /** One match record over `a.ts` whose fields the case overrides. */
+    function matchWith(over: Record<string, unknown>): string {
+        return JSON.stringify({
+            type: 'match',
+            data: {
+                path: { text: 'a.ts' },
+                lines: { text: 'abc def\n' },
+                line_number: 3,
+                submatches: [{ match: { text: 'abc' }, start: 0, end: 3 }],
+                ...over
+            }
+        });
+    }
+
+    /** One `end` record carrying this stats value. */
+    function endWith(stats: unknown): string {
+        return JSON.stringify({ type: 'end', data: { path: { text: 'a.ts' }, stats } });
+    }
+
+    /** The answer for one stream of these lines over the root `r` with room for ten hits. */
+    function folded(...lines: string[]): ReturnType<typeof foldStream> {
+        return foldStream(lines.join('\n'), 'r', 10);
+    }
+
+    const WHOLE = { line: 3, column: 1, length: 3, text: 'abc def' };
+    const BARE = { line: 3, column: 1, length: 0, text: 'abc def' };
+    const one = (hit: SearchHit, truncated = false): ReturnType<typeof foldStream> => ({
+        files: [{ root: 'r', path: 'a.ts', hits: [hit] }],
+        total: 1,
+        truncated
+    });
+
+    it('drops a match whose line number is text and says the file held more', () => {
+        expect(
+            folded(begin, matchWith({ line_number: '3' }), endWith({ matched_lines: 1 }))
+        ).toStrictEqual({ files: [], total: 0, truncated: true });
+    });
+
+    it('reads a hit at column 1 of length 0 when its first submatch is not an object holding a match', () => {
+        for (const submatches of ['x', [null], ['abc'], [5], []]) {
+            expect(
+                folded(begin, matchWith({ submatches }), endWith({ matched_lines: 1 })),
+                JSON.stringify(submatches)
+            ).toStrictEqual(one(BARE));
+        }
+    });
+
+    it('takes the count of an end record only when matched_lines is a number', () => {
+        for (const stats of [[], { matched_lines: '5' }]) {
+            expect(folded(begin, matchWith({}), endWith(stats))).toStrictEqual(one(WHOLE));
+        }
+        expect(folded(begin, matchWith({}), endWith({ matched_lines: 9 }))).toStrictEqual(
+            one(WHOLE, true)
+        );
+    });
+
+    it('keeps a count, a line number and an offset of infinity as numbers', () => {
+        const infinite = (text: string): string => text.replace('"@inf"', '1e999');
+        expect(
+            folded(begin, matchWith({}), infinite(endWith({ matched_lines: '@inf' })))
+        ).toStrictEqual(one(WHOLE, true));
+        expect(folded(begin, infinite(matchWith({ line_number: '@inf' })))).toStrictEqual(
+            one({ ...WHOLE, line: Infinity })
+        );
+        const offset = [{ match: { text: 'abc' }, start: '@inf', end: 3 }];
+        expect(folded(begin, infinite(matchWith({ submatches: offset })))).toStrictEqual(
+            one({ ...WHOLE, column: 9 })
+        );
+    });
+
+    it('skips a line that is not JSON, a list, a number, null and a record whose data is a list', () => {
+        expect(
+            folded(
+                begin,
+                'not json',
+                '[]',
+                '3',
+                'null',
+                matchWith({}),
+                endWith({ matched_lines: 1 })
+            )
+        ).toStrictEqual(one(WHOLE));
+        expect(folded(JSON.stringify({ type: 'begin', data: [] }), matchWith({}))).toStrictEqual({
+            files: [],
+            total: 0,
+            truncated: false
+        });
     });
 });

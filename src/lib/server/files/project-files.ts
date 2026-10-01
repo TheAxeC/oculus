@@ -15,11 +15,11 @@
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { portfolioConfigFrom } from '../../data/index.ts';
 import { loadLocalOrDefaults } from '../../data/sources/config.ts';
-import { isMap } from '../../data/helpers/guards.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import type { PortfolioConfig } from '../../data/model/index.ts';
 import { inside } from '../core/paths.ts';
@@ -94,6 +94,21 @@ const DEFAULT_CAP = 400;
 const NO_STORE = { 'cache-control': 'no-store' };
 
 /**
+ * The `file_index` block as the walk reads it. A switch that is not a boolean reads as on, a list
+ * of extensions keeps its text items and reads as empty when it is no list, and a cap that is not
+ * a number reads as the default; `typeof` is the whole test of a number, so one that is not finite
+ * is a number here.
+ */
+const fileIndexShape = z.object({
+    enabled: z.boolean().catch(true),
+    ext: z
+        .array(z.unknown())
+        .transform((all) => all.filter((one): one is string => typeof one === 'string'))
+        .catch(() => []),
+    max_per_project: z.custom<number>((held) => typeof held === 'number').catch(DEFAULT_CAP)
+});
+
+/**
  * The `file_index` block of the merged config: what is listed, how much of it, and whether at all.
  */
 export function fileIndex(settings: Record<string, unknown>): {
@@ -101,14 +116,12 @@ export function fileIndex(settings: Record<string, unknown>): {
     ext: string[];
     cap: number;
 } {
-    const block = isMap(settings.file_index) ? settings.file_index : {};
-    const ext = Array.isArray(block.ext)
-        ? block.ext.filter((one): one is string => typeof one === 'string')
-        : [];
-    const cap = typeof block.max_per_project === 'number' ? block.max_per_project : DEFAULT_CAP;
+    const parsed = fileIndexShape.safeParse(settings.file_index);
+    const block = parsed.success ? parsed.data : fileIndexShape.parse({});
+    const cap = block.max_per_project;
     return {
-        enabled: block.enabled !== false,
-        ext: (ext.length > 0 ? ext : DEFAULT_EXT).map((one) => one.toLowerCase()),
+        enabled: block.enabled,
+        ext: (block.ext.length > 0 ? block.ext : DEFAULT_EXT).map((one) => one.toLowerCase()),
         cap: cap > 0 ? Math.trunc(cap) : DEFAULT_CAP
     };
 }

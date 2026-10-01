@@ -20,6 +20,7 @@ import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import { isMap } from '../../data/helpers/guards.ts';
 import type { FolderLines, LanguageLines, LineCount, LineTally } from '../../data/model/index.ts';
 import { trackedFiles } from '../core/git.ts';
@@ -126,9 +127,15 @@ function add(into: LineTally, file: Clocked, todo: number): void {
 }
 
 /** A whole count of lines, as cloc writes each of the three. */
-function lines(value: unknown): number | null {
-    return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
-}
+const lineCountShape = z.number().refine((held) => Number.isInteger(held) && held >= 0);
+
+/** One file of cloc's answer: its language and its three counts, and no other key is read. */
+const clocFileShape = z.object({
+    language: z.string(),
+    blank: lineCountShape,
+    comment: lineCountShape,
+    code: lineCountShape
+}) satisfies z.ZodType<Clocked>;
 
 /**
  * The files of cloc's answer, keyed by path, or null when the answer is not cloc's shape. The
@@ -145,12 +152,9 @@ function clocked(text: string): Map<string, Clocked> | null {
     const files = new Map<string, Clocked>();
     for (const [path, value] of Object.entries(parsed)) {
         if (path === 'header' || path === 'SUM') continue;
-        if (!isMap(value) || typeof value.language !== 'string') return null;
-        const blank = lines(value.blank);
-        const comment = lines(value.comment);
-        const code = lines(value.code);
-        if (blank === null || comment === null || code === null) return null;
-        files.set(path, { language: value.language, blank, comment, code });
+        const file = clocFileShape.safeParse(value);
+        if (!file.success) return null;
+        files.set(path, file.data);
     }
     return files;
 }

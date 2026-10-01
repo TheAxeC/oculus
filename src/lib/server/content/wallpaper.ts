@@ -9,6 +9,7 @@
 // named a fragment or asked for a random one.
 
 import { resolve } from 'node:path';
+import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
 import { folderOf, images, stream } from './images.ts';
 
@@ -75,6 +76,19 @@ export function serve(settings: Wallpaper | null, memory: WallpaperMemory): Resp
     return stream(settings.dir, choose(settings, memory));
 }
 
+/** How an image is chosen: the first by name, or one at random. */
+const pickShape = z.enum(['first', 'random']) satisfies z.ZodType<Wallpaper['pick']>;
+
+/**
+ * The `wallpaper:` block: a map with a directory, the part of an image's name that picks it when it
+ * is text, and the way to choose, which is checked on its own so a refusal can name it as it came.
+ */
+const wallpaperBlockShape = z.object({
+    dir: z.string().min(1),
+    file: z.string().optional().catch(undefined),
+    pick: z.unknown().optional()
+});
+
 /**
  * The configured wallpaper, or null when there is nothing to serve. The config is the request's own
  * read, so an edit shows on reload. A missing `dir`, or one outside the hub, serves nothing.
@@ -85,24 +99,20 @@ export function settings(
     engine: string
 ): Wallpaper | null {
     const raw = config.wallpaper;
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
-    const held = raw as Record<string, unknown>;
-    if (typeof held.dir !== 'string' || held.dir === '') return null;
-    if (held.pick !== 'first' && held.pick !== 'random') {
-        const key = `pick:${String(held.pick)}`;
+    const held = wallpaperBlockShape.safeParse(raw);
+    if (!held.success) return null;
+    const pick = pickShape.safeParse(held.data.pick);
+    if (!pick.success) {
+        const key = `pick:${String(held.data.pick)}`;
         if (!memory.refused.has(key)) {
             memory.refused.add(key);
             console.error(
-                `wallpaper: pick must be first or random, not ${String(held.pick)}; serving no image`
+                `wallpaper: pick must be first or random, not ${String(held.data.pick)}; serving no image`
             );
         }
         return null;
     }
     const dir = folderOf(raw, engine, memory.refused, 'wallpaper');
     if (dir === null) return null;
-    return {
-        dir,
-        file: typeof held.file === 'string' ? held.file : undefined,
-        pick: held.pick
-    };
+    return { dir, file: held.data.file, pick: pick.data };
 }

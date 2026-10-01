@@ -116,3 +116,51 @@ describe('the documents of layout.yml against the disk', () => {
         ).toEqual(['the document names no path']);
     });
 });
+
+describe('the documents list with entries of the wrong shape', () => {
+    const FILE = '/engine/config/layout.yml';
+
+    it('words each entry by the first part of it that fails, in the order of the list', () => {
+        const hub = scratch();
+        const entries = [
+            3,
+            { label: 3, group: 'g', path: 'p' },
+            { label: 'L', group: 'zz', path: 'p.md' },
+            { label: 'M', group: 'g', path: '' },
+            [],
+            null,
+            { label: '', group: 'g' },
+            { label: 'N', group: '', path: 'x.md' },
+            { label: 'O', group: 'g', path: '../x.md' },
+            { label: 'P', group: '0', path: 'q.md' }
+        ];
+        const found = docFindings({ docs: entries, nav_groups: ['a', 'b'] }, hub, FILE);
+        const none = 'a document is not a map of label, path and group';
+        const unnamed = 'a document names no label or no group';
+        expect(found.map((one) => [one.key, one.message])).toStrictEqual([
+            ['docs', none],
+            ['docs', unnamed],
+            ['L', 'nav_groups names no group zz; this document trails the groups'],
+            ['L', `no file at ${join(hub, 'p.md')}; this document draws nothing`],
+            ['M', 'the document names no path'],
+            ['docs', none],
+            ['docs', none],
+            ['docs', unnamed],
+            ['docs', unnamed],
+            ['O', 'nav_groups names no group g; this document trails the groups'],
+            ['O', 'the path ../x.md is not inside the hub'],
+            ['P', `no file at ${join(hub, 'q.md')}; this document draws nothing`]
+        ]);
+        expect(found.every((one) => one.file === FILE)).toBe(true);
+    });
+
+    it('checks the groups only against a nav_groups that is a map or a list', () => {
+        const hub = scratch();
+        const docs = [{ label: 'L', group: 'g', path: 'p.md' }];
+        const missing = `no file at ${join(hub, 'p.md')}; this document draws nothing`;
+        for (const nav_groups of [{ g: {} }, 3, null, undefined]) {
+            const found = docFindings({ docs, nav_groups }, hub, FILE);
+            expect(found.map((one) => one.message)).toStrictEqual([missing]);
+        }
+    });
+});

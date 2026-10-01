@@ -21,6 +21,7 @@ import { homedir } from 'node:os';
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import mime from 'mime';
+import { z } from 'zod';
 import { configDir } from '../../data/sources/config.ts';
 import type { Finding } from '../../data/model/index.ts';
 import { inside, realPath } from '../core/paths.ts';
@@ -126,6 +127,18 @@ export function resolveRootPath(
     return { path: full };
 }
 
+/** A served root: a key and a directory, each text that is not empty. */
+export const rootShape = z.object({
+    key: z.string().min(1),
+    dir: z.string().min(1)
+}) satisfies z.ZodType<Root>;
+
+/** One entry of the `roots:` list: a map, whose `key` and `dir` are checked one at a time. */
+const rootEntryShape = z.looseObject({ key: z.unknown().optional(), dir: z.unknown().optional() });
+
+/** The `roots:` value: a list, of entries nothing has checked yet. */
+const rootListShape = z.array(z.unknown());
+
 /**
  * The `roots:` list of config/sources.yml, and a finding for every entry that is not usable: one
  * that is not a pair of strings, a key two entries share, and a directory that is not on this
@@ -138,44 +151,46 @@ export function readRoots(
 ): { roots: Root[]; findings: Finding[] } {
     const roots: Root[] = [];
     const findings: Finding[] = [];
-    const raw = config.roots;
-    if (raw === undefined) return { roots, findings };
-    if (!Array.isArray(raw)) {
+    if (config.roots === undefined) return { roots, findings };
+    const list = rootListShape.safeParse(config.roots);
+    if (!list.success) {
         findings.push({ file, key: 'roots', message: 'roots is not a list' });
         return { roots, findings };
     }
-    for (const entry of raw) {
-        if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+    for (const item of list.data) {
+        const entry = rootEntryShape.safeParse(item);
+        if (!entry.success) {
             findings.push({ file, key: 'roots', message: 'a root is not a map of key and dir' });
             continue;
         }
-        const held = entry as { key?: unknown; dir?: unknown };
-        if (typeof held.key !== 'string' || held.key === '') {
+        const key = rootShape.shape.key.safeParse(entry.data.key);
+        if (!key.success) {
             findings.push({ file, key: 'roots', message: 'a root has no key' });
             continue;
         }
-        if (typeof held.dir !== 'string' || held.dir === '') {
-            findings.push({ file, key: held.key, message: 'the root names no dir' });
+        const named = rootShape.shape.dir.safeParse(entry.data.dir);
+        if (!named.success) {
+            findings.push({ file, key: key.data, message: 'the root names no dir' });
             continue;
         }
-        if (roots.some((one) => one.key === held.key)) {
-            findings.push({ file, key: held.key, message: 'two roots carry this key' });
+        if (roots.some((one) => one.key === key.data)) {
+            findings.push({ file, key: key.data, message: 'two roots carry this key' });
             continue;
         }
-        const dir = expandHome(held.dir);
+        const dir = expandHome(named.data);
         if (!isAbsolute(dir)) {
             findings.push({
                 file,
-                key: held.key,
-                message: `the dir ${held.dir} is relative; a root is absolute or starts with ~/`
+                key: key.data,
+                message: `the dir ${named.data} is relative; a root is absolute or starts with ~/`
             });
             continue;
         }
-        roots.push({ key: held.key, dir });
+        roots.push({ key: key.data, dir });
         if (realPath(dir) === null) {
             findings.push({
                 file,
-                key: held.key,
+                key: key.data,
                 message: `no directory at ${dir}; this root serves nothing`
             });
         }

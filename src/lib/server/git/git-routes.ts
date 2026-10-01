@@ -16,10 +16,10 @@
 // whole endpoint without running git at all.
 
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import { textCatalog } from '../../data/sources/config.ts';
-import { byKey, strings } from '../../data/helpers/guards.ts';
+import { byKey, isMap } from '../../data/helpers/guards.ts';
 import { tokenedBody } from '../core/auth.ts';
-import { text } from '../core/json.ts';
 import {
     allowedRoots,
     commit,
@@ -88,7 +88,7 @@ export const ACTIONS = [
     'deleteTag',
     'pushTags',
     'suggest'
-];
+] as const;
 
 /**
  * The refusal of an action that can lose work or move a branch and came without the `confirm: true`
@@ -162,9 +162,42 @@ export type GitOptions = {
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
 
-/** A field the page sends as a string, or as nothing, which reads as its default word. */
-function word<T extends string>(value: unknown, fallback: T): T {
-    return typeof value === 'string' && value !== '' ? (value as T) : fallback;
+/** A text field the page sends as a string; anything else reads as the empty text. */
+const textFieldShape = z.string().catch('');
+
+/**
+ * The body of POST /api/git: the action among ACTIONS and every field an action reads, each with
+ * the fallback the action gives it. The page sends `mode` as a word, and an empty one reads as
+ * `tracked`; a word that is no stash mode reaches `stash`, which refuses it in its own sentence.
+ */
+const gitBodyShape = z.looseObject({
+    action: z.enum(ACTIONS),
+    root: textFieldShape,
+    paths: z
+        .array(z.unknown())
+        .transform((items) => items.filter((item) => typeof item === 'string'))
+        .catch(() => []),
+    patch: textFieldShape,
+    group: textFieldShape,
+    message: textFieldShape,
+    amend: z
+        .unknown()
+        .optional()
+        .transform((held) => held === true),
+    remote: textFieldShape,
+    name: textFieldShape,
+    path: textFieldShape,
+    branch: textFieldShape,
+    content: textFieldShape,
+    ref: textFieldShape,
+    mode: z.custom<StashMode>((held) => typeof held === 'string' && held !== '').catch('tracked')
+});
+
+type GitBody = z.output<typeof gitBodyShape>;
+
+/** The refusal of a body that is no git action, answered before anything else is read. */
+function notAnAction(): Response {
+    return json({ error: 'the body is not a git action' }, { status: 400, headers: NO_STORE });
 }
 
 /** The required catalog instruction used to suggest a commit message. */
@@ -191,63 +224,51 @@ async function suggestFor(
     );
 }
 
+/** One real operation: the root, the parsed body and the roots a request may name. */
+type GitOperation = (root: string, fields: GitBody, roots: string[]) => Promise<Outcome>;
+
 /** The real operations, one per action. `suggest` is answered before this is reached. */
-const OPERATIONS: Record<string, GitRun> = {
-    stage: (_action, root, fields, roots) => stage(root, strings(fields.paths), roots),
-    unstage: (_action, root, fields, roots) => unstage(root, strings(fields.paths), roots),
-    discard: (_action, root, fields, roots) => discard(root, strings(fields.paths), roots),
-    stagePatch: (_action, root, fields, roots) =>
-        applyHunk(root, text(fields.patch), 'stage', roots),
-    unstagePatch: (_action, root, fields, roots) =>
-        applyHunk(root, text(fields.patch), 'unstage', roots),
-    revertPatch: (_action, root, fields, roots) =>
-        applyHunk(root, text(fields.patch), 'revert', roots),
-    stageAll: (_action, root, fields, roots) => stageAll(root, text(fields.group), roots),
-    unstageAll: (_action, root, _fields, roots) => unstageAll(root, roots),
-    discardAll: (_action, root, _fields, roots) => discardAll(root, roots),
-    commit: (_action, root, fields, roots) =>
-        commit(root, text(fields.message), roots, fields.amend === true),
-    push: (_action, root, _fields, roots) => push(root, roots),
-    pull: (_action, root, _fields, roots) => pull(root, roots),
-    fetch: (_action, root, _fields, roots) => fetchAll(root, roots),
-    sync: (_action, root, _fields, roots) => sync(root, roots),
-    publish: (_action, root, fields, roots) => publish(root, text(fields.remote), roots),
-    createBranch: (_action, root, fields, roots) => createBranch(root, text(fields.name), roots),
-    switchBranch: (_action, root, fields, roots) => switchBranch(root, text(fields.name), roots),
-    createWorktree: (_action, root, fields, roots) =>
-        createWorktree(root, text(fields.name), roots),
-    removeWorktree: (_action, root, fields, roots) =>
-        removeWorktree(root, text(fields.path), roots),
-    merge: (_action, root, fields, roots) => merge(root, text(fields.branch), roots),
-    abortMerge: (_action, root, _fields, roots) => abortMerge(root, roots),
-    continueRebase: (_action, root, _fields, roots) => continueRebase(root, roots),
-    resolve: (_action, root, fields, roots) =>
-        resolveMerge(root, text(fields.path), text(fields.content), roots),
-    markResolved: (_action, root, fields, roots) => markResolved(root, text(fields.path), roots),
-    acceptDeletion: (_action, root, fields, roots) =>
-        acceptDeletion(root, text(fields.path), roots),
-    stash: (_action, root, fields, roots) =>
-        stash(root, word<StashMode>(fields.mode, 'tracked'), text(fields.message), roots),
-    stashApply: (_action, root, fields, roots) => stashAct(root, 'apply', text(fields.ref), roots),
-    stashPop: (_action, root, fields, roots) => stashAct(root, 'pop', text(fields.ref), roots),
-    stashDrop: (_action, root, fields, roots) => stashAct(root, 'drop', text(fields.ref), roots),
-    createTag: (_action, root, fields, roots) =>
-        createTag(root, text(fields.name), text(fields.message), roots),
-    deleteTag: (_action, root, fields, roots) => deleteTag(root, text(fields.name), roots),
-    pushTags: (_action, root, _fields, roots) => pushTags(root, roots)
+const OPERATIONS: Record<string, GitOperation> = {
+    stage: (root, fields, roots) => stage(root, fields.paths, roots),
+    unstage: (root, fields, roots) => unstage(root, fields.paths, roots),
+    discard: (root, fields, roots) => discard(root, fields.paths, roots),
+    stagePatch: (root, fields, roots) => applyHunk(root, fields.patch, 'stage', roots),
+    unstagePatch: (root, fields, roots) => applyHunk(root, fields.patch, 'unstage', roots),
+    revertPatch: (root, fields, roots) => applyHunk(root, fields.patch, 'revert', roots),
+    stageAll: (root, fields, roots) => stageAll(root, fields.group, roots),
+    unstageAll: (root, _fields, roots) => unstageAll(root, roots),
+    discardAll: (root, _fields, roots) => discardAll(root, roots),
+    commit: (root, fields, roots) => commit(root, fields.message, roots, fields.amend),
+    push: (root, _fields, roots) => push(root, roots),
+    pull: (root, _fields, roots) => pull(root, roots),
+    fetch: (root, _fields, roots) => fetchAll(root, roots),
+    sync: (root, _fields, roots) => sync(root, roots),
+    publish: (root, fields, roots) => publish(root, fields.remote, roots),
+    createBranch: (root, fields, roots) => createBranch(root, fields.name, roots),
+    switchBranch: (root, fields, roots) => switchBranch(root, fields.name, roots),
+    createWorktree: (root, fields, roots) => createWorktree(root, fields.name, roots),
+    removeWorktree: (root, fields, roots) => removeWorktree(root, fields.path, roots),
+    merge: (root, fields, roots) => merge(root, fields.branch, roots),
+    abortMerge: (root, _fields, roots) => abortMerge(root, roots),
+    continueRebase: (root, _fields, roots) => continueRebase(root, roots),
+    resolve: (root, fields, roots) => resolveMerge(root, fields.path, fields.content, roots),
+    markResolved: (root, fields, roots) => markResolved(root, fields.path, roots),
+    acceptDeletion: (root, fields, roots) => acceptDeletion(root, fields.path, roots),
+    stash: (root, fields, roots) => stash(root, fields.mode, fields.message, roots),
+    stashApply: (root, fields, roots) => stashAct(root, 'apply', fields.ref, roots),
+    stashPop: (root, fields, roots) => stashAct(root, 'pop', fields.ref, roots),
+    stashDrop: (root, fields, roots) => stashAct(root, 'drop', fields.ref, roots),
+    createTag: (root, fields, roots) => createTag(root, fields.name, fields.message, roots),
+    deleteTag: (root, fields, roots) => deleteTag(root, fields.name, roots),
+    pushTags: (root, _fields, roots) => pushTags(root, roots)
 };
 
-async function operate(
-    action: string,
-    root: string,
-    fields: Record<string, unknown>,
-    roots: string[]
-): Promise<Outcome> {
-    const operation = byKey(OPERATIONS, action);
+async function operate(root: string, fields: GitBody, roots: string[]): Promise<Outcome> {
+    const operation = byKey(OPERATIONS, fields.action);
     if (operation === undefined) {
-        return { ok: false, output: '', error: `no git action named ${action}` };
+        return { ok: false, output: '', error: `no git action named ${fields.action}` };
     }
-    return operation(action, root, fields, roots);
+    return operation(root, fields, roots);
 }
 
 /**
@@ -262,15 +283,10 @@ export async function handleGit(
     const read = await tokenedBody(request, token, { headers: NO_STORE });
     if (read instanceof Response) return read;
     const body = read.body;
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-        return json({ error: 'the body is not a git action' }, { status: 400, headers: NO_STORE });
-    }
-    const fields = body as Record<string, unknown>;
-    const action = text(fields.action);
-    if (!ACTIONS.includes(action)) {
-        return json({ error: 'the body is not a git action' }, { status: 400, headers: NO_STORE });
-    }
-    const root = text(fields.root);
+    if (!isMap(body)) return notAnAction();
+    const parsed = gitBodyShape.safeParse(body);
+    if (!parsed.success) return notAnAction();
+    const { action, root } = parsed.data;
     const roots = (options.rootsFor ?? allowedRoots)();
     if (!permitted(root, roots)) {
         return json(
@@ -278,7 +294,7 @@ export async function handleGit(
             { status: 400, headers: NO_STORE }
         );
     }
-    const refused = unconfirmed(CONFIRMED, action, fields);
+    const refused = unconfirmed(CONFIRMED, action, body);
     if (refused !== null) return refused;
 
     if (action === 'suggest') {
@@ -290,7 +306,10 @@ export async function handleGit(
         return json({ ok: true, output: answer.output }, { headers: NO_STORE });
     }
 
-    const outcome = await (options.run ?? operate)(action, root, fields, roots);
+    const outcome = await (
+        options.run ??
+        ((_action, selected, _body, allowed) => operate(selected, parsed.data, allowed))
+    )(action, root, body, roots);
     // The watcher would find this at its next event, up to two seconds later and only if the write
     // touched a path it watches; re-reading here is what makes the panel answer the click. A write
     // git refused may still have moved the repository (a merge that stopped on conflicts leaves

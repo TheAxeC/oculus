@@ -36,6 +36,7 @@
 // (`inside`, `realPath`).
 
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -413,6 +414,29 @@ export function layoutFile(engine: string): string {
     return join(configDir(engine), 'layout.yml');
 }
 
+/** A document of the `docs:` list: a label, a path and a group, each a text with a character. */
+const docShape = z.object({
+    label: z.string().min(1),
+    path: z.string().min(1),
+    group: z.string().min(1)
+});
+
+/** One entry of the `docs:` list: a map, whose three fields are checked one at a time. */
+const docEntryShape = z.looseObject({
+    label: z.unknown().optional(),
+    path: z.unknown().optional(),
+    group: z.unknown().optional()
+});
+
+/** The `docs:` value: a list, of entries nothing has checked yet. */
+const docListShape = z.array(z.unknown());
+
+/**
+ * The `nav_groups:` value, whose keys name the groups: any object, a list included, since a list's
+ * indexes are its keys.
+ */
+const groupsShape = z.custom<object>((held) => typeof held === 'object' && held !== null);
+
 /**
  * The ways the `docs:` list of config/layout.yml fails to draw, as findings: an entry that is not a
  * map of three strings, a group `nav_groups` does not name, a path that leaves the hub, a path with
@@ -425,16 +449,17 @@ export function layoutFile(engine: string): string {
 export function docFindings(config: Record<string, unknown>, hub: string, file: string): Finding[] {
     const findings: Finding[] = [];
     // The groups are checked only against a config that names some, which every real one does.
-    const groups = config.nav_groups;
-    const known = typeof groups === 'object' && groups !== null ? Object.keys(groups) : null;
-    const raw = config.docs;
-    if (raw === undefined) return findings;
-    if (!Array.isArray(raw)) {
+    const groups = groupsShape.safeParse(config.nav_groups);
+    const known = groups.success ? Object.keys(groups.data) : null;
+    if (config.docs === undefined) return findings;
+    const list = docListShape.safeParse(config.docs);
+    if (!list.success) {
         findings.push({ file, key: 'docs', message: 'docs is not a list' });
         return findings;
     }
-    for (const entry of raw) {
-        if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+    for (const item of list.data) {
+        const entry = docEntryShape.safeParse(item);
+        if (!entry.success) {
             findings.push({
                 file,
                 key: 'docs',
@@ -442,13 +467,9 @@ export function docFindings(config: Record<string, unknown>, hub: string, file: 
             });
             continue;
         }
-        const held = entry as { label?: unknown; path?: unknown; group?: unknown };
-        if (
-            typeof held.label !== 'string' ||
-            held.label === '' ||
-            typeof held.group !== 'string' ||
-            held.group === ''
-        ) {
+        const label = docShape.shape.label.safeParse(entry.data.label);
+        const group = docShape.shape.group.safeParse(entry.data.group);
+        if (!label.success || !group.success) {
             findings.push({
                 file,
                 key: 'docs',
@@ -456,43 +477,44 @@ export function docFindings(config: Record<string, unknown>, hub: string, file: 
             });
             continue;
         }
-        if (typeof held.path !== 'string' || held.path === '') {
-            findings.push({ file, key: held.label, message: 'the document names no path' });
+        const path = docShape.shape.path.safeParse(entry.data.path);
+        if (!path.success) {
+            findings.push({ file, key: label.data, message: 'the document names no path' });
             continue;
         }
-        if (known !== null && !known.includes(held.group)) {
+        if (known !== null && !known.includes(group.data)) {
             findings.push({
                 file,
-                key: held.label,
-                message: `nav_groups names no group ${held.group}; this document trails the groups`
+                key: label.data,
+                message: `nav_groups names no group ${group.data}; this document trails the groups`
             });
         }
-        const full = join(hub, held.path);
+        const full = join(hub, path.data);
         if (escapes(full, hub)) {
             findings.push({
                 file,
-                key: held.label,
-                message: `the path ${held.path} is not inside the hub`
+                key: label.data,
+                message: `the path ${path.data} is not inside the hub`
             });
             continue;
         }
         if (!existsSync(full)) {
             findings.push({
                 file,
-                key: held.label,
+                key: label.data,
                 message: `no file at ${full}; this document draws nothing`
             });
         } else if (statSync(full).isDirectory()) {
             findings.push({
                 file,
-                key: held.label,
+                key: label.data,
                 message: `${full} is a directory; this document draws nothing`
             });
-        } else if (!held.path.endsWith('.md')) {
+        } else if (!path.data.endsWith('.md')) {
             findings.push({
                 file,
-                key: held.label,
-                message: `${held.path} is not a Markdown file; this document draws nothing`
+                key: label.data,
+                message: `${path.data} is not a Markdown file; this document draws nothing`
             });
         }
     }

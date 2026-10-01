@@ -253,3 +253,52 @@ describe('the counter', () => {
         expect(answer.error).toMatch(/\bcloc\b/);
     });
 });
+
+describe("cloc's JSON of an odd shape", () => {
+    const GOOD_A = '"a.ts":{"language":"TypeScript","blank":1,"comment":2,"code":1}';
+    const GOOD_B = '"src/lib/x/b.svelte":{"language":"Svelte","blank":1,"comment":0,"code":4}';
+    const NOT_CLOC = { error: "cloc's answer is not the JSON it writes." };
+
+    /** The count over FILES when the stub cloc prints this JSON text. */
+    async function counting(json: string): Promise<LineCount | { error: string }> {
+        const dir = repository(FILES);
+        const script = join(scratchDir('oculus-lines-odd-'), 'cloc');
+        writeFileSync(script, `print '${json}';\n`);
+        return countLines(dir, { cloc: script });
+    }
+
+    it('skips the header and the sum and counts the files', async () => {
+        const header = '"header":{"cloc_version":"2"},';
+        const sum = ',"SUM":{"blank":2,"comment":2,"code":5,"nFiles":2}';
+        const answer = answered(await counting(`{${header}${GOOD_A},${GOOD_B}${sum}}`));
+        expect(answer.total).toStrictEqual(tally([2, 2, 2, 5, 1]));
+    });
+
+    it('answers the error when an entry lacks a whole count or a language', async () => {
+        const entries = [
+            '"a.ts":{"language":"TypeScript","code":5}',
+            '"a.ts":{"language":"TypeScript","blank":1,"comment":2,"code":-1}',
+            '"a.ts":{"language":"TypeScript","blank":1,"comment":2,"code":1.5}',
+            '"a.ts":{"blank":1,"comment":2,"code":1}'
+        ];
+        for (const entry of entries) {
+            expect(await counting(`{${entry},${GOOD_B}}`), entry).toStrictEqual(NOT_CLOC);
+        }
+    });
+
+    it('counts a code count of two to the sixtieth as it is written', async () => {
+        const big =
+            '"a.ts":{"language":"TypeScript","blank":1,"comment":2,"code":1152921504606846976}';
+        const answer = answered(await counting(`{${big},${GOOD_B}}`));
+        expect(answer.total.code).toBe(1152921504606846976 + 4);
+        expect(answer.total.files).toBe(2);
+    });
+
+    it('reads a path key __proto__ as a file entry, whole or malformed', async () => {
+        const proto = '"__proto__":{"language":"X","blank":0,"comment":0,"code":1}';
+        const whole = answered(await counting(`{${GOOD_A},${proto},${GOOD_B}}`));
+        expect(whole.total).toStrictEqual(tally([2, 2, 2, 5, 1]));
+        const bad = '"__proto__":{"language":"X","code":-1}';
+        expect(await counting(`{${GOOD_A},${bad},${GOOD_B}}`)).toStrictEqual(NOT_CLOC);
+    });
+});

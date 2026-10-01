@@ -325,3 +325,48 @@ describe('the roots of the configuration', () => {
         ]);
     });
 });
+
+describe('the roots of the configuration with entries of the wrong shape', () => {
+    const FILE = '/engine/config/sources.yml';
+
+    it('reports roots that are a map as not a list, and keeps no root', () => {
+        expect(readRoots({ roots: {} }, FILE)).toStrictEqual({
+            roots: [],
+            findings: [{ file: FILE, key: 'roots', message: 'roots is not a list' }]
+        });
+    });
+
+    it('words each entry by the first part of it that fails, in the order of the list', () => {
+        const gone = join(folder({}), 'moved-away');
+        const { roots, findings } = readRoots(
+            {
+                roots: [
+                    { key: '', dir: 'd' },
+                    { key: 'k', dir: 3 },
+                    3,
+                    [],
+                    { key: 'rel', dir: 'rel' },
+                    { key: 'dup', dir: gone },
+                    { key: 'dup', dir: '/elsewhere' },
+                    { dir: '/x' },
+                    { key: 4, dir: '/x' },
+                    null
+                ]
+            },
+            FILE
+        );
+        expect(roots).toStrictEqual([{ key: 'dup', dir: gone }]);
+        expect(findings.map((one) => [one.key, one.message])).toStrictEqual([
+            ['roots', 'a root has no key'],
+            ['k', 'the root names no dir'],
+            ['roots', 'a root is not a map of key and dir'],
+            ['roots', 'a root is not a map of key and dir'],
+            ['rel', 'the dir rel is relative; a root is absolute or starts with ~/'],
+            ['dup', `no directory at ${gone}; this root serves nothing`],
+            ['dup', 'two roots carry this key'],
+            ['roots', 'a root has no key'],
+            ['roots', 'a root has no key'],
+            ['roots', 'a root is not a map of key and dir']
+        ]);
+    });
+});

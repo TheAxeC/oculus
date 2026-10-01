@@ -2,9 +2,10 @@
 //
 // Every repository here is made under the system temporary directory with the real git, and the
 // allowed root comes from local.yml inside that directory, so nothing reaches the hub's own
-// checkout. The last describe is the module's gate, the
+// checkout. The describe "the gate over what this module can run" is the module's gate, the
 // mirror image of the one over git.ts: git.ts may name no writing subcommand at all, and this may
-// name only the enumerated ones, each at one call site, and `--force` nowhere.
+// name only the enumerated ones, each at one call site, and `--force` nowhere. The two describes
+// after it read a configuration and a git route body of the wrong shape over the real operations.
 //
 // What this does NOT cover: `claude` is never run. suggestMessage is exercised with the diff and
 // the subprocess both handed in, which is what its options exist for.
@@ -37,8 +38,12 @@ import {
     worktreeDiff
 } from '../../../src/lib/server/git/git-write.ts';
 import { worktreePath } from '../../../src/lib/data/helpers/worktrees.ts';
-import { suggestMessage } from '../../../src/lib/server/git/git-message.ts';
+import { messageModel, suggestMessage } from '../../../src/lib/server/git/git-message.ts';
 import { abortMerge } from '../../../src/lib/server/git/git-index.ts';
+import { handleGit } from '../../../src/lib/server/git/git-routes.ts';
+import type { GitOptions } from '../../../src/lib/server/git/git-routes.ts';
+import { mintToken } from '../../../src/lib/server/core/auth.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { ALLOWED } from './allowed.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
@@ -594,5 +599,82 @@ describe('the gate over what this module can run', () => {
             used.add(args[2]);
         }
         expect([...used].every((one) => ALLOWED.includes(one))).toBe(true);
+    });
+});
+
+describe('the commit-message model of a configuration of the wrong shape', () => {
+    it('answers the empty string for a block that is a list and for a model that is not text', () => {
+        expect(messageModel({ git: [] })).toBe('');
+        expect(messageModel({ git: { message_model: 3 } })).toBe('');
+        expect(messageModel({})).toBe('');
+        expect(messageModel({ git: { message_model: '' } })).toBe('');
+    });
+
+    it('answers the model the block names', () => {
+        expect(messageModel({ git: { message_model: 'haiku' } })).toBe('haiku');
+    });
+});
+
+describe('the git route on a body of the wrong shape, over the real operations', () => {
+    const TOKEN = mintToken();
+    const HOST = '127.0.0.1:8791';
+
+    /** A repository of the case's own with one committed file, the one root a request may name. */
+    function repository(): string {
+        const own = scratchDir('oculus-git-route-');
+        execFileSync('git', ['init', '-q', '-b', 'main', own]);
+        git(own, 'config', 'user.email', 'nobody@example.invalid');
+        git(own, 'config', 'user.name', 'Nobody');
+        git(own, 'config', 'commit.gpgsign', 'false');
+        write(own, 'kept.txt', 'one\n');
+        git(own, 'add', 'kept.txt');
+        git(own, 'commit', '-q', '-m', 'Start');
+        return own;
+    }
+
+    /** A request as the page makes it. */
+    function request(body: unknown): Request {
+        return new Request(`http://${HOST}/api/git`, {
+            method: 'POST',
+            headers: {
+                host: HOST,
+                origin: `http://${HOST}`,
+                'sec-fetch-site': 'same-origin',
+                'content-type': 'application/json',
+                'x-oculus-token': TOKEN
+            },
+            body: JSON.stringify(body)
+        });
+    }
+
+    const live = (root: string): GitOptions => ({
+        config: loadConfig(engineDir()).config,
+        rootsFor: () => [root]
+    });
+
+    it('answers a commit whose message is not text as a commit with no message', async () => {
+        const own = repository();
+        for (const message of [3, null]) {
+            const response = await handleGit(
+                request({ action: 'commit', root: own, confirm: true, message }),
+                TOKEN,
+                live(own)
+            );
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({ error: 'a commit needs a message' });
+        }
+    });
+
+    it('stashes in the mode tracked when the mode is empty', async () => {
+        const own = repository();
+        write(own, 'kept.txt', 'changed\n');
+        write(own, 'loose.txt', 'new\n');
+        const response = await handleGit(
+            request({ action: 'stash', root: own, mode: '' }),
+            TOKEN,
+            live(own)
+        );
+        expect(response.status).toBe(200);
+        expect(git(own, 'status', '--porcelain')).toBe('?? loose.txt\n');
     });
 });

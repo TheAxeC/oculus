@@ -393,6 +393,16 @@ describe('hunks and lines', () => {
         expect(nothing.error).toContain('not a patch');
     });
 
+    it('refuses a mode that is a property every object inherits', async () => {
+        write(repo, 'kept.txt', 'changed\n');
+        const patch = diffOf(repo);
+        for (const mode of ['constructor', 'toString', '__proto__']) {
+            const answer = await applyHunk(repo, patch, mode as 'stage', ROOTS);
+            expect(answer.ok, mode).toBe(false);
+            expect(answer.error, mode).toContain('not a way to apply a change');
+        }
+    });
+
     it('stages every tracked change, every untracked path, unstages all and discards all', async () => {
         write(repo, 'kept.txt', 'changed\n');
         write(repo, 'loose.txt', 'new\n');
@@ -614,6 +624,16 @@ describe('stashes', () => {
             expect(answer.ok).toBe(false);
             expect(answer.error).toContain('not a stash');
         }
+    });
+
+    it('refuses a mode that is a property every object inherits', async () => {
+        write(repo, 'kept.txt', 'changed\n');
+        for (const mode of ['constructor', 'toString', '__proto__']) {
+            const answer = await stash(repo, mode as 'tracked', '', ROOTS);
+            expect(answer.ok, mode).toBe(false);
+            expect(answer.error, mode).toContain('not a way to stash');
+        }
+        expect(git(repo, 'stash', 'list')).toBe('');
     });
 
     it('applies, pops and drops a stash by its name', async () => {

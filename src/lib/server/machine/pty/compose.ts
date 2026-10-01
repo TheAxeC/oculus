@@ -21,6 +21,7 @@
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
@@ -38,6 +39,7 @@ import type {
     AgentsAnswer,
     ComposeStart
 } from '../../../data/model/index.ts';
+import { isMap } from '../../../data/helpers/guards.ts';
 import { below } from '../../core/paths.ts';
 
 /** The catalog's path under the engine's config folder. */
@@ -153,7 +155,7 @@ export function compose(
     accounts: AgentAccount[],
     claudeBin: string
 ): Composed {
-    const prompt = typeof request.prompt === 'string' ? request.prompt : '';
+    const prompt = request.prompt;
     if (prompt.length > PROMPT_MAX) throw new Error(`prompt must be at most ${PROMPT_MAX} chars`);
     // eslint-disable-next-line no-control-regex
     if (/[\u0000-\u0008\u000b-\u001f\u007f]/.test(prompt)) {
@@ -167,11 +169,11 @@ export function compose(
     const flags = choiceArgs(accountChoices(own, account), request.picks);
     const { prefix, env } = accountEnv(agent, account);
     const argv: string[] = [...prefix, agent === 'claude' ? claudeBin : 'codex', ...flags];
-    const images = Array.isArray(request.images) ? request.images : [];
+    const images = request.images;
     if (images.length > 0 && agent !== 'codex') throw new Error('images are attached for codex');
     if (images.length > IMAGES_MAX) throw new Error(`at most ${IMAGES_MAX} images`);
     for (const image of images) {
-        if (typeof image !== 'string' || !isAbsolute(image) || !below(image, request.cwd)) {
+        if (!isAbsolute(image) || !below(image, request.cwd)) {
             throw new Error(`image must be a file inside the workspace: ${image}`);
         }
         argv.push('-i', image);
@@ -180,26 +182,41 @@ export function compose(
     return { argv, env, keys: '' };
 }
 
+/** One pick of a request: text. */
+const pickShape = z.string();
+
+/**
+ * The picks of a request: the entries of the map whose value is a string, read from the map's own
+ * keys, and no picks for anything that is no map.
+ */
+function picksOf(held: unknown): Record<string, string> {
+    const picks: Record<string, string> = {};
+    for (const [key, value] of Object.entries(isMap(held) ? held : {})) {
+        const pick = pickShape.safeParse(value);
+        if (pick.success) picks[key] = pick.data;
+    }
+    return picks;
+}
+
+/**
+ * The start a request body asks for. A field of the wrong type is read as missing, an agent that
+ * is neither `claude` nor `codex` is a shell, and a list of images keeps the items that are text.
+ */
+const composeRequestShape = z.object({
+    agent: z.enum(['claude', 'codex', 'shell']).catch('shell'),
+    cwd: z.string().catch(''),
+    account: z.string().catch(''),
+    picks: z.unknown().optional().transform(picksOf),
+    prompt: z.string().catch(''),
+    images: z
+        .array(z.unknown())
+        .transform((all) => all.filter((one): one is string => typeof one === 'string'))
+        .catch(() => [])
+}) satisfies z.ZodType<ComposeStart>;
+
 /** The request body's start, with every field of the wrong type read as missing. */
 export function composeRequest(message: Record<string, unknown>): ComposeStart {
-    const agent = message.agent;
-    const picks: Record<string, string> = {};
-    const raw = message.picks;
-    if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
-        for (const [key, value] of Object.entries(raw)) {
-            if (typeof value === 'string') picks[key] = value;
-        }
-    }
-    return {
-        agent: agent === 'claude' || agent === 'codex' ? agent : 'shell',
-        cwd: typeof message.cwd === 'string' ? message.cwd : '',
-        account: typeof message.account === 'string' ? message.account : '',
-        picks,
-        prompt: typeof message.prompt === 'string' ? message.prompt : '',
-        images: Array.isArray(message.images)
-            ? message.images.filter((one): one is string => typeof one === 'string')
-            : []
-    };
+    return composeRequestShape.parse(message);
 }
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */

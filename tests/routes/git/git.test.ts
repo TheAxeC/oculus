@@ -4,8 +4,8 @@
 //
 // Nothing here runs git: the handler takes the operations as options, and every case hands it a
 // stub the test owns, so the roots are names rather than repositories and no file is written
-// anywhere. What git actually does with a well-formed request is
-// tests/server/git/git-write.test.ts.
+// anywhere. What git actually does with a request is tests/server/git/git-write.test.ts, which
+// also holds the cases of a body of the wrong shape that reach the real operations.
 //
 // What this does NOT cover: the token reaching the page and Kit putting it on the event, which is
 // exercised by the curl in the package's verification.
@@ -590,5 +590,60 @@ describe('unconfirmed', () => {
         expect(unconfirmed(CONFIRMED, 'fetch', {})).toBeNull();
         expect(unconfirmed(CONFIRMED, '', {})).toBeNull();
         expect(unconfirmed([], 'push', {})).toBeNull();
+    });
+});
+
+describe('a body of the wrong shape', () => {
+    it('refuses a body with no action, an action it does not know and every body that is no map', async () => {
+        const bodies: unknown[] = [
+            { root: ROOT },
+            { action: 'nope', root: ROOT },
+            { action: 3, root: ROOT },
+            [],
+            null,
+            3,
+            'x',
+            true
+        ];
+        for (const body of bodies) {
+            const response = await handleGit(request(JSON.stringify(body)), TOKEN, options());
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({ error: 'the body is not a git action' });
+        }
+        expect(ran).toEqual([]);
+    });
+
+    it('answers a root that is not text as a root it does not know', async () => {
+        const response = await handleGit(request({ action: 'stage', root: 3 }), TOKEN, options());
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+            error: 'that directory is not a workspace oculus knows'
+        });
+        expect(ran).toEqual([]);
+    });
+
+    it('asks for the confirm of an action whose confirm is not the boolean true', async () => {
+        const response = await handleGit(
+            request({ action: 'push', root: ROOT, confirm: 'true' }),
+            TOKEN,
+            options()
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+            error: 'this action needs the page to confirm it'
+        });
+        expect(ran).toEqual([]);
+    });
+
+    it('hands the run the body whole, an own __proto__ key included', async () => {
+        const body = '{"__proto__":{"x":1},"action":"stage","root":"/hub","paths":["a.txt"]}';
+        const response = await handleGit(request(body), TOKEN, options());
+        expect(response.status).toBe(200);
+        expect(ran).toHaveLength(1);
+        expect(ran[0].action).toBe('stage');
+        expect(ran[0].root).toBe(ROOT);
+        expect(Object.keys(ran[0].fields)).toEqual(['__proto__', 'action', 'root', 'paths']);
+        expect(Object.getPrototypeOf(ran[0].fields)).toBe(Object.prototype);
+        expect(ran[0].fields.paths).toEqual(['a.txt']);
     });
 });

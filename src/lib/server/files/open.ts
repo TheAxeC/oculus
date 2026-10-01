@@ -22,7 +22,8 @@
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { json } from '@sveltejs/kit';
-import { scalar } from '../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { isMap, scalar } from '../../data/helpers/guards.ts';
 import { execFile } from 'node:child_process';
 import { closeSync, openSync, readSync, realpathSync, statSync } from 'node:fs';
 import { basename, isAbsolute, resolve } from 'node:path';
@@ -318,6 +319,12 @@ function resolved(body: Record<string, unknown>, path: string, roots: Root[]): s
 }
 
 /**
+ * What an open request must carry: a `path` with a character that is not a blank. The other keys,
+ * `root` among them, are kept as they came for `resolved` to read.
+ */
+const openBodyShape = z.looseObject({ path: z.string().refine((path) => path.trim() !== '') });
+
+/**
  * Refuse an untrusted path, or hand its canonical file or folder to the opener. `appsFor` reads
  * `open.program_ext` of the configuration as it is now, once per request; a map that cannot be read
  * answers 500 naming the key.
@@ -332,16 +339,11 @@ export async function handleOpen(
 ): Promise<Response> {
     const read = await tokenedBody(request, token);
     if (read instanceof Response) return read;
-    const body = read.body;
-    if (
-        typeof body !== 'object' ||
-        body === null ||
-        Array.isArray(body) ||
-        typeof (body as { path?: unknown }).path !== 'string' ||
-        (body as { path: string }).path.trim() === ''
-    ) {
+    const named = openBodyShape.safeParse(read.body);
+    if (!isMap(read.body) || !named.success) {
         return json({ error: 'the path is required' }, { status: 400 });
     }
+    const body = named.data;
     let apps: ProgramApps;
     try {
         apps = appsFor();
@@ -351,8 +353,7 @@ export async function handleOpen(
             { status: 500 }
         );
     }
-    const path = (body as { path: string }).path;
-    const found = await target(body as Record<string, unknown>, path, roots, apps, reader);
+    const found = await target(body, body.path, roots, apps, reader);
     if (found instanceof Response) return found;
     try {
         await opener(found);

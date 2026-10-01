@@ -89,7 +89,7 @@ function writeAtomic(path: string, content: string | Uint8Array, newMode?: numbe
 }
 
 // The one map guard, from data/helpers/guards.ts, re-exported here beside the helpers `text`,
-// `whole` and `list` below it, which modules of `sessions`, `files` and `git` import.
+// `whole` and `list` below it, which modules of `sessions` import.
 export { isMap } from '../../data/helpers/guards.ts';
 
 /** A string value, or the empty string for anything else. */

@@ -12,6 +12,7 @@
 // will refuse the save.
 
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import { accessSync, closeSync, constants, openSync, readSync } from 'node:fs';
 import { LOCAL_NAME, checkLocal } from '../../data/sources/config.ts';
 import { TEXT_SNIFF_READ, isTextBytes } from '../../data/helpers/files/text-kind.ts';
@@ -64,20 +65,17 @@ export function isBinaryFile(path: string): boolean {
     }
 }
 
+/** A whole-file source body: a root and a path that are not empty, and the text to write. */
+const sourceBodyShape = z.object({
+    root: z.string().min(1),
+    path: z.string().min(1),
+    content: z.string()
+}) satisfies z.ZodType<SourceBody>;
+
 /** A valid whole-file source body, or null when any required field is absent or malformed. */
 export function sourceBody(value: unknown): SourceBody | null {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-    const held = value as Record<string, unknown>;
-    if (
-        typeof held.root !== 'string' ||
-        held.root === '' ||
-        typeof held.path !== 'string' ||
-        held.path === '' ||
-        typeof held.content !== 'string'
-    ) {
-        return null;
-    }
-    return { root: held.root, path: held.path, content: held.content };
+    const body = sourceBodyShape.safeParse(value);
+    return body.success ? body.data : null;
 }
 
 /**

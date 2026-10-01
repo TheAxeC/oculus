@@ -15,9 +15,10 @@
 // whole endpoint without running git or `gh` at all.
 
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import { tokenedBody } from '../core/auth.ts';
 import { unconfirmed } from './git-routes.ts';
-import { byKey } from '../../data/helpers/guards.ts';
+import { byKey, isMap } from '../../data/helpers/guards.ts';
 import {
     adopt,
     branches,
@@ -45,7 +46,7 @@ export const ACTIONS = [
     'branches',
     'createBranch',
     'switchBranch'
-];
+] as const;
 
 /** The actions that write outside this machine or over `code/`, and therefore need the confirm. */
 export const CONFIRMED = ['commit', 'push', 'snapshot', 'createBranch', 'switchBranch'];
@@ -78,31 +79,41 @@ export type DepositOptions = {
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
 
-function text(value: unknown): string {
-    return typeof value === 'string' ? value : '';
+/** A text field the page sends as a string; anything else reads as the empty text. */
+const textFieldShape = z.string().catch('');
+
+/** The body of POST /api/deposit: the action among ACTIONS and the fields an action reads. */
+const depositBodyShape = z.looseObject({
+    action: z.enum(ACTIONS),
+    id: textFieldShape,
+    message: textFieldShape,
+    name: textFieldShape
+});
+
+type DepositBody = z.output<typeof depositBodyShape>;
+
+/** The refusal of a body that is no deposit action, answered before anything else is read. */
+function notAnAction(): Response {
+    return json({ error: 'the body is not a deposit action' }, { status: 400, headers: NO_STORE });
 }
 
 /** The real operations, one per action. */
 const OPERATIONS: Record<
     string,
-    (
-        id: string,
-        fields: Record<string, unknown>,
-        with_: ServerDepositOptions
-    ) => Promise<DepositAnswer>
+    (id: string, fields: DepositBody, with_: ServerDepositOptions) => Promise<DepositAnswer>
 > = {
     adopt: (id, _fields, with_) => adopt(id, with_),
     plan: (id, _fields, with_) => sync(id, with_),
-    commit: (id, fields, with_) => commit(id, text(fields.message), with_),
+    commit: (id, fields, with_) => commit(id, fields.message, with_),
     push: (id, _fields, with_) => push(id, with_),
-    snapshot: (id, fields, with_) => snapshot(id, text(fields.message), with_),
+    snapshot: (id, fields, with_) => snapshot(id, fields.message, with_),
     branches: (id, _fields, with_) => branches(id, with_),
-    createBranch: (id, fields, with_) => createBranch(id, text(fields.name), with_),
-    switchBranch: (id, fields, with_) => switchBranch(id, text(fields.name), with_)
+    createBranch: (id, fields, with_) => createBranch(id, fields.name, with_),
+    switchBranch: (id, fields, with_) => switchBranch(id, fields.name, with_)
 };
 
-function operate(with_: ServerDepositOptions): DepositRun {
-    return (action, id, fields) => {
+function operate(with_: ServerDepositOptions, parsed: DepositBody): DepositRun {
+    return (action, id) => {
         const operation = byKey(OPERATIONS, action);
         if (operation === undefined) {
             return Promise.resolve({
@@ -111,7 +122,7 @@ function operate(with_: ServerDepositOptions): DepositRun {
                 error: `no deposit action named ${action}`
             });
         }
-        return operation(id, fields, with_);
+        return operation(id, parsed, with_);
     };
 }
 
@@ -171,31 +182,24 @@ export async function handleDeposit(
     const read = await tokenedBody(request, token, { headers: NO_STORE });
     if (read instanceof Response) return read;
     const body = read.body;
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-        return json(
-            { error: 'the body is not a deposit action' },
-            { status: 400, headers: NO_STORE }
-        );
-    }
-    const fields = body as Record<string, unknown>;
-    const action = text(fields.action);
-    if (!ACTIONS.includes(action)) {
-        return json(
-            { error: 'the body is not a deposit action' },
-            { status: 400, headers: NO_STORE }
-        );
-    }
-    const id = text(fields.id);
+    if (!isMap(body)) return notAnAction();
+    const parsed = depositBodyShape.safeParse(body);
+    if (!parsed.success) return notAnAction();
+    const { action, id } = parsed.data;
     if (!(options.idsFor ?? knownIds)().includes(id)) {
         return json(
             { error: 'the portfolio holds no project with that id' },
             { status: 404, headers: NO_STORE }
         );
     }
-    const refused = unconfirmed(CONFIRMED, action, fields);
+    const refused = unconfirmed(CONFIRMED, action, body);
     if (refused !== null) return refused;
 
-    const outcome = await (options.run ?? operate(options.deposit ?? {}))(action, id, fields);
+    const outcome = await (options.run ?? operate(options.deposit ?? {}, parsed.data))(
+        action,
+        id,
+        body
+    );
     if (!outcome.ok) {
         return json(
             { error: outcome.error, plan: outcome.plan ?? null },

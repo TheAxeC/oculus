@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import {
+    folderOf,
     images,
     READ_CAP,
     SEGMENTS,
@@ -566,5 +567,44 @@ describe('the pictures of a folder', () => {
         expect(stream(dir, 'f.webp').headers.get('content-type')).toBe('image/webp');
         expect(stream(dir, 'b.svg').status).toBe(404);
         expect(stream(dir, 'c.gif').status).toBe(404);
+    });
+});
+
+describe('the folder a configuration block names', () => {
+    /** An engine directory of the case's own, whose local.yml puts the hub inside the scratch. */
+    function engineOver(): { engine: string; hub: string } {
+        const root = scratchDir('oculus-images-folder-');
+        const engine = join(root, 'engine');
+        const hub = join(root, 'hub');
+        mkdirSync(join(engine, 'config'), { recursive: true });
+        mkdirSync(hub, { recursive: true });
+        writeFileSync(join(engine, 'config', 'local.yml'), `hub: ${JSON.stringify(hub)}\n`);
+        return { engine, hub };
+    }
+
+    it('names no folder for a dir that is empty or not text, and for a block that is a list', () => {
+        const { engine } = engineOver();
+        const refused = new Set<string>();
+        expect(folderOf({ dir: '' }, engine, refused, 'images')).toBeNull();
+        expect(folderOf({ dir: 3 }, engine, refused, 'images')).toBeNull();
+        expect(folderOf([], engine, refused, 'images')).toBeNull();
+        expect(folderOf(null, engine, refused, 'images')).toBeNull();
+        expect(refused.size).toBe(0);
+    });
+
+    it('names the folder under the hub, and none that leaves it, saying so once', () => {
+        const { engine, hub } = engineOver();
+        const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+            const refused = new Set<string>();
+            expect(folderOf({ dir: 'pictures' }, engine, refused, 'images')).toBe(
+                join(hub, 'pictures')
+            );
+            expect(folderOf({ dir: '../out' }, engine, refused, 'images')).toBeNull();
+            expect(folderOf({ dir: '../out' }, engine, refused, 'images')).toBeNull();
+            expect(error).toHaveBeenCalledTimes(1);
+        } finally {
+            error.mockRestore();
+        }
     });
 });

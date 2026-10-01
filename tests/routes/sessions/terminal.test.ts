@@ -302,3 +302,60 @@ describe('POST /api/terminal, the recover action', () => {
         expect(driver.calls).toEqual([]);
     });
 });
+
+describe('POST /api/terminal, a start body of the wrong shape', () => {
+    const start = (extra: Record<string, unknown>): Request =>
+        request({ action: 'start', kind: 'shell', cwd: HERE, cols: 80, rows: 24, ...extra });
+
+    it('refuses a kind that is not one of the three, whatever its type', async () => {
+        for (const kind of ['nope', 3, null]) {
+            const driver = tmux();
+            const response = await handleTerminal(start({ kind }), TOKEN, {
+                engine: task.engine,
+                configFor: configOf(task.engine),
+                run: driver.run
+            });
+            expect(response.status).toBe(400);
+            expect((await answer(response)).error).toBe('kind must be one of claude, codex, shell');
+            expect(driver.calls).toEqual([]);
+        }
+    });
+
+    it('refuses a geometry that is text or infinite with the sentence of the start', async () => {
+        const infinite = new Request(`http://${HOST}/api/terminal`, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'sec-fetch-site': 'same-origin',
+                'x-oculus-token': TOKEN
+            },
+            body: `{"action":"start","kind":"shell","cwd":${JSON.stringify(HERE)},"cols":1e999,"rows":24}`
+        });
+        for (const body of [start({ cols: '80' }), infinite]) {
+            const driver = tmux();
+            const response = await handleTerminal(body, TOKEN, {
+                engine: task.engine,
+                configFor: configOf(task.engine),
+                run: driver.run
+            });
+            expect(response.status).toBe(400);
+            expect((await answer(response)).error).toBe(
+                'cols must be a whole number between 1 and 2000'
+            );
+            expect(driver.calls).toEqual([]);
+        }
+    });
+
+    it('starts a terminal with no name when the name is null or is not text', async () => {
+        for (const name of [null, 3]) {
+            const driver = tmux();
+            const response = await handleTerminal(start({ name }), TOKEN, {
+                engine: task.engine,
+                configFor: configOf(task.engine),
+                run: driver.run
+            });
+            expect(response.status).toBe(200);
+            expect(driver.calls.some((call) => call[0] === 'set-option')).toBe(false);
+        }
+    });
+});

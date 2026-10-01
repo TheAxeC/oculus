@@ -15,7 +15,8 @@
 
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isMap, str } from '../../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { isMap } from '../../../data/helpers/guards.ts';
 import type { InboxKind, TriageFile, TriageNote } from '../../../data/model/index.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 
@@ -33,25 +34,46 @@ export function triageFile(dir: string): string {
     return join(dir, 'triage.json');
 }
 
-/** The three words a note's `kind` may be, and nothing when it is something else. */
-function kindOf(value: unknown): InboxKind | undefined {
-    return value === 'reply' || value === 'action' || value === 'info' ? value : undefined;
-}
+/** The three words a `kind` may be, and nothing when it is something else. */
+export const inboxKindShape = z
+    .enum(['reply', 'action', 'info'])
+    .optional()
+    .catch(undefined) satisfies z.ZodType<InboxKind | undefined>;
+
+/**
+ * What a note holds under a thread id. A field of another type reads as unset, `triaged` is only
+ * ever true, and a value that is no map is no note.
+ */
+const noteShape = z.object({
+    kind: inboxKindShape,
+    what: z.string().optional().catch(undefined),
+    draft: z.string().optional().catch(undefined),
+    triaged: z.literal(true).optional().catch(undefined),
+    written: z.string().catch('')
+});
 
 /** One note out of whatever the file held under a thread id. */
 function noteOf(value: unknown): TriageNote | null {
-    if (!isMap(value)) return null;
-    const kind = kindOf(value.kind);
-    const what = str(value.what);
-    const draft = str(value.draft);
+    const parsed = noteShape.safeParse(value);
+    if (!parsed.success) return null;
+    const { kind, what, draft, triaged, written } = parsed.data;
     return {
         ...(kind === undefined ? {} : { kind }),
         ...(what === undefined ? {} : { what }),
         ...(draft === undefined ? {} : { draft }),
-        ...(value.triaged === true ? { triaged: true } : {}),
-        written: str(value.written) ?? ''
+        ...(triaged === undefined ? {} : { triaged }),
+        written
     };
 }
+
+/**
+ * The file as a whole: the time of the last triage run when it is text, and the notes as a map read
+ * from its own keys, which is no notes at all when the value is anything else.
+ */
+const triageFileShape = z.object({
+    run: z.string().optional().catch(undefined),
+    notes: z.custom<Record<string, unknown>>(isMap).optional().catch(undefined)
+});
 
 /**
  * The notes as the file holds them, or an empty set when there is no file yet. A file that is there
@@ -68,14 +90,15 @@ export function readTriage(dir: string): TriageFile {
     } catch {
         throw new Error(`${file} is not JSON`);
     }
-    if (!isMap(parsed)) throw new Error(`${file} must hold a JSON object`);
-    const held = isMap(parsed.notes) ? parsed.notes : {};
+    const held = triageFileShape.safeParse(parsed);
+    if (!isMap(parsed) || !held.success) throw new Error(`${file} must hold a JSON object`);
     const notes: Record<string, TriageNote> = {};
-    for (const [id, value] of Object.entries(held)) {
+    // A key `__proto__` assigned would set the prototype of `notes` to that note, so it is skipped.
+    for (const [id, value] of Object.entries(held.data.notes ?? {})) {
         const note = noteOf(value);
-        if (note !== null) notes[id] = note;
+        if (note !== null && id !== '__proto__') notes[id] = note;
     }
-    return { run: str(parsed.run) ?? null, notes };
+    return { run: held.data.run ?? null, notes };
 }
 
 /** Write the whole file, owner-readable alone, making the folder when it is not there yet. */
@@ -95,7 +118,8 @@ export type TriageFields = {
 /**
  * Put one thread's fields into the file and answer the note that is now there. A field given as the
  * empty string, or `triaged` given as false, takes that field off the note, so a reader who clears
- * a draft or restores a thread leaves nothing behind.
+ * a draft or restores a thread leaves nothing behind. The thread id `__proto__` is refused, since
+ * assigning to that key of the notes would set the prototype of the map and store no note.
  */
 export function writeNote(
     dir: string,
@@ -103,6 +127,7 @@ export function writeNote(
     fields: TriageFields,
     now: () => Date = () => new Date()
 ): TriageNote {
+    if (thread === '__proto__') throw new Error('no such thread');
     const held = readTriage(dir);
     const before = held.notes[thread] ?? { written: '' };
     const next: TriageNote = { ...before, written: now().toISOString() };

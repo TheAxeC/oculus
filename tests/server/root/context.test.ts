@@ -426,3 +426,46 @@ describe('ServerContext', () => {
         );
     });
 });
+
+describe('ServerContext with a refresh cadence that is not a positive number', () => {
+    const sentence = 'usage_refresh_min must be a positive number';
+
+    /**
+     * The inert dependencies with the refresh cadence 0 and counting watchers, and the stub that
+     * stands in for the refresher when the case does not run the real one.
+     */
+    function replaced(realRefresher: boolean) {
+        const portfolio = vi.fn(() => ({ close: noop }));
+        const sessions = vi.fn(() => ({ onChange: () => noop, close: noop }));
+        const usage = vi.fn(() => ({ refresh: noopAsync, close: noop }));
+        const { watchUsageRefresh, loadConfig, ...inert } = inertDependencies();
+        const refresher = vi.fn(watchUsageRefresh);
+        const dependencies: Partial<ContextDependencies> = {
+            ...inert,
+            loadConfig: (engine) => {
+                if (loadConfig === undefined) throw new Error('no loadConfig to wrap');
+                const held = loadConfig(engine);
+                return { ...held, config: { ...held.config, usage_refresh_min: 0 } };
+            },
+            watchPortfolio: portfolio,
+            watchSessions: sessions,
+            watchUsage: usage,
+            ...(realRefresher ? {} : { watchUsageRefresh: refresher })
+        };
+        return { dependencies, portfolio, sessions, usage, refresher };
+    }
+
+    it('throws the cadence sentence at start-up, after the portfolio and the sessions watch', () => {
+        const held = replaced(true);
+        expect(() => createServerContext('/engine', held.dependencies)).toThrow(sentence);
+        expect(held.portfolio).toHaveBeenCalledTimes(1);
+        expect(held.sessions).toHaveBeenCalledTimes(1);
+        expect(held.usage).not.toHaveBeenCalled();
+    });
+
+    it('throws the same sentence before a replaced refresher is started', () => {
+        const held = replaced(false);
+        expect(() => createServerContext('/engine', held.dependencies)).toThrow(sentence);
+        expect(held.refresher).not.toHaveBeenCalled();
+    });
+});

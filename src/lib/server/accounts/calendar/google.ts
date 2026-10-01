@@ -9,7 +9,7 @@
 // `start.date` is an all-day event's date. Both go into the payload unchanged, and `allDay` says
 // which one a reader is looking at.
 
-import { isMap, str } from '../../../data/helpers/guards.ts';
+import { z } from 'zod';
 import type {
     CalendarEvent,
     CalendarEventStatus,
@@ -22,6 +22,48 @@ const BASE = 'https://www.googleapis.com/calendar/v3';
 /** How many events one page asks for; a calendar with more is followed by its page token. */
 const PER_PAGE = 250;
 
+/** A field of Google's answer that is text where it is there, and read as absent otherwise. */
+const optionalTextShape = z.string().optional().catch(undefined);
+
+/** The token of the next page: text where the answer names one, and nothing otherwise. */
+const pageTokenShape = z.string();
+
+/** A calendar of the list the reader selected: Google's id for it, and its name when it has one. */
+const calendarRowShape = z.object({
+    selected: z.literal(true),
+    id: z.string(),
+    summary: optionalTextShape
+});
+
+/** Google's three event states, and nothing when it named something else. */
+const statusShape = z
+    .enum(['confirmed', 'tentative', 'cancelled'])
+    .optional()
+    .catch(undefined) satisfies z.ZodType<CalendarEventStatus | undefined>;
+
+/**
+ * One end of an event: the timed value with its own offset when there is one, else the date of an
+ * all-day event, else null for an end that names neither or is no map.
+ */
+const edgeShape = z
+    .object({ dateTime: optionalTextShape, date: optionalTextShape })
+    .transform((held): { at: string; allDay: boolean } | null => {
+        if (held.dateTime !== undefined) return { at: held.dateTime, allDay: false };
+        return held.date === undefined ? null : { at: held.date, allDay: true };
+    })
+    .catch(null);
+
+/** The fields of an event this reader carries; an event with no id has no key and is left out. */
+const eventRowShape = z.object({
+    id: z.string(),
+    summary: optionalTextShape,
+    location: optionalTextShape,
+    htmlLink: optionalTextShape,
+    status: statusShape,
+    start: edgeShape,
+    end: edgeShape
+});
+
 /** Read one listing to its end, following `nextPageToken`. */
 async function paged(
     args: ReadArgs,
@@ -32,9 +74,9 @@ async function paged(
     for (let page = 0; page < PAGE_MAX; page += 1) {
         const body = await getJson('google', url(pageToken), args);
         rows.push(...rowsOf(body, 'items'));
-        const next = str(body.nextPageToken);
-        if (next === undefined) return rows;
-        pageToken = next;
+        const next = pageTokenShape.safeParse(body.nextPageToken);
+        if (!next.success) return rows;
+        pageToken = next.data;
     }
     return rows;
 }
@@ -48,28 +90,12 @@ async function calendars(args: ReadArgs): Promise<CalendarListEntry[]> {
     });
     const found: CalendarListEntry[] = [];
     for (const row of rows) {
-        if (row.selected !== true) continue;
-        const id = str(row.id);
-        if (id === undefined) continue;
-        found.push({ id, name: str(row.summary) ?? id });
+        const calendar = calendarRowShape.safeParse(row);
+        if (!calendar.success) continue;
+        const { id, summary } = calendar.data;
+        found.push({ id, name: summary ?? id });
     }
     return found;
-}
-
-/** Google's three event states, and nothing when it named something else. */
-function statusOf(value: unknown): CalendarEventStatus | undefined {
-    return value === 'confirmed' || value === 'tentative' || value === 'cancelled'
-        ? value
-        : undefined;
-}
-
-/** One end of an event: the date of an all-day event, or the timed value with its own offset. */
-function edge(value: unknown): { at: string; allDay: boolean } | null {
-    if (!isMap(value)) return null;
-    const timed = str(value.dateTime);
-    if (timed !== undefined) return { at: timed, allDay: false };
-    const date = str(value.date);
-    return date === undefined ? null : { at: date, allDay: true };
 }
 
 /** One calendar's events inside the window, in the order Google sorted them. */
@@ -85,19 +111,17 @@ async function events(args: ReadArgs, calendar: CalendarListEntry): Promise<Cale
         return url.toString();
     });
     const found: CalendarEvent[] = [];
-    for (const row of rows) {
-        const id = str(row.id);
-        const start = edge(row.start);
-        const end = edge(row.end);
-        if (id === undefined || start === null || end === null) continue;
-        const location = str(row.location);
-        const link = httpsLink(str(row.htmlLink));
-        const status = statusOf(row.status);
+    for (const item of rows) {
+        const row = eventRowShape.safeParse(item);
+        if (!row.success) continue;
+        const { id, start, end, location, status } = row.data;
+        if (start === null || end === null) continue;
+        const link = httpsLink(row.data.htmlLink);
         found.push({
             id: `${args.key}-${calendar.id}-${id}`,
             account: args.label,
             calendar: calendar.name,
-            title: str(row.summary) ?? '',
+            title: row.data.summary ?? '',
             start: start.at,
             end: end.at,
             allDay: start.allDay,

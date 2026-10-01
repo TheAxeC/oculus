@@ -26,6 +26,11 @@ export const USAGE_PREFIX = `${PREFIX}usage-`;
 /** The three things a terminal runs: DESIGN.md's two agents and a shell. */
 export const KINDS: TerminalKind[] = ['claude', 'codex', 'shell'];
 
+/** Whether a value is one of the three kinds a terminal runs. */
+export function isTerminalKind(value: unknown): value is TerminalKind {
+    return KINDS.some((kind) => kind === value);
+}
+
 /** The default scrollback handed to a page that attaches. */
 export const SCROLLBACK_LINES = 2000;
 
@@ -89,10 +94,14 @@ export const LIST_FORMAT = [
 export type StartRequest = {
     /** A preallocated id when a caller must prepare a resource named after the terminal. */
     id?: string;
-    kind: TerminalKind;
-    cwd: string;
-    cols: number;
-    rows: number;
+    /**
+     * The kind, the directory and the geometry as the starter named them: startTerminal checks
+     * each one and refuses with a sentence of its own, so a request body hands them on as sent.
+     */
+    kind: unknown;
+    cwd: unknown;
+    cols: unknown;
+    rows: unknown;
     name?: string;
     /**
      * The session this terminal continues. With it the command is the tool's own resume command
@@ -103,6 +112,15 @@ export type StartRequest = {
      * The environment the session's process starts with beside tmux's own, each `NAME=value` set
      * with new-session's `-e`: the account folder an agent reads its login and settings from.
      */
+    env?: Record<string, string>;
+};
+
+/** A start whose kind, directory and geometry are checked, as its argument vector needs. */
+export type CheckedStart = {
+    kind: TerminalKind;
+    cwd: string;
+    cols: number;
+    rows: number;
     env?: Record<string, string>;
 };
 
@@ -337,7 +355,7 @@ function vector(command: string[]): string[] {
  * of more words directly, so a vector of one word gets `env` in front: `env` runs the word as the
  * program it names, and no shell reads it.
  */
-export function startArgs(id: string, request: StartRequest, command: string | string[]): string[] {
+export function startArgs(id: string, request: CheckedStart, command: string | string[]): string[] {
     return [
         'new-session',
         '-d',
@@ -361,7 +379,7 @@ export async function startTerminal(
     options: StartOptions = {}
 ): Promise<Terminal> {
     const kind = request.kind;
-    if (!KINDS.includes(kind)) throw new Error(`kind must be one of ${KINDS.join(', ')}`);
+    if (!isTerminalKind(kind)) throw new Error(`kind must be one of ${KINDS.join(', ')}`);
     const cwd = directory(request.cwd);
     const cols = geometry(request.cols, 'cols');
     const rows = geometry(request.rows, 'rows');
@@ -404,8 +422,8 @@ export function resizeArgs(id: string, cols: number, rows: number): string[] {
 
 export async function resizeTerminal(
     id: string,
-    cols: number,
-    rows: number,
+    cols: unknown,
+    rows: unknown,
     options: RunOptions = {}
 ): Promise<void> {
     if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);

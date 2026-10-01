@@ -5,6 +5,7 @@
 
 import { setTimeout as delay } from 'node:timers/promises';
 import { stripVTControlCharacters } from 'node:util';
+import { z } from 'zod';
 import type { UsageAccountConfig, UsageRefresher } from '../../../data/model/index.ts';
 import { usageAccountLabel } from '../../../data/sources/config.ts';
 import { sendKeysArgs, startArgs, USAGE_PREFIX, type Runner } from '../pty/sessions.ts';
@@ -132,18 +133,28 @@ export function paneReason(screen: string): UsageRefreshReason {
 }
 
 /**
- * The two settings the refresher cannot run without: a cadence that is a positive number of
- * minutes and a model with a name. Values are taken as unknown so the config-key writer can hand it
- * what the merged configuration holds; it is the one place the two checks are made.
+ * The two settings the refresher cannot run without: a cadence that is a finite number of minutes
+ * above zero and a model with a name, taken as unknown values from the merged configuration.
  */
-export function requireRefreshSettings(settings: { refreshMin: unknown; model: unknown }): void {
-    const { refreshMin, model } = settings;
-    if (typeof refreshMin !== 'number' || !Number.isFinite(refreshMin) || refreshMin <= 0) {
-        throw new Error('usage_refresh_min must be a positive number');
-    }
-    if (typeof model !== 'string' || model.trim() === '') {
-        throw new Error('usage_refresh_model must not be empty');
-    }
+const refreshSettingsShape = z.object({
+    refreshMin: z.number().refine((minutes) => minutes > 0),
+    model: z.string().refine((name) => name.trim() !== '')
+}) satisfies z.ZodType<{ refreshMin: number; model: string }>;
+
+/**
+ * The two settings, typed, or the throw naming the first that is wrong. It is the one place the
+ * two checks are made: the config-key writer hands it what the merged configuration holds, and the
+ * server context hands it the configuration it starts the refresher with.
+ */
+export function requireRefreshSettings(settings: { refreshMin: unknown; model: unknown }): {
+    refreshMin: number;
+    model: string;
+} {
+    const refreshMin = refreshSettingsShape.shape.refreshMin.safeParse(settings.refreshMin);
+    if (!refreshMin.success) throw new Error('usage_refresh_min must be a positive number');
+    const model = refreshSettingsShape.shape.model.safeParse(settings.model);
+    if (!model.success) throw new Error('usage_refresh_model must not be empty');
+    return { refreshMin: refreshMin.data, model: model.data };
 }
 
 /**

@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ReadArgs } from '../../../../src/lib/server/accounts/calendar/api.ts';
 import { readGoogle } from '../../../../src/lib/server/accounts/calendar/google.ts';
 import { hostZone, readMicrosoft } from '../../../../src/lib/server/accounts/calendar/microsoft.ts';
+import { refusalLine } from '../../../../src/lib/server/accounts/connect/api.ts';
 import type { Fetcher } from '../../../../src/lib/server/accounts/connect/oauth.ts';
 
 const TOKEN = 'the-access-token-of-this-case';
@@ -284,5 +285,117 @@ describe('the Microsoft reader', () => {
             'microsoft: 401 ErrorAccessDenied'
         );
         await expect(readMicrosoft(microsoftArgs(fetcher))).rejects.not.toThrow(/axel@example/);
+    });
+});
+
+describe('the refusal line over a body of the wrong shape', () => {
+    it('names the error text, the status or the code of the provider, in that order', () => {
+        expect(refusalLine('google', 403, { error: 'x' })).toBe('google: 403 x');
+        expect(refusalLine('google', 403, { error: { status: 'S' } })).toBe('google: 403 S');
+        expect(refusalLine('google', 403, { error: { status: 3, code: 'C' } })).toBe(
+            'google: 403 C'
+        );
+        expect(refusalLine('microsoft', 401, { error: { code: 5 } })).toBe('microsoft: 401');
+        expect(refusalLine('microsoft', 401, [])).toBe('microsoft: 401');
+        expect(refusalLine('microsoft', 401, null)).toBe('microsoft: 401');
+        expect(refusalLine('microsoft', 401, { error: [] })).toBe('microsoft: 401');
+    });
+});
+
+describe('the Google reader over events of the wrong shape', () => {
+    it('reads a date when the timed value is not text, and drops an event whose ends are not text', async () => {
+        const { fetcher } = answering({
+            calendarList: { items: [{ id: 'primary', summary: 'Work', selected: true }] },
+            '/events': {
+                items: [
+                    { id: 'a', start: { date: 3 }, end: { date: '2031-03-04' } },
+                    {
+                        id: 'b',
+                        start: { dateTime: 3, date: '2031-03-03' },
+                        end: { date: '2031-03-04' }
+                    },
+                    {
+                        id: 'c',
+                        summary: 3,
+                        status: 3,
+                        location: 3,
+                        htmlLink: 3,
+                        start: { dateTime: '2031-03-02T09:00:00+01:00' },
+                        end: { dateTime: '2031-03-02T10:00:00+01:00' }
+                    },
+                    { id: 3, start: { date: '2031-03-03' }, end: { date: '2031-03-04' } }
+                ]
+            }
+        });
+        const reading = await readGoogle(args(fetcher));
+        const event = (id: string, start: string, end: string, title: string, allDay: boolean) => ({
+            id: `google-work-primary-${id}`,
+            account: 'work',
+            calendar: 'Work',
+            title,
+            start,
+            end,
+            allDay
+        });
+        expect(reading.events).toStrictEqual([
+            event('b', '2031-03-03', '2031-03-04', '', true),
+            event('c', '2031-03-02T09:00:00+01:00', '2031-03-02T10:00:00+01:00', '', false)
+        ]);
+    });
+});
+
+describe('the Microsoft reader over events of the wrong shape', () => {
+    it('leaves out a location, a link and a state that are not what they should be', async () => {
+        const { fetcher } = answering({
+            '/me/calendars?': { value: [{ id: 'cal', name: 'Uni' }] },
+            calendarView: {
+                value: [
+                    {
+                        id: 'one',
+                        subject: 3,
+                        isAllDay: 'true',
+                        isCancelled: 'true',
+                        showAs: 3,
+                        location: [],
+                        webLink: 3,
+                        start: { dateTime: '2031-03-02T09:00:00.0000000' },
+                        end: { dateTime: '2031-03-02T11:00:00.0000000' }
+                    },
+                    {
+                        id: 'two',
+                        subject: 'Two',
+                        location: { displayName: 3 },
+                        start: { dateTime: '2031-03-02T09:00:00' },
+                        end: { dateTime: '2031-03-02T10:00:00' }
+                    },
+                    {
+                        id: 'three',
+                        subject: 'Three',
+                        location: { displayName: '' },
+                        start: { dateTime: 3 },
+                        end: { dateTime: '2031-03-02T10:00:00' }
+                    }
+                ]
+            }
+        });
+        const reading = await readMicrosoft({
+            ...args(fetcher),
+            key: 'microsoft-uni',
+            label: 'uni'
+        });
+        const event = (id: string, title: string, start: string, end: string) => ({
+            id: `microsoft-uni-cal-${id}`,
+            account: 'uni',
+            calendar: 'Uni',
+            title,
+            start,
+            end,
+            allDay: false,
+            status: 'confirmed'
+        });
+        expect(reading.events).toStrictEqual([
+            event('one', '', '2031-03-02T09:00:00', '2031-03-02T11:00:00'),
+            event('two', 'Two', '2031-03-02T09:00:00', '2031-03-02T10:00:00')
+        ]);
     });
 });

@@ -20,6 +20,7 @@
 
 import { spawn } from 'node:child_process';
 import { rgPath } from '@vscode/ripgrep';
+import { z } from 'zod';
 import {
     pathIn,
     rootsOf,
@@ -177,51 +178,75 @@ export function reasonOf(stderr: string): string {
     return last.length > 200 ? `${last.slice(0, 200)}...` : last;
 }
 
-/** One line of `rg --json`, or null for a line that is not one. */
-function record(line: string): Record<string, unknown> | null {
+/**
+ * A number of any value, as ripgrep's counts and offsets are read: `typeof` is the whole test, so
+ * `NaN` and the infinite numbers are numbers here.
+ */
+const anyNumberShape = z.custom<number>((held) => typeof held === 'number');
+
+/** A `{ text }` field of ripgrep's output; one that carried bytes instead reads as absent. */
+const textFieldShape = z.object({ text: z.string() }).optional().catch(undefined);
+
+/** The first submatch of a match: the text it matched and the byte offset it starts at. */
+const submatchShape = z.object({
+    match: textFieldShape,
+    start: anyNumberShape.optional().catch(undefined)
+});
+
+/**
+ * One record of `rg --json` this fold reads, by its type: the start of a file, the end of one with
+ * ripgrep's own count of its matching lines, and a match. A record of another type, and one whose
+ * `data` is no map, is refused; a field of a record that is odd reads as absent.
+ */
+const ripgrepLineShape = z.discriminatedUnion('type', [
+    z.object({ type: z.literal('begin'), data: z.object({ path: textFieldShape }) }),
+    z.object({
+        type: z.literal('end'),
+        data: z.object({
+            stats: z
+                .object({ matched_lines: anyNumberShape.optional().catch(undefined) })
+                .optional()
+                .catch(undefined)
+        })
+    }),
+    z.object({
+        type: z.literal('match'),
+        data: z.object({
+            line_number: anyNumberShape.optional().catch(undefined),
+            lines: textFieldShape,
+            submatches: z.array(z.unknown()).optional().catch(undefined)
+        })
+    })
+]);
+
+type RipgrepLine = z.output<typeof ripgrepLineShape>;
+
+/** One line of `rg --json` as a record this fold reads, or null for a line that is not one. */
+function record(line: string): RipgrepLine | null {
     if (line.trim() === '') return null;
+    let held: unknown;
     try {
-        const held: unknown = JSON.parse(line);
-        if (typeof held !== 'object' || held === null || Array.isArray(held)) return null;
-        return held as Record<string, unknown>;
+        held = JSON.parse(line);
     } catch {
         return null;
     }
-}
-
-/** A `{ text }` field of ripgrep's output, and null where it carried bytes instead. */
-function textOf(value: unknown): string | null {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-    const text = (value as Record<string, unknown>).text;
-    return typeof text === 'string' ? text : null;
-}
-
-/** ripgrep's own count of the matching lines of one file, from its `end` record, or null. */
-function matchedLines(data: Record<string, unknown>): number | null {
-    const stats = data.stats;
-    if (typeof stats !== 'object' || stats === null || Array.isArray(stats)) return null;
-    const count = (stats as Record<string, unknown>).matched_lines;
-    return typeof count === 'number' ? count : null;
+    const parsed = ripgrepLineShape.safeParse(held);
+    return parsed.success ? parsed.data : null;
 }
 
 /**
  * One match record as a hit. ripgrep counts its submatch offsets in bytes of the line; the line is
  * read back as characters, so the offset is turned into a character column through the same bytes.
  */
-function hitOf(data: Record<string, unknown>): SearchHit | null {
+function hitOf(data: Extract<RipgrepLine, { type: 'match' }>['data']): SearchHit | null {
     const line = data.line_number;
-    const text = textOf(data.lines);
-    if (typeof line !== 'number' || text === null) return null;
-    const submatches = data.submatches;
-    const first =
-        Array.isArray(submatches) && submatches.length > 0
-            ? (submatches[0] as Record<string, unknown>)
-            : null;
-    const matched = first === null ? null : textOf(first.match);
-    const start = first === null ? 0 : first.start;
-    const before = typeof start === 'number' ? start : 0;
+    const text = data.lines?.text;
+    if (line === undefined || text === undefined) return null;
+    const first = submatchShape.safeParse(data.submatches?.[0]);
+    const matched = first.success ? first.data.match?.text : undefined;
+    const before = first.success ? (first.data.start ?? 0) : 0;
     const column = characters(text, before) + 1;
-    const length = matched === null ? 0 : matched.length;
+    const length = matched === undefined ? 0 : matched.length;
     const cut = trimAround(text, column, length);
     return { line, column: cut.column, length, text: cut.text };
 }
@@ -272,29 +297,26 @@ export function createFold(root: string, room: number): Fold {
         line(text: string): void {
             const held_ = record(text);
             if (held_ === null) return;
-            const data = held_.data;
-            if (typeof data !== 'object' || data === null || Array.isArray(data)) return;
-            const fields = data as Record<string, unknown>;
             if (held_.type === 'begin') {
                 close();
-                const path = textOf(fields.path);
-                held = path === null ? null : { root, path: pathIn(path), hits: [] };
+                const path = held_.data.path?.text;
+                held = path === undefined ? null : { root, path: pathIn(path), hits: [] };
                 return;
             }
             if (held_.type === 'end') {
-                const counted = matchedLines(fields);
-                if (held !== null && counted !== null && counted > held.hits.length) {
+                const counted = held_.data.stats?.matched_lines;
+                if (held !== null && counted !== undefined && counted > held.hits.length) {
                     truncated = true;
                 }
                 close();
                 return;
             }
-            if (held_.type !== 'match' || held === null) return;
+            if (held === null) return;
             if (total >= room) {
                 truncated = true;
                 return;
             }
-            const hit = hitOf(fields);
+            const hit = hitOf(held_.data);
             if (hit === null) return;
             held.hits.push(hit);
             total += 1;

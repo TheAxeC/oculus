@@ -199,3 +199,148 @@ Cases of the brief's "Cases":
 Reviewer usage: about 475,000 tokens by the session counter (15,000,000 at the start, 14,524,612 at the end); the number of tool uses and the minutes were not counted.
 
 Usage (the completion notice): claude-opus-5-5, 118,315 tokens, 88 tool uses, 20.9 min.
+
+
+## Repair round 1, refuted
+
+Q85a4, worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85a4, base a549ed92. The verify list passes, and every claim of the round that I reran reproduces. I found two Standards findings, both small and inside the brief. Spec, Proof and Behaviour have none.
+
+```
+$ npm run diagrams   (docs/diagrams identical before and after the run: diff -r printed nothing)
+$ sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md   (exit 0)
+$ npm test
+ Test Files  371 passed | 20 skipped (391)
+      Tests  5976 passed | 600 skipped (6576)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  442 passed | 9 skipped (451)
+$ npm run check
+1790842619572 COMPLETED 2838 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+
+Slow-tagged files by name (deposit, git-write, lines, git-ops; the four changed test files that carry @module-tag slow):
+npx vitest run tests/server/git/deposit.test.ts tests/server/git/git-write.test.ts tests/server/machine/lines.test.ts tests/server/git/git-ops.test.ts --testTimeout 0 --hookTimeout 0
+ Test Files  4 passed (4)
+      Tests  139 passed (139)
+
+The 28 case files plus open.test.ts, rows.test.ts and usage.test.ts (the 29 in the report's table), in the worktree:
+ 685 passed, 0 failed. The per-file counts equal the report's "After" column.
+```
+
+Cases claimed to fail first. I made `scratchpad/refute-r1/pre`, a copy of the worktree with the round's source changes taken out: the `.catch([])` form in compose.ts, no `Object.hasOwn` in git-refs.ts and git-index.ts, and no `__proto__` throw in `writeNote`. The tests are in their final form there.
+```
+npx vitest run tests/server/machine/pty/compose.test.ts tests/server/accounts/mail/triage.test.ts tests/server/git/git-ops.test.ts
+ Tests  5 failed | 65 passed (70)
+ compose.test.ts  "answers a fresh empty list of images ..."   AssertionError: expected [ 'leak' ] to strictly equal []
+ compose.test.ts  "keeps the fields it holds and starts the rest empty"   (the shared array carried 'leak')
+ triage.test.ts   "refuses a write for the thread id __proto__ ..."       AssertionError: expected [Function] to throw an error
+ git-ops.test.ts  "hunks and lines > refuses a mode that is a property every object inherits"   TypeError: flags is not iterable
+ git-ops.test.ts  "stashes > refuses a mode that is a property every object inherits"          TypeError: flags is not iterable
+```
+Each failure matches the report's quote. The unchanged tree is the base `src` rebuilt by reverse-applying `git diff a549ed92 -- src` to a copy, and it equals the builder's `src-orig` (`diff -rq` printed nothing). Running the 26 changed test files against it gives:
+```
+ Tests  7 failed | 614 passed (621)
+ refresh.test.ts "answers the two settings as a number and a string" | context.test.ts "throws the same sentence before a replaced refresher ..." | triage.test.ts (the __proto__ write and the __proto__ note) | audit.test.ts "a scalar field read as text" | git-ops.test.ts (the two inherited-mode cases)
+```
+These are the report's seven. Every other case passes on the base `src`, so the tests state base behaviour.
+
+Other reruns:
+```
+verify 3 loop: files 35 lines 99   twin: files 9 lines 20
+  name grep: only z.number() inside schemas, ics.ts's own text(), response.text(), open.ts:110 and git-write.ts:172
+verify 4: no .issues/prettifyError/treeifyError hit; every "const x = z" name ends in Shape (grep -v printed nothing);
+  no " as string/number" in context.ts; no cast of the pty/routes.ts kind in the cast grep; "as AccountRow" only at actions.ts:186 (rowsIn)
+timing (builder's timing.ts, 3 pairs, base vs worktree, means of 5 in ms):
+  createFold 247.0/264.5/225.2 vs 250.3/241.4/249.8      newestCodexLimits 47.1/50.1/46.6 vs 58.8/51.2/56.6
+  UsageTranscriptFold 138.3/123.7/124.3 vs 153.8/147.0/140.3
+  highest pair ratios 1.11 / 1.25 / 1.19, all under 1.5; the printed answers are equal in each pair
+differential probe, composeRequest on base vs worktree over 17 maps (own __proto__ pick, picks list/null/string, images null/string/mixed, wrong-typed cwd/account/prompt, key order): all "same"
+```
+
+## Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. Every schema is a module-level `...Shape` const. The inline ones the first review named (`compose.ts` `pickShape`, `rules.ts` `readLimitShape`, `staleLagShape`, `publicationsFileShape`) are now consts, and no `z.` call is built inside a function. The only non-top-level `z.` hits are `keeping()` at rules.ts:44, a factory that is only called at module level (rules.ts:56, 70, 76), and fields inside module-level schemas. No parse error is read (greps above). The fallbacks are fresh per call (see ruling 5 below). The base-versus-worktree probes and the 614 passing base-tree cases give the same answers.
+- 2: holds. `composeRequest(message: Record<string, unknown>)` has base's signature and `EMPTY_START` is gone (`grep -rnw EMPTY_START src tests` prints nothing). The 17-input probe equals base. The handleTerminal casts are gone and `addRow` reads `addedRowShape`.
+- 3: holds. The cloc, ripgrep and `gh` readers each have a schema, and cases 8 to 10 pass on both trees.
+- 4: holds. `json`, `text` and `number` are gone from usage/accounts.ts. The schema readers are in place and the usage cases pass on both trees.
+- 5: holds. The schemas are in api, oauth, both calendars and both mail providers, and cases 17 and 18 pass on both trees.
+- 6: holds, and the first review's Standards 1 is closed. `scalarShape` (rules.ts:83) and `steerTextShape` (pty/routes.ts:93) are `z.unknown().optional().transform((value) => scalar(value))` with `scalar` from guards.ts. `scalarShape` is imported by projects.ts and publications.ts. `mapOf` and `number` are gone (rename grep). `readRoots` and `docFindings` keep their findings (cases 22 and 23 pass).
+- 7: holds. `requireRefreshSettings` is typed, `context.ts` calls it, and the casts are gone. The context and refresh cases fail on the base tree and pass now.
+- 8: holds. Allowlist lines 22, 23, 24 and 27 are removed and the duplication check passes inside `test:checks`.
+- 9: holds. No step folder imports `text`, `whole`, `list` or `isMap` from core/json (grep above). Nine `sessions` files do, and the comment at core/json.ts:91-92 names `sessions`.
+- 10: holds, and the first review's Spec 3 is closed. DESIGN.md:148 now names the terminal, git, deposit, file-browser write, source, open, account add, mail triage and memories upload bodies. I enumerated the tree's body readers myself:
+  - `tokenedBody` is called in pty/routes.ts:454, git-routes.ts:283, deposit-routes.ts:182, fs.ts:567, source.ts:120, open.ts:340 and memories.ts:163.
+  - `gatedBody` is called in mail/routes.ts:137, calendar/routes.ts:45, hpc/routes.ts:17, usage/routes.ts:16 and connect/setup.ts:61.
+  - The hpc, usage, calendar and setup bodies are the brief's "stays" list.
+  - Account add is read at connect/actions.ts:193 (`addedRowShape`), so the paragraph is right to name it as the ninth, beyond the ruling's eight.
+  - guards.ts's head comment is rewritten.
+- 11: holds. `usage.test.ts` is not in `git status`. `git.test.ts` imports are identical to base: `describe, expect, it` from vitest and no fixture, as in `git show` of the base file as shown in the diff, which changes only the head comment and appends a describe. No existing case text is edited.
+- 12: holds (timing above).
+- 13: holds. `readTriage` skips `__proto__` (triage.ts:96-99). The case fails on the base tree and passes now. `writeNote` now refuses the thread id `__proto__` (triage.ts:130).
+
+Cases of the brief's "Cases":
+
+- 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11b, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 26b, 26c, 26d: met. Each is a test in its named file. All 685 tests pass in the worktree and, apart from the 7 parts marked to fail, the same tests pass on the base `src`. Spot greps confirm the specific inputs exist: `[object Object]` in deposit.test.ts, `1e999` in channel.test.ts and terminal.test.ts, `an answer needs words`, `no such event`, and the nav_groups case.
+- Case 6, last sentence (`commit` with `message: 3` and `null`; `stash` with `mode: ''`): met, now in `tests/server/git/git-write.test.ts:617-679`. See ruling 8.
+- 27, 28: met. `npm test` and `npm run test:checks` pass, and no existing case text is edited.
+
+Rulings of the round:
+
+- 1 (inline schemas): closed. The consts are at compose.ts:186 and rules.ts:89, 92 and 95.
+- 2 (`composeRequest`): closed. The signature is `Record<string, unknown>`, the "no map" describe is gone, and the 17-input probe equals base.
+- 3 (DESIGN.md:148): closed (item 10).
+- 4 (`scalar` once): closed. The shapes call guards.ts's `scalar`, and audit.test.ts:836 compares `scalarShape.parse(v)` with `scalar(v, '')` over the 15 values.
+- 5 (fresh fallbacks): closed.
+  - In the five step folders plus `root` and `core`, `grep -rnE "\.(catch|default)\(\s*(\[|\{)"` prints nothing and there is no `.default(` call.
+  - The remaining `.catch(` arguments are primitives, `undefined` or arrow functions.
+  - Every array or object fallback is `.catch(() => [])` or `.catch(() => ({ ... }))`: compose.ts:214, accounts.ts:125-126, fs.ts:171 and 177, bookmarks.ts:94, project-files.ts:107, deposit.ts:225 and 785, git-routes.ts:179, google.ts, microsoft.ts, rules.ts and actions.ts:168.
+  - The constants `NO_CLAUDE_FILE`, `NO_CODEX_LIMITS`, `NO_FILE_INDEX`, `NO_LIFECYCLE` and `NO_CODE_BLOCK` are gone (`grep -rnw` over src, tests, config and docs prints nothing). Each use is `<shape>.parse({})` at the failing call (accounts.ts:138 and 520, project-files.ts:120, rules.ts:106, deposit.ts:235).
+  - The diff adds no module-level object or array constant outside `...Shape`, apart from `OPERATIONS` in git-routes.ts.
+  - The remaining fixed objects `DEFAULT_SHOWN`, `DEFAULT_ROOT` (fs.ts) and `NO_ROWS` (poll.ts) are base code that the diff does not change.
+  - The one case (compose.test.ts:410) fails on the pre-round copy and passes now.
+- 6 (inherited modes): closed. `Object.hasOwn` is on both tables (git-refs.ts:59, git-index.ts:89), and the cases cover `constructor`, `toString` and `__proto__` for both. They fail on the pre-round copy with `flags is not iterable`. `OPERATIONS` and the deposit table are reached through `byKey`, which is `Object.hasOwn`-based, and `action` is a `z.enum`. The form of the guard is Standards 2.
+- 7 (`writeNote`): closed. It throws `no such thread` for `__proto__` before reading the file. The case fails on the pre-round copy.
+- 8 (`git.test.ts` runner): the deviation is real and the move holds, so I count it as met.
+  - I reproduced the clash. In my copy I added `import { it as scratchIt, scratchDir } from '../../fixtures/scratch.ts'` and one `scratchIt` case to `tests/routes/git/git.test.ts`. `npx vitest run tests/checks/tree/scratch.test.ts` then gave `2 failed | 15 passed`, one entry being `"tests/routes/git/git.test.ts takes a scratch directory and declares cases with vitest's it"`. So the ruling as written cannot pass `npm run test:checks`.
+  - `git.test.ts` is back to base's runner for every case. Its import lines are identical to base, the file has no `scratch` reference, and the diff against base is the head comment plus the appended describe of the stub-run cases (bodies with no action, `root: 3`, `confirm: 'true'`, own `__proto__` key).
+  - The two moved cases are in `git-write.test.ts` under that file's fixture `it`. They are `commit` with `message` 3 and `null` answering 400 `a commit needs a message`, and `stash` with `mode: ''` answering 200 and leaving only `?? loose.txt` in `git status --porcelain`. That is the brief's case 6 behaviour, with the real operations and no `run`. I could not compare their text with the first-round form, because I have no copy of that tree.
+  - The builder raised the clash itself, and the orchestrator has accepted it (state file, builder_usage).
+
+## 1. Spec
+
+None. The ruling 8 move and the DESIGN.md account-add entry are both reasoned above and are not findings.
+
+## 2. Proof
+
+None. Every claim of closure that I reran reproduces: the five failing cases on the pre-round copy, the seven on the base `src`, the slow files, the timing, and the loop, grep and rename counts. The ruling 5 case covers only compose.ts's `images` fallback, which is what the ruling asked for. The twelve other fresh-fallback sites are established by my read and grep and have no test of their own.
+
+## 3. Standards
+
+- 1. tests/server/git/git-write.test.ts:1-10 head comment: "The last describe is the module's gate, the mirror image of the one over git.ts: git.ts may name no writing subcommand at all, and this may name only the enumerated ones". `grep -n "describe(" tests/server/git/git-write.test.ts` shows the gate describe at :561, then 'the commit-message model of a configuration of the wrong shape' at :604 and 'the git route on a body of the wrong shape, over the real operations' at :617. The step adds both after the gate, and the second is this round's move. What is wrong: a sentence in a head comment that the diff makes false (spec.md, "What every package obeys", after changing a name or a shape, a sentence the change makes false is a defect of the change). Failure scenario: a reader who trusts "the last describe is the gate" and looks at the end of the file finds route cases; one who adds a gate case there, or a script that finds the gate at the end, goes wrong. The head also does not mention that the file now holds route cases and the `messageModel` cases. Fix: reword the sentence (the gate is a describe in the middle) and say what the other two describes hold. No verdict changes.
+- 2. src/lib/server/git/git-refs.ts:59 `const flags = Object.hasOwn(STASH_FLAGS, mode) ? STASH_FLAGS[mode] : undefined;` and src/lib/server/git/git-index.ts:89 `const flags = Object.hasOwn(FLAGS, mode) ? FLAGS[mode] : undefined;`. What is wrong: these restate `byKey` of src/lib/data/helpers/guards.ts:54, `Object.hasOwn(record, key) ? record[key] : undefined`, which the same step's git-routes.ts (`byKey(OPERATIONS, fields.action)`) and deposit-routes.ts already use. agents/spec.md, "The principles every package is judged on": "a parser, a fold or a rule exists once and is reused". Ruling 6 names `Object.hasOwn(STASH_FLAGS, mode)` in a parenthesis, so the inline form follows its literal text; whether it dictated the form is the orchestrator's reading. Failure scenario: a later change to how an own key is read (for example a `Map`) is made in `byKey` and the two tables keep the old reading. The same inherited-property defect can come back in a third table without a shared helper to point to. Fix: `byKey(STASH_FLAGS, mode)` and `byKey(FLAGS, mode)`; the new git-ops cases are the check, and they already fail without the guard. No verdict changes; this is small and inside the brief, so it can be fixed at landing.
+
+## 4. Behaviour
+
+None. The round's changes of behaviour are the inherited stash and patch mode (now the existing refusal instead of `TypeError: flags is not iterable`) and `writeNote` refusing `__proto__`. The report states both, with before and after, as changed behaviours 3 and 4. A non-map passed directly to `composeRequest` still throws, now a ZodError instead of a TypeError. The route cannot reach that, since pty/routes.ts:457 tests `isMap` first.
+
+## Declined to judge
+
+- `tests/server/core/paths.test.ts`, `root/hooks.ts:125,139` and the merge with Q85a2: on your already-known list. I did not judge them.
+- The moved cases against their first-round text: I have no copy of the tree the first review read. I judged them against the brief's case 6 and by the behaviour they check (above).
+- Whether the ruling 8 deviation needs a recorded ruling: it is a clash between a round ruling and `scratch.test.ts`. I reproduced the clash. Recording it is the orchestrator's decision.
+- The round's delta as a diff: the builder runs no git, so I read it ruling by ruling against the whole diff since the base, not as a diff of two trees.
+
+Reviewer usage: about 255,000 tokens by the session counter (15,000,000 at the start, 14,749,000 at the end), about 80 tool uses, minutes not measured.
+
+## Closed
+
+- Repair round 1, refuted, Standards 1 (`tests/server/git/git-write.test.ts` head comment calling the gate "the last describe"): fixed at landing; the comment names the gate describe and says what the two describes after it read.
+- Repair round 1, refuted, Standards 2 (the two flag tables read through `Object.hasOwn` inline, restating `byKey`): fixed at landing; `git-refs.ts` and `git-index.ts` read `byKey(STASH_FLAGS, mode)` and `byKey(FLAGS, mode)`, and the inherited-mode cases of `git-ops.test.ts` pass.
+- The first review's findings: closed in repair round 1, as the run over the round records.

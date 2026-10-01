@@ -60,7 +60,11 @@ import { projectFolders } from '../sessions/index.ts';
 import { HookStore, sessionRecord } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
 import { sessionFolders } from '../sessions/folders.ts';
-import { watchUsageRefresh, type UsageRefreshWatcher } from '../machine/usage/refresh.ts';
+import {
+    requireRefreshSettings,
+    watchUsageRefresh,
+    type UsageRefreshWatcher
+} from '../machine/usage/refresh.ts';
 import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
 import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
 import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
@@ -259,12 +263,16 @@ export function createServerContext(
         hooks: store
     });
     let usage: UsageWatcher | null = null;
+    const refresh = requireRefreshSettings({
+        refreshMin: config.usage_refresh_min,
+        model: config.usage_refresh_model
+    });
     const usageRefresh = make.watchUsageRefresh({
         accounts: local.accounts,
         hub: local.hub,
         claudeBin: local.claudeBin,
-        model: config.usage_refresh_model as string,
-        refreshMin: config.usage_refresh_min as number,
+        model: refresh.model,
+        refreshMin: refresh.refreshMin,
         onChange: () => void usage?.refresh()
     });
     usage = make.watchUsage(hub, {

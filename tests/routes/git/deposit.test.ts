@@ -138,3 +138,33 @@ describe('the deposit endpoint', () => {
         expect(refused.status).toBe(404);
     });
 });
+
+describe('a deposit body of the wrong shape', () => {
+    it('refuses a body with no action, an action it does not know and every body that is no map', async () => {
+        const bodies: unknown[] = [
+            { id: ID },
+            { action: 'nope', id: ID },
+            { action: 3, id: ID },
+            [],
+            null,
+            3,
+            'x',
+            true
+        ];
+        for (const body of bodies) {
+            const response = await handleDeposit(request(JSON.stringify(body)), TOKEN, options());
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({ error: 'the body is not a deposit action' });
+        }
+        expect(ran).toEqual([]);
+    });
+
+    it('answers an id that is not text as a project the portfolio does not hold', async () => {
+        const response = await handleDeposit(request({ action: 'push', id: 3 }), TOKEN, options());
+        expect(response.status).toBe(404);
+        expect(await response.json()).toEqual({
+            error: 'the portfolio holds no project with that id'
+        });
+        expect(ran).toEqual([]);
+    });
+});

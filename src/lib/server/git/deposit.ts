@@ -36,8 +36,7 @@ import {
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { readManifests } from '../../data/sources/manifests.ts';
-// `textOf` here is the shared `text`: a value that is not a string reads as the empty string.
-import { text as textOf } from '../../data/helpers/guards.ts';
+import { z } from 'zod';
 import {
     NETWORK_TIMEOUT_MS,
     addAll,
@@ -206,10 +205,25 @@ function settings(options: DepositOptions): {
     };
 }
 
-function mapOf(value: unknown): Record<string, unknown> {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
-    return value as Record<string, unknown>;
-}
+/** A manifest or `gh` text field; anything that is not a string reads as the empty string. */
+const textFieldShape = z.string().catch('');
+
+/**
+ * The manifest's `code_availability` block as the deposit reads it: each text field as text, the
+ * topics as the strings their items print as, and a block that is no map as a block with none of
+ * them.
+ */
+const codeFieldsShape = z.object({
+    url: textFieldShape,
+    repo: textFieldShape,
+    description: textFieldShape,
+    homepage: textFieldShape,
+    visibility: textFieldShape,
+    topics: z
+        .array(z.unknown())
+        .transform((items) => items.map((one) => String(one)))
+        .catch(() => [])
+});
 
 /** The deposit of one project, or null when the hub holds no project with that id. */
 function depositFor(id: string, options: DepositOptions): Deposit | null {
@@ -217,16 +231,16 @@ function depositFor(id: string, options: DepositOptions): Deposit | null {
     const { manifests } = readManifests(into.hub, into.config.scan, into.config.text);
     const manifest = manifests.find((one) => one.id === id);
     if (manifest === undefined) return null;
-    const code = mapOf(manifest.code_availability);
+    const block = codeFieldsShape.safeParse(manifest.code_availability);
+    const code = block.success ? block.data : codeFieldsShape.parse({});
     // The repository's name: `repo` when the manifest sets it, else the last segment of the url of
     // a deposit already made (the thirteen deposited manuscripts name theirs that way alone), else
     // the project id. Without the url fallback, adopt would start an empty mirror beside a
     // repository that exists and push would create a second one.
-    const url = textOf(code.url);
-    const named = textOf(code.repo);
+    const url = code.url;
+    const named = code.repo;
     const repo = named !== '' ? named : url !== '' ? nameOf(url) : id;
-    const topics = Array.isArray(code.topics) ? code.topics.map((one) => String(one)) : [];
-    const description = textOf(code.description);
+    const description = code.description;
     return {
         id,
         repo,
@@ -238,10 +252,10 @@ function depositFor(id: string, options: DepositOptions): Deposit | null {
                 description.length > DESCRIPTION_MAX
                     ? `${description.slice(0, DESCRIPTION_MAX - 3).trimEnd()}...`
                     : description,
-            homepage: textOf(code.homepage),
-            topics
+            homepage: code.homepage,
+            topics: code.topics
         },
-        visibility: textOf(code.visibility) === 'private' ? 'private' : 'public'
+        visibility: code.visibility === 'private' ? 'private' : 'public'
     };
 }
 
@@ -765,27 +779,33 @@ async function pointDefaultAtMain(deposit: Deposit, run: GhRun): Promise<boolean
     return (await run(defaultBranchArgs(slugOf(url), MAIN), NETWORK_TIMEOUT_MS)).ok;
 }
 
+/** What `gh repo view --json url,defaultBranchRef` says, each part as text. */
+const repoViewShape = z.object({
+    url: textFieldShape,
+    defaultBranchRef: z.object({ name: textFieldShape }).catch(() => ({ name: '' }))
+});
+
+/** The view of `gh repo view --json url,defaultBranchRef`, or one with nothing in it. */
+function repoView(output: string): z.output<typeof repoViewShape> {
+    try {
+        const view = repoViewShape.safeParse(JSON.parse(output));
+        if (view.success) return view.data;
+    } catch {
+        // Output that is not JSON has no view in it.
+    }
+    return { url: '', defaultBranchRef: { name: '' } };
+}
+
 /**
  * The `defaultBranchRef.name` of `gh repo view --json url,defaultBranchRef`, or the empty string.
  */
 function defaultBranchOf(output: string): string {
-    try {
-        const body = JSON.parse(output) as { defaultBranchRef?: { name?: unknown } };
-        const name = body.defaultBranchRef?.name;
-        return typeof name === 'string' ? name : '';
-    } catch {
-        return '';
-    }
+    return repoView(output).defaultBranchRef.name;
 }
 
 /** The `url` of `gh repo view --json url,defaultBranchRef`, or the empty string. */
 function urlOf(output: string): string {
-    try {
-        const body = JSON.parse(output) as { url?: unknown };
-        return typeof body.url === 'string' ? body.url : '';
-    } catch {
-        return '';
-    }
+    return repoView(output).url;
 }
 
 /** A commit message goes through a file rather than an argument, as git-write.ts's commit does. */

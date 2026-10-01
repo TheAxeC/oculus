@@ -14,8 +14,8 @@
 import { randomUUID } from 'node:crypto';
 import { decodeHTML } from 'entities';
 import MailComposer from 'nodemailer/lib/mail-composer';
-import { str } from '../../../data/helpers/guards.ts';
-import { getJson, httpsLink, postJson, rowsOf } from '../connect/api.ts';
+import { z } from 'zod';
+import { getJson, httpsLink, postJson, rowsOf, rowsShape } from '../connect/api.ts';
 import {
     SIGNALS,
     TODO_LABEL,
@@ -26,6 +26,43 @@ import {
 import type { Signal } from './plate.ts';
 
 const BASE = 'https://www.googleapis.com/gmail/v1/users/me';
+
+/** A field of Gmail's answer that is text where it is there, and read as absent otherwise. */
+const optionalTextShape = z.string().optional().catch(undefined);
+
+/** One thread of a listing: Gmail's id for it, which a row without is left out. */
+const threadRowShape = z.object({ id: z.string() });
+
+/** One header of a message: its name and its value, each read as absent unless it is text. */
+const headerShape = z.object({ name: optionalTextShape, value: optionalTextShape });
+
+/**
+ * One message of a thread read as metadata: its headers, its labels (the items that are text), the
+ * epoch milliseconds it arrived at as the text Gmail writes them, and its snippet.
+ */
+const messageShape = z.object({
+    payload: z
+        .object({ headers: rowsShape.pipe(z.array(headerShape)).catch(() => []) })
+        .optional()
+        .catch(undefined),
+    labelIds: z
+        .array(z.unknown())
+        .transform((all) => all.filter((one): one is string => typeof one === 'string'))
+        .catch(() => []),
+    internalDate: optionalTextShape,
+    snippet: optionalTextShape
+});
+
+type Message = z.output<typeof messageShape>;
+
+/** A thread read as metadata: the thread's own snippet and the messages it holds, oldest first. */
+const threadBodyShape = z.object({
+    snippet: optionalTextShape,
+    messages: rowsShape.pipe(z.array(messageShape)).catch(() => [])
+});
+
+/** The account's profile: the address it sends from, when Gmail names one. */
+const profileShape = z.object({ emailAddress: optionalTextShape });
 
 /** The reader's own page for one thread, which is where the card's link goes. */
 function threadLink(id: string): string | undefined {
@@ -47,31 +84,23 @@ async function idsFor(args: MailReadArgs, signal: Signal): Promise<string[]> {
     const body = await getJson('google', url.toString(), args);
     const found: string[] = [];
     for (const row of rowsOf(body, 'threads')) {
-        const id = str(row.id);
-        if (id !== undefined) found.push(id);
+        const thread = threadRowShape.safeParse(row);
+        if (thread.success) found.push(thread.data.id);
     }
     return found.slice(0, args.perSignal);
 }
 
 /** One header of a message, by name, case-insensitively as the provider writes them. */
-function header(message: Record<string, unknown>, name: string): string {
-    const payload = message.payload;
-    const rows = typeof payload === 'object' && payload !== null ? payload : {};
-    for (const row of rowsOf(rows as Record<string, unknown>, 'headers')) {
-        if ((str(row.name) ?? '').toLowerCase() === name) return str(row.value) ?? '';
+function header(message: Message, name: string): string {
+    for (const row of message.payload?.headers ?? []) {
+        if ((row.name ?? '').toLowerCase() === name) return row.value ?? '';
     }
     return '';
 }
 
-/** The labels one message carries. */
-function labels(message: Record<string, unknown>): string[] {
-    const held = message.labelIds;
-    return Array.isArray(held) ? held.filter((one): one is string => typeof one === 'string') : [];
-}
-
 /** The moment a message arrived, from the epoch milliseconds Gmail answers with. */
-function receivedAt(message: Record<string, unknown>): string {
-    const ms = Number(str(message.internalDate) ?? '');
+function receivedAt(message: Message): string {
+    const ms = Number(message.internalDate ?? '');
     return Number.isFinite(ms) && ms > 0 ? new Date(ms).toISOString() : '';
 }
 
@@ -87,17 +116,19 @@ async function readThread(args: MailReadArgs, id: string): Promise<Record<string
 }
 
 /** The address a reply goes to: the thread's `Reply-To` when it has one, else its `From`. */
-function replyTo(newest: Record<string, unknown>): string {
+function replyTo(newest: Message): string {
     const stated = header(newest, 'reply-to');
     return stated === '' ? header(newest, 'from') : stated;
 }
 
 /** One thread in the shape the plate rules take, out of what the metadata read answered. */
 function threadOf(id: string, body: Record<string, unknown>): PlateThread | null {
-    const messages = rowsOf(body, 'messages');
+    const thread = threadBodyShape.safeParse(body);
+    if (!thread.success) return null;
+    const { messages } = thread.data;
     const newest = messages.at(-1);
     if (newest === undefined) return null;
-    const carried = labels(newest);
+    const carried = newest.labelIds;
     const link = threadLink(id);
     return {
         id,
@@ -105,7 +136,7 @@ function threadOf(id: string, body: Record<string, unknown>): PlateThread | null
         replyTo: replyTo(newest),
         subject: header(newest, 'subject'),
         received: receivedAt(newest),
-        snippet: decodeHTML(str(newest.snippet) ?? str(body.snippet) ?? ''),
+        snippet: decodeHTML(newest.snippet ?? thread.data.snippet ?? ''),
         messages: messages.length,
         ...(link === undefined ? {} : { url: link }),
         ownNewest: carried.includes('SENT'),
@@ -181,14 +212,14 @@ export async function replyGoogle(
     threadId: string,
     body: string
 ): Promise<void> {
-    const thread = await readThread(args, threadId);
-    const newest = rowsOf(thread, 'messages').at(-1);
+    const thread = threadBodyShape.safeParse(await readThread(args, threadId));
+    const newest = thread.success ? thread.data.messages.at(-1) : undefined;
     if (newest === undefined) throw new Error('google: the thread holds no message');
     const messageId = header(newest, 'message-id');
     const references = header(newest, 'references');
-    const profile = await getJson('google', `${BASE}/profile`, args);
+    const profile = profileShape.safeParse(await getJson('google', `${BASE}/profile`, args));
     const raw = await rawMessage({
-        sender: str(profile.emailAddress) ?? '',
+        sender: (profile.success ? profile.data.emailAddress : undefined) ?? '',
         to: replyTo(newest),
         subject: replySubject(header(newest, 'subject')),
         inReplyTo: messageId,

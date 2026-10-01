@@ -441,3 +441,135 @@ describe('the snippet of a thread', () => {
         expect(rows.map((one) => one.snippet)).toEqual([DECODED]);
     });
 });
+
+describe('the Google reader over messages of the wrong shape', () => {
+    /** The candidates of a round in which only the unread signal names this thread. */
+    async function candidatesOf(thread: unknown): Promise<Candidate[]> {
+        const fake = fakeFetcher([
+            { when: (url) => url.includes('is%3Aunread'), body: googleList(['odd']) },
+            { when: (url) => url.includes('label%3Atodo'), body: googleList([]) },
+            { when: (url) => url.includes('has%3Anouserlabels'), body: googleList([]) },
+            { when: (url) => url.includes('/threads/odd'), body: thread }
+        ]);
+        return readGoogleMail({ ...ARGS, fetcher: fake.fetcher });
+    }
+
+    it('reads a header, a label and a time that are not text as empty, and falls back to the thread snippet', async () => {
+        const found = await candidatesOf({
+            snippet: 'the thread snippet',
+            messages: [
+                {
+                    id: 'm',
+                    internalDate: 5,
+                    snippet: 3,
+                    labelIds: ['SENT', 2],
+                    payload: {
+                        headers: [
+                            { name: 3, value: 'x' },
+                            { name: 'From', value: 3 },
+                            { name: 'Subject', value: 'S' }
+                        ]
+                    }
+                }
+            ]
+        });
+        expect(found.map((one) => one.thread)).toStrictEqual([
+            {
+                id: 'odd',
+                sender: '',
+                replyTo: '',
+                subject: 'S',
+                received: '',
+                snippet: 'the thread snippet',
+                messages: 1,
+                url: 'https://mail.google.com/mail/u/0/#inbox/odd',
+                ownNewest: true,
+                trashed: false
+            }
+        ]);
+    });
+
+    it('reads a payload that is a list as holding no headers, and keeps the labels that are text', async () => {
+        const found = await candidatesOf({
+            messages: [{ id: 'm', labelIds: ['a', 2, 'TRASH'], payload: [] }]
+        });
+        expect(found).toHaveLength(1);
+        expect(found[0].thread.sender).toBe('');
+        expect(found[0].thread.subject).toBe('');
+        expect(found[0].thread.snippet).toBe('');
+        expect(found[0].thread.ownNewest).toBe(false);
+        expect(found[0].thread.trashed).toBe(true);
+    });
+});
+
+describe('the Microsoft reader over messages of the wrong shape', () => {
+    /** The candidates of a round in which only the unread signal names this conversation. */
+    async function candidatesOf(row: Record<string, unknown>): Promise<Candidate[]> {
+        const id = 'odd';
+        const { fetcher } = graphFetcher({ [id]: [row] }, [
+            {
+                when: (url: string) => /isRead(\+|%20)eq/.test(url),
+                body: { value: [{ id, conversationId: id }] }
+            },
+            {
+                when: (url: string) => url.includes('any%28') || url.includes('any('),
+                body: { value: [] }
+            },
+            {
+                when: (url: string) => url.includes('/mailFolders/inbox/messages'),
+                body: { value: [] }
+            },
+            { when: (url: string) => url.includes('/me/messages'), body: { value: [] } }
+        ]);
+        return readMicrosoftMail({ ...ARGS, key: 'microsoft-uni', fetcher });
+    }
+
+    const SENDER = { emailAddress: { name: 'Sen', address: 's@example.invalid' } };
+
+    it('answers an empty sender for a from that is not an object even when sender is a good one', async () => {
+        const found = await candidatesOf({
+            id: 'odd',
+            conversationId: 'odd',
+            subject: 3,
+            from: 3,
+            sender: SENDER,
+            replyTo: [{ emailAddress: [] }],
+            receivedDateTime: 3,
+            bodyPreview: 3,
+            categories: ['a', 2],
+            parentFolderId: 'inbox-folder',
+            webLink: 3
+        });
+        expect(found.map((one) => one.thread)).toStrictEqual([
+            {
+                id: 'odd',
+                sender: '',
+                replyTo: '',
+                subject: '',
+                received: '',
+                snippet: '',
+                messages: 1,
+                ownNewest: false,
+                trashed: false
+            }
+        ]);
+    });
+
+    it('reads the sender when from is absent, and the first reply-to that names someone', async () => {
+        const found = await candidatesOf({
+            id: 'odd',
+            conversationId: 'odd',
+            from: null,
+            sender: SENDER,
+            replyTo: [
+                { emailAddress: [] },
+                { emailAddress: { name: 3, address: 'x@example.invalid' } },
+                { emailAddress: { name: 'Desk', address: 'd@example.invalid' } }
+            ],
+            parentFolderId: 'inbox-folder'
+        });
+        expect(found).toHaveLength(1);
+        expect(found[0].thread.sender).toBe('Sen <s@example.invalid>');
+        expect(found[0].thread.replyTo).toBe('x@example.invalid');
+    });
+});

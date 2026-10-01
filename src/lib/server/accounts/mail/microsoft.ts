@@ -24,8 +24,8 @@
 // nothing in this file.
 
 import { decodeHTML } from 'entities';
-import { isMap, str } from '../../../data/helpers/guards.ts';
-import { getJson, httpsLink, postJson, rowsOf } from '../connect/api.ts';
+import { z } from 'zod';
+import { getJson, httpsLink, postJson, rowsShape } from '../connect/api.ts';
 import {
     SIGNALS,
     TODO_LABEL,
@@ -36,6 +36,60 @@ import {
 import type { Signal } from './plate.ts';
 
 const BASE = 'https://graph.microsoft.com/v1.0';
+
+/** A field of Graph's answer that is text where it is there, and read as absent otherwise. */
+const optionalTextShape = z.string().optional().catch(undefined);
+
+/**
+ * One address of a recipient field, as a name and an address where the provider gave both. A value
+ * that is no recipient reads as the empty text.
+ */
+const personShape = z
+    .object({
+        emailAddress: z.object({
+            name: z.string().catch(''),
+            address: z.string().catch('')
+        })
+    })
+    .transform(({ emailAddress: { name, address } }) => {
+        if (name === '') return address;
+        return address === '' ? name : `${name} <${address}>`;
+    })
+    .catch('');
+
+/**
+ * One message of a listing. `from` and `sender` are read as they came, since `from` stands for the
+ * sender whenever it is there at all and `sender` only when it is null or absent; `replyTo` is the
+ * recipients it names, each one as text, and the categories are the items of that list that are
+ * text.
+ */
+const messageShape = z.object({
+    id: optionalTextShape,
+    conversationId: optionalTextShape,
+    subject: optionalTextShape,
+    from: z.unknown().optional(),
+    sender: z.unknown().optional(),
+    replyTo: z.array(personShape).catch(() => []),
+    receivedDateTime: optionalTextShape,
+    bodyPreview: optionalTextShape,
+    categories: z
+        .array(z.unknown())
+        .transform((all) => all.filter((one): one is string => typeof one === 'string'))
+        .catch(() => []),
+    parentFolderId: optionalTextShape,
+    webLink: optionalTextShape
+});
+
+type Message = z.output<typeof messageShape>;
+
+/** A listing: its messages, and the address of the page after it when Graph named one. */
+const listShape = z.object({
+    value: rowsShape.pipe(z.array(messageShape)).catch(() => []),
+    '@odata.nextLink': optionalTextShape
+});
+
+/** A well-known folder: its id, which reads as the empty text when Graph would not name it. */
+const folderShape = z.object({ id: z.string().catch('') });
 
 /** The fields a message is read with, which is every field the plate and the payload need. */
 const SELECT = [
@@ -67,7 +121,8 @@ export type MailboxFacts = { sentFolder: string; trashFolder: string };
 /** The id of one well-known folder, or the empty string when Graph would not name it. */
 async function folderId(args: MailReadArgs, name: string): Promise<string> {
     const folder = await getJson('microsoft', `${BASE}/me/mailFolders/${name}?$select=id`, args);
-    return str(folder.id) ?? '';
+    const held = folderShape.safeParse(folder);
+    return held.success ? held.data.id : '';
 }
 
 /**
@@ -95,20 +150,10 @@ function filterFor(signal: Signal): string | null {
     return null;
 }
 
-/** One address of a recipient field, as a name and an address where the provider gave both. */
-function personOf(held: unknown): string {
-    if (!isMap(held)) return '';
-    const inner = held.emailAddress;
-    if (!isMap(inner)) return '';
-    const name = str(inner.name) ?? '';
-    const address = str(inner.address) ?? '';
-    if (name === '') return address;
-    return address === '' ? name : `${name} <${address}>`;
-}
-
 /** The display name and address of a message's sender. */
-function senderOf(row: Record<string, unknown>): string {
-    return personOf(row.from ?? row.sender);
+function senderOf(row: Message): string {
+    const person = personShape.safeParse(row.from ?? row.sender);
+    return person.success ? person.data : '';
 }
 
 /**
@@ -116,39 +161,34 @@ function senderOf(row: Record<string, unknown>): string {
  * `replyTo` when it names anyone, and its sender otherwise. The page names it in the confirmation,
  * so what the reader is asked about is who the answer reaches.
  */
-function replyToOf(row: Record<string, unknown>): string {
-    const held: unknown[] = Array.isArray(row.replyTo) ? row.replyTo : [];
-    const stated = held.map(personOf).find((one) => one !== '') ?? '';
+function replyToOf(row: Message): string {
+    const stated = row.replyTo.find((one) => one !== '') ?? '';
     return stated === '' ? senderOf(row) : stated;
 }
 
-/** The categories one message carries. */
-function categories(row: Record<string, unknown>): string[] {
-    const held = row.categories;
-    return Array.isArray(held) ? held.filter((one): one is string => typeof one === 'string') : [];
-}
-
 /** The moment one message arrived, as a number, with an unreadable time sorting last. */
-function receivedAt(row: Record<string, unknown>): number {
-    const at = Date.parse(str(row.receivedDateTime) ?? '');
+function receivedAt(row: Message): number {
+    const at = Date.parse(row.receivedDateTime ?? '');
     return Number.isFinite(at) ? at : Number.NEGATIVE_INFINITY;
 }
 
 /** Messages newest first, which a filtered listing does not promise and this file needs. */
-function byNewest(one: Record<string, unknown>, two: Record<string, unknown>): number {
+function byNewest(one: Message, two: Message): number {
     const first = receivedAt(one);
     const second = receivedAt(two);
     if (first !== second) return first > second ? -1 : 1;
-    return (str(one.id) ?? '') < (str(two.id) ?? '') ? -1 : 1;
+    return (one.id ?? '') < (two.id ?? '') ? -1 : 1;
 }
 
 /** One page of a listing and the address of the page after it, if Graph named one. */
 async function page(
     args: MailReadArgs,
     url: string
-): Promise<{ rows: Record<string, unknown>[]; next: string | undefined }> {
-    const body = await getJson('microsoft', url, args);
-    return { rows: rowsOf(body, 'value'), next: str(body['@odata.nextLink']) };
+): Promise<{ rows: Message[]; next: string | undefined }> {
+    const list = listShape.safeParse(await getJson('microsoft', url, args));
+    return list.success
+        ? { rows: list.data.value, next: list.data['@odata.nextLink'] }
+        : { rows: [], next: undefined };
 }
 
 /** The address one signal's first page is asked for. */
@@ -170,17 +210,14 @@ function listingUrl(args: MailReadArgs, signal: Signal): string {
  * here, so a page of messages that are all filed yields none of them and the next page is where the
  * signal's own rows are.
  */
-async function messagesFor(args: MailReadArgs, signal: Signal): Promise<Record<string, unknown>[]> {
-    const kept: Record<string, unknown>[] = [];
+async function messagesFor(args: MailReadArgs, signal: Signal): Promise<Message[]> {
+    const kept: Message[] = [];
     let url: string | undefined = listingUrl(args, signal);
     for (let read = 0; read < UNLABELED_PAGE_MAX && url !== undefined; read += 1) {
-        const answered: { rows: Record<string, unknown>[]; next: string | undefined } = await page(
-            args,
-            url
-        );
+        const answered: { rows: Message[]; next: string | undefined } = await page(args, url);
         kept.push(
             ...(signal === 'unlabeled'
-                ? answered.rows.filter((row) => categories(row).length === 0)
+                ? answered.rows.filter((row) => row.categories.length === 0)
                 : answered.rows)
         );
         if (signal !== 'unlabeled' || kept.length >= args.perSignal) break;
@@ -191,32 +228,28 @@ async function messagesFor(args: MailReadArgs, signal: Signal): Promise<Record<s
 }
 
 /** Every message of one conversation, newest first, which is the whole of what a thread is here. */
-async function conversation(args: MailReadArgs, id: string): Promise<Record<string, unknown>[]> {
+async function conversation(args: MailReadArgs, id: string): Promise<Message[]> {
     const url = new URL(`${BASE}/me/messages`);
     url.searchParams.set('$filter', `conversationId eq '${id.replace(/'/g, "''")}'`);
     url.searchParams.set('$select', SELECT);
     url.searchParams.set('$top', String(args.perSignal));
-    const rows = rowsOf(await getJson('microsoft', url.toString(), args), 'value');
+    const { rows } = await page(args, url.toString());
     return rows.sort(byNewest);
 }
 
 /** One conversation in the shape the plate rules take. */
-function threadOf(
-    id: string,
-    messages: Record<string, unknown>[],
-    facts: MailboxFacts
-): PlateThread | null {
+function threadOf(id: string, messages: Message[], facts: MailboxFacts): PlateThread | null {
     const newest = messages.at(0);
     if (newest === undefined) return null;
-    const link = httpsLink(str(newest.webLink));
-    const folder = str(newest.parentFolderId);
+    const link = httpsLink(newest.webLink);
+    const folder = newest.parentFolderId;
     return {
         id,
         sender: senderOf(newest),
         replyTo: replyToOf(newest),
-        subject: str(newest.subject) ?? '',
-        received: str(newest.receivedDateTime) ?? '',
-        snippet: decodeHTML(str(newest.bodyPreview) ?? ''),
+        subject: newest.subject ?? '',
+        received: newest.receivedDateTime ?? '',
+        snippet: decodeHTML(newest.bodyPreview ?? ''),
         messages: messages.length,
         ...(link === undefined ? {} : { url: link }),
         ownNewest: facts.sentFolder !== '' && folder === facts.sentFolder,
@@ -225,8 +258,8 @@ function threadOf(
 }
 
 /** The id a reply is sent on: the newest message of the conversation. */
-function newestMessageId(messages: Record<string, unknown>[]): string | undefined {
-    return str(messages.at(0)?.id);
+function newestMessageId(messages: Message[]): string | undefined {
+    return messages.at(0)?.id;
 }
 
 /** Every candidate of one account: the three signals read, each conversation read behind them. */
@@ -236,7 +269,7 @@ export async function readMicrosoftMail(args: MailReadArgs): Promise<Candidate[]
     const read = new Map<string, PlateThread | null>();
     for (const signal of SIGNALS) {
         for (const row of await messagesFor(args, signal)) {
-            const id = str(row.conversationId);
+            const id = row.conversationId;
             if (id === undefined) continue;
             if (!read.has(id)) read.set(id, threadOf(id, await conversation(args, id), facts));
             const thread = read.get(id) ?? null;
@@ -267,9 +300,9 @@ export async function archiveMicrosoft(args: MailReadArgs, conversationId: strin
     const messages = await conversation(args, conversationId);
     const inboxId = await folderId(args, 'inbox');
     for (const message of messages) {
-        const id = str(message.id);
+        const id = message.id;
         if (id === undefined) continue;
-        if (inboxId !== '' && str(message.parentFolderId) !== inboxId) continue;
+        if (inboxId !== '' && message.parentFolderId !== inboxId) continue;
         await postJson('microsoft', `${BASE}/me/messages/${encodeURIComponent(id)}/move`, {
             token: args.token,
             fetcher: args.fetcher,

@@ -167,3 +167,40 @@ describe('the configured settings', () => {
         }
     });
 });
+
+describe('the configured settings of the wrong shape', () => {
+    /** An engine directory of the case's own, with this appearance and a hub inside the scratch. */
+    function fixture(body: string): { engine: string; hub: string } {
+        const root = scratchDir('oculus-wallpaper-odd-');
+        const engine = join(root, 'engine');
+        const hub = join(root, 'hub');
+        const config = join(engine, 'config');
+        mkdirSync(config, { recursive: true });
+        mkdirSync(hub, { recursive: true });
+        writeFileSync(join(config, 'appearance.yml'), body);
+        writeFileSync(join(config, 'local.yml'), `hub: ${JSON.stringify(hub)}\n`);
+        return { engine, hub };
+    }
+
+    const read = (own: { engine: string }): ReturnType<typeof settings> =>
+        settings(wallpaperMemory(), loadConfig(own.engine).config, own.engine);
+
+    it('serves nothing for a dir that is empty or not text, and for a block that is a list', () => {
+        expect(read(fixture("wallpaper:\n  dir: ''\n  pick: first\n"))).toBeNull();
+        expect(read(fixture('wallpaper:\n  dir: 3\n  pick: first\n'))).toBeNull();
+        expect(read(fixture('wallpaper:\n  - dir: pictures\n'))).toBeNull();
+    });
+
+    it('reads a file that is not text as no file, the key still present', () => {
+        for (const file of ['3', 'null']) {
+            const own = fixture(`wallpaper:\n  dir: pictures\n  pick: first\n  file: ${file}\n`);
+            const found = read(own);
+            expect(found).toStrictEqual({
+                dir: join(own.hub, 'pictures'),
+                file: undefined,
+                pick: 'first'
+            });
+            expect(Object.keys(found ?? {})).toEqual(['dir', 'file', 'pick']);
+        }
+    });
+});

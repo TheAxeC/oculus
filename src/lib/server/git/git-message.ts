@@ -4,15 +4,15 @@
 // The instruction is the catalog's `git.message_prompt`, so the shape of a hub commit message (a
 // capitalised imperative subject, a blank line, `- Verb ...` bullets, no attribution of any kind)
 // is config rather than a string in a module. The model is `git.message_model` of
-// config/behavior.yml, read the way server/root/hooks.ts reads `notify:`: defensively, with a
-// default when the key is missing or malformed. Empty means the CLI's own default model, so nothing
-// is passed.
+// config/behavior.yml, read through a schema, with a default when the key is missing or malformed.
+// Empty means the CLI's own default model, so nothing is passed.
 //
 // The diff and the subprocess are both options with real defaults, which is what lets
 // tests/server/git/git-write.test.ts exercise this without a `claude` on the machine ever being
 // run.
 
 import { execFile } from 'node:child_process';
+import { z } from 'zod';
 import { allowedRoots, MAX_OUTPUT, stagedDiff, type Outcome } from './git-write.ts';
 
 /** The CLI this asks. */
@@ -35,15 +35,18 @@ export type MessageOptions = {
     model?: string;
 };
 
+/** The `git.message_model` text of a configuration, or the empty text when a part is missing. */
+const messageModelShape = z
+    .object({ git: z.object({ message_model: z.string() }) })
+    .transform((config) => config.git.message_model);
+
 /**
  * `git.message_model` of config/behavior.yml. A missing or malformed key answers the empty string,
  * which is the CLI's own default model.
  */
 export function messageModel(config: Record<string, unknown>): string {
-    const held = config.git;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) return '';
-    const raw = (held as Record<string, unknown>).message_model;
-    return typeof raw === 'string' ? raw : '';
+    const held = messageModelShape.safeParse(config);
+    return held.success ? held.data : '';
 }
 
 /**

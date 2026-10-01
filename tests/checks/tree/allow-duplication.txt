@@ -19,12 +19,8 @@ src/lib/data/sources/collections.ts src/lib/data/sources/registries.ts 52307771f
 src/lib/data/sources/config/agents.ts src/lib/server/sessions/stores/customizations.ts c7bd352c4b8c the same 11 lines at 258 and 132, to fold into one place
 src/lib/data/sources/config/agents.ts src/lib/state/workbench/navigation/catalogue.ts ca6bded45400 the same 9 lines at 257 and 175, to fold into one place
 src/lib/data/sources/config/merge.ts src/lib/server/transcripts/stores.ts 6ba7db2c1596 the same 10 lines at 81 and 51, to fold into one place
-src/lib/server/accounts/connect/store.ts src/lib/server/accounts/mail/triage.ts 46984edf819e the same 9 lines at 102 and 63, to fold into one place
-src/lib/server/content/audit/rules.ts src/lib/server/edit/deck-edit.ts 3a43caa175b4 the same 11 lines at 73 and 30, to fold into one place
-src/lib/server/content/audit/rules.ts src/lib/server/git/deposit.ts 3a43caa175b4 the same 10 lines at 73 and 206, to fold into one place
 src/lib/server/edit/deck-edit.ts src/lib/server/edit/writes/audit-mute.ts 1e0e0eb0f6b5 the same 15 lines at 30 and 35, to fold into one place
 src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts 22e246596d51 the same 9 lines at 107 and 317, to fold into one place
-src/lib/server/git/deposit-routes.ts src/lib/server/git/git-routes.ts 2e395e19649f the same 6 lines at 176 and 266, to fold into one place
 src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts e81afc4ebda6 the same 30 lines at 100 and 14, to fold into one place
 src/lib/server/machine/hpc/parse.ts src/lib/state/system/hpc.ts 8ead1c0cdafe the same 7 lines at 25 and 20, to fold into one place
 src/lib/shell/rail/RailPages.svelte src/lib/views/system/workbench/Catalogue.svelte 3e68f3880de2 the same 10 lines at 205 and 218, to fold into one place

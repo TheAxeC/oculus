@@ -370,3 +370,41 @@ describe('the connector folders and scopes', () => {
         expect(ACCESS).toBeTruthy();
     });
 });
+
+describe('a triage write of the wrong shape', () => {
+    it('refuses an empty fields map and a triaged that is not a boolean', async () => {
+        const dir = scratch();
+        for (const fields of [{}, { triaged: 'yes' }]) {
+            const answer = await handleMail(
+                post({ action: 'triage', thread: THREAD.id, fields }),
+                target(dir)
+            );
+            expect(answer.status).toBe(400);
+            expect(await answer.json()).toEqual({ error: 'no field to write' });
+        }
+        expect(readTriage(dir).notes).toEqual({});
+    });
+
+    it('sets the text and clears the triaged flag of a note, and no other field', async () => {
+        const dir = scratch();
+        const wrote = async (fields: unknown): Promise<number> =>
+            (await handleMail(post({ action: 'triage', thread: THREAD.id, fields }), target(dir)))
+                .status;
+        expect(await wrote({ triaged: true })).toBe(200);
+        expect(readTriage(dir).notes[THREAD.id]).toHaveProperty('triaged', true);
+        expect(await wrote({ what: 'w', triaged: false })).toBe(200);
+        const note = readTriage(dir).notes[THREAD.id];
+        expect(Object.keys(note).sort()).toEqual(['what', 'written']);
+        expect(note.what).toBe('w');
+    });
+
+    it('answers a reply with a body that is not text as a reply with no words', async () => {
+        const dir = scratch();
+        const answer = await handleMail(
+            post({ action: 'reply', thread: THREAD.id, body: 3 }),
+            target(dir)
+        );
+        expect(answer.status).toBe(400);
+        expect(await answer.json()).toEqual({ error: 'an answer needs words' });
+    });
+});

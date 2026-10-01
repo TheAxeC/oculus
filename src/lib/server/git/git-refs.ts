@@ -11,6 +11,7 @@
 //
 // The records of `status --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
 
+import { byKey } from '../../data/helpers/guards.ts';
 import { STASH_REF, statusRecords } from '../core/git-parse.ts';
 import {
     allowedRoots,
@@ -56,7 +57,7 @@ export async function stash(
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
-    const flags = STASH_FLAGS[mode] as string[] | undefined;
+    const flags = byKey(STASH_FLAGS, mode);
     if (flags === undefined) return failed('that is not a way to stash');
     const state = await porcelain(root);
     if (!state.ok) return state;

@@ -659,3 +659,106 @@ describe('the gate over what this module can run', () => {
         }
     });
 });
+
+describe('what the deposit makes of an odd gh answer and an odd topics list', () => {
+    const HUB_URL = 'https://github.com/someone/theta-code';
+
+    /** A gh that answers every view with this output and any other call as the suite's gh does. */
+    function viewing(output: () => string | null): GhRun {
+        return (args, timeout) => {
+            if (args[1] !== 'view' || output() === null) return gh(args, timeout);
+            ran.push(['gh', ...args]);
+            return answer(true, output() ?? '', '');
+        };
+    }
+
+    it('names each topic as text, whatever the manifest holds in the list', async () => {
+        const text = manifest('theta', 'theta-code').replace(
+            '  topics: [tensors]',
+            '  topics: [1, {a: 1}, null]'
+        );
+        write(hub, join('projects', 'manuscripts', 'theta', 'project.yml'), text);
+        write(codeOf('theta'), 'README.md', '# theta\n');
+        expect((await adopt('theta', options())).ok).toBe(true);
+        expect((await commit('theta', 'Add the first files', options())).ok).toBe(true);
+        expect((await push('theta', options())).ok).toBe(true);
+        expect(edits.at(-1)).toEqual([
+            'repo',
+            'edit',
+            expect.stringContaining('theta-code'),
+            '--description',
+            'One line about the repository.',
+            '--add-topic',
+            '1',
+            '--add-topic',
+            '[object Object]',
+            '--add-topic',
+            'null'
+        ]);
+    });
+
+    it('reads no default branch from an answer that holds none, and sets none', async () => {
+        let output: string | null = null;
+        const held = { mirrors, into, gh: viewing(() => output) };
+        const odd = [
+            JSON.stringify({ url: HUB_URL, defaultBranchRef: { name: 3 } }),
+            'null',
+            '[]',
+            'not json'
+        ];
+        for (const one of odd) {
+            output = one;
+            const before = edits.length;
+            const taken = await snapshot('theta', 'Code deposit', held);
+            expect(taken.ok, one).toBe(true);
+            expect(taken.output, one).toBe('the remote now holds one commit');
+            expect(edits.length, one).toBe(before);
+        }
+    });
+
+    it('sets main as the default when the answer names another branch and a url', async () => {
+        const named = (url: unknown): string =>
+            JSON.stringify({ url, defaultBranchRef: { name: 'dev' } });
+        let output: string | null = null;
+        const held = { mirrors, into, gh: viewing(() => output) };
+        output = named(HUB_URL);
+        const before = edits.length;
+        const set = await snapshot('theta', 'Code deposit, again', held);
+        expect(set.output).toBe('the remote now holds one commit');
+        expect(edits.length).toBe(before + 1);
+        expect(edits.at(-1)).toEqual([
+            'repo',
+            'edit',
+            'someone/theta-code',
+            '--default-branch',
+            'main'
+        ]);
+        output = named(3);
+        const none = await snapshot('theta', 'Code deposit, once again', held);
+        expect(none.output).toBe(
+            'the remote now holds one commit, and its default branch is not main'
+        );
+        expect(edits.length).toBe(before + 1);
+    });
+
+    it('makes an empty mirror when the view answers no url, and clones one it does answer', async () => {
+        write(
+            hub,
+            join('projects', 'manuscripts', 'iota', 'project.yml'),
+            manifest('iota', 'iota-code')
+        );
+        write(codeOf('iota'), 'README.md', '# iota\n');
+        let output = '';
+        const held = { mirrors, into, gh: viewing(() => output) };
+        for (const one of [JSON.stringify({ url: 3 }), 'null', '[]', 'not json']) {
+            output = one;
+            rmSync(join(mirrors, 'iota-code'), { recursive: true, force: true });
+            const made = await adopt('iota', held);
+            expect(made.output, one).toBe('made an empty mirror on main');
+        }
+        output = JSON.stringify({ url: known.get('beta-code') });
+        rmSync(join(mirrors, 'iota-code'), { recursive: true, force: true });
+        const cloned = await adopt('iota', held);
+        expect(cloned.output).toBe(`cloned ${known.get('beta-code')}`);
+    });
+});

@@ -27,6 +27,7 @@
 import { json } from '@sveltejs/kit';
 import { existsSync, readFileSync } from 'node:fs';
 import { parse } from 'yaml';
+import { z } from 'zod';
 import { publishedLink } from '../../../data/accounts/calendar.ts';
 import { accountRefusal, connectKey, signsIn } from '../../../data/accounts/connect.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
@@ -157,7 +158,23 @@ function localText(file: string): string {
     return existsSync(file) ? readFileSync(file, 'utf8') : '';
 }
 
-/** The rows one list of the machine file holds now, read as the file's reader would. */
+/**
+ * One list of the machine file: its map items, whatever their fields, and no rows for a value that
+ * is no list.
+ */
+const rowListShape = z
+    .array(z.unknown())
+    .transform((all) => all.filter(isMap))
+    .catch(() => []);
+
+/** The two account lists of the machine file, each read as a list of rows. */
+const accountListsShape = z.object({ calendars: rowListShape, mail: rowListShape });
+
+/**
+ * The rows one list of the machine file holds now, read as the file's reader would. A row is kept
+ * whatever its fields, since the label rule only compares a row's provider and label with the ones
+ * being added.
+ */
 function rowsIn(text: string, list: AccountList): AccountRow[] {
     let parsed: unknown;
     try {
@@ -165,9 +182,18 @@ function rowsIn(text: string, list: AccountList): AccountRow[] {
     } catch {
         return [];
     }
-    const held = isMap(parsed) ? parsed[list] : undefined;
-    return Array.isArray(held) ? held.filter(isMap).map((row) => row as AccountRow) : [];
+    const lists = accountListsShape.safeParse(parsed);
+    return lists.success ? lists.data[list].map((row) => row as AccountRow) : [];
 }
+
+/**
+ * The row an Add names, once the label rule has accepted its provider and label: a provider the
+ * connectors offer and a label.
+ */
+const addedRowShape = z.object({
+    provider: z.enum(['google', 'microsoft', 'ics']),
+    label: z.string()
+}) satisfies z.ZodType<AccountRow>;
 
 /**
  * The row of an Add written into the machine file with its account file, and the lists read again,
@@ -184,7 +210,9 @@ function addRow(
     const text = localText(target.book.file);
     const refused = accountRefusal(kind, rowsIn(text, list), record.provider, record.label);
     if (refused !== null) return json({ error: refused }, { status: 400 });
-    const row = { provider: record.provider, label: record.label } as AccountRow;
+    const added = addedRowShape.safeParse(record);
+    if (!added.success) return json({ error: 'provider' }, { status: 400 });
+    const row = added.data;
     const link = row.provider === 'ics' ? publishedLink(record.url) : null;
     if (row.provider === 'ics' && link === null) return json({ error: 'link' }, { status: 400 });
     if (signsIn(row)) {

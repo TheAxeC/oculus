@@ -1,13 +1,14 @@
 // Layer 1, data. The type guards every reader of untyped YAML and JSON needs, in one place.
 //
-// A parsed config file, a manifest, a feed, a socket frame and an endpoint's answer all arrive as
-// `unknown`, and every module that reads one narrows it the same few ways: is this a map, what map
-// is it with an empty one for anything else, is this a string, what string is it with a fallback,
-// what text is this scalar, which items of this list are strings, and what does a record or a list
-// hold under a key or at a position it may not have. The contracts here are the ones their readers
-// agreed on:
-// nothing trims, nothing coerces a number to text, and a value of the wrong shape is dropped rather
-// than repaired, so a bad line of a config file loses that line and nothing else.
+// A value from outside the process (a parsed file, a request body, a socket frame, an answer of
+// another program or service) is read through a zod schema at its reader, as DESIGN.md's "Untyped
+// input" says. What is here is for the bare map test and for the values a reader already holds:
+// is this a map, what map is it with an empty one for anything else, is this a string, what string
+// is it with a fallback, what text is this scalar, which items of this list are strings, and what
+// does a record or a list hold under a key or at a position it may not have. The contracts here
+// are the ones their readers agreed on: nothing trims, nothing coerces a number to text, and a
+// value of the wrong shape is dropped rather than repaired, so a bad line of a config file loses
+// that line and nothing else.
 //
 // `state/` may import this beside `data/model`, which is the one row of DESIGN.md's boundary table
 // this file widened; `ui/`, `shell/` and `themes/` may not.

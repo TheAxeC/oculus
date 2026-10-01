@@ -15,6 +15,7 @@
 
 import { isAbsolute, join } from 'node:path';
 import { existsSync } from 'node:fs';
+import { byKey } from '../../data/helpers/guards.ts';
 import { writeTextAtomic } from '../core/json.ts';
 import { pathInside } from '../core/git.ts';
 import { statusRecords } from '../core/git-parse.ts';
@@ -86,7 +87,7 @@ export async function applyHunk(
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
-    const flags = FLAGS[mode] as string[] | undefined;
+    const flags = byKey(FLAGS, mode);
     if (flags === undefined) return failed('that is not a way to apply a change');
     if (typeof patch !== 'string' || !patch.startsWith('diff --git ')) {
         return failed('that is not a patch git can apply');

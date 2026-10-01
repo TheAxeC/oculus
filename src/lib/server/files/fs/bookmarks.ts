@@ -23,6 +23,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { parse } from 'yaml';
+import { z } from 'zod';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import type { Entry, SchemaField } from '../../../data/model/index.ts';
@@ -77,14 +78,30 @@ function scaffoldSchema(): SchemaField[] {
 /** What a GET for the bookmarks answers: the entries as the form edits them, and their schema. */
 export type BookmarksAnswer = { entries: Entry[]; schema: SchemaField[] };
 
+/** An item of the file's `entries:` list that is a map, answered as the file holds it. */
+const bookmarkItemShape = z.custom<Record<string, unknown>>(isMap);
+
+/** What a bookmark is found by: a label of text or a number, written out as text. */
+const bookmarkLabelShape = z
+    .union([z.string(), z.custom<number>((held) => typeof held === 'number')])
+    .transform(String);
+
+/**
+ * The parts of the file this module reads: the `entries:` list, which reads as empty when it is
+ * odd, and the `schema:` as the file holds it for the collection reader to check.
+ */
+const bookmarksFileShape = z.object({
+    entries: z.array(z.unknown()).catch(() => []),
+    schema: z.unknown().optional()
+});
+
 /** One entry of the file as the page reads it, or null for an item that is not a map. */
 function bookmark(item: unknown, file: string, index: number): Entry | null {
-    if (!isMap(item)) return null;
-    const held = item[BOOKMARK_IDENTITY];
-    if (typeof held !== 'string' && typeof held !== 'number') return null;
-    const label = String(held);
-    if (label === '') return null;
-    return { id: label, title: label, fields: { ...item }, file, index };
+    const held = bookmarkItemShape.safeParse(item);
+    if (!held.success) return null;
+    const named = bookmarkLabelShape.safeParse(held.data[BOOKMARK_IDENTITY]);
+    if (!named.success || named.data === '') return null;
+    return { id: named.data, title: named.data, fields: { ...held.data }, file, index };
 }
 
 /**
@@ -99,12 +116,12 @@ export function readBookmarks(file: string): BookmarksAnswer {
     } catch {
         return { entries: [], schema: scaffoldSchema() };
     }
-    if (!isMap(data)) return { entries: [], schema: scaffoldSchema() };
-    const items = Array.isArray(data.entries) ? data.entries : [];
+    const held = bookmarksFileShape.safeParse(data);
+    if (!held.success) return { entries: [], schema: scaffoldSchema() };
     const entries: Entry[] = [];
-    for (const [index, item] of items.entries()) {
+    for (const [index, item] of held.data.entries.entries()) {
         const one = bookmark(item, file, index);
         if (one !== null) entries.push(one);
     }
-    return { entries, schema: collectionSchema(data.schema) ?? scaffoldSchema() };
+    return { entries, schema: collectionSchema(held.data.schema) ?? scaffoldSchema() };
 }

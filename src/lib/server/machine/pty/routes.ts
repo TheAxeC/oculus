@@ -18,9 +18,10 @@
 // no English the page would have to show raw. The page maps the two keys back through t().
 
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import { join } from 'node:path';
 import { taskSkipPermissions } from '../../../data/helpers/tasks.ts';
-import { scalar } from '../../../data/helpers/guards.ts';
+import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, loadLocalOrDefaults, textCatalog } from '../../../data/sources/config.ts';
 import { MANUSCRIPT, mains } from '../../content/latex.ts';
@@ -44,7 +45,6 @@ import {
     restyleTerminal
 } from './edit.ts';
 import {
-    KINDS,
     RESUME_TOOLS,
     interruptTerminal,
     isSessionId,
@@ -71,9 +71,32 @@ const NAME_MAX = 80;
 const TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
 type TaskKind = (typeof TASKS)[number];
 
+/** Whether a value names one of the four update tasks. */
+function isTask(value: unknown): value is TaskKind {
+    return TASKS.some((task) => task === value);
+}
+
 /** The two things a reader does to one main file of a manuscript. */
 const LATEX_STEPS = ['build', 'clean'] as const;
 type LatexStep = (typeof LATEX_STEPS)[number];
+
+/** The step of a latex request: build or clean, and anything else is refused. */
+const latexStepShape = z.literal(LATEX_STEPS);
+
+/** The name of a start request: text, and anything else starts the terminal with no name. */
+const startNameShape = z.string().optional().catch(undefined);
+
+/**
+ * The text of a steer, read by the shared `scalar`: a string as it is, a number or a boolean
+ * written out, and anything else the empty text, which steerTerminal then refuses.
+ */
+const steerTextShape = z
+    .unknown()
+    .optional()
+    .transform((value) => scalar(value));
+
+/** The tool of a fork or a resume request: one of the two whose sessions can be continued. */
+const resumeToolShape = z.literal(RESUME_TOOLS);
 
 export type TerminalOptions = StartOptions &
     ChatOptions & {
@@ -143,8 +166,8 @@ async function resumeSession(
         {
             kind: resume.tool,
             cwd: record.cwd ?? '',
-            cols: cols as number,
-            rows: rows as number,
+            cols,
+            rows,
             name: title.slice(0, NAME_MAX),
             resume,
             env
@@ -196,8 +219,8 @@ async function forkSession(
         {
             kind: resume.tool,
             cwd: record.cwd ?? '',
-            cols: message.cols as number,
-            rows: message.rows as number,
+            cols: message.cols,
+            rows: message.rows,
             name: words(catalog, 'server.fork.name', title).slice(0, NAME_MAX),
             env
         },
@@ -231,8 +254,8 @@ async function composeSession(
             id,
             kind,
             cwd: request.cwd,
-            cols: message.cols as number,
-            rows: message.rows as number,
+            cols: message.cols,
+            rows: message.rows,
             env: composed.env
         },
         composed.argv === null ? options : { ...options, argv: composed.argv }
@@ -275,8 +298,8 @@ async function recoverDataset(
         {
             kind: 'shell',
             cwd,
-            cols: cols as number,
-            rows: rows as number,
+            cols,
+            rows,
             name: `recover ${key}`
         },
         { ...options, command: `python3 tools/data/redownload.py ${shellWord(key)}` }
@@ -306,7 +329,7 @@ async function startTask(
     rows: unknown,
     options: TerminalOptions
 ): Promise<Response> {
-    if (typeof kind !== 'string' || !TASKS.includes(kind as TaskKind)) {
+    if (!isTask(kind)) {
         return json(
             { error: `kind must be one of ${TASKS.join(', ')}` },
             { status: 400, headers: NO_STORE }
@@ -318,13 +341,13 @@ async function startTask(
         {
             kind: 'claude',
             cwd: local.hub,
-            cols: cols as number,
-            rows: rows as number,
+            cols,
+            rows,
             name: `task ${kind}`
         },
         {
             ...options,
-            command: taskCommand(local.claudeBin, kind as TaskKind, taskSkipPermissions(config))
+            command: taskCommand(local.claudeBin, kind, taskSkipPermissions(config))
         }
     );
     options.refresh?.();
@@ -361,13 +384,14 @@ async function startLatex(
     message: Record<string, unknown>,
     options: TerminalOptions
 ): Promise<Response> {
-    const step = message.step as LatexStep;
-    if (!LATEX_STEPS.includes(step)) {
+    const asked = latexStepShape.safeParse(message.step);
+    if (!asked.success) {
         return json(
             { error: `step must be one of ${LATEX_STEPS.join(', ')}` },
             { status: 400, headers: NO_STORE }
         );
     }
+    const step = asked.data;
     const id = message.id;
     if (typeof id !== 'string' || id === '') {
         return json({ error: 'id is not a project id' }, { status: 400, headers: NO_STORE });
@@ -393,14 +417,29 @@ async function startLatex(
         {
             kind: 'shell',
             cwd: join(folder, MANUSCRIPT),
-            cols: message.cols as number,
-            rows: message.rows as number,
+            cols: message.cols,
+            rows: message.rows,
             name: latexName(options, step, id, main)
         },
         { ...options, command: latexCommand(step, main) }
     );
     options.refresh?.();
     return json({ ok: true, terminal }, { headers: NO_STORE });
+}
+
+/** The session a fork or a resume names, or the refusal of a tool or an id that is none. */
+function sessionOf(message: Record<string, unknown>): TerminalResume | Response {
+    const tool = resumeToolShape.safeParse(message.tool);
+    if (!tool.success) {
+        return json(
+            { error: `tool must be one of ${RESUME_TOOLS.join(', ')}` },
+            { status: 400, headers: NO_STORE }
+        );
+    }
+    if (!isSessionId(message.id)) {
+        return json({ error: 'id is not a session id' }, { status: 400, headers: NO_STORE });
+    }
+    return { tool: tool.data, id: message.id };
 }
 
 /**
@@ -415,27 +454,20 @@ export async function handleTerminal(
     const read = await tokenedBody(request, token, { headers: NO_STORE });
     if (read instanceof Response) return read;
     const body = read.body;
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    if (!isMap(body)) {
         return json({ error: 'the body is not an action' }, { status: 400, headers: NO_STORE });
     }
-    const message = body as Record<string, unknown>;
+    const message = body;
 
     try {
         if (message.action === 'start') {
-            const kind = message.kind as TerminalKind;
-            if (!KINDS.includes(kind)) {
-                return json(
-                    { error: `kind must be one of ${KINDS.join(', ')}` },
-                    { status: 400, headers: NO_STORE }
-                );
-            }
             const terminal = await startTerminal(
                 {
-                    kind,
-                    cwd: scalar(message.cwd),
-                    cols: message.cols as number,
-                    rows: message.rows as number,
-                    name: typeof message.name === 'string' ? message.name : undefined
+                    kind: message.kind,
+                    cwd: message.cwd,
+                    cols: message.cols,
+                    rows: message.rows,
+                    name: startNameShape.parse(message.name)
                 },
                 options
             );
@@ -462,7 +494,7 @@ export async function handleTerminal(
         if (message.action === 'steer') {
             if (!isTerminalId(message.id))
                 return json({ error: NOT_OURS }, { status: 400, headers: NO_STORE });
-            await steerTerminal(message.id, scalar(message.text), options);
+            await steerTerminal(message.id, steerTextShape.parse(message.text), options);
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
         if (message.action === 'interrupt') {
@@ -472,19 +504,9 @@ export async function handleTerminal(
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
         if (message.action === 'fork') {
-            const tool = message.tool as TerminalResume['tool'];
-            if (!RESUME_TOOLS.includes(tool)) {
-                return json(
-                    { error: `tool must be one of ${RESUME_TOOLS.join(', ')}` },
-                    { status: 400, headers: NO_STORE }
-                );
-            }
-            if (!isSessionId(message.id))
-                return json(
-                    { error: 'id is not a session id' },
-                    { status: 400, headers: NO_STORE }
-                );
-            return await forkSession({ tool, id: message.id }, message, options);
+            const session = sessionOf(message);
+            if (session instanceof Response) return session;
+            return await forkSession(session, message, options);
         }
         if (message.action === 'stop') {
             if (!isTerminalId(message.id))
@@ -514,34 +536,14 @@ export async function handleTerminal(
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
         if (message.action === 'resume') {
-            const tool = message.tool as TerminalResume['tool'];
-            if (!RESUME_TOOLS.includes(tool)) {
-                return json(
-                    { error: `tool must be one of ${RESUME_TOOLS.join(', ')}` },
-                    { status: 400, headers: NO_STORE }
-                );
-            }
-            if (!isSessionId(message.id))
-                return json(
-                    { error: 'id is not a session id' },
-                    { status: 400, headers: NO_STORE }
-                );
-            return await resumeSession(
-                { tool, id: message.id },
-                message.cols,
-                message.rows,
-                options
-            );
+            const session = sessionOf(message);
+            if (session instanceof Response) return session;
+            return await resumeSession(session, message.cols, message.rows, options);
         }
         if (message.action === 'resize') {
             if (!isTerminalId(message.id))
                 return json({ error: NOT_OURS }, { status: 400, headers: NO_STORE });
-            await resizeTerminal(
-                message.id,
-                message.cols as number,
-                message.rows as number,
-                options
-            );
+            await resizeTerminal(message.id, message.cols, message.rows, options);
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
     } catch (error) {

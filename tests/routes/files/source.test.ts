@@ -18,7 +18,8 @@ import { mintToken, TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
 import {
     handleSource,
     handleSourceInfo,
-    isBinaryFile
+    isBinaryFile,
+    sourceBody
 } from '../../../src/lib/server/files/source.ts';
 import { ENGINE_ROOT, engineRoot } from '../../../src/lib/server/files/files.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
@@ -358,5 +359,20 @@ describe('a config file of the engine', () => {
 
         expect(answer.status).toBe(403);
         expect(readFileSync(join(one.engine, 'local.yml'), 'utf8')).toBe('hub: /above\n');
+    });
+});
+
+describe('a source body of the wrong shape', () => {
+    it('answers the three fields it needs and drops every other key', () => {
+        const body = sourceBody({ root: 'r', path: 'p', content: '', extra: 1 });
+        expect(body).toStrictEqual({ root: 'r', path: 'p', content: '' });
+        expect(Object.keys(body ?? {})).toHaveLength(3);
+    });
+
+    it('refuses an empty root, a content that is not text, and a body that is no map', () => {
+        expect(sourceBody({ root: '', path: 'p', content: '' })).toBeNull();
+        expect(sourceBody({ root: 'r', path: 'p', content: 3 })).toBeNull();
+        expect(sourceBody(null)).toBeNull();
+        expect(sourceBody([])).toBeNull();
     });
 });

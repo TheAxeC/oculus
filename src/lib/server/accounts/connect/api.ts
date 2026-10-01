@@ -6,9 +6,26 @@
 // carry the account's own address, a calendar's name or a correspondent's, and none of that belongs
 // on a page or in a log.
 
-import { isMap, str } from '../../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { isMap } from '../../../data/helpers/guards.ts';
 import type { ConnectProvider } from '../../../data/model/index.ts';
 import { ReadTimeout, type Fetcher } from './oauth.ts';
+
+/** A field of a provider's error that is text where it is there, and read as absent otherwise. */
+const optionalTextShape = z.string().optional().catch(undefined);
+
+/**
+ * A provider's refusal: its `error` is the code itself, or a map that holds it under `status` or
+ * under `code`, `status` first. A map that holds neither, and a numeric code, give no code.
+ */
+const refusalShape = z.object({
+    error: z.union([
+        z.string(),
+        z
+            .object({ status: optionalTextShape, code: optionalTextShape })
+            .transform((held) => held.status ?? held.code ?? '')
+    ])
+});
 
 /**
  * The error code a provider put in its refusal, or nothing when it put none there. Google names it
@@ -16,11 +33,8 @@ import { ReadTimeout, type Fetcher } from './oauth.ts';
  * left out, since it says no more than the status the line already carries.
  */
 function codeOf(body: unknown): string {
-    if (!isMap(body)) return '';
-    const error = body.error;
-    if (typeof error === 'string') return error;
-    if (isMap(error)) return str(error.status) ?? str(error.code) ?? '';
-    return '';
+    const refusal = refusalShape.safeParse(body);
+    return refusal.success ? refusal.data.error : '';
 }
 
 /** One line saying what a provider refused: the provider, the status and its own code. */
@@ -89,10 +103,13 @@ export async function postJson(
     return isMap(answer.body) ? answer.body : {};
 }
 
+/** The rows of a paged list: the items that are maps, answered as the provider sent them. */
+export const rowsShape = z.array(z.unknown()).transform((all) => all.filter(isMap));
+
 /** The rows of a paged answer, under the key the provider lists them at. */
 export function rowsOf(body: Record<string, unknown>, key: string): Record<string, unknown>[] {
-    const held = body[key];
-    return Array.isArray(held) ? held.filter(isMap) : [];
+    const held = rowsShape.safeParse(body[key]);
+    return held.success ? held.data : [];
 }
 
 /** How many pages one listing is followed over, so a wrong answer cannot loop for ever. */

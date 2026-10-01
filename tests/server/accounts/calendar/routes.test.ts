@@ -127,3 +127,15 @@ describe('the calendar endpoint', () => {
         expect(opened).toEqual([]);
     });
 });
+
+describe('the calendar endpoint, an event that is not text', () => {
+    it('opens nothing and answers that there is no such event', async () => {
+        const opened: string[] = [];
+        for (const event of [3, null, ['google-work-primary-one']]) {
+            const answer = await handleCalendar(post({ action: 'open', event }), target(opened));
+            expect(answer.status).toBe(400);
+            expect(await answer.json()).toMatchObject({ error: 'no such event' });
+        }
+        expect(opened).toEqual([]);
+    });
+});

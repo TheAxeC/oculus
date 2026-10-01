@@ -55,24 +55,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   builder_usage: first run (stopped at the cases' first run, `agents/reviews/Q85a2-first-run.md`) 99,564 tokens, 98 tool uses, 22.0 min; after round 0 (the whole build) 339,566 tokens, 351 tool uses, 119.2 min
   reviewer_report: agents/reviews/Q85a2-refuter.md (first review, reviewer a34f1484825697f1c on claude-opus-5-5, 85,236 tokens, 108 tool uses, 29.8 min)
   brief_check: agents/reviews/Q85a2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 228,189 tokens, 56 tool uses, 9.5 min
+  shared_paths: Q85a4 landed first (2026-10-01 10:42), so this landing hand-merges `DESIGN.md:148` (one paragraph naming both steps' folders and bodies), `src/lib/server/core/json.ts` (the comment at 91-92, helpers left with no caller) and `tests/checks/tree/allow-duplication.txt` (the union of removed lines), folds Q85a4's own `anyNumberShape` (`machine/pty/channel.ts`, `files/search.ts`) and `mapShape` (`machine/usage/accounts.ts`) into `core/shapes.ts`, and regenerates `docs/diagrams/`
   landing: not-started
   round: 1 (`agents/briefs/Q85a2-round1.md`; round 0 the cases ruling `agents/briefs/Q85a2-cases.md`, sent 2026-10-01 07:28)
-- step: Q85a4
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 07:34)
-  session_id: a344f53186c6712f8 (launched 2026-10-01 07:34 local)
-  worktree: .agents/worktrees/Q85a4
-  base: a549ed92
-  launched: 2026-10-01 07:34 local
-  report: agents/reviews/Q85a4-report.md
-  builder_usage: first run 316,920 tokens, 350 tool uses, 100.4 min; round 1 185,933 tokens, 75 tool uses, 35.9 min (ruling 8's describe moved to `tests/server/git/git-write.test.ts`, since `tests/checks/tree/scratch.test.ts:349` refuses a file that takes the scratch fixture and declares cases with vitest's `it`; accepted by the orchestrator as inside the step)
-  reviewer_report: agents/reviews/Q85a4-refuter.md (first review, reviewer aa1dc822a80854f94 on claude-opus-5-5, 118,315 tokens, 88 tool uses, 20.9 min); over round 1, reviewer a240111e66250a2d8 on claude-sonnet-5-5 (the first Sonnet reviewer, Z145 (b)), launched 10:14, running
-  brief_check: agents/reviews/Q85a4-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 322,964 tokens, 100 tool uses, 15.8 min
-  shared_paths: with Q85a2, `DESIGN.md` line 148 (one paragraph, rewritten by hand at the second landing to name both steps' folders), `src/lib/server/core/json.ts` (the comment at 91-92 and helpers left with no caller, settled on the merged tree at the second landing), `tests/checks/tree/allow-duplication.txt` (the union of the two steps' removed lines), `docs/diagrams/` (regenerated once on main); simple, since each is a union of line removals or one paragraph
-  landing_fix: `tests/server/core/paths.test.ts` "are written nowhere under src" fails on main since X3d (a5a6eed6): `insideFolder` (`src/lib/state/sources/repositories/change-tree.ts:148`) matches `function inside`, and it tests a row id's prefix, not a path; the list gains it by name with its clause in the comment at :70-77, as the comment's own process says; and `src/lib/server/root/hooks.ts:125,139` hands out `DEFAULT_NOTIFY.events` and `DEFAULT_NOTIFY` themselves as fallbacks (found by Q85a4's builder in round 1; the one reader, `hooks.ts:264`, only calls `includes`), made fresh per call as Q85a4's round-1 ruling 5 rules for every fallback
-  landing: not-started
-  round: 1 (`agents/briefs/Q85a4-round1.md`, sent 2026-10-01 09:37)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -652,6 +637,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 10:42. Q85a4 landed (zod in `machine`, `accounts`, `files`, `content` and `git`), report `agents/reviews/Q85a4-landing.md`; four fixes at landing. U2's review over round 2 is in (Sonnet). In flight: U2 (to land), Q85a2 (round 1). Next: U2's landing, /spec for the freed slot. Open: none.
 - 2026-10-01 07:34. Q85a4's brief check closed in its brief and its builder launched; Q85a2's builder handed back at its first run (case 23's field, the time bound) and was resumed with the round-0 cases ruling at 07:28. In flight: U2, Q85a2, Q85a4 (builders). Next: their reports. Open: Z138.
 - 2026-10-01 07:05. U2's builder launched at 06:59 on a worktree rebuilt at main's head (86e6d8bb, its brief's premises rechecked); Q85a2's brief check closed in its brief (29 findings) and its builder launched at 07:05. In flight: U2, Q85a2 (builders). Next: /spec Q85a4 into the third slot. Open: Z138.
 - 2026-10-01 06:55. Q109 landed (a moved tab's lines, the five watchers' capped debounce, a sole terminal's bar menu, four `terminal:` keys), report `agents/reviews/Q109-landing.md`; five fixes at landing; the look on TEST taken. Q85a2's brief check in (29 findings). In flight: none building. Next: close Q85a2's findings in its brief and launch its builder; U2's builder; /spec Q85a4. Open: Z138.

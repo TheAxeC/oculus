@@ -705,3 +705,36 @@ describe('input through a real tmux', () => {
         30000
     );
 });
+
+describe('an inbound message of the wrong type', () => {
+    it('answers the input message with its three keys and refuses the rest', () => {
+        const input = terminalMessage(
+            JSON.stringify({ type: 'input', channel: CHANNEL, bytes: 'x' })
+        );
+        expect(input).toStrictEqual({ type: 'input', channel: CHANNEL, bytes: 'x' });
+        expect(Object.keys(input ?? {})).toEqual(['type', 'channel', 'bytes']);
+        expect(
+            terminalMessage(JSON.stringify({ type: 'input', channel: CHANNEL, bytes: 3 }))
+        ).toBeNull();
+        expect(
+            terminalMessage(JSON.stringify({ type: 'input', channel: 'other', bytes: 'x' }))
+        ).toBeNull();
+        for (const text of ['[]', 'null', 'not json']) expect(terminalMessage(text)).toBeNull();
+    });
+
+    it('reads a resize of numbers as numbers and refuses cols of text', () => {
+        expect(
+            terminalMessage(
+                JSON.stringify({ type: 'resize', channel: CHANNEL, cols: '80', rows: 24 })
+            )
+        ).toBeNull();
+        expect(
+            terminalMessage(
+                JSON.stringify({ type: 'resize', channel: CHANNEL, cols: 80.5, rows: 24 })
+            )
+        ).toStrictEqual({ type: 'resize', channel: CHANNEL, cols: 80.5, rows: 24 });
+        expect(
+            terminalMessage(`{"type":"resize","channel":"${CHANNEL}","cols":1e999,"rows":24}`)
+        ).toStrictEqual({ type: 'resize', channel: CHANNEL, cols: Infinity, rows: 24 });
+    });
+});

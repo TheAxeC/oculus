@@ -5,6 +5,7 @@
 import { createReadStream, realpathSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
+import { z } from 'zod';
 import type { UsageAccountConfig, UsageDay, UsageTool } from '../../../data/model/index.ts';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
@@ -73,6 +74,14 @@ function row(event: UsageEvent, tool: UsageTool, account: string, model: string)
     };
 }
 
+/** A `turn_context` record of a Codex rollout: the model its payload names, when it names one. */
+const turnContextShape = z.object({
+    payload: z
+        .object({ model: z.string().optional().catch(undefined) })
+        .optional()
+        .catch(undefined)
+});
+
 async function foldFile(file: Found): Promise<UsageDay[]> {
     const rows = new Map<string, UsageDay>();
     let model = '';
@@ -90,8 +99,8 @@ async function foldFile(file: Found): Promise<UsageDay[]> {
             }
             if (!isMap(value)) continue;
             if (file.tool === 'codex' && value.type === 'turn_context') {
-                const payload = isMap(value.payload) ? value.payload : {};
-                if (typeof payload.model === 'string' && payload.model) model = payload.model;
+                const named = turnContextShape.safeParse(value);
+                if (named.success && named.data.payload?.model) model = named.data.payload.model;
             }
             const event = file.tool === 'claude' ? claudeUsage(value) : codexUsage(value, previous);
             if (event === null) continue;

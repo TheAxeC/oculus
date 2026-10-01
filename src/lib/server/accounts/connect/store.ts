@@ -31,6 +31,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { z } from 'zod';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { connectKey, type ProviderHalf } from '../../../data/accounts/connect.ts';
 import type {
@@ -88,10 +89,13 @@ export function providerFile(providerDir: string, provider: ConnectProvider): st
     return join(providerDir, `${provider}.json`);
 }
 
+/** What a field of a credential file holds when it is set: text with a character in it. */
+const fieldShape = z.string().min(1);
+
 /** A field of a file as a non-empty string, or undefined when it is absent or not one. */
 function field(record: Record<string, unknown>, name: string): string | undefined {
-    const value = record[name];
-    return typeof value === 'string' && value !== '' ? value : undefined;
+    const held = fieldShape.safeParse(record[name]);
+    return held.success ? held.data : undefined;
 }
 
 /**

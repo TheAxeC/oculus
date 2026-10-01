@@ -378,3 +378,55 @@ describe('a composed start in a real tmux', () => {
         }
     );
 });
+
+describe('a request body of the wrong shape', () => {
+    const SHELL = { agent: 'shell', cwd: '', account: '', prompt: '' };
+
+    it('keeps the string picks and the string images and drops the rest', () => {
+        expect(
+            composeRequest({ agent: 'x', cwd: 3, picks: { a: 'b', c: 1 }, images: ['p', 2] })
+        ).toStrictEqual({ ...SHELL, picks: { a: 'b' }, images: ['p'] });
+        expect(composeRequest({ picks: [] })).toStrictEqual({ ...SHELL, picks: {}, images: [] });
+        expect(composeRequest({ images: null })).toStrictEqual({
+            ...SHELL,
+            picks: {},
+            images: []
+        });
+    });
+
+    it('drops an own __proto__ pick that is not a string and keeps the others', () => {
+        const parsed = JSON.parse('{"picks":{"__proto__":"x","a":"b"}}') as Record<string, unknown>;
+        const request = composeRequest(parsed);
+        expect(request).toStrictEqual({ ...SHELL, picks: { a: 'b' }, images: [] });
+        const mapped = JSON.parse('{"picks":{"__proto__":{"y":"z"},"a":"b"}}') as Record<
+            string,
+            unknown
+        >;
+        expect(Object.keys(composeRequest(mapped).picks)).toEqual(['a']);
+    });
+});
+
+describe('composeRequest fallbacks', () => {
+    it('answers a fresh empty list of images for every body whose images are no list', () => {
+        const first = composeRequest({ images: 3 });
+        first.images.push('leak');
+        const next = composeRequest({ images: 'z' });
+        expect(next.images).toStrictEqual([]);
+        expect(next.images).not.toBe(first.images);
+    });
+});
+
+describe('composeRequest of a body that names only some fields', () => {
+    it('keeps the fields it holds and starts the rest empty', () => {
+        expect(
+            composeRequest({ action: 'compose', agent: 'codex', cwd: '/w', prompt: 'hi', x: 1 })
+        ).toStrictEqual({
+            agent: 'codex',
+            cwd: '/w',
+            account: '',
+            picks: {},
+            prompt: 'hi',
+            images: []
+        });
+    });
+});

@@ -4,7 +4,9 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
+import { z } from 'zod';
 import { findingText } from '../../../data/helpers/finding-text.ts';
+import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import type { AuditFinding, Collection, Project } from '../../../data/model/index.ts';
 
 /** The thresholds and vocabularies the rules read, out of the merged configuration. */
@@ -34,77 +36,102 @@ export function printed(items: string[]): string {
     return `[${items.map((item) => `'${item}'`).join(', ')}]`;
 }
 
-/** A finite number of the merged config, or the fallback when the key is absent or not a number. */
-export function number(value: unknown, fallback: number): number {
-    return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
-}
-
-/** The strings of a configured list, lowercased and trimmed, as a set. */
-function wordSet(value: unknown): Set<string> {
-    if (!Array.isArray(value)) return new Set();
-    return new Set(
-        value
-            .filter((item): item is string => typeof item === 'string')
-            .map((item) => item.trim().toLowerCase())
+/**
+ * The items of a list that a shape accepts, in the order the list holds them. A value that is no
+ * list is refused.
+ */
+function keeping<T>(shape: z.ZodType<T>) {
+    return z.array(z.unknown()).transform((all) =>
+        all.flatMap((one) => {
+            const kept = shape.safeParse(one);
+            return kept.success ? [kept.data] : [];
+        })
     );
 }
 
-/** The rules the scan runs under, read out of the merged configuration. */
-export function auditRules(config: Record<string, unknown>): AuditRules {
-    const limits = config.read_limits;
-    const readLimits: Record<string, number> = {};
-    if (typeof limits === 'object' && limits !== null && !Array.isArray(limits)) {
-        for (const [key, value] of Object.entries(limits as Record<string, unknown>)) {
-            if (typeof value === 'number' && Number.isFinite(value)) readLimits[key] = value;
-        }
-    }
-    const lifecycle = mapOf(config.lifecycle);
-    return {
-        readLimits,
-        staleLagDays: number(config.stale_lag_days, 1),
-        dataDomains: wordSet(config.data_domains),
-        waitingStatus: wordSet(config.waiting_status),
-        publicationsFile:
-            typeof config.publications_file === 'string' ? config.publications_file : '',
-        liveChips: new Set(wordList(lifecycle.live_chips)),
-        terminalTypes: new Set(wordList(lifecycle.terminal_types)),
-        authorChips: wordList(lifecycle.author_chips),
-        contradictory: chipPairs(lifecycle.contradictory_chips)
-    };
-}
-
-/** A map of the merged config, or an empty one for anything that is not one. */
-function mapOf(value: unknown): Record<string, unknown> {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
-    return value as Record<string, unknown>;
-}
+/** A word of a configured list: text with a character in it. */
+const wordShape = z.string().min(1);
 
 /** The strings of a configured list, in the order the file writes them. */
-function wordList(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter((one): one is string => typeof one === 'string' && one !== '');
-}
+const wordListShape = keeping(wordShape);
 
-/** The two-chip rows of a configured list of pairs; a row that is not a pair is left out. */
-function chipPairs(value: unknown): [string, string][] {
-    if (!Array.isArray(value)) return [];
-    const pairs: [string, string][] = [];
-    for (const row of value) {
-        const words = wordList(row);
-        if (words.length === 2) pairs.push([words[0], words[1]]);
+/** A field that is one name or a list of names: the names in it, and none for anything else. */
+export const namesShape = z
+    .union([wordListShape, wordShape.transform((one) => [one])])
+    .catch(() => []);
+
+/** The strings of a configured list, lowercased and trimmed, as a set. */
+const wordSetShape = keeping(z.string()).transform(
+    (all) => new Set(all.map((item) => item.trim().toLowerCase()))
+);
+
+/** A pair of chips: a list holding exactly two words, any other item of it left out. */
+const chipPairShape = wordListShape.pipe(z.tuple([z.string(), z.string()]));
+
+/** The part of the configuration that names the chips a project's lifecycle reads. */
+const lifecycleShape = z.object({
+    live_chips: wordListShape.catch(() => []),
+    terminal_types: wordListShape.catch(() => []),
+    author_chips: wordListShape.catch(() => []),
+    contradictory_chips: keeping(chipPairShape).catch(() => [])
+});
+
+/** A map of any content, answered as it came; `read_limits` is read from its own keys. */
+const readLimitsShape = z.custom<Record<string, unknown>>(isMap);
+
+/** A scalar field as the text it reads as, by the shared `scalar`; an absent field reads as ''. */
+export const scalarShape = z
+    .unknown()
+    .optional()
+    .transform((value) => scalar(value));
+
+/** A soft limit of `read_limits`: a number. */
+const readLimitShape = z.number();
+
+/** `stale_lag_days`: a number. */
+const staleLagShape = z.number();
+
+/** `publications_file`: text. */
+const publicationsFileShape = z.string();
+
+/** The rules the scan runs under, read out of the merged configuration. */
+export function auditRules(config: Record<string, unknown>): AuditRules {
+    const limits = readLimitsShape.safeParse(config.read_limits);
+    const readLimits: Record<string, number> = {};
+    for (const [key, value] of Object.entries(limits.success ? limits.data : {})) {
+        const limit = readLimitShape.safeParse(value);
+        if (limit.success) readLimits[key] = limit.data;
     }
-    return pairs;
-}
-
-/** The signatures config/behavior.yml's `audit_ignore:` holds, in the order the file lists them. */
-export function mutedSignatures(config: Record<string, unknown>): string[] {
-    const held = config.audit_ignore;
-    if (!Array.isArray(held)) return [];
-    return held.filter((one): one is string => typeof one === 'string' && SIGNATURE.test(one));
+    const lifecycle = lifecycleShape.safeParse(config.lifecycle);
+    const chips = lifecycle.success ? lifecycle.data : lifecycleShape.parse({});
+    const lag = staleLagShape.safeParse(config.stale_lag_days);
+    const domains = wordSetShape.safeParse(config.data_domains);
+    const waiting = wordSetShape.safeParse(config.waiting_status);
+    const publications = publicationsFileShape.safeParse(config.publications_file);
+    return {
+        readLimits,
+        staleLagDays: lag.success ? lag.data : 1,
+        dataDomains: domains.success ? domains.data : new Set(),
+        waitingStatus: waiting.success ? waiting.data : new Set(),
+        publicationsFile: publications.success ? publications.data : '',
+        liveChips: new Set(chips.live_chips),
+        terminalTypes: new Set(chips.terminal_types),
+        authorChips: chips.author_chips,
+        contradictory: chips.contradictory_chips
+    };
 }
 
 /** What a signature looks like, which is what the write accepts and what the config may hold. */
 export const SIGNATURE = /^[0-9a-f]{12}$/;
+
+/** The signatures of a configured list, in the order the file lists them. */
+const signatureListShape = keeping(z.string().regex(SIGNATURE));
+
+/** The signatures config/behavior.yml's `audit_ignore:` holds, in the order the file lists them. */
+export function mutedSignatures(config: Record<string, unknown>): string[] {
+    const held = signatureListShape.safeParse(config.audit_ignore);
+    return held.success ? held.data : [];
+}
 
 /**
  * One finding's stable short key: sha1 over the scope, the place, the kind, the catalog key of its
@@ -178,17 +205,4 @@ export function isFolder(path: string): boolean {
     } catch {
         return false;
     }
-}
-
-/** A scalar field of an entry as the text it reads as, and the empty string for anything else. */
-export function scalar(value: unknown): string {
-    if (typeof value === 'string') return value;
-    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-    return '';
-}
-
-/** A field that is one value or a list of them, as a list of the strings in it. */
-export function listOf(value: unknown): string[] {
-    const items = Array.isArray(value) ? value : [value];
-    return items.filter((one): one is string => typeof one === 'string' && one !== '');
 }

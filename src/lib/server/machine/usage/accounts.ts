@@ -13,6 +13,7 @@ import {
 } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
+import { z } from 'zod';
 import type {
     UsageAccount,
     UsageAccountConfig,
@@ -31,29 +32,40 @@ export type ClaudeStatusSnapshot = {
     observedAt: string;
 };
 
-function json(path: string): Record<string, unknown> | null {
+/** The JSON a file holds, or null for a file that is missing or is not JSON. */
+function jsonFile(path: string): unknown {
     try {
-        const value: unknown = JSON.parse(readFileSync(path, 'utf8'));
-        return isMap(value) ? value : null;
+        return JSON.parse(readFileSync(path, 'utf8')) as unknown;
     } catch {
         return null;
     }
 }
 
-function text(value: unknown): string {
-    return typeof value === 'string' ? value : '';
+/** The JSON object a file holds, or null for a file that is missing, not JSON or no object. */
+function jsonMap(path: string): Record<string, unknown> | null {
+    const value = jsonFile(path);
+    return isMap(value) ? value : null;
 }
 
-function number(value: unknown): number | null {
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+/** A text field: a string as it is, and the empty text for anything else. */
+const textShape = z.string().catch('');
+
+/** A number field: a finite number, and null for anything else, `NaN` and infinity included. */
+const finiteShape = z.number().nullable().catch(null);
+
+/** A map of any content, answered as it came, and nothing for a value that is no map. */
+const mapShape = z.custom<Record<string, unknown>>(isMap).optional().catch(undefined);
+
+/**
+ * A nested map whose fields all take a default: a value that is no map reads as a map with every
+ * field defaulted.
+ */
+function nested<T extends z.ZodObject>(shape: T) {
+    return shape.catch(() => shape.parse({}));
 }
 
-function severity(value: unknown): UsageWindow['severity'] {
-    return value === 'normal' || value === 'warning' || value === 'critical' ? value : undefined;
-}
-
-function unixSeconds(value: unknown): number | null {
-    const milliseconds = Date.parse(text(value));
+function unixSeconds(value: string): number | null {
+    const milliseconds = Date.parse(value);
     return Number.isFinite(milliseconds) ? milliseconds / 1000 : null;
 }
 
@@ -78,61 +90,102 @@ export function claudeAccountFile(dir: string): string {
     return isDefaultClaudeDir(dir) ? join(homedir(), '.claude.json') : join(dir, '.claude.json');
 }
 
+/** The five fields of `oauthAccount` this module reads; nothing else of the account is. */
+const oauthShape = z.object({
+    emailAddress: textShape,
+    organizationName: textShape,
+    organizationRateLimitTier: textShape,
+    billingType: textShape,
+    subscriptionCreatedAt: textShape
+});
+
+/**
+ * One entry of the cached utilization's limit list. A figure that is no finite number reads as
+ * null and a `resets_at` that is no text as the empty text, so the entry is dropped by the window
+ * reader; the kind is compared with a word and read as it came.
+ */
+const cachedLimitShape = z.object({
+    kind: z.unknown().optional(),
+    percent: finiteShape,
+    resets_at: textShape,
+    severity: z.enum(['normal', 'warning', 'critical']).optional().catch(undefined),
+    is_active: z.boolean().catch(false),
+    scope: z
+        .object({
+            model: z.object({ display_name: textShape }).optional().catch(undefined)
+        })
+        .optional()
+        .catch(undefined)
+});
+
+/** `cachedUsageUtilization` of Claude's account file: when it was fetched and its limit list. */
+const cachedUsageShape = z.object({
+    fetchedAtMs: finiteShape,
+    utilization: z
+        .object({ limits: z.array(z.unknown()).catch(() => []) })
+        .catch(() => ({ limits: [] }))
+});
+
+/** The two parts of Claude's account file this module reads, each defaulted when it is odd. */
+const claudeFileShape = z.object({
+    oauthAccount: nested(oauthShape),
+    cachedUsageUtilization: nested(cachedUsageShape)
+});
+
+/** Claude's account file read through its shape, and a file with nothing in it for any other. */
+function claudeFile(dir: string): z.output<typeof claudeFileShape> {
+    const parsed = claudeFileShape.safeParse(jsonFile(claudeAccountFile(dir)));
+    return parsed.success ? parsed.data : claudeFileShape.parse({});
+}
+
 /** Read only oauthAccount's five approved identity and subscription fields. */
 export function claudeAccount(dir: string): Record<string, string> {
-    const root = json(claudeAccountFile(dir));
-    const oauth = root !== null && isMap(root.oauthAccount) ? root.oauthAccount : {};
+    const oauth = claudeFile(dir).oauthAccount;
     return {
-        email: text(oauth.emailAddress),
-        organisation: text(oauth.organizationName),
-        tier: text(oauth.organizationRateLimitTier),
-        billing: text(oauth.billingType),
-        subscriptionCreatedAt: text(oauth.subscriptionCreatedAt)
+        email: oauth.emailAddress,
+        organisation: oauth.organizationName,
+        tier: oauth.organizationRateLimitTier,
+        billing: oauth.billingType,
+        subscriptionCreatedAt: oauth.subscriptionCreatedAt
     };
 }
 
 /** Read only the fetch timestamp for the refresher's account-file polling. */
 export function claudeUsageFetchedAt(dir: string): number | null {
-    const root = json(claudeAccountFile(dir));
-    const cache =
-        root !== null && isMap(root.cachedUsageUtilization) ? root.cachedUsageUtilization : {};
-    return number(cache.fetchedAtMs);
+    return claudeFile(dir).cachedUsageUtilization.fetchedAtMs;
 }
 
 /** Read Claude Code's cached utilization observation without exposing other account-file data. */
 export function claudeCachedUsage(dir: string): ClaudeUsageCache {
-    const root = json(claudeAccountFile(dir));
-    const cache =
-        root !== null && isMap(root.cachedUsageUtilization) ? root.cachedUsageUtilization : {};
-    const fetchedAtMs = number(cache.fetchedAtMs);
+    const cache = claudeFile(dir).cachedUsageUtilization;
+    const fetchedAtMs = cache.fetchedAtMs;
     // A value outside what Date can hold would throw in toISOString.
     const fetchedAt =
         fetchedAtMs === null || Math.abs(fetchedAtMs) > 8.64e15
             ? ''
             : new Date(fetchedAtMs).toISOString();
-    const utilization = isMap(cache.utilization) ? cache.utilization : {};
-    const limits = Array.isArray(utilization.limits) ? utilization.limits : [];
     const windows: UsageWindow[] = [];
 
-    for (const candidate of limits) {
-        if (!isMap(candidate)) continue;
-        const usedPercent = number(candidate.percent);
-        const resetsAt = unixSeconds(candidate.resets_at);
+    for (const entry of cache.utilization.limits) {
+        const candidate = cachedLimitShape.safeParse(entry);
+        if (!candidate.success) continue;
+        const limit = candidate.data;
+        const usedPercent = limit.percent;
+        const resetsAt = unixSeconds(limit.resets_at);
         if (usedPercent === null || resetsAt === null) continue;
         const common = {
             usedPercent,
             resetsAt,
-            severity: severity(candidate.severity),
-            active: candidate.is_active === true,
+            severity: limit.severity,
+            active: limit.is_active,
             observedAt: fetchedAt
         };
-        if (candidate.kind === 'session') {
+        if (limit.kind === 'session') {
             windows.push({ name: 'five_hour', windowMinutes: 300, ...common });
-        } else if (candidate.kind === 'weekly_all') {
+        } else if (limit.kind === 'weekly_all') {
             windows.push({ name: 'seven_day', windowMinutes: 10080, ...common });
-        } else if (candidate.kind === 'weekly_scoped') {
-            const scope = isMap(candidate.scope) ? candidate.scope : {};
-            const model = isMap(scope.model) ? text(scope.model.display_name) : '';
+        } else if (limit.kind === 'weekly_scoped') {
+            const model = limit.scope?.model?.display_name ?? '';
             if (model !== '') {
                 windows.push({
                     name: 'weekly_model',
@@ -150,19 +203,53 @@ export function defaultUsageRoot(): string {
     return join(homedir(), '.oculus', 'usage', 'claude');
 }
 
+/** One window of a status file's `rate_limits`: a window with a figure missing or odd has none. */
+const statusWindowShape = z
+    .object({ used_percentage: z.number(), resets_at: z.number() })
+    .optional()
+    .catch(undefined);
+
+/**
+ * The parts of a status file this module reads: its two rate-limit windows and the live session it
+ * describes. A part of the wrong type reads as absent, and a file that is no map is refused.
+ */
+const claudeStatusShape = z.object({
+    rate_limits: z
+        .object({ five_hour: statusWindowShape, seven_day: statusWindowShape })
+        .optional()
+        .catch(undefined),
+    session_name: textShape,
+    session_id: textShape,
+    model: z.object({ display_name: textShape, id: textShape }).optional().catch(undefined),
+    context_window: z.object({ used_percentage: finiteShape }).optional().catch(undefined),
+    cost: z.object({ total_cost_usd: finiteShape }).optional().catch(undefined),
+    cwd: textShape
+});
+
 function claudeWindows(data: Record<string, unknown>, observedAt: string): UsageWindow[] {
-    const limits = isMap(data.rate_limits) ? data.rate_limits : {};
+    const status = claudeStatusShape.safeParse(data);
+    if (!status.success) return [];
+    const limits = status.data.rate_limits;
     const rows: UsageWindow[] = [];
-    for (const [key, name, minutes] of [
-        ['five_hour', 'five_hour', 300],
-        ['seven_day', 'seven_day', 10080]
-    ] as const) {
-        const value = limits[key];
-        if (!isMap(value)) continue;
-        const usedPercent = number(value.used_percentage);
-        const resetsAt = number(value.resets_at);
-        if (usedPercent === null || resetsAt === null) continue;
-        rows.push({ name, usedPercent, resetsAt, windowMinutes: minutes, observedAt });
+    const five = limits?.five_hour;
+    if (five !== undefined) {
+        rows.push({
+            name: 'five_hour',
+            usedPercent: five.used_percentage,
+            resetsAt: five.resets_at,
+            windowMinutes: 300,
+            observedAt
+        });
+    }
+    const seven = limits?.seven_day;
+    if (seven !== undefined) {
+        rows.push({
+            name: 'seven_day',
+            usedPercent: seven.used_percentage,
+            resetsAt: seven.resets_at,
+            windowMinutes: 10080,
+            observedAt
+        });
     }
     return rows;
 }
@@ -242,19 +329,18 @@ function statusFiles(dir: string): { path: string; mtimeMs: number }[] {
 }
 
 function liveClaude(path: string, mtimeMs: number): UsageLiveSession | null {
-    const data = json(path);
-    if (data === null) return null;
-    if (text(data.session_name).startsWith(USAGE_PREFIX)) return null;
-    const model = isMap(data.model) ? data.model : {};
-    const context = isMap(data.context_window) ? data.context_window : {};
-    const cost = isMap(data.cost) ? data.cost : {};
+    const parsed = claudeStatusShape.safeParse(jsonFile(path));
+    if (!parsed.success) return null;
+    const data = parsed.data;
+    if (data.session_name.startsWith(USAGE_PREFIX)) return null;
+    const model = data.model === undefined ? '' : data.model.display_name || data.model.id;
     return {
-        sessionId: text(data.session_id) || basename(path, '.json'),
-        model: text(model.display_name) || text(model.id),
-        contextPercent: number(context.used_percentage),
-        costUsd: number(cost.total_cost_usd),
+        sessionId: data.session_id || basename(path, '.json'),
+        model,
+        contextPercent: data.context_window?.used_percentage ?? null,
+        costUsd: data.cost?.total_cost_usd ?? null,
         updatedAt: new Date(mtimeMs).toISOString(),
-        cwd: text(data.cwd)
+        cwd: data.cwd
     };
 }
 
@@ -287,7 +373,7 @@ function claudeUsage(
             cached.windows,
             latestWindows(
                 files.map((file) => ({
-                    data: json(file.path),
+                    data: jsonMap(file.path),
                     observedAt: new Date(file.mtimeMs).toISOString()
                 }))
             )
@@ -297,12 +383,27 @@ function claudeUsage(
     };
 }
 
-function rateLimits(record: Record<string, unknown>): Record<string, unknown> | null {
-    if (isMap(record.rate_limits)) return record.rate_limits;
-    const payload = isMap(record.payload) ? record.payload : {};
-    if (isMap(payload.rate_limits)) return payload.rate_limits;
-    const info = isMap(payload.info) ? payload.info : {};
-    return isMap(info.rate_limits) ? info.rate_limits : null;
+/**
+ * The three places a rollout record may carry `rate_limits`: at its top, under `payload`, and under
+ * `payload.info`. Each is answered as the record holds it, and one that is no map reads as absent.
+ */
+const rolloutRecordShape = z.object({
+    rate_limits: mapShape,
+    payload: z
+        .object({
+            rate_limits: mapShape,
+            info: z.object({ rate_limits: mapShape }).optional().catch(undefined)
+        })
+        .optional()
+        .catch(undefined)
+});
+
+/** The rate limits of one rollout record, nearest the top first, or null when it holds none. */
+function rateLimits(record: unknown): Record<string, unknown> | null {
+    const parsed = rolloutRecordShape.safeParse(record);
+    if (!parsed.success) return null;
+    const { rate_limits: top, payload } = parsed.data;
+    return top ?? payload?.rate_limits ?? payload?.info?.rate_limits ?? null;
 }
 
 /**
@@ -353,7 +454,6 @@ function lastRateLimits(path: string, tailBytes: number): Record<string, unknown
             } catch {
                 continue;
             }
-            if (!isMap(record)) continue;
             const found = rateLimits(record);
             if (found !== null) return found;
         }
@@ -386,23 +486,39 @@ export function newestCodexLimits(
     return fallback;
 }
 
-function codexWindows(limits: Record<string, unknown>): UsageWindow[] {
+/** One window of a rollout's rate limits: a window with a figure missing or odd has none. */
+const codexWindowShape = z
+    .object({ used_percent: z.number(), resets_at: z.number(), window_minutes: z.number() })
+    .optional()
+    .catch(undefined);
+
+/** The plan and the two windows of a rollout's rate limits. */
+const codexLimitsShape = z.object({
+    plan_type: textShape,
+    primary: codexWindowShape,
+    secondary: codexWindowShape
+});
+
+function codexWindows(limits: z.output<typeof codexLimitsShape>): UsageWindow[] {
     const rows: UsageWindow[] = [];
     for (const name of ['primary', 'secondary'] as const) {
         const value = limits[name];
-        if (!isMap(value)) continue;
-        const usedPercent = number(value.used_percent);
-        const resetsAt = number(value.resets_at);
-        const windowMinutes = number(value.window_minutes);
-        if (usedPercent === null || resetsAt === null || windowMinutes === null) continue;
-        rows.push({ name, usedPercent, resetsAt, windowMinutes, observedAt: '' });
+        if (value === undefined) continue;
+        rows.push({
+            name,
+            usedPercent: value.used_percent,
+            resetsAt: value.resets_at,
+            windowMinutes: value.window_minutes,
+            observedAt: ''
+        });
     }
     return rows;
 }
 
 function codexUsage(account: UsageAccountConfig, tiers: UsageTiers): UsageAccount {
-    const limits = newestCodexLimits(account.dir) ?? {};
-    const tier = text(limits.plan_type);
+    const parsed = codexLimitsShape.safeParse(newestCodexLimits(account.dir));
+    const limits = parsed.success ? parsed.data : codexLimitsShape.parse({});
+    const tier = limits.plan_type;
     return {
         tool: account.tool,
         label: account.label,

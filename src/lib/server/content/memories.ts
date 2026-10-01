@@ -21,6 +21,7 @@
 // file cannot be written under a picture's name into a folder the page then draws from.
 
 import { json } from '@sveltejs/kit';
+import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
 import type { Picture } from '../../data/model/index.ts';
 import { tokenedBody } from '../core/auth.ts';
@@ -97,12 +98,13 @@ export function folder(
     return folderOf(config.memories, engine, memory.refused, 'memories');
 }
 
+/** The body of an upload: a name and the data, each text. */
+const uploadShape = z.object({ name: z.string(), data: z.string() }) satisfies z.ZodType<Upload>;
+
 /** Read the body of an upload, or null when it is not one. */
 export function upload(body: unknown): Upload | null {
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
-    const held = body as Record<string, unknown>;
-    if (typeof held.name !== 'string' || typeof held.data !== 'string') return null;
-    return { name: held.name, data: held.data };
+    const held = uploadShape.safeParse(body);
+    return held.success ? held.data : null;
 }
 
 /** Whether the bytes begin the way the named extension's format does. */

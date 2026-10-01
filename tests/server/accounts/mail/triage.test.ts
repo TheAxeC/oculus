@@ -46,6 +46,13 @@ describe('the triage notes', () => {
         expect(readTriage(dir).notes.one).toEqual({ written: WHEN.toISOString() });
     });
 
+    it('refuses a write for the thread id __proto__ and stores no note', () => {
+        const dir = scratch();
+        writeNote(dir, 'one', { triaged: true }, now);
+        expect(() => writeNote(dir, '__proto__', { what: 'w' }, now)).toThrow('no such thread');
+        expect(Object.keys(readTriage(dir).notes)).toEqual(['one']);
+    });
+
     it('leaves the file readable by its owner alone', () => {
         const dir = scratch();
         writeNote(dir, 'one', { triaged: true }, now);
@@ -114,5 +121,41 @@ describe('the triage notes', () => {
         const before = readFileSync(triageFile(dir), 'utf8');
         pruneNotes(dir, new Set(['one']), WHEN.getTime());
         expect(readFileSync(triageFile(dir), 'utf8')).toBe(before);
+    });
+});
+
+describe('a triage file of the wrong shape', () => {
+    /** The notes file of a folder, holding this text. */
+    function planted(text: string): string {
+        const dir = scratch();
+        writeFileSync(triageFile(dir), text);
+        return dir;
+    }
+
+    it('reads notes that are a list as holding none, and a run that is not text as none', () => {
+        expect(readTriage(planted('{"run":3,"notes":[{"what":"w"}]}'))).toStrictEqual({
+            run: null,
+            notes: {}
+        });
+    });
+
+    it('keeps a note whose kind is not a word, without the kind', () => {
+        const dir = planted(
+            '{"notes":{"a":{"kind":3},"b":{"what":3,"draft":"d","triaged":"yes"},"c":3,"d":[]}}'
+        );
+        expect(readTriage(dir).notes).toStrictEqual({
+            a: { written: '' },
+            b: { draft: 'd', written: '' }
+        });
+    });
+
+    it('holds the notes of a file with a __proto__ note under the plain object prototype', () => {
+        const dir = planted(
+            '{"notes":{"__proto__":{"what":"w"},"b":{"what":"kept","written":"2026-09-16T10:00:00.000Z"}}}'
+        );
+        const read = readTriage(dir);
+        expect(Object.keys(read.notes)).toEqual(['b']);
+        expect(Object.getPrototypeOf(read.notes)).toBe(Object.prototype);
+        expect(read.notes.b).toStrictEqual({ what: 'kept', written: '2026-09-16T10:00:00.000Z' });
     });
 });

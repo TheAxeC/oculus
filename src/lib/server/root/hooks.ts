@@ -104,11 +104,10 @@ export class RateLimiter {
 
 export type NotifyConfig = { enabled: boolean; events: string[]; quietSeconds: number };
 
-const DEFAULT_NOTIFY: NotifyConfig = {
-    enabled: true,
-    events: ['permission_prompt', 'idle_prompt', 'stop'],
-    quietSeconds: 3
-};
+/** The `notify:` defaults, a fresh value per call so no caller shares another's list. */
+function defaultNotify(): NotifyConfig {
+    return { enabled: true, events: ['permission_prompt', 'idle_prompt', 'stop'], quietSeconds: 3 };
+}
 
 /**
  * The `notify:` map of config/behavior.yml. A field of the wrong type takes its default and the
@@ -118,14 +117,14 @@ const DEFAULT_NOTIFY: NotifyConfig = {
  */
 const notifyShape = z
     .object({
-        enabled: z.boolean().catch(DEFAULT_NOTIFY.enabled),
+        enabled: z.boolean().catch(() => defaultNotify().enabled),
         events: z
             .array(z.unknown())
             .transform((all) => all.filter((one): one is string => typeof one === 'string'))
-            .catch(DEFAULT_NOTIFY.events),
+            .catch(() => defaultNotify().events),
         quiet_seconds: z
             .union([z.number().min(0), z.literal(Infinity)])
-            .catch(DEFAULT_NOTIFY.quietSeconds)
+            .catch(() => defaultNotify().quietSeconds)
     })
     .transform((held) => ({
         enabled: held.enabled,
@@ -136,7 +135,7 @@ const notifyShape = z
 /** `notify:` of config/behavior.yml, defensively: a malformed or absent key answers the default. */
 export function notifyConfig(config: Record<string, unknown>): NotifyConfig {
     const held = notifyShape.safeParse(config.notify);
-    return held.success ? held.data : DEFAULT_NOTIFY;
+    return held.success ? held.data : defaultNotify();
 }
 
 /**

@@ -19,7 +19,8 @@
 // the HTTP status and the provider's own error code and never its body.
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { isMap, str } from '../../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { isMap } from '../../../data/helpers/guards.ts';
 import type { ConnectKind, ConnectProvider } from '../../../data/model/index.ts';
 import type { Credentials } from './store.ts';
 
@@ -248,9 +249,19 @@ export function consentUrl(
     return url.toString();
 }
 
+/** A provider's refusal at the token endpoint: its `error` code where that is text. */
+const tokenRefusalShape = z.object({ error: z.string().catch('') });
+
+/** The two fields of a token answer the connector uses, each read as absent unless it is text. */
+const tokenAnswerShape = z.object({
+    access_token: z.string().optional().catch(undefined),
+    refresh_token: z.string().optional().catch(undefined)
+});
+
 /** One line saying what a provider refused, made of the status and its own error code. */
 function refusal(provider: ConnectProvider, status: number, body: unknown): string {
-    const code = isMap(body) ? (str(body.error) ?? '') : '';
+    const refused = tokenRefusalShape.safeParse(body);
+    const code = refused.success ? refused.data.error : '';
     return `${provider} token endpoint: ${status}${code === '' ? '' : ` ${code}`}`;
 }
 
@@ -273,8 +284,11 @@ async function post(
         body = null;
     }
     if (!response.ok) throw new Error(refusal(credentials.provider, response.status, body));
-    if (!isMap(body)) throw new Error(refusal(credentials.provider, response.status, null));
-    return { accessToken: str(body.access_token), refreshToken: str(body.refresh_token) };
+    const answer = tokenAnswerShape.safeParse(body);
+    if (!isMap(body) || !answer.success) {
+        throw new Error(refusal(credentials.provider, response.status, null));
+    }
+    return { accessToken: answer.data.access_token, refreshToken: answer.data.refresh_token };
 }
 
 /** The client fields every token call carries: the secret only where the provider has one. */

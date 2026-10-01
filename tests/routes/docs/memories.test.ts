@@ -326,3 +326,13 @@ describe('the configured folder', () => {
         ).toBeNull();
     });
 });
+
+describe('an upload body of the wrong shape', () => {
+    it('answers the name and the data and drops every other key', () => {
+        expect(upload({ name: 'a', data: 'b', x: 1 })).toStrictEqual({ name: 'a', data: 'b' });
+    });
+
+    it('refuses a name that is not text', () => {
+        expect(upload({ name: 3, data: 'b' })).toBeNull();
+    });
+});

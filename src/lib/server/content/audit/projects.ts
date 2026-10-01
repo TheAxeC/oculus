@@ -8,6 +8,7 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { stringify } from 'yaml';
+import { z } from 'zod';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
 import { isHubPath } from '../../../data/hub-address.ts';
@@ -19,8 +20,8 @@ import {
     type Raised,
     slurp,
     isFolder,
-    scalar,
-    listOf
+    namesShape,
+    scalarShape
 } from './rules.ts';
 import { below } from '../../core/paths.ts';
 
@@ -408,6 +409,18 @@ export function readability(input: AuditInput, add: (f: Raised) => void): void {
 }
 
 /**
+ * The fields of a collection entry the checks read. A scalar reads as the text it is written as and
+ * as the empty text when it is any other value; `related` is one name or a list of names, and the
+ * items of it that are not names are left out.
+ */
+const entryFieldsShape = z.object({
+    status: scalarShape,
+    date: scalarShape,
+    link: scalarShape,
+    related: namesShape
+});
+
+/**
  * The collection invariants: the file is there, and every entry says what it is and where it is.
  */
 export function collections(input: AuditInput, add: (f: Raised) => void): void {
@@ -437,7 +450,8 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                     ...sentence('audit.msg_entry_no_title')
                 });
             }
-            const status = scalar(entry.fields.status);
+            const fields = entryFieldsShape.parse(entry.fields);
+            const status = fields.status;
             if (status === '' && tracked) {
                 add({
                     scope: collection.id,
@@ -445,10 +459,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                     kind: 'data',
                     ...sentence('audit.msg_entry_no_status')
                 });
-            } else if (
-                rules.waitingStatus.has(status.toLowerCase()) &&
-                scalar(entry.fields.date) === ''
-            ) {
+            } else if (rules.waitingStatus.has(status.toLowerCase()) && fields.date === '') {
                 add({
                     scope: collection.id,
                     where: label,
@@ -456,7 +467,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                     ...sentence('audit.msg_entry_no_date', status)
                 });
             }
-            for (const related of listOf(entry.fields.related)) {
+            for (const related of fields.related) {
                 if (ids.has(related)) continue;
                 add({
                     scope: collection.id,
@@ -468,7 +479,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
             // A link is looked for on disk only when the card would open it as a file of the hub:
             // trimmed as the card trims it, never a web address (the scan fetches nothing), and
             // never a path that climbs out of the hub, which the card draws no file link for.
-            const link = scalar(entry.fields.link).trim();
+            const link = fields.link.trim();
             const path = resolve(input.hub, link);
             const inHub = below(path, input.hub);
             if (isHubPath(link) && inHub && !existsSync(path)) {

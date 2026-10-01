@@ -137,3 +137,29 @@ describe('fileIndex', () => {
         });
     });
 });
+
+describe('fileIndex over a block of the wrong shape', () => {
+    const defaults = fileIndex({});
+
+    it('keeps the extensions that are text and the default cap for a cap that is text', () => {
+        const index = fileIndex({ file_index: { ext: ['A', 1], max_per_project: '5' } });
+        expect(index).toStrictEqual({ enabled: true, ext: ['a'], cap: defaults.cap });
+    });
+
+    it('answers the defaults for a block that is a list and the default extensions for a null', () => {
+        expect(fileIndex({ file_index: [] })).toStrictEqual(defaults);
+        expect(fileIndex({ file_index: { ext: null } }).ext).toStrictEqual(defaults.ext);
+    });
+
+    it('keeps a cap of infinity and refuses a cap that is not a number above zero', () => {
+        expect(fileIndex({ file_index: { max_per_project: Infinity } }).cap).toBe(Infinity);
+        expect(fileIndex({ file_index: { max_per_project: NaN } }).cap).toBe(defaults.cap);
+        expect(fileIndex({ file_index: { max_per_project: -3 } }).cap).toBe(defaults.cap);
+        expect(fileIndex({ file_index: { max_per_project: 7.9 } }).cap).toBe(7);
+    });
+
+    it('lists unless the block says false', () => {
+        expect(fileIndex({ file_index: { enabled: false } }).enabled).toBe(false);
+        expect(fileIndex({ file_index: { enabled: 0 } }).enabled).toBe(true);
+    });
+});

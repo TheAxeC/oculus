@@ -20,6 +20,8 @@ import {
     signatureOf,
     titleWords
 } from '../../../src/lib/server/content/audit.ts';
+import { scalarShape } from '../../../src/lib/server/content/audit/rules.ts';
+import { scalar } from '../../../src/lib/data/helpers/guards.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { AuditFinding, Collection, Project } from '../../../src/lib/data/model/index.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
@@ -737,5 +739,121 @@ describe('a ghost project', () => {
         const hub = scratch();
         write(hub, 'projects/active/alpha/README.md', 'TODO one\n');
         expect(scan(hub, [project({ ghost: true, type: undefined })])).toEqual([]);
+    });
+});
+
+describe('the rules read out of a configuration of the wrong shape', () => {
+    it('keeps the read limits that are finite numbers and the stale lag that is one', () => {
+        const rules = auditRules({
+            read_limits: { a: 1, b: '2', c: NaN, d: Infinity },
+            stale_lag_days: Infinity,
+            publications_file: 3
+        });
+        expect(rules.readLimits).toStrictEqual({ a: 1 });
+        expect(rules.staleLagDays).toBe(1);
+        expect(rules.publicationsFile).toBe('');
+        expect(auditRules({ stale_lag_days: 5, read_limits: [] })).toMatchObject({
+            readLimits: {},
+            staleLagDays: 5
+        });
+    });
+
+    it('reads the vocabularies as the strings they hold, and a lifecycle that is a list as empty', () => {
+        const rules = auditRules({ data_domains: ['A ', 3], waiting_status: 'x', lifecycle: [] });
+        expect([...rules.dataDomains]).toEqual(['a']);
+        expect(rules.waitingStatus.size).toBe(0);
+        expect(rules.liveChips.size).toBe(0);
+        expect(rules.contradictory).toStrictEqual([]);
+        const chips = auditRules({
+            lifecycle: {
+                live_chips: ['a', '', 3],
+                terminal_types: 'x',
+                author_chips: ['b'],
+                contradictory_chips: [['a', 'b'], ['a'], 'ab', ['a', 3, 'b'], ['', 'b']]
+            }
+        });
+        expect([...chips.liveChips]).toEqual(['a']);
+        expect(chips.terminalTypes.size).toBe(0);
+        expect(chips.authorChips).toStrictEqual(['b']);
+        expect(chips.contradictory).toStrictEqual([
+            ['a', 'b'],
+            ['a', 'b']
+        ]);
+    });
+
+    it('keeps the muted signatures that are twelve lowercase hex characters, in order', () => {
+        const held = [
+            '0123456789ab',
+            3,
+            'xyz',
+            'ABCDEF012345',
+            '0123456789abc',
+            null,
+            'fedcba987654'
+        ];
+        expect(mutedSignatures({ audit_ignore: held })).toStrictEqual([
+            '0123456789ab',
+            'fedcba987654'
+        ]);
+        expect(mutedSignatures({ audit_ignore: 'x' })).toStrictEqual([]);
+    });
+});
+
+describe('the website feed of the wrong shape', () => {
+    const NO_ENTRY =
+        'publications.yml: public (`published`) but no website entry: add it (likely section journal/other-publications)';
+
+    /** The website findings for one published paper over a feed holding this text. */
+    function findingsOver(feed: string): string[] {
+        const hub = scratch();
+        write(hub, 'site/publications.yml', feed);
+        const found = scan(hub, [
+            project({ type: 'published', title: 'A published paper', chips: ['journal'] })
+        ]);
+        return lines(found, 'publink');
+    }
+
+    it('reads a feed that is a list, a block that is a list and papers that are a map as holding none', () => {
+        expect(findingsOver('- a\n- b\n')).toStrictEqual([NO_ENTRY]);
+        expect(findingsOver('journal:\n  - x\n')).toStrictEqual([NO_ENTRY]);
+        expect(findingsOver('journal:\n  papers:\n    a: 1\n')).toStrictEqual([NO_ENTRY]);
+    });
+
+    it('skips a paper that is a string and matches the one beside it', () => {
+        const feed =
+            'journal:\n  papers:\n    - just a string\n    - { title: "A published paper" }\n';
+        expect(findingsOver(feed)).toStrictEqual([]);
+    });
+
+    it('reads a section named __proto__ as a section', () => {
+        const feed = '"__proto__":\n  papers:\n    - { title: "A published paper" }\n';
+        expect(findingsOver(feed)).toStrictEqual([
+            "publications.yml: on the website under ['__proto__'] but hub type `published` expects ['journal', 'other-publications']: wrong section?"
+        ]);
+    });
+});
+
+describe('a scalar field read as text', () => {
+    it('answers what the shared scalar helper answers, for every kind of value', () => {
+        const values: unknown[] = [
+            'a',
+            '',
+            0,
+            5,
+            -1.5,
+            Number.NaN,
+            Number.POSITIVE_INFINITY,
+            true,
+            false,
+            null,
+            undefined,
+            [],
+            {},
+            [1],
+            10n
+        ];
+        for (const value of values) {
+            expect(scalarShape.parse(value), String(value)).toBe(scalar(value, ''));
+        }
     });
 });

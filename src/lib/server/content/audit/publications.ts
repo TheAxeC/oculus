@@ -4,8 +4,10 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
+import { z } from 'zod';
+import { isMap } from '../../../data/helpers/guards.ts';
 import type { Project } from '../../../data/model/index.ts';
-import { printed, type AuditInput, sentence, type Raised, slurp, scalar } from './rules.ts';
+import { printed, type AuditInput, sentence, type Raised, slurp, scalarShape } from './rules.ts';
 
 /** Hub types that should have a public entry on the website. */
 const PUBLIC = ['published', 'phd', 'submitted'];
@@ -80,17 +82,27 @@ export function jaccard(left: Set<string>, right: Set<string>): number {
 /** One paper of the public website: its key, its section, its words. */
 type SitePaper = { key: string; section: string; title: string; words: Set<string> };
 
+/** The feed: a map of sections, read from its own keys. */
+const feedShape = z.custom<Record<string, unknown>>(isMap);
+
+/** One section of the feed: a map that holds a list of papers. */
+const sectionShape = z.object({ papers: z.array(z.unknown()) });
+
+/** One paper of a section: a map, whose title reads as the text it is written as. */
+const paperShape = z.object({ title: scalarShape });
+
 /** The papers of the website's feed, one record each, in the order the file lists them. */
 function sitePapers(data: unknown): SitePaper[] {
-    if (typeof data !== 'object' || data === null || Array.isArray(data)) return [];
+    const feed = feedShape.safeParse(data);
+    if (!feed.success) return [];
     const found: SitePaper[] = [];
-    for (const [section, block] of Object.entries(data as Record<string, unknown>)) {
-        if (typeof block !== 'object' || block === null || Array.isArray(block)) continue;
-        const papers = (block as Record<string, unknown>).papers;
-        if (!Array.isArray(papers)) continue;
-        for (const paper of papers) {
-            if (typeof paper !== 'object' || paper === null || Array.isArray(paper)) continue;
-            const title = scalar((paper as Record<string, unknown>).title).trim();
+    for (const [section, block] of Object.entries(feed.data)) {
+        const held = sectionShape.safeParse(block);
+        if (!held.success) continue;
+        for (const item of held.data.papers) {
+            const paper = paperShape.safeParse(item);
+            if (!paper.success) continue;
+            const title = paper.data.title.trim();
             const key = normalTitle(title);
             if (key !== '') found.push({ key, section, title, words: titleWords(title) });
         }

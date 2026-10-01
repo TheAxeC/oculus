@@ -35,6 +35,7 @@ import { extname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { imageSize } from 'image-size';
 import mime from 'mime';
+import { z } from 'zod';
 import { loadLocalOrDefaults } from '../../data/sources/config.ts';
 import { inside } from '../core/paths.ts';
 
@@ -308,6 +309,9 @@ export function stream(dir: string, name: string | null): Response {
     });
 }
 
+/** A config block that names a directory: a map whose `dir` is text that is not empty. */
+const dirBlockShape = z.looseObject({ dir: z.string().min(1) });
+
 /**
  * The absolute directory a config block's `dir` names, resolved under the hub, and null when the
  * block names none or names one outside the hub. `refused` is the caller's memory of the
@@ -319,11 +323,10 @@ export function folderOf(
     refused: Set<string>,
     label: string
 ): string | null {
-    if (typeof block !== 'object' || block === null || Array.isArray(block)) return null;
-    const held = block as Record<string, unknown>;
-    if (typeof held.dir !== 'string' || held.dir === '') return null;
+    const held = dirBlockShape.safeParse(block);
+    if (!held.success) return null;
     const hub = loadLocalOrDefaults(engine).hub;
-    const dir = resolve(hub, held.dir);
+    const dir = resolve(hub, held.data.dir);
     if (!inside(dir, hub)) {
         const key = `directory:${dir}`;
         if (!refused.has(key)) {

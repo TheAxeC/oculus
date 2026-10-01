@@ -39,12 +39,14 @@ import { json } from '@sveltejs/kit';
 import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, isAbsolute, join } from 'node:path';
+import { z } from 'zod';
+import { isMap } from '../../data/helpers/guards.ts';
 import { tokenedBody } from '../core/auth.ts';
-import { expandHome, HUB_ROOT, resolveRootPath, type Root } from './files.ts';
+import { expandHome, HUB_ROOT, resolveRootPath, rootShape, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
 import { ignoredIn } from '../core/git.ts';
 import { deleteNote, listNotes, readNote, saveNote } from './fs/notes.ts';
-import { chained, isMap, readJson, writeJsonAtomic, type FsWrites } from '../core/json.ts';
+import { chained, readJson, writeJsonAtomic, type FsWrites } from '../core/json.ts';
 import { inside, realPath } from '../core/paths.ts';
 
 /** One entry of one directory, as the tree draws it. */
@@ -159,14 +161,21 @@ export function defaultWorkspacesPath(): string {
     return join(homedir(), '.oculus', 'workspaces.json');
 }
 
-/** One root out of the file, or null for an entry that is not a pair of non-empty strings. */
-function readRoot(value: unknown): Root | null {
-    if (!isMap(value)) return null;
-    const { key, dir } = value;
-    if (typeof key !== 'string' || key === '') return null;
-    if (typeof dir !== 'string' || dir === '') return null;
-    return { key, dir };
-}
+/**
+ * The parts of the saved file this module reads: the workspace in force by name, which reads as the
+ * default when it is no text, and the workspaces list, which reads as empty when it is no list. The
+ * items of the list are checked one at a time.
+ */
+const savedFileShape = z.object({
+    current: z.string().catch(DEFAULT_WORKSPACE),
+    workspaces: z.array(z.unknown()).catch(() => [])
+});
+
+/** One saved workspace as the file holds it: a name, and the roots of it as the file lists them. */
+const workspaceFileShape = z.object({
+    name: z.string(),
+    roots: z.array(z.unknown()).catch(() => [])
+});
 
 /**
  * Every workspace the file holds. Missing, corrupt or the wrong shape all read as nothing saved. A
@@ -174,26 +183,29 @@ function readRoot(value: unknown): Root | null {
  * page can say what was left out rather than showing a root that silently does nothing.
  */
 export function readSaved(file: string, reserved: string[] = []): Saved {
-    const data = readJson(file);
+    const file_ = savedFileShape.safeParse(readJson(file));
     const dropped: string[] = [];
-    if (!isMap(data)) return { current: DEFAULT_WORKSPACE, workspaces: [], dropped };
+    if (!file_.success) return { current: DEFAULT_WORKSPACE, workspaces: [], dropped };
     const workspaces: SavedWorkspace[] = [];
-    for (const entry of Array.isArray(data.workspaces) ? data.workspaces : []) {
-        if (!isMap(entry) || typeof entry.name !== 'string') continue;
-        if (workspaces.some((one) => one.name === entry.name)) continue;
+    for (const item of file_.data.workspaces) {
+        const entry = workspaceFileShape.safeParse(item);
+        if (!entry.success) continue;
+        if (workspaces.some((one) => one.name === entry.data.name)) continue;
         const roots: Root[] = [];
-        for (const raw of Array.isArray(entry.roots) ? entry.roots : []) {
-            const root = readRoot(raw);
-            if (root === null || roots.some((one) => one.key === root.key)) continue;
+        for (const raw of entry.data.roots) {
+            const parsed = rootShape.safeParse(raw);
+            if (!parsed.success) continue;
+            const root = parsed.data;
+            if (roots.some((one) => one.key === root.key)) continue;
             if (reserved.includes(root.key)) {
                 if (!dropped.includes(root.key)) dropped.push(root.key);
                 continue;
             }
             roots.push(root);
         }
-        workspaces.push({ name: entry.name, roots });
+        workspaces.push({ name: entry.data.name, roots });
     }
-    const current = typeof data.current === 'string' ? data.current : DEFAULT_WORKSPACE;
+    const current = file_.data.current;
     const known = current === DEFAULT_WORKSPACE || workspaces.some((one) => one.name === current);
     return { current: known ? current : DEFAULT_WORKSPACE, workspaces, dropped };
 }
@@ -354,9 +366,8 @@ export function shownOf(query: URLSearchParams): Shown {
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
 
-function text(value: unknown): string {
-    return typeof value === 'string' ? value : '';
-}
+/** A text field of a write body: the text as it came, and the empty text for anything else. */
+const textShape = z.string().catch('');
 
 /** The keys a saved workspace may not carry, which is every key the configuration owns. */
 function reservedKeys(fixed: Root[]): string[] {
@@ -418,7 +429,23 @@ export const ACTIONS = [
     'select-workspace',
     'note-save',
     'note-delete'
-];
+] as const;
+
+/**
+ * A write body: one of the actions, and the fields the actions read, each the text it came as and
+ * the empty text for anything else. A body naming no action is refused as a body that is no map is.
+ */
+const fsBodyShape = z.object({
+    action: z.enum(ACTIONS),
+    dir: textShape,
+    key: textShape,
+    name: textShape,
+    id: textShape,
+    title: textShape,
+    body: textShape
+});
+
+type FsFields = z.output<typeof fsBodyShape>;
 
 /**
  * The workspace a write lands in. The default workspace holds no roots of its own until one is
@@ -439,8 +466,8 @@ function written(saved: Saved, into: FsTarget): Response {
 }
 
 /** Add the folder the body names to the workspace in force, under a key taken from its own name. */
-function addRoot(saved: Saved, fields: Record<string, unknown>, into: FsTarget): Response {
-    const typed = text(fields.dir).trim();
+function addRoot(saved: Saved, fields: FsFields, into: FsTarget): Response {
+    const typed = fields.dir.trim();
     if (typed === '') return json({ error: 'no-dir' }, { status: 400, headers: NO_STORE });
     const expanded = expandHome(typed);
     if (!isAbsolute(expanded))
@@ -466,8 +493,8 @@ function addRoot(saved: Saved, fields: Record<string, unknown>, into: FsTarget):
 }
 
 /** Take one reader-added root out of the workspace in force. A configured root is refused. */
-function removeRoot(saved: Saved, fields: Record<string, unknown>, into: FsTarget): Response {
-    const key = text(fields.key);
+function removeRoot(saved: Saved, fields: FsFields, into: FsTarget): Response {
+    const key = fields.key;
     if (into.fixed.some((one) => one.key === key))
         return json({ error: 'root-fixed' }, { status: 400, headers: NO_STORE });
     const workspace = currentOf(saved);
@@ -478,8 +505,8 @@ function removeRoot(saved: Saved, fields: Record<string, unknown>, into: FsTarge
 }
 
 /** Save the roots in force under a new name, and make that workspace the current one. */
-function saveWorkspace(saved: Saved, fields: Record<string, unknown>, into: FsTarget): Response {
-    const name = text(fields.name).trim();
+function saveWorkspace(saved: Saved, fields: FsFields, into: FsTarget): Response {
+    const name = fields.name.trim();
     if (name === '') return json({ error: 'no-name' }, { status: 400, headers: NO_STORE });
     if (saved.workspaces.some((one) => one.name === name))
         return json({ error: 'name-held' }, { status: 400, headers: NO_STORE });
@@ -489,8 +516,8 @@ function saveWorkspace(saved: Saved, fields: Record<string, unknown>, into: FsTa
 }
 
 /** Put another saved workspace, or the default one, in force. */
-function selectWorkspace(saved: Saved, fields: Record<string, unknown>, into: FsTarget): Response {
-    const name = text(fields.name);
+function selectWorkspace(saved: Saved, fields: FsFields, into: FsTarget): Response {
+    const name = fields.name;
     if (name !== DEFAULT_WORKSPACE && !saved.workspaces.some((one) => one.name === name)) {
         return json({ error: 'no-such-workspace' }, { status: 400, headers: NO_STORE });
     }
@@ -499,16 +526,16 @@ function selectWorkspace(saved: Saved, fields: Record<string, unknown>, into: Fs
 }
 
 /** Write one note, which is a file of its own rather than a change to the workspaces file. */
-function writeNote(fields: Record<string, unknown>, into: FsTarget): Response {
-    const id = text(fields.id).trim();
-    const row = saveNote(into.notes, id, text(fields.title), text(fields.body));
+function writeNote(fields: FsFields, into: FsTarget): Response {
+    const id = fields.id.trim();
+    const row = saveNote(into.notes, id, fields.title, fields.body);
     if (row === null) return json({ error: 'no-such-note' }, { status: 400, headers: NO_STORE });
     return json({ ok: true, changed: ['note'], refused: [], note: row }, { headers: NO_STORE });
 }
 
 /** Take one note off the disk. */
-function removeNote(fields: Record<string, unknown>, into: FsTarget): Response {
-    const id = text(fields.id).trim();
+function removeNote(fields: FsFields, into: FsTarget): Response {
+    const id = fields.id.trim();
     if (!deleteNote(into.notes, id))
         return json({ error: 'no-such-note' }, { status: 400, headers: NO_STORE });
     return json({ ok: true, changed: ['note'], refused: [] }, { headers: NO_STORE });
@@ -517,7 +544,8 @@ function removeNote(fields: Record<string, unknown>, into: FsTarget): Response {
 /**
  * One action, read and written behind the process's chain so no change is lost to another's write.
  */
-function act(action: string, fields: Record<string, unknown>, into: FsTarget): Response {
+function act(fields: FsFields, into: FsTarget): Response {
+    const action = fields.action;
     if (action === 'note-save') return writeNote(fields, into);
     if (action === 'note-delete') return removeNote(fields, into);
     const saved = readSaved(into.file, reservedKeys(into.fixed));
@@ -541,13 +569,12 @@ export async function handleFsWrite(
         words: { token: 'token', json: 'not-json' }
     });
     if (read instanceof Response) return read;
-    const body = read.body;
-    if (!isMap(body)) return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
-    const action = text(body.action);
-    if (!ACTIONS.includes(action))
+    const body = fsBodyShape.safeParse(read.body);
+    if (!isMap(read.body) || !body.success) {
         return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
-    const fields = body;
+    }
+    const fields = body.data;
     // Whichever request got here first finishes its read, its change and its write before the next
     // one starts its read, so two adds in flight are two roots and never one.
-    return chained(into.writes, () => act(action, fields, into));
+    return chained(into.writes, () => act(fields, into));
 }
