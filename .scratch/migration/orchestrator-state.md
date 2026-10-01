@@ -81,7 +81,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   executor: agent
   worker: claude:sonnet
   model: claude-sonnet-5-5 (the transcript's message.model, read at 23:03)
-  session_id: a4af80915516453ed (launched 2026-10-01 23:02 local)
+  session_id: a7c7904a6d1025f78 (continuation builder launched 2026-10-02 01:03 local, claude-sonnet-5-5 read at 01:04, taking over the worktree of the stopped builder; earlier a4af80915516453ed (launched 2026-10-01 23:02 local))
   worktree: .agents/worktrees/Q66
   base: d6359dcd
   launched: 2026-10-01 23:02 local
@@ -94,7 +94,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   executor: agent
   worker: claude:sonnet
   model: claude-sonnet-5-5 (the transcript's message.model, read at 23:15)
-  session_id: a4808d97d811f004d (launched 2026-10-01 23:15 local)
+  session_id: a7e830c8a488197ee (continuation builder launched 2026-10-02 01:03 local, claude-sonnet-5-5 read at 01:04, taking over the worktree of the stopped builder; earlier a4808d97d811f004d (launched 2026-10-01 23:15 local))
   worktree: .agents/worktrees/Q35
   base: f9d13777
   launched: 2026-10-01 23:15 local
