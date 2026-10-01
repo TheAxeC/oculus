@@ -645,6 +645,8 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z135 (2026-10-01): (a), the cap on the restarting debounce is one helper used by all five watchers (sessions, usage, portfolio, bookmarks, local), a test each, in Q109 (the orchestrator, automode).
 - Open item Z136 (2026-10-01): (a), the five watchers' debounce with a maximum wait is `es-toolkit/compat`'s `debounce` with `maxWait`, and `perfect-debounce` is removed, in Q109 (the orchestrator, automode).
 - Open item Z136 corrected (2026-10-01): (b), `lodash-es`'s `debounce` with `maxWait` (and `@types/lodash-es`), since es-toolkit's `maxWait` fires only on a call and misses the bound (Q109's brief check) (the orchestrator, automode).
+- Open item Z140 (2026-10-01): (2), the diff's wall surface is one surface token in `themes/tokens.css`, the colour and wall checks taught it, all 13 components on it, at X3d's landing (the orchestrator, automode).
+- Open item Z141 (2026-10-01): (1), the change row's status letter stays in the interface font (the orchestrator, automode).
 - Open item Z137 (2026-10-01): (a), D30's keys are `mac_option_is_meta`, `copy_on_selection`, `cursor_style` (`block|line|underline`) and `cursor_blinking`, VS Code's names (the orchestrator, automode).
 - Open item Z139 (2026-10-01): (1), a rename in a group diff draws "R" and its old path: `GitEntry` gains `from`, read with `-M`; in X3d's repair round (the orchestrator, automode).
 - Open item Z133 (2026-10-01): (a), `title:` and `icon:` removed from the `collections` rows of `config/sources.yml`, which no code reads; in S3a's repair round 1 (the orchestrator, automode).

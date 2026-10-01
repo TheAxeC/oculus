@@ -1,0 +1,16 @@
+light | Commit, empty message | 300 px | {"rowWidth":300,"left":11,"right":12,"h":26,"labels":["Commit","More ways to commit"]}
+light | Commit, empty message | 600 px | {"rowWidth":600,"left":11,"right":12,"h":26,"labels":["Commit","More ways to commit"]}
+light | Commit, two-line message | 300 px | {"rowWidth":300,"left":11,"right":12,"h":26,"labels":["Commit","More ways to commit"]}
+light | Commit, two-line message | 600 px | {"rowWidth":600,"left":11,"right":12,"h":26,"labels":["Commit","More ways to commit"]}
+light | Sync Changes | 300 px | {"rowWidth":300,"left":11,"right":12,"h":26,"labels":["Sync Changes"]}
+light | Sync Changes | 600 px | {"rowWidth":600,"left":11,"right":12,"h":26,"labels":["Sync Changes"]}
+light | Publish Branch | 300 px | {"rowWidth":300,"left":11,"right":12,"h":26,"labels":["Publish Branch"]}
+light | Publish Branch | 600 px | {"rowWidth":600,"left":11,"right":12,"h":26,"labels":["Publish Branch"]}
+dark | Commit, empty message | 300 px | {"rowWidth":300,"left":11,"right":12,"h":26,"labels":["Commit","More ways to commit"]}
+dark | Commit, empty message | 600 px | {"rowWidth":600,"left":11,"right":12,"h":26,"labels":["Commit","More ways to commit"]}
+dark | Commit, two-line message | 300 px | {"rowWidth":300,"left":11,"right":12,"h":26,"labels":["Commit","More ways to commit"]}
+dark | Commit, two-line message | 600 px | {"rowWidth":600,"left":11,"right":12,"h":26,"labels":["Commit","More ways to commit"]}
+dark | Sync Changes | 300 px | {"rowWidth":300,"left":11,"right":12,"h":26,"labels":["Sync Changes"]}
+dark | Sync Changes | 600 px | {"rowWidth":600,"left":11,"right":12,"h":26,"labels":["Sync Changes"]}
+dark | Publish Branch | 300 px | {"rowWidth":300,"left":11,"right":12,"h":26,"labels":["Publish Branch"]}
+dark | Publish Branch | 600 px | {"rowWidth":600,"left":11,"right":12,"h":26,"labels":["Publish Branch"]}

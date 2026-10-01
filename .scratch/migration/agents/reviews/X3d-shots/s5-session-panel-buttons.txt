@@ -1,0 +1,4 @@
+dark commit push buttons: 0 ["Suggest","Commit","More ways to commit","Publish Branch"]
+dark sync push buttons: 0 ["Suggest","Sync Changes","Publish Branch"]
+light commit push buttons: 0 ["Suggest","Commit","More ways to commit","Publish Branch"]
+light sync push buttons: 0 ["Suggest","Sync Changes","Publish Branch"]

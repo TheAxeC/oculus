@@ -1,0 +1,4 @@
+tabs before ["Files","Repositories","Search"]
+row newdir | ? | icon present
+tabs after ["Files","Repositories","Search"]
+editor text 53 | 4 | 3 | 1 | Files | Repositories | Search | FILES | hidden files | ignored files | cathedra | newdir | HUB | ENGINE | CATHEDRA | docs | newdir | scripts | src | counter.txt | data.jso

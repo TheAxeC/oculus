@@ -1,0 +1,8 @@
+light press Merge branch feat: page answered in 8 ms
+light open commit file rows: 2
+light reload with the commit open: page answered in 1 ms
+light after reload file rows: 2
+dark press Merge branch feat: page answered in 6 ms
+dark open commit file rows: 2
+dark reload with the commit open: page answered in 1 ms
+dark after reload file rows: 2

@@ -1,0 +1,10 @@
+Both wall rules set to `background: var(--diff-wall-surface);` with the token declared in tokens.css as
+`color-mix(in srgb, var(--chip) var(--wall-panel), transparent)`; `npx vitest run tests/ui/theme/colours.test.ts tests/ui/theme/wall.test.ts` gives:
+
+ FAIL  |unit| tests/ui/theme/colours.test.ts > the colour rule > holds in every component under ui, shell, views and routes
+AssertionError: expected [ ...(2) ] to deeply equal []
++   "lib/views/sources/repositories/diff/Diff.svelte: :global(body.wall) .files: background: var(--diff-wall-surface) (not a surface or a hue)",
++   "lib/views/sources/repositories/diff/FileHeader.svelte: :global(body.wall) .header: background: var(--diff-wall-surface) (not a surface or a hue)",
+ FAIL  |unit| tests/ui/theme/wall.test.ts > the wallpaper rule > answers every surface a component paints, or names it as solid with its reason
+AssertionError: expected [ ...(36) ] to deeply equal [ ...(34) ]
+      Tests  2 failed | 15 passed (17)
