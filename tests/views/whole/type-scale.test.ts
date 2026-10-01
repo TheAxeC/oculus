@@ -90,13 +90,22 @@ const VIEWS: Record<string, string> = {
     'academic/slides/Slides.svelte': '.intro=fs-md | .at=fs-xs | .said=fs-md',
     'sources/source/Source.svelte': '.message=fs-sm | .locked=fs-sm',
     'system/status/Status.svelte': '.view=fs-md',
-    'system/workbench/Appearance.svelte': 'h3=fs-sm | .caption, .value=fs-sm',
     'system/workbench/Catalogue.svelte':
         '.hint=fs-sm | h3=fs-sm | .chord, .key=fs-3xs | .badge=fs-3xs',
     'system/workbench/Pages.svelte': '',
     'system/workbench/RailEditor.svelte':
-        'h3=fs-sm | .word=fs-sm | .about, .empty, .outcome=fs-sm | .problems=fs-sm',
+        '.word=fs-sm | .about, .empty, .outcome=fs-sm | .problems=fs-sm',
     'system/workbench/Settings.svelte': '',
+    'system/workbench/settings/BrowserControl.svelte': '.value=fs-sm',
+    'system/workbench/settings/Contents.svelte': '',
+    'system/workbench/settings/Control.svelte': '.count=fs-sm',
+    'system/workbench/settings/EditLink.svelte': '',
+    'system/workbench/settings/Gear.svelte': '',
+    'system/workbench/settings/Header.svelte': '.count=fs-sm',
+    'system/workbench/settings/Item.svelte':
+        '.title=fs-md | .description, .fields, .path=fs-sm | .field-list=fs-sm | code=fs-sm | .said=fs-sm | .foot=fs-xs',
+    'system/workbench/settings/List.svelte':
+        '.group-title=fs-xl | .section-title=fs-md | .note=fs-sm',
     'sources/venues/Venues.svelte': '.said=fs-md | .empty=fs-md',
     'boards/collection/Coverage.svelte': '.label=fs-xxs',
     'boards/collection/Software.svelte': '.label=fs-xxs | .kind=fs-xxs | .none=fs-xs',
@@ -302,6 +311,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/forms/choice/GlyphSelect.svelte': '.select=fs-sm',
     'src/lib/ui/forms/choice/MultiSelect.svelte': '.filter=fs-sm',
     'src/lib/ui/forms/choice/Select.svelte': '.select=fs-sm',
+    'src/lib/ui/forms/NumberInput.svelte': '',
     'src/lib/ui/forms/Prompt.svelte': '.message=fs-sm | .detail, .name=fs-xs | .row button=fs-sm',
     'src/lib/ui/forms/TextArea.svelte': '.area=fs-sm',
     'src/lib/ui/forms/TextInput.svelte': '.text=fs-sm',
@@ -342,9 +352,7 @@ describe('the view type scale', () => {
     });
 
     it('audits every local role in the section of Settings that resets the pages', () => {
-        expect(typeRules(join(ROOT, 'system/workbench/PagesReset.svelte'))).toBe(
-            'h3=fs-sm | .empty=fs-sm'
-        );
+        expect(typeRules(join(ROOT, 'system/workbench/PagesReset.svelte'))).toBe('.empty=fs-sm');
     });
 
     it('audits that every ui component is listed in the pass-through audit', () => {

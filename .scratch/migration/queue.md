@@ -1,13 +1,12 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- S3c (the Settings editor), review of repair round 1 running.
-- Q85b (zod in the state layer), built; review running.
+- Q85b (zod in the state layer), review in; repair round next.
 - Q88b (the Files view's file operations), building.
 Queued, in order:
-- U3 (every view on VS Code's scale, from U2's audit), once S3c has landed.
+- U3 (every view on VS Code's scale, from U2's audit).
 - Q85c (zod in the data folder), once Q85b has landed; then Q85d.
-- Q88c (the Source Control rows' and the pane strip's new menu items), once Q88b and S3c have landed.
+- Q88c (the Source Control rows' and the pane strip's new menu items), once Q88b has landed.
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - X3a (the Files view as VS Code's Explorer), once Q88b has landed.
 - Q91 (the project view and its editor), once X3a has landed.
@@ -15,7 +14,7 @@ Queued, in order:
 - Q66 (a hidden tab defers its work).
 - Q35 (the session views).
 - D11 and D14 (the rite debug client; LaTeX everywhere).
-- D25 (the editor's options), once S3c has landed; D27 (the editor's languages).
+- D25 (the editor's options); D27 (the editor's languages).
 - D23, D15 and D17 (language servers; PDF reading, once D14 has landed; project commands).
 - D23b (more language server features), once D23 has landed.
 - D28 (saving a source file), once D25 has landed.
@@ -34,6 +33,7 @@ Queued, in order:
 Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers.
 
 Landed, newest first:
+- S3c (the Settings editor), 2026-10-01, 0445bcb2.
 - Q85a2 (zod in the edit, sessions and transcripts folders), 2026-10-01, 0b38c14c.
 - U2 (every view's look against VS Code), 2026-10-01, e8b517c0.
 - Q85a4 (zod in the other server folders), 2026-10-01, 58b860a0.

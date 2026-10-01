@@ -6,7 +6,7 @@
     // text boxes' editing menu (TextBoxMenu.svelte); the date control keeps the browser's.
 
     import TextBoxMenu from '../controls/text/TextBoxMenu.svelte';
-    import { boxValue } from '../controls/text/text-menu';
+    import { typedInto } from '../controls/text/text-menu';
 
     type Props = {
         value: string;
@@ -23,15 +23,16 @@
     const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
     const kind = $derived(value === '' || ISO.test(value) ? 'date' : 'text');
-
-    function typed(event: Event): void {
-        const typedValue = boxValue(event);
-        if (typedValue !== null) oninput(typedValue);
-    }
 </script>
 
 {#if kind === 'date'}
-    <input class="date" type="date" {value} aria-label={label} oninput={typed} />
+    <input
+        class="date"
+        type="date"
+        {value}
+        aria-label={label}
+        oninput={(event) => typedInto(event, oninput)}
+    />
 {:else}
     <TextBoxMenu {label} box={() => box}>
         <input
@@ -39,7 +40,7 @@
             type="text"
             {value}
             aria-label={label}
-            oninput={typed}
+            oninput={(event) => typedInto(event, oninput)}
             bind:this={box}
         />
     </TextBoxMenu>

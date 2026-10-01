@@ -146,6 +146,8 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which row the pointer is on',
     'src/lib/views/system/hpc/Capacity.svelte .bar':
         'a track, read as the proportion of it the fill covers',
+    'src/lib/views/system/workbench/settings/Item.svelte .item:hover, .item:focus-within':
+        'a hover response, saying which setting the pointer or the focus is on',
     'src/lib/views/sessions/session-list/SessionWorkspace.svelte .row:hover':
         'a hover response, saying which row the pointer is on',
     'src/lib/views/sessions/session-list/TerminalRows.svelte .row:hover':

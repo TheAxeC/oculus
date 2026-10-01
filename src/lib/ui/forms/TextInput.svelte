@@ -4,32 +4,59 @@
     // already follows, so a form that keeps a draft and one that writes straight through use the
     // same box.
     //
+    // A form that writes a value when the reader is done with the box, rather than at each
+    // keystroke, hands `onenter` and `onblur`: each is called with the box's text, Enter outside an
+    // input method's composition and the loss of focus respectively. The box keeps nothing of its
+    // own either way.
+    //
     // A right-click on the box opens its editing menu (TextBoxMenu.svelte), read from the box as
     // the right-click arrives; the menu is the box's own, so a menu of a row or a view around it
     // does not open over it.
 
     import TextBoxMenu from '../controls/text/TextBoxMenu.svelte';
-    import { boxValue } from '../controls/text/text-menu';
+    import { typedInto } from '../controls/text/text-menu';
 
     type Props = {
         value: string;
         /** The box's accessible name, already translated by the view. */
         label: string;
         oninput: (value: string) => void;
+        /** Enter was pressed in the box, with its text. */
+        onenter?: (value: string) => void;
+        /** The box lost the focus, with its text. */
+        onblur?: (value: string) => void;
         /** Shown and not editable, for a field a write never touches. */
         readonly?: boolean;
         placeholder?: string;
         /** Drawn as dots and never offered to the browser's autofill, for a secret. */
         secret?: boolean;
+        /** The keypad a touch screen offers, for a box holding a number. */
+        inputmode?: 'decimal';
     };
 
-    let { value, label, oninput, readonly = false, placeholder, secret = false }: Props = $props();
+    let {
+        value,
+        label,
+        oninput,
+        onenter,
+        onblur,
+        readonly = false,
+        placeholder,
+        secret = false,
+        inputmode
+    }: Props = $props();
 
     let box: HTMLInputElement | null = $state(null);
 
-    function typed(event: Event): void {
-        const typedValue = boxValue(event);
-        if (typedValue !== null) oninput(typedValue);
+    function keyed(event: KeyboardEvent): void {
+        if (event.key !== 'Enter' || event.isComposing || onenter === undefined) return;
+        const field = event.currentTarget;
+        if (field instanceof HTMLInputElement) onenter(field.value);
+    }
+
+    function left(event: FocusEvent): void {
+        const field = event.currentTarget;
+        if (field instanceof HTMLInputElement) onblur?.(field.value);
     }
 </script>
 
@@ -41,9 +68,12 @@
         {value}
         {readonly}
         {placeholder}
+        {inputmode}
         aria-label={label}
         aria-readonly={readonly ? 'true' : undefined}
-        oninput={typed}
+        oninput={(event) => typedInto(event, oninput)}
+        onkeydown={keyed}
+        onblur={left}
         bind:this={box}
     />
 </TextBoxMenu>

@@ -7,7 +7,7 @@ import {
     configFiles,
     fileLineCount,
     isLocalFile
-} from '../../../src/lib/state/system/config-files.ts';
+} from '../../../src/lib/state/system/config/config-files.ts';
 import { LOCAL_NAME as SERVER_LOCAL_NAME } from '../../../src/lib/data/sources/config.ts';
 import type { FsEntry } from '../../../src/lib/state/sources/fs.ts';
 

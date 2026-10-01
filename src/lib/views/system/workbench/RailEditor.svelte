@@ -18,9 +18,9 @@
     // glyph the vocabulary does not hold (a new row has none yet) draws its icon field with no
     // icon, and the rule's line names what the row lacks.
     //
-    // The rail's Settings choice opens the Settings view with `reveal: 'rail'` in its instance
-    // state; the list is then scrolled into view and the ask is taken out of the state, so a later
-    // switch back to the tab leaves the view where the reader scrolled it.
+    // The partial has no heading: it is drawn inside the `rail` row of the Settings view
+    // (settings/Item.svelte), whose title is the heading. The rail's Settings choice opens that row
+    // (Settings.svelte).
 
     import GlyphSelect from '$lib/ui/forms/choice/GlyphSelect.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
@@ -44,7 +44,7 @@
 
     const {
         entities: { config },
-        layout: { instanceLayoutState, instanceView, restateInstance },
+        layout: { instanceView },
         ui: { instanceState, setInstanceState },
         writes: { writeRail }
     } = useState();
@@ -59,23 +59,6 @@
     const glyphs = $derived(glyphNames(merged) ?? []);
     const problems = $derived(readRail(rows, pages, glyphs).problems);
     const dirty = $derived(draft !== null && !sameRail(draft, saved));
-
-    let section: HTMLElement | undefined = $state();
-
-    /** Whether the tab was opened to show the rail list, which the rail's Settings choice asks. */
-    const revealing = $derived.by(() => {
-        const held = instanceLayoutState(id);
-        return typeof held === 'object' && held !== null && 'reveal' in held
-            ? held.reveal === 'rail'
-            : false;
-    });
-
-    $effect(() => {
-        if (!revealing || section === undefined) return;
-        section.scrollIntoView({ block: 'start' });
-        const { reveal: _asked, ...rest } = instanceLayoutState(id) as Record<string, unknown>;
-        restateInstance(id, rest);
-    });
 
     /** Whether a save is on its way, which is what keeps Save from being pressed twice. */
     let sending = $state(false);
@@ -137,8 +120,7 @@
     }
 </script>
 
-<section class="rail" data-settings="rail" bind:this={section}>
-    <h3>{t('workbench.rail_title')}</h3>
+<div class="rail" data-settings="rail">
     <p class="about">{t('workbench.rail_about')}</p>
     {#if rows.length === 0}
         <p class="empty">{t('workbench.rail_empty')}</p>
@@ -228,21 +210,13 @@
             <span class="outcome" role="status">{outcome}</span>
         {/if}
     </div>
-</section>
+</div>
 
 <style>
     .rail {
         display: flex;
         flex-direction: column;
         gap: 6px;
-    }
-
-    h3 {
-        margin: 0;
-        font-size: var(--fs-sm);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--muted-txt, var(--muted));
     }
 
     .row,

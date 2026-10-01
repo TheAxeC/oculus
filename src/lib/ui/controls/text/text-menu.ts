@@ -62,6 +62,12 @@ export function boxValue(event: Event): string | null {
     return null;
 }
 
+/** Hand the text of the box an input event came from to `oninput`; any other target hands none. */
+export function typedInto(event: Event, oninput: (value: string) => void): void {
+    const typed = boxValue(event);
+    if (typed !== null) oninput(typed);
+}
+
 /** The text a box has selected. */
 function selectedOf(box: Box): string {
     return box.value.slice(box.selectionStart ?? 0, box.selectionEnd ?? 0);

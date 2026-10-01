@@ -62,7 +62,10 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // Settings view draws as the Code theme menu; and `data/sources/config/rail`, the rule
 // over the `rail:` list of config/layout.yml, which the page drawing the rail, the Settings view
 // editing it and the server writing it and wording its findings all read, so the three agree on
-// which entries are pages; and `data/hub-address`, the rule telling a path of the hub from a web
+// which entries are pages; and `data/sources/config/options`, the options catalog's types and the
+// reader of it from the merged config, which the Settings view's rows are made from, so the rows
+// and the server's write of one option (server/edit/writes/config-key.ts) read one description of
+// what an option is; and `data/hub-address`, the rule telling a path of the hub from a web
 // address, which the collection card reads to decide what a click opens and the Audit reads to
 // decide which links to look for on disk. `data/helpers/files/paths` holds the `/` path rules (a
 // path's last name, the path under a folder, the deepest folder holding a target) that the file
@@ -130,6 +133,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/code-themes',
         'data/helpers/finding-text',
         'data/sources/config/rail',
+        'data/sources/config/options',
         'data/hub-address',
         'data/prose/languages'
     ],

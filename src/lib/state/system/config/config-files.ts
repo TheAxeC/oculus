@@ -9,7 +9,7 @@
 // tag. Pure over the listings the file browser's store holds, so the order is checked without a
 // rendering.
 
-import type { FsEntry } from '../sources/fs.ts';
+import type { FsEntry } from '../../sources/fs.ts';
 
 /** The extension a configuration file carries. */
 export const CONFIG_SUFFIX = '.yml';

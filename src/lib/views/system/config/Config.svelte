@@ -42,7 +42,7 @@
         configFiles,
         fileLineCount,
         isLocalFile
-    } from '$lib/state/system/config-files';
+    } from '$lib/state/system/config/config-files';
     import { descriptionKey } from './files';
     import { ENGINE_ROOT } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source.svelte';

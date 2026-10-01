@@ -118,3 +118,164 @@ Cases of the brief's "Cases":
 
 Reviewer usage: tokens not measured by the reviewer, about 55 tool uses, minutes not measured.
 
+
+# Step S3c refuter report, repair round 1 (on /Users/axelfaes/workspace/research-hube/.agents/worktrees/S3c, base a157d199)
+
+(Worktree path: /Users/axelfaes/workspace/research-hub/.agents/worktrees/S3c.) Reading order: refute skill and templates/report.md, plan.yaml, the state file's S3c dispatch entry, spec.md, the brief, S3c-round1.md, the first refuter report, the builder's report, plan.md Z153 (line 721) and the state file's Z153 entry (line 173), then `git diff a157d199` and every new file whole. No file in the worktree or the ledger was changed. `npm run diagrams` rewrote docs/diagrams/*; `git status --short | wc -l` printed 43 before and after, the same files. Mutations ran on a copy of tools/oculus under $TMPDIR (node_modules symlinked, config/local.yml excluded, never opened), removed afterwards (`ls $TMPDIR | grep -c s3c` printed 0). Ports 8787 and 8790 and `.vscode` untouched.
+
+## Repair round 1, refuted
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
+(exit 0, 18 files written)
+$ PATH=... sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md   (exit 0)
+$ npm test              Test Files  377 passed | 20 skipped (397)    Tests  6094 passed | 600 skipped (6694)
+$ npm run test:checks   Test Files  29 passed | 2 skipped (31)        Tests  442 passed | 9 skipped (451)
+$ npm run check         1790855591956 COMPLETED 2862 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build         nodes/2.B6R9JOhY.js 2,159.67 kB ... built in 11.36s
+$ npm run format:check  All matched files use Prettier code style!
+$ npm run lint          (no output)
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests   (no output)
+checks: 7 commands passed
+```
+
+Commands the round-1 section quotes, rerun in the same form:
+
+```
+npx vitest run tests/state/system/settings tests/views/system/workbench/settings.test.ts tests/ui/forms/number-input.test.ts tests/ui/forms/text-input.test.ts tests/state/workbench/ui.test.ts
+  Test Files  8 passed (8)   Tests  167 passed (167)            (report: 8 files, 167: reproduces)
+grep -rn typedInto src/lib: Search.svelte:19,57; TextInput.svelte:17,74; TextArea.svelte:17,93; DateInput.svelte:9,34,43; text-menu.ts:66   (report: 4 callers and the definition: reproduces; DateInput calls it twice)
+git grep -l lodash-es a157d199 -- src: only src/lib/server/** files; grep -rn lodash-es src | grep -v /server/ : browser.ts:16, rows.ts:19, write.ts:13   (first client import of lodash-es: reproduces)
+grep -rhoE "const [A-Z][A-Za-z]*Shape =" src/lib | wc -l: 0   (reproduces)
+find .svelte-kit/output/client/_app/immutable -name '*.js' -not -path '*workers*' -exec wc -c {} + | sort -n | tail: nodes/2.B6R9JOhY.js 2159674; chunks/I7Dj73QH.js 2737063   (report "after" figures 2,159,674 and 2,737,063 reproduce; file hashes differ between builds)
+perl ASCII gate over src tests config (local.yml excluded); LC_ALL=C grep -nP '[^\x00-\x7F]' HELP.md DESIGN.md S3c-report.md: printed nothing
+folder items: src/lib/views/system/workbench/settings 10 (ten-item rule holds; folder size and duplication checks are inside test:checks, green)
+```
+
+Mutation table M7 to M23, reproduced on the scratch copy (one-line edit each, the suite named, failing tests quoted). Every row reproduces with the failing tests the report names:
+
+```
+M7  decimalOf without DECIMAL        FAIL browser.test.ts "refuses what is not a decimal ..."; write.test.ts "writes nothing for text that is not a decimal number, and says so"
+M8  commit choice accepts any word   FAIL write.test.ts "writes nothing for the empty choice or a word ..."; "the write of a row > writes nothing for the empty choice"
+M9  superseded guard removed         FAIL write.test.ts "lets the answer of the later write stand ..."
+M10 closed guard removed             FAIL write.test.ts "changes nothing for an answer that arrives after the view is closed"
+M11 @id: matches all                 FAIL search.test.ts "@id: > keeps the rows ...", "looks at the key path alone ...", "counts the seven This browser rows ..."
+M12 @modified off                    FAIL search.test.ts "@modified > combines with a word", "... whatever the case of the word", "counts the seven ..."
+M13 Modified always false            FAIL rows.test.ts x3, search.test.ts x2, write.test.ts "resets a Modified row ..."
+M14 localRows drops first            FAIL rows.test.ts x2, search.test.ts "drops a group that holds no row ..."
+M15 count adds nothing               FAIL search.test.ts x4 (incl. "counts the seven This browser rows ...")
+M16 group kept under a query         FAIL search.test.ts "drops a group that holds no row once a query is typed ..."; settings.test.ts "is left out once a query is typed ..."
+M17 press toggles a leaf group       FAIL rows.test.ts "leaves a group with no section as it is ..."
+M18 wallpaper row by theme alone     FAIL rows.test.ts and settings.test.ts "... while a wallpaper choice is saved"
+M19 mapOf answers a copy             FAIL write.test.ts "hands on every key of the state it was given ..."
+M20 empty box not given back         FAIL browser.test.ts "gives the size back to the config for an empty box"
+M21 gear always drawn                FAIL settings.test.ts "draws no gear on a row whose menu is empty ...", "the machine-local rows > ..."
+M22 theme control 'toggle'           FAIL settings.test.ts "names on each row the control it draws, and no other word"
+M23 tinted removed                   FAIL settings.test.ts "is a tinted pane, as every view drawn over the wallpaper is"
+```
+
+My own mutations, beyond the report's:
+
+```
+A  terminalSizeOf reads Number() (the first review's defect)   FAIL browser.test.ts "refuses what is not a decimal ...", "writes -0 as 0"
+L  DECIMAL without the exponent                                 FAIL browser.test.ts "takes a decimal, trimmed ..."; write.test.ts "makes a number from decimal text ..."   (R1-A: both places share one rule)
+E  canReset ignores modified                                    FAIL settings.test.ts "draws no gear on a row whose menu is empty ..."
+F  canCopy always true                                          FAIL settings.test.ts (same test and the local.yml one)
+J  This browser rows never Modified                             FAIL rows.test.ts x3, settings.test.ts x3
+K  Reset of code theme sets 'tokens'                            FAIL rows.test.ts "marks a saved code theme Modified, and forgets it on Reset", "marks each value ... Reset forgets each"
+G  SOLID entry for Item.svelte removed from tests/ui/theme/wall.test.ts   FAIL wall.test.ts "answers every surface a component paints, or names it as solid with its reason"
+H  allow-styling DELIBERATE entry removed                        FAIL boundaries.test.ts "lets no view or shell component style a primitive own class"
+N  tocOf without its status filter                               all 124 tests PASS (see Standards 3.1)
+```
+
+Ruling 7 reproduced: on the base `ui.svelte.ts` in the scratch copy, a test of `setWallpaper(null)` (saved wallpaper becomes null) and one of `setCodeTheme(null)` (saved code theme becomes null) both pass: `Tests  2 passed | 38 skipped (40)`. `isCodeTheme(null)` is false (`data/helpers/code-themes.ts:31`) and `setWallpaper` stores whatever it is given, so the change adds no runtime behaviour there and the removal is right.
+
+Reveal effect, modelled in the client runtime (a `.client.test.ts` copy of the effect's shape over the real ui store, not the component): `setQuery('')` called in the effect's synchronous part gives `RUNS 2 SCROLLS 2`; the same call wrapped in `untrack` gives `RUNS 1 SCROLLS 1`.
+
+VS Code 1.137.0, rerun by reading the shipped files: the pointer handler `if(this.tree.setFocus([c]),this.tree.toggleCollapsed(c,l),n){...}` for a collapsible row is in workbench.desktop.main.js (the Contents press claim reproduces); `categoryFilter!==i&&(this.viewState.categoryFilter=i??void 0,this.renderTree(void 0,!0),this.settingsTree.scrollTop=0)` reproduces; nls.messages.json 18703 "{0} Settings Found", 18706, 18708, 18699, 18701, 18827 "Modified", 18849, 18842, 18855 reproduce. Not reproduced because a second build or the pre-round tree is needed: "Tests 15 failed | 109 passed (124)" (the round's first run), first-run.txt, chunks-before.txt (the 1,940,418 byte "before"), and M1 to M6. The report names `chunks/C7Jv4Oi_.js` as holding zod's library code; that file is not in my build, and the zod markers (`ZodError`, `invalid_type`, `too_small`) are in `nodes/2` only. No decision rests on that name.
+
+## Verdicts
+
+Round-1 rulings, judged for each (done as ruled, closure by removing a check, reach beyond the ruling, closure my rerun does not reproduce):
+
+- 1 (Terminal text size box, one decimal rule): done as ruled, including R1-A. `write.ts` exports `decimalOf`; `commit` and `browser.ts terminalSizeOf` both use it; mutation A and L fail tests. Z153 (a) makes `1e1` read as 10 in the box and in a config row, which the code does (`browser.test.ts` "takes a decimal ..." expects 10).
+- 2 (`data-control` vocabulary): done; `Item.svelte` returns `row.control`, and `grep browser` finds no `data-control="browser"` value; M22 fails the view test.
+- 3 (`typedInto` once): done as a dedupe; the diff of Search, TextArea, DateInput and TextInput is mechanical (the `typed` function moved to `text-menu.ts:65-69`, same body). Both paths are named in the report. See Behaviour 4.3 for the look.
+- 4 (`isEqual`): done; the report names it as the client's first import of `lodash-es`.
+- 5 (VS Code checked, Contents press): partly done. The press behaviour is built and tested at the state layer and its VS Code source is reproduced. The check of "each behaviour" is not complete: Spec 1.1.
+- 6 (mutations M7 onward, first run restated): done; every row reproduces. The restatement of the first run is accurate (earlier form, six files, cases 1 to 27 only as module-missing load failures).
+- 7 (the two `ui.test.ts` tests): done by removal, which the ruling allowed when the change adds no runtime behaviour; I reproduced that it adds none.
+- 8 (case 27 `searchGroups` count): done; `search.test.ts:221`, fails under M11, M12, M15.
+- 9 (bundle sentence): done; the whole delta (219,256 bytes) is stated and what the node holds is named, with no attribution to `yaml` alone. The "after" figures reproduce.
+- 10 (tag-comparison test removed): done; `text-input.test.ts` now holds two tests of preserved behaviour (value and label; secret as dots) and its head comment names Enter and blur as not covered.
+- 11 (`Header.svelte` restyle entered): done; `allow-styling.ts` DELIBERATE entry; mutation H fails `boundaries.test.ts` without it. See Standards 3.2.
+- 12 (reveal: clear, `await tick()`, scroll, restate): built as ruled and named for the look. See Behaviour 4.1.
+- 13 (no empty gear): done; M21, E, F fail the view test.
+- 14 (`tinted` kept, own wall rule dropped): done; `Settings.svelte:176` is `<Pane title={t('views.settings')} tinted>`, no `body.wall` rule in the file; M23 fails.
+- 15 (empty groups dropped under a query): done; `search.ts:80`, M16 fails two tests.
+- 16 (wallpaper row listed when a choice is saved): done; M18 fails two tests.
+- 17 (`mapOf` answers `state` itself): done; M19 fails.
+- 18 (lower camel schema names): done; `grep -rhoE "const [A-Z][A-Za-z]*Shape =" src/lib | wc -l` prints 0, and the 10 schemas of `typed.ts` and `rows.ts` are lower camel.
+- 19 (open items pointer by heading): done; the report names the "Open items" section, and the section it quotes matches `orchestrator-state.md:142-144`, which holds no entry.
+
+R1-B (Item's hover answer removed, `Item.svelte .item:hover, .item:focus-within` added to SOLID in `tests/ui/theme/wall.test.ts`): it follows the established form and does not weaken the check. The SOLID map is keyed on the exact file and selector, with a reason in the words the sessions and card hover entries use ("a hover response, saying which ... the pointer is on"); the check still fails when the entry is removed (mutation G) and fails for an entry that stops being needed (the test compares the two key sets for equality). `tinted.test.ts` forbids a wall surface in a tinted view or its partials, so a `body.wall` answer for the hover cannot coexist with ruling 14; the only way to keep both checks is the exemption. What it changes is the look: the hover over a wallpaper is the opaque `--chip`, the width of a whole item. That is for the landing look, and the report says so.
+
+Items of the brief's "What to build", over the whole diff:
+
+- 1 (rows module): holds. `state/system/config/` holds rows, groups, search, write, browser, typed, messages and the moved config-files; the 155 earlier tests plus the round's tests pass; every write-logic, search and Modified behaviour fails a named test under a mutation (M7 to M20).
+- 2 (the view): holds on reading, tests and mutations; the browser-only parts (presses, scroll, hover, Enter and blur, the reveal effect) are for the look. Findings 4.1 to 4.4 are low-severity notes on bullets of this item, and the report's VS Code check is incomplete (Spec 1.1).
+- 3 (the sentences): holds. HELP.md:145 and :216, appearance.yml:62 and :69, options.yml:84 and :89, DESIGN.md:85 and :171 and the head comment of Settings.svelte are rewritten (read in `git diff`).
+- 4 (the tests): holds. Each new or changed test of an added behaviour has a failing check quoted or reproduced (the report's first-run lines; my mutations A, E, F, G, H, J, K, L, M7 to M23). The tests of `typedInto` do not exist (Behaviour 4.3).
+
+Cases of the brief's "Cases" (all rerun, passing):
+
+- 1 met (rows.test.ts:101), 2 met (:112), 3 met (:118), 4 met (:136), 5 met (:150, :162), 6 met (:176, :192), 7 met (:208), 8 met (:237), 9 met (:252), 10 met (:276).
+- 11 met (search.test.ts:86), 12 met (:153, :159), 13 met (:170, :179), 14 met (:127, :133), 15 met (:121).
+- 16 met (rows.test.ts:331, :350), 17 met (:388), 18 met (:432, :466, :477).
+- 19 met (write.test.ts:65, :76, :85, :123), 20 met (:130, :141), 21 met (:149), 22 met (:223), 23 met (:244), 24 met (:273), 25 met (:102, :282), 26 met (:309).
+- 27 met (search.test.ts:221 counts 7, 1 and 0 over the browser-only fixture, with rows.test.ts:501 for the no-file-group half). The first review's "partial" is closed.
+- 28 met (settings.test.ts:425), 29 met (:464), 30 met (:494, with `log.asked` excluding local.yml at :756), 31 met (:526), 32 met (:539, :550), 33 met (:565, :573), 34 met (:614), 35 met (:636, :655), 36 met (:730), 37 met (:399).
+
+## 1. Spec
+
+- 1.1 `S3c-report.md`, section "VS Code 1.137.0 against the brief", last two bullets: "Boolean setting: the class `setting-item-bool` is in the css; that its label is the description was not verified." and "Escape in a field reverting its text, and the number box's `inputmode`: no string searched found them ... were not checked against VS Code." What is wrong: ruling 5 asked for each behaviour of What to build 2 to be checked in the shipped source with the string searched. These are left unchecked with no string named, and the check was feasible. One `grep -o` for `setting-item-bool-control` in workbench.desktop.main.js shows the boolean row is built as `.setting-item-value-description` holding `.setting-item-bool-control` (the checkbox) and `.setting-item-description` side by side, which is what the brief's "label is the description" assumed. `Edit in settings.json` is nls message 18844, the VS Code counterpart of the list and family "Edit in <file>" row, and the report does not mention it. Failure scenario: a difference between oculus's boolean, list or family rows and VS Code's stays unreported, and the report's "Not done" line does not list the unchecked behaviours. Verdict: none of items 1 to 4 (a required report part left partly undone).
+
+## 2. Proof
+
+none. (The earlier findings 2.1 to 2.5 are closed: mutations reproduce; the two `ui.test.ts` removals are right; case 27 is met; the bundle sentence states the whole delta; the tag-comparison test is gone.)
+
+## 3. Standards
+
+- 3.1 `src/lib/state/system/config/groups.ts:137`: ".filter((group) => !searching || group.status === 'rows')". What is wrong: since ruling 15, `searchGroups` drops every group with no row under a typed query, so this filter can no longer remove anything for the view's input, and no test reaches it (my mutation N, which deletes the line, leaves all 124 tests passing). The `searching` argument of `tocOf` is kept for a rule that now lives in `search.ts`, and `rows.test.ts:370`'s title ("only those with a row when searching") promises a check that its fixture does not exercise. Failure scenario: a later change to `searchGroups` that keeps a group again would be caught by the search test, not by this filter, so the filter protects nothing, and a reader of `tocOf` believes it does. Small enough for landing: delete the line and the argument, or test it.
+- 3.2 `tests/checks/tree/allow-styling.ts` (new DELIBERATE entry for `Header.svelte .field :global(.search)`): "why: 'the Settings header gives the search input the width left in its row ...; Search has no prop for its width'". What is wrong, as a judgment for the orchestrator: ruling 11 said to enter it "as `Data.svelte`'s entry is", and `Data.svelte`'s entry is in HELD, which the file defines as a coupling "to undo by giving the primitive the prop it is missing". The builder used DELIBERATE, defined as a rule the primitive "cannot carry itself", and its own reason says only that `Search` has no width prop. The check passes either way (and fails without the entry: mutation H). Failure scenario: a coupling that a `Search` prop would remove is recorded as deliberate and nobody revisits it. No verdict.
+
+## 4. Behaviour
+
+- 4.1 `src/lib/views/system/workbench/Settings.svelte:158-173`: "async function showRail(area, hidden) { if (hidden) setQuery(''); await tick(); ... }" called as "void showRail(area, hidden);" inside the `$effect`. What is wrong: the report (ruling 12) says the effect reads `railHidden` and `query` untracked "so the cleared query does not run it again". `query` and `railHidden` are untracked, but `setQuery` itself reads `ui.instanceState(instance.id)` in the effect's synchronous part, so the effect depends on the store it then writes. A client-runtime model of exactly this shape ran the body twice (`RUNS 2 SCROLLS 2`); wrapped in `untrack` it ran once. Failure scenario: a Settings tab with the query `poll` opened by the rail's Settings choice scrolls to the rail row and restates the instance twice. The second pass sees an empty query, so both end on the same state and nothing visibly goes wrong; the stated reason is simply wrong, and the cost is a second scroll. By model, not by the component; the effect in a browser is for the look. Fix: `untrack(() => void showRail(area, hidden))`. No verdict.
+- 4.2 `src/lib/views/system/workbench/settings/Contents.svelte:31`: "{ id: entry.id, parent: null, open }" for every group, including a group with no section ("This browser"). What is wrong: ruling 5 makes a press on a group with no section leave it as it is (`pressedGroups`), but the tree's keyboard (`ontoggle={toggle}`, `toggledGroups`) still closes it on Left, because `open` is passed for a row that has no children (`tree-keys.ts` says `open` is omitted for a row that does not open). Failure scenario: focus "This browser" in the contents and press Left: its `aria-expanded` turns false with nothing to collapse, where the mouse does nothing. By reading; keyboard behaviour is for the look. No verdict.
+- 4.3 `S3c-report.md`, section "For the landing look", against `src/lib/ui/controls/text/text-menu.ts:65-69` and its four callers: "export function typedInto(event, oninput) { const typed = boxValue(event); if (typed !== null) oninput(typed); }". What is wrong: ruling 3 moved the input handler of Search, TextInput, TextArea and DateInput (the last two outside the brief's paths) onto one function. By reading it is the old `typed` unchanged, but no test reaches it (`boxValue` needs `HTMLInputElement`, which the unit suite lacks) and the look list names only the Terminal text size box, Enter and blur. Failure scenario: a regression in `typedInto` would stop every text box in the app from reporting what is typed, and nothing before the look would show it. Add typing into those four boxes to the look list. No verdict.
+- 4.4 `src/lib/views/system/workbench/settings/Item.svelte:209-212` and `:269-275`: ".item:hover, .item:focus-within { background: var(--chip); }" and "code { background: var(--chip); ... }". What is wrong: both use the same token, so in a theme without a wallpaper the inline code spans of a description lose their chip while the item is hovered or focused (under a wallpaper `code` is transparent at `:277`). Failure scenario: hover a row whose description holds backticked words. For the look; not stated in the report. No verdict.
+
+## Declined to judge
+
+- Everything that runs in a browser: presses and keys in the contents, the hover and focus gear, Down and Escape, Enter and blur writes of the boxes, the reveal effect in the component, the 700 px hide, the hover surface over a wallpaper (R1-B) and the pane without its own wall rule (ruling 14), per spec.md "A behaviour that needs a DOM". Findings 4.1 and 4.2 rest on a model and on reading.
+- The round's first run ("Tests 15 failed | 109 passed (124)"), `first-run.txt`, `chunks-before.txt` (the 1,940,418 byte "before"), M1 to M6: the pre-round tree or a second build is needed, and the worktree may not be edited. The mutation rows and my own mutations stand in for the round's first run.
+- Which part of the 219,256 byte growth belongs to `yaml`, `isEqual`, zod and the view code: not measured by the builder or by me; ruling 9 only asked for the whole delta and what the node holds.
+- Whether `Search`'s edit reaches beyond the dedupe in any browser path: by reading it is the same function; the DOM path is for the look.
+- VS Code behaviours beyond those I grepped (bool row markup, nls 18844, the pointer handler, the nls indices): the number input's `inputmode` and the Escape revert are oculus's own per the brief; I found no VS Code counterpart and did not search further.
+
+Reviewer usage: tokens not measured by the reviewer, about 75 tool uses, minutes not measured.
+
+
+## Closed
+
+First run (Spec 1.1 to 1.5, Proof 2.1 to 2.5, Standards 3.1, Behaviour 4.1 to 4.5 and the wallpaper note): each sent to the builder as a ruling of `agents/briefs/S3c-round1.md` (rulings 1 to 16) and judged done by the run over round 1; 1.1's `1e1` booked as Z153.
+
+Run over round 1, each closed at landing on main:
+- Spec 1.1: the boolean row's markup the reviewer read in VS Code 1.137.0 (`.setting-item-value-description` holding `.setting-item-bool-control` beside `.setting-item-description`) is what the brief assumed; `Edit in settings.json` (nls 18844) is the counterpart of the list and family "Edit in <file>" row. Recorded in the booking; no code change.
+- Standards 3.1: `tocOf` in `state/system/config/groups.ts` lost its `searching` argument and the filter `searchGroups` already applies; its caller in `Settings.svelte` and the test title in `rows.test.ts` follow.
+- Standards 3.2: `ui/controls/text/Search.svelte` gained a `fill` prop (the box takes the width its row leaves free); `settings/Header.svelte` and `views/sources/data/Data.svelte` use it in place of their `:global(.search)` rules, and both entries left `tests/checks/tree/allow-styling.ts`.
+- Behaviour 4.1: the reveal effect in `Settings.svelte` runs `showRail` inside `untrack`, so the instance state `setQuery` reads does not run it again.
+- Behaviour 4.2: `settings/Contents.svelte` gives a group with no section no `open` in the tree's rows and no `expanded` when drawn; a view test asserts it, failing with the old rows (`expected ... not to contain 'aria-expanded'`).
+- Behaviour 4.3: typing into the search box and the Terminal text size box (both through `typedInto`) checked in the look on TEST.
+- Behaviour 4.4: seen in the look (a hovered row's code words lost their chip); `settings/Item.svelte` gives a hovered or focused row's `code` the `--line` background, seen fixed in the look.

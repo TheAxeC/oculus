@@ -21,10 +21,6 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/boards/collection/Collection.svelte:403 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/sources/data/Data.svelte styles .search of ui/controls/text/Search.svelte through .controls :global(.search)',
-        why: 'the rule at src/lib/views/sources/data/Data.svelte:190 reaches into the primitive rather than asking it for the difference'
-    },
-    {
         line: 'views/boards/collection/EntryCard.svelte styles .bar of ui/frame/Card.svelte through .slot > :global(.card > .bar)',
         why: 'the rule at src/lib/views/boards/collection/EntryCard.svelte:418 reaches into the primitive rather than asking it for the difference'
     },

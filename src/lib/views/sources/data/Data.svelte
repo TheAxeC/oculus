@@ -102,6 +102,7 @@
                 value={held.search}
                 placeholder={t('data.search')}
                 oninput={(search: string) => write({ search })}
+                fill
             />
             {#if collection?.schema !== undefined}
                 <ToolButton
@@ -180,10 +181,6 @@
         align-items: center;
         gap: 6px;
         margin-top: 10px;
-    }
-
-    .controls :global(.search) {
-        flex: 1;
     }
 
     .cards {

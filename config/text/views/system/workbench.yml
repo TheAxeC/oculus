@@ -35,7 +35,6 @@ text:
         rail_save: Save
         rail_saved: Saved.
         rail_saving: Saving...
-        rail_title: Rail
         rail_unwritable: layout.yml could not be written
         rail_up: Move button {0} up
         rail_word_icon: Icon
@@ -56,5 +55,57 @@ text:
         reset_rebuilt: 'Rebuilt: {0}.'
         reset_tab: 'Tab: {0}, on {1}.'
         reset_removed: 'Removed: {0}.'
-        reset_title: Pages
-        settings_appearance: Appearance
+        settings_browser_code_theme: Code theme
+        settings_browser_code_theme_about: "How the editors colour code in this browser. From the theme takes the syntax colours of the UI theme, and the other choices are Shiki's bundled themes. Only the source tab, the diff and the merge editor follow it."
+        settings_browser_crt: CRT overlay
+        settings_browser_crt_about: 'Scanlines and a vignette over the page, cosmetic only. The choice applies to this browser alone.'
+        settings_browser_icons: Icons
+        settings_browser_icons_about: Keeps the icons on a terminal theme instead of their ASCII stand-ins.
+        settings_browser_terminal_font: Terminal text size
+        settings_browser_terminal_font_about: 'Text size of the terminal grid in CSS pixels in this browser, from 6 to 40. Empty follows the size the config gives.'
+        settings_browser_text_size: Text size
+        settings_browser_text_size_about: 'How large the text of the whole page is in this browser, from 70% to 160% in steps of 10%.'
+        settings_browser_theme: Theme
+        settings_browser_theme_about: The colour theme of the page in this browser.
+        settings_browser_wallpaper: Wallpaper
+        settings_browser_wallpaper_about: The wallpaper behind the panels and the slight transparency that goes with it. Offered under the themes that show one.
+        settings_choice_empty: Not chosen
+        settings_clear: Clear search
+        settings_contents: Settings contents
+        settings_copy_id: Copy Setting ID
+        settings_copy_refused: The clipboard refused the copy.
+        settings_cut: '{0} is longer than the file window reads, so its settings are not listed.'
+        settings_default: 'Default: {0}'
+        settings_default_empty: 'Default: empty'
+        settings_default_item_one: 'Default: 1 item'
+        settings_default_items: 'Default: {0} items'
+        settings_edit_in: 'Edit in {0}'
+        settings_edit_in_tip: 'Open {0} in a source tab'
+        settings_empty: 'The field is empty, so nothing was written.'
+        settings_failed: 'Not written: {0}'
+        settings_fields: 'Each entry has:'
+        settings_filter: Filter settings
+        settings_filter_modified: 'Modified'
+        settings_found: '{0} Settings Found'
+        settings_found_none: No Settings Found
+        settings_found_one: 1 Setting Found
+        settings_gear: More actions
+        settings_item_one: 1 item
+        settings_items: '{0} items'
+        settings_loading: 'Reading {0}...'
+        settings_mismatch_choice: 'The file holds {0}, which is not one of the choices.'
+        settings_mismatch_list: 'The file holds {0}, which is not a list.'
+        settings_mismatch_number: 'The file holds {0}, which is not a number.'
+        settings_mismatch_text: 'The file holds {0}, which is not text.'
+        settings_mismatch_toggle: 'The file holds {0}, which is not true or false.'
+        settings_missing: 'This key is not set in {0}.'
+        settings_network: 'Not written: the server could not be reached.'
+        settings_not_number: 'That is not a decimal number, so nothing was written.'
+        settings_refused: 'Not written: {0}'
+        settings_reset: Reset Setting
+        settings_search: Search settings
+        settings_this_browser: This browser
+        settings_timed_out: 'Not written: no answer came in time, so the write may not have landed.'
+        settings_unparsed: '{0} is not valid YAML, so its settings are not listed: {1}'
+        settings_unreadable: '{0} could not be read: {1}'
+        settings_unwritable: 'Not written: {0} could not be written.'

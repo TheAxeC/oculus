@@ -639,3 +639,41 @@ describe('the code theme', () => {
         expect(theme()).toBe('mocha');
     });
 });
+
+describe('the values this browser chose of its own', () => {
+    /** What a browser that saved nothing holds, as the config gives it. */
+    function startValues() {
+        return {
+            theme: DEFAULT_THEME,
+            codeTheme: null,
+            textScale: null,
+            terminalFont: null,
+            crt: crtDefault(),
+            wallpaper: null,
+            icons: false
+        };
+    }
+
+    it('gives the start values of a browser that saved nothing, whatever it holds now', () => {
+        loadUi(fakeStorage());
+        expect(client.ui.initial()).toEqual(startValues());
+        expect(client.ui.chosen()).toEqual(startValues());
+        setTheme('mocha');
+        setCodeTheme('nord');
+        setTextScale(1.3);
+        setTerminalFont(14);
+        setCrt(!crtDefault());
+        setWallpaper(true);
+        setIcons(true);
+        expect(client.ui.initial()).toEqual(startValues());
+        expect(client.ui.chosen()).toEqual({
+            theme: 'mocha',
+            codeTheme: 'nord',
+            textScale: 1.3,
+            terminalFont: 14,
+            crt: !crtDefault(),
+            wallpaper: true,
+            icons: true
+        });
+    });
+});

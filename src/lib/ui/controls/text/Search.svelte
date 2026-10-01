@@ -16,7 +16,7 @@
     // TextInput's does.
 
     import TextBoxMenu from './TextBoxMenu.svelte';
-    import { boxValue } from './text-menu';
+    import { typedInto } from './text-menu';
 
     type Props = {
         value: string;
@@ -27,16 +27,13 @@
         onenter?: () => void;
         /** The attributes of the list this box steers, put on the input under its own. */
         field?: Record<string, unknown>;
+        /** The box takes the width its row leaves free, for a box set in a flex row. */
+        fill?: boolean;
     };
 
-    let { value, placeholder, oninput, onenter, field = {} }: Props = $props();
+    let { value, placeholder, oninput, onenter, field = {}, fill = false }: Props = $props();
 
     let box: HTMLInputElement | null = $state(null);
-
-    function typed(event: Event): void {
-        const typedValue = boxValue(event);
-        if (typedValue !== null) oninput(typedValue);
-    }
 
     function keys(event: KeyboardEvent): void {
         if (event.key === 'Enter' && onenter !== undefined) {
@@ -54,12 +51,13 @@
     <input
         {...field}
         class="search"
+        class:fill
         data-search
         type="search"
         {value}
         {placeholder}
         aria-label={placeholder}
-        oninput={typed}
+        oninput={(event) => typedInto(event, oninput)}
         onkeydown={keys}
         bind:this={box}
     />
@@ -75,6 +73,10 @@
         font: inherit;
         font-size: var(--fs-sm);
         padding: 3px 8px;
+    }
+
+    .fill {
+        flex: 1 1 auto;
     }
 
     .search::placeholder {

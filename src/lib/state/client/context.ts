@@ -68,7 +68,8 @@ import {
     type PaletteSourceStore
 } from '../workbench/palette-source.svelte.ts';
 import { createPresent, type PresentStore } from '../life/present.svelte.ts';
-import { configRail, railTyped } from '../workbench/navigation/rail.ts';
+import { SETTINGS_VIEW, configRail, railTyped } from '../workbench/navigation/rail.ts';
+import { settingsTyped } from '../system/config/typed.ts';
 import { createRailBadges, type RailBadgesStore } from '../workbench/rail-badges.svelte.ts';
 import {
     createRepositories,
@@ -288,6 +289,11 @@ export function createClientState(): ClientState {
             ui.instanceState(id),
             configRail(entities.config()?.config)
         )
+    );
+    // A Settings tab holding text typed into a field and not yet written is text no write has
+    // taken, which the tab's state keeps beside the rail list.
+    ui.registerUnsaved(
+        (id) => layout.instanceView(id) === SETTINGS_VIEW && settingsTyped(ui.instanceState(id))
     );
     const railBadges = createRailBadges(entities, feeds, hpc, calendar, inbox, audit, selectors);
     const paletteSource = createPaletteSource(entities, feeds);

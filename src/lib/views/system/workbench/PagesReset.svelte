@@ -1,12 +1,13 @@
 <script lang="ts">
-    // Layer 3, view partial. Reset all pages, as the Settings view offers it: every saved page a
-    // rail button carries the key of is made again from that button's arrangement, and every saved
-    // page of a button the rail no longer has is removed, after a confirm naming each page it
-    // rebuilds and each it removes, and then the question closing each of their tabs holding
-    // unsaved text asks, one at a time; a no to any leaves every page as it was. A page of the
-    // reader's own, which no button made, is left alone. What the reset does is the layout store's
-    // resetPages over state/workbench/navigation/pages.ts's plan, so the confirm names the pages
-    // the store then acts on.
+    // Layer 3, view partial. Reset all pages, as the `arrangements` row of the Settings view
+    // (settings/Item.svelte) offers it, with no heading of its own: every saved page a rail button
+    // carries the key of is made again from that button's arrangement, and every saved page of a
+    // button the rail no longer has is removed, after a confirm naming each page it rebuilds and
+    // each it removes, and then the question closing each of their tabs holding unsaved text asks,
+    // one at a time; a no to any leaves every page as it was. A page of the reader's own, which no
+    // button made, is left alone. What the reset does is the layout store's resetPages over
+    // state/workbench/navigation/pages.ts's plan, so the confirm names the pages the store then
+    // acts on.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
@@ -59,8 +60,7 @@
     }
 </script>
 
-<section class="reset" data-settings="reset">
-    <h3>{t('workbench.reset_title')}</h3>
+<div class="reset" data-settings="reset">
     <div class="actions">
         <ToolButton
             label={t('workbench.reset_all')}
@@ -73,7 +73,7 @@
     {#if nothing}
         <p class="empty">{t('workbench.reset_all_none')}</p>
     {/if}
-</section>
+</div>
 
 <CloseQuestion
     message={question?.message ?? null}
@@ -87,14 +87,6 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
-    }
-
-    h3 {
-        margin: 0;
-        font-size: var(--fs-sm);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--muted-txt, var(--muted));
     }
 
     .actions {

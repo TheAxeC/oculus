@@ -21,7 +21,7 @@ digraph layer_state {
         "folder state/client to folder state/sessions" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/client to folder state/shared" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/client to folder state/sources" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder state/client to folder state/system" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder state/client to folder state/system" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/client to folder state/workbench" [label="15", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/client to layer data" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/workbench to folder state/boards" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -40,8 +40,8 @@ digraph layer_state {
         "folder state/sessions to folder state/shared" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/sessions to folder state/sources" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/sessions to layer data" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder state/system to folder state/shared" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder state/system to layer data" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder state/system to folder state/shared" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder state/system to layer data" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to folder state/forms" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to folder state/shared" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to folder state/sources" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

@@ -77,6 +77,21 @@ export type CardMove = { instance: string; card: string; step: -1 | 1; seq: numb
 
 export type { BusyTerminal };
 
+/**
+ * The seven appearance values as this browser holds them of its own: a value that is null is one
+ * this browser has not chosen, which the config's answer stands in for. `initial()` gives what a
+ * browser that saved nothing holds, so a value that differs from it is one this browser chose.
+ */
+export type Chosen = {
+    theme: string;
+    codeTheme: string | null;
+    textScale: number | null;
+    terminalFont: number | null;
+    crt: boolean;
+    wallpaper: boolean | null;
+    icons: boolean;
+};
+
 /** An instance as a terminal owner reads it: its identity, its view and the state it holds. */
 export type OwnedInstance = { id: string; view: string; state?: unknown };
 
@@ -103,6 +118,8 @@ export type UiStore = {
     codeTheme: () => string;
     statusHidden: () => string[];
     statusQuiet: () => boolean;
+    chosen: () => Chosen;
+    initial: () => Chosen;
     instanceState: (id: string) => unknown;
     registerUnsaved: (reports: (id: string) => boolean) => void;
     unsaved: (id: string) => boolean;
@@ -117,12 +134,12 @@ export type UiStore = {
     stopFollowing: () => void;
     setTheme: (name: string) => void;
     setCrt: (on: boolean) => void;
-    setWallpaper: (on: boolean) => void;
+    setWallpaper: (on: boolean | null) => void;
     setIcons: (on: boolean) => void;
     setTextScale: (scale: number | null) => void;
     stepTextScale: (by: -1 | 1) => void;
     setTerminalFont: (size: number | null) => void;
-    setCodeTheme: (id: string) => void;
+    setCodeTheme: (id: string | null) => void;
     setStatusHidden: (item: string, hidden: boolean) => void;
     setStatusQuiet: (on: boolean) => void;
     setInstanceState: (id: string, state: unknown) => void;
@@ -199,8 +216,8 @@ export function createUi(): UiStore {
      * does not show under hides it without forgetting the choice.
      */
     function wallpaper(): boolean {
-        const chosen = store.current.wallpaper;
-        return chosen ?? wallpaperOnTheme(store.current.theme);
+        const picked = store.current.wallpaper;
+        return picked ?? wallpaperOnTheme(store.current.theme);
     }
 
     /** Whether the icons are kept on a terminal theme instead of their ASCII stand-ins. */
@@ -231,6 +248,18 @@ export function createUi(): UiStore {
     /** Whether Do Not Disturb is on. */
     function statusQuiet(): boolean {
         return store.current.statusQuiet;
+    }
+
+    /** The seven appearance values as this browser holds them of its own. */
+    function chosen(): Chosen {
+        const { theme, codeTheme, textScale, terminalFont, crt, wallpaper, icons } = store.current;
+        return { theme, codeTheme, textScale, terminalFont, crt, wallpaper, icons };
+    }
+
+    /** The seven appearance values of a browser that saved nothing, given the config. */
+    function initial(): Chosen {
+        const { theme, codeTheme, textScale, terminalFont, crt, wallpaper, icons } = defaultUi();
+        return { theme, codeTheme, textScale, terminalFont, crt, wallpaper, icons };
     }
 
     /** What a view instance saved, or undefined when it has saved nothing yet. */
@@ -466,9 +495,10 @@ export function createUi(): UiStore {
     }
 
     /**
-     * Turn the wallpaper on or off. The only writer of the field, so the value saved is a choice.
+     * Turn the wallpaper on or off. The only writer of the field, so the value saved is a choice;
+     * null forgets the choice, and the theme's answer applies again.
      */
-    function setWallpaper(on: boolean): void {
+    function setWallpaper(on: boolean | null): void {
         save({ ...store.current, wallpaper: on });
     }
 
@@ -503,10 +533,10 @@ export function createUi(): UiStore {
 
     /**
      * Pick the code theme of the editors: `tokens` or the id of a Shiki theme. The only writer of
-     * the field, so the value saved is a choice; anything else, the empty string included, clears
-     * the pick and the config's `code_theme:` answers again.
+     * the field, so the value saved is a choice; null, and anything else, the empty string
+     * included, clears the pick and the config's `code_theme:` answers again.
      */
-    function setCodeTheme(id: string): void {
+    function setCodeTheme(id: string | null): void {
         save({ ...store.current, codeTheme: isCodeTheme(id) ? id : null });
     }
 
@@ -554,6 +584,8 @@ export function createUi(): UiStore {
         codeTheme,
         statusHidden,
         statusQuiet,
+        chosen,
+        initial,
         instanceState,
         registerUnsaved,
         unsaved,

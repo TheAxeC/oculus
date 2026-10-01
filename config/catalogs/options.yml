@@ -81,12 +81,12 @@ options:
             default: tools/oculus/assets/memories
             control: text
         crt.default:
-            description: Whether the CRT overlay (scanlines and vignette, cosmetic only) is on in a browser that has never been told otherwise. The Settings view's CRT toggle saves the viewer's own choice, which takes over.
+            description: Whether the CRT overlay (scanlines and vignette, cosmetic only) is on in a browser that has never been told otherwise. The CRT row under This browser in the Settings view saves the viewer's own choice, which takes over.
             default: false
             control: toggle
         code_theme:
             section: Code theme
-            description: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens, and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours while the editor's background and chrome stay on the UI theme. An id Shiki does not bundle is reported as a finding and read as tokens. The Settings view's menu saves the viewer's own choice.
+            description: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens, and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours while the editor's background and chrome stay on the UI theme. An id Shiki does not bundle is reported as a finding and read as tokens. The Code theme row under This browser in the Settings view saves the viewer's own choice, which takes over.
             default: tokens
             control: text
     behavior.yml:

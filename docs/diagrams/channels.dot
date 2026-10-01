@@ -26,21 +26,38 @@ digraph channels {
         "ch audit" [label="audit", shape=ellipse];
         "ch calendar" [label="calendar", shape=ellipse];
         "ch config" [label="config", shape=ellipse];
+        "ch empty" [label="empty", shape=ellipse];
         "ch feeds" [label="feeds", shape=ellipse];
         "ch files" [label="files", shape=ellipse];
         "ch git" [label="git", shape=ellipse];
         "ch hpc" [label="hpc", shape=ellipse];
         "ch inbox" [label="inbox", shape=ellipse];
+        "ch network" [label="network", shape=ellipse];
+        "ch notNumber" [label="notNumber", shape=ellipse];
         "ch portfolio" [label="portfolio", shape=ellipse];
         "ch pty:*" [label="pty:*", shape=ellipse];
         "ch sessions" [label="sessions", shape=ellipse];
+        "ch timedOut" [label="timedOut", shape=ellipse];
         "ch usage" [label="usage", shape=ellipse];
     }
     subgraph "cluster_lost" {
         label="not placed"; style=dashed;
         "? src/lib/state/client/queries.svelte.ts:71" [label="src/lib/state/client/queries.svelte.ts:71 .subscribe((event)"];
+        "? src/lib/state/system/config/rows.ts:217" [label="src/lib/state/system/config/rows.ts:217 message('loading', file)"];
+        "? src/lib/state/system/config/rows.ts:219" [label="src/lib/state/system/config/rows.ts:219 message('unreadable', file, held.error)"];
+        "? src/lib/state/system/config/rows.ts:221" [label="src/lib/state/system/config/rows.ts:221 message('cut', file)"];
+        "? src/lib/state/system/config/rows.ts:226" [label="src/lib/state/system/config/rows.ts:226 message('unparsed', file, first)"];
+        "? src/lib/state/system/config/rows.ts:257" [label="src/lib/state/system/config/rows.ts:257 message('mismatchToggle', text)"];
+        "? src/lib/state/system/config/rows.ts:258" [label="src/lib/state/system/config/rows.ts:258 message('mismatchNumber', text)"];
+        "? src/lib/state/system/config/rows.ts:259" [label="src/lib/state/system/config/rows.ts:259 message('mismatchChoice', text)"];
+        "? src/lib/state/system/config/rows.ts:260" [label="src/lib/state/system/config/rows.ts:260 message('mismatchList', text)"];
+        "? src/lib/state/system/config/rows.ts:261" [label="src/lib/state/system/config/rows.ts:261 message('mismatchText', text)"];
+        "? src/lib/state/system/config/write.ts:70" [label="src/lib/state/system/config/write.ts:70 message('refused', answer.refused.map((one)"];
+        "? src/lib/state/system/config/write.ts:75" [label="src/lib/state/system/config/write.ts:75 message('unwritable', row.file)"];
+        "? src/lib/state/system/config/write.ts:76" [label="src/lib/state/system/config/write.ts:76 message('failed', answer.error ?? '')"];
         "? src/lib/views/shared/changes/CommitBox.svelte:54" [label="src/lib/views/shared/changes/CommitBox.svelte:54 message(root)"];
         "? src/lib/views/shared/changes/CommitBox.svelte:71" [label="src/lib/views/shared/changes/CommitBox.svelte:71 message(root)"];
+        "? src/lib/views/system/workbench/settings/Item.svelte:95" [label="src/lib/views/system/workbench/settings/Item.svelte:95 message('missing', row.file)"];
     }
     subgraph "cluster_read state" {
         label="state"; style=solid;
@@ -57,6 +74,9 @@ digraph channels {
         "state/sources/fs";
         "state/sources/search";
         "state/system/audit";
+        "state/system/config/browser";
+        "state/system/config/rows";
+        "state/system/config/write";
         "state/system/docs";
         "state/system/hpc";
         "state/system/usage-refresh";
@@ -89,8 +109,21 @@ digraph channels {
         "routes/+page";
     }
     "? src/lib/state/client/queries.svelte.ts:71" -> "state/client/queries";
+    "? src/lib/state/system/config/rows.ts:217" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:219" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:221" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:226" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:257" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:258" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:259" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:260" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:261" -> "state/system/config/rows";
+    "? src/lib/state/system/config/write.ts:70" -> "state/system/config/write";
+    "? src/lib/state/system/config/write.ts:75" -> "state/system/config/write";
+    "? src/lib/state/system/config/write.ts:76" -> "state/system/config/write";
     "? src/lib/views/shared/changes/CommitBox.svelte:54" -> "views/shared/changes";
     "? src/lib/views/shared/changes/CommitBox.svelte:71" -> "views/shared/changes";
+    "? src/lib/views/system/workbench/settings/Item.svelte:95" -> "views/system/workbench";
     "ch audit" -> "routes/+page" [style=dashed];
     "ch audit" -> "state/system/audit";
     "ch calendar" -> "routes/+page" [style=dashed];
@@ -113,6 +146,7 @@ digraph channels {
     "ch config" -> "views/system/findings";
     "ch config" -> "views/system/usage";
     "ch config" -> "views/system/workbench";
+    "ch empty" -> "state/system/config/write";
     "ch feeds" -> "routes/+page" [style=dashed];
     "ch feeds" -> "state/feeds/feeds";
     "ch files" -> "routes/+page" [style=dashed];
@@ -132,6 +166,9 @@ digraph channels {
     "ch inbox" -> "state/life/accounts";
     "ch inbox" -> "state/workbench/navigation/notice-sources";
     "ch inbox" -> "state/workbench/palette-source";
+    "ch network" -> "state/system/config/write";
+    "ch notNumber" -> "state/system/config/browser";
+    "ch notNumber" -> "state/system/config/write";
     "ch portfolio" -> "routes/+page" [style=dashed];
     "ch portfolio" -> "routes/+page";
     "ch portfolio" -> "state/client/context";
@@ -158,6 +195,7 @@ digraph channels {
     "ch sessions" -> "state/sessions/terminals";
     "ch sessions" -> "state/workbench/navigation/notice-sources";
     "ch sessions" -> "views/system/status";
+    "ch timedOut" -> "state/system/config/write";
     "ch usage" -> "routes/+page" [style=dashed];
     "ch usage" -> "routes/+page";
     "ch usage" -> "state/system/usage-refresh";

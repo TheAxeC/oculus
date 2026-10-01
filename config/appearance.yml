@@ -59,12 +59,12 @@ memories:
 
 
 # The CRT overlay (scanlines and vignette, cosmetic only): what a browser that has never been told
-# otherwise starts on. The Settings view's CRT toggle writes the viewer's own choice into the
-# appearance store.
+# otherwise starts on. The CRT row under This browser in the Settings view writes the viewer's own
+# choice into the appearance store, and the `crt.default` row of this file sets the value below.
 crt:
   default: false
 
 
 # === Code theme =============================================================
-# How the editors colour code. `tokens` takes the syntax colours from the UI theme's own code tokens. Any id of Shiki's bundled themes (such as `dark-plus`, `github-light`, `nord`) takes that theme's syntax colours, while the editor's background and chrome stay on the UI theme. The Settings view's Code theme menu writes the viewer's own choice into the appearance store, as the CRT toggle does.
+# How the editors colour code. `tokens` takes the syntax colours from the UI theme's own code tokens. Any id of Shiki's bundled themes (such as `dark-plus`, `github-light`, `nord`) takes that theme's syntax colours, while the editor's background and chrome stay on the UI theme. The Code theme row under This browser in the Settings view writes the viewer's own choice into the appearance store, as its CRT row does, and the `code_theme` row of this file sets the value below.
 code_theme: tokens

@@ -17,7 +17,8 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { CATALOGS, LOCAL_NAME } from '../../../src/lib/state/system/config-files.ts';
+import { CATALOGS, LOCAL_NAME } from '../../../src/lib/state/system/config/config-files.ts';
+import { SETTINGS_MESSAGES } from '../../../src/lib/state/system/config/messages.ts';
 import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { recordedKinds } from '../../fixtures/kinds.ts';
@@ -155,6 +156,14 @@ const COMPUTED_PREFIXES = [
             ].filter((name) => name.endsWith('.yml'));
             return [...new Set([...names, LOCAL_NAME])].map((name) => descriptionKey(name));
         }
+    },
+    {
+        // A sentence of the Settings rows is a message of the rows module: its catalog key and the
+        // values to fill in. The keys are the module's own list, so a message added there without
+        // a word fails here.
+        file: 'lib/views/system/workbench/settings/said.ts',
+        start: 't(message.key',
+        keys: () => Object.values(SETTINGS_MESSAGES)
     },
     {
         // One word per kind of write the change log records, keyed by the body kind itself, so a

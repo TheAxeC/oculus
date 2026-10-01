@@ -14,7 +14,7 @@
     // size.
 
     import TextBoxMenu from '../controls/text/TextBoxMenu.svelte';
-    import { boxValue } from '../controls/text/text-menu';
+    import { typedInto } from '../controls/text/text-menu';
 
     type Props = {
         value: string;
@@ -73,11 +73,6 @@
     );
 
     let box: HTMLTextAreaElement | null = $state(null);
-
-    function typed(event: Event): void {
-        const typedValue = boxValue(event);
-        if (typedValue !== null) oninput(typedValue);
-    }
 </script>
 
 <TextBoxMenu {label} box={() => box}>
@@ -95,7 +90,7 @@
         {value}
         readonly={readOnly}
         {spellcheck}
-        oninput={typed}
+        oninput={(event) => typedInto(event, oninput)}
         {onkeydown}
         bind:this={box}></textarea>
 </TextBoxMenu>
