@@ -38,7 +38,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: 86e6d8bb (prepared again at main's head after X3d, S3b and Q109 landed; the worktree rebuilt there, its brief's premises rechecked; first prepared at 7e8eec33)
   report: agents/reviews/U2-report.md (with U2-audit.md, U2-vscode.css and U2-shots/, copied to main's ledger on the report)
   builder_usage: round 2 298,044 tokens, 461 tool uses, 29.8 min (Group 8 removed after the theme measure; 88 shots, 15 removed and 32 cropped under Z144; the Files tab of TEST's pane 0 was found missing and reopened last, cause not established); round 1 143,324 tokens, 410 tool uses, 41.3 min; first run 244,358 tokens, 528 tool uses, 98.3 min (95 of the 97 shots copied; `usage-narrow.png` and `usage-wide.png` stay in the worktree, since they show Axel's account email addresses)
-  reviewer_report: agents/reviews/U2-refuter.md (first review, reviewer ad200f3022d402cec on claude-opus-5-5, 89,273 tokens, 212 tool uses, 18.3 min); over round 1, reviewer a0a8d85bdf3420043 on claude-opus-5-5, 343,545 tokens, 188 tool uses, 13.6 min, appended to the same file under "Repair round 1, refuted"; over round 2, reviewer a38a34dca830dcb25 on claude-sonnet-5-5, launched 10:26, running
+  reviewer_report: agents/reviews/U2-refuter.md (first review, reviewer ad200f3022d402cec on claude-opus-5-5, 89,273 tokens, 212 tool uses, 18.3 min); over round 1, reviewer a0a8d85bdf3420043 on claude-opus-5-5, 343,545 tokens, 188 tool uses, 13.6 min, appended to the same file under "Repair round 1, refuted"; over round 2, reviewer a38a34dca830dcb25 on claude-sonnet-5-5, 274,805 tokens, 134 tool uses, 8.2 min, appended under "Repair round 2, refuted"
   brief_check: agents/reviews/U2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 70 tool uses, 160,458 tokens, 9.9 min
   landing: not-started
   round: 2 (`agents/briefs/U2-round2.md`, the round cap's exception: item 3 unbuilt; round 1 `agents/briefs/U2-round1.md`, sent 2026-10-01 08:58)
@@ -52,8 +52,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: 4f4dcfc4
   launched: 2026-10-01 07:05 local
   report: agents/reviews/Q85a2-report.md
-  builder_usage: first run (stopped at the cases' first run, `agents/reviews/Q85a2-first-run.md`) 99,564 tokens, 98 tool uses, 22.0 min; after round 0 (the whole build) 339,566 tokens, 351 tool uses, 119.2 min
-  reviewer_report: agents/reviews/Q85a2-refuter.md (first review, reviewer a34f1484825697f1c on claude-opus-5-5, 85,236 tokens, 108 tool uses, 29.8 min)
+  builder_usage: first run (stopped at the cases' first run, `agents/reviews/Q85a2-first-run.md`) 99,564 tokens, 98 tool uses, 22.0 min; after round 0 (the whole build) 339,566 tokens, 351 tool uses, 119.2 min; round 1 283,978 tokens, 130 tool uses, 42.0 min
+  reviewer_report: agents/reviews/Q85a2-refuter.md (first review, reviewer a34f1484825697f1c on claude-opus-5-5, 85,236 tokens, 108 tool uses, 29.8 min); over round 1, reviewer a890ccc337bb5cdfb on claude-sonnet-5-5, launched 10:44, running
   brief_check: agents/reviews/Q85a2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 228,189 tokens, 56 tool uses, 9.5 min
   shared_paths: Q85a4 landed first (2026-10-01 10:42), so this landing hand-merges `DESIGN.md:148` (one paragraph naming both steps' folders and bodies), `src/lib/server/core/json.ts` (the comment at 91-92, helpers left with no caller) and `tests/checks/tree/allow-duplication.txt` (the union of removed lines), folds Q85a4's own `anyNumberShape` (`machine/pty/channel.ts`, `files/search.ts`) and `mapShape` (`machine/usage/accounts.ts`) into `core/shapes.ts`, and regenerates `docs/diagrams/`
   landing: not-started

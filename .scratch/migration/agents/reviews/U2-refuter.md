@@ -326,3 +326,132 @@ Cases:
 - The first pass's per-shot `local.yml` checks (case 6).
 
 Reviewer usage: tokens not counted; about 130 tool uses; about 15 minutes (09:38 to 09:53).
+
+
+## Repair round 2, refuted
+
+Reviewer of `refute` over U2's repair round 2. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2`, base 86e6d8bb. I changed no file. On TEST I ran read-only `javascript_tool` reads in tab 812136282 and clicked and typed nothing. I did not switch the theme.
+
+### Verification (rerun from `tools/oculus/.scratch/migration/agents/reviews` in the worktree)
+
+```
+git status --short                      -> ?? U2-audit.md, ?? U2-report.md, ?? U2-shots/, ?? U2-vscode.css
+git diff 86e6d8bb --stat | wc -l        -> 0
+wc -l                                   -> U2-audit.md 1138, U2-report.md 118, U2-vscode.css 1106
+ls U2-shots | wc -l                     -> 88
+V1 grep -c '^## ' U2-audit.md           -> 58
+   the 56 ids in order compared with the brief's list -> equal; the last two headings are "Common differences" and "Proposed grouping"
+   grep -c '^Fixed set:' / '^Better and kept:' / '^Counterpart:' / '^Error state:' -> 56 each; '^Re-measure against the notes' -> 32
+V2 css:N tokens in U2-audit.md          -> 539 tokens, 78 distinct lines, 0 out of range
+   lines below 1087 (before the js block), whitespace normalised: every cited line is present in VS Code 1.137.0 workbench.desktop.main.css; none is blank or a comment
+   lines 1089 to 1106: each "first match" string occurs in workbench.desktop.main.js (count 1; 'ITEM_HEIGHT' and 'getHeight' lines are counts, 'minimumWidth=170' occurs 2 times)
+   css:1106 text: grep -oF of its own quoted string in the js -> 1 match
+V3 LC_ALL=C grep -c '[^ -~]'            -> U2-audit.md:0, U2-report.md:0, U2-vscode.css:0
+V4 ls U2-shots | grep -cE '^(config|inbox|calendar|memories|transcript|terminal|session-detail|linkedin|person|gallery)-' -> 0
+   ls U2-shots | grep -ic config        -> 0
+   ls U2-shots | grep -vc '\.png$'      -> 0 ; ls -d U2-shots/originals -> No such file or directory
+Shot sets: the report's "cropped or new" 35 + "unchanged" 53 vs ls U2-shots (88): no overlap, none missing, none extra
+sips: the 35 sizes in the report's "Cropped or new" list -> 0 mismatches against pixelWidth x pixelHeight
+15 removed shots + search-results: each absent from U2-shots; the audit names usage-wide, map-wide and search-results only as removed
+audit png names vs disk: no png cited that is absent, except the removed ones above; no png on disk is uncited
+tmux list-sessions (10:31:45)           -> oculus-a5f844-shell: 1 windows (created Wed Sep 30 14:19:19 2026)
+wc -l < ~/.oculus/changes.jsonl         -> 27 ; newest "at":"2026-09-30T16:28:35.611Z" ; ls -lT ~/.oculus/bookmarks.yml -> Sep 25 05:05:32 2026
+TEST (javascript_tool, tab 812136282): visibilityState "visible", hasFocus false, activeElement BODY
+   body rgb(241, 245, 249); localStorage oculus.ui.v1 theme "light", codeTheme "tokens"; no .monaco-editor in the DOM at the read
+   pane 0, 9 tabs, current Repositories: Status, Repositories, Map, Help, Present, Memories, Transcript, Live HPC, Files
+   pane 1, 2 tabs, current Staged Changes: tools/oculus/src/lib/server/core/git-parse.ts, Staged Changes
+   pane 2, 31 tabs, current Settings: Deposit ... Calendar, Settings, Config, Archive (last)
+Premise 2.1: grep of workbench.desktop.main.css for '.monaco-list .monaco-list-row:hover{background-color:var(--vscode-list-hoverBackground)!important}' -> 2 hits, each after a parent selector (.chat-artifacts-widget .chat-artifacts-list ..., .interactive-session .chat-summary-list ...); no unscoped form
+   the same rule is generated in workbench.desktop.main.js: .monaco-list${e}:not(.drop-target):not(.dragging) .monaco-list-row:hover:not(.selected):not(.focused) { background-color: ${o.listHoverBackground}; } (1 occurrence)
+```
+
+### Verdicts (whole diff since the base)
+
+Items of "What to build":
+- 1, `U2-vscode.css`: holds. Every cited stylesheet line is in VS Code 1.137.0 and every js constant is there. `css:1106` holds the generic list row hover (Premise 1 below). Standards 3 names the row-action reveal rules the file lacks.
+- 2, `U2-audit.md`: violated. The 56 sections, the fixed set and the Z144 crops are in place. The cites still name rules of the wrong element (Standards 3), and `source` calls a home-folder file a hub file (Standards 1).
+- 3, closing sections: holds. Common differences item 2 and Proposed grouping agree: "No difference", 7 groups, no Group 8, and no stale "waiting" text remains (`grep -n -i 'group 8\|occluded\|waiting on'` finds nothing). Item 2 carries one scope gap (Proof 1).
+- 4, shots: violated. `source-narrow.png`, `source-wide.png`, `present-narrow.png` and `present-wide.png` still show content of the kind Z144 and ruling 12 exclude (Standards 1 and 2).
+
+Cases of "Cases":
+- 1: met. 56 `Fixed set:` lines, one per section; I did not re-measure each value.
+- 2: met. The search error state is reached (regex toggle on, `(`, Return) and measured: `error: unclosed group`, `.empty` 455 x 39 px. `search-error.png` shows the toggle row, the hint and the message. Findings and Deposit errors are written as unreached with reasons; hpc's empty states exist in code and are unreachable here.
+- 3: partial. Every cite resolves to a line that exists. Many name a rule of another element (Standards 3).
+- 4: met by the 32 "Re-measure against the notes" lines; not re-measured by me.
+- 5: met. No Config shot; V4 prints 0.
+- 6: not verifiable for the first pass's shots, as the report says. In my session no pane had Config current; pane 2's current tab is Settings.
+- 7: not verifiable. The list now holds only `oculus-a5f844-shell`. The report states that `oculus-d0935c-shell` (created 2026-10-01 00:04) was listed earlier and is gone, and claims nothing about the cause.
+- 8: met.
+- 9: met. V1 holds and `## settings` is present with S3 as its first line.
+- 10: met. The change log has 27 entries, the newest 2026-09-30 16:28 UTC. `bookmarks.yml` is unchanged since Sep 25.
+- 11: met on the audited views, with Proof 1. The switch back to light holds: body rgb(241, 245, 249) and `oculus.ui.v1` theme "light".
+
+### 1. Spec
+
+- Premise departure 1, the generic row hover: confirmed. The rule is not unscoped in the css file; it is generated in the js (see the last verification line). `css:1106` quotes that source with a grep that matches once. `U2-audit.md:22` and `:530` cite it for the focus and timeline row hovers. The generated rule excludes `.selected` and `.focused` rows, and the comment line quotes that. This departure is sound. The report's first line calls it "Brief item 8", which is the round brief's Standards 2; wording only.
+- Premise departure 2, the tmux list: `U2-report.md:3`, the first-read item 3 and the DONE row state only the list at 10:23:21 (I read the same list at 10:31:45), that `d0935c` was listed earlier and is gone, and that the cause is not known. This is the end state, not a defect.
+- `U2-shots/customization-wide.png` (928 x 16): a 16 px strip holding a clipped icon and the word CUSTOMIZATION. The brief asks for one shot per view state looked at, and this one supports no measure. Low weight. Failure scenario: a reader opens it expecting the populated wide state and finds nothing to compare. No verdict.
+- Otherwise: none.
+
+### 2. Proof
+
+- `U2-audit.md:1090` (Common differences item 2): "No difference: switching the theme in Settings repaints the application and an open Monaco editor on its own".
+  - What is wrong: the measure is on one Monaco instance, the `build.py` source tab. Brief What to build 3 and Z142 (2) name an open code or diff editor. The diff editor was not measured (X3d owns `repositories` and its diff, and the audit's own line says "Views that hold Monaco: source only"). The claim is stated for every editor.
+  - Failure scenario: Axel rules on the grouping with Group 8 gone. If the diff editor still keeps the old colours after a live switch, as Z142 saw at X3d's landing, the difference has no build step. At my read no `.monaco-editor` was in the DOM, so I could not reread it, and I did not switch the theme.
+  - Verdict: none. Item 3 holds for the audited views. The text should say "on the source tab" or measure the diff.
+- The rest of the round's claims reproduce:
+  - theme light in `oculus.ui.v1`;
+  - 539 cites and 78 distinct lines;
+  - the 35 sizes;
+  - pane tab lists, 9 / 2 / 31.
+
+### 3. Standards
+
+- Standards 1, `U2-shots/source-narrow.png` and `U2-shots/source-wide.png` (verdict: item 4 violated):
+  - Both show the open file `NEVER-TAKE-THE-LAZY-OPTION.MD` in full: the editor and the rendered preview of its 11 lines.
+  - `ls ~/.claude/rules/never-take-the-lazy-option.md` exists, and `grep -rl '^# Never take the lazy option'` over the hub finds no copy. So this is Axel's global rule file under the home folder.
+  - `U2-audit.md` source section (State line) calls it "a hub `.md` rule file". That claim is false by those two commands.
+  - Round 1 treated `customization-narrow.png`, which showed the body of `~/.codex/AGENTS.md`, as private rule text to crop. The same standard applies here.
+  - Failure scenario: the file's text is committed with U2-shots while the audit calls it a hub file.
+  - Axel can rule that rule-file text is committable. Z144 lists no such class, but the round 2 crop of `customization-narrow.png` set the precedent.
+- Standards 2, `U2-shots/present-narrow.png` (618 x 1468) and `present-wide.png` (931 x 470) (verdict: item 4 violated, borderline):
+  - Both show the title slide of Axel's research-portfolio briefing: "A dozen active projects spanning brain, heart, liver and immunity", the thesis on block-term tensor structure, and the lane labels.
+  - The `present` State line says only "slide 1 of 23". It does not say the shot was kept as a decision, and the shots are uncropped.
+  - Failure scenario: the portfolio thesis of an unpublished briefing is committed. Ruling Z144 lists "project plans" and "unpublished research". Whether a thesis slide counts is Axel's call, but the report's claim that all 88 were checked against the whole list does not mention it.
+- Standards 2, lower weight (a call for Axel, not a verdict). These shots show counts and descriptions from the portfolio:
+  - `status-narrow.png`, `status-wide.png`: Projects 94, Venues 71, Datasets 54, Funding schemes 11.
+  - `code-narrow.png`, `code-wide.png`: "deposited 13 | review-anon 1 | no deposit 40".
+  - `radar-narrow.png`, `radar-wide.png`: "561 tracked".
+  - `archive-*`, `coauthor-*`, `projects-*`, `joint-work-*`, `tasks-*`: status counts.
+  - `education-*`: the intro naming institutions and evaluation roles.
+  - Z144 lists "lead counts" and "dataset details" but no portfolio counts. I checked each shot and found no names, emails, home paths, session titles, task names, account labels, AAAI card or equation. Those Z144 items are clean.
+- Standards 3, cites that resolve to a line but not to the element compared (case 3 partial, item 2 violated):
+  - `css:86` is the pane header's action reveal (`.monaco-pane-view .pane:hover>.pane-header.expanded>.actions`). It is cited 31 times as VS Code's reveal of row and card actions, for example `U2-audit.md:349` ("the hover actions of tree rows (css:86)"), `:788` (History rows, "VS Code reveals row actions on hover"), `:1098` (item 6, every collection view).
+    - VS Code's stylesheet has the row rules, for example `.customview-tree .monaco-list .monaco-list-row:hover .custom-view-tree-node-item .actions{display:block}` and `.open-editors ... .monaco-list-row:hover>.monaco-action-bar{visibility:visible}`. They are not in `U2-vscode.css`.
+    - This is the same class as the generic row hover that round 2 Standards 2 closed for two cites.
+    - Failure scenario: a builder of Group 5 copies the header reveal rule onto card actions.
+  - `css:826` is `.message-box-container{line-height:22px;padding-left:20px}`, the Problems panel's message box. `:349` and `:386` cite it for "Problems list rows with 22 px lines". `css:824` (`height:100%`) and `css:812` (a 16px icon background) are cited as counterparts at `:27`, `:386`, `:424` and `:517` with no value in them.
+  - `U2-audit.md:233` compares the search error to a notification item (`css:403`, `css:406`).
+    - `css:286` in the same file is `.monaco-inputbox-container .monaco-inputbox-message`, the inline validation message of an input, which is the nearer element for an invalid pattern. The claim about what VS Code shows for an invalid regex has no cited evidence.
+    - Failure scenario: Group 7's "error state a notification-shaped item" is built from a comparison nobody verified.
+- Standards 4: the round 2 fixes read correctly:
+  - the `css:1067` row cite;
+  - History `:790` keeps only `css:14`;
+  - the report no longer restates the first pass's reasons;
+  - 0 non-ASCII bytes.
+
+### 4. Behaviour
+
+- Pane 0 of TEST holds Files last; before the audit it stood second. The cause of its disappearance is not established, the report says so, and I cannot establish it from the DOM. Pane 2 holds Archive last of 31 tabs; its earlier position is not known. Settings, Repositories and Staged Changes are current. Config was not selected by me. Failure scenario: a Files tab reopened as a new instance loses the filter text the orchestrator's looks saw on it ("Deposit"). That is a state change on Axel's TEST page the report names but cannot explain.
+- The TEST page keeps the audit's footprint, which the report's "Things to know" lists: the History filter `transcript`, the Search view showing `error: unclosed group` in place of earlier results, and the Customizations block expanded. `oculus-d0935c-shell` is gone, with the cause unknown. None of these is a hub write: the change log and `bookmarks.yml` are unchanged.
+
+### Declined to judge
+
+- Whether any first-pass shot's `local.yml` check was made before the shot (case 6): it cannot be re-proved.
+- Whether the audit ended `oculus-d0935c-shell` or something else did: no record to read.
+- The Monaco repaint timings (183, 168, 394 ms) and the three theme switches: I did not switch the theme, and no Monaco was open at my read. I confirmed only the end state (light) and the stored colours' consistency.
+- Whether portfolio counts and rule-file text may be committed: Axel's call (Standards 1 and 2).
+- Each of the 56 sections' individual values (rows, paddings, counts): I rechecked cites and structure, not the measures, except those the report names. My own re-measures were not repeated this round.
+- The pre-audit position of the Archive and Files tabs: no earlier read exists.
+
+Reviewer usage: tokens not counted; about 60 tool uses; about 30 minutes (10:27 to 10:35).
