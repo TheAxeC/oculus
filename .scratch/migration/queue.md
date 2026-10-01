@@ -5,7 +5,7 @@ Landed 06:36: S3b (the `config-key` write), `agents/reviews/S3b-landing.md`.
 Landed 06:55: Q109 (the terminal: lines after a pane move, the five watchers' capped debounce, a sole terminal's menu, four terminal options), `agents/reviews/Q109-landing.md`.
 
 In flight:
-- U2 (every view's look against VS Code's), repair round 1 sent after its review.
+- U2 (every view's look against VS Code's), repair round 1 done, its review running since 09:40.
 - Q85a2 (zod in the edit, sessions and transcripts folders), built with two red checks, review running since 09:28.
 - Q85a4 (zod in the other server folders), repair round 1 sent at 09:37 after its review.
 Open items: Z143 (keep a pane when its last tab closes, yours). Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
