@@ -49,6 +49,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   reviewer_round_1: running, agent a0ab098f7b4f23aae, claude-sonnet-5-5 read from its transcript at 19:48
   landing: not-started
   round: 1
+- step: D27
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 19:49)
+  session_id: a796c6ad2701fd677 (launched 2026-10-01 19:49 local)
+  worktree: .agents/worktrees/D27
+  base: 193479a8
+  launched: 2026-10-01 19:49 local
+  report: agents/reviews/D27-report.md
+  brief_check: agents/reviews/D27-brief-check.md, every finding closed in the brief (its Closed heading, Z178 in automode); claude-sonnet-5-5, 301,967 tokens, 104 tool uses, 16.6 min
+  shared_paths: with U3, `Source.svelte` (D27 the import and line 133; U3 hunks at 28-30, 56-61, 124 and from 330), `tests/views/sources/source.test.ts` (D27 494-516; U3 up to 314) and `DESIGN.md` (D27 85, 171, 379; U3 158, 216-222, 374-375, 392, 405, 410), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
