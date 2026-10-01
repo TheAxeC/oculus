@@ -38,6 +38,11 @@
          */
         compact?: boolean;
         /**
+         * The opener's words as the small text button ToolButton draws, 22 px high, for a menu in a
+         * 22 px row.
+         */
+        small?: boolean;
+        /**
          * Which way the list opens. `up` is the default, for a menu at the foot of the window; a
          * menu in a header opens `down`; `beside` opens it upward to the right of the button, for
          * a menu in the rail, and `above` upward from the button's top left corner. A list with
@@ -93,6 +98,7 @@
         onpick,
         glyph,
         compact = false,
+        small = false,
         placement = 'up',
         align = 'left',
         bare = false,
@@ -144,6 +150,7 @@
                 bind:button
                 {glyph}
                 {compact}
+                {small}
                 {bare}
                 {inherit}
                 {rail}

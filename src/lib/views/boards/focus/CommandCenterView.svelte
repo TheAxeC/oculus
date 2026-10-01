@@ -213,13 +213,13 @@
 
 <style>
     .week {
-        padding: 10px 12px;
+        padding: 4px 8px;
         border: 1px solid var(--line);
         border-left: 3px solid var(--c-red);
-        border-radius: 8px;
+        border-radius: var(--input-radius);
         background: var(--chip);
         columns: 2 22em;
-        column-gap: 26px;
+        column-gap: 16px;
     }
 
     :global(body.wall) .week {
@@ -230,7 +230,7 @@
         display: flex;
         column-span: all;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         flex-wrap: wrap;
     }
     .head > b {
@@ -246,7 +246,7 @@
         flex: 0 0 auto;
     }
     .grp {
-        margin-top: 9px;
+        margin-top: 4px;
         break-inside: avoid;
     }
     .lbl {

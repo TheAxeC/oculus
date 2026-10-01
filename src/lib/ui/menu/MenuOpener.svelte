@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, primitive. The button a Menu opens its list from, in the looks a menu takes: a word
-    // with an optional glyph, the glyph alone in a narrow strip, a strip's bare icon box, an item
-    // of the activity rail, drawn as ToolButton.svelte draws its rail control, an item of the
-    // status bar, drawn as ToolButton.svelte draws its status item, and the dropdown part of a
-    // joined primary ToolButton.svelte, in the same fill. It holds nothing: it is the
+    // with an optional glyph, those words as VS Code's small text button for a 22 px row, the
+    // glyph alone in a narrow strip, a strip's bare icon box, an item of the activity rail, drawn
+    // as ToolButton.svelte draws its rail control, an item of the status bar, drawn as
+    // ToolButton.svelte draws its status item, and the dropdown part of a joined primary
+    // ToolButton.svelte, in the same fill and the same height. It holds nothing: it is the
     // trigger of the menu's bits-ui Dropdown Menu, whose attributes and handlers the menu hands it
     // as `trigger`, so whether the list is open, what a press or a key does and what the button
     // says to assistive technology are the menu's.
@@ -23,6 +24,8 @@
         button?: HTMLButtonElement;
         glyph?: string;
         compact?: boolean;
+        /** The words as ToolButton.svelte's small text button: 22 px high, for a 22 px row. */
+        small?: boolean;
         bare?: boolean;
         /** A bare opener's glyph in the ink of what it sits in rather than muted. */
         inherit?: boolean;
@@ -51,6 +54,7 @@
         button = $bindable(),
         glyph,
         compact = false,
+        small = false,
         bare = false,
         inherit = false,
         rail = false,
@@ -74,6 +78,7 @@
         type="button"
         class="opener"
         class:compact
+        class:small
         class:bare
         class:inherit
         class:rail
@@ -120,9 +125,19 @@
         border-color: var(--accent);
     }
 
+    /* The small text button, VS Code's, as ToolButton.svelte draws it: 11px words on a 14px line,
+       3px above and below and 6px beside, which make it 22 px high. */
+    .opener.small {
+        font-size: var(--fs-xs);
+        line-height: calc(14px * var(--text-scale, 1));
+        padding: 3px 6px;
+    }
+
     /* An icon control of a row or a card: the 16 px icon in a 20 px box with no border, as
-       ToolButton.svelte draws its compact button. */
-    .opener.compact {
+       ToolButton.svelte draws its compact button. The dropdown of a primary button is excluded:
+       it takes the button's height and keeps its accent fill under the pointer. `:where` keeps
+       the rule's specificity at that of the other looks, which the bare box relies on. */
+    .opener.compact:where(:not(.primary)) {
         justify-content: center;
         box-sizing: border-box;
         width: auto;
@@ -136,7 +151,7 @@
         line-height: 1;
     }
 
-    .opener.compact:hover {
+    .opener.compact:where(:not(.primary)):hover {
         background: var(--chip);
         color: var(--ink-txt, var(--ink));
     }
@@ -157,8 +172,8 @@
         color: var(--ink-txt, var(--ink));
     }
 
-    /* The dropdown of a primary button: the button's fill, 4px beside its glyph, and the input
-       radius on its right corners only. */
+    /* The dropdown of a primary button: the button's fill, 4px beside its glyph, the input radius
+       on its right corners only, and no height of its own, so it stretches to the button's. */
     .opener.primary,
     :global(body.rice) .opener.primary {
         justify-content: center;

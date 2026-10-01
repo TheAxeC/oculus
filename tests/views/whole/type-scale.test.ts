@@ -124,7 +124,7 @@ const VIEWS: Record<string, string> = {
         '.head > b=fs-md | .lbl=fs-xs | .sub=fs-sm | .behind=fs-md',
     'boards/focus/lanes/Lanes.svelte': 'summary=fs-xs | .hint=fs-md | .lane-sub=fs-sm',
     'boards/focus/lanes/LaneCard.svelte': '.name=fs-md | .wait, .next=fs-sm',
-    'boards/focus/lanes/LaneHead.svelte': '.lane-title=fs-md | .count=fs-xs',
+    'boards/focus/lanes/LaneHead.svelte': '.lane-title=fs-xs | .count=fs-xs',
     'boards/focus/QuickAdd.svelte': '.lbl=fs-xs',
     'boards/focus/Tasks.svelte': '.head > b=fs-md | .lbl=fs-xs',
     'system/hpc/Capacity.svelte':
@@ -192,7 +192,7 @@ const VIEWS: Record<string, string> = {
         '.kv dt=fs-xs | .kv dd=fs-md | .pin .lb=fs-xs | .pin .outcome=fs-md | .line .lb=fs-xs | .line .vl=fs-md',
     'sessions/session-list/SessionList.svelte': '',
     'sessions/session-list/SessionWorkspace.svelte':
-        '.head=fs-xs | .one .nm=fs-md | .two=fs-sm | .mark=fs-xs',
+        '.head=fs-xs | .one .nm=fs-sm | .two=fs-xs | .mark=fs-xs',
     'sessions/session-list/Customizations.svelte': '.line=fs-sm',
     'sessions/customization/CustomizationView.svelte': '.path, .line=fs-sm | .text=fs-sm',
     'sessions/terminal/Terminal.svelte': '.failure=fs-xs',
@@ -205,7 +205,7 @@ const VIEWS: Record<string, string> = {
     'sessions/terminal/TerminalTitle.svelte': '.title=fs-md | .description=fs-sm',
     'sessions/terminal/TerminalFontTools.svelte': '',
     'sessions/session-list/TerminalRows.svelte':
-        '.head=fs-xs | .confirm=fs-xs | .top .nm=fs-md | .meta=fs-sm',
+        '.head=fs-xs | .confirm=fs-xs | .top .nm=fs-sm | .meta=fs-xs',
     'sessions/timeline/Timeline.svelte': '.turn-h, .event=fs-md | .ts=fs-sm',
     'sessions/transcript/Transcript.svelte':
         '.turn=fs-md | .who=fs-xs | .ts=fs-sm | .sum=fs-sm | .cut=fs-md | .doc=fs-md | .doc :global(h1), .doc :global(h2), .doc :global(h3), .doc :global(h4)=fs-md | .doc :global(code), .doc :global(pre)=fs-sm',
@@ -295,7 +295,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/menu/Menu.svelte': '',
     'src/lib/ui/menu/MenuList.svelte': '.heading=fs-xs | .item-badge=fs-xs',
     'src/lib/ui/menu/MenuOpener.svelte':
-        '.opener=fs-sm | .opener.compact=fs-lg | :global(body.rice) .opener.rail :global(.glyph:not(:has(svg)))=fs-lg',
+        '.opener=fs-sm | .opener.small=fs-xs | .opener.compact:where(:not(.primary))=fs-lg | :global(body.rice) .opener.rail :global(.glyph:not(:has(svg)))=fs-lg',
     'src/lib/ui/controls/Confirm.svelte': '.message=fs-md | .detail=fs-xs | .row button=fs-sm',
     'src/lib/ui/display/CodeText.svelte': 'code=fs-sm',
     'src/lib/ui/display/Glyph.svelte': '',

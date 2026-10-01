@@ -41,12 +41,15 @@
 </div>
 
 <style>
+    /* One row of the tree's height, VS Code's section head: the name in 11px capitals, cut with an
+       ellipsis where the count begins. */
     .lane-h {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
         gap: 6px;
-        padding: 3px 6px;
+        height: calc(var(--tree-row) * var(--text-scale, 1));
+        padding: 0 6px;
         border-radius: var(--radius-sm);
         background: var(--lane);
         color: var(--lane-txt);
@@ -58,11 +61,21 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        font-size: var(--fs-md);
+        min-width: 0;
+        font-size: var(--fs-xs);
         font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .lane-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .count {
+        flex: none;
         font-size: var(--fs-xs);
         font-weight: 600;
     }

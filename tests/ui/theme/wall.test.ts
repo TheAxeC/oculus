@@ -116,7 +116,7 @@ const SOLID: Record<string, string> = {
         'a hover response, saying the bare opener is under the pointer',
     "src/lib/ui/menu/MenuOpener.svelte .opener.status:hover, .opener.status[aria-expanded='true']":
         'a hover response, saying which status bar item the pointer is on or has open',
-    'src/lib/ui/menu/MenuOpener.svelte .opener.compact:hover':
+    'src/lib/ui/menu/MenuOpener.svelte .opener.compact:where(:not(.primary)):hover':
         'a hover response, saying which compact opener the pointer is on',
     "src/lib/ui/menu/MenuList.svelte .item:hover, .item[data-state='open']":
         'a hover response inside a list that is translucent, kept while its submenu shows',

@@ -425,18 +425,20 @@
         gap: 6px;
     }
 
+    /* A row's button is drawn as ToolButton.svelte's small text button, VS Code's: 11px words on a
+       14px line in 3px above and below and 6px beside, 22 px high, in the words the caller wrote.
+       It is a button of this list's own and not a ToolButton, since the list reads its buttons by
+       class to measure and reveal them and a ToolButton's wrapper would stand between. */
     .act {
         flex: 0 0 auto;
         padding: 3px 6px;
         border: 1px solid var(--line);
         border-radius: var(--input-radius);
-        background: var(--chip);
+        background: var(--panel);
         font: inherit;
         font-size: var(--fs-xs);
+        font-weight: 400;
         line-height: calc(14px * var(--text-scale, 1));
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
         color: var(--muted-txt, var(--muted));
         cursor: pointer;
     }

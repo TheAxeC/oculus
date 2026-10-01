@@ -114,7 +114,7 @@
         {/if}
         {#if !project.ghost}
             <span class="move">
-                <Menu label={t('focus.move_to')} {items} placement="down" {onpick} />
+                <Menu label={t('focus.move_to')} {items} small placement="down" {onpick} />
             </span>
         {/if}
     </div>
@@ -154,8 +154,8 @@
         }
     }
 
-    /* The first line is one row of the tree's height; the waiting and next lines are further
-       whole rows. */
+    /* The first line is one row of the tree's height; the waiting and next lines are 18 px
+       lines. */
     .card-h {
         display: flex;
         align-items: center;
@@ -225,7 +225,7 @@
     .next {
         margin: 0;
         font-size: var(--fs-sm);
-        line-height: calc(var(--tree-row) * var(--text-scale, 1));
+        line-height: calc(18px * var(--text-scale, 1));
         color: var(--muted-txt, var(--muted));
     }
 </style>

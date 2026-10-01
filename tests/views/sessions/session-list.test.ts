@@ -94,6 +94,56 @@ describe('the session list', () => {
         expect(body).toContain(catalog['sessions.prompts_n'].replace('{0}', '4'));
     });
 
+    /** The words of one row's second line, the tags dropped and the spaces collapsed. */
+    function details(body: string, id: string): string {
+        const from = body.indexOf(`data-session-row="${id}"`);
+        const line = body.indexOf('class="line two', from);
+        const end = body.indexOf('</button>', line);
+        return body
+            .slice(line, end)
+            .replace(/^[^>]*>/, '')
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    // The fixture's bare row has neither a start nor a last activity, so it has no age to tell.
+    it('draws no empty slot and no doubled separator for a session with no age', () => {
+        const sep = catalog['sessions.meta_sep'];
+        const words = details(html(), 'bare-one');
+        expect(words).toBe(
+            [
+                catalog['sessions.kind_claude'],
+                'opus-5',
+                catalog['sessions.files_n'].replace('{0}', '0'),
+                catalog['sessions.prompts_n'].replace('{0}', '0')
+            ].join(` ${sep} `)
+        );
+    });
+
+    it('draws no model and no extra separator for a session with no model', () => {
+        const sep = catalog['sessions.meta_sep'];
+        const quiet = record('quiet-one', {
+            title: 'The quiet one',
+            workspace: HUB,
+            area: ALPHA,
+            cwd: ALPHA,
+            model: null,
+            lastActivity: new Date(Date.now() - 5 * 60_000).toISOString()
+        });
+        receive(60, [workspace(HUB, [area(ALPHA, [quiet])])]);
+        const body = html();
+        receive(61, tree);
+        expect(details(body, 'quiet-one')).toBe(
+            [
+                catalog['sessions.kind_claude'],
+                catalog['sessions.ago_m'].replace('{0}', '5'),
+                catalog['sessions.files_n'].replace('{0}', '0'),
+                catalog['sessions.prompts_n'].replace('{0}', '0')
+            ].join(` ${sep} `)
+        );
+    });
+
     it('marks each row with its state', () => {
         const body = html();
         const state = (id: string) =>

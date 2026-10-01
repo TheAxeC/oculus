@@ -299,7 +299,6 @@
         overflow: auto;
         display: flex;
         flex-direction: column;
-        gap: 4px;
     }
 
     .failure {

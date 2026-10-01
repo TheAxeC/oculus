@@ -194,33 +194,40 @@
         color: inherit;
     }
 
-    /* Each line is one list row of VS Code's, 22 pixels. */
     .top,
     .meta {
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    /* The title line of VS Code's agent session item, as the session rows draw it: 18 px, 3px
+       below the row's top edge. */
+    .top {
         display: flex;
         align-items: center;
         gap: 4px;
-        height: calc(var(--tree-row) * var(--text-scale, 1));
-        min-width: 0;
-        white-space: nowrap;
+        height: calc(18px * var(--text-scale, 1));
+        margin-top: 3px;
     }
 
     .top .nm {
         overflow: hidden;
         text-overflow: ellipsis;
-        font-size: var(--fs-md);
-    }
-
-    .meta {
-        overflow: hidden;
-        color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
-        padding-left: 12px;
     }
 
-    .meta .act {
+    /* The details line: 16 px, 3px above the row's bottom edge, cut with one ellipsis where the
+       pane ends. */
+    .meta {
+        display: block;
+        height: calc(16px * var(--text-scale, 1));
+        margin-bottom: 3px;
+        padding-left: 12px;
         overflow: hidden;
         text-overflow: ellipsis;
+        line-height: calc(16px * var(--text-scale, 1));
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
     }
 
     .sep {

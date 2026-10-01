@@ -183,18 +183,18 @@
     .lanes {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
-        gap: 10px;
-        margin-top: 8px;
+        gap: 8px;
+        margin-top: 4px;
     }
 
     .lane {
         display: flex;
         flex-direction: column;
         min-width: 0;
-        padding: 8px;
+        padding: 4px 8px;
         border: 1px solid var(--line);
         border-top: 3px solid var(--tone, var(--line));
-        border-radius: 8px;
+        border-radius: var(--input-radius);
         background: var(--panel);
     }
 
@@ -204,7 +204,7 @@
     }
 
     .lane-sub {
-        margin: 4px 0 6px;
+        margin: 2px 0 4px;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
@@ -212,12 +212,13 @@
     .lane-body {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 4px;
         min-width: 0;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .stage {
-        margin: 0 0 4px;
+        margin: 0 0 2px;
         font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
@@ -228,7 +229,7 @@
     .stage-block {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
         padding-left: 6px;
         border-left: 3px solid var(--stage, var(--line));
     }
@@ -279,7 +280,7 @@
     .note {
         margin: 0;
         font-size: var(--fs-sm);
-        line-height: calc(var(--tree-row) * var(--text-scale, 1));
+        line-height: calc(18px * var(--text-scale, 1));
         color: var(--muted-txt, var(--muted));
     }
 </style>

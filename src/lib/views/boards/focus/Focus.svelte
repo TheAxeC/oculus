@@ -188,7 +188,7 @@
     .focus {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 8px;
         min-width: 0;
     }
 
@@ -202,10 +202,10 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
+        gap: 4px;
+        padding: 4px 8px;
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: var(--input-radius);
     }
 
     .wait-head,

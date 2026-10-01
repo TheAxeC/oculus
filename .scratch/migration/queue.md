@@ -1,10 +1,9 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D27 (the editor's languages), repair round 1 built (nine rulings done, the full list passed); its review over the round running.
+- D27 (the editor's languages), repair round 1 built and refuted (two comment findings, fixed at landing); landing next.
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), reviewed (no red check, 12 findings); repair round 1 building.
-- Q85d (zod in the views, ui, shell and routes), building.
-- U4 (Focus and Sessions brought to the other views' size, the commit dropdown aligned, the Sessions rows two lines a font step smaller by Z180 (b)), built and its report in; its review (/refute) running.
+- Q85d (zod in the views, ui, shell and routes), built and its report in; its review (/refute) running.
 - L4 (floating panes and kept empty panes), building.
 
 

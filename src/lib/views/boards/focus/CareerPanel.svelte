@@ -255,7 +255,7 @@
 <style>
     .career {
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: var(--input-radius);
         background: var(--panel);
     }
 
@@ -268,7 +268,7 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 8px 12px;
+        padding: 4px 8px;
         font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
@@ -285,11 +285,11 @@
     }
 
     .body {
-        padding: 8px 14px 12px;
+        padding: 4px 8px;
     }
 
     .seclbl {
-        margin: 10px 0 3px;
+        margin: 4px 0 2px;
         font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
@@ -319,7 +319,7 @@
     .fact {
         padding: 2px 8px;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: var(--input-radius);
         background: var(--chip);
         font-size: var(--fs-md);
     }
@@ -342,10 +342,10 @@
         align-items: baseline;
         gap: 5px;
         margin: 6px 0 0;
-        padding: 5px 10px;
+        padding: 4px 8px;
         border: 1px solid var(--line);
         border-left: 3px solid var(--c-orange);
-        border-radius: 6px;
+        border-radius: var(--input-radius);
         background: var(--chip);
     }
 
@@ -364,7 +364,7 @@
 
     .order {
         margin: 3px 0 0;
-        padding-left: 20px;
+        padding-left: 16px;
     }
 
     .order li {
@@ -390,7 +390,7 @@
     .when {
         margin-left: 6px;
         padding: 1px 7px;
-        border-radius: 6px;
+        border-radius: var(--input-radius);
         background: var(--chip);
         font-size: var(--fs-xs);
         font-weight: 700;
@@ -413,7 +413,7 @@
     .host {
         --row-reveal: 0;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: var(--input-radius);
     }
 
     .host:hover,
@@ -462,7 +462,7 @@
     }
 
     .hostbody {
-        padding: 2px 10px 7px 26px;
+        padding: 2px 8px 4px 24px;
     }
 
     .moves {
@@ -475,7 +475,7 @@
 
     .crit {
         margin: 5px 0 0;
-        padding-left: 20px;
+        padding-left: 16px;
     }
 
     .crit li {

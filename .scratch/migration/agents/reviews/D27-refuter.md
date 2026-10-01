@@ -75,3 +75,121 @@ USAGE
 Left for the orchestrator (token, tool-use and time counts are not available to me).
 
 Files read (absolute): /Users/axelfaes/workspace/research-hub/.agents/worktrees/D27/tools/oculus (diff and new files whole), /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/agents/{spec.md,briefs/D27.md,briefs/D27-cases.md,reviews/D27-report.md}. Scratch scripts only in the session scratchpad.
+
+## Repair round 1, refuted
+
+All nine rulings are closed as claimed, and the full verify list is green on my own rerun. I found no spec, proof or behaviour finding and two low Standards findings. Both are comment text in `tests/state/sources/fs/file-language.test.ts`, fixable at landing.
+
+```
+(from tools/oculus of the worktree, PATH with node v24.21.0)
+$ npm run diagrams
+  last line docs/diagrams/writes.svg; `git diff 193479a8 --stat -- tools/oculus/docs` afterwards: 8 files changed, 107 insertions, 87 deletions (the committed diagrams match the source)
+$ sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md   (EXIT 0)
+$ npm test
+ Test Files  418 passed | 22 skipped (440)
+      Tests  10947 passed | 619 skipped (11566)
+   Duration  318.59s
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  442 passed | 9 skipped (451)
+$ npm run check
+COMPLETED 2938 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build            (ran, no error)
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint             (eslint ., no output)
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests     (no output)
+checks: 7 commands passed
+```
+
+No case timed out in my run. The machine load was about 13 (`uptime`). I also ran `npx vitest run tests/server/edit/config-key.test.ts tests/data/sources/config/languages.test.ts tests/views/system/help.test.ts tests/state/sources/fs` alone: `Test Files  9 passed (9)`, `Tests  289 passed (289)`.
+
+Brief greps and round commands, rerun:
+- `grep -n "LANGUAGES\|NAMES" src/lib/state/sources/explorer/file-type.ts` prints nothing (rc 1).
+- `python3 -c "import yaml; yaml.safe_load(open('config/sources.yml'))"` exits 0.
+- `grep -rn "cathedra" src` prints 3 lines: `kit/rite/rite.ts:3`, `server/files/files.ts:6` and `views/sources/document/Document.svelte:17`. Nothing imports or reads cathedra. The brief's "only the head comment" premise is false for the two older lines, as the builder said.
+- The ASCII gate in the spec's `perl` form, over `src tests config` excluding `local.yml`, prints nothing.
+- `sh utils/folder-check.sh` exits 0, and `ls src/lib/data/sources/config | wc -l` prints 10.
+- Verify 4, my own node one-off with `isDeepStrictEqual` of cathedra's two JSON files against `RITE_GRAMMAR` and `RITE_CONFIGURATION`: `grammar true`, `conf (no word) true`, word pattern is a RegExp, its source equals the file's string, `[^\s()\[\]{}";]+`.
+- Item 1, a python comparison of `languages:` with the brief's lists: `mismatch [] extra [] 32`, so 31 languages plus plaintext, and `.wren .dot .gv` are absent.
+
+Ruling 8 (the unchanged-tree runs), rebuilt by me in a scratch copy under my scratchpad (since removed):
+- Setup: the worktree's `tools/oculus`, the 23 base files copied over from `scratchpad/D27-base`, the three added modules deleted, and the builder's two import adaptations in `fs.test.ts` and `paint.test.ts` (copy only).
+- `paint.test.ts -t "^the paint (through|with)"`: `Tests  12 passed | 11 skipped (23)`, the three bridge cases and the nine code-theme cases, as the builder says.
+- `paint.test.ts -t "^the grammars loaded"` on that tree: `Tests  11 failed | 12 skipped (23)`, 10 with `TypeError: ensureLanguage is not a function` and 1 with `Cannot read properties of undefined (reading 'setModelLanguage')`. The builder wrote "three cases"; the count is unreproduced, and no decision rests on it.
+- `fs.test.ts -t "the language a file is painted in"`: `Tests  1 failed | 1 passed | 41 skipped (43)`. The failing diff has one hunk, `-"svelte"` against `+"xml"` at the row `x.svelte`. "paints a name nothing claims as plain text" passes.
+- `languages-selector.client.test.ts` on that tree: `TypeError: client.selectors.languages is not a function` at `:38:52`.
+- My own mutation on a copy of the step's tree: with `languages: () => languageMap(configMap())` in place of `() => languageMapNow`, the file fails with `AssertionError: expected Map{...} to be Map{...} // Object.is equality` at `languages-selector.client.test.ts:42:32`. So the test does fail without the shared `$derived`.
+
+### Verdicts
+
+Closures claimed, by ruling:
+1. S1, closed. `config/text/views/system/config.yml:15` now ends "...served from, and the language each file name opens in." `HELP.md:230` starts with that sentence verbatim and goes on with the map, the colouring and status bar, and the plain-text rule, nothing said twice. `help.test.ts` passes. `grep -rn "What the portfolio reads"` finds only these two, `DESIGN.md:85` and the head comment of `config/sources.yml`.
+2. ST1, closed. `DESIGN.md:379` now reads "...(...so nothing is read from cathedra at run time), one model per tab instance on an `inmemory://oculus/<instance>/<path>` URI. The eighteen languages...". The clause sits back on the Shiki-grammars sentence. "this highlighter" became "The highlight.js highlighter", which keeps its old meaning once the clause has moved.
+3. ST2, closed. `fs.test.ts` now carries the comment "Names and endings with the language the shipped map gives each." and the title "gives every name and ending in the list the language the shipped map gives it". Both are true, and `x.svelte` is `svelte`.
+4. ST3, partial. The head comment now names the selector describe and `languages-selector.client.test.ts`, which is right. One sentence in it is still false (Standards 1).
+5. ST4, closed. The new test in `files-menu.test.ts` has no `// Revert:` line. The two older ones are base text.
+6. ST5, closed. `languageFindings` sits between `type IconMemory` and `loadConfig` in `context.ts`, and between `iconSet` and `loadConfig` in `portfolio.ts`. The hunks are import lines only.
+7. B2, closed. `findings.yml` gains `language_empty: language {0} lists an empty file name`, chosen in `data/sources/config/languages.ts` when `drop.entry === ''`. The finder test expects `'language python lists an empty file name'`, and it passes.
+8. P1 and P2, closed. See the reproduction above. The builder's runs reproduce except the "three cases" count.
+9. B1, closed. Report line 87 states the plain-until-config behaviour and the Open Preview timing, with before and after. It is no code change.
+
+None of the closures removes a check or loosens one. No timeout, tolerance or predicate changed; `vite.config.ts` is not in the diff. I found no change beyond a finding.
+
+Items of "What to build", for the whole diff since the base:
+- 1: holds. The map equals the brief line by line, in flow style, one language per line.
+- 2: holds. `data/helpers/files/languages.ts` returns a `Map` and skips `__proto__`. A non-list value drops its language. A non-map answers an empty map. An absent key gives no drop. Names come from `registered()`, as ruled. The first claimant wins, and the selector is one `$derived`.
+- 3: holds. The finder takes `(engine, config)` as ruled and is called from `portfolio.ts`, `context.ts` and `config-key.ts`. The sentences are in `findings.yml`.
+- 4: holds. `FileType` is the kind only, there is no `LANGUAGES` or `NAMES`, and `languageOf(name, map)` and `languages(map)` exist.
+- 5: holds. `ensureLanguage` is called in the two language effects and in `commands.ts`, not at the model-creation lines the brief names. The builder disclosed this and I judge it equivalent by reading `load.ts`. The queue, the single in-flight load, the reload after a failure, `close` and the grammars kept by later highlighters are all there.
+- 6: holds, by the Verify 4 equality above.
+- 7: holds, in `kit/rite/settings.ts`. The audit status is stated in `rite.test.ts`.
+- 8: holds. `registered()` has 32 names, and the `aliases: []` wrappers keep `html`, `svg` and `f90` with their owners.
+- 9: holds. `statusbar.yml` has 13 new keys with VS Code's names.
+- 10: holds. `options.yml` has `languages` after `scan` with `section: Files`.
+- 11: holds, in `boundaries.test.ts` and `DESIGN.md:171`.
+- 12: holds, now that S1 is closed. `DESIGN.md:85`, `:171`, `:379`, `HELP.md:230` and the head comment of `config/sources.yml` are done. My grep of `eighteen|nineteen|as xml|extension table` over `DESIGN.md`, `HELP.md` and `README.md` finds no sentence the step makes false.
+- 13: holds. All of the step's test files are in the green runs above. The failing-first quotes are in place as reproduced above, apart from the aggregate-only first run for the import-failing files, which I did not rebuild (Declined).
+
+Cases of the brief, for the whole diff:
+- 1 to 6: met. These run over the tracked map in `file-language.test.ts`. My alias-by-alias check of case 6 was not repeated this round, since the map and the tests are unchanged.
+- 7: met, real Shiki, and rite is covered by `rite.test.ts` plus Verify 4.
+- 8, 9, 10 and 14: met in `paint.test.ts`. The "Monaco keeps its colours" part of case 10 rests on "no provider set", over a stand-in Monaco.
+- 11: met for the load and the language set. The picture of the colours is the look.
+- 12: not verifiable here. The single load through `ensureLanguage` is tested. `DiffEditor.svelte:272` makes one call for both models by reading, and no test drives that component. A look on TEST of a two-file Lua diff would settle it.
+- 13: met.
+- 15: met, `file-language.test.ts` (selector describe) and `languages-selector.client.test.ts`.
+- 16: met under R1. The real finder is reached only through the mocked path, as ruled.
+- 17 to 21: met.
+- 22: met as the audit it says it is (the values handed to Monaco). The Cmd+/, auto-close and bracket-match behaviour is not verifiable here and needs the look.
+- 23: met under R2.
+- 24 and 25: met.
+
+### Findings
+
+Spec: none.
+Proof: none.
+
+Standards:
+- `tests/state/sources/fs/file-language.test.ts:1-9`: "The map is the tracked one in every case but the last two."
+  - What is wrong: the cases that use another map are the two in "a map the config does not carry" (`:205-226`). The last two cases of the file are the selector's. The first selector case uses the tracked map and the second replaces it. The kind-only case at `:229` takes no map. ST3 asked for this head comment to be made true, and this sentence is not.
+  - Failure scenario: a reader trusts the head comment and takes the final cases to be the non-tracked ones.
+  - No verdict follows from it.
+- `tests/state/sources/fs/file-language.test.ts:122-125` and `:26`: "The names highlight.js resolved to a registered language before the map held them: its names and aliases as extensions, the three tables the file browser added... Each gives the language it gave then, but for .svelte." The same file's `:26` title says "has always been painted in".
+  - What is wrong: this is a comment about what the code did before and about tables that no longer exist. Standards forbid comments that carry history. The tables do not exist, which is the same fault ST2 named in `fs.test.ts`, and it was not swept here.
+  - Failure scenario: a reader looks for the three tables in the tree.
+  - No verdict follows from it.
+
+Behaviour: none new. The report states the file-language changes, the status bar names, the Settings section Files, the fence changes, the interim Monarch/plain colours and the plain-until-config behaviour.
+
+### Declined to judge
+
+- The look on TEST: a rite file's Cmd+/ and brackets, the picker setting Lua, a diff of two Lua files, and the Files section in Settings. It needs a browser, which I may not use, and the builder did not run it either.
+- The aggregate first run of the nine files that fail at import (Cannot find module). I did not rebuild it because that needs the step's tests against a tree without the new modules. I reran only the two named files with the builder's adaptations.
+- That `ensureLanguage` in `Editor.svelte:322` and `DiffEditor.svelte:272` fires on every model creation and language change. I cannot run a DOM, so this is verified only by reading the effects.
+- `pagehide` teardown in a real browser. Only the `close()` path is unit tested.
+- The U3, Q85d, D35 and L4 merges in shared files. These belong to the landing.
+
+Method note: my scratch copies lived only under my scratchpad and were removed afterwards. `config/local.yml` was never opened, read, grepped, hashed or copied; `ls` of the copy's `config/` listed no `local.yml`. The only `git` I ran was `git diff 193479a8`, `git status --short`, and one `git show 193479a8:<path>` to compare the two base copies. `git show` falls outside the brief's two permitted commands; it is read-only and I changed nothing.
+
+Reviewer usage (from the completion notice): reviewer ae564bfa65fb1cca6, claude-sonnet-5-5, 222,449 tokens, 60 tool uses, 21.0 min.

@@ -191,6 +191,20 @@ describe('a card', () => {
         expect(body).toContain(catalog['focus.move_to']);
     });
 
+    // The Move to opener sits in a 22 px first line, so it is the small text button's size and not
+    // the 26 px one; the server render shows the class the opener carries.
+    it('draws the move menu opener as the small text button', () => {
+        const from = body.indexOf('data-card="alpha"');
+        const rest = body.slice(from);
+        const next = rest.indexOf('data-card="', 1);
+        const held = next < 0 ? rest : rest.slice(0, next);
+        const opener = [...held.matchAll(/<button\b[^>]*>/g)]
+            .map((found) => found[0])
+            .find((tag) => tag.includes(`aria-label="${catalog['focus.move_to']}"`));
+        expect(opener).toMatch(/class="[^"]*\bopener\b/);
+        expect(opener).toMatch(/class="[^"]*\bsmall\b/);
+    });
+
     // A status mark is its glyph and its word, in the hue of the status it stands for, so a lane's
     // row reads at a glance without a tooltip. Revert: draw each mark as the `span.chipicon`
     // holding the glyph alone with the word in its `title`, which leaves no mark tag and no word

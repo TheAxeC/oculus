@@ -1,9 +1,11 @@
 <script lang="ts">
     // Layer 3, sessions view partial. One workspace's group of the sessions list: a side-bar
-    // section header with the workspace's name and count, then its rows. A row is two lines of the
-    // list's row height, as a VS Code list row is one: the state at the left and the title, then
-    // the agent, the model, how long ago it last moved, the files it changed and its prompts. A
-    // row being renamed holds the title's field in place of the title.
+    // section header with the workspace's name and count, then its rows. A row is VS Code's agent
+    // session item, two lines 3px in from the row's edges (40 px): an 18 px line with the state at
+    // the left and the title, and a 16 px line with the agent, the model, how long ago it last
+    // moved, the files it changed and its prompts. The model and the age are left out when the
+    // session has none, and the whole line is cut with an ellipsis where the pane ends. A row
+    // being renamed holds the title's field in place of the title and is as high as that field.
 
     import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -99,6 +101,7 @@
     {@const archived = isArchived(entry)}
     {@const state = rowState(entry, archived)}
     {@const top = topOf(entry)}
+    {@const age = since(entry)}
     <div
         class="row"
         class:on={entry.id === selected()}
@@ -148,8 +151,10 @@
                         <span class="sep">{t('sessions.meta_sep')}</span>
                         <span>{modelShort(entry.model)}</span>
                     {/if}
-                    <span class="sep">{t('sessions.meta_sep')}</span>
-                    <span>{since(entry)}</span>
+                    {#if age !== ''}
+                        <span class="sep">{t('sessions.meta_sep')}</span>
+                        <span>{age}</span>
+                    {/if}
                     <span class="sep">{t('sessions.meta_sep')}</span>
                     <span title={t('sessions.files_tip')}
                         >{t('sessions.files_n', String(entry.files.length))}</span
@@ -255,7 +260,7 @@
         color: var(--on-accent-bg, var(--ink));
     }
 
-    /* The selected row's second line and its menu read in the ink of the selection tint. */
+    /* The selected row's details line and its menu read in the ink of the selection tint. */
     .row.on .two {
         color: inherit;
     }
@@ -268,27 +273,39 @@
         opacity: 0.6;
     }
 
-    /* Each line is one list row of VS Code's, 22 pixels. */
     .line {
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    /* The title line of VS Code's agent session item: 18 px, 3px below the row's top edge. */
+    .one {
         display: flex;
         align-items: center;
         gap: 4px;
-        height: calc(var(--tree-row) * var(--text-scale, 1));
-        min-width: 0;
-        white-space: nowrap;
+        height: calc(18px * var(--text-scale, 1));
+        margin-top: 3px;
     }
 
     .one .nm {
         overflow: hidden;
         text-overflow: ellipsis;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
+    /* The details line: 16 px, 3px above the row's bottom edge, under the title and past the
+       state's dot. It is a block of inline parts and not a flex box, so the whole line is cut with
+       one ellipsis where the pane ends. */
     .two {
-        overflow: hidden;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        display: block;
+        height: calc(16px * var(--text-scale, 1));
+        margin-bottom: 3px;
         padding-left: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: calc(16px * var(--text-scale, 1));
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
     }
 
     .mark {

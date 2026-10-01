@@ -45,7 +45,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   cases: agents/briefs/D27-cases.md (round 0: R1 the finder kept in FINDERS with two tests, R2 the builder's reading of case 23, R3 Tree.svelte and files-menu.test.ts added; R4 three test paths added after the build)
   builder_usage: first run of the cases 330,199 tokens, 84 tool uses, 16.4 min (0 full-list runs); the build to its stop on R4 265,047 tokens, 202 tool uses, 34.8 min (0 full-list runs); R4 to the report 343,131 tokens, 32 tool uses, 16.3 min (3 full-list starts: the first from the worktree root, where the R4 message had put it, failed at npm test reading no package.json; the second stopped on help.test.ts, fixed; the third passed); round 1 76,794 tokens, 33 tool uses, 23.0 min (2 full-list runs: the first timed out on one config-key case under load 12.8, the second passed)
   round: 1 (agents/briefs/D27-round1.md, sent 21:43)
-  reviewer_report (round 1): agents/reviews/D27-refuter.md, Repair round 1 (reviewer ae564bfa65fb1cca6, claude-sonnet-5-5, launched 22:08; usage on its completion)
+  reviewer_report (round 1): agents/reviews/D27-refuter.md, Repair round 1 (reviewer ae564bfa65fb1cca6, claude-sonnet-5-5, launched 22:08; 222,449 tokens, 60 tool uses, 21.0 min; 0 Spec, 0 Proof, 2 Standards, 0 Behaviour)
 - step: D35
   executor: agent
   worker: claude:sonnet at ordo-medium (Axel's effort experiment)
@@ -74,21 +74,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/Q85d-brief-check.md, every finding closed in the brief (its Closed heading, Z179 in automode); claude-sonnet-5-5, 311,875 tokens, 104 tool uses, 15.7 min
   shared_paths: with D27, `Source.svelte` and `Merge.svelte` (D27 the lines that make or change a model's language; Q85d the instance-state readers, Merge's body read at 112 and the imports), `state/sources/fs.ts` (D27 the file-type reads; Q85d two exports beside `refShape` at 211), `tests/checks/tree/boundaries.test.ts` (D27 the state row's comment; Q85d the views' and shell's rows and the comment at 73-75), `tests/views/sources/source.test.ts` (D27 494-516; Q85d new cases at the end) and `tests/checks/tree/allow-audits.txt` (one line each), different hunks, a simple merge with the import blocks read at the second landing; no path shared with D35; `docs/diagrams/`, regenerated at each landing
   landing: not-started
-  round: 0
-- step: U4
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 21:29)
-  session_id: a9d3aad609c4df803 (launched 2026-10-01 21:29 local)
-  worktree: .agents/worktrees/U4
-  base: b240670e
-  launched: 2026-10-01 21:29 local
-  report: agents/reviews/U4-report.md
-  brief_check: agents/reviews/U4-brief-check.md, every finding closed in the brief (its Closed heading; Z180 raised to Axel, the step built with (b)); claude-sonnet-5-5, 306,765 tokens, 84 tool uses, 14.6 min
-  shared_paths: with Q85d, `SessionList.svelte`, `Band.svelte` and `CommandCenter.svelte` (Q85d their script readers; U4 their style blocks), different blocks, a simple merge; `DESIGN.md` (U4 369, 404, 408; D27 85, 171, 379; D35 224-235; Q85d 148, 323) and `HELP.md` (U4 100; D27 230; D35 216, 236), different lines; `docs/diagrams/`, regenerated at each landing
-  landing: not-started
-  builder_usage: the build to the report 311,295 tokens, 72 tool uses, 21.2 min (1 full-list run, passed)
-  reviewer_report: agents/reviews/U4-refuter.md (first run, reviewer af7ae20aeafc614df, claude-sonnet-5-5, launched 21:55; usage on its completion)
+  reviewer_report: agents/reviews/Q85d-refuter.md (first run, reviewer a1869e27b7f463b00, claude-sonnet-5-5, launched 22:28; usage on its completion)
+  builder_usage: the build to the report 290,982 tokens, 229 tool uses, 82.8 min (4 full-list runs: the first two failed at npm run test:checks, the third at npm run lint, the fourth passed)
   round: 0
 - step: L4
   executor: agent
