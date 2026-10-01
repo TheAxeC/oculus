@@ -1,8 +1,9 @@
 /plan-orchestration oculus/migration
 
 In flight:
+- D31 (git auto fetch), being prepared.
 - Q85c (zod in the data folder), building.
-- U3 (every view on VS Code's scale, from U2's audit), builder stopped with no report, waiting on Axel.
+- U3 (every view on VS Code's scale, from U2's audit), building (a second builder took over the worktree).
 Queued, in order:
 - Q85d (zod in the views, ui, shell and routes).
 - Q88c (the Source Control rows' and the pane strip's new menu items).
@@ -17,7 +18,6 @@ Queued, in order:
 - D23, D15 and D17 (language servers; PDF reading, once D14 has landed; project commands).
 - D23b (more language server features), once D23 has landed.
 - D28 (saving a source file), once D25 has landed.
-- D31 (git auto fetch), waiting on Axel's ruling on the rule it breaks.
 - D32 (replace in Search).
 - D33 (the Problems view), once D23 and D17 have landed.
 - D18, D20 and D24 (the Processes view; an agent from a task or in a new worktree; the Personal board).

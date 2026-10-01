@@ -267,3 +267,17 @@ Where it is built: Q88b's landing. Booked in the state file's closed log and `pl
 - Not chosen: (b) book the fold and the `loadConfig` defect as later steps, the lazy option.
 
 Where it is built: Q85c. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z164 (2026-10-01 17:12, step U3)
+
+- Chosen (b): a fresh builder takes over U3's worktree as it stands, starts no agent, finishes every item from the brief and the diff as left, runs the cases and reports.
+- Not chosen: (a) resume the interrupted builder, which Axel says cannot be done; (c) discard the worktree, which throws away work with no defect found in it.
+
+Where it is built: U3. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z165 (2026-10-01 17:12, step D31)
+
+- Chosen (a): DESIGN.md:128, DESIGN.md:344 and the head comment of `src/lib/server/git/git-write.ts` name one exception, the timer of `git.autofetch_minutes`, which runs only `git fetch --prune` through the existing call site, in repositories `git remote` names a remote for, only while the key is above 0.
+- Not chosen: (b) keep the rule absolute and reverse Z83, the lazy option.
+
+Where it is built: D31. Booked in the state file's closed log and `plan.md` Rulings.
