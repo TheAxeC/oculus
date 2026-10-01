@@ -708,6 +708,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z143 (2026-10-01): (5) widened to terminals, a pane stays when its last tab, closed or dragged out, was a view opened for something or a Terminal tab, at most one empty pane of each kind per page, documents landing in the document one first; built in L4 (the user).
 - Open item Z145 (2026-10-01): (b), reviewers and brief checks run on Claude Sonnet 5.5 (`reviewer: claude:sonnet`), the model check after each launch as for builders (the user).
 - Open item Z144 (2026-10-01): (a), no committed U2 shot shows session or agent titles, agent task names, account labels or unpublished research (project plans, manuscript and equation content, submission cards, dataset details, lead counts); cropped or removed in U2's round 2 (the user).
+- Open item Z149 (2026-10-01): (a) for all three, `RailEditor` and `PagesReset` drawn as a Settings row leave out their own heading, a "This browser" row is Modified when this browser holds its own value and Reset forgets it, and the terminal text size is a "This browser" row; step S3c (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

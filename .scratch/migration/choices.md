@@ -2,6 +2,16 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z149 (2026-10-01 11:08, step S3c)
+
+The question: S3c's brief check found three things the brief left open about the Settings editor. (1) The rail editor and Reset all pages, drawn as the controls of the `rail` and `arrangements` rows, each carry their own heading; (2) what Modified and Reset mean for a "This browser" row; (3) the ui store keeps a seventh per-browser value, the terminal text size, that the brief did not list.
+
+- (1) chosen (a): drawn as a row's control, each leaves out its own heading, since the row's title and the catalog's description stand in its place; their sentence about what a row is stays. Not chosen: (b) both headings kept under the row's title, a heading twice.
+- (2) chosen (a): a "This browser" row is Modified when this browser holds a value of its own, and Reset Setting forgets that value so the config's default applies; the ui store takes null for the wallpaper and the code theme as it does for the text size. Not chosen: (b) no Modified or Reset on those rows, the lazy option.
+- (3) chosen (a): the terminal text size is a "This browser" row. Not chosen: (b) left to the terminal's own font tools only, the lazy option.
+
+Where it is built: S3c's brief, "The step's line and its rulings" and What to build 1 and 2. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z142 (2026-10-01 06:19, step X3d)
 
 The question: X3d's landing look on TEST showed two differences that are on main before the step: a pane's header actions wrap onto a second line when the pane is narrow and its title long (`Pane.svelte`'s `.tools`, about 480 px), and an open editor or diff keeps the old theme's colours after a live theme switch. (1) Fold both into U2, the step that audits every view's look against VS Code's; (2) a step of their own.

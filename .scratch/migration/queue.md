@@ -7,9 +7,9 @@ Landed 06:36: S3b (the `config-key` write), `agents/reviews/S3b-landing.md`.
 Landed 06:55: Q109 (the terminal: lines after a pane move, the five watchers' capped debounce, a sole terminal's menu, four terminal options), `agents/reviews/Q109-landing.md`.
 
 In flight:
-- S3c (the Settings editor), its brief check (Sonnet) in; the brief's findings closing, then its builder.
-- Q85a2 (zod in the edit, sessions and transcripts folders), repair round 1 done, its review (Sonnet) running since 10:44.
-Open items: Z146 (U2's grouping into build steps), Z147 (collections as rows or cards), Z148 (the icon set), all three Axel's, in `orchestrator-state.md`'s Open items. Z144 ruled (a) by Axel. Z145 ruled (b) by Axel: reviewers and brief checks on Sonnet 5.5. The choices U2's audit raises (its grouping, group 6's rows or cards, and the like) are Axel's once U2 has landed, never automode. Z143 ruled (5) with terminals by Axel, built in L4. Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
+- S3c (the Settings editor), its brief's findings closed (Z149 in automode); preparation commit, then its builder.
+- Q85a2 (zod in the edit, sessions and transcripts folders), its review over round 1 in at 11:09: four findings, all for landing; landing next.
+Choice made in automode: Z149 (S3c's two embedded headings, Modified and Reset on "This browser" rows, the terminal text size row). Open items: Z146 (U2's grouping into build steps), Z147 (collections as rows or cards), Z148 (the icon set), all three Axel's, in `orchestrator-state.md`'s Open items. Z144 ruled (a) by Axel. Z145 ruled (b) by Axel: reviewers and brief checks on Sonnet 5.5. The choices U2's audit raises (its grouping, group 6's rows or cards, and the like) are Axel's once U2 has landed, never automode. Z143 ruled (5) with terminals by Axel, built in L4. Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - Q85b and Q85c, then Q85d (zod after Q85a4).
 - Q88b (the right-click menus' new capabilities), X3d has landed.
