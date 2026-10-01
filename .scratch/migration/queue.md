@@ -3,8 +3,8 @@
 In flight:
 - U3 (every view on VS Code's scale, from U2's audit), repair round 1 built, its review running.
 - D27 (the editor's languages), building.
-Queued, in order (34 steps):
-- D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), brief checked, being prepared again on the new main.
+- D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), building.
+Queued, in order (33 steps):
 - Q85d (zod in the views, ui, shell and routes).
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), once U3 has landed.
 - Q88c (the Source Control rows' and the pane strip's new menu items).

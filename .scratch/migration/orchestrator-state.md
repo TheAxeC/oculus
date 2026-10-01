@@ -62,6 +62,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with U3, `Source.svelte` (D27 the import and line 133; U3 hunks at 28-30, 56-61, 124 and from 330), `tests/views/sources/source.test.ts` (D27 494-516; U3 up to 314) and `DESIGN.md` (D27 85, 171, 379; U3 158, 216-222, 374-375, 392, 405, 410), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   round: 0
+- step: D35
+  executor: agent
+  worker: claude:sonnet at ordo-medium (Axel's effort experiment)
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 19:56)
+  session_id: a9c7089e38094deba (launched 2026-10-01 19:55 local)
+  worktree: .agents/worktrees/D35
+  base: c44def15
+  launched: 2026-10-01 19:55 local
+  report: agents/reviews/D35-report.md
+  brief_check: agents/reviews/D35-brief-check.md, every finding closed in the brief (its Closed heading, Z174 amended and Z177 in automode); claude-sonnet-5-5, 279,072 tokens, 70 tool uses, 13.0 min
+  shared_paths: with D27, `context.ts` (D27 the findings list 250-253 and an import; D35 the comment 215-217, the hook target 239-240, the start of liveSettings after the pollers, `close()`), `config-key.ts` (D27 FINDERS 104-112 and an import; D35 line 232 and the function's parameters), `options.yml` (D27 a `languages` entry after `scan` at 509; D35 the descriptions at 124-262 and from 585), `DESIGN.md` (D27 85, 171, 379; D35 224-235) and `HELP.md` (D27 230; D35 216, 236), different lines, a simple merge with the import blocks read at the second landing; no path shared with U3; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -683,6 +696,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 19:56. D35 prepared on main (c44def15) and its builder launched at ordo-medium on claude-sonnet-5-5. In flight: U3 (round-1 review running), D27 (building), D35 (building). Next: U3's round review saved and /land U3 with the look on TEST; D27's and D35's reports, then /refute.
 - 2026-10-01 19:42. Q85c landed (zod in `src/lib/data`), two fixes at landing, `checks: 7 commands passed`. In flight: U3 (repair round 1 building), D27 (brief check in, findings to close). Next: D27's brief closed and its builder launched; D35 prepared again on the new main; U3's round review. Open items: none.
 - 2026-10-01 19:26. D31 landed (git auto fetch), three fixes at landing, `checks: 7 commands passed`. U3's review and D27's brief check are in and saved. In flight: Q85c (round-1 review running), U3 (review in, repair round 1 next), D27 (brief check in, findings to close). Next: U3's round 1; D27's brief closed and its builder launched; Q85c's landing; then D35. Open items: none.
 - 2026-10-01 18:31. Axel ruled Z169 (a): the Config view removed and the System and Views and Settings pages merged, in S4. `local.yml` comment block appended by Axel. In flight: Q85c (review), D31 (review), U3 (second builder). Next: each review, its repair round, /land; /spec D35 into the first free slot. Open items: none.
