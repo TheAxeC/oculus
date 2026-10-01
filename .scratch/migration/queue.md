@@ -2,11 +2,14 @@
 
 In flight:
 - S3c (the Settings editor), builder (Sonnet) running since 11:11.
+- Q85b (zod in the state layer), brief written, its brief check (Sonnet) running since 11:31.
+- Q88b (the Files view's file operations), brief written, its brief check (Sonnet) running since 11:45.
 Open items: Z146 (U2's grouping into build steps), Z147 (collections as rows or cards), Z148 (the icon set), all three Axel's, in `orchestrator-state.md`'s Open items. Choices made in automode, for review: `choices.md`.
 Queued, in order:
-- Q85b and Q85c, then Q85d (zod after Q85a4).
-- Q88b (the right-click menus' new capabilities), X3d has landed.
-- X3c (the tab strip as VS Code's), once Q88b has landed.
+- Q85c, once Q85b has landed (it reads `data/shapes/shapes.ts`, which Q85b makes), then Q85d.
+- Q88c (the Source Control rows' git operations), once Q88b has landed.
+- Q88d (the pane strip and the page-wide right-click handler), once S3c has landed (its two settings are rows of the new Settings editor).
+- X3c (the tab strip as VS Code's), once Q88d has landed.
 - X3a (the Files view as VS Code's Explorer, with Z138's light-theme Seti colours), once Q88b has landed.
 - Q91 (the project view and its editor), once X3a has landed.
 - L4 (floating panes, and Z143's kept panes), after S3.

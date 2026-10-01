@@ -2,6 +2,24 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z151 (2026-10-01 11:43, step Q88b)
+
+The question: building the Files view's file operations takes user-visible choices the plan leaves open: whether they show in History with an undo, their route, the label of a two-file diff, the name rule, Upload's limit, the delete question, where the clipboard lives, and what of the Explorer stays X3a's.
+
+- Chosen (a): as Q88b's brief, Decisions 1 to 8: not recorded in History (History is the log of `api/write`'s structured writes, and a source save is not in it either); `POST /api/ops` and `GET /api/ops` for the compare; `{left} vs {right}`; VS Code's macOS name rule; files under the 32 MiB body cap the server has; the delete question always shown, no opt-out key; the clipboard and the compare selection page-wide; multi-select, drag and drop, Duplicate and the title-bar buttons X3a's, the wire shapes taking lists.
+- Not chosen: (b) each operation a write kind of `api/write`, recorded in History with an undo, which needs a record shape for files and an inverse for a Trash move that `trash` does not report.
+
+Where it is built: Q88b's brief, "Decisions taken in this brief". Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z150 (2026-10-01 11:40, step Q88b)
+
+The question: Q88b's line covers three surfaces, each the size of a step: the Files view's file operations (New File, New Folder, Rename, Delete to the Trash, Cut, Copy, Paste, Upload, Compare Selected, Reveal in Finder, Find in Folder), the Source Control rows' git operations (thirteen, each a new server write or read), and the pane strip (Lock Group, New Text File, the Tab Bar and Editor Actions settings) with the page-wide right-click handler.
+
+- Chosen (a): split by surface into Q88b (Files), Q88c (Source Control, after Q88b, which brings `trash`) and Q88d (the pane strip and the right-click handler), as S3 and X3 were split. X3c waits for Q88d, X3a for Q88b.
+- Not chosen: (b) one step for all three, one builder and one review across three surfaces.
+
+Where it is built: `plan.md`'s Q88b, Q88c and Q88d lines. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z149 (2026-10-01 11:08, step S3c)
 
 The question: S3c's brief check found three things the brief left open about the Settings editor. (1) The rail editor and Reset all pages, drawn as the controls of the `rail` and `arrangements` rows, each carry their own heading; (2) what Modified and Reset mean for a "This browser" row; (3) the ui store keeps a seventh per-browser value, the terminal text size, that the brief did not list.
