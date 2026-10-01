@@ -7,10 +7,11 @@ Landed 06:55: Q109 (the terminal: lines after a pane move, the five watchers' ca
 In flight:
 - U2 (every view's look against VS Code's), builder running since 06:59.
 - Q85a2 (zod in the edit, sessions and transcripts folders), builder running since 07:05.
+- Q85a4 (zod in the other server folders), brief check running since 07:13.
 Open items: Z138 (X3d's light-theme Seti colours, yours). Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - S3c (the Settings editor), S3a and S3b have landed.
-- Q85a4 (zod in the other server folders), /spec when a slot frees; then Q85b and Q85c, then Q85d.
+- Q85b and Q85c, then Q85d (zod after Q85a4).
 - Q88b (the right-click menus' new capabilities), X3d has landed.
 - X3c (the tab strip as VS Code's), once Q88b has landed.
 - X3a (the Files view as VS Code's Explorer), once Q88b has landed.

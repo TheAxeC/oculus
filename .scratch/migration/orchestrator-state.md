@@ -50,9 +50,10 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: 4f4dcfc4
   launched: 2026-10-01 07:05 local
   report: agents/reviews/Q85a2-report.md
+  builder_usage: first run (stopped at the cases' first run, `agents/reviews/Q85a2-first-run.md`) 99,564 tokens, 98 tool uses, 22.0 min
   brief_check: agents/reviews/Q85a2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 228,189 tokens, 56 tool uses, 9.5 min
   landing: not-started
-  round: 0
+  round: 0 (the cases ruling `agents/briefs/Q85a2-cases.md`, sent 2026-10-01 07:28)
 ```
 
 ## The standing demands (from Axel, in force)
