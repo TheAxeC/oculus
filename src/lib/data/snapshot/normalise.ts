@@ -7,10 +7,14 @@
 // and no others, so the snapshot is the typed model rather than the YAML. An id that names nothing
 // is left out of both the entity that held it and the relation table, and validate has already
 // named it in a finding, so a view never joins against something that is not there.
+//
+// The career section is read in normalise-career.ts and handed on from here.
 
+import { z } from 'zod';
+import { compact } from './compact.ts';
+import { career } from './normalise-career.ts';
 import { indexing } from './indexing.ts';
 import type {
-    Career,
     CodeAvailability,
     Collection,
     Dataset,
@@ -22,7 +26,6 @@ import type {
     Finding,
     Followup,
     Funding,
-    Host,
     Id,
     Organisation,
     Person,
@@ -42,6 +45,17 @@ import type {
     Venue
 } from '../model/index.ts';
 import { isMap, str, strings } from '../helpers/guards.ts';
+import {
+    keyedRowsShape,
+    listOrOneShape,
+    mapShape,
+    optionalTextShape,
+    readAs,
+    readOr,
+    rowsShape,
+    optionalItemsShape,
+    stringItemsShape
+} from '../shapes/shapes.ts';
 
 /**
  * Registry-backed collection keys. Normalise carries these both as entities and collections so
@@ -51,6 +65,12 @@ import { isMap, str, strings } from '../helpers/guards.ts';
  */
 export const REGISTRY_KEYS = ['venues', 'datasets', 'pillars', 'domains', 'data'];
 
+/** The `key` of one entry of the `collections:` list: a text with something in it. */
+const collectionKeyShape = z.object({ key: z.string().min(1) }).transform((entry) => entry.key);
+
+/** The `collections:` list as the keys it names. */
+const collectionKeysShape = rowsShape(collectionKeyShape);
+
 /**
  * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the four
  * that name a registry with a dedicated view. They ship as the page's data and the page registers
@@ -58,13 +78,9 @@ export const REGISTRY_KEYS = ['venues', 'datasets', 'pillars', 'domains', 'data'
  * sources.yml and its owner catalog file; the collection registration supplies its group and order.
  */
 export function collectionKeys(config: Record<string, unknown>): string[] {
-    const raw = config.collections;
-    if (!Array.isArray(raw)) return [];
     const keys: string[] = [];
-    for (const item of raw) {
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) continue;
-        const key = (item as Record<string, unknown>).key;
-        if (typeof key !== 'string' || key === '' || REGISTRY_KEYS.includes(key)) continue;
+    for (const key of readOr(collectionKeysShape, config.collections, [])) {
+        if (REGISTRY_KEYS.includes(key)) continue;
         if (!keys.includes(key)) keys.push(key);
     }
     return keys;
@@ -97,19 +113,12 @@ export const JOINT_WORK = 'joint-work';
 /** The field of a joint-work entry that names its person. */
 export const PERSON_FIELD = 'person';
 
-/** A number value, or undefined. NaN and Infinity are not JSON-safe and are dropped with them. */
-function num(value: unknown): number | undefined {
-    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
+/** A finite number: NaN and Infinity are not JSON-safe and are dropped with them. */
+const numberShape = z.number();
 
-/** Drop the keys whose value is undefined, so the object survives JSON round-tripping unchanged. */
-function compact<T extends object>(value: T): T {
-    const record = value as Record<string, unknown>;
-    for (const key of Object.keys(record)) {
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-        if (record[key] === undefined) delete record[key];
-    }
-    return value;
+/** A number value, or undefined. */
+function num(value: unknown): number | undefined {
+    return numberShape.safeParse(value).data;
 }
 
 /** A record keyed by id, filled in sorted id order, so its JSON does not depend on read order. */
@@ -207,22 +216,42 @@ function staleDays(found: DocPresence[] | undefined, manifest: number | undefine
     return lag > 0 ? lag : 0;
 }
 
+/** One note of a `followup:`: a string, or a map with its `do` and `after`. */
+const noteShape = z.union([
+    z.string().transform((text) => ({ do: text, after: undefined as string | undefined })),
+    z.object({ do: optionalTextShape, after: optionalTextShape })
+]);
+
 /**
  * The `followup:` notes of a manifest or of a collection entry. The key holds one note as a string,
  * one as a `{ do, after }` map, or a list of either; all three arrive here as a list. A note with
  * no `do` is dropped in silence, the way str() drops a value of the wrong type.
  */
 export function followups(value: unknown): Followup[] {
-    const items = Array.isArray(value) ? value : [value];
     const out: Followup[] = [];
-    for (const item of items) {
-        const text = typeof item === 'string' ? item : isMap(item) ? str(item.do) : undefined;
-        if (text === undefined || text.trim() === '') continue;
-        const after = isMap(item) ? str(item.after) : undefined;
-        out.push(compact({ do: text, after }));
+    for (const item of readOr(listOrOneShape, value, [])) {
+        const note = readAs(noteShape, item);
+        if (note?.do === undefined || note.do.trim() === '') continue;
+        out.push(compact({ do: note.do, after: note.after }));
     }
     return out;
 }
+
+/** One line of a `subtasks:` checklist: a string, or a map of its `do`, `deadline` and so on. */
+const lineShape = z.union([
+    z.string().transform((text) => ({
+        do: text,
+        deadline: undefined as string | undefined,
+        done: false,
+        snooze: undefined as string | undefined
+    })),
+    z.object({
+        do: optionalTextShape,
+        deadline: optionalTextShape,
+        done: z.boolean().catch(false),
+        snooze: optionalTextShape
+    })
+]);
 
 /**
  * The `subtasks:` checklist of a manifest or of a collection entry. The key holds a map of key to
@@ -231,27 +260,25 @@ export function followups(value: unknown): Followup[] {
  * which line it means whatever shape the file is written in.
  */
 export function subtasks(value: unknown): Subtask[] {
-    const rows: [string, unknown][] = Array.isArray(value)
-        ? value.map((item, at) => [String(at), item])
-        : isMap(value)
-          ? Object.entries(value)
-          : [];
     const out: Subtask[] = [];
-    for (const [key, item] of rows) {
-        const text = typeof item === 'string' ? item : isMap(item) ? str(item.do) : undefined;
-        if (text === undefined || text.trim() === '') continue;
+    for (const [key, item] of readOr(keyedRowsShape, value, [])) {
+        const line = readAs(lineShape, item);
+        if (line?.do === undefined || line.do.trim() === '') continue;
         out.push(
             compact({
                 key,
-                do: text,
-                deadline: isMap(item) ? str(item.deadline) : undefined,
-                done: isMap(item) && item.done === true,
-                snooze: isMap(item) ? str(item.snooze) : undefined
+                do: line.do,
+                deadline: line.deadline,
+                done: line.done,
+                snooze: line.snooze
             })
         );
     }
     return out;
 }
+
+/** The `authors:` of a manifest: one text, or the texts among a list. */
+const authorsShape = z.union([z.string(), z.array(z.unknown()).transform(strings)]);
 
 /**
  * A project. Every field comes from the manifest key of the same meaning, and nothing else does.
@@ -261,8 +288,7 @@ function project(
     found: DocPresence[] | undefined,
     slides: PresentSlide[] | undefined
 ): Project {
-    const status = isMap(manifest.status) ? manifest.status : {};
-    const authors = manifest.authors;
+    const status = readOr(mapShape, manifest.status, {});
     const domain = str(manifest.domain);
     const lag = staleDays(found, manifest.fileMtime);
     return compact({
@@ -274,12 +300,7 @@ function project(
         title: str(manifest.title) ?? '',
         short: str(manifest.short),
         lead: str(manifest.lead),
-        authors:
-            typeof authors === 'string'
-                ? authors
-                : Array.isArray(authors)
-                  ? strings(authors)
-                  : undefined,
+        authors: authorsShape.safeParse(manifest.authors).data,
         year: num(manifest.year),
         pin: manifest.pin === true ? true : undefined,
         chips: strings(status.chips),
@@ -356,7 +377,7 @@ function dataset(entry: RawRegistryEntry): Dataset {
         size: str(entry.size),
         access: str(entry.access),
         source: str(entry.source),
-        retrieval: isMap(entry.retrieval) ? entry.retrieval : undefined,
+        retrieval: mapShape.safeParse(entry.retrieval).data,
         hpcPath: str(entry.hpc_path),
         themes: strings(entry.themes),
         projectIds: []
@@ -396,15 +417,19 @@ function person(entry: RawRegistryEntry): Person {
     });
 }
 
+/** The affiliations of a person: one key as a text, or the texts among a list. */
+const affiliationsShape = z.union([
+    z.string().transform((key) => (key === '' ? [] : [key])),
+    stringItemsShape
+]);
+
 /**
  * The organisation keys a person's entry names, the primary first. A file still writing the one key
  * `affiliation:` is read as a list of that one, so an entry nobody has rewritten still draws its
  * organisation; validate.ts is where the key that replaced it is named.
  */
 function affiliationsOf(entry: RawRegistryEntry): string[] {
-    const held = entry.affiliations ?? entry.affiliation;
-    if (typeof held === 'string') return held === '' ? [] : [held];
-    return strings(held);
+    return readOr(affiliationsShape, entry.affiliations ?? entry.affiliation, []);
 }
 
 /** One organisation, the thing a person's `affiliations:` and a scheme's `funder:` point at. */
@@ -457,9 +482,10 @@ function funding(entry: RawRegistryEntry): Funding {
  * One collection entry: its identity, and every field the YAML gave it apart from the provenance.
  */
 function entry(raw: RawEntry, index: number, ident = 'title'): Entry {
+    // An own `__proto__` key is skipped: assigning to it would replace the new map's prototype.
     const fields: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(raw)) {
-        if (key !== 'provenance') fields[key] = value;
+        if (key !== 'provenance' && key !== '__proto__') fields[key] = value;
     }
     const title = str(raw.title) ?? str(raw.name) ?? str(raw[ident]) ?? '';
     const key = str(raw.key);
@@ -479,34 +505,45 @@ function entry(raw: RawEntry, index: number, ident = 'title'): Entry {
     };
 }
 
+/** One field of a collection's `schema:` as the check reads it: a map naming a field and a type. */
+const namedFieldShape = z.object({ field: z.string(), type: z.string() });
+
+/** A collection's `schema:` as the check reads it: a list of maps naming a field and a type. */
+export const namedSchemaShape = z.array(namedFieldShape);
+
+/** One field of a collection's `schema:`, with the keys it may carry beside its name and type. */
+const schemaFieldShape = namedFieldShape
+    .extend({
+        label: optionalTextShape,
+        options: optionalItemsShape,
+        options_from: optionalTextShape,
+        required: z.boolean().optional().catch(undefined),
+        help: optionalTextShape
+    })
+    .transform((item): SchemaField => {
+        return compact({
+            field: item.field,
+            type: item.type,
+            label: item.label,
+            options: item.options,
+            optionsFrom: item.options_from,
+            required: item.required,
+            help: item.help
+        });
+    });
+
+/** A collection's `schema:` whole: a list of fields, or nothing when any one of them is wrong. */
+const schemaShape = z.array(schemaFieldShape);
+
 /**
  * The `schema:` a collection file carries, or undefined when it has none and when what it has is
  * not a list of maps naming a field and a type. It is all or nothing: half a schema would draw half
  * a record in a field order the file did not write, so a malformed one is left off whole.
- * validate.ts calls this as well and reports the case where the key is there and nothing comes
- * back.
+ * validate.ts tests the same thing with `namedSchemaShape` and reports the case where the key is
+ * there and nothing comes back.
  */
 export function collectionSchema(value: unknown): SchemaField[] | undefined {
-    if (!Array.isArray(value)) return undefined;
-    const fields: SchemaField[] = [];
-    for (const item of value) {
-        if (!isMap(item)) return undefined;
-        const name = str(item.field);
-        const type = str(item.type);
-        if (name === undefined || type === undefined) return undefined;
-        fields.push(
-            compact({
-                field: name,
-                type,
-                label: str(item.label),
-                options: item.options === undefined ? undefined : strings(item.options),
-                optionsFrom: str(item.options_from),
-                required: typeof item.required === 'boolean' ? item.required : undefined,
-                help: str(item.help)
-            })
-        );
-    }
-    return fields;
+    return schemaShape.safeParse(value).data;
 }
 
 function collection(raw: RawCollection): Collection {
@@ -538,131 +575,6 @@ function jointWorkRows(collections: Collection[]): { id: Id; person: Id }[] {
 }
 
 /**
- * The relation tables. A pair is written only when both ends are entities of the snapshot, so a
- * dangling id (which validate has reported) reaches no table and no entity's id list.
- *
- * `fundingPillar` is the one table with no field behind it: pillars.yml carries no funding key,
- * its `funding:` is prose, so a scheme and a pillar are related here when at least one
- * project names them both.
- */
-/** The keys of a host row that are the host itself; every other string key is one of its scores. */
-const HOST_KEYS = ['name', 'inst', 'tag', 'status', 'note'];
-
-/** The status a host row carries no `status:` of its own for. */
-const HOST_DEFAULT = 'candidate';
-
-/**
- * The prose of a host row, with the `[proposal: Strong | ...]` prefix removed. The prefix repeats
- * what the score chips already show, so leaving it in would print every score twice.
- */
-function hostNote(value: unknown): string | undefined {
-    const text = str(value);
-    if (text === undefined) return undefined;
-    const trimmed =
-        text.startsWith('[') && text.includes(']')
-            ? text.slice(text.indexOf(']') + 1).trimStart()
-            : text;
-    return trimmed.trim() === '' ? undefined : trimmed;
-}
-
-function host(value: unknown): Host | null {
-    if (!isMap(value)) return null;
-    const name = str(value.name);
-    if (name === undefined || name.trim() === '') return null;
-    const scores: Record<string, string> = {};
-    for (const [key, held] of Object.entries(value)) {
-        if (HOST_KEYS.includes(key)) continue;
-        const text = str(held);
-        if (text !== undefined && text.trim() !== '') scores[key] = text;
-    }
-    return compact({
-        name,
-        inst: str(value.inst),
-        tag: str(value.tag),
-        status: str(value.status) ?? HOST_DEFAULT,
-        scores,
-        note: hostNote(value.note)
-    });
-}
-
-/** One numbered row of the order of work, tolerating the plain-string form the file may write. */
-function orderRow(value: unknown): { task: string; when?: string; note?: string } | null {
-    if (typeof value === 'string') return value.trim() === '' ? null : { task: value };
-    if (!isMap(value)) return null;
-    const task = str(value.task);
-    if (task === undefined || task.trim() === '') return null;
-    return compact({ task, when: str(value.when), note: str(value.note) });
-}
-
-/** A `what`/`why` or `who`/`why` chip row, tolerating the plain-string form. */
-function reasoned<K extends string>(value: unknown, key: K): Record<K | 'why', string> | null {
-    if (typeof value === 'string') {
-        return value.trim() === '' ? null : ({ [key]: value } as Record<K | 'why', string>);
-    }
-    if (!isMap(value)) return null;
-    const what = str(value[key]);
-    if (what === undefined || what.trim() === '') return null;
-    return compact({ [key]: what, why: str(value.why) }) as Record<K | 'why', string>;
-}
-
-/** The eligibility section, whose `rule` the file may write as one string or as a list of them. */
-function eligibility(value: unknown): Career['eligibility'] {
-    if (!isMap(value)) return null;
-    const rule = typeof value.rule === 'string' ? [value.rule] : strings(value.rule);
-    const shots = strings(value.shots);
-    if (rule.length === 0 && shots.length === 0 && str(value.caveat) === undefined) return null;
-    return compact({ rule, shots, caveat: str(value.caveat) });
-}
-
-/**
- * The career strategy as the panel reads it. Every section is optional and every list tolerates the
- * plain-string form the file is allowed to write, so a half-filled career file draws the half it
- * has rather than nothing.
- */
-export function career(raw: Record<string, unknown> | null): Career | null {
-    if (raw === null) return null;
-    const situation: { label: string; value: string }[] = [];
-    if (isMap(raw.situation)) {
-        for (const [label, held] of Object.entries(raw.situation)) {
-            const text = str(held);
-            if (text !== undefined) situation.push({ label, value: text });
-        }
-    }
-    const hosts: Host[] = [];
-    for (const row of Array.isArray(raw.hosts) ? raw.hosts : []) {
-        const one = host(row);
-        if (one !== null) hosts.push(one);
-    }
-    const order: { task: string; when?: string; note?: string }[] = [];
-    for (const row of Array.isArray(raw.order) ? raw.order : []) {
-        const one = orderRow(row);
-        if (one !== null) order.push(one);
-    }
-    const notHosts: { who: string; why?: string }[] = [];
-    for (const row of Array.isArray(raw.not_hosts) ? raw.not_hosts : []) {
-        const one = reasoned(row, 'who');
-        if (one !== null) notHosts.push(one);
-    }
-    const dropped: { what: string; why?: string }[] = [];
-    for (const row of Array.isArray(raw.dropped) ? raw.dropped : []) {
-        const one = reasoned(row, 'what');
-        if (one !== null) dropped.push(one);
-    }
-    return compact({
-        title: str(raw.title) ?? '',
-        milestone: str(raw.milestone),
-        situation,
-        order,
-        orderNote: str(raw.order_note),
-        hosts,
-        hostCriteria: strings(raw.host_criteria),
-        notHosts,
-        eligibility: eligibility(raw.eligibility),
-        dropped
-    });
-}
-
-/**
  * The feeds, already the summary sources/feeds.ts made of them. They are copied rather than passed
  * through so that the snapshot owns its own objects, which is what every other entity here does.
  */
@@ -683,6 +595,14 @@ type Sides = {
     jointWork: { id: Id; person: Id }[];
 };
 
+/**
+ * The relation tables. A pair is written only when both ends are entities of the snapshot, so a
+ * dangling id (which validate has reported) reaches no table and no entity's id list.
+ *
+ * `fundingPillar` is the one table with no field behind it: pillars.yml carries no funding key,
+ * its `funding:` is prose, so a scheme and a pillar are related here when at least one
+ * project names them both.
+ */
 function relations(
     projects: Project[],
     entities: Record<string, Set<Id>>,

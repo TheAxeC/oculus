@@ -13,6 +13,9 @@
 // is what a server process hands a child, so a search with no path would wait for input nobody
 // sends. A search scoped to one folder (`under`) names `./<folder>` there instead.
 
+import { z } from 'zod';
+import { fields } from './guards.ts';
+
 /** The root key that means every served root rather than one of them. */
 export const ALL_ROOTS = 'all';
 
@@ -213,6 +216,9 @@ export function queryFrom(parameters: URLSearchParams, cap: number): SearchQuery
     };
 }
 
+/** The configured cap: a finite number above zero, cut to its whole part. */
+const searchCapShape = z.number().positive().transform(Math.floor);
+
 /**
  * The hit cap of config/behavior.yml's `search:` block, which the page reads off the configuration
  * the config channel carries. Zero until that push has landed; the server clamps a query's `max` to
@@ -220,8 +226,5 @@ export function queryFrom(parameters: URLSearchParams, cap: number): SearchQuery
  * than at a number written here.
  */
 export function searchCap(config: Record<string, unknown>): number {
-    const held = config.search;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) return 0;
-    const max = (held as Record<string, unknown>).max_hits;
-    return typeof max === 'number' && Number.isFinite(max) && max > 0 ? Math.floor(max) : 0;
+    return searchCapShape.safeParse(fields(config.search).max_hits).data ?? 0;
 }

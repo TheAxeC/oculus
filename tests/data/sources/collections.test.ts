@@ -143,6 +143,16 @@ describe('readCollections', () => {
         expect(collections.events.meta).not.toHaveProperty('entries');
     });
 
+    it('skips an own __proto__ key of the file when it builds the meta', () => {
+        const hub = scratch();
+        write(hub, 'network/events.yml', '__proto__:\n  injected: "yes"\ntitle: T\nentries: []\n');
+        const { collections } = readCollections(hub, [FILES[1]], CATALOG);
+
+        expect(Object.getPrototypeOf(collections.events.meta)).toBe(Object.prototype);
+        expect(collections.events.meta).not.toHaveProperty('injected');
+        expect(Object.keys(collections.events.meta)).toStrictEqual(['title']);
+    });
+
     it('records provenance on every entry and derives no identity', () => {
         const hub = buildHub();
         const { collections } = readCollections(hub, FILES, CATALOG);
@@ -256,5 +266,54 @@ describe('readCollections', () => {
         const second = readCollections(hub, FILES, CATALOG);
         expect(second.collections).toEqual(first.collections);
         expect(second.findings).toEqual(first.findings);
+    });
+});
+
+describe('readCollections over a collection file of the wrong shape', () => {
+    /** The collection `tasks` and the findings that name its file, for a file holding `body`. */
+    function readTasks(body: string) {
+        const hub = scratch();
+        write(hub, 'tasks/tasks.yml', body);
+        const file = join(hub, 'tasks/tasks.yml');
+        const out = readCollections(hub, [{ key: 'tasks', file: 'tasks/tasks.yml' }], CATALOG);
+        return { file, tasks: out.collections.tasks, findings: out.findings };
+    }
+
+    it.each([['[]'], ['3'], ['x'], ['']])('reads a file holding %j as one finding', (body) => {
+        const read = readTasks(body);
+        expect(read.findings).toStrictEqual([
+            { file: read.file, key: '', message: 'is not a map of keys' }
+        ]);
+        expect(read.tasks).toStrictEqual({ key: 'tasks', file: read.file, meta: {}, entries: [] });
+    });
+
+    it('reads an entry list that is a map as one finding and no entries', () => {
+        const read = readTasks('title: T\nentries:\n  a: 1\n');
+        expect(read.findings).toStrictEqual([
+            { file: read.file, key: 'entries', message: 'entry list entries is not a list' }
+        ]);
+        expect(read.tasks.entries).toStrictEqual([]);
+        expect(read.tasks.meta).toStrictEqual({ title: 'T' });
+    });
+
+    it('hands a map item on with its fields and provenance and reports a list item', () => {
+        const read = readTasks('entries:\n  - []\n  - { key: k, extra: 1 }\n');
+        expect(read.findings).toStrictEqual([
+            { file: read.file, key: 'entries[0]', message: 'entry is not a map of keys' }
+        ]);
+        expect(read.tasks.entries).toStrictEqual([
+            { key: 'k', extra: 1, provenance: { file: read.file, index: 1 } }
+        ]);
+    });
+
+    it('keeps the keys of an entry and of the meta in the order the file wrote them', () => {
+        const read = readTasks('zeta: 1\nentries:\n  - { name: N, key: a, extra: 1 }\nalpha: 3\n');
+        expect(Object.keys(read.tasks.meta)).toStrictEqual(['zeta', 'alpha']);
+        expect(Object.keys(read.tasks.entries[0])).toStrictEqual([
+            'name',
+            'key',
+            'extra',
+            'provenance'
+        ]);
     });
 });

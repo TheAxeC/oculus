@@ -14,7 +14,8 @@
 // channel's first message lands, so no control is drawn before then; the server reads the map from
 // the configuration on disk at every request, so an edit reaches both.
 
-import { fields } from '../guards.ts';
+import { z } from 'zod';
+import { fields, isMap } from '../guards.ts';
 
 /** An extension with its dot, lowercased, to the bundle id of the application that opens it. */
 export type ProgramApps = Record<string, string>;
@@ -28,6 +29,9 @@ const EXTENSION = /^\.[^./\s]+$/;
  * What a bundle id looks like: two or more dot-separated segments of letters, digits and dashes.
  */
 const BUNDLE_ID = /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
+
+/** A bundle id as the map holds it: a string of that shape. */
+const bundleIdShape = z.string().regex(BUNDLE_ID);
 
 /**
  * The extension of the last segment of a path, lowercased and with its dot, or the empty string for
@@ -45,7 +49,7 @@ export function extensionOf(name: string): string {
 
 /** Whether a string has the shape of an application's bundle id. */
 export function isBundleId(value: string): boolean {
-    return BUNDLE_ID.test(value);
+    return bundleIdShape.safeParse(value).success;
 }
 
 /**
@@ -55,11 +59,12 @@ export function isBundleId(value: string): boolean {
  */
 export function programApps(config: Record<string, unknown>): ProgramApps | null {
     const held = fields(config.open).program_ext;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) return null;
+    if (!isMap(held)) return null;
     const apps: ProgramApps = {};
-    for (const [key, value] of Object.entries(held as Record<string, unknown>)) {
-        if (!EXTENSION.test(key) || typeof value !== 'string' || !isBundleId(value)) return null;
-        apps[key.toLowerCase()] = value;
+    for (const [key, value] of Object.entries(held)) {
+        const app = bundleIdShape.safeParse(value);
+        if (!EXTENSION.test(key) || !app.success) return null;
+        apps[key.toLowerCase()] = app.data;
     }
     return apps;
 }

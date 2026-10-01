@@ -15,9 +15,21 @@ import type {
     ValidationRules,
     Vocabulary
 } from '../model/index.ts';
+import { z } from 'zod';
 import { isMap, byKey, str } from '../helpers/guards.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
-import { JOINT_WORK, PERSON_FIELD, collectionSchema } from './normalise.ts';
+import {
+    itemsShape,
+    listOrOneShape,
+    mapShape,
+    readAs,
+    readOr,
+    rowsShape,
+    survivorsShape,
+    textOrNumberOnlyShape,
+    wordShape
+} from '../shapes/shapes.ts';
+import { JOINT_WORK, PERSON_FIELD, namedSchemaShape } from './normalise.ts';
 import { checkThemes } from './validate-themes.ts';
 
 /** Keys the reader itself adds to every manifest record; no schema names them. */
@@ -127,6 +139,15 @@ const SHAPES: { field: string; kind: 'string' | 'list'; nullable: boolean }[] = 
     { field: 'funding', kind: 'list', nullable: true }
 ];
 
+/** What each kind of `SHAPES` accepts: a text, or a list of anything. */
+const KIND_SHAPES = { string: z.string(), list: itemsShape };
+
+/** A text, which an id of a relation field must be. */
+const idShape = z.string();
+
+/** The ids among a list's items, as the list itself when every item is one. */
+const idsShape = survivorsShape(idShape);
+
 /** What a value is, in the words the shape messages use. */
 function shapeOf(catalog: TextCatalog, value: unknown): string {
     if (value === null) return findingText(catalog, 'findings.shape.is_null');
@@ -135,6 +156,20 @@ function shapeOf(catalog: TextCatalog, value: unknown): string {
     return findingText(catalog, 'findings.shape.is_other', typeof value);
 }
 
+/** The names of a schema written as a list of maps, every one with a `field` text. */
+const fieldRowsShape = z
+    .array(z.object({ field: z.string() }))
+    .transform((rows) => rows.map((row) => row.field));
+
+/**
+ * The names of a schema written as a list: its texts and the `field` of its maps, in order. A list
+ * of maps that all name a field is read by `fieldRowsShape`, the one a schema of the hub is.
+ */
+const listNamesShape = z.union([
+    fieldRowsShape,
+    rowsShape(z.union([z.object({ field: z.string() }).transform((row) => row.field), z.string()]))
+]);
+
 /**
  * The field names the schema holds, whatever shape the config gives it: a list of names, a list of
  * maps with a `field` key, a map with a `fields` map inside (what the hub's manifest-schema.yml
@@ -142,19 +177,10 @@ function shapeOf(catalog: TextCatalog, value: unknown): string {
  * key of every manifest is then a finding; there is no quiet path where the check does not run.
  */
 export function fieldNames(schema: unknown): string[] {
-    if (Array.isArray(schema)) {
-        const names: string[] = [];
-        for (const item of schema) {
-            if (typeof item === 'string') names.push(item);
-            else if (isMap(item) && typeof item.field === 'string') names.push(item.field);
-        }
-        return names;
-    }
-    if (isMap(schema)) {
-        if (isMap(schema.fields)) return Object.keys(schema.fields);
-        return Object.keys(schema);
-    }
-    return [];
+    const list = readAs(listNamesShape, schema);
+    if (list !== null) return list;
+    const map = readAs(mapShape, schema);
+    return map === null ? [] : Object.keys(readOr(mapShape, map.fields, map));
 }
 
 /**
@@ -205,8 +231,9 @@ function checkKeys(
             continue;
         }
         const inner = schema.nested.get(key);
-        const value = manifest[key];
-        if (inner === undefined || !isMap(value)) continue;
+        if (inner === undefined) continue;
+        const value = readAs(mapShape, manifest[key]);
+        if (value === null) continue;
         for (const sub of Object.keys(value)) {
             if (inner.has(sub)) continue;
             findings.push({
@@ -300,10 +327,7 @@ function checkShapes(manifest: RawManifest, catalog: TextCatalog, findings: Find
         const value = manifest[shape.field];
         if (value === undefined) continue;
         if (value === null && shape.nullable) continue;
-        if (value !== null) {
-            const ok = shape.kind === 'list' ? Array.isArray(value) : typeof value === 'string';
-            if (ok) continue;
-        }
+        if (value !== null && KIND_SHAPES[shape.kind].safeParse(value).success) continue;
         findings.push({
             file: manifest.file,
             key: shape.field,
@@ -322,10 +346,9 @@ function checkReferences(
     for (const relation of REFERENCES) {
         const value = manifest[relation.field];
         if (value === undefined || value === null) continue;
-        const named = relation.single ? [value] : Array.isArray(value) ? value : [];
+        const named = relation.single ? [readAs(idShape, value)] : readOr(idsShape, value, []);
         for (const item of named) {
-            if (typeof item !== 'string') continue;
-            if (ids[relation.kind].has(item)) continue;
+            if (item === null || ids[relation.kind].has(item)) continue;
             findings.push({
                 file: manifest.file,
                 key: relation.field,
@@ -337,9 +360,8 @@ function checkReferences(
 
 /** A project's `related:` names other projects; naming itself draws a card that links to itself. */
 function checkSelfRelated(manifest: RawManifest, catalog: TextCatalog, findings: Finding[]): void {
-    const value = manifest.related;
-    if (!Array.isArray(value)) return;
-    for (const item of value) {
+    if (manifest.related === undefined) return;
+    for (const item of readOr(itemsShape, manifest.related, [])) {
         if (item !== manifest.id) continue;
         findings.push({
             file: manifest.file,
@@ -384,10 +406,9 @@ function checkCollaborators(
     catalog: TextCatalog,
     findings: Finding[]
 ): void {
-    const value = manifest.collaborators;
-    if (!Array.isArray(value)) return;
-    for (const item of value) {
-        if (typeof item !== 'string' || keys.has(item)) continue;
+    if (manifest.collaborators === undefined) return;
+    for (const item of readOr(idsShape, manifest.collaborators, [])) {
+        if (keys.has(item)) continue;
         findings.push({
             file: manifest.file,
             key: 'collaborators',
@@ -408,10 +429,8 @@ function checkWaitingOn(
     catalog: TextCatalog,
     findings: Finding[]
 ): void {
-    const value = manifest['waiting-on'];
-    if (!Array.isArray(value)) return;
-    for (const item of value) {
-        if (typeof item !== 'string') continue;
+    if (manifest['waiting-on'] === undefined) return;
+    for (const item of readOr(idsShape, manifest['waiting-on'], [])) {
         if (item === manifest.id) {
             findings.push({
                 file: manifest.file,
@@ -439,11 +458,12 @@ function checkChips(
     catalog: TextCatalog,
     findings: Finding[]
 ): void {
-    const status = manifest.status;
-    if (!isMap(status) || status.chips === undefined) return;
+    const status = readAs(mapShape, manifest.status);
+    if (status?.chips === undefined) return;
     const file = manifest.file;
     const key = 'status.chips';
-    if (!Array.isArray(status.chips)) {
+    const held = readAs(itemsShape, status.chips);
+    if (held === null) {
         findings.push({
             file,
             key,
@@ -455,15 +475,16 @@ function checkChips(
         });
         return;
     }
-    for (const chip of status.chips) {
-        if (typeof chip !== 'string') {
+    for (const one of held) {
+        const chip = readAs(idShape, one);
+        if (chip === null) {
             findings.push({
                 file,
                 key,
                 message: findingText(
                     catalog,
                     'findings.validate.chip_not_a_string',
-                    shapeOf(catalog, chip)
+                    shapeOf(catalog, one)
                 )
             });
             continue;
@@ -514,7 +535,7 @@ function checkCollectionSchema(raw: RawPortfolio, catalog: TextCatalog, findings
         const collection = raw.collections[key];
         const schema = collection.meta.schema;
         if (schema === undefined) continue;
-        if (collectionSchema(schema) !== undefined) continue;
+        if (namedSchemaShape.safeParse(schema).success) continue;
         findings.push({
             file: collection.file,
             key: 'schema',
@@ -537,18 +558,15 @@ function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: F
         const collection = raw.collections[key];
         const names = fieldNames(collection.meta.schema);
         const ident = names.length > 0 ? names[0] : 'title';
+        const values = collection.entries.map((entry) =>
+            readAs(textOrNumberOnlyShape, entry[ident])
+        );
         const counts = new Map<string, number>();
-        for (const entry of collection.entries) {
-            const held = entry[ident];
-            if (typeof held !== 'string' && typeof held !== 'number') continue;
-            const value = String(held);
-            counts.set(value, (counts.get(value) ?? 0) + 1);
+        for (const value of values) {
+            if (value !== null) counts.set(value, (counts.get(value) ?? 0) + 1);
         }
-        collection.entries.forEach((entry, index) => {
-            const held = entry[ident];
-            if (typeof held !== 'string' && typeof held !== 'number') return;
-            const value = String(held);
-            if ((counts.get(value) ?? 0) < 2) return;
+        values.forEach((value, index) => {
+            if (value === null || (counts.get(value) ?? 0) < 2) return;
             findings.push({
                 file: collection.file,
                 key: `entries[${index}].${ident}`,
@@ -586,8 +604,7 @@ function checkPeople(
         }
         const held = entry.affiliations ?? entry.affiliation;
         if (held === undefined || held === null) return;
-        const named = typeof held === 'string' ? [held] : Array.isArray(held) ? held : [held];
-        named.forEach((one, at) => {
+        readOr(listOrOneShape, held, []).forEach((one, at) => {
             if (typeof one === 'string' && organisations.has(one)) return;
             findings.push({
                 file: entry.file,
@@ -699,6 +716,9 @@ function checkFundingIdentity(raw: RawPortfolio, catalog: TextCatalog, findings:
     });
 }
 
+/** The two texts of a funding entry the acknowledgment check reads, the empty text when wrong. */
+const fundingRowShape = z.object({ status: wordShape, title: wordShape });
+
 /** The statuses of a funding entry that a manuscript may have to acknowledge. */
 const ACKNOWLEDGED = new Set(['awarded', 'contributing']);
 
@@ -713,9 +733,8 @@ function checkFundingStatements(
     findings: Finding[]
 ): void {
     raw.registries.funding.entries.forEach((entry, index) => {
-        const status = typeof entry.status === 'string' ? entry.status : '';
+        const { status, title } = readOr(fundingRowShape, entry, { status: '', title: '' });
         if (!ACKNOWLEDGED.has(status)) return;
-        const title = typeof entry.title === 'string' ? entry.title : '';
         const name = entry.key.length > 0 ? entry.key : title;
         const statement = entry.statement;
         if (entry.key.length === 0) {
@@ -765,6 +784,9 @@ function sortFindings(findings: Finding[]): Finding[] {
     });
 }
 
+/** A host row of the career file: a map, whose `status` is the empty text when it is not a text. */
+const hostRowShape = z.object({ status: wordShape });
+
 /**
  * A host of the career file whose `status:` is not one of `career_host_status`. The buttons on a
  * host row are that vocabulary, so a status outside it is a row the board cannot move on.
@@ -772,14 +794,13 @@ function sortFindings(findings: Finding[]): Finding[] {
 function checkHostStatus(raw: RawPortfolio, rules: ValidationRules, findings: Finding[]): void {
     const allowed = rules.vocab.hostStatuses;
     if (allowed === undefined || allowed.length === 0 || raw.career === null) return;
-    const hosts = raw.career.hosts;
-    if (!Array.isArray(hosts)) return;
+    const hosts = readAs(itemsShape, raw.career.hosts);
+    if (hosts === null) return;
     const file = rules.careerFile ?? '';
-    hosts.forEach((held: unknown, index: number) => {
-        if (typeof held !== 'object' || held === null || Array.isArray(held)) return;
-        const row = held as Record<string, unknown>;
-        const status = typeof row.status === 'string' ? row.status : '';
-        if (status === '' || allowed.includes(status)) return;
+    hosts.forEach((held, index) => {
+        const row = readAs(hostRowShape, held);
+        if (row === null || row.status === '' || allowed.includes(row.status)) return;
+        const status = row.status;
         findings.push({
             file,
             key: `hosts[${index}]`,

@@ -97,3 +97,24 @@ describe('the map in the configuration', () => {
         });
     });
 });
+
+describe('the extension map read from a configuration of the wrong shape', () => {
+    it.each([
+        [{}],
+        [{ open: [] }],
+        [{ open: { program_ext: [] } }],
+        [{ open: { program_ext: { pdf: 'com.a.b' } } }],
+        [{ open: { program_ext: { '.pdf': 3 } } }],
+        [{ open: { program_ext: { '.pdf': 'com.a.b', pdf: 'com.c.d' } } }],
+        [{ open: { program_ext: JSON.parse('{"__proto__":"com.a.b"}') as unknown } }]
+    ])('answers null for %j', (config) => {
+        expect(programApps(config)).toBeNull();
+    });
+
+    it('answers the extensions lowercased, and an empty map for an empty one', () => {
+        expect(
+            programApps({ open: { program_ext: { '.PDF': 'com.a.b', '.Md': 'com.c.d' } } })
+        ).toStrictEqual({ '.pdf': 'com.a.b', '.md': 'com.c.d' });
+        expect(programApps({ open: { program_ext: {} } })).toStrictEqual({});
+    });
+});

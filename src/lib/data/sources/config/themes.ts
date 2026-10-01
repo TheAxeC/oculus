@@ -11,16 +11,10 @@ import { join } from 'node:path';
 import { isCodeTheme } from '../../helpers/code-themes.ts';
 import { findingText } from '../../helpers/finding-text.ts';
 import type { Finding } from '../../model/index.ts';
+import { filledText, itemsShape, mapShape, readAs } from '../../shapes/shapes.ts';
 import { glyphCatalog } from './catalogs.ts';
 import { configDir } from './folder.ts';
 import { textCatalog } from './merge.ts';
-
-/** A row of `themes:` as a map, or null for anything else. */
-function rowOf(row: unknown): Record<string, unknown> | null {
-    return typeof row === 'object' && row !== null && !Array.isArray(row)
-        ? (row as Record<string, unknown>)
-        : null;
-}
 
 /**
  * One finding per theme row whose glyph the picker cannot draw and per row that repeats a theme's
@@ -43,14 +37,14 @@ export function themeFindings(engine: string, config: Record<string, unknown>): 
             )
         });
     }
-    const rows = config.themes;
-    if (!Array.isArray(rows)) return findings;
+    const rows = readAs(itemsShape, config.themes);
+    if (rows === null) return findings;
     const glyphs = glyphCatalog(config);
     const seen = new Set<string>();
     rows.forEach((raw, index) => {
-        const row = rowOf(raw);
-        const name = row?.name;
-        if (typeof name !== 'string' || name === '') return;
+        const row = readAs(mapShape, raw);
+        const name = filledText(row?.name);
+        if (name === undefined) return;
         const key = `themes[${index}]`;
         if (seen.has(name)) {
             findings.push({
@@ -61,8 +55,8 @@ export function themeFindings(engine: string, config: Record<string, unknown>): 
             return;
         }
         seen.add(name);
-        const glyph = row?.glyph;
-        if (typeof glyph !== 'string' || glyph === '') {
+        const glyph = filledText(row?.glyph);
+        if (glyph === undefined) {
             findings.push({
                 file,
                 key,

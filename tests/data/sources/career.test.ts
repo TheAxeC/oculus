@@ -6,7 +6,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { CAREER_FILE, readCareer } from '../../../src/lib/data/sources/career.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { career } from '../../../src/lib/data/snapshot/normalise.ts';
+import { career } from '../../../src/lib/data/snapshot/normalise-career.ts';
 import { validate } from '../../../src/lib/data/snapshot/validate.ts';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
 import type { RawPortfolio, ValidationRules } from '../../../src/lib/data/model/index.ts';
@@ -185,5 +185,16 @@ describe('validating a host status', () => {
 
     it('reports nothing when the hub holds no career file', () => {
         expect(validate(portfolio({ career: null }), rules)).toEqual([]);
+    });
+});
+
+describe('reading a career file of the wrong shape', () => {
+    it.each([['[]'], ['3'], ['x'], ['']])('reads a file holding %j as one finding', (body) => {
+        const dir = hub(body);
+        const read = readCareer(dir, CAREER_FILE, CATALOG);
+        expect(read.career).toBeNull();
+        expect(read.findings).toStrictEqual([
+            { file: join(dir, CAREER_FILE), key: '', message: 'is not a map of keys' }
+        ]);
     });
 });

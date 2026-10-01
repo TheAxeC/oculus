@@ -39,3 +39,15 @@ describe('the source editor cap', () => {
         );
     });
 });
+
+describe('the source editor cap over sizes of every kind', () => {
+    it.each([
+        [{ editor: { paint_limit_kb: '5' } }, null],
+        [{ editor: { paint_limit_kb: 0 } }, null],
+        [{ editor: { paint_limit_kb: Number.NaN } }, null],
+        [{ editor: { paint_limit_kb: Number.POSITIVE_INFINITY } }, null],
+        [{ editor: { paint_limit_kb: 2.5 } }, 2560]
+    ])('reads %j as %j', (held, bytes) => {
+        expect(paintLimit(held)).toBe(bytes);
+    });
+});

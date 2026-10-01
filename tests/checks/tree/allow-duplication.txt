@@ -11,11 +11,6 @@
 #
 # The list is a text file rather than a module because its entries with their reasons in TypeScript
 # are a source file several times over the 1000-line rule.
-src/lib/data/sources/career.ts src/lib/data/sources/collections.ts 0b53d19ffb40 the same 9 lines at 32 and 45, to fold into one place
-src/lib/data/sources/collections.ts src/lib/data/sources/feeds.ts 254546075de3 the same 15 lines at 45 and 57, to fold into one place
-src/lib/data/sources/collections.ts src/lib/data/sources/manifests.ts c04395eb71df the same 21 lines at 49 and 93, to fold into one place
-src/lib/data/sources/collections.ts src/lib/data/sources/registries.ts 2c675ba6c971 the same 27 lines at 43 and 75, to fold into one place
-src/lib/data/sources/collections.ts src/lib/data/sources/registries.ts 52307771f8f6 the same 17 lines at 27 and 59, to fold into one place
 src/lib/data/sources/config/merge.ts src/lib/server/transcripts/stores.ts 6ba7db2c1596 the same 10 lines at 81 and 51, to fold into one place
 src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts 22e246596d51 the same 9 lines at 107 and 317, to fold into one place
 src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts 1910d33ebbe8 the same 27 lines at 99 and 20, to fold into one place
@@ -43,15 +38,15 @@ src/lib/views/sources/file/File.svelte src/lib/views/sources/note/Note.svelte 74
 src/lib/views/sources/file/File.svelte src/lib/views/sources/source/Source.svelte 75307d805c57 the same 12 lines at 99 and 276, to fold into one place
 src/lib/views/sources/venues/VenueCard.svelte src/lib/views/structure/domains/DomainCard.svelte d13011ab81f9 the same 10 lines at 148 and 43, to fold into one place
 src/lib/views/structure/domains/DomainCard.svelte src/lib/views/structure/pillars/LineCard.svelte 30795789acd0 the same 15 lines at 39 and 65, to fold into one place
-tests/checks/config/config.test.ts tests/data/sources/calendar-config.test.ts 1cbbb41f5894 the same 12 lines at 29 and 26, to fold into one place
+tests/checks/config/config.test.ts tests/data/sources/config/calendar-config.test.ts 1cbbb41f5894 the same 12 lines at 29 and 26, to fold into one place
 tests/checks/diagrams/diagrams.test.ts tests/checks/diagrams/parsed.test.ts 1d1ce5a4f7d4 the same 9 lines at 46 and 16, to fold into one place
 tests/checks/tree/audits.test.ts tests/checks/tree/boundaries.test.ts c8f66082a9d8 the same 11 lines at 220 and 382, to fold into one place
 tests/checks/tree/audits.test.ts tests/checks/tree/negatives.test.ts 04c8b7ed5d87 the same 12 lines at 219 and 138, to fold into one place
 tests/data/snapshot/normalise.test.ts tests/state/boards/board/board-fixture.ts c1398a1e73c9 the same 11 lines at 289 and 160, to fold into one place
-tests/data/sources/calendar-config.test.ts tests/data/sources/mail-config.test.ts 1af1b9164200 the same 15 lines at 25 and 25, to fold into one place
-tests/data/sources/calendar-config.test.ts tests/data/sources/mail-config.test.ts 1c224db4bd3b the same 9 lines at 17 and 17, to fold into one place
-tests/data/sources/calendar-config.test.ts tests/data/sources/mail-config.test.ts 6b5f31729fcf the same 11 lines at 103 and 109, to fold into one place
-tests/data/sources/calendar-config.test.ts tests/server/accounts/calendar/poll.test.ts 1c224db4bd3b the same 8 lines at 17 and 39, to fold into one place
+tests/data/sources/config/calendar-config.test.ts tests/data/sources/config/mail-config.test.ts 1af1b9164200 the same 15 lines at 25 and 25, to fold into one place
+tests/data/sources/config/calendar-config.test.ts tests/data/sources/config/mail-config.test.ts 1c224db4bd3b the same 9 lines at 17 and 17, to fold into one place
+tests/data/sources/config/calendar-config.test.ts tests/data/sources/config/mail-config.test.ts 6b5f31729fcf the same 11 lines at 103 and 109, to fold into one place
+tests/data/sources/config/calendar-config.test.ts tests/server/accounts/calendar/poll.test.ts 1c224db4bd3b the same 8 lines at 17 and 39, to fold into one place
 tests/data/sources/collections.test.ts tests/data/sources/manifests.test.ts 009d9fe6ad5d the same 17 lines at 26 and 26, to fold into one place
 tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts 33a8d3a93398 the same 19 lines at 26 and 15, to fold into one place
 tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts dd605d6cb92e the same 14 lines at 36 and 25, to fold into one place

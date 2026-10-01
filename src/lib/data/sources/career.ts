@@ -5,11 +5,10 @@
 // is one the vocabulary allows is validate.ts's. A file that is not there is null with no finding,
 // since a hub need not keep a career plan; a file that is there and does not parse is a finding.
 
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse } from 'yaml';
-import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
+import type { TextCatalog } from '../helpers/finding-text.ts';
 import type { Finding } from '../model/index.ts';
+import { readYamlMap } from './yaml-file.ts';
 
 /** The path on the hub today, which the config falls back to when it names none. */
 export const CAREER_FILE = 'registries/career.yml';
@@ -25,31 +24,6 @@ export function readCareer(
 ): { career: Record<string, unknown> | null; findings: Finding[] } {
     const findings: Finding[] = [];
     const path = join(hub, file);
-    let text: string;
-    try {
-        text = readFileSync(path, 'utf8');
-    } catch {
-        return { career: null, findings };
-    }
-    let parsed: unknown;
-    try {
-        parsed = parse(text);
-    } catch (error) {
-        const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        findings.push({
-            file: path,
-            key: '',
-            message: findingText(catalog, 'findings.file.does_not_parse', message)
-        });
-        return { career: null, findings };
-    }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        findings.push({
-            file: path,
-            key: '',
-            message: findingText(catalog, 'findings.file.not_a_map')
-        });
-        return { career: null, findings };
-    }
-    return { career: parsed as Record<string, unknown>, findings };
+    const career = readYamlMap(path, catalog, findings, () => null);
+    return { career, findings };
 }

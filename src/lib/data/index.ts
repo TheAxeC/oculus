@@ -6,7 +6,8 @@
 // what the socket carries; the caller owns the version number and increments it on every rebuild.
 
 import { join } from 'node:path';
-import { isMap } from './helpers/guards.ts';
+import { z } from 'zod';
+import { keysOfShape, optionalTextShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
 import { readManifests } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
@@ -37,35 +38,47 @@ import type {
 /** The one config file the public deck lives in, inside the engine's config directory. */
 export const DECK_FILE = 'present.yml';
 
-function list(value: unknown): unknown[] {
-    return Array.isArray(value) ? value : [];
-}
+/**
+ * One `scan:` rule: a map with a `dir` that is a text, carrying its `type` when that is a text and
+ * its `nested` and `optional` marks when they are true.
+ */
+const scanRuleShape = z
+    .object({
+        dir: z.string(),
+        type: optionalTextShape,
+        nested: z.literal(true).optional().catch(undefined),
+        optional: z.literal(true).optional().catch(undefined)
+    })
+    .transform((item): ScanRule => {
+        const rule: ScanRule = { dir: item.dir };
+        if (item.type !== undefined) rule.type = item.type;
+        if (item.nested !== undefined) rule.nested = item.nested;
+        if (item.optional !== undefined) rule.optional = item.optional;
+        return rule;
+    }) satisfies z.ZodType<ScanRule>;
+
+/** The `scan:` list, the rules that name a directory. */
+const scanRulesShape = rowsShape(scanRuleShape);
 
 /**
  * The `scan:` rules of the layout config. A rule with no `dir` names no directory and is dropped.
  */
 function scanRules(value: unknown): ScanRule[] {
-    const rules: ScanRule[] = [];
-    for (const item of list(value)) {
-        if (!isMap(item) || typeof item.dir !== 'string') continue;
-        const rule: ScanRule = { dir: item.dir };
-        if (typeof item.type === 'string') rule.type = item.type;
-        if (item.nested === true) rule.nested = true;
-        if (item.optional === true) rule.optional = true;
-        rules.push(rule);
-    }
-    return rules;
+    return readOr(scanRulesShape, value, []);
 }
 
+/** One entry of the `collections:` list: a key and a hub-relative file, both texts. */
+const collectionFileShape = z.object({
+    key: z.string(),
+    file: z.string()
+}) satisfies z.ZodType<CollectionFile>;
+
 /** The `collections:` list, each entry a key and a hub-relative file. */
+const collectionFilesShape = rowsShape(collectionFileShape);
+
+/** The `collections:` list as the files it names. */
 function collectionFiles(value: unknown): CollectionFile[] {
-    const files: CollectionFile[] = [];
-    for (const item of list(value)) {
-        if (!isMap(item)) continue;
-        if (typeof item.key !== 'string' || typeof item.file !== 'string') continue;
-        files.push({ key: item.key, file: item.file });
-    }
-    return files;
+    return readOr(collectionFilesShape, value, []);
 }
 
 /** The feed paths on the hub today, for a config that names none of them. */
@@ -81,17 +94,29 @@ const FEED_FILES: FeedFiles = {
     linkedin: 'theaxec.github.io/_linkedin'
 };
 
+/** The name of one vocabulary list entry: its `key` when it is a map, else the entry itself. */
+const vocabKeyShape = z.union([
+    z.object({ key: z.string() }).transform((row) => row.key),
+    z.string()
+]);
+
+/** The names of a keyed vocabulary list, one per entry that has one. */
+const vocabKeysShape = rowsShape(vocabKeyShape);
+
 /**
  * The `key` of every entry of a keyed vocabulary list, `status_legend` being the one that matters.
  */
 function vocabKeys(value: unknown): string[] {
-    const keys: string[] = [];
-    for (const item of list(value)) {
-        if (isMap(item) && typeof item.key === 'string') keys.push(item.key);
-        else if (typeof item === 'string') keys.push(item);
-    }
-    return keys;
+    return readOr(vocabKeysShape, value, []);
 }
+
+/** The deck's `equations_dir`: the text of that key of the deck map. */
+const equationsDirShape = z
+    .object({ equations_dir: z.string() })
+    .transform((deck) => deck.equations_dir);
+
+/** A config path: the text the key holds. */
+const pathShape = z.string();
 
 /**
  * The portfolio's half of the merged config. The six `*_file` keys give six registry paths and the
@@ -105,7 +130,7 @@ export function portfolioConfigFrom(
     engine: string
 ): PortfolioConfig {
     const path = (key: string, fallback: string): string =>
-        typeof merged[key] === 'string' ? merged[key] : fallback;
+        readOr(pathShape, merged[key], fallback);
     const collections = collectionFiles(merged.collections);
     const fundingFile = collections.find((file) => file.key === 'funding')?.file;
 
@@ -120,13 +145,13 @@ export function portfolioConfigFrom(
     };
 
     const vocab: Vocabulary = {
-        types: isMap(merged.type_color) ? Object.keys(merged.type_color) : [],
-        statuses: isMap(merged.status_palette) ? Object.keys(merged.status_palette) : []
+        types: readOr(keysOfShape, merged.type_color, []),
+        statuses: readOr(keysOfShape, merged.status_palette, [])
     };
     const chips = vocabKeys(merged.status_legend);
     if (chips.length > 0) vocab.chips = chips;
-    if (isMap(merged.career_host_status))
-        vocab.hostStatuses = Object.keys(merged.career_host_status);
+    const hostStatuses = readAs(keysOfShape, merged.career_host_status);
+    if (hostStatuses !== null) vocab.hostStatuses = hostStatuses;
     // The lanes a `focus:` may name, plus the ideas backlog: vocab.yml keeps `holding` out of
     // `focus_lanes` on purpose (it is not a lane) and names it through `holding_color`, so it is
     // added here when that colour is configured, which is the same file saying the backlog exists.
@@ -193,8 +218,7 @@ function slides(
 
 /** The deck's `equations_dir`, hub-relative, and the empty string when the deck names none. */
 function equationsDirOf(deck: unknown): string {
-    const held = isMap(deck) ? deck.equations_dir : undefined;
-    return typeof held === 'string' ? held : '';
+    return readOr(equationsDirShape, deck, '');
 }
 
 /**

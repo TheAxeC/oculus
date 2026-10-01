@@ -3,8 +3,15 @@
 
 import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
-import { normalise } from '../../../src/lib/data/snapshot/normalise.ts';
+import {
+    collectionKeys,
+    collectionSchema,
+    followups,
+    normalise,
+    subtasks
+} from '../../../src/lib/data/snapshot/normalise.ts';
 import { fields } from '../../../src/lib/data/helpers/guards.ts';
+import { career } from '../../../src/lib/data/snapshot/normalise-career.ts';
 import type {
     DocPresence,
     RawCollection,
@@ -475,6 +482,24 @@ describe('normalise, the field mapping', () => {
     });
 });
 
+describe('normalise, an entry whose YAML carries a __proto__ key', () => {
+    it('skips the key when it builds the fields', () => {
+        const raw = portfolio();
+        const planted = JSON.parse('{"__proto__":{"injected":"yes"},"title":"t"}') as Record<
+            string,
+            unknown
+        >;
+        raw.collections.events.entries = [
+            { ...planted, provenance: { file: '/hub/events.yml', index: 0 } }
+        ];
+        const found = normalise(raw, []).entities.collections.events.entries[0];
+
+        expect(Object.getPrototypeOf(found.fields)).toBe(Object.prototype);
+        expect(found.fields).not.toHaveProperty('injected');
+        expect(Object.keys(found.fields)).toStrictEqual(['title']);
+    });
+});
+
 describe("normalise, a collection's schema", () => {
     /**
      * The events collection with one `schema:` value under its meta, as the file would carry it.
@@ -631,5 +656,210 @@ describe('normalise, the wire', () => {
         expect(JSON.stringify(normalise(portfolio(), []))).toBe(
             JSON.stringify(normalise(portfolio(), []))
         );
+    });
+});
+
+describe('normalise, the readers of an entry over values of the wrong shape', () => {
+    it.each([
+        ['str', [{ do: 'str' }]],
+        [{}, []],
+        [['a'], [{ do: 'a' }]],
+        [[3], []],
+        [{ do: 3 }, []],
+        [{ do: 'x', after: 'y' }, [{ do: 'x', after: 'y' }]],
+        [{ do: 'x', after: 3 }, [{ do: 'x' }]],
+        [
+            ['a', { do: 'b', after: 'c' }, 3, { do: ' ' }],
+            [{ do: 'a' }, { do: 'b', after: 'c' }]
+        ],
+        [null, []],
+        [3, []]
+    ])('reads the followup %j as %j', (value, notes) => {
+        expect(followups(value)).toStrictEqual(notes);
+    });
+
+    it.each([
+        ['str', []],
+        [{}, []],
+        [null, []],
+        [7, []],
+        [
+            ['a', { do: 'b' }],
+            [
+                { key: '0', do: 'a', done: false },
+                { key: '1', do: 'b', done: false }
+            ]
+        ],
+        [
+            {
+                a: 'x',
+                b: { do: 3 },
+                c: { do: 'y', done: 'true' },
+                d: { do: 'z', done: true, deadline: 3, snooze: 's' },
+                e: 3,
+                f: null,
+                g: { do: 'w', deadline: 'd1' }
+            },
+            [
+                { key: 'a', do: 'x', done: false },
+                { key: 'c', do: 'y', done: false },
+                { key: 'd', do: 'z', done: true, snooze: 's' },
+                { key: 'g', do: 'w', deadline: 'd1', done: false }
+            ]
+        ],
+        [[3, ' ', { do: 'q', done: true }], [{ key: '2', do: 'q', done: true }]]
+    ])('reads the subtasks %j as %j', (value, rows) => {
+        expect(subtasks(value)).toStrictEqual(rows);
+    });
+
+    it.each([
+        ['str', undefined],
+        [{}, undefined],
+        [['x'], undefined],
+        [null, undefined],
+        [[], []],
+        [[{ field: 3, type: 't' }], undefined],
+        [[{ key: 'k', required: 'yes' }], undefined],
+        [[{ key: 3 }], undefined],
+        [[{ field: 'a', type: 'text' }, 3], undefined],
+        [[{ field: 'a', type: 'text' }], [{ field: 'a', type: 'text' }]],
+        [
+            [
+                {
+                    field: 'a',
+                    type: 'text',
+                    required: 'yes',
+                    options: [1, 'a'],
+                    label: 3,
+                    help: 'h',
+                    options_from: 'x'
+                }
+            ],
+            [{ field: 'a', type: 'text', options: ['a'], optionsFrom: 'x', help: 'h' }]
+        ],
+        [[{ field: 'a', type: 'text', options: 'x' }], [{ field: 'a', type: 'text', options: [] }]],
+        [
+            [
+                { field: 'a', type: 'text', required: true },
+                { field: 'b', type: 'text', required: false }
+            ],
+            [
+                { field: 'a', type: 'text', required: true },
+                { field: 'b', type: 'text', required: false }
+            ]
+        ]
+    ])('reads the schema %j as %j', (value, schema) => {
+        expect(collectionSchema(value)).toStrictEqual(schema);
+    });
+
+    it('reads the collection keys that name a collection of their own, once each', () => {
+        const keys = [
+            3,
+            { key: '' },
+            { key: 'registry key' },
+            { key: 'a' },
+            { key: 'a' },
+            'k',
+            null,
+            { key: 'venues' },
+            { key: 'data' },
+            { key: 'b' }
+        ];
+        expect(collectionKeys({ collections: keys })).toStrictEqual(['registry key', 'a', 'b']);
+        for (const held of ['x', {}, null, undefined]) {
+            expect(collectionKeys({ collections: held })).toStrictEqual([]);
+        }
+    });
+
+    it('reads a project whose year is not a finite number and whose status is not a map', () => {
+        const raw = portfolio();
+        raw.manifests.push(
+            manifest({ title: 'G', year: Number.NaN, status: [] }, 'gamma'),
+            manifest({ title: 'H', year: '2020', status: 'done' }, 'delta')
+        );
+        const found = normalise(raw, []).entities.projects;
+        for (const id of ['gamma', 'delta']) {
+            expect('year' in found[id]).toBe(false);
+            expect('statusLine' in found[id]).toBe(false);
+            expect(found[id].chips).toStrictEqual([]);
+        }
+    });
+});
+
+describe('normalise, the career strategy over values of the wrong shape', () => {
+    const EMPTY = {
+        title: '',
+        situation: [],
+        order: [],
+        hosts: [],
+        hostCriteria: [],
+        notHosts: [],
+        eligibility: null,
+        dropped: []
+    };
+
+    it('answers null for no file', () => {
+        expect(career(null)).toBeNull();
+    });
+
+    it.each([
+        [{}],
+        [{ hosts: 'x', order: [3], situation: [], not_hosts: 'x', dropped: 'x', eligibility: 3 }],
+        [{ situation: [], hosts: {}, order: {}, not_hosts: {}, dropped: {}, eligibility: [] }],
+        [{ eligibility: { rule: 3 } }]
+    ])('reads %j as an empty strategy', (raw) => {
+        expect(career(raw)).toStrictEqual(EMPTY);
+    });
+
+    it('reads each row of each section by its own shape', () => {
+        expect(
+            career({
+                hosts: [
+                    3,
+                    { name: 3 },
+                    { name: ' ' },
+                    { name: 'N', status: 3, x: 's', y: 3, z: ' ', note: '[proposal: Strong] hello' }
+                ],
+                order: [
+                    3,
+                    'task',
+                    ' ',
+                    { task: 3 },
+                    { task: ' ' },
+                    { task: 't', when: 3, note: 'n' }
+                ],
+                situation: { a: 'x', b: 3, c: null },
+                not_hosts: [3, 'who', { who: 3 }, { who: 'w', why: 3 }, { who: 'w2', why: 'y' }],
+                dropped: [{ what: 'x' }, 'y', 5],
+                host_criteria: ['a', 3],
+                title: 3,
+                milestone: 3,
+                order_note: 3
+            })
+        ).toStrictEqual({
+            title: '',
+            situation: [{ label: 'a', value: 'x' }],
+            order: [{ task: 'task' }, { task: 't', note: 'n' }],
+            hosts: [{ name: 'N', status: 'candidate', scores: { x: 's' }, note: 'hello' }],
+            hostCriteria: ['a'],
+            notHosts: [{ who: 'who' }, { who: 'w' }, { who: 'w2', why: 'y' }],
+            eligibility: null,
+            dropped: [{ what: 'x' }, { what: 'y' }]
+        });
+    });
+
+    it('reads the eligibility rule as a text, a list or neither', () => {
+        expect(career({ eligibility: { rule: 'single', shots: 'x' } })?.eligibility).toStrictEqual({
+            rule: ['single'],
+            shots: []
+        });
+        expect(
+            career({ eligibility: { rule: ['a', 3], shots: ['s'], caveat: 3 } })?.eligibility
+        ).toStrictEqual({ rule: ['a'], shots: ['s'] });
+        expect(career({ eligibility: { rule: 3, caveat: 'c' } })?.eligibility).toStrictEqual({
+            rule: [],
+            shots: [],
+            caveat: 'c'
+        });
     });
 });

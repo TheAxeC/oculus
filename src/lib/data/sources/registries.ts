@@ -3,10 +3,10 @@
 // It validates nothing and resolves nothing. Every failure is a Finding; nothing here throws, so a
 // missing or broken registry costs its own entries and no more.
 
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
+import { filledText, itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
+import { readYamlMap } from './yaml-file.ts';
 import type {
     Finding,
     RawRegistry,
@@ -59,42 +59,6 @@ function empty(): RawRegistry {
     return { entries: [], meta: {} };
 }
 
-/** Read and parse one registry file. A map is returned; anything else is a finding and null. */
-function readFile(
-    file: string,
-    catalog: TextCatalog,
-    findings: Finding[]
-): Record<string, unknown> | null {
-    let text: string;
-    try {
-        text = readFileSync(file, 'utf8');
-    } catch {
-        findings.push({
-            file,
-            key: '',
-            message: findingText(catalog, 'findings.registries.file_missing')
-        });
-        return null;
-    }
-    let parsed: unknown;
-    try {
-        parsed = parse(text);
-    } catch (error) {
-        const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        findings.push({
-            file,
-            key: '',
-            message: findingText(catalog, 'findings.file.does_not_parse', message)
-        });
-        return null;
-    }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        findings.push({ file, key: '', message: findingText(catalog, 'findings.file.not_a_map') });
-        return null;
-    }
-    return parsed as Record<string, unknown>;
-}
-
 /**
  * One registry: its entries in file order with provenance, and every other top-level key as meta.
  */
@@ -107,16 +71,19 @@ function readRegistry(
 ): RawRegistry {
     const shape = SHAPES[name];
     const file = join(hub, relPath);
-    const data = readFile(file, catalog, findings);
+    const data = readYamlMap(file, catalog, findings, () =>
+        findingText(catalog, 'findings.registries.file_missing')
+    );
     if (data === null) return empty();
 
+    // An own `__proto__` key is skipped: assigning to it would replace the new map's prototype.
     const meta: RegistryMeta = {};
     for (const [key, value] of Object.entries(data)) {
-        if (key !== shape.list) meta[key] = value;
+        if (key !== shape.list && key !== '__proto__') meta[key] = value;
     }
 
-    const list = data[shape.list];
-    if (!Array.isArray(list)) {
+    const list = readAs(itemsShape, data[shape.list]);
+    if (list === null) {
         const message =
             shape.list in data
                 ? findingText(catalog, 'findings.file.list_not_a_list', shape.list)
@@ -126,9 +93,10 @@ function readRegistry(
     }
 
     const entries: RawRegistryEntry[] = [];
-    list.forEach((item: unknown, index: number) => {
+    list.forEach((item, index) => {
         const where = `${shape.list}[${index}]`;
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+        const raw = readAs(mapShape, item);
+        if (raw === null) {
             findings.push({
                 file,
                 key: where,
@@ -136,11 +104,8 @@ function readRegistry(
             });
             return;
         }
-        const raw = item as Record<string, unknown>;
-        const id = raw[shape.idField];
-        let key = '';
-        if (typeof id === 'string' && id.length > 0) key = id;
-        else if (shape.idRequired) {
+        const key = filledText(raw[shape.idField]) ?? '';
+        if (key === '' && shape.idRequired) {
             findings.push({
                 file,
                 key: where,

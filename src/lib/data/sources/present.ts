@@ -16,8 +16,18 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { PRESENT_DOC } from '../helpers/deck.ts';
-import { byKey, fields, isMap, str, strings } from '../helpers/guards.ts';
+import { z } from 'zod';
+import { byKey, fields, str, strings } from '../helpers/guards.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
+import {
+    itemsShape,
+    mapShape,
+    optionalTextShape,
+    readAs,
+    readOr,
+    rowsShape,
+    wordShape
+} from '../shapes/shapes.ts';
 import { readFrontmatter, splitFrontmatter } from './docs.ts';
 import type {
     Finding,
@@ -69,57 +79,71 @@ function isFile(path: string): boolean {
     }
 }
 
+/** The `tag:` map: its `class` and `text` when they are texts, nothing when it holds neither. */
+const tagShape = z
+    .object({ class: optionalTextShape, text: optionalTextShape })
+    .transform((value): PresentTag | undefined => {
+        const held: PresentTag = {};
+        if (value.class !== undefined) held.class = value.class;
+        if (value.text !== undefined) held.text = value.text;
+        return Object.keys(held).length === 0 ? undefined : held;
+    });
+
+/** The `eli5:` callout: its `purpose` and `plain` when they are texts, and nothing when neither. */
+const eli5Shape = z
+    .object({ purpose: optionalTextShape, plain: optionalTextShape })
+    .transform((value): PresentEli5 | undefined => {
+        const held: PresentEli5 = {};
+        if (value.purpose !== undefined) held.purpose = value.purpose;
+        if (value.plain !== undefined) held.plain = value.plain;
+        return Object.keys(held).length === 0 ? undefined : held;
+    });
+
+/** One `specs:` chip. A half that is missing or is not a text is the empty string. */
+const specShape = z.object({ label: wordShape, value: wordShape }) satisfies z.ZodType<PresentSpec>;
+
+/** One `panels:` visual, kept when it carries any of its four texts. */
+const panelShape = z
+    .object({
+        figure: optionalTextShape,
+        diagram_html: optionalTextShape,
+        caption: optionalTextShape,
+        explain: optionalTextShape
+    })
+    .transform((value): PresentPanel => {
+        const panel: PresentPanel = {};
+        if (value.figure !== undefined) panel.figure = value.figure;
+        if (value.diagram_html !== undefined) panel.diagramHtml = value.diagram_html;
+        if (value.caption !== undefined) panel.caption = value.caption;
+        if (value.explain !== undefined) panel.explain = value.explain;
+        return panel;
+    })
+    .refine((panel) => Object.keys(panel).length > 0) satisfies z.ZodType<PresentPanel>;
+
 /** The `tag:` map, or nothing when the slide declares none. */
 function tag(value: unknown): PresentTag | undefined {
-    if (!isMap(value)) return undefined;
-    const held: PresentTag = {};
-    const name = str(value.class);
-    const text = str(value.text);
-    if (name !== undefined) held.class = name;
-    if (text !== undefined) held.text = text;
-    return Object.keys(held).length === 0 ? undefined : held;
+    return readOr(tagShape, value, undefined);
 }
 
 /** The `eli5:` callout, or nothing when the slide declares none. */
 function eli5(value: unknown): PresentEli5 | undefined {
-    if (!isMap(value)) return undefined;
-    const held: PresentEli5 = {};
-    const purpose = str(value.purpose);
-    const plain = str(value.plain);
-    if (purpose !== undefined) held.purpose = purpose;
-    if (plain !== undefined) held.plain = plain;
-    return Object.keys(held).length === 0 ? undefined : held;
+    return readOr(eli5Shape, value, undefined);
 }
+
+/** The `specs:` list, one chip per entry. */
+const specsShape = rowsShape(specShape);
 
 /** The `specs:` chips. An entry missing either half carries the empty string for it. */
 function specs(value: unknown): PresentSpec[] {
-    if (!Array.isArray(value)) return [];
-    const held: PresentSpec[] = [];
-    for (const item of value) {
-        if (!isMap(item)) continue;
-        held.push({ label: str(item.label) ?? '', value: str(item.value) ?? '' });
-    }
-    return held;
+    return readOr(specsShape, value, []);
 }
+
+/** The `panels:` list, one visual per usable entry. */
+const panelsShape = rowsShape(panelShape);
 
 /** The `panels:` visuals, each a figure name or inline diagram markup with its words. */
 function panels(value: unknown): PresentPanel[] {
-    if (!Array.isArray(value)) return [];
-    const held: PresentPanel[] = [];
-    for (const item of value) {
-        if (!isMap(item)) continue;
-        const panel: PresentPanel = {};
-        const figure = str(item.figure);
-        const diagram = str(item.diagram_html);
-        const caption = str(item.caption);
-        const explain = str(item.explain);
-        if (figure !== undefined) panel.figure = figure;
-        if (diagram !== undefined) panel.diagramHtml = diagram;
-        if (caption !== undefined) panel.caption = caption;
-        if (explain !== undefined) panel.explain = explain;
-        if (Object.keys(panel).length > 0) held.push(panel);
-    }
-    return held;
+    return readOr(panelsShape, value, []);
 }
 
 /** One slide out of one front-matter map, under the id the caller minted for it. */
@@ -265,13 +289,13 @@ export function readPresent(
     const slides: PresentSlide[] = [];
     const seen = new Set<string>();
 
-    const own = front.present;
-    if (isMap(own)) slides.push(slide(id, id, own));
+    const own = readAs(mapShape, front.present);
+    if (own !== null) slides.push(slide(id, id, own));
 
-    const more = Array.isArray(front.slides) ? front.slides : [];
-    for (const [at, item] of more.entries()) {
-        if (!isMap(item)) continue;
-        const slug = str(item.id);
+    for (const [at, item] of readOr(itemsShape, front.slides, []).entries()) {
+        const row = readAs(mapShape, item);
+        if (row === null) continue;
+        const slug = str(row.id);
         if (slug === undefined || slug === '') {
             findings.push({
                 file,
@@ -280,7 +304,7 @@ export function readPresent(
             });
             continue;
         }
-        slides.push(slide(`${id}/${slug}`, id, item));
+        slides.push(slide(`${id}/${slug}`, id, row));
     }
 
     // A file that declares no slide is the narrative alone, which is the one slide it still draws.
@@ -343,10 +367,10 @@ export function deckFindings(
             message: findingText(catalog, 'findings.present.slide_is_deck_key', id)
         });
     }
-    const raw = Array.isArray(map.order) ? map.order : [];
-    for (const [at, item] of raw.entries()) {
+    for (const [at, item] of readOr(itemsShape, map.order, []).entries()) {
         const key = `deck.order[${at}]`;
-        if (!isMap(item)) {
+        const entry = readAs(mapShape, item);
+        if (entry === null) {
             findings.push({
                 file,
                 key,
@@ -354,8 +378,8 @@ export function deckFindings(
             });
             continue;
         }
-        const kind = str(item.slide);
-        const ref = str(item.ref);
+        const kind = str(entry.slide);
+        const ref = str(entry.ref);
         if (kind === undefined) {
             findings.push({
                 file,

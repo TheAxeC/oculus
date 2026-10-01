@@ -12,8 +12,10 @@
 // `arrangements:` and no earlier entry names the same key. The page key is what a saved page is
 // tied to, so two entries on one key would be two buttons over one page; the second is dropped.
 
+import { z } from 'zod';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import type { Finding } from '../../model/index.ts';
+import { itemsShape, mapShape, readAs, text } from '../../shapes/shapes.ts';
 
 /** One button of the rail: its words, its glyph name, and the arrangement key of its page. */
 export type RailEntry = { label: string; glyph: string; page: string };
@@ -28,16 +30,12 @@ export type RailProblem = { index: number; why: RailWhy; page: string };
 /** The entries the rail draws, in order, and every entry it leaves out with the reason. */
 export type RailRead = { entries: RailEntry[]; problems: RailProblem[] };
 
-/** A map of a parsed value, or null for anything that is not one. */
-function mapOf(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
+/** A string with something in it besides white space, answered as it was written. */
+const unblankShape = z.string().regex(/\S/);
 
 /** A non-empty string, or null. */
 function word(value: unknown): string | null {
-    return typeof value === 'string' && value.trim() !== '' ? value : null;
+    return readAs(unblankShape, value);
 }
 
 /**
@@ -47,10 +45,10 @@ function word(value: unknown): string | null {
  * while it is typed in, and what the server records before and after a write.
  */
 export function railRows(raw: unknown): RailEntry[] | null {
-    if (!Array.isArray(raw)) return null;
-    return raw.map((row) => {
-        const one = mapOf(row) ?? {};
-        const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+    const list = readAs(itemsShape, raw);
+    if (list === null) return null;
+    return list.map((row) => {
+        const one = readAs(mapShape, row) ?? {};
         return { label: text(one.label), glyph: text(one.glyph), page: text(one.page) };
     });
 }
@@ -61,7 +59,7 @@ export function railRows(raw: unknown): RailEntry[] | null {
  * glyph against one.
  */
 export function glyphNames(config: Record<string, unknown> | undefined): string[] | undefined {
-    const held = mapOf(config?.glyphs);
+    const held = readAs(mapShape, config?.glyphs);
     return held === null ? undefined : Object.keys(held);
 }
 
@@ -70,7 +68,7 @@ export function glyphNames(config: Record<string, unknown> | undefined): string[
  * none, so every rail entry is then refused for naming an unknown page.
  */
 export function arrangementKeys(raw: unknown): string[] {
-    const held = mapOf(raw);
+    const held = readAs(mapShape, raw);
     return held === null ? [] : Object.keys(held);
 }
 
@@ -82,9 +80,10 @@ export function arrangementKeys(raw: unknown): string[] {
 export function readRail(raw: unknown, arrangements: string[], glyphs?: string[]): RailRead {
     const entries: RailEntry[] = [];
     const problems: RailProblem[] = [];
-    if (!Array.isArray(raw)) return { entries, problems };
-    for (const [index, item] of raw.entries()) {
-        const held = mapOf(item);
+    const list = readAs(itemsShape, raw);
+    if (list === null) return { entries, problems };
+    for (const [index, item] of list.entries()) {
+        const held = readAs(mapShape, item);
         if (held === null) {
             problems.push({ index, why: 'shape', page: '' });
             continue;
@@ -121,7 +120,7 @@ export function railFindings(
 ): Finding[] {
     const raw = config.rail;
     if (raw === undefined) return [];
-    if (!Array.isArray(raw)) {
+    if (readAs(itemsShape, raw) === null) {
         return [{ file, key: 'rail', message: findingText(catalog, 'findings.rail.not_a_list') }];
     }
     const read = readRail(raw, arrangementKeys(config.arrangements), glyphNames(config));

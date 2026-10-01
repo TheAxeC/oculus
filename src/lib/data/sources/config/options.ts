@@ -15,6 +15,7 @@
 // any fixed sense and a catalog line per member would be a line per row of someone's data.
 
 import { byKey, isMap } from '../../helpers/guards.ts';
+import { mapShape, readOr, unchangedAs } from '../../shapes/shapes.ts';
 
 /** The controls an option is set with, which decide what a value of the option may be. */
 export const CONTROLS = ['toggle', 'number', 'text', 'choice', 'list'] as const;
@@ -40,6 +41,9 @@ export type CatalogEntry = {
 /** Config file name, then dotted key path, then entry. */
 export type Catalog = Record<string, Record<string, CatalogEntry>>;
 
+/** The catalog as a map, answered as it was given and held to the type above. */
+const catalogShape = unchangedAs<Catalog>(mapShape);
+
 /**
  * The catalog held by the merged config's `options` key, and an empty one when the key is missing
  * or is not a map. The shape inside is not checked here: the check in
@@ -47,8 +51,7 @@ export type Catalog = Record<string, Record<string, CatalogEntry>>;
  * so a reader may rely on them.
  */
 export function catalogOf(config: Record<string, unknown>): Catalog {
-    const held = config.options;
-    return isMap(held) ? (held as Catalog) : {};
+    return readOr(catalogShape, config.options, {});
 }
 
 /** Whether the catalog describes this path as a family, which is an entry holding `fields`. */

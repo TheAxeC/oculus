@@ -11,8 +11,8 @@ import {
     engineDir,
     loadConfig,
     loadLocal
-} from '../../../src/lib/data/sources/config.ts';
-import { it, scratchDir } from '../../fixtures/scratch.ts';
+} from '../../../../src/lib/data/sources/config.ts';
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const made: string[] = [];
 

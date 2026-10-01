@@ -3,11 +3,12 @@
 // validates nothing and resolves nothing. Every failure is a Finding; nothing here throws, so one
 // unparseable manifest costs its own record and no more.
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import type { Finding, RawManifest, ScanRule, Tier } from '../model/index.ts';
+import { optionalText } from '../shapes/shapes.ts';
+import { errorLine, readYamlMap } from './yaml-file.ts';
 
 /** Folder names the walk never descends into: a project's own code and attic hold no manifests. */
 const NEVER_DESCEND = ['code', 'attic'];
@@ -82,31 +83,6 @@ function nestedProjects(base: string, segments: string[] = []): string[][] {
     return found;
 }
 
-/** Read and parse one project.yml. A map is returned; anything else is a finding and null. */
-function readManifest(
-    file: string,
-    catalog: TextCatalog,
-    findings: Finding[]
-): Record<string, unknown> | null {
-    let parsed: unknown;
-    try {
-        parsed = parse(readFileSync(file, 'utf8'));
-    } catch (error) {
-        const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        findings.push({
-            file,
-            key: '',
-            message: findingText(catalog, 'findings.file.does_not_parse', message)
-        });
-        return null;
-    }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        findings.push({ file, key: '', message: findingText(catalog, 'findings.file.not_a_map') });
-        return null;
-    }
-    return parsed as Record<string, unknown>;
-}
-
 /**
  * Build one record. Provenance wins over the manifest for `id`, and for `type` on a flat tier;
  * the manifest's own values are kept (`manifestId`) or reported (`type`), never silently replaced.
@@ -153,8 +129,8 @@ function record(
                 )
             });
         }
-    } else if (typeof data.type === 'string') {
-        type = data.type;
+    } else {
+        type = optionalText(data.type);
     }
 
     const built: RawManifest = { ...data, file, folder, id, tier, ghost: false };
@@ -229,7 +205,9 @@ export function readManifests(
                 manifests.push(ghost(hub, folderPath, tier, rule.type));
                 continue;
             }
-            const data = readManifest(join(folderPath, MANIFEST), catalog, findings);
+            const data = readYamlMap(join(folderPath, MANIFEST), catalog, findings, (error) =>
+                findingText(catalog, 'findings.file.does_not_parse', errorLine(error))
+            );
             if (data === null) continue;
             const category = rule.nested && segments.length > 1 ? segments[0] : undefined;
             manifests.push(

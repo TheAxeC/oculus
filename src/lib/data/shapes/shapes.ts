@@ -1,7 +1,10 @@
-// Layer 1, data. The zod helpers every reader of an untyped value shares, in the server and in the
-// state layer: a schema that answers the value it was given, the map, number and filled-text
-// schemas, the whole-number and string-list schemas, the quick path `quickly` builds over a schema
-// full of `.catch` repairs, and the plain readers `readAs` and `text`. They sit in a folder of
+// Layer 1, data. The zod helpers every reader of an untyped value shares, in the data folder, the
+// server and the state layer: a schema that answers the value it was given, the map, number and
+// filled-text schemas (`mapShape`, `keysOfShape`, `valuesOfShape`, `filledTextShape`,
+// `optionalTextShape`, `textOrNumberOnlyShape`), the whole-number schema `wholeShape`, the list
+// schemas (`itemsShape`, a list of anything, and `optionalItemsShape`, an optional list of
+// strings), the quick path `quickly` builds over a schema full of `.catch` repairs, and the plain
+// readers `readAs`, `readOr`, `filledText`, `optionalText` and `text`. They sit in a folder of
 // their own so every data folder above data/helpers can import them, and apart from the server's
 // json.ts, which can reach the disk: the write diagram draws a module as a writer when anything it
 // imports can write, and a schema helper never does.
@@ -32,16 +35,40 @@ export function unchangedAs<T>(shape: z.ZodType): z.ZodType<T> {
 export const anyNumberShape = z.custom<number>((value) => typeof value === 'number');
 
 /** A map of any keys and values: what `isMap` accepts, answered as it was given. */
-export const mapShape = unchanged(z.looseObject({}));
+export const mapShape = unchangedAs<Record<string, unknown>>(z.object({}));
+
+/** The own keys of a map in their order, an own `__proto__` key included. */
+export const keysOfShape = mapShape.transform((map) => Object.keys(map));
+
+/**
+ * The own values of a map in the order of their keys, an own `__proto__` key included, each read by
+ * `value`. A value that is no map fails, and so does a map with one value `value` refuses.
+ */
+export function valuesOfShape<T>(value: z.ZodType<T>): z.ZodType<T[]> {
+    return mapShape.transform((map) => Object.values(map)).pipe(z.array(value));
+}
 
 /** A text field that carries something: absent unless it is a non-empty string. */
 export const filledTextShape = z.string().min(1).optional().catch(undefined);
 
+/** The text of a value that carries something, and undefined for any other value. */
+export function filledText(value: unknown): string | undefined {
+    return filledTextShape.safeParse(value).data;
+}
+
 /** A text field that may be empty: absent unless it is a string. */
 export const optionalTextShape = z.string().optional().catch(undefined);
 
+/** The text of a value that is a string, empty or not, and undefined for any other value. */
+export function optionalText(value: unknown): string | undefined {
+    return optionalTextShape.safeParse(value).data;
+}
+
+/** A string, or any number (`NaN` and the infinities included) written out; else it fails. */
+export const textOrNumberOnlyShape = z.union([z.string(), anyNumberShape.transform(String)]);
+
 /** A string, or any number (`NaN` and the infinities included) written out, else the empty text. */
-export const textOrNumberShape = z.union([z.string(), anyNumberShape.transform(String)]).catch('');
+export const textOrNumberShape = textOrNumberOnlyShape.catch('');
 
 /**
  * The two fields most tabs keep in their saved state: `search`, the empty text unless it is a
@@ -179,6 +206,12 @@ export function readAs<T>(shape: z.ZodType<T>, value: unknown): T | null {
     return parsed.success ? parsed.data : null;
 }
 
+/** What `shape` makes of the value, or `fallback` when it refuses it. */
+export function readOr<T>(shape: z.ZodType<T>, value: unknown, fallback: T): T {
+    const parsed = shape.safeParse(value);
+    return parsed.success ? parsed.data : fallback;
+}
+
 /** A string value, or the empty string for anything else. */
 export function text(value: unknown): string {
     return typeof value === 'string' ? value : '';
@@ -201,6 +234,9 @@ export const keyedRowsShape = z.union([
 
 /** An object field that holds strings: its string items, and none when absent or not a list. */
 export const fieldItemsShape = stringItemsShape.catch([]);
+
+/** The string items of a list when the field is present, and absent when it is not. */
+export const optionalItemsShape = stringItemsShape.optional();
 
 /** An object field that may hold anything, absent included, which a bare `z.unknown()` is not. */
 export const anyValueShape = z.unknown().optional();

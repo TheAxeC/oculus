@@ -15,6 +15,8 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import type { DocPresence, Finding } from '../model/index.ts';
+import { mapShape, readAs } from '../shapes/shapes.ts';
+import { errorLine } from './yaml-file.ts';
 
 /** One Markdown document: its body, and the leading YAML block when it had one. */
 export type Doc = {
@@ -114,21 +116,21 @@ export function readFrontmatter(
     try {
         parsed = parse(block) ?? {};
     } catch (error) {
-        const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
         return {
             file: path,
             key: 'frontmatter',
-            message: findingText(catalog, 'findings.file.does_not_parse', message)
+            message: findingText(catalog, 'findings.file.does_not_parse', errorLine(error))
         };
     }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    const frontmatter = readAs(mapShape, parsed);
+    if (frontmatter === null) {
         return {
             file: path,
             key: 'frontmatter',
             message: findingText(catalog, 'findings.file.not_a_map')
         };
     }
-    return { frontmatter: parsed as Record<string, unknown> };
+    return { frontmatter };
 }
 
 /**

@@ -8,11 +8,11 @@
 // carried as entities; this reader knows that the data registry lists records under `datasets:` and
 // every other collection lists them under `entries:`.
 
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { byKey } from '../helpers/guards.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
-import { parse } from 'yaml';
+import { itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
+import { readYamlMap } from './yaml-file.ts';
 import type { CollectionFile, Finding, RawCollection, RawEntry } from '../model/index.ts';
 
 /** A key and a hub-relative path from the `collections:` list; declared with the other types. */
@@ -27,42 +27,6 @@ function empty(key: string, file: string): RawCollection {
     return { key, file, meta: {}, entries: [] };
 }
 
-/** Read and parse one collection file. A map is returned; anything else is a finding and null. */
-function readFile(
-    file: string,
-    catalog: TextCatalog,
-    findings: Finding[]
-): Record<string, unknown> | null {
-    let text: string;
-    try {
-        text = readFileSync(file, 'utf8');
-    } catch {
-        findings.push({
-            file,
-            key: '',
-            message: findingText(catalog, 'findings.collections.file_missing')
-        });
-        return null;
-    }
-    let parsed: unknown;
-    try {
-        parsed = parse(text);
-    } catch (error) {
-        const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        findings.push({
-            file,
-            key: '',
-            message: findingText(catalog, 'findings.file.does_not_parse', message)
-        });
-        return null;
-    }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        findings.push({ file, key: '', message: findingText(catalog, 'findings.file.not_a_map') });
-        return null;
-    }
-    return parsed as Record<string, unknown>;
-}
-
 /**
  * One collection: its entries in file order with provenance, and every other top-level key as meta.
  */
@@ -73,17 +37,20 @@ function readCollection(
     findings: Finding[]
 ): RawCollection {
     const file = join(hub, asked.file);
-    const data = readFile(file, catalog, findings);
+    const data = readYamlMap(file, catalog, findings, () =>
+        findingText(catalog, 'findings.collections.file_missing')
+    );
     if (data === null) return empty(asked.key, file);
     const listName = listKey(asked.key);
 
+    // An own `__proto__` key is skipped: assigning to it would replace the new map's prototype.
     const meta: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
-        if (key !== listName) meta[key] = value;
+        if (key !== listName && key !== '__proto__') meta[key] = value;
     }
 
-    const list = data[listName];
-    if (!Array.isArray(list)) {
+    const list = readAs(itemsShape, data[listName]);
+    if (list === null) {
         const message =
             listName in data
                 ? findingText(catalog, 'findings.file.list_not_a_list', listName)
@@ -93,8 +60,9 @@ function readCollection(
     }
 
     const entries: RawEntry[] = [];
-    list.forEach((item: unknown, index: number) => {
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+    list.forEach((item, index) => {
+        const raw = readAs(mapShape, item);
+        if (raw === null) {
             findings.push({
                 file,
                 key: `${listName}[${index}]`,
@@ -102,7 +70,7 @@ function readCollection(
             });
             return;
         }
-        entries.push({ ...(item as Record<string, unknown>), provenance: { file, index } });
+        entries.push({ ...raw, provenance: { file, index } });
     });
 
     return { key: asked.key, file, meta, entries };

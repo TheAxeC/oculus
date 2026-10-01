@@ -9,6 +9,7 @@ import {
     equationIsImage,
     readPresent
 } from '../../../src/lib/data/sources/present.ts';
+import { deckOrder, savedKeys } from '../../../src/lib/data/helpers/deck.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
@@ -329,5 +330,119 @@ describe('deckFindings', () => {
     it('says nothing about a saved selection or order naming a slide that is gone', () => {
         const deck = { order: [], selection: ['alpha'], slide_order: ['beta'] };
         expect(deckFindings(deck, [], 'config/present.yml', CATALOG)).toEqual([]);
+    });
+});
+
+describe('the deck file read from values of the wrong shape', () => {
+    const ID = 'alpha';
+
+    it('reads a present: that is a list and a slides: that is a map as the narrative alone', () => {
+        const paths = project(['---', 'present: [1]', 'slides: { a: 1 }', '---', 'narrative', '']);
+        expect(readPresent(paths, ID, CATALOG)).toStrictEqual({
+            slides: [
+                {
+                    id: ID,
+                    projectId: ID,
+                    specs: [],
+                    panels: [],
+                    method: [],
+                    results: [],
+                    body: 'narrative\n'
+                }
+            ],
+            findings: []
+        });
+    });
+
+    it('reads the fields of a slide by their own shapes and drops what is of another', () => {
+        const paths = project([
+            '---',
+            'slides:',
+            '  - 3',
+            '  - { id: a, tag: 3 }',
+            '  - { id: b, tag: { class: 3 } }',
+            '  - { id: c, eli5: [] }',
+            '  - { id: d, specs: [3, { label: 3, value: v }] }',
+            '  - { id: e, panels: [3, { figure: 3 }] }',
+            '  - { id: f, tag: { class: k, text: 3 }, eli5: { plain: p, purpose: 3 } }',
+            '---',
+            ''
+        ]);
+        const slide = (id: string, over: object = {}) => ({
+            id: `${ID}/${id}`,
+            projectId: ID,
+            specs: [],
+            panels: [],
+            method: [],
+            results: [],
+            ...over
+        });
+        expect(readPresent(paths, ID, CATALOG)).toStrictEqual({
+            slides: [
+                slide('a'),
+                slide('b'),
+                slide('c'),
+                slide('d', { specs: [{ label: '', value: 'v' }] }),
+                slide('e'),
+                slide('f', { tag: { class: 'k' }, eli5: { plain: 'p' } })
+            ],
+            findings: []
+        });
+    });
+
+    it('names an order entry that is not a map, has no kind, or names a kind or ref wrongly', () => {
+        const file = '/hub/config/present.yml';
+        const deck = {
+            order: [
+                'x',
+                { kind: 3 },
+                { slide: 3 },
+                { slide: 'project' },
+                { slide: 'nonesuch' },
+                { slide: 'framing' },
+                { slide: 'framing', ref: 'gone' },
+                { slide: 'summary', ref: 3 },
+                { slide: 'title' }
+            ],
+            framing: { here: {} }
+        };
+        const at = (index: number, message: string) => ({
+            file,
+            key: `deck.order[${index}]`,
+            message
+        });
+        expect(deckFindings(deck, [], file, CATALOG)).toStrictEqual([
+            at(0, 'is not a map of keys'),
+            at(1, 'names no slide kind'),
+            at(2, 'names no slide kind'),
+            at(3, 'names no project slide'),
+            at(4, 'unknown slide kind nonesuch'),
+            at(5, 'a framing slide names no ref'),
+            at(6, 'deck.framing has no gone'),
+            at(7, 'a summary slide names no ref')
+        ]);
+    });
+
+    it.each([[null], [[1, 'a']], [{ a: 1 }], ['x']])('reads %j as no order', (value) => {
+        expect(deckFindings(value, [], '/hub/present.yml', CATALOG)).toStrictEqual([]);
+        expect(deckOrder(value)).toStrictEqual([]);
+    });
+
+    it('keeps the order lines that name a kind of the deck, with a ref when it is text', () => {
+        expect(
+            deckOrder([1, { slide: 'title' }, { slide: 'bogus' }, { slide: 'project', ref: 3 }])
+        ).toStrictEqual([{ slide: 'title' }, { slide: 'project' }]);
+        expect(deckOrder([{ slide: 'summary', ref: 'r' }])).toStrictEqual([
+            { slide: 'summary', ref: 'r' }
+        ]);
+    });
+
+    it('reads a saved list of keys as its text items, and anything else as none', () => {
+        expect([savedKeys(null), savedKeys({ a: 1 }), savedKeys('x')]).toStrictEqual([
+            null,
+            null,
+            null
+        ]);
+        expect(savedKeys([1, 'a', null, 'b'])).toStrictEqual(['a', 'b']);
     });
 });

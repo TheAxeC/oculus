@@ -309,3 +309,33 @@ describe('readManifests', () => {
         expect(second.findings).toEqual(first.findings);
     });
 });
+
+describe('readManifests over a project.yml of the wrong shape', () => {
+    const FLAT: ScanRule[] = [{ dir: 'projects/active', type: 'active' }];
+
+    /** What readManifests answers over a hub whose one active project.yml holds `body`. */
+    function readOne(body: string) {
+        const hub = scratch();
+        write(hub, 'projects/active/alpha/project.yml', body);
+        const file = join(hub, 'projects/active/alpha/project.yml');
+        return { file, ...readManifests(hub, FLAT, CATALOG) };
+    }
+
+    it.each([['[]'], ['3'], ['x'], ['']])('reads a file holding %j as one finding', (body) => {
+        const read = readOne(body);
+        expect(read.manifests).toStrictEqual([]);
+        expect(read.findings).toStrictEqual([
+            { file: read.file, key: '', message: 'is not a map of keys' }
+        ]);
+    });
+
+    it('keeps a key the schema does not name, in its place among the others', () => {
+        const read = readOne('title: Alpha\nnonesuch: 1\nid: alpha\n');
+        expect(Object.keys(read.manifests[0]).slice(0, 3)).toStrictEqual([
+            'title',
+            'nonesuch',
+            'id'
+        ]);
+        expect(read.manifests[0].nonesuch).toBe(1);
+    });
+});

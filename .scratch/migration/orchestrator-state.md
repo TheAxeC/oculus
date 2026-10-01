@@ -29,22 +29,6 @@ workers_at_once: 5           # Axel, 2026-10-01 18:49: five, to see the impact (
 
 ```yaml
 dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
-- step: Q85c
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 16:58)
-  session_id: a5d6f19f5a6360b3b (launched 2026-10-01 16:58 local)
-  worktree: .agents/worktrees/Q85c
-  base: 8db30ca2
-  launched: 2026-10-01 16:58 local
-  report: agents/reviews/Q85c-report.md (saved from the builder's hand-back message; it wrote no report file)
-  builder_usage: 138,304 tokens, 236 tool uses, 69.7 min (1 full-list run); round 1 211,570 tokens, 63 tool uses, 17.0 min (2 full-list runs: the first red at `npm test` on a config-key timeout, green alone and in the second)
-  reviewer_report: agents/reviews/Q85c-refuter.md (reviewer a4424239736fa1dee, claude-sonnet-5-5 read from its transcript; 339,515 tokens, 88 tool uses, 35.5 min; 3 Spec, 2 Proof, 9 Standards, 1 Behaviour)
-  round_1: agents/briefs/Q85c-round1.md (five rulings, Z173 among them; sent to the builder)
-  brief_check: agents/reviews/Q85c-brief-check.md, every finding closed in the brief (its Closed heading, Z163 widened in automode); claude-sonnet-5-5, 272,378 tokens, 80 tool uses, 13.3 min
-  landing: not-started
-  reviewer_round_1: agents/reviews/Q85c-refuter.md "Repair round 1, refuted" (agent ad09686ce9cc473e2, claude-sonnet-5-5 read from its transcript; 204,734 tokens, 61 tool uses, 23.3 min; 0 Spec, 0 Proof, 2 Standards, 1 Behaviour)
-  round: 1
 - step: U3
   executor: agent
   worker: claude:sonnet
@@ -684,6 +668,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 19:42. Q85c landed (zod in `src/lib/data`), two fixes at landing, `checks: 7 commands passed`. In flight: U3 (repair round 1 building), D27 (brief check in, findings to close). Next: D27's brief closed and its builder launched; D35 prepared again on the new main; U3's round review. Open items: none.
 - 2026-10-01 19:26. D31 landed (git auto fetch), three fixes at landing, `checks: 7 commands passed`. U3's review and D27's brief check are in and saved. In flight: Q85c (round-1 review running), U3 (review in, repair round 1 next), D27 (brief check in, findings to close). Next: U3's round 1; D27's brief closed and its builder launched; Q85c's landing; then D35. Open items: none.
 - 2026-10-01 18:31. Axel ruled Z169 (a): the Config view removed and the System and Views and Settings pages merged, in S4. `local.yml` comment block appended by Axel. In flight: Q85c (review), D31 (review), U3 (second builder). Next: each review, its repair round, /land; /spec D35 into the first free slot. Open items: none.
 - 2026-10-01 18:15. Axel ruled Z166 (a) (new step D35), Z167 (a) (folder bookmarks in X3a) and Z168 (b) (new step S4 after U3), and set D35's builder as the `ordo-medium` experiment. Q85c and D31 builders done, reports saved, reviewers running (Sonnet). In flight: Q85c (review), D31 (review), U3 (second builder). Next: each review, its repair round, /land; /spec D35 into the first free slot. Open items: none.

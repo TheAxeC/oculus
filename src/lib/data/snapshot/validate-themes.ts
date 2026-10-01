@@ -5,8 +5,13 @@
 // validate.ts rather than in it so that file stays one reader's length; validate calls it once per
 // portfolio, and like validate it is pure and repairs nothing.
 
+import { z } from 'zod';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import type { Finding, RawPortfolio, ValidationRules } from '../model/index.ts';
+import { itemsShape, readAs } from '../shapes/shapes.ts';
+
+/** A theme word: a text. */
+const themeWordShape = z.string();
 
 /**
  * The two registries whose entries carry `themes:`, the name of each file's entry list, the
@@ -47,11 +52,15 @@ export function checkThemes(raw: RawPortfolio, rules: ValidationRules, findings:
     for (const { registry, list, vocab: name, offList } of THEMED) {
         const allowed = rules.vocab[name];
         if (allowed === undefined) continue;
-        const known = new Set(allowed);
+        const known = new Set<unknown>(allowed);
         raw.registries[registry].entries.forEach((entry, index) => {
-            if (!Array.isArray(entry.themes)) return;
-            entry.themes.forEach((word: unknown, at: number) => {
-                if (typeof word !== 'string' || known.has(word)) return;
+            if (entry.themes === undefined) return;
+            const themes = readAs(itemsShape, entry.themes);
+            if (themes === null) return;
+            themes.forEach((held, at) => {
+                if (known.has(held)) return;
+                const word = readAs(themeWordShape, held);
+                if (word === null) return;
                 findings.push({
                     file: entry.file,
                     key: `${list}[${index}].themes[${at}]`,

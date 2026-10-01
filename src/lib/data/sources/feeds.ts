@@ -11,15 +11,16 @@
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse } from 'yaml';
 import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../model/index.ts';
 // `str` here is the shared `text`: this file's reading of a missing or mistyped value has always
 // been the empty string rather than undefined, and the alias keeps that reading at every call it
 // makes. The lead's status is the one value it does not read for itself, since the rule that closes
 // a lead reads it in data/accounts/leads.ts.
-import { isMap, text as str } from '../helpers/guards.ts';
+import { text as str } from '../helpers/guards.ts';
+import { itemsShape, mapShape, readOr, rowsShape } from '../shapes/shapes.ts';
 import { isLeadClosed } from '../accounts/leads.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
+import { errorLine, readYamlMap } from './yaml-file.ts';
 
 /** An ISO date anywhere inside a string; the leads feed writes prose around its dates. */
 const DATE = /\d{4}-\d{2}-\d{2}/;
@@ -30,49 +31,12 @@ const SCOUT_RUN = /^\s*(\d{4}-\d{2}-\d{2})\b.*?scout/i;
 /** A `date:` line of a LinkedIn post's front matter. */
 const FRONT_DATE = /^date:\s*["']?(\d{4}-\d{2}-\d{2})/m;
 
+/** The maps among the `entries:` of a feed file. */
+const entriesShape = rowsShape(mapShape);
+
 /** The `meta:` map of a feed file, and an empty map for a file that has none. */
 function metaOf(data: Record<string, unknown>): Record<string, unknown> {
-    return isMap(data.meta) ? data.meta : {};
-}
-
-/** The `entries:` list of a feed file, and an empty list for a file that has none. */
-function entriesOf(data: Record<string, unknown>): Record<string, unknown>[] {
-    if (!Array.isArray(data.entries)) return [];
-    return data.entries.filter(isMap);
-}
-
-/**
- * Read and parse one feed file. A file that is not there is null with no finding, which is what
- * separates this from sources/registries.ts: a registry is part of the hub and a feed is generated.
- */
-function readFeed(
-    file: string,
-    catalog: TextCatalog,
-    findings: Finding[]
-): Record<string, unknown> | null {
-    let text: string;
-    try {
-        text = readFileSync(file, 'utf8');
-    } catch {
-        return null;
-    }
-    let parsed: unknown;
-    try {
-        parsed = parse(text);
-    } catch (error) {
-        const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        findings.push({
-            file,
-            key: '',
-            message: findingText(catalog, 'findings.file.does_not_parse', message)
-        });
-        return null;
-    }
-    if (!isMap(parsed)) {
-        findings.push({ file, key: '', message: findingText(catalog, 'findings.file.not_a_map') });
-        return null;
-    }
-    return parsed;
+    return readOr(mapShape, data.meta, {});
 }
 
 /** One lead of the feed, with the ISO date its `deadline:` text holds. */
@@ -97,13 +61,12 @@ function leads(
     catalog: TextCatalog,
     findings: Finding[]
 ): { leads: Feeds['leads']; scout: Feeds['scout'] } {
-    const data = readFeed(file, catalog, findings);
+    const data = readYamlMap(file, catalog, findings, () => null);
     if (data === null) return { leads: null, scout: null };
-    const live = entriesOf(data)
+    const live = readOr(entriesShape, data.entries, [])
         .filter((entry) => !isLeadClosed(entry.status))
         .map(lead);
-    const log = metaOf(data).log;
-    const runs = (Array.isArray(log) ? log : [])
+    const runs = readOr(itemsShape, metaOf(data).log, [])
         .map((line) => SCOUT_RUN.exec(str(line)))
         .filter((found): found is RegExpExecArray => found !== null)
         .map((found) => found[1]);
@@ -113,7 +76,7 @@ function leads(
 
 /** The Lit Watch radar: the day the last sweep ran. */
 function radar(file: string, catalog: TextCatalog, findings: Finding[]): Feeds['radar'] {
-    const data = readFeed(file, catalog, findings);
+    const data = readYamlMap(file, catalog, findings, () => null);
     if (data === null) return null;
     const run = str(metaOf(data).last_run);
     return { lastRun: run === '' ? null : run };
@@ -139,11 +102,10 @@ function linkedin(dir: string, catalog: TextCatalog, findings: Finding[]): Feeds
         try {
             text = readFileSync(join(dir, name), 'utf8');
         } catch (error) {
-            const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
             findings.push({
                 file: join(dir, name),
                 key: '',
-                message: findingText(catalog, 'findings.feeds.cannot_read', message)
+                message: findingText(catalog, 'findings.feeds.cannot_read', errorLine(error))
             });
             continue;
         }

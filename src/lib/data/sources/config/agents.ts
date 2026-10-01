@@ -9,9 +9,10 @@
 // a start builds its argv from the parsed file and nothing else: a pick is an id, and the words
 // that reach the command line are the file's.
 //
-// `isMap` names data/helpers/guards.ts's test of a parsed value in every file, so the yaml
-// library's own node test is imported as `isYamlMap`.
+// The yaml library's own node test is imported as `isYamlMap`, so a parsed value is never mistaken
+// for a node.
 
+import { z } from 'zod';
 import { LineCounter, isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Node, Pair, YAMLMap } from 'yaml';
 import type {
@@ -22,6 +23,7 @@ import type {
     AgentChoicesWhy,
     AgentId
 } from '../../model/index.ts';
+import { itemsShape, mapShape, readAs, readOr } from '../../shapes/shapes.ts';
 
 /** The agents the file may name, in the order the composer offers them. */
 export const AGENTS: AgentId[] = ['claude', 'codex'];
@@ -257,18 +259,17 @@ export function choiceArgs(choices: AgentChoices, picks: Record<string, string>)
     return args;
 }
 
-/** A plain map of a parsed JSON value, or null. */
-function mapOf(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
+/** A text that carries something besides white space, answered trimmed. */
+const trimmedShape = z.string().trim().min(1);
+
+/** The models of a cache file: a list of them, or a map holding the list under `models`. */
+const modelsShape = z.union([itemsShape, mapShape.transform((map) => map.models).pipe(itemsShape)]);
 
 /** The first of the named fields that is a non-empty string. */
 function firstText(map: Record<string, unknown>, names: string[]): string {
     for (const name of names) {
-        const value = map[name];
-        if (typeof value === 'string' && value.trim() !== '') return value.trim();
+        const value = trimmedShape.safeParse(map[name]);
+        if (value.success) return value.data;
     }
     return '';
 }
@@ -280,11 +281,9 @@ function firstText(map: Record<string, unknown>, names: string[]): string {
  * one. A model whose name could not follow a flag is left out.
  */
 export function cacheModels(raw: unknown): AgentChoice[] {
-    const list = Array.isArray(raw) ? raw : mapOf(raw)?.models;
-    if (!Array.isArray(list)) return [];
     const found: AgentChoice[] = [];
-    for (const item of list) {
-        const model = mapOf(item);
+    for (const item of readOr(modelsShape, raw, [])) {
+        const model = readAs(mapShape, item);
         if (model === null) continue;
         const slug = firstText(model, ['slug', 'id', 'model']);
         if (!passable(slug) || found.some((one) => one.id === slug)) continue;

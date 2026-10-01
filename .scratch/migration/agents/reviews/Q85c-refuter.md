@@ -239,3 +239,13 @@ None. The ruling-2 cases were seen failing on the unchanged tree, by the builder
 Usage: Sonnet 5.5 (claude-sonnet-5-5)
 
 Usage (from the completion notice): claude-sonnet-5-5, 204,734 tokens, 61 tool uses, 23.3 min.
+
+## Closed
+
+First run: Spec 1 (module-level schemas), Spec 2 (the three maps skip an own `__proto__` key, Z173), Spec 3 (the literal gate accepted as built), Standards 1 to 7 (DESIGN.md:148, `themeWordShape`, the dead `?? ['']` branch, the `career` re-export, `strip` renamed (to `written`, `situation` being taken in the same function), `isBundleId` through `bundleIdShape`, the `shapes.ts` head comment), Behaviour 1 (the changed answers listed) were closed by the builder in repair round 1 and confirmed by the run over that round ("Verdict per round-1 ruling"). Proof 1 and 2 and Standards 8 and 9 were about the builder's report (the quoted verify lines, the first-run counts, a read-only `git diff --stat`, the broad runs); the run over round 1 reran every command and quotes its own lines.
+
+The run over repair round 1, closed at landing on main:
+- Standards 1: the `shapes.ts` head comment names the data folder among the readers and describes `itemsShape` as a list of anything and `optionalItemsShape` as an optional list of strings.
+- Standards 2: kept as built. After the loop that names the refused key, `tiersShape.parse(held)` cannot throw; taking the answer from `readAs` instead needs a branch for a `null` that cannot occur, which is the dead fallback Standards 3 of the first run removed.
+- Behaviour 1: the nested answer is item 11 of the round's changed-answer list in `agents/reviews/Q85c-report.md`, and `tests/data/sources/config/merge.test.ts` gains "skips an own __proto__ key holding text or a number below the top". With the skip limited to the top level (`key === '__proto__' && prefix === ''`) it fails, with "skips an own __proto__ key at every level" (`expected [ 'a.__proto__.c', 'a.d' ] to strictly equal [ 'a.d' ]`); `merge.ts` was restored (`git diff --quiet` rc 0) and `tests/data` gives 34 files, 673 tests passed.
+

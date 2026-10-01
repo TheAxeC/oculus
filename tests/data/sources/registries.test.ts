@@ -228,3 +228,70 @@ describe('readRegistries', () => {
         });
     });
 });
+
+describe('readRegistries over a registry file of the wrong shape', () => {
+    /** The venues registry and its findings for a hub whose venue file holds `body`. */
+    function readVenues(body: string) {
+        const hub = scratch();
+        write(hub, REGISTRY_FILES.venues, body);
+        const file = join(hub, REGISTRY_FILES.venues);
+        const out = readRegistries(hub, REGISTRY_FILES, CATALOG);
+        return { file, venues: out.venues, findings: out.findings.filter((f) => f.file === file) };
+    }
+
+    it.each([['[]'], ['3'], ['x'], ['']])('reads a file holding %j as one finding', (body) => {
+        const read = readVenues(body);
+        expect(read.findings).toStrictEqual([
+            { file: read.file, key: '', message: 'is not a map of keys' }
+        ]);
+        expect(read.venues).toStrictEqual({ entries: [], meta: {} });
+    });
+
+    it('reads an entry list that is a map as one finding and no entries', () => {
+        const read = readVenues('title: V\nentries:\n  a: 1\n');
+        expect(read.findings).toStrictEqual([
+            { file: read.file, key: 'entries', message: 'entry list entries is not a list' }
+        ]);
+        expect(read.venues).toStrictEqual({ entries: [], meta: { title: 'V' } });
+    });
+
+    it('reads each item of the list by its own shape and hands a map on with its provenance', () => {
+        const read = readVenues(
+            'entries:\n  - 3\n  - null\n  - { id: 3 }\n  - { id: "" }\n  - { id: a, extra: 1 }\n'
+        );
+        expect(read.findings).toStrictEqual([
+            { file: read.file, key: 'entries[0]', message: 'entry is not a map of keys' },
+            { file: read.file, key: 'entries[1]', message: 'entry is not a map of keys' },
+            { file: read.file, key: 'entries[2]', message: 'entry has no string id' },
+            { file: read.file, key: 'entries[3]', message: 'entry has no string id' }
+        ]);
+        expect(read.venues.entries).toStrictEqual([
+            { id: 3, registry: 'venues', key: '', file: read.file },
+            { id: '', registry: 'venues', key: '', file: read.file },
+            { id: 'a', extra: 1, registry: 'venues', key: 'a', file: read.file }
+        ]);
+    });
+
+    it('keeps the keys of an entry and of the meta in the order the file wrote them', () => {
+        const read = readVenues(
+            'zeta: 1\nentries:\n  - { name: N, id: a, extra: 1, alpha: 2 }\nalpha: 3\n'
+        );
+        expect(Object.keys(read.venues.meta)).toStrictEqual(['zeta', 'alpha']);
+        expect(Object.keys(read.venues.entries[0])).toStrictEqual([
+            'name',
+            'id',
+            'extra',
+            'alpha',
+            'registry',
+            'key',
+            'file'
+        ]);
+    });
+
+    it('skips an own __proto__ key of the file when it builds the meta', () => {
+        const read = readVenues('__proto__:\n  injected: "yes"\ntitle: V\nentries: []\n');
+        expect(Object.getPrototypeOf(read.venues.meta)).toBe(Object.prototype);
+        expect(read.venues.meta).not.toHaveProperty('injected');
+        expect(Object.keys(read.venues.meta)).toStrictEqual(['title']);
+    });
+});

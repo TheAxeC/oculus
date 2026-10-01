@@ -340,7 +340,8 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - Removed by Z127 (Axel, 2026-10-01): Q85a5 (`files`, `content` and `git`), folded into Q85a4.
 - ✅ Q85b the same in the state layer (`src/lib/state`, 71 files, 506 check lines), after Q85a1, Q85a2 and Q85a4 (ruling The queue) (ruling Z73)
   - Booked 2026-10-01: `zod` schemas at the state layer's inputs, the redundant hand checks deleted, `shapes.ts` in `data/shapes/`; base 402437e8, one repair round refuted again; three fixes at landing (`tones.test.ts`'s `__PROTO__` rows, the customization fields required, a stale sentence closed); `checks: 7 commands passed`; no look; in full in `agents/reviews/Q85b-landing.md`.
-- Q85c the same in `src/lib/data` (30 files, 196 check lines), after Q85a1, Q85a2 and Q85a4 (ruling The queue) (ruling Z73)
+- ✅ Q85c the same in `src/lib/data` (30 files, 196 check lines), after Q85a1, Q85a2 and Q85a4 (ruling The queue) (ruling Z73)
+  - Booked 2026-10-01: `zod` schemas at `src/lib/data`'s inputs, an own `__proto__` key skipped in the text catalog, config merge and three hub maps (Z173); base 8db30ca2, one repair round refuted again; two fixes at landing (the `shapes.ts` head comment, a nested `__proto__` case); `checks: 7 commands passed`; no look; in full in `agents/reviews/Q85c-landing.md`.
 - Q85d the same in the views, `ui/`, `shell/` and the routes (33 files), after Q85b (ruling The queue) (ruling Z73)
   - Counted 2026-09-30 on main: 206 files that mention `unknown` hold 1,269 lines of `typeof`, `Array.isArray`, `isMap` and `isRecord` checks, against LA7's "about 40 state files"; 29 files parse JSON or YAML.
 - ✅ Q86 the Map's layout tried on `@viz-js/viz` neato or fdp in the page; `d3-force` for the tick if the trial's layouts read worse (LA10; Axel 2026-09-26, library audit) (ruling The queue)

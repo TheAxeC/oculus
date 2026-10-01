@@ -4,9 +4,13 @@
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { z } from 'zod';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
+import { isMap } from '../../helpers/guards.ts';
 import type { Finding } from '../../model/index.ts';
+import { mapOfShape, readAs, textOrNumberOnlyShape } from '../../shapes/shapes.ts';
+import { errorLine } from '../yaml-file.ts';
 import { configDir } from './folder.ts';
 import { LOCAL_NAME } from './local.ts';
 
@@ -15,6 +19,12 @@ export const CATALOGS_DIR = 'catalogs';
 
 /** The one top-level key more than one file may carry. Catalog fragments merge by dotted leaf. */
 export const TEXT_KEY = 'text';
+
+/** The top-level keys of one config file, in their order, without an own `__proto__` key. */
+const keysShape = mapOfShape(z.unknown());
+
+/** A catalog leaf: a text, or a number or a boolean written out. */
+const leafShape = z.union([textOrNumberOnlyShape, z.boolean().transform(String)]);
 
 /**
  * A finding of loadConfig before its words are known. The catalog is what loadConfig is reading, so
@@ -147,7 +157,7 @@ export function loadConfig(
             const text = instead?.name === name ? instead.text : readFileSync(file, 'utf8');
             parsed = parse(text) ?? {};
         } catch (error) {
-            const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
+            const message = errorLine(error);
             pending.push({
                 file,
                 key: '',
@@ -155,7 +165,8 @@ export function loadConfig(
             });
             continue;
         }
-        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        const top = readAs(keysShape, parsed);
+        if (top === null) {
             pending.push({
                 file,
                 key: '',
@@ -163,7 +174,7 @@ export function loadConfig(
             });
             continue;
         }
-        for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+        for (const [key, value] of Object.entries(top)) {
             if (key === TEXT_KEY) {
                 mergeText(config, value, name, file, from, pending);
                 continue;
@@ -205,18 +216,17 @@ class TextNotAMap extends Error {
 }
 
 /**
- * Flatten a nested map of strings to dotted keys. Values are strings; anything else is an error.
+ * Flatten a nested map of strings to dotted keys. Values are strings; anything else is an error. An
+ * own `__proto__` key is skipped at every level, because it is no key of the flat map.
  */
 export function flattenText(node: unknown, prefix = ''): Record<string, string> {
     const flat: Record<string, string> = {};
-    if (typeof node !== 'object' || node === null || Array.isArray(node)) {
-        throw new TextNotAMap(prefix || 'root');
-    }
-    for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+    if (!isMap(node)) throw new TextNotAMap(prefix || 'root');
+    for (const [key, value] of Object.entries(node)) {
+        if (key === '__proto__') continue;
         const dotted = prefix === '' ? key : `${prefix}.${key}`;
-        if (typeof value === 'string') flat[dotted] = value;
-        else if (typeof value === 'number' || typeof value === 'boolean')
-            flat[dotted] = String(value);
+        const leaf = readAs(leafShape, value);
+        if (leaf !== null) flat[dotted] = leaf;
         else Object.assign(flat, flattenText(value, dotted));
     }
     return flat;

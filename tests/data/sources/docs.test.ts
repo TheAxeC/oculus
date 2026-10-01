@@ -241,3 +241,26 @@ describe('projectDocs', () => {
         expect(projectDocs(root).find((d) => d.name === 'README.md')?.mtime).toBe(later.getTime());
     });
 });
+
+describe('readDoc over a frontmatter block of the wrong shape', () => {
+    /** What readDoc answers for a document opening with a block holding `block`. */
+    function readBlock(block: string) {
+        const root = scratch();
+        const file = write(root, 'doc.md', `---\n${block}---\nbody\n`);
+        return { file, read: readDoc(file, CATALOG) };
+    }
+
+    it.each([['[]\n'], ['3\n'], ['x\n']])('reads a block holding %j as one finding', (block) => {
+        const { file, read } = readBlock(block);
+        expect(read).toStrictEqual({
+            file,
+            key: 'frontmatter',
+            message: 'is not a map of keys'
+        });
+    });
+
+    it('reads an empty block as no keys', () => {
+        const { read } = readBlock('');
+        expect(read).toStrictEqual({ text: 'body\n', frontmatter: {} });
+    });
+});

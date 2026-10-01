@@ -5,6 +5,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { homedir } from 'node:os';
+import { z } from 'zod';
 import { parse } from 'yaml';
 import type {
     AccountProvider,
@@ -13,7 +14,11 @@ import type {
     UsageAccountConfig
 } from '../../model/index.ts';
 import { isAccountLabel, isCalendarProvider, isProvider } from '../../accounts/connect.ts';
+import { filledText, itemsShape, mapShape, readAs } from '../../shapes/shapes.ts';
 import { configDir } from './folder.ts';
+
+/** A port: a whole number. */
+const portShape = z.number().refine(Number.isInteger);
 
 export type LocalConfig = {
     /** Absolute path of the research hub whose YAML the portfolio is built from. */
@@ -137,26 +142,37 @@ export function usageAccountLabel(label: string): string {
     return label.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
 }
 
+/** The text at `key` of `record`, which must carry something, or a throw saying what it must be. */
+function filledAt(
+    record: Record<string, unknown>,
+    key: string,
+    file: string,
+    words: string
+): string {
+    const value = filledText(record[key]);
+    if (value === undefined) throw new Error(`${file}: ${key} must be ${words}`);
+    return value;
+}
+
 function usageAccounts(value: unknown, file: string, base: string): UsageAccountConfig[] {
-    if (!Array.isArray(value)) throw new Error(`${file}: accounts must be a list`);
+    const list = readAs(itemsShape, value);
+    if (list === null) throw new Error(`${file}: accounts must be a list`);
     const claudeLabels = new Set<string>();
-    return value.map((item, index) => {
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-            throw new Error(`${file}: accounts[${index}] must be a map`);
-        }
-        const row = item as Record<string, unknown>;
+    return list.map((item, index) => {
+        const row = readAs(mapShape, item);
+        if (row === null) throw new Error(`${file}: accounts[${index}] must be a map`);
         const tool = row.tool;
         if (tool !== 'claude' && tool !== 'codex') {
             throw new Error(`${file}: accounts[${index}].tool must be claude or codex`);
         }
-        if (typeof row.dir !== 'string' || row.dir.length === 0) {
-            throw new Error(`${file}: accounts[${index}].dir must be a path`);
-        }
-        if (typeof row.label !== 'string' || row.label.length === 0) {
+        const dir = filledText(row.dir);
+        if (dir === undefined) throw new Error(`${file}: accounts[${index}].dir must be a path`);
+        const label = filledText(row.label);
+        if (label === undefined) {
             throw new Error(`${file}: accounts[${index}].label must be words`);
         }
         if (tool === 'claude') {
-            const reduced = usageAccountLabel(row.label);
+            const reduced = usageAccountLabel(label);
             if (claudeLabels.has(reduced)) {
                 throw new Error(
                     `${file}: accounts[${index}].label duplicates a Claude label or reduced label: ${reduced}`
@@ -164,7 +180,7 @@ function usageAccounts(value: unknown, file: string, base: string): UsageAccount
             }
             claudeLabels.add(reduced);
         }
-        return { tool: tool, dir: accountDir(row.dir, base), label: row.label };
+        return { tool, dir: accountDir(dir, base), label };
     });
 }
 
@@ -181,13 +197,12 @@ function connectAccounts<P extends AccountProvider>(
     list: string,
     takes: { accepts: (value: unknown) => value is P; named: string }
 ): { provider: P; label: string }[] {
-    if (!Array.isArray(value)) throw new Error(`${file}: ${list} must be a list`);
+    const rows = readAs(itemsShape, value);
+    if (rows === null) throw new Error(`${file}: ${list} must be a list`);
     const seen = new Set<string>();
-    return value.map((item, index) => {
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-            throw new Error(`${file}: ${list}[${index}] must be a map`);
-        }
-        const row = item as Record<string, unknown>;
+    return rows.map((item, index) => {
+        const row = readAs(mapShape, item);
+        if (row === null) throw new Error(`${file}: ${list}[${index}] must be a map`);
         const provider = row.provider;
         if (!takes.accepts(provider)) {
             throw new Error(`${file}: ${list}[${index}].provider must be ${takes.named}`);
@@ -229,42 +244,29 @@ function applyLocal(
     config: LocalConfig,
     onUnknown?: (keys: string[]) => void
 ): LocalConfig {
-    const raw: unknown = parse(text) ?? {};
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-        throw new Error(`${file}: expected a map of keys`);
-    }
-    const record = raw as Record<string, unknown>;
+    const record = readAs(mapShape, parse(text) ?? {});
+    if (record === null) throw new Error(`${file}: expected a map of keys`);
 
     const unknown = Object.keys(record).filter((key) => !LOCAL_KEYS.includes(key));
     if (unknown.length > 0) onUnknown?.(unknown);
 
     if (record.hub !== undefined) {
-        if (typeof record.hub !== 'string' || record.hub.length === 0) {
-            throw new Error(`${file}: hub must be a path`);
-        }
-        config.hub = isAbsolute(record.hub) ? record.hub : resolve(base, record.hub);
+        const hub = filledAt(record, 'hub', file, 'a path');
+        config.hub = isAbsolute(hub) ? hub : resolve(base, hub);
     }
     if (record.port !== undefined) {
-        if (!Number.isInteger(record.port)) throw new Error(`${file}: port must be an integer`);
-        config.port = record.port as number;
+        const port = readAs(portShape, record.port);
+        if (port === null) throw new Error(`${file}: port must be an integer`);
+        config.port = port;
     }
     if (record.hpc_host !== undefined) {
-        if (typeof record.hpc_host !== 'string' || record.hpc_host.length === 0) {
-            throw new Error(`${file}: hpc_host must be a non-empty string`);
-        }
-        config.hpcHost = record.hpc_host;
+        config.hpcHost = filledAt(record, 'hpc_host', file, 'a non-empty string');
     }
     if (record.claude_bin !== undefined) {
-        if (typeof record.claude_bin !== 'string' || record.claude_bin.length === 0) {
-            throw new Error(`${file}: claude_bin must be a non-empty string`);
-        }
-        config.claudeBin = record.claude_bin;
+        config.claudeBin = filledAt(record, 'claude_bin', file, 'a non-empty string');
     }
     if (record.open_bin !== undefined) {
-        if (typeof record.open_bin !== 'string' || record.open_bin.length === 0) {
-            throw new Error(`${file}: open_bin must be a non-empty string`);
-        }
-        config.openBin = record.open_bin;
+        config.openBin = filledAt(record, 'open_bin', file, 'a non-empty string');
     }
     if (record.accounts !== undefined) config.accounts = usageAccounts(record.accounts, file, base);
     if (record.calendars !== undefined) {
@@ -292,10 +294,7 @@ function applyLocal(
         ['mail_dir', 'mailDir']
     ] as const) {
         if (record[key] === undefined) continue;
-        if (typeof record[key] !== 'string' || record[key] === '') {
-            throw new Error(`${file}: ${key} must be a path`);
-        }
-        const value = record[key];
+        const value = filledAt(record, key, file, 'a path');
         config[field] = isAbsolute(value) ? value : resolve(base, value);
     }
     return config;

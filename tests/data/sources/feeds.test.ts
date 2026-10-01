@@ -5,6 +5,7 @@
 // What this does NOT cover: the feed views themselves. This reads the counts and run dates the
 // command center needs, and the Inbox, Lit Watch and Position Leads views read the entries.
 
+import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { readFeeds } from '../../../src/lib/data/sources/feeds.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -151,5 +152,53 @@ describe('a LinkedIn folder with no dated post', () => {
 
     it('says the folder is there and holds no post date', () => {
         expect(read.feeds.linkedin).toEqual({ lastPost: null });
+    });
+});
+
+describe('readFeeds over feed files of the wrong shape', () => {
+    const files = (body: string) => ({
+        'feeds/position-leads.yml': body,
+        'feeds/literature-radar.yml': body
+    });
+
+    it.each([['[]'], ['3'], ['x'], ['']])('reads a file holding %j as one finding each', (body) => {
+        const dir = hub(files(body));
+        const read = readFeeds(dir, FILES, CATALOG);
+        expect(read.feeds).toStrictEqual({
+            leads: null,
+            radar: null,
+            scout: null,
+            linkedin: null
+        });
+        expect(read.findings).toStrictEqual([
+            { file: join(dir, FILES.leads), key: '', message: 'is not a map of keys' },
+            { file: join(dir, FILES.radar), key: '', message: 'is not a map of keys' }
+        ]);
+    });
+
+    it('reads a meta that is a list and an entries that is a map as empty', () => {
+        const dir = hub(files('meta:\n  - a\nentries:\n  a: 1\n'));
+        const read = readFeeds(dir, FILES, CATALOG);
+        expect(read.feeds).toStrictEqual({
+            leads: [],
+            radar: { lastRun: null },
+            scout: { lastRun: null },
+            linkedin: null
+        });
+        expect(read.findings).toStrictEqual([]);
+    });
+
+    it('skips a run log line that is not text, and an entry that is not a map', () => {
+        const dir = hub(
+            files(
+                'meta:\n  log: [3, { at: 1 }, "2026-09-09 (scout): a pass"]\n  last_run: 4\nentries: [3, { title: T }]\n'
+            )
+        );
+        const read = readFeeds(dir, FILES, CATALOG);
+        expect(read.feeds.scout).toStrictEqual({ lastRun: '2026-09-09' });
+        expect(read.feeds.leads).toStrictEqual([
+            { title: 'T', deadline: null, status: '', fit: null }
+        ]);
+        expect(read.feeds.radar).toStrictEqual({ lastRun: null });
     });
 });

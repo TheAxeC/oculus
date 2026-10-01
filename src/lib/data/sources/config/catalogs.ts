@@ -5,9 +5,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
+import { z } from 'zod';
 import { paintLimit } from '../../helpers/editor.ts';
 import { findingText } from '../../helpers/finding-text.ts';
 import type { Finding } from '../../model/index.ts';
+import { mapOfShape, mapShape, readAs, readOr } from '../../shapes/shapes.ts';
 import { configDir } from './folder.ts';
 import { CATALOGS_DIR, textCatalog } from './merge.ts';
 
@@ -52,7 +54,7 @@ export function vocabCatalog(config: Record<string, unknown>): Record<string, un
  * vocabulary and one bad entry is not worth losing the rest, and iconFindings reports it.
  */
 export function glyphCatalog(config: Record<string, unknown>): Record<string, string> {
-    return stringMap(config.glyphs);
+    return readOr(stringMapShape, config.glyphs, {});
 }
 
 /**
@@ -60,7 +62,7 @@ export function glyphCatalog(config: Record<string, unknown>): Record<string, st
  * the names alone; iconSet() is what turns them into the drawing the page is given.
  */
 export function iconCatalog(config: Record<string, unknown>): Record<string, string> {
-    return stringMap(config.icons);
+    return readOr(stringMapShape, config.icons, {});
 }
 
 /**
@@ -86,7 +88,10 @@ function iconFile(icon: string): string | null {
  * A stand-in: one to three printable ASCII characters, which a terminal font is sure to hold and
  * the three-character box of ui/display/Glyph.svelte is sure to fit.
  */
-const STAND_IN = /^[\x20-\x7E]{1,3}$/;
+const standInShape = z.string().regex(/^[\x20-\x7E]{1,3}$/);
+
+/** A map of strings out of a config key, dropping anything that is not one. */
+const stringMapShape = mapOfShape(z.string());
 
 /**
  * Every way the icon map and the glyph vocabulary can drift apart, as findings: a glyph name whose
@@ -104,10 +109,10 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
     const glyphs = glyphCatalog(config);
     const catalog = textCatalog(config);
     const findings: Finding[] = [];
-    const vocabulary = config.glyphs;
-    if (typeof vocabulary === 'object' && vocabulary !== null && !Array.isArray(vocabulary)) {
-        for (const [name, standIn] of Object.entries(vocabulary as Record<string, unknown>)) {
-            if (typeof standIn === 'string' && STAND_IN.test(standIn)) continue;
+    const vocabulary = readAs(mapShape, config.glyphs);
+    if (vocabulary !== null) {
+        for (const [name, standIn] of Object.entries(vocabulary)) {
+            if (standInShape.safeParse(standIn).success) continue;
             findings.push({
                 file: join(configDir(engine), CATALOGS_DIR, 'glyphs.yml'),
                 key: name,
@@ -153,15 +158,13 @@ export function behaviorFindings(engine: string, config: Record<string, unknown>
     const file = join(configDir(engine), 'behavior.yml');
     const catalog = textCatalog(config);
     const findings: Finding[] = [];
-    const chat = config.chat;
-    if (typeof chat === 'object' && chat !== null && !Array.isArray(chat)) {
-        if ('skip_permissions' in (chat as Record<string, unknown>)) {
-            findings.push({
-                file,
-                key: 'chat.skip_permissions',
-                message: findingText(catalog, 'findings.config.skip_permissions_retired')
-            });
-        }
+    const chat = readAs(mapShape, config.chat);
+    if (chat !== null && 'skip_permissions' in chat) {
+        findings.push({
+            file,
+            key: 'chat.skip_permissions',
+            message: findingText(catalog, 'findings.config.skip_permissions_retired')
+        });
     }
     if (paintLimit(config) === null) {
         findings.push({
@@ -191,14 +194,4 @@ export function iconSet(config: Record<string, unknown>): Record<string, string>
         icons[name] = readFileSync(file, 'utf8').trim();
     }
     return icons;
-}
-
-/** A map of strings out of a config key, dropping anything that is not one. */
-function stringMap(raw: unknown): Record<string, string> {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
-    const map: Record<string, string> = {};
-    for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
-        if (typeof value === 'string') map[name] = value;
-    }
-    return map;
 }

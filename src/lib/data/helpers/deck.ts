@@ -8,7 +8,8 @@
 // Nothing here knows what a slide looks like. It answers over entries and keys; the titles, the
 // hues and the drawing are state/life/present.ts's, over the same entries.
 
-import { isMap, str, strings } from './guards.ts';
+import { z } from 'zod';
+import { strings } from './guards.ts';
 import type { DeckEntry, DeckKind, Project } from '../model/index.ts';
 
 /** The one file a project's slides and its deck narrative are read from. */
@@ -54,25 +55,31 @@ export function slideKey(entry: DeckEntry): string {
     return entry.ref === undefined ? entry.slide : `${entry.slide}:${entry.ref}`;
 }
 
+/** One `order:` line: a map naming a kind of slide the deck has, and a `ref` when it is a text. */
+const deckEntryShape = z
+    .object({ slide: z.enum(DECK_KINDS), ref: z.string().optional().catch(undefined) })
+    .transform((item): DeckEntry => {
+        return item.ref === undefined
+            ? { slide: item.slide }
+            : { slide: item.slide, ref: item.ref };
+    });
+
+/** The `order:` lines that name a slide, in order, and none for a value that is not a list. */
+const deckOrderShape = z
+    .array(deckEntryShape.nullable().catch(null))
+    .transform((lines) => lines.filter((line) => line !== null));
+
+/** A saved list of keys: the texts among its items. */
+const savedKeysShape = z.array(z.unknown()).transform(strings);
+
 /** The `order:` lines, dropping one that names a kind the deck has no slide of. */
 export function deckOrder(value: unknown): DeckEntry[] {
-    if (!Array.isArray(value)) return [];
-    const held: DeckEntry[] = [];
-    for (const item of value) {
-        if (!isMap(item)) continue;
-        const kind = str(item.slide);
-        if (kind === undefined || !DECK_KINDS.includes(kind as DeckKind)) continue;
-        const ref = str(item.ref);
-        held.push(
-            ref === undefined ? { slide: kind as DeckKind } : { slide: kind as DeckKind, ref }
-        );
-    }
-    return held;
+    return deckOrderShape.safeParse(value).data ?? [];
 }
 
 /** A saved list of keys, or null when the file holds none and the order alone decides. */
 export function savedKeys(value: unknown): string[] | null {
-    return Array.isArray(value) ? strings(value) : null;
+    return savedKeysShape.safeParse(value).data ?? null;
 }
 
 /**

@@ -253,3 +253,18 @@ describe('the folder a search is scoped to', () => {
         expect(queryFrom(new URLSearchParams({ q: 'x' }), 500).under).toBe('');
     });
 });
+
+describe('the hit cap read from a configuration of the wrong shape', () => {
+    it.each([
+        [{ search: [] }, 0],
+        [{ search: 'x' }, 0],
+        [{ search: { max_hits: '5' } }, 0],
+        [{ search: { max_hits: 2.7 } }, 2],
+        [{ search: { max_hits: Number.POSITIVE_INFINITY } }, 0],
+        [{ search: { max_hits: Number.NaN } }, 0],
+        [{ search: { max_hits: 0 } }, 0],
+        [{ search: { max_hits: -3 } }, 0]
+    ])('reads %j as %j', (config, cap) => {
+        expect(searchCap(config)).toBe(cap);
+    });
+});

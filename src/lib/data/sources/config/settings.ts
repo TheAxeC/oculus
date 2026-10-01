@@ -2,7 +2,53 @@
 // calendar, the search, the open list, the mail, the change log's length and the usage tiers. Each
 // reads its block and falls back to the default the config file carries.
 
+import { z } from 'zod';
 import { programApps, type ProgramApps } from '../../helpers/files/opens-in-program.ts';
+import { mapShape, readAs, unchangedAs, valuesOfShape } from '../../shapes/shapes.ts';
+
+/** A text, empty or not. */
+const labelShape = z.string();
+
+/** A finite number. */
+const numberShape = z.number();
+
+/** A finite number above zero. */
+const positiveShape = z.number().positive();
+
+/** A whole number above zero. */
+const wholePositiveShape = z.number().refine(Number.isInteger).positive();
+
+/** A text with something in it. */
+const hostShape = z.string().min(1);
+
+/** True or false. */
+const flagShape = z.boolean();
+
+/**
+ * A map whose every own value is a text, an own `__proto__` key's included, answered as the map it
+ * was given.
+ */
+const tiersShape = unchangedAs<Record<string, string>>(valuesOfShape(labelShape));
+
+/** The block `name` of the merged map, or a throw saying it must be a map. */
+function blockOf(config: Record<string, unknown>, name: string): Record<string, unknown> {
+    const block = readAs(mapShape, config[name]);
+    if (block === null) throw new Error(`config/behavior.yml: ${name} must be a map`);
+    return block;
+}
+
+/** The setting `name.key` of `block` read through `shape`, or a throw saying it must be `words`. */
+function settingOf<T>(
+    shape: z.ZodType<T>,
+    block: Record<string, unknown>,
+    name: string,
+    key: string,
+    words: string
+): T {
+    const parsed = shape.safeParse(block[key]);
+    if (!parsed.success) throw new Error(`config/behavior.yml: ${name}.${key} must be ${words}`);
+    return parsed.data;
+}
 
 /** The Live HPC settings of config/behavior.yml, every key required. */
 export type SlurmSettings = {
@@ -15,30 +61,15 @@ export type SlurmSettings = {
 
 /** Read `slurm:` with its five keys, or throw naming the key that is missing or mistyped. */
 export function slurmSettings(config: Record<string, unknown>): SlurmSettings {
-    const held = config.slurm;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
-        throw new Error('config/behavior.yml: slurm must be a map');
-    }
-    const slurm = held as Record<string, unknown>;
-    const number = (key: string): number => {
-        const value = slurm[key];
-        if (typeof value !== 'number' || !Number.isFinite(value)) {
-            throw new Error(`config/behavior.yml: slurm.${key} must be a number`);
-        }
-        return value;
-    };
-    if (typeof slurm.host !== 'string' || slurm.host === '') {
-        throw new Error('config/behavior.yml: slurm.host must be a non-empty string');
-    }
-    if (typeof slurm.prewarm !== 'boolean') {
-        throw new Error('config/behavior.yml: slurm.prewarm must be true or false');
-    }
+    const slurm = blockOf(config, 'slurm');
+    const host = settingOf(hostShape, slurm, 'slurm', 'host', 'a non-empty string');
+    const prewarm = settingOf(flagShape, slurm, 'slurm', 'prewarm', 'true or false');
     return {
-        host: slurm.host,
-        days: number('days'),
-        pollMin: number('poll_min'),
-        quotaMin: number('quota_min'),
-        prewarm: slurm.prewarm
+        host,
+        days: settingOf(numberShape, slurm, 'slurm', 'days', 'a number'),
+        pollMin: settingOf(numberShape, slurm, 'slurm', 'poll_min', 'a number'),
+        quotaMin: settingOf(numberShape, slurm, 'slurm', 'quota_min', 'a number'),
+        prewarm
     };
 }
 
@@ -53,22 +84,11 @@ export type CalendarSettings = {
 
 /** Read `calendar:` with its three keys, or throw naming the key that is missing or mistyped. */
 export function calendarSettings(config: Record<string, unknown>): CalendarSettings {
-    const held = config.calendar;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
-        throw new Error('config/behavior.yml: calendar must be a map');
-    }
-    const calendar = held as Record<string, unknown>;
-    const number = (key: string): number => {
-        const value = calendar[key];
-        if (typeof value !== 'number' || !Number.isFinite(value)) {
-            throw new Error(`config/behavior.yml: calendar.${key} must be a number`);
-        }
-        return value;
-    };
+    const calendar = blockOf(config, 'calendar');
     return {
-        pollMin: number('poll_min'),
-        daysBack: number('days_back'),
-        daysAhead: number('days_ahead')
+        pollMin: settingOf(numberShape, calendar, 'calendar', 'poll_min', 'a number'),
+        daysBack: settingOf(numberShape, calendar, 'calendar', 'days_back', 'a number'),
+        daysAhead: settingOf(numberShape, calendar, 'calendar', 'days_ahead', 'a number')
     };
 }
 
@@ -82,19 +102,11 @@ export type SearchSettings = {
 
 /** Read `search:` with its two keys, or throw naming the key that is missing or mistyped. */
 export function searchSettings(config: Record<string, unknown>): SearchSettings {
-    const held = config.search;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
-        throw new Error('config/behavior.yml: search must be a map');
-    }
-    const search = held as Record<string, unknown>;
-    const number = (key: string): number => {
-        const value = search[key];
-        if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-            throw new Error(`config/behavior.yml: search.${key} must be a number above zero`);
-        }
-        return value;
+    const search = blockOf(config, 'search');
+    return {
+        maxHits: settingOf(positiveShape, search, 'search', 'max_hits', 'a number above zero'),
+        timeoutS: settingOf(positiveShape, search, 'search', 'timeout_s', 'a number above zero')
     };
-    return { maxHits: number('max_hits'), timeoutS: number('timeout_s') };
 }
 
 /** The open action's settings of config/behavior.yml, every key required. */
@@ -123,44 +135,25 @@ export type MailSettings = {
 
 /** Read `mail:` with its two keys, or throw naming the key that is missing or mistyped. */
 export function mailSettings(config: Record<string, unknown>): MailSettings {
-    const held = config.mail;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
-        throw new Error('config/behavior.yml: mail must be a map');
-    }
-    const mail = held as Record<string, unknown>;
-    const number = (key: string): number => {
-        const value = mail[key];
-        if (typeof value !== 'number' || !Number.isFinite(value)) {
-            throw new Error(`config/behavior.yml: mail.${key} must be a number`);
-        }
-        return value;
+    const mail = blockOf(config, 'mail');
+    return {
+        pollMin: settingOf(numberShape, mail, 'mail', 'poll_min', 'a number'),
+        perSignal: settingOf(numberShape, mail, 'mail', 'per_signal', 'a number')
     };
-    return { pollMin: number('poll_min'), perSignal: number('per_signal') };
 }
 
 /** Read `changes.keep`, how many change-log lines are kept, or throw naming what is wrong. */
 export function changesKeep(config: Record<string, unknown>): number {
-    const held = config.changes;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
-        throw new Error('config/behavior.yml: changes must be a map');
-    }
-    const keep = (held as Record<string, unknown>).keep;
-    if (typeof keep !== 'number' || !Number.isInteger(keep) || keep <= 0) {
-        throw new Error('config/behavior.yml: changes.keep must be a whole number above zero');
-    }
-    return keep;
+    const changes = blockOf(config, 'changes');
+    return settingOf(wholePositiveShape, changes, 'changes', 'keep', 'a whole number above zero');
 }
 
 /** Read `usage_tiers:`, a map of plan id to label, or throw. */
 export function usageTiers(config: Record<string, unknown>): Record<string, string> {
-    const held = config.usage_tiers;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
-        throw new Error('config/behavior.yml: usage_tiers must be a map');
+    const held = blockOf(config, 'usage_tiers');
+    const refused = Object.entries(held).find(([, value]) => !labelShape.safeParse(value).success);
+    if (refused !== undefined) {
+        throw new Error(`config/behavior.yml: usage_tiers.${refused[0]} must be a string`);
     }
-    for (const [key, value] of Object.entries(held)) {
-        if (typeof value !== 'string') {
-            throw new Error(`config/behavior.yml: usage_tiers.${key} must be a string`);
-        }
-    }
-    return held as Record<string, string>;
+    return tiersShape.parse(held);
 }
