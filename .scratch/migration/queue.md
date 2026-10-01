@@ -17,7 +17,8 @@ Queued, in order:
 - D23, D15 and D17 (language servers; PDF reading, once D14 has landed; project commands).
 - D23b (more language server features), once D23 has landed.
 - D28 (saving a source file), once D25 has landed.
-- D31 and D32 (git auto fetch; replace in Search).
+- D31 (git auto fetch), waiting on Axel's ruling on the rule it breaks.
+- D32 (replace in Search).
 - D33 (the Problems view), once D23 and D17 have landed.
 - D18, D20 and D24 (the Processes view; an agent from a task or in a new worktree; the Personal board).
 - A1 and A3 (review with feedback; scheduled runs, once D17 has landed).
