@@ -40,12 +40,12 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   report: agents/reviews/D35-report.md
   brief_check: agents/reviews/D35-brief-check.md, every finding closed in the brief (its Closed heading, Z174 amended and Z177 in automode); claude-sonnet-5-5, 279,072 tokens, 70 tool uses, 13.0 min
   shared_paths: with D27, `context.ts` (D27 the findings list 250-253 and an import; D35 the comment 215-217, the hook target 239-240, the start of liveSettings after the pollers, `close()`), `config-key.ts` (D27 FINDERS 104-112 and an import; D35 line 232 and the function's parameters), `options.yml` (D27 a `languages` entry after `scan` at 509; D35 the descriptions at 124-262 and from 585), `DESIGN.md` (D27 85, 171, 379; D35 224-235) and `HELP.md` (D27 230; D35 216, 236), different lines, a simple merge with the import blocks read at the second landing; no path shared with U3; `docs/diagrams/`, regenerated at each landing
-  landing: not-started
+  landing: cherry-picking
   reviewer_report: agents/reviews/D35-refuter.md (first run, reviewer a5b43146ac6990bdc, claude-sonnet-5-5, launched 21:31; 308,262 tokens, 65 tool uses, 18.5 min; 3 Spec, 3 Proof, 3 Standards, 3 Behaviour)
   cases: agents/briefs/D35-cases.md (round 0: the bounds' tests under tests/data rewritten to Z174, loadLocalOrDefaults' tests removed with it, the signature-following tests in the step)
   builder_usage: first run of the cases 99,350 tokens, 88 tool uses, 19.1 min (0 full-list runs); the build to the report 123,962 tokens, 149 tool uses, 58.7 min (3 full-list runs: the first failed at npm test, the second at npm run test:checks, the third passed); round 1 260,642 tokens, 104 tool uses, 50.6 min (2 full-list runs: the first failed at npm run test:checks, the second passed)
   round: 1 (agents/briefs/D35-round1.md, sent 21:54)
-  reviewer_report (round 1): agents/reviews/D35-refuter.md, Repair round 1 (reviewer a816f9f04f144459b, claude-sonnet-5-5, launched 22:48; usage on its completion)
+  reviewer_report (round 1): agents/reviews/D35-refuter.md, Repair round 1 (reviewer a816f9f04f144459b, claude-sonnet-5-5, launched 22:48; 271,567 tokens, 79 tool uses, 29.9 min; 0 Spec, 4 Proof, 2 Standards, 1 Behaviour)
 - step: Q85d
   executor: agent
   worker: claude:sonnet
@@ -59,8 +59,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with D27, `Source.svelte` and `Merge.svelte` (D27 the lines that make or change a model's language; Q85d the instance-state readers, Merge's body read at 112 and the imports), `state/sources/fs.ts` (D27 the file-type reads; Q85d two exports beside `refShape` at 211), `tests/checks/tree/boundaries.test.ts` (D27 the state row's comment; Q85d the views' and shell's rows and the comment at 73-75), `tests/views/sources/source.test.ts` (D27 494-516; Q85d new cases at the end) and `tests/checks/tree/allow-audits.txt` (one line each), different hunks, a simple merge with the import blocks read at the second landing; no path shared with D35; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   reviewer_report: agents/reviews/Q85d-refuter.md (first run, reviewer a1869e27b7f463b00, claude-sonnet-5-5, launched 22:28; 282,135 tokens, 76 tool uses, 25.0 min; 2 Spec, 1 Proof, 5 Standards, 0 Behaviour)
-  builder_usage: the build to the report 290,982 tokens, 229 tool uses, 82.8 min (4 full-list runs: the first two failed at npm run test:checks, the third at npm run lint, the fourth passed)
+  builder_usage: the build to the report 290,982 tokens, 229 tool uses, 82.8 min (4 full-list runs: the first two failed at npm run test:checks, the third at npm run lint, the fourth passed); repair round 1 368,588 tokens, 54 tool uses, 24.4 min (3 full-list runs: the first two failed at npm test on timeouts under load, the third passed)
   round: 1 (agents/briefs/Q85d-round1.md, sent 22:55)
+  reviewer_report (round 1): agents/reviews/Q85d-refuter.md, Repair round 1 (reviewer a92dbded06a6276fd, claude-sonnet-5-5, launched 23:22; usage on its completion)
 - step: L4
   executor: agent
   worker: claude:sonnet
@@ -99,7 +100,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/Q35-brief-check.md, every finding closed in the brief (its Closed heading, Z193 in automode); claude-sonnet-5-5, 283,148 tokens, 102 tool uses, 16.1 min
   shared_paths: with Q85d, `Audit.svelte` (Q85d the reader at 53-61 and one import; Q35 the head comment, the `Card` import, markup and style), `tests/views/system/audit.test.ts` (Q85d one new case; Q35 the cards' describe rewritten and the source-text case removed), `tests/checks/tree/allow-audits.txt` (Q85d line 58; Q35 line 11), `type-scale.test.ts` if Q85d touches it, different hunks, a simple merge with the import block read at the second landing; with Q66, none; `DESIGN.md` (Q35 367, 378) and `HELP.md` (Q35 120 and the Changes passage) against the other entries' lines; `docs/diagrams/`, regenerated at each landing
   landing: not-started
-  round: 0
+  cases: agents/briefs/Q35-cases.md (round 0: case 8's `fit(100, 50)` corrected to 50 / 720 by item 5's rule)
+  builder_usage: first run of the cases 260,277 tokens, 65 tool uses, 12.7 min (0 full-list runs)
+  round: 0 (agents/briefs/Q35-cases.md, sent 23:27)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -210,6 +213,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z195, D20's seeded agent against the approval store D17 builds (raised 2026-10-01 23:18 at /spec D20): closed by the orchestrator, automode (`choices.md`): D20 is prepared after D17 has landed; (c), seeding without approval, was the lazy option.
 - Z193, how the slide is laid out inside Present's frame (raised 2026-10-01 23:13 by Q35's brief check): closed by the orchestrator, automode (`choices.md`): a slide type scale in px at the design size, centred content, frame-px reading widths, a long slide scrolling inside the frame; (b), the parts left at the UI's tokens, was the lazy option.
 - Z191, D11's `before` against D17's unbuilt `commands.yml` (raised 2026-10-01 23:04 at /spec D11): closed by the orchestrator, automode (`choices.md`): D11 is prepared after D17 has landed; (b), `before` left out of D11 and added by D17, was the lazy option.
 - Z189, how the Present deck fills its pane (raised 2026-10-01 at /spec Q35): closed by the orchestrator, automode (`choices.md`): a 16:9 frame at 1280 by 720, scaled uniformly and letterboxed; (c), the slide at the UI's type size, was the lazy option.
