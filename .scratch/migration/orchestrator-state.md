@@ -84,8 +84,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   report: agents/reviews/S3b-report.md
   brief_check: agents/reviews/S3b-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 75 tool uses, 216,498 tokens, 11.0 min
   shared_paths: DESIGN.md and HELP.md with X3d and Q109 (S3b writes DESIGN 313 and HELP 256; X3d DESIGN 373 and 389, HELP 112, 130, 176, 180 and 198; Q109 DESIGN 116, HELP 127 and 221); docs/diagrams regenerated at each landing; no two change the same line
-  builder_usage: first run (handed back at case 4) 317,363 tokens, 67 tool uses, 11.3 min; after the round-0 ruling 183,610 tokens, 147 tool uses, 47.9 min (report read at 04:37)
-  reviewer_report: agents/reviews/S3b-refuter.md (reviewer ab5621edb5c166992, launched 04:37, served claude-opus-5-5, 250,936 tokens, 69 tool uses, 19.5 min; items 2, 5 and 7 violated, every case met)
+  builder_usage: first run (handed back at case 4) 317,363 tokens, 67 tool uses, 11.3 min; after the round-0 ruling 183,610 tokens, 147 tool uses, 47.9 min (report read at 04:37); repair round 1 350,291 tokens, 76 tool uses, 34.4 min (report read at 05:32)
+  reviewer_report: agents/reviews/S3b-refuter.md (reviewer ab5621edb5c166992, launched 04:37, served claude-opus-5-5, 250,936 tokens, 69 tool uses, 19.5 min; items 2, 5 and 7 violated, every case met); over round 1: reviewer ac4fce0c8fc2f70c7, launched 05:34, served claude-opus-5-5, running
   landing: not-started
   round: 1 (sent 04:59: agents/briefs/S3b-round1.md, ten rulings); round 0 sent 04:00: agents/briefs/S3b-cases.md, case 4's -0 moved to calendar.days_back, notifyConfig left out of the readers, DESIGN.md:313 lists config-key)
 ```
@@ -655,6 +655,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 05:34. S3b's round-1 report in (every ruling claimed done, checks 7 passed); its reviewer over round 1 launched (claude-opus-5-5). In flight: X3d (round-1 review), Q109 (review), S3b (round-1 review). Open: Z138.
 - 2026-10-01 05:32. X3d's round-1 report in; its two new questions closed in automode (Z140 (2), one wall surface token at landing; Z141 (1), the letter's font as built); its reviewer over round 1 launched. In flight: X3d (round-1 review), Q109 (review), S3b (round 1). Open: Z138.
 - 2026-10-01 05:23. Q109's builder reported everything done but the looks, which are the landing's (report `agents/reviews/Q109-report.md`); its reviewer launched (claude-opus-5-5). In flight: X3d (round 1), Q109 (review), S3b (round 1). Open: Z138.
 - 2026-10-01 04:59. S3b's review in (ab5621edb5c166992): every case met; items 2, 5 and 7 violated (a swallowed finder throw, readers that cannot refuse, a read-back that refuses `.inf`, no-op calls added to pass the diagram check, two false doc sentences from wrong brief premises); repair round 1 sent with ten rulings, the diagram tool's parting among them. In flight: X3d (round 1), Q109 (builder), S3b (round 1). Open: Z138.
