@@ -2,7 +2,7 @@
 
 In flight:
 - Q85c (zod in the data folder), repair round 1 built, its review running.
-- U3 (every view on VS Code's scale, from U2's audit), review in, repair round 1 next.
+- U3 (every view on VS Code's scale, from U2's audit), repair round 1 building.
 - D27 (the editor's languages), brief check in, its findings being closed in the brief.
 Queued, in order (34 steps):
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), brief checked, prepared again once Q85c has landed.

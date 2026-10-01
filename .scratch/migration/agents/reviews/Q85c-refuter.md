@@ -131,3 +131,111 @@ No test asserts a known defect, none has a threshold widened, none is made to pa
 - Windows or other-platform behaviour of the file readers: not exercised.
 
 Reviewer usage: about 330,000 tokens (context counter), about 80 tool uses, about 70 minutes (including two runs of the 7-command list at about 7.5 minutes each; the first run's output file was overwritten by a parallel session writing the same scratchpad path, so the quoted lines are from the second run).
+
+## Repair round 1, refuted
+
+# Q85c repair round 1, reviewer report (worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85c, base 8db30ca2, product tools/oculus)
+
+Position first: every ruling of round 1 is closed. The verification list is green. I found 0 Spec, 0 Proof, 2 Standards (low) and 1 Behaviour (low) findings. Nothing was changed anywhere. `git status --short` in the worktree still prints 48 paths after my runs. My scratch files are under $TMPDIR with the prefix `Q85c-r1-review-`.
+
+## Verification lines (from tools/oculus in the worktree, run in the foreground)
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams        exit 0, git status --short afterwards 48 paths
+$ sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md      exit 0
+$ npm test
+ Test Files  410 passed | 22 skipped (432)
+      Tests  10779 passed | 618 skipped (11397)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  442 passed | 9 skipped (451)
+$ npm run check
+1790874541965 COMPLETED 2924 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+No test timed out in my run, so there is nothing to name as load.
+
+Commands the round's report quotes, rerun:
+- `npx vitest run tests/data tests/checks/diagrams` printed `Test Files 37 passed (37)` and `Tests 744 passed (744)`. This matches the report.
+- Counting grep over `src/lib/data` printed 14 files and 41 lines (validate 12, normalise 2, shapes 2, connect 2, calendar 1, model-sessions 1, agents 1, options 4, merge 1, worktrees 3, code-themes 1, search 1, guards 9, opens-in-program 1). The `.issues|prettifyError|treeifyError` grep and the non-`Shape` `const x = z` grep print nothing. The cast grep prints `snapshot/compact.ts:6` and `sources/config/merge.ts:63` only. The item 6 grep prints `helpers/guards.ts:18` only.
+- `sed -n 148p DESIGN.md | grep -c 'src/lib/data'` printed 1, and `grep -o "server/transcripts., .src/lib/data. and .state/."` matched the opening scope sentence.
+- `grep -rn "export { career" src/lib/data` and `grep -n "?? \['']" settings.ts` print nothing. `grep -rn "rowsShape(" src/lib/data` prints only module-level consts (`index.ts:61,77,104`, `normalise.ts:72`, `present.ts:134,142`, `feeds.ts:35`, `validate.ts:170` inside `listNamesShape`) plus the helper's own definition in `shapes.ts`.
+- `q85c-answers.mjs` was in the session scratchpad. I ran it on the tree it was run on (`$S/base/oculus`, which I confirmed equals the base: reverse-applying `git diff 8db30ca2 -- tools/oculus/src/lib/data` onto a copy of the worktree's folder leaves only the three new files as the difference) and on the worktree. All ten changed answers reproduce:
+  - Before: `flattenText` gave `["__proto__.a","b"]` and nested `["a.__proto__.c","a.d"]`; `textCatalog` and `portfolioConfigFrom(...).text` gave `["__proto__.a","b"]`.
+  - Before, `loadConfig`: the map case replaced the prototype (`protoIsObject:false`, `inherited_a:"x"`) with a `defined_twice __proto__` finding; the text case kept the prototype and had the same finding; the two-file case replaced the prototype and had two findings.
+  - Before: registry meta and collection meta had `protoIsObject:false` and `injected:"yes"`.
+  - After: `["b"]`, `["a.d"]`, `["b"]`, `["b"]`; `loadConfig` has `protoIsObject:true`, own keys `["b"]` and `[]` findings in the map and text cases; the two-file case has `inherited_a:"z"` and `[]` findings; registry meta and collection meta have `protoIsObject:true` and keys `["title"]`.
+- Case 14: `JSON.stringify(buildPortfolio(demo, config))` from the base tree and from the worktree is 43256 bytes each, and `cmp` printed nothing (exit 0).
+- Timing: `build-timing.test.ts` ran in 3 alternating rounds, base then worktree (base src copy, worktree tests), 200 runs each. buildPortfolio ms: base 2016.5, 2730.8, 2368.2 (mean 2371.8); worktree 2280.4, 2083.7, 1964.3 (mean 2109.5; 0.89x). readManifests: base 443.7, 787.1, 684.4 (mean 638.4); worktree 610.7, 697.6, 460.2 (mean 589.5). validate: base 10.4, 15.4, 17.6 (mean 14.5); worktree 11.0, 11.4, 10.7 (mean 11.0). All three are under the 1.5x bound; the machine was loaded.
+- Differential (the scripts of the first review, in the session scratchpad, adapted in a copy only to import `career` from `normalise-career.ts`, since ruling 4 removed the re-export): `diff.mjs` compared 10751 cases and found 8 differences, all `flattenText` and `portfolioConfigFrom(...).text` on an own `__proto__` key. `diff3.mjs` compared 235695 cases and found 12 differences, all `loadConfig` with an own `__proto__` key in a file. `diff4.mjs` found 0 differences in 2463 `readPresent`/`deckFindings` inputs. `diff5.mjs` found 0 differences in 900 `validate`/`normalise` cases. Identity, key order and thrown sentences matched everywhere else. These scripts do not cover the three round-1 `__proto__` loops; those are covered by the answers script and the three cases below.
+
+## Verdicts for the whole diff since the base
+
+Items of "What to build":
+- 1: holds. The six `rowsShape(...)` schemas now sit at module level (Spec 1 of round 0 is closed). `satisfies` is used where a declared type exists. The answers come from `safeParse(...).data`, `readAs` or `readOr`. The one `.parse` is `tiersShape.parse(held)` at `settings.ts:158`, which cannot fail (Standards 1).
+- 2: holds. `readYamlMap` (`sources/yaml-file.ts:24-51`) tests the top through `readAs(mapShape, ...)`. The cast grep above shows only the two allowed lines.
+- 3: holds. The lists and rows read through item schemas. The `local.ts` sentences and their order are unchanged; the differential and `local.test.ts` agree.
+- 4: holds. `settings.ts`, `searchCap`, `programApps` and `paintLimit` read through schemas. `flattenText` stays a walk using `isMap`.
+- 5: holds. `normalise.ts` is 769 lines, `validate.ts` 849, and the new `compact.ts` and `normalise-career.ts` sit in `snapshot/`, which holds 6 items.
+- 6: holds. The item 6 grep prints `guards.ts:18` only. `yaml-file.ts` replaces the five `readFile` clones. In `allow-duplication.txt` five lines are removed and five are rewritten to the moved paths (diff read), and none is added.
+- 7: holds. The remaining check lines are the ones "The other check lines" names (`shapeOf`, vocabulary comparisons, type tests, single-argument checks, bare `isMap` walks).
+- 8: holds. `build-timing.test.ts` is tagged `@module-tag slow`, asserts results and not time, and times the three passes. I ran it by name (3 passed).
+- 9: holds. The two changed answers named in the brief, and the three further maps of Z173, are ended. See Behaviour 1 for one changed answer the report does not list.
+- 10: holds. `DESIGN.md:148` names `src/lib/data` in the opening scope sentence and in its own paragraph. No `typeof` appears in the first 15 lines of any changed file under `src/lib/data`.
+- 11: holds. The two config tests moved into `tests/data/sources/config/`, which holds 9 items; `tests/data/sources` holds 9; the seven new files exist. The new cases sit in the module test files. `normalise.test.ts` is now 865 lines (above the brief's 850 mark, below the 900 limit); round-1 ruling 2 told the builder to put the case in the module's own file, so this follows the ruling.
+- Verify 2 (per-file `grep -c "safeParse\|readAs("`): partial on the literal text. `feeds.ts`, `manifests.ts`, `career.ts`, `options.ts` and `compact.ts` print 0. The four reader files read through `readOr`, `optionalText` and `readYamlMap`, which call `safeParse` inside. Met in substance; the orchestrator ruled it accepted (round-1 ruling 3). `compact.ts` is a helper with no reader.
+
+Cases:
+- 1, 2, 3, 4, 4b, 5, 6, 7, 9, 10, 11, 12, 13: met. Each has its test in the files named by the first review; the 37 files of `tests/data` and `tests/checks/diagrams` pass, and the differentials above show no difference on these readers.
+- 8: met. The changed cases of `merge.test.ts` fail on the base and pass after: the first review reproduced it, and my base-tree runs of the registries, collections and normalise files fail exactly the three ruling-2 cases.
+- 14: met (`cmp` above).
+- 15, 16: met (`npm test` and `npm run test:checks` pass; the only edited existing test lines are imports).
+
+## Verdict per round-1 ruling
+
+1. Six schemas at module level: closed. See the `rowsShape(` grep above. Each function reads through its const (`scanRules`, `collectionFiles`, `vocabKeys`, `collectionKeys`, `specs`, `panels` call `readOr(<const>, ...)`).
+2. Three maps skip an own `__proto__` key: closed. The code is `collections.ts:49`, `registries.ts:82` and `normalise.ts:488`, each with `key !== '__proto__'` and a comment line. I ran the three new cases on the base: `registries.test.ts` "skips an own __proto__ key of the file when it builds the meta" fails, `collections.test.ts` the same name fails, and `normalise.test.ts` "skips the key when it builds the fields" fails (`expected { injected: 'yes' } to be Object.prototype`). All three pass on the worktree inside the 744. The fix reaches only those three loops and is not a removed check. A grep of the data folder for other maps built from outside keys finds only string-valued assignments (`scores[key] = text`, `icons[name] = ...`), where assigning to `__proto__` is a no-op, and `byId` keyed by an id value, which is not an outside map's key.
+3. Literal gate accepted as built: closed. No padding call was added.
+4. Standards: closed, each part checked.
+   - `DESIGN.md:148` names `src/lib/data` in the opening sentence.
+   - `validate-themes.ts:14` is `themeWordShape`, used at `:62`, and no other `wordShape` is in that file.
+   - The `?? ['']` branch is gone.
+   - `export { career }` is gone, and `career.test.ts:9` and `normalise.test.ts:14` import from `normalise-career.ts`.
+   - `isBundleId` returns `bundleIdShape.safeParse(value).success`, and `BUNDLE_ID` is read only at `opens-in-program.ts:34`.
+   - The `shapes.ts` head comment names `readOr`, `filledText`, `optionalText`, `keysOfShape`, `valuesOfShape`, `optionalItemsShape` and `textOrNumberOnlyShape`.
+   - The `strip` to `written` rename: the builder's reason holds. `career()` already declares `const situation: {label, value}[] = []` at `normalise-career.ts:118`, so a second `situation` would not compile. `const written = readAs(mapShape, raw.situation)` followed by `for (const [label, held] of Object.entries(written))` reads acceptably. The file uses `section` for the eligibility map, which would also have worked, but I raise no finding.
+5. Changed answers listed: not closed, narrowly. The report states ten with before and after, and my rerun reproduces all ten. One changed answer of the same rule is missing (Behaviour 1).
+
+## 1. Spec
+
+None.
+
+## 2. Proof
+
+None. The ruling-2 cases were seen failing on the unchanged tree, by the builder's quoted run and by my rerun. I did not find a test that asserts a known defect, a loosened threshold or a fitted revert. The `usageTiers` and `flattenText` tests assert the new answers.
+
+## 3. Standards
+
+1. `src/lib/data/shapes/shapes.ts:1-9` (head comment): "the whole-number and string-list schemas (`wholeShape`, `itemsShape`, `optionalItemsShape`)". `itemsShape` is `z.array(z.unknown())` at `:244`, a list of anything, not a string list. The comment also still says the helpers serve "the server and the state layer", although `src/lib/data` is now their largest reader. Failure scenario: a reader takes `itemsShape` for a string-list schema and uses it where items must be checked as texts. Fix: describe `itemsShape` as a list of anything, and name the data folder.
+2. `src/lib/data/sources/config/settings.ts:152-158`: "const refused = Object.entries(held).find(([, value]) => !labelShape.safeParse(value).success); ... return tiersShape.parse(held);". The map is validated twice, and this is the only reader in `src/lib/data` that ends in a throwing `.parse`, where every other reader answers from `safeParse(...).data`, `readAs` or `readOr`. It cannot fail after the loop, so no answer is wrong. Failure scenario: a later edit that changes `tiersShape` but not the loop would make `.parse` throw a zod error whose text the brief says is never shown. Fix: take the answer from `readAs(tiersShape, held)` and keep the loop only to name the key.
+
+## 4. Behaviour
+
+1. `src/lib/data/sources/config/merge.ts:222-232` (`flattenText`): the round's report lists ten changed answers but not this one. Rerun on the unchanged tree and the worktree: `flattenText(JSON.parse('{"a":{"__proto__":"x","b":"y"}}'))` answered `{"a.__proto__":"x","a.b":"y"}` before and answers `{"a.b":"y"}` now. The same holds for a number leaf (`{"k":{"a":1,"__proto__":3}}` loses `k.__proto__`, found by `diff.mjs`). Item 9 says `flattenText` skips an own `__proto__` key "at every level", so the behaviour is as ruled, but ruling 5 asks for every changed answer with its before and after, and `merge.test.ts:53-58` asserts only the top-level text case, which was already `['b']` before. Failure scenario: a reader of the report's list sees a key `a.__proto__` leave the text catalog's dotted keys with no entry saying so. Fix: add the before and after to the list, and a case over a nested text leaf.
+
+## Declined to judge
+
+- The look on the TEST page: no view, style or markup file changed, so it belongs to the landing.
+- Whether the `written` name is the best one available: I judge it acceptable and leave the choice to the orchestrator.
+- The builder's claim that it started no agent and ran no git command this round: no command here can verify what it ran.
+- `config/local.yml`: never opened, printed, grepped or hashed by me. `vite.config.ts` calls `loadLocal` at vitest start in every run, which is the app's own tooling, and I ran vitest with symlinks to the worktree's `config`.
+- Timing ratios below about 20 percent: three rounds on a loaded machine (base `validate` ranged 10.4 to 17.6 ms) cannot resolve them. The ratios I measured are 0.89x, 0.92x and 0.76x.
+
+Usage: Sonnet 5.5 (claude-sonnet-5-5)
+
+Usage (from the completion notice): claude-sonnet-5-5, 204,734 tokens, 61 tool uses, 23.3 min.

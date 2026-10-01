@@ -43,7 +43,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   round_1: agents/briefs/Q85c-round1.md (five rulings, Z173 among them; sent to the builder)
   brief_check: agents/reviews/Q85c-brief-check.md, every finding closed in the brief (its Closed heading, Z163 widened in automode); claude-sonnet-5-5, 272,378 tokens, 80 tool uses, 13.3 min
   landing: not-started
-  reviewer_round_1: running, agent ad09686ce9cc473e2, claude-sonnet-5-5 read from its transcript at 19:04
+  reviewer_round_1: agents/reviews/Q85c-refuter.md "Repair round 1, refuted" (agent ad09686ce9cc473e2, claude-sonnet-5-5 read from its transcript; 204,734 tokens, 61 tool uses, 23.3 min; 0 Spec, 0 Proof, 2 Standards, 1 Behaviour)
   round: 1
 - step: U3
   executor: agent
@@ -61,8 +61,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/U3-brief-check.md, every finding closed in the brief (its Closed heading, Z157 and Z160 in automode); agent a2d45e553bd8d1965 on claude-sonnet-5-5, 327,546 tokens, 88 tool uses, 14.4 min
   shared_paths: with Q85b, `src/lib/state/sources/search.svelte.ts` (U3 adds at most one retry function; Q85b rewrites its readers into schemas) and `DESIGN.md` (different lines). With Q88b, the Files view (`views/sources/files/Files.svelte`, `tree/Tree.svelte`), `views/sources/search/Query.svelte`, `views/sources/repositories/diff/Diff.svelte`, `views/life/memories/Memories.svelte`, `ui/tree/TreeItem.svelte`, `search.svelte.ts`, `tests/views/sources/files/` and `DESIGN.md` (different lines): U3 changes style blocks and moves header controls into the bar, Q88b adds menus, handlers and new components, so the hunks meet only where both edit one toolbar snippet, merged by reading both at U3's landing, which comes after both; the new components Q88b adds (`NameInput.svelte`, the questions component) are put on the scale at that landing. `docs/diagrams/` is regenerated at each landing
   reviewer_report: agents/reviews/U3-refuter.md (reviewer a09318b9b70abb118, claude-sonnet-5-5 read from its transcript; 340,175 tokens, 160 tool uses, 36.1 min; 4 Spec, 6 Proof, 3 Standards, 4 Behaviour)
+  round_1: agents/briefs/U3-round1.md (sixteen rulings; HELP.md and src/routes/+layout.svelte:33 added to the paths; sent to the builder)
   landing: not-started
-  round: 0
+  round: 1
 ```
 
 ## The standing demands (from Axel, in force)
