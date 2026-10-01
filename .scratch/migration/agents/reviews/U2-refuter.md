@@ -188,3 +188,141 @@ Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2`, base 86e
 - Context used: about 440k tokens of the budget in this session's current window. The total across the compacted earlier window was not counted. The number of tool calls was not counted.
 
 Usage (the completion notice): claude-opus-5-5, 89,273 tokens, 212 tool uses, 18.3 min.
+
+
+## Repair round 1, refuted
+
+Reviewer of `refute` over U2's repair round 1. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/U2`, base 86e6d8bb. Outputs read under `.../U2/tools/oculus/.scratch/migration/agents/reviews/`: `U2-audit.md` (1139 lines), `U2-vscode.css` (1105), `U2-report.md` (112, written 09:39:06), `U2-shots/` (100 PNGs). I changed no file. On TEST I only switched tabs, opened two views and closed them again, and cleared one filter and typed it back (listed under Behaviour).
+
+### Verification (rerun from `tools/oculus` in the worktree)
+
+```
+git status --short        -> ?? .../U2-audit.md, ?? .../U2-report.md, ?? .../U2-shots/, ?? .../U2-vscode.css
+git diff 86e6d8bb --stat | wc -l   -> 0
+V1 grep -c '^## ' U2-audit.md      -> 58
+   grep '^## ' ... | head -56 | cut -c4- | diff - ids.txt  (ids.txt: HELP.md 98-146 ids minus files, repositories, then the 11; 56 lines) -> no output, exit 0
+   tail -2 -> "## Common differences", "## Proposed grouping"
+V2 every cite: grep -o 'css:[0-9]*' U2-audit.md | wc -l -> 537 numbered (plus one bare "css:N" in line 3's legend)
+   each of the 69 distinct cited lines below 1086, braces normalised, counted in VS Code 1.137.0 workbench.desktop.main.css (python str.count):
+   "69 lines; found once: 68 more: 1 missing: 0"; control string with 23px -> 0
+   js constants in workbench.desktop.main.js: getHeight(){return 22} 6, ITEM_HEIGHT=22 5, chatListTreeTemplate 1, var QQt=22 1, [Ust] default:8 1, minimumWidth=170 2, qmo=dt?12:14 1, editor fontSize dt?12:14 1, rTi=dt?1.5:1.35 1
+   no cite points at a blank or /* line below 1086
+V3 LC_ALL=C grep -c '[^ -~]' -> U2-audit.md:0, U2-report.md:0, U2-vscode.css:0
+V4 ls U2-shots | grep -cE '^(config|inbox|calendar|memories|transcript|terminal|session-detail|linkedin|person|gallery)-' -> 0
+V5 tmux list-sessions (09:40:54 and 09:52:08) -> oculus-a5f844-shell: 1 windows (created Wed Sep 30 14:19:19 2026)
+   (the report's line 37 also lists oculus-d0935c-shell; it is gone)
+V6 wc -l < ~/.oculus/changes.jsonl -> 27; last entry "at":"2026-09-30T16:28:35.611Z"; file mtime Sep 30 18:28
+   ls -lT ~/.oculus/bookmarks.yml -> Sep 25 05:05:32 2026
+Shot fates: kept list 54 + cropped list 44 + new 2 -> diff against ls U2-shots: no output (all 100 accounted, no overlap)
+sips eq_btfno.png -> 1628 x 235 (matches P2)
+TEST (javascript_tool, tab 812136282, before my first action): vis "visible", hasFocus true, rAF 98 in ~1 s, window 1512x944 at screenY 38; again later: vis "visible", rAF 103
+```
+
+### Verdicts (whole diff since the base)
+
+Items of "What to build":
+- 1, `U2-vscode.css`: holds. Every cited stylesheet line is in VS Code 1.137.0 and every js constant is there. It does not contain VS Code's generic list-row hover (finding Standards 2).
+- 2, `U2-audit.md`: violated. Rulings B1 to B5 and P1 to P3 reproduce: I re-measured doc, customization and History myself. Three things still fail: two sections state crops their shots do not have (Spec 1, Spec 2), the search error state names no attempt (Spec 3), and three cites name the wrong line (Standards 1 to 3).
+- 3, closing sections: violated. Item 2 (the theme switch) is still unmeasured, and a visible tab with animation frames running was available at my reads (Proof 1). Group 8 rests on that measure.
+- 4, shots: violated. Shots show content that may not be committed (Standards 4), and two shots hold more than one pane (Spec 4).
+
+Cases:
+- 1: met. History's populated rows reproduce on TEST: 27 `li`, at 479 px 58 to 122 px high, padding 4px 0, line-height 22.5px, row background transparent while hovered, Undo 65x25.3 and pill 80x21.3 at opacity 1. I did not re-measure agents at narrow (see Declined).
+- 2: partial. The hpc empty states are now written correctly. The search error state is written as unreachable with no attempt named (Spec 3).
+- 3: partial. See Standards 1 to 3.
+- 4: met.
+- 5: met. V4 prints 0, and `ls U2-shots | grep -ic config` printed 0 in the report. No shot shows the Config view; Config appears only as a tab label in settings, account-setup and pages shots.
+- 6: not verifiable for the first pass's shots. For this round's shots the report says the check was made before each, and I cannot re-prove that. In my session no pane had Config as its current tab before my screenshot or zooms.
+- 7: not verifiable. `oculus-d0935c-shell` (created Oct 1 00:04, before the audit) was gone by 09:40:54, 2 minutes after the report listed it as present (Proof 2).
+- 8: met.
+- 9: met. V1 holds, and `## settings` is present.
+- 10: met. The change log has 27 entries, the newest 2026-09-30 18:28 local. `bookmarks.yml` is unchanged since Sep 25, so the audit created neither bookmark. That settles the report's "not verified" line 104.
+- 11: partial. The header wrap is measured. The theme switch is not (Proof 1).
+
+### Findings
+
+**Spec**
+
+1. `U2-audit.md:853` ("customization-narrow.png, customization-wide.png (the populated state, cropped to the header and tab strip, because the body is a rule file ...)"), `U2-report.md:56` ("customization-narrow.png (header crop)") and `:84` (lists customization-narrow as "Kept whole").
+   - What is wrong: `customization-narrow.png` is 494x261 and shows the first lines of the body of `~/.codex/AGENTS.md` ("# Global rules (apply in every project and session)", "## ABSOLUTE RULE ... never publish negative/null results"). The section's reason for the crop is not met, and the report contradicts itself about this shot.
+   - Failure scenario: Axel's private global rule file text is committed with U2-shots, while the audit tells the lander it was cropped out.
+   - Verdict: item 2 and item 4 violated.
+2. `U2-audit.md:183` ("`code-wide.png` to the header, intro and chips; the other cards list repository names and addresses, so their measures are by computed styles only").
+   - What is wrong: `code-wide.png` (931x305) shows four repository cards, with names, GitHub addresses and "Visibility: private" on `research-hub` and `game-engine`.
+   - Failure scenario: private repository names and addresses are committed while the section says they were cropped out.
+   - Verdict: item 2 and item 4 violated.
+3. `U2-audit.md:233` ("Error state: none reached") and `U2-report.md:50` ("not produced by any query that can be run without a write").
+   - What is wrong: case 2 requires the attempt to be named. A read-only attempt exists and is not named: the regex toggle with an invalid pattern. Whether it produces an error state is not verified.
+   - Failure scenario: the search error state stays out of Group 7 on an untested "unreachable".
+   - Verdict: case 2 partial.
+4. `U2-shots/doc-wide.png` (928x345) and `file-wide.png` (928x200).
+   - What is wrong: both include the left rail with its badge counts as well as the pane. Brief item 4 says "A shot is of one pane only".
+   - Failure scenario: a reader compares chrome outside the view as if it were the view's.
+   - Verdict: item 4 violated.
+
+**Proof**
+
+1. `U2-report.md:3`, `:42`, `U2-audit.md:1090` ("the window is occluded and a visible tab could not be had") and Group 8 at `:1137`.
+   - What is wrong: at my reads the TEST tab was visible, with focus, at 1512x944, running 98 and then 103 animation frames per second. The round's third branch ("if a visible tab cannot be had") therefore no longer applies. The measure can be taken now through Settings' Theme control. I did not switch the theme.
+   - Failure scenario: Group 8 stays "waiting" and Axel rules on the grouping without the one measure that decides whether Group 8 exists.
+   - Verdict: item 3 violated, case 11 partial.
+2. `U2-report.md:37` ("tmux list-sessions prints ... oculus-d0935c-shell ...").
+   - What is wrong: at 09:40:54 and 09:52:08 only `oculus-a5f844-shell` is listed. d0935c predates the audit. Who ended it, and whether it was still alive at 09:39, is not known. Case 7's claim that the audit left other terminals alone rests on this line.
+   - Failure scenario: the lander books case 7 as met on a list that no longer holds.
+   - Verdict: case 7 not verifiable.
+
+**Standards**
+
+1. `U2-audit.md:424` ("the agent sessions list (css:812, css:1055)") and `:462` ("css:1055 to css:1074").
+   - What is wrong: ruling S1 replaced the comment-line cite css:1054 with the next line. css:1055 is `.monaco-workbench:not(.agent-sessions-workbench) .interactive-item-container.interactive-request.editing .chat-request-timestamp-container { ... padding-inline-end ... }`. That is a chat-request timestamp rule outside the agent sessions workbench, and it holds no row value. The first agent-sessions list rule in the group is css:1066 or css:1067.
+   - Failure scenario: a builder reads padding from a chat edit timestamp as the session row.
+   - Verdict: case 3 partial.
+2. `U2-audit.md:22` and `:530` (css:1073 kept, relabelled as "the welcome grid row hover tint of the agent sessions list").
+   - What is wrong: ruling S1 said to cite the line that holds the value for the element compared. The focus and timeline rows are still compared against the agent-sessions welcome grid. VS Code's generic `.monaco-list .monaco-list-row:hover{background-color:var(--vscode-list-hoverBackground)!important}` is in `workbench.desktop.main.css` (found by grep) and not in `U2-vscode.css`, which the builder could have extended. The closure is a relabel, not a correction.
+   - Verdict: item 1 holds with this gap, case 3 partial.
+3. `U2-audit.md:790` ("VS Code names the filter in its filtered-empty message and centres it with 40px top padding at 70% opacity (css:14)").
+   - What is wrong: css:14 holds the centring, the padding and the opacity. Nothing in `U2-vscode.css` holds "names the filter". The wording came from the round's ruling, but case 3 forbids writing it as VS Code's without a line.
+   - Verdict: case 3 partial.
+4. Shots with content ruling 12 excludes, all looked at with Read:
+   - `events-narrow.png` (kept whole): the AAAI 2027 card "BT-FNO target ... attend". It ties Axel to a submission under double-blind review.
+   - `customization-narrow.png` and `code-wide.png`: see Spec 1 and Spec 2.
+   - Lower weight, and inconsistent with the session-list section's own rule of cropping out titles that come from prompts:
+     - session titles "Z103 shapes options" in `agents-narrow.png` and `changes-narrow.png`;
+     - "S2 status" in `timeline-wide.png`, `agents-wide.png` and `doc-wide.png`;
+     - the agent task "Build Q85a4, zod in five folders" in `agents-wide.png`;
+     - account labels "gmail + uhasselt" in `usage-wide.png` (no email address is visible).
+   - No email address, token, home path, Config body or `local.yml` was seen in any of the 100 shots. The session-list shots show the Customizations block collapsed, with no home paths.
+   - Failure scenario: these are committed when U2-shots lands.
+   - Verdict: item 4 violated.
+5. `U2-report.md:55` and `:109`.
+   - What is wrong: ruling B1 said to replace the old reason. Line 109 restates the first pass's wrong reasons for doc and customization, and misstates the round brief as saying "only". This is narration of a wrong turn, which spec.md "Report" excludes.
+   - Failure scenario: a reader takes the first pass's reasoning as part of the end state.
+
+**Behaviour**
+
+1. The Archive tab (`U2-report.md:3`, `:78`).
+   - Read from the DOM: pane 2 of TEST holds 30 tabs (Deposit ... Calendar, *Settings, Config) with no Archive tab. Panes 0 and 1 are as the report gives them.
+   - In `oculus.layout.v1` (read only), the TEST page holds no `archive` instance. The one `archive` instance in storage (id 846b227c...) is on the page labelled "Page 1". Whether it is the tab TEST lost cannot be told without the earlier id.
+   - The first-pass shots `history-wide.png`, `deposit-wide.png` and `doc-empty-wide.png` (07:40) show the pointer resting on the Archive tab, with its tooltip and close control drawn. That shows the pointer was there; it does not show a click.
+   - `U2-audit-notes.md` line 7 shows the orchestrator looked at archive before the audit. So a tab the audit did not open is gone, which ruling 14 said to keep, and it is not reopened.
+   - Cause not established.
+2. My own actions on TEST, all restored. At the end, `.tab.current` per strip was Repositories, Staged Changes and Settings, and `document.activeElement` was BODY. The actions:
+   - h then 5 with BODY focused. This opened "HPC how-to" in pane 1, which I measured and closed with its close control.
+   - Sessions selected by a JS click. Customizations set to Codex, `~/.codex/AGENTS.md` opened (it appeared after Config in pane 2), Settings reselected, AGENTS.md closed while not current, the agent set back to Claude.
+   - Audit tab selected once by a misclick.
+   - History selected. Its filter, with focus confirmed, cleared by Backspace over the selected text and "transcript" typed back.
+   - Config was never selected. I wrote no storage, made no fetch and changed no Appearance value.
+   - Re-measures that agree with the audit:
+     - doc at 481 px: header 30.25, `h1` 24px/700/36 px, links 12.5px/14.5 px, `div.doc` max-width none, padding 0, 0 svg, 0 Monaco.
+     - customization at 479 px: header 30.25, title 106 px, no tools; `pre` 11.5px monospace, line-height 17.25px, padding 0, pre-wrap; 0 Monaco.
+     - Settings: 72 svg at 11.5 px.
+
+### Declined to judge
+
+- B3 (agents at narrow) and P3 (usage overflow at 309 px): not re-measured, since both need the window resized.
+- Whether `project-wide`/`project-narrow`, `editor-*`, `map-wide`, `slides-*`, `file-*` (the BT-FNO equation) and `leads-wide`'s intro ("9 live | 2 expired") may be committed. They show unpublished research plans, dataset details and lead counts, none of which is in ruling 12's list. This is Axel's call.
+- Whether the audit opened the LinkedIn tab it closed: no record of its origin.
+- The report's open items quote Z138 from the base state file. On main the open-items list is now empty, since Z138 has been ruled. This is a fact about timing, not a builder defect.
+- The first pass's per-shot `local.yml` checks (case 6).
+
+Reviewer usage: tokens not counted; about 130 tool uses; about 15 minutes (09:38 to 09:53).

@@ -703,6 +703,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z43 (2026-09-28): (a), the `sessions` message leaves out `terminals` until tmux has answered once, and a page reads a message without it as saying nothing about any terminal; built in Q99 (the user).
 - Open item Z138 (2026-10-01): (3), Seti's colours on the dark themes and each `--seti-*` token derived darker on the light themes in `themes/derive.ts`; no VS Code hex copied; built in X3a (the user).
 - Open item Z143 (2026-10-01): (5) widened to terminals, a pane stays when its last tab, closed or dragged out, was a view opened for something or a Terminal tab, at most one empty pane of each kind per page, documents landing in the document one first; built in L4 (the user).
+- Open item Z144 (2026-10-01): (a), no committed shot shows session or agent titles, agent task names, account labels or unpublished research (project plans, manuscript and equation content, submission cards, dataset details, lead counts); such shots are cropped or removed in U2's round 2 (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

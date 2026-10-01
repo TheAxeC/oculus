@@ -144,3 +144,13 @@ The question: after the dialog fix, where is the keyboard once a tab of another 
 An editor action from the palette (Add Line Comment, Fold All) moves no tab, so the keyboard stays in the editor; the palette's `:tab` and `:goto` commands land on their tab as a picked tab does.
 
 Where it is built: Q106's brief, item 6 (`Palette.svelte`'s `choose` and `run`) and case 19; `HELP.md:90` and `DESIGN.md:218` say it. Booked in the state file's closed log and `plan.md` Rulings.
+
+
+## Z144, what a committed shot may show
+
+U2's review over round 1 found shots showing session titles, an agent task, account labels and unpublished research (project plans, an equation, a submission card, lead counts), and declined to judge whether they may be committed.
+
+- (a) chosen: none of these is committed; each shot is cropped or removed and its measure is by computed styles. The shots go into git, and oculus moves to its own repository.
+- (b) not chosen: commit them as they are. This was the lazy option.
+
+Where it is built: U2's round 2, item 10. Booked in the state file's closed log and `plan.md` Rulings.
