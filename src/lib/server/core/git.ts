@@ -36,6 +36,7 @@
 //     git -C <root> merge-base <branch> HEAD
 //     git -C <root> check-attr filter text eol working-tree-encoding ident -- <path>
 //     git -C <root> config --get --default= core.autocrlf
+//     git -C <root> config --get --default= core.sshCommand
 //
 // `check-ignore` is the file browser's: which entries of one listed folder the repository ignores,
 // the names handed on its standard input, so the tree can leave them out (ignoredIn below).
@@ -49,7 +50,9 @@
 // The diff pane's reads answer each file's two versions whole, read by `show`, beside the head
 // lines of the diff; `merge-base` names where a worktree's diff starts, and `check-attr` and
 // `config --get` say whether git converts a file's text, which decides whether the pane may cut a
-// partial patch from it. `config` is held to its one reading vector.
+// partial patch from it. `config --get --default= core.sshCommand` is the ssh command the
+// repository names, which an unattended fetch extends (server/root/watch/autofetch.ts). `config` is
+// held to those two reading vectors.
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
 // dashboard watcher must never be the thing that runs one. tests/server/core/git.test.ts holds two
@@ -482,6 +485,16 @@ export function attributesOf(
         ok: true,
         value: { ...parseAttributes(checked.text), autocrlf: autocrlf.text.trim() }
     };
+}
+
+/**
+ * The ssh command the repository's configuration names, `core.sshCommand`: the empty text when none
+ * is set, which includes a folder that is no repository (git answers it from the global
+ * configuration), and null when the read fails (a timeout, git not run, or git exiting non-zero).
+ */
+export function sshCommand(root: string): string | null {
+    const done = run(root, ['config', '--get', '--default=', 'core.sshCommand'], TIMEOUT_MS);
+    return done.ok ? done.text.trim() : null;
 }
 
 /** Who last changed each line of one file as the worktree holds it. */

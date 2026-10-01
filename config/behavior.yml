@@ -133,8 +133,10 @@ changes:
 
 # === The git panel ==========================================================
 # The Changes view asks this model for a suggested commit message. Empty uses the command-line default.
+# The minutes between two automatic fetches of every repository with a remote, 0 for none.
 git:
   message_model: ""
+  autofetch_minutes: 0
 
 
 # === Search across files ====================================================

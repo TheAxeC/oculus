@@ -1,11 +1,11 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D31 (git auto fetch), building.
-- Q85c (zod in the data folder), building.
-- U3 (every view on VS Code's scale, from U2's audit), building (a second builder took over the worktree).
-Queued, in order:
-- D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment).
+- Q85c (zod in the data folder), repair round 1 built, its review running.
+- U3 (every view on VS Code's scale, from U2's audit), review in, repair round 1 next.
+- D27 (the editor's languages), brief check in, its findings being closed in the brief.
+Queued, in order (34 steps):
+- D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), brief checked, prepared again once Q85c has landed.
 - Q85d (zod in the views, ui, shell and routes).
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), once U3 has landed.
 - Q88c (the Source Control rows' and the pane strip's new menu items).
@@ -16,7 +16,7 @@ Queued, in order:
 - Q66 (a hidden tab defers its work).
 - Q35 (the session views).
 - D11 and D14 (the rite debug client; LaTeX everywhere).
-- D25 (the editor's options); D27 (the editor's languages).
+- D25 (the editor's options), once S4 has landed.
 - D23, D15 and D17 (language servers; PDF reading, once D14 has landed; project commands).
 - D23b (more language server features), once D23 has landed.
 - D28 (saving a source file), once D25 has landed.

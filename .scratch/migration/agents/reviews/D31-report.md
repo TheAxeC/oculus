@@ -11,12 +11,12 @@ Open items of the state file: not included (not reachable from the builder).
    - `GIT_TERMINAL_PROMPT=0` is set on the timer's fetch.
    - `GIT_SSH_COMMAND` is the ssh command git would have used plus ` -o BatchMode=yes`. `unattendedSsh(env, configured)` in autofetch.ts resolves it in git's own order: environment `GIT_SSH_COMMAND`, else `core.sshCommand`, else `ssh`.
    - With only `GIT_SSH` set and neither of the first two, nothing is added for ssh (`unattendedSsh` answers undefined). If `core.sshCommand` is set and `GIT_SSH` too, BatchMode is still appended, because git reads `core.sshCommand` before `GIT_SSH`. This is my reading of the ruling's order.
-   - `sshCommand(root): string` in src/lib/server/core/git.ts, vector `config --get core.sshCommand`, through the one call site. A failed read (key unset, no repository, timeout) answers the empty text.
+    - `sshCommand(root): string | null` in src/lib/server/core/git.ts, vector `config --get --default= core.sshCommand`, through the one call site. An unset key answers the empty text, a failed read (a timeout, git not run, git exiting non-zero) answers null (repair round 1).
    - `fetchIn(root, { unattended, sshCommand })` in git-write.ts takes the resolved command and runs no read. The pressed Fetch is unchanged.
    - Case 14 is four runs in tests/server/git/autofetch.test.ts, 'the environment of an unattended fetch', through `watchAutofetch` with the real remotes, fetch and ssh resolution: the repository command (`core.sshCommand`), the environment command, neither, and a pressed Fetch.
    - Discrepancy in the ruling: the script's arguments do not END with `-o BatchMode=yes`. git appends its own options and the host after the configured command, so they BEGIN with the configured command's arguments followed by `-o BatchMode=yes`. The test asserts `args=-i /some/key -o BatchMode=yes ` and `args=-o BatchMode=yes `.
    - New case for the read: tests/server/core/git-ssh.test.ts (set value, unset, no repository, repository left as it was).
-3. DESIGN.md:128 now says sixteen subcommands. The tree already had sixteen (`ALLOWED` in tests/server/core/git.test.ts; `merge-base`, `check-attr` and `config` were already pinned but missing from the paragraph), so "fourteen" would have been false. I also added to the paragraph the `merge-base`, `check-attr`, `config --get --default= core.autocrlf` and `config --get core.sshCommand` forms, and `config` and `check-attr` to the pinned list.
+3. DESIGN.md:128 now says sixteen subcommands. The tree already had sixteen (`ALLOWED` in tests/server/core/git.test.ts; `merge-base`, `check-attr` and `config` were already pinned but missing from the paragraph), so "fourteen" would have been false. I also added to the paragraph the `merge-base`, `check-attr`, `config --get --default= core.autocrlf` and `config --get --default= core.sshCommand` forms, and `config` and `check-attr` to the pinned list.
 
 ## First run on the unchanged tree (new and changed cases after the ruling)
 - autofetch.test.ts (cases 1-6, 8-15 and the four case 14 runs): "Cannot find module '../../../src/lib/server/root/watch/autofetch.ts'". fetch-period.test.ts: "Cannot find module '.../core/fetch-period.ts'". context.test.ts (case 19, wiring and default member): fails to load on the same missing import. Case 7's context case, run as a temporary copy without that import: "expected function to throw an error, but it didn't".
@@ -61,37 +61,7 @@ Paths widened beyond the brief and the ruling:
 - tests/server/core/git-ssh.test.ts (new): git.test.ts was at 894 lines and the new cases took it past 900; tests/server/core now holds ten items.
 
 ## Item 14
-The rows whose oculus column reads `has, fixed` in sections 4b, 4h and 4i of Z74-inventory.md. 4b has none; its rows read "sets" or "leaves Monaco's default". VS Code's defaults are those of the installed app, version 1.137.0 (`extensions/git/package.json` and `workbench.desktop.main.js`).
-
-Mismatch (reported, not changed):
-- git.pruneOnFetch: the tree fixes on (`fetchIn` runs `fetch --prune`, git-write.ts); VS Code's default is false. This is the same `--prune` that item 2's auto fetch runs, per Z83.
-- git.pullTags: the tree runs plain `git pull` with no `--tags` (`pullIn`, git-write.ts:589); VS Code's default is true. The inventory row says "VS Code's `false`", which is wrong.
-- git.requireGitUserConfig: the tree runs plain `git commit`; VS Code's default is true and passes `-c user.useConfigOnly=true` (read in the app's git dist/main.js).
-- git.enableCommitSigning: the tree runs plain `git commit`, so `commit.gpgsign` decides. VS Code's default false passes `--no-gpg-sign` explicitly (same dist/main.js).
-- git.statusLimit: the tree caps each change list at 200 (`MAX_ENTRIES`, core/git.ts:126); VS Code's default is 10000.
-- git.untrackedChanges: the tree draws Untracked as its own group (HELP.md:112; `ChangeRow.svelte` group 'untracked'); VS Code's default is "mixed".
-- scm.alwaysShowRepositories: the tree lists every root with no count condition (RepoList.svelte `{#each roots ...}`); VS Code's default is false.
-- git.countBadge: the tree has a per-row badge (HELP.md:112) and rail badges; VS Code's default is "all" on the activity-bar icon. Only partly matching; not verified further.
-- git.autoRepositoryDetection: VS Code's default is true (scans); the tree lists configured roots and session workspaces and scans nothing. Not verified further.
-
-Match:
-- git.allowForcePush (false): no `--force` in src/lib/server/git/git-write.ts or its siblings. `deposit-git.ts:257` force-pushes a deposit mirror, a separate path.
-- git.confirmSync (true): `sync` is in `CONFIRMED` (git-routes.ts).
-- git.enableStatusBarSync (true): the sync item in StatusBar.svelte / RepoItems.
-- git.fetchOnPull (false): plain `pull`.
-- git.openDiffOnClick (true): `ChangeRow.svelte`.
-- git.path (null): `GIT = 'git'`.
-- git.rebaseWhenSync (false): no strategy imposed.
-- git.showActionButton: the commit button.
-- git.showCommitInput, git.showInlineOpenFileAction: present.
-- git.showPushSuccessNotification (false): no notification.
-- git.similarityThreshold (50): `-M` without a value (core/git.ts:333, 346, 371).
-- scm.diffDecorationsGutterAction ("diff"): `markAction('open')` in Editor.svelte.
-- scm.diffDecorationsGutterVisibility ("always"): marks are always drawn.
-- scm.diffDecorationsGutterWidth (3): `width: 3px` in Editor.svelte:465.
-- scm.diffDecorationsIgnoreTrimWhitespace ("false"): no whitespace flag.
-
-Because of the mismatches, the sentences of items 9 and 12 say the other git behaviours "are fixed with no key" (DESIGN.md:344) and "are fixed and have no key" (HELP.md:186). They do not say "at VS Code's defaults". If you want that clause, the eight mismatching rows above would have to change first; that is yours to rule.
+The 25-row table, with 8 rows that differ from VS Code 1.137.0 and 17 that match, is under "Repair round 1, the builder's report" below; `git.enableCommitSigning` matches.
 
 ## Judgment calls (reversible)
 - `refresh(root)` follows any fetch that answered, ok or not, and not a fetch that rejected.
@@ -101,7 +71,7 @@ Because of the mismatches, the sentences of items 9 and 12 say the other git beh
 - A `refresh` that throws is logged as `autofetch: <root>: <reason>`.
 - The unattended-fetch hazard I named earlier (the env var overriding `core.sshCommand`) is closed by the ruling.
 - Sharp edge, not measured: a `setTimeout` that fires a millisecond early waits one more tick (accepted in the ruling).
-- Sharp edge: `sshCommand` runs `spawnSync` before each timer fetch, which blocks the event loop for as long as the read takes (its 5-second timeout at most). A read that times out answers the empty text, so that repository's fetch then runs with plain `ssh -o BatchMode=yes` and ignores its `core.sshCommand`. Not measured.
+- Sharp edge: `sshCommand` runs `spawnSync` before each timer fetch, which blocks the event loop for as long as the read takes (its 5-second timeout at most). A read that fails answers null, and that repository is skipped for the period with one log line (repair round 1).
 
 ## User-visible changes
 - behavior.yml `git.autofetch_minutes: 0` (new key, default off); catalog entry and Settings control (number).
@@ -115,3 +85,74 @@ Because of the mismatches, the sentences of items 9 and 12 say the other git beh
 - The built app's behaviour under the timer.
 
 Files, absolute: /Users/axelfaes/workspace/research-hub/.agents/worktrees/D31/tools/oculus/ (all paths above are relative to it).
+
+## Repair round 1, the builder's report
+
+Everything in the seven rulings is done. One correction to my earlier report comes first, because it changes what you have: git.enableCommitSigning is NOT a mismatch. VS Code's git extension sets `signCommit = enableCommitSigning === true ? true : void 0` and passes `--no-gpg-sign` only when `signCommit` is not undefined (dist/main.js of 1.137.0, read with grep), so at the default false it passes nothing and git's own `commit.gpgsign` decides, as in the tree. My earlier report said the default passes `--no-gpg-sign`; that was wrong. The number of rows that differ from VS Code's default is 8, not the 9 I listed (the earlier text said "eight" over a list of nine).
+
+Open items of the state file: not read from the builder side (no change). Nothing is left undone in the seven rulings. Sharp edges after the change:
+- The skipped-repository log line carries a fixed reason ("git timed out, did not run or exited with an error"), because a `null` answer cannot carry git's own message.
+- `sshCommand` is still a `spawnSync` read, once per repository per period, up to 5000 ms each, and blocks the server's event loop for that long. Not measured.
+
+## Rulings and the command that proves each
+1. `sshCommand(root)` (src/lib/server/core/git.ts:495-498) is `run(root, ['config', '--get', '--default=', 'core.sshCommand'], milliseconds(ms))` and answers `done.ok ? done.text.trim() : null`, typed `string | null`. I renamed its second parameter from `timeout` to `ms` so the call stays on one line and the file stays at 898 lines (900 is the size line; `sh utils/size-check.sh` rc 0). The head comment (core/git.ts:39, 53-55), `CALLS`/`PINNED`/`PINNED_SOURCE` in tests/server/core/git.test.ts (still 900 lines) and DESIGN.md:128 name the `--default=` form.
+   - autofetch.ts now has a default `unattendedFetch(root)`: it calls `sshCommand(root)` only when `process.env.GIT_SSH_COMMAND` is empty; on `null` it throws `core.sshCommand could not be read: git timed out, did not run or exited with an error`, which the existing catch in `visit` logs as `autofetch: <root>: core.sshCommand could not be read: <reason>` with no refresh.
+   - New cases, run on the tree before the change:
+     - tests/server/core/git-ssh.test.ts, "answers null when the read fails, for a root that does not exist": `AssertionError: expected '' to be null`.
+     - tests/server/git/autofetch.test.ts, "skips a repository whose core.sshCommand cannot be read, says so, and tries again next period" (the clone is moved away, one look, the clone is moved back, a second look): `AssertionError: expected [] to deeply equal [ 'autofetch: .../clone: core.sshCommand could not be read: git timed out, did not run or exited with an error' ]`. After the change it asserts one line after the first look, `calls` equal to `['remotes <clone>']`, then `refresh <clone>` after the second look and still one line.
+     - tests/server/core/git.test.ts: the gate cases "holds only the allowed subcommands at its call site, the pinned nine as their exact vectors" and "ran nothing but those commands over this file, the pinned nine as their vectors" failed with the new vector lists before the source change.
+     - "does not read core.sshCommand when the environment names the command" passes on the old tree, which never skips. With `const configured = sshCommand(root);` in place of `named ? '' : sshCommand(root)` it failed (1 failed, 43 skipped); restored, it passed (1 passed).
+2. The environment cases of autofetch.test.ts set `GIT_CONFIG_GLOBAL=/dev/null` and `GIT_CONFIG_NOSYSTEM=1` through the `ALONE` constant that `withEnv` applies (both names are in `NAMES`, so they are restored afterwards).
+3. The source test in autofetch.test.ts is titled "audits the source: ..." and now also asserts the names imported from core/git.ts equal `['sshCommand']`.
+4. DESIGN.md:344 ends "...nothing pushes after a commit except where the reader pressed Commit and Push or Commit and Sync."
+5. DESIGN.md:128 says "when only the older `GIT_SSH` variable names the ssh program, nothing is added for ssh, so ssh may still ask"; HELP.md:186 says "when only the older `GIT_SSH` variable names the ssh program, nothing is added for ssh, which may then still ask".
+6. HELP.md:186: the sentence "The status bar's sync item does the same for the repository of the tab on screen." now comes right after "none of them ever forces", followed by the auto fetch sentences; "and the incoming commits follow" is now "and the behind count of each branch moves with what the remote holds".
+7. Item 14 is below. No code change.
+
+## Verification
+- Scoped run: `npx vitest run` over git-ssh, fetch-period, core/git, autofetch, git-write, context, config-key and help tests printed `Test Files 8 passed (8)`, `Tests 210 passed (210)`.
+- Full list: `npm run diagrams` rc 0, then `sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md` from tools/oculus, rc 0. It printed `$ npm test`, `$ npm run test:checks`, `$ npm run check`, `$ npm run build`, `$ npm run format:check`, `$ npm run lint`, `$ ! LC_ALL=C grep -rna '[^ -~]' src tests`, `checks: 7 commands passed`.
+- Number of full-list runs this round: 1, green. The file count of tests/server/core is 10 (the cap, unchanged).
+- Line counts now (`wc -l`): core/git.ts 898, autofetch.ts 225, autofetch.test.ts 823, core/git.test.ts 900, git-ssh.test.ts 62, DESIGN.md 419, HELP.md 302.
+
+## Item 14: the 25 `has, fixed` rows (20 git.*, 5 scm.*)
+VS Code defaults come from the installed 1.137.0: `extensions/git/package.json` for git.*, `out/vs/workbench/workbench.desktop.main.js` for scm.*, and `extensions/git/dist/main.js` for behaviour. Tree side is in tools/oculus.
+
+Differ (8):
+| Key | VS Code default | Tree |
+|---|---|---|
+| git.pruneOnFetch | false (prune only if set) | `['fetch', '--prune']` always, src/lib/server/git/git-write.ts:615 |
+| git.pullTags | true (main.js passes `tags: pullTags`) | `['pull']`, no `--tags`, git-write.ts:590 |
+| git.requireGitUserConfig | true (main.js adds `-c user.useConfigOnly=true`) | `['commit', ...args]` with no `-c`, git-write.ts:580 (`grep -rn "useConfigOnly" src/lib/server` finds nothing) |
+| git.statusLimit | 10000 | `MAX_ENTRIES = 200`, core/git.ts:126, used at :630 |
+| git.untrackedChanges | "mixed" | Untracked is its own group, ChangeGroups.svelte:189 |
+| scm.alwaysShowRepositories | false | every root listed, no count condition, RepoList.svelte:120 |
+| git.countBadge | "all" (count on the activity-bar icon) | per-row badge RepoList.svelte:139-141, total in Changes.svelte:76; no git count on the rail (rail-badges.ts has no git function, RailPages.svelte names none) |
+| git.autoRepositoryDetection | true (scans) | roots from sessions (`rootsOf`, root/watch/git.ts:122) and config (`readRoots`, :334); no directory scan in that file |
+
+Match (17):
+| Key | VS Code default | Tree |
+|---|---|---|
+| git.allowForcePush | false | no `--force` under src/lib/server/git except deposit-git.ts:257, a deposit mirror push |
+| git.confirmSync | true | `'sync'` in `CONFIRMED`, git-routes.ts:121 |
+| git.enableCommitSigning | false (passes nothing) | plain commit, git-write.ts:580 |
+| git.enableStatusBarSync | true | sync item, RepoItems.svelte:119 (StatusBar.svelte:101) |
+| git.fetchOnPull | false | plain `pull`, git-write.ts:590 |
+| git.openDiffOnClick | true | row opens its diff, ChangeRow.svelte:112 |
+| git.path | null (git on PATH) | `GIT = 'git'`, core/git.ts:118 |
+| git.rebaseWhenSync | false | sync is pull then push, git-remote.ts:50-52 |
+| git.showActionButton | commit, publish, sync all true | `actionButton(git)`, CommitBox.svelte:60 |
+| git.showCommitInput | true | commit box with message field, CommitBox.svelte:144 |
+| git.showInlineOpenFileAction | true | Open File on the row, ChangeRow.svelte:133-138 |
+| git.showPushSuccessNotification | false | a line `git.done` on the repository, repositories.svelte.ts:193 |
+| git.similarityThreshold | 50 | `-M` with no value, core/git.ts:333, 346, 371 |
+| scm.diffDecorationsGutterAction | "diff" | a press opens the diff, Editor.svelte:246-248 |
+| scm.diffDecorationsGutterVisibility | "always" | marks always drawn, Editor.svelte:338 (`markDecorations`) |
+| scm.diffDecorationsGutterWidth | 3 | `width: 3px`, Editor.svelte:465 |
+| scm.diffDecorationsIgnoreTrimWhitespace | "false" | `-U0` with no whitespace flag, core/git.ts:523 |
+
+17 + 8 = 25. Because of the 8 mismatches the sentences in DESIGN.md:344 and HELP.md:186 say the other git behaviours "are fixed with no key" and do not say "at VS Code's defaults". Whether that clause may return after the rows change is yours to rule.
+
+Not verified: the real prompting fetch against an https or ssh remote; the blocking time of `sshCommand`; the built app under the timer (no server was started).
+
+All paths above are relative to /Users/axelfaes/workspace/research-hub/.agents/worktrees/D31/tools/oculus.

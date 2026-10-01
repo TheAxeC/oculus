@@ -37,19 +37,22 @@
 // sites exported below, so every subcommand still has exactly one place it is run from and that
 // place is in this file.
 //
-// Nothing here is reachable from a watcher, a timer or the socket. The one caller is server/
-// git-routes.ts, which answers POST /api/git only for a request carrying the write token, coming
-// from this application's own page, and (for the actions that can lose work) carrying the confirm
-// the page sets from a dialog. DESIGN.md's decision on git writes is that shape: commit, push,
-// pull, branches, stashes, tags and worktrees on the repositories oculus knows, every write behind
-// the token and those behind a confirm.
+// Two callers reach this module. server/git-routes.ts answers POST /api/git only for a request
+// carrying the write token, coming from this application's own page, and (for the actions that can
+// lose work) carrying the confirm the page sets from a dialog. DESIGN.md's decision on git writes
+// is that shape: commit, push, pull, branches, stashes, tags and worktrees on the repositories
+// oculus knows, every write behind the token and those behind a confirm. server/root/watch/
+// autofetch.ts runs only `remoteNames` and `fetchIn`, from a timer, while `git.autofetch_minutes`
+// is above 0, on the repositories the last published `git` payload names. Nothing else here is
+// reachable from a watcher, a timer or the socket.
 //
 // `git.ts`'s `run` is not imported: putting a writing subcommand through the read-only module's one
 // call site would run it past that module's recorder and break the gate that says what it ran.
 //
 // A root is refused unless the last published `git` payload names it or it is the hub itself or
 // under it. That payload is every root the file browser serves as well as every workspace a session
-// names, so these writes reach a configured repository nobody has a session in. A path is refused
+// names, so these writes reach a configured repository nobody has a session in. The timer reads the
+// roots from that payload itself and does not go through `permitted`. A path is refused
 // unless it is relative and stays inside the repository. Every operation answers
 // `{ ok, output, error }` and never throws.
 //
@@ -587,9 +590,29 @@ export function pullIn(root: string): Promise<Outcome> {
     return run(root, ['pull'], PUSH_TIMEOUT_MS);
 }
 
+/** How a fetch nobody pressed is told never to wait for a person. */
+export type FetchOptions = {
+    /** Sets `GIT_TERMINAL_PROMPT=0`, so git asks for no user name or password. */
+    unattended?: boolean;
+    /**
+     * The ssh command to run with, already carrying `-o BatchMode=yes`, so ssh asks for no password
+     * or passphrase. Only used when `unattended` is set; the caller resolves it, since reading the
+     * repository's own command is a read and not a write.
+     */
+    sshCommand?: string;
+};
+
+/** The environment of an unattended fetch, beside the process environment. */
+function unattendedEnv(options: FetchOptions): Record<string, string> | undefined {
+    if (options.unattended !== true) return undefined;
+    const env: Record<string, string> = { GIT_TERMINAL_PROMPT: '0' };
+    if (options.sshCommand !== undefined) env.GIT_SSH_COMMAND = options.sshCommand;
+    return env;
+}
+
 /** The one `fetch` call site: every remote branch, and the ones gone from the remote taken away. */
-export function fetchIn(root: string): Promise<Outcome> {
-    return run(root, ['fetch', '--prune'], PUSH_TIMEOUT_MS);
+export function fetchIn(root: string, options: FetchOptions = {}): Promise<Outcome> {
+    return run(root, ['fetch', '--prune'], PUSH_TIMEOUT_MS, { env: unattendedEnv(options) });
 }
 
 /** The one `remote` call site: the remotes by name, which a branch may be published to. */

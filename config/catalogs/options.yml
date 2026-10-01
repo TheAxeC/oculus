@@ -295,6 +295,10 @@ options:
             description: The model the Changes view asks for a suggested commit message. Empty uses the command line's own default model.
             default: ''
             control: text
+        git.autofetch_minutes:
+            description: Minutes between two automatic git fetch --prune of every repository oculus shows that has a remote, as VS Code's auto fetch. 0, the default, fetches only when Fetch is pressed; nothing else reaches a remote unasked. It is read again within a minute of a change. A value that is not a whole number of 0 or more is refused.
+            default: 0
+            control: number
         search.max_hits:
             description: How many hits one answer of the Search view carries before it says it was cut. Must be above zero.
             default: 500

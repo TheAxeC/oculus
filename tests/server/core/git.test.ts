@@ -45,6 +45,7 @@ import {
     lineMarks,
     mergeBase,
     mergeSides,
+    sshCommand,
     stashDiff,
     statusFor,
     trackedFiles
@@ -89,7 +90,7 @@ const ALLOWED = [
  * line counts and the on-demand diffs; `log` four times, the channel's log, the stashes' reflog, a
  * page of the graph and the range either side of the upstream.
  */
-const CALLS = [...ALLOWED, 'rev-parse', 'diff', 'log', 'log', 'log'].sort();
+const CALLS = [...ALLOWED, 'config', 'rev-parse', 'diff', 'log', 'log', 'log'].sort();
 
 /**
  * The exact vectors nine subcommands may run as. `symbolic-ref HEAD <ref>` moves HEAD, `worktree
@@ -98,15 +99,18 @@ const CALLS = [...ALLOWED, 'rev-parse', 'diff', 'log', 'log', 'log'].sort();
  * change this gate sees, `check-ignore` to the one form the file browser reads its ignored entries
  * by, `for-each-ref` to the one ref listing over the branches, the tags and the stash ref,
  * `ls-files` to the one listing of the tracked paths the Status view's line counts read, `config`
- * (which has writing forms) to the one read of `core.autocrlf`, and `check-attr` to the five
- * attributes the diff pane reads, over the one path this file asks for.
+ * (which has writing forms) to its two reads, `core.autocrlf` and `core.sshCommand`, and
+ * `check-attr` to the five attributes the diff pane reads, over the one path this file asks for.
  */
 const PINNED: Partial<Record<string, string[][]>> = {
     'check-attr': [
         ['check-attr', 'filter', 'text', 'eol', 'working-tree-encoding', 'ident', '--', 'kept.txt']
     ],
     'check-ignore': [['check-ignore', '--stdin', '-z']],
-    config: [['config', '--get', '--default=', 'core.autocrlf']],
+    config: [
+        ['config', '--get', '--default=', 'core.autocrlf'],
+        ['config', '--get', '--default=', 'core.sshCommand']
+    ],
     'for-each-ref': [['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash']],
     'ls-files': [['ls-files', '-z']],
     remote: [['remote']],
@@ -123,6 +127,7 @@ const PINNED_SOURCE = [
     "['check-attr', 'filter', 'text', 'eol', 'working-tree-encoding', 'ident', '--', path]",
     "['check-ignore', '--stdin', '-z']",
     "['config', '--get', '--default=', 'core.autocrlf']",
+    "['config', '--get', '--default=', 'core.sshCommand']",
     "['for-each-ref', REFS_FORMAT, 'refs/heads', 'refs/tags', 'refs/stash']",
     "['ls-files', '-z']",
     "['remote']",
@@ -815,6 +820,7 @@ describe('read only', () => {
         expect(blameOf(repo, 'kept.txt').ok).toBe(true);
         expect(lineMarks(repo, 'kept.txt').ok).toBe(true);
         expect(attributesOf(repo, 'kept.txt').ok).toBe(true);
+        expect(sshCommand(repo)).toBe('');
         expect(mergeBase(repo, hash).ok).toBe(true);
         // kept.txt is in no conflict, which the read says after asking git for each stage.
         expect(mergeSides(repo, 'kept.txt').ok).toBe(false);

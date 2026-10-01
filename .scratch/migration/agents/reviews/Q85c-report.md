@@ -103,3 +103,66 @@ REMOVED NAMES (`grep -rnw <name> src tests HELP.md DESIGN.md README.md`)
 BEFORE AND AFTER FOR THE LOOK: no view, style or markup file changed; case 14's snapshot (`cmp`) is byte-identical, so the app's data answer is the same.
 
 BRIEF WRONG OR IMPOSSIBLE: the premise that the literal `safeParse|readAs(` count is at least 1 per converted file does not hold for four files (see top). The cast grep lines moved to `compact.ts:6` and `merge.ts:63`, which are the two the brief names.
+
+## Repair round 1, the builder's report
+
+Q85c repair round 1 report (worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85c, app tools/oculus)
+
+NOT DONE / DEVIATIONS (first)
+- Ruling 4, `strip` renamed to `situation`: the literal name cannot be used. `career()` in `snapshot/normalise-career.ts` already declares `const situation: {label, value}[] = []` (the output list) three lines above; a second `situation` in the same function would not compile. The map is renamed `written` (`const written = readAs(mapShape, raw.situation)`) and the output list keeps `situation`. Your call whether another name is wanted.
+- The first full verify list failed at `npm test` on `tests/server/edit/config-key.test.ts` (3 tests, the file took 61712 ms; the machine is shared with other agents). Rerun alone with `npx vitest run tests/server/edit/config-key.test.ts`: `Tests 32 passed (32)`. The list was then run once more and passed (below).
+- Everything else in the five rulings is done.
+
+RUN COUNTS
+- `npm test`: 2 (once in each full-list run). `npm run test:checks`: 1 inside the second full-list run, plus the first full list stopped at `npm test` before reaching it, so 1 in total. Full list: 2 (run 1 failed at `npm test` as above; run 2 passed). No `npm test` or `test:checks` run outside the list. Scoped runs while working: `npx vitest run tests/data/sources/registries.test.ts tests/data/sources/collections.test.ts tests/data/snapshot/normalise.test.ts` (before the change), `npx vitest run tests/data tests/checks/diagrams`, the config-key file alone.
+- No git command, no agent, no ledger file touched, `config/local.yml` never opened.
+
+FULL LIST, run 2 (`npm run diagrams`, then `sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`), lines kept:
+```
+$ npm test            Test Files  410 passed | 22 skipped (432)   Tests  10779 passed | 618 skipped (11397)
+$ npm run test:checks Test Files  29 passed | 2 skipped (31)      Tests  442 passed | 9 skipped (451)
+$ npm run check       1790874000571 COMPLETED 2924 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+`cmp docs/diagrams/writes.dot` against the base copy: identical.
+
+RULING 1, six schemas at module level (`grep -rn "rowsShape(" src/lib/data` outside shapes.ts prints only module-level consts)
+- `index.ts:61 scanRulesShape`, `:77 collectionFilesShape`, `:104 vocabKeysShape`; `snapshot/normalise.ts:72 collectionKeysShape`; `sources/present.ts:134 specsShape`, `:142 panelsShape`. Each function reads through its const. The other two hits (`validate.ts:170` inside `listNamesShape`, `feeds.ts:35 entriesShape`) were already module-level.
+
+RULING 2, three maps skip an own `__proto__` key
+- Code: `sources/collections.ts:49`, `sources/registries.ts:82`, `snapshot/normalise.ts:488` (`key !== '__proto__'`, one comment line above each).
+- Cases, each run on the tree before the change (`npx vitest run` of the three test files): `Tests 3 failed | 104 passed (107)`:
+  - `tests/data/snapshot/normalise.test.ts > normalise, an entry whose YAML carries a __proto__ key > skips the key when it builds the fields`: `AssertionError: expected { injected: 'yes' } to be { …(12) } // Object.is equality`
+  - `tests/data/sources/collections.test.ts > readCollections > skips an own __proto__ key of the file when it builds the meta`: the same assertion error
+  - `tests/data/sources/registries.test.ts > readRegistries over a registry file of the wrong shape > skips an own __proto__ key of the file when it builds the meta`: the same assertion error
+  After the change `npx vitest run tests/data tests/checks/diagrams`: `Test Files 37 passed (37)`, `Tests 744 passed (744)`; both full-list runs include them.
+
+RULING 3, literal gate: accepted as built, no call added (`feeds.ts`, `manifests.ts`, `career.ts`, `options.ts` unchanged in that respect).
+
+RULING 4, standards
+- `DESIGN.md:148` opening sentence now reads "... `server/transcripts`, `src/lib/data` and `state/`, a value that comes from outside ..." (`sed -n 148p DESIGN.md | grep -o "server/transcripts., .src/lib/data. and .state/."` prints it).
+- `validate-themes.ts:14 const themeWordShape = z.string();`, used at `:62`; no other `wordShape` in the file.
+- `settings.ts` `usageTiers`: the `?? ['']` branch is gone (`grep -n "?? \[''\]"` prints nothing). It now finds the first refused entry with `Object.entries(held).find(...)`, throws `config/behavior.yml: usage_tiers.<key> must be a string` when there is one, and otherwise returns `tiersShape.parse(held)`. The thrown sentence and the answer (`held` itself) are unchanged; `tests/data/sources/config/merge.test.ts` and `settings.test.ts` pass.
+- `normalise.ts`: `export { career }` removed (`grep -rn "export { career" src/lib/data` prints nothing); `tests/data/sources/career.test.ts:9` and `tests/data/snapshot/normalise.test.ts:14` (which also imported `career` from `normalise.ts`) import it from `normalise-career.ts`.
+- `normalise-career.ts`: `strip` is `written` (see deviation above).
+- `opens-in-program.ts:52`: `isBundleId` returns `bundleIdShape.safeParse(value).success`; `BUNDLE_ID` is read only by `bundleIdShape` at `:34`. `tests/data/helpers/files/opens-in-program.test.ts` passes.
+- `shapes.ts` head comment (lines 1-9) now names `mapShape`, `keysOfShape`, `valuesOfShape`, `filledTextShape`, `optionalTextShape`, `textOrNumberOnlyShape`, `wholeShape`, `itemsShape`, `optionalItemsShape`, `quickly`, `readAs`, `readOr`, `filledText`, `optionalText`, `text`.
+- Sizes: `normalise.ts` 769 lines, `normalise.test.ts` 865 lines; `tests/data/sources` holds 9 items; `LC_ALL=C grep -rna '[^ -~]' src tests DESIGN.md` prints nothing.
+
+RULING 5, every changed answer, before (the unchanged base tree copy) and after (this worktree). Command for both: `node $S/q85c-answers.mjs <tree>` where `$S` is the scratchpad and the tree is `$S/base/oculus` or the worktree's `tools/oculus`. Keys are `Object.keys` of the answer.
+1. `flattenText(JSON.parse('{"__proto__":{"a":"x"},"b":"y"}'))`: before `["__proto__.a","b"]`; after `["b"]`.
+2. `flattenText(JSON.parse('{"a":{"__proto__":{"c":"x"},"d":"y"}}'))`: before `["a.__proto__.c","a.d"]`; after `["a.d"]`.
+3. `textCatalog({ text: JSON.parse('{"__proto__":{"a":"x"},"b":"y"}') })`: before `["__proto__.a","b"]`; after `["b"]`.
+4. `portfolioConfigFrom({ text: <same> }, engine).text`: before `["__proto__.a","b"]`; after `["b"]`.
+5. `loadConfig`, map case (`behavior.yml` = `__proto__:\n  a: x\nb: y`): before the config prototype is not `Object.prototype`, `config.a === 'x'` inherited, own keys `["b"]`, findings `[{file: .../config/behavior.yml, key: '__proto__', message: 'findings.config.defined_twice __proto__ [object Object] behavior.yml'}]`; after prototype is `Object.prototype`, `a` not inherited, own keys `["b"]`, findings `[]`.
+6. `loadConfig`, text case (`behavior.yml` = `__proto__: x\nb: y`): before prototype `Object.prototype`, own keys `["b"]`, and the same `defined_twice __proto__ [object Object] behavior.yml` finding; after own keys `["b"]`, findings `[]`.
+7. `loadConfig`, two files (`a.yml` = `__proto__:\n  a: x`, `b.yml` = `a: z`): before prototype replaced, own keys `["a"]`, findings two: `defined_twice __proto__ [object Object] a.yml` on `a.yml` and `defined_twice a undefined b.yml` on `b.yml`; after prototype `Object.prototype`, own keys `["a"]`, `config.a === 'z'`, findings `[]`. The second file's `defined_twice` finding goes away because no `a` is inherited from the first file any more.
+8. Registry file `__proto__:\n  injected: "yes"\ntitle: V\nentries: []` through `readRegistries`, `venues.meta`: before prototype not `Object.prototype`, `meta.injected === 'yes'`, own keys `["title"]`; after prototype `Object.prototype`, `injected` undefined, own keys `["title"]`.
+9. Collection file `__proto__:\n  injected: "yes"\ntitle: T\nentries: []` through `readCollections`, `meta`: before prototype not `Object.prototype`, `meta.injected === 'yes'`, own keys `["title"]`; after prototype `Object.prototype`, `injected` undefined, own keys `["title"]`.
+10. Collection entry `{"__proto__":{"injected":"yes"},"title":"t"}` through `normalise`, `entry.fields`: before the prototype of `fields` is `{ injected: 'yes' }` (the failing assertion above); after it is `Object.prototype`, `fields` has no `injected`, own keys `["title"]` (the new case asserts all three and passes).
+
+FILES CHANGED THIS ROUND: `DESIGN.md`; `src/lib/data/{index.ts, shapes/shapes.ts, sources/{collections,registries,present}.ts, sources/config/settings.ts, helpers/files/opens-in-program.ts, snapshot/{normalise,normalise-career,validate-themes}.ts}`; tests `tests/data/sources/{collections,registries,career}.test.ts`, `tests/data/snapshot/normalise.test.ts`; `docs/diagrams` regenerated by `npm run diagrams` (`writes.dot` identical to the base).

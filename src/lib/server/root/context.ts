@@ -44,6 +44,7 @@ import {
 } from '../files/open.ts';
 import { docFindings, layoutFile } from '../content/docs.ts';
 import { Hub } from '../core/channels.ts';
+import { requireAutofetch } from '../core/fetch-period.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
 import { RateLimiter, notifyConfig, type HookTarget } from './hooks.ts';
 import type { LogPaths } from '../machine/hpc/actions.ts';
@@ -66,6 +67,7 @@ import {
     type UsageRefreshWatcher
 } from '../machine/usage/refresh.ts';
 import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
+import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
 import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
 import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
 import { watchLocal, type LocalWatcher } from './watch/local.ts';
@@ -174,6 +176,7 @@ export type ContextDependencies = {
     ) => Watcher;
     watchSessions: typeof watchSessions;
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
+    watchAutofetch: (hub: Hub, options: AutofetchOptions) => AutofetchWatcher;
     watchBookmarks: (hub: Hub, options: BookmarksWatchOptions) => Watcher;
     watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
     watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
@@ -192,6 +195,7 @@ const dependencies: ContextDependencies = {
     watchPortfolio,
     watchSessions,
     watchGit: (hub, options) => watchGit(hub, options),
+    watchAutofetch: (hub, options) => watchAutofetch(hub, options),
     watchBookmarks,
     watchHpc,
     watchCalendar,
@@ -220,6 +224,7 @@ export function createServerContext(
     // the open endpoint reads `open.program_ext` again at every request, so a missing or mistyped
     // key stops the server here with the key named rather than reaching a tab.
     requirePaintLimit(config);
+    requireAutofetch(config);
     openSettings(config);
     const hub = make.createHub();
     registerFilesChannel(hub);
@@ -296,6 +301,9 @@ export function createServerContext(
         roots: () => repositoryRoots({ config: make.loadConfig(engine).config, engine, local }),
         workspacesFile
     });
+    // The timer reads the `config` and `git` channels, so it is started after the git watcher has
+    // its roots, and re-reads a root's state through that watcher after each fetch.
+    const autofetch = make.watchAutofetch(hub, { refresh: (root) => git.refresh(root) });
     // The reader's own bookmarks lie under no root, so the git watcher's handles say nothing about
     // them: this one carries a bookmark written outside oculus to every open page.
     const bookmarks = make.watchBookmarks(hub, {
@@ -386,6 +394,7 @@ export function createServerContext(
             calendar.close();
             hpc.close();
             bookmarks.close();
+            autofetch.close();
             git.close();
             usage.close();
             sessions.close();

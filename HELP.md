@@ -169,7 +169,7 @@ Typing runs nothing. Enter in the box and the Search control are the two ways a 
 
 ## Source Control
 
-The Repositories view and a session's Changes panel are Source Control as VS Code draws it, over the repositories oculus knows. Every write runs only from a press on the page, and one that throws work away or reaches a remote asks first.
+The Repositories view and a session's Changes panel are Source Control as VS Code draws it, over the repositories oculus knows. Every write runs from a press on the page, except the automatic fetch described under Pull, push, fetch, sync and publish, and every one that throws work away or reaches a remote asks first, except Fetch.
 
 ### Committing
 
@@ -183,7 +183,7 @@ Each block of a file's own diff, the changes git groups into one hunk as `git ad
 
 ### Pull, push, fetch, sync and publish
 
-The `...` menu of the Repositories view holds Pull, Push, Fetch, Sync and Publish Branch. Pull runs git's own `pull` with the repository's own configuration, so whether it merges or rebases is the repository's choice; Sync pulls and then pushes; Fetch reads the remote's branches and forgets the ones the remote deleted. A branch with no upstream offers Publish Branch to each of the repository's remotes, which pushes it and makes that its upstream. Everything except Fetch asks first, and none of them ever forces. The status bar's sync item does the same for the repository of the tab on screen.
+The `...` menu of the Repositories view holds Pull, Push, Fetch, Sync and Publish Branch. Pull runs git's own `pull` with the repository's own configuration, so whether it merges or rebases is the repository's choice; Sync pulls and then pushes; Fetch reads the remote's branches and forgets the ones the remote deleted. A branch with no upstream offers Publish Branch to each of the repository's remotes, which pushes it and makes that its upstream. Everything except Fetch asks first, and none of them ever forces. The status bar's sync item does the same for the repository of the tab on screen. With `git.autofetch_minutes` in `behavior.yml` above 0, oculus fetches every repository with a remote at that period, as Fetch does, without asking for a password or a passphrase, and the behind count of each branch moves with what the remote holds; when only the older `GIT_SSH` variable names the ssh program, nothing is added for ssh, which may then still ask. 0, the default, fetches only when Fetch is pressed. Nothing else reaches a remote unasked, and nothing pushes after a commit except where the reader pressed Commit and Push or Commit and Sync. The other git behaviours oculus has are fixed and have no key.
 
 ### Merges and conflicts
 
@@ -219,7 +219,7 @@ The files below sit in the `config/` folder of the engine, `tools/oculus/config/
 |---|---|
 | `catalogs/agents.yml` | The composer of a new agent session: per agent, the models, efforts and permission modes it offers, each with the words it shows and the flag it passes, and each list with its default. |
 | `appearance.yml` | The UI theme list with the glyph each theme is offered under, the wallpaper behind the panels, the Memories wall's folder, the CRT default, the code theme of the editors, the terminal text size and the terminal's cursor style, cursor blinking, Option key and copy on selection. The four under `terminal:` are `mac_option_is_meta` (Option sends Meta on macOS), `copy_on_selection` (a selection is copied as it is made), `cursor_style` (`block`, `line` or `underline`) and `cursor_blinking`; all four start false or block and follow a change of the file without a reload. The `code_theme` key is `tokens`, or the id of a Shiki theme such as `dark-plus`, and is what a browser that has not picked in the Code theme menu starts on. |
-| `behavior.yml` | Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh strip, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git and chat. |
+| `behavior.yml` | Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh strip, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`) and chat. |
 | `catalogs/glyphs.yml` | The glyph vocabulary: each name with the ASCII stand-in, one to three characters, that a terminal theme draws in place of its icon. |
 | `catalogs/icons.yml` | The line icon each glyph name is drawn as, one row per name in the glyph vocabulary. |
 | `layout.yml` | How things are arranged: the rail's pages and the arrangements each starts as, the view catalogue's groups, the hub documents, the board chrome, the tab rollups and the live badges. |

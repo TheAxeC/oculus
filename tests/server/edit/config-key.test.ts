@@ -498,6 +498,39 @@ describe('the readers of the merged configuration', () => {
     });
 });
 
+describe('the period of the automatic fetch', () => {
+    const FETCH = 'behavior.yml:git.autofetch_minutes';
+    const SENTENCE =
+        'config/behavior.yml: git.autofetch_minutes must be a whole number of minutes, 0 or more';
+
+    it("refuses -1 and 1.5 with the reader's sentence and writes nothing", () => {
+        for (const value of [-1, 1.5]) {
+            const engine = scratchEngine();
+            const before = held(engine);
+            const outcome = writeConfigKey(engine, 'behavior.yml', 'git.autofetch_minutes', value);
+            expect(refusedWith(outcome, FETCH), String(value)).toBe(SENTENCE);
+            expect(held(engine)).toBe(before);
+        }
+    });
+
+    it('refuses a text with the words of a number option and writes nothing', () => {
+        const engine = scratchEngine();
+        const before = held(engine);
+        const outcome = writeConfigKey(engine, 'behavior.yml', 'git.autofetch_minutes', '5');
+        expect(refusedWith(outcome, FETCH)).toBe(why('not_number'));
+        expect(held(engine)).toBe(before);
+    });
+
+    it('writes 3 over the shipped 0 and keeps every other byte', () => {
+        const engine = scratchEngine();
+        const before = held(engine);
+        const outcome = writeConfigKey(engine, 'behavior.yml', 'git.autofetch_minutes', 3);
+        expect(outcome.refused).toEqual([]);
+        expect(outcome.changed).toEqual([FETCH]);
+        expect(held(engine)).toBe(before.replace('autofetch_minutes: 0', 'autofetch_minutes: 3'));
+    });
+});
+
 describe('a file the writer cannot write', () => {
     it('lets the exception of a read-only file reach the route and leaves the mode as it was', () => {
         const engine = keepEngine();

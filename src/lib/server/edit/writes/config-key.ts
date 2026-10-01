@@ -52,6 +52,7 @@ import { railFindings } from '../../../data/sources/config/rail.ts';
 import type { Finding } from '../../../data/model/index.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
 import { requireRefreshSettings } from '../../machine/usage/refresh.ts';
+import { requireAutofetch } from '../../core/fetch-period.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { words } from '../../core/words.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
@@ -89,6 +90,7 @@ const READERS: ((config: Merged) => unknown)[] = [
     changesKeep,
     usageTiers,
     requirePaintLimit,
+    requireAutofetch,
     (config) =>
         requireRefreshSettings({
             refreshMin: config.usage_refresh_min,

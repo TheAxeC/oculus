@@ -16,8 +16,17 @@ import {
 } from '../../../src/lib/server/root/context.ts';
 import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
 import { macOpenAddress } from '../../../src/lib/server/files/open.ts';
+import { watchAutofetch as builtAutofetch } from '../../../src/lib/server/root/watch/autofetch.ts';
 import { noop, noopAsync } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+
+// The module as it is, except that its calls are recorded, so a case can read which constructor a
+// context uses when it is handed none.
+vi.mock('../../../src/lib/server/root/watch/autofetch.ts', async (original) => {
+    const actual =
+        await original<typeof import('../../../src/lib/server/root/watch/autofetch.ts')>();
+    return { ...actual, watchAutofetch: vi.fn(actual.watchAutofetch) };
+});
 
 const driver = (close: () => void = noop): TerminalDriver => ({
     run: () => Promise.resolve(''),
@@ -28,6 +37,23 @@ const driver = (close: () => void = noop): TerminalDriver => ({
     serverRuns: () => Promise.resolve(false),
     close
 });
+
+/** The configuration an inert context reads, with the `git` block as a case sets it. */
+function inertConfig(
+    git: unknown = { message_model: '', autofetch_minutes: 0 }
+): Record<string, unknown> {
+    return {
+        slurm: { host: 'cluster', days: 2, poll_min: 1, quota_min: 5, prewarm: false },
+        calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
+        editor: { paint_limit_kb: 64 },
+        open: { program_ext: { '.docx': 'com.microsoft.Word' } },
+        mail: { poll_min: 10, per_signal: 25 },
+        usage_tiers: {},
+        usage_refresh_min: 5,
+        usage_refresh_model: 'model',
+        git
+    };
+}
 
 /**
  * Every dependency of a context as an inert double, so a case builds a whole context without a
@@ -43,25 +69,7 @@ function inertDependencies(): Partial<ContextDependencies> {
             calendars: [],
             mail: []
         }),
-        loadConfig: () => ({
-            config: {
-                slurm: {
-                    host: 'cluster',
-                    days: 2,
-                    poll_min: 1,
-                    quota_min: 5,
-                    prewarm: false
-                },
-                calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
-                editor: { paint_limit_kb: 64 },
-                open: { program_ext: { '.docx': 'com.microsoft.Word' } },
-                mail: { poll_min: 10, per_signal: 25 },
-                usage_tiers: {},
-                usage_refresh_min: 5,
-                usage_refresh_model: 'model'
-            },
-            findings: []
-        }),
+        loadConfig: () => ({ config: inertConfig(), findings: [] }),
         mintToken: () => 'context-token',
         createHub: () => new Hub(),
         createTerminals: (hub) => new Terminals(hub, { driver: driver(), poll: 0 }),
@@ -70,6 +78,7 @@ function inertDependencies(): Partial<ContextDependencies> {
         watchMail: () => ({ refresh: noopAsync, republish: noop, setAccounts: noop, close: noop }),
         watchLocal: () => ({ close: noop }),
         watchGit: () => ({ refresh: noopAsync, close: noop }),
+        watchAutofetch: () => ({ close: noop }),
         watchBookmarks: () => ({ close: noop }),
         watchHpc: () => ({ refresh: noopAsync, close: noop }),
         watchUsageRefresh: () => ({
@@ -92,7 +101,7 @@ function inertDependencies(): Partial<ContextDependencies> {
 
 describe('ServerContext', () => {
     it('builds and closes each process-owned object once and carries its token', () => {
-        const closes = Array.from({ length: 11 }, () => vi.fn());
+        const closes = Array.from({ length: 12 }, () => vi.fn());
         const hub = new Hub();
         const merge = vi.spyOn(hub, 'merge');
         const terminals = new Terminals(hub, { driver: driver(closes[6]), poll: 0 });
@@ -108,6 +117,9 @@ describe('ServerContext', () => {
         const watchGit = vi.fn((_hub: Hub, _options: unknown) => ({
             refresh: vi.fn(),
             close: closes[2]
+        }));
+        const watchAutofetch = vi.fn<ContextDependencies['watchAutofetch']>(() => ({
+            close: closes[11]
         }));
         const watchBookmarks = vi.fn<ContextDependencies['watchBookmarks']>(() => ({
             close: closes[9]
@@ -158,6 +170,7 @@ describe('ServerContext', () => {
                 usage_tiers: {},
                 usage_refresh_min: 5,
                 usage_refresh_model: 'model',
+                git: { message_model: '', autofetch_minutes: 0 },
                 glyphs: { pin: 'P' },
                 icons: { pin: 'pin' }
             },
@@ -184,6 +197,7 @@ describe('ServerContext', () => {
             watchPortfolio,
             watchSessions,
             watchGit,
+            watchAutofetch,
             watchBookmarks,
             watchHpc,
             watchCalendar,
@@ -201,6 +215,7 @@ describe('ServerContext', () => {
             watchPortfolio,
             watchSessions,
             watchGit,
+            watchAutofetch,
             watchBookmarks,
             watchHpc,
             watchCalendar,
@@ -404,7 +419,8 @@ describe('ServerContext', () => {
                         mail: { poll_min: 10, per_signal: 25 },
                         usage_tiers: {},
                         usage_refresh_min: 5,
-                        usage_refresh_model: 'model'
+                        usage_refresh_model: 'model',
+                        git: { message_model: '', autofetch_minutes: 0 }
                     },
                     findings: []
                 })),
@@ -413,6 +429,79 @@ describe('ServerContext', () => {
 
         expect(build).toThrow('open.program_ext');
         expect(createHub).not.toHaveBeenCalled();
+    });
+
+    it('stops before building anything when git.autofetch_minutes is not a whole number', () => {
+        const sentence =
+            'config/behavior.yml: git.autofetch_minutes must be a whole number of minutes, 0 or more';
+        for (const git of [
+            { autofetch_minutes: -1 },
+            { autofetch_minutes: 1.5 },
+            { autofetch_minutes: '5' },
+            { autofetch_minutes: null },
+            { message_model: '' },
+            []
+        ]) {
+            const createHub = vi.fn(() => new Hub());
+            const build = (): unknown =>
+                createServerContext('/engine', {
+                    ...inertDependencies(),
+                    loadConfig: () => ({ config: inertConfig(git), findings: [] }),
+                    createHub
+                });
+            expect(build).toThrow(new Error(sentence));
+            expect(createHub).not.toHaveBeenCalled();
+        }
+    });
+
+    it('starts the auto fetch after the git watcher, hands it the hub and the git refresh, and closes it first', () => {
+        const order: string[] = [];
+        const refresh = vi.fn();
+        const hub = new Hub();
+        const autofetch = vi.fn<ContextDependencies['watchAutofetch']>(() => {
+            order.push('start autofetch');
+            return {
+                close: () => {
+                    order.push('close autofetch');
+                }
+            };
+        });
+        const context = createServerContext('/engine', {
+            ...inertDependencies(),
+            createHub: () => hub,
+            watchGit: () => {
+                order.push('start git');
+                return {
+                    refresh,
+                    close: () => {
+                        order.push('close git');
+                    }
+                };
+            },
+            watchAutofetch: autofetch
+        });
+
+        expect(autofetch).toHaveBeenCalledOnce();
+        expect(autofetch.mock.calls[0][0]).toBe(hub);
+        autofetch.mock.calls[0][1].refresh('/some/root');
+        expect(refresh).toHaveBeenCalledExactlyOnceWith('/some/root');
+        context.close();
+        context.close();
+        expect(order).toEqual(['start git', 'start autofetch', 'close autofetch', 'close git']);
+    });
+
+    it('builds the auto fetch of server/root/watch/autofetch.ts when it is handed none', () => {
+        const inert = inertDependencies();
+        delete inert.watchAutofetch;
+        const hub = new Hub();
+        vi.mocked(builtAutofetch).mockClear();
+
+        const context = createServerContext('/engine', { ...inert, createHub: () => hub });
+
+        expect(builtAutofetch).toHaveBeenCalledOnce();
+        expect(vi.mocked(builtAutofetch).mock.calls[0][0]).toBe(hub);
+        expect(vi.mocked(builtAutofetch).mock.calls[0][1].refresh).toEqual(expect.any(Function));
+        context.close();
     });
 
     it('reads a carried context and names event.platform.req when it is absent', () => {

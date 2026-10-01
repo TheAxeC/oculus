@@ -288,3 +288,36 @@ Where it is built: D31. Booked in the state file's closed log and `plan.md` Ruli
 - Not chosen: (b) a booking for a later step, the lazy option.
 
 Where it is built: Q85c. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z174 (2026-10-01 18:56, step D35)
+
+- Chosen (a): the readers refuse `slurm.poll_min`, `slurm.quota_min`, `calendar.poll_min` and `mail.poll_min` unless above zero, `slurm.days`, `calendar.days_back` and `calendar.days_ahead` below zero, and `mail.per_signal` unless a whole number above zero; the Settings write refuses the same values through those readers, and `options.yml` states each bound. Built in D35, since a cadence of zero made live is a busy loop against the cluster or a provider.
+- Not chosen: (b) the readers left accepting any number, the lazy option, leaving a Settings control that makes a poller misbehave.
+
+Where it is built: D35. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z175 (2026-10-01 18:59, step Q88c)
+
+- Chosen (a): the two rows D31's corrected table shows differing from VS Code that Z172 did not cover are brought to VS Code's default in Q88c: `git.countBadge`, the count of changed files on the rail item that opens the Repositories view (VS Code's `all`, every repository's changes), and `git.autoRepositoryDetection`, each configured root that is not itself a repository scanned one folder deep for repositories (VS Code's `git.repositoryScanMaxDepth` of 1), each listed on the `git` channel like a root.
+- Not chosen: (b) both kept as they are and named in Q88c's list of fixed choices, the lazy option, since a repository inside a configured folder stays unseen and the rail says nothing of pending changes.
+
+Where it is built: Q88c. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z176 (2026-10-01 19:03, step D27)
+
+- Chosen (a): the one extension-to-language map is a top-level key `languages:` in `config/sources.yml`, oculus's language name to a list of endings, an entry with a leading dot an extension and one without a whole file name compared lowercased, the whole name matched first; shown in the Settings view through a family entry of `options.yml`.
+- Not chosen: (b) a map from each ending to its language, which repeats the language name on every line and is not the per-language shape Z78 (2) names; (c) the key in `behavior.yml`, whose keys are thresholds and cadences rather than how a file is read.
+
+Where it is built: D27. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z174, amended (2026-10-01 19:11, step D35)
+
+- Chosen (a): the bounds have an upper limit as well: `slurm.poll_min`, `slurm.quota_min`, `calendar.poll_min`, `mail.poll_min` and `usage_refresh_min` from 1 to 35791 minutes (the longest a Node timer holds; a larger value fires every millisecond); `slurm.days`, `calendar.days_back` and `calendar.days_ahead` whole numbers from 0 to 3650 (ten years); `mail.per_signal` a whole number from 1 to 500 (Gmail's page ceiling).
+- Not chosen: (b) "above zero" alone, the lazy option, which leaves 0.00001 and 40000 minutes spinning.
+
+## Z177 (2026-10-01 19:11, step D35)
+
+- Chosen (a): every `local.yml` key except `calendars`, `calendar_dir`, `mail` and `mail_dir` is read once at start and used from that value everywhere; the per-request re-reads of `hub`, `sessions_overrides`, `bookmarks`, `changes` and the terminal routes' `claude_bin` take the start value, so no key is half live; each such key's description says a change takes effect when the server is started again, and `HELP.md:236` says so. Built in D35.
+- Not chosen: (b) the per-request re-reads kept with a sentence describing the split, the lazy option, which leaves a hand-edited `hub` writing to one hub while the page shows another until a restart; (c) every key made live, rebuilding the watchers on a `hub` change, a different concern from Z166, which ruled that these keys take a restart.
+
+Where they are built: D35. Booked in the state file's closed log and `plan.md` Rulings.

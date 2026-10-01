@@ -130,3 +130,150 @@ Cases of the brief's "Cases" (case 14 and 18 as the ruling amended them; the add
 - Commands I ran outside the two the prompt allows, all read-only: `git show 133ee543:<path>` for two base files (DESIGN.md, tests/server/core/git.test.ts), `git --version`, `git config --global --get core.sshCommand`, `git stash list` (output discarded), and the `git ls-remote ssh://nohost.invalid/...` probes above, run from /tmp with ssh replaced by shell snippets and no file written. The first checks output I wrote to the scratchpad used the name `checks.out`, which another reviewer session of the same orchestrator also used; its first lines were that session's, so I discarded them and reran under a unique name (the verification block above is from the rerun). If the Q85c reviewer's own `checks.out` was overwritten, it needs its own rerun.
 
 Reviewer usage: about 250,000 tokens (from the context counter, not the runner's notice), about 75 tool uses, minutes not measured.
+
+## Repair round 1, refuted
+
+D31 repair round 1: reviewer's report. Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/D31 (product tools/oculus), base 133ee543. All seven rulings are met in code, tests and documents. One ruling (7) is open on the report's text only. Findings: Proof 3, Standards 1, Behaviour 1, Spec none.
+
+I changed nothing in the worktree, the main checkout or the ledger. `git status --short` in the worktree prints 19 entries, the same 14 modified and 5 untracked as at the start. The one hunk-level probe I ran was in a scratch copy under $TMPDIR (prefix `D31-r1-review-`, deleted afterwards). It reverted pieces of the round to see the new cases fail. The only git I ran were `git diff 133ee543` and `git status --short`.
+
+## Verification lines (verbatim)
+
+`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams` printed the regenerated file list (ending `docs/diagrams/writes.svg`) and exited rc=0. `git diff 133ee543 --stat -- docs` is unchanged by the run (layer-server.dot 7, layer-server.svg 611).
+
+`PATH=... sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md` (run from tools/oculus in the worktree, rc=0):
+```
+$ npm test
+ Test Files  404 passed | 21 skipped (425)
+      Tests  10526 passed | 615 skipped (11141)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  442 passed | 9 skipped (451)
+$ npm run check
+1790874242981 COMPLETED 2916 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+No failures in that run.
+
+Commands the round's report quotes, rerun in the same form:
+- Scoped run over git-ssh, fetch-period, core/git, autofetch, git-write, context, config-key and help tests: `Test Files 1 failed | 7 passed (8)`, `Tests 1 failed | 209 passed (210)`. The failure was `tests/server/core/git.test.ts > cuts every list it publishes at the cap`. I did not capture its reason.
+- That file rerun alone: `Test Files 1 passed (1)`, `Tests 43 passed (43)`. A 9-file run (the 8 plus options-catalog) earlier gave `Tests 273 passed (273)`, and `npm test` inside checks.sh passed the file. I name this failure as load (see Declined to judge) and not as a finding. The builder's 210 passed is reproduced by those green runs.
+- `sh utils/folder-check.sh` rc 0, `sh utils/size-check.sh` rc 0.
+- `wc -l`: core/git.ts 898, autofetch.ts 225, autofetch.test.ts 823, core/git.test.ts 900, git-ssh.test.ts 62, DESIGN.md 419, HELP.md 302. These match the report.
+- `ls tests/server/core | wc -l` is 10 and `ls src/lib/server/core | wc -l` is 10.
+- The spec.md perl ASCII gate over src, tests and config (minus local.yml) prints nothing.
+- `grep -rn -i 'autofetch\|fetch-period' src config DESIGN.md HELP.md --exclude=local.yml` lists the two new modules, their imports (context.ts:47,70; config-key.ts:55,93), git-write.ts:45, core/git.ts:54, behavior.yml:139, options.yml:298, config/text/views/system/config.yml:6, DESIGN.md:116,128,344 and HELP.md:186,222. Nothing else.
+- Subcommands: 16 entries in the `ALLOWED` array of git.test.ts (`sed -n 66,86p ... | grep -c "^    '"`), and the perl count of `run(root, ['<sub>'` in core/git.ts lists 16 distinct. DESIGN.md:128 says sixteen.
+
+## Verdicts for the whole diff since the base
+
+Items of "What to build" (as the round-0 ruling and round 1 amended them):
+- 1 fetch-period.ts: holds. `z.number().int().min(0)` inside a `git` object, no cast, the brief's sentence. fetch-period.test.ts passes.
+- 2 autofetch.ts (225 lines): holds. TICK 60000, the look arms the next one first (:190), grouping by `worktrees[0].path`, key re-read per repository, close guards before `remotes`, `fetch` and `refresh`. It runs no process of its own.
+- 3 git-write.ts: holds as ruled (`fetchIn(root, { unattended, sshCommand })`, `GIT_TERMINAL_PROMPT=0` plus the resolved command, pressed Fetch unchanged). The head comment names both callers.
+- 4 context.ts: holds (:227, :306, `autofetch.close()` before `git.close()` at :397).
+- 5 config-key.ts: holds (`requireAutofetch` in `READERS`, :93).
+- 6 behavior.yml: holds. 7 options.yml: holds.
+- 8 DESIGN.md:128: holds. It names the exception, the `GIT_SSH` clause, and now the vector `config --get --default= core.sshCommand`.
+- 9 DESIGN.md:344: holds. The Commit and Push / Commit and Sync exception is now in the sentence.
+- 10 DESIGN.md:116: holds.
+- 11 HELP.md:172: holds ("except the automatic fetch ... except Fetch").
+- 12 HELP.md:186: holds. The sync-item sentence comes first, then the auto fetch sentences; "the behind count of each branch moves with what the remote holds" replaces the old clause; the `GIT_SSH` clause is there.
+- 13 HELP.md:222: holds, with the matching `desc_behavior` in config/text/views/system/config.yml (needed by help.test.ts).
+- 14 other git options: holds in the round's section (verified below). The older Item 14 section of the same report file contradicts it (Proof 1).
+- 15 tests: holds. All listed files exist and pass.
+
+Cases (as amended):
+- 1 to 13: met. They are in autofetch.test.ts and pass in my runs.
+- 14: met. Three environment runs and the pressed Fetch, with the third run now isolated from the machine's global git configuration (ruling 2). Git puts the host after the configured command, so the arguments begin with the configured options and then `-o BatchMode=yes`, as the first review found.
+- 15: met as an audit. I reproduced its failure in the scratch copy twice: with `import { execFile } from 'node:child_process'` added it fails with "not to contain 'node:child_process'", and with a second name imported from core/git.ts it fails with `expected [ 'sshCommand', 'attributesOf' ] to deeply equal [ 'sshCommand' ]`.
+- 16: met. git-write.test.ts passes in my runs.
+- 17: met for the passing run (options-catalog.test.ts passes). The failing run with the entry removed is the builder's quote and I did not reproduce it.
+- 18: met. config-key.test.ts, 35 cases.
+- 19: met. context.test.ts: start order, `refresh('/some/root')` reaching the git watcher, and the default member checked through the `vi.mock` wrapper.
+- Added read case: met. git-ssh.test.ts covers the set value, the empty text for an unset key, the empty text for a folder that is no repository, `null` for a missing root, and the repository left as it was.
+- Round-1 cases: met. These are "answers null when the read fails", "skips a repository whose core.sshCommand cannot be read ... tries again next period" and "does not read core.sshCommand when the environment names the command".
+
+## Verdict per round-1 ruling
+
+1. Behaviour 1, the ssh read: closed.
+   - `sshCommand` (core/git.ts:495-498) runs `config --get --default= core.sshCommand` and answers `done.ok ? done.text.trim() : null`, typed `string | null`.
+   - `CALLS`, `PINNED` and `PINNED_SOURCE` in git.test.ts, the core/git.ts head comment (:39, :53-55) and DESIGN.md:128 name the new form.
+   - The default fetch (autofetch.ts:108-116) reads `sshCommand(root)` only when `process.env.GIT_SSH_COMMAND` is empty. On `null` it throws, and `visit`'s catch logs `autofetch: <root>: core.sshCommand could not be read: git timed out, did not run or exited with an error`, with no refresh.
+   - Failing-first check: in the scratch copy I put back `config --get core.sshCommand` returning `''`, and the unconditional read. Four tests failed with the builder's quoted failures: git-ssh "expected '' to be null", the autofetch skip case "expected [] to deeply equal [ Array(1) ]", and the two git.test.ts gate cases (the source-text one and the recorded-vector one). The "does not read core.sshCommand when the environment names the command" case passes on that old form, as the builder says. With the unconditional read plus the null check restored it fails (1 failed, 43 skipped). The claim is reproduced.
+2. Proof 3, the isolated environment cases: closed.
+   - `ALONE = { GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' }` is applied by `withEnv`.
+   - In the scratch copy with `HOME` holding a `.gitconfig` that sets `core.sshCommand`: the six environment cases pass as built. With `ALONE = {}` the case "sets ssh -o BatchMode=yes when neither names a command" fails.
+3. Proof 2, the source rule: closed. The test is titled "audits the source ..." and pins the names imported from core/git.ts to `['sshCommand']`. The scratch mutation above fails it.
+4. Standards 1, DESIGN.md:344: closed. The sentence ends "...except where the reader pressed Commit and Push or Commit and Sync."
+5. Standards 2, the `GIT_SSH` clause: closed. DESIGN.md:128 says "when only the older `GIT_SSH` variable names the ssh program, nothing is added for ssh, so ssh may still ask". HELP.md:186 says "...which may then still ask".
+6. Standards 3, the order in HELP.md:186: closed (see item 12 above).
+7. Spec 1, item 14: not closed, on the report's text only. No code was asked for.
+   - The round's table is complete and correct.
+   - `awk` over Z74-inventory.md gives 0 `has, fixed` rows in 4b (lines 661-687), 20 in 4h and 5 in 4i. That is 25 rows (20 `git.*`, 5 `scm.*`), and the table's 17 + 8 cover exactly those names.
+   - VS Code 1.137.0 defaults, read from `extensions/git/package.json` and `workbench.desktop.main.js`: pruneOnFetch false, pullTags true, requireGitUserConfig true, statusLimit 10000, untrackedChanges "mixed", countBadge "all", autoRepositoryDetection true, scm.alwaysShowRepositories (key present in workbench.desktop.main.js; its default is unchanged from the first review), allowForcePush false, confirmSync true, enableStatusBarSync true, fetchOnPull false, openDiffOnClick true, rebaseWhenSync false, showCommitInput true, showInlineOpenFileAction true, showPushSuccessNotification false, similarityThreshold 50, showActionButton `{commit, publish, sync: true}`, path null, enableCommitSigning false. scm gutter width 3, action "diff", visibility "always" and ignoreTrimWhitespace "false" are read from workbench.desktop.main.js.
+   - The correction on `enableCommitSigning` is right. In `dist/main.js`, `signCommit=n.get("enableCommitSigning")===!0?!0:void 0` and `--no-gpg-sign` is pushed only when `signCommit !== void 0`. `-c user.useConfigOnly=true` is added when `requireUserConfig ?? true`, which agrees with requireGitUserConfig differing.
+   - The 8 differing rows are pruneOnFetch, pullTags, requireGitUserConfig, statusLimit, untrackedChanges, alwaysShowRepositories, countBadge and autoRepositoryDetection. I confirmed these tree-side citations by `sed -n`: git-write.ts:615, :590 and :580; core/git.ts:126, :630, :118, :333, :346, :371 and :523; git-routes.ts:121; git-remote.ts:50 and :52; ChangeGroups.svelte:189; RepoList.svelte:120 and :139-141; RepoItems.svelte:119; StatusBar.svelte:101; ChangeRow.svelte:112 and :133; CommitBox.svelte:60 and :144; repositories.svelte.ts:193; ui/controls/editor/Editor.svelte:248, :338 and :465; root/watch/git.ts:122 and :334. `grep -n 'git' state/workbench/rail-badges.ts` finds no git count.
+   - The report file still holds the older "Item 14" section (lines 63-94) listing nine mismatches, including `enableCommitSigning`, and saying "the eight mismatching rows above". So the count is stated more than once and contradicts itself (Proof 1).
+
+## 1. Spec
+
+None.
+
+## 2. Proof
+
+1. Place: `agents/reviews/D31-report.md`, lines 14, 19, 63-94 and 104 (the round-0 sections).
+   - Hunk: line 14 "`sshCommand(root): string` ... vector `config --get core.sshCommand`. A failed read (key unset, no repository, timeout) answers the empty text."; line 19 "...`config --get core.sshCommand` forms"; lines 66-75 "Mismatch (reported, not changed)" listing nine rows with `git.enableCommitSigning`, "Only partly matching; not verified further" and "Not verified further"; line 94 "the eight mismatching rows above"; line 104 "A read that times out answers the empty text, so that repository's fetch then runs with plain `ssh -o BatchMode=yes`".
+   - What is wrong: every one of these is false of the tree now (`core/git.ts:495-498`, DESIGN.md:128, the 8-row table below it). The round-1 section corrects only `enableCommitSigning` and the count, and ruling 7 asks for the count "stated once and correct".
+   - Failure scenario: Axel or the orchestrator reads the file top down, takes the nine-row list with an unexamined `countBadge` and `autoRepositoryDetection` as current, and books or rules on nine rows or on the old empty-text read.
+   - Fix at landing: remove or rewrite those lines so the file states the end state only.
+2. Place: `tests/server/git/autofetch.test.ts`, "does not read core.sshCommand when the environment names the command".
+   - Hunk: the case passes on the tree before the change. The builder says so, and I reproduced it in the scratch copy.
+   - What is wrong: ruling 1 says "each new case is run on the tree before this change and its failure quoted", and this case cannot fail there. The builder substituted a mutation (reading unconditionally), and I reproduced that mutation failing, so it does guard the clause. The report states it plainly.
+   - Failure scenario: none beyond the substitution, which is disclosed. Named for the booking.
+3. Place: `tests/server/git/autofetch.test.ts`, "audits the source" (the `coreNames` regex `import\s*\{...\}\s*from '...core\/git\.ts'`).
+   - What is wrong: only a braced value import from core/git.ts is pinned. `import type { ... }`, `import * as g` and a default import from that module are not matched.
+   - Failure scenario: a later edit adds a namespace import of core/git.ts to the timer and the case stays green. core/git.ts is read-only, so the harm is bounded.
+   - Low.
+
+## 3. Standards
+
+1. Place: `src/lib/server/core/git.ts:495`, `export function sshCommand(root: string, ms: number = TIMEOUT_MS)`.
+   - What is wrong: every sibling reader names this parameter `timeout` (:192, :219, :236, :271, :307, :326, :365, :404, :458, :472). The builder says it renamed it to `ms` so the call stays on one line and the file stays at 898 lines. `tests/server/core/git.test.ts` is at exactly 900 and `src/lib/server/core` and `tests/server/core` are both at 10 items.
+   - spec.md: "a file approaching it is split by concern". Here an inconsistent name was chosen to fit the cap.
+   - Failure scenario: the next line added to either file fails `size-check.sh`, and the next file in either folder fails `folder-check.sh`.
+   - Low. A fix is to name it `timeout` and split the new reader's cases or its group out of the 898-line file, which this round's paths did not allow.
+
+Checked and clean: no non-ASCII, no history words (D31, Z83, Z165, Z172, ruling, brief, previously, no longer) on any added line of the source, tests, config or documents, no `as` cast of an outside value in the new modules, the head comment of each new file, and the `git-write.ts` head comment (:40-55), which names both callers.
+
+## 4. Behaviour
+
+1. Landing interaction: `orchestrator-state.md` line 62 gives D31's `shared_paths` as Q85c and U3 only. Z172 and Z175 put Q88c in the same documents: Z172 has Q88c write the fixed git choices with their reasons into HELP.md and DESIGN.md, and Z175 brings `git.countBadge` and `git.autoRepositoryDetection` to VS Code's defaults there. D31's DESIGN.md:344 ("The other git behaviours oculus has are fixed with no key") and HELP.md:186 ("The other git behaviours oculus has are fixed and have no key") sit in that region. `ls agents/briefs | grep Q88c` finds no Q88c brief yet, so I could not compare lines.
+   - Failure scenario: two edits to the same sentences conflict at the second landing, or both stand and a reader sees two statements of what is fixed. This is for the orchestrator to merge.
+2. The skip line names three causes at once ("git timed out, did not run or exited with an error"), because `sshCommand` answers `null`. The ruling asked for exactly that shape, and the report states it. No scenario beyond a vaguer log line.
+
+## Declined to judge
+
+- `tests/server/core/git.test.ts > cuts every list it publishes at the cap` failed once in the 8-file scoped run, with the machine loaded. I did not capture its reason, so I cannot say it was a timeout. The same file passed in my 9-file run, inside `npm test` in checks.sh, and alone (43 passed). Named as load, per spec.md.
+- Case 17's failing run with the catalog entry removed, and the builder's first runs of the round-0 cases (the config-key failure, the missing-module failures). Reproducing them needs the base tree built or an edited file. I read the tests, and the reasons quoted fit them.
+- The blocking time of the `spawnSync` read (up to 5000 ms per repository per period). Neither the builder nor I measured it. It is in the report's sharp edges, and the ruling kept `spawnSync`.
+- A real HTTPS or ssh remote that prompts. `GIT_TERMINAL_PROMPT=0` does not stop a credential helper that opens a window, so HELP.md:186's "without asking for a password or a passphrase" is unverified for that case. A configured ssh command that is plink or putty (an appended `-o BatchMode=yes` would not apply). The built app under the timer and the look on TEST. No server may be started here.
+- The tree-side line numbers of item 14 that name a bare file, such as `ChangeRow.svelte` or `Editor.svelte`. I resolved them to the files that carry the cited text. Three files are called `Editor.svelte` and two `Changes.svelte`, so a reader needs the folder.
+
+Usage: claude-sonnet-5-5
+
+## Closed
+
+Round 1 (the first run's findings), each closed by the builder in repair round 1 and confirmed by the run over that round ("Verdict per round-1 ruling" above): Spec 1 (item 14 table complete, 8 differing rows, `enableCommitSigning` matches), Proof 2 (the source-rule case named an audit), Proof 3 (the environment cases isolated from the machine's git configuration), Standards 1 (DESIGN.md:344 names Commit and Push and Commit and Sync), Standards 2 (the `GIT_SSH` clause in DESIGN.md:128 and HELP.md:186), Standards 3 (HELP.md:186 order), Behaviour 1 (`sshCommand` read only when the environment names no command, `null` on a failed read, the repository skipped with a log line).
+
+The run over repair round 1, closed at landing on main:
+- Proof 1: `agents/reviews/D31-report.md` lines 14, 19 and 104 rewritten to the end state (`sshCommand(root): string | null`, the `config --get --default= core.sshCommand` vector, a failed read skips the repository); the stale "Item 14" section replaced by a pointer to the round-1 table (8 differ, 17 match). `grep -n "eight mismatching\|Not verified further\|enableCommitSigning.*Mismatch" agents/reviews/D31-report.md` prints nothing; line 14 says an unset key answers the empty text and a failed read answers null, which is the tree.
+- Proof 2: disclosed, not a defect. The case cannot fail on the base tree; the mutation that reads `core.sshCommand` unconditionally fails it, reproduced by the round's reviewer.
+- Proof 3: the audit regex in `tests/server/git/autofetch.test.ts` now matches every import form of core/git.ts (braced, type, namespace, default) and pins the list to `['{ sshCommand }']`. With `import * as core from '../../core/git.ts'` added it fails with `expected [ '{ sshCommand }', '* as core' ] to deeply equal [ '{ sshCommand }' ]`.
+- Standards 1: the unused timeout parameter of `sshCommand` removed (`export function sshCommand(root: string): string | null`, the sibling `TIMEOUT_MS` used inside); core/git.ts is 898 lines.
+- Behaviour 1: noted for Q88c's /spec, which writes Z172's and Z175's sentences into the same DESIGN.md:344 and HELP.md:186 region D31 wrote; the Q88c brief names those lines as D31 leaves them.
+- Behaviour 2: as ruled (the skip line names the three causes `null` stands for).
