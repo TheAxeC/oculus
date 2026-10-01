@@ -285,6 +285,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Step 0, carried from Q88's /spec 2026-09-29: the rows the inventory marked "not checked" were checked against the server's git functions; the new ones are this step's, as `agents/briefs/Q88b.md` lists them.
   - Ruled 2026-09-30 by Axel: Z70 (a), `show_tabs: multiple | single | none` (default `multiple`) and `editor_actions: strip | hidden` (default `strip`) in `config/appearance.yml`, each with a control in the Settings view's Appearance section.
   - Ruled 2026-09-29 by Axel: Z55 (a).
+  - Widened 2026-10-01 by Axel (ruling Z172): the commit adds `-c user.useConfigOnly=true`; a change list cut at 200 entries says how many it holds; HELP.md and DESIGN.md name oculus's fixed git choices with their reasons (separate Untracked group, every root listed, prune, signing left to `commit.gpgsign`, plain `git pull`). (ruling Z172)
 - Removed by Z152 (Axel, 2026-10-01 13:11): Q88d (the pane strip's new capabilities and the page-wide right-click handler), merged into Q88c above.
   - Step 0, stopped at `/spec` 2026-09-30 on Z69 (the orchestrator's state file, Open items): Copy as HTML through `@xterm/addon-serialize` 0.14.0 or by hand; the brief is written once Axel rules.
   - Ruled 2026-09-30 by Axel: Z69 (a), Copy as HTML through `@xterm/addon-serialize` 0.14.0.
@@ -751,6 +752,8 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z173 (2026-10-01): (a), the `meta` loops of the registry and collection readers and the `fields` loop of `normalise` skip an own `__proto__` key, fixed in Q85c's repair round 1 (the orchestrator, automode).
 - Open item Z170 (2026-10-01): (a), in S4, an open-the-file action for `local.yml` and a Texts group of the 53 `config/text/` files; no card of `local.yml`'s text; (c) was the lazy option (the user).
 - Open item Z171 (2026-10-01): (a), Pages kept as its own view, in the merged page's pane with Catalogue, in S4 (the user).
+- Open item Z172 (2026-10-01): in Q88c, `requireGitUserConfig` adopted, the 200-entry cut made visible, and five git choices written as oculus's own with reasons; a new step for all seven rows not chosen; nothing was the lazy option (the user).
+- Five builders at once (2026-10-01): `workers_at_once` 5, to see the impact, measured over the next ten landings (waits, timed-out cases, load); supersedes Z109 (a) (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
