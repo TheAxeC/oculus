@@ -50,6 +50,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: 133ee543
   launched: 2026-10-01 17:26 local
   report: agents/reviews/D31-report.md
+  cases: agents/briefs/D31-cases.md (round 0: case 18 (a); the ssh command git would use kept, with BatchMode appended, read through core/git.ts; paths widened by core/git.ts and its test)
+  builder_usage: first run of the cases 248,113 tokens, 39 tool uses, 10.7 min (0 full-list runs)
   brief_check: agents/reviews/D31-brief-check.md, every finding closed in the brief (its Closed heading); claude-sonnet-5-5, 159,546 tokens, 52 tool uses, 5.5 min
   shared_paths: with Q85c and U3, `DESIGN.md` (D31 lines 116, 128 and 344; Q85c line 148; U3 lines 214-222, 405 and the Pane and Toolbar paragraph), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
@@ -74,6 +76,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
 ```
 
 ## The standing demands (from Axel, in force)
+- Every builder prompt restates `agents/spec.md:25` (scoped test files while working; the full verify list once, after the last change; a failed command rerun alone, then the full list once more) and asks the report for the number of full-list runs; each landing report states that number. Builders ran the full list 6 to 18 times a step before this (Q88b 18 runs, 38.6 min; Q107 17, 55.3 min), counted from their transcripts.
 - Skills are never edited, ever (Axel, 2026-10-01): the orchestrator, its agents and every session of this plan never change a skill or any file of one (`~/.claude/skills`, `~/.local/share/ordo-stable`, `~/workspace/ordo`: its `SKILL.md`, templates, scripts such as `land/templates/checks.sh`, tests and docs), never offer to, and never put such a change to Axel as an option or an open item, whatever his go; a skill's behaviour that costs time is reported as a fact and nothing more.
 - Automode (Axel, 2026-09-30 22:42): every choice goes through the process as before (an open item written in full with its options, pros, cons, recommendation and the lazy option named), and the orchestrator then closes it itself with the option Axel would take, books it everywhere a ruling is booked (the closed log, `plan.md`'s Rulings as "(the orchestrator, automode)", the briefs and the steps), and adds it to `choices.md` beside `queue.md` for Axel's review; the work goes on without waiting. Axel reviews `choices.md` when he likes: an agreed entry is removed from it, and a disagreed one is discussed and, when it changes what was built, becomes a new step that changes it on top. Left open for Axel, never decided in automode: a clash between two of Axel's written rules or rulings; a reversal of a ruling Axel gave; anything that needs Axel's own hands or accounts (a login, a look he must fix, his cluster, money); anything touching a secret or deleting his data; a choice with no clear recommendation.
 - U2's choices are Axel's (Axel, 2026-10-01): the choices U2's audit raises, its grouping into build steps and the choices it names (such as group 6, collections as rows or cards, and group 4's icon set), go to him as open items once U2 has landed; automode never closes one. Nothing else changes.
