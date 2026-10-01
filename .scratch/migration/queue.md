@@ -3,7 +3,7 @@
 In flight:
 - Q85b (zod in the state layer), review of repair round 1 running.
 - Q88b (the Files view's file operations), repair round 1 running.
-- U3 (every view on VS Code's scale, from U2's audit), brief check running.
+- U3 (every view on VS Code's scale, from U2's audit), building.
 Queued, in order:
 - Q85c (zod in the data folder), once Q85b has landed; then Q85d.
 - Q88c (the Source Control rows' and the pane strip's new menu items), once Q88b has landed.

@@ -726,6 +726,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z157 (2026-10-01): (a), U3's header holds the title and 20 px icon actions with an overflow opener, and a bar under it holds the inputs, selects, segments, filter toggles and stateful text buttons (the orchestrator, automode).
 - Open item Z158 (2026-10-01): (a), the Files listing's entry carries `link: true` for a symbolic link, so a link to a folder takes the file message of the Delete question (the orchestrator, automode).
 - Open item Z159 (2026-10-01): (a), a Cut paste whose request never reached the server keeps the clipboard; a refused one clears it (the orchestrator, automode).
+- Open item Z160 (2026-10-01): (a), one new glyph `add` (Lucide `plus`) for the add actions in a view's header; other actions without a glyph go to the bar as text buttons (the orchestrator, automode).
 - Open item Z147 (2026-10-01): (c) widened, the cards kept and put on the same scale as everything else: they fit the pane's width, take one chip shape and titles on the type scale, and get groups 2 and 5; links lose the underline; Projects looked at on TEST after the step (the user).
 - Open item Z146 (2026-10-01): U2's seven groups as one step U3, with Z147 (c) widened and Z148 (1) (the user).
 

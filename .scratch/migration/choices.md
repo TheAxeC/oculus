@@ -237,3 +237,12 @@ The question: whether a Cut paste that never reached the server clears the clipb
 - Not chosen: (b) clear it on every failure.
 
 Where it is built: Q88b's round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z160 (2026-10-01 15:22, step U3)
+
+The question: the header keeps icon actions only, and the add actions have no glyph.
+
+- Chosen (a): one new glyph `add` (Lucide `plus`) for the add actions; other actions without a glyph go to the bar as text buttons.
+- Not chosen: (b) a glyph for every such action; (c) the add actions in the bar.
+
+Where it is built: U3. Booked in the state file's closed log and `plan.md` Rulings.
