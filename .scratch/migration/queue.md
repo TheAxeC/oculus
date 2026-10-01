@@ -1,42 +1,39 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- S3c (the Settings editor), repair round 1 (19 rulings) sent 12:52.
-- Q85b (zod in the state layer), builder (Sonnet) resumed 12:43 with its nine cases ruled.
-- Q88b (the Files view's file operations), builder (Sonnet) resumed 12:37 with its two cases ruled.
-Open items: Z146 (U2's grouping into build steps), Z147 (collections as rows or cards), Z148 (the icon set), all three Axel's, in `orchestrator-state.md`'s Open items. Choices made in automode, for review: `choices.md`.
+- S3c (the Settings editor), repair round 1 running.
+- Q85b (zod in the state layer), building.
+- Q88b (the Files view's file operations), building.
 Queued, in order:
-- Q85c, once Q85b has landed (it reads `data/shapes/shapes.ts`, which Q85b makes), then Q85d.
+- Q85c (zod in the data folder), once Q85b has landed; then Q85d.
 - Q88c (the Source Control rows' git operations), once Q88b has landed.
-- Q88d (the pane strip and the page-wide right-click handler), once S3c has landed (its two settings are rows of the new Settings editor).
+- Q88d (the pane strip and the page-wide right-click handler), once S3c has landed.
 - X3c (the tab strip as VS Code's), once Q88d has landed.
-- X3a (the Files view as VS Code's Explorer, with Z138's light-theme Seti colours), once Q88b has landed.
+- X3a (the Files view as VS Code's Explorer), once Q88b has landed.
 - Q91 (the project view and its editor), once X3a has landed.
-- L4 (floating panes, and Z143's kept panes), after S3.
-- Q66 (a hidden tab defers its work), X3d has landed.
+- L4 (floating panes).
+- Q66 (a hidden tab defers its work).
 - Q35 (the session views).
 - D11 and D14 (the rite debug client; LaTeX everywhere).
-- D25 (the editor's options), after S3c; D27 (the editor's languages, the rite language included), before D23.
+- D25 (the editor's options), once S3c has landed; D27 (the editor's languages).
 - D23, D15 and D17 (language servers; PDF reading, once D14 has landed; project commands).
-- D23b (more language server features, TypeScript and Svelte included), once D23 has landed.
+- D23b (more language server features), once D23 has landed.
 - D28 (saving a source file), once D25 has landed.
-- D31 and D32 (git auto fetch, X3d has landed; replace in Search).
+- D31 and D32 (git auto fetch; replace in Search).
 - D33 (the Problems view), once D23 and D17 have landed.
 - D18, D20 and D24 (the Processes view; an agent from a task or in a new worktree; the Personal board).
 - A1 and A3 (review with feedback; scheduled runs, once D17 has landed).
 - M3 and M4 (the resources registry; live equations in Present).
 - Q72 (the architecture re-read).
-- E4 (the apps built, to the design E1 to E3 wrote and Axel ruled), after Q72 and before R2, so release readiness covers it (Axel).
+- E4 (the apps built), after Q72.
 - R2 (release readiness).
 - O29 and O30 (retiring the cockpit; the native window).
 - X2 (a new orchestrator resumes from the files).
 - O33, last (oculus in its own repository).
 
-Owed: the three-way Opus and Sonnet comparison once 15 steps have landed with Sonnet reviewers (state file, Booked section).
+Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers.
 
-The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
-
-Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+Landed, newest first:
 - Q85a2 (zod in the edit, sessions and transcripts folders), 2026-10-01, 0b38c14c.
 - U2 (every view's look against VS Code), 2026-10-01, e8b517c0.
 - Q85a4 (zod in the other server folders), 2026-10-01, 58b860a0.
