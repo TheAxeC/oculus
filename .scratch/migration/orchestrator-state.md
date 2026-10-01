@@ -52,13 +52,14 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: 133ee543
   launched: 2026-10-01 17:26 local
   report: agents/reviews/D31-report.md (saved from the builder's hand-back message)
-  reviewer_report: agents/reviews/D31-refuter.md (reviewer a8b81aeece3e5b341, launched 18:12, claude-sonnet-5-5 read from its transcript; report pending)
+  reviewer_report: agents/reviews/D31-refuter.md (reviewer a8b81aeece3e5b341, claude-sonnet-5-5 read from its transcript; 262,857 tokens, 64 tool uses, 26.9 min; 1 Spec, 3 Proof, 3 Standards, 1 Behaviour)
+  round_1: agents/briefs/D31-round1.md (seven rulings; sent to the builder)
   cases: agents/briefs/D31-cases.md (round 0: case 18 (a); the ssh command git would use kept, with BatchMode appended, read through core/git.ts; paths widened by core/git.ts and its test)
   builder_usage: first run of the cases 248,113 tokens, 39 tool uses, 10.7 min (0 full-list runs); the notice after the resumed build reads 371,242 tokens, 61 tool uses, 33.1 min (5 checks.sh runs: 1 from the wrong folder, 3 red, 1 green)
   brief_check: agents/reviews/D31-brief-check.md, every finding closed in the brief (its Closed heading); claude-sonnet-5-5, 159,546 tokens, 52 tool uses, 5.5 min
   shared_paths: with Q85c and U3, `DESIGN.md` (D31 lines 116, 128 and 344; Q85c line 148; U3 lines 214-222, 405 and the Pane and Toolbar paragraph), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
-  round: 0
+  round: 1
 - step: U3
   executor: agent
   worker: claude:sonnet
@@ -143,6 +144,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
+
+- Z172, git behaviours that differ from VS Code's defaults (raised 2026-10-01 by D31's item 14 and its review, `agents/reviews/D31-refuter.md` Spec 1). D31's widening line in `plan.md` says the other git options stay at VS Code's defaults as X3d built them; the review reproduced seven that do not, against VS Code 1.137.0: `git.pullTags` (VS Code true; oculus runs plain `git pull`, `git-write.ts:590`), `git.requireGitUserConfig` (true, `-c user.useConfigOnly=true`; oculus plain `git commit`), `git.enableCommitSigning` (false, `--no-gpg-sign`; oculus leaves `commit.gpgsign` to decide, unset on this machine), `git.statusLimit` (10000; oculus 200, `core/git.ts:126`), `git.untrackedChanges` (mixed; oculus a separate Untracked group), `scm.alwaysShowRepositories` (false; oculus lists every root, `RepoList.svelte:120`); `git.pruneOnFetch` (false; oculus prunes, which Z83 ruled for oculus). Two more (`git.countBadge`, `git.autoRepositoryDetection`) are being examined in D31's round 1. (a) Recommended: a new step that brings the six unruled rows to VS Code's defaults, prune kept under Z83, HELP.md and DESIGN.md then saying the rest is at VS Code's defaults. For: the parity the plan line claims. Against: Untracked folded into Changes and the repository list hidden for one root change what you see today. (b) Keep oculus's choices and write each one into HELP.md and DESIGN.md as a fixed choice. For: nothing on screen changes. Against: seven divergences from the editor oculus copies. (c) Nothing, the plan line left false: the lazy option.
+
+- Z170, `local.yml` and the 53 `config/text/` files in the Settings view (raised 2026-10-01 by Axel's question). Today Settings draws `local.yml`'s 16 keys as rows with their description and key path, never reads the file (`state/system/config/groups.ts:8-10`) and gives no open link (`settings/Item.svelte:53`); the text files (2,581 key lines, `find config/text -name '*.yml' | xargs cat | grep -cE`) are in no Settings group and were no Config card. (a) Recommended: a `local.yml` group heading with the open-the-file action S4 adds for every file, and a Texts group listing the 53 files, each with that action; no card shows `local.yml`'s text, since it holds the calendar link. For: every config file reachable from Settings; the secret stays off the page. Against: the text keys are edited in the source tab, not as rows. (b) the same, plus every text key a Settings row with a text control. For: words found by search. Against: 2,581 rows drown the 128 options in every search. (c) neither, the lazy option.
+- Z171, the Pages view folded into Settings (raised 2026-10-01 by Axel's question). Pages (`views/system/workbench/Pages.svelte`, 391 lines) lists every page, the rail's and the reader's own, and shows, renames, resets, closes and makes one, and a row dragged onto a pane's edge nests that page; Settings already holds the rail list (`RailEditor`) and the reset of every page (`PagesReset`) as rows (`settings/Item.svelte:175-177`). (a) Recommended: Pages kept as its own view on the merged page. For: it is a navigator used to reach and arrange pages, closer to VS Code's Open Editors than to a setting, and its drag onto a pane needs a view beside the panes. Against: two places name pages. (b) Pages moved into Settings as a section with all its controls, the view removed. For: one view fewer. Against: reaching a page means opening Settings, and the drag to a pane edge starts inside a settings list.
 
 
 
