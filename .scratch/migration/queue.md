@@ -11,6 +11,7 @@ In flight:
 Open items: none. Z143 ruled (5) with terminals by Axel, built in L4. Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - S3c (the Settings editor), S3a and S3b have landed.
+- E4 (the apps built, to the design E1 to E3 wrote and Axel ruled).
 - Q85b and Q85c, then Q85d (zod after Q85a4).
 - Q88b (the right-click menus' new capabilities), X3d has landed.
 - X3c (the tab strip as VS Code's), once Q88b has landed.
