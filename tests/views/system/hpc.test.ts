@@ -161,7 +161,7 @@ describe('Live HPC view', () => {
     it('lays the disk meters out in responsive columns', () => {
         const source = readFileSync('src/lib/views/system/hpc/Quota.svelte', 'utf8');
         expect(source).toMatch(
-            /\.meters\s*{[^}]*grid-template-columns:\s*repeat\(auto-fill, minmax\(230px, 1fr\)\)/s
+            /\.meters\s*{[^}]*grid-template-columns:\s*repeat\(auto-fill, minmax\(min\(230px, 100%\), 1fr\)\)/s
         );
     });
     it('draws the empty queue words in the header and queue body', () => {
@@ -174,11 +174,25 @@ describe('Live HPC view', () => {
         const at = empty.search(/class="empty[\s"]/);
         expect(at).toBeGreaterThan(-1);
         const line = empty.slice(at, empty.indexOf('</p>', at));
-        expect(line).toMatch(/<span class="message">[^]*No jobs in the queue for you right now\./);
+        expect(line).toMatch(
+            /<span class="message[^"]*">[^]*No jobs in the queue for you right now\./
+        );
         const queued = draw(payload, 32);
         expect(queued).toContain('<table');
         // the cluster answers and the queue holds a job, so no list in the body is said to be empty
         expect(queued.search(/class="empty[\s"]/)).toBe(-1);
+    });
+    it('draws the queue as a Table inside its own scroll box, with small row controls', () => {
+        const body = draw(payload, 35);
+        const scroll = body.search(/<div class="scroll[^"]*">\s*<table/);
+        expect(scroll).toBeGreaterThan(-1);
+        expect(body.slice(scroll)).toMatch(/class="tool[^"]*\bsmall\b[^"]*"[^>]*>[^]*Cancel/);
+    });
+    it('audits that the queue row controls are clear at rest and drawn on hover and focus', () => {
+        const source = readFileSync('src/lib/views/system/hpc/Jobs.svelte', 'utf8');
+        expect(source).toMatch(/tr:hover[^{]*,[^{]*tr:focus-within[^{]*{[^}]*--row-reveal:\s*1/s);
+        expect(source).toMatch(/@media \(hover: none\)[^{]*{[^}]*--row-reveal:\s*1/s);
+        expect(source).not.toMatch(/display:\s*none|visibility:\s*hidden/);
     });
     it('leaves a fresh answer unmarked', () => {
         const body = drawAt('2026-09-11T12:10:00.000Z', payload, 10);
@@ -371,25 +385,42 @@ describe('Live HPC view', () => {
         expect(foldTag(opened, 'capacity')).not.toBe('');
         expect(isOpen(foldTag(opened, 'capacity'))).toBe(true);
     });
-    it('draws the unreachable line as a status message, and the hint in the head code', () => {
+    /** The error box the view draws while the cluster does not answer. */
+    function errorBox(body: string): string {
+        const at = body.search(/<p[^>]*class="empty[^"]*\berror\b/);
+        expect(at).toBeGreaterThan(-1);
+        return body.slice(at, body.indexOf('</p>', at));
+    }
+    it('draws the unreachable line as an error box with the hint as code in it', () => {
         const body = draw({ ...payload, status: 'unreachable', hint: 'ssh timeout' }, 27);
-        expect(body).toMatch(
-            /<p[^>]*class="[^"]*\bsaid\b[^"]*"[^>]*>Cluster unreachable - on UT network \/ EduVPN\?<\/p>/
-        );
-        // an audit on the tree as it is: the hint is drawn in the head's code element
-        expect(body).toMatch(/<code[^>]*>ssh timeout<\/code>/);
+        const box = errorBox(body);
+        expect(box).toContain('role="alert"');
+        expect(box).toContain('Cluster unreachable - on UT network / EduVPN?');
+        expect(box).toMatch(/<code[^>]*>ssh timeout<\/code>/);
     });
-    it('draws the unreachable line as a status message and no code when there is no hint', () => {
+    it('draws the unreachable line as an error box and no code when there is no hint', () => {
         const held = { ...payload, status: 'unreachable' as const };
         delete held.hint;
         const body = draw(held, 28);
-        expect(body).toMatch(/<p[^>]*class="[^"]*\bsaid\b[^"]*"[^>]*>Cluster unreachable/);
-        // the payload carries no failure text, so the head has none to print
+        const box = errorBox(body);
+        expect(box).toContain('Cluster unreachable');
+        // the payload carries no failure text, so the box has none to print
         expect(body).not.toContain('<code');
     });
-    it('draws the same status message for an error payload', () => {
+    it('draws the same error box for an error payload', () => {
         const body = draw({ ...payload, status: 'error', hint: 'fixture' }, 29);
-        expect(body).toMatch(/<p[^>]*class="[^"]*\bsaid\b[^"]*"[^>]*>Cluster unreachable/);
+        expect(errorBox(body)).toContain('Cluster unreachable');
+    });
+    it('makes Refresh now the retry of the error box, and keeps it out of the bar while it fails', () => {
+        const failed = draw({ ...payload, status: 'unreachable', hint: 'ssh timeout' }, 33);
+        const box = errorBox(failed);
+        expect(box).toMatch(/<span class="action[^"]*">[^]*Refresh now/);
+        // one refresh control in all: the bar does not hold a second one beside the retry
+        expect(failed.match(/Refresh now/g)).toHaveLength(1);
+        const live = draw(payload, 34);
+        expect(live).toContain('Refresh now');
+        // the cluster answers, so the bar holds the control and there is no error box
+        expect(live.search(/<p[^>]*class="empty[^"]*\berror\b/)).toBe(-1);
     });
     it('draws the fetching line through the empty primitive while the cluster is starting', () => {
         const body = draw({ ...payload, status: 'starting' }, 30);

@@ -37,24 +37,29 @@
     // tab, which is what a LaTeX build does to the PDF it rebuilds, is a new address and the frame
     // fetches the new bytes instead of drawing the ones the browser cached.
     //
-    // The star in the toolbar is `shared/links/BookmarkStar.svelte`, which the source tab draws
+    // The header holds the icon actions: the star, opening the address in a browser tab and the
+    // program control. The star is `shared/links/BookmarkStar.svelte`, which the source tab draws
     // too: a reader bookmarks the file in front of them, whichever of the two tabs is showing it.
+    // What a refused bookmark write or open says is at the end of the pane's bar.
     //
     // "Open in its program" is `shared/links/ProgramButton.svelte`, which hands the file to the
     // application `open.program_ext` of config/behavior.yml names for its extension, so a `.docx`
     // or an `.xlsx` the page draws no view of opens in the program that edits it. It is offered
-    // only for a name with such an entry, in the toolbar once this view holds the file (a file
-    // still being read, or one about to be handed to the source tab, carries none, for the same
-    // reason it carries no download) and again beside the download; a listed file whose bytes are
-    // text is handed to the source tab, which carries the same control. The server refuses what the
-    // name cannot show (an execute bit, a Finder alias, a file it cannot read) when it is pressed,
-    // and each control says so beside it.
+    // only for a name with such an entry, in the header once this view holds the file (a file still
+    // being read, or one about to be handed to the source tab, carries none, for the same reason
+    // it carries no download) and again beside the download; a listed file whose bytes are text is
+    // handed to the source tab, which carries the same control. The server refuses what the name
+    // cannot show (an execute bit, a Finder alias, a file it cannot read) when it is pressed, and
+    // each control says so beside it.
+    //
+    // A picture the browser cannot load is the read failure: the message box with a control that
+    // draws the picture again, which asks the server for the bytes once more.
 
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import BookmarkStar from '../../shared/links/BookmarkStar.svelte';
     import ProgramButton from '../../shared/links/ProgramButton.svelte';
     import { openSourceFile } from '../../shared/links/source-file';
@@ -74,6 +79,13 @@
     } = client;
 
     let { instance }: ViewProps = $props();
+
+    /** What the star or the program control was refused with, or the empty string. */
+    let said = $state('');
+    /** The address of the picture that failed to load, and the empty string while none has. */
+    let unreadable = $state('');
+    /** How many times the picture was asked for again, which makes a new element each time. */
+    let attempt = $state(0);
 
     const root = $derived(read(instance.state, 'root'));
     const path = $derived(read(instance.state, 'path'));
@@ -149,24 +161,56 @@
         if (src === '') return;
         window.open(src, '_blank', 'noopener');
     }
+
+    /** Ask the server for the picture again, in a new element. */
+    function retry(): void {
+        unreadable = '';
+        attempt += 1;
+    }
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('file.toolbar')}>
-        <BookmarkStar {root} {path} />
-        <ToolButton label={t('file.open_outside')} onclick={outside} />
+    <Toolbar label={t('file.toolbar')} overflow>
+        <BookmarkStar bare {root} {path} onsaid={(words: string) => (said = words)} />
+        <ToolButton
+            bare
+            label={t('file.open_outside')}
+            glyph={t('file.open_outside_glyph')}
+            onclick={outside}
+        />
         {#if openable}
-            <ProgramButton {root} {path} />
+            <ProgramButton bare {root} {path} onsaid={(words: string) => (said = words)} />
         {/if}
     </Toolbar>
 {/snippet}
 
-<Pane {title} toolbar={tools}>
+{#snippet bar()}
+    {#if said !== ''}
+        <span class="said" role="alert">{said}</span>
+    {/if}
+{/snippet}
+
+{#snippet again()}
+    <ToolButton small label={t('file.retry')} onclick={retry} />
+{/snippet}
+
+<Pane {title} toolbar={tools} {bar}>
     <div class="file" data-instance={instance.id} data-root={root} data-path={path}>
         {#if src === ''}
             <Empty message={t('file.none')} glyph={t('file.none_glyph')} />
         {:else if type.kind === 'image'}
-            <img class="picture" alt={t('file.image', nameOf(path))} {src} />
+            {#if unreadable === src}
+                <Empty error message={t('file.unreadable', nameOf(path))} action={again} />
+            {:else}
+                {#key attempt}
+                    <img
+                        class="picture"
+                        alt={t('file.image', nameOf(path))}
+                        {src}
+                        onerror={() => (unreadable = src)}
+                    />
+                {/key}
+            {/if}
         {:else if type.kind === 'pdf'}
             <iframe class="frame" {title} {src}></iframe>
         {:else if known === null || known.kind === 'text'}
@@ -225,18 +269,26 @@
     .other {
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
         gap: 4px;
     }
 
     .actions {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
     }
 
     .download {
         color: var(--accent-txt, var(--accent));
+        font-size: var(--fs-sm);
+    }
+
+    /* What the star or the program control was refused with: alert words at the end of the bar. */
+    .said {
+        margin-left: auto;
+        color: var(--c-red-txt);
         font-size: var(--fs-sm);
     }
 </style>

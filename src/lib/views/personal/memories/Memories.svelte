@@ -38,7 +38,7 @@
     import { tick, untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import FileChooser from '$lib/ui/forms/file/FileChooser.svelte';
     import { encoded } from '$lib/ui/forms/file/file-data';
@@ -181,10 +181,11 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('memories.toolbar')}>
+    <Toolbar label={t('memories.toolbar')} overflow>
         <ToolButton
+            bare
             label={t('memories.add')}
-            glyph={t('memories.add_glyph')}
+            glyph="add"
             title={t('memories.add_tip')}
             disabled={busy}
             onclick={() => chooser?.open()}

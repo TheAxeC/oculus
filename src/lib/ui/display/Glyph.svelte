@@ -47,28 +47,31 @@
 {/if}
 
 <style>
+    /* An icon is drawn at VS Code's icon size, 16 px grown with the text scale, whatever the text
+       beside it is. A surface whose icon is another size, the activity rail's and the
+       status bar's, sets `--glyph-size` on itself. The fixed box keeps a rail of glyphs in one
+       column whatever the drawing or the stand-in is, and keeps the room of a name with no
+       drawing. */
     .glyph {
         display: inline-block;
-        /* A fixed box keeps a rail of glyphs in one column whatever the drawing or the stand-in is,
-           and keeps the room of a name with no drawing. */
-        width: 1.2em;
+        flex: none;
+        width: var(--glyph-size, calc(var(--icon-box) * var(--text-scale, 1)));
         text-align: center;
         line-height: 1;
     }
 
-    /* An icon is drawn at the size of the text it sits beside, inside the box above, and the shift
-       puts its middle on the line's rather than its foot on the baseline. */
+    /* The shift puts the icon's middle on the line's rather than its foot on the baseline. */
     .glyph :global(svg) {
         display: inline-block;
-        width: 1em;
-        height: 1em;
+        width: var(--glyph-size, calc(var(--icon-box) * var(--text-scale, 1)));
+        height: var(--glyph-size, calc(var(--icon-box) * var(--text-scale, 1)));
         vertical-align: -0.125em;
     }
 
     /* A terminal palette draws the ASCII stand-in of config/catalogs/glyphs.yml instead of the
-       icon, and a stand-in is at most three characters wide, which
-       tests/checks/config/config-folder.test.ts holds, so the box holds three of the theme's own
-       face. */
+       icon, in the text size of the parent, and a stand-in is at most three characters wide,
+       which tests/checks/config/config-folder.test.ts holds, so the box holds three of the
+       theme's own face. */
     :global(body.rice) .glyph {
         width: 3ch;
     }

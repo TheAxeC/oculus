@@ -43,11 +43,14 @@
 </ol>
 
 <style>
+    /* A step is a line of the tree's row height, and a longer step grows by whole lines. */
     .steps {
         display: grid;
-        gap: 8px;
+        gap: 4px;
         margin: 0;
         padding-left: 20px;
+        font-size: var(--fs-md);
+        line-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
     .note {
         margin: 4px 0 0;

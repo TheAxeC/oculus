@@ -46,6 +46,7 @@
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { DiffCommand, EditorAction } from '$lib/ui/controls/editor/types';
     import DiffBar from './DiffBar.svelte';
     import DiffSection from './DiffSection.svelte';
@@ -398,6 +399,10 @@
     />
 {/snippet}
 
+{#snippet again()}
+    <ToolButton small label={t('repositories.diff_retry')} onclick={() => void load(held)} />
+{/snippet}
+
 <Pane {title} toolbar={tools}>
     <!-- The pane's keys: the files region is the focus stop, and Alt+F5 moves through changes. -->
     <div
@@ -410,11 +415,11 @@
         {#if !subject}
             <Empty message={t('repositories.diff_empty')} glyph={t('repositories.empty_glyph')} />
         {:else if failure !== ''}
-            <p class="failed">{failure}</p>
+            <Empty error message={failure} action={again} />
         {:else if !loaded}
-            <p class="note">{t('repositories.diff_pending')}</p>
+            <Empty message={t('repositories.diff_pending')} glyph={t('repositories.empty_glyph')} />
         {:else if files.length === 0}
-            <p class="note">{t('repositories.diff_empty')}</p>
+            <Empty message={t('repositories.diff_empty')} glyph={t('repositories.empty_glyph')} />
         {:else}
             <!-- A scrolled region is a focus stop, to scroll it and move by change by keyboard. -->
             <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -513,23 +518,12 @@
     }
 
     .files:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     :global(body.wall) .files {
         background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
-    }
-
-    .note,
-    .failed {
-        margin: 2px 0 0;
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .failed {
-        color: var(--c-red-txt, var(--muted));
     }
 </style>

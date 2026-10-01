@@ -139,16 +139,24 @@
     }
 
     .legend {
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
+    /* A deadline is one row of the tree's height, its venue in the main size and its distance in
+       the secondary one. */
     .nextitem {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         padding-left: 6px;
         border-left: 1px solid var(--line);
+        font-size: var(--fs-md);
     }
 
     .nextitem i {
         color: var(--accent-txt, var(--accent));
+        font-size: var(--fs-sm);
     }
 
     .spark {
@@ -169,11 +177,11 @@
     }
 
     .spark-label {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
     }
 
     .spark-months {
-        font-size: var(--fs-3xs);
+        font-size: var(--fs-xs);
     }
 
     :global(body.rice) .spark {
@@ -211,7 +219,7 @@
     .monthname {
         margin-bottom: 4px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
     }
 

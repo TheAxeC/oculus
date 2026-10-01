@@ -20,6 +20,7 @@
     // are drawn whatever they overlap, and last, so they sit on top.
 
     import { tick, untrack } from 'svelte';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import { onShown } from '$lib/ui/shown';
     import { writeRelated } from './edge-write';
     import {
@@ -31,13 +32,9 @@
         shownLabels,
         type LabelSize
     } from './labels';
+    import { nodeTone, viewOf } from './node-view';
     import { dragTarget, movedEnough, nearestProject, toBox, toGraph } from './pointer';
-    import {
-        DEFAULT_BOUNDS,
-        type Graph,
-        type GraphNode,
-        type PointNode
-    } from '$lib/state/boards/structure/graph';
+    import { DEFAULT_BOUNDS, type Graph, type PointNode } from '$lib/state/boards/structure/graph';
     import {
         clampToBox,
         dragTo as holdAt,
@@ -54,7 +51,6 @@
         type MapPlacement
     } from '$lib/state/boards/structure/layout';
     import { t } from '$lib/state/shared/words/text';
-    import { toneOf, typeTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -190,14 +186,6 @@
         }
     });
 
-    function nodeTone(node: GraphNode): string {
-        if (node.archived === undefined) return typeTone(node.type ?? '');
-        const colors = configMap().arch_color;
-        if (typeof colors !== 'object' || colors === null || Array.isArray(colors)) return 'grey';
-        const color = (colors as Record<string, unknown>)[node.archived];
-        return typeof color === 'string' ? toneOf(color) : 'grey';
-    }
-
     function viewport(event: PointerEvent | WheelEvent): { x: number; y: number } {
         return toBox({ x: event.clientX, y: event.clientY }, svg.getBoundingClientRect());
     }
@@ -255,13 +243,8 @@
     }
 
     function open(node: PointNode): void {
-        if (node.kind === 'project') {
-            openView('project', { id: node.entityId, label: node.label });
-        } else if (node.kind === 'line') {
-            openView('pillars');
-        } else {
-            openView('person', { key: node.entityId, label: node.label });
-        }
+        const target = viewOf(node);
+        openView(target.view, target.state);
     }
 
     /** Put the dragged node under the pointer, once it has moved a pixel, and run the forces. */
@@ -303,10 +286,14 @@
 
 <div class="graph-wrap">
     {#if status !== ''}
-        <p class="status" role="status">{status}</p>
+        <div class="status">
+            <Empty error message={status} />
+        </div>
     {/if}
     {#if failure !== null}
-        <p class="status" role="status">{t('map.layout_failed', failure)}</p>
+        <div class="status">
+            <Empty error message={t('map.layout_failed', failure)} />
+        </div>
     {/if}
     <svg
         bind:this={svg}
@@ -391,7 +378,7 @@
                             cx={node.x}
                             cy={node.y}
                             r={node.radius}
-                            style={`--node-fill: var(--c-${nodeTone(node)})`}
+                            style={`--node-fill: var(--c-${nodeTone(node, configMap().arch_color)})`}
                         ></circle>
                     {:else}
                         <rect
@@ -427,10 +414,11 @@
 </div>
 
 <style>
+    /* The graph takes the height the head and the legend leave in the map's column. */
     .graph-wrap {
         position: relative;
+        flex: 1 1 auto;
         min-height: 420px;
-        height: calc(100% - 78px);
         border: 1px solid var(--line);
         border-radius: var(--radius);
         background: var(--panel);
@@ -442,17 +430,15 @@
         backdrop-filter: blur(var(--wall-blur));
     }
 
+    /* The error box sits over the canvas's top left corner, on the panel so the nodes under it do
+       not show through the words. */
     .status {
         position: absolute;
         z-index: 1;
         top: 8px;
         left: 8px;
-        margin: 0;
-        padding: 4px 8px;
-        color: var(--c-red-d-txt);
+        right: 8px;
         background: var(--panel);
-        border: 1px solid var(--c-red);
-        border-radius: var(--radius-sm);
     }
 
     :global(body.wall) .status {

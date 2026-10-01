@@ -63,11 +63,11 @@
      screen: the queue is what the view is opened for, and the capacity is the glance above it. -->
 {#if meters.length}
     <details class="capacity" open={held.capacity} ontoggle={(event) => toggled('capacity', event)}>
-        <summary>{title(meters.length)}</summary>
+        <summary class="title">{title(meters.length)}</summary>
         <div class="meters">
             {#each meters as meter (meter.name)}
                 <div class="meter">
-                    <span>{meter.name}</span>
+                    <span class="name">{meter.name}</span>
                     {#if meter.gpu}
                         <Tag label={t('hpc.gpu')} tone="violet" />
                     {/if}
@@ -76,13 +76,15 @@
                         <i class="mixed" style={`flex:${meter.mixed}`}></i>
                         <i class="allocated" style={`flex:${meter.allocated}`}></i>
                     </span>
-                    <span>{t('hpc.idle_count', meter.idle)}</span>
+                    <span class="count">{t('hpc.idle_count', meter.idle)}</span>
                 </div>
             {/each}
         </div>
         <details class="sinfo" open={held.sinfo} ontoggle={(event) => toggled('sinfo', event)}>
             <summary>{summary(rows.length)}</summary>
-            <Table {columns} rows={tableRows} rowKey="key" />
+            <div class="scroll">
+                <Table {columns} rows={tableRows} rowKey="key" />
+            </div>
         </details>
     </details>
 {/if}
@@ -90,7 +92,7 @@
 <style>
     .meters {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
         gap: 4px 16px;
     }
     /* The view's own gap between its parts, kept inside the capacity fold. */
@@ -102,13 +104,17 @@
         gap: 8px;
         align-items: center;
         min-width: 0;
-        font-size: var(--fs-sm);
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
-    .meter > span:first-child {
+    .name {
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-size: var(--fs-md);
+    }
+    .count {
+        font-size: var(--fs-sm);
     }
     .bar {
         display: flex;
@@ -130,11 +136,24 @@
     .allocated {
         background: var(--c-red);
     }
+    /* The section's heading is the outer summary; the inner one is a disclosure's words. */
     summary {
         cursor: pointer;
         font-size: var(--fs-sm);
     }
-    details :global(table) {
-        font-size: var(--fs-sm);
+    summary.title {
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--muted-txt, var(--muted));
+    }
+    summary:focus-visible {
+        outline: 1px solid var(--accent);
+        outline-offset: 1px;
+    }
+    /* A table wider than the pane scrolls inside its own box. */
+    .scroll {
+        min-width: 0;
+        overflow-x: auto;
     }
 </style>

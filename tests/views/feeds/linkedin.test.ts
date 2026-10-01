@@ -18,6 +18,7 @@ import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { barOf, headerOf } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 let layout: ClientState['layout']['layout'];
@@ -308,5 +309,38 @@ describe('the LinkedIn view', () => {
             { kind: 'linkedin-idea', title: 'Uncategorised', category: '' },
             { kind: 'linkedin-post', file: 'xx-new-idea.md' }
         ]);
+    });
+
+    it('puts the search in the bar and the idea control in the header as a bare icon', () => {
+        const body = draw('linkedin-controls', entries, '', false);
+        const header = headerOf(body);
+        const bar = barOf(body);
+        expect(bar).toMatch(/<input class="search[^"]*\bfill\b/);
+        // a search box is a control of the bar, and the header holds icon actions only
+        expect(header).not.toContain('class="search');
+        const tools = header.match(/<button[^>]*class="tool[^"]*"[^>]*>/g) ?? [];
+        expect(tools.length).toBe(1);
+        expect(tools[0]).toMatch(/\bbare\b/);
+        expect(tools[0]).toContain('aria-pressed="false"');
+        expect(tools[0]).toContain(`aria-label="${catalog['linkedin.addidea']}"`);
+        expect(header).toContain('data-glyph="add"');
+        const open = draw('linkedin-controls-open', entries, '', true);
+        expect(open.slice(open.indexOf('<header'), open.indexOf('</header>'))).toContain(
+            'aria-pressed="true"'
+        );
+    });
+
+    it('draws the post-due nudge as one box holding its words and the picked idea', () => {
+        const overdueEntries = entries.map((entry) =>
+            entry.idea ? entry : { ...entry, date: '2026-07-01' }
+        );
+        const body = draw('linkedin-nudge', overdueEntries);
+        const at = body.indexOf('<div class="nudge');
+        expect(at).toBeGreaterThan(-1);
+        const nudge = body.slice(at, body.indexOf('</div>', at));
+        expect(nudge).toContain(catalog['linkedin.postdue']);
+        expect(nudge).toContain('Zeta idea');
+        // the cadence is on track here, so the view has nothing to nudge about
+        expect(draw('linkedin-no-nudge')).not.toContain('class="nudge');
     });
 });

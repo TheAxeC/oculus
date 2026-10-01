@@ -17,6 +17,7 @@
     // the glyphs stage, unstage and note_back in both.
 
     import type { Snippet } from 'svelte';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ChangeCounts from './ChangeCounts.svelte';
     import { elide } from '$lib/state/shared/words/format';
@@ -116,7 +117,7 @@
             </span>
         </div>
         {#if entries.length === 0}
-            <p class="none">{t('sessions.ch_group_empty')}</p>
+            <Empty message={t('sessions.ch_group_empty')} />
         {:else}
             {#each entries as entry (entry.path)}
                 <div class="file" class:shared={marked?.(entry) ?? false} data-entry={entry.path}>
@@ -142,6 +143,7 @@
                                 label={t('git.unstage')}
                                 title={t('git.unstage_title')}
                                 glyph="unstage"
+                                compact
                                 disabled={busy}
                                 onclick={() => onunstage(entry.path)}
                             />
@@ -149,6 +151,7 @@
                             <ToolButton
                                 label={t('repositories.merge_mark')}
                                 title={t('repositories.merge_mark_title')}
+                                small
                                 disabled={busy}
                                 onclick={() => onresolve(entry.path)}
                             />
@@ -157,6 +160,7 @@
                                 label={t('git.stage')}
                                 title={t('git.stage_title')}
                                 glyph="stage"
+                                compact
                                 disabled={busy}
                                 onclick={() => onstage(entry.path)}
                             />
@@ -166,6 +170,7 @@
                                 label={t('git.discard')}
                                 title={t('git.discard_title')}
                                 glyph="note_back"
+                                compact
                                 disabled={busy}
                                 onclick={() => ondiscard(entry.path)}
                             />
@@ -189,14 +194,39 @@
 {@render group(t('sessions.ch_untracked'), untracked, 'untracked')}
 
 <style>
-    .group-h {
+    /* A group head and a file row are one line of the tree's row height. Their controls are drawn
+       while the pointer is on the line or the focus is inside it, and always on a screen that does
+       not hover; a control keeps the keyboard focus while it is clear. */
+    .group-h,
+    .file {
+        --row-reveal: 0;
         display: flex;
         align-items: center;
         gap: 6px;
+        min-width: 0;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+    }
+
+    .group-h:hover,
+    .group-h:focus-within,
+    .file:hover,
+    .file:focus-within {
+        --row-reveal: 1;
+    }
+
+    @media (hover: none) {
+        .group-h,
+        .file {
+            --row-reveal: 1;
+        }
+    }
+
+    .group-h {
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
         font-size: var(--fs-xs);
+        font-weight: 700;
     }
     .group {
         margin-top: 6px;
@@ -209,13 +239,11 @@
         display: flex;
         gap: 2px;
         text-transform: none;
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
     }
     .file {
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-        min-width: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
     .pa {
         min-width: 0;
@@ -230,15 +258,12 @@
         color: var(--tone-txt, var(--muted-txt));
         font-family: var(--font-mono);
     }
-    .none {
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-        margin: 2px 0 0;
-    }
     .acts {
         flex: 0 0 auto;
         display: flex;
         gap: 2px;
         margin-left: auto;
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
     }
 </style>

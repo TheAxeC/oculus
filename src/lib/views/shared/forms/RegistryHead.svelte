@@ -1,38 +1,33 @@
 <script lang="ts">
     // Layer 3, view partial under views/shared/. The head a registry-line view draws above its
-    // cards: the view's intro with the control that opens the form adding an entry, that form while
-    // it is open, and the line the last write said.
+    // cards: the view's intro, the form adding an entry while it is open, and the line the last
+    // write said. The control that opens the form is the view's header icon (AddButton.svelte).
     //
-    // The Pillars and the Domains views draw it the same way, so it lives here once. Whether the
-    // form is open and what was last said belong to the view, which a card of it also writes, so
-    // both are handed in with the callbacks that change them.
+    // The Pillars, Domains, Data and Venues views draw it the same way, so it lives here once.
+    // Whether the form is open and what was last said belong to the view, which a card of it also
+    // writes, so the view binds the line and hands in whether the form is open with the callback
+    // that closes it.
 
     import type { Snippet } from 'svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
     import type { SchemaField } from '$lib/state/boards/collection';
-    import { t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** The collection key, which is what the add form's write names its file by. */
         collection: string;
-        /** The collection file's own schema; no add control is drawn for a file with none. */
+        /** The collection file's own schema; the add form is drawn only for a file with one. */
         schema: SchemaField[] | undefined;
         /**
-         * The view's own intro, handed the add control to draw among its actions. The view draws
-         * it, so its words are the view's own catalog line, which a trusted Intro may carry.
+         * The view's own intro. The view draws it, so its words are the view's own catalog line,
+         * which a trusted Intro may carry.
          */
-        intro: Snippet<[Snippet]>;
+        intro: Snippet;
         /** Whether the add form is open. */
         adding: boolean;
-        /** The line the last write said, empty for none. */
-        said: string;
-        /** Open or close the add form. */
-        ontoggle: () => void;
+        /** The line the last write said, empty for none; the add form's writes set it. */
+        said?: string;
         /** Close the add form. */
         onclose: () => void;
-        /** Say one line about a write. */
-        onsaid: (words: string) => void;
         /** Whether the said line keeps the gap above it that the Pillars view's notes carry. */
         spaced?: boolean;
     };
@@ -42,28 +37,21 @@
         schema,
         intro,
         adding,
-        said,
-        ontoggle,
+        said = $bindable(''),
         onclose,
-        onsaid,
         spaced = false
     }: Props = $props();
 </script>
 
-{#snippet actions()}
-    {#if schema !== undefined}
-        <ToolButton
-            label={t('collection.add')}
-            title={t('collection.add_tip')}
-            active={adding}
-            onclick={ontoggle}
-        />
-    {/if}
-{/snippet}
-
-{@render intro(actions)}
+{@render intro()}
 {#if adding && schema !== undefined}
-    <EntryForm {collection} {schema} entry={null} {onclose} {onsaid} />
+    <EntryForm
+        {collection}
+        {schema}
+        entry={null}
+        {onclose}
+        onsaid={(words: string) => (said = words)}
+    />
 {/if}
 {#if said !== ''}
     <p class="said" class:spaced>{said}</p>

@@ -29,7 +29,7 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { focusQuietly } from '$lib/ui/frame/quiet-focus';
-    import { openPaletteItem } from '$lib/shell/keys/palette-open';
+    import { configuredThemes, openPaletteItem } from '$lib/shell/keys/palette-open';
     import {
         buildIndex,
         commands,
@@ -207,14 +207,7 @@
             return;
         }
         if (command.name === 'theme') {
-            const configured = Array.isArray(current.config.themes)
-                ? current.config.themes.flatMap((row) => {
-                      if (typeof row !== 'object' || row === null || Array.isArray(row)) return [];
-                      const name = (row as Record<string, unknown>).name;
-                      return typeof name === 'string' ? [name] : [];
-                  })
-                : [];
-            if (configured.includes(argument)) setTheme(argument);
+            if (configuredThemes(current.config).includes(argument)) setTheme(argument);
         } else if (command.name === 'crt') {
             setCrt(!crt());
         } else if (command.name === 'tab') {
@@ -284,6 +277,7 @@
                                                                         )}</span
                                                                     >
                                                                     <ToolButton
+                                                                        plain
                                                                         label={found.item.label}
                                                                         onclick={pressed}
                                                                     >
@@ -315,6 +309,7 @@
                                                                         )}</span
                                                                     >
                                                                     <ToolButton
+                                                                        plain
                                                                         label={t(
                                                                             'statusbar.palette_line',
                                                                             line
@@ -354,6 +349,7 @@
                                                                         )}</span
                                                                     >
                                                                     <ToolButton
+                                                                        plain
                                                                         label={found.choice.label}
                                                                         active={source?.status
                                                                             .language ===
@@ -390,6 +386,7 @@
                                                                 <div {...row} class="result">
                                                                     <span class="kind">:</span>
                                                                     <ToolButton
+                                                                        plain
                                                                         label={`${command.name}${command.hint === '' ? '' : ` ${command.hint}`}`}
                                                                         disabled={!command.available}
                                                                         title={!command.available
@@ -472,18 +469,28 @@
         overflow: auto;
     }
 
+    /* One row of the list is one line of the tree's row height with its words at the main size,
+       which the plain button inside it takes; the row in force is ringed by the application's one
+       ring. */
     .result {
         display: grid;
         grid-template-columns: minmax(5rem, auto) 1fr auto;
         align-items: center;
         gap: 6px;
-        padding: 2px;
-        border: 1px solid transparent;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         border-radius: var(--radius-sm);
+        color: var(--ink-txt, var(--ink));
+        font-size: var(--fs-md);
+        line-height: calc(var(--tree-row) * var(--text-scale, 1));
+    }
+
+    .result:hover {
+        background: var(--chip);
     }
 
     .result[data-selected] {
-        border-color: var(--accent);
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     .result :global(.tool) {
@@ -507,15 +514,21 @@
     .hint,
     .empty {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
     }
 
     .kind {
+        font-size: var(--fs-xs);
         text-align: right;
+    }
+
+    .unavailable,
+    .hint {
+        font-size: var(--fs-sm);
     }
 
     .empty {
         margin: 0;
         padding: 8px;
+        font-size: var(--fs-md);
     }
 </style>

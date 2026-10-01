@@ -118,4 +118,26 @@ describe('the deposit panel', () => {
         expect(body).toContain(catalog['deposit.plan_none']);
         expect(body).toContain(catalog['deposit.why_no_plan']);
     });
+
+    it('draws a failed read as the error box with a retry button', () => {
+        hold('alpha', null, 'the mirror folder is locked');
+        const { body } = render(Deposit, {
+            context: clientContext(client),
+            props: { instance: instance('alpha') }
+        });
+        expect(body).toMatch(/class="empty[^"]*\berror\b/);
+        expect(body).toContain('role="alert"');
+        expect(body).toContain('the mirror folder is locked');
+        expect(body).toContain(catalog['deposit.retry']);
+    });
+
+    it('draws its empty lines through the empty state, not as bare paragraphs', () => {
+        hold('alpha', mirror(null));
+        const { body } = render(Deposit, {
+            context: clientContext(client),
+            props: { instance: instance('alpha') }
+        });
+        const before = body.slice(0, body.indexOf(catalog['deposit.plan_none']));
+        expect(before.slice(before.lastIndexOf('<p'))).toMatch(/^<p class="empty/);
+    });
 });

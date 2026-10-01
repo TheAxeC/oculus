@@ -92,7 +92,11 @@
     {#if held.loading}
         <Empty message={t('project.card.files_loading')} />
     {:else if held.error !== ''}
-        <Empty message={t('project.card.files_error', held.error)} glyph={t('board.warn_glyph')} />
+        <Empty
+            error
+            message={t('project.card.files_error', held.error)}
+            glyph={t('board.warn_glyph')}
+        />
     {:else if rows.length === 0 && filter === ''}
         <Empty message={t('project.card.files_none')} />
     {:else}
@@ -109,6 +113,7 @@
                 <div class="frow">
                     {#if READABLE.test(row.path)}
                         <ToolButton
+                            small
                             label={nameOf(row.path)}
                             onclick={() => openReadable(row.path)}
                         />
@@ -145,7 +150,7 @@
     }
 
     .label {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -173,25 +178,24 @@
         overflow: auto;
     }
 
+    /* A file is one row of the tree's height, its name in the main size and its folder and size
+       beside it in the secondary one. */
     .frow {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         gap: 6px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         font-size: var(--fs-md);
     }
 
     .fname {
         color: var(--accent-txt, var(--accent));
-        text-decoration: none;
-    }
-
-    .fname:hover {
-        text-decoration: underline;
     }
 
     .fsub {
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-mono);
+        font-size: var(--fs-sm);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -200,12 +204,13 @@
     .fsize {
         margin-left: auto;
         color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
         white-space: nowrap;
     }
 
     .capped {
         margin: 4px 0 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 </style>

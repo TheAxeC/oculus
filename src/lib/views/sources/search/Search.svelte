@@ -25,11 +25,17 @@
     // The query, the root, the toggles and the last answer belong to the instance, so a saved page
     // draws the results it had without running anything, and two tabs are two searches.
     //
+    // The pane's header holds the one icon action, Search; the bar holds the query box, the root
+    // picker and the three option toggles (search/Query.svelte). A run that failed is the message
+    // box with a control that runs the same query again.
+    //
     // The `/` key is the shell's own (`shell/keys/key-dom.ts`, focusSearch): it puts the cursor in
     // the `input[data-search]` of the focused pane, which is this view's query box, so nothing here
     // takes that key for itself.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
     import Query from './Query.svelte';
     import Results from './Results.svelte';
@@ -64,25 +70,40 @@
     }
 </script>
 
-<Pane title={t('views.search')}>
-    <div class="search-view" data-instance={instance.id} data-search-root={held.root}>
-        <Query
-            q={held.q}
-            root={held.root}
-            under={held.under}
-            word={held.word}
-            case={held.case}
-            regex={held.regex}
-            {roots}
-            {running}
-            onq={(q: string) => setSearchState(instance.id, { q })}
-            onroot={(root: string) => setSearchState(instance.id, { root })}
-            onclearscope={() => setSearchState(instance.id, { under: '' })}
-            onword={() => setSearchState(instance.id, { word: !held.word })}
-            oncase={() => setSearchState(instance.id, { case: !held.case })}
-            onregex={() => setSearchState(instance.id, { regex: !held.regex })}
-            onrun={run}
+{#snippet tools()}
+    <Toolbar label={t('search.actions')} overflow>
+        <ToolButton
+            bare
+            label={t('search.run')}
+            glyph={t('search.run_glyph')}
+            title={t('search.run_title')}
+            disabled={running}
+            onclick={run}
         />
+    </Toolbar>
+{/snippet}
+
+{#snippet bar()}
+    <Query
+        q={held.q}
+        root={held.root}
+        under={held.under}
+        word={held.word}
+        case={held.case}
+        regex={held.regex}
+        {roots}
+        onq={(q: string) => setSearchState(instance.id, { q })}
+        onroot={(root: string) => setSearchState(instance.id, { root })}
+        onclearscope={() => setSearchState(instance.id, { under: '' })}
+        onword={() => setSearchState(instance.id, { word: !held.word })}
+        oncase={() => setSearchState(instance.id, { case: !held.case })}
+        onregex={() => setSearchState(instance.id, { regex: !held.regex })}
+        onrun={run}
+    />
+{/snippet}
+
+<Pane title={t('views.search')} toolbar={tools} {bar} tinted>
+    <div class="search-view" data-instance={instance.id} data-search-root={held.root}>
         <Intro html={t('search.help')} trusted />
         <div class="results">
             <Results
@@ -92,6 +113,7 @@
                 all={held.root === ALL_ROOTS}
                 max={held.max}
                 onopen={open}
+                onretry={run}
             />
         </div>
     </div>
@@ -100,7 +122,7 @@
 <style>
     .search-view {
         display: grid;
-        grid-template-rows: auto auto minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
         gap: 8px;
         height: 100%;
         min-height: 0;

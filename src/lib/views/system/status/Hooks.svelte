@@ -62,6 +62,7 @@
     h3 {
         margin: 0;
         font-size: var(--fs-md);
+        font-weight: 700;
     }
 
     p {
@@ -77,7 +78,7 @@
         background: var(--bg);
         color: var(--ink-txt, var(--ink));
         font-family: var(--font-mono);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .controls {

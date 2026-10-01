@@ -14,17 +14,19 @@
     // Layer 3, view. The venue catalogue: theme facets, journal cards and conference timing.
     // Registry entities provide the display model while the matching collection provides editing.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
-    import SourceButton from '$lib/views/shared/links/SourceButton.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
+    import Disclosure from '$lib/ui/tree/Disclosure.svelte';
+    import AddButton from '$lib/views/shared/forms/AddButton.svelte';
+    import RegistryHead from '$lib/views/shared/forms/RegistryHead.svelte';
+    import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
     import Intro from '$lib/views/shared/prose/Intro.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
-    import Facets from '$lib/views/sources/venues/Facets.svelte';
+    import ThemeFacets from '$lib/views/shared/forms/ThemeFacets.svelte';
     import Ribbon from '$lib/views/sources/venues/Ribbon.svelte';
     import VenueCard from '$lib/views/sources/venues/VenueCard.svelte';
     import {
@@ -88,59 +90,61 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('collection.toolbar')}>
+    <SourceToolbar {source}>
         {#if collection?.schema !== undefined}
-            <ToolButton
-                label={t('collection.add')}
-                title={t('collection.add_tip')}
-                active={held.adding}
+            <AddButton
+                open={held.adding}
                 onclick={() => write({ adding: toggleAdd(instance.id, 'venues', held.adding) })}
             />
         {/if}
+    </SourceToolbar>
+{/snippet}
+
+{#snippet bar()}
+    <Toolbar label={t('venues.filters')}>
         <Search
+            fill
             value={held.search}
             placeholder={t('collection.search', t('views.venues'))}
             oninput={(search: string) => write({ search })}
         />
-        {#if source !== null}
-            <SourceButton file={source} />
-        {/if}
-    </Toolbar>
-{/snippet}
-
-<Pane title={t('views.venues')} toolbar={tools}>
-    <div class="venues" data-instance={instance.id}>
-        <Intro html={t('venues.intro')} trusted />
-        {#if held.adding && collection?.schema !== undefined}
-            <EntryForm
-                collection="venues"
-                schema={collection.schema}
-                entry={null}
-                onclose={() => write({ adding: false })}
-                onsaid={(words: string) => (said = words)}
-            />
-        {/if}
-
-        {#if said !== ''}
-            <p class="said">{said}</p>
-        {/if}
-
-        <Facets {facets} off={held.off} ontoggle={toggleTheme}>
+        <ThemeFacets
+            {facets}
+            caption={t('venues.themes_facet')}
+            off={held.off}
+            ontoggle={toggleTheme}
+        >
             <Tooltip text={t('venues.conc_tip')} focusable>
                 <Tag label={t('venues.conc')} tone="violet" />
             </Tooltip>
-        </Facets>
+        </ThemeFacets>
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('views.venues')} toolbar={tools} {bar}>
+    <div class="venues" data-instance={instance.id}>
+        <RegistryHead
+            collection="venues"
+            schema={collection?.schema}
+            adding={held.adding}
+            bind:said
+            spaced
+            onclose={() => write({ adding: false })}
+        >
+            {#snippet intro()}
+                <Intro html={t('venues.intro')} trusted />
+            {/snippet}
+        </RegistryHead>
 
         {#if allVenues.length === 0}
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-            <p class="empty">{@html t('venues.empty')}</p>
+            <Empty message={t('venues.empty')} />
         {:else}
             {#if journals.length > 0}
                 <section>
-                    <ToolButton
-                        label={t('venues.journals', journals.length)}
-                        glyph="journals"
-                        active={held.journalsOpen}
+                    <Disclosure
+                        count={journals.length}
+                        label={t('venues.journals')}
+                        expanded={held.journalsOpen}
                         onclick={() => write({ journalsOpen: !held.journalsOpen })}
                     />
                     {#if held.journalsOpen}
@@ -181,10 +185,10 @@
 
             {#if conferences.length > 0}
                 <section>
-                    <ToolButton
-                        label={t('venues.conferences', conferences.length)}
-                        glyph="conference"
-                        active={held.conferencesOpen}
+                    <Disclosure
+                        count={conferences.length}
+                        label={t('venues.conferences')}
+                        expanded={held.conferencesOpen}
                         onclick={() => write({ conferencesOpen: !held.conferencesOpen })}
                     />
                     {#if held.conferencesOpen}
@@ -234,17 +238,6 @@
         min-width: 0;
     }
 
-    .said {
-        margin: 8px 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
-    }
-
-    .empty {
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
-    }
-
     section {
         margin-top: 12px;
     }
@@ -256,7 +249,7 @@
 
     .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
         gap: 10px;
         align-items: start;
         margin-top: 8px;

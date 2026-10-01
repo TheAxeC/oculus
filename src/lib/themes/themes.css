@@ -747,16 +747,14 @@ body.tokyoneon {
 
 /* --- Rice: the shape the thirteen terminal palettes share ---------------- */
 /* Terminal-ish rather than pixel-art: square corners, hairline borders, no shadows, monospace
-   chrome, one step down the type scale. The palette classes above carry the colour; this carries
-   the shape, and a component reads both through the tokens. */
+   chrome, the seven type scale steps one step down. The palette classes above carry the colour;
+   this carries the shape, and a component reads both through the tokens. */
 body.rice {
-    --fs-3xs: calc(8px * var(--text-scale, 1));
-    --fs-xxs: calc(9px * var(--text-scale, 1));
     --fs-xs: calc(10px * var(--text-scale, 1));
-    --fs-sm: calc(10.5px * var(--text-scale, 1));
-    --fs-md: calc(11.5px * var(--text-scale, 1));
-    --fs-lg: calc(12.5px * var(--text-scale, 1));
-    --fs-xl: calc(13.5px * var(--text-scale, 1));
+    --fs-sm: calc(11px * var(--text-scale, 1));
+    --fs-md: calc(12px * var(--text-scale, 1));
+    --fs-lg: calc(13px * var(--text-scale, 1));
+    --fs-xl: calc(14px * var(--text-scale, 1));
     --fs-2xl: calc(16px * var(--text-scale, 1));
     --fs-3xl: calc(20px * var(--text-scale, 1));
     --radius: 3px;

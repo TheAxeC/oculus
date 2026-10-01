@@ -17,7 +17,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import Bucket from './Bucket.svelte';
@@ -76,19 +76,25 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('radar.search')}>
-        <Search
-            value={held.search}
-            placeholder={t('radar.search')}
-            oninput={(search: string) => write({ search })}
-        />
+    <Toolbar label={t('radar.toolbar')} overflow>
         {#if source !== null}
             <SourceButton file={source} />
         {/if}
     </Toolbar>
 {/snippet}
 
-<Pane title={t('views.radar')} toolbar={tools}>
+{#snippet bar()}
+    <Toolbar label={t('radar.filters')}>
+        <Search
+            fill
+            value={held.search}
+            placeholder={t('radar.search')}
+            oninput={(search: string) => write({ search })}
+        />
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('views.radar')} toolbar={source === null ? undefined : tools} {bar}>
     <div class="radar" data-instance={instance.id}>
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="litwatch" />

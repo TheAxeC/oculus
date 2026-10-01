@@ -78,6 +78,17 @@ describe('the bar of the diff pane over a file of its own', () => {
         ]);
     });
 
+    it('draws the bar in the header as the one-line toolbar that folds what does not fit', () => {
+        const body = pane(FILE);
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+
+        expect(header).toMatch(/class="toolbar[^"]*\boverflow\b/);
+        // an icon action carries its words as the name and draws none beside the icon
+        expect(header).not.toContain('<span class="label">');
+        // the bar holds icon actions only, so the pane draws no second strip under its header
+        expect(body).not.toContain('class="viewbar');
+    });
+
     it('draws each control as a bare icon button with the icon of its action', () => {
         pane(FILE);
         const control = (label: string): Record<string, unknown> | undefined =>

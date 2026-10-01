@@ -113,7 +113,7 @@
                         <ToolButton
                             label={t('leads.action.applied')}
                             title={t('leads.action.applied_tip')}
-                            compact
+                            small
                             onclick={onapply}
                         />
                     {/if}
@@ -121,7 +121,7 @@
                         <ToolButton
                             label={t('leads.action.decline')}
                             title={t('leads.action.decline_tip')}
-                            compact
+                            small
                             onclick={() => mark(DECLINED)}
                         />
                     {/if}
@@ -129,14 +129,14 @@
                         <ToolButton
                             label={t('leads.action.reopen')}
                             title={t('leads.action.reopen_tip')}
-                            compact
+                            small
                             onclick={() => mark(OPEN)}
                         />
                     {/if}
                     <ToolButton
                         label={t('project.action.del')}
                         title={t('leads.action.delete_lead_tip')}
-                        compact
+                        small
                         onclick={() => (sure = true)}
                     />
                 </span>
@@ -203,15 +203,23 @@
         font-size: var(--fs-sm);
     }
 
+    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-reveal`: transparent at
+       rest, so the card keeps its size and Tab still reaches every control. */
+    .actions {
+        opacity: var(--card-reveal);
+        transition: opacity 120ms ease-out;
+    }
+
     .sub {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
     .sub,
     .note,
     .posting {
         margin: 4px 0 0;
+        overflow-wrap: anywhere;
     }
 
     .chips {

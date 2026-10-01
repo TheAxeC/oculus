@@ -19,6 +19,7 @@ import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { barOf, headerOf } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 let layout: ClientState['layout']['layout'];
@@ -276,11 +277,75 @@ describe('the Lit Watch view', () => {
         const buckets = config.radar_buckets as { color: string }[];
         expect(marks).toEqual(buckets.map((bucket) => toneOf(bucket.color)));
         expect(new Set(marks).size).toBe(marks.length);
-        // The rule paints the icon of the heading control alone, which is the tooltip span sitting
-        // directly under the section, so the markup has to keep that shape for the colour to land.
+        // The mark is the heading control's own child, a span the view paints in the section's
+        // hue, so the colour reaches the icon without a rule over the button's classes.
         expect(body).toMatch(
-            /<section[^>]*--bucket-txt[^>]*>(?:<!--[^>]*-->)*\s*<span class="tip[^"]*"><button[^>]*class="tool[^"]*"[^>]*>(?:<!--[^>]*-->)*<span class="glyph/
+            /<section[^>]*--bucket-txt[^>]*>(?:<!--[^>]*-->)*\s*<span class="tip[^"]*"><button[^>]*class="tool[^"]*"[^>]*>(?:<!--[^>]*-->)*[\s\S]*?<span class="label"><span class="heading[^"]*"><span class="mark[^"]*">(?:<!--[^>]*-->)*<span class="glyph/
         );
+    });
+
+    it('puts the search in the bar and only the source icon in the header', () => {
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            meta: {},
+            entries
+        });
+        const body = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-bar') }
+        }).body;
+        const header = headerOf(body);
+        const bar = barOf(body);
+        expect(bar).toMatch(/<input class="search[^"]*\bfill\b/);
+        // a search box is a control of the bar, and the header holds icon actions only
+        expect(header).not.toContain('class="search');
+        const tools = header.match(/<button[^>]*class="tool[^"]*"/g) ?? [];
+        expect(tools.length).toBe(1);
+        for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
+    });
+
+    it('draws no header toolbar while the feed file is not on this machine', () => {
+        serve({ ok: true, kind: 'radar', file: 'feeds/literature-radar.yml', missing: true });
+        const body = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-bar-missing') }
+        }).body;
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+        // the feed file is missing, so no source icon is left and the header draws no strip
+        expect(header).not.toContain('role="toolbar"');
+        expect(body.slice(body.indexOf('<div class="viewbar'))).toMatch(/<input class="search/);
+    });
+
+    it('draws the actions of a card inside the control box that the card reveals', () => {
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            meta: {},
+            entries: [
+                { title: 'Idea paper', bucket: 'idea', maps_to: 'new-idea-candidate' },
+                { title: 'Gone paper', bucket: 'adjacent', dismissed: true }
+            ]
+        });
+        const body = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-controls', true) }
+        }).body;
+        // the control box is the last child of the card's meta row, which its div closes
+        const boxes = body
+            .split('class="controls')
+            .slice(1)
+            .map((part) => part.slice(0, part.indexOf('</div>')));
+        expect(boxes.length).toBe(2);
+        const labels = boxes.map((box) =>
+            [...box.matchAll(/aria-label="([^"]*)"/g)].map((found) => found[1])
+        );
+        expect(labels).toEqual([
+            [catalog['radar.idea'], catalog['radar.dismiss']],
+            [catalog['radar.restore']]
+        ]);
     });
 
     it('draws the empty and missing-file states', () => {

@@ -157,7 +157,7 @@
         padding: 5px 9px;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         line-height: 1.3;
     }
 
@@ -165,24 +165,24 @@
         display: block;
         margin-bottom: 1px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-3xs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         letter-spacing: 0.07em;
         text-transform: uppercase;
     }
 
+    /* Two columns while the pane holds two of a readable width, one column once it does not, which
+       a split pane very soon is. */
     .cols {
         display: grid;
-        grid-template-columns: 1.08fr 0.92fr;
+        grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
         gap: 26px;
         align-items: start;
     }
 
-    /* One column once the pane is too narrow to read two, which a split pane very soon is. */
-    @media (max-width: 860px) {
-        .cols {
-            grid-template-columns: 1fr;
-        }
+    .left,
+    .right {
+        min-width: 0;
     }
 
     .lbl {
@@ -228,7 +228,7 @@
     .e5 span {
         flex: 0 0 92px;
         color: var(--accent-txt, var(--accent));
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 800;
         letter-spacing: 0.1em;
         text-transform: uppercase;

@@ -96,18 +96,21 @@
 </Tooltip>
 
 <style>
+    /* The text button's size: 12px words on a 16px line, 4px above and below, 8px
+       beside, a 1px border, the input radius; 26 px high. */
     .opener {
         display: flex;
         align-items: center;
         gap: 4px;
         width: 100%;
         border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
+        border-radius: var(--input-radius);
         background: var(--chip);
         color: var(--ink-txt, var(--ink));
         font: inherit;
         font-size: var(--fs-sm);
-        padding: 4px 6px;
+        line-height: calc(var(--button-line) * var(--text-scale, 1));
+        padding: 4px 8px;
         cursor: pointer;
         white-space: nowrap;
         overflow: hidden;
@@ -117,23 +120,31 @@
         border-color: var(--accent);
     }
 
+    /* An icon control of a row or a card: the 16 px icon in a 20 px box with no border, as
+       ToolButton.svelte draws its compact button. */
     .opener.compact {
-        justify-content: center;
-        font-size: var(--fs-lg);
-    }
-
-    .opener.bare {
         justify-content: center;
         box-sizing: border-box;
         width: auto;
-        min-width: var(--tab-action);
-        height: var(--tab-action);
+        min-width: var(--header-action);
+        height: var(--header-action);
         padding: 0 var(--tab-action-pad);
-        border-color: transparent;
+        border: 0;
         background: none;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-lg);
         line-height: 1;
+    }
+
+    .opener.compact:hover {
+        background: var(--chip);
+        color: var(--ink-txt, var(--ink));
+    }
+
+    /* A strip's bare box, or the box a pane sets as `--bare-box` for its header actions. */
+    .opener.bare {
+        min-width: var(--bare-box, var(--tab-action));
+        height: var(--bare-box, var(--tab-action));
     }
 
     .opener.bare.inherit {
@@ -168,8 +179,8 @@
     }
 
     .opener:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     /* The rail item's box, the same as ToolButton.svelte's rail control: square at the rail's
@@ -184,7 +195,7 @@
         border-radius: 0;
         background: none;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--rail-icon);
+        --glyph-size: var(--rail-icon);
         line-height: 1;
     }
 
@@ -226,8 +237,8 @@
         background: var(--chip);
     }
 
-    .opener.status :global(.glyph) {
-        font-size: var(--status-icon);
+    .opener.status {
+        --glyph-size: var(--status-icon);
     }
 
     :global(body.rice) .opener.status :global(.glyph:not(:has(svg))) {

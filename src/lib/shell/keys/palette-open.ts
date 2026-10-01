@@ -36,3 +36,13 @@ export function openPaletteItem(
     ui.setInstanceState(id, { ...held, ...item.state, search: '' });
     return id;
 }
+
+/** The names of the themes the configuration lists, which the `:theme` command accepts. */
+export function configuredThemes(config: Record<string, unknown>): string[] {
+    if (!Array.isArray(config.themes)) return [];
+    return config.themes.flatMap((row) => {
+        if (typeof row !== 'object' || row === null || Array.isArray(row)) return [];
+        const name = (row as Record<string, unknown>).name;
+        return typeof name === 'string' ? [name] : [];
+    });
+}

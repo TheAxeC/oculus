@@ -11,6 +11,7 @@ text:
         edit_delete: edit / delete
         edit_glyph: edit
         empty: No entries yet - add some to the YAML.
+        filters: Collection filters
         folder_glyph: folder
         form_add_title: New entry
         form_bad_value: '{0}: that value does not fit the field'

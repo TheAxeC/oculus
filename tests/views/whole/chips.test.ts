@@ -1,8 +1,9 @@
 // Layer 4, view test. Which of a project card's marks wear the capsule. The status words and the
 // project type are chips; everything else the card lists, its domain, its deadline, its code state,
-// its compute and its cross-link entries, is a tag in the muted text colour. The rule is asserted
-// off one rendered card rather than left to each view's own test, so a mark that gains a capsule
-// somewhere fails here.
+// its compute and its cross-link entries, is a tag in the muted text colour; the one other chip is
+// a control (a filter toggle, a pill that opens something), which carries no tone. The rule is
+// asserted off one rendered card rather than left to each view's own test, so a mark that gains a
+// capsule somewhere fails here.
 // @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { readFileSync } from 'node:fs';
@@ -129,9 +130,10 @@ const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'src
 /**
  * The tone expressions a chip may be given at its own call site. A status word is toned by its own
  * status and the type pill by its type; `item.tone` is the board item's type tone, which
- * state/boards/board/items.ts reads with typeTone().
+ * state/boards/board/items.ts reads with typeTone(); `badge.tone` is the hue a view registration's
+ * badge hook names for the state it marks.
  */
-const CHIP_TONES = ['statusTone(', 'typeTone(', 'item.tone'];
+const CHIP_TONES = ['statusTone(', 'typeTone(', 'item.tone', 'badge.tone'];
 
 /**
  * The one helper a file may tone its chips through instead: the gallery hands each chip a tone it
@@ -239,23 +241,35 @@ export function tagTags(source: string): string[] {
     return balancedTags(source, /<Tag\b/g);
 }
 
-/** Every chip whose tone is not one of the three the rule allows, by file and tag. */
+/**
+ * Whether a chip breaks the rule: it names a tone that is none of CHIP_TONES, or it names none and
+ * is no control. A chip that is a control (a filter toggle pressed or not, or a pill that opens
+ * something) is the one chip that carries no state of its own to tone, so it may carry no tone;
+ * pressed, it fills in the accent.
+ */
+export function isLooseChip(tag: string): boolean {
+    const words = tag.replace(/\s+/g, ' ');
+    if (CHIP_TONES.some((tone) => words.includes(tone))) return false;
+    const control = /\s(?:pressed|onclick)=/.test(words);
+    return !(control && toneAttribute(words) === null);
+}
+
+/** Every chip that breaks the rule above, by file and tag. */
 export function looseChips(root: string): string[] {
     const loose: string[] = [];
     for (const file of svelteFiles(root)) {
         const source = readFileSync(join(root, file), 'utf8');
         if (source.includes(TONE_HELPER)) continue;
         for (const tag of chipTags(source)) {
-            const words = tag.replace(/\s+/g, ' ');
-            if (CHIP_TONES.some((tone) => words.includes(tone))) continue;
-            loose.push(`${file}: ${words}`);
+            if (!isLooseChip(tag)) continue;
+            loose.push(`${file}: ${tag.replace(/\s+/g, ' ')}`);
         }
     }
     return loose.sort();
 }
 
 describe('the chip audit over every view', () => {
-    it('audits that finds a chip toned by a status, a project type, or nothing else', () => {
+    it('audits that finds a chip toned by a status, a project type or a badge, or a control with no tone', () => {
         expect(looseChips(LIB)).toEqual([]);
     });
 
@@ -309,6 +323,11 @@ describe('the chip audit over every view', () => {
             '<Chip label={one} tone="teal" />'
         ]);
         expect(looseChipsIn('<Chip label={one} />')).toEqual(['<Chip label={one} />']);
+        // A control carries no tone of its own, and a tone it does name is still checked.
+        expect(looseChipsIn('<Chip label={one} pressed={on} onclick={flip} />')).toEqual([]);
+        expect(looseChipsIn('<Chip label={one} pressed={on} tone="teal" />')).toEqual([
+            '<Chip label={one} pressed={on} tone="teal" />'
+        ]);
         expect(looseChipsIn('<Chip label={one} tone={statusTone(chip)} filled />')).toEqual([]);
         // A tone written over two lines, which is how the longer call sites read.
         expect(looseChipsIn('<Chip\n    label={one}\n    tone={typeTone(kind)}\n/>')).toEqual([]);
@@ -326,7 +345,7 @@ function looseTagsIn(source: string, hues: string[]): string[] {
 
 /** The loose chips of one piece of markup, which is what the negative case above reads. */
 function looseChipsIn(source: string): string[] {
-    return chipTags(source).filter((tag) => !CHIP_TONES.some((tone) => tag.includes(tone)));
+    return chipTags(source).filter(isLooseChip);
 }
 
 describe('the capsule on a project card', () => {

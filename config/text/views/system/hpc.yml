@@ -63,7 +63,9 @@ text:
         refresh_now: Refresh now
         retrying: retrying every {0}m
         tail: tail
+        toolbar: Live HPC controls
         unreachable: unreachable
+        unreachable_detail: '{0} `{1}`'
         unreachable_msg: Cluster unreachable - on UT network / EduVPN?
         used_of: '{0} of {1} ({2}%)'
         walltime: fraction of walltime used

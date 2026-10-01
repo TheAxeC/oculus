@@ -1,6 +1,8 @@
 <script lang="ts">
-    // Layer 3, view partial. The Live HPC heading presents the four connection states and keeps
-    // refresh as an explicit server action.
+    // Layer 3, view partial. The Live HPC bar presents the four connection states at its end and
+    // keeps refresh as an explicit server action. While the cluster does not answer, the refresh
+    // control is the retry of the error box (Hpc.svelte) and the bar holds the status words alone.
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { clock } from '$lib/state/shared/words/format';
@@ -22,6 +24,9 @@
     // The head ages between publishes, so the minute the page is in is read as state.
     $effect(startMinuteClock);
     const now = $derived(minuteNow());
+
+    /** Whether the cluster is not answering, which the error box in the body says in words. */
+    const failed = $derived(data?.status === 'unreachable' || data?.status === 'error');
 
     function status(): string {
         if (data === null || data.status === 'starting') return t('hpc.polling');
@@ -70,38 +75,33 @@
     }
 </script>
 
-<!-- The pane carries the view's name, so the head is the status line and the refresh control. -->
-<header>
-    <div>
-        <p class="meta">
-            <span
-                class:ok={data?.status === 'ok'}
-                class:bad={data?.status === 'error' || data?.status === 'unreachable'}
-            >
-                {status()}
-            </span>
-            {#each parts() as part (part.text)}
-                <span class="separator">{t('sessions.meta_sep')}</span>
-                <span class:late={part.late}>{part.text}</span>
-            {/each}
-        </p>
-        {#if data?.hint}<code>{data.hint}</code>{/if}
-    </div>
-    <ToolButton label={t('hpc.refresh_now')} onclick={onrefresh} />
-</header>
+<!-- The pane carries the view's name, so the bar is the refresh control and the status line. -->
+<Toolbar label={t('hpc.toolbar')}>
+    {#if !failed}
+        <ToolButton label={t('hpc.refresh_now')} onclick={onrefresh} />
+    {/if}
+    <p class="meta">
+        <span
+            class:ok={data?.status === 'ok'}
+            class:bad={data?.status === 'error' || data?.status === 'unreachable'}
+        >
+            {status()}
+        </span>
+        {#each parts() as part (part.text)}
+            <span class="separator">{t('sessions.meta_sep')}</span>
+            <span class:late={part.late}>{part.text}</span>
+        {/each}
+    </p>
+</Toolbar>
 
 <style>
-    header {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        align-items: start;
-    }
+    /* The status words at the bar's end; they wrap inside the pane rather than widening it. */
     .meta {
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
-        margin: 0 0 4px;
+        min-width: 0;
+        margin: 0 0 0 auto;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
     }
@@ -115,10 +115,5 @@
     }
     .late {
         color: var(--c-red-d-txt);
-    }
-    code {
-        color: var(--c-red-txt);
-        font-family: var(--font-mono);
-        font-size: var(--fs-sm);
     }
 </style>

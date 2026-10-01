@@ -40,6 +40,7 @@ text:
         push_detail: The manifest's code_availability gets the status, the URL and today's date.
         push_title: Push the mirror to {0}
         remote_none: no remote yet
+        retry: Try again
         snapshot: snapshot
         snapshot_confirm: Replace the history of {0} with one commit?
         snapshot_detail: The remote keeps one commit and the history it had is gone. There is no undo.

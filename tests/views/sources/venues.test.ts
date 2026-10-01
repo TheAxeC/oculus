@@ -26,6 +26,7 @@ import type {
 } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { between, expectAddThenSource, headerOf } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -222,6 +223,42 @@ function venueCard(body: string, id: string): string {
     return found?.[0] ?? '';
 }
 
+describe('where the Venues view puts its controls', () => {
+    it('holds only bare icon actions in the header: add first, the control over the file last', () => {
+        expectAddThenSource(html(), catalog['collection.add'], 'registries/venues.yml');
+        const header = headerOf(html());
+        // a search box and a toggle are controls of the bar, and the header holds icon actions only
+        expect(header).not.toContain('class="search');
+        // the theme toggles are bar controls, so the header draws no pressable capsule
+        expect(header).not.toContain('class="chip');
+    });
+
+    it('puts the search box and the theme toggles in the bar, the toggles as pressable chips', () => {
+        const bar = between(html(), '<div class="viewbar', '<div class="body');
+        expect(bar).toContain('class="search');
+        expect(bar).toContain(`aria-label="${catalog['venues.filters']}"`);
+        expect(bar).toContain(catalog['venues.themes_facet']);
+        const toggles = bar.match(
+            /<button[^>]*class="chip pressable[^"]*"[^>]*aria-pressed="true"/g
+        );
+        expect(toggles).toHaveLength(3);
+    });
+
+    it('draws a theme the instance switched off as a toggle that is not pressed', () => {
+        receive({ channel: 'portfolio', version: 25, payload: snapshot() });
+        setInstanceState(INSTANCE, {
+            search: '',
+            off: ['systems'],
+            journalsOpen: true,
+            conferencesOpen: true
+        });
+        const instance: Instance = { id: INSTANCE, view: 'venues', state: {} };
+        const body = render(Venues, { context: clientContext(client), props: { instance } }).body;
+        const bar = between(body, '<div class="viewbar', '<div class="body');
+        expect(bar).toMatch(/aria-pressed="false"[^>]*>(?:(?!<\/button>)[\s\S])*Systems 1/);
+    });
+});
+
 describe('the Venues controls and facets', () => {
     it('closes its toolbar with the control that opens registries/venues.yml', () => {
         const body = html();
@@ -242,7 +279,6 @@ describe('the Venues controls and facets', () => {
         expect(body).toContain('Search Venues ...');
         expect(body).toContain(catalog['venues.themes_facet']);
         expect(body.indexOf('ml 2')).toBeLessThan(body.indexOf('Systems 1'));
-        expect(body).toMatch(/class="tool [^"]*active"/);
     });
 });
 
@@ -260,7 +296,7 @@ describe('the theme words under their venue_themes labels', () => {
 
     it('draws a facet under its label, and a word with no row as the word', () => {
         const body = html();
-        const row = /<div class="facets[^"]*"[\s\S]*?<\/div>/.exec(body)?.[0] ?? '';
+        const row = between(body, '<div class="viewbar', '<div class="body');
         expect(label('clinical')).not.toBe('clinical');
         expect(row).toContain(`${label('clinical')} 2`);
         expect(row).toContain(`${label('systems')} 1`);
@@ -296,7 +332,11 @@ describe('the theme words under their venue_themes labels', () => {
 describe('the journal section and venue card', () => {
     it('draws the open journal section, card fields, links, themes and concentrated project users', () => {
         const body = html();
-        expect(body).toContain(catalog['venues.journals'].replace('{0}', '1'));
+        expect(body).toMatch(
+            new RegExp(
+                `class="disclosure[^"]*"[^>]*aria-expanded="true"[^>]*><strong class="count">1</strong> <span class="label">${catalog['venues.journals']}</span>`
+            )
+        );
         expect(body).toContain('Journal of <strong>Tests</strong>');
         expect(body).toContain(catalog['venues.jif'].replace('{0}', '5.9'));
         expect(body).toContain('SCIE');
@@ -392,6 +432,29 @@ describe('the journal section and venue card', () => {
     });
 });
 
+describe('the controls of a venue card', () => {
+    // Revert: in views/sources/venues/VenueCard.svelte, put the two compact ToolButtons back in the
+    // meta row in place of CardActions.
+    it('draws Show in Files and Edit entry among the card controls, which are shown under the pointer', () => {
+        const path = VENUES.map((one) =>
+            one.id === 'journal' ? { ...one, link: 'network/../registries/venues.yml' } : one
+        );
+        const journal = venueCard(html(path), 'journal');
+        const actions = between(journal, 'data-card-actions', '</article>');
+        expect(actions).toContain(`aria-label="${catalog['venues.show_in_files']}"`);
+        expect(actions).toContain(`aria-label="${catalog['collection.form_edit_title']}"`);
+        expect(actions.match(/class="tool[^"]*\bcompact\b/g)).toHaveLength(2);
+    });
+
+    it('draws no card controls on a venue the collection file does not hold', () => {
+        const only: Venue = { id: 'ghost', name: 'Ghost', category: 'journal', themes: [] };
+        receive({ channel: 'portfolio', version: 27, payload: snapshot([only]) });
+        const body = html([only]);
+        // a venue the file does not hold cannot be edited, so its card draws no controls
+        expect(venueCard(body, 'ghost')).not.toContain('data-card-actions');
+    });
+});
+
 describe('the indexing marks of a venue card', () => {
     it('draws a yes as the check glyph and a no as the cross glyph beside the words', () => {
         const indexed: Venue = {
@@ -441,7 +504,11 @@ describe('the conference section and ribbon', () => {
 
     it('draws next deadlines, legend, all months, timed chips and biennial caveats', () => {
         const body = html();
-        expect(body).toContain(catalog['venues.conferences'].replace('{0}', '3'));
+        expect(body).toMatch(
+            new RegExp(
+                `class="disclosure[^"]*"[^>]*aria-expanded="true"[^>]*><strong class="count">3</strong> <span class="label">${catalog['venues.conferences']}</span>`
+            )
+        );
         expect(body).toContain(catalog['venues.next']);
         expect(body).toContain(catalog['venues.leg_deadline']);
         // A deadline's mark is violet and a held conference's green, painted on the tag's own
@@ -462,6 +529,18 @@ describe('the conference section and ribbon', () => {
         expect(body).toContain(catalog['venues.biennial_caveat']);
         expect(body).toContain('Untimed Conference');
         expect(body).toMatch(/class="month [^"]*current"/);
+    });
+
+    // Audit: a string render draws no computed height, so the rule that makes a next deadline one
+    // row of the tree's height is read off the source.
+    it('audits that a next deadline is one row of the tree height and the grids fit the pane', () => {
+        const ribbon = readFileSync('src/lib/views/sources/venues/Ribbon.svelte', 'utf8');
+        const item = ribbon.slice(ribbon.indexOf('.nextitem {'));
+        expect(item.slice(0, item.indexOf('}'))).toContain(
+            'min-height: calc(var(--tree-row) * var(--text-scale, 1));'
+        );
+        const view = readFileSync('src/lib/views/sources/venues/Venues.svelte', 'utf8');
+        expect(view).toContain('repeat(auto-fill, minmax(min(320px, 100%), 1fr))');
     });
 
     it('draws call and contact links only on the venue that carries them', () => {
@@ -498,16 +577,21 @@ describe('the venue card as a card primitive', () => {
 describe('the concentration legend chip', () => {
     it('sits inside the theme facet row, so it wraps with the toggles and never lands alone', () => {
         const body = html();
-        const row = /<div class="facets[^"]*"[\s\S]*?<\/div>/.exec(body)?.[0] ?? '';
+        const row = between(body, '<div class="viewbar', '<div class="body');
         expect(row).toContain(catalog['venues.themes_facet']);
         expect(row).toContain(catalog['venues.conc']);
-        // the chip sits in the facet row itself, so no row of its own is drawn for it
+        // the legend closes the bar, after the last theme toggle
+        expect(row.indexOf(catalog['venues.conc'])).toBeGreaterThan(row.indexOf('Systems 1'));
+        // the chip sits in the bar itself, so no row of its own is drawn for it
         expect(body).not.toContain('class="facet-row"');
     });
 });
 
 describe('an empty venue file', () => {
     it('draws the catalogued empty state', () => {
-        expect(html([])).toContain(catalog['venues.empty']);
+        const empty = between(html([]), '<p class="empty', '</p>');
+        expect(empty).toMatch(/<span class="message[^"]*">/);
+        expect(empty).toContain('No venues yet - add some to');
+        expect(empty).toMatch(/<code[^>]*>registries\/venues\.yml<\/code>/);
     });
 });

@@ -284,6 +284,12 @@ describe('the command center', () => {
         expect(buttons.some((button) => button.includes('Foxtrot'))).toBe(true);
     });
 
+    it('draws the project behind its documents as a plain button, a link and not a box', () => {
+        const buttons = body.match(/<button[\s\S]*?<\/button>/g) ?? [];
+        const behind = buttons.find((button) => button.includes('Foxtrot')) ?? '';
+        expect(behind).toMatch(/class="tool[^"]*\bplain\b/);
+    });
+
     it('draws the snooze buttons on a project deadline line', () => {
         for (const key of [
             'project.action.snooze_1w',
@@ -404,6 +410,12 @@ describe('the strip and the band', () => {
         }
     });
 
+    it('draws a band entry name as a plain button, a link and not a box', () => {
+        const buttons = body.match(/<button[\s\S]*?<\/button>/g) ?? [];
+        const entry = buttons.find((button) => button.includes('A grant in prep')) ?? '';
+        expect(entry).toMatch(/class="tool[^"]*\bplain\b/);
+    });
+
     it('draws the first sentence of a band card note and not the rest of it', () => {
         expect(body).toContain('The concept is written.');
         // the band card draws the first sentence of its note and stops there
@@ -428,6 +440,13 @@ describe('the career panel', () => {
         expect(body).toContain('>candidate<');
         // the host is warm, and the statuses offered are the ones it can be moved to
         expect(body).not.toContain('>awaiting<');
+    });
+
+    it('draws the status buttons of a host as small buttons, the size of the row they sit under', () => {
+        const buttons = body.match(/<button[\s\S]*?<\/button>/g) ?? [];
+        const moves = buttons.filter((button) => />(warm|candidate)</.test(button));
+        expect(moves.length).toBeGreaterThan(0);
+        for (const button of moves) expect(button).toMatch(/class="tool[^"]*\bsmall\b/);
     });
 
     it('draws the situation strip, the criteria, the shots and the dropped chips', () => {

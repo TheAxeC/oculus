@@ -366,8 +366,9 @@
         align-items: baseline;
         gap: 6px;
         min-width: 0;
-        font-size: var(--fs-sm);
-        line-height: 1.5;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+        font-size: var(--fs-md);
+        line-height: calc(var(--button-line) * var(--text-scale, 1));
     }
 
     .name {
@@ -426,12 +427,13 @@
 
     .act {
         flex: 0 0 auto;
-        padding: 0 5px;
+        padding: 3px 6px;
         border: 1px solid var(--line);
-        border-radius: 4px;
+        border-radius: var(--input-radius);
         background: var(--chip);
         font: inherit;
-        font-size: var(--fs-3xs);
+        font-size: var(--fs-xs);
+        line-height: calc(14px * var(--text-scale, 1));
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;

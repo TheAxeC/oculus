@@ -107,6 +107,7 @@
 
 <style>
     .lines {
+        min-width: 0;
         margin-top: 16px;
         border-top: 1px solid var(--line);
         padding-top: 10px;
@@ -115,6 +116,7 @@
     h3 {
         margin: 0;
         font-size: var(--fs-md);
+        font-weight: 700;
     }
 
     .help {
@@ -137,9 +139,11 @@
         color: var(--c-red-txt);
     }
 
+    /* The table scrolls inside this box, so a narrow pane scrolls the table and not itself. */
     .scroller {
-        overflow-x: auto;
+        min-width: 0;
         max-width: 100%;
+        overflow-x: auto;
     }
 
     .folder,

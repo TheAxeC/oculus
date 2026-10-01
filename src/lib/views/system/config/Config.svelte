@@ -113,12 +113,15 @@
                         {#if isLocalFile(name)}
                             <Tag label={t('config.local_tag')} />
                         {/if}
-                        <ToolButton
-                            label={t('views.open_source')}
-                            glyph="edit"
-                            title={t('views.open_source_tip', name)}
-                            onclick={() => edit(name)}
-                        />
+                        <span class="act">
+                            <ToolButton
+                                compact
+                                label={t('views.open_source')}
+                                glyph="edit"
+                                title={t('views.open_source_tip', name)}
+                                onclick={() => edit(name)}
+                            />
+                        </span>
                     {/snippet}
                     <p class="desc">
                         <CodeText text={lookup(descriptionKey(name))} />
@@ -157,10 +160,17 @@
         grid-auto-rows: max-content;
         align-content: start;
         gap: 8px;
-        height: 100%;
-        overflow: auto;
-        padding: 12px 16px;
-        box-sizing: border-box;
+        min-width: 0;
+    }
+
+    /* The edit control is drawn as its card says, ui/frame/Card.svelte's `--card-reveal`: under
+       the pointer, with the focus inside the card, or always where nothing hovers. It keeps its
+       place in the layout and in the tab order while it is clear. */
+    .act {
+        display: inline-flex;
+        margin-left: auto;
+        opacity: var(--card-reveal);
+        transition: opacity 120ms ease-out;
     }
 
     .intro,

@@ -251,9 +251,9 @@
         top: 24px;
         right: 8px;
         box-sizing: border-box;
-        min-width: 16px;
+        min-width: var(--rail-badge-height);
         max-width: calc(100% - 8px);
-        height: 16px;
+        height: var(--rail-badge-height);
         padding: 0 4px;
         overflow: hidden;
         border-radius: var(--radius-pill);
@@ -262,7 +262,7 @@
         font-family: var(--font-ui);
         font-size: var(--rail-badge-text);
         font-weight: 600;
-        line-height: 16px;
+        line-height: var(--rail-badge-height);
         text-align: center;
         text-overflow: ellipsis;
         white-space: nowrap;

@@ -25,7 +25,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { clock, compactCount } from '$lib/state/shared/words/format';
     import { nameOf } from '$lib/state/sources/explorer/file-type';
     import { timelineTurns } from '$lib/state/sessions/folds';
@@ -116,13 +116,13 @@
     }
 </script>
 
-{#snippet tools()}
-    <Toolbar label={t('sessions.view_timeline')}>
+{#snippet bar()}
+    <Toolbar label={t('sessions.timeline_bar')}>
         <SessionPicker instance={instance.id} />
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.view_timeline')} toolbar={tools} tinted>
+<Pane title={t('sessions.view_timeline')} {bar} tinted>
     <div class="timeline" bind:this={column} data-instance={instance.id}>
         {#if record === null}
             <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
@@ -157,7 +157,6 @@
     .timeline {
         display: flex;
         flex-direction: column;
-        gap: 2px;
         height: 100%;
         overflow: auto;
     }
@@ -165,38 +164,36 @@
     .turn {
         display: flex;
         flex-direction: column;
-        gap: 2px;
         padding-bottom: 4px;
         border-bottom: 1px solid var(--line);
     }
 
-    .turn-h {
+    /* A prompt and an event are each one line of the tree's row height, the event indented one
+       level under its prompt; the words are the row's main words and the clock is secondary. */
+    .turn-h,
+    .event {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         gap: 6px;
         min-width: 0;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+        font-size: var(--fs-md);
+    }
+
+    .turn-h {
         margin: 0;
-        font-size: var(--fs-sm);
         font-weight: 700;
     }
 
     .turn .event {
-        padding-left: 12px;
-    }
-
-    .event {
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-        min-width: 0;
-        font-size: var(--fs-sm);
+        padding-left: calc(var(--tree-indent) * var(--text-scale, 1));
     }
 
     .ts {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-num);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .tx {

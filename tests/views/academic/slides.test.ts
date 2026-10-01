@@ -188,6 +188,28 @@ describe('the slide catalog', () => {
         expect(html).toContain(catalog['slides.down']);
     });
 
+    it('keeps the header empty, with Save and the status words in the bar and the status last', () => {
+        const html = body({ said: catalog['slides.keep_one'], order: [], picked: [], at: '' });
+        const header = html.slice(html.indexOf('<header'), html.indexOf('</header>'));
+        // the header carries no control in this view, as every control belongs to the bar
+        expect(header).not.toContain('<button');
+        // the status words end the bar, so the header holds none of them
+        expect(header).not.toContain('role="status"');
+        const bar = html.slice(
+            html.indexOf('<div class="viewbar'),
+            html.indexOf('<div class="body')
+        );
+        expect(bar).toContain(`>${catalog['slides.save']}</span>`);
+        expect(bar.indexOf('role="status"')).toBeGreaterThan(bar.indexOf(catalog['slides.save']));
+    });
+
+    it('draws the move controls of every row as small buttons, the size of the row', () => {
+        const row = rowOf(body(), KEYS[1]);
+        const buttons = row.match(/<button[^>]*class="tool[^"]*"/g) ?? [];
+        expect(buttons).toHaveLength(2);
+        for (const button of buttons) expect(button).toMatch(/\bsmall\b/);
+    });
+
     it('disables the move each end row cannot make, and neither move in between', () => {
         const html = body();
         expect(steps(html, KEYS[0])).toEqual({ up: true, down: false });

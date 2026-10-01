@@ -1,40 +1,42 @@
 # Oculus text owned by the Search view: the query row, the count line and the results grouped by file.
 text:
     search:
-        toolbar: Search
-        placeholder: What to find
-        root: Where to look
-        root_all: Every root
-        word: word
-        word_title: Match whole words only, which is how an identifier is found without its neighbours
+        actions: Search actions
+        capped: cut at {0}
         case: case
         case_title: Match the pattern's own upper and lower case
-        regex: regex
-        regex_title: Read the pattern as a regular expression instead of as text to find
-        run: Search
-        run_glyph: search
-        run_title: Run this search over the files of the chosen root
-        running: Searching...
+        clear_scope: Search the whole root
+        clear_scope_glyph: dismiss
+        count: '{0} hits in {1} files, {2} ms'
         empty: Type a pattern and press Enter.
         empty_glyph: search
-        none: Nothing in these files carries that.
-        count: '{0} hits in {1} files, {2} ms'
-        capped: cut at {0}
         failed: The search answered something this page could not read.
         failed_roots: No answer from {0}.
         file_glyph: paper
         file_in_root: '{0} ({1})'
         file_title: Open {0} at its first hit
+        help: Finding every reference to a name is this view with the word toggle on, over a root that holds the code.
         hit_title: Open {0} at line {1}
+        in_folder: In {0}/{1}
+        none: Nothing in these files carries that.
+        placeholder: What to find
         refused_empty: A search needs a pattern.
+        refused_missing: That folder is not there.
+        refused_outside: A folder is searched under one root, inside it.
         refused_too_long: That pattern is longer than a search takes.
         refused_unknown_root: That root is not one oculus serves.
-        refused_outside: A folder is searched under one root, inside it.
-        refused_missing: That folder is not there.
-        in_folder: In {0}/{1}
-        clear_scope: Search the whole root
-        clear_scope_glyph: dismiss
-        help: Finding every reference to a name is this view with the word toggle on, over a root that holds the code.
+        regex: regex
+        regex_title: Read the pattern as a regular expression instead of as text to find
+        retry: Search again
+        root: Where to look
+        root_all: Every root
+        run: Search
+        run_glyph: search
+        run_title: Run this search over the files of the chosen root
+        running: Searching...
+        toolbar: Search
+        word: word
+        word_title: Match whole words only, which is how an identifier is found without its neighbours
     views:
         search: Search
         search_glyph: search

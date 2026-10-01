@@ -37,6 +37,7 @@ import {
     hubGit
 } from './harness.ts';
 import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
+import { barOf, headerOf, toolsOf } from '../../shared/pane-parts.ts';
 
 let client: ClientState;
 
@@ -193,6 +194,35 @@ describe('the Repositories view', () => {
         const body = html({ [HUB]: tracked });
         expect(body).toContain('>main<');
         expect(body).toContain(`aria-label="${catalog['sessions.ch_ahead'].replace('{0}', '2')}`);
+    });
+
+    it('draws the branch and Sync buttons of a row as small text buttons and its icon buttons compact', () => {
+        const tracked = {
+            ...HUB_GIT,
+            upstream: true,
+            branches: [{ name: 'main', upstream: 'origin/main', current: true }]
+        };
+        const list = group(html({ [HUB]: tracked }), 'repos');
+        const from = list.indexOf(`data-repo-row="${HUB}"`);
+        const row = list.slice(from, list.indexOf('</li>', from));
+        const buttons = row.match(/<button[^>]*class="tool[^"]*"/g) ?? [];
+        const words = buttons.filter((one) => !/\bcompact\b/.test(one));
+
+        // the branch name and Sync carry words, so each is a text button as high as the 22 px row
+        expect(words.length).toBe(2);
+        for (const one of words) expect(one).toMatch(/\bsmall\b/);
+    });
+
+    it('keeps the header actions on one line that folds what does not fit, as bare icons', () => {
+        const body = html({ [HUB]: HUB_GIT });
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+        const tools = header.match(/<button[^>]*class="(?:tool|opener)[^"]*"[^>]*>/g) ?? [];
+
+        expect(header).toMatch(/class="toolbar[^"]*\boverflow\b/);
+        expect(tools.length).toBeGreaterThanOrEqual(2);
+        for (const one of tools) expect(one).toMatch(/\bbare\b/);
+        // an icon action draws no words beside the icon, only its tooltip
+        expect(header).not.toContain('<span class="label">');
     });
 
     it('says in step on the repository row only for a branch with an upstream', () => {
@@ -749,8 +779,38 @@ describe('the merge editor', () => {
 
     it('holds Complete Merge back until the three versions are read', () => {
         const body = pane(Merge, 'repositories-merge', { root: '/hub', path: 'both.txt' });
-        const at = body.indexOf(`>${catalog['repositories.merge_complete']}</span>`);
-        const open = body.lastIndexOf('<button', at);
-        expect(body.slice(open, body.indexOf('>', open))).toContain('disabled');
+        const button =
+            new RegExp(
+                `<button[^>]*aria-label="${catalog['repositories.merge_complete']}"[^>]*>`
+            ).exec(body)?.[0] ?? '';
+
+        expect(button).not.toBe('');
+        expect(button).toContain('disabled');
+    });
+
+    it('puts Complete Merge in the header as a bare icon and the open conflicts at the end of the bar', () => {
+        const body = pane(Merge, 'repositories-merge', { root: '/hub', path: 'both.txt' });
+        const header = headerOf(body);
+        const bar = barOf(body);
+        const tools = toolsOf(header);
+
+        expect(header).toMatch(/class="toolbar[^"]*\boverflow\b/);
+        expect(tools.length).toBe(1);
+        expect(tools[0]).toMatch(/\bbare\b/);
+        expect(tools[0]).toContain(`aria-label="${catalog['repositories.merge_complete']}"`);
+        // the count of open conflicts is status words that end the bar, not a header item
+        expect(header).not.toContain('data-conflicts-left');
+        // the count is status words, so it is no control and it is the last thing on the bar
+        expect(bar).toContain('data-conflicts-left="0"');
+        // the bar holds the count alone, so it draws no control
+        expect(bar).not.toContain('<button');
+    });
+
+    it('says the three versions are being read as an empty state and not as a loose line', () => {
+        const body = pane(Merge, 'repositories-merge', { root: '/hub', path: 'both.txt' });
+        const empty = /<p class="empty[^"]*"[^>]*>[\s\S]*?<\/p>/.exec(body)?.[0] ?? '';
+
+        expect(empty).toContain(catalog['repositories.merge_pending']);
+        expect(empty).not.toMatch(/\berror\b/);
     });
 });

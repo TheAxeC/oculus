@@ -197,15 +197,6 @@
         margin-left: 0;
     }
 
-    /* The More opener is drawn at a compact control's size, so a row with More is as tall as one
-       without. */
-    [data-action-more] :global(.opener) {
-        padding: 3px 5px;
-        background: var(--panel);
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
     /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-reveal`, which the nearest
        card sets, so the controls answer to their own card and not to a card around it. */
     .act {

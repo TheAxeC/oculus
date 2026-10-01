@@ -49,6 +49,16 @@ describe('a collection as its own tab', () => {
         expect(body).toContain(catalog['collection.add']);
     });
 
+    it('draws the add control as a bare icon on the add glyph, its words as its name', () => {
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+        const add =
+            /<button[^>]*aria-label="([^"]*)"[^>]*>(?:(?!<\/button>)[\s\S])*data-glyph="add"/.exec(
+                header
+            );
+        expect(add?.[1]).toBe(catalog['collection.add']);
+        expect(header).toMatch(/class="tool[^"]*\bbare\b/);
+    });
+
     it('says which collection it is drawing', () => {
         expect(body).toContain('data-collection="events"');
     });
@@ -237,8 +247,13 @@ describe('the status facet', () => {
         expect(body).toContain(catalog['collection.status_facet']);
         expect(body).toContain('upcoming 2');
         expect(body).toContain('completed 1');
-        expect(body).toContain(`--accent: var(--c-${statusTone('upcoming')})`);
-        expect(body).toContain(`--accent: var(--c-${statusTone('completed')})`);
+        expect(body).toContain(`--tone: var(--c-${statusTone('upcoming')})`);
+        expect(body).toContain(`--tone: var(--c-${statusTone('completed')})`);
+        const bar = body.slice(
+            body.indexOf('<div class="viewbar'),
+            body.indexOf('<div class="body')
+        );
+        expect(bar.match(/aria-pressed="true"/g)?.length).toBe(2);
     });
 
     it("hides a status's cards when its toggle is switched off", () => {

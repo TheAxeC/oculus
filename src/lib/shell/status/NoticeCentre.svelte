@@ -141,8 +141,8 @@
     .title {
         flex: 1 1 auto;
         margin: 0;
-        font-size: var(--status-text);
-        font-weight: 600;
+        font-size: var(--fs-xs);
+        font-weight: 700;
         text-transform: uppercase;
     }
 
@@ -161,6 +161,6 @@
         margin: 0;
         padding: 10px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--status-text);
+        font-size: var(--fs-md);
     }
 </style>

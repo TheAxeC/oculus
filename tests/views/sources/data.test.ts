@@ -24,6 +24,7 @@ import type {
 } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { between } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -185,6 +186,74 @@ function tagLabels(html: string): string[] {
         .map((piece) => /class="label[^"]*">([^<]*)</.exec(piece)?.[1] ?? '');
 }
 
+function drawn(): string {
+    receive({ channel: 'portfolio', version: 25, payload: snapshot(DATASETS) });
+    setInstanceState(INSTANCE, { search: '', off: [] });
+    return render(Data, { context: clientContext(client), props: { instance: instance() } }).body;
+}
+
+describe('where the Data view puts its controls', () => {
+    it('holds only bare icon actions in the header: add first, the control over the file last', () => {
+        const header = between(drawn(), '<header', '</header>');
+        const tools = header.match(/<button[^>]*class="tool[^"]*"/g) ?? [];
+        expect(tools).toHaveLength(2);
+        for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
+        const add = between(header, `aria-label="${catalog['collection.add']}"`, '</button>');
+        expect(add).toContain('data-glyph="add"');
+        expect(header.indexOf('data-glyph="add"')).toBeLessThan(
+            header.indexOf('data-source-path="registries/data.yml"')
+        );
+        // the search box and the facets are controls of the bar, and the header holds icon actions
+        expect(header).not.toContain('class="search');
+        // the facet toggles are bar controls, so the header draws no pressable capsule
+        expect(header).not.toContain('class="chip');
+    });
+
+    it('puts the search box and the modality toggles in the bar, the toggles as pressable chips', () => {
+        const bar = between(drawn(), '<div class="viewbar', '<div class="body');
+        expect(bar).toContain('class="search');
+        expect(bar).toContain(`aria-label="${catalog['data.filters']}"`);
+        expect(bar).toContain(catalog['data.modality_facet']);
+        const toggles = bar.match(
+            /<button[^>]*class="chip pressable[^"]*"[^>]*aria-pressed="true"/g
+        );
+        expect(toggles).toHaveLength(2);
+    });
+
+    it('draws a modality the instance switched off as a toggle that is not pressed', () => {
+        receive({ channel: 'portfolio', version: 25, payload: snapshot(DATASETS) });
+        setInstanceState(INSTANCE, { search: '', off: ['scans'] });
+        const body = render(Data, {
+            context: clientContext(client),
+            props: { instance: instance() }
+        }).body;
+        const bar = between(body, '<div class="viewbar', '<div class="body');
+        expect(bar).toMatch(/aria-pressed="false"[^>]*>(?:(?!<\/button>)[\s\S])*scans 2/);
+    });
+
+    it('keeps the add control out of the body, which holds the search box alone', () => {
+        const body = drawn();
+        const page = body.slice(body.indexOf('<div class="body'));
+        // the add control is a header action, so the body does not hold it
+        expect(page).not.toContain(`aria-label="${catalog['collection.add']}"`);
+        // the body draws no row of controls, since the bar holds the search box
+        expect(page).not.toContain('class="controls');
+    });
+});
+
+describe('the controls of a dataset card', () => {
+    // Revert: in views/sources/data/DatasetCard.svelte, put the Edit entry and Recover ToolButtons
+    // back in the meta row in place of CardActions.
+    it('draws Edit entry and Recover among the card controls, both as icons shown under the pointer', () => {
+        const card = between(drawn(), 'data-dataset="open"', '</article>');
+        const actions = between(card, 'data-card-actions', 'class="description');
+        expect(actions).toContain(`aria-label="${catalog['collection.form_edit_title']}"`);
+        expect(actions).toContain(`aria-label="${catalog['data.recover']}"`);
+        expect(actions).toContain(catalog['data.recover_tip']);
+        expect(actions.match(/class="tool[^"]*\bcompact\b/g)).toHaveLength(2);
+    });
+});
+
 describe('the Data view', () => {
     it('closes its toolbar with the control that opens registries/data.yml', () => {
         receive({ channel: 'portfolio', version: 25, payload: snapshot(DATASETS) });
@@ -277,6 +346,9 @@ describe('the Data view', () => {
             context: clientContext(client),
             props: { instance: instance() }
         }).body;
+        expect(html).toMatch(
+            /<p class="empty[^"]*"[^>]*>(?:(?!<\/p>)[\s\S])*<span class="message[^"]*">(?:(?!<\/p>)[\s\S])*No datasets yet/
+        );
         expect(html).toContain('No datasets yet - add some to registries/data.yml.');
         // the file holds no entry, so there is no card to draw
         expect(html).not.toContain('data-dataset=');

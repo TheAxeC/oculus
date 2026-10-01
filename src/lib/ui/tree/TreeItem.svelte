@@ -392,7 +392,7 @@
         display: inline-flex;
         flex: 0 0 auto;
         justify-content: center;
-        width: 1.2em;
+        width: calc(var(--icon-box) * var(--text-scale, 1));
         color: var(--muted-txt, var(--muted));
         transition: transform 120ms ease;
     }

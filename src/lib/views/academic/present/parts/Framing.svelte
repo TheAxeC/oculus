@@ -56,7 +56,7 @@
 
     .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
         gap: 14px;
         margin: 22px 0;
     }
@@ -66,7 +66,7 @@
         border: 1px solid var(--line);
         border-radius: var(--radius);
         background: var(--card);
-        font-size: var(--fs-lg);
+        font-size: var(--fs-md);
         line-height: 1.45;
     }
 

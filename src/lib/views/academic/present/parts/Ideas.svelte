@@ -52,7 +52,7 @@
 
     .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
         gap: 12px;
         margin-top: 14px;
     }
@@ -80,7 +80,8 @@
 
     .head b {
         flex: 1;
-        font-size: var(--fs-lg);
+        font-size: var(--fs-md);
+        font-weight: 600;
         line-height: 1.2;
     }
 
@@ -89,7 +90,7 @@
         border: 1px solid var(--line);
         border-radius: var(--radius-pill);
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;

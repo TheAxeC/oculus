@@ -92,6 +92,7 @@
                 <span class="label">{t('project.action.subtasks')}</span>
                 <span class="count">{t('project.action.n_open', open)}</span>
                 <ToolButton
+                    small
                     label={t('project.action.add_subtask')}
                     title={t('project.action.add_subtask_tip')}
                     active={adding}
@@ -137,22 +138,26 @@
                 <span class="acts">
                     {#if line.done}
                         <ToolButton
+                            small
                             label={t('project.action.reopen')}
                             onclick={() => act(line.key, 'reopen')}
                         />
                     {:else}
                         <ToolButton
+                            small
                             label={t('project.action.done')}
                             title={t('project.action.mark_done')}
                             onclick={() => act(line.key, 'done')}
                         />
                         {#if line.snooze}
                             <ToolButton
+                                small
                                 label={t('project.action.unsnooze')}
                                 onclick={() => act(line.key, 'snooze', '')}
                             />
                         {:else}
                             <ToolButton
+                                small
                                 label={t('project.action.snooze_1w')}
                                 title={t(
                                     'project.action.snooze_tip',
@@ -161,6 +166,7 @@
                                 onclick={() => act(line.key, 'snooze', snoozeDate(7))}
                             />
                             <ToolButton
+                                small
                                 label={t('project.action.snooze_1mo')}
                                 title={t(
                                     'project.action.snooze_tip',
@@ -169,6 +175,7 @@
                                 onclick={() => act(line.key, 'snooze', snoozeDate(30))}
                             />
                             <ToolButton
+                                small
                                 label={t('project.action.snooze_hide')}
                                 title={t(
                                     'project.action.snooze_tip',
@@ -179,6 +186,7 @@
                         {/if}
                     {/if}
                     <ToolButton
+                        small
                         label={t('project.action.del')}
                         title={t('project.action.delete_subtask')}
                         onclick={() => act(line.key, 'delete')}
@@ -207,6 +215,35 @@
         gap: 6px;
     }
 
+    /* A header and a line are one row of the tree's height; a line that wraps grows by whole
+       lines. */
+    .hdr,
+    .line {
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+    }
+
+    /* The buttons of a line are drawn while the line is hovered or holds the focus, and always on
+       a screen that does not hover. They stay in the tab order while they are transparent. */
+    .line {
+        --row-reveal: 0;
+    }
+
+    .line:hover,
+    .line:focus-within {
+        --row-reveal: 1;
+    }
+
+    @media (hover: none) {
+        .line {
+            --row-reveal: 1;
+        }
+    }
+
+    .acts {
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
+    }
+
     .label {
         font-size: var(--fs-xs);
         font-weight: 700;
@@ -215,9 +252,12 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    .count,
+    .count {
+        font-size: var(--fs-sm);
+        color: var(--muted-txt, var(--muted));
+    }
+
     .box {
-        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
 

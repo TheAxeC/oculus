@@ -211,7 +211,7 @@
         overflow: hidden;
         border-radius: var(--radius-sm);
         font-family: var(--font-num);
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
     }
 
@@ -310,7 +310,7 @@
     }
 
     .face:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 </style>

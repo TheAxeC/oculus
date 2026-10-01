@@ -127,6 +127,32 @@ describe('one note as its own tab', () => {
         expect(body).not.toContain('<textarea');
     });
 
+    it('puts the save status at the end of the bar and draws no controls in the header', () => {
+        const body = drawn(client, { id: '20260915-120000-001' });
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+        const bar = body.slice(
+            body.indexOf('<div class="viewbar'),
+            body.indexOf('<div class="body')
+        );
+
+        // the header holds only the status words, so it draws no toolbar
+        expect(header).not.toContain('role="toolbar"');
+        // the unsaved state is status words in the bar
+        expect(header).not.toContain('Not saved yet');
+        expect(bar).toContain('Not saved yet');
+        expect(bar).toContain('aria-live="polite"');
+        // the status is words and not a control
+        expect(bar).not.toContain('<button');
+    });
+
+    it('draws a note that could not be read as the message box', async () => {
+        const fresh = await answering({ error: 'no-such-note' }, 404);
+        const body = drawn(fresh, { id: '20260915-120000-001' });
+
+        expect(body).toMatch(/<p class="empty[^"]*\berror\b[^"]*"[^>]*role="alert"/);
+        expect(body).toContain('The note could not be read: no-such-note');
+    });
+
     it('is one instance per note, so opening the same note twice is one tab', () => {
         const { openView } = client.layout;
         const first = openView('note', { id: '20260915-120000-001' });

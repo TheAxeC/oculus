@@ -6,8 +6,13 @@
     // the way into the file rather than a report about it. The match is emboldened from the hit's
     // own column and length: the page never matches the pattern a second time, which is the only
     // way a regular-expression hit could be marked at all.
+    //
+    // A heading and a hit are each one line of the tree's row height with the words at the
+    // workbench size; a failed run is the message box with a control that runs the same query
+    // again.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { firstLine, hitParts } from '$lib/state/sources/search';
     import { t } from '$lib/state/shared/words/text';
@@ -24,9 +29,11 @@
         /** The cap the run was given, which is the number the cap word says. */
         max: number;
         onopen: (file: SearchFile, line: number) => void;
+        /** Run the same query again, which is what the failed run's message box offers. */
+        onretry: () => void;
     };
 
-    let { answer, running, error, all, max, onopen }: Props = $props();
+    let { answer, running, error, all, max, onopen, onretry }: Props = $props();
 
     const files = $derived(answer?.files ?? []);
 
@@ -39,10 +46,14 @@
     }
 </script>
 
+{#snippet again()}
+    <ToolButton small label={t('search.retry')} onclick={onretry} />
+{/snippet}
+
 {#if running}
     <Empty message={t('search.running')} glyph={t('search.empty_glyph')} />
 {:else if error !== ''}
-    <Empty message={error} glyph="warn" />
+    <Empty error message={error} action={again} />
 {:else if answer === null}
     <Empty message={t('search.empty')} glyph={t('search.empty_glyph')} />
 {:else if files.length === 0}
@@ -62,25 +73,35 @@
     <ul class="files">
         {#each files as file (`${file.root}:${file.path}`)}
             <li class="file" data-search-file={`${file.root}:${file.path}`}>
-                <ToolButton
-                    label={heading(file)}
-                    glyph={t('search.file_glyph')}
-                    title={t('search.file_title', file.path)}
-                    onclick={() => onopen(file, firstLine(file))}
-                />
+                <div class="row head">
+                    <ToolButton
+                        cell
+                        label={heading(file)}
+                        title={t('search.file_title', file.path)}
+                        onclick={() => onopen(file, firstLine(file))}
+                    >
+                        <span class="line-box">
+                            <Glyph name={t('search.file_glyph')} />
+                            <span class="path">{heading(file)}</span>
+                        </span>
+                    </ToolButton>
+                </div>
                 <ul class="hits">
                     {#each file.hits as hit (`${hit.line}:${hit.column}`)}
-                        <li class="hit" data-search-hit={`${file.path}:${hit.line}`}>
+                        <li class="row hit" data-search-hit={`${file.path}:${hit.line}`}>
                             <ToolButton
+                                cell
                                 label={hitTitle(file, hit)}
                                 title={hitTitle(file, hit)}
                                 onclick={() => onopen(file, hit.line)}
                             >
-                                <span class="line">{hit.line}</span>
-                                <span class="text">
-                                    {hitParts(hit).before}<strong class="match"
-                                        >{hitParts(hit).match}</strong
-                                    >{hitParts(hit).after}
+                                <span class="line-box">
+                                    <span class="line">{hit.line}</span>
+                                    <span class="text">
+                                        {hitParts(hit).before}<strong class="match"
+                                            >{hitParts(hit).match}</strong
+                                        >{hitParts(hit).after}
+                                    </span>
                                 </span>
                             </ToolButton>
                         </li>
@@ -106,45 +127,54 @@
     .hits {
         display: flex;
         flex-direction: column;
-        gap: 1px;
         margin: 0;
         padding: 0;
         list-style: none;
         min-width: 0;
     }
 
-    .files {
-        gap: 10px;
-    }
-
+    /* Hits sit under their file by the width of its icon. */
     .hits {
-        padding-left: 12px;
+        padding-left: calc(var(--icon-box) * var(--text-scale, 1));
     }
 
-    /* A results row reads as a line of the file it came from, so the primitive keeps the press and
-       the focus ring and drops the box a control on a bar is drawn in. */
-    .hit :global(.tool) {
+    /* One line of the tree's row height; the button inside is the whole row. */
+    .row {
+        display: flex;
+        height: calc(var(--tree-row) * var(--text-scale, 1));
+        min-width: 0;
+        border-radius: var(--radius-sm);
+        font-size: var(--fs-md);
+    }
+
+    .row:hover {
+        background: var(--chip);
+    }
+
+    .line-box {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         width: 100%;
-        border-color: transparent;
-        background: none;
+        height: 100%;
+        min-width: 0;
+        padding: 0 4px;
         text-align: left;
     }
 
-    .hit :global(.tool:hover) {
-        border-color: var(--line);
-    }
-
-    .hit :global(.label) {
-        display: flex;
-        gap: 8px;
+    .path {
         min-width: 0;
+        overflow: hidden;
+        color: var(--ink-txt, var(--ink));
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .line {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-num);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .text {
@@ -152,7 +182,6 @@
         overflow: hidden;
         color: var(--ink-txt, var(--ink));
         font-family: var(--font-mono);
-        font-size: var(--fs-xs);
         white-space: pre;
         text-overflow: ellipsis;
     }

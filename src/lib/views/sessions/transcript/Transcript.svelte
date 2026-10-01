@@ -32,7 +32,7 @@
     import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sanitise } from '$lib/ui/html';
     import { clock } from '$lib/state/shared/words/format';
@@ -130,18 +130,24 @@
     }
 </script>
 
-<Pane title={t('sessions.view_transcript')} tinted>
-    {#snippet toolbar()}
-        <Toolbar label={t('sessions.turn_toolbar')}>
-            <SessionPicker instance={instance.id} />
-            <ToolButton
-                label={t('sessions.turn_end')}
-                glyph={t('sessions.turn_end_glyph')}
-                title={t('sessions.turn_end')}
-                onclick={() => toFoot()}
-            />
-        </Toolbar>
-    {/snippet}
+{#snippet tools()}
+    <Toolbar label={t('sessions.turn_toolbar')} overflow>
+        <ToolButton
+            bare
+            label={t('sessions.turn_end')}
+            glyph={t('sessions.turn_end_glyph')}
+            onclick={() => toFoot()}
+        />
+    </Toolbar>
+{/snippet}
+
+{#snippet bar()}
+    <Toolbar label={t('sessions.turn_bar')}>
+        <SessionPicker instance={instance.id} />
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('sessions.view_transcript')} toolbar={tools} {bar} tinted>
     <div class="frame">
         <div
             class="chat"
@@ -156,7 +162,7 @@
                     glyph={t('sessions.empty_glyph')}
                 />
             {:else if held.error !== ''}
-                <p class="failed">{held.error}</p>
+                <Empty error message={held.error} />
             {:else if turns.length === 0}
                 <Empty message={t('sessions.turns_empty')} glyph={t('sessions.empty_glyph')} />
             {:else}
@@ -214,15 +220,13 @@
         font-size: var(--fs-md);
     }
 
-    .turn.tool {
-        font-size: var(--fs-sm);
-    }
-
+    /* The head of a turn is one line of the tree's row height. */
     .head {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         gap: 6px;
         min-width: 0;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .who {
@@ -238,7 +242,7 @@
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-num);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .name {
@@ -253,6 +257,7 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
     }
 
     .said {
@@ -266,12 +271,6 @@
 
     .cut {
         margin: 2px 0 0;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .failed {
-        margin: 0;
         font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }

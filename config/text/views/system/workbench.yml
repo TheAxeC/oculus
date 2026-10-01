@@ -18,6 +18,7 @@ text:
         pages_rename: Rename
         pages_reset: Reset to its arrangement
         pages_rename_label: Name of {0}
+        pages_toolbar: Pages actions
         pages_unsaved: unsaved
         rail_about: 'Each row is a button on the rail: its words, its icon, and the page it shows.'
         rail_add: Add a button

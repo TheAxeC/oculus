@@ -113,7 +113,9 @@
             </span>
         {/if}
         {#if !project.ghost}
-            <Menu label={t('focus.move_to')} {items} placement="down" {onpick} />
+            <span class="move">
+                <Menu label={t('focus.move_to')} {items} placement="down" {onpick} />
+            </span>
         {/if}
     </div>
     {#if wait !== ''}
@@ -125,28 +127,47 @@
 </div>
 
 <style>
+    /* `--row-reveal` says whether what the card draws only under the pointer or the keyboard is
+       drawn: 0 at rest and 1 while the card is hovered, holds the focus, has the keyboard cursor
+       or has its move menu open, and always on a screen whose pointer does not hover. */
     .card {
+        --row-reveal: 0;
         min-width: 0;
-        padding: 6px 8px;
+        padding: 0 8px;
         border: 1px solid var(--line);
         border-left: 3px solid var(--tone, var(--line));
-        border-radius: 6px;
+        border-radius: var(--input-radius);
         background: var(--bg);
         cursor: grab;
     }
 
+    .card:hover,
+    .card:focus-within,
+    .card[data-cursor],
+    .card:has(:global([aria-expanded='true'])) {
+        --row-reveal: 1;
+    }
+
+    @media (hover: none) {
+        .card {
+            --row-reveal: 1;
+        }
+    }
+
+    /* The first line is one row of the tree's height; the waiting and next lines are further
+       whole rows. */
     .card-h {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         flex-wrap: wrap;
         gap: 5px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     /* The flames and the name are plain buttons, each inside the box below that draws its look. */
     .flames {
         display: inline-flex;
         flex: 0 0 auto;
-        font-size: var(--fs-xxs);
         line-height: 1;
     }
 
@@ -162,7 +183,6 @@
     /* The ghost badge: a line icon whose words are its tooltip. */
     .chipicon {
         flex: 0 0 auto;
-        font-size: var(--fs-xs);
         line-height: 1;
     }
 
@@ -179,7 +199,7 @@
         max-width: 100%;
         white-space: nowrap;
         font-size: var(--fs-md);
-        font-weight: 650;
+        font-weight: 600;
         color: var(--ink-txt, var(--ink));
     }
 
@@ -193,10 +213,19 @@
         margin-left: auto;
     }
 
+    /* The move menu is drawn as the card around it says, and keeps the keyboard while it is not
+       drawn. */
+    .move {
+        display: inline-flex;
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
+    }
+
     .wait,
     .next {
-        margin: 2px 0 0;
-        font-size: var(--fs-xs);
+        margin: 0;
+        font-size: var(--fs-sm);
+        line-height: calc(var(--tree-row) * var(--text-scale, 1));
         color: var(--muted-txt, var(--muted));
     }
 </style>

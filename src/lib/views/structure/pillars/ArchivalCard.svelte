@@ -3,6 +3,7 @@
     // category at a time and project links inside it.
 
     import Card from '$lib/ui/frame/Card.svelte';
+    import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -42,16 +43,16 @@
         <div class="groups">
             {#each groups as group (group.type)}
                 <div class="group">
-                    <ToolButton
-                        label={group.type}
-                        active={shown === group.type}
+                    <Chip
+                        label={`${group.type} ${group.count}`}
+                        pressed={shown === group.type}
                         onclick={() => (shown = shown === group.type ? '' : group.type)}
                     />
-                    <Tag label={String(group.count)} />
                     {#if shown === group.type}
                         <div class="members">
                             {#each group.projects as project (project.id)}
                                 <ToolButton
+                                    small
                                     label={labelOf(project)}
                                     onclick={() =>
                                         openView('project', {
@@ -89,6 +90,12 @@
 
     .groups {
         margin-top: 8px;
+    }
+
+    /* A group and the members of an open group are rows of the tree's height. */
+    .group,
+    .members {
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .members {

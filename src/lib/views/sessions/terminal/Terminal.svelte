@@ -27,16 +27,17 @@
     // moving their boundary, and the row scrolling sideways when it is wider than the pane. The
     // composer of a start with a prompt shows right of the row while `composing`.
     //
-    // The bar's `new terminal` starts a shell at once in the tab's folder, and the kinds dropdown
-    // beside it starts Shell, Claude or Codex the same way, shows the composer (With a Prompt) in
-    // the shown terminal's kind, or, under Attach to Session, joins a running terminal no Terminal
-    // tab owns to the end of this tab and shows it alone. The bar's Split splits the shown
-    // terminal; the font buttons beside it are TerminalFontTools.svelte. A start the server
-    // refuses, a Split of a terminal the page knows nothing of, and a failed Copy as HTML are said
-    // on the bar and change nothing. From two terminals on, the tab's list (TerminalList.svelte) is
-    // drawn on the right of the body, and with one while the composer shows; a tab showing its only
-    // terminal names it on the bar. A row dragged from another tab's list onto this tab's body,
-    // when this tab draws no list, joins the end of this tab.
+    // The header holds the icon actions (bar/TerminalActions.svelte): New terminal starts a shell
+    // at once in the tab's folder, the kinds dropdown beside it starts Shell, Claude or Codex the
+    // same way, shows the composer (With a Prompt) in the shown terminal's kind, or, under Attach
+    // to Session, joins a running terminal no Terminal tab owns to the end of this tab and shows
+    // it alone, and Split splits the shown terminal. The bar under the header holds the shown
+    // terminal's title, the font buttons (TerminalFontTools.svelte) and, at its end, what the tab
+    // says. A start the server refuses, a Split of a terminal the page knows nothing of, and a
+    // failed Copy as HTML are said on the bar and change nothing. From two terminals on, the tab's
+    // list (TerminalList.svelte) is drawn on the right of the body, and with one while the composer
+    // shows; a tab showing its only terminal names it on the bar. A row dragged from another tab's
+    // list onto this tab's body, when this tab draws no list, joins the end of this tab.
     //
     // The tab's label is the shown terminal's title, else its name, kept in its state as a terminal
     // is renamed while it runs. Rename opens an inline field on the row, or on the bar's title
@@ -51,18 +52,17 @@
     // and Join Terminals is offered the terminals the other Terminal tabs own, each by its name.
 
     import Composer from './Composer.svelte';
+    import TerminalActions from './bar/TerminalActions.svelte';
     import { SvelteMap } from 'svelte/reactivity';
     import GlyphDialog from '$lib/ui/forms/choice/GlyphDialog.svelte';
     import TerminalGrid from './grid/TerminalGrid.svelte';
     import TerminalList from './TerminalList.svelte';
     import TerminalFontTools from './TerminalFontTools.svelte';
     import TerminalTitle from './TerminalTitle.svelte';
-    import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Sash from '$lib/ui/frame/Sash.svelte';
     import { SASH_PX } from '$lib/ui/frame/sash-size';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import {
         ROW_MIN,
         joined,
@@ -83,14 +83,10 @@
     import {
         bellMark,
         COMPOSER_REM,
-        MENU_PROMPT,
         ROW_DRAG,
-        attachedOf,
-        kindsMenu,
         listDrawn,
         ownedElsewhere,
         pressKill,
-        profileOf,
         routePick,
         tabRows,
         terminalRowMenu,
@@ -108,16 +104,13 @@
         selectors: { sessionsByWorkspace },
         terminals: {
             attachable,
-            attachTerminal,
             clearHistory,
-            composeInTab,
             moveTerminal,
             refusal,
             renameTerminal,
             restyleTerminal,
             say,
             splitTerminal,
-            startInTab,
             stopTerminal,
             terminalById,
             terminals
@@ -235,18 +228,6 @@
         void splitTerminal(instance.id, terminal);
     }
 
-    /**
-     * The kinds dropdown: a kind starts at once, With a Prompt shows the composer, and a terminal
-     * under Attach to Session joins this tab.
-     */
-    function kindPicked(pick: string): void {
-        const kind = profileOf(pick);
-        const attaching = attachedOf(pick);
-        if (pick === MENU_PROMPT) composeInTab(instance.id, terminal?.kind);
-        else if (kind !== null) void startInTab(instance.id, kind);
-        else if (attaching !== null) attachTerminal(instance.id, attaching);
-    }
-
     /** Open the rename field on a terminal's row, or on the bar's title while no list is drawn. */
     function rename(which: string): void {
         renaming = which;
@@ -340,13 +321,19 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('sessions.view_terminal')}>
-        {#if said !== ''}
-            <span class="failure" role="alert">{said}</span>
-        {/if}
-        {#if failure !== '' && !listed}
-            <span class="failure" role="alert">{failure}</span>
-        {/if}
+    <Toolbar label={t('sessions.view_terminal')} overflow>
+        <TerminalActions
+            instance={instance.id}
+            shown={tab.shown}
+            kind={terminal?.kind}
+            {attachables}
+            onsplit={splitOn}
+        />
+    </Toolbar>
+{/snippet}
+
+{#snippet bar()}
+    <Toolbar label={t('sessions.terminal_bar')}>
         {#if !listed && shownRow !== null}
             <TerminalTitle
                 shown={shownRow}
@@ -367,31 +354,13 @@
                 oncancel={() => (renaming = '')}
             />
         {/if}
-        <ToolButton
-            label={t('sessions.new_terminal')}
-            title={t('sessions.new_terminal_title')}
-            glyph={t('sessions.terminal_glyph')}
-            onclick={() => void startInTab(instance.id, 'shell')}
-        />
-        <Menu
-            label={t('sessions.new_kinds')}
-            items={kindsMenu(t, attachables)}
-            glyph="disclosure"
-            compact
-            bare
-            placement="down"
-            align="right"
-            onpick={kindPicked}
-        />
-        {#if tab.shown !== null}
-            <ToolButton
-                label={t('sessions.terminal_split')}
-                title={t('sessions.terminal_split_tip')}
-                glyph="split_right"
-                onclick={() => tab.shown !== null && splitOn(tab.shown)}
-            />
-        {/if}
         <TerminalFontTools />
+        {#if said !== ''}
+            <span class="failure" role="alert">{said}</span>
+        {/if}
+        {#if failure !== '' && !listed}
+            <span class="failure" role="alert">{failure}</span>
+        {/if}
     </Toolbar>
 {/snippet}
 
@@ -412,7 +381,7 @@
     />
 {/snippet}
 
-<Pane title={t('sessions.view_terminal')} toolbar={tools} tinted>
+<Pane title={t('sessions.view_terminal')} toolbar={tools} {bar} tinted>
     <!-- The body takes a row dropped from another tab's list while this tab draws none. -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
@@ -524,10 +493,15 @@
         flex: 1 0 20rem;
     }
 
-    /* A refused Kill Terminal from a menu, on the bar. */
+    /* What the tab said of a refused action, at the end of the bar. */
     .failure {
+        margin-left: auto;
         color: var(--c-red-txt, var(--ink));
         font-size: var(--fs-xs);
+    }
+
+    .failure ~ .failure {
+        margin-left: 0;
     }
 
     .start {

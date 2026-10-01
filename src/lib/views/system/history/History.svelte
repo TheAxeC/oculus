@@ -28,13 +28,17 @@
     // unpressable, since pressing it again would be refused for the same reason until the page is
     // read afresh. An answer that wrote no field is a refusal here too: the row says the value is
     // back only when the endpoint names the field it wrote.
+    //
+    // The filter is in the bar under the header, with the status sentence of the last press at the
+    // bar's end. A row's undo control and the pills that open its values are drawn while the
+    // pointer is over the row or the focus is inside it, and an opened pill stays drawn.
 
     import { SvelteSet } from 'svelte/reactivity';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { stamp } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
@@ -105,19 +109,19 @@
     }
 </script>
 
-{#snippet tools()}
+{#snippet bar()}
     <Toolbar label={t('history.toolbar')}>
-        <Search value={filter} placeholder={t('history.filter')} oninput={typed} />
+        <Search fill value={filter} placeholder={t('history.filter')} oninput={typed} />
         <span class="said" role="status">{said}</span>
     </Toolbar>
 {/snippet}
 
-<Pane title={t('views.history')} toolbar={tools}>
+<Pane title={t('views.history')} {bar}>
     <div class="view" data-instance={instance.id} data-history>
         {#if error() !== ''}
-            <p class="said">{t('history.failed', error())}</p>
+            <Empty error message={t('history.failed', error())} />
         {:else if loading()}
-            <p class="said">{t('history.loading')}</p>
+            <p class="loading">{t('history.loading')}</p>
         {:else if list.length === 0}
             <Empty message={t('history.none')} glyph={t('history.none_glyph')} />
         {:else}
@@ -130,13 +134,16 @@
                             <span class="file">{row.file}</span>
                             <span class="what">{named(row)}</span>
                             {#if row.undo !== 'none'}
-                                <ToolButton
-                                    label={t('history.undo')}
-                                    glyph={t('history.undo_glyph')}
-                                    title={t('history.undo_tip', named(row))}
-                                    disabled={pending() || refused.has(row.at)}
-                                    onclick={() => void undo(row)}
-                                />
+                                <span class="reveal">
+                                    <ToolButton
+                                        small
+                                        label={t('history.undo')}
+                                        glyph={t('history.undo_glyph')}
+                                        title={t('history.undo_tip', named(row))}
+                                        disabled={pending() || refused.has(row.at)}
+                                        onclick={() => void undo(row)}
+                                    />
+                                </span>
                             {/if}
                         </div>
                         <div class="sides">
@@ -149,12 +156,14 @@
                                     {:else if pair.held.size === 0}
                                         <span class="value">{pair.held.text}</span>
                                     {:else}
-                                        <Disclosure
-                                            count={pair.held.size}
-                                            label={t('history.items')}
-                                            expanded={opened.has(key)}
-                                            onclick={() => toggle(key)}
-                                        />
+                                        <span class="reveal" class:open={opened.has(key)}>
+                                            <Disclosure
+                                                count={pair.held.size}
+                                                label={t('history.items')}
+                                                expanded={opened.has(key)}
+                                                onclick={() => toggle(key)}
+                                            />
+                                        </span>
                                         {#if opened.has(key)}
                                             <pre class="raw" data-value={key}>{pair.held.text}</pre>
                                         {/if}
@@ -188,31 +197,58 @@
         list-style: none;
     }
 
+    /* A row's controls are drawn while the pointer is over the row or the focus is inside it, and
+       always where nothing hovers. They stay in the layout and in the tab order while clear. */
     li {
-        padding: 4px 0;
+        --row-reveal: 0;
         border-bottom: 1px solid var(--line);
     }
 
+    li:hover,
+    li:focus-within {
+        --row-reveal: 1;
+    }
+
+    @media (hover: none) {
+        li {
+            --row-reveal: 1;
+        }
+    }
+
+    .reveal {
+        display: inline-flex;
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
+    }
+
+    /* A pill that is open is the row's selected control, so it stays drawn. */
+    .reveal.open {
+        opacity: 1;
+    }
+
+    /* Each line of a row is one line of the tree's row height, and a line that wraps grows by
+       whole lines. */
     .head {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 6px;
+        gap: 0 6px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         min-width: 0;
     }
 
     .sides {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 2px;
+        gap: 0 12px;
     }
 
     .side {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 4px;
+        gap: 0 4px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         min-width: 0;
     }
 
@@ -245,7 +281,14 @@
     }
 
     .empty,
+    .loading {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
+    }
+
+    /* The sentence the last press produced, at the bar's end. */
     .said {
+        margin-left: auto;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
     }

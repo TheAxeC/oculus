@@ -28,7 +28,8 @@
     // into, and typing into a conflict's lines settles it by hand. A choice rewrites the Result as
     // one edit of the editor's, so undo takes it back, and the choice goes with it: the conflict
     // reads open again, as it did before; the Result editor says whether an edit was its undo, its
-    // redo or typing. The count of conflicts still open is in the bar. Complete
+    // redo or typing. The count of conflicts still open is the status at the end of the pane's
+    // bar; Complete Merge and Accept Deletion are icon actions on its header. Complete
     // Merge writes the Result over the file and stages it, which is what tells git the conflict is
     // resolved; with conflicts still open it asks first. Where a side deleted the file, the pane
     // says which, Accept Deletion takes the deletion (the file leaves the index and the worktree)
@@ -40,7 +41,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Editor from '$lib/ui/controls/editor/Editor.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import MergeSide, { type SideConflict } from './MergeSide.svelte';
     import {
         chooseIn,
@@ -159,9 +160,9 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('views.repositories_merge')}>
-        <span class="left" data-conflicts-left={left}>{t('repositories.merge_left', left)}</span>
+    <Toolbar label={t('views.repositories_merge')} overflow>
         <ToolButton
+            bare
             label={t('repositories.merge_complete')}
             glyph="check"
             disabled={busy || sides === null || done}
@@ -169,6 +170,7 @@
         />
         {#if sides !== null && sides.deleted !== ''}
             <ToolButton
+                bare
                 label={t('repositories.merge_delete')}
                 title={t('repositories.merge_delete_title')}
                 glyph="trash"
@@ -179,14 +181,22 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('repositories.merge_editor_title', path)} toolbar={tools} tinted>
+{#snippet bar()}
+    <span class="left" data-conflicts-left={left}>{t('repositories.merge_left', left)}</span>
+{/snippet}
+
+{#snippet again()}
+    <ToolButton small label={t('repositories.merge_retry')} onclick={() => void load(root, path)} />
+{/snippet}
+
+<Pane title={t('repositories.merge_editor_title', path)} toolbar={tools} {bar} tinted>
     <div class="merge" data-instance={instance.id} data-view="repositories-merge" data-path={path}>
         {#if root === '' || path === ''}
             <Empty message={t('repositories.merge_empty')} glyph="merge" />
         {:else if failure !== ''}
-            <p class="failed">{failure}</p>
+            <Empty error message={failure} action={again} />
         {:else if sides === null}
-            <p class="note">{t('repositories.merge_pending')}</p>
+            <Empty message={t('repositories.merge_pending')} glyph="merge" />
         {:else}
             {#if done}
                 <p class="note" data-merge-done>{t('repositories.merge_done', path)}</p>
@@ -304,22 +314,20 @@
         margin: 0 0 2px;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
+        font-weight: 700;
         text-transform: uppercase;
     }
 
+    /* The count of open conflicts: status words at the end of the bar. */
     .left {
+        margin-left: auto;
         color: var(--c-scm-conflict-txt);
         font-size: var(--fs-sm);
     }
 
-    .note,
-    .failed {
+    .note {
         margin: 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
-    .failed {
-        color: var(--c-red-txt, var(--muted));
+        font-size: var(--fs-md);
     }
 </style>

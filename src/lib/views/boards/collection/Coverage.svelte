@@ -4,9 +4,10 @@
     // every project's `code_availability:` field, each group opening into the projects in it.
     //
     // The grouping is coverage() of state/boards/collection.ts; what is left here is the markup and
-    // the words. A project's name opens that project's own tab, exactly as a cross-link does.
+    // the words. A group is a pressable Chip carrying its count, pressed while its projects are
+    // listed. A project's name opens that project's own tab, exactly as a cross-link does.
 
-    import Tag from '$lib/ui/controls/Tag.svelte';
+    import Chip from '$lib/ui/controls/Chip.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { coverage, type Project } from '$lib/state/boards/collection';
     import { t } from '$lib/state/shared/words/text';
@@ -43,16 +44,16 @@
     <span class="label">{t('collection.coverage')}</span>
     {#each groups as group (group.group)}
         <div class="group" data-group={group.group}>
-            <ToolButton
-                label={label(group.group)}
-                active={shown === group.group}
+            <Chip
+                label={`${label(group.group)} ${group.count}`}
+                pressed={shown === group.group}
                 onclick={() => (shown = shown === group.group ? '' : group.group)}
             />
-            <Tag label={String(group.count)} />
             {#if shown === group.group}
                 <div class="members">
                     {#each group.members as member (member.id)}
                         <ToolButton
+                            small
                             label={member.label}
                             onclick={() =>
                                 openView('project', {
@@ -77,8 +78,15 @@
         gap: 6px;
     }
 
+    /* The groups and the members of an open group are rows of the tree's height. */
     .coverage {
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         margin-bottom: 10px;
+    }
+
+    .group,
+    .members {
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .members {
@@ -86,7 +94,7 @@
     }
 
     .label {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;

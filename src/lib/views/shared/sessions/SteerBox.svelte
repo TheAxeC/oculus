@@ -5,6 +5,7 @@
     // runs in a terminal oculus did not start cannot be typed into from here, and the box says so
     // and holds no controls that would pretend otherwise.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { promptKey } from '$lib/state/sessions/terminal/composer';
@@ -103,7 +104,9 @@
     {#if !usable}
         <p class="elsewhere" data-steer-elsewhere>{t('composer.elsewhere')}</p>
     {:else if failure !== ''}
-        <p class="failure">{failure}</p>
+        <div class="failure" data-steer-failure>
+            <Empty error message={failure} />
+        </div>
     {/if}
 </div>
 
@@ -118,7 +121,7 @@
         display: flex;
         flex-direction: column;
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: var(--input-radius);
         background: var(--chip);
     }
 
@@ -145,18 +148,14 @@
         flex: 1 1 auto;
     }
 
-    .failure,
+    .failure {
+        margin-top: 4px;
+    }
+
     .elsewhere {
         margin: 4px 0 0;
-        font-size: var(--fs-sm);
-    }
-
-    .failure {
-        color: var(--c-red-txt, var(--ink));
-    }
-
-    .elsewhere {
         color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
     }
 
     /* Over the wallpaper the box sits on the tinted box of the view, which is its surface there. */

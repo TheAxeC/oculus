@@ -2,6 +2,7 @@
     // Layer 3, view partial of views/feeds/radar/Radar.svelte. One ordered radar bucket and its
     // cards. The heading is a ToolButton and the section begins open, without owning feed rules.
 
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import RadarCard from './RadarCard.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
@@ -42,17 +43,18 @@
     }: Props = $props();
     let open = $state(true);
     const ordered = $derived(sortBucket(entries));
+    const heading = $derived(t('radar.count', bucket.label, entries.length));
 </script>
 
 <section
     style={`--bucket-tone: var(--c-${toneOf(bucket.color)}); --bucket-txt: var(--c-${toneOf(bucket.color)}-txt)`}
 >
-    <ToolButton
-        label={t('radar.count', bucket.label, entries.length)}
-        glyph={bucket.glyph}
-        active={open}
-        onclick={() => (open = !open)}
-    />
+    <ToolButton label={heading} active={open} onclick={() => (open = !open)}>
+        <span class="heading">
+            <span class="mark"><Glyph name={bucket.glyph} /></span>
+            {heading}
+        </span>
+    </ToolButton>
     {#if open}
         <div class="cards">
             {#each ordered as entry, at (`${asText(entry.title)}:${at}`)}
@@ -80,7 +82,14 @@
 
     /* The bucket glyphs are colour names in the vocabulary, and a line icon carries no colour, so
        the heading's mark is drawn in the bucket's own hue. The cards below keep their own. */
-    section > :global(.tip .tool .glyph) {
+    .heading {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .mark {
+        display: inline-flex;
         color: var(--bucket-txt);
     }
 

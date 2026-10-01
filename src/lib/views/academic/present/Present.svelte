@@ -31,7 +31,8 @@
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Chip from '$lib/ui/controls/Chip.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Overview from './Overview.svelte';
     import Slide from './Slide.svelte';
@@ -133,11 +134,8 @@
     }
 </script>
 
-{#snippet tools()}
+{#snippet bar()}
     <Toolbar label={t('present.toolbar')}>
-        <span class="counter"
-            >{t('present.counter', String(position(held.slide)), String(rows.length))}</span
-        >
         <ToolButton
             label={t('present.previous')}
             onclick={() => step(-1)}
@@ -148,7 +146,7 @@
             onclick={() => step(1)}
             disabled={rows.length === 0}
         />
-        <ToolButton
+        <Chip
             label={t('present.overview')}
             glyph={t('present.overview_glyph')}
             pressed={grid}
@@ -164,10 +162,13 @@
                 openBeside('slides');
             }}
         />
+        <span class="counter"
+            >{t('present.counter', String(position(held.slide)), String(rows.length))}</span
+        >
     </Toolbar>
 {/snippet}
 
-<Pane title={t('present.title')} toolbar={tools}>
+<Pane title={t('present.title')} {bar}>
     <!-- The box is the deck's own key surface: it is focusable and named as a region, and the keys
          it takes move the reader through the deck rather than acting on the box itself. -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -198,9 +199,11 @@
         outline: none;
     }
 
+    /* The place in the deck closes the bar. */
     .counter {
+        margin-left: auto;
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-num);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 </style>

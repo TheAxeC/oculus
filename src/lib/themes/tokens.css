@@ -99,14 +99,15 @@
     /* shape + type */
     --radius: 10px;
     --radius-sm: 6px;
-    --radius-pill: 999px;
+    --radius-pill: 11px;
     /* The activity rail's width, the one place it is set, and the side of each of its square
        items: VS Code's activity bar width (activitybarpart.css). */
     --rail-width: 48px;
-    /* The rail's icon and its badge's count, fixed as the item that holds them is, so a larger text
-       scale leaves the icon clear of the badge and the count inside its pill. */
+    /* The rail's icon and its badge's count and height, fixed as the item that holds them is, so a
+       larger text scale leaves the icon clear of the badge and the count inside its pill. */
     --rail-icon: 24px;
     --rail-badge-text: 9px;
+    --rail-badge-height: 16px;
     /* The status bar's height and its items' text: VS Code's status bar (statusbarpart.css), 22 px
        with 12 px words, fixed as the rail is, so a larger text scale leaves the bar's height alone
        and its words inside it. */
@@ -118,17 +119,15 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
     --font-num: var(--font-mono); /* counts, dates, ids - mono in every theme */
     --text-scale: 1;
-    /* Type scale. Every font-size resolves through these nine steps, so a theme rescales the whole
-       UI by overriding them here and no rule carries its own px value. */
-    --fs-3xs: calc(8.5px * var(--text-scale, 1));
-    --fs-xxs: calc(9.5px * var(--text-scale, 1));
-    --fs-xs: calc(10.5px * var(--text-scale, 1));
-    --fs-sm: calc(11.5px * var(--text-scale, 1));
-    --fs-md: calc(12.5px * var(--text-scale, 1));
-    --fs-lg: calc(13.5px * var(--text-scale, 1));
-    --fs-xl: calc(15px * var(--text-scale, 1));
-    --fs-2xl: calc(19px * var(--text-scale, 1));
-    --fs-3xl: calc(24px * var(--text-scale, 1));
+    /* Type scale. Every font-size resolves through these seven steps, VS Code's own sizes, so a
+       theme rescales the whole UI by overriding them here and no rule carries its own px value. */
+    --fs-xs: calc(11px * var(--text-scale, 1));
+    --fs-sm: calc(12px * var(--text-scale, 1));
+    --fs-md: calc(13px * var(--text-scale, 1));
+    --fs-lg: calc(14px * var(--text-scale, 1));
+    --fs-xl: calc(16px * var(--text-scale, 1));
+    --fs-2xl: calc(20px * var(--text-scale, 1));
+    --fs-3xl: calc(26px * var(--text-scale, 1));
     --scan: none; /* CRT scanline layer, opt-in per theme */
     /* The tab strip's measures, which are VS Code's editor tab measures grown with the text the way
        a tree row is: the tab's height (35, editorTabsControl.ts), the room before its glyph (10,
@@ -149,6 +148,9 @@
     --tab-action: calc(22px * var(--text-scale, 1));
     --tab-action-pad: calc(2px * var(--text-scale, 1));
     --tab-action-gap: calc(2px * var(--text-scale, 1));
+    /* A pane header's action: a 16 px icon in 2 px of room either side, VS Code's pane action,
+       with no border. A pane sets it as the box of its bare buttons. */
+    --header-action: calc(20px * var(--text-scale, 1));
     /* A tab's count badge: the narrowest it draws, the room either side of its number, and the line
        the number sits on, so a one-digit badge is a circle. */
     --tab-badge-min: calc(16px * var(--text-scale, 1));
@@ -159,7 +161,7 @@
        drawn, so a tree grows with a scale any ancestor of it sets. */
     --tree-row: 22px;
     --tree-font: 13px;
-    --tree-indent: 12px;
+    --tree-indent: 8px;
     --tree-heading-font: 11px;
     /* How much of a tree row shows while the row is on the clipboard as Cut. */
     --tree-cut-opacity: 0.5;
@@ -205,4 +207,21 @@
    chip and not the default one. */
 body {
     --chip-on-wall: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+}
+
+/* A link is underlined under the pointer and with the focus, and not at rest, as VS Code draws a
+   link, and ringed on focus with the application's one ring, drawn outside since it has no box.
+   The colour is the view's. */
+a {
+    text-decoration: none;
+}
+
+a:hover,
+a:focus-visible {
+    text-decoration: underline;
+}
+
+a:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: 1px;
 }

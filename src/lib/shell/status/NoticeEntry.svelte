@@ -57,7 +57,7 @@
         gap: 4px 8px;
         padding: 8px 10px;
         color: var(--ink-txt, var(--ink));
-        font-size: var(--status-text);
+        font-size: var(--fs-md);
     }
 
     .tone {
@@ -80,6 +80,7 @@
 
     .when {
         color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
         white-space: nowrap;
     }
 

@@ -41,46 +41,6 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/boards/collection/EntryCard.svelte:422 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/boards/focus/Band.svelte styles .tool of ui/controls/ToolButton.svelte through .entry-name :global(.tool)',
-        why: 'the rule at src/lib/views/boards/focus/Band.svelte:255 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/boards/focus/CommandCenterView.svelte styles .tool of ui/controls/ToolButton.svelte through .behind :global(.tool)',
-        why: 'the rule at src/lib/views/boards/focus/CommandCenterView.svelte:268 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/boards/focus/lanes/Lanes.svelte styles .tool of ui/controls/ToolButton.svelte through .hint-link :global(.tool)',
-        why: 'the rule at src/lib/views/boards/focus/lanes/Lanes.svelte:319 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/feeds/radar/Bucket.svelte styles .glyph of ui/display/Glyph.svelte through section > :global(.tip .tool .glyph)',
-        why: 'the rule at src/lib/views/feeds/radar/Bucket.svelte:78 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/feeds/radar/Bucket.svelte styles .tip of ui/menu/Tooltip.svelte through section > :global(.tip .tool .glyph)',
-        why: 'the rule at src/lib/views/feeds/radar/Bucket.svelte:78 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/feeds/radar/Bucket.svelte styles .tool of ui/controls/ToolButton.svelte through section > :global(.tip .tool .glyph)',
-        why: 'the rule at src/lib/views/feeds/radar/Bucket.svelte:78 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/sources/search/Results.svelte styles .label of ui/controls/Chip.svelte, ui/controls/Tag.svelte, ui/tabs/TabFace.svelte through .hit :global(.label)',
-        why: 'the rule at src/lib/views/sources/search/Results.svelte:137 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/sources/search/Results.svelte styles .tool of ui/controls/ToolButton.svelte through .hit :global(.tool)',
-        why: 'the rule at src/lib/views/sources/search/Results.svelte:126 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/sources/search/Results.svelte styles .tool of ui/controls/ToolButton.svelte through .hit :global(.tool:hover)',
-        why: 'the rule at src/lib/views/sources/search/Results.svelte:133 reaches into the primitive rather than asking it for the difference'
-    },
-    {
-        line: 'views/shared/card/CardActions.svelte styles .opener of ui/menu/MenuOpener.svelte, ui/tabs/Tabs.svelte through [data-action-more] :global(.opener)',
-        why: 'the rule at src/lib/views/shared/card/CardActions.svelte:202 reaches into the primitive rather than asking it for the difference'
-    },
-    {
         line: 'views/shared/card/CardDocs.svelte styles .tool of ui/controls/ToolButton.svelte through .doc.human :global(.tool)',
         why: 'the rule at src/lib/views/shared/card/CardDocs.svelte:162 reaches into the primitive rather than asking it for the difference'
     },

@@ -76,6 +76,7 @@
     }
 
     .diagram {
+        overflow-x: auto;
         padding: 16px;
         border: 1px solid var(--line);
         border-radius: var(--radius);
@@ -115,7 +116,7 @@
         border: 2px solid var(--line);
         border-radius: var(--radius-sm);
         background: var(--card);
-        font-size: var(--fs-lg);
+        font-size: var(--fs-md);
         font-weight: 700;
         text-align: center;
     }

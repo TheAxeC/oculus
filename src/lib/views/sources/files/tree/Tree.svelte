@@ -46,6 +46,7 @@
     import VirtualRows from '$lib/ui/tree/VirtualRows.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import type { Attachment } from 'svelte/attachments';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import FileChooser from '$lib/ui/forms/file/FileChooser.svelte';
@@ -341,7 +342,7 @@
 {/snippet}
 
 {#if refused !== ''}
-    <p class="refused" role="alert">{refused}</p>
+    <Empty error message={refused} />
 {/if}
 
 <FileChooser
@@ -494,12 +495,6 @@
 </TreeView>
 
 <style>
-    .refused {
-        margin: 0;
-        color: var(--c-red-txt);
-        font-size: var(--fs-sm);
-    }
-
     .rows {
         display: flex;
         flex-direction: column;

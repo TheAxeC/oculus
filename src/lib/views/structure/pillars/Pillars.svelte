@@ -17,7 +17,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import RegistryHead from '$lib/views/shared/forms/RegistryHead.svelte';
     import Intro from '$lib/views/shared/prose/Intro.svelte';
-    import type { Snippet } from 'svelte';
+    import AddButton from '$lib/views/shared/forms/AddButton.svelte';
     import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import ArchivalCard from '$lib/views/structure/pillars/ArchivalCard.svelte';
@@ -78,7 +78,14 @@
 </script>
 
 {#snippet tools()}
-    <SourceToolbar {source} />
+    <SourceToolbar {source}>
+        {#if collection?.schema !== undefined}
+            <AddButton
+                open={held.adding}
+                onclick={() => write({ adding: toggleAdd(instance.id, 'pillars', held.adding) })}
+            />
+        {/if}
+    </SourceToolbar>
 {/snippet}
 
 <Pane title={t('views.pillars')} toolbar={tools}>
@@ -87,14 +94,12 @@
             collection="pillars"
             schema={collection?.schema}
             adding={held.adding}
-            {said}
-            ontoggle={() => write({ adding: toggleAdd(instance.id, 'pillars', held.adding) })}
+            bind:said
             onclose={() => write({ adding: false })}
-            onsaid={(words: string) => (said = words)}
             spaced
         >
-            {#snippet intro(actions: Snippet)}
-                <Intro html={inlineMarkdown(t('pillars.intro'))} trusted {actions} />
+            {#snippet intro()}
+                <Intro html={inlineMarkdown(t('pillars.intro'))} trusted />
             {/snippet}
         </RegistryHead>
 
@@ -214,7 +219,7 @@
 
     .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
         gap: 10px;
         margin-top: 10px;
     }
@@ -226,6 +231,10 @@
     h3 {
         margin: 0;
         color: var(--ink-txt, var(--ink));
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
 
     .note {

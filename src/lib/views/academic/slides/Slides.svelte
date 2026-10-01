@@ -36,7 +36,8 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Intro from '../../shared/prose/Intro.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
         catalogSignature,
@@ -171,7 +172,7 @@
     }
 </script>
 
-{#snippet tools()}
+{#snippet bar()}
     <Toolbar label={t('slides.toolbar')}>
         <ToolButton
             label={t('slides.save')}
@@ -182,12 +183,12 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('slides.title')} toolbar={tools} tinted>
+<Pane title={t('slides.title')} {bar} tinted>
     <div class="slides" data-instance={instance.id} data-slides>
         {#if rows.length === 0}
             <Empty message={t('slides.empty')} glyph={t('slides.empty_glyph')} />
         {:else}
-            <p class="intro">{t('slides.intro')}</p>
+            <Intro html={t('slides.intro')} trusted />
             <div class="rows" role="list" inert={busy}>
                 {#each shown as row, at (row.key)}
                     <div
@@ -227,6 +228,7 @@
                         <span class="steps">
                             <span data-step="up">
                                 <ToolButton
+                                    small
                                     label={t('slides.up')}
                                     title={t('slides.up_tip', titleOf(row.key))}
                                     disabled={at === 0}
@@ -236,6 +238,7 @@
                             </span>
                             <span data-step="down">
                                 <ToolButton
+                                    small
                                     label={t('slides.down')}
                                     title={t('slides.down_tip', titleOf(row.key))}
                                     disabled={at === shown.length - 1}
@@ -257,49 +260,55 @@
         flex-direction: column;
         gap: 8px;
         min-width: 0;
+        max-width: 100%;
     }
 
-    .intro {
-        margin: 0;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
+    /* A row is one line of the tree's height, and fits the pane it is in: the title gives way
+       before any control does. */
     .rows {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        min-width: 0;
     }
 
     .row {
         display: flex;
         align-items: center;
         gap: 6px;
+        box-sizing: border-box;
         min-width: 0;
-        border: 1px solid var(--line);
+        max-width: 100%;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         border-radius: var(--radius-sm);
-        padding: 3px 6px;
+        padding: 0 6px;
+    }
+
+    .row:hover {
+        background: var(--chip);
     }
 
     .row.dragging {
-        border-color: var(--accent);
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     .grip {
+        flex: none;
         color: var(--muted-txt, var(--muted));
         cursor: grab;
     }
 
     .at {
+        flex: none;
         min-width: 2ch;
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-num);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         text-align: right;
     }
 
     .pick {
-        flex: 1;
+        flex: 1 1 0;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -308,11 +317,14 @@
 
     .steps {
         display: flex;
+        flex: none;
         align-items: center;
         gap: 4px;
     }
 
+    /* The status words close the bar. */
     .said {
+        margin-left: auto;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
     }

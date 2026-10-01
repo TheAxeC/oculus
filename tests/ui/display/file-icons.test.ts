@@ -96,9 +96,6 @@ describe('the icon drawn before a name', () => {
         expect(read('src/lib/views/sources/repositories/changes/ChangeRow.svelte')).toContain(
             'width: calc(var(--icon-box) * var(--text-scale, 1));'
         );
-        expect(read('src/lib/views/sources/repositories/Repositories.svelte')).toContain(
-            '--action-font: calc(var(--icon-box) * var(--text-scale, 1));'
-        );
     });
 
     // Revert: treat every `set` entry of the table as an ending, a name with no leading dot (the

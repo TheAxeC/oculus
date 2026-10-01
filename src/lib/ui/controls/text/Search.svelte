@@ -67,16 +67,18 @@
     .search {
         min-width: 0;
         border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
+        border-radius: var(--input-radius);
         background: var(--chip);
         color: var(--ink-txt, var(--ink));
         font: inherit;
-        font-size: var(--fs-sm);
-        padding: 3px 8px;
+        font-size: var(--fs-md);
+        line-height: calc(var(--button-line) * var(--text-scale, 1));
+        padding: 4px 6px;
     }
 
     .fill {
-        flex: 1 1 auto;
+        flex: 1 1 12em;
+        max-width: 32em;
     }
 
     .search::placeholder {
@@ -84,8 +86,8 @@
     }
 
     .search:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     /* The terminal shape: a prompt on the panel, no box round it. */

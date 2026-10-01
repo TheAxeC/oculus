@@ -62,7 +62,6 @@ tests/views/system/history.test.ts :: says the value is back only when the endpo
 tests/views/system/history.test.ts :: shows a scalar whole and says how many things a list or a map holds | the case draws nothing and asserts over shown('a line')
 tests/views/system/hpc.test.ts :: lays the disk meters out in responsive columns | the case draws nothing and asserts over source
 tests/views/shared/prose/intro.test.ts :: takes a catalog line as it is written and puts a hub value through the sanitiser | the case draws nothing and asserts over source
-tests/views/shared/prose/intro.test.ts :: uses the chip surface, accent rule and prose size | the case draws nothing and asserts over source
 tests/views/shared/prose/intro.test.ts :: wraps its row at every width, so a control beside a long line is not cut off | the case draws nothing and asserts over intro.slice(0, intro.indexOf('}'))
 tests/views/structure/map-labels.test.ts :: counts boxes that only touch as apart | the case draws nothing and asserts over [...shownLabels(boxes, [], [])].sort()
 tests/views/structure/map-labels.test.ts :: draws a hovered or selected label whatever it overlaps, and leaves out what it covers | the case draws nothing and asserts over [...shownLabels(boxes, ['b'], [])].sort()

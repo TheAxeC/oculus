@@ -81,6 +81,7 @@
                             {#each kind.members as member (member.id)}
                                 <span class="member">
                                     <ToolButton
+                                        small
                                         label={member.label}
                                         title={member.label}
                                         onclick={() =>
@@ -114,6 +115,12 @@
 
     .groups {
         margin-top: 8px;
+    }
+
+    /* A group's head and a type's line are one row of the tree's height. */
+    .group-head,
+    .kind {
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     /* Every flex box on the path from the card to a title keeps its content's minimum width unless

@@ -31,7 +31,7 @@ import Table from '../../src/lib/ui/display/Table.svelte';
 import { order, type Column } from '../../src/lib/ui/display/table-rows.ts';
 import Ticker from '../../src/lib/ui/display/Ticker.svelte';
 import type { TickerRow } from '../../src/lib/ui/display/ticker-rows.ts';
-import Toolbar from '../../src/lib/ui/frame/Toolbar.svelte';
+import Toolbar from '../../src/lib/ui/frame/toolbar/Toolbar.svelte';
 import ToolButton from '../../src/lib/ui/controls/ToolButton.svelte';
 import Gallery from '../../src/lib/views/system/gallery/Gallery.svelte';
 import {

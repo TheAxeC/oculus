@@ -11,5 +11,6 @@ text:
         ag_stopped: stopped
         ag_tokens: '{0} tokens'
         ag_type: agent
+        agents_bar: Agents controls
         agents_glyph: agents
         view_agents: Agents

@@ -103,6 +103,7 @@
 </section>
 
 <style>
+    /* A section heading: the group label in the size of a label, bold and in capitals. */
     .sec-h {
         display: flex;
         align-items: center;
@@ -110,7 +111,8 @@
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        font-weight: 700;
         border-bottom: 1px solid var(--line);
         padding-bottom: 2px;
         margin-bottom: 4px;
@@ -122,7 +124,7 @@
     }
     .none {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         margin: 2px 0 0;
     }
     .outcome {
@@ -132,9 +134,9 @@
     .branch,
     .newbranch {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: 6px;
-        font-size: var(--fs-sm);
     }
     .newbranch,
     .commit {
@@ -148,6 +150,6 @@
     .branch .mt {
         margin-left: auto;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 </style>

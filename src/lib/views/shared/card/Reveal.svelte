@@ -28,13 +28,19 @@
     });
 </script>
 
-<div bind:this={node} class:flashing data-reveal={id}>
+<div bind:this={node} class="holder" class:flashing data-reveal={id}>
     {#if children}
         {@render children()}
     {/if}
 </div>
 
 <style>
+    /* The wrapper is the grid item of a card grid, so it may be narrower than its card's longest
+       unbroken word. */
+    .holder {
+        min-width: 0;
+    }
+
     .flashing {
         animation: reveal-flash 900ms ease-out;
     }

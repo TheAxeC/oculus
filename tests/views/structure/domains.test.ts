@@ -6,6 +6,7 @@ import Domains from '../../../src/lib/views/structure/domains/Domains.svelte';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { between, expectAddThenSource } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 let setInstanceState: ClientState['ui']['setInstanceState'];
@@ -25,6 +26,29 @@ function html(empty = false): string {
     const instance: Instance = { id: INSTANCE, view: 'domains', state: {} };
     return render(Domains, { context: clientContext(client), props: { instance } }).body;
 }
+
+describe('where the Domains view puts its controls', () => {
+    it('holds only bare icon actions in the header: add first, the control over the file last', () => {
+        expectAddThenSource(html(), catalog['collection.add'], 'registries/domains.yml');
+    });
+
+    it('keeps the add control out of the intro', () => {
+        const intro = between(html(), '<div class="intro', 'data-domain=');
+        // the add control is the header's icon, so the intro does not carry one
+        expect(intro).not.toContain(`aria-label="${catalog['collection.add']}"`);
+        // the intro is prose and holds no controls at all
+        expect(intro).not.toContain('class="actions');
+    });
+
+    // Revert: in views/structure/domains/DomainCard.svelte, put the compact Edit entry ToolButton
+    // back in the meta row in place of CardActions.
+    it('draws Edit entry among the card controls, an icon shown under the pointer', () => {
+        const body = html();
+        const actions = between(body, 'data-card-actions', '</div>');
+        expect(actions).toContain(`aria-label="${catalog['collection.form_edit_title']}"`);
+        expect(actions).toMatch(/class="tool[^"]*\bcompact\b/);
+    });
+});
 
 describe('the Domains view', () => {
     it('closes its toolbar with the control that opens registries/domains.yml', () => {
@@ -55,7 +79,10 @@ describe('the Domains view', () => {
     });
 
     it('draws the catalogued empty state when no domain has a member', () => {
-        expect(html(true)).toContain(catalog['domains.empty']);
+        const empty = between(html(true), '<p class="empty', '</p>');
+        // the message span is what the Empty primitive draws round its words
+        expect(empty).toMatch(/<span class="message[^"]*">/);
+        expect(empty).toContain(catalog['domains.empty']);
     });
 
     it('marks a domain dormant when none of its members are live', () => {

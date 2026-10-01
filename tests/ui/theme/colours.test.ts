@@ -500,12 +500,12 @@ describe('the surfaces a component may fill and paint on', () => {
     setAppearance(loadConfig(engineDir()).config);
     const names = themes().map((entry) => entry.name);
 
-    it('keeps both type scales at their cockpit pixels when the app scale is one', () => {
+    it('keeps both type scales at their pixels when the app scale is one', () => {
         const expected = {
-            ':root': [8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 15, 19, 24],
-            rice: [8, 9, 10, 10.5, 11.5, 12.5, 13.5, 16, 20]
+            ':root': [11, 12, 13, 14, 16, 20, 26],
+            rice: [10, 11, 12, 13, 14, 16, 20]
         };
-        const tokens = ['3xs', 'xxs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'];
+        const tokens = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'];
         for (const [block, pixels] of Object.entries(expected)) {
             expect(
                 tokens.map((token) => {

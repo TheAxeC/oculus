@@ -5,6 +5,7 @@ text:
         transcript_open: Open the transcript
         transcript_open_tip: read the turns of this session in the transcript view
         turn_assistant: Agent
+        turn_bar: Transcript session controls
         turn_cut: (cut at 20000 characters)
         turn_end: Jump to the last turn
         turn_end_glyph: disclosure

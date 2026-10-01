@@ -35,6 +35,7 @@ glyphs:
   now: ">"
   chevron: ">"
   collapse_all: "[-]"
+  add: "[+]"
   folder_add: "[+]"
   save: "[s]"
   branch: "[Y]"

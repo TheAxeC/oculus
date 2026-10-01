@@ -17,6 +17,7 @@ text:
         draft_label: The answer to send
         error: error
         every: every {0}m
+        filters: Inbox filters
         info: info
         live: live
         messages: '{0} messages'

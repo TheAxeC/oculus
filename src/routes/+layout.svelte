@@ -23,14 +23,15 @@
 </TooltipGroup>
 
 <style>
-    /* The page's own two colours. Every other surface is a component's, and every component reads
-       the tokens; ui/theme.ts sets the theme class on the body and the derived -txt tokens with
-       it. */
+    /* The page's own two colours and the body's text size, the main-words step, which text drawn
+       outside a pane (a popover or a menu portalled out of one) inherits. Every other surface is a
+       component's, and every component reads the tokens; ui/theme.ts sets the theme class on the
+       body and the derived -txt tokens with it. */
     :global(body) {
         margin: 0;
         background: var(--bg);
         color: var(--ink-txt, var(--ink));
-        font: var(--fs-xl) / 1.5 var(--font-ui);
+        font: var(--fs-md) / 1.5 var(--font-ui);
     }
 
     /* Every scrolling box draws a thin bar in the theme's two scrollbar tokens, which ui/theme.ts

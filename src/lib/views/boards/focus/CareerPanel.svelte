@@ -7,6 +7,7 @@
     // holds no career file, which is the ordinary case for a hub that keeps no career plan.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import {
@@ -167,6 +168,7 @@
                                     {#each statuses as one (one.key)}
                                         {#if one.key !== host.status}
                                             <ToolButton
+                                                small
                                                 label={one.key}
                                                 title={t('focus.host', one.key)}
                                                 onclick={() => move(host, one.key)}
@@ -247,7 +249,7 @@
         </div>
     </details>
 {:else}
-    <p class="empty">{t('focus.career_empty')}</p>
+    <Empty message={t('focus.career_empty')} />
 {/if}
 
 <style>
@@ -267,7 +269,7 @@
         align-items: center;
         gap: 6px;
         padding: 8px 12px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -288,7 +290,7 @@
 
     .seclbl {
         margin: 10px 0 3px;
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -297,7 +299,7 @@
 
     .sub {
         margin: 4px 0 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -319,7 +321,7 @@
         border: 1px solid var(--line);
         border-radius: 6px;
         background: var(--chip);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     :global(body.wall) .fact {
@@ -328,7 +330,7 @@
 
     .fact b {
         margin-right: 5px;
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--accent-txt, var(--accent));
@@ -357,7 +359,7 @@
     }
 
     .caveat {
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .order {
@@ -367,21 +369,21 @@
 
     .order li {
         margin: 2px 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .ordernote {
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
     .inst {
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
     .tag {
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -406,9 +408,23 @@
         margin: 3px 0;
     }
 
+    /* `--row-reveal` says whether the status buttons of a host are drawn: 0 at rest and 1 while the
+       host is hovered or holds the focus, and always on a screen whose pointer does not hover. */
     .host {
+        --row-reveal: 0;
         border: 1px solid var(--line);
         border-radius: 6px;
+    }
+
+    .host:hover,
+    .host:focus-within {
+        --row-reveal: 1;
+    }
+
+    @media (hover: none) {
+        .host {
+            --row-reveal: 1;
+        }
     }
 
     .host-h {
@@ -416,8 +432,9 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
-        padding: 4px 8px;
-        font-size: var(--fs-sm);
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+        padding: 0 8px;
+        font-size: var(--fs-md);
         cursor: pointer;
     }
 
@@ -427,7 +444,7 @@
         text-align: center;
         border-radius: 50%;
         background: var(--chip);
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         color: var(--muted-txt, var(--muted));
     }
@@ -452,6 +469,8 @@
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
     }
 
     .crit {
@@ -461,12 +480,6 @@
 
     .crit li {
         margin: 2px 0;
-        font-size: var(--fs-sm);
-    }
-
-    .empty {
-        margin: 0;
         font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
     }
 </style>

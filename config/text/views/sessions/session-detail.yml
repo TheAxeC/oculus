@@ -10,6 +10,7 @@ text:
         clear_title: clear the title
         context: context
         context_num: '{0} / {1}'
+        detail_bar: Session controls
         detail_glyph: detail
         detail_title: Session
         f_branch: branch

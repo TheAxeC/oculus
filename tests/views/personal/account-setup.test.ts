@@ -85,6 +85,18 @@ describe('the account setup view', () => {
         expect(body).not.toContain(t('accounts.reading'));
     });
 
+    it('draws the unreadable setup as the error box with a retry button', async () => {
+        vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
+        await client.accounts.loadSetup();
+        const body = render(AccountSetup, {
+            context: clientContext(client),
+            props: { instance }
+        }).body;
+        const box = body.slice(body.indexOf('role="alert"'));
+        expect(box).toContain(t('accounts.unreachable'));
+        expect(box).toContain(t('accounts.retry'));
+    });
+
     it('draws a section per provider, each saying whether it is set up', async () => {
         const body = await draw({ google: true, microsoft: false });
         const google = body.slice(body.indexOf('data-provider="google"'));

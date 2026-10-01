@@ -11,8 +11,9 @@
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
+    import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
+    import { editAction } from '$lib/views/shared/card/card';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -64,6 +65,30 @@
     const groups = $derived(groupProjects(projects, archiveDead()));
     /** The hub path the venue's `link` names, or undefined for an address or no link. */
     const linkPath = $derived(hubPathsOf({ link: venue.link }).at(0));
+
+    /**
+     * The card's controls, drawn while the card is hovered or holds the focus: Show in Files for a
+     * link that is a hub path, and the edit form for a venue the collection file holds.
+     */
+    const actions = $derived.by((): CardAction[] => {
+        const rows: CardAction[] = [];
+        const path = linkPath;
+        if (path !== undefined) {
+            rows.push({
+                id: `files:${path}`,
+                label: t('venues.show_in_files'),
+                title: t('venues.show_in_files_tip', path),
+                glyph: 'show_in_files',
+                onclick: () => {
+                    showInFiles(path);
+                }
+            });
+        }
+        if (entry !== null && schema !== undefined) {
+            rows.push(editAction(editing, onedit));
+        }
+        return rows;
+    });
     /** One item of the card's metadata line. */
     type MetaItem = {
         label: string;
@@ -134,25 +159,8 @@
             {#if venue.free}
                 <Tag label={venue.free} tone={freeTone(venue.free)} />
             {/if}
-            {#if linkPath !== undefined}
-                <ToolButton
-                    label={t('venues.show_in_files')}
-                    title={t('venues.show_in_files_tip', linkPath)}
-                    glyph="show_in_files"
-                    compact
-                    onclick={() => {
-                        showInFiles(linkPath);
-                    }}
-                />
-            {/if}
-            {#if entry !== null && schema !== undefined}
-                <ToolButton
-                    label={t('collection.form_edit_title')}
-                    glyph={t('collection.edit_glyph')}
-                    compact
-                    active={editing}
-                    onclick={onedit}
-                />
+            {#if actions.length > 0}
+                <CardActions {actions} />
             {/if}
         {/snippet}
 
@@ -259,6 +267,7 @@
     }
 
     .label {
+        font-size: var(--fs-xs);
         font-weight: 700;
     }
 </style>

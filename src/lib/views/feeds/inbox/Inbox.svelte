@@ -29,8 +29,9 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import AccountActions from '../../shared/accounts/AccountActions.svelte';
     import AccountList from '../../shared/accounts/AccountList.svelte';
     import AddAccount from '../../shared/accounts/AddAccount.svelte';
     import ConnectorHead from '../../shared/accounts/ConnectorHead.svelte';
@@ -107,13 +108,27 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('inbox.search')}>
-        <Search
-            value={held.search}
-            placeholder={t('inbox.search')}
-            oninput={(search: string) => write({ search })}
-        />
-    </Toolbar>
+    <AccountActions bind:adding />
+{/snippet}
+
+{#snippet bar()}
+    <ConnectorHead
+        {data}
+        words={headWords()}
+        notice={data?.notesError ? t('inbox.notes_error', data.notesError) : ''}
+        onrefresh={() =>
+            void refresh().then((answer) => (said = answer.ok ? '' : (answer.error ?? '')))}
+    />
+    <div class="filters">
+        <Toolbar label={t('inbox.filters')}>
+            <Search
+                fill
+                value={held.search}
+                placeholder={t('inbox.search')}
+                oninput={(search: string) => write({ search })}
+            />
+        </Toolbar>
+    </div>
 {/snippet}
 
 {#snippet card(thread: InboxThread)}
@@ -149,17 +164,8 @@
     {/if}
 {/snippet}
 
-<Pane title={t('views.inbox')} toolbar={tools}>
+<Pane title={t('views.inbox')} toolbar={tools} {bar}>
     <div class="inbox" data-instance={instance.id}>
-        <ConnectorHead
-            {data}
-            words={headWords()}
-            notice={data?.notesError ? t('inbox.notes_error', data.notesError) : ''}
-            onrefresh={() =>
-                void refresh().then((answer) => (said = answer.ok ? '' : (answer.error ?? '')))}
-            {adding}
-            onadd={() => (adding = !adding)}
-        />
         {#if adding}
             <AddAccount kind="mail" onclose={() => (adding = false)} />
         {/if}
@@ -220,9 +226,24 @@
 </Pane>
 
 <style>
+    /* One column the width of the pane, however long a line inside it: a grid's own column would
+       otherwise grow to the widest line it holds and widen the pane. */
     .inbox {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: 12px;
+    }
+
+    .inbox > :global(*),
+    .cards > :global(*) {
+        min-width: 0;
+    }
+
+    /* The search takes a line of the bar of its own, under the connector's status. */
+    .filters {
+        display: flex;
+        flex: 1 0 100%;
+        min-width: 0;
     }
 
     .said {
@@ -233,7 +254,9 @@
     .group h3 {
         margin: 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-lg);
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        text-transform: uppercase;
     }
 
     /* One column, so the cards read top to bottom in the order the section sorted them. */

@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import Agents from '../../../src/lib/views/sessions/agents/Agents.svelte';
+import Changes from '../../../src/lib/views/sessions/changes/Changes.svelte';
 import SessionDetail from '../../../src/lib/views/sessions/session-detail/SessionDetail.svelte';
 import SessionList from '../../../src/lib/views/sessions/session-list/SessionList.svelte';
 import Terminal from '../../../src/lib/views/sessions/terminal/Terminal.svelte';
@@ -26,7 +27,18 @@ import type { Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Component } from 'svelte';
 import type { ViewProps } from '../../../src/lib/state/workbench/navigation/registry.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
-import { ALPHA, HUB, UNKNOWN, catalog, installFixture, renderView, tree } from './views-fixture.ts';
+import {
+    ALPHA,
+    HUB,
+    UNKNOWN,
+    barOf,
+    catalog,
+    headerOf,
+    installFixture,
+    renderView,
+    toolsOf,
+    tree
+} from './views-fixture.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -337,6 +349,70 @@ describe('the terminal view with nothing selected', () => {
     });
 });
 
+describe('where the session views put their controls', () => {
+    const pickers: [string, Component<ViewProps>][] = [
+        ['agents', Agents],
+        ['changes', Changes],
+        ['session detail', SessionDetail],
+        ['timeline', Timeline],
+        ['transcript', Transcript]
+    ];
+
+    // Revert: pass the picker to the Pane as its `toolbar` again.
+    for (const [name, view] of pickers) {
+        it(`puts the ${name} view's session picker and pin in the bar and not in the header`, () => {
+            select('live-one');
+            const body = html(view);
+            expect(barOf(body)).toContain('data-session-picker');
+            expect(barOf(body)).toContain(catalog['sessions.pin_pane']);
+            // the picker is a bar control and not an icon action, so the header lacks it
+            expect(headerOf(body)).not.toContain('data-session-picker');
+            // the pin control sits with the picker in the bar, and the header keeps icons only
+            expect(headerOf(body)).not.toContain(catalog['sessions.pin_pane']);
+        });
+    }
+
+    it('draws one pin control in the Changes bar, the picker having its own', () => {
+        select('live-one');
+        const pins = barOf(html(Changes)).match(
+            new RegExp(`<span class="label">${catalog['sessions.pin_pane']}</span>`, 'g')
+        );
+        expect(pins).toHaveLength(1);
+    });
+
+    // Revert: draw the Jump to the last turn control as a text button.
+    it('draws the transcript jump control as a bare icon named by its words', () => {
+        select('live-one');
+        const head = headerOf(html(Transcript));
+        const found = toolsOf(head);
+        expect(found).toHaveLength(1);
+        expect(found[0]).toMatch(/\bbare\b/);
+        expect(head).toContain(`aria-label="${catalog['sessions.turn_end']}"`);
+        // an icon action draws no words beside the icon, only its tooltip
+        expect(head).not.toContain('<span class="label">');
+    });
+
+    it('draws the four pinned-view icons of a pinned session detail as bare icons', () => {
+        const head = headerOf(html(SessionDetail, { session: 'live-one', label: 'The live one' }));
+        const found = toolsOf(head);
+        expect(found).toHaveLength(4);
+        for (const one of found) expect(one).toMatch(/\bbare\b/);
+        for (const key of ['view_transcript', 'view_timeline', 'view_changes', 'view_agents']) {
+            expect(head).toContain(`aria-label="${catalog[`sessions.${key}`]}"`);
+        }
+        // an icon action draws no words beside the icon, only its tooltip
+        expect(head).not.toContain('<span class="label">');
+    });
+
+    it('draws no header toolbar where the only controls are the bar ones', () => {
+        select('live-one');
+        for (const view of [Agents, Changes, Timeline, SessionDetail]) {
+            // these views have no header controls, since all of theirs belong to the bar
+            expect(headerOf(html(view))).not.toContain('<div class="tools');
+        }
+    });
+});
+
 describe('the terminal toolbar', () => {
     it('carries no pin control, since a tab owns what it shows', () => {
         select(null);
@@ -358,8 +434,11 @@ describe('the terminal toolbar', () => {
     });
 
     it("audits that the bar's New starts a shell in this tab at once", () => {
-        const source = readFileSync('src/lib/views/sessions/terminal/Terminal.svelte', 'utf8');
-        expect(source).toContain("onclick={() => void startInTab(instance.id, 'shell')}");
+        const source = readFileSync(
+            'src/lib/views/sessions/terminal/bar/TerminalActions.svelte',
+            'utf8'
+        );
+        expect(source).toContain("onclick={() => void startInTab(instance, 'shell')}");
     });
 });
 

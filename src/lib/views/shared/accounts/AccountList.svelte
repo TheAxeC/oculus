@@ -110,12 +110,14 @@
             <span class="controls">
                 {#if row.needsSetup === true}
                     <ToolButton
+                        small
                         label={t('accounts.open_setup', setupName(row))}
                         glyph={t('views.account_setup_glyph')}
                         onclick={openSetup}
                     />
                 {:else if row.status !== 'connected' && signsIn(row)}
                     <ToolButton
+                        small
                         label={connecting(kind, row)
                             ? t('accounts.connecting')
                             : t('accounts.connect')}
@@ -123,21 +125,24 @@
                         onclick={() => void press(row)}
                     />
                 {/if}
-                <Menu
-                    label={t('ui.row_menu')}
-                    items={[
-                        {
-                            id: 'remove',
-                            label: t('accounts.remove'),
-                            glyph: t('accounts.remove_glyph')
-                        }
-                    ]}
-                    glyph={t('accounts.menu_glyph')}
-                    compact
-                    placement="down"
-                    align="right"
-                    onpick={() => (asking = row)}
-                />
+                <span class="more">
+                    <Menu
+                        label={t('ui.row_menu')}
+                        items={[
+                            {
+                                id: 'remove',
+                                label: t('accounts.remove'),
+                                glyph: t('accounts.remove_glyph')
+                            }
+                        ]}
+                        glyph={t('accounts.menu_glyph')}
+                        compact
+                        bare
+                        placement="down"
+                        align="right"
+                        onpick={() => (asking = row)}
+                    />
+                </span>
             </span>
         </li>
         {#if row.needsSetup === true}
@@ -171,12 +176,35 @@
         list-style: none;
         min-width: 0;
     }
+    /* One line of the tree's row height. The row's menu is drawn while the pointer is over the row
+       or the focus is inside it, and always where nothing hovers; it keeps its place and its
+       place in the tab order while clear. */
     li {
+        --row-reveal: 0;
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 12px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         min-width: 0;
+        font-size: var(--fs-md);
+    }
+
+    li:hover,
+    li:focus-within {
+        --row-reveal: 1;
+    }
+
+    @media (hover: none) {
+        li {
+            --row-reveal: 1;
+        }
+    }
+
+    .more {
+        display: inline-flex;
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
     }
     .who,
     .controls {

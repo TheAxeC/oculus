@@ -84,12 +84,12 @@
     }
 
     .title {
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .description {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .mark {

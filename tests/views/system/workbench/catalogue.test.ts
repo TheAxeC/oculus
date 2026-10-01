@@ -97,8 +97,12 @@ describe('the Views catalogue', () => {
             badgeTone: () => 'red'
         });
         const body = draw();
-        expect(body).toContain('--badge-bg: var(--c-red)');
-        expect(body).toMatch(/class="badge[^>]*>(?:<!--[^>]*-->)*3 5</);
+        // the badge is the Chip primitive in the registration's hue
+        expect(body).toContain('--tone: var(--c-red)');
+        expect(body).toMatch(
+            /<span class="badge[^>]*>(?:<!--[^>]*-->|\s)*<span class="chip[^>]*toned/
+        );
+        expect(body).toMatch(/class="label[^>]*>(?:<!--[^>]*-->)*3 5</);
     });
 
     it('names the key in the hover words of an entry a chord reaches', () => {

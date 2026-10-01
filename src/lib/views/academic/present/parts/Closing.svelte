@@ -35,7 +35,7 @@
 
     .kicker {
         color: var(--accent-txt, var(--accent));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         font-weight: 700;
         letter-spacing: 0.12em;
         text-transform: uppercase;

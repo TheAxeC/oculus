@@ -274,17 +274,18 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
-    .branch .lb,
-    .branch .mt {
+    .branch .lb {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
     }
 
     .branch .mt {
         margin-left: auto;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
     }
 
     .path {
@@ -294,13 +295,13 @@
         white-space: nowrap;
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-mono);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .none {
         margin: 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
     }
 
     .outcome {
@@ -313,7 +314,7 @@
         align-items: center;
         gap: 6px;
         color: var(--c-scm-conflict-txt);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .sequence .said {

@@ -182,11 +182,14 @@
                                 <Tag label={account.billing} />
                             {/if}
                             {#if account.tool === 'claude'}
-                                <ToolButton
-                                    label={t('usage.refresh')}
-                                    glyph="refresh"
-                                    onclick={() => refreshUsageAccount(account.label)}
-                                />
+                                <span class="act">
+                                    <ToolButton
+                                        compact
+                                        label={t('usage.refresh')}
+                                        glyph="refresh"
+                                        onclick={() => refreshUsageAccount(account.label)}
+                                    />
+                                </span>
                             {/if}
                         {/snippet}
                         {#if hasStatus(account)}
@@ -256,11 +259,13 @@
             <section class="history">
                 <h2>{t('usage.history')}</h2>
                 {#if data.days.length}
-                    <Table
-                        {columns}
-                        rows={usageRows(data.days, t('usage.total'))}
-                        rowKey="rowKey"
-                    />
+                    <div class="scroller">
+                        <Table
+                            {columns}
+                            rows={usageRows(data.days, t('usage.total'))}
+                            rowKey="rowKey"
+                        />
+                    </div>
                 {:else}
                     <Empty message={t('usage.no_history')} glyph="circle_empty" />
                 {/if}
@@ -279,7 +284,7 @@
 
     .accounts {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
         gap: 10px;
     }
 
@@ -295,15 +300,14 @@
         gap: 8px;
     }
 
-    .window-name,
-    .live-row {
-        font-size: var(--fs-sm);
+    .window-name {
+        font-size: var(--fs-xs);
     }
 
     .refresher {
         margin: 6px 0 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .live {
@@ -313,24 +317,46 @@
     .live h3,
     .history h2 {
         margin: 0 0 6px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--muted-txt, var(--muted));
     }
 
+    /* A live session is a row of facts: one line of the tree's row height, growing by whole lines
+       when its words wrap. */
     .live-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 4px 10px;
-        padding: 4px 0;
+        align-items: center;
+        gap: 0 10px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         border-top: 1px solid var(--line);
+        font-size: var(--fs-md);
     }
 
     .session {
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-num);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
+    }
+
+    /* The refresh control is drawn as its card says, ui/frame/Card.svelte's `--card-reveal`: under
+       the pointer, with the focus inside the card, or always where nothing hovers. It keeps its
+       place in the layout and in the tab order while clear. */
+    .act {
+        display: inline-flex;
+        margin-left: auto;
+        opacity: var(--card-reveal);
+        transition: opacity 120ms ease-out;
     }
 
     .history {
+        min-width: 0;
+    }
+
+    /* The table scrolls inside this box, so a narrow pane scrolls the table and not itself. */
+    .scroller {
         min-width: 0;
         overflow-x: auto;
     }

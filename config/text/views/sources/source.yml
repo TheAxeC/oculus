@@ -1,6 +1,7 @@
 # Oculus text owned by the source view.
 text:
     source:
+        bar: Source actions
         binary: This file is not text on disk; the editor saves nothing over it.
         blame: Blame
         blame_title: Show who last changed each line, and when
@@ -12,8 +13,10 @@ text:
         open_change: Open Change
         preview: Preview
         preview_glyph: page
+        preview_title: Show the rendered Markdown beside the text
         previous_change: Go to Previous Change
         readonly: This file is read-only on this machine; the editor shows it and saves nothing.
+        retry: Read again
         save_failed: save failed
         saved: saved
         saving: saving...

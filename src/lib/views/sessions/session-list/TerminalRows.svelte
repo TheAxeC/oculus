@@ -46,7 +46,7 @@
 
 {#snippet row(entry: Terminal)}
     {@const armed = arming === entry.id}
-    <div class="row" class:on={entry.id === selected()}>
+    <div class="row" class:on={entry.id === selected()} class:armed>
         <RowButton
             title={t('sessions.select_tip')}
             selected={entry.id === selected()}
@@ -66,33 +66,35 @@
                 <span class="ts">{stamp(entry.created, now)}</span></span
             >
         </RowButton>
-        <div class="menu">
+        <div class="actions">
             <Menu
                 label={t('ui.row_menu')}
                 items={terminalRowItems()}
                 glyph={t('ui.pane_menu_glyph')}
                 compact
+                bare
+                inherit={entry.id === selected()}
                 placement="down"
                 align="right"
                 onpick={(picked) => {
                     if (picked === 'pinned') onpinned(entry);
                 }}
             />
+            <!-- One button whose words follow the arming, so the element focused at the first press
+                 is the one the second press confirms. -->
+            <ToolButton
+                bare
+                compact={!armed}
+                label={armed ? t('ui.confirm_stop') : t('sessions.stop_terminal')}
+                glyph={armed ? undefined : t('sessions.dismiss_glyph')}
+                title={armed ? t('sessions.confirm_stop') : t('sessions.stop_terminal')}
+                onclick={() => void onstop(entry)}
+            >
+                {#if armed}
+                    <span class="confirm">{t('ui.confirm_stop')}</span>
+                {/if}
+            </ToolButton>
         </div>
-        <!-- One button whose words follow the arming, so the element focused at the first press is
-             the one the second press confirms. -->
-        <ToolButton
-            bare
-            compact={!armed}
-            label={armed ? t('ui.confirm_stop') : t('sessions.stop_terminal')}
-            glyph={armed ? undefined : t('sessions.dismiss_glyph')}
-            title={armed ? t('sessions.confirm_stop') : t('sessions.stop_terminal')}
-            onclick={() => void onstop(entry)}
-        >
-            {#if armed}
-                <span class="confirm">{t('ui.confirm_stop')}</span>
-            {/if}
-        </ToolButton>
     </div>
 {/snippet}
 
@@ -120,7 +122,7 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        height: 22px;
+        height: calc(var(--tree-row) * var(--text-scale, 1));
         margin: 0;
         padding: 0 8px;
         color: var(--muted-txt, var(--muted));
@@ -142,9 +144,35 @@
         font-weight: 400;
     }
 
-    .row .menu {
+    /* The row's controls are drawn while the pointer is on the row, the focus is inside it, it is
+       the selected row or its Stop is armed, and always on a screen that does not hover. */
+    .row {
+        --row-reveal: 0;
+        display: flex;
+        align-items: stretch;
+        min-width: 0;
+        border-left: 2px solid transparent;
+    }
+
+    .row:hover,
+    .row:focus-within,
+    .row.on,
+    .row.armed {
+        --row-reveal: 1;
+    }
+
+    @media (hover: none) {
+        .row {
+            --row-reveal: 1;
+        }
+    }
+
+    .actions {
         display: flex;
         align-items: flex-start;
+        padding-top: 1px;
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
     }
 
     .confirm {
@@ -153,19 +181,17 @@
         letter-spacing: 0.04em;
     }
 
-    .row {
-        display: flex;
-        align-items: stretch;
-        min-width: 0;
-        border-left: 2px solid transparent;
-    }
-
     .row:hover {
         background: var(--chip);
     }
 
     .row.on {
         background: var(--accent-bg);
+        color: var(--on-accent-bg, var(--ink));
+    }
+
+    .row.on .meta {
+        color: inherit;
     }
 
     /* Each line is one list row of VS Code's, 22 pixels. */
@@ -174,7 +200,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        height: 22px;
+        height: calc(var(--tree-row) * var(--text-scale, 1));
         min-width: 0;
         white-space: nowrap;
     }
@@ -188,7 +214,7 @@
     .meta {
         overflow: hidden;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         padding-left: 12px;
     }
 

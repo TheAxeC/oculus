@@ -202,7 +202,7 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        height: 22px;
+        height: calc(var(--tree-row) * var(--text-scale, 1));
         margin: 0;
         padding: 0 8px;
         color: var(--muted-txt, var(--muted));
@@ -224,11 +224,26 @@
         font-weight: 400;
     }
 
+    /* The row's menu is drawn while the pointer is on the row, the focus is inside it, it is the
+       selected row, and always on a screen that does not hover. */
     .row {
+        --row-reveal: 0;
         display: flex;
         align-items: stretch;
         min-width: 0;
         border-left: 2px solid transparent;
+    }
+
+    .row:hover,
+    .row:focus-within,
+    .row.on {
+        --row-reveal: 1;
+    }
+
+    @media (hover: none) {
+        .row {
+            --row-reveal: 1;
+        }
     }
 
     .row:hover {
@@ -258,7 +273,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        height: 22px;
+        height: calc(var(--tree-row) * var(--text-scale, 1));
         min-width: 0;
         white-space: nowrap;
     }
@@ -272,14 +287,14 @@
     .two {
         overflow: hidden;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         padding-left: 12px;
     }
 
     .mark {
         flex: none;
         display: inline-flex;
-        font-size: var(--fs-3xs);
+        font-size: var(--fs-xs);
     }
 
     .dot {
@@ -294,6 +309,8 @@
         display: flex;
         align-items: flex-start;
         padding-top: 1px;
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
     }
 
     .rename {

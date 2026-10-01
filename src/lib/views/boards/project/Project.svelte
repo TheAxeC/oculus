@@ -266,7 +266,8 @@
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
         margin-bottom: 4px;
-        padding: 5px 2px;
+        padding: 0 2px;
+        line-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .session.on {
@@ -291,7 +292,6 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        margin-top: 2px;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }

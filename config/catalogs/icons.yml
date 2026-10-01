@@ -34,6 +34,7 @@ icons:
     now: play
     chevron: chevron-right
     collapse_all: chevrons-down-up
+    add: plus
     folder_add: folder-plus
     save: save
     branch: git-branch

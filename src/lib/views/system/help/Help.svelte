@@ -83,6 +83,16 @@
         box-sizing: border-box;
     }
 
+    /* The manual's table of contents: each entry is one line of the tree's row height, with the
+       entries' own margins gone, and a link takes the application's link rule (no underline at
+       rest, underlined under the pointer, the one ring on focus). The selector names the document
+       the Markdown partial draws, since its HTML reaches the page without this component's
+       scope. */
+    .view :global(.doc ul.toc li) {
+        margin: 0;
+        line-height: calc(var(--tree-row) * var(--text-scale, 1));
+    }
+
     :global(body.rice) .view {
         font-family: var(--font-mono);
     }

@@ -55,7 +55,9 @@
         gap: 6px;
     }
 
+    /* The strip is one row of the tree's height; a strip that wraps grows by whole lines. */
     .stats {
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         margin-bottom: 8px;
     }
 

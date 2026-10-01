@@ -124,6 +124,7 @@
         margin: 0 0 2px;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
+        font-weight: 700;
         text-transform: uppercase;
     }
 

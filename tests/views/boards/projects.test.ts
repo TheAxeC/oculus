@@ -39,6 +39,7 @@ import type {
 } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { between } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -856,5 +857,28 @@ describe('the file finder', () => {
         vi.unstubAllGlobals();
 
         expect(asked).not.toHaveBeenCalled();
+    });
+});
+
+describe('where the board puts its controls', () => {
+    it('puts the search, the filter menu, the toggles and both segments in the bar', () => {
+        const body = html('projects');
+        const bar = between(body, '<div class="viewbar', '<div class="body');
+        expect(bar).toContain('class="search');
+        expect(bar).toContain(`aria-label="${catalog['board.view']}"`);
+        expect(bar).toContain(`aria-label="${catalog['board.labels']}"`);
+        expect(bar).toContain(catalog['board.type_toggle_tip'].split('{0}')[0]);
+        expect(bar).toContain(catalog['board.quick_stale']);
+    });
+
+    it('keeps only bare icon actions in the header', () => {
+        const header = between(html('projects'), '<header', '</header>');
+        const tools = header.match(/<button[^>]*class="tool[^"]*"/g) ?? [];
+        expect(tools.length).toBeGreaterThan(0);
+        for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
+        // a search box is a control of the bar and the header holds icon actions only
+        expect(header).not.toContain('class="search');
+        // a segment is a control of the bar and the header holds icon actions only
+        expect(header).not.toContain('role="radiogroup"');
     });
 });

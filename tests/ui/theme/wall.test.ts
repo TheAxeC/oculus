@@ -116,8 +116,8 @@ const SOLID: Record<string, string> = {
         'a hover response, saying the bare opener is under the pointer',
     "src/lib/ui/menu/MenuOpener.svelte .opener.status:hover, .opener.status[aria-expanded='true']":
         'a hover response, saying which status bar item the pointer is on or has open',
-    'src/lib/views/shared/card/CardActions.svelte [data-action-more] :global(.opener)':
-        'a control, the More opener drawn as the card controls beside it are',
+    'src/lib/ui/menu/MenuOpener.svelte .opener.compact:hover':
+        'a hover response, saying which compact opener the pointer is on',
     "src/lib/ui/menu/MenuList.svelte .item:hover, .item[data-state='open']":
         'a hover response inside a list that is translucent, kept while its submenu shows',
     'src/lib/ui/forms/choice/GlyphList.svelte .item[data-highlighted]':
@@ -141,6 +141,16 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which bare icon the pointer is on',
     "src/lib/ui/controls/ToolButton.svelte .tool.status:hover:not(:disabled), .tool.status[aria-expanded='true']":
         'a hover response, saying which status bar item the pointer is on or has open',
+    'src/lib/ui/controls/ToolButton.svelte .tool.compact:not(.active):hover:not(:disabled)':
+        'a hover response, saying which compact icon the pointer is on',
+    "src/lib/ui/frame/toolbar/Toolbar.svelte .more:hover, .more[data-state='open']":
+        'a hover response, saying the overflow opener is under the pointer or open',
+    'src/lib/shell/keys/Palette.svelte .result:hover':
+        'a hover response, saying which result the pointer is on',
+    'src/lib/views/academic/slides/Slides.svelte .row:hover':
+        'a hover response, saying which row the pointer is on',
+    'src/lib/views/sources/search/Results.svelte .row:hover':
+        'a hover response, saying which row the pointer is on',
     'src/lib/ui/tabs/Breadcrumb.svelte .crumb:hover':
         'a hover response, saying which segment the pointer is on',
     'src/lib/ui/tree/TreeItem.svelte .item:not(.muted, .warn, .error):hover':

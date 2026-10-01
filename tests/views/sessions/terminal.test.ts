@@ -48,7 +48,18 @@ import { area, payload, record, terminal, workspace } from '../../fixtures/sessi
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 import { t } from '../../../src/lib/state/shared/words/text.ts';
 import SessionList from '../../../src/lib/views/sessions/session-list/SessionList.svelte';
-import { ALPHA, HUB, catalog, installFixture, renderView, textOf, tree } from './views-fixture.ts';
+import {
+    ALPHA,
+    HUB,
+    barOf,
+    catalog,
+    headerOf,
+    installFixture,
+    renderView,
+    textOf,
+    toolsOf,
+    tree
+} from './views-fixture.ts';
 
 let client: ClientState;
 let version = 500;
@@ -106,8 +117,7 @@ function withTerminals(...panes: (typeof claude)[]): void {
 }
 
 /** One Terminal tab on the current page, holding this state, rendered. */
-function html(state: unknown = {}): string {
-    const id = `terminal-${(version += 1)}`;
+function html(state: unknown = {}, id = `terminal-${(version += 1)}`): string {
     client.ui.setInstanceState(id, state);
     const instance: Instance = { id, view: 'terminal', state };
     client.layout.apply({ root: { kind: 'pane', tabs: [instance], active: id } });
@@ -135,6 +145,49 @@ function listOf(body: string): string {
 function owning(terminals: string[], over: Record<string, unknown> = {}): Record<string, unknown> {
     return { id: 'own-tab', terminals, shown: terminals[0] ?? null, ...over };
 }
+
+describe('where the Terminal view puts its controls', () => {
+    // Revert: pass TerminalTitle and TerminalFontTools to the Pane as its `toolbar` again.
+    it('puts the title and the font buttons in the bar and only bare icons in the header', () => {
+        withTerminals(vim);
+        const body = html(owning([vim.id]));
+        expect(barOf(body)).toContain('data-terminal-shown');
+        for (const key of ['terminal_smaller', 'terminal_larger', 'terminal_reset']) {
+            expect(barOf(body)).toContain(`aria-label="${catalog[`sessions.${key}`]}"`);
+            // the font buttons are bar controls, so the header leaves them out
+            expect(headerOf(body)).not.toContain(catalog[`sessions.${key}`]);
+        }
+        // the title is a bar control, so the header leaves it out
+        expect(headerOf(body)).not.toContain('data-terminal-shown');
+        const tools = toolsOf(headerOf(body));
+        expect(tools.length).toBeGreaterThan(0);
+        for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
+        expect(headerOf(body)).toContain(`aria-label="${catalog['sessions.new_terminal']}"`);
+        expect(headerOf(body)).toContain(`aria-label="${catalog['sessions.terminal_split']}"`);
+        // an icon action draws no words beside the icon, only its tooltip
+        expect(headerOf(body)).not.toContain('<span class="label">');
+    });
+
+    it('draws the font buttons in the bar of a tab that shows the composer alone', () => {
+        const body = html(owning([]));
+        expect(barOf(body)).toContain(`aria-label="${catalog['sessions.terminal_smaller']}"`);
+    });
+
+    it('says what the tab was refused at the end of the bar, after the font buttons', () => {
+        withTerminals(vim);
+        const id = 'terminal-refused';
+        client.terminals.say(id, 'the start was refused');
+        const strip = barOf(html(owning([vim.id]), id));
+        const alert = strip.indexOf('role="alert"');
+        expect(alert).toBeGreaterThan(-1);
+        expect(strip.indexOf(`aria-label="${catalog['sessions.terminal_reset']}"`)).toBeLessThan(
+            alert
+        );
+        expect(strip).toContain('the start was refused');
+        // the refusal is shown in the bar's alert and is not repeated in the header
+        expect(headerOf(html(owning([vim.id]), id))).not.toContain('the start was refused');
+    });
+});
 
 describe('the steer box under the grid', () => {
     it('is drawn under an agent terminal', () => {

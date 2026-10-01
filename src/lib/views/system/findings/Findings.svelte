@@ -14,8 +14,11 @@
     // Layer 3, view. Everything the build found wrong, in one list: the snapshot's findings, which
     // come from validate over the hub's YAML, and the config channel's own, which come from reading
     // config/. A finding is reported and never repaired, so this view is where a bad manifest edit
-    // shows up within a second of being saved.
+    // shows up within a second of being saved. The list is drawn straight into the pane, so the
+    // pane asks for the tint; a clear list is said with the Empty primitive.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
+    import Pane from '$lib/ui/frame/Pane.svelte';
     import { allFindings } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -30,34 +33,29 @@
     const found = $derived(allFindings(portfolio(), config()));
 </script>
 
-<div class="view" data-instance={instance.id}>
-    {#if found.length === 0}
-        <p class="none">{t('views.findings_none')}</p>
-    {:else}
-        <ul>
-            {#each found as finding, index (`${finding.file}:${finding.key}:${index}`)}
-                <li>
-                    <span class="file">{finding.file}</span>
-                    <span class="key">{finding.key}</span>
-                    <span class="message">{finding.message}</span>
-                </li>
-            {/each}
-        </ul>
-    {/if}
-</div>
+<Pane title={t('views.findings')} tinted>
+    <div class="view" data-instance={instance.id}>
+        {#if found.length === 0}
+            <Empty message={t('views.findings_none')} glyph={t('views.findings_none_glyph')} />
+        {:else}
+            <ul>
+                {#each found as finding, index (`${finding.file}:${finding.key}:${index}`)}
+                    <li>
+                        <span class="file">{finding.file}</span>
+                        <span class="key">{finding.key}</span>
+                        <span class="message">{finding.message}</span>
+                    </li>
+                {/each}
+            </ul>
+        {/if}
+    </div>
+</Pane>
 
 <style>
     .view {
-        height: 100%;
-        overflow: auto;
-        padding: 12px 16px;
-        box-sizing: border-box;
+        min-width: 0;
         color: var(--ink-txt, var(--ink));
         font-size: var(--fs-md);
-    }
-
-    .none {
-        color: var(--muted-txt, var(--muted));
     }
 
     ul {
@@ -66,11 +64,13 @@
         list-style: none;
     }
 
+    /* One line of the tree's row height, growing by whole lines when the words wrap. */
     li {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
-        padding: 4px 0;
+        align-items: center;
+        gap: 0 6px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         border-bottom: 1px solid var(--line);
     }
 

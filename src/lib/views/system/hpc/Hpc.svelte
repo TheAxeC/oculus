@@ -17,8 +17,10 @@
 
 <script lang="ts">
     // Layer 3, view. Live HPC composes the socket state, explicit actions, capacity, queue, recent
-    // jobs, quota, and one selected log.
+    // jobs, quota, and one selected log. The refresh control is in the bar while the cluster
+    // answers, and is the retry of the error box while it does not.
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Head from './Head.svelte';
     import Capacity from './Capacity.svelte';
     import Jobs from './Jobs.svelte';
@@ -46,6 +48,12 @@
     let logId = $state('');
     let logStatus = $state('');
     let logOutput = $state('');
+    /** The error box's words: the sentence, and the ssh line under it as code when there is one. */
+    function unreachable(hint: string | undefined): string {
+        return hint === undefined || hint === ''
+            ? t('hpc.unreachable_msg')
+            : t('hpc.unreachable_detail', t('hpc.unreachable_msg'), hint);
+    }
     async function refresh(): Promise<void> {
         await command({ action: 'refresh' });
     }
@@ -61,14 +69,22 @@
     }
 </script>
 
-<!-- The pane is the frame every view has; the head inside it is the cluster's own status line. -->
-<Pane title={t('views.hpc')} tinted>
+<!-- The pane is the frame every view has; the bar under its header is the cluster's own status
+     line and the refresh control. -->
+{#snippet bar()}
+    <Head {data} onrefresh={refresh} />
+{/snippet}
+
+<Pane title={t('views.hpc')} tinted {bar}>
     <div class="hpc" data-instance={instance.id}>
-        <Head {data} onrefresh={refresh} />
         {#if data?.status === 'starting'}
             <Empty message={t('hpc.fetching')} />
         {:else if data && data.status !== 'ok'}
-            <p class="said">{t('hpc.unreachable_msg')}</p>
+            <Empty error message={unreachable(data.hint)}>
+                {#snippet action()}
+                    <ToolButton small label={t('hpc.refresh_now')} onclick={refresh} />
+                {/snippet}
+            </Empty>
         {/if}
         {#if data && (data.status === 'ok' || data.sinfo.length > 0 || data.quota.length > 0)}
             <Capacity rows={data.sinfo} {held} onheld={keepHeld} />
@@ -100,11 +116,6 @@
         flex-direction: column;
         gap: 10px;
         min-width: 0;
-    }
-    .said {
-        margin: 0;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
     }
     footer {
         margin-top: 12px;

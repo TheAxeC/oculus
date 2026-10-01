@@ -120,7 +120,7 @@
     }
 
     .label {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;

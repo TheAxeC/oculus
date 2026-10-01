@@ -33,7 +33,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { auditSearch, findingsOfKind, muteMessage } from '$lib/state/system/audit';
@@ -103,9 +103,9 @@
     }
 </script>
 
-{#snippet tools()}
+{#snippet bar()}
     <Toolbar label={t('audit.toolbar')}>
-        <Search value={search} placeholder={t('audit.search')} oninput={typed} />
+        <Search fill value={search} placeholder={t('audit.search')} oninput={typed} />
     </Toolbar>
 {/snippet}
 
@@ -113,13 +113,16 @@
     <Card id={finding.signature} cursor={false} title={finding.scope} level={4}>
         {#snippet meta()}
             <span class="where">{finding.where}</span>
-            <ToolButton
-                label={muted ? t('audit.unmute') : t('audit.mute')}
-                glyph={muted ? t('audit.unmute_glyph') : t('audit.mute_glyph')}
-                title={muted ? t('audit.unmute_tip') : t('audit.mute_tip')}
-                disabled={busy}
-                onclick={() => void mute(finding, !muted)}
-            />
+            <span class="act">
+                <ToolButton
+                    compact
+                    label={muted ? t('audit.unmute') : t('audit.mute')}
+                    glyph={muted ? t('audit.unmute_glyph') : t('audit.mute_glyph')}
+                    title={muted ? t('audit.unmute_tip') : t('audit.mute_tip')}
+                    disabled={busy}
+                    onclick={() => void mute(finding, !muted)}
+                />
+            </span>
         {/snippet}
         <span class="message">
             <CodeText text={finding.message} />
@@ -127,10 +130,10 @@
     </Card>
 {/snippet}
 
-<Pane title={t('audit.title')} toolbar={tools}>
+<Pane title={t('audit.title')} {bar}>
     <div class="audit" data-instance={instance.id} data-audit>
         {#if failed !== ''}
-            <p class="failed" aria-live="polite">{failed}</p>
+            <Empty error message={failed} />
         {/if}
         {#if shown.length === 0 && hidden.length === 0}
             <Empty
@@ -192,12 +195,6 @@
         min-width: 0;
     }
 
-    .failed {
-        margin: 0;
-        color: var(--c-red-txt);
-        font-size: var(--fs-sm);
-    }
-
     .group {
         display: flex;
         flex-direction: column;
@@ -210,12 +207,15 @@
         align-items: baseline;
         gap: 6px;
         margin: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        text-transform: uppercase;
         color: var(--muted-txt, var(--muted));
     }
 
     .count {
         font-family: var(--font-num);
+        font-size: var(--fs-sm);
     }
 
     .cards {
@@ -234,6 +234,16 @@
 
     .message {
         font-size: var(--fs-md);
+    }
+
+    /* The mute control is drawn as its card says, ui/frame/Card.svelte's `--card-reveal`: under
+       the pointer, with the focus inside the card, or always where nothing hovers. It stays in the
+       tab order and in the layout while it is clear. */
+    .act {
+        display: inline-flex;
+        margin-left: auto;
+        opacity: var(--card-reveal);
+        transition: opacity 120ms ease-out;
     }
 
     .note {

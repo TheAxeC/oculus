@@ -44,14 +44,20 @@
          */
         compact?: boolean;
         /**
+         * A text button inside a 22 px row: 11px words on a 14px line, so the button is as high as
+         * the row, VS Code's small button.
+         */
+        small?: boolean;
+        /**
          * One item of the activity rail: the glyph alone, at the icon size, in a square box the
          * rail's width, with no border and no fill, muted until the pointer is over it; the one in
          * force draws its glyph in the text colour with the accent bar on its left edge.
          */
         rail?: boolean;
         /**
-         * The glyph alone in a bare icon box, for a strip's own buttons: no border, no fill and no
-         * terminal brackets until the pointer is over it, the same box a bare menu opener draws.
+         * The glyph alone in a bare icon box, for a strip's own buttons and a pane's header
+         * actions: no border, no fill and no terminal brackets until the pointer is over it, the
+         * same box a bare menu opener draws. The words are the tooltip and the accessible name.
          */
         bare?: boolean;
         /**
@@ -132,6 +138,7 @@
         checked,
         disabled = false,
         compact = false,
+        small = false,
         rail = false,
         bare = false,
         status = false,
@@ -150,9 +157,8 @@
         children
     }: Props = $props();
 
-    const compactGlyph = $derived(compact && glyph !== undefined);
-    const iconOnly = $derived(compactGlyph);
-    const tip = $derived(title ?? (compactGlyph ? label : ''));
+    const iconOnly = $derived((compact || bare) && glyph !== undefined);
+    const tip = $derived(title ?? (iconOnly ? label : ''));
     const named = $derived(iconOnly || cell || children !== undefined);
     const attributes = $derived(
         Object.fromEntries(Object.entries(data).map(([name, value]) => [`data-${name}`, value]))
@@ -172,6 +178,7 @@
         class="tool"
         class:active
         class:compact={iconOnly}
+        class:small
         class:rail-control={rail}
         class:bare
         class:status
@@ -214,23 +221,48 @@
 </Tooltip>
 
 <style>
+    /* A text button, VS Code's: 12px words on a 16px line, 4px above and below and 8px beside
+       them, a 1px border and the input radius, which make it 26 px high. */
     .tool {
         display: inline-flex;
         align-items: center;
         gap: 4px;
         border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
+        border-radius: var(--input-radius);
         background: var(--panel);
         color: var(--muted-txt, var(--muted));
         font: inherit;
         font-size: var(--fs-sm);
-        padding: 3px 8px;
+        line-height: calc(var(--button-line) * var(--text-scale, 1));
+        padding: 4px 8px;
         cursor: pointer;
         white-space: nowrap;
     }
 
+    /* The small text button, VS Code's: 22 px high, for a row that is 22 px high. */
+    .tool.small {
+        font-size: var(--fs-xs);
+        line-height: calc(14px * var(--text-scale, 1));
+        padding: 3px 6px;
+    }
+
+    /* An icon control of a row or a card: the 16 px icon in 2 px of room either side, 20 px, no
+       border, the chip fill under the pointer, as VS Code's pane
+       actions have. */
     .tool.compact {
-        padding: 3px 5px;
+        justify-content: center;
+        box-sizing: border-box;
+        min-width: var(--header-action);
+        height: var(--header-action);
+        padding: 0 var(--tab-action-pad);
+        border: 0;
+        background: none;
+        line-height: 1;
+    }
+
+    .tool.compact:not(.active):hover:not(:disabled) {
+        background: var(--chip);
+        color: var(--ink-txt, var(--ink));
     }
 
     /* An item of the activity rail, drawn as VS Code draws one (activityaction.css): a square box
@@ -245,7 +277,7 @@
         border-radius: 0;
         background: none;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--rail-icon);
+        --glyph-size: var(--rail-icon);
         padding: 0;
     }
 
@@ -263,16 +295,17 @@
         cursor: default;
     }
 
-    /* A strip's own button: the glyph in a box of the strip's action size, the same under every
-       theme, a terminal palette included. */
+    /* A strip's own button: the glyph in a box of the strip's action size, or of the box a pane
+       sets as `--bare-box` for its header actions, the same under every theme, a terminal palette
+       included. Under a terminal palette the font size is the stand-in's. */
     .tool.bare,
     :global(body.rice) .tool.bare {
         justify-content: center;
         box-sizing: border-box;
-        min-width: var(--tab-action);
-        height: var(--tab-action);
+        min-width: var(--bare-box, var(--tab-action));
+        height: var(--bare-box, var(--tab-action));
         padding: 0 var(--tab-action-pad);
-        border: 1px solid transparent;
+        border: 0;
         border-radius: var(--radius-sm);
         background: none;
         color: var(--muted-txt, var(--muted));
@@ -304,8 +337,8 @@
     }
 
     /* Its icon at the size VS Code draws a status bar icon, and a stand-in at the words' size. */
-    .tool.status :global(.glyph) {
-        font-size: var(--status-icon);
+    .tool.status {
+        --glyph-size: var(--status-icon);
     }
 
     :global(body.rice) .tool.status :global(.glyph:not(:has(svg))) {
@@ -440,8 +473,8 @@
     }
 
     .tool:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     /* A plain button has no box of its own to draw the ring inside, so the ring sits just

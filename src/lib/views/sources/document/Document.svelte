@@ -40,7 +40,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { fileUrl } from '../../shared/links/file-url';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -120,8 +120,13 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('document.toolbar')}>
-        <ToolButton label={t('document.open_outside')} onclick={outside} />
+    <Toolbar label={t('document.toolbar')} overflow>
+        <ToolButton
+            bare
+            label={t('document.open_outside')}
+            glyph={t('document.open_outside_glyph')}
+            onclick={outside}
+        />
     </Toolbar>
 {/snippet}
 

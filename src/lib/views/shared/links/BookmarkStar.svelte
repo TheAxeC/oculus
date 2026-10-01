@@ -7,7 +7,9 @@
     // It is shared because a file is read in two tabs, the source tab for text and the file view
     // for a picture, a PDF or a download, and a reader bookmarks the file they are looking at in
     // either. A label another bookmark already holds is refused rather than written over, which the
-    // endpoint says in words and the line under the control repeats.
+    // endpoint says in words: beside the control, or through `onsaid` where the caller draws a
+    // message line of its own. `bare` draws the star as a header icon, its words the tooltip and
+    // the accessible name.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { nameOf } from '$lib/state/sources/fs';
@@ -18,9 +20,13 @@
     type Props = {
         root: string;
         path: string;
+        /** Draw the star as an icon action of a pane's header. */
+        bare?: boolean;
+        /** Where a refused write is said, for a caller with a message line of its own. */
+        onsaid?: (said: string) => void;
     };
 
-    let { root, path }: Props = $props();
+    let { root, path, bare = false, onsaid }: Props = $props();
 
     const {
         fs: { addBookmark, bookmarks, removeBookmark }
@@ -38,11 +44,14 @@
             marked === null
                 ? await addBookmark({ label: nameOf(path), root, path })
                 : await removeBookmark(marked.id);
-        failed = markRefusal(answer);
+        const refusal = markRefusal(answer);
+        if (onsaid === undefined) failed = refusal;
+        else onsaid(refusal === '' ? '' : t('file.bookmark_failed', refusal));
     }
 </script>
 
 <ToolButton
+    {bare}
     label={marked === null ? t('file.bookmark') : t('file.unbookmark')}
     glyph={t('file.bookmark_glyph')}
     pressed={marked !== null}

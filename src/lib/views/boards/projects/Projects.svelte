@@ -45,7 +45,8 @@
     import type { SegmentItem } from '$lib/ui/controls/segment-items';
     import Table from '$lib/ui/display/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table-rows';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Chip from '$lib/ui/controls/Chip.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Card from '../../shared/card/ProjectCard.svelte';
     import NewIdea from './NewIdea.svelte';
@@ -234,8 +235,35 @@
 {/snippet}
 
 {#snippet tools()}
-    <Toolbar label={t('board.toolbar')}>
+    <Toolbar label={t('board.toolbar')} overflow>
+        <ToolButton
+            bare
+            glyph="add"
+            label={t('board.new_idea')}
+            title={t('board.new_idea_tip')}
+            active={adding}
+            pressed={adding}
+            onclick={() => (adding = !adding)}
+        />
+        <ToolButton
+            bare
+            label={t('board.expand_all')}
+            glyph={t('project.card.expand_glyph')}
+            onclick={() => bulk(true)}
+        />
+        <ToolButton
+            bare
+            label={t('board.collapse')}
+            glyph={t('project.card.collapse_glyph')}
+            onclick={() => bulk(false)}
+        />
+    </Toolbar>
+{/snippet}
+
+{#snippet bar()}
+    <Toolbar label={t('board.filters')}>
         <Search
+            fill
             value={held.search}
             placeholder={preset.search === '' ? t('board.search_default') : preset.search}
             oninput={(value: string) => write({ search: value })}
@@ -249,33 +277,27 @@
             }}
             placement="down"
         />
-        <ToolButton
-            label={t('board.new_idea')}
-            title={t('board.new_idea_tip')}
-            active={adding}
-            onclick={() => (adding = !adding)}
-        />
         {#if preset.id === STATS_BOARD}
-            <ToolButton
+            <Chip
                 label={t('board.quick_stale')}
                 title={t('board.quick_stale_tip')}
                 glyph={t('board.stale_glyph')}
-                active={held.stale}
+                pressed={held.stale}
                 onclick={() => write({ stale: !held.stale })}
             />
-            <ToolButton
+            <Chip
                 label={t('board.quick_deadline')}
                 title={t('board.quick_deadline_tip')}
                 glyph={t('project.card.deadline_glyph')}
-                active={held.dated}
+                pressed={held.dated}
                 onclick={() => write({ dated: !held.dated })}
             />
         {/if}
         {#each types as one (one.type)}
-            <ToolButton
+            <Chip
                 label={`${one.type} ${one.count}`}
                 title={t('board.type_toggle_tip', one.type)}
-                active={!held.hiddenTypes.includes(one.type)}
+                pressed={!held.hiddenTypes.includes(one.type)}
                 onclick={() => toggleType(one.type)}
             />
         {/each}
@@ -291,20 +313,10 @@
             value={held.labels}
             onchange={(id) => write({ labels: id === 'full' ? 'full' : 'short' })}
         />
-        <ToolButton
-            label={t('board.expand_all')}
-            glyph={t('project.card.expand_glyph')}
-            onclick={() => bulk(true)}
-        />
-        <ToolButton
-            label={t('board.collapse')}
-            glyph={t('project.card.collapse_glyph')}
-            onclick={() => bulk(false)}
-        />
     </Toolbar>
 {/snippet}
 
-<Pane title={title()} toolbar={tools}>
+<Pane title={title()} toolbar={tools} {bar}>
     <div class="board" data-instance={instance.id} data-board={preset.id}>
         {#if adding}
             <NewIdea
@@ -321,7 +333,9 @@
         {#if shown.length === 0}
             <Empty message={t('board.empty')} glyph={t('board.empty_glyph')} />
         {:else if held.mode === 'list'}
-            <Table columns={preset.columns} {rows} rowKey="id" sortable cell={statusCell} />
+            <div class="table">
+                <Table columns={preset.columns} {rows} rowKey="id" sortable cell={statusCell} />
+            </div>
         {:else}
             <div class="cards">
                 {#each shown as item (item.id)}
@@ -350,11 +364,17 @@
         color: var(--mark, var(--muted-txt));
     }
 
+    /* A table wider than the pane scrolls inside its own box and not the pane. */
+    .table {
+        min-width: 0;
+        overflow-x: auto;
+    }
+
     /* The cards of one row stretch to the row's height, in file order, so no empty cell is left
        under a short card and nothing is reordered to fill one. */
     .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
         gap: 10px;
         align-items: stretch;
     }

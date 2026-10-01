@@ -160,6 +160,12 @@ function serve(body: Record<string, unknown>, _status = 200): void {
 beforeEach(() => loadUi({ getItem: () => null, setItem: noop }));
 afterEach(() => vi.unstubAllGlobals());
 
+/** The markup of the pressable chip that shows or hides the declined leads. */
+function declinedChip(body: string): string {
+    const bar = body.slice(body.indexOf('<div class="viewbar'), body.indexOf('<div class="body'));
+    return /<button[^>]*class="chip[^"]*"[\s\S]*?<\/button>/.exec(bar)?.[0] ?? '';
+}
+
 describe('the Position Leads view', () => {
     it('hides the declined and dismissed cards, counts both on the toggle, and shows them under it', () => {
         serve({
@@ -181,6 +187,8 @@ describe('the Position Leads view', () => {
         // a lead the reader declined is hidden by the same toggle, and counted in the same number
         expect(hidden).not.toContain('data-lead="Declined role"');
         expect(hidden).toContain(catalog['leads.show_declined'].replace('{0}', '2'));
+        expect(declinedChip(hidden)).toContain('aria-pressed="false"');
+        expect(declinedChip(hidden)).toContain(catalog['leads.declined'].replace('{0}', '2'));
 
         const shown = render(Leads, {
             context: clientContext(client),
@@ -189,6 +197,9 @@ describe('the Position Leads view', () => {
         expect(shown).toContain('data-lead="Dismissed role"');
         expect(shown).toContain('data-lead="Declined role"');
         expect(shown).toContain(catalog['leads.hide_declined'].replace('{0}', '2'));
+        expect(declinedChip(shown)).toContain('aria-pressed="true"');
+        // the toggle keeps its words and says its state through aria-pressed
+        expect(declinedChip(shown)).toContain(catalog['leads.declined'].replace('{0}', '2'));
     });
 
     it('draws a dismissed card in the expired list, tagged by its status, with reopen and no decline', () => {
@@ -436,7 +447,9 @@ describe('the Position Leads view', () => {
             context: clientContext(client),
             props: { instance: instance('leads-empty') }
         }).body;
-        expect(empty).toContain('<code>/research-cockpit scout</code>');
+        // the empty line is the Empty primitive's, with the command drawn as a code span
+        expect(empty).toMatch(/<p class="empty[^"]*"[^>]*>[\s\S]*?data-glyph="scout"/);
+        expect(empty).toMatch(/<code[^>]*>\/research-cockpit scout<\/code>/);
         // the code span is drawn as markup, so its angle brackets are not escaped into the text
         expect(empty).not.toContain('&lt;code>');
 
@@ -504,5 +517,90 @@ describe('the Applications entry a lead fills', () => {
             expect(found).toBeDefined();
         }
         expect(body).toContain(catalog['leads.action.applied_tip']);
+    });
+});
+
+describe('where Position Leads puts its controls', () => {
+    function drawn(id: string, showDeclined = false): string {
+        serve({ ok: true, kind: 'leads', file: 'feeds/position-leads.yml', schema, entries });
+        return render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance(id, true, false, '', false, showDeclined) }
+        }).body;
+    }
+
+    function parts(body: string): { header: string; bar: string } {
+        return {
+            header: body.slice(body.indexOf('<header'), body.indexOf('</header>')),
+            bar: body.slice(body.indexOf('<div class="viewbar'), body.indexOf('<div class="body'))
+        };
+    }
+
+    it('keeps the add control and the source control in the header as bare icons', () => {
+        const { header } = parts(drawn('leads-header'));
+        const add =
+            /<button[^>]*aria-label="([^"]*)"[^>]*>(?:(?!<\/button>)[\s\S])*data-glyph="add"/.exec(
+                header
+            );
+        expect(add?.[1]).toBe(catalog['leads.add']);
+        const tools = header.match(/<button[^>]*class="tool[^"]*"/g) ?? [];
+        expect(tools.length).toBe(2);
+        for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
+        // a search box is a control of the bar, and the header holds icon actions only
+        expect(header).not.toContain('class="search');
+        // a toggle chip is a control of the bar, and the header holds icon actions only
+        expect(header).not.toContain('class="chip');
+    });
+
+    it('draws the add control pressed while the add form is open', () => {
+        serve({ ok: true, kind: 'leads', file: 'feeds/position-leads.yml', schema, entries });
+        const open = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('leads-header-open', true, false, '', true) }
+        }).body;
+        expect(parts(open).header).toMatch(
+            /<button[^>]*aria-pressed="true"[^>]*aria-label="\+ add lead"/
+        );
+        expect(parts(drawn('leads-header-closed')).header).toMatch(
+            /<button[^>]*aria-pressed="false"[^>]*aria-label="\+ add lead"/
+        );
+    });
+
+    it('puts the search and the declined toggle in the bar', () => {
+        const { bar } = parts(drawn('leads-bar'));
+        expect(bar).toMatch(/<input class="search[^"]*\bfill\b/);
+        expect(bar).toContain('class="chip pressable');
+        expect(bar).toContain('data-glyph="dismiss"');
+    });
+
+    it('draws no declined toggle while no lead is declined', () => {
+        serve({
+            ok: true,
+            kind: 'leads',
+            file: 'feeds/position-leads.yml',
+            schema,
+            entries: entries.slice(0, 2)
+        });
+        const body = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('leads-bar-none') }
+        }).body;
+        // no lead is declined, so there is no declined count for a toggle to offer
+        expect(parts(body).bar).not.toContain('class="chip');
+    });
+
+    it('draws the buttons of a lead card as small text buttons in the control box', () => {
+        const body = drawn('leads-small');
+        const strong = card(body, '**Strong** role');
+        const box = strong.slice(
+            strong.indexOf('class="actions'),
+            strong.indexOf('</div>', strong.indexOf('class="actions'))
+        );
+        const buttons = box.match(/<button[^>]*class="tool[^"]*"/g) ?? [];
+        expect(buttons.length).toBe(3);
+        for (const button of buttons) {
+            expect(button).toMatch(/\bsmall\b/);
+            expect(button).not.toMatch(/\bcompact\b/);
+        }
     });
 });

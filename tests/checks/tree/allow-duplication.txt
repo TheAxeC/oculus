@@ -15,7 +15,6 @@ src/lib/data/sources/config/merge.ts src/lib/server/transcripts/stores.ts 6ba7db
 src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts 22e246596d51 the same 9 lines at 107 and 317, to fold into one place
 src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts 1910d33ebbe8 the same 27 lines at 99 and 20, to fold into one place
 src/lib/server/machine/hpc/parse.ts src/lib/state/system/hpc.ts 8ead1c0cdafe the same 7 lines at 25 and 20, to fold into one place
-src/lib/shell/rail/RailPages.svelte src/lib/views/system/workbench/Catalogue.svelte 3e68f3880de2 the same 10 lines at 205 and 218, to fold into one place
 src/lib/state/feeds/leads.ts src/lib/state/feeds/radar.ts c0785dd03b7f the same 12 lines at 145 and 82, to fold into one place
 src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/instances.ts d3d8defb0911 the same 8 lines at 80 and 45, to fold into one place
 src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/instances.ts f126c1015ffd the same 9 lines at 119 and 52, to fold into one place
@@ -26,18 +25,11 @@ src/lib/views/boards/collection/EntryCard.svelte src/lib/views/shared/card/Proje
 src/lib/views/boards/editor/Editor.svelte src/lib/views/boards/project/Project.svelte 5bb0e172c4a6 the same 10 lines at 80 and 86, to fold into one place
 src/lib/views/boards/focus/CommandCenter.svelte src/lib/views/boards/focus/Tasks.svelte 298aa81587ba the same 16 lines at 39 and 24, to fold into one place
 src/lib/views/boards/focus/lanes/Lanes.svelte src/lib/views/shared/forms/Subtasks.svelte 2f5da5c5461b the same 13 lines at 123 and 58, to fold into one place
-src/lib/views/feeds/radar/Radar.svelte src/lib/views/sources/venues/Venues.svelte c95bebb07c98 the same 10 lines at 82 and 102, to fold into one place
 src/lib/views/sessions/changes/ChangesRepo.svelte src/lib/views/sessions/changes/ChangesTouched.svelte 13f55a441e6e the same 9 lines at 72 and 23, to fold into one place
 src/lib/views/sources/data/Data.svelte src/lib/views/sources/venues/Venues.svelte 8098bb514f72 the same 15 lines at 66 and 73, to fold into one place
-src/lib/views/sources/data/Data.svelte src/lib/views/sources/venues/Venues.svelte 8c494a8f4ede the same 12 lines at 119 and 117, to fold into one place
-src/lib/views/sources/data/DatasetCard.svelte src/lib/views/sources/venues/VenueCard.svelte 7da18dd82ab1 the same 11 lines at 69 and 145, to fold into one place
 src/lib/views/sources/data/DatasetCard.svelte src/lib/views/structure/domains/DomainCard.svelte d1622fb5ffbe the same 10 lines at 24 and 17, to fold into one place
-src/lib/views/sources/data/DatasetCard.svelte src/lib/views/structure/domains/DomainCard.svelte e73af320d541 the same 9 lines at 71 and 43, to fold into one place
-src/lib/views/sources/data/Facets.svelte src/lib/views/sources/venues/Facets.svelte fdfc08cc96ec the same 9 lines at 20 and 24, to fold into one place
 src/lib/views/sources/file/File.svelte src/lib/views/sources/note/Note.svelte 74adc88409e0 the same 9 lines at 99 and 106, to fold into one place
 src/lib/views/sources/file/File.svelte src/lib/views/sources/source/Source.svelte 75307d805c57 the same 12 lines at 99 and 276, to fold into one place
-src/lib/views/sources/venues/VenueCard.svelte src/lib/views/structure/domains/DomainCard.svelte d13011ab81f9 the same 10 lines at 148 and 43, to fold into one place
-src/lib/views/structure/domains/DomainCard.svelte src/lib/views/structure/pillars/LineCard.svelte 30795789acd0 the same 15 lines at 39 and 65, to fold into one place
 tests/checks/config/config.test.ts tests/data/sources/config/calendar-config.test.ts 1cbbb41f5894 the same 12 lines at 29 and 26, to fold into one place
 tests/checks/diagrams/diagrams.test.ts tests/checks/diagrams/parsed.test.ts 1d1ce5a4f7d4 the same 9 lines at 46 and 16, to fold into one place
 tests/checks/tree/audits.test.ts tests/checks/tree/boundaries.test.ts c8f66082a9d8 the same 11 lines at 220 and 382, to fold into one place
@@ -170,7 +162,6 @@ tests/views/shared/card/card-docs.test.ts tests/views/shared/card/card.test.ts 6
 tests/views/shared/card/card-docs.test.ts tests/views/shared/card/cardlinks.test.ts 0925c74d334b the same 16 lines at 48 and 63, to fold into one place
 tests/views/sources/data.test.ts tests/views/sources/venues.test.ts 00a4e28009a2 the same 12 lines at 35 and 37, to fold into one place
 tests/views/sources/data.test.ts tests/views/sources/venues.test.ts 38bae11dc04c the same 16 lines at 50 and 52, to fold into one place
-tests/views/sources/document.test.ts tests/views/sources/files/files.test.ts 0e0fefd3cbaa the same 11 lines at 23 and 35, to fold into one place
 tests/views/system/config.test.ts tests/views/system/history.test.ts e8031d1c8053 the same 10 lines at 31 and 25, to fold into one place
 tests/views/system/config.test.ts tests/views/whole/chips.test.ts e8031d1c8053 the same 10 lines at 31 and 32, to fold into one place
 tests/views/system/status.test.ts tests/views/system/usage.test.ts 4de31adc431f the same 9 lines at 24 and 25, to fold into one place

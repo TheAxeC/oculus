@@ -15,6 +15,7 @@
     // The prompt goes to the server as one field and reaches the agent as one argument; nothing on
     // this side quotes, splits or escapes it, since nothing on either side hands it to a shell.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -338,7 +339,9 @@
         </div>
     </div>
     {#if failure !== ''}
-        <p class="failure" data-composer-failure>{failure}</p>
+        <div class="failure" data-composer-failure>
+            <Empty error message={failure} />
+        </div>
     {/if}
 </div>
 
@@ -355,7 +358,7 @@
         flex-direction: column;
         min-width: 0;
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: var(--input-radius);
         background: var(--chip);
         overflow: visible;
     }
@@ -406,13 +409,7 @@
         margin: 0;
         padding: 0 0 0 16px;
         color: var(--c-amber-txt, var(--ink));
-        font-size: var(--fs-sm);
-    }
-
-    .failure {
-        margin: 0;
         font-size: var(--fs-md);
-        color: var(--c-red-txt, var(--ink));
     }
 
     /* Over the wallpaper the box sits on the tinted box of the view, which is its surface there. */

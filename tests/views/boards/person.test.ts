@@ -331,4 +331,25 @@ describe('one person as their own tab', () => {
         // the folder holds directories alone, and the block lists the files in it
         expect(body).not.toContain('drafts');
     });
+
+    it('keeps only bare icon actions in the header, the joint-work opener and the source file', () => {
+        const body = drawn(client, { key: 'naesens' });
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+        const tools = header.match(/<button[^>]*class="tool[^"]*"/g) ?? [];
+        expect(tools).toHaveLength(2);
+        for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
+        expect(header).toContain(`aria-label="${catalog['person.open_joint_work']}"`);
+        expect(header).toContain('data-source-path="registries/people.yml"');
+    });
+
+    it('draws a project and a file as links, plain words that open from their name', async () => {
+        const projects = drawn(client, { key: 'naesens' });
+        const block = projects.slice(projects.indexOf('data-block="projects"'));
+        expect(/<button[^>]*class="tool[^"]*"/.exec(block)?.[0]).toMatch(/\bplain\b/);
+        const body = await listed([{ name: 'thesis.pdf', kind: 'file', size: 10, mtime: 0 }]);
+        const folder = body.slice(body.indexOf('data-block="folder"'));
+        const file =
+            /<button[^>]*class="tool[^"]*"[^>]*>(?:(?!<\/button>)[\s\S])*?thesis\.pdf/.exec(folder);
+        expect(file?.[0]).toMatch(/\bplain\b/);
+    });
 });

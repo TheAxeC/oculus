@@ -71,15 +71,10 @@
         padding: var(--action-pad, 1px 3px);
     }
 
-    /* A view that draws the icon controls of its rows larger sets `--action-pad`, `--action-font`
-       and `--action-glyph`: the padding round the icon, its size and the width of its box. */
+    /* A view that draws the icon controls of its rows closer sets `--action-pad`, the padding round
+       the 16 px icon. */
     .actions :global(.tool.compact) {
-        padding: var(--action-pad, 1px 3px);
-        font-size: var(--action-font, var(--fs-sm));
-    }
-
-    .actions :global(.tool.compact .glyph) {
-        width: var(--action-glyph, 1.2em);
+        padding: var(--action-pad, 0 var(--tab-action-pad));
     }
 
     .actions :global(.tool:hover:not(:disabled)) {

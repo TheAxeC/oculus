@@ -6,7 +6,6 @@ text:
     accounts:
         account_error: error
         add: Add account
-        add_glyph: expand
         add_go: Add and connect
         add_go_link: Add
         add_label: Label
@@ -15,6 +14,7 @@ text:
         add_link_hint: "The address the calendar is published at, starting https:// or webcal://. It is kept in this machine's calendar folder and never shown again."
         add_provider: Provider
         adding: adding...
+        bar: Connector status
         cancel: Cancel
         connect: Connect
         connected: connected
@@ -83,12 +83,14 @@ text:
         remove_confirm_own: 'Remove the account {0}? Its token file is deleted, and its own client id is deleted with it.'
         remove_glyph: trash
         reading: reading the setup...
+        retry: Try again
         save: Save
         saved: 'Saved. {0} is set up.'
         saving: saving...
         set_up_provider: Set up provider
         setup_intro: 'Each provider is set up once on this machine: the application you register there serves every account of it, in the Calendar and the Inbox. The values below are the ones this server uses.'
         timed_out: 'The provider did not answer within {0} s.'
+        toolbar: Account actions
         unreachable: 'The server did not answer. Try again once oculus is running.'
         unreadable: "The server's answer could not be read. Open the view again to see what it holds now."
         waiting: 'The account {0} is added once {1} is saved below.'

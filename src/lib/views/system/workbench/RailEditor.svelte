@@ -189,7 +189,7 @@
     <div class="actions">
         <ToolButton
             label={t('workbench.rail_add')}
-            glyph="expand"
+            glyph="add"
             onclick={() => edit([...rows, { label: '', glyph: '', page: '' }])}
         />
         <ToolButton
@@ -238,7 +238,7 @@
 
     .word {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
     }
 
     .about {
@@ -246,16 +246,20 @@
     }
 
     .about,
-    .empty,
     .outcome {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
+    }
+
+    .empty {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
     }
 
     .problems {
         margin: 0;
         padding-left: 18px;
         color: var(--c-red-txt);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 </style>

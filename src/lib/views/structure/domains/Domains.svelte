@@ -19,7 +19,8 @@
     import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
     import RegistryHead from '$lib/views/shared/forms/RegistryHead.svelte';
     import Intro from '$lib/views/shared/prose/Intro.svelte';
-    import type { Snippet } from 'svelte';
+    import AddButton from '$lib/views/shared/forms/AddButton.svelte';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
@@ -60,7 +61,14 @@
 </script>
 
 {#snippet tools()}
-    <SourceToolbar {source} />
+    <SourceToolbar {source}>
+        {#if collection?.schema !== undefined}
+            <AddButton
+                open={held.adding}
+                onclick={() => write({ adding: toggleAdd(instance.id, 'domains', held.adding) })}
+            />
+        {/if}
+    </SourceToolbar>
 {/snippet}
 
 <Pane title={t('views.domains')} toolbar={tools}>
@@ -69,17 +77,15 @@
             collection="domains"
             schema={collection?.schema}
             adding={held.adding}
-            {said}
-            ontoggle={() => write({ adding: toggleAdd(instance.id, 'domains', held.adding) })}
+            bind:said
             onclose={() => write({ adding: false })}
-            onsaid={(words: string) => (said = words)}
         >
-            {#snippet intro(actions: Snippet)}
-                <Intro html={inlineMarkdown(t('domains.intro'))} trusted {actions} />
+            {#snippet intro()}
+                <Intro html={inlineMarkdown(t('domains.intro'))} trusted />
             {/snippet}
         </RegistryHead>
         {#if shown.length === 0}
-            <p class="empty">{t('domains.empty')}</p>
+            <Empty message={t('domains.empty')} />
         {:else}
             <div class="cards">
                 {#each shown as item (item.domain.id)}
@@ -120,13 +126,8 @@
 
     .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
         gap: 10px;
         margin-top: 10px;
-    }
-
-    .empty {
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
     }
 </style>

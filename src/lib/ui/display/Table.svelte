@@ -100,6 +100,7 @@
         background: var(--panel);
         border-bottom: 1px solid var(--line);
         padding: 0;
+        line-height: calc(var(--button-line) * var(--text-scale, 1));
         text-align: left;
         font-size: var(--fs-xs);
         font-weight: 700;
@@ -123,7 +124,7 @@
         color: inherit;
         font: inherit;
         text-align: inherit;
-        padding: 5px 8px;
+        padding: 3px 8px 2px;
         cursor: pointer;
     }
 
@@ -132,16 +133,17 @@
     }
 
     th button:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     th:not(:has(button)) {
-        padding: 5px 8px;
+        padding: 3px 8px 2px;
     }
 
     td {
-        padding: 5px 8px;
+        padding: 3px 8px 2px;
+        line-height: calc(var(--button-line) * var(--text-scale, 1));
         border-bottom: 1px solid var(--line);
         vertical-align: top;
     }

@@ -3,6 +3,7 @@ text:
     data:
         empty: No datasets yet - add some to registries/data.yml.
         fetch: Fetch
+        filters: Dataset filters
         hpc: HPC
         intro: '{0} datasets ({1}). Provenance + recovery recipe per set; edit <code>registries/data.yml</code>, recover a set with its Recover control (<code>python3 tools/data/redownload.py</code> in a terminal here).'
         modality_facet: Modality

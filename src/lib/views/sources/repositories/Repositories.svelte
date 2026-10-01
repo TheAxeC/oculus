@@ -30,11 +30,11 @@
     // to open are the instance's own state, so the view comes back as it was left after a tab
     // switch, and a repository the list no longer offers hands the view to the first one it does.
     //
-    // The bar holds, whatever the state, a toggle between the list and the tree mode of the changes
-    // (View as Tree, View as List; the list is the start) before its `...` menu, which holds what
-    // VS Code's does: Pull, Push, Fetch, Sync and Publish Branch; the three stashes; Create Tag and
-    // Push Tags. What asks first is asked here, in the one confirm dialog or, for what needs words
-    // typed, in the prompt, and a yes presses through
+    // The header holds, whatever the state, a toggle between the list and the tree mode of the
+    // changes (View as Tree, View as List; the list is the start) before its `...` menu, which
+    // holds what VS Code's does: Pull, Push, Fetch, Sync and Publish Branch; the three stashes;
+    // Create Tag and Push Tags. What asks first is asked here, in the one confirm dialog or, for
+    // what needs words typed, in the prompt, and a yes presses through
     // state/sources/repositories/repositories.svelte.ts, which holds which roots have a write in
     // flight and what the last write on each answered.
     //
@@ -54,7 +54,7 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Repo from './Repo.svelte';
     import RepoList from './RepoList.svelte';
@@ -290,7 +290,7 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('views.repositories')}>
+    <Toolbar label={t('views.repositories')} overflow>
         {#if view.mode === 'tree'}
             <ToolButton
                 label={t('repositories.view_list')}
@@ -332,7 +332,7 @@
             <Empty message={t('repositories.empty')} glyph={t('repositories.empty_glyph')} />
         {:else}
             {#if refused !== ''}
-                <p class="refused" role="alert">{refused}</p>
+                <Empty error message={refused} />
             {/if}
             <RepoList
                 {roots}
@@ -387,20 +387,12 @@
 {/if}
 
 <style>
-    .refused {
-        margin: 0;
-        color: var(--c-red-txt);
-        font-size: var(--fs-sm);
-    }
-
-    /* The icon controls of the rows are a 16px icon with 2px round it (1px of padding and the
-       control's own 1px border), a 20px box, and the last part of a row (its count or status
-       letter) sits 12px from the row's edge. */
+    /* The icon controls of the rows draw 1px of padding round the 16px icon, and are a 20px box
+       because the compact control's min-width and height are `--header-action`, with no border;
+       the last part of a row (its count or status letter) sits 12px from the row's edge. */
     .repos {
         --tree-end-inset: 12px;
         --action-pad: 1px;
-        --action-font: calc(var(--icon-box) * var(--text-scale, 1));
-        --action-glyph: 1em;
         display: flex;
         flex-direction: column;
         gap: 6px;

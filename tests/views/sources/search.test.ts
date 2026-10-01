@@ -19,6 +19,7 @@ import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.
 import { noop } from '../../fixtures/doubles.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { between } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 
@@ -86,6 +87,41 @@ describe('the query row', () => {
         expect(drawn()).toContain(
             'Finding every reference to a name is this view with the word toggle on'
         );
+    });
+});
+
+describe('where the search view puts its controls', () => {
+    it('keeps the one icon action, Search, in the header', () => {
+        const header = between(drawn({ q: 'needle' }), '<header', '</header>');
+        const tools = header.match(/<button[^>]*class="tool[^"]*"[^>]*>/g) ?? [];
+        expect(tools.length).toBe(1);
+        expect(tools[0]).toMatch(/\bbare\b/);
+        expect(tools[0]).toContain('aria-label="Search"');
+        expect(header).toContain('data-glyph="search"');
+        // the query box is a control of the bar and the header holds icon actions only
+        expect(header).not.toContain('class="search');
+    });
+
+    it('puts the query box, the root picker and the three options as pressable chips in the bar', () => {
+        const bar = between(
+            drawn({ q: 'needle', word: true }),
+            '<div class="viewbar',
+            '<div class="body'
+        );
+        expect(bar).toContain('class="search');
+        expect(bar).toContain('Every root');
+        const chips = bar.match(/<button[^>]*class="chip[^"]*pressable[^"]*"[^>]*>/g) ?? [];
+        expect(chips.length).toBe(3);
+        expect(chips[0]).toContain('aria-pressed="true"');
+        expect(chips[1]).toContain('aria-pressed="false"');
+        expect(chips[2]).toContain('aria-pressed="false"');
+        // the toggles are chips, so the bar draws no bordered text button for them
+        expect(bar).not.toMatch(/<button[^>]*class="tool[ "]/);
+    });
+
+    it('lets the query box fill the bar', () => {
+        const bar = between(drawn(), '<div class="viewbar', '<div class="body');
+        expect(bar).toMatch(/class="search[^"]*\bfill\b/);
     });
 });
 
@@ -163,8 +199,31 @@ describe('the results', () => {
         expect(drawn({ q: 'needle', answer: ANSWER })).not.toContain('data-search-failed');
     });
 
-    it('draws what the last run failed with instead of results', () => {
+    it('draws what the last run failed with as the message box, with a control that runs the same query again', () => {
         const body = drawn({ q: 'fo(', error: 'error: unclosed group', answer: null });
-        expect(body).toContain('error: unclosed group');
+        const box =
+            /<p class="empty[^"]*\berror\b[^"]*"[^>]*role="alert"[^>]*>[\s\S]*?<\/p>/.exec(
+                body
+            )?.[0] ?? '';
+        expect(box).toContain('error: unclosed group');
+        expect(box).toMatch(/<button[^>]*class="tool[^"]*\bsmall\b/);
+        expect(box).toContain('<span class="label">Search again</span>');
+        // a run that failed has no results to draw
+        expect(body).not.toContain('data-search-file');
+    });
+
+    it('draws no retry control when the run did not fail', () => {
+        // the message box and its control belong to a failed run
+        expect(drawn({ q: 'needle', answer: ANSWER })).not.toContain('Search again');
+    });
+
+    it('draws each file heading and each hit as one pressable row of the tree height', () => {
+        const body = drawn({ q: 'needle', answer: ANSWER });
+        const heads = body.match(/<div class="row head[^"]*"/g) ?? [];
+        const hits = body.match(/<li class="row hit[^"]*"/g) ?? [];
+        expect(heads.length).toBe(2);
+        expect(hits.length).toBe(3);
+        const cells = body.match(/<button[^>]*class="tool[^"]*\bcell\b/g) ?? [];
+        expect(cells.length).toBe(5);
     });
 });

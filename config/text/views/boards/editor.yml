@@ -20,6 +20,7 @@ text:
         saved_none: nothing to save
         saving: saving
         search: filter
+        status: Manifest status
         title: Manifest
         toolbar: Manifest editor
         unknown: The snapshot holds no project with the id {0}.

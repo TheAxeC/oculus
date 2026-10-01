@@ -22,8 +22,11 @@
     // the constants the connect flow uses, so what the page asks the reader to register is what the
     // server sends. The page draws whether a provider is set up and never a saved half.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Intro from '../../shared/prose/Intro.svelte';
     import GoogleSteps from './GoogleSteps.svelte';
     import HalfForm from './HalfForm.svelte';
     import MicrosoftSteps from './MicrosoftSteps.svelte';
@@ -66,14 +69,22 @@
 
 <Pane title={t('views.account_setup')} tinted>
     <div class="setup" data-instance={instance.id}>
-        <p class="intro">{t('accounts.setup_intro')}</p>
+        <Intro html={t('accounts.setup_intro')} trusted />
         {#if pending !== null}
             <p class="waiting">{t('accounts.waiting', pending.label, named(pending.provider))}</p>
         {/if}
         {#if held === null && setupFailed() !== ''}
-            <p class="failed" role="alert">{setupFailed()}</p>
+            <Empty error message={setupFailed()}>
+                {#snippet action()}
+                    <ToolButton
+                        small
+                        label={t('accounts.retry')}
+                        onclick={() => void loadSetup()}
+                    />
+                {/snippet}
+            </Empty>
         {:else if held === null}
-            <p class="intro">{t('accounts.reading')}</p>
+            <Intro html={t('accounts.reading')} trusted />
         {:else}
             <section data-provider="google">
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -100,19 +111,10 @@
         gap: 16px;
         min-width: 0;
     }
-    .intro,
     .waiting {
         margin: 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-    .waiting {
         color: var(--ink-txt, var(--ink));
-    }
-    .failed {
-        margin: 0;
-        color: var(--c-red-txt);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
     section {
         display: grid;
@@ -125,6 +127,7 @@
         gap: 8px;
         align-items: center;
         margin: 0;
-        font-size: var(--fs-lg);
+        font-size: var(--fs-md);
+        font-weight: 700;
     }
 </style>

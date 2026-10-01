@@ -5,6 +5,7 @@
     // The fields are emptied once the half is saved, and the page never draws a saved id, secret or
     // tenant back: what it says of a saved half is that the provider is set up.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Field from '$lib/ui/forms/Field.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -80,10 +81,13 @@
             disabled={saving}
             onclick={() => void save()}
         />
-        {#if said !== ''}
-            <span class="said" class:bad={refused} role="status">{said}</span>
+        {#if said !== '' && !refused}
+            <span class="said" role="status">{said}</span>
         {/if}
     </div>
+    {#if said !== '' && refused}
+        <Empty error message={said} />
+    {/if}
 </div>
 
 <style>
@@ -99,9 +103,6 @@
     }
     .said {
         color: var(--c-green-d-txt);
-        font-size: var(--fs-sm);
-    }
-    .said.bad {
-        color: var(--c-red-txt);
+        font-size: var(--fs-md);
     }
 </style>

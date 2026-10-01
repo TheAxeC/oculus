@@ -45,6 +45,7 @@
     // handlers the tab hands the list.
 
     import { untrack } from 'svelte';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { reordered, showingRow } from '$lib/state/sessions/terminal/terminal-tabs';
@@ -362,7 +363,9 @@
             <span class="mark" aria-hidden="true"></span>
         {/if}
         {#if failure !== ''}
-            <p class="failure" role="alert">{failure}</p>
+            <div class="failure">
+                <Empty error message={failure} />
+            </div>
         {/if}
     </div>
 </ContextMenu>
@@ -380,13 +383,27 @@
 
     /* One row of VS Code's tabs list, 22 pixels. */
     .row {
+        --row-reveal: 0;
         display: flex;
         align-items: center;
         gap: 2px;
-        height: 22px;
+        height: calc(var(--tree-row) * var(--text-scale, 1));
         min-width: 0;
         padding: 0 2px 0 6px;
         border-left: 2px solid transparent;
+    }
+
+    .row:hover,
+    .row:focus-within,
+    .row.current,
+    .row.armed {
+        --row-reveal: 1;
+    }
+
+    @media (hover: none) {
+        .row {
+            --row-reveal: 1;
+        }
     }
 
     .row:hover {
@@ -424,14 +441,14 @@
 
     .title {
         flex: 0 1 auto;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .description {
         flex: 1 1 0;
         min-width: 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .markglyph {
@@ -445,18 +462,14 @@
     }
 
     /* The row's controls are drawn clear, and drawn while the pointer or the keyboard's stop is on
-       the row, or while its Kill is armed, so the armed Kill shows while a Delete, a Backspace or
-       a menu's Kill Terminal waits for its second press. */
+       the row, while it is a terminal the tab shows, or while its Kill is armed, so the armed Kill
+       shows while a Delete, a Backspace or a menu's Kill Terminal waits for its second press. They
+       are always drawn on a screen that does not hover, and keep the focus while clear. */
     .actions {
         display: flex;
         flex: 0 0 auto;
-        opacity: 0;
-    }
-
-    .row:hover .actions,
-    .row:focus-within .actions,
-    .row.armed .actions {
-        opacity: 1;
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
     }
 
     .mark {
@@ -466,7 +479,5 @@
 
     .failure {
         margin: 4px 6px;
-        color: var(--c-red-txt, var(--ink));
-        font-size: var(--fs-xs);
     }
 </style>

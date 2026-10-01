@@ -24,10 +24,11 @@
     // writes nothing to the lead. An add form already holding typed text is asked about before the
     // lead replaces it.
 
+    import Chip from '$lib/ui/controls/Chip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import LeadCard from './LeadCard.svelte';
     import AskConfirm from '../../shared/AskConfirm.svelte';
@@ -86,7 +87,8 @@
     const leadOf = $derived(leadIdents(entries));
     const declined = $derived(declinedCount(entries));
     const split = $derived(splitLeads(visibleLeads(entries, held.showDeclined), today));
-    const declinedToggleLabel = $derived(
+    /** What pressing the declined toggle does, said in its tooltip: its own words are fixed. */
+    const declinedToggleTip = $derived(
         held.showDeclined ? t('leads.hide_declined', declined) : t('leads.show_declined', declined)
     );
     const live = $derived(leadsSearch(split.live, held.search));
@@ -154,34 +156,43 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('leads.search')}>
-        <Search
-            value={held.search}
-            placeholder={t('leads.search')}
-            oninput={(search: string) => write({ search })}
-        />
+    <Toolbar label={t('leads.toolbar')} overflow>
         <ToolButton
+            bare
+            glyph="add"
             label={t('leads.add')}
             title={t('leads.add_tip')}
             active={held.adding}
+            pressed={held.adding}
             onclick={() => write({ adding: toggleAdd(instance.id, 'leads', held.adding) })}
         />
-        {#if declined > 0}
-            <ToolButton
-                label={declinedToggleLabel}
-                glyph="dismiss"
-                active={held.showDeclined}
-                pressed={held.showDeclined}
-                onclick={() => write(showing(!held.showDeclined))}
-            />
-        {/if}
         {#if source !== null}
             <SourceButton file={source} />
         {/if}
     </Toolbar>
 {/snippet}
 
-<Pane title={t('views.leads')} toolbar={tools}>
+{#snippet bar()}
+    <Toolbar label={t('leads.filters')}>
+        <Search
+            fill
+            value={held.search}
+            placeholder={t('leads.search')}
+            oninput={(search: string) => write({ search })}
+        />
+        {#if declined > 0}
+            <Chip
+                label={t('leads.declined', declined)}
+                title={declinedToggleTip}
+                glyph="dismiss"
+                pressed={held.showDeclined}
+                onclick={() => write(showing(!held.showDeclined))}
+            />
+        {/if}
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('views.leads')} toolbar={tools} {bar}>
     <div class="leads" data-instance={instance.id}>
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="scout" />
@@ -232,8 +243,7 @@
                     {/each}
                 </div>
             {:else}
-                <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-                <p class="empty">{@html t('leads.empty')}</p>
+                <Empty message={t('leads.empty')} glyph="scout" />
             {/if}
 
             {#if split.expired.length > 0}
@@ -303,24 +313,22 @@
 <AskConfirm {asking} onclose={() => (asking = null)} />
 
 <style>
+    /* One column the width of the pane, however long a line inside it: a grid's own column would
+       otherwise grow to the widest line it holds and widen the pane. */
     .leads {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: 12px;
     }
 
-    .said,
-    .empty {
+    .leads > :global(*),
+    .cards > :global(*) {
+        min-width: 0;
+    }
+
+    .said {
         margin: 0;
-    }
-
-    .said,
-    .empty {
         color: var(--muted-txt, var(--muted));
-    }
-
-    .empty {
-        padding: 10px 0;
-        font-size: var(--fs-md);
     }
 
     .cards {

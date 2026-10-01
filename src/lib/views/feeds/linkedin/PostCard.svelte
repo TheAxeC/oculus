@@ -97,12 +97,17 @@
     .snippet {
         margin: 0;
         white-space: pre-wrap;
+        overflow-wrap: anywhere;
     }
 
+    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-reveal`: transparent at
+       rest, so the card keeps its size and Tab still reaches every control. */
     .actions {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
         gap: 6px;
+        opacity: var(--card-reveal);
+        transition: opacity 120ms ease-out;
     }
 </style>

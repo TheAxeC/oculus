@@ -1,16 +1,11 @@
 <script lang="ts">
-    // Layer 3, Domains partial. One populated domain, its configured accent, registry prose,
-    // grouped project links and schema-driven edit form.
+    // Layer 3, Domains partial. One populated domain: the registry card (RegistryCard.svelte) with
+    // its configured accent and its registry prose.
 
-    import Card from '$lib/ui/frame/Card.svelte';
-    import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
-    import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
+    import RegistryCard from '$lib/views/shared/forms/RegistryCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Entry, SchemaField } from '$lib/state/boards/collection';
     import { isDormant, type Domain, type Project } from '$lib/state/boards/structure/lines';
-    import { t } from '$lib/state/shared/words/text';
     import { domainTone } from '$lib/state/shared/words/tones';
 
     type Props = {
@@ -24,41 +19,27 @@
         onsaid: (said: string) => void;
     };
     let { domain, cursor, projects, entry, schema, editing, onedit, onsaid }: Props = $props();
-
-    function projectWord(): string {
-        return projects.length === 1 ? t('pillars.project') : t('pillars.projects');
-    }
 </script>
 
 <div class:dormant={isDormant(projects)} data-domain={domain.id}>
-    <Card
+    <RegistryCard
+        collection="domains"
         id={domain.id}
         {cursor}
         title={domain.title}
-        titleHtml={inlineMarkdown(domain.title)}
         tone={domainTone(domain.id)}
+        {projects}
+        {entry}
+        {schema}
+        {editing}
+        {onedit}
+        {onsaid}
     >
-        {#snippet meta()}
-            <Tag label={`${projects.length} ${projectWord()}`} />
-            {#if entry !== null && schema !== undefined}
-                <ToolButton
-                    label={t('collection.form_edit_title')}
-                    glyph={t('collection.edit_glyph')}
-                    compact
-                    active={editing}
-                    onclick={onedit}
-                />
-            {/if}
-        {/snippet}
         {#if domain.blurb}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p>{@html inlineMarkdown(domain.blurb)}</p>
         {/if}
-        <CrossLinks {projects} />
-        {#if editing && entry !== null}
-            <EntryForm collection="domains" {schema} {entry} onclose={onedit} {onsaid} />
-        {/if}
-    </Card>
+    </RegistryCard>
 </div>
 
 <style>

@@ -75,5 +75,6 @@ text:
         ch_touched: Touched by this session
         ch_touched_empty: No file touched yet.
         ch_untracked: Untracked
+        changes_bar: Changes controls
         changes_glyph: changes
         view_changes: Changes

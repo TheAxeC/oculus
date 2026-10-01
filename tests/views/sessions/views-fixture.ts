@@ -178,3 +178,5 @@ export function textOf(body: string, attribute: string, from = 0): string {
         .replace(/<!--[^>]*-->/g, '')
         .trim();
 }
+
+export { between, barOf, headerOf, toolsOf } from '../shared/pane-parts.ts';

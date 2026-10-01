@@ -387,6 +387,7 @@
     .slot {
         display: flex;
         flex-direction: column;
+        min-width: 0;
     }
 
     .slot > :global(.card) {
@@ -397,7 +398,7 @@
     /* The card draws past its own edge, so its colour bar carries the card's rounded corners itself
        and a long unbroken title breaks inside the card's width. */
     .slot > :global(.card > .bar) {
-        border-radius: var(--radius) 0 0 var(--radius);
+        border-radius: var(--input-radius) 0 0 var(--input-radius);
     }
 
     .slot > :global(.card .title) {
@@ -406,9 +407,9 @@
 
     .folder {
         font-family: var(--font-mono);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
-        word-break: break-all;
+        overflow-wrap: anywhere;
     }
 
     .row {
@@ -416,6 +417,7 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         margin-top: 6px;
     }
 
@@ -466,7 +468,7 @@
     }
 
     .label {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;

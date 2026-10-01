@@ -17,6 +17,7 @@ import {
 import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { between } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 
@@ -144,6 +145,27 @@ describe('one file as its own tab', () => {
     });
 });
 
+// Where the file view puts its controls: the one icon action in the header, the text buttons in
+// the bar under it.
+describe('where the file view puts its controls', () => {
+    it('keeps the star and Open in a browser tab in the header as bare icons', () => {
+        const body = drawn({ root: 'hub', path: 'paper.pdf', label: 'paper.pdf' });
+        const header = between(body, '<header', '</header>');
+        const bar = between(body, '<div class="viewbar', '<div class="body');
+
+        const tools = header.match(/<button[^>]*class="tool[^"]*"[^>]*>/g) ?? [];
+        expect(tools.length).toBe(2);
+        for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
+        expect(header).toContain('aria-label="Bookmark this file"');
+        expect(header).toContain('aria-label="Open in a browser tab"');
+        expect(header).toContain('data-glyph="launch"');
+        // the star is an action with a glyph, so it is not a control of the bar
+        expect(bar).not.toContain('Bookmark this file');
+        // the bar holds only the failure words, so it draws no strip of controls
+        expect(bar).not.toContain('role="toolbar"');
+    });
+});
+
 // The control that hands the file to its program on this machine. What pressing it posts, and the
 // sentence a refusal leaves, need a DOM and a server, and no case here presses it.
 describe('the control that opens a file in its program', () => {
@@ -186,14 +208,17 @@ describe('the control that opens a file in its program', () => {
         return body.split(`<span class="label">${catalog['file.open_program']}</span>`).length - 1;
     }
 
-    it('draws it in the toolbar and beside the download for a .docx, as ui/controls/ToolButton', async () => {
+    it('draws it in the header and beside the download for a .docx, as ui/controls/ToolButton', async () => {
         const body = await held('drafts/report.docx', false);
 
-        expect(controls(body)).toBe(2);
+        // one text button beside the download, and one bare icon in the header
+        expect(controls(body)).toBe(1);
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+        expect(header).toContain(`aria-label="${catalog['file.open_program']}"`);
         const other = body.slice(body.indexOf('class="other'));
         expect(other).toContain('download="report.docx"');
         expect(other).toContain(catalog['file.open_program']);
-        for (const at of body.split(catalog['file.open_program']).slice(0, -1)) {
+        for (const at of other.split(catalog['file.open_program']).slice(0, -1)) {
             expect(at.lastIndexOf('<button type="button" class="tool')).toBeGreaterThan(-1);
         }
         expect(body).toContain(`data-glyph="${catalog['file.open_program_glyph']}"`);
@@ -207,7 +232,7 @@ describe('the control that opens a file in its program', () => {
     it('reads the list from the configuration the page holds: one naming .zip offers a .zip', async () => {
         const zipped = { ...config, open: { program_ext: { '.zip': 'com.apple.archiveutility' } } };
         expect(controls(await held('bundle.zip', false))).toBe(0);
-        expect(controls(await held('bundle.zip', false, zipped))).toBe(2);
+        expect(controls(await held('bundle.zip', false, zipped))).toBe(1);
         expect(controls(await held('drafts/report.docx', false, zipped))).toBe(0);
     });
 
@@ -233,6 +258,23 @@ describe('the control that opens a file in its program', () => {
 
     it('draws none while no file is chosen', () => {
         expect(controls(drawn({}))).toBe(0);
+    });
+
+    it('puts the program control in the header for a file whose extension names a program', async () => {
+        const body = await held('drafts/report.docx', false);
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+        const bar = body.slice(
+            body.indexOf('<div class="viewbar'),
+            body.indexOf('<div class="body')
+        );
+
+        expect(header).toMatch(
+            new RegExp(
+                `<button[^>]*class="tool[^"]*\\bbare\\b[^"]*"[^>]*aria-label="${catalog['file.open_program']}"`
+            )
+        );
+        // the program control is a header icon, so the bar does not repeat it
+        expect(bar).not.toContain(catalog['file.open_program']);
     });
 });
 

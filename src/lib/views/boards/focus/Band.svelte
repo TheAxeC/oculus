@@ -83,7 +83,7 @@
     <div class="entry">
         <div class="entry-h">
             <span class="entry-name">
-                <ToolButton label={item.title} {glyph} onclick={() => reveal(item)} />
+                <ToolButton plain cut label={item.title} {glyph} onclick={() => reveal(item)} />
             </span>
             {#if days !== null}
                 <span class="badge">
@@ -178,17 +178,13 @@
         cursor: pointer;
     }
 
+    /* The columns fill the pane's width in as many as it holds, and one in a pane narrower than a
+       column. */
     .lanes {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
         gap: 10px;
         margin-top: 8px;
-    }
-
-    @media (max-width: 900px) {
-        .lanes {
-            grid-template-columns: 1fr;
-        }
     }
 
     .lane {
@@ -209,7 +205,7 @@
 
     .lane-sub {
         margin: 4px 0 6px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -222,7 +218,7 @@
 
     .stage {
         margin: 0 0 4px;
-        font-size: var(--fs-3xs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -239,9 +235,9 @@
 
     .entry {
         min-width: 0;
-        padding: 4px 6px;
+        padding: 0 6px;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: var(--input-radius);
         background: var(--chip);
     }
 
@@ -251,28 +247,29 @@
         background: transparent;
     }
 
+    /* The first line of an entry is one row of the tree's height. */
     .entry-h {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
         gap: 6px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
+    /* The entry's name is a plain button: the words of the row, with the focus ring the button
+       draws and an underline under the pointer. */
     .entry-name {
+        display: flex;
         min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
         font-size: var(--fs-md);
+        font-weight: 600;
         color: var(--ink-txt, var(--ink));
     }
 
-    .entry-name :global(.tool) {
-        border: 0;
-        background: none;
-        padding: 0;
-        color: var(--ink-txt, var(--ink));
-        font-size: var(--fs-md);
+    .entry-name:hover,
+    .entry-name:focus-within {
+        color: var(--accent-txt, var(--accent));
+        text-decoration: underline;
     }
 
     .badge {
@@ -280,8 +277,9 @@
     }
 
     .note {
-        margin: 2px 0 0;
-        font-size: var(--fs-xs);
+        margin: 0;
+        font-size: var(--fs-sm);
+        line-height: calc(var(--tree-row) * var(--text-scale, 1));
         color: var(--muted-txt, var(--muted));
     }
 </style>

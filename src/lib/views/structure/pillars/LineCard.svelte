@@ -1,13 +1,10 @@
 <script lang="ts">
-    // Layer 3, Pillars partial. One registry-line card with its portfolio metrics, registry prose,
-    // project cross-links and the shared schema-driven edit form.
+    // Layer 3, Pillars partial. One registry-line card (RegistryCard.svelte) with its portfolio
+    // metrics and registry prose.
 
-    import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
-    import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
+    import RegistryCard from '$lib/views/shared/forms/RegistryCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Entry, SchemaField } from '$lib/state/boards/collection';
     import {
@@ -55,27 +52,22 @@
         typeof entry?.fields.funding === 'string' ? entry.fields.funding : undefined
     );
     const tone = $derived(line.color === undefined ? undefined : paletteTone(line.color));
-
-    function projectWord(): string {
-        return projects.length === 1 ? t('pillars.project') : t('pillars.projects');
-    }
 </script>
 
 <div class:dormant={isDormant(projects)} class:muted data-pillar={line.id}>
-    <Card id={line.id} {cursor} title={line.title} titleHtml={inlineMarkdown(line.title)} {tone}>
-        {#snippet meta()}
-            <Tag label={`${projects.length} ${projectWord()}`} />
-            {#if entry !== null && schema !== undefined}
-                <ToolButton
-                    label={t('collection.form_edit_title')}
-                    glyph={t('collection.edit_glyph')}
-                    compact
-                    active={editing}
-                    onclick={onedit}
-                />
-            {/if}
-        {/snippet}
-
+    <RegistryCard
+        collection="pillars"
+        id={line.id}
+        {cursor}
+        title={line.title}
+        {tone}
+        {projects}
+        {entry}
+        {schema}
+        {editing}
+        {onedit}
+        {onsaid}
+    >
         {#if !muted}
             <div class="metrics">
                 <strong>{flight.length} {t('pillars.in_flight')}</strong>
@@ -103,11 +95,7 @@
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p class="blurb">{@html inlineMarkdown(line.blurb)}</p>
         {/if}
-        <CrossLinks {projects} />
-        {#if editing && entry !== null}
-            <EntryForm collection="pillars" {schema} {entry} onclose={onedit} {onsaid} />
-        {/if}
-    </Card>
+    </RegistryCard>
 </div>
 
 <style>
@@ -121,12 +109,17 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .total,
     .funding,
     .blurb {
         color: var(--muted-txt, var(--muted));
+    }
+
+    .total {
+        font-size: var(--fs-sm);
     }
 
     .goal,

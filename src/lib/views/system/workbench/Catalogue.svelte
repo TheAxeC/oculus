@@ -28,6 +28,7 @@
     // that opens it.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import Chip from '$lib/ui/controls/Chip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -156,15 +157,6 @@
         if (from === null || event.detail === 0) return false;
         return Math.hypot(event.clientX - from.x, event.clientY - from.y) >= THRESHOLD;
     }
-
-    /**
-     * The status pair for a registration's badge; absent leaves the accent pair in the stylesheet.
-     */
-    function badgeStyle(tone: string | undefined): string | undefined {
-        return tone === undefined
-            ? undefined
-            : `--badge-bg: var(--c-${tone}); --badge-fg: var(--on-c-${tone})`;
-    }
 </script>
 
 <!-- The box every view has; this one draws its rows straight into it, so it asks for the tint. -->
@@ -210,15 +202,13 @@
                                     <span class="key" aria-hidden="true">{key}</span>
                                 {/if}
                                 {#if badge.glyph !== '' || badge.text !== ''}
-                                    <span
-                                        class="badge"
-                                        style={badgeStyle(badge.tone)}
-                                        title={badge.title}
-                                        aria-hidden="true"
-                                    >
-                                        {#if badge.glyph !== ''}
-                                            <Glyph name={badge.glyph} />
-                                        {/if}{badge.text}
+                                    <span class="badge" title={badge.title} aria-hidden="true">
+                                        <Chip
+                                            label={badge.text}
+                                            glyph={badge.glyph}
+                                            tone={badge.tone}
+                                            filled
+                                        />
                                     </span>
                                 {/if}
                             </div>
@@ -278,7 +268,8 @@
         align-items: center;
         gap: 6px;
         margin: 0 0 6px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--muted-txt, var(--muted));
@@ -287,7 +278,7 @@
     .chord,
     .key {
         font-family: var(--font-num);
-        font-size: var(--fs-3xs);
+        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -304,11 +295,6 @@
     }
 
     .badge {
-        padding: 0 4px;
-        border-radius: var(--radius-pill);
-        background: var(--badge-bg, var(--chip));
-        color: var(--badge-fg, var(--accent-txt, var(--accent)));
-        font-family: var(--font-num);
-        font-size: var(--fs-3xs);
+        display: inline-flex;
     }
 </style>

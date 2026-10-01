@@ -5,8 +5,9 @@
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
+    import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
+    import { editAction } from '$lib/views/shared/card/card';
     import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import { accessTone, type Dataset } from '$lib/state/sources/datasets';
@@ -44,7 +45,29 @@
             : ''
     );
 
+    /**
+     * The card's controls, drawn while the card is hovered or holds the focus: the edit form for a
+     * dataset the collection file holds, and the recovery, which is not offered again while one is
+     * starting.
+     */
+    const actions = $derived.by((): CardAction[] => {
+        const rows: CardAction[] = [];
+        if (entry !== null && schema !== undefined) {
+            rows.push(editAction(editing, onedit));
+        }
+        rows.push({
+            id: 'recover',
+            label: t('data.recover'),
+            title: t('data.recover_tip'),
+            glyph: 'refresh',
+            active: recovering,
+            onclick: recover
+        });
+        return rows;
+    });
+
     async function recover(): Promise<void> {
+        if (recovering) return;
         recovering = true;
         const answer = await recoverDataset(dataset.id);
         recovering = false;
@@ -68,23 +91,7 @@
             {#if dataset.access}
                 <Tag label={dataset.access} tone={accessTone(dataset.access)} />
             {/if}
-            {#if entry !== null && schema !== undefined}
-                <ToolButton
-                    label={t('collection.form_edit_title')}
-                    glyph={t('collection.edit_glyph')}
-                    compact
-                    active={editing}
-                    onclick={onedit}
-                />
-            {/if}
-            <ToolButton
-                label={t('data.recover')}
-                title={t('data.recover_tip')}
-                glyph="refresh"
-                active={recovering}
-                disabled={recovering}
-                onclick={recover}
-            />
+            <CardActions {actions} />
         {/snippet}
 
         {#if dataset.description}

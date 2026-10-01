@@ -99,6 +99,6 @@
     .empty {
         margin: 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 </style>

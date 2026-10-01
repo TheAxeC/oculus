@@ -9,7 +9,6 @@ text:
         saved: Saved {0}
         title_hint: A line to find it by
         title_label: Title
-        toolbar: Note controls
         unsaved: Not saved yet
         untitled: Untitled note
     views:

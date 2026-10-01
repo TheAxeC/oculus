@@ -272,6 +272,35 @@ describe('the Present view', () => {
         expect(body).toContain(catalog['present.overview']);
     });
 
+    it('keeps the header empty and puts every control in the bar, the place in the deck last', () => {
+        const body = at('title');
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+        // the header carries no control in this view, as every control belongs to the bar
+        expect(header).not.toContain('<button');
+        const bar = body.slice(
+            body.indexOf('<div class="viewbar'),
+            body.indexOf('<div class="body')
+        );
+        const order = [
+            catalog['present.previous'],
+            catalog['present.next'],
+            catalog['present.overview'],
+            catalog['slides.open'],
+            `${client.present.position('title')} / ${client.present.slides().length}`
+        ].map((words) => bar.indexOf(words));
+        expect(order.every((at) => at > 0)).toBe(true);
+        expect(order).toEqual([...order].sort((one, two) => one - two));
+    });
+
+    it('draws the overview control as a toggle that says whether the grid is open', () => {
+        const shut = at('title');
+        const open = draw(instance.id, { slide: 'title', overview: true });
+        const toggle = (body: string): string =>
+            /<button[^>]*aria-pressed="(?:true|false)"[^>]*>/.exec(body)?.[0] ?? '';
+        expect(toggle(shut)).toContain('aria-pressed="false"');
+        expect(toggle(open)).toContain('aria-pressed="true"');
+    });
+
     it('draws its empty state when no config and no snapshot have arrived', () => {
         const bare = createClientState();
         const body = render(Present, {

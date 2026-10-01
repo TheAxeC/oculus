@@ -245,7 +245,7 @@
         />
     </div>
     {#if !one.exists}
-        <p class="none">{t('deposit.no_mirror')}</p>
+        <Empty message={t('deposit.no_mirror')} />
     {/if}
 {/snippet}
 
@@ -263,7 +263,7 @@
             <span>{t('deposit.changes', one.changes.length)}</span>
         </div>
         {#if one.changes.length === 0}
-            <p class="none">{t('deposit.changes_none')}</p>
+            <Empty message={t('deposit.changes_none')} />
         {:else}
             {#each one.changes as change (change.path)}
                 <div class="fl">
@@ -363,15 +363,19 @@
         {#if id === ''}
             <Empty message={t('deposit.none')} glyph={t('deposit.none_glyph')} />
         {:else if held.error !== ''}
-            <p class="warn">{held.error}</p>
+            <Empty error message={held.error}>
+                {#snippet action()}
+                    <ToolButton small label={t('deposit.retry')} onclick={() => reload(id)} />
+                {/snippet}
+            </Empty>
         {:else if now === null}
-            <p class="none">{t('deposit.unknown', id)}</p>
+            <Empty message={t('deposit.unknown', id)} />
         {:else}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render head(now)}
             {#if now.exists}
                 {#if plan === null}
-                    <p class="none">{t('deposit.plan_none')}</p>
+                    <Empty message={t('deposit.plan_none')} />
                 {:else}
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render made(plan)}
@@ -429,10 +433,14 @@
         margin-bottom: 4px;
     }
 
+    /* A file of the plan is one line of the tree's row height, its words the main words of a
+       row. */
     .fl {
         display: flex;
         gap: 8px;
-        align-items: baseline;
+        align-items: center;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+        font-size: var(--fs-md);
     }
 
     .st {

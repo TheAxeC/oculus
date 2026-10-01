@@ -13,7 +13,8 @@
 
 <script lang="ts">
     // Layer 3, view. The roots of the current workspace as an explorer: the workspace picker and
-    // the add-root control on the view's header, a filter and a breadcrumb over one tree per root,
+    // the add-root control on the view's header, the filter and the two listing toggles on its bar
+    // (tree/Filters.svelte), a breadcrumb over one tree per root,
     // each under a head carrying that root's icon controls, and the bookmarks, the notes and the
     // workspaces as sections under the trees in the same row style. Every control is drawn in every
     // state the view is in: a section whose file could not be read keeps its head and its control
@@ -69,9 +70,9 @@
     import Breadcrumb from '$lib/ui/tabs/Breadcrumb.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Search from '$lib/ui/controls/text/Search.svelte';
     import BookmarkForm from './sections/BookmarkForm.svelte';
     import Controls from './tree/Controls.svelte';
+    import Filters from './tree/Filters.svelte';
     import RootForm from './sections/RootForm.svelte';
     import Sections from './sections/Sections.svelte';
     import ShowPath from './tree/ShowPath.svelte';
@@ -372,20 +373,27 @@
         current={saved.current}
         names={workspaceNames(saved)}
         adding={view.form === 'root'}
-        shown={listed}
         owner={instance.id}
         followed={sessionById(followed) !== null || terminalById(followed) !== null
             ? followed
             : null}
         onselect={(name: string) => void select(name)}
-        onshow={flip}
         onadd={() => {
             show('root');
         }}
     />
 {/snippet}
 
-<Pane title={t('views.files')} toolbar={tools} tinted>
+{#snippet bar()}
+    <Filters
+        value={view.filter}
+        shown={listed}
+        onfilter={(value: string) => patch({ filter: value })}
+        onshow={flip}
+    />
+{/snippet}
+
+<Pane title={t('views.files')} toolbar={tools} {bar} tinted>
     <div class="files" data-instance={instance.id}>
         {#if view.form === 'root' || view.form === 'workspace'}
             <RootForm
@@ -401,7 +409,7 @@
                 }}
             />
         {:else if view.note !== ''}
-            <p class="note" aria-live="polite">{view.note}</p>
+            <Empty error message={view.note} />
         {/if}
         {#if markForm}
             {#key `${instance.id} ${view.opening}`}
@@ -432,11 +440,6 @@
             rows={shown}
             onpatch={patchAt}
         />
-        <Search
-            value={view.filter}
-            placeholder={t('files.filter')}
-            oninput={(value: string) => patch({ filter: value })}
-        />
         {#if crumbs.length > 0}
             <Breadcrumb
                 label={t('files.breadcrumb')}
@@ -449,7 +452,7 @@
         {/if}
         <Follow owner={instance.id} {follow} />
         {#if saved.error !== ''}
-            <p class="note" aria-live="polite">{t('files.read_failed', saved.error)}</p>
+            <Empty error message={t('files.read_failed', saved.error)} />
         {:else if saved.loading}
             <Empty message={t('files.loading')} glyph={t('files.none_glyph')} />
         {:else if rows.length === 0}
@@ -459,12 +462,13 @@
             {/if}
         {:else}
             {#each saved.dropped as key (key)}
-                <p class="note">{t('files.reserved', key)}</p>
+                <Empty error message={t('files.reserved', key)} />
             {/each}
             {#each failures as failure (treeKey(failure.root, failure.path))}
-                <p class="note">
-                    {t('files.listing_failed', failure.path || failure.root, failure.error)}
-                </p>
+                <Empty
+                    error
+                    message={t('files.listing_failed', failure.path || failure.root, failure.error)}
+                />
             {/each}
             <Tree
                 rows={shown}
@@ -485,7 +489,7 @@
                 onaddroot={view.form === 'root' ? undefined : () => show('root')}
             />
             {#if filtering && matchedNothing(shown)}
-                <p class="said">{t('files.filter_none')}</p>
+                <Empty message={t('files.filter_none')} glyph={t('files.none_glyph')} />
             {/if}
         {/if}
         <Sections
@@ -523,12 +527,6 @@
         flex-direction: column;
         gap: 4px;
         min-width: 0;
-    }
-
-    .note {
-        margin: 0;
-        color: var(--c-red-txt);
-        font-size: var(--fs-sm);
     }
 
     .said {

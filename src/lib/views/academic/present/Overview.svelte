@@ -50,7 +50,7 @@
 <style>
     .overview {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
         gap: 12px;
     }
 
@@ -74,6 +74,6 @@
     .at {
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-num);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 </style>

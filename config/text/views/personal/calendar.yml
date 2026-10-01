@@ -21,6 +21,7 @@ text:
         no_events: No events in this window.
         no_earlier: 'Nothing before {0} is read.'
         no_later: 'Nothing after {0} is read.'
+        paging: Calendar paging
         polling: reading calendars...
         provider_google: Google
         provider_ics: Published link

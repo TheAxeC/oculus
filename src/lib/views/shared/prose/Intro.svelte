@@ -1,7 +1,8 @@
 <script lang="ts">
-    // Layer 3, shared view partial. The bordered block directly under a pane title. It accepts
-    // catalog HTML, optional additional lines, or structured content such as a status chip. A line
-    // may carry a value from a hub file, so what it is given is sanitised before it is drawn.
+    // Layer 3, shared view partial. The words directly under a pane header, in plain muted type. It
+    // accepts catalog HTML, optional additional lines, or structured content such as a status chip.
+    // A line may carry a value from a hub file, so what it is given is sanitised before it is
+    // drawn.
 
     import type { Snippet } from 'svelte';
     import { sanitise } from '$lib/ui/html';
@@ -47,24 +48,16 @@
 </div>
 
 <style>
+    /* Plain words in the muted colour, with the view's controls after them: no box, rule or
+       fill, as VS Code draws the text above a view's content. */
     .intro {
         display: flex;
         flex-wrap: wrap;
         align-items: flex-start;
         gap: 12px;
         margin: 0 0 10px;
-        padding: 8px 10px;
-        border: 1px solid var(--line);
-        border-left: 3px solid var(--accent);
-        border-radius: var(--radius-sm);
-        background: var(--chip);
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
-    }
-
-    :global(body.wall) .intro {
-        background: var(--chip-on-wall);
-        backdrop-filter: blur(var(--wall-blur));
     }
 
     .content {

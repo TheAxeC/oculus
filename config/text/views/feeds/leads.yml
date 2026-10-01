@@ -12,10 +12,12 @@ text:
             to_application_replace: The Applications add form holds text you have not saved. Replace it with this lead?
         add: + add lead
         add_tip: add a position lead
-        empty: No live leads - run <code>/research-cockpit scout</code>.
+        declined: declined {0}
+        empty: No live leads - run `/research-cockpit scout`.
         exp_note: '| {0} expired (hidden)'
         expired: expired
         expired_sec: Expired / actioned ({0}) - hidden
+        filters: Lead filters
         fit_none: '-'
         hide_declined: Hide declined ({0})
         intro: Academic openings - auto-scouted (BE/NL/LU). {0} live{1} | fit chip = strong / moderate / reach.
@@ -27,6 +29,7 @@ text:
         runlog: Run log
         search: Search leads | institution | focus ...
         show_declined: Show declined ({0})
+        toolbar: Lead actions
     views:
         leads: Position Leads
         leads_glyph: scout

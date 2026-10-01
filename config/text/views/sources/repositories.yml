@@ -112,6 +112,7 @@ text:
         merge_open_title: Resolve this conflict in the merge editor
         merge_pending: Reading the three versions
         merge_result: Result
+        merge_retry: Read again
         merge_took_both: took both
         merge_took_current: took current
         merge_took_edited: edited by hand
@@ -181,6 +182,7 @@ text:
         diff_empty: Nothing to show for this one.
         diff_failed: The diff could not be read.
         diff_pending: Reading the diff
+        diff_retry: Read again
         diff_staged_title: Show what is staged for this path
         diff_title: Show what changed in this path
         diff_worktree_title: Show what this worktree holds that the repository does not

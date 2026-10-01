@@ -78,6 +78,7 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         margin-top: 6px;
     }
 

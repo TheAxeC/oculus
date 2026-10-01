@@ -1,6 +1,6 @@
-// Layer 4, view test. The shared intro partial owns the bordered surface, draws the catalog's own
-// markup as written and cuts a hub value down first, and wraps its controls under the words rather
-// than pushing them past its edge.
+// Layer 4, view test. The shared intro partial draws plain muted words with no box, draws the
+// catalog's own markup as written and cuts a hub value down first, and wraps its controls under
+// the words rather than pushing them past its edge.
 //
 // What this does NOT cover: the filtering. DOMPurify needs a document and this suite runs in node,
 // so `sanitise` returns its argument here; which of the two paths a line takes is read off the
@@ -55,10 +55,12 @@ describe('Intro', () => {
         expect(intro.slice(0, intro.indexOf('}'))).toContain('flex-wrap: wrap');
     });
 
-    it('uses the chip surface, accent rule and prose size', () => {
+    it('audits that the words are plain muted type at the prose size, with no box, rule or fill', () => {
         const source = readFileSync('src/lib/views/shared/prose/Intro.svelte', 'utf8');
-        expect(source).toContain('background: var(--chip)');
-        expect(source).toContain('border-left: 3px solid var(--accent)');
-        expect(source).toContain('font-size: var(--fs-md)');
+        const intro = source.slice(source.indexOf('.intro {'));
+        const rule = intro.slice(0, intro.indexOf('}'));
+        expect(rule).toContain('font-size: var(--fs-md)');
+        expect(rule).toContain('color: var(--muted-txt, var(--muted))');
+        expect(rule).not.toMatch(/background|border/);
     });
 });

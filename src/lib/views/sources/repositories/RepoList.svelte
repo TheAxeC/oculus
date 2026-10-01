@@ -151,6 +151,7 @@
                                             label={branchOf(git)}
                                             title={working ? t('git.busy') : branchOf(git)}
                                             glyph="branch"
+                                            small
                                             cut
                                             tabindex={reach}
                                             disabled={working}
@@ -161,6 +162,7 @@
                                                 label={branchState(git)}
                                                 title={working ? t('git.busy') : branchState(git)}
                                                 glyph="sync"
+                                                small
                                                 tabindex={reach}
                                                 disabled={working}
                                                 onclick={() => sync(root, git)}

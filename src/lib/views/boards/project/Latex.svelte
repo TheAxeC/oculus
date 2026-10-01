@@ -18,6 +18,7 @@
     // with the new PDF time and the new error count.
 
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { HUB_ROOT, nameOf } from '$lib/state/sources/fs';
     import { stamp } from '$lib/state/shared/words/format';
@@ -34,7 +35,7 @@
     let { id }: Props = $props();
 
     const {
-        latex: { state: latexOf, watch },
+        latex: { invalidate, state: latexOf, watch },
         layout: { openView },
         selection: { select },
         terminals: { latex: startLatex, showTerminal }
@@ -102,10 +103,18 @@
     <section class="block" data-latex={id}>
         <h3 class="heading">{t('project.latex.heading')}</h3>
         {#if held.error !== ''}
-            <p class="failed">{t('project.latex.read_failed', held.error)}</p>
+            <Empty error message={t('project.latex.read_failed', held.error)}>
+                {#snippet action()}
+                    <ToolButton
+                        small
+                        label={t('project.latex.retry')}
+                        onclick={() => invalidate(id)}
+                    />
+                {/snippet}
+            </Empty>
         {/if}
         {#if said !== ''}
-            <p class="failed">{said}</p>
+            <Empty error message={said} />
         {/if}
         {#each shown as row (row.main)}
             <div class="main" data-main={row.main}>
@@ -113,17 +122,20 @@
                     <span class="nm">{row.main}</span>
                     <span class="ts">{pdfLabel(row)}</span>
                     <ToolButton
+                        small
                         label={t('project.latex.build')}
                         title={t('project.latex.build_tip')}
                         onclick={() => void run(row, 'build')}
                     />
                     <ToolButton
+                        small
                         label={t('project.latex.clean')}
                         title={t('project.latex.clean_tip')}
                         onclick={() => void run(row, 'clean')}
                     />
                     {#if row.pdf !== null}
                         <ToolButton
+                            small
                             label={t('project.latex.open_pdf')}
                             title={t('project.latex.open_pdf_tip')}
                             onclick={() => openPdf(row)}
@@ -176,12 +188,6 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    .failed {
-        margin: 0 0 4px;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
     .main {
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
@@ -195,6 +201,7 @@
         gap: 6px;
         flex-wrap: wrap;
         min-width: 0;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .nm {
@@ -213,7 +220,7 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        margin-top: 4px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .issues {
@@ -225,7 +232,7 @@
     .issues li {
         display: flex;
         gap: 6px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         overflow-wrap: anywhere;
     }
 

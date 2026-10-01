@@ -113,13 +113,15 @@
         display: flex;
         background: var(--card);
         border: 1px solid var(--line);
-        border-radius: var(--radius);
+        border-radius: var(--input-radius);
         box-shadow: var(--shadow);
         overflow: hidden;
     }
 
+    /* The card holding the keyboard cursor reveals its actions as a hovered card does. */
     .card:hover,
-    .card:focus-within {
+    .card:focus-within,
+    .card[data-cursor] {
         --card-reveal: 1;
     }
 
@@ -144,8 +146,8 @@
     }
 
     :global(.card[data-cursor]) {
-        outline: 2px solid var(--accent);
-        outline-offset: -3px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     .bar {
@@ -156,13 +158,13 @@
     .face {
         flex: 1 1 auto;
         min-width: 0;
-        padding: 10px 12px;
+        padding: 8px 12px;
     }
 
     .title {
         margin: 0;
-        font-size: var(--fs-xl);
-        font-weight: 700;
+        font-size: var(--fs-md);
+        font-weight: 600;
         color: var(--ink-txt, var(--ink));
     }
 
@@ -185,8 +187,8 @@
     }
 
     .open:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
+        outline: 1px solid var(--accent);
+        outline-offset: 1px;
     }
 
     .meta {
@@ -227,7 +229,6 @@
     }
 
     :global(body.rice) .title {
-        font-size: var(--fs-md);
         letter-spacing: 0.01em;
     }
 </style>

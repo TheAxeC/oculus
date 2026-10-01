@@ -32,6 +32,7 @@ import {
 import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { barOf, headerOf, toolsOf } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -148,10 +149,10 @@ describe('the source editor', () => {
         });
         expect(body).toContain('data-editor-host');
         expect(body).toContain('&lt; B');
-        // Save, Revert and the rendered half are the pane's bar, which Source draws, so the
-        // editor draws no bar of its own
+        // Save and Revert are the pane's header actions and the rendered half is its bar, which
+        // Source draws, so the editor draws no bar of its own
         expect(body).not.toContain('role="toolbar"');
-        // nor the save control that bar carries
+        // nor the save control that the header carries
         expect(body).not.toContain(`>${catalog['editor.save']}</span>`);
         // nor the control that takes the rendered half away
         expect(body).not.toContain(`>${catalog['source.preview']}</span>`);
@@ -201,7 +202,7 @@ describe('the source editor', () => {
         expect(saved).not.toContain('data-glyph="cross"');
     });
 
-    it('draws Save, Revert, Preview and the star on the pane bar in that order, the saved word after', async () => {
+    it('puts Save, Revert and the star in the header as bare icons, and Preview and the saved word in the bar', async () => {
         vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
             Promise.resolve(
                 new Response(init === undefined ? '# notes' : JSON.stringify({ ok: true }))
@@ -216,20 +217,89 @@ describe('the source editor', () => {
         await loadSourceDraft(instance.id, 'hub', 'notes.md');
         await saveSourceDraft(instance.id, 'hub', 'notes.md');
         const body = render(Source, { context: clientContext(client), props: { instance } }).body;
-        const bar = body.slice(body.indexOf('role="toolbar"'), body.indexOf('class="source"'));
-        const at = (words: string): number => bar.indexOf(`>${words}</span>`);
-        expect(at(catalog['editor.save'])).toBeGreaterThan(-1);
-        expect(at(catalog['editor.revert'])).toBeGreaterThan(at(catalog['editor.save']));
-        expect(at(catalog['source.preview'])).toBeGreaterThan(at(catalog['editor.revert']));
-        const star = bar.indexOf(catalog['file.bookmark']);
-        expect(star).toBeGreaterThan(at(catalog['source.preview']));
-        expect(bar).toContain(`data-glyph="${catalog['editor.revert_glyph']}"`);
-        expect(bar.indexOf(catalog['source.saved'])).toBeGreaterThan(star);
-        // the bar is the one row of controls: the body under it holds none
-        expect(body.split('role="toolbar"').length - 1).toBe(1);
+        const header = headerOf(body);
+        const bar = barOf(body);
+
+        const tools = toolsOf(header);
+        expect(tools.length).toBe(3);
+        for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
+        expect(tools[0]).toContain(`aria-label="${catalog['editor.save']}"`);
+        expect(tools[1]).toContain(`aria-label="${catalog['editor.revert']}"`);
+        expect(tools[2]).toContain(`aria-label="${catalog['file.bookmark']}"`);
+        expect(header).toContain(`data-glyph="${catalog['editor.revert_glyph']}"`);
+        // an icon action carries its words as the name and draws none beside the icon
+        expect(header).not.toContain('<span class="label">');
+
+        // the toggle is a pressable chip and the saved word ends the bar; the star is the header's
+        const preview = bar.indexOf(`>${catalog['source.preview']}</span>`);
+        expect(bar).toMatch(
+            /<button[^>]*class="chip[^"]*pressable[^"]*"[^>]*aria-pressed="(true|false)"/
+        );
+        expect(preview).toBeGreaterThan(-1);
+        // the bookmark star is a header icon, so the bar does not repeat it
+        expect(bar).not.toContain(catalog['file.bookmark']);
+        expect(bar.indexOf(catalog['source.saved'])).toBeGreaterThan(preview);
+        // Save is a header icon, so no word of it sits in the bar
+        expect(bar).not.toContain(`>${catalog['editor.save']}</span>`);
+        // the header and the bar are the two rows of controls: the body under them holds none
+        expect(body.split('role="toolbar"').length - 1).toBe(2);
     });
 
-    it('carries the program control in its bar for a listed .rtf, and none for a Markdown file', () => {
+    it('draws the Preview chip pressed while the rendered half is shown and not pressed after it is taken away', async () => {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('# notes')));
+        const instance = {
+            id: 'source-pressed',
+            view: 'source',
+            state: sourceTabState('hub', 'notes.md')
+        };
+        await loadSourceDraft(instance.id, 'hub', 'notes.md');
+        const pressedWhile = (): string => {
+            const body = render(Source, {
+                context: clientContext(client),
+                props: { instance }
+            }).body;
+            const chip =
+                /<button[^>]*class="chip[^"]*pressable[^"]*"[^>]*>/.exec(barOf(body))?.[0] ?? '';
+            return /aria-pressed="(true|false)"/.exec(chip)?.[1] ?? 'none';
+        };
+        const before = (instanceState(instance.id) as { rendered: boolean }).rendered;
+        expect(pressedWhile()).toBe(String(before));
+        toggleSourceRendered(instance.id);
+        expect(pressedWhile()).toBe(String(!before));
+    });
+
+    it('draws a file that could not be read as the message box with a control that reads it again', async () => {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('gone', { status: 404 })));
+        const instance = {
+            id: 'source-refused-read',
+            view: 'source',
+            state: sourceTabState('hub', 'link.md')
+        };
+        await loadSourceDraft(instance.id, 'hub', 'link.md');
+        const body = render(Source, { context: clientContext(client), props: { instance } }).body;
+
+        const box =
+            /<p class="empty[^"]*\berror\b[^"]*"[^>]*role="alert"[^>]*>[\s\S]*?<\/p>/.exec(
+                body
+            )?.[0] ?? '';
+        expect(box).not.toBe('');
+        expect(box).toContain('Cannot open: ');
+        expect(box).toContain(`<span class="label">${catalog['source.retry']}</span>`);
+        // the box is where the editor would be, so there is no editor under it
+        expect(body).not.toContain('data-editor-host');
+    });
+
+    it('draws a tab that names no file as the message box with no control to read it again', () => {
+        const body = render(Source, {
+            context: clientContext(client),
+            props: { instance: { id: 'source-none', view: 'source', state: {} } }
+        }).body;
+        expect(body).toMatch(/<p class="empty[^"]*\berror\b/);
+        // a tab that names no file has nothing to read again
+        expect(body).not.toContain(`<span class="label">${catalog['source.retry']}</span>`);
+    });
+
+    it('carries the program control in its header for a listed .rtf, and none for a Markdown file', () => {
         const tab = (path: string): string =>
             render(Source, {
                 context: clientContext(client),
@@ -241,7 +311,7 @@ describe('the source editor', () => {
                     }
                 }
             }).body;
-        const words = `<span class="label">${catalog['file.open_program']}</span>`;
+        const words = `aria-label="${catalog['file.open_program']}"`;
         expect(tab('letters/cover.rtf')).toContain(words);
         // a .md is read in the tab itself, so it is offered no program control
         expect(tab('notes.md')).not.toContain(words);

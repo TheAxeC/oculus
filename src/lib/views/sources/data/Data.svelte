@@ -15,14 +15,16 @@
     // schema-driven add and edit forms. Registry entities display while its collection handles
     // writes.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
+    import AddButton from '$lib/views/shared/forms/AddButton.svelte';
     import SourceToolbar from '$lib/views/shared/links/SourceToolbar.svelte';
-    import EntryForm from '$lib/views/shared/forms/EntryForm.svelte';
+    import RegistryHead from '$lib/views/shared/forms/RegistryHead.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
-    import Facets from '$lib/views/sources/data/Facets.svelte';
+    import ThemeFacets from '$lib/views/shared/forms/ThemeFacets.svelte';
     import DatasetCard from '$lib/views/sources/data/DatasetCard.svelte';
     import {
         accessSummary,
@@ -85,53 +87,54 @@
 </script>
 
 {#snippet tools()}
-    <SourceToolbar {source} />
+    <SourceToolbar {source}>
+        {#if collection?.schema !== undefined}
+            <AddButton
+                open={held.adding}
+                onclick={() => write({ adding: toggleAdd(instance.id, 'data', held.adding) })}
+            />
+        {/if}
+    </SourceToolbar>
 {/snippet}
 
-<Pane title={t('views.data')} toolbar={tools}>
-    <div class="data" data-instance={instance.id}>
-        <Intro
-            lines={[
-                t('data.intro', allDatasets.length, accessSummary(allDatasets)),
-                ...(collection?.intro ? [inlineMarkdown(collection.intro)] : [])
-            ]}
+{#snippet bar()}
+    <Toolbar label={t('data.filters')}>
+        <Search
+            fill
+            value={held.search}
+            placeholder={t('data.search')}
+            oninput={(search: string) => write({ search })}
         />
+        <ThemeFacets
+            {facets}
+            caption={t('data.modality_facet')}
+            off={held.off}
+            ontoggle={toggleTheme}
+        />
+    </Toolbar>
+{/snippet}
 
-        <div class="controls">
-            <Search
-                value={held.search}
-                placeholder={t('data.search')}
-                oninput={(search: string) => write({ search })}
-                fill
-            />
-            {#if collection?.schema !== undefined}
-                <ToolButton
-                    label={t('collection.add')}
-                    title={t('collection.add_tip')}
-                    active={held.adding}
-                    onclick={() => write({ adding: toggleAdd(instance.id, 'data', held.adding) })}
+<Pane title={t('views.data')} toolbar={tools} {bar}>
+    <div class="data" data-instance={instance.id}>
+        <RegistryHead
+            collection="data"
+            schema={collection?.schema}
+            adding={held.adding}
+            bind:said
+            onclose={() => write({ adding: false })}
+        >
+            {#snippet intro()}
+                <Intro
+                    lines={[
+                        t('data.intro', allDatasets.length, accessSummary(allDatasets)),
+                        ...(collection?.intro ? [inlineMarkdown(collection.intro)] : [])
+                    ]}
                 />
-            {/if}
-        </div>
-
-        {#if held.adding && collection?.schema !== undefined}
-            <EntryForm
-                collection="data"
-                schema={collection.schema}
-                entry={null}
-                onclose={() => write({ adding: false })}
-                onsaid={(words: string) => (said = words)}
-            />
-        {/if}
-
-        {#if said !== ''}
-            <p class="said">{said}</p>
-        {/if}
-
-        <Facets {facets} off={held.off} ontoggle={toggleTheme} />
+            {/snippet}
+        </RegistryHead>
 
         {#if allDatasets.length === 0}
-            <p class="empty">{t('data.empty')}</p>
+            <Empty message={t('data.empty')} />
         {:else}
             <div class="cards">
                 {#each shown as dataset (dataset.id)}
@@ -170,22 +173,9 @@
         min-width: 0;
     }
 
-    .said,
-    .empty {
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
-    }
-
-    .controls {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 10px;
-    }
-
     .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+        gap: 10px;
     }
 </style>

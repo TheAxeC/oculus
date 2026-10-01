@@ -133,3 +133,151 @@ The builder did not run any new test on the base tree (report, "NOT DONE" item 1
 Reviewer usage: tokens not available to the reviewer (not measured); tool uses not counted (about 70 in this last segment, more before the context compaction); minutes not measured (checks.sh alone took 6 min 18 s).
 
 Usage (from the completion notice): claude-sonnet-5-5, 340,175 tokens, 160 tool uses, 36.1 min.
+
+## Repair round 1, refuted
+
+Reviewer a0ab098f7b4f23aae, claude-sonnet-5-5 read from its transcript; 185,397 tokens, 63 tool uses, 14.1 min; 0 Spec, 0 Proof, 4 Standards (F2, F3a, F3b, F5), 2 Behaviour (F1, F4).
+
+### Report (worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/U3, base ab4d9084)
+
+Nothing in the worktree or the main checkout was edited. `git status --short` in the worktree printed the same 295 paths (md5 1ad4327d8f5900dd6b9f99d66e7b141a) before and after my runs, including after `npm run diagrams`, so it produced no new or removed paths. The failing-first runs were made in a scratch copy under $TMPDIR (node_modules symlinked), which I deleted afterwards.
+
+**Departure from the stated limits.** The brief allowed only `git diff ab4d9084` and `git status --short`. I also ran read-only `git show ab4d9084:<path>` several times (Chip, Files, Domains, Data, Venues, Leads and the change-rows test, to read base text), plus one `git ls-tree` and one `git ls-files`. They wrote nothing. Every conclusion built on a `git show` read was re-confirmed with `git diff` where it mattered (the Chip's new `solid`, `title` and `Tooltip`).
+
+## Open items
+
+None raised by me. Findings F1 to F4 below are fixes within the step. One decision belongs to the orchestrator and Axel: whether to take F1 as a repair-round-2 item or leave Ticker's small button for landing.
+
+## Verification (my own runs, from tools/oculus in the worktree)
+
+```
+$ npm run diagrams                      -> ran, listed docs/diagrams/*.dot/*.svg, rc 0
+$ sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md     rc=0
+$ npm test                -> Test Files  382 passed | 20 skipped (402) ; Tests  6269 passed | 614 skipped (6883)
+$ npm run test:checks     -> Test Files  29 passed | 2 skipped (31)     ; Tests  442 passed | 9 skipped (451)
+$ npm run check           -> COMPLETED 2881 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build           -> built in 10.70s
+$ npm run format:check    -> All matched files use Prettier code style!
+$ npm run lint            -> (no output)
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests   -> (no output)
+checks: 7 commands passed
+```
+
+No test timed out under load. These counts equal the builder's report (6269 passed, 614 skipped, 442 passed, 2881 files).
+
+Other commands I ran:
+- `grep -rn "line-height: 16px" src`, `grep -rn "css:[0-9]" src`, and case 8's four greps print nothing (rc=1 each). `grep -rn "function between" tests` prints only `tests/views/shared/pane-parts.ts:8`.
+- `sh utils/folder-check.sh` rc=0 and `sh utils/size-check.sh` rc=0. `git status --short src/lib/state src/routes src/lib/server src/lib/data` prints only ` M src/routes/+layout.svelte`, which is the ruled path.
+- `npx vitest run` over toolbar-fit, chip, empty, domains, data, venues, the search state test, `tests/views/whole` and `tests/ui`: 50 files, 768 tests passed. A second run over projects, collection, `tests/config`, the two search tests, glyph, chips (slow-tagged, run with timeouts off) and `tests/ui/theme`: 11 files, 212 tests passed.
+- Outline census: 28 `outline-offset: -1px`, 6 `outline-offset: 1px`, 31 `outline: 1px solid var(--accent)`, 10 `outline: none`.
+
+**Failing-first reproduction in the scratch copy.** Each mutation was made, run, and restored.
+
+| Change made | Result |
+|---|---|
+| `closesPopover` back to `return control !== null;` | `toolbar-fit.test.ts`: 2 failed, 11 passed ("stays open on a button that opens a menu" and "...a span inside a button that opens a menu"). Matches the builder. |
+| Chip `solid = $derived(filled)` | `chip.test.ts`: 1 failed, 5 passed (the pressed-fill case). Matches. |
+| Chip `<Tooltip text=''>` | 1 failed, 5 passed (the tooltip case). Matches. |
+| Empty `role='alert'` always | `empty.test.ts`: 1 failed, 4 passed ("draws the centred empty markup without error"). Matches. |
+| Empty without `class:error` and role | 1 failed, 4 passed ("draws the error box as an alert with the error class"). Matches. |
+| Domains, Data and Venues each given back a plain `<p class="empty">` | Each view's empty-state test fails, 1 failed each (Domains 1 of 8, Data 1 of 14, Venues 1 of 27). Matches. |
+
+The base `Chip.svelte` had no `title` prop, no Tooltip and no `solid`, so the two new Chip cases fail on the tree before the step. This is read from `git diff`, not run on the base tree.
+
+## Verdicts on the sixteen rulings
+
+1. Closed. `closesPopover` is in `ui/frame/toolbar/fit.ts:34-47` and is called at `Toolbar.svelte:110-112`. It checks for `[aria-haspopup]` on the found control or any ancestor of it. The six cases in `toolbar-fit.test.ts` match the six the ruling named. The test uses a plain-object stand-in for a node, so it proves the decision function. That `Toolbar` calls it, and that bits-ui puts `aria-haspopup` on the trigger, are shown by reading only. I read bits-ui's `use-dismissable-layer.svelte.js`: only the top-most layer answers an outside press (`isResponsibleLayer`), so a menu opened over the popover should not close it. That is a reading, not a run. A pick from the menu leaves the popover open. This is not a defect of the ruling, but the orchestrator will see it at the look.
+2. Closed as ruled, with one same-class leftover (F1). The thirteen `line-height: calc(var(--button-line) * var(--text-scale, 1))` additions are in place, and the ruling's grep prints nothing. No check was loosened. `RailPages.svelte` is judged below.
+3. Closed. `src/routes/+layout.svelte:34` reads `font: var(--fs-md) / 1.5 var(--font-ui);`, and the comment above it was updated. No test pins the body rule. I found no `em` or `rem` dependence on the old body size in Modal, Menu, ContextMenu, PaneView or FloatingBar.
+4. Closed, with a note (F4). The report states the four changes with before and after. I confirmed each against source:
+   - Files draws `<Empty error ...>` at `Files.svelte:412, 455, 465, 468`. At the base, the notes at 404 and 452 were `aria-live="polite"`.
+   - `Leads.svelte:183-190` is a `Chip` with `label={t('leads.declined', declined)}`, `title={declinedToggleTip}` and `pressed`.
+   - `sessions.test.ts` asserts exactly one Pin in the Changes bar.
+   - `AddButton.svelte` is a bare `ToolButton` with `active={open}` and `pressed={open}`.
+5. Closed. `DESIGN.md:410` reads "(14 px against VS Code's 13 px, ...)", and `TabFace.svelte:233,255` use `--fs-lg`, 14px.
+6. Closed with a small residue (F3). `DESIGN.md:405`, `Repositories.svelte:390-392` and the test comment at `change-rows.test.ts:150-151` now give the 20 px box as the compact control's `min-width` and `height` of `--header-action`, with no border. That matches `ToolButton.svelte:250-260`. The test comment calls it an audit of source text.
+7. Closed. `DESIGN.md:220` lists a status word, the project type, a filter toggle and the Views catalogue badge. It says a toggle is toned or untoned (Joint-work and disclosure pills are untoned), and it agrees with the `chips.test.ts` sentence later in the paragraph.
+8. Closed with a wording point (F5). `HELP.md:122` names the toggle "declined (n)" and gives its tooltip as Show declined (n) or Hide declined (n). The six other HELP.md edits remain.
+9. Closed. `chip.test.ts` has the pressed-fills and tooltip cases, and both fail with the behaviour taken out (table above). The three earlier cases pass in both mutation runs.
+10. Closed. `empty.test.ts` asserts `role="alert"` and the `error` class on the error box, and neither on the plain box. Both are mutation-proven.
+11. Closed. `tests/state/sources/search.test.ts` is unchanged and passes. `search.svelte.ts` is not in the diff, so both cases hold on the tree before the step.
+12. Closed. The three tests require `<span class="message`, which only `Empty` draws, and each fails with the view returned to a plain `<p class="empty">`.
+13. Closed. `grep -rn "css:[0-9]" src` prints nothing. Replacement texts such as "VS Code's welcome view: centred, ..." keep the measure and name VS Code's part in words. No added `src` line names `U2-` or `vscode.css`.
+14. Closed. The `data.test.ts` title and comments at 234-244, `note.test.ts:138` and `file.test.ts:164` are rewritten. My scan of added `src` and `config` comment lines for "used to / no longer / previously / was moved / now" is clean. One instance of "instead" remains (F2).
+15. Closed. Six files import `between` from `../shared/pane-parts.ts` (editor, projects, data, document, file, search). `files/files.test.ts:26` imports it from `../../shared/pane-parts.ts`. The only definition is `pane-parts.ts:8`.
+16. Closed. No change, as ruled. The diagrams I regenerated gave the same path set in `git status`.
+
+**Fix reaching beyond the ruling: `--rail-badge-height` and RailPages.** Not a reach beyond the ruling that I would send back. The `RailPages.svelte` `.badge` height and line-height are one fixed 16 px box. Scaling its line with the text would push the count out of the pill. The new token `tokens.css:110` sits beside `--rail-icon` and `--rail-badge-text` under the comment that already says the badge's count and height are fixed, so it follows an existing pattern. It is one more token the rulings do not name, internal and reversible, and the builder reported it. The leftover is in F3.
+
+## Verdicts for the whole diff since the base
+
+"What to build" (readings of source plus the rerun tests; nothing was seen on screen):
+- 1 Header frame: holds, except F1's class of defect does not reach it. `Pane.svelte` has a header of `calc(22px * scale)`, padding `0 8px 0 12px`, a 11px/700/uppercase title cut with an ellipsis and `min-width: 3ch`, and a `.viewbar` of 6px 12px with `:empty` hidden. `--header-action` is `calc(20px * var(--text-scale, 1))`. `ui/frame/toolbar/{Toolbar.svelte,fit.ts,watch.ts}` is built on bits-ui's Popover. Findings has a Pane (`Findings` view line 36). The earlier B1 (a clipped Menu opener closing the popover) is closed by ruling 1, with the mouse path unseen.
+- 2 Control sizes and one focus ring: holds, except F1. Single-line fields now scale their line. The ring census above shows no 2px ring and no `outline: auto`.
+- 3 Type and row scale: holds. Seven tokens at `tokens.css:123-129` (11, 12, 13, 14, 16, 20, 26 px), none of the removed ones left (case 8 grep), the rice block one step down at `themes.css:753-759`, the Calendar rule at `Calendar.svelte:338-348`, `--tree-indent: 8px`, and the twistie box at `TreeItem.svelte:395`. The body is now `--fs-md`.
+- 4 Icons at 16 px: holds. `Glyph.svelte:58,66,67` use `var(--glyph-size, calc(var(--icon-box) * var(--text-scale, 1)))`. `--glyph-size` is set only for the rail and the status bar, in `ToolButton.svelte:280,341` and `MenuOpener.svelte:198,241`.
+- 5 Actions on hover or focus: holds by reading (21 files use `--card-reveal` or `--row-reveal`, and 16 `hover: none` rules). Behaviour on the screen is unseen.
+- 6 Cards on the scale: holds. Every fixed `minmax` is `min(...)`-guarded except Ribbon's grid inside an `overflow-x: auto` box, and `KeySheet`/`Palette`, which are not card grids. `Card.svelte` has radius `--input-radius`, `.face` padding `8px 12px` and a title of `--fs-md` weight 600. `Chip.svelte` has min-height 18, padding `3px 5px` (ruled), `--fs-xs`, line-height 11 and `--radius-pill` of 11px. The underline rules I checked are all hover or focus selectors.
+- 7 Empty, error, narrow and intro states: holds. `Empty.svelte` has `error` (with `role="alert"`) and `action`. `Intro.svelte` has no border, rule or fill. There are 35 `<Empty ... error` sites.
+- 8 Size limits: holds. Both scripts rc=0, and `utils/size-allow.txt` is not in the diff.
+- 9 DESIGN.md: holds. `DESIGN.md` lines 158, 216, 220, 222, 374-375, 392, 405 and 410 agree with the code. A grep for "13.5", "nine", `fs-xxs` and `fs-3xs` in DESIGN.md, README.md and HELP.md finds nothing stale.
+
+Cases:
+1. fit values: met (`toolbar-fit.test.ts` passes).
+2. Pane strip and `more` opener markup: met (`pane-bar.test.ts` passes).
+3. Projects bar and header: met (`projects.test.ts` passes).
+4. Collection add icon and the `add` glyph: met (collection and `tests/config` pass).
+5. Empty error: met, with all behaviours now mutation-proven.
+6. Chip: met. The pressed fill, the tooltip, `aria-pressed` and the untoned-filled case are all proven.
+7. Glyph modes: met by existing tests. They also pass on the base, so they preserve behaviour.
+8. Greps: met (all print nothing).
+9. Search retry: met. The state tests pass on the unchanged state file, so they pin the contract. The retry button is proven in `tests/views/sources/search.test.ts`.
+10. 309 px header, `more` button and Escape: met by reading only.
+11. Tab into a clipped control: met by reading (`inert` clipped controls, `onOpenAutoFocus` focusing the first control). Unseen, and the mouse path through a menu is also unseen.
+12. 26/22/20 px controls and 16 px svg: met by reading at text scale 1.
+13. Icon sizes: met by reading.
+14. Reveal rules: met by reading. The audit tests read CSS text.
+15. No card past a 309 or 170 px pane: met by reading the grids. Unseen.
+16. Chip and link shapes: met by reading.
+17. Empty and error states: met by reading.
+18. Text scale 1.5: partial, because of F1. Fields now scale. Ticker's small button does not.
+
+## Findings
+
+### Spec
+None.
+
+### Proof
+None. Every new or changed test of an added behaviour in this round fails with the behaviour removed (table above). The three tests of preserved behaviour pass. Two limits remain as audits and are not coverage: the `closesPopover` test uses a stand-in node, and the change-rows assertion reads source text.
+
+### Standards
+- F2, `tests/views/sources/note.test.ts:139`: "// the unsaved state is status words, and the bar carries them instead". "instead" refers to an earlier arrangement, which is history in test text. It is not one of the words the ruling listed. Fix: "the unsaved state is status words in the bar."
+- F3a, `tests/views/sources/repositories/change-rows.test.ts:142`: the title `'audits that draws a 16px icon with 2px round it, in this view only'` contradicts its own comment and the view, which sets `--action-pad: 1px`. The 20 px comes from the compact control's `min-width` and `height`. Failure scenario: a reader trusts the title and expects 2px round the icon in this view. Fix the title to say 1px of padding and a 20px box.
+- F3b, `src/lib/shell/rail/RailPages.svelte:254`: `min-width: 16px;` stays a literal beside `height: var(--rail-badge-height);` a few lines below. Failure scenario: someone changes `--rail-badge-height` and a one-digit badge stops being a circle. Fix: read the token for `min-width` as well.
+- F5, `HELP.md:122`: "The bar's toggle declined (n) shows the declined leads, and its tooltip reads Show declined (n) or Hide declined (n), counting the older `dismissed` ones with them". "counting ... with them" now follows the tooltip clause, so it reads as if the tooltip does the counting. Fix: put the count clause straight after "shows the declined leads".
+
+### Behaviour
+- F1, `src/lib/ui/display/Ticker.svelte:436`: `line-height: 14px;` in `.act`, which has `font-size: var(--fs-xs)` and padding `3px 6px`. This is the same defect as ruling 2, a text size that grows with `--text-scale` on a line that does not. `ToolButton.svelte:245` writes the same small-button line as `calc(14px * var(--text-scale, 1))`. The ruling's grep was for `16px` only and does not match it. Failure scenario: at text size 1.5 the subtask buttons draw 16.5px words on a 14px line and clip. Fix: `line-height: calc(14px * var(--text-scale, 1));`. It is the last fixed px line-height in `src` (`grep -rnE "line-height: [0-9.]+px" src` prints only this line).
+- F4, ruling 4's report: it names Files' two `aria-live` notes. `Files.svelte:465` and `:468` also became error boxes with `role="alert"`, and at the base they were plain `.note` paragraphs with no live region. Across `src` there are 35 `<Empty ... error` sites, each announced assertively. The statement "every error Empty carries `role="alert"`" is correct. The before and after is incomplete for those sites. This is a reporting gap and needs no code change.
+
+## Declined to judge
+
+- Everything seen on screen (cases 10 to 18): popover with the mouse and keyboard, menu opener in the popover, 309 and 170 px panes, text scale 1.5, rice palettes, hover and focus reveals. I may not start a server or take a screenshot. These are readings only.
+- Whether a menu pick inside the popover leaves it open in a browser, and whether bits-ui's layer order behaves as I read it. That is the orchestrator's check on TEST.
+- `npm run test:browser`, which starts a server.
+- The builder's edit-and-restore runs in the worktree itself. I reproduced the same mutations in a scratch copy, not in the worktree, so I cannot say what the worktree held during them. I can say the worktree's current source holds the unmutated code, because the full list passed on it and the sites I read are intact.
+- The wall-theme hover entries and the catalogue-badge capsule are design choices for Axel, outside this round.
+- HELP.md sentences about views U3 did not touch.
+
+Reviewer usage: about 60 tool uses. Tokens and minutes are not measured.
+## Closed
+
+The findings of the run over repair round 1, each fixed on main at landing (inside the brief), and the look's finding:
+
+- F1 (Behaviour, `Ticker.svelte:436`): `line-height: calc(14px * var(--text-scale, 1));`. `grep -rnE "line-height: [0-9.]+px" src` prints nothing.
+- F2 (Standards, `note.test.ts:139`): the comment reads "the unsaved state is status words in the bar".
+- F3a (Standards, `change-rows.test.ts:142`): the title reads "audits that draws a 16px icon with 1px of padding in a 20px box, in this view only".
+- F3b (Standards, `RailPages.svelte:254`): `min-width: var(--rail-badge-height);`.
+- F4 (Behaviour, a gap in the report): no code change. The before and after it lacked is in `agents/reviews/U3-landing.md`: `Files.svelte:465,468` were plain `.note` paragraphs and are error boxes with `role="alert"`; 35 `<Empty ... error` sites announce assertively.
+- F5 (Standards, `HELP.md:122`): the count clause follows "shows the declined leads", and the tooltip clause comes after it.
+- The look on TEST: a pick in a menu opened from the toolbar popover left the popover open, against the Toolbar's rule that a press closes it once the control has acted. `fit.ts` gains `picksMenuItem`, and `Toolbar.svelte` closes the open popover on a click on a menu item. `tests/ui/frame/toolbar-fit.test.ts` gains three cases; two fail with `picksMenuItem` answering false (`Tests 2 failed | 14 passed (16)`), and all 16 pass with it. The mouse path on TEST: the menu opened from the popover, Refresh picked, the popover closed.

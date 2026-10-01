@@ -7,7 +7,6 @@ text:
         title: Memories
         toolbar: Memories controls
         add: add photo
-        add_glyph: expand
         add_tip: Add a picture to the wall. JPEG and PNG.
         empty: 'No pictures on the wall yet. Add one, or drop a JPEG or PNG into the folder config/appearance.yml names.'
         empty_glyph: circle_empty

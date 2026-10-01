@@ -26,13 +26,13 @@
     .bin {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
     .add,
     .del {
         flex: 0 0 auto;
         font-family: var(--font-num);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
     .add {
         color: var(--c-green-txt, var(--muted));

@@ -31,7 +31,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import { type Column, cellText } from '$lib/ui/display/table-rows';
     import Ticker from '$lib/ui/display/Ticker.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
@@ -118,8 +118,20 @@
 {/snippet}
 
 {#snippet tools()}
-    <Toolbar label={t('gallery.toolbar')}>
+    <Toolbar label={t('gallery.toolbar')} overflow>
+        <ToolButton
+            bare
+            label={t('gallery.reset')}
+            glyph={t('gallery.reset_glyph')}
+            onclick={reset}
+        />
+    </Toolbar>
+{/snippet}
+
+{#snippet bar()}
+    <Toolbar label={t('gallery.filters')}>
         <Search
+            fill
             value={query}
             placeholder={t('gallery.search')}
             oninput={(next: string) => (query = next)}
@@ -130,7 +142,6 @@
             value={form}
             onchange={(id: string) => (form = id)}
         />
-        <ToolButton label={t('gallery.reset')} glyph={t('gallery.reset_glyph')} onclick={reset} />
     </Toolbar>
 {/snippet}
 
@@ -142,7 +153,7 @@
     {/if}
 {/snippet}
 
-<Pane title={t('gallery.title')} toolbar={tools}>
+<Pane title={t('gallery.title')} toolbar={tools} {bar}>
     <div class="gallery" data-instance={instance.id}>
         <section>
             <h3>{t('gallery.cards')}</h3>
@@ -269,7 +280,7 @@
 
     .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
         gap: 10px;
     }
 

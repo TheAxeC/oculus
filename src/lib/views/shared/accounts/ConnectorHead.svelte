@@ -1,13 +1,13 @@
 <script lang="ts">
-    // Layer 3, view partial. The head the Calendar and the Inbox share: the connector's state word,
-    // how old what is on screen is, the cadence, the one explicit refresh, Add account, and the
-    // `...` menu whose Set up provider opens the account setup page.
+    // Layer 3, view partial. The bar the Calendar and the Inbox share under their header: the one
+    // explicit refresh, and at the bar's end the connector's state word, how old what is on screen
+    // is and the cadence. Add account and the `...` menu are the header's (AccountActions.svelte).
     //
     // The words are the view's own, since each connector names its state in its own terms; the
     // rule for when the next poll is late is this head's, once for both.
 
-    import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { clock } from '$lib/state/shared/words/format';
     import type { ConnectStatus, HeadWords } from '$lib/state/life/accounts';
@@ -21,24 +21,19 @@
     const LATE_GRACE_MIN = 2;
 
     const {
-        accounts: { openSetup },
         clock: { minuteNow, startMinuteClock }
     } = useState();
     let {
         data,
         words,
         notice = '',
-        onrefresh,
-        adding,
-        onadd
+        onrefresh
     }: {
         data: { status: ConnectStatus; updated: string; pollMin: number; retryMin: number } | null;
         words: HeadWords;
         /** One more part after the state word, in the failure tone, or nothing. */
         notice?: string;
         onrefresh: () => void;
-        adding: boolean;
-        onadd: () => void;
     } = $props();
 
     // The head ages between publishes, so the minute the page is in is read as state.
@@ -77,9 +72,10 @@
     }
 </script>
 
-<!-- The pane carries the view's name, so the head is the connector's status line, its refresh
-     and its account controls. -->
-<header>
+<!-- The pane carries the view's name, so the bar is the refresh and the connector's status
+     line. -->
+<Toolbar label={t('accounts.bar')}>
+    <ToolButton label={words.refresh} onclick={onrefresh} />
     <p class="meta">
         <span class:ok={data?.status === 'ok'} class:bad={data?.status === 'error'}>
             {status()}
@@ -93,44 +89,16 @@
             <span class:late={part.late}>{part.text}</span>
         {/each}
     </p>
-    <span class="tools">
-        <ToolButton label={words.refresh} onclick={onrefresh} />
-        <ToolButton
-            label={t('accounts.add')}
-            glyph={t('accounts.add_glyph')}
-            active={adding}
-            expanded={adding}
-            onclick={onadd}
-        />
-        <Menu
-            label={t('accounts.menu')}
-            items={[{ id: 'setup', label: t('accounts.set_up_provider') }]}
-            glyph={t('accounts.menu_glyph')}
-            compact
-            placement="down"
-            align="right"
-            onpick={openSetup}
-        />
-    </span>
-</header>
+</Toolbar>
 
 <style>
-    header {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        align-items: start;
-    }
-    .tools {
-        display: inline-flex;
-        gap: 4px;
-        align-items: center;
-    }
+    /* The status words at the bar's end; they wrap inside the pane rather than widening it. */
     .meta {
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
-        margin: 0 0 4px;
+        min-width: 0;
+        margin: 0 0 0 auto;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
     }

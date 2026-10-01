@@ -8,6 +8,7 @@ text:
         ev_k_tool: tool
         ev_k_turn: turn
         ev_turn: finished in {0} s
+        timeline_bar: Timeline controls
         timeline_glyph: timing
         tl_before: Before the first prompt
         tl_empty: Nothing on the timeline for this session yet.

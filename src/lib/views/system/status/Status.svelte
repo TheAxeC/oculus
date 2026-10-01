@@ -91,12 +91,18 @@
 
 <style>
     .view {
-        height: 100%;
-        overflow: auto;
-        padding: 12px 16px;
-        box-sizing: border-box;
+        min-width: 0;
         color: var(--ink-txt, var(--ink));
         font-size: var(--fs-md);
+    }
+
+    /* The facts are rows: one line of the tree's row height each. */
+    .view > p,
+    li {
+        display: flex;
+        align-items: center;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+        margin: 0;
     }
 
     .socket {

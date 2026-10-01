@@ -5,6 +5,8 @@
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
 import type { ClientState } from '$lib/state/client/context';
 import { findView, type Layout } from '$lib/state/workbench/layout';
+import { t } from '$lib/state/shared/words/text';
+import type { CardAction } from './CardActions.svelte';
 
 export type Translate = (key: string, ...args: (string | number)[]) => string;
 
@@ -120,4 +122,20 @@ export function deadline(
         return { label: translate('project.card.due_days', days), tone: 'amber' };
     }
     return { label: date };
+}
+
+/** How many projects a registry card holds, as its tag reads: a count, singular or plural. */
+export function projectCount(count: number): string {
+    return `${count} ${count === 1 ? t('pillars.project') : t('pillars.projects')}`;
+}
+
+/** The control that opens and closes a registry card's edit form, pressed while it is open. */
+export function editAction(editing: boolean, onedit: () => void): CardAction {
+    return {
+        id: 'edit',
+        label: t('collection.form_edit_title'),
+        glyph: t('collection.edit_glyph'),
+        active: editing,
+        onclick: onedit
+    };
 }

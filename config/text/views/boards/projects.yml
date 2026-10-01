@@ -26,6 +26,7 @@ text:
         filter: Filter
         filter_count: Filter ({0})
         filter_tick_glyph: check
+        filters: Board filters
         labels: Title length
         new_idea: + new idea
         new_idea_cancel: cancel

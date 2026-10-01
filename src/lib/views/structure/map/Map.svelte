@@ -16,11 +16,19 @@
     // built from the current portfolio snapshot. The pane keeps the start seed Graphviz's neato
     // lays its node set out from, as `start: { key, seed }` in its own instance state, so a page
     // saved with a map draws the same picture again; the re-tune control saves the next seed.
+    //
+    // The header holds the two icon actions, link mode and re-tune. The bar holds the filters and
+    // the visibility toggles (Controls.svelte), and the body the heading, the legend
+    // (Legend.svelte) and the graph.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Controls from '$lib/views/structure/map/Controls.svelte';
     import Graph from '$lib/views/structure/map/Graph.svelte';
+    import Legend from '$lib/views/structure/map/Legend.svelte';
     import {
         archiveStatuses,
         buildGraph,
@@ -97,7 +105,46 @@
     }
 </script>
 
-<Pane title={t('views.map')}>
+{#snippet tools()}
+    <Toolbar label={t('map.toolbar')} overflow>
+        <ToolButton
+            bare
+            glyph={t('map.link_glyph')}
+            label={t('map.link')}
+            title={t('map.link_tip')}
+            active={linkMode}
+            pressed={linkMode}
+            onclick={() => write({ linkMode: !linkMode })}
+        />
+        <ToolButton
+            bare
+            glyph={t('map.retune_glyph')}
+            label={t('map.retune')}
+            title={t('map.retune_tip')}
+            onclick={retune}
+        />
+    </Toolbar>
+{/snippet}
+
+{#snippet bar()}
+    <Controls
+        {collaborators}
+        {statuses}
+        {enabled}
+        {connected}
+        types={typeFilters}
+        lines={lineFilters}
+        oncollaborators={(checked: boolean) => write({ collaborators: checked })}
+        onarchive={toggleArchive}
+        ontype={(type: string) => write({ types: toggleFilter(types, type) })}
+        online={(id: string) => write({ lines: toggleFilter(lines, id) })}
+        onalltypes={() => write({ types: [] })}
+        onalllines={() => write({ lines: [] })}
+        onconnected={() => write({ connected: !connected })}
+    />
+{/snippet}
+
+<Pane title={t('views.map')} toolbar={tools} {bar}>
     <div class="map" data-instance={instance.id}>
         <div class="head">
             <span class="shape">
@@ -106,28 +153,11 @@
             </span>
             <span>{t('map.head')}</span>
         </div>
-        <Controls
-            {linkMode}
-            {collaborators}
-            {statuses}
-            {enabled}
-            {connected}
-            types={typeFilters}
-            lines={lineFilters}
-            onlink={() => write({ linkMode: !linkMode })}
-            onretune={retune}
-            oncollaborators={(checked: boolean) => write({ collaborators: checked })}
-            onarchive={toggleArchive}
-            ontype={(type: string) => write({ types: toggleFilter(types, type) })}
-            online={(id: string) => write({ lines: toggleFilter(lines, id) })}
-            onalltypes={() => write({ types: [] })}
-            onalllines={() => write({ lines: [] })}
-            onconnected={() => write({ connected: !connected })}
-        />
+        <Legend />
         {#if !hasRelationships}
-            <p class="empty">{t('map.empty')}</p>
+            <Empty message={t('map.empty')} glyph={t('map.empty_glyph')} />
         {:else if base.nodes.length > 0 && graph.nodes.length === 0}
-            <p class="empty">{t('map.empty_filtered')}</p>
+            <Empty message={t('map.empty_filtered')} glyph={t('map.empty_glyph')} />
         {:else}
             {#key `${layoutKey(graph.nodes)}-${seed}`}
                 <Graph {graph} instanceId={instance.id} {linkMode} {seed} />
@@ -137,7 +167,12 @@
 </Pane>
 
 <style>
+    /* The head and the legend take their own height and the graph takes the rest, so the graph
+       fills the body whatever the bar above it needs. */
     .map {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         height: 100%;
         min-width: 0;
     }
@@ -153,10 +188,5 @@
     .shape {
         color: var(--accent-txt, var(--accent));
         white-space: nowrap;
-    }
-
-    .empty {
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
     }
 </style>

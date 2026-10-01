@@ -18,6 +18,7 @@ text:
         empty: Empty state
         empty_glyph: circle_empty
         empty_message: Nothing matches the filter.
+        filters: Gallery filters
         form: Chip form
         form_both: Both
         form_filled: Filled

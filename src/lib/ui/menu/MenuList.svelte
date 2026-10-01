@@ -218,7 +218,7 @@
 
     .heading {
         padding: 6px 6px 2px;
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -249,7 +249,7 @@
         background: var(--badge-bg, var(--chip));
         color: var(--badge-fg, var(--accent-txt, var(--accent)));
         font-family: var(--font-num);
-        font-size: var(--fs-3xs);
+        font-size: var(--fs-xs);
     }
 
     .more {
@@ -277,7 +277,7 @@
     }
 
     .item:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 </style>

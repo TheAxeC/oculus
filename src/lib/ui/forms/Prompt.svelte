@@ -85,7 +85,7 @@
 
     .message {
         margin: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .detail,
@@ -109,9 +109,10 @@
     }
 
     .row button {
-        padding: 3px 10px;
+        padding: 4px 8px;
         border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
+        border-radius: var(--input-radius);
+        line-height: calc(var(--button-line) * var(--text-scale, 1));
         background: var(--chip);
         color: var(--ink-txt, var(--ink));
         font: inherit;
@@ -125,7 +126,7 @@
     }
 
     .row button:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 1px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 </style>

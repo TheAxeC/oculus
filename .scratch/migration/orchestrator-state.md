@@ -29,26 +29,6 @@ workers_at_once: 5           # Axel, 2026-10-01 18:49: five, to see the impact (
 
 ```yaml
 dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
-- step: U3
-  executor: agent
-  worker: claude:sonnet
-  worktree: .agents/worktrees/U3
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 17:20)
-  session_id: a2609b2bc8bd7786d (launched 2026-10-01 17:20 local, the second builder, taking over the worktree on Z164 (b)); the first builder was ae3ab3b225611181e (launched 15:23)
-  base: ab4d9084
-  launched: 2026-10-01 15:23 local
-  report: agents/reviews/U3-report.md (saved from the second builder's hand-back message)
-  cases: agents/briefs/U3-cases.md (round 0, Z161 and six corrections)
-  builder_usage: first run of the cases 302,766 tokens, 52 tool uses, 11.1 min; second builder 154,209 tokens, 414 tool uses, 84.5 min (1 full-list run); round 1 258,462 tokens, 53 tool uses, 17.9 min (1 full-list run)
-  state: the first builder dead with no report (all seven agents stopped at 16:37); a second builder runs on Z164 (b), from `agents/reviews/U3-takeover.md`
-  helpers: the builder started six general-purpose agents (G1 to G6, a5d7291ed63e97e69, ac32fd6bcdffe7ad2, a0bd1af5212f339c0, ac434b873d6ee5f00, a8ce99953d8e5bb84, a7aac8f1957bc071a), each served claude-sonnet-5-5, briefed from its scratch file `u3-view-brief.md`, before `agents/spec.md:34` forbade a builder to start an agent; all stopped by Axel's interrupt at 16:37 (each meta reads `stoppedByUser: true`); G3 handed back its group's report; what is known of each group is `agents/reviews/U3-takeover.md`; the review reads their work as the builder's, and the landing counts their usage
-  brief_check: agents/reviews/U3-brief-check.md, every finding closed in the brief (its Closed heading, Z157 and Z160 in automode); agent a2d45e553bd8d1965 on claude-sonnet-5-5, 327,546 tokens, 88 tool uses, 14.4 min
-  shared_paths: with Q85b, `src/lib/state/sources/search.svelte.ts` (U3 adds at most one retry function; Q85b rewrites its readers into schemas) and `DESIGN.md` (different lines). With Q88b, the Files view (`views/sources/files/Files.svelte`, `tree/Tree.svelte`), `views/sources/search/Query.svelte`, `views/sources/repositories/diff/Diff.svelte`, `views/life/memories/Memories.svelte`, `ui/tree/TreeItem.svelte`, `search.svelte.ts`, `tests/views/sources/files/` and `DESIGN.md` (different lines): U3 changes style blocks and moves header controls into the bar, Q88b adds menus, handlers and new components, so the hunks meet only where both edit one toolbar snippet, merged by reading both at U3's landing, which comes after both; the new components Q88b adds (`NameInput.svelte`, the questions component) are put on the scale at that landing. `docs/diagrams/` is regenerated at each landing
-  reviewer_report: agents/reviews/U3-refuter.md (reviewer a09318b9b70abb118, claude-sonnet-5-5 read from its transcript; 340,175 tokens, 160 tool uses, 36.1 min; 4 Spec, 6 Proof, 3 Standards, 4 Behaviour)
-  round_1: agents/briefs/U3-round1.md (sixteen rulings; HELP.md and src/routes/+layout.svelte:33 added to the paths; sent to the builder)
-  reviewer_round_1: running, agent a0ab098f7b4f23aae, claude-sonnet-5-5 read from its transcript at 19:48
-  landing: not-started
-  round: 1
 - step: D27
   executor: agent
   worker: claude:sonnet
@@ -696,6 +676,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 20:27. U3 landed (every view on VS Code's scale), seven fixes at landing, the look on TEST taken, `checks: 7 commands passed`. D27's and D35's builders stopped at their first runs with cases to rule (D27 R1 to R3, D35 the bounds' tests under tests/data). In flight: D27, D35. Next: the two rulings and the builders resumed; /spec Q85d on the new main.
 - 2026-10-01 19:56. D35 prepared on main (c44def15) and its builder launched at ordo-medium on claude-sonnet-5-5. In flight: U3 (round-1 review running), D27 (building), D35 (building). Next: U3's round review saved and /land U3 with the look on TEST; D27's and D35's reports, then /refute.
 - 2026-10-01 19:42. Q85c landed (zod in `src/lib/data`), two fixes at landing, `checks: 7 commands passed`. In flight: U3 (repair round 1 building), D27 (brief check in, findings to close). Next: D27's brief closed and its builder launched; D35 prepared again on the new main; U3's round review. Open items: none.
 - 2026-10-01 19:26. D31 landed (git auto fetch), three fixes at landing, `checks: 7 commands passed`. U3's review and D27's brief check are in and saved. In flight: Q85c (round-1 review running), U3 (review in, repair round 1 next), D27 (brief check in, findings to close). Next: U3's round 1; D27's brief closed and its builder launched; Q85c's landing; then D35. Open items: none.

@@ -122,6 +122,11 @@ function count(body: string, label: string): number {
     return [...body.matchAll(new RegExp(`>${label}<`, 'g'))].length;
 }
 
+/** How many icon controls are named exactly this, their words being their accessible name. */
+function named(body: string, label: string): number {
+    return [...body.matchAll(new RegExp(`aria-label="${label}"`, 'g'))].length;
+}
+
 /** The `/other` workspace's git state replaced for one case, or dropped with `null`. */
 function otherGit(state: GitState | null): void {
     const held = state === null ? { [HUB]: HUB_GIT } : { [HUB]: HUB_GIT, '/other': state };
@@ -132,6 +137,40 @@ function otherGit(state: GitState | null): void {
 function said(body: string): string[] {
     return [...body.matchAll(/data-repo="(\w+)"/g)].map((one) => one[1]);
 }
+
+describe('the repository section of the changes view in the box that says a state', () => {
+    function inSection(body: string, shape: string): string {
+        const at = body.indexOf(`data-repo="${shape}"`);
+        return body.slice(at, body.indexOf('</section>', at));
+    }
+
+    // Revert: draw the sentence as a `none` paragraph in the view.
+    it('says a workspace that is not a repository in the empty box', () => {
+        select('bare-one');
+        const body = html(Changes);
+        expect(inSection(body, 'none')).toContain('class="empty');
+        expect(inSection(body, 'none')).not.toMatch(/class="empty[^"]*\berror\b/);
+        expect(inSection(body, 'none')).toContain(catalog['sessions.ch_norepo']);
+    });
+
+    // Revert: draw the failed sentence as a `none failed` paragraph in the view.
+    it('says a repository whose read failed in the red box', () => {
+        otherGit(git({ error: 'fatal: index file smaller than expected' }));
+        select('bare-one');
+        const failed = inSection(html(Changes), 'failed');
+        expect(failed).toMatch(/class="empty[^"]*\berror\b/);
+        expect(failed).toContain('role="alert"');
+    });
+
+    // Revert: draw the touched list's empty sentence as a `none` paragraph in ChangesTouched.
+    it('says a session that touched no file in the empty box', () => {
+        select('bare-one');
+        const body = html(Changes);
+        const at = body.indexOf(catalog['sessions.ch_touched_empty']);
+        expect(at).toBeGreaterThan(-1);
+        expect(body.slice(body.lastIndexOf('<p', at), at)).toContain('class="empty');
+    });
+});
 
 describe('the changes view', () => {
     it('offers pin and unpin in place', () => {
@@ -255,16 +294,16 @@ describe('the changes view', () => {
     it('draws a control on every row: unstage on a staged one, stage and discard on a changed one', () => {
         select('live-one');
         const body = html(Changes);
-        expect(body).toContain(catalog['git.unstage']);
-        expect(body).toContain(catalog['git.stage']);
-        expect(body).toContain(catalog['git.discard']);
-        // The reason a control gives is drawn as a Tooltip bubble rather than a title attribute.
+        // A row's controls are icons, so their words are their accessible names and their tooltips.
         expect(body).toContain(catalog['git.discard_title']);
         // Three rows carry a stage (two changed, one untracked) and one carries the unstage.
-        expect(count(body, catalog['git.stage'])).toBe(3);
-        expect(count(body, catalog['git.unstage'])).toBe(1);
+        expect(named(body, catalog['git.stage'])).toBe(3);
+        expect(named(body, catalog['git.unstage'])).toBe(1);
         // An untracked row offers no discard, so only the two changed rows carry one.
-        expect(count(body, catalog['git.discard'])).toBe(2);
+        expect(named(body, catalog['git.discard'])).toBe(2);
+        // The icons carry no words of their own beside the glyph.
+        expect(count(body, catalog['git.stage'])).toBe(0);
+        expect(count(body, catalog['git.discard'])).toBe(0);
     });
 
     it('marks a git row another live session is holding open', () => {

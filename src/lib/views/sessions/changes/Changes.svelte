@@ -22,10 +22,9 @@
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
-    import { pinnedSession } from '$lib/state/workbench/selection.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { repoShape } from '$lib/state/sources/repositories/repositories';
@@ -34,7 +33,6 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { instanceLayoutState, pinInstance, unpinInstance },
         repositories,
         selectors: { gitFor, sessionFor, touchers }
     } = useState();
@@ -43,7 +41,6 @@
     type Branch = { name: string; upstream: string; current: boolean };
 
     const record = $derived(sessionFor(instance.id));
-    const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
     const workspace = $derived(record?.workspace ?? '');
     const files = $derived(record?.files ?? []);
     const repo = $derived(workspace === '' ? null : gitFor(workspace));
@@ -58,14 +55,6 @@
     let asked = 0;
     const busy = $derived(workspace !== '' && repositories.busy(workspace));
     const outcome = $derived(workspace === '' ? '' : repositories.outcome(workspace));
-
-    function togglePanePin(): void {
-        if (panePin !== null) {
-            unpinInstance(instance.id);
-            return;
-        }
-        if (record !== null) pinInstance(instance.id, record.id, record.title);
-    }
 
     $effect(() => {
         const root = workspace;
@@ -149,21 +138,13 @@
     );
 </script>
 
-{#snippet tools()}
-    <Toolbar label={t('sessions.view_changes')}>
+{#snippet bar()}
+    <Toolbar label={t('sessions.changes_bar')}>
         <SessionPicker instance={instance.id} />
-        {#if record !== null || panePin !== null}
-            <ToolButton
-                label={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
-                title={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
-                pressed={panePin !== null}
-                onclick={togglePanePin}
-            />
-        {/if}
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.view_changes')} toolbar={tools} tinted>
+<Pane title={t('sessions.view_changes')} {bar} tinted>
     <div class="changes" data-instance={instance.id}>
         {#if record === null}
             <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
@@ -172,27 +153,31 @@
             {#if shape === 'unplaced'}
                 <section class="repo" data-repo="unplaced">
                     <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
-                    <p class="none">{t('sessions.ch_noworkspace')}</p>
+                    <Empty message={t('sessions.ch_noworkspace')} />
                 </section>
             {:else if shape === 'missing'}
                 <section class="repo" data-repo="missing">
                     <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
-                    <p class="none" title={repo?.error ?? undefined}>{t('sessions.ch_nofolder')}</p>
+                    <div title={repo?.error ?? undefined}>
+                        <Empty message={t('sessions.ch_nofolder')} />
+                    </div>
                 </section>
             {:else if shape === 'none'}
                 <section class="repo" data-repo="none">
                     <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
-                    <p class="none" title={repo?.error ?? undefined}>{t('sessions.ch_norepo')}</p>
+                    <div title={repo?.error ?? undefined}>
+                        <Empty message={t('sessions.ch_norepo')} />
+                    </div>
                 </section>
             {:else if shape === 'failed'}
                 <section class="repo" data-repo="failed">
                     <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
-                    <p class="none failed">{t('sessions.ch_failed', repo?.error ?? '')}</p>
+                    <Empty error message={t('sessions.ch_failed', repo?.error ?? '')} />
                 </section>
             {:else if shape === 'reading'}
                 <section class="repo" data-repo="reading">
                     <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
-                    <p class="none">{t('sessions.ch_reading')}</p>
+                    <Empty message={t('sessions.ch_reading')} />
                 </section>
             {:else if readable !== null}
                 <ChangesRepo
@@ -227,6 +212,7 @@
         flex-direction: column;
         gap: 12px;
     }
+    /* A section heading: the group label in the size of a label, bold and in capitals. */
     .sec-h {
         display: flex;
         align-items: center;
@@ -234,18 +220,11 @@
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        font-weight: 700;
         border-bottom: 1px solid var(--line);
         padding-bottom: 2px;
         margin-bottom: 4px;
-    }
-    .none {
-        margin: 2px 0 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-    }
-    .none.failed {
-        color: var(--c-red-txt);
     }
     :global(body.rice) .changes {
         font-family: var(--font-mono);

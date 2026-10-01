@@ -10,15 +10,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Document from '../../../src/lib/views/sources/document/Document.svelte';
 import { fileUrl } from '../../../src/lib/views/shared/links/file-url.ts';
-import {
-    engineDir,
-    glyphCatalog,
-    loadConfig,
-    textCatalog
-} from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { installRealText } from '../shared/real-text.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { between } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 
@@ -26,9 +21,7 @@ beforeEach(() => {
     client = createClientState();
 });
 
-const { config } = loadConfig(engineDir());
-setCatalog(textCatalog(config));
-setGlyphs(glyphCatalog(config));
+installRealText();
 
 /** One instance of the view, opened for the bookmark the rail hands openView. */
 function instance(state: unknown): Instance {
@@ -92,5 +85,23 @@ describe('a document as its own tab', () => {
         // the instance names no file, so there is nothing to frame
         expect(body).not.toContain('<iframe');
         expect(body).toContain('No document chosen.');
+    });
+});
+
+describe('where the document puts its control', () => {
+    it('keeps Open in a browser tab in the header as a bare icon named by its words, and draws no bar', () => {
+        const { body } = render(Document, {
+            context: clientContext(client),
+            props: { instance: instance(MANUAL) }
+        });
+        const header = between(body, '<header', '</header>');
+        const tool = /<button[^>]*class="tool[^"]*"[^>]*>/.exec(header)?.[0] ?? '';
+        expect(tool).toMatch(/\bbare\b/);
+        expect(tool).toContain('aria-label="Open in a browser tab"');
+        expect(header).toContain('data-glyph="launch"');
+        // an icon action carries its words as the name and draws none beside the icon
+        expect(header).not.toContain('<span class="label">');
+        // the one control is an icon, so the pane draws no bar under its header
+        expect(body).not.toContain('class="viewbar');
     });
 });

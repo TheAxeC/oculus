@@ -16,6 +16,7 @@
 
 <span data-source-root={file.root} data-source-path={file.path}>
     <ToolButton
+        bare
         label={t('views.open_source')}
         glyph="edit"
         title={t('views.open_source_tip', file.path)}

@@ -405,6 +405,33 @@ describe('the LaTeX panel of a project tab', () => {
         expect(row(body, 'supplement.tex')).not.toContain(catalog['project.latex.open_pdf_tip']);
     });
 
+    it('draws build, clean and PDF as small buttons, the size of the 22 px row they sit in', async () => {
+        answering(MAINS);
+        const body = await settled();
+        const top = row(body, 'main.tex');
+        const buttons = top.match(/<button[^>]*class="tool[^"]*"/g) ?? [];
+        // build, clean and PDF; the errors disclosure is not a ToolButton
+        expect(buttons.length).toBeGreaterThanOrEqual(3);
+        for (const one of buttons) expect(one).toMatch(/\bsmall\b/);
+    });
+
+    it('draws a failed read as the error box with a retry button', async () => {
+        vi.stubGlobal('fetch', () =>
+            Promise.resolve(
+                new Response(JSON.stringify({ error: 'the folder is locked' }), {
+                    status: 500,
+                    headers: { 'content-type': 'application/json' }
+                })
+            )
+        );
+        const body = await settled();
+        expect(body).toContain(
+            catalog['project.latex.read_failed'].replace('{0}', 'the folder is locked')
+        );
+        expect(body).toContain('role="alert"');
+        expect(body).toContain(catalog['project.latex.retry']);
+    });
+
     it('keeps the errors behind their count until the disclosure is opened', async () => {
         answering(MAINS);
         const body = await settled();

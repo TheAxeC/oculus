@@ -7,7 +7,7 @@
     // The HTML is somebody's Markdown turned into markup by marked, so it is drawn through
     // ui/html.ts's sanitise and holds only what that profile allows. The words for the two states
     // the document is not in come from the view that owns the document, since each of them names
-    // what it is reading.
+    // what it is reading; the pending line is an Empty state and the failure its error box.
     //
     // A press on a link to a fragment is handled inside the view by jump.ts, never through the
     // address.
@@ -16,6 +16,7 @@
     // arrives: Copy over a selection, Copy Image over an image, and Open Image over an image the
     // hub serves, which opens it in the file view. With neither, nothing opens.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import { sanitise } from '$lib/ui/html';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -74,9 +75,9 @@
 </script>
 
 {#if doc.error !== ''}
-    <p class="note">{failed}</p>
+    <Empty error message={failed} />
 {:else if doc.loading}
-    <p class="note">{loading}</p>
+    <Empty message={loading} />
 {:else}
     <!-- The press is the links' own: each link is a keyboard stop whose Enter is a click, and the
          box only hears it bubble up, so the box itself takes no key and no focus. -->
@@ -90,12 +91,6 @@
 {/if}
 
 <style>
-    .note {
-        margin: 0;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
     /* The document. The Markdown reaches the DOM as HTML, so every rule below is :global. */
     .doc {
         font-size: var(--fs-md);
@@ -152,14 +147,6 @@
 
     .doc :global(ul.toc li) {
         margin: 2px 0;
-    }
-
-    .doc :global(ul.toc a) {
-        text-decoration: none;
-    }
-
-    .doc :global(ul.toc a:hover) {
-        text-decoration: underline;
     }
 
     .doc :global(img) {

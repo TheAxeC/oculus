@@ -38,7 +38,7 @@
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { editDiffers } from '$lib/state/forms/manifest-draft';
     import {
@@ -223,19 +223,32 @@
 {/snippet}
 
 {#snippet tools()}
-    <Toolbar label={t('editor.toolbar')}>
-        <Tag label={pending() ? t('editor.saving') : summary()} />
+    <Toolbar label={t('editor.toolbar')} overflow>
         <ToolButton
+            bare
             label={t('editor.save')}
             glyph={t('editor.save_glyph')}
             active={dirty.length > 0}
             onclick={save}
         />
-        <ToolButton label={t('editor.revert')} glyph={t('editor.revert_glyph')} onclick={revert} />
+        <ToolButton
+            bare
+            label={t('editor.revert')}
+            glyph={t('editor.revert_glyph')}
+            onclick={revert}
+        />
     </Toolbar>
 {/snippet}
 
-<Pane title={project === null ? t('editor.title') : project.title} toolbar={tools} tinted>
+{#snippet bar()}
+    <Toolbar label={t('editor.status')}>
+        <span class="status">
+            <Tag label={pending() ? t('editor.saving') : summary()} />
+        </span>
+    </Toolbar>
+{/snippet}
+
+<Pane title={project === null ? t('editor.title') : project.title} toolbar={tools} {bar} tinted>
     <div class="editor" data-instance={instance.id} data-project={id}>
         {#if id === ''}
             <Empty message={t('editor.none')} glyph={t('editor.none_glyph')} />
@@ -277,9 +290,14 @@
         margin-bottom: 12px;
     }
 
+    /* The status words close the bar. */
+    .status {
+        margin-left: auto;
+    }
+
     .heading {
         margin: 0 0 4px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;

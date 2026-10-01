@@ -28,7 +28,7 @@
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { clock, compactCount, modelShort, stamp } from '$lib/state/shared/words/format';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
@@ -220,34 +220,46 @@
 {/snippet}
 
 {#snippet tools()}
-    <Toolbar label={t('sessions.detail_title')}>
-        <SessionPicker instance={instance.id} />
-        {#if panePin !== null && record !== null}
-            <ToolButton
-                label={t('sessions.view_transcript')}
-                glyph={t('sessions.transcript_glyph')}
-                onclick={() => pin('transcript')}
-            />
-            <ToolButton
-                label={t('sessions.view_timeline')}
-                glyph={t('sessions.timeline_glyph')}
-                onclick={() => pin('timeline')}
-            />
-            <ToolButton
-                label={t('sessions.view_changes')}
-                glyph={t('sessions.changes_glyph')}
-                onclick={() => pin('changes')}
-            />
-            <ToolButton
-                label={t('sessions.view_agents')}
-                glyph={t('sessions.agents_glyph')}
-                onclick={() => pin('agents')}
-            />
-        {/if}
+    <Toolbar label={t('sessions.detail_title')} overflow>
+        <ToolButton
+            bare
+            label={t('sessions.view_transcript')}
+            glyph={t('sessions.transcript_glyph')}
+            onclick={() => pin('transcript')}
+        />
+        <ToolButton
+            bare
+            label={t('sessions.view_timeline')}
+            glyph={t('sessions.timeline_glyph')}
+            onclick={() => pin('timeline')}
+        />
+        <ToolButton
+            bare
+            label={t('sessions.view_changes')}
+            glyph={t('sessions.changes_glyph')}
+            onclick={() => pin('changes')}
+        />
+        <ToolButton
+            bare
+            label={t('sessions.view_agents')}
+            glyph={t('sessions.agents_glyph')}
+            onclick={() => pin('agents')}
+        />
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.detail_title')} toolbar={tools} tinted>
+{#snippet bar()}
+    <Toolbar label={t('sessions.detail_bar')}>
+        <SessionPicker instance={instance.id} />
+    </Toolbar>
+{/snippet}
+
+<Pane
+    title={t('sessions.detail_title')}
+    toolbar={panePin !== null && record !== null ? tools : undefined}
+    {bar}
+    tinted
+>
     <div class="detail" data-instance={instance.id}>
         {#if record === null}
             <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
@@ -405,19 +417,20 @@
         grid-template-columns: auto 1fr;
         gap: 2px 10px;
         margin: 0;
-        font-size: var(--fs-sm);
     }
 
     .kv dt {
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         align-self: center;
     }
 
+    /* A value in a panel of facts is the panel's main words. */
     .kv dd {
         margin: 0;
+        font-size: var(--fs-md);
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -435,6 +448,7 @@
 
     .pin .ctl {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: 6px;
         min-width: 0;
@@ -463,17 +477,18 @@
         display: flex;
         align-items: baseline;
         gap: 8px;
-        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
     .line .lb {
         text-transform: uppercase;
         letter-spacing: 0.04em;
+        font-size: var(--fs-xs);
     }
 
     .line .vl {
         margin-left: auto;
+        font-size: var(--fs-md);
         font-family: var(--font-num);
         text-align: right;
     }

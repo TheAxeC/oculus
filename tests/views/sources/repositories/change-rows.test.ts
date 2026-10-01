@@ -139,7 +139,7 @@ describe('the icon controls of the rows of the view', () => {
         return at < 0 ? '' : source.slice(at, source.indexOf('}', at));
     };
 
-    it('audits that draws a 16px icon with 2px round it, in this view only', () => {
+    it('audits that draws a 16px icon with 1px of padding in a 20px box, in this view only', () => {
         const view = rule('src/lib/views/sources/repositories/Repositories.svelte', '    .repos');
         const tokens = readFileSync('src/lib/themes/tokens.css', 'utf8');
         const strip = rule(
@@ -147,15 +147,13 @@ describe('the icon controls of the rows of the view', () => {
             '    .actions :global(.tool.compact)'
         );
 
-        // 1px of padding and the control's 1px border make the 2px, a 20px box
+        // an audit of source text: the view sets 1px of padding round the 16px icon, and the 20px
+        // box is the compact control's min-width and height (ToolButton.svelte), with no border
         expect(view).toContain('--action-pad: 1px');
-        // the 16px is the icon box token that the Seti icon and the status letter read as well
-        expect(view).toContain('--action-font: calc(var(--icon-box) * var(--text-scale, 1))');
-        expect(view).toContain('--action-glyph: 1em');
+        // the 16px is the icon box token that the glyph, the Seti icon and the status letter read
         expect(tokens).toContain('--icon-box: 16px;');
-        // the strip keeps the padding and the size it had for every view that sets nothing
-        expect(strip).toContain('padding: var(--action-pad, 1px 3px)');
-        expect(strip).toContain('font-size: var(--action-font, var(--fs-sm))');
+        // a view that sets nothing gets the 20px box the other icon controls have
+        expect(strip).toContain('padding: var(--action-pad, 0 var(--tab-action-pad))');
     });
 });
 

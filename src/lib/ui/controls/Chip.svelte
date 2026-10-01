@@ -1,8 +1,10 @@
 <script lang="ts">
-    // Layer 3, primitive. An inline label in a hue: a status word and the project type, and nothing
-    // else. The capsule is what marks a status out of the run of words on a card, so every other
-    // tag a view lists is ui/controls/Tag.svelte instead. Outline is the default and the filled
-    // form is for the one chip that has to carry a row.
+    // Layer 3, primitive. An inline label in a hue: a status word and the project type, and a
+    // filter the reader presses. The capsule is what marks a status out of the run of words on a
+    // card, so every other tag a view lists is ui/controls/Tag.svelte instead. It is VS Code's
+    // count badge in shape: 11px words, an 18 px minimum, a full round end. Outline is
+    // the default and the filled form is for the one chip that has to carry a row; a pressed
+    // toggle is drawn filled in its hue.
     //
     // The hue reaches the CSS as three custom properties the component sets from the tone, so the
     // rules below name only tokens: the tinted form paints `--c-<tone>-txt` on `--chip` and the
@@ -10,6 +12,7 @@
     // tests/checks/look/contrast.test.ts measures under every theme.
 
     import Glyph from '../display/Glyph.svelte';
+    import Tooltip from '../menu/Tooltip.svelte';
     import { bracketedGlyph } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -30,10 +33,13 @@
         onclick?: (event: MouseEvent) => void;
         /** A toggle chip's own state, which is what a reader is told it is pressing. */
         pressed?: boolean;
+        /** The tooltip of a toggle chip, when it should say more than the label does. */
+        title?: string;
     };
 
-    let { label, tone, glyph, filled = false, onclick, pressed }: Props = $props();
+    let { label, tone, glyph, filled = false, onclick, pressed, title }: Props = $props();
 
+    const solid = $derived(filled || pressed === true);
     const style = $derived(
         tone === undefined
             ? undefined
@@ -49,28 +55,36 @@
 </script>
 
 {#if onclick === undefined}
-    <span class="chip" class:toned={tone !== undefined} class:filled class:bracketed {style}>
+    <span
+        class="chip"
+        class:toned={tone !== undefined}
+        class:filled={solid}
+        class:bracketed
+        {style}
+    >
         {#if glyph !== undefined && glyph !== ''}
-            <Glyph name={glyph} />
+            <span class="mark"><Glyph name={glyph} /></span>
         {/if}
         <span class="label">{label}</span>
     </span>
 {:else}
-    <button
-        type="button"
-        class="chip pressable"
-        class:toned={tone !== undefined}
-        class:filled
-        class:bracketed
-        aria-pressed={pressed}
-        {style}
-        {onclick}
-    >
-        {#if glyph !== undefined && glyph !== ''}
-            <Glyph name={glyph} />
-        {/if}
-        <span class="label">{label}</span>
-    </button>
+    <Tooltip text={title ?? ''}>
+        <button
+            type="button"
+            class="chip pressable"
+            class:toned={tone !== undefined}
+            class:filled={solid}
+            class:bracketed
+            aria-pressed={pressed}
+            {style}
+            {onclick}
+        >
+            {#if glyph !== undefined && glyph !== ''}
+                <span class="mark"><Glyph name={glyph} /></span>
+            {/if}
+            <span class="label">{label}</span>
+        </button>
+    </Tooltip>
 {/if}
 
 <style>
@@ -78,15 +92,25 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
+        box-sizing: border-box;
         max-width: 100%;
         min-width: 0;
-        padding: 1px 8px;
+        min-height: calc(18px * var(--text-scale, 1));
+        padding: 3px 5px;
         border: 1px solid var(--line);
         border-radius: var(--radius-pill);
         background: var(--chip);
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        line-height: calc(11px * var(--text-scale, 1));
         white-space: nowrap;
+    }
+
+    /* The 16 px icon of a chip is taller than the chip's 11 px line; its margin gives the room
+       back, so a chip with an icon is as high as one without. */
+    .chip .mark {
+        display: inline-flex;
+        margin: calc(-3px * var(--text-scale, 1)) 0;
     }
 
     /* A long value is cut at the chip's own edge rather than at the card's, so a column of chips
@@ -112,9 +136,15 @@
         border-color: var(--accent);
     }
 
+    /* A pressed toggle with no hue of its own is marked in the accent. */
+    .chip.pressable[aria-pressed='true']:not(.toned) {
+        border-color: var(--accent);
+        color: var(--ink-txt, var(--ink));
+    }
+
     .chip.pressable:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 1px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     .chip.filled {
@@ -132,9 +162,14 @@
 
     /* The terminal shape: a bracketed text tag in its own colour, no pill and no fill. */
     :global(body.rice) .chip {
+        min-height: 0;
         padding: 1px 0;
         border: 0;
         background: none;
+    }
+
+    :global(body.rice) .chip .mark {
+        margin: 0;
     }
 
     :global(body.rice) .chip.filled {

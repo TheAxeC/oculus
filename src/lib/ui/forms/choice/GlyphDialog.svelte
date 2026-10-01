@@ -59,6 +59,6 @@
 
     .message {
         margin: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 </style>

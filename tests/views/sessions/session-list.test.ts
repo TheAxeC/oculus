@@ -15,11 +15,14 @@ import { createClientState, type ClientState } from '../../fixtures/client.ts';
 import {
     ALPHA,
     HUB,
+    barOf,
     catalog,
     gone,
+    headerOf,
     installFixture,
     live,
     renderView,
+    toolsOf,
     tree
 } from './views-fixture.ts';
 
@@ -159,6 +162,18 @@ describe('the session list', () => {
         expect(body).toContain(catalog['sessions.new_session_title']);
         expect(body).toContain('data-list-filter');
         expect(body).toContain(`placeholder="${catalog['sessions.search']}"`);
+    });
+
+    // Revert: draw the search box in the body again.
+    it('puts the search box in the bar and New and the filter in the header as bare icons', () => {
+        const body = html();
+        expect(barOf(body)).toContain(`placeholder="${catalog['sessions.search']}"`);
+        // the search box is a bar control, so the header holds icon actions only
+        expect(headerOf(body)).not.toContain(`placeholder="${catalog['sessions.search']}"`);
+        const found = toolsOf(headerOf(body));
+        expect(found.length).toBeGreaterThan(0);
+        for (const one of found) expect(one).toMatch(/\bbare\b/);
+        expect(headerOf(body)).toContain('data-list-filter');
     });
 
     it('shows its empty state when the payload holds nothing', () => {

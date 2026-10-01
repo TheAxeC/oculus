@@ -145,11 +145,14 @@
                             >{t('focus.command.behind_refresh')}</span
                         >
                         {#each week.behind.projects as project (project.id)}
-                            <ToolButton
-                                label={project.label}
-                                title={t('project.card.stale_behind', project.days)}
-                                onclick={() => onproject(project.id)}
-                            />
+                            <span class="link">
+                                <ToolButton
+                                    plain
+                                    label={project.label}
+                                    title={t('project.card.stale_behind', project.days)}
+                                    onclick={() => onproject(project.id)}
+                                />
+                            </span>
                         {/each}
                         {#if week.behind.more > 0}
                             <span>{t('focus.command.more', week.behind.more)}</span>
@@ -236,7 +239,8 @@
         gap: 6px;
         flex: 0 0 auto;
         margin-right: auto;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
+        font-weight: 600;
     }
     .pill {
         flex: 0 0 auto;
@@ -261,7 +265,7 @@
     }
     .sub {
         margin: 6px 0 2px;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
     .behind {
@@ -269,13 +273,17 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 5px;
-        margin-top: 3px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         font-size: var(--fs-md);
     }
-    .behind :global(.tool) {
-        border: 0;
-        background: none;
-        padding: 0;
+
+    /* A project behind its documents opens from its name, drawn as a link: the accent colour, an
+       underline under the pointer and with the focus. */
+    .link {
         color: var(--accent-txt, var(--accent));
+    }
+    .link:hover,
+    .link:focus-within {
+        text-decoration: underline;
     }
 </style>

@@ -6,12 +6,8 @@
     // release does not have still renders: the tab says so and the body is empty, which is the rule
     // state/workbench/layout/ states for a ViewId the registry does not hold.
     //
-    // A tab's view is mounted the first time the tab is shown and stays mounted until the tab
-    // closes or leaves the pane, so switching back to it neither builds the view again nor fetches
-    // what it read again, and a tab never shown costs nothing. There is no cap on the views one
-    // pane keeps: it is the number of tabs the reader has opened and looked at.
-    // A pane holding no tab draws one line saying that opened files appear there, since an empty
-    // pane is where a view opened for something lands on its page.
+    // The body under the strip is panes/PaneBody.svelte: the views of the tabs the pane has shown,
+    // the pointer's report of where a drop would land, and the line of an empty pane.
     //
     // It is where closing is guarded. A tab holding text no save has taken is asked about before it
     // goes, whether the close came from the tab's own control or from Delete on it, and so is a
@@ -19,9 +15,9 @@
     // learns nothing about what any view keeps.
     //
     // It is also where a drag begins and where most drops land, a tab's and a view's carried out of
-    // the catalogue alike. The strip reports a press and an insertion index; the body turns the
-    // pointer's place inside its own rect into an edge or a centre. Neither performs anything: the
-    // drag store holds what is hovered and the pointer coming up is what performs it.
+    // the catalogue alike. The strip reports a press and an insertion index; the body reports an
+    // edge or a centre. Neither performs anything: the drag store holds what is hovered and the
+    // pointer coming up is what performs it.
     //
     // Every item of the pane menu is an operation the pointer has another path to, which is what
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
@@ -42,7 +38,6 @@
     // right-click on a tab is left to the tab's own menu, so the strip's menu opens only where no
     // tab is under the pointer.
 
-    import { untrack } from 'svelte';
     import {
         EMBED,
         PAGE,
@@ -60,15 +55,15 @@
     import Tabs from '$lib/ui/tabs/Tabs.svelte';
     import type { Tab } from '$lib/ui/tabs/tab-strip';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { edgeAt, markAt, withoutOwn } from '$lib/state/workbench/drag.svelte';
+    import { markAt, withoutOwn } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/shared/words/text';
     import {
         badgeOf,
         registrationGlyph,
         registrationLabel
     } from '$lib/state/workbench/navigation/registry';
-    import TabView from './TabView.svelte';
-    import { panes, showable, type Instance, type Layout } from '$lib/state/workbench/layout';
+    import PaneBody from './PaneBody.svelte';
+    import { panes, type Instance, type Layout } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -119,8 +114,6 @@
 
     let { node, page = currentPage().id, path = [], onpalette = () => undefined }: Props = $props();
 
-    let body: HTMLDivElement | undefined = $state();
-
     const instances = $derived<Instance[]>(node.kind === 'pane' ? node.tabs : []);
     const active = $derived(node.kind === 'pane' ? node.active : '');
     const shown = $derived(instances.find((instance) => instance.id === active));
@@ -140,21 +133,6 @@
         touchPane(page);
         if (active !== '' && !activePane) activateInstance(active, page);
     }
-
-    /**
-     * The tabs this pane has shown, in the order they were first shown. A closed tab, or one moved
-     * to another pane, is dropped as soon as the pane no longer holds it.
-     */
-    let seen: string[] = $state([]);
-    $effect(() => {
-        const open = instances.map((one) => one.id);
-        const held = untrack(() => seen).filter((id) => open.includes(id));
-        if (active !== '' && !held.includes(active)) held.push(active);
-        if (held.join('\n') !== untrack(() => seen).join('\n')) seen = held;
-    });
-
-    /** The tabs whose views are mounted: the one shown, and every other one shown before it. */
-    const kept = $derived(instances.filter((one) => one.id === active || seen.includes(one.id)));
 
     /**
      * A tab per instance: the registry's words and glyph, or the view's own id when it has none. A
@@ -338,30 +316,6 @@
         hover({ kind: 'strip', path, index: withoutOwn(index, own), page });
     }
 
-    /** The pointer over the body: an edge of it, or its middle, which is the end of the strip. */
-    function bodyHover(event: PointerEvent): void {
-        const carried = dragging();
-        if (carried === null || body === undefined) return;
-        // A page already drawn on this screen, or one that would draw the page this pane is in, is
-        // no drop at all: nothing is drawn over the body and the ghost says why.
-        if (carried.kind === 'page' && !showable(pages(), currentPage().id, page, carried.id)) {
-            hover(null, null, true);
-            return;
-        }
-        const rect = body.getBoundingClientRect();
-        const point = { x: event.clientX, y: event.clientY };
-        const edge = edgeAt(rect, point);
-        hover(
-            edge === null ? { kind: 'centre', path, page } : { kind: 'edge', path, edge, page },
-            rect
-        );
-    }
-
-    function bodyLeave(): void {
-        if (dragging() === null) return;
-        hover(null);
-    }
-
     function pick(id: string): void {
         if (id === 'close') {
             // Closing a pane closes every tab in it at once, and a tab holds a view's own state,
@@ -434,33 +388,7 @@
             />
         </div>
     </ContextMenu>
-    <!-- The body is where a view is mounted, and the two pointer handlers only report where a drop
-         would land while a drag is in progress. Every drop they report has an item in the pane
-         menu, which is the keyboard path. -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div
-        class="body"
-        data-pane-body
-        bind:this={body}
-        onpointermove={bodyHover}
-        onpointerleave={bodyLeave}
-    >
-        {#each kept as instance (instance.id)}
-            {@const found = viewFor(instance.view)}
-            {#if found !== undefined}
-                <TabView {instance} registration={found} shown={instance.id === active} />
-            {/if}
-        {/each}
-        <!-- A pane holding no tab is where a view opened for something lands on the page, so it
-             says so rather than drawing nothing. -->
-        {#if instances.length === 0}
-            <ContextMenu label={t('ui.pane_menu')} items={stripItems} onpick={stripPick}>
-                <p class="empty" data-pane-empty>
-                    {t('ui.pane_empty')}
-                </p>
-            </ContextMenu>
-        {/if}
-    </div>
+    <PaneBody {instances} {active} {page} {path} items={stripItems} onpick={stripPick} />
 </div>
 
 <CloseQuestion
@@ -514,27 +442,8 @@
         background: transparent;
     }
 
-    /* The only thing on the page that scrolls is what a view puts in here. */
-    .body {
-        flex: 1 1 auto;
-        min-width: 0;
-        min-height: 0;
-        overflow: hidden;
-    }
-
     /* The strip's menu wrapper, which draws nothing of its own around the tab strip. */
     .tabs-menu {
         display: contents;
-    }
-
-    /* The one line of a pane with no tab, in the muted ink, clear of the strip above it. It fills
-       the body, so a right-click anywhere in an empty pane opens the strip's menu. */
-    .empty {
-        box-sizing: border-box;
-        height: 100%;
-        margin: 0;
-        padding: 12px;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
     }
 </style>

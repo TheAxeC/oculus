@@ -26,6 +26,7 @@ import { formFields, formSections } from '../../../src/lib/state/forms/schema.ts
 import type { Id, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { between } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -232,5 +233,31 @@ describe('the editor with nothing to edit', () => {
         const body = html({ id: 'nobody' });
         expect(body).toContain('nobody');
         expect(controls(body)).toBe(0);
+    });
+});
+
+describe('where the editor puts its controls', () => {
+    it('keeps Save and Revert as bare icons in the header', () => {
+        const header = between(html({ id: 'alpha' }), '<header', '</header>');
+        const tools = header.match(/<button[^>]*class="tool[^"]*"/g) ?? [];
+        expect(tools).toHaveLength(2);
+        for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
+        expect(header).toContain(`aria-label="${catalog['editor.save']}"`);
+        expect(header).toContain(`aria-label="${catalog['editor.revert']}"`);
+        // the clean-state word is status text, which sits in the bar and not in the header
+        expect(header).not.toContain(catalog['editor.clean']);
+    });
+
+    it('puts the status words in the bar, after the header', () => {
+        const body = html({ id: 'alpha' });
+        const bar = between(body, '<div class="viewbar', '<div class="body');
+        expect(bar).toContain(catalog['editor.clean']);
+        expect(bar).toContain(`aria-label="${catalog['editor.status']}"`);
+    });
+
+    it('says how many fields wait to be saved in the bar', () => {
+        client.manifestDraft.editManifest('editor-one', 'alpha', 'status.line', 'typed earlier');
+        const bar = between(html({ id: 'alpha' }), '<div class="viewbar', '<div class="body');
+        expect(bar).toContain(t('editor.dirty', 1));
     });
 });

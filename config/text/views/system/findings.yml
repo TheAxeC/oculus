@@ -4,3 +4,4 @@ text:
         findings: Findings
         findings_glyph: warn
         findings_none: 'No findings: every id resolves and every status is in the vocabulary.'
+        findings_none_glyph: circle_empty

@@ -39,6 +39,7 @@ text:
         new_kinds: New terminal of another kind
         new_terminal: new terminal
         new_terminal_title: Start a shell in this tab's folder
+        terminal_bar: Terminal controls
         terminal_rename_field: Terminal title
         style_default: Default
         stop_terminal: Stop this terminal

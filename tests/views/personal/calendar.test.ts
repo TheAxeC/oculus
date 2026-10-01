@@ -320,10 +320,16 @@ describe('the Calendar view', () => {
         expect(body).not.toMatch(/>Connect</);
     });
 
-    it('offers Add account in the empty state and in the head', () => {
+    it('offers Add account in the empty state and as an icon in the header', () => {
         const body = draw({ ...payload, status: 'unconfigured', accounts: [], events: [] });
         expect(body).toContain(catalog['accounts.empty_calendar']);
-        expect([...body.matchAll(/>Add account</g)]).toHaveLength(2);
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+        // the header holds the icon, named by its words, and the empty state the text button
+        expect(header).toContain('aria-label="Add account"');
+        expect(header).toContain('data-glyph="add"');
+        expect(body).toMatch(
+            /<button[^>]*class="tool[^"]*\bsmall\b[^"]*"[^>]*>(?:(?!<\/button>)[\s\S])*Add account/
+        );
         expect(body).toContain('aria-label="Account actions"');
     });
 

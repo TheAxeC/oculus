@@ -35,6 +35,7 @@ text:
         file_glyph: paper
         filter: Filter the folders already read by name
         filter_none: No folder read so far holds a name with that text.
+        filters: File filters
         follow: Follow the session
         follow_none: No session is picked, so there is no workspace to follow.
         follow_pin: Keep following this session when the selection moves

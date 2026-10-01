@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, shared view support. The control that hands one file to its application on this
     // machine through api/open, addressed by root and path. The file view and the source tab draw
-    // it in their bars, and the project card's file list and a collection card's link draw it as
-    // the row itself, labelled with the file's name and the words in the tooltip.
+    // it as an icon action of their headers (`bare`, its words the tooltip and the accessible
+    // name), and the project card's file list and a collection card's link draw it as the row
+    // itself, labelled with the file's name and the words in the tooltip.
     //
     // It is shared because the press is the same in all four: one POST, a refusal said in words,
     // and an answer a later press of the same control has superseded dropped, so a slow refusal
@@ -21,9 +22,11 @@
         label?: string;
         /** Where a refused or failed open is said, for a caller with a message line of its own. */
         onsaid?: (said: string) => void;
+        /** Draw the control as an icon action of a pane's header. */
+        bare?: boolean;
     };
 
-    let { root, path, label, onsaid }: Props = $props();
+    let { root, path, label, onsaid, bare = false }: Props = $props();
 
     const {
         writes: { openFile }
@@ -49,6 +52,7 @@
 </script>
 
 <ToolButton
+    {bare}
     label={label ?? t('file.open_program')}
     glyph={t('file.open_program_glyph')}
     title={label === undefined ? undefined : t('file.open_program')}

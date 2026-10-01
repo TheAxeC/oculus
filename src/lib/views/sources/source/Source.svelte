@@ -25,13 +25,15 @@
     // A keystroke keeps a preview tab. A file opened by a single click is the tab the next single
     // click replaces, and typing into it is a reader saying they are working in it.
     //
-    // Every control of the tab is on the pane's own bar, in one row: Save, Revert and, for a
-    // Markdown file, the rendered half, which act on the text and are drawn while the text may be
-    // written; then the star, `shared/links/BookmarkStar.svelte`, which the file view draws too, so
-    // a reader bookmarks the file in front of them whichever of the two tabs is showing it; then,
-    // for a file whose extension `open.program_ext` names an application for, such as a `.rtf`
-    // whose bytes are text, `shared/links/ProgramButton.svelte`, the control the file view draws.
-    // The editor below draws no bar of its own.
+    // The tab's controls are on the pane's header and bar. The header holds the icon actions: Save
+    // and Revert, drawn while the text may be written, then the star,
+    // `shared/links/BookmarkStar.svelte`, which the file view draws too, so a reader bookmarks the
+    // file in front of them whichever of the two tabs is showing it, and, for a file whose
+    // extension `open.program_ext` names an application for, such as a `.rtf` whose bytes are
+    // text, `shared/links/ProgramButton.svelte`, the control the file view draws. The bar holds the
+    // toggles (the rendered half of a Markdown file and Blame) and, at its end, the save outcome
+    // and what a refused bookmark write or open said. The editor below draws no bar of its own. A
+    // file that could not be read is the message box with a control that reads it again.
     //
     // What the status bar draws for the tab is published from here to the editor status store,
     // keyed by the instance, while the tab is mounted: the caret the editor reports, the
@@ -54,11 +56,12 @@
     // decorations; the code window draws them with Gutter.svelte.
 
     import { onDestroy, untrack } from 'svelte';
+    import Chip from '$lib/ui/controls/Chip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import BookmarkStar from '../../shared/links/BookmarkStar.svelte';
     import ProgramButton from '../../shared/links/ProgramButton.svelte';
     import Code from '../../shared/code/Code.svelte';
@@ -122,6 +125,8 @@
     const title = $derived(label === '' ? t('views.source') : label);
     const draft = $derived(sourceDraft(instance.id));
     const blocked = $derived(root === '' || path === '');
+    /** What the star or the program control was refused with, or the empty string. */
+    let said = $state('');
     const error = $derived(blocked ? t('source.cannot_open', path) : draft.error);
     /** The line a tab that may not write its file draws, and the empty string for one that may. */
     const locked = $derived(
@@ -327,25 +332,36 @@
 {/snippet}
 
 {#snippet tools()}
-    <Toolbar label={t('source.toolbar')}>
+    <Toolbar label={t('source.toolbar')} overflow>
         {#if editing}
-            <ToolButton label={t('editor.save')} glyph="check" onclick={() => void save()} />
+            <ToolButton bare label={t('editor.save')} glyph="check" onclick={() => void save()} />
             <ToolButton
+                bare
                 label={t('editor.revert')}
                 glyph={t('editor.revert_glyph')}
                 onclick={() => revertSourceDraft(instance.id)}
             />
-            {#if markdown}
-                <ToolButton
-                    label={t('source.preview')}
-                    glyph={t('source.preview_glyph')}
-                    pressed={draft.rendered}
-                    onclick={() => toggleSourceRendered(instance.id)}
-                />
-            {/if}
+        {/if}
+        <BookmarkStar bare {root} {path} onsaid={(words: string) => (said = words)} />
+        {#if !blocked && opensInProgram(path, programApps())}
+            <ProgramButton bare {root} {path} onsaid={(words: string) => (said = words)} />
+        {/if}
+    </Toolbar>
+{/snippet}
+
+{#snippet bar()}
+    <Toolbar label={t('source.bar')}>
+        {#if editing && markdown}
+            <Chip
+                label={t('source.preview')}
+                title={t('source.preview_title')}
+                glyph={t('source.preview_glyph')}
+                pressed={draft.rendered}
+                onclick={() => toggleSourceRendered(instance.id)}
+            />
         {/if}
         {#if inRepo !== null && draft.loaded}
-            <ToolButton
+            <Chip
                 label={t('source.blame')}
                 title={t('source.blame_title')}
                 glyph="blame"
@@ -353,25 +369,32 @@
                 onclick={() => toggleSourceBlame(instance.id)}
             />
         {/if}
-        <BookmarkStar {root} {path} />
-        {#if !blocked && opensInProgram(path, programApps())}
-            <ProgramButton {root} {path} />
-        {/if}
-        {#if editing && draft.message !== ''}
-            <span class="message" aria-live="polite">
-                {#if draft.failed}
-                    <Glyph name="cross" />
-                {/if}
-                {draft.message}
-            </span>
-        {/if}
     </Toolbar>
+    {#if editing && draft.message !== ''}
+        <span class="message" aria-live="polite">
+            {#if draft.failed}
+                <Glyph name="cross" />
+            {/if}
+            {draft.message}
+        </span>
+    {/if}
+    {#if said !== ''}
+        <span class="refused" role="alert">{said}</span>
+    {/if}
 {/snippet}
 
-<Pane {title} toolbar={tools}>
+{#snippet again()}
+    <ToolButton
+        small
+        label={t('source.retry')}
+        onclick={() => void loadSourceDraft(instance.id, root, path)}
+    />
+{/snippet}
+
+<Pane {title} toolbar={tools} {bar}>
     <div class="source" data-instance={instance.id} data-root={root} data-path={path}>
         {#if error !== ''}
-            <Empty message={error} glyph="warn" />
+            <Empty error message={error} action={blocked ? undefined : again} />
         {:else if !draft.loaded}
             <Empty message={t('app.waiting')} glyph="edit" />
         {:else if locked !== ''}
@@ -423,9 +446,22 @@
         gap: 6px;
     }
 
+    /* The save outcome: status words at the end of the bar. */
     .message {
+        margin-left: auto;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
+    }
+
+    /* What a refused bookmark write or open said: alert words at the end of the bar. */
+    .refused {
+        margin-left: auto;
+        color: var(--c-red-txt);
+        font-size: var(--fs-sm);
+    }
+
+    .message ~ .refused {
+        margin-left: 0;
     }
 
     .locked {
@@ -434,6 +470,6 @@
         gap: 4px;
         margin: 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 </style>

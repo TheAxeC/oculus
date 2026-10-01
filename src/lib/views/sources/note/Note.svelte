@@ -21,7 +21,7 @@
     // answer landing from the server never writes over a keystroke: the draft is seeded from the
     // file once per note and is the reader's from then on. The save is a wait that starts again on
     // every keystroke (state/life/notes.ts), so typing a paragraph is one write and not one
-    // per letter, and the toolbar says when the last one landed.
+    // per letter, and the end of the pane's bar says when the last one landed.
     //
     // A note's file is made by its first keystroke and not by the control that opened the tab, so a
     // tab left with nothing typed into it leaves nothing on the disk and nothing has to be cleaned
@@ -35,7 +35,6 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import {
         autosaveMs,
         browserTimer,
@@ -232,26 +231,24 @@
     }
 </script>
 
-{#snippet tools()}
-    <Toolbar label={t('note.toolbar')}>
-        <span class="when" aria-live="polite">
-            {#if failed !== ''}
-                {t('note.failed', failed)}
-            {:else if savedAt === ''}
-                {t('note.unsaved')}
-            {:else}
-                {t('note.saved', savedAt)}
-            {/if}
-        </span>
-    </Toolbar>
+{#snippet bar()}
+    <span class="when" aria-live="polite">
+        {#if failed !== ''}
+            {t('note.failed', failed)}
+        {:else if savedAt === ''}
+            {t('note.unsaved')}
+        {:else}
+            {t('note.saved', savedAt)}
+        {/if}
+    </span>
 {/snippet}
 
-<Pane {title} toolbar={tools} tinted>
+<Pane {title} {bar} tinted>
     <div class="note" data-instance={instance.id} data-note={id}>
         {#if id === ''}
             <Empty message={t('note.none')} glyph={t('note.none_glyph')} />
         {:else if held.error !== ''}
-            <Empty message={t('note.error', held.error)} glyph={t('note.none_glyph')} />
+            <Empty error message={t('note.error', held.error)} />
         {:else}
             <Field label={t('note.title_label')}>
                 <TextInput
@@ -282,7 +279,9 @@
         min-width: 0;
     }
 
+    /* Status words at the end of the bar. */
     .when {
+        margin-left: auto;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
     }

@@ -134,6 +134,25 @@ describe('what it refuses without asking', () => {
         expect(client.search.searchState('one').error).toBe('error: unclosed group');
         expect(client.search.searchState('one').answer).toBeNull();
     });
+
+    it('runs the held query again once per call, whatever the last answer was', async () => {
+        const held = stub({ error: 'error: unclosed group' }, false);
+        client.search.setSearchState('one', { q: 'fo(', regex: true });
+        await client.search.runSearch('one', ['hub']);
+        expect(client.search.searchState('one').error).toBe('error: unclosed group');
+        await client.search.runSearch('one', ['hub']);
+        expect(held.calls).toHaveLength(2);
+        expect(held.calls[1].url).toBe(held.calls[0].url);
+    });
+
+    it('leaves a second press alone while a run is in flight', async () => {
+        const held = stub(ANSWER);
+        client.search.setSearchState('one', { q: 'needle' });
+        const first = client.search.runSearch('one', ['hub']);
+        const second = client.search.runSearch('one', ['hub']);
+        await Promise.all([first, second]);
+        expect(held.calls).toHaveLength(1);
+    });
 });
 
 describe('the pure readers', () => {

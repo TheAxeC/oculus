@@ -20,6 +20,7 @@ import { archiveConfirm, recipientOf, sendConfirm } from '../../../src/lib/state
 import type { InboxPayload, InboxThread } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { barOf, headerOf } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -254,8 +255,14 @@ describe('the Inbox view', () => {
         expect(body).toContain(catalog['inbox.unconfigured']);
         // The head carries the state word and the body the sentence, so the sentence is drawn once.
         expect(body.split(catalog['accounts.empty_mail']).length).toBe(2);
-        // Add account is in the head and in the empty state.
-        expect(body.split(`>${catalog['accounts.add']}<`).length).toBe(3);
+        // Add account is the header's icon, named by its words, and the empty state's action.
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
+        expect(header).toContain(`aria-label="${catalog['accounts.add']}"`);
+        expect(body).toMatch(
+            new RegExp(
+                `<button[^>]*class="tool[^"]*\\bsmall\\b[^"]*"[^>]*>(?:(?!</button>)[\\s\\S])*${catalog['accounts.add']}`
+            )
+        );
         // no account is configured, so there is no thread to put in a section
         expect(body).not.toContain(catalog['inbox.sec_reply']);
     });
@@ -436,6 +443,58 @@ describe('the Inbox card', () => {
         expect(whole).not.toContain('class="provider');
         // nor a paragraph of its own anywhere on the card
         expect(whole).not.toContain('<p class="provider');
+    });
+
+    it('puts the search in the bar and draws no header toolbar', () => {
+        serve();
+        const body = draw('inbox-bar');
+        const header = headerOf(body);
+        const bar = barOf(body);
+        expect(bar).toMatch(/<input class="search[^"]*\bfill\b/);
+        // the header holds the two account actions as bare icons, and nothing else
+        const tools = header.match(/<button[^>]*class="(?:tool|opener)[^"]*"[^>]*>/g) ?? [];
+        expect(tools.length).toBe(2);
+        for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
+        // a search box is a control of the bar, and the header holds icon actions only
+        expect(header).not.toContain('class="search');
+    });
+
+    it('draws the four card controls in one box the card reveals', () => {
+        serve();
+        const row = controlRow(card(draw('inbox-reveal'), 'reply'));
+        const at = row.indexOf('class="controls');
+        expect(at).toBeGreaterThan(-1);
+        const box = row.slice(at);
+        const labels = [...box.matchAll(/aria-label="([^"]*)"/g)].map((found) => found[1]);
+        expect(labels).toEqual([
+            catalog['inbox.show_draft'],
+            catalog['inbox.open_provider'],
+            catalog['inbox.archive'],
+            catalog['inbox.triaged']
+        ]);
+        // the age and the tags stay outside the box, so they are drawn at rest
+        expect(row.slice(0, at)).toContain('class="age');
+    });
+
+    it('audits that the card controls are transparent at rest and follow the card', () => {
+        const source = readFileSync('src/lib/views/feeds/inbox/InboxCard.svelte', 'utf8');
+        const css =
+            compile(source, { filename: 'InboxCard.svelte', css: 'external' }).css?.code ?? '';
+        const rule = /\.controls[^{]*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+        expect(rule).toContain('opacity: var(--card-reveal)');
+        expect(rule).toContain('transition: opacity 120ms ease-out');
+        // a hidden control keeps its box, so Tab still reaches it
+        expect(rule).not.toContain('display: none');
+        // a hidden control keeps its place in the tab order and in the layout
+        expect(rule).not.toContain('visibility');
+    });
+
+    it('audits that a section heading is an uppercase label of weight 700', () => {
+        const source = readFileSync('src/lib/views/feeds/inbox/Inbox.svelte', 'utf8');
+        const css = compile(source, { filename: 'Inbox.svelte', css: 'external' }).css?.code ?? '';
+        const rule = /\.group[^{]*h3[^{]*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+        expect(rule).toContain('font-weight: 700');
+        expect(rule).toContain('text-transform: uppercase');
     });
 
     it('audits that the cards are one column in reading order', () => {

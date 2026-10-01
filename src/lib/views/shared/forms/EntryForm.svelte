@@ -369,6 +369,7 @@
                             />
                             <ToolButton
                                 label={t('collection.meta_remove')}
+                                glyph={t('collection.delete_glyph')}
                                 compact
                                 onclick={() => removeMeta(field.field, at)}
                             />

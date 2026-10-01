@@ -102,12 +102,13 @@
         min-width: 0;
         resize: vertical;
         border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
+        border-radius: var(--input-radius);
         background: var(--chip);
         color: var(--ink-txt, var(--ink));
         font: inherit;
-        font-size: var(--fs-sm);
-        padding: 3px 8px;
+        font-size: var(--fs-md);
+        line-height: calc(var(--button-line) * var(--text-scale, 1));
+        padding: 4px 6px;
     }
 
     .area.bare,
@@ -151,8 +152,8 @@
     }
 
     .area:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     :global(body.rice) .area {

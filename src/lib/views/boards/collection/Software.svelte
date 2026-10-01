@@ -9,10 +9,12 @@
     // draws back.
     //
     // The rows are softwareRows() of state/boards/collection.ts; what is left here is the markup
-    // and the words. The status word is the card's own codeLabel(), so one deposit state reads the
-    // same on a project card and in this list.
+    // and the words. Each row is one line of the tree's height. The status mark is a Tag over the
+    // card's own codeLabel(), so one deposit state reads the same on a project card and in this
+    // list, and a list with no row says so through Empty.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { codeLabel } from '$lib/views/shared/card/card';
     import { softwareRows, type Project } from '$lib/state/boards/collection';
@@ -35,11 +37,14 @@
 <div class="software" data-software="1">
     <span class="label">{t('collection.software')}</span>
     {#if rows.length === 0}
-        <span class="none">{t('collection.software_none')}</span>
+        <div class="none">
+            <Empty message={t('collection.software_none')} />
+        </div>
     {/if}
     {#each rows as row (row.id)}
         <div class="row" data-software-row={row.id}>
             <ToolButton
+                small
                 label={row.label}
                 title={row.label}
                 onclick={() => openView('project', { id: row.id, label: row.label })}
@@ -50,6 +55,7 @@
                     <span class="kind">{t('collection.software_papers')}</span>
                     {#each row.papers as paper (paper.id)}
                         <ToolButton
+                            small
                             label={paper.label}
                             title={paper.label}
                             onclick={() =>
@@ -79,10 +85,16 @@
     .row {
         flex-basis: 100%;
         min-width: 0;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+    }
+
+    .none {
+        flex-basis: 100%;
+        min-width: 0;
     }
 
     .label {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -90,15 +102,10 @@
     }
 
     .kind {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .none {
-        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
 </style>

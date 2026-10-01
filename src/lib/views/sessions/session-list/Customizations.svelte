@@ -8,6 +8,7 @@
     // The section keeps what it was scoped to and which rows are open in the list's instance state,
     // beside the list's own filter, under `custom`.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
@@ -164,7 +165,7 @@
             />
         </li>
         {#if read !== null && read.error !== ''}
-            <li class="line" role="none">{read.error}</li>
+            <li role="none"><Empty error message={read.error} /></li>
         {:else if read?.pending === true}
             <li class="line" role="none">{t('customize.loading')}</li>
         {/if}

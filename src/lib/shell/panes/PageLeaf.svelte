@@ -90,6 +90,7 @@
                 label={t('ui.page_leaf_close')}
                 glyph={t('ui.page_leaf_close_glyph')}
                 compact
+                bare
                 onclick={() => unembedPage(path, host)}
             />
         </div>
@@ -127,20 +128,28 @@
     }
 
     /* One line over the page, so the reader can tell which page is being shown and stop showing
-       it. */
+       it. It is a pane header's size: 22 px, the title cut with an ellipsis beside the close
+       action in its 20 px box. */
     .head {
+        --bare-box: var(--header-action);
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 6px;
+        gap: 8px;
         flex: 0 0 auto;
-        padding: 2px 4px;
+        box-sizing: border-box;
+        height: calc(22px * var(--text-scale, 1));
+        padding: 0 8px 0 12px;
         min-width: 0;
+        border-bottom: 1px solid var(--line);
     }
 
     .name {
+        flex: 1 1 auto;
+        min-width: 3ch;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        text-transform: uppercase;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

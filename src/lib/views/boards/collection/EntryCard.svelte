@@ -329,7 +329,7 @@
                 {:else if drawn.kind === 'person'}
                     <div class="row">
                         <span class="label">{drawn.label}</span>
-                        <ToolButton
+                        <Chip
                             label={personName(portfolio(), drawn.values[0])}
                             glyph={t('collection.person_glyph')}
                             title={t('collection.open_person')}
@@ -407,6 +407,7 @@
     .slot {
         display: flex;
         flex-direction: column;
+        min-width: 0;
     }
 
     .slot > :global(.card) {
@@ -417,7 +418,7 @@
     /* The card draws past its own edge, so its colour bar carries the card's rounded corners itself
        and a long unbroken title breaks inside the card's width. */
     .slot > :global(.card > .bar) {
-        border-radius: var(--radius) 0 0 var(--radius);
+        border-radius: var(--input-radius) 0 0 var(--input-radius);
     }
 
     .slot > :global(.card .title) {
@@ -426,21 +427,23 @@
 
     .grip {
         cursor: grab;
-        font-size: var(--fs-lg);
         color: var(--muted-txt, var(--muted));
     }
 
     .sub {
         margin: 0 0 4px;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
+    /* A line of labels, tags and chips is one row of the tree's height; one that wraps grows by
+       whole lines. */
     .row {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         margin-top: 6px;
     }
 
@@ -475,12 +478,13 @@
         display: flex;
         align-items: baseline;
         gap: 6px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
         margin-top: 6px;
     }
 
     .label {
         flex: 0 0 auto;
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;

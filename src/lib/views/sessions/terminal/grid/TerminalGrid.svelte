@@ -36,11 +36,12 @@
     // Cmd+F (Ctrl+F off macOS) at the grid opens the find bar over its top right (FindBar.svelte),
     // as VS Code's terminal find: the search addon marks every match on the theme's `--accent-bg`
     // and the active one in `--accent` (grid-look.ts, `findLook`), read again when the theme
-    // changes. The find keys are taken with xterm's own key hook before xterm handles the key, so
-    // the shell never sees them and the browser's find does not open. A URL in the output is a
-    // link (the web links addon), opened in a new tab on Cmd+click (Ctrl+click off macOS) and left
-    // to the program on a plain click. The Unicode 11 width tables draw an emoji and a wide
-    // character over two cells, as the shell counts them.
+    // changes. The bar's state and its searches are grid-find.svelte.ts's. The find keys are taken
+    // with xterm's own key hook before xterm handles the key, so the shell never sees them and the
+    // browser's find does not open. A URL in the output is a link (the web links addon), opened in
+    // a new tab on Cmd+click (Ctrl+click off macOS) and left to the program on a plain click. The
+    // Unicode 11 width tables draw an emoji and a wide character over two cells, as the shell
+    // counts them.
     //
     // The grid is subscribed once its window has the grid's size (`subscribePty`), and an effect of
     // its own follows the `terminal:` cursor, Option and copy settings (grid-look.ts).
@@ -71,14 +72,8 @@
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { scheduleReflow } from './reflow';
-    import {
-        applyLook,
-        findLook,
-        followTerminalOptions,
-        gridLook,
-        gridOptions,
-        type FindLook
-    } from './grid-look';
+    import { applyLook, followTerminalOptions, gridLook, gridOptions } from './grid-look';
+    import { GridFind } from './grid-find.svelte';
     import {
         clearGrid,
         copyAsHtml,
@@ -90,15 +85,11 @@
     import {
         FIND_LIMIT,
         findKey,
-        findOptions,
-        findUnparsable,
         linkHandler,
         type FindAction,
-        type FindResults,
         type FindToggles
     } from '../terminal-list';
     import { untrack } from 'svelte';
-    import type { SearchAddon } from '@xterm/addon-search';
     import type { Terminal as Grid } from '@xterm/xterm';
     import { terminalOptions } from '$lib/state/shared/words/appearance';
     import { useState } from '$lib/state/client/use';
@@ -176,67 +167,11 @@
     /** Whether the page runs on macOS, where the find and link modifier is Cmd. */
     const mac = onMac();
 
-    /** The search addon of the mounted grid, and the colours its marks are drawn in. */
-    let search: SearchAddon | null = null;
-    let marks: FindLook | null = null;
     /** The serialize addon of the mounted grid, which Copy as HTML reads the selection through. */
     let serializer: HtmlSerializer | null = null;
 
-    /** Whether the find bar is open, how often it was asked for, and what it searches. */
-    let finding = $state(false);
-    let asked = $state(0);
-    let findTerm = $state('');
-    let findToggles: FindToggles = $state({ matchCase: false, wholeWord: false, regex: false });
-    let results: FindResults | null = $state(null);
-
-    /**
-     * Search the grid's output: upward from the active match for Previous and for a changed text
-     * or toggle (incrementally, so a longer text keeps the match it still fits), downward for
-     * Next. An empty text clears the marks and the count. A regular expression that does not parse
-     * (terminal-list.ts, `findUnparsable`) clears the marks and counts no results, rather than
-     * letting the addon's SyntaxError out of the key press.
-     */
-    function runFind(move: 'next' | 'previous' | 'typed'): void {
-        if (search === null) return;
-        if (findTerm === '') {
-            search.clearDecorations();
-            results = null;
-            return;
-        }
-        if (findUnparsable(findTerm, findToggles)) {
-            search.clearDecorations();
-            results = { resultIndex: -1, resultCount: 0 };
-            return;
-        }
-        const options = findOptions(findToggles, marks ?? findLook());
-        if (move === 'next') search.findNext(findTerm, options);
-        else search.findPrevious(findTerm, { ...options, incremental: move === 'typed' });
-    }
-
-    /** The find bar's text as typed, searched for at once. */
-    function typedFind(typed: string): void {
-        findTerm = typed;
-        runFind('typed');
-    }
-
-    /** The find bar's toggles after one was pressed, searched with at once. */
-    function toggledFind(flipped: FindToggles): void {
-        findToggles = flipped;
-        runFind('typed');
-    }
-
-    /** What a find key or a press in the bar does. */
-    function findAction(action: FindAction): void {
-        if (action === 'open') {
-            finding = true;
-            asked += 1;
-        } else if (action === 'close') {
-            finding = false;
-            search?.clearDecorations();
-            results = null;
-            grid?.focus();
-        } else runFind(action);
-    }
+    /** The find bar's state and what it does with the mounted grid's search addon. */
+    const find = new GridFind(() => grid?.focus());
 
     const terminal = $derived(terminalById(id));
     /** Whether an agent runs in the terminal, which is what the steer box is drawn under. */
@@ -356,17 +291,15 @@
             term.unicode.activeVersion = '11';
             // A find key is the bar's, on its press and on its release, and never the shell's.
             term.attachCustomKeyEventHandler((event) => {
-                const action = findKey(event, { mac, where: 'grid', open: finding });
+                const action = findKey(event, { mac, where: 'grid', open: find.finding });
                 if (action === null) return true;
                 if (event.type === 'keydown') {
                     event.preventDefault();
-                    findAction(action);
+                    find.action(action);
                 }
                 return false;
             });
-            const counted = searcher.onDidChangeResults((found) => (results = found));
-            search = searcher;
-            marks = findLook();
+            const detachFind = find.attach(searcher);
             term.open(at);
             fit.fit();
             grid = term;
@@ -412,12 +345,9 @@
                 unsubscribePty(wanted);
                 typed.dispose();
                 rang.dispose();
-                counted.dispose();
-                search = null;
+                detachFind();
                 serializer = null;
                 oncontrol(wanted, null);
-                finding = false;
-                results = null;
                 unhold();
                 unkey();
                 pasting = null;
@@ -461,8 +391,7 @@
                 const held = untrack(() => grid);
                 if (held === null) return false;
                 applyLook(held.options, gridLook());
-                marks = findLook();
-                if (finding) runFind('typed');
+                find.restyle();
                 const size = gridFontSize(chosen, scale);
                 if (size !== undefined && held.options.fontSize !== size) {
                     held.options.fontSize = size;
@@ -493,16 +422,16 @@
             ondrop={droppedOnGrid}
         ></div>
     </ContextMenu>
-    {#if finding}
+    {#if find.finding}
         <FindBar
-            term={findTerm}
-            toggles={findToggles}
-            {results}
+            term={find.term}
+            toggles={find.toggles}
+            results={find.results}
             {mac}
-            {asked}
-            onterm={typedFind}
-            ontoggles={toggledFind}
-            onaction={findAction}
+            asked={find.asked}
+            onterm={(typed: string) => find.typed(typed)}
+            ontoggles={(flipped: FindToggles) => find.toggled(flipped)}
+            onaction={(action: FindAction) => find.action(action)}
         />
     {/if}
     {#if agent}

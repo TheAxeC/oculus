@@ -26,14 +26,18 @@
 
 <style>
     .quota {
-        font-size: var(--fs-sm);
+        min-width: 0;
     }
     .meters {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
         gap: 4px 16px;
     }
     h3 {
-        font-size: var(--fs-sm);
+        margin: 0 0 6px;
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--muted-txt, var(--muted));
     }
 </style>

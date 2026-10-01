@@ -134,7 +134,7 @@
         min-width: 7em;
         padding: 0 6px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         white-space: nowrap;
     }
 </style>

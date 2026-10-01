@@ -78,6 +78,14 @@ describe('the funding view', () => {
         expect(body).toContain('>beta</span>');
     });
 
+    it('draws the projects no scheme covers as 22 px row buttons inside the card', () => {
+        const row = body.slice(
+            body.indexOf('class="row'),
+            body.indexOf('</article>', body.indexOf('class="row'))
+        );
+        expect(row).toMatch(/<button[^>]*class="tool[^"]*\bsmall\b[^"]*"/);
+    });
+
     it('drops that card when its toggle is switched off', () => {
         const off = html('funding', { hidden: ['no-funding'] });
         // the toggle is off, so the card and its sub-line are not drawn
@@ -100,6 +108,21 @@ describe('the code view', () => {
         expect(body).toContain('data-group="deposited"');
     });
 
+    // Revert: in views/boards/collection/Coverage.svelte, put the ToolButton and the Tag count
+    // back in place of the Chip.
+    it('draws each coverage group as a pressable chip carrying its count, closed', () => {
+        const coverage = body.slice(body.indexOf('data-coverage'), body.indexOf('data-software'));
+        const chips = coverage.match(
+            /<button[^>]*class="chip pressable[^"]*"[^>]*aria-pressed="false"/g
+        );
+        expect(chips).toHaveLength(3);
+        expect(coverage).toMatch(
+            new RegExp(`${catalog['collection.coverage_deposited']} \\d+</span></button>`)
+        );
+        // the count is inside the chip, so no loose tag follows the group
+        expect(coverage).not.toContain('class="tag');
+    });
+
     it("draws the repo cards under it, with the projects the entry's related list names", () => {
         const card = cards(body)[0];
         expect(card).toContain('a repo');
@@ -112,6 +135,12 @@ describe('the code view', () => {
     it('says the tier holds nothing while the portfolio has no software project', () => {
         expect(body).toContain(catalog['collection.software']);
         expect(body).toContain(catalog['collection.software_none']);
+        // the empty line is the Empty state, not a bare span
+        expect(body).toMatch(
+            new RegExp(
+                `<p class="empty[^"]*"[^>]*>(?:(?!</p>)[\\s\\S])*${catalog['collection.software_none']}`
+            )
+        );
         // the portfolio holds no software project, so there is no row to draw
         expect(body).not.toContain('data-software-row=');
     });
@@ -138,6 +167,16 @@ describe('the code view', () => {
         expect(withTool).toContain(catalog['board.code_deposited']);
         expect(withTool).toContain(catalog['collection.software_papers']);
         expect(withTool).toContain('>Alpha<');
+        // the row is one line: its deposit state a Tag, its project and its papers 22 px buttons
+        const row = withTool.slice(
+            withTool.indexOf('data-software-row="kit"'),
+            withTool.indexOf('</div>', withTool.indexOf('class="papers'))
+        );
+        expect(row).toMatch(/<span class="tag [^"]*"/);
+        expect(row).toContain('>deposited</span>');
+        // the deposit state is a code state, which is a tag and never wears the capsule
+        expect(row).not.toContain('class="chip');
+        expect(row.match(/<button[^>]*class="tool[^"]*\bsmall\b/g)).toHaveLength(2);
     });
 });
 
@@ -146,6 +185,9 @@ describe('a joint-work card', () => {
         const body = html('joint-work');
         expect(body).toContain(catalog['collection.open_person']);
         expect(body).toContain('Maarten Naesens');
+        // the person is a pressable Chip, one capsule shape, and not a bordered text button
+        const person = body.slice(body.lastIndexOf('<button', body.indexOf('Maarten Naesens')));
+        expect(person.slice(0, person.indexOf('>'))).toContain('class="chip pressable');
         // The key itself is not what the card draws; the name the registry holds is.
         expect(body).not.toContain('>naesens<');
     });

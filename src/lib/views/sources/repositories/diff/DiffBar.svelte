@@ -6,7 +6,7 @@
     // draws what it is told and asks the pane to act.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { t } from '$lib/state/shared/words/text';
@@ -57,7 +57,7 @@
     }
 </script>
 
-<Toolbar label={t('views.repositories_diff')}>
+<Toolbar label={t('views.repositories_diff')} overflow>
     {#if openable}
         <ToolButton
             label={t('repositories.open_file')}

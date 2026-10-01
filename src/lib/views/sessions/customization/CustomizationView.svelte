@@ -63,7 +63,7 @@
         {#if read === null}
             <Empty message={t('customize.view_none')} glyph={t('customize.view_glyph')} />
         {:else if read.error !== ''}
-            <p class="line">{read.error}</p>
+            <Empty error message={read.error} />
         {:else if read.pending || read.value === null}
             <p class="line">{t('customize.loading')}</p>
         {:else}

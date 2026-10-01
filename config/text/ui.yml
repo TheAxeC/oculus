@@ -81,6 +81,8 @@ text:
         text_undo: Undo
         theme: Theme
         theme_glyph: darkmode
+        toolbar_more: More actions
+        toolbar_more_glyph: more
         unknown_view: 'Unknown view: {0}'
         wallpaper: Wallpaper
         wallpaper_title: Wallpaper behind the panels - and the slight transparency that goes with it

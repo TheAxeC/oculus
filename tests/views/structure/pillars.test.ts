@@ -10,6 +10,7 @@ import { catalog, fixture, install } from './lines-fixture.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { present } from '../../fixtures/present.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { between, expectAddThenSource } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 let setInstanceState: ClientState['ui']['setInstanceState'];
@@ -55,6 +56,29 @@ function withPillarTypes(types: string[]): Snapshot {
     );
     return snapshot;
 }
+
+describe('where the Pillars view puts its controls', () => {
+    it('holds only bare icon actions in the header: add first, the control over the file last', () => {
+        expectAddThenSource(html(), catalog['collection.add'], 'registries/pillars.yml');
+    });
+
+    it('keeps the add control out of the intro', () => {
+        const body = html();
+        const intro = between(body, '<div class="intro', 'data-pillar=');
+        // the add control is the header's icon, so the intro does not carry one
+        expect(intro).not.toContain(`aria-label="${catalog['collection.add']}"`);
+        // the intro is prose and holds no controls at all
+        expect(intro).not.toContain('class="actions');
+    });
+
+    // Revert: in views/structure/pillars/LineCard.svelte, put the compact Edit entry ToolButton
+    // back in the meta row in place of CardActions.
+    it('draws Edit entry among the card controls, an icon shown under the pointer', () => {
+        const actions = between(card(html(), 'pillar'), 'data-card-actions', '</div>');
+        expect(actions).toContain(`aria-label="${catalog['collection.form_edit_title']}"`);
+        expect(actions).toMatch(/class="tool[^"]*\bcompact\b/);
+    });
+});
 
 describe('the Pillars view', () => {
     it('closes its toolbar with the control that opens registries/pillars.yml', () => {
@@ -102,6 +126,15 @@ describe('the Pillars view', () => {
         expect(body).toContain(catalog['pillars.archival']);
         expect(body).toContain('1 not active');
         expect(body).toContain('dropped');
+    });
+
+    it('draws each archival group as a pressable chip with its count, closed', () => {
+        const archival = between(html(), 'data-pillar-archival', '</article>');
+        expect(archival).toMatch(
+            /<button[^>]*class="chip pressable[^"]*"[^>]*aria-pressed="false"[^>]*>(?:(?!<\/button>)[\s\S])*dropped 1/
+        );
+        // the count is part of the chip, so no loose tag follows the group
+        expect(archival).not.toMatch(/<span class="tag[^"]*"[^>]*><span class="label[^"]*">1</);
     });
 
     it('draws provisional metrics and omits metrics from an off-pillar card', () => {

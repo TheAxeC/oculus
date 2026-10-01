@@ -24,6 +24,7 @@ text:
         filter_state: State
         fork: Fork
         fork_tip: continue it as a new session in a new terminal
+        list_bar: Session list search
         list_toolbar: Session list controls
         live_busy: busy
         live_idle: idle

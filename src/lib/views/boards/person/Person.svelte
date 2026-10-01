@@ -31,7 +31,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import { openSourceFile } from '../../shared/links/source-file';
@@ -129,9 +129,10 @@
 
 <Pane title={title === '' ? t('person.nobody') : title} tinted>
     {#snippet toolbar()}
-        <Toolbar label={t('person.toolbar')}>
+        <Toolbar label={t('person.toolbar')} overflow>
             {#if join.jointWork.length > 0}
                 <ToolButton
+                    bare
                     label={t('person.open_joint_work')}
                     glyph="collab"
                     title={t('person.open_joint_work_tip')}
@@ -189,13 +190,17 @@
                     <ul class="rows">
                         {#each join.projects as project (project.id)}
                             <li>
-                                <ToolButton
-                                    label={project.short === undefined || project.short === ''
-                                        ? project.title
-                                        : project.short}
-                                    title={t('person.open_project', project.title)}
-                                    onclick={() => openProject(project.id, project.title)}
-                                />
+                                <span class="link">
+                                    <ToolButton
+                                        plain
+                                        cut
+                                        label={project.short === undefined || project.short === ''
+                                            ? project.title
+                                            : project.short}
+                                        title={t('person.open_project', project.title)}
+                                        onclick={() => openProject(project.id, project.title)}
+                                    />
+                                </span>
                             </li>
                         {/each}
                     </ul>
@@ -230,11 +235,15 @@
                         <ul class="rows">
                             {#each documents as entry (entry.name)}
                                 <li>
-                                    <ToolButton
-                                        label={entry.name}
-                                        title={t('person.open_file', entry.name)}
-                                        onclick={() => openFile(entry.name)}
-                                    />
+                                    <span class="link">
+                                        <ToolButton
+                                            plain
+                                            cut
+                                            label={entry.name}
+                                            title={t('person.open_file', entry.name)}
+                                            onclick={() => openFile(entry.name)}
+                                        />
+                                    </span>
                                 </li>
                             {/each}
                         </ul>
@@ -256,15 +265,19 @@
         margin: 0;
     }
 
+    /* Every line of the fact strip is the tree's row height, and a longer value grows by whole
+       lines. */
     .facts {
         display: grid;
         grid-template-columns: max-content 1fr;
-        gap: 4px 12px;
+        column-gap: 12px;
         margin: 0;
+        font-size: var(--fs-md);
+        line-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .facts dt {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -278,21 +291,27 @@
     }
 
     .block h3 {
-        margin: 0 0 6px;
-        font-size: var(--fs-sm);
+        margin: 0 0 4px;
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        color: var(--muted-txt, var(--muted));
     }
 
     /* The folder block's heading carries the control that selects the folder in the Files view. */
     .head {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         gap: 8px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+    }
+
+    .head h3 {
+        margin: 0;
     }
 
     .rows {
         display: flex;
         flex-direction: column;
-        gap: 4px;
         margin: 0;
         padding: 0;
         list-style: none;
@@ -303,10 +322,25 @@
         align-items: center;
         gap: 8px;
         min-width: 0;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+        font-size: var(--fs-md);
     }
 
     .what {
         min-width: 0;
         overflow-wrap: anywhere;
+    }
+
+    /* A project and a file open from their name, drawn as a link: the accent colour, an underline
+       under the pointer and with the focus. */
+    .link {
+        display: inline-flex;
+        min-width: 0;
+        color: var(--accent-txt, var(--accent));
+    }
+
+    .link:hover,
+    .link:focus-within {
+        text-decoration: underline;
     }
 </style>

@@ -6,6 +6,7 @@ text:
         default_pick: a recent project milestone
         edit: edit
         edit_tip: edit this post file
+        filters: LinkedIn filters
         form_category: Category
         form_category_help: e.g. reflection / mentorship / research
         form_title: Post title
@@ -23,6 +24,7 @@ text:
         postdue: Post-due.
         posted_hdr: Posted ({0})
         search: Search posts & ideas ...
+        toolbar: LinkedIn actions
     views:
         linkedin: LinkedIn
         linkedin_badge_mark: post overdue

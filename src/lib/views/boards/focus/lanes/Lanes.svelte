@@ -280,6 +280,7 @@
     <p class="hint">
         <span class="hint-link">
             <ToolButton
+                plain
                 label={t('focus.hint_count', missing.length)}
                 title={t('focus.hint_link')}
                 onclick={() => openMissing(missing[0])}
@@ -309,31 +310,29 @@
         color: var(--muted-txt, var(--muted));
     }
 
-    .hint-link :global(.tool) {
-        padding: 0;
-        border: 0;
-        background: none;
-        font: inherit;
+    /* The count that opens the first unplaced project is a link: the accent colour, an underline
+       under the pointer and with the focus. */
+    .hint-link {
         font-weight: 600;
         color: var(--accent-txt, var(--accent));
-        cursor: pointer;
     }
 
+    .hint-link:hover,
+    .hint-link:focus-within {
+        text-decoration: underline;
+    }
+
+    /* The lanes fill the pane's width in as many columns as it holds, and one column in a pane
+       narrower than a lane. */
     .lanes {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
         gap: 10px;
         margin-top: 8px;
     }
 
     .lanes.one {
-        grid-template-columns: 1fr;
-    }
-
-    @media (max-width: 900px) {
-        .lanes {
-            grid-template-columns: 1fr;
-        }
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .lane {
@@ -365,7 +364,7 @@
 
     .lane-sub {
         margin: 4px 0 6px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -379,13 +378,7 @@
 
     .lane-body.grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
         align-items: start;
-    }
-
-    @media (max-width: 700px) {
-        .lane-body.grid {
-            grid-template-columns: 1fr;
-        }
     }
 </style>

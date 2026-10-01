@@ -24,6 +24,7 @@ import {
 import { setGlyphMode, setGlyphs, setIcons } from '../../../src/lib/state/shared/words/text.ts';
 
 const GLYPH = 'src/lib/ui/display/Glyph.svelte';
+const SIZE = 'var(--glyph-size, calc(var(--icon-box) * var(--text-scale, 1)))';
 const TOOL = 'src/lib/ui/controls/ToolButton.svelte';
 
 const { config } = loadConfig(engineDir());
@@ -131,15 +132,15 @@ describe('the glyph slot', () => {
         expect(rice[0].body).toMatch(/width:\s*3ch\s*;/);
     });
 
-    it('is the fixed box of one character elsewhere', () => {
+    it('is the fixed box of the icon size elsewhere, whatever the text beside it', () => {
         const plain = rules(GLYPH).find((rule) => rule.selector === '.glyph');
-        expect(plain?.body).toMatch(/width:\s*1\.2em\s*;/);
+        expect(plain?.body).toContain(`width: ${SIZE};`);
     });
 
-    it('draws an icon at the size of the text beside it', () => {
+    it('draws an icon at the icon size, which a surface may set as --glyph-size', () => {
         const icon = rules(GLYPH).find((rule) => rule.selector === '.glyph :global(svg)');
-        expect(icon?.body).toMatch(/width:\s*1em\s*;/);
-        expect(icon?.body).toMatch(/height:\s*1em\s*;/);
+        expect(icon?.body).toContain(`width: ${SIZE};`);
+        expect(icon?.body).toContain(`height: ${SIZE};`);
     });
 });
 

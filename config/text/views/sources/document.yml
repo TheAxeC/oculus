@@ -4,6 +4,7 @@ text:
         none: No document chosen. Open one from the rail's bookmarks.
         none_glyph: paper
         open_outside: Open in a browser tab
+        open_outside_glyph: launch
         toolbar: Document controls
     views:
         document: Document

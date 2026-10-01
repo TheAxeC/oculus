@@ -1,6 +1,7 @@
 <script lang="ts">
     // Layer 3, view partial. Finished jobs stay collapsed and show memory and CPU efficiency tones
-    // with an on-demand log action.
+    // with an on-demand log action, drawn while the pointer is over the row or the focus is inside
+    // it.
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Table from '$lib/ui/display/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table-rows';
@@ -70,12 +71,15 @@
             tone={efficiencyTone(row.cpuPct as number | null)}
         />
     {:else if column.key === 'actions'}
-        <ToolButton
-            label={t('hpc.log')}
-            disabled={!live}
-            title={live ? undefined : t('hpc.controls_offline')}
-            onclick={() => onlog(cellText(row.id))}
-        />
+        <span class="reveal">
+            <ToolButton
+                small
+                label={t('hpc.log')}
+                disabled={!live}
+                title={live ? undefined : t('hpc.controls_offline')}
+                onclick={() => onlog(cellText(row.id))}
+            />
+        </span>
     {:else}
         {cellText(row[column.key])}
     {/if}
@@ -83,15 +87,53 @@
 {#if rows.length}
     <details>
         <summary>{t('hpc.recent_summary', rows.length)}</summary>
-        <Table {columns} rows={tableRows} rowKey="id" {cell} />
+        <div class="scroll">
+            <Table {columns} rows={tableRows} rowKey="id" {cell} />
+        </div>
     </details>
 {/if}
 
 <style>
+    /* The section's heading. */
     summary {
-        font-size: var(--fs-sm);
+        cursor: pointer;
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--muted-txt, var(--muted));
     }
-    details :global(table) {
-        font-size: var(--fs-sm);
+
+    summary:focus-visible {
+        outline: 1px solid var(--accent);
+        outline-offset: 1px;
+    }
+
+    /* A table wider than the pane scrolls inside its own box. */
+    .scroll {
+        min-width: 0;
+        overflow-x: auto;
+    }
+
+    /* A row's control is drawn while the pointer is over the row or the focus is inside it, and
+       always where nothing hovers. It stays in the layout and in the tab order while clear. */
+    .scroll :global(tr) {
+        --row-reveal: 0;
+    }
+
+    .scroll :global(tr:hover),
+    .scroll :global(tr:focus-within) {
+        --row-reveal: 1;
+    }
+
+    @media (hover: none) {
+        .scroll :global(tr) {
+            --row-reveal: 1;
+        }
+    }
+
+    .reveal {
+        display: inline-flex;
+        opacity: var(--row-reveal);
+        transition: opacity 120ms ease-out;
     }
 </style>

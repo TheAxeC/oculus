@@ -4,6 +4,7 @@
     // place and a file picked with one press. It lists only what the file server serves, so a
     // workspace no root of the workspace in force holds says so and lists nothing.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import { absoluteOf, childPath, rootHolding } from '$lib/state/sources/fs';
@@ -78,13 +79,13 @@
         />
     </div>
     {#if held === null}
-        <p class="line">{t('composer.attach_unserved', workspace)}</p>
+        <Empty message={t('composer.attach_unserved', workspace)} />
     {:else if listed.error !== ''}
-        <p class="line">{listed.error}</p>
+        <Empty error message={listed.error} />
     {:else if listed.loading}
         <p class="line">{t('composer.attach_loading')}</p>
     {:else if rows.length === 0}
-        <p class="line">{t('composer.attach_empty')}</p>
+        <Empty message={t('composer.attach_empty')} />
     {:else}
         <ul class="rows">
             {#each rows as row (row.name)}

@@ -40,8 +40,9 @@
 
 <script lang="ts">
     // Layer 3, view. One collection file as its own tab: the file's title and intro, a search over
-    // every word an entry holds, a facet bar of the statuses the file uses, an add form over the
-    // file's own schema, and one card per entry, the pinned ones first.
+    // every word an entry holds and a facet bar of the statuses the file uses (both in the bar
+    // under the header), an add form over the file's own schema, and one card per entry, the
+    // pinned ones first.
     //
     // It is registered once per collection key of config/sources.yml and reads which collection it
     // is from the id of the instance it was mounted as, exactly as Projects.svelte reads which
@@ -60,15 +61,17 @@
     // writes nothing to it.
 
     import Card from '$lib/ui/frame/Card.svelte';
+    import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Coverage from './Coverage.svelte';
     import Software from './Software.svelte';
     import EntryCard from './EntryCard.svelte';
+    import AddButton from '../../shared/forms/AddButton.svelte';
     import EntryForm from '../../shared/forms/EntryForm.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
@@ -228,17 +231,10 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('collection.toolbar')}>
-        <Search
-            value={held.search}
-            placeholder={t('collection.search', title())}
-            oninput={(value: string) => write({ search: value })}
-        />
+    <Toolbar label={t('collection.toolbar')} overflow>
         {#if schema !== undefined}
-            <ToolButton
-                label={t('collection.add')}
-                title={t('collection.add_tip')}
-                active={held.adding}
+            <AddButton
+                open={held.adding}
                 onclick={() => write({ adding: toggleAdd(instance.id, key, held.adding) })}
             />
         {/if}
@@ -248,35 +244,39 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={title()} toolbar={tools}>
+{#snippet bar()}
+    <Toolbar label={t('collection.filters')}>
+        <Search
+            fill
+            value={held.search}
+            placeholder={t('collection.search', title())}
+            oninput={(value: string) => write({ search: value })}
+        />
+        {#if facets.length > 0 || unfunded.length > 0}
+            <span class="label">{t('collection.status_facet')}</span>
+            {#each facets as facet (facet.value)}
+                <Chip
+                    label={`${facet.value} ${facet.count}`}
+                    tone={statusTone(facet.value)}
+                    pressed={!held.hidden.includes(facet.value)}
+                    onclick={() => toggle(facet.value)}
+                />
+            {/each}
+            {#if unfunded.length > 0}
+                <Chip
+                    label={`${t('collection.no_funding')} ${unfunded.length}`}
+                    pressed={!held.hidden.includes(NO_FUNDING)}
+                    onclick={() => toggle(NO_FUNDING)}
+                />
+            {/if}
+        {/if}
+    </Toolbar>
+{/snippet}
+
+<Pane title={title()} toolbar={tools} {bar}>
     <div class="collection" data-instance={instance.id} data-collection={instance.view}>
         {#if collection?.intro}
             <Intro html={inlineMarkdown(collection.intro)} />
-        {/if}
-
-        {#if facets.length > 0 || unfunded.length > 0}
-            <div class="facets">
-                <span class="label">{t('collection.status_facet')}</span>
-                {#each facets as facet (facet.value)}
-                    <span
-                        class="facet"
-                        style={`--accent: var(--c-${statusTone(facet.value)}); --on-accent: var(--on-c-${statusTone(facet.value)})`}
-                    >
-                        <ToolButton
-                            label={`${facet.value} ${facet.count}`}
-                            active={!held.hidden.includes(facet.value)}
-                            onclick={() => toggle(facet.value)}
-                        />
-                    </span>
-                {/each}
-                {#if unfunded.length > 0}
-                    <ToolButton
-                        label={`${t('collection.no_funding')} ${unfunded.length}`}
-                        active={!held.hidden.includes(NO_FUNDING)}
-                        onclick={() => toggle(NO_FUNDING)}
-                    />
-                {/if}
-            </div>
         {/if}
 
         {#if held.adding}
@@ -343,6 +343,7 @@
                             <div class="row">
                                 {#each unfunded as project (project.id)}
                                     <ToolButton
+                                        small
                                         label={project.short ?? project.title}
                                         onclick={() =>
                                             openView('project', {
@@ -361,20 +362,16 @@
 </Pane>
 
 <style>
-    .facets,
     .row {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
-    }
-
-    .facets {
-        margin-bottom: 10px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .label {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -389,7 +386,7 @@
 
     .sub {
         margin: 0 0 6px;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -398,7 +395,7 @@
        which is stretched with it. */
     .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
         gap: 10px;
         align-items: stretch;
     }

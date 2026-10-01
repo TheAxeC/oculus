@@ -251,6 +251,12 @@
         opacity: 1;
     }
 
+    @media (hover: none) {
+        .gear {
+            opacity: 1;
+        }
+    }
+
     .description,
     .fields,
     .path {
@@ -287,7 +293,7 @@
     .said {
         margin: 6px 0 0;
         color: var(--c-red-txt);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .foot {
@@ -297,6 +303,6 @@
         gap: 8px;
         margin-top: 8px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 </style>

@@ -26,7 +26,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
     import PostCard from './PostCard.svelte';
@@ -98,23 +98,31 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('linkedin.search')}>
-        <Search
-            value={held.search}
-            placeholder={t('linkedin.search')}
-            oninput={(search: string) => write({ search })}
-        />
+    <Toolbar label={t('linkedin.toolbar')} overflow>
         <ToolButton
+            bare
             label={t('linkedin.addidea')}
             title={t('linkedin.addidea_tip')}
-            glyph="idea"
+            glyph="add"
             active={held.adding}
+            pressed={held.adding}
             onclick={() => write({ adding: toggleAdd(instance.id, 'linkedin', held.adding) })}
         />
     </Toolbar>
 {/snippet}
 
-<Pane title={t('views.linkedin')} toolbar={tools}>
+{#snippet bar()}
+    <Toolbar label={t('linkedin.filters')}>
+        <Search
+            fill
+            value={held.search}
+            placeholder={t('linkedin.search')}
+            oninput={(search: string) => write({ search })}
+        />
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('views.linkedin')} toolbar={tools} {bar}>
     <div class="linkedin" data-instance={instance.id}>
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="linkedin" />
@@ -229,9 +237,17 @@
 </Pane>
 
 <style>
+    /* One column the width of the pane, however long a line inside it: a grid's own column would
+       otherwise grow to the widest line it holds and widen the pane. */
     .linkedin {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: 12px;
+    }
+
+    .linkedin > :global(*),
+    .cards > :global(*) {
+        min-width: 0;
     }
 
     .cadence {
@@ -249,15 +265,16 @@
         color: var(--c-green-txt);
     }
 
+    /* The amber message box: a 1px border and tint, 4px of room (.4em) round 12px words on 17px
+       lines, the shape ui/frame/Empty.svelte gives an error box in red. */
     .nudge {
-        padding: 8px 10px;
-        border-left: 3px solid var(--c-red);
-        background: var(--chip);
-    }
-
-    :global(body.wall) .nudge {
-        background: var(--chip-on-wall);
-        backdrop-filter: blur(var(--wall-blur));
+        padding: 0.4em;
+        border: 1px solid var(--c-amber);
+        background: var(--c-amber-bg);
+        color: var(--c-amber-txt);
+        font-size: var(--fs-sm);
+        line-height: calc(17px * var(--text-scale, 1));
+        overflow-wrap: anywhere;
     }
 
     .nudge strong,
@@ -279,7 +296,9 @@
         align-items: center;
         gap: 4px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-lg);
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        text-transform: uppercase;
     }
 
     .cards {

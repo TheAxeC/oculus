@@ -21,7 +21,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { compactCount, modelShort, seconds, span } from '$lib/state/shared/words/format';
     import type { SessionAgent } from '$lib/state/client/selectors.svelte';
     import { agentTokens, anyRunning, newestFirst } from '$lib/state/sessions/folds';
@@ -104,13 +104,13 @@
     }
 </script>
 
-{#snippet tools()}
-    <Toolbar label={t('sessions.view_agents')}>
+{#snippet bar()}
+    <Toolbar label={t('sessions.agents_bar')}>
         <SessionPicker instance={instance.id} />
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.view_agents')} toolbar={tools} tinted>
+<Pane title={t('sessions.view_agents')} {bar} tinted>
     <div class="agents" data-instance={instance.id}>
         {#if record === null}
             <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
@@ -134,15 +134,17 @@
     .agents {
         display: flex;
         flex-direction: column;
-        gap: 4px;
     }
 
+    /* One line of the tree's row height; the kind and the task are the row's main words, the
+       model and how it went are secondary. */
     .agent {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         gap: 6px;
         min-width: 0;
-        font-size: var(--fs-sm);
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+        font-size: var(--fs-md);
     }
 
     .dot {
@@ -160,13 +162,13 @@
     .st {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .mo {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .ds {

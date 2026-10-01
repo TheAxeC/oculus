@@ -19,14 +19,15 @@
     // names its key after its name, and a page holding unsaved text carries the dirty mark at the
     // row's end. The row's controls, shown under the pointer and with the focus inside the row,
     // rename it, reset a rail page to its button's arrangement after a confirm naming it, and
-    // close it; New page makes one. A row carried out of the list onto a pane's edge shows its
-    // page there, which is the pointer's way to a page inside a page; the pane menu is the
-    // keyboard's.
+    // close it; New page, an icon in the pane header, makes one. A row carried out of the list onto
+    // a pane's edge shows its page there, which is the pointer's way to a page inside a page; the
+    // pane menu is the keyboard's.
 
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
@@ -233,12 +234,15 @@
     $effect(() => release);
 </script>
 
+{#snippet tools()}
+    <Toolbar label={t('workbench.pages_toolbar')} overflow>
+        <ToolButton bare glyph="add" label={t('ui.page_new')} onclick={add} />
+    </Toolbar>
+{/snippet}
+
 <!-- The box every view has; this one draws its rows straight into it, so it asks for the tint. -->
-<Pane title={t('views.pages')} tinted>
+<Pane title={t('views.pages')} toolbar={tools} tinted>
     <div class="view" data-instance={instance.id} data-pages>
-        <div class="actions">
-            <ToolButton label={t('ui.page_new')} glyph="expand" onclick={add} />
-        </div>
         <TreeView label={t('views.pages')} rows={keyRows}>
             {#snippet children(nav: TreeNav)}
                 {#each shown as page, at (page.id)}
@@ -361,11 +365,6 @@
         padding: 8px 12px 16px;
         overflow: auto;
         min-height: 0;
-    }
-
-    .actions {
-        display: flex;
-        gap: 6px;
     }
 
     /* The row's own space is where a drag starts, so the pointer says it can be carried. */

@@ -2,6 +2,7 @@
     // Layer 3, sessions view partial. Files touched by one session live here because session-file
     // activity changes independently of repository status and controls.
 
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import { elide, relativeTo } from '$lib/state/shared/words/format';
     import type { SessionFile } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -34,7 +35,7 @@
         <span class="n">{files.length}</span>
     </div>
     {#if files.length === 0}
-        <p class="none">{t('sessions.ch_touched_empty')}</p>
+        <Empty message={t('sessions.ch_touched_empty')} />
     {:else}
         {#each files as file (file.path)}
             {@const also = shared(file.path)}
@@ -50,6 +51,7 @@
 </section>
 
 <style>
+    /* A section heading: the group label in the size of a label, bold and in capitals. */
     .sec-h {
         display: flex;
         align-items: center;
@@ -57,7 +59,8 @@
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        font-weight: 700;
         border-bottom: 1px solid var(--line);
         padding-bottom: 2px;
         margin-bottom: 4px;
@@ -66,12 +69,14 @@
         margin-left: auto;
         font-family: var(--font-num);
     }
+    /* One line of the tree's row height; the path is the row's main words. */
     .file {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         gap: 6px;
         min-width: 0;
-        font-size: var(--fs-sm);
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+        font-size: var(--fs-md);
     }
     .pa {
         min-width: 0;
@@ -80,15 +85,10 @@
         white-space: nowrap;
     }
     .ct,
-    .mark {
-        flex: 0 0 auto;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-    }
     .to {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
     .to,
     .ct {
@@ -98,11 +98,8 @@
         font-family: var(--font-num);
     }
     .mark {
+        flex: 0 0 auto;
         color: var(--c-amber-txt, var(--muted));
-    }
-    .none {
-        margin: 2px 0 0;
-        color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
     }
 </style>

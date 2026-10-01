@@ -18,30 +18,33 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The read-only calendar: the connector's head with its account controls, the
-    // Add form while it is open, one row per configured account, and the events of the configured
-    // window drawn by @event-calendar/core as a day, a week, a month or a list. A machine with no
-    // account says so and offers Add in its place.
+    // Layer 3, view. The read-only calendar: the header's account actions, the pane's bar with the
+    // connector's refresh and status words and the paging controls, the Add form while it is open,
+    // one row per configured account, and the events of the configured window drawn by
+    // @event-calendar/core as a day, a week, a month or a list. A machine with no account says so
+    // and offers Add in its place.
     //
     // Everything drawn here comes from the `calendar` channel, so the view holds no copy of the
     // events and a publish redraws them. The view an instance shows is kept in the instance's
     // state, so a reload or a second instance opens where the reader left it.
     //
-    // The library draws the grid and the list; the controls above it are oculus's own buttons,
-    // which drive the library through its `prev`, `next` and `gotoDate` calls and its `view`
-    // option. Paging stops at the window's edges: the library greys the days outside `validRange`,
-    // and the previous and next buttons are disabled once the period beyond lies wholly outside it.
-    // The options come from state/life/calendar.ts; the view adds only the callbacks, which set the
-    // period title, keep the view, open an event's page and put its tooltip on it. The library's
-    // colours are its `--ec-*` properties, every one set below from oculus's tokens, so each theme
-    // draws the calendar in its own colours, and its surfaces are the pane's own, so a wallpaper
-    // shows through them.
+    // The library draws the grid and the list; the paging controls in the bar are oculus's own
+    // buttons, which drive the library through its `prev`, `next` and `gotoDate` calls and its
+    // `view` option. Paging stops at the window's edges: the library greys the days outside
+    // `validRange`, and the previous and next buttons are disabled once the period beyond lies
+    // wholly outside it. The options come from state/life/calendar.ts; the view adds only the
+    // callbacks, which set the period title, keep the view, open an event's page and put its
+    // tooltip on it. The library's colours are its `--ec-*` properties, every one set below from
+    // oculus's tokens, so each theme draws the calendar in its own colours, and its surfaces are
+    // the pane's own, so a wallpaper shows through them.
 
     import { Calendar as EventCalendar, DayGrid, List, TimeGrid } from '@event-calendar/core';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Segment from '$lib/ui/controls/Segment.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { HUES } from '$lib/ui/display/hues';
+    import AccountActions from '../../shared/accounts/AccountActions.svelte';
     import AccountList from '../../shared/accounts/AccountList.svelte';
     import AddAccount from '../../shared/accounts/AddAccount.svelte';
     import ConnectorHead from '../../shared/accounts/ConnectorHead.svelte';
@@ -184,34 +187,19 @@
     });
 </script>
 
-<!-- The pane is the frame every view has; the head inside it is the connector's own status
-     line. -->
-<Pane title={t('views.calendar')} tinted>
-    <div class="calendar" data-instance={instance.id}>
-        <ConnectorHead
-            {data}
-            words={headWords()}
-            onrefresh={() => void refresh().then((words) => (said = words))}
-            {adding}
-            onadd={() => (adding = !adding)}
-        />
-        {#if adding}
-            <AddAccount kind="calendar" onclose={() => (adding = false)} />
-        {/if}
-        {#if said !== ''}
-            <p class="said">{said}</p>
-        {/if}
-        {#if data && data.accounts.length > 0}
-            <AccountList kind="calendar" rows={data.accounts} />
-        {:else if data && !adding}
-            <NoAccounts
-                message={t('accounts.empty_calendar')}
-                glyph={t('views.calendar_glyph')}
-                onadd={() => (adding = true)}
-            />
-        {/if}
-        {#if data && data.status !== 'unconfigured' && range}
-            <div class="bar">
+{#snippet tools()}
+    <AccountActions bind:adding />
+{/snippet}
+
+{#snippet bar()}
+    <ConnectorHead
+        {data}
+        words={headWords()}
+        onrefresh={() => void refresh().then((words) => (said = words))}
+    />
+    {#if data && data.status !== 'unconfigured' && range}
+        <div class="paging">
+            <Toolbar label={t('calendar.paging')}>
                 <ToolButton
                     label={prevWords(held.view)}
                     disabled={atStart}
@@ -239,7 +227,31 @@
                     label={t('calendar.view')}
                     onchange={keepView}
                 />
-            </div>
+            </Toolbar>
+        </div>
+    {/if}
+{/snippet}
+
+<!-- The pane is the frame every view has; the bar under its header is the connector's own status
+     line and the paging controls. -->
+<Pane title={t('views.calendar')} toolbar={tools} {bar} tinted>
+    <div class="calendar" data-instance={instance.id}>
+        {#if adding}
+            <AddAccount kind="calendar" onclose={() => (adding = false)} />
+        {/if}
+        {#if said !== ''}
+            <p class="said">{said}</p>
+        {/if}
+        {#if data && data.accounts.length > 0}
+            <AccountList kind="calendar" rows={data.accounts} />
+        {:else if data && !adding}
+            <NoAccounts
+                message={t('accounts.empty_calendar')}
+                glyph={t('views.calendar_glyph')}
+                onadd={() => (adding = true)}
+            />
+        {/if}
+        {#if data && data.status !== 'unconfigured' && range}
             <div class="grid">
                 <EventCalendar bind:this={drawn} plugins={[TimeGrid, DayGrid, List]} {options} />
             </div>
@@ -272,11 +284,10 @@
         margin: 0;
         color: var(--muted-txt, var(--muted));
     }
-    .bar {
+    /* The paging controls take a line of the bar of their own, under the connector's status. */
+    .paging {
         display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
+        flex: 1 0 100%;
         min-width: 0;
     }
     .period {
@@ -325,8 +336,12 @@
         color: var(--ink-txt, var(--ink));
     }
 
-    /* The library sets a list view's event title in the page's root size; it takes the calendar's
-       own size, as the grids' titles do. */
+    /* The library sets an event, a day's footer and a list view's event in a fraction of its own
+       size or in the page's root size; each takes the calendar's own size, as the grids' titles
+       do. */
+    .grid :global(.ec-event),
+    .grid :global(.ec-day-foot),
+    .grid :global(.ec-list .ec-event),
     .grid :global(.ec-list .ec-event-title) {
         font-size: var(--fs-sm);
     }

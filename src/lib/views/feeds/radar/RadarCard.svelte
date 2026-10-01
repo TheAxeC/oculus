@@ -84,34 +84,36 @@
         {#if found !== ''}
             <span class="date">{found}</span>
         {/if}
-        {#if dismissed && identity !== ''}
-            <ToolButton
-                label={t('radar.restore')}
-                title={t('radar.restore_tip')}
-                glyph="refresh"
-                compact
-                onclick={() => mark(null)}
-            />
-        {:else}
-            {#if canSpin && identity !== ''}
-                <ToolButton
-                    label={t('radar.idea')}
-                    title={t('radar.idea_tip')}
-                    glyph="spark"
-                    compact
-                    active={spinning}
-                    onclick={() => (spinning = !spinning)}
-                />
-            {/if}
-            {#if identity !== ''}
-                <ToolButton
-                    label={t('radar.dismiss')}
-                    title={t('radar.dismiss_tip')}
-                    glyph="dismiss"
-                    compact
-                    onclick={() => mark(true)}
-                />
-            {/if}
+        {#if identity !== ''}
+            <span class="controls">
+                {#if dismissed}
+                    <ToolButton
+                        label={t('radar.restore')}
+                        title={t('radar.restore_tip')}
+                        glyph="refresh"
+                        compact
+                        onclick={() => mark(null)}
+                    />
+                {:else}
+                    {#if canSpin}
+                        <ToolButton
+                            label={t('radar.idea')}
+                            title={t('radar.idea_tip')}
+                            glyph="spark"
+                            compact
+                            active={spinning}
+                            onclick={() => (spinning = !spinning)}
+                        />
+                    {/if}
+                    <ToolButton
+                        label={t('radar.dismiss')}
+                        title={t('radar.dismiss_tip')}
+                        glyph="dismiss"
+                        compact
+                        onclick={() => mark(true)}
+                    />
+                {/if}
+            </span>
         {/if}
     {/snippet}
 
@@ -180,15 +182,27 @@
     .threat,
     .paper {
         margin: 4px 0 0;
+        overflow-wrap: anywhere;
     }
 
     .sub {
         min-width: 0;
         overflow: hidden;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-reveal`: transparent at
+       rest, so the card keeps its size and Tab still reaches every control, and drawn while the
+       pointer is over the card or the keyboard is inside it. */
+    .controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        opacity: var(--card-reveal);
+        transition: opacity 120ms ease-out;
     }
 
     .date {

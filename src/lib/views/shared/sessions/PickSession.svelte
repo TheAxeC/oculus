@@ -33,9 +33,11 @@
 </div>
 
 <style>
+    /* The empty state is centred, so the control that opens the Sessions view is centred under
+       it. */
     .pick {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
         align-items: center;
         gap: 8px;
     }

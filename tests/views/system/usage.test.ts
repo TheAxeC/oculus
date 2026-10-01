@@ -385,7 +385,11 @@ describe('Usage', () => {
             days: [],
             builtAt: '2026-09-13T12:35:00.000Z'
         });
-        expect(html).toMatch(/<button[^>]*>[\s\S]*Refresh now[\s\S]*<\/button>/);
+        // an icon in a card is a compact tool button named for assistive tools
+        expect(html).toMatch(
+            /<button[^>]*class="tool[^"]*\bcompact\b[^"]*"[^>]*aria-label="Refresh now"[^>]*>[\s\S]*?data-glyph="refresh"/
+        );
+        expect(drawnWith('Refresh now')).toMatchObject({ compact: true });
         expect(html).toContain('refresher: down since 14:34: the account usage limit was reached');
     });
 });

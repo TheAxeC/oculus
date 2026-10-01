@@ -165,49 +165,51 @@
             {#if thread.messages > 1}
                 <span class="age">{t('inbox.messages', thread.messages)}</span>
             {/if}
-            <ToolButton
-                label={t('inbox.show_draft')}
-                glyph="draft"
-                compact
-                active={draftOpen}
-                expanded={draftOpen}
-                onclick={() => onshowdraft(thread, !draftOpen)}
-            />
-            {#if thread.url}
+            <span class="controls">
                 <ToolButton
-                    label={t('inbox.open_provider')}
-                    glyph="launch"
+                    label={t('inbox.show_draft')}
+                    glyph="draft"
                     compact
-                    onclick={openProvider}
+                    active={draftOpen}
+                    expanded={draftOpen}
+                    onclick={() => onshowdraft(thread, !draftOpen)}
                 />
-            {/if}
-            <ToolButton
-                label={t('inbox.archive')}
-                title={t('inbox.archive_tip')}
-                glyph="archived"
-                compact
-                disabled={busy}
-                onclick={() => (asking = 'archive')}
-            />
-            {#if note.triaged}
+                {#if thread.url}
+                    <ToolButton
+                        label={t('inbox.open_provider')}
+                        glyph="launch"
+                        compact
+                        onclick={openProvider}
+                    />
+                {/if}
                 <ToolButton
-                    label={t('inbox.restore')}
-                    title={t('inbox.restore_tip')}
-                    glyph="refresh"
+                    label={t('inbox.archive')}
+                    title={t('inbox.archive_tip')}
+                    glyph="archived"
                     compact
                     disabled={busy}
-                    onclick={() => void mark(false)}
+                    onclick={() => (asking = 'archive')}
                 />
-            {:else}
-                <ToolButton
-                    label={t('inbox.triaged')}
-                    title={t('inbox.triage_tip')}
-                    glyph="done"
-                    compact
-                    disabled={busy}
-                    onclick={() => void mark(true)}
-                />
-            {/if}
+                {#if note.triaged}
+                    <ToolButton
+                        label={t('inbox.restore')}
+                        title={t('inbox.restore_tip')}
+                        glyph="refresh"
+                        compact
+                        disabled={busy}
+                        onclick={() => void mark(false)}
+                    />
+                {:else}
+                    <ToolButton
+                        label={t('inbox.triaged')}
+                        title={t('inbox.triage_tip')}
+                        glyph="done"
+                        compact
+                        disabled={busy}
+                        onclick={() => void mark(true)}
+                    />
+                {/if}
+            </span>
         {/snippet}
 
         {#if thread.subject !== ''}
@@ -273,6 +275,7 @@
 <style>
     .address {
         margin-left: 6px;
+        overflow-wrap: anywhere;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
         font-weight: 400;
@@ -281,6 +284,17 @@
     .age {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
+    }
+
+    /* Draw as the card around them says, ui/frame/Card.svelte's `--card-reveal`: transparent at
+       rest, so the card keeps its size and Tab still reaches every control, and drawn while the
+       pointer is over the card or the keyboard is inside it. */
+    .controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        opacity: var(--card-reveal);
+        transition: opacity 120ms ease-out;
     }
 
     .subject {
@@ -305,6 +319,7 @@
     .what,
     .snippet {
         margin: 4px 0 0;
+        overflow-wrap: anywhere;
     }
 
     .draft {

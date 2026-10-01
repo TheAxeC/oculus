@@ -29,7 +29,7 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import {
@@ -215,7 +215,7 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('sessions.list_toolbar')}>
+    <Toolbar label={t('sessions.list_toolbar')} overflow>
         <ToolButton
             label={t('sessions.new_session')}
             title={t('sessions.new_session_title')}
@@ -240,17 +240,23 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.rail_title')} toolbar={tools} tinted>
+{#snippet bar()}
+    <Toolbar label={t('sessions.list_bar')}>
+        <Search
+            fill
+            value={filter.query}
+            placeholder={t('sessions.search')}
+            oninput={(value: string) => write({ query: value })}
+        />
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('sessions.rail_title')} toolbar={tools} {bar} tinted>
     <div class="list" data-instance={instance.id}>
-        <div class="search">
-            <Search
-                value={filter.query}
-                placeholder={t('sessions.search')}
-                oninput={(value: string) => write({ query: value })}
-            />
-        </div>
         {#if failure !== ''}
-            <p class="failure">{failure}</p>
+            <div class="failure" data-list-failure>
+                <Empty error message={failure} />
+            </div>
         {/if}
         <div class="rows">
             {#if groups.length === 0 && panes.length === 0}
@@ -287,14 +293,6 @@
         min-height: 0;
     }
 
-    /* The box spans the list, so its placeholder is read whole. */
-    .search {
-        flex: none;
-        display: flex;
-        flex-direction: column;
-        padding: 0 4px 4px;
-    }
-
     .rows {
         flex: 1 1 auto;
         min-height: 0;
@@ -305,10 +303,8 @@
     }
 
     .failure {
-        margin: 0;
-        padding: 0 8px;
-        color: var(--c-red-txt, var(--ink));
-        font-size: var(--fs-md);
+        flex: none;
+        padding: 0 8px 4px;
     }
 
     .filter {

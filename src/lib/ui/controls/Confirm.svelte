@@ -75,7 +75,7 @@
 
     .message {
         margin: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .detail {
@@ -108,7 +108,7 @@
     }
 
     .row button:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 1px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 </style>

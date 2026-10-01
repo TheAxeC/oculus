@@ -125,6 +125,7 @@ text:
             pdf_at: 'PDF {0}'
             read_failed: 'the manuscript was not read: {0}'
             refused: 'the step was not started: {0}'
+            retry: Try again
             warnings: '{0} warnings'
         no_documents: This project has no Markdown document.
         no_sessions: No session has worked in this folder.

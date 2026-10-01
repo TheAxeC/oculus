@@ -27,13 +27,16 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 1px 8px;
+        box-sizing: border-box;
+        min-height: calc(18px * var(--text-scale, 1));
+        padding: 3px 5px;
         border: 1px solid var(--line);
         border-radius: var(--radius-pill);
         background: var(--chip);
         color: var(--muted-txt, var(--muted));
         font: inherit;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
+        line-height: calc(11px * var(--text-scale, 1));
         cursor: pointer;
         white-space: nowrap;
     }
@@ -43,12 +46,15 @@
     }
 
     .disclosure:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 1px;
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
+    /* The 16 px marker is taller than the 11 px line; its margin gives the room back, so the pill
+       is as high as a Chip. */
     .marker {
         display: inline-flex;
+        margin: calc(-3px * var(--text-scale, 1)) 0;
         transition: transform 120ms ease;
     }
 

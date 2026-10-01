@@ -128,6 +128,7 @@
                     {/each}
                     {#if drawn.length < kind.tags.length}
                         <ToolButton
+                            small
                             label={t('project.card.more_tags', kind.tags.length - drawn.length)}
                             title={t('project.card.more_tags_tip', kind.label)}
                             onclick={() => expand(kind.key)}
@@ -152,10 +153,11 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .kind {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;

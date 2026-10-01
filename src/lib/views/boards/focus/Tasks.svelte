@@ -130,7 +130,8 @@
         gap: 6px;
         flex: 0 0 auto;
         margin-right: auto;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
+        font-weight: 600;
     }
     .grp {
         margin-top: 9px;
