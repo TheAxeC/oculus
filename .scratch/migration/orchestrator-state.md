@@ -155,6 +155,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
+- Z181, the Explorer's rename key (raised 2026-10-01 21:35 by X3a's /spec, from its Step 0): VS Code on macOS renames the selected file or folder with Enter and opens it with Cmd+Down; in oculus, Enter on a tree row opens it (`ui/tree/TreeItem.svelte:170`, every tree). X3a builds the Explorer's keys as VS Code's, so the two collide. X3a waits for the ruling.
+  - (a) The Files view as VS Code's macOS Explorer: Enter renames, Cmd+Down opens, F2 renames too; every other tree keeps Enter opens, as VS Code's other trees do. Pro: the Explorer behaves exactly as VS Code's. Con: Enter in Files differs from Enter in every other oculus tree.
+  - (b) Enter opens as today in every tree, F2 renames (VS Code's Windows and Linux binding). Pro: one Enter everywhere in oculus. Con: differs from VS Code on macOS, the platform Axel uses.
+  - Recommendation: (a), since the ruling asks for VS Code's Explorer in look and behaviour and (a) matches it on this machine.
+
 
 
 

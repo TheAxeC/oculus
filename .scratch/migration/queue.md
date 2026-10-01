@@ -5,16 +5,16 @@ In flight:
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), built and its report in; its review (/refute) running.
 - Q85d (zod in the views, ui, shell and routes), building: its builder runs the first run of the cases.
 - U4 (Focus and Sessions brought to the other views' size, the commit dropdown aligned, the Sessions rows two lines a font step smaller by Z180 (b)), building.
-- X3a (the Files view as VS Code's Explorer, folder bookmarks included), being prepared.
+- L4 (floating panes), being prepared.
 
 
 Queued, in order (31 steps):
+- X3a (the Files view as VS Code's Explorer, folder bookmarks included), waiting for Axel's ruling on Z181 (the rename key).
 - D32 (replace in Search), once D35 has landed (both change the write target and the undo table); its brief check is in.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), once D27 has landed (both change `config-key.ts`'s single-value refusal).
 - Q88c (the Source Control rows' and the pane strip's new menu items).
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - Q91 (the project view and its editor), once X3a has landed.
-- L4 (floating panes).
 - Q66 (a hidden tab defers its work).
 - Q35 (the session views).
 - D11 and D14 (the rite debug client; LaTeX everywhere).
