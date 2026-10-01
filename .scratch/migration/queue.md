@@ -6,15 +6,15 @@ Landed 06:55: Q109 (the terminal: lines after a pane move, the five watchers' ca
 
 In flight:
 - U2 (every view's look against VS Code's), repair round 1 sent after its review.
-- Q85a2 (zod in the edit, sessions and transcripts folders), builder running since 07:05, resumed at 07:28 with the round-0 cases ruling.
-- Q85a4 (zod in the other server folders), builder running since 07:34.
-Open items: Z138 (X3d's light-theme Seti colours, yours). Choices made in automode, for review: `choices.md`.
+- Q85a2 (zod in the edit, sessions and transcripts folders), built with two red checks, review running since 09:28.
+- Q85a4 (zod in the other server folders), built, review running since 09:15.
+Open items: none. Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - S3c (the Settings editor), S3a and S3b have landed.
 - Q85b and Q85c, then Q85d (zod after Q85a4).
 - Q88b (the right-click menus' new capabilities), X3d has landed.
 - X3c (the tab strip as VS Code's), once Q88b has landed.
-- X3a (the Files view as VS Code's Explorer), once Q88b has landed.
+- X3a (the Files view as VS Code's Explorer, with Z138's light-theme Seti colours), once Q88b has landed.
 - Q91 (the project view and its editor), once X3a has landed.
 - L4 (floating panes), after S3.
 - Q66 (a hidden tab defers its work), X3d has landed.
@@ -38,6 +38,12 @@ Queued, in order:
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- Q109 (the terminal: lines after a pane move, the watchers' capped debounce, a sole terminal's menu, four terminal options), 2026-10-01, 4148664b.
+- S3b (the `config-key` write), 2026-10-01, ae1e8024.
+- X3d (Source Control as VS Code's), 2026-10-01, a5a6eed6.
+- S3a (the options catalog), 2026-10-01, 87d8ab6a.
+- Q107 (a Terminal tab never closes while its terminals run), 2026-10-01, c6d32e5a.
+- Q106 (Close pane closes a pane of two or more tabs after Confirm), 2026-10-01, 2ac1a5cb.
 - Q111 (Undo gives a cleared field's lines back), 2026-09-30, 3b437d63.
 - E3 (the apps section's text), 2026-09-30, 439f9680.
 - Q110 (an undo gives a replaced value back), 2026-09-30, e8f4c010.

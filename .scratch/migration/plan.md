@@ -163,7 +163,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ S2 the sessions views rebuilt to VS Code's Agents window: the composer with its pickers from `config/catalogs/agents.yml`, steer and Stop, the sessions list, Customizations, the Sessions page with Files following the session, Q35's session items folded in (brief `agents/briefs/S2.md`; one repair round; landing `agents/reviews/S2-landing.md`); landed 2026-09-26
   - Step 0, ruled 2026-09-25 by Axel: the composer's choices live in a new catalog `config/catalogs/agents.yml`, per agent its models, efforts and permission modes with the words shown, the flag passed and a default; the last choice kept per tab.
   - Step 0, ruled 2026-09-26 by Axel: (a) a tab of a `config/layout.yml` arrangement may carry a starting `state:`, checked by the view's own reader (`{ view: files, state: { follow: true } }`).
-- X3a the Files view brought to VS Code's Explorer, every row of P1's Explorer table, Reveal in Finder included (split from X3 on 2026-09-25 by surface, scope unchanged); in full in `agents/briefs/X3a.md` (ruling The queue)
+- X3a the Files view brought to VS Code's Explorer, every row of P1's Explorer table, Reveal in Finder included (split from X3 on 2026-09-25 by surface, scope unchanged), and the `--seti-*` tokens on the light themes derived darker in `themes/derive.ts`; in full in `agents/briefs/X3a.md` (ruling The queue) (ruling Z138)
   - Widened 2026-09-30 by Axel (ruling X3a widened): the Explorer's look and behaviour, not only its features, measured against VS Code's own stylesheet and layout and compared side by side on TEST; the roots and workspaces as Z76 rules. (ruling X3a widened)
   - Roots and workspaces as Z76 (a) rules, with the nine things kept that its Rulings line names. (ruling Z76)
   - Axel 2026-09-27 (Z1): Show in Files opens a Files tab rooted at the project's folder with a way up to the parent, and an Open Folder command; opened files land in the Explorer page's right pane (the rule in `agents/briefs/L7.md`).
@@ -690,6 +690,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z46 (2026-09-29): (a), D13 is split into D13a (the source tab on Monaco), D13b (the diffs and the merge on Monaco, after D13a) and D13c (the code theme key and its control, after D13a, beside D13b); D23 waits on D13a (the user).
 - Open item Z47 (2026-09-29): 1 (a), X3c after Q81 lands, its tab menu on bits-ui, and Q88 leaves the tab menu to X3c; 2 (a), VS Code's pinned tab is "Pin" and the session pin is relabelled "Lock to this session"; 3 (a), `wrap_tabs: false` in `config/appearance.yml` with a toggle in the Appearance section; 4 (a), breadcrumbs over a file tab now, symbols after D23 (the user).
 - Open item Z43 (2026-09-28): (a), the `sessions` message leaves out `terminals` until tmux has answered once, and a page reads a message without it as saying nothing about any terminal; built in Q99 (the user).
+- Open item Z138 (2026-10-01): (3), Seti's colours on the dark themes and each `--seti-*` token derived darker on the light themes in `themes/derive.ts`; no VS Code hex copied; built in X3a (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
