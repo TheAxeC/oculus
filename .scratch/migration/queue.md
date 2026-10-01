@@ -17,9 +17,11 @@ Queued, in order (30 steps):
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - Q91 (the project view and its editor), once X3a has landed.
 - Q35 (the Audit view as a list and the Present deck filling its pane; the rest of its line is on the tree or in D25 and S4), brief written; its brief check running.
-- D11 and D14 (the rite debug client; LaTeX everywhere).
+- D14 (LaTeX everywhere).
 - D25 (the editor's options), once S4 has landed.
-- D23, D15 and D17 (language servers; PDF reading, once D14 has landed; project commands).
+- D17 (project commands).
+- D23 and D15 (language servers; PDF reading, once D14 has landed).
+- D11 (the rite debug client), once D17 has landed (Z191: its launch configurations' `before` names a command of D17's `commands.yml`).
 - D23b (more language server features), once D23 has landed.
 - D28 (saving a source file), once D25 has landed.
 - D33 (the Problems view), once D23 and D17 have landed.

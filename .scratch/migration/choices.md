@@ -371,3 +371,10 @@ Where they are built: X3a. Booked in the state file's closed log and `plan.md` R
 - Not chosen: (b) the slide's words sized in container units so the slide reflows to any pane shape (a slide then looks different in every pane and on the projector); (c) the slide left at the UI's type size, the lazy option.
 
 Where it is built: Q35. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z191 (2026-10-01 23:04, step D11)
+
+- Chosen (a): D11 waits for D17. Z92 (1) (a) gives each launch configuration a `before`, the name of a command of `.oculus/commands.yml`, and that file is D17's; the tree reads no such file (`grep -rn "commands.yml" src` prints nothing). D17 has no wait of its own, so it is prepared now and D11 after it lands.
+- Not chosen: (b) D11 built now with `before` left out and added by D17, which moves part of D11's ruled scope into another step, the lazy option; (c) D11 building its own reader of `commands.yml`, which D17 then rebuilds.
+
+Where it is built: D11, after D17. Booked in the state file's closed log and `plan.md` Rulings.

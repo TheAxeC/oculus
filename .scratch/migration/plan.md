@@ -397,6 +397,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ D9 the mail connector: the inbox plate read live from Gmail and Outlook on the `inbox` channel, reply and archive through the provider behind a confirmation, the triage notes in `<mail_dir>/triage.json`, `feeds/inbox.yml` retired everywhere (Axel 2026-09-12 23:45; brief `agents/briefs/D9.md`; review `agents/reviews/D9.md`); landed 2026-09-16 13:32
 - D11 the debug client for rite: a Debug Adapter Protocol client over cathedra's `rite_dap` with breakpoints, stepping, variables and the console; launch configurations in a repository's `.oculus/launch.yml`, no form (Z92 (1) (a)); the full line in `agents/briefs/D11.md` (ruling The queue) (ruling Z87) (ruling Z92)
   - Widened 2026-10-01 by the Settings ruling (fixed choices written in DESIGN.md or HELP.md), from the Cut table of `agents/reviews/Z74-inventory.md`: the console uses the terminal's font and wraps; the editor takes the focus on a break; no compounds and no server-ready action.
+  - Step 0, at /spec 2026-10-01 23:04 (Z191, automode): `.oculus/launch.yml`'s `before` (Z92 (1) (a)) names a command of `.oculus/commands.yml`, which D17 builds and the tree lacks (`grep -rn "commands.yml" src` prints nothing), so D11 is prepared after D17 lands.
 - ✅ D12 search across files: `GET /api/search` running ripgrep from the `@vscode/ripgrep` dependency over one served root or all, a `search` view in the Sources group with word, case and regex toggles, hits grouped by file, a hit opening the file at its line (Axel 2026-09-13 00:45; brief `agents/briefs/D12.md`; review `agents/reviews/D12.md`); landed 2026-09-16 13:24
 - ✅ D13a the source tab on Monaco: the `ui/controls/editor/` primitive (the ui root holds ten items); in full in `agents/briefs/D13a.md` (ruling The queue) (ruling Z46)
   - Carried from D13, whose scope the three steps share: D13 the editor replaced by Monaco for editing (Axel, L2 (a), 2026-09-26); in full in `agents/briefs/D13a.md` (ruling The queue)
@@ -784,6 +785,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z188 (2026-10-01): (a), X3a's brief-check findings other than Z187 closed in its brief (roots written to `sources.yml`, a `history` key, VS Code's git letters on `--c-scm-*`, `local.yml` never copied) (the orchestrator, automode)
 - Open item Z189 (2026-10-01): (a), the Present deck fills its pane as a 16:9 frame at a 1280 by 720 design size, scaled uniformly and letterboxed, in Q35 (the orchestrator, automode)
 - D35 premise corrected (2026-10-01): the three `notify.*` keys and `notify.stop` are already read at every hook request, so D35 makes the other 13 live and removes the unread start copies.
+- Open item Z191 (2026-10-01): (a), D11 is prepared after D17 has landed, since its launch configurations' `before` names a command of D17's `.oculus/commands.yml` (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
