@@ -69,6 +69,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/Q109-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 84 tool uses, 279,074 tokens, 15.0 min
   diagnosis: agents/reviews/Q109-diagnosis.md (three diagnoses; the third by agent add169c371291c833, claude-opus-5-5, 188,283 tokens, 50 tool uses, 19.8 min)
   shared_paths: package.json and package-lock.json with X3d (X3d adds seti-ui on the line after perfect-debounce, Q109 removes perfect-debounce and adds lodash-es; the lock is regenerated with npm install at the second landing); DESIGN.md and HELP.md with X3d (Q109 writes DESIGN 116 and HELP 127 and 221, X3d other lines)
+  builder_usage: 110,010 tokens, 253 tool uses, 98.6 min (report read at 05:23)
+  reviewer_report: agents/reviews/Q109-refuter.md (reviewer a7e316a676da80877, launched 05:24, served claude-opus-5-5, running)
   landing: not-started
   round: 0
 - step: S3b
@@ -651,6 +653,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 05:24. Q109's builder reported everything done but the looks, which are the landing's (report `agents/reviews/Q109-report.md`); its reviewer launched (claude-opus-5-5). In flight: X3d (round 1), Q109 (review), S3b (round 1). Open: Z138.
 - 2026-10-01 04:59. S3b's review in (ab5621edb5c166992): every case met; items 2, 5 and 7 violated (a swallowed finder throw, readers that cannot refuse, a read-back that refuses `.inf`, no-op calls added to pass the diagram check, two false doc sentences from wrong brief premises); repair round 1 sent with ten rulings, the diagram tool's parting among them. In flight: X3d (round 1), Q109 (builder), S3b (round 1). Open: Z138.
 - 2026-10-01 04:37. S3b's builder reported everything in the brief done (report `agents/reviews/S3b-report.md`); its reviewer ab5621edb5c166992 launched (claude-opus-5-5). In flight: X3d (round 1), Q109 (builder), S3b (review). Open: Z138.
 - 2026-10-01 04:00. S3b's first run handed back case 4 (`-0` on `changes.keep` meets case 3's refusal) and two points; ruled at round 0 (`agents/briefs/S3b-cases.md`) and the builder resumed. In flight: X3d (round 1), Q109, S3b. Open: Z138.
