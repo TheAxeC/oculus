@@ -38,7 +38,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: 193479a8
   launched: 2026-10-01 19:49 local
   report: agents/reviews/D27-report.md
-  reviewer_report: agents/reviews/D27-refuter.md (first run, reviewer a91c680d389523352, claude-sonnet-5-5, launched 21:25; usage on its completion)
+  reviewer_report: agents/reviews/D27-refuter.md (first run, reviewer a91c680d389523352, claude-sonnet-5-5, launched 21:24; usage on its completion)
   brief_check: agents/reviews/D27-brief-check.md, every finding closed in the brief (its Closed heading, Z178 in automode); claude-sonnet-5-5, 301,967 tokens, 104 tool uses, 16.6 min
   shared_paths: with U3, `Source.svelte` (D27 the import and line 133; U3 hunks at 28-30, 56-61, 124 and from 330), `tests/views/sources/source.test.ts` (D27 494-516; U3 up to 314) and `DESIGN.md` (D27 85, 171, 379; U3 158, 216-222, 374-375, 392, 405, 410), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
@@ -140,6 +140,12 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
+
+- Z180, one line or two per row in the Sessions list (raised 2026-10-01 21:28 by U4's brief check, Premises 6). Axel's U4 ruling says the Sessions view is far too large; the U2 audit kept the two-line row ("Better and kept: a session row shows title, meta, status dot and 'needs input' in two lines", `agents/reviews/U2-audit.md:461`), and VS Code's own agent session item is two rows. Going to one line reverses that kept item, so it is Axel's. U4 is built meanwhile with option (b).
+  - (a) One 22 px row per session and terminal: the title, then the agent, model, age, files and prompts muted after it, cut first when the row is narrow. Pro: half today's height, the same row as every other list. Con: the details are cut in a narrow pane; it reverses the kept two-line row.
+  - (b) Two lines at VS Code's own two-row size: an 18 px title line and a 16 px details line, 40 px a row (44 today). Pro: nothing hidden, the kept item stands, VS Code's own form. Con: only 4 px less per row.
+  - (c) Two lines as today, 44 px. Con: answers nothing of the ruling; the lazy option.
+  - Recommendation: (a), since the ruling asks for the size of the other views and only (a) reaches it. If Axel rules (a) before U4 lands, U4 takes it in a repair round.
 
 
 
