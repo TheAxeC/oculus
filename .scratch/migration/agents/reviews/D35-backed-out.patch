@@ -1,5 +1,5 @@
 diff --git a/tools/oculus/DESIGN.md b/tools/oculus/DESIGN.md
-index baef71ea..eb45bcf3 100644
+index 55c63a49..2cebad3c 100644
 --- a/tools/oculus/DESIGN.md
 +++ b/tools/oculus/DESIGN.md
 @@ -231,7 +231,9 @@ Three kinds of change, three mechanisms, no restart in any of them.
@@ -14,7 +14,7 @@ index baef71ea..eb45bcf3 100644
  ## Apps added while oculus runs
  
 diff --git a/tools/oculus/HELP.md b/tools/oculus/HELP.md
-index 378cbf67..3292dba6 100644
+index 47e0a121..34c818ec 100644
 --- a/tools/oculus/HELP.md
 +++ b/tools/oculus/HELP.md
 @@ -213,7 +213,7 @@ Removing the worktree is a second control and never part of the merge. It refuse
@@ -36,7 +36,7 @@ index 378cbf67..3292dba6 100644
  ## Where the data comes from
  
 diff --git a/tools/oculus/config/catalogs/options.yml b/tools/oculus/config/catalogs/options.yml
-index a8f36685..364ccc85 100644
+index 04374dbb..d470b012 100644
 --- a/tools/oculus/config/catalogs/options.yml
 +++ b/tools/oculus/config/catalogs/options.yml
 @@ -123,18 +123,18 @@ options:
@@ -114,7 +114,7 @@ index a8f36685..364ccc85 100644
              default: 25
              control: number
          notify.enabled:
-@@ -590,34 +590,34 @@ options:
+@@ -584,34 +584,34 @@ options:
                  dir: the directory, absolute or starting with ~/
      local.yml:
          hub:
@@ -234,7 +234,7 @@ index b36dc9fa..43534f51 100644
  <!-- folder server/files&#45;&gt;folder server/files to layer data -->
  <g id="edge66" class="edge">
 diff --git a/tools/oculus/src/lib/data/sources/config.ts b/tools/oculus/src/lib/data/sources/config.ts
-index ad1c7d68..47f482fc 100644
+index d074db5d..6a93f00f 100644
 --- a/tools/oculus/src/lib/data/sources/config.ts
 +++ b/tools/oculus/src/lib/data/sources/config.ts
 @@ -37,7 +37,6 @@ export {
@@ -833,18 +833,18 @@ index b5c680aa..e13f2142 100644
              // The file is the reader's own configuration and anything about it can go wrong on this
              // machine; the page is told which of the refusals it was and the file is left alone.
 diff --git a/tools/oculus/src/lib/server/edit/writes/config-key.ts b/tools/oculus/src/lib/server/edit/writes/config-key.ts
-index 7d848667..b56cc90a 100644
+index 14946651..b9dac28a 100644
 --- a/tools/oculus/src/lib/server/edit/writes/config-key.ts
 +++ b/tools/oculus/src/lib/server/edit/writes/config-key.ts
-@@ -35,7 +35,6 @@ import {
+@@ -34,7 +34,6 @@ import {
+     configDir,
      iconFindings,
-     languageFindings,
      loadConfig,
 -    loadLocalOrDefaults,
      mailSettings,
      openSettings,
      searchSettings,
-@@ -216,6 +215,7 @@ function sentenceOf(error: unknown): string {
+@@ -214,6 +213,7 @@ function sentenceOf(error: unknown): string {
   */
  function refusedBy(
      engine: string,
@@ -852,7 +852,7 @@ index 7d848667..b56cc90a 100644
      file: string,
      edited: string,
      before: ReturnType<typeof loadConfig>
-@@ -231,7 +231,6 @@ function refusedBy(
+@@ -229,7 +229,6 @@ function refusedBy(
              return sentenceOf(error);
          }
      }
@@ -860,7 +860,7 @@ index 7d848667..b56cc90a 100644
      for (const find of FINDERS) {
          let seen: Set<string> | null = null;
          try {
-@@ -287,6 +286,7 @@ export function configKeyNow(
+@@ -285,6 +284,7 @@ export function configKeyNow(
   */
  export function writeConfigKey(
      engine: string,
@@ -868,7 +868,7 @@ index 7d848667..b56cc90a 100644
      file: string,
      key: string,
      value: unknown
-@@ -323,7 +323,7 @@ export function writeConfigKey(
+@@ -321,7 +321,7 @@ export function writeConfigKey(
      if (!('text' in edited) || !kept(source, edited.text, key, wanted)) {
          return refuse(words(text, 'server.config_key.not_kept'));
      }
@@ -1056,7 +1056,7 @@ index e103a8eb..138b7a6c 100644
  
  function settings(options: DepositOptions): {
 diff --git a/tools/oculus/src/lib/server/machine/hpc/poll.ts b/tools/oculus/src/lib/server/machine/hpc/poll.ts
-index 6e76ceb7..8696a60d 100644
+index 6e76ceb7..ef44d29e 100644
 --- a/tools/oculus/src/lib/server/machine/hpc/poll.ts
 +++ b/tools/oculus/src/lib/server/machine/hpc/poll.ts
 @@ -1,6 +1,7 @@
@@ -1197,7 +1197,7 @@ index 6e76ceb7..8696a60d 100644
              startPrewarm();
          }
      };
-@@ -190,14 +228,19 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
+@@ -190,14 +228,15 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
      const prewarmStep = async (): Promise<void> => {
          const paths = options.logPaths;
          if (paths === undefined) return;
@@ -1211,15 +1211,11 @@ index 6e76ceb7..8696a60d 100644
 -                const found = await prewarmLogs(options.host, todo, options.days, runner);
 -                if (stopped()) return;
 +                const found = await prewarmLogs(current.host, todo, current.days, runner);
-+                if (stopped() || began !== asking) {
-+                    // Dropped under an older host or window: the next prewarm asks about them.
-+                    for (const id of todo) asked.delete(id);
-+                    return;
-+                }
++                if (stopped() || began !== asking) return;
                  for (const [id, path] of found) if (!paths.has(id)) paths.set(id, path);
              }
              if (paths.size > PREWARM_MAX) {
-@@ -243,16 +286,62 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
+@@ -243,16 +282,62 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
          queued ??= running.then(() => refresh()).finally(() => (queued = null));
          return queued;
      };
@@ -1619,10 +1615,10 @@ index 18c6bbac..e8aff948 100644
              closed = true;
              offSessions();
 diff --git a/tools/oculus/src/lib/server/root/context.ts b/tools/oculus/src/lib/server/root/context.ts
-index bc04679e..39a7069b 100644
+index 1dd70cb2..014e68a8 100644
 --- a/tools/oculus/src/lib/server/root/context.ts
 +++ b/tools/oculus/src/lib/server/root/context.ts
-@@ -47,7 +47,7 @@ import { docFindings, layoutFile } from '../content/docs.ts';
+@@ -46,7 +46,7 @@ import { docFindings, layoutFile } from '../content/docs.ts';
  import { Hub } from '../core/channels.ts';
  import { requireAutofetch } from '../core/fetch-period.ts';
  import { registerFilesChannel } from '../files/files-channel.ts';
@@ -1631,7 +1627,7 @@ index bc04679e..39a7069b 100644
  import type { LogPaths } from '../machine/hpc/actions.ts';
  import type { Plan } from '../git/deposit.ts';
  import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
-@@ -68,6 +68,7 @@ import {
+@@ -67,6 +67,7 @@ import {
      type UsageRefreshWatcher
  } from '../machine/usage/refresh.ts';
  import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
@@ -1639,7 +1635,7 @@ index bc04679e..39a7069b 100644
  import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
  import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
  import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
-@@ -213,9 +214,10 @@ export function createServerContext(
+@@ -212,9 +213,10 @@ export function createServerContext(
  ): ServerContext {
      const make = { ...dependencies, ...replacements };
      const local = make.loadLocal(engine);
@@ -1653,7 +1649,7 @@ index bc04679e..39a7069b 100644
      const config = make.loadConfig(engine).config;
      const slurm = slurmSettings(config);
      const calendarConfig = calendarSettings(config);
-@@ -237,8 +239,6 @@ export function createServerContext(
+@@ -236,8 +238,6 @@ export function createServerContext(
          hub,
          limiter: new RateLimiter(),
          logged: new Set<string>(),
@@ -1662,7 +1658,7 @@ index bc04679e..39a7069b 100644
          recordFor: (session) => sessionRecord(hub, session)
      };
      // The icon map is read once here and by the watcher on every config push; a page load takes
-@@ -314,8 +314,9 @@ export function createServerContext(
+@@ -312,8 +312,9 @@ export function createServerContext(
      // One map, two writers: the log action writes what a press resolved, the watcher's prewarm what
      // it resolved behind the page, and neither replaces the other's answer.
      const hpcLogPaths: LogPaths = new Map();
@@ -1673,7 +1669,7 @@ index bc04679e..39a7069b 100644
          days: slurm.days,
          pollMin: slurm.pollMin,
          quotaMin: slurm.quotaMin,
-@@ -355,6 +356,26 @@ export function createServerContext(
+@@ -353,6 +354,26 @@ export function createServerContext(
          words: { timedOut: textCatalog(config)['accounts.timed_out'] }
      });
  
@@ -1700,7 +1696,7 @@ index bc04679e..39a7069b 100644
      let closed = false;
      const writes = fsWrites();
      const context: ServerContext = {
-@@ -390,6 +411,7 @@ export function createServerContext(
+@@ -388,6 +409,7 @@ export function createServerContext(
          close(): void {
              if (closed) return;
              closed = true;
@@ -3670,7 +3666,7 @@ index e5b7f1c2..d0dff26c 100644
          } finally {
              error.mockRestore();
 diff --git a/tools/oculus/tests/server/edit/config-key.test.ts b/tools/oculus/tests/server/edit/config-key.test.ts
-index 2a128b63..d372fb7f 100644
+index e67ae8cc..86aea5f8 100644
 --- a/tools/oculus/tests/server/edit/config-key.test.ts
 +++ b/tools/oculus/tests/server/edit/config-key.test.ts
 @@ -10,7 +10,12 @@ import { chmodSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -3708,7 +3704,7 @@ index 2a128b63..d372fb7f 100644
              if (docsFinder.throwOn.includes(docsFinder.calls)) throw new Error('docs unreadable');
              return actual.docFindings(...args);
          }
-@@ -69,6 +79,11 @@ vi.mock('../../../src/lib/data/sources/config/languages.ts', async (original) =>
+@@ -38,6 +48,11 @@ vi.mock('../../../src/lib/server/content/docs.ts', async (original) => {
  
  const CATALOG = textCatalog(loadConfig(engineDir()).config);
  
@@ -3720,7 +3716,7 @@ index 2a128b63..d372fb7f 100644
  /** One of the writer's own reason sentences, out of config/text/server.yml. */
  function why(key: string, ...args: string[]): string {
      return words(CATALOG, `server.config_key.${key}`, ...args);
-@@ -131,7 +146,7 @@ describe('one value written over its own bytes', () => {
+@@ -100,7 +115,7 @@ describe('one value written over its own bytes', () => {
      it('replaces the value and keeps every other byte, the comment on its line included', () => {
          const engine = keepEngine();
          const before = held(engine);
@@ -3729,7 +3725,7 @@ index 2a128b63..d372fb7f 100644
          expect(outcome.changed).toEqual([KEEP]);
          expect(outcome.refused).toEqual([]);
          expect(held(engine)).toBe(before.replace('keep: 200  # how many', 'keep: 300  # how many'));
-@@ -150,7 +165,7 @@ describe('one value written over its own bytes', () => {
+@@ -119,7 +134,7 @@ describe('one value written over its own bytes', () => {
      it('writes nothing for the value the file already holds', () => {
          const engine = keepEngine();
          const before = held(engine);
@@ -3738,7 +3734,7 @@ index 2a128b63..d372fb7f 100644
          expect(outcome).toEqual({ changed: [], refused: [] });
          expect(held(engine)).toBe(before);
      });
-@@ -159,8 +174,8 @@ describe('one value written over its own bytes', () => {
+@@ -128,8 +143,8 @@ describe('one value written over its own bytes', () => {
          const engine = scratchEngine();
          const layout = held(engine, 'layout.yml');
          const deck = held(engine, 'present.yml');
@@ -3749,7 +3745,7 @@ index 2a128b63..d372fb7f 100644
          expect([one.changed, two.changed]).toEqual([
              ['layout.yml:board.search.projects'],
              ['present.yml:deck.meta.kicker']
-@@ -175,25 +190,25 @@ describe('one value written over its own bytes', () => {
+@@ -144,25 +159,25 @@ describe('one value written over its own bytes', () => {
  
      it('keeps the quote style of the line, the apostrophe of a single-quoted one doubled', () => {
          const engine = scratchEngine();
@@ -3782,7 +3778,7 @@ index 2a128b63..d372fb7f 100644
              'appearance.yml:crt.default'
          ]);
          expect(held(engine, 'appearance.yml')).toBe(
-@@ -207,7 +222,7 @@ describe('one value written over its own bytes', () => {
+@@ -176,7 +191,7 @@ describe('one value written over its own bytes', () => {
          const engine = scratchEngine();
          const before = held(engine, 'appearance.yml');
          const text = 'a: b # "c" \'d\'';
@@ -3791,7 +3787,7 @@ index 2a128b63..d372fb7f 100644
          expect(outcome.refused).toEqual([]);
          const after = held(engine, 'appearance.yml');
          expect((parse(after) as { wallpaper: { dir: string } }).wallpaper.dir).toBe(text);
-@@ -218,16 +233,16 @@ describe('one value written over its own bytes', () => {
+@@ -187,16 +202,16 @@ describe('one value written over its own bytes', () => {
  
      it('writes a text that holds a newline double-quoted, even over a single-quoted line', () => {
          const engine = scratchEngine();
@@ -3811,7 +3807,7 @@ index 2a128b63..d372fb7f 100644
          expect(outcome.refused).toEqual([]);
          expect(held(engine, 'present.yml')).toContain(`kicker: '${text}'\n`);
      });
-@@ -240,7 +255,7 @@ describe('one value written over its own bytes', () => {
+@@ -209,7 +224,7 @@ describe('one value written over its own bytes', () => {
          );
          for (const engine of [scratchEngine(), ...styled]) {
              const before = held(engine);
@@ -3820,7 +3816,7 @@ index 2a128b63..d372fb7f 100644
              expect(outcome).toEqual({ changed: [], refused: [] });
              expect(held(engine)).toBe(before);
          }
-@@ -253,7 +268,7 @@ describe('one value written over its own bytes', () => {
+@@ -222,7 +237,7 @@ describe('one value written over its own bytes', () => {
          );
          addOption(engine, 'behavior.yml', 'flow_probe.text', { description: 'x', control: 'text' });
          const value = 'a, b {c} [d]';
@@ -3829,7 +3825,7 @@ index 2a128b63..d372fb7f 100644
          expect(outcome.refused).toEqual([]);
          expect(held(engine)).toContain('flow_probe: { text: "a, b {c} [d]", n: 1 }\n');
          expect((parse(held(engine)) as { flow_probe: { text: string } }).flow_probe.text).toBe(
-@@ -268,7 +283,7 @@ describe('one value written over its own bytes', () => {
+@@ -237,7 +252,7 @@ describe('one value written over its own bytes', () => {
                  (text) => `${prefix}${keepText(text).replaceAll('\n', '\r\n')}`
              );
              const before = held(engine);
@@ -3838,7 +3834,7 @@ index 2a128b63..d372fb7f 100644
              expect(outcome.refused).toEqual([]);
              expect(held(engine)).toBe(
                  before.replace('keep: 200  # how many', 'keep: 300  # how many')
-@@ -283,9 +298,9 @@ describe('a value the option does not take', () => {
+@@ -252,9 +267,9 @@ describe('a value the option does not take', () => {
          for (const value of [0, 2.5]) {
              const engine = keepEngine();
              const before = held(engine);
@@ -3851,7 +3847,7 @@ index 2a128b63..d372fb7f 100644
              expect(held(engine)).toBe(before);
          }
      });
-@@ -294,9 +309,9 @@ describe('a value the option does not take', () => {
+@@ -263,9 +278,9 @@ describe('a value the option does not take', () => {
          for (const value of ['300', true, [], null, JSON.parse('1e309'), {}]) {
              const engine = keepEngine();
              const before = held(engine);
@@ -3864,7 +3860,7 @@ index 2a128b63..d372fb7f 100644
              expect(held(engine)).toBe(before);
          }
      });
-@@ -304,7 +319,7 @@ describe('a value the option does not take', () => {
+@@ -273,7 +288,7 @@ describe('a value the option does not take', () => {
      it('writes minus zero as zero, over an option whose reader takes zero', () => {
          const engine = scratchEngine();
          const before = held(engine);
@@ -3873,7 +3869,7 @@ index 2a128b63..d372fb7f 100644
          expect(outcome.refused).toEqual([]);
          expect(outcome.records?.[0].after).toBe(0);
          expect(held(engine)).toBe(before.replace(/days_back: \d+/, 'days_back: 0'));
-@@ -316,13 +331,13 @@ describe('a value the option does not take', () => {
+@@ -285,13 +300,13 @@ describe('a value the option does not take', () => {
      it('refuses a choice outside its values and a toggle that is not a boolean', () => {
          const engine = scratchEngine();
          const before = held(engine, 'appearance.yml');
@@ -3890,7 +3886,7 @@ index 2a128b63..d372fb7f 100644
          expect(refusedWith(text, 'appearance.yml:wallpaper.dir')).toBe(why('not_text'));
          expect(held(engine, 'appearance.yml')).toBe(before);
      });
-@@ -336,7 +351,7 @@ describe('a value the option does not take', () => {
+@@ -305,7 +320,7 @@ describe('a value the option does not take', () => {
              ['behavior.yml', 'read_limits']
          ]) {
              const before = held(engine, file);
@@ -3899,7 +3895,7 @@ index 2a128b63..d372fb7f 100644
                  why('not_single')
              );
              expect(held(engine, file)).toBe(before);
-@@ -350,7 +365,7 @@ describe('an option the catalog does not hold', () => {
+@@ -319,7 +334,7 @@ describe('an option the catalog does not hold', () => {
          const local = engineFile(engine, 'local.yml');
          writeFileSync(local, 'port: 8791\n');
          const stamp = statSync(local).mtimeMs;
@@ -3908,7 +3904,7 @@ index 2a128b63..d372fb7f 100644
          expect(refusedWith(outcome, 'local.yml:port')).toBe(why('local'));
          expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
          expect(statSync(local).mtimeMs).toBe(stamp);
-@@ -375,7 +390,7 @@ describe('an option the catalog does not hold', () => {
+@@ -344,7 +359,7 @@ describe('an option the catalog does not hold', () => {
              ['behavior.yml/../layout.yml', 'changes.keep'],
              ['catalogs/options.yml', 'options']
          ]) {
@@ -3917,7 +3913,7 @@ index 2a128b63..d372fb7f 100644
              expect(refusedWith(outcome, `${file}:${key}`)).toBe(why('no_entry'));
          }
          expect(held(engine)).toBe(behavior);
-@@ -389,7 +404,7 @@ describe('a file that does not hold the key', () => {
+@@ -358,7 +373,7 @@ describe('a file that does not hold the key', () => {
          const twice = engineWith('behavior.yml', (text) => `${text}\nsearch:\n  max_hits: 1\n`);
          for (const engine of [unparsed, twice]) {
              const before = held(engine);
@@ -3926,7 +3922,7 @@ index 2a128b63..d372fb7f 100644
              expect(refusedWith(outcome, KEEP)).toBe(why('not_parsed'));
              expect(held(engine)).toBe(before);
          }
-@@ -409,7 +424,7 @@ describe('a file that does not hold the key', () => {
+@@ -378,7 +393,7 @@ describe('a file that does not hold the key', () => {
          for (const block of variants) {
              const engine = engineWith('behavior.yml', (text) => text.replace(KEEP_BLOCK, block));
              const before = held(engine);
@@ -3935,7 +3931,7 @@ index 2a128b63..d372fb7f 100644
              expect(refusedWith(outcome, KEEP)).toBe(why('not_in_file'));
              expect(held(engine)).toBe(before);
          }
-@@ -420,7 +435,7 @@ describe('a file that does not hold the key', () => {
+@@ -389,7 +404,7 @@ describe('a file that does not hold the key', () => {
              text.replace(KEEP_BLOCK, 'changes: &log\n  keep: 500\nchanges_copy: *log\n')
          );
          const before = held(engine);
@@ -3944,7 +3940,7 @@ index 2a128b63..d372fb7f 100644
          expect(refusedWith(outcome, KEEP)).toBe(why('not_kept'));
          expect(held(engine)).toBe(before);
      });
-@@ -431,7 +446,7 @@ describe('a file that does not hold the key', () => {
+@@ -400,7 +415,7 @@ describe('a file that does not hold the key', () => {
                  'behavior.yml',
                  (text) => `${keepText(text)}\nprobe: { a: ${scalar}, b: [${scalar}] }\n`
              );
@@ -3953,7 +3949,7 @@ index 2a128b63..d372fb7f 100644
              expect(outcome.refused).toEqual([]);
              expect(held(engine)).toContain('keep: 300  # how many');
              expect(held(engine)).toContain(`probe: { a: ${scalar}, b: [${scalar}] }`);
-@@ -452,7 +467,7 @@ describe('a file that does not hold the key', () => {
+@@ -421,7 +436,7 @@ describe('a file that does not hold the key', () => {
              [numbered, 'changes.1', 'y']
          ] as const) {
              const before = held(engine);
@@ -3962,7 +3958,7 @@ index 2a128b63..d372fb7f 100644
              expect(refusedWith(outcome, `behavior.yml:${key}`)).toBe(why('not_in_file'));
              expect(held(engine)).toBe(before);
          }
-@@ -467,7 +482,11 @@ describe('the readers of the merged configuration', () => {
+@@ -436,7 +451,11 @@ describe('the readers of the merged configuration', () => {
                  0,
                  'config/behavior.yml: editor.paint_limit_kb must be a number above zero'
              ],
@@ -3975,7 +3971,7 @@ index 2a128b63..d372fb7f 100644
              ['usage_refresh_model', '', 'usage_refresh_model must not be empty'],
              [
                  'search.timeout_s',
-@@ -478,7 +497,7 @@ describe('the readers of the merged configuration', () => {
+@@ -447,7 +466,7 @@ describe('the readers of the merged configuration', () => {
          for (const [key, value, sentence] of cases) {
              const engine = scratchEngine();
              const before = held(engine);
@@ -3984,7 +3980,7 @@ index 2a128b63..d372fb7f 100644
              expect(refusedWith(outcome, `behavior.yml:${key}`)).toBe(sentence);
              expect(held(engine)).toBe(before);
          }
-@@ -487,7 +506,7 @@ describe('the readers of the merged configuration', () => {
+@@ -456,7 +475,7 @@ describe('the readers of the merged configuration', () => {
      it('refuses a code theme that is none, in the words of the finding it would give', () => {
          const engine = scratchEngine();
          const before = held(engine, 'appearance.yml');
@@ -3993,7 +3989,7 @@ index 2a128b63..d372fb7f 100644
          expect(refusedWith(outcome, 'appearance.yml:code_theme')).toBe(
              findingText(CATALOG, 'findings.appearance.code_theme', '"nonesuch"')
          );
-@@ -501,13 +520,13 @@ describe('the readers of the merged configuration', () => {
+@@ -470,13 +489,13 @@ describe('the readers of the merged configuration', () => {
              );
          const mended = zero();
          const original = held(mended).replace('  max_hits: 0\n', '  max_hits: 500\n');
@@ -4009,7 +4005,7 @@ index 2a128b63..d372fb7f 100644
          expect(refusedWith(outcome, 'behavior.yml:search.timeout_s')).toBe(
              'config/behavior.yml: search.max_hits must be a number above zero'
          );
-@@ -518,11 +537,11 @@ describe('the readers of the merged configuration', () => {
+@@ -487,11 +506,11 @@ describe('the readers of the merged configuration', () => {
          const engine = engineWith('behavior.yml', (text) =>
              text.replace('  max_hits: 500\n', '  max_hits: 0\n')
          );
@@ -4024,7 +4020,7 @@ index 2a128b63..d372fb7f 100644
          expect(refusedWith(back, 'behavior.yml:search.max_hits')).toBe(
              'config/behavior.yml: search.max_hits must be a number above zero'
          );
-@@ -538,7 +557,7 @@ describe('the period of the automatic fetch', () => {
+@@ -507,7 +526,7 @@ describe('the period of the automatic fetch', () => {
          for (const value of [-1, 1.5]) {
              const engine = scratchEngine();
              const before = held(engine);
@@ -4033,7 +4029,7 @@ index 2a128b63..d372fb7f 100644
              expect(refusedWith(outcome, FETCH), String(value)).toBe(SENTENCE);
              expect(held(engine)).toBe(before);
          }
-@@ -547,7 +566,7 @@ describe('the period of the automatic fetch', () => {
+@@ -516,7 +535,7 @@ describe('the period of the automatic fetch', () => {
      it('refuses a text with the words of a number option and writes nothing', () => {
          const engine = scratchEngine();
          const before = held(engine);
@@ -4042,7 +4038,7 @@ index 2a128b63..d372fb7f 100644
          expect(refusedWith(outcome, FETCH)).toBe(why('not_number'));
          expect(held(engine)).toBe(before);
      });
-@@ -555,7 +574,7 @@ describe('the period of the automatic fetch', () => {
+@@ -524,7 +543,7 @@ describe('the period of the automatic fetch', () => {
      it('writes 3 over the shipped 0 and keeps every other byte', () => {
          const engine = scratchEngine();
          const before = held(engine);
@@ -4051,7 +4047,7 @@ index 2a128b63..d372fb7f 100644
          expect(outcome.refused).toEqual([]);
          expect(outcome.changed).toEqual([FETCH]);
          expect(held(engine)).toBe(before.replace('autofetch_minutes: 0', 'autofetch_minutes: 3'));
-@@ -568,7 +587,7 @@ describe('a file the writer cannot write', () => {
+@@ -537,7 +556,7 @@ describe('a file the writer cannot write', () => {
          const path = engineFile(engine, 'behavior.yml');
          chmodSync(path, 0o444);
          const before = held(engine);
@@ -4060,7 +4056,7 @@ index 2a128b63..d372fb7f 100644
          expect(held(engine)).toBe(before);
          expect(statSync(path).mode & 0o777).toBe(0o444);
      });
-@@ -592,7 +611,7 @@ describe('the readers that give findings', () => {
+@@ -561,7 +580,7 @@ describe('the readers that give findings', () => {
          docsFinder.throwOn = [2];
          const engine = keepEngine();
          const before = held(engine);
@@ -4069,7 +4065,7 @@ index 2a128b63..d372fb7f 100644
          expect(refusedWith(outcome, KEEP)).toBe('docs unreadable');
          expect(held(engine)).toBe(before);
      });
-@@ -601,7 +620,7 @@ describe('the readers that give findings', () => {
+@@ -570,7 +589,7 @@ describe('the readers that give findings', () => {
          docsFinder.calls = 0;
          docsFinder.throwOn = [1, 2];
          const engine = keepEngine();
@@ -4078,7 +4074,7 @@ index 2a128b63..d372fb7f 100644
          expect(refusedWith(outcome, KEEP)).toBe('docs unreadable');
      });
  
-@@ -609,7 +628,7 @@ describe('the readers that give findings', () => {
+@@ -578,18 +597,82 @@ describe('the readers that give findings', () => {
          docsFinder.calls = 0;
          docsFinder.throwOn = [1];
          const engine = engineWithMissingDoc();
@@ -4087,32 +4083,6 @@ index 2a128b63..d372fb7f 100644
          expect(outcome.refused).toEqual([]);
          expect(outcome.changed).toEqual([KEEP]);
          expect(held(engine)).toContain('keep: 300  # how many');
-@@ -620,7 +639,7 @@ describe('the readers that give findings', () => {
-         languagesFinder.findOn = [2];
-         const engine = keepEngine();
-         const before = held(engine);
--        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-+        const outcome = write(engine, 'behavior.yml', 'changes.keep', 300);
-         expect(refusedWith(outcome, KEEP)).toBe(
-             'ending .h is listed under c and under cpp; c keeps it'
-         );
-@@ -631,7 +650,7 @@ describe('the readers that give findings', () => {
-         languagesFinder.calls = 0;
-         languagesFinder.findOn = [1, 2];
-         const engine = keepEngine();
--        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-+        const outcome = write(engine, 'behavior.yml', 'changes.keep', 300);
-         expect(outcome.refused).toEqual([]);
-         expect(languagesFinder.calls).toBe(2);
-     });
-@@ -641,17 +660,81 @@ describe('the readers that give findings', () => {
-         languagesFinder.findOn = [];
-         const engine = scratchEngine();
-         const before = held(engine, 'sources.yml');
--        const outcome = writeConfigKey(engine, 'sources.yml', 'languages', '.h');
-+        const outcome = write(engine, 'sources.yml', 'languages', '.h');
-         expect(refusedWith(outcome, 'sources.yml:languages')).toBe(why('not_single'));
-         expect(held(engine, 'sources.yml')).toBe(before);
      });
  
 +    it('hands every finder the hub it is given, though local.yml names another since', () => {
@@ -4190,7 +4160,7 @@ index 2a128b63..d372fb7f 100644
 +    });
 +});
 diff --git a/tools/oculus/tests/server/git/deposit.test.ts b/tools/oculus/tests/server/git/deposit.test.ts
-index 9b3c14af..59ce6b9c 100644
+index 9b3c14af..35548a54 100644
 --- a/tools/oculus/tests/server/git/deposit.test.ts
 +++ b/tools/oculus/tests/server/git/deposit.test.ts
 @@ -40,7 +40,7 @@ import {
@@ -4229,7 +4199,7 @@ index 9b3c14af..59ce6b9c 100644
          writeFileSync(
              join(engine, 'config', 'sources.yml'),
              'scan:\n  - { dir: projects/manuscripts, type: manuscript, tier: projects }\n'
-@@ -256,23 +260,36 @@ describe('the hub the engine names', () => {
+@@ -256,23 +260,32 @@ describe('the hub the engine names', () => {
          return engine;
      }
  
@@ -4260,22 +4230,18 @@ index 9b3c14af..59ce6b9c 100644
 +        // route's request and its server.
 +        const engine = depositEngine();
 +        const config = loadConfig(engine).config;
-+        const local = localDefaults(engine);
-+        // Partial start values do not compile: `config` and `local` are each required beside
-+        // `engine`, for the deposit and for the id gate. The calls are type checks and never run.
-+        const partial = () => [
++        for (const given of [{ engine }, { engine, config }]) {
++            // The partial start values do not compile: `local` is required beside `engine`.
 +            // @ts-expect-error a caller that leaves `local` out is refused by the types
-+            state('alpha', { engine, config, mirrors }),
-+            // @ts-expect-error a caller that leaves `config` out is refused by the types
-+            state('alpha', { engine, local, mirrors }),
-+            // @ts-expect-error the id gate's start values need `local` beside the configuration
-+            knownIds([], engine, config)
-+        ];
-+        void partial;
++            const asked = state('alpha', { ...given, mirrors });
++            await expect(asked).rejects.toThrow(
++                'the engine directory, its configuration and the machine values'
++            );
++        }
      });
  
      // The id gate of the endpoint. The published payload is what a running server has seen, and the
-@@ -281,8 +298,9 @@ describe('the hub the engine names', () => {
+@@ -281,8 +294,9 @@ describe('the hub the engine names', () => {
      it('is the id gate, so a project the last payload does not carry is still known', () => {
          const engine = depositEngine();
          const config = loadConfig(engine).config;
@@ -4411,10 +4377,10 @@ index 00000000..3dde39df
 +}
 diff --git a/tools/oculus/tests/server/machine/hpc/poll-live.test.ts b/tools/oculus/tests/server/machine/hpc/poll-live.test.ts
 new file mode 100644
-index 00000000..f69f1cf6
+index 00000000..b6093fec
 --- /dev/null
 +++ b/tools/oculus/tests/server/machine/hpc/poll-live.test.ts
-@@ -0,0 +1,501 @@
+@@ -0,0 +1,441 @@
 +// The HPC poller's settings changed while it runs: a new period moves the next poll and the next
 +// quota read to the earlier of the old time and the new period from the push, a new host clears
 +// what the old one answered and polls the new one, a new window polls at once, and a poll, quota
@@ -4815,66 +4781,6 @@ index 00000000..f69f1cf6
 +            await vi.advanceTimersByTimeAsync(0);
 +
 +            expect([...logPaths]).toEqual([]);
-+        } finally {
-+            watcher.close();
-+            vi.useRealTimers();
-+        }
-+    });
-+
-+    it('drops the failure of a poll begun under the old host and publishes the new host', async () => {
-+        vi.useFakeTimers();
-+        const hub = new Hub();
-+        const client = recording();
-+        hub.subscribe(client.sink, ['hpc']);
-+        let fail: (error: Error) => void = () => {
-+            throw new Error('the poll was failed before its promise existed');
-+        };
-+        const first = new Promise<RunResult>((_resolve, reject) => (fail = reject));
-+        let calls = 0;
-+        const runner = vi.fn<Runner>((_host, remote) => {
-+            if (remote.startsWith('quota')) return Promise.resolve(NOTHING);
-+            calls += 1;
-+            return calls === 1 ? first : Promise.resolve({ stdout: ANSWER, stderr: '', code: 0 });
-+        });
-+        const watcher = watchHpc(hub, { ...START, runner });
-+        try {
-+            await vi.advanceTimersByTimeAsync(0);
-+            watcher.set({ ...START, host: 'other' });
-+            fail(new Error('timeout'));
-+            await vi.advanceTimersByTimeAsync(0);
-+
-+            const statuses = client.got.map((message) => (message.payload as HpcPayload).status);
-+            expect(statuses).not.toContain('unreachable');
-+            expect(held(hub)).toMatchObject({ status: 'ok', host: 'other' });
-+        } finally {
-+            watcher.close();
-+            vi.useRealTimers();
-+        }
-+    });
-+
-+    it('asks again about the jobs of a prewarm dropped by a change of the day count', async () => {
-+        vi.useFakeTimers();
-+        const listing = gate();
-+        let listings = 0;
-+        const answer = prewarmRunner();
-+        const runner = vi.fn<Runner>((host, remote, limit) => {
-+            if (remote.includes('@@oculus:wd=')) {
-+                listings += 1;
-+                if (listings === 1) return listing.answer;
-+            }
-+            return answer(host, remote, limit);
-+        });
-+        const logPaths = new Map<string, string>();
-+        const watcher = watchHpc(new Hub(), { ...START, runner, logPaths });
-+        try {
-+            await vi.advanceTimersByTimeAsync(0);
-+            expect(listings).toBe(1);
-+
-+            watcher.set({ ...START, days: 14 });
-+            listing.settle({ stdout: LISTING, stderr: '', code: 0 });
-+            await vi.advanceTimersByTimeAsync(START.pollMin * MINUTE);
-+
-+            expect([...logPaths.keys()].sort()).toEqual(['10', '9']);
 +        } finally {
 +            watcher.close();
 +            vi.useRealTimers();
@@ -5839,15 +5745,10 @@ index 81a6f7ff..eb387461 100644
 +    });
 +});
 diff --git a/tools/oculus/tests/server/root/context-fixture.ts b/tools/oculus/tests/server/root/context-fixture.ts
-index f5d21d5c..f456ea82 100644
+index f5d21d5c..c88852cd 100644
 --- a/tools/oculus/tests/server/root/context-fixture.ts
 +++ b/tools/oculus/tests/server/root/context-fixture.ts
-@@ -1,17 +1,22 @@
- // Layer 2, server test support. Builds a complete inert ServerContext for route tests without
--// opening a watcher, running tmux, reading the real hub, or writing outside a test's own fixture.
-+// opening a watcher, running tmux, reading the real hub, or writing outside a test's own fixture,
-+// and the inert configuration and dependencies that `createServerContext`'s own tests build from.
- 
+@@ -4,14 +4,18 @@
  import type { LocalConfig } from '../../../src/lib/data/sources/config.ts';
  import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
  import { Hub } from '../../../src/lib/server/core/channels.ts';
@@ -5869,7 +5770,7 @@ index f5d21d5c..f456ea82 100644
  
  export const ROUTE_TOKEN = 'the-write-token-of-this-context';
  
-@@ -37,7 +42,6 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
+@@ -37,7 +41,6 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
          calendars: [],
          mail: []
      };
@@ -5877,7 +5778,7 @@ index f5d21d5c..f456ea82 100644
      const terminals =
          overrides.terminals ?? new Terminals(hub, { driver: terminalDriver(), poll: 0 });
      const hooks = overrides.hooks ?? {
-@@ -45,7 +49,6 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
+@@ -45,7 +48,6 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
          hub,
          limiter: new RateLimiter(),
          logged: new Set<string>(),
@@ -5885,7 +5786,7 @@ index f5d21d5c..f456ea82 100644
          recordFor: (session: string) => sessionRecord(hub, session)
      };
      let closed = false;
-@@ -55,14 +58,28 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
+@@ -55,14 +57,28 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
          terminals,
          hooks,
          git: { refresh: noop, close: noop },
@@ -5918,7 +5819,7 @@ index f5d21d5c..f456ea82 100644
              state: () => ({
                  state: 'running',
                  since: '',
-@@ -104,3 +121,99 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
+@@ -104,3 +120,99 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
      };
      return context;
  }
@@ -6019,7 +5920,7 @@ index f5d21d5c..f456ea82 100644
 +    };
 +}
 diff --git a/tools/oculus/tests/server/root/context.test.ts b/tools/oculus/tests/server/root/context.test.ts
-index 91d9e1e8..66df8536 100644
+index 91d9e1e8..52ba8c72 100644
 --- a/tools/oculus/tests/server/root/context.test.ts
 +++ b/tools/oculus/tests/server/root/context.test.ts
 @@ -14,11 +14,12 @@ import {
@@ -6229,7 +6130,7 @@ index 91d9e1e8..66df8536 100644
          const { watchUsageRefresh, loadConfig, ...inert } = inertDependencies();
          const refresher = vi.fn(watchUsageRefresh);
          const dependencies: Partial<ContextDependencies> = {
-@@ -558,3 +488,373 @@ describe('ServerContext with a refresh cadence that is not a positive number', (
+@@ -558,3 +488,326 @@ describe('ServerContext with a refresh cadence that is not a positive number', (
          expect(held.refresher).not.toHaveBeenCalled();
      });
  });
@@ -6449,7 +6350,7 @@ index 91d9e1e8..66df8536 100644
 +            expect(run.setters.tiers).not.toHaveBeenCalled();
 +        }));
 +
-+    it('hands nothing on for a push whose values equal the ones in force (an audit)', () =>
++    it('hands nothing on for a push whose values equal the ones in force (an audit: nothing re-reads on the old code)', () =>
 +        inRun(async (run) => {
 +            await run.push(inertConfig());
 +            await run.push(inertConfig());
@@ -6536,53 +6437,6 @@ index 91d9e1e8..66df8536 100644
 +            expect(run.setters.calendar).toHaveBeenCalledTimes(2);
 +            expect(run.hub.size).toBe(subscribed);
 +        }));
-+
-+    it('logs each other group whose setter throws, and the next push still reaches the poller', async () => {
-+        const text = inertConfig().text as Record<string, Record<string, unknown>>;
-+        const pushes: [keyof ReturnType<typeof started>['setters'], Record<string, unknown>][] = [
-+            ['calendar', { calendar: blockWith('calendar', { poll_min: 5 }) }],
-+            ['mail', { mail: blockWith('mail', { poll_min: 4 }) }],
-+            ['refresh', { usage_refresh_min: 3 }],
-+            ['tiers', { usage_tiers: { max: 'Max' } }],
-+            [
-+                'calendarWords',
-+                { text: { ...text, calendar: { ...text.calendar, ics_no_link: 'new link' } } }
-+            ],
-+            [
-+                'mailWords',
-+                {
-+                    text: {
-+                        ...text,
-+                        accounts: { ...text.accounts, timed_out: 'new timed out {0}' }
-+                    }
-+                }
-+            ]
-+        ];
-+        for (const [group, changes] of pushes) {
-+            await inRun(async (run) => {
-+                run.setters[group].mockImplementation(() => {
-+                    throw new Error(`the ${group} setter broke`);
-+                });
-+                const subscribed = run.hub.size;
-+
-+                await run.push(
-+                    configWith({ ...changes, slurm: blockWith('slurm', { poll_min: 5 }) })
-+                );
-+                await run.push(
-+                    configWith({ ...changes, slurm: blockWith('slurm', { poll_min: 7 }) })
-+                );
-+
-+                expect(run.setters[group]).toHaveBeenCalled();
-+                expect(
-+                    run
-+                        .lines()
-+                        .filter((line) => line === `config: the ${group} setter broke; ${KEPT}`)
-+                ).toHaveLength(1);
-+                expect(run.setters.hpc).toHaveBeenCalledTimes(2);
-+                expect(run.hub.size).toBe(subscribed);
-+            });
-+        }
-+    });
 +
 +    it('stops at start-up naming the key for a cadence of 0, a day window of -1 and a count of 501', () => {
 +        const cases: [string, string, number, string][] = [

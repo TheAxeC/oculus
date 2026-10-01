@@ -1,10 +1,10 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D35 (every configuration file live, `local.yml` included, by Z198), to be taken back out of its landing and prepared again; its patch keeps the reviewed work.
-- L4 (floating panes and kept empty panes), built; its review to run on a fresh reviewer.
-- Q66 (a hidden tab defers its work), builder stopped without a report; a fresh builder takes over its worktree.
-- Q35 (Changes, Customizations, Audit, Present), builder stopped mid-build; a fresh builder takes over its worktree.
+- D35 (every configuration file live, `local.yml` included, by Z198 and Axel's D35 redo ruling), taken back out of main; /spec prepares it again, builder at ordo-high.
+- L4 (floating panes and kept empty panes), built; review running on a fresh reviewer.
+- Q66 (a hidden tab defers its work), a continuation builder taking over the worktree.
+- Q35 (Changes, Customizations, Audit, Present), a continuation builder taking over the worktree.
 
 
 Three queued steps are kept prepared ahead (Z185).

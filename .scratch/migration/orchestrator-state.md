@@ -29,23 +29,6 @@ workers_at_once: 5           # Axel, 2026-10-01 18:49: five, to see the impact (
 
 ```yaml
 dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
-- step: D35
-  executor: agent
-  worker: claude:sonnet at ordo-medium for the backed-out build (Axel's effort experiment); the redo builder runs at ordo-high (plan.md:800)
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 19:56)
-  session_id: a9c7089e38094deba (launched 2026-10-01 19:55 local)
-  worktree: .agents/worktrees/D35
-  base: c44def15
-  launched: 2026-10-01 19:55 local
-  report: agents/reviews/D35-report.md
-  brief_check: agents/reviews/D35-brief-check.md, every finding closed in the brief (its Closed heading, Z174 amended and Z177 in automode); claude-sonnet-5-5, 279,072 tokens, 70 tool uses, 13.0 min
-  shared_paths: with D27, `context.ts` (D27 the findings list 250-253 and an import; D35 the comment 215-217, the hook target 239-240, the start of liveSettings after the pollers, `close()`), `config-key.ts` (D27 FINDERS 104-112 and an import; D35 line 232 and the function's parameters), `options.yml` (D27 a `languages` entry after `scan` at 509; D35 the descriptions at 124-262 and from 585), `DESIGN.md` (D27 85, 171, 379; D35 224-235) and `HELP.md` (D27 230; D35 216, 236), different lines, a simple merge with the import blocks read at the second landing; no path shared with U3; `docs/diagrams/`, regenerated at each landing
-  landing: backed-out
-  reviewer_report: agents/reviews/D35-refuter.md (first run, reviewer a5b43146ac6990bdc, claude-sonnet-5-5, launched 21:31; 308,262 tokens, 65 tool uses, 18.5 min; 3 Spec, 3 Proof, 3 Standards, 3 Behaviour)
-  cases: agents/briefs/D35-cases.md (round 0: the bounds' tests under tests/data rewritten to Z174, loadLocalOrDefaults' tests removed with it, the signature-following tests in the step)
-  builder_usage: first run of the cases 99,350 tokens, 88 tool uses, 19.1 min (0 full-list runs); the build to the report 123,962 tokens, 149 tool uses, 58.7 min (3 full-list runs: the first failed at npm test, the second at npm run test:checks, the third passed); round 1 260,642 tokens, 104 tool uses, 50.6 min (2 full-list runs: the first failed at npm run test:checks, the second passed)
-  round: 1 (agents/briefs/D35-round1.md, sent 21:54)
-  reviewer_report (round 1): agents/reviews/D35-refuter.md, Repair round 1 (reviewer a816f9f04f144459b, claude-sonnet-5-5, launched 22:48; 271,567 tokens, 79 tool uses, 29.9 min; 0 Spec, 4 Proof, 2 Standards, 1 Behaviour)
 - step: L4
   executor: agent
   worker: claude:sonnet
