@@ -321,6 +321,16 @@ export function createWrites(
     }
 
     /**
+     * Set one option of a tracked config file: the endpoint writes the value over the key's own
+     * bytes in `file` (`behavior.yml`) at the dotted `key` (`changes.keep`), and answers a refusal
+     * as `refused: [{ field: '<file>:<key>', reason }]` with nothing written. The change is
+     * recorded in History and can be taken back.
+     */
+    async function writeConfigKey(file: string, key: string, value: unknown): Promise<WriteAnswer> {
+        return send({ kind: 'config-key', file, key, value });
+    }
+
+    /**
      * Park one audit finding, or bring it back. The signature is the scan's own; the endpoint
      * writes it into the `audit_ignore:` list of config/behavior.yml and the watcher pushes the
      * scan again.
@@ -487,6 +497,7 @@ export function createWrites(
         newEntry,
         writeDeck,
         writeRail,
+        writeConfigKey,
         muteFinding,
         addMemory,
         newIdea,

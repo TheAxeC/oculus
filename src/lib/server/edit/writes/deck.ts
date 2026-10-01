@@ -46,11 +46,13 @@ export function deckLists(source: string): { selection: string[]; order: string[
 /**
  * The deck's two lists as the file holds them now. The check an undo makes reads the file rather
  * than the config the request was built with, so it answers what is on disk at the moment it asks.
+ * A file it may not read throws; one that is gone or does not parse gives null.
  */
 export function deckNow(config: PortfolioConfig): { selection: string[]; order: string[] } | null {
     try {
         return deckLists(readFileSync(config.deckFile, 'utf8'));
-    } catch {
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'EACCES') throw error;
         return null;
     }
 }

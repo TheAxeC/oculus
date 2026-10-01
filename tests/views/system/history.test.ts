@@ -101,7 +101,8 @@ describe('what an undo is said to have done', () => {
             ['moved', 'history.moved'],
             ['gone', 'history.gone'],
             ['unknown', 'history.unknown'],
-            ['nothing', 'history.nothing']
+            ['nothing', 'history.nothing'],
+            ['unwritable', 'history.unwritable']
         ]) {
             const outcome = undoSaid({ ok: false, changed: [], error: word }, 'x');
             expect(outcome).toEqual({ undone: false, said: catalog[key] });

@@ -4,7 +4,7 @@
 // The hub, the deck file and the change log are the fixture beside this file, all under the system
 // temporary directory, so no case here reaches ~/.oculus or the checkout.
 
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, describe } from 'vitest';
 import { parse } from 'yaml';
@@ -18,6 +18,7 @@ import {
     TASKS,
     TOKEN,
     changesOf,
+    configTarget,
     deckOf,
     deckTarget,
     hold,
@@ -562,5 +563,115 @@ describe('taking a manifest write back exactly', () => {
         expect(second.status).toBe(409);
         expect(await second.json()).toEqual({ error: 'moved' });
         expect(manifestOf(into)).toBe(empty);
+    });
+});
+
+describe('taking back a change whose file cannot be written', () => {
+    const LAYOUT = `rail:
+  - { label: "Focus", glyph: compass, page: focus }
+
+arrangements:
+  focus:
+    root: { kind: pane, view: focus }
+  inbox:
+    root: { kind: pane, view: inbox }
+`;
+
+    it('answers unwritable for a setting whose file has turned read-only', async () => {
+        const into = configTarget();
+        const body = { kind: 'config-key', file: 'behavior.yml', key: 'changes.keep', value: 300 };
+        expect((await handleWrite(request(body), TOKEN, into)).status).toBe(200);
+        const [change] = changesOf(into);
+        chmodSync(into.behaviorFile, 0o444);
+        const written = readFileSync(into.behaviorFile, 'utf8');
+
+        const response = await undone(into, change);
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: 'unwritable' });
+        expect(readFileSync(into.behaviorFile, 'utf8')).toBe(written);
+        expect(statSync(into.behaviorFile).mode & 0o777).toBe(0o444);
+        expect(changesOf(into)).toHaveLength(1);
+    });
+
+    it('answers unwritable for a setting whose file can no longer be read', async () => {
+        const into = configTarget();
+        const body = { kind: 'config-key', file: 'behavior.yml', key: 'changes.keep', value: 300 };
+        expect((await handleWrite(request(body), TOKEN, into)).status).toBe(200);
+        const [change] = changesOf(into);
+        chmodSync(into.behaviorFile, 0o000);
+        try {
+            const response = await undone(into, change);
+            expect(response.status).toBe(500);
+            expect(await response.json()).toEqual({ error: 'unwritable' });
+        } finally {
+            chmodSync(into.behaviorFile, 0o644);
+        }
+        expect(changesOf(into)).toHaveLength(1);
+    });
+
+    it('answers unwritable for a deck whose file has turned read-only', async () => {
+        const into = deckTarget();
+        const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
+        await handleWrite(
+            request({ kind: 'deck', selection: ['title', 'alpha'], order }),
+            TOKEN,
+            into
+        );
+        const body = { kind: 'deck', selection: ['closing'], order };
+        expect((await handleWrite(request(body), TOKEN, into)).status).toBe(200);
+        const [change] = changesOf(into);
+        chmodSync(into.config.deckFile, 0o444);
+        const written = deckOf(into);
+
+        const response = await undone(into, change);
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: 'unwritable' });
+        expect(deckOf(into)).toBe(written);
+    });
+
+    it('answers unwritable for a rail list whose file has turned read-only', async () => {
+        const into = { ...target(), glyphs: ['compass', 'inbox'] };
+        writeFileSync(into.layoutFile, LAYOUT);
+        const rail = [
+            { label: 'Focus', glyph: 'compass', page: 'focus' },
+            { label: 'Inbox', glyph: 'inbox', page: 'inbox' }
+        ];
+        expect((await handleWrite(request({ kind: 'rail', rail }), TOKEN, into)).status).toBe(200);
+        const [change] = changesOf(into);
+        chmodSync(into.layoutFile, 0o444);
+        const written = readFileSync(into.layoutFile, 'utf8');
+
+        const response = await undone(into, change);
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: 'unwritable' });
+        expect(readFileSync(into.layoutFile, 'utf8')).toBe(written);
+        expect(changesOf(into)).toHaveLength(1);
+    });
+    it('answers unwritable for a deck and a rail list whose file can no longer be read', async () => {
+        const deck = deckTarget();
+        const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
+        const picked = { kind: 'deck', selection: ['closing'], order };
+        expect((await handleWrite(request(picked), TOKEN, deck)).status).toBe(200);
+        const rails = { ...target(), glyphs: ['compass', 'inbox'] };
+        writeFileSync(rails.layoutFile, LAYOUT);
+        const rail = [
+            { label: 'Focus', glyph: 'compass', page: 'focus' },
+            { label: 'Inbox', glyph: 'inbox', page: 'inbox' }
+        ];
+        expect((await handleWrite(request({ kind: 'rail', rail }), TOKEN, rails)).status).toBe(200);
+        for (const [into, file] of [
+            [deck, deck.config.deckFile],
+            [rails, rails.layoutFile]
+        ] as const) {
+            const [change] = changesOf(into);
+            chmodSync(file, 0o000);
+            try {
+                const response = await undone(into, change);
+                expect(response.status).toBe(500);
+                expect(await response.json()).toEqual({ error: 'unwritable' });
+            } finally {
+                chmodSync(file, 0o644);
+            }
+        }
     });
 });

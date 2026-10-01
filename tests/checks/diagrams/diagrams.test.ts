@@ -490,6 +490,28 @@ describe('the write reader', () => {
         expect(dot).not.toContain('writes nothing');
     });
 
+    it('draws no arrow for a local that has the name of an import', () => {
+        const local = (body: string) =>
+            writesDot(
+                sources({
+                    ...base,
+                    'lib/server/edit/writes.ts': `import { saveOld } from './old.ts';\nexport function handleWrite() {\n${body}}\n`
+                })
+            );
+        expect(local('    return saveOld;\n')).toContain('lib/server/edit/old.ts');
+        const shadowed = local('    const saveOld = 1;\n    return saveOld;\n');
+        expect(shadowed).not.toContain('lib/server/edit/old.ts');
+        expect(shadowed).not.toContain('style=dotted');
+        for (const body of [
+            '    const { saveOld } = { saveOld: 1 };\n    return saveOld;\n',
+            '    const [saveOld] = [1];\n    return saveOld;\n',
+            '    return [1].map((saveOld) => saveOld);\n',
+            '    return [1].map(function (saveOld) { return saveOld; });\n'
+        ]) {
+            expect(local(body)).not.toContain('lib/server/edit/old.ts');
+        }
+    });
+
     it('follows a dispatch table to its writer and names the call it cannot follow', () => {
         const dot = writesDot(
             sources({

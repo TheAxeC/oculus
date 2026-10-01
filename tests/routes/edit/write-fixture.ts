@@ -4,11 +4,20 @@
 // anything is written, the overrides file, the reader's own bookmarks and the change log included,
 // so no case of either suite reaches ~/.oculus or the checkout.
 //
-// It is its own file because two suites are made over it: tests/routes/edit/write.test.ts, which is
-// what each write kind answers, and tests/routes/edit/undo.test.ts, which is what taking one of
-// them back writes.
+// It is its own file because the suites are made over it: tests/routes/edit/write.test.ts, which is
+// what each write kind answers, tests/routes/edit/undo.test.ts, which is what taking one of them
+// back writes, and the two config-key suites, which write a scratch copy of the engine's config
+// folder (`scratchEngine`) and never the checkout's.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+    copyFileSync,
+    existsSync,
+    mkdirSync,
+    readdirSync,
+    readFileSync,
+    writeFileSync
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import { parse } from 'yaml';
@@ -16,7 +25,7 @@ import { logChanges, readChanges } from '../../../src/lib/server/core/changes.ts
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { LOCAL_NAME, engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { Project, Tier } from '../../../src/lib/data/model/index.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { Change, ChangeLog, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
@@ -293,4 +302,48 @@ export function deckTarget(): WriteTarget {
 /** What the deck file of a target holds now. */
 export function deckOf(into: WriteTarget): string {
     return readFileSync(into.config.deckFile, 'utf8');
+}
+
+/**
+ * A folder copied file by file, the machine's own file left out by name before anything of it is
+ * read.
+ */
+function copyConfig(from: string, to: string): void {
+    mkdirSync(to, { recursive: true });
+    for (const entry of readdirSync(from, { withFileTypes: true })) {
+        if (entry.name === LOCAL_NAME) continue;
+        if (entry.isDirectory()) copyConfig(join(from, entry.name), join(to, entry.name));
+        else copyFileSync(join(from, entry.name), join(to, entry.name));
+    }
+}
+
+/**
+ * A scratch engine holding a copy of this checkout's tracked config/, the machine's own file left
+ * out, which is what a case of the config-key write is made over.
+ */
+export function scratchEngine(): string {
+    const engine = scratchDir('oculus-engine-');
+    expect(resolve(engine).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+    copyConfig(join(engineDir(), 'config'), join(engine, 'config'));
+    return engine;
+}
+
+/** One file of a scratch engine's config folder, by its path under config/. */
+export function engineFile(engine: string, name: string): string {
+    const file = join(engine, 'config', name);
+    expect(resolve(file).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+    return file;
+}
+
+/**
+ * The write target of a scratch engine: the synthetic hub and change log of `target()`, over an
+ * engine that is not the checkout, so the config-key write reads and writes the copy.
+ */
+export function configTarget(engine: string = scratchEngine()): WriteTarget {
+    return {
+        ...target(),
+        engine,
+        behaviorFile: engineFile(engine, 'behavior.yml'),
+        layoutFile: engineFile(engine, 'layout.yml')
+    };
 }

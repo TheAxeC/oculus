@@ -25,11 +25,12 @@ digraph layer_server {
         "folder server/git to folder server/core" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/git to folder server/edit" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/git to layer data" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/edit to folder server/content" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/edit to folder server/core" [label="17", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/edit to folder server/content" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/edit to folder server/core" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/files" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/edit to folder server/machine" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/sessions" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/edit to layer data" [label="26", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/edit to layer data" [label="30", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/machine to folder server/content" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/machine to folder server/core" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/machine to folder server/files" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -98,6 +99,8 @@ digraph layer_server {
     "folder server/edit to folder server/core" -> "folder server/core" [];
     "folder server/edit" -> "folder server/edit to folder server/files" [arrowhead=none, minlen=3, weight=10];
     "folder server/edit to folder server/files" -> "folder server/files" [];
+    "folder server/edit" -> "folder server/edit to folder server/machine" [arrowhead=none, minlen=1, weight=10];
+    "folder server/edit to folder server/machine" -> "folder server/machine" [];
     "folder server/edit" -> "folder server/edit to folder server/sessions" [arrowhead=none, minlen=3, weight=10];
     "folder server/edit to folder server/sessions" -> "folder server/sessions" [];
     "folder server/edit" -> "folder server/edit to layer data" [arrowhead=none, style=dashed];

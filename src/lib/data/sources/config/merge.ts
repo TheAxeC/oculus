@@ -97,16 +97,28 @@ function configNames(dir: string): string[] {
 }
 
 /**
+ * One file of the config folder read from this text instead of from the disk, named relative to
+ * config/ (`behavior.yml`). A write of one key merges the file as it would be after the edit with
+ * it, so precedence and the defined-twice finding are the merge's own.
+ */
+export type ReplacedFile = { name: string; text: string };
+
+/**
  * Merge root config files and catalog fragments into one map. Files are read in name order and
  * local.yml is not one of them. A duplicate top-level key or catalog leaf is a finding and the
  * later file wins. Invalid files are findings and contribute nothing; a missing config directory is
  * a finding and an empty map.
  *
+ * `instead` replaces what the disk holds of one file for this merge alone.
+ *
  * Every finding is worded after the merge, from the catalog the merge produced. A finding key that
  * catalog lacks (config/text/findings.yml itself does not parse, or there is no config directory to
  * hold it) is written as the key followed by its arguments, so the finding still names what broke.
  */
-export function loadConfig(engine: string): {
+export function loadConfig(
+    engine: string,
+    instead?: ReplacedFile
+): {
     config: Record<string, unknown>;
     findings: Finding[];
 } {
@@ -132,7 +144,8 @@ export function loadConfig(engine: string): {
         const file = join(dir, name);
         let parsed: unknown;
         try {
-            parsed = parse(readFileSync(file, 'utf8')) ?? {};
+            const text = instead?.name === name ? instead.text : readFileSync(file, 'utf8');
+            parsed = parse(text) ?? {};
         } catch (error) {
             const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
             pending.push({

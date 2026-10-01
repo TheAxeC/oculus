@@ -11,6 +11,7 @@ import {
     USAGE_RENEW_WAIT_MS,
     USAGE_WAIT_MS,
     hasPrompt,
+    requireRefreshSettings,
     sheetShown,
     usageSessionName,
     usageStartArgs,
@@ -531,5 +532,33 @@ describe('the screen read without its escapes', () => {
         expect(hasPrompt('\u001b[31m>\u001b[0m red')).toBe(true);
         expect(sheetShown('\u001b[1mcurrent \u001b[31mweek\u001b[0m')).toBe(true);
         expect(paneReason('\u001b[31mUsage limit\u001b[0m reached\n> ')).toBe('usage_limit');
+    });
+});
+
+describe('the settings the refresher requires', () => {
+    const sentenceMin = 'usage_refresh_min must be a positive number';
+    const sentenceModel = 'usage_refresh_model must not be empty';
+
+    it('accepts a positive number of minutes and a model with a name', () => {
+        expect(() => requireRefreshSettings({ refreshMin: 10, model: 'haiku' })).not.toThrow();
+        expect(() => requireRefreshSettings({ refreshMin: 0.5, model: ' x ' })).not.toThrow();
+    });
+
+    it('refuses a cadence that is not a positive number, and a model that is empty or not text', () => {
+        for (const refreshMin of [0, -1, Number.NaN, Number.POSITIVE_INFINITY, '10', undefined]) {
+            expect(() => requireRefreshSettings({ refreshMin, model: 'haiku' })).toThrow(
+                sentenceMin
+            );
+        }
+        for (const model of ['', '   ', undefined, 4]) {
+            expect(() => requireRefreshSettings({ refreshMin: 10, model })).toThrow(sentenceModel);
+        }
+    });
+
+    it('is the check the watcher starts with, so a bad setting starts no watcher', () => {
+        const stub = tmux();
+        expect(() => watcher(stub, { refreshMin: 0 })).toThrow(sentenceMin);
+        expect(() => watcher(stub, { model: '' })).toThrow(sentenceModel);
+        expect(stub.calls).toEqual([]);
     });
 });

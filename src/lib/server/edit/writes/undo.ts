@@ -27,6 +27,7 @@ import {
 } from '../feeds.ts';
 import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
 import { deckNow, writeDeck } from './deck.ts';
+import { configKeyNow, writeConfigKey } from './config-key.ts';
 import { railNow, writeRail } from './rail.ts';
 import { railRows } from '../../../data/sources/config/rail.ts';
 import {
@@ -55,12 +56,13 @@ import type { SubtaskTarget } from './subtasks.ts';
 import type { WriteOutcome, WriteTarget } from '../writes.ts';
 
 /**
- * Why an undo was not made, or the outcome of the write that made it. `refused` carries what the
- * writer would not write: an undo that changed no byte is a refusal and never an answer the page
- * can read as success, since the row would otherwise say the value is back when it is not.
+ * Why an undo was not made, or the outcome of the write that made it. `unwritable` is a file the
+ * writer could not read or write. `refused` carries what the writer would not write: an undo that
+ * changed no byte is a refusal and never an answer the page can read as success, since the row
+ * would otherwise say the value is back when it is not.
  */
 export type UndoOutcome =
-    | { error: 'unknown' | 'gone' | 'moved' | 'nothing' }
+    | { error: 'unknown' | 'gone' | 'moved' | 'nothing' | 'unwritable' }
     | { error: 'refused'; refused: WriteOutcome['refused'] }
     | WriteOutcome;
 
@@ -129,6 +131,7 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         const rail = railNow(into.layoutFile);
         return rail === null ? { found: false, value: null } : { found: true, value: rail };
     }
+    if (change.kind === 'config-key') return configKeyNow(into.engine, change.key, change.field);
     if (change.kind === 'subtask' || change.kind === 'subtask-add') {
         return subtaskValue(into.hub, into.config, subtaskTarget(into, change), change.field);
     }
@@ -183,19 +186,34 @@ function wordsOf(value: unknown): string[] {
  */
 export function undoChange(into: WriteTarget, change: Change): UndoOutcome {
     if (change.undo === 'none') return { error: 'nothing' };
-    const now = valueNow(into, change);
-    if (!now.found) return { error: 'gone' };
-    if (!same(now.value, change.after)) return { error: 'moved' };
-    const outcome = apply(into, change);
+    let outcome;
+    try {
+        const now = valueNow(into, change);
+        if (!now.found) return { error: 'gone' };
+        if (!same(now.value, change.after)) return { error: 'moved' };
+        outcome = apply(into, change);
+    } catch {
+        // The file is the reader's own and anything about it can go wrong on this machine; the
+        // answer is the one a write of the same file gives, and the file is left alone.
+        return UNWRITABLE;
+    }
     if (outcome === null) return { error: 'nothing' };
+    if ('error' in outcome) return outcome;
     // A writer that wrote no byte has not put the value back, whatever it said about the fields it
     // would not write, so the answer is a refusal and carries what it objected to.
     if (outcome.changed.length === 0) return { error: 'refused', refused: outcome.refused };
     return outcome;
 }
 
-/** The writer one change goes back through, or null when its kind has none. */
-function apply(into: WriteTarget, change: Change): WriteOutcome | null {
+/** The answer of an undo whose file could not be read or written. */
+const UNWRITABLE = { error: 'unwritable' } as const;
+
+/**
+ * The writer one change goes back through, or null when its kind has none. A writer that answers
+ * `unwritable` gives that answer; any other refusal word of a config writer leaves nothing to
+ * write.
+ */
+function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwritable' } | null {
     const { hub, config } = into;
     if (change.kind === 'manifest') {
         // The record holds the value the file had, so it is written as that value and not read as
@@ -235,11 +253,17 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | null {
             wordsOf(before.selection),
             wordsOf(before.order)
         );
-        return 'error' in outcome ? null : { found: true, ...outcome };
+        if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
+        return { found: true, ...outcome };
     }
     if (change.kind === 'rail') {
         const outcome = writeRail(into.layoutFile, railRows(change.before) ?? [], into.glyphs);
-        return 'error' in outcome ? null : { found: true, ...outcome };
+        if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
+        return { found: true, ...outcome };
+    }
+    if (change.kind === 'config-key') {
+        const outcome = writeConfigKey(into.engine, change.key, change.field, change.before);
+        return { found: true, ...outcome };
     }
     if (change.kind === 'subtask') {
         const target = subtaskTarget(into, change);

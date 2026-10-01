@@ -32,7 +32,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
 - step: U2
   executor: agent
   worker: claude:sonnet
-  session_id: (not launched; X3d and Q108 have landed; launches once S3b and Q109 have landed, since the builder takes every look on TEST while it runs and their landing looks may not run beside it)
+  session_id: (not launched; X3d and Q108 have landed; launches once Q109 has landed (S3b landed 06:36), since the builder takes every look on TEST while it runs and their landing looks may not run beside it)
   worktree: .agents/worktrees/U2
   base: 7e8eec33
   report: agents/reviews/U2-report.md (with U2-audit.md, U2-vscode.css and U2-shots/, copied to main's ledger on the report)
@@ -52,24 +52,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   diagnosis: agents/reviews/Q109-diagnosis.md (three diagnoses; the third by agent add169c371291c833, claude-opus-5-5, 188,283 tokens, 50 tool uses, 19.8 min)
   shared_paths: package.json and package-lock.json with X3d (X3d adds seti-ui on the line after perfect-debounce, Q109 removes perfect-debounce and adds lodash-es; the lock is regenerated with npm install at the second landing); DESIGN.md and HELP.md with X3d (Q109 writes DESIGN 116 and HELP 127 and 221, X3d other lines)
   builder_usage: 110,010 tokens, 253 tool uses, 98.6 min (report read at 05:23); repair round 1 273,047 tokens, 45 tool uses, 19.1 min (report read at 06:10)
-  reviewer_report: agents/reviews/Q109-refuter.md (reviewer a7e316a676da80877, launched 05:23, served claude-opus-5-5, 276,828 tokens, 82 tool uses, 18.1 min; no item violated, no case unmet, seven findings); over round 1: reviewer a656c8c3d8e744fab, launched 06:12, served claude-opus-5-5, running
+  reviewer_report: agents/reviews/Q109-refuter.md (reviewer a7e316a676da80877, launched 05:23, served claude-opus-5-5, 276,828 tokens, 82 tool uses, 18.1 min; no item violated, no case unmet, seven findings); over round 1: reviewer a656c8c3d8e744fab, launched 06:12, served claude-opus-5-5, 237,568 tokens, 61 tool uses, 17.5 min; no item violated, no case unmet, five findings, all for landing
   landing: not-started
   round: 1 (sent 05:42: agents/briefs/Q109-round1.md, eight rulings; the tree at the send is agents/reviews/Q109-round1-base.patch)
-- step: S3b
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 03:49)
-  session_id: a0416efd8565aca13 (launched 2026-10-01 03:49 local)
-  worktree: .agents/worktrees/S3b
-  base: 41177dcf
-  launched: 2026-10-01 03:49 local
-  report: agents/reviews/S3b-report.md
-  brief_check: agents/reviews/S3b-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 75 tool uses, 216,498 tokens, 11.0 min
-  shared_paths: DESIGN.md and HELP.md with X3d and Q109 (S3b writes DESIGN 313 and HELP 256; X3d DESIGN 373 and 389, HELP 112, 130, 176, 180 and 198; Q109 DESIGN 116, HELP 127 and 221); docs/diagrams regenerated at each landing; no two change the same line
-  builder_usage: first run (handed back at case 4) 317,363 tokens, 67 tool uses, 11.3 min; after the round-0 ruling 183,610 tokens, 147 tool uses, 47.9 min (report read at 04:37); repair round 1 350,291 tokens, 76 tool uses, 34.4 min (report read at 05:32)
-  reviewer_report: agents/reviews/S3b-refuter.md (reviewer ab5621edb5c166992, launched 04:37, served claude-opus-5-5, 250,936 tokens, 69 tool uses, 19.5 min; items 2, 5 and 7 violated, every case met); over round 1: reviewer ac4fce0c8fc2f70c7, launched 05:34, served claude-opus-5-5, 265,107 tokens, 61 tool uses, 16.7 min; item 7 violated (three stale line citations), every case met, findings for landing
-  landing: not-started
-  round: 1 (sent 04:59: agents/briefs/S3b-round1.md, ten rulings); round 0 sent 04:00: agents/briefs/S3b-cases.md, case 4's -0 moved to calendar.days_back, notifyConfig left out of the readers, DESIGN.md:313 lists config-key)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -638,6 +623,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 06:36. S3b landed (the `config-key` write), report `agents/reviews/S3b-landing.md`; six fixes at landing. Q109's round-1 review in (a656c8c3d8e744fab): no item violated, five findings, all for landing. Next: /land Q109; /spec Q85a2 and Q85a4 into the free slots; U2's builder after Q109's landing look. In flight: Q109 (landing next). Open: Z138.
 - 2026-10-01 06:19. X3d landed (Source Control as VS Code's, the Graph hang fix, the Seti icons, the lanes, renames in a group diff), report `agents/reviews/X3d-landing.md`; Z140 (2) and eight fixes at landing; the look's two differences already on main folded into U2 (Z142, automode). Next: /land S3b, then /spec Q85a2 into the free slot; Q109 to /land after its round-1 review; U2's builder after both landings, whose looks it would block. In flight: Q109 (round-1 review), S3b (landing next). Open: Z138.
 - 2026-10-01 05:42. Q109's review in (a7e316a676da80877): no item violated, no case unmet, seven findings; repair round 1 sent with eight rulings (the usage rebuilds coalesced to at most one waiting, the FROZEN exemption ended by one binding, two doc sentences and one catalog text made true, the DESIGN.md:116 git-watcher clause, the report's quotations). In flight: X3d (round-1 review), Q109 (round 1), S3b (round-1 review). Open: Z138.
 - 2026-10-01 05:34. S3b's round-1 report in (every ruling claimed done, checks 7 passed); its reviewer over round 1 launched (claude-opus-5-5). In flight: X3d (round-1 review), Q109 (review), S3b (round-1 review). Open: Z138.

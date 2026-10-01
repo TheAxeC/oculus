@@ -52,11 +52,13 @@ export function railLists(source: string): RailEntry[] {
     return railRows(mapOf(parsed)[RAIL]) ?? [];
 }
 
-/** The list the file holds now, or null when it cannot be read. */
+/** The list the file holds now, or null when it is gone or does not parse; a file it may not read
+ * throws. */
 export function railNow(file: string): RailEntry[] | null {
     try {
         return railLists(readFileSync(file, 'utf8'));
-    } catch {
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'EACCES') throw error;
         return null;
     }
 }

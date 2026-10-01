@@ -216,3 +216,253 @@ The widenings beyond the brief's paths, each read:
 - **The pre-existing DESIGN.md:116 opening.** "Each channel has one watcher module that ... debounces" is also untrue of the git watcher, which throttles (`server/root/watch/git.ts:232`). That was so before this diff and is outside the change.
 
 Reviewer usage: about 270,000 tokens, about 60 tool uses, about 35 minutes. None of these was measured exactly.
+
+## Repair round 1, refuted
+
+# Step Q109 refuter report, repair round 1 (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q109, base f5b3290b)
+
+Every path is under `/Users/axelfaes/workspace/research-hub/.agents/worktrees/Q109/tools/oculus/` unless it says otherwise.
+
+No item is violated and no case is unmet. All eight rulings are closed, and each closure reproduces when rerun. There are five findings, all small enough to fix at landing:
+- two untested lines in ruling 8's queue;
+- a doc comment that still makes the claim ruling 1 took out of the test name;
+- an unhandled rejection left in the queue's waiting path;
+- the bar's `own` prop and its arming argument, which neither a test nor a named look checks.
+
+One side effect outside the repo. My cleanup ran `rm` on `*.py`, `*.keep` and `checks.out` at the top level of the session scratchpad (`/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/`), which other agents of this session also use. Any such file another agent left there is gone. The builder's `mutr1.py`, which its report names, may have been one of them. No tracked file changed: `git status --short` lists the same 40 entries before and after.
+
+## Verification (rerun by the reviewer)
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
+exit=0   (git status --short unchanged afterwards; every file of the diff byte-identical to my copy taken before the run)
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md     exit=0
+(lines below are the output filtered by grep for the command and summary lines; the rest of vite's build output is elided)
+$ npm test
+ Test Files  355 passed | 20 skipped (375)
+      Tests  5555 passed | 580 skipped (6135)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  438 passed | 9 skipped (447)
+$ npm run check
+1790828145631 COMPLETED 2809 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+.svelte-kit/output/server/entries/fallbacks/error.svelte.js                                      2.77 kB | gzip:   1.15 kB
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+
+Verify 3:
+$ grep -rn perfect-debounce src tests package.json                      -> nothing, rc=1
+$ grep -rn "perfect-debounce\|es-toolkit" DESIGN.md README.md src        -> nothing, rc=1
+
+Verify 4:
+$ npx vitest run tests/server/root/watch tests/server/machine/usage tests/state/sessions/terminals.test.ts tests/checks/config tests/ui/theme tests/views/sessions tests/state/shared --testTimeout 0
+ Test Files  34 passed (34)
+      Tests  667 passed (667)
+
+Round delta: the round-1 tree was rebuilt in $TMPDIR (the base, from `git diff f5b3290b` reversed, plus Q109-round1-base.patch) and compared with `diff -ru` against the current files. Changed in the round: DESIGN.md (116, 361), config/catalogs/options.yml, src/lib/server/machine/usage/watch.ts, src/lib/state/shared/words/appearance.ts, tests/checks/tree/boundaries.test.ts, tests/server/machine/usage/watch.test.ts, tests/server/root/watch/probe.ts. Nothing else.
+
+Verify 5, on a scratch copy of the unchanged tree: the src/config files of the diff were put back to the base, pty-subscribe.ts was removed, constants-only shims were added for MAX_WAIT, USAGE_MAX_WAIT, RESIZE_WAIT and the exported DEBOUNCE, and main's node_modules (which has perfect-debounce) was used:
+ Test Files  10 failed | 4 passed (14);  Tests  52 failed | 263 passed (315)
+ per file: usage 3, bookmarks 2, local 2, portfolio 2, sessions 7, terminals 10, tones 1, theme 7, terminal-menu 7, terminal 11
+ (the round's "hands every refresh ..." test fails there too; "leaves at most one rebuild waiting ..." passes there, since perfect-debounce never rebuilt during writes)
+ The report's quoted failure lines reproduce verbatim for cases 2, 5, 6, 8 (drop), 10 (300 ms), 23, 26, 18 and 29.
+ Case 3's test and every case 14 to 17 test pass there.
+
+Ruling 8, the round's own tests, on the round-1 watch.ts in the current tests:
+ Tests  2 failed | 56 passed (58)
+ AssertionError: expected 6 to be 2 // Object.is equality
+ AssertionError: expected Promise{...} to be Promise{...} // Object.is equality
+Current code: Tests 58 passed (58).
+
+Mutations of usage/watch.ts, each alone, `npx vitest run tests/server/machine/usage`:
+ sharing removed (a new waiting chain per refresh):   2 failed (expected 6 to be 2; Promise not the same)
+ waiting rebuild started at once (overlap):           1 failed (expected 2 to be 1)
+ `waiting = null;` removed from `after`:               58 passed
+ `if (closed) return;` removed from build:            58 passed
+ `running = null` removed from `ended`:                58 passed (equivalent: the idle path goes through `waiting` one microtask later)
+Scratch test of a second waiting cycle (fold held; change; release; change; release; expect 3 folds):
+ current code: Tests 1 passed;  with `waiting = null;` removed: AssertionError: expected 2 to be 3
+Scratch test of a rejecting fold:
+ current code: "Unhandled Rejection  Error: fold-waiting  at build src/lib/server/machine/usage/watch.ts:86:34"; direct path silent; Tests 2 passed, Errors 1 error
+ round-1 code: Unhandled Rejection fold-direct and fold-waiting; Errors 2 errors
+
+Ruling 3: with 'lib/state/shared/words/appearance.ts:terminal', removed from FROZEN:
+ + "lib/state/shared/words/appearance.ts holds module-level state in terminal",  Tests 1 failed | 10 passed (11)
+$ grep -rn "terminalSettings\|terminalFont\b" src tests DESIGN.md (terminalFontPx excluded)  -> only ui.svelte.ts's own `terminalFont` (the browser store), none in appearance.ts
+
+Bar wiring and copy guard, each alone, `npx vitest run tests/views/sessions tests/views/whole/type-scale.test.ts`:
+ copySelection without `|| clipboard === undefined`:           Tests 438 passed (438)
+ Terminal.svelte menu={() => []}:                              Tests 438 passed (438)
+ Terminal.svelte arming argument replaced by false:            Tests 438 passed (438)
+ Terminal.svelte onpick={(pick) => void pick}:                 Tests 438 passed (438)
+ TerminalTitle.svelte read={() => []}:                          Tests 438 passed (438)
+ TerminalTitle.svelte `own` removed:                            Tests 438 passed (438)
+
+$ git diff f5b3290b -- tests | grep -E "^\+.*it\(['\"\`]audits that" | wc -l   -> 16  (and 0 removed), as the report says
+$ grep -rn "keeps the maximum wait\|quiet of 0" tests src DESIGN.md HELP.md README.md
+ tests/server/root/watch/probe.ts:245:/** An injected quiet of 0 runs a rebuild for each of three events 100 ms apart. */
+ tests/server/root/watch/probe.ts:262: * writes runs nothing more, an injected quiet of 0 keeps the maximum wait, and one longer than the
+```
+
+All scratch copies were removed after use.
+
+## Verdicts (whole diff since the base)
+
+Items of the brief's "What to build":
+
+- 1: **holds.**
+  - `subscribePty(id, size, onBytes)` is at `src/lib/state/sessions/terminals.svelte.ts:183` (type) and its body is below it.
+  - `createPtyOrder` is in `src/lib/state/sessions/terminal/pty-subscribe.ts` (read whole). It re-reads the size after each answer, counts a resize as answered at `RESIZE_WAIT = 2000`, chains the resizes per id through `tails`, and holds input through `hold`.
+  - `TerminalGrid.svelte` passes `() => ({ cols: term.cols, rows: term.rows })` after `fit.fit()`, and the `resized(wanted)` after the subscribe is gone.
+  - The case tests fail on the unchanged tree (verify 5 above).
+- 2: **holds.**
+  - All five watchers use lodash-es `debounce` with `maxWait`, and the constants are exported.
+  - The rename asked in ruling 1 is made (see the judgments below). Ruling 8's coalescing is correct by reading and by its two tests; see Proof 1, Proof 2 and Behaviour 1.
+- 3: **holds.**
+  - `TerminalTitle.svelte` wraps the name in `ContextMenu ... read={menu} own {onpick}`.
+  - `Terminal.svelte` passes `terminalRowMenu(tab, shownRow.terminal, others, arming === shownRow.terminal, t)` and routes picks through `routePick` with the one `handlers` object the list also gets.
+  - `joinInto` uses `instance.id` and `pageId()`, which are what the list received as `instance` and `page`.
+  - See Proof 4 on the wiring.
+- 4: **holds.**
+  - The four keys, `readTerminalOptions` and `terminalOptions()` are in place.
+  - Ruling 3's one binding is `src/lib/state/shared/words/appearance.ts:78`, `let terminal: { fontPx: number | null; options: TerminalOptions }`. It is written only by `setAppearance` (`:168`), and its readers keep their names and shapes.
+  - `gridOptions` takes an optional third parameter, and `followTerminalOptions` is in grid-look.ts.
+  - The catalog entries are there, and the `copy_on_selection` text is as ruling 6 words it.
+- 5: **holds.**
+  - DESIGN.md:116 names lodash's `debounce` with `maxWait`, limits the debounce to the five watchers, describes the usage queue, and says the git watcher throttles per root. That matches `touch` at `src/lib/server/root/watch/git.ts:231-245`.
+  - DESIGN.md:361 carries ruling 5's clause verbatim.
+  - README.md:13 names `lodash-es` (MIT).
+
+Cases of the brief's "Cases":
+
+- 1: **not verifiable here.** It is the look at landing, on the "Split tab downwards" move.
+- 2: **met.** "resizes the window to the grid before it asks for the channel" fails on the unchanged tree with `expected [] to deeply equal [ { action: 'resize', ...(3) } ]`.
+- 3: **met.** "asks for the channel when the resize is refused" passes before and after. `answered` treats any settle as an answer.
+- 4: **met.** "asks for nothing when the listener is taken off before the resize answered".
+- 5: **met.** "posts the grid size again when it changed while the resize was out ..." fails on the unchanged tree with `expected [] to have a length of 2 but got +0`.
+- 6: **met.** "asks for the channel at RESIZE_WAIT when the resize never answers".
+- 7: **met.** The second-subscribe test and the remount test.
+- 8: **met.** The hold test, and the drop test (`expected true to be false`).
+- 9: **met** by reading `TerminalGrid.svelte` (the mount and the subscribe call). The look of case 1 is its gate.
+- 10: **met.** The tests at 100, 300 and 450 ms fail on the unchanged tree (`the started terminal published in -1 ms`).
+- 11: **met.** The renamed-terminal test fails on the unchanged tree.
+- 12: **met.** The appended-prompts test fails on the unchanged tree.
+- 13: **met.** The `holdsQuietAndMaxWait` cases at 100 ms and at 0.9 quiet fail on the unchanged tree in all five files.
+- 14: **met.** Passes before and after.
+- 15: **met.** Passes before and after.
+- 16: **met.** Passes before and after. For usage, the rebuild pending is the debounce's, which `queued.cancel()` drops. See Proof 2 for a rebuild waiting behind a fold at close.
+- 17: **met.** The injected-0 and injected-long cases and `local.test.ts`'s 1500 ms case pass. The renamed injected-0 test now says what it asserts; see Proof 3 for its doc comment.
+- 18: **met** for the menu items (`terminalRowMenu`, an audit) and the shared routing.
+  - "draws the bar name directly inside the context menu trigger" fails on the unchanged tree.
+  - The right-click itself is the look and is not verifiable here; see Proof 4.
+- 19: **met** for the routing. The field opening is the look and is not verifiable here.
+- 20: **met** for the routing: "Kill arms on the first pick from the bar and kills on the second".
+- 21: **met** for the routing: "the Join pick is handed the terminal the bar shows and the one to move".
+- 22: **met.**
+- 23: **met.** `expected undefined to be 'bar'` on the unchanged tree.
+- 24: **met.**
+- 25: **met.**
+- 26: **met** for the function. The browser half is the look and is not verifiable here. See the judgment on the guard.
+- 27: **met.**
+- 28: **met** for `followTerminalOptions`. "calls no resize" rests on reading the effect in `TerminalGrid.svelte` (it calls only `followTerminalOptions`), and the report now says so. The re-run on a config push is the look and is not verifiable here.
+- 29: **met.** The first refuter reproduced red then green. The four entries are present and the catalog check passes in `npm run test:checks`.
+- 30: **met.** The greps print nothing. `npm ls perfect-debounce` was not rerun this round, and package.json and package-lock.json are unchanged since the first review.
+
+## The builder's three statements, and ruling 8
+
+1. **The unit word in ruling 1's rename.** The statement holds.
+   - The new name is ``it(`runs one ${what} for each event when the quiet is 0`, ...)`` at `tests/server/root/watch/probe.ts:306`.
+   - `what` is 'rebuild' in usage (`watch.test.ts:220`) and portfolio (`portfolio.test.ts:461`), 'message' in bookmarks (`:204`), 'call' in local (`:128`) and 'publish' in sessions (`sessions.test.ts:668`). In each file it names what that file's `count` counts, and every sibling test in the helper uses the same word.
+   - The ruling's purpose, a name that says what the test asserts, is met in all five files. The two that differ from the ruling's literal wording are still true. The builder said three, and that count is right: message, call and publish.
+   - The closure is incomplete: the helper's doc comment still makes the claim the rename removed (Proof 3).
+2. **The `clipboard === undefined` guard in `copySelection`.** The statement holds.
+   - My mutation run without the guard gives `Tests 438 passed (438)`.
+   - Behaviour does not depend on it: with no clipboard, `clipboard.writeText` throws a TypeError at once, and the `try`/`catch` at `src/lib/views/sessions/terminal/grid/grid-actions.ts` takes it. So the absent-clipboard half of case 26 is proved by the catch, and the guard is not a proof gap.
+   - The guard does narrow `SelectionClipboard | undefined` under `"strict": true` (tsconfig.json:12). Without it `clipboard.writeText` would not type-check. That is by reading; I did not run svelte-check on the mutation.
+   - It leaves no case unchecked.
+3. **The four bar-wiring mutations.** The statement holds, and a fifth passes too: `arming === shownRow.terminal` replaced by `false` (438 passed).
+   - Does it leave a case of the brief unchecked? No case as the brief words it.
+     - Case 18 gives "the right-click itself" to the look, and that look exercises `menu` and `read`.
+     - Case 19's look (Rename picked from the bar opens the field) exercises `onpick`.
+     - Cases 20 and 21 ask only for a test of the routing.
+   - Two wiring points are checked by neither a test nor a named look:
+     - `own`: whether a right-click on the bar also reaches a menu around it.
+     - The arming argument: the armed wording of Kill on the bar's menu after the first pick. Case 20's behaviour holds without it, since the shared `kill` handler holds the arm.
+   - See Proof 4.
+4. **Ruling 8's coalescing** (`src/lib/server/machine/usage/watch.ts:80-126`).
+   - **At most one rebuild waits behind a running one.** True. `refresh` creates `waiting` only when it is null, and every later call returns the same promise. When the running promise settles, `ended` runs before `after`: both are reactions on the same promise, registered in that order and queued together. So `running` is cleared and then set to the new run with no code in between.
+   - **The data published last is the latest.** True. `build` reads `now()` and the fold when it starts, and a waiting rebuild starts only after the running one ends, so after every refresh it absorbed. A refresh that comes after the waiting rebuild has started creates a new waiting one. The test covers one waiting cycle only (Proof 1).
+   - **A closed watcher stops.** A waiting rebuild that starts after close returns at `if (closed) return;` (`:84`). No test covers that path (Proof 2). A fold already running at close still publishes once after close. Base f5b3290b had the same `build`, so this is not this step's.
+   - **No rejection is left unhandled.** Not met. The waiting path leaves one, and the direct path drops a failure without a log (Behaviour 1).
+
+## 1. Spec
+
+None. The round's delta touches only the files its rulings name, and DESIGN.md:116 adds no claim the code does not bear out.
+
+## 2. Proof
+
+1. **The reset of `waiting` is untested.**
+   - Place: `src/lib/server/machine/usage/watch.ts:119-122`.
+   - The hunk: `const after = (): Promise<void> => { waiting = null; return start(); };`
+   - What is wrong:
+     - With `waiting = null;` removed, all 58 tests in `tests/server/machine/usage` pass.
+     - The round's test runs one waiting cycle only. My scratch test of a second cycle passes on the current code and fails without the line: `expected 2 to be 3`.
+   - Failure scenario: an edit drops the reset. After the first queued rebuild, every refresh made while a fold runs joins a promise that has already settled. The last change before the writes stop is then not published until the next event or the 60 s clock, and the test meant to guard "the last event's data is published" stays green.
+   - Fix at landing: add a second cycle to "leaves at most one rebuild waiting ...", or a test of its own.
+   - Verdict: none (item 2 holds).
+2. **No test closes the watcher while a rebuild waits behind a running fold.**
+   - Place: `src/lib/server/machine/usage/watch.ts:84`.
+   - The hunk: `if (closed) return;`
+   - What is wrong: removing the guard passes all 58 tests. The waiting path the round added is a new way for a rebuild to start after close. Ruling 8 asked that `closed` keep its meaning, and nothing proves it does on that path.
+   - Failure scenario: the guard is lost in an edit. A watcher closed during a slow fold with a rebuild queued then folds again and publishes to the hub after close.
+   - Verdict: none (case 16 is met for the debounce's pending rebuild).
+3. **The helper's doc comment still says the injected-0 case keeps the maximum wait.**
+   - Place: `tests/server/root/watch/probe.ts:262`.
+   - The hunk: ` * writes runs nothing more, an injected quiet of 0 keeps the maximum wait, and one longer than the`
+   - What is wrong: ruling 1 renamed the test because it asserts nothing about a maximum wait. This doc comment of `holdsQuietAndMaxWait`, the lines the case list of all five watcher files hangs on, still makes that claim. The closure reached the name and not the sentence beside it.
+   - Failure scenario: the one in the first report's Proof 1. A reader of the helper believes the injected-0 maximum wait is covered, and a change that derives `maxWait` from the injected quiet goes unnoticed.
+   - Fix at landing: "an injected quiet of 0 runs once per event".
+   - Verdict: none.
+4. **The bar's `own` and its arming argument rest on no test and no named look.**
+   - Place: `src/lib/views/sessions/terminal/TerminalTitle.svelte`, `<ContextMenu label={shown.title} read={menu} own {onpick}>`, and `src/lib/views/sessions/terminal/Terminal.svelte`, `arming === shownRow.terminal,`.
+   - What is wrong: five mutations of the wiring pass every view test (Verification). The report names four of them, and their coverage by the looks of cases 18 and 19 is right. The two points those looks do not reach are not named in the report's "What the green does not cover":
+     - `own` matters only where a menu wraps the bar;
+     - the arming argument decides the armed wording of Kill on the bar's second right-click.
+   - Failure scenario: `own` removed, or the arming argument set to a constant. At landing the right-click shows a menu and Rename opens the field, so the look passes. Either the outer menu opens too, or Kill on the bar never reads as armed.
+   - Fix at landing: the look of cases 18 and 20 includes a second right-click after Kill, and a right-click on the bar's name with the pane's own menu in mind.
+   - Verdict: none.
+
+## 3. Standards
+
+None. In the round's files, the only lines over 100 columns are test-name strings, which `format:check` accepts. DESIGN.md:116 and :361 now state what the code does, and the catalog text is true to its reader.
+
+## 4. Behaviour
+
+1. **A rebuild that rejects is unhandled on the waiting path and dropped silently on the direct path.**
+   - Place: `src/lib/server/machine/usage/watch.ts:102-126` with `:130` (`void refresh();`). The same `void` is at `src/lib/server/root/context.ts:268` (`onChange: () => void usage?.refresh()`).
+   - The hunk: `waiting = running.then(after, after);` ... `return waiting;`, and `run.then(ended, ended); return run;`
+   - What is wrong:
+     - On the waiting path, `waiting` adopts the new run's rejection, and no caller handles it. The scratch probe gives `Unhandled Rejection Error: fold-waiting at build src/lib/server/machine/usage/watch.ts:86:34`.
+     - On the direct path, `run` has the `ended` handler, so a failed build is swallowed with no log.
+     - Before the round, both paths left the rejection unhandled (scratch probe: two unhandled errors). So this is not a regression, but ruling 8 asked that no rejection be left unhandled, and the report states neither behaviour.
+   - Reachability: by reading, the fold's file reads and parses are caught (`foldFile`'s `try`/`catch` and `stores`' `realpathSync` `try`/`catch` in `src/lib/server/machine/usage/transcripts.ts`). I did not establish that nothing in `build` can throw (`usageAccounts`, `refresherFor`, `hub.publish`).
+   - Failure scenario: a build that throws while a rebuild waits. Under Node's default for unhandled rejections the server process ends. A build that throws with nothing waiting fails with no trace, and the usage channel goes stale with nothing logged.
+   - Fix at landing: one catch that logs, at `start` or at the two `void refresh()` callers, so both paths report and neither crashes.
+   - Verdict: none (item 2 holds).
+
+## Declined to judge
+
+- **The looks**: case 1, and the browser halves of cases 18, 19, 26 and 28. The orchestrator takes them at landing, as briefed.
+- **Whether a throw in the usage `build` is reachable in practice.** Settling it needs a probe of `usageAccounts` and `refresherFor` against a malformed account store, or a timed run on the real store. Neither is a read or a rerun of the step's checks.
+- **The type error from removing the `copySelection` guard.** I inferred it from `"strict": true` and did not run `npm run check` on that mutation.
+- **Pre-existing behaviour, outside this step**:
+  - a fold in flight at close publishes once after close (`build` checks `closed` only before its `await`; the same in base f5b3290b);
+  - `void mine.finally(...)` in `pty-subscribe.ts` would leave an unhandled rejection if `size()` or `subscribe()` threw. The first review accepted it, and the round does not touch it.
+
+Reviewer usage: about 226,000 tokens (from the context counter, not exact), about 45 tool uses, minutes not measured.

@@ -13,6 +13,17 @@ text:
             chat_name_focus: '{0}'
             seed_focus: "Ask about {0}: methods, results, what's next..."
             seed_portfolio: Ask about the portfolio, e.g. "what's blocked?", "summarise a project". Runs on your Claude Code / Max plan; I remember this conversation.
+        config_key:
+            local: local.yml is the machine's own file and is not written from here
+            no_entry: The options catalog has no option of that name in a tracked config file
+            not_single: This option is a list or a family, so it is not set one key at a time
+            not_boolean: This option takes true or false
+            not_number: This option takes a finite number
+            not_text: This option takes text
+            not_choice: 'This option takes one of: {0}'
+            not_parsed: The file does not parse
+            not_in_file: The file does not hold this key as a plain or quoted value
+            not_kept: The edit would change more than this one value, so the file is left as it is
         export:
             agent: 'Agent: {0}'
             assistant: Agent

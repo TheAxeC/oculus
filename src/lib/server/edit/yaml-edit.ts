@@ -386,9 +386,15 @@ function spliced(text: string, from: number, to: number, insert: string): Writte
  * Write a value over the bytes of an existing one. A list keeps the style the file has it in: a
  * flow list stays flow and a block list stays block, at its own indentation. An empty value
  * (`venue_id:` with nothing after it) is a zero-width range, so the rendering is inserted there and
- * given the space the colon has not got.
+ * given the space the colon has not got. `style` is the quoting a string is written in when the
+ * caller knows the node's own would not read back, as a plain string inside a flow map.
  */
-function replaceValue(text: string, node: Node, value: Exclude<FieldValue, null>): Written {
+export function replaceValue(
+    text: string,
+    node: Node,
+    value: Exclude<FieldValue, null>,
+    style?: string
+): Written {
     const range = rangeOf(node);
     if (range === null) return fail('the value has no place in the file');
     const start = range[0];
@@ -412,7 +418,7 @@ function replaceValue(text: string, node: Node, value: Exclude<FieldValue, null>
             : renderFlow(value, styles);
         if (value.length === 0) rendered = '[]';
     } else {
-        rendered = renderScalar(value, isScalar(node) ? node.type : undefined);
+        rendered = renderScalar(value, style ?? (isScalar(node) ? node.type : undefined));
         if (rendered.includes('\n')) return fail('the value does not fit on one line');
     }
     if (start === end && text[start - 1] !== ' ' && text[start - 1] !== '\n') {

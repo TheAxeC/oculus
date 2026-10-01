@@ -246,6 +246,71 @@ describe('the drawings the source gives', () => {
         expect(arrowsAlong(drawn.svg)).toEqual(['m->a along m->b for 64']);
     });
 
+    /** An svg of the arrows given, each `[id, title, path]`, and of the nodes of words given. */
+    function drawing(arrows: [string, string, string][], words: string[] = []): string {
+        const nodes = words.map(
+            (title, at) => `<g id="node${at + 1}" class="node">\n<title>${title}</title>\n</g>`
+        );
+        const edges = arrows.map(
+            ([id, title, path]) =>
+                `<g id="${id}" class="edge">\n<title>${title}</title>\n<path fill="none" stroke="currentColor" d="${path}"/>\n</g>`
+        );
+        return ['<svg>', ...nodes, ...edges, '</svg>'].join('\n');
+    }
+
+    const TOGETHER = 'M0,0C20,0 40,0 60,0C70,0 80,0 90,0';
+    const LEAVING = 'M0,0.5C20,0.5 40,0.5 60,0.5C70,0.5 80,20 90,40';
+
+    it('parts two arrows that reach one module from two modules', () => {
+        let draws = 0;
+        const together = drawing([
+            ['edge1', 'm&#45;&gt;j', TOGETHER],
+            ['edge2', 'n&#45;&gt;j', LEAVING]
+        ]);
+        const drawn = writesDrawn(ROUTE_ONLY, () => {
+            draws += 1;
+            return draws === 1 ? together : '<svg>\n</svg>';
+        });
+        expect(arrowsAlong(together)).toEqual(['m->j along n->j for 64']);
+        expect(draws).toBe(2);
+        expect(arrowsAlong(drawn.svg)).toEqual([]);
+    });
+
+    it('parts a plain arrow that runs along an arrow drawn through its words', () => {
+        let draws = 0;
+        const together = drawing(
+            [
+                ['edge1', 'm to d (calls)&#45;&gt;d', TOGETHER],
+                ['edge2', 'm&#45;&gt;j', LEAVING]
+            ],
+            ['m to d (calls)']
+        );
+        const drawn = writesDrawn(ROUTE_ONLY, () => {
+            draws += 1;
+            return draws === 1 ? together : '<svg>\n</svg>';
+        });
+        expect(arrowsAlong(together)).toEqual(['m to d (calls) along m->j for 64']);
+        expect(draws).toBe(2);
+        expect(arrowsAlong(drawn.svg)).toEqual([]);
+    });
+
+    it('leaves a pair of arrows drawn through their words, which a tail port cannot part', () => {
+        let draws = 0;
+        const together = drawing(
+            [
+                ['edge1', 'm to d (calls)&#45;&gt;d', TOGETHER],
+                ['edge2', 'm to e (calls)&#45;&gt;e', LEAVING]
+            ],
+            ['m to d (calls)', 'm to e (calls)']
+        );
+        writesDrawn(ROUTE_ONLY, () => {
+            draws += 1;
+            return together;
+        });
+        expect(arrowsAlong(together)).toEqual(['m to d (calls) along m to e (calls) for 64']);
+        expect(draws).toBe(1);
+    });
+
     it('have no two arrows running along each other in the write diagram', async () => {
         const drawn = (await engineDrawn()).find((one) => one.name === 'writes');
         const committed = readFileSync(resolve(ENGINE, 'docs/diagrams/writes.svg'), 'utf8');

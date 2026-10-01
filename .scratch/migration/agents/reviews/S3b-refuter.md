@@ -399,3 +399,13 @@ Cases (as ruled at round 0 where a ruling applies):
 - Whether `textCatalog(before.config)` at `config-key.ts:282`, outside any catch, should answer something other than `500 unwritable` when the current `text:` tree is not a map. That has been so since round 0, and the brief's item 3 covers only an exception reading or writing the file.
 
 Reviewer usage: tokens not visible to the reviewer; about 45 tool uses; time not measured.
+
+## Closed (findings of the run over repair round 1, at landing on main)
+
+- Spec 1, the malformed `config-key` body on `target()`: `tests/routes/edit/write.test.ts` builds that kind's target with `configTarget()`.
+- Spec 2, the deck branch of `apply`: kept, as the finding says.
+- Proof 1, the report's `HELP.md:256` row: the Before column gives the base's state.
+- Standards 1, three stale line citations: `DESIGN.md` reads `server/edit/writes.ts:89-90`, `writes/undo.ts:188`, `writes.svelte.ts:430-431`, recomputed after X3d's landing.
+- Behaviour 1, the History row worded "The undo was refused: unwritable": `history.unwritable` in `config/text/views/system/history.yml`, a branch in `sentenceFor` (`views/system/history/rows.ts`), the word in `tests/views/system/history.test.ts`, which failed first.
+- Behaviour 2, an unreadable file's undo answering `gone`: `configKeyNow`, `deckNow` and `railNow` throw on `EACCES`, and `undoChange` reads the current value inside its catch; two tests in `tests/routes/edit/undo.test.ts` failed first with `expected 404 to be 500`.
+- Behaviour 3, a destructured local or a parameter named like an import: `localsOf` in `utils/diagrams/writes.mjs` reads the body's syntax tree; four cases in `tests/checks/diagrams/diagrams.test.ts` failed first. `npm run diagrams` changed no committed diagram.

@@ -132,14 +132,26 @@ export function paneReason(screen: string): UsageRefreshReason {
 }
 
 /**
+ * The two settings the refresher cannot run without: a cadence that is a positive number of
+ * minutes and a model with a name. Values are taken as unknown so the config-key writer can hand it
+ * what the merged configuration holds; it is the one place the two checks are made.
+ */
+export function requireRefreshSettings(settings: { refreshMin: unknown; model: unknown }): void {
+    const { refreshMin, model } = settings;
+    if (typeof refreshMin !== 'number' || !Number.isFinite(refreshMin) || refreshMin <= 0) {
+        throw new Error('usage_refresh_min must be a positive number');
+    }
+    if (typeof model !== 'string' || model.trim() === '') {
+        throw new Error('usage_refresh_model must not be empty');
+    }
+}
+
+/**
  * Start the per-account queues and the configured cadence. Every tick starts and kills its own
  * session.
  */
 export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWatcher {
-    if (!Number.isFinite(options.refreshMin) || options.refreshMin <= 0) {
-        throw new Error('usage_refresh_min must be a positive number');
-    }
-    if (options.model.trim() === '') throw new Error('usage_refresh_model must not be empty');
+    requireRefreshSettings(options);
     const accounts = options.accounts.filter((account) => account.tool === 'claude');
     const exec = options.run ?? run;
     const now = options.now ?? Date.now;

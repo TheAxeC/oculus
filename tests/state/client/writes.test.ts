@@ -117,3 +117,24 @@ describe('a command posted to an endpoint', () => {
         });
     });
 });
+
+describe('a setting written by the page', () => {
+    it('is one POST to the write endpoint carrying the file, the key and the value', async () => {
+        const seen: { url: string; init: RequestInit | undefined }[] = [];
+        vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+            seen.push({ url, init });
+            return Promise.resolve(
+                Response.json({ ok: true, changed: ['behavior.yml:changes.keep'], refused: [] })
+            );
+        });
+        const writes = createWrites();
+        writes.setToken('tok');
+        const answer = await writes.writeConfigKey('behavior.yml', 'changes.keep', 300);
+        expect(seen).toHaveLength(1);
+        expect(seen[0].url).toBe('/api/write');
+        expect(seen[0].init?.method).toBe('POST');
+        const sent = { kind: 'config-key', file: 'behavior.yml', key: 'changes.keep', value: 300 };
+        expect(seen[0].init?.body).toBe(JSON.stringify(sent));
+        expect(answer.changed).toEqual(['behavior.yml:changes.keep']);
+    });
+});

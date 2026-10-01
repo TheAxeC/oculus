@@ -104,6 +104,12 @@ export type AuditMuteWrite = { kind: 'audit-mute'; signature: string; muted: boo
 /** The rail's whole list of pages, in order, each entry a label, a glyph name and a page key. */
 export type RailWrite = { kind: 'rail'; rail: { label: string; glyph: string; page: string }[] };
 
+/**
+ * One option of a tracked config file set to a value: the file's name, the dotted key path and the
+ * value, which the writer checks against the option's control.
+ */
+export type ConfigKeyWrite = { kind: 'config-key'; file: string; key: string; value: unknown };
+
 const ACTIONS: SubtaskAction[] = ['done', 'reopen', 'snooze', 'delete'];
 
 /** The `target` of a subtask body: `{ id }` for a manifest, `{ collection, id }` for an entry. */
@@ -348,4 +354,17 @@ export function railWrite(body: unknown): RailWrite | null {
         rail.push({ label, glyph, page });
     }
     return { kind: 'rail', rail };
+}
+
+/**
+ * The body as a config-key write, or null when it is not one: a file and a key that are non-empty
+ * strings and a value that is present, whatever it is. Whether the file and the key name an option
+ * and the value fits it is the writer's to say.
+ */
+export function configKeyWrite(body: unknown): ConfigKeyWrite | null {
+    if (!isMap(body) || body.kind !== 'config-key') return null;
+    if (typeof body.file !== 'string' || body.file === '') return null;
+    if (typeof body.key !== 'string' || body.key === '') return null;
+    if (!Object.hasOwn(body, 'value')) return null;
+    return { kind: 'config-key', file: body.file, key: body.key, value: body.value };
 }

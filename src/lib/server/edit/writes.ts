@@ -19,8 +19,11 @@
 //
 // The work is in the modules below it, one concern each: writes/manifest.ts for a project.yml and a
 // new idea, writes/entries.ts for a collection file, writes/subtasks.ts for a subtask line and a
-// career host, writes/bodies.ts for the ten body parsers. What an importer of this module needs of
-// them is re-exported here, so an importer may name this module or the one that holds the function.
+// career host, writes/bodies.ts for the body parsers (one per kind of write), and the writers of
+// the engine's own configuration files: writes/deck.ts for the deck, writes/audit-mute.ts for the
+// audit's mute list, writes/rail.ts for the rail list and writes/config-key.ts for one option of a
+// tracked config file. What an importer of this module needs of them is re-exported here, so an
+// importer may name this module or the one that holds the function.
 
 import { json } from '@sveltejs/kit';
 import { join } from 'node:path';
@@ -37,6 +40,7 @@ import { createIdea, writeManifest } from './writes/manifest.ts';
 import { writeDeck } from './writes/deck.ts';
 import { writeMute } from './writes/audit-mute.ts';
 import { writeRail } from './writes/rail.ts';
+import { writeConfigKey } from './writes/config-key.ts';
 import { glyphNames } from '../../data/sources/config/rail.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { careerRules, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
@@ -50,6 +54,7 @@ import {
 } from './feeds.ts';
 import {
     auditMuteWrite,
+    configKeyWrite,
     deckWrite,
     deleteEntryWrite,
     entryWrite,
@@ -158,8 +163,10 @@ export { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
 export { writeMute } from './writes/audit-mute.ts';
 export { writeRail } from './writes/rail.ts';
+export { writeConfigKey } from './writes/config-key.ts';
 export {
     auditMuteWrite,
+    configKeyWrite,
     deckWrite,
     deleteEntryWrite,
     entryWrite,
@@ -488,6 +495,19 @@ export async function handleWrite(
         return answer({ found: true, ...outcome }, 'rail', into);
     }
 
+    const setting = configKeyWrite(body);
+    if (setting !== null) {
+        let outcome;
+        try {
+            outcome = writeConfigKey(into.engine, setting.file, setting.key, setting.value);
+        } catch {
+            // The file is the reader's own configuration and anything about it can go wrong on this
+            // machine; the page is told which of the refusals it was and the file is left alone.
+            return json({ error: 'unwritable' }, { status: 500 });
+        }
+        return answer({ found: true, ...outcome }, 'config-key', into);
+    }
+
     const idea = newIdea(body);
     if (idea !== null) return answer(createIdea(into.hub, idea.fields), 'new-idea', into);
 
@@ -501,10 +521,9 @@ export async function handleWrite(
             if (outcome.error === 'refused') {
                 return json({ error: outcome.error, refused: outcome.refused }, { status: 400 });
             }
-            return json(
-                { error: outcome.error },
-                { status: outcome.error === 'moved' ? 409 : 404 }
-            );
+            const status =
+                outcome.error === 'moved' ? 409 : outcome.error === 'unwritable' ? 500 : 404;
+            return json({ error: outcome.error }, { status });
         }
         // The undo is a write like any other and is recorded like one, by the writer it went
         // through, so taking it back again is the row above it in the log.

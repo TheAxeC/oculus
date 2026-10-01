@@ -181,7 +181,7 @@ The comparison of `loadConfig`'s own findings before and after has no case of it
 | `loadConfig(engine)` | one argument | `loadConfig(engine, instead?)`; one argument behaves as before |
 | `watchUsageRefresh` | inline checks | calls `requireRefreshSettings`, same two sentences |
 | Server start-up with `usage_refresh_model` absent or not text | stopped with a `TypeError` from `options.model.trim()` | stops with "usage_refresh_model must not be empty" (`refresh.ts:145`) |
-| `HELP.md:256` | listed the audit mute among the recorded writes | says muting an audit finding is not recorded |
+| `HELP.md:256` | did not say whether muting an audit finding is recorded | says muting an audit finding goes through the write endpoint and is not recorded (corrected at landing: the earlier Before column described the round-0 state, not the base) |
 | `config/` files | | unchanged (V4); the writer is not run against the checkout |
 
 ## Findings

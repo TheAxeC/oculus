@@ -26,6 +26,7 @@ text:
         gone: What this write addressed is no longer in the hub.
         unknown: The change log no longer holds this write.
         nothing: This write cannot be taken back.
+        unwritable: The file cannot be written, so the earlier value was not put back.
         refused_write: The file would not take the earlier value back, so it was left alone.
         refused: 'The undo was refused: {0}'
         # One word per kind of write, so a row says what happened rather than the word the wire uses.
@@ -47,3 +48,4 @@ text:
         kind_new_idea: idea scaffolded
         kind_audit_mute: audit mute
         kind_rail: rail list
+        kind_config_key: setting

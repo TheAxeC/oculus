@@ -165,6 +165,8 @@ export type WritesStore = {
         rail: { label: string; glyph: string; page: string }[],
         said?: boolean
     ) => Promise<WriteAnswer>;
+    /** Set one option of a tracked config file, by its file name and dotted key path. */
+    writeConfigKey: (file: string, key: string, value: unknown) => Promise<WriteAnswer>;
     muteFinding: (signature: string, muted: boolean) => Promise<WriteAnswer>;
     addMemory: (name: string, data: string) => Promise<WriteAnswer>;
     newIdea: (fields: {

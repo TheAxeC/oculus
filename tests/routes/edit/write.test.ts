@@ -12,7 +12,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
-import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
+import { configKeyWrite, handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import { localDate } from '../../../src/lib/data/helpers/dates.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import {
@@ -23,6 +23,7 @@ import {
     MANIFEST,
     TOKEN,
     URL_,
+    configTarget,
     deckOf,
     deckTarget,
     manifestOf,
@@ -336,7 +337,8 @@ const MALFORMED: Record<string, unknown> = {
     'lead-add': { kind: 'lead-add', fields: 'not a map' },
     'linkedin-idea': { kind: 'linkedin-idea', title: 42, category: 'research' },
     'linkedin-post': { kind: 'linkedin-post', file: 42 },
-    'new-idea': { kind: 'new-idea', fields: { title: 'no id' } }
+    'new-idea': { kind: 'new-idea', fields: { title: 'no id' } },
+    'config-key': { kind: 'config-key', file: 'behavior.yml', key: 'changes.keep' }
 };
 
 describe('the kinds the write endpoint learned in P1', () => {
@@ -367,7 +369,7 @@ describe('the kinds the write endpoint learned in P1', () => {
 
     for (const [kind, body] of Object.entries(MALFORMED)) {
         it(`answers 400 for a malformed ${kind} body`, async () => {
-            const into = target();
+            const into = kind === 'config-key' ? configTarget() : target();
             const response = await handleWrite(request(body), TOKEN, into);
             expect(response.status).toBe(400);
             expect(await response.json()).toEqual({
@@ -692,5 +694,46 @@ describe('the deck write', () => {
         const again = await handleWrite(request(body), TOKEN, into);
         expect(await again.json()).toEqual({ ok: true, changed: [], refused: [] });
         expect(deckOf(into)).toBe(written);
+    });
+});
+
+describe('the config-key body', () => {
+    const GOOD_BODY = { kind: 'config-key', file: 'behavior.yml', key: 'changes.keep', value: 300 };
+
+    it('is read as the file, the key and the value, whatever the value is', () => {
+        expect(configKeyWrite(GOOD_BODY)).toEqual(GOOD_BODY);
+        expect(configKeyWrite({ ...GOOD_BODY, value: null })).toEqual({
+            ...GOOD_BODY,
+            value: null
+        });
+        expect(configKeyWrite({ ...GOOD_BODY, value: [1] })).toEqual({ ...GOOD_BODY, value: [1] });
+    });
+
+    it('is not a write when the value is missing, the file or the key is empty or not a string', () => {
+        const { value: _value, ...without } = GOOD_BODY;
+        for (const body of [
+            without,
+            { ...GOOD_BODY, file: '' },
+            { ...GOOD_BODY, file: 7 },
+            { ...GOOD_BODY, key: '' },
+            { ...GOOD_BODY, key: ['changes', 'keep'] },
+            { ...GOOD_BODY, key: undefined },
+            { ...GOOD_BODY, kind: 'config_key' },
+            'config-key',
+            null
+        ]) {
+            expect(configKeyWrite(body)).toBeNull();
+        }
+    });
+
+    it('answers 400 for a body that is not a write, whatever it is missing', async () => {
+        const { value: _value, ...without } = GOOD_BODY;
+        for (const body of [without, { ...GOOD_BODY, file: '' }, { ...GOOD_BODY, key: 3 }]) {
+            const response = await handleWrite(request(body), TOKEN, configTarget());
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({
+                error: 'the body is not a write this route knows'
+            });
+        }
     });
 });

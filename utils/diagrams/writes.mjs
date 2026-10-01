@@ -17,6 +17,7 @@
 // one reached through a computed member.
 
 import { posix } from 'node:path';
+import ts from 'typescript';
 import { arrowsAlong, labelledEdge } from './labels.mjs';
 import { parseReader } from './parsed.mjs';
 import {
@@ -185,6 +186,36 @@ function refusals(/** @type {string} */ body) {
 /** An import or re-export statement, however many lines it spans. */
 const STATEMENT = /(?:^|\n)\s*(?:import|export)\s[^;]*?\sfrom\s*'[^']*';?/g;
 
+/**
+ * The names a body declares for itself: each variable, destructured one included, each parameter,
+ * and each function and class it names, read from the body's syntax tree.
+ *
+ * @param {string} body
+ * @returns {Set<string>}
+ */
+function localsOf(body) {
+    const names = new Set();
+    /** @param {ts.BindingName} name */
+    const bind = (name) => {
+        if (ts.isIdentifier(name)) names.add(name.text);
+        else
+            for (const element of name.elements)
+                if (!ts.isOmittedExpression(element)) bind(element.name);
+    };
+    /** @param {ts.Node} node */
+    const walk = (node) => {
+        if (ts.isVariableDeclaration(node) || ts.isParameter(node)) bind(node.name);
+        else if (
+            (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+            node.name !== undefined
+        )
+            names.add(node.name.text);
+        ts.forEachChild(node, walk);
+    };
+    walk(ts.createSourceFile('body.ts', body, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS));
+    return names;
+}
+
 /** A call the reader cannot follow: through a computed member, or a method of an imported value. */
 const COMPUTED = /(?<![\w$.])([\w$]+(?:\.[\w$]+)*\[[^\]\n]*\])\s*\(/g;
 const METHOD = /(?<![\w$.])([\w$]+)\.([\w$]+)\s*\(/g;
@@ -347,6 +378,9 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map(), read 
         const body = fn === null ? whole : (held.decls.get(fn) ?? '');
         const offset = fn === null ? 0 : held.text.indexOf(body);
         const aliases = new Map([...held.aliases, ...aliasesIn(body)]);
+        // A name the body declares for itself is that local, so it is no call or reference of an
+        // import of the same name.
+        const locals = localsOf(body);
         const named = (/** @type {string} */ name) => unalias(name, aliases);
         const refused = new Set(
             refusals(body).flatMap((condition) => [...callsIn(condition)].map(named))
@@ -414,13 +448,15 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map(), read 
                 if (FS_WRITE.test(real)) edge(path, DISK, real);
                 continue;
             }
-            if (held.imports.names.has(name)) follow(name, refused.has(name) ? 'refuses' : 'calls');
+            if (held.imports.names.has(name) && !locals.has(name)) {
+                follow(name, refused.has(name) ? 'refuses' : 'calls');
+            }
         }
         for (const match of body.matchAll(/(?<![\w$.])([A-Za-z_$][\w$]*)(?![\w$])(?!\s*\()/g)) {
             const name = match[1];
             if (name === fn || called.has(name)) continue;
             if (held.decls.has(name)) queue.push([path, name]);
-            else if (held.imports.names.has(name)) follow(name, 'refers');
+            else if (held.imports.names.has(name) && !locals.has(name)) follow(name, 'refers');
         }
         for (const match of body.matchAll(METHOD)) {
             member(match[1], match[2], match.index, match[0]);
@@ -483,18 +519,21 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map(), read 
 const RANKSEP = 0.8;
 
 /**
- * The tail ports writesDrawn() tries, in order, for a plain arrow that runs along another arrow of
- * its module: the sides beside the east side a left-to-right arrow leaves by.
+ * The tail ports writesDrawn() tries, in order, for a plain arrow that runs along another arrow:
+ * the sides beside the east side a left-to-right arrow leaves by.
  */
 const PORTS = ['se', 's', 'ne', 'n'];
 
 /**
- * The write diagram drawn, with no two plain arrows of one module running along each other where
- * a tail port can part them: while arrowsAlong() names such a pair, the later arrow of the pair (by
- * name) is given the next tail port of PORTS and the diagram is drawn again. It stops when no such
- * pair is left or the arrow has tried every port, so what it cannot part stays for the check to
- * name. Two arrows from one module leave it at one point, and when their heads lie in one
- * direction the router lays them together for as long as they head that way.
+ * The write diagram drawn, with no two arrows running along each other where a tail port can part
+ * them: while arrowsAlong() names a pair, the later plain arrow of the pair (by name) is given the
+ * next tail port of PORTS and the diagram is drawn again. A plain arrow joins two modules directly;
+ * an arrow drawn through its words or its calls is not one, so a pair of a plain arrow and another
+ * kind is parted by the plain one. The pair may leave one module or reach one: two arrows from one
+ * module leave it at one point and two arrows into one module reach it at one point, and when their
+ * heads lie in one direction the router lays them together for as long as they head that way. It
+ * stops when no pair is left whose plain arrow has a port it has not tried, so what it cannot part
+ * stays for the check to name.
  *
  * @param {Sources} sources
  * @param {(dot: string) => string} draw The renderer, DOT to SVG.
@@ -505,21 +544,17 @@ const PORTS = ['se', 's', 'ne', 'n'];
 export function writesDrawn(sources, draw, route = WRITE_ROUTE, read = parseReader()) {
     /** @type {Map<string, string>} */
     const ports = new Map();
+    /** The index in PORTS of the port the arrow takes next; PORTS.length when it has tried all. */
+    const nextPort = (/** @type {string} */ arrow) => PORTS.indexOf(ports.get(arrow) ?? '') + 1;
     for (;;) {
         const dot = writesDot(sources, route, ports, read);
         const svg = draw(dot);
-        const pair = arrowsAlong(svg)
+        const arrow = arrowsAlong(svg)
             .map((line) => /^(.*) along (.*) for \d+$/.exec(line)?.slice(1) ?? [])
-            .find(([one, other]) => {
-                const plain = [one, other].every(
-                    (arrow) => arrow !== undefined && !arrow.includes(' to ')
-                );
-                return plain && one.split('->')[0] === other.split('->')[0];
-            });
-        const next =
-            pair === undefined ? PORTS.length : PORTS.indexOf(ports.get(pair[1]) ?? '') + 1;
-        if (pair === undefined || next >= PORTS.length) return { dot, svg };
-        ports.set(pair[1], PORTS[next]);
+            .map((pair) => pair.reverse().find((one) => !one.includes(' to ')))
+            .find((one) => one !== undefined && nextPort(one) < PORTS.length);
+        if (arrow === undefined) return { dot, svg };
+        ports.set(arrow, PORTS[nextPort(arrow)]);
     }
 }
 

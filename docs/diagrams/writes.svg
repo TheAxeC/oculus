@@ -1,493 +1,517 @@
-<svg width="1183pt" height="542pt"
- viewBox="0.00 0.00 1183.00 542.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="1183pt" height="615pt"
+ viewBox="0.00 0.00 1183.00 615.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <style>svg { color: #333333; } @media (prefers-color-scheme: dark) { svg { color: #cccccc; background: #1e1e1e; } }</style>
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 538.24)">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 611.32)">
 <title>writes</title>
 <g id="clust1" class="cluster">
 <title>cluster_lib/server/core</title>
-<polygon fill="none" stroke="currentColor" points="710.19,-327 710.19,-423 908.68,-423 908.68,-327 710.19,-327"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="809.43" y="-408.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">lib/server/core</text>
+<polygon fill="none" stroke="currentColor" points="710.19,-399.58 710.19,-495.58 908.68,-495.58 908.68,-399.58 710.19,-399.58"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="809.43" y="-480.78" font-family="Helvetica,Arial,sans-serif" font-size="12.00">lib/server/core</text>
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_lib/server/edit</title>
-<polygon fill="none" stroke="currentColor" points="141.2,-428 141.2,-488 434.78,-488 434.78,-428 141.2,-428"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="287.99" y="-473.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">lib/server/edit</text>
+<polygon fill="none" stroke="currentColor" points="141.2,-499.58 141.2,-559.58 434.78,-559.58 434.78,-499.58 141.2,-499.58"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="287.99" y="-544.78" font-family="Helvetica,Arial,sans-serif" font-size="12.00">lib/server/edit</text>
 </g>
 <g id="clust3" class="cluster">
 <title>cluster_lib/server/edit/writes</title>
-<polygon fill="none" stroke="currentColor" points="133.31,-98 133.31,-262 657.37,-262 657.37,-98 133.31,-98"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="395.34" y="-247.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">lib/server/edit/writes</text>
+<polygon fill="none" stroke="currentColor" points="133.31,-133.58 133.31,-333.58 657.37,-333.58 657.37,-133.58 133.31,-133.58"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="395.34" y="-318.78" font-family="Helvetica,Arial,sans-serif" font-size="12.00">lib/server/edit/writes</text>
 </g>
 <g id="clust4" class="cluster">
 <title>cluster_lib/server/files/fs</title>
-<polygon fill="none" stroke="currentColor" points="699.37,-237 699.37,-297 796.68,-297 796.68,-237 699.37,-237"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="748.02" y="-282.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">lib/server/files/fs</text>
+<polygon fill="none" stroke="currentColor" points="699.37,-309.58 699.37,-369.58 796.68,-369.58 796.68,-309.58 699.37,-309.58"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="748.02" y="-354.78" font-family="Helvetica,Arial,sans-serif" font-size="12.00">lib/server/files/fs</text>
 </g>
 <g id="clust5" class="cluster">
 <title>cluster_lib/server/sessions</title>
-<polygon fill="none" stroke="currentColor" points="348.29,-360 348.29,-420 452.28,-420 452.28,-360 348.29,-360"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="400.28" y="-405.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">lib/server/sessions</text>
+<polygon fill="none" stroke="currentColor" points="348.29,-431.58 348.29,-491.58 452.28,-491.58 452.28,-431.58 348.29,-431.58"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="400.28" y="-476.78" font-family="Helvetica,Arial,sans-serif" font-size="12.00">lib/server/sessions</text>
 </g>
 <g id="clust6" class="cluster">
 <title>cluster_routes/api/write</title>
-<polygon fill="none" stroke="currentColor" points="0,-428 0,-488 91.31,-488 91.31,-428 0,-428"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="45.66" y="-473.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">routes/api/write</text>
+<polygon fill="none" stroke="currentColor" points="0,-499.58 0,-559.58 91.31,-559.58 91.31,-499.58 0,-499.58"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="45.66" y="-544.78" font-family="Helvetica,Arial,sans-serif" font-size="12.00">routes/api/write</text>
 </g>
 <g id="clust7" class="cluster">
 <title>cluster_lost</title>
-<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="261.08,-8 261.08,-68 538.48,-68 538.48,-8 261.08,-8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-53.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">not placed</text>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="261.08,-65.58 261.08,-125.58 538.48,-125.58 538.48,-65.58 261.08,-65.58"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-110.78" font-family="Helvetica,Arial,sans-serif" font-size="12.00">not placed</text>
 </g>
 <!-- lib/server/core/auth.ts -->
 <g id="node1" class="node">
 <title>lib/server/core/auth.ts</title>
-<polygon fill="none" stroke="currentColor" points="774.52,-392.8 720.52,-392.8 720.52,-371.2 774.52,-371.2 774.52,-392.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="747.52" y="-379" font-family="Helvetica,Arial,sans-serif" font-size="10.00">auth.ts</text>
+<polygon fill="none" stroke="currentColor" points="774.52,-465.38 720.52,-465.38 720.52,-443.78 774.52,-443.78 774.52,-465.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="747.52" y="-451.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">auth.ts</text>
 </g>
 <!-- lib/server/core/changes.ts -->
 <g id="node2" class="node">
 <title>lib/server/core/changes.ts</title>
-<polygon fill="none" stroke="currentColor" points="776.85,-356.8 718.19,-356.8 718.19,-335.2 776.85,-335.2 776.85,-356.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="747.52" y="-343" font-family="Helvetica,Arial,sans-serif" font-size="10.00">changes.ts</text>
+<polygon fill="none" stroke="currentColor" points="776.85,-429.38 718.19,-429.38 718.19,-407.78 776.85,-407.78 776.85,-429.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="747.52" y="-415.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">changes.ts</text>
 </g>
 <!-- lib/server/core/json.ts -->
 <g id="node3" class="node">
 <title>lib/server/core/json.ts</title>
-<polygon fill="none" stroke="currentColor" points="900.68,-356.8 846.68,-356.8 846.68,-335.2 900.68,-335.2 900.68,-356.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="873.68" y="-343" font-family="Helvetica,Arial,sans-serif" font-size="10.00">json.ts</text>
+<polygon fill="none" stroke="currentColor" points="900.68,-429.38 846.68,-429.38 846.68,-407.78 900.68,-407.78 900.68,-429.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="873.68" y="-415.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">json.ts</text>
 </g>
 <!-- lib/server/core/changes.ts&#45;&gt;lib/server/core/json.ts -->
 <g id="edge3" class="edge">
 <title>lib/server/core/changes.ts&#45;&gt;lib/server/core/json.ts: chained, writeTextAtomic</title>
-<path fill="none" stroke="currentColor" d="M777.32,-346C795.78,-346 819.83,-346 839.15,-346"/>
-<polygon fill="currentColor" stroke="currentColor" points="839.06,-348.1 845.06,-346 839.06,-343.9 839.06,-348.1"/>
+<path fill="none" stroke="currentColor" d="M777.32,-418.58C795.78,-418.58 819.83,-418.58 839.15,-418.58"/>
+<polygon fill="currentColor" stroke="currentColor" points="839.06,-420.68 845.06,-418.58 839.06,-416.48 839.06,-420.68"/>
 </g>
 <!-- lib/server/core/changes.ts to file on disk (calls) -->
-<g id="node18" class="node">
+<g id="node19" class="node">
 <title>lib/server/core/changes.ts to file on disk (calls)</title>
-<polygon fill="none" stroke="none" points="1055.09,-408.24 958.68,-408.24 958.68,-395.76 1055.09,-395.76 1055.09,-408.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1006.88" y="-399.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">appendFileSync, mkdirSync</text>
+<polygon fill="none" stroke="none" points="1055.09,-455.82 958.68,-455.82 958.68,-443.34 1055.09,-443.34 1055.09,-455.82"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1006.88" y="-447.18" font-family="Helvetica,Arial,sans-serif" font-size="8.00">appendFileSync, mkdirSync</text>
 </g>
 <!-- lib/server/core/changes.ts&#45;&gt;lib/server/core/changes.ts to file on disk (calls) -->
 <g id="edge1" class="edge">
 <title>lib/server/core/changes.ts&#45;&gt;lib/server/core/changes.ts to file on disk (calls)</title>
-<path fill="none" stroke="currentColor" d="M777.05,-352.21C825.86,-362.83 925,-384.4 975.24,-395.33"/>
+<path fill="none" stroke="currentColor" d="M777.18,-424.61C796.69,-428.53 823.15,-433.47 846.68,-436.58 884.07,-441.52 926.66,-444.88 958.38,-446.94"/>
 </g>
 <!-- lib/server/core/json.ts to file on disk (calls) -->
-<g id="node19" class="node">
+<g id="node20" class="node">
 <title>lib/server/core/json.ts to file on disk (calls)</title>
-<polygon fill="none" stroke="none" points="1027.32,-371.24 986.45,-371.24 986.45,-358.76 1027.32,-358.76 1027.32,-371.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1006.88" y="-362.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">mkdirSync</text>
+<polygon fill="none" stroke="none" points="1027.32,-426.82 986.45,-426.82 986.45,-414.34 1027.32,-414.34 1027.32,-426.82"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1006.88" y="-418.18" font-family="Helvetica,Arial,sans-serif" font-size="8.00">mkdirSync</text>
 </g>
 <!-- lib/server/core/json.ts&#45;&gt;lib/server/core/json.ts to file on disk (calls) -->
 <g id="edge4" class="edge">
 <title>lib/server/core/json.ts&#45;&gt;lib/server/core/json.ts to file on disk (calls)</title>
-<path fill="none" stroke="currentColor" d="M900.91,-349.8C926.04,-353.44 963.4,-358.85 986.11,-362.14"/>
+<path fill="none" stroke="currentColor" d="M900.91,-418.98C926.04,-419.36 963.4,-419.93 986.11,-420.28"/>
 </g>
 <!-- lib/server/edit/feeds.ts -->
 <g id="node4" class="node">
 <title>lib/server/edit/feeds.ts</title>
-<polygon fill="none" stroke="currentColor" points="426.78,-457.8 372.78,-457.8 372.78,-436.2 426.78,-436.2 426.78,-457.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-444" font-family="Helvetica,Arial,sans-serif" font-size="10.00">feeds.ts</text>
+<polygon fill="none" stroke="currentColor" points="426.78,-529.38 372.78,-529.38 372.78,-507.78 426.78,-507.78 426.78,-529.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-515.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">feeds.ts</text>
 </g>
 <!-- lib/server/edit/feeds.ts&#45;&gt;lib/server/core/changes.ts -->
 <g id="edge8" class="edge">
 <title>lib/server/edit/feeds.ts&#45;&gt;lib/server/core/changes.ts: plain</title>
-<path fill="none" stroke="currentColor" d="M427.11,-445.46C474.97,-441.82 578.59,-430.1 657.37,-394 678.22,-384.44 679.15,-374.85 699.37,-364 703.12,-361.98 707.16,-360.08 711.23,-358.33"/>
-<polygon fill="currentColor" stroke="currentColor" points="711.92,-360.31 716.67,-356.09 710.32,-356.43 711.92,-360.31"/>
+<path fill="none" stroke="currentColor" d="M427.23,-515.39C455.17,-511.69 500.39,-504.77 538.48,-494.58 555.63,-489.99 656.22,-452.5 711,-431.94"/>
+<polygon fill="currentColor" stroke="currentColor" points="711.47,-434.01 716.35,-429.94 710,-430.08 711.47,-434.01"/>
 </g>
 <!-- lib/server/edit/feeds.ts&#45;&gt;lib/server/core/json.ts -->
 <g id="edge9" class="edge">
 <title>lib/server/edit/feeds.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
-<path fill="none" stroke="currentColor" d="M427.2,-455.18C493.68,-474.17 671.49,-514.93 796.68,-451 832.43,-432.74 855.26,-388.94 865.81,-364.07"/>
-<polygon fill="currentColor" stroke="currentColor" points="867.68,-365.04 868.01,-358.7 863.79,-363.45 867.68,-365.04"/>
+<path fill="none" stroke="currentColor" d="M427.78,-507.78C435.06,-500.5 787.03,-476.17 796.68,-472.58 819.44,-464.1 841.63,-447 856.1,-434.31"/>
+<polygon fill="currentColor" stroke="currentColor" points="857.25,-436.1 860.31,-430.53 854.45,-432.97 857.25,-436.1"/>
 </g>
 <!-- lib/server/edit/writes/entries.ts -->
-<g id="node8" class="node">
+<g id="node9" class="node">
 <title>lib/server/edit/writes/entries.ts</title>
-<polygon fill="none" stroke="currentColor" points="645.92,-195.8 591.92,-195.8 591.92,-174.2 645.92,-174.2 645.92,-195.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="618.92" y="-182" font-family="Helvetica,Arial,sans-serif" font-size="10.00">entries.ts</text>
+<polygon fill="none" stroke="currentColor" points="645.92,-303.38 591.92,-303.38 591.92,-281.78 645.92,-281.78 645.92,-303.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="618.92" y="-289.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">entries.ts</text>
 </g>
 <!-- lib/server/edit/feeds.ts&#45;&gt;lib/server/edit/writes/entries.ts -->
 <g id="edge10" class="edge">
 <title>lib/server/edit/feeds.ts&#45;&gt;lib/server/edit/writes/entries.ts: saved</title>
-<path fill="none" stroke="currentColor" d="M427.11,-450.34C457.97,-452.67 508.67,-451.33 538.48,-423 611.17,-353.93 530,-284.45 588.48,-203 588.94,-202.37 589.42,-201.75 589.93,-201.16"/>
-<polygon fill="currentColor" stroke="currentColor" points="591.09,-202.95 594,-197.3 588.2,-199.9 591.09,-202.95"/>
+<path fill="none" stroke="currentColor" d="M427.21,-521.16C457.46,-522.63 506.89,-520.35 538.48,-494.58 596.67,-447.11 612.4,-351.14 616.52,-310.95"/>
+<polygon fill="currentColor" stroke="currentColor" points="618.61,-311.14 617.08,-304.97 614.43,-310.75 618.61,-311.14"/>
 </g>
 <!-- lib/server/edit/feeds.ts to file on disk (calls) -->
-<g id="node20" class="node">
+<g id="node21" class="node">
 <title>lib/server/edit/feeds.ts to file on disk (calls)</title>
-<polygon fill="none" stroke="none" points="1029.53,-498.24 984.23,-498.24 984.23,-485.76 1029.53,-485.76 1029.53,-498.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1006.88" y="-489.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">renameSync</text>
+<polygon fill="none" stroke="none" points="1029.53,-512.82 984.23,-512.82 984.23,-500.34 1029.53,-500.34 1029.53,-512.82"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1006.88" y="-504.18" font-family="Helvetica,Arial,sans-serif" font-size="8.00">renameSync</text>
 </g>
 <!-- lib/server/edit/feeds.ts&#45;&gt;lib/server/edit/feeds.ts to file on disk (calls) -->
 <g id="edge6" class="edge">
 <title>lib/server/edit/feeds.ts&#45;&gt;lib/server/edit/feeds.ts to file on disk (calls)</title>
-<path fill="none" stroke="currentColor" d="M427.09,-456.15C463.02,-468.12 529.69,-488.45 588.48,-496 738.71,-515.29 921.85,-500.42 984.03,-494.31"/>
+<path fill="none" stroke="currentColor" d="M427.17,-518.05C528.4,-516.05 890.83,-508.86 983.95,-507.01"/>
 </g>
 <!-- lib/server/edit/writes.ts -->
 <g id="node5" class="node">
 <title>lib/server/edit/writes.ts</title>
-<polygon fill="none" stroke="currentColor" points="203.2,-457.8 149.2,-457.8 149.2,-436.2 203.2,-436.2 203.2,-457.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="176.2" y="-444" font-family="Helvetica,Arial,sans-serif" font-size="10.00">writes.ts</text>
+<polygon fill="none" stroke="currentColor" points="203.2,-529.38 149.2,-529.38 149.2,-507.78 203.2,-507.78 203.2,-529.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="176.2" y="-515.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">writes.ts</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/core/changes.ts -->
 <g id="edge13" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/core/changes.ts: changeAt, defaultChangesPath, logChanges, pathOf</title>
-<path fill="none" stroke="currentColor" d="M203.41,-454.12C219.84,-458.21 241.53,-462.93 261.08,-465 383.68,-478.01 417.45,-488.51 538.48,-465 594.42,-454.13 611.74,-451.13 657.37,-417 681.43,-399 675.13,-381.77 699.37,-364 702.98,-361.35 707.04,-359.04 711.21,-357.04"/>
-<polygon fill="currentColor" stroke="currentColor" points="711.78,-359.08 716.44,-354.75 710.1,-355.23 711.78,-359.08"/>
+<path fill="none" stroke="currentColor" d="M203.41,-525.7C219.84,-529.78 241.53,-534.5 261.08,-536.58 383.68,-549.58 418.64,-565.53 538.48,-536.58 596.21,-522.63 608.73,-509.66 657.37,-475.58 678.23,-460.96 677.74,-450.03 699.37,-436.58 702.99,-434.32 706.94,-432.28 710.96,-430.44"/>
+<polygon fill="currentColor" stroke="currentColor" points="711.66,-432.42 716.36,-428.14 710.02,-428.56 711.66,-432.42"/>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/feeds.ts -->
 <g id="edge14" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/feeds.ts: addLead, addLinkedinIdea, deleteFeedEntry, markLinkedinPosted, writeFeedField</title>
-<path fill="none" stroke="currentColor" d="M203.48,-447C243.8,-447 320.86,-447 365.18,-447"/>
-<polygon fill="currentColor" stroke="currentColor" points="365.01,-449.1 371.01,-447 365.01,-444.9 365.01,-449.1"/>
+<path fill="none" stroke="currentColor" d="M203.48,-518.58C243.8,-518.58 320.86,-518.58 365.18,-518.58"/>
+<polygon fill="currentColor" stroke="currentColor" points="365.01,-520.68 371.01,-518.58 365.01,-516.48 365.01,-520.68"/>
 </g>
 <!-- lib/server/edit/writes/audit&#45;mute.ts -->
 <g id="node6" class="node">
 <title>lib/server/edit/writes/audit&#45;mute.ts</title>
-<polygon fill="none" stroke="currentColor" points="211.08,-127.8 141.31,-127.8 141.31,-106.2 211.08,-106.2 211.08,-127.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="176.2" y="-114" font-family="Helvetica,Arial,sans-serif" font-size="10.00">audit&#45;mute.ts</text>
+<polygon fill="none" stroke="currentColor" points="211.08,-163.38 141.31,-163.38 141.31,-141.78 211.08,-141.78 211.08,-163.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="176.2" y="-149.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">audit&#45;mute.ts</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/audit&#45;mute.ts -->
 <g id="edge17" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/audit&#45;mute.ts: writeMute</title>
-<path fill="none" stroke="currentColor" d="M168.81,-436.05C146.92,-402.19 85.53,-296.28 112.31,-210 121.65,-179.91 144.47,-150.93 160.14,-133.53"/>
-<polygon fill="currentColor" stroke="currentColor" points="161.61,-135.04 164.13,-129.2 158.52,-132.19 161.61,-135.04"/>
+<path fill="none" stroke="currentColor" d="M169.07,-507.3C148.51,-473.36 91.82,-369.13 112.31,-281.58 122.36,-238.65 148.9,-193.63 164.42,-169.78"/>
+<polygon fill="currentColor" stroke="currentColor" points="166.1,-171.06 167.65,-164.9 162.59,-168.74 166.1,-171.06"/>
+</g>
+<!-- lib/server/edit/writes/config&#45;key.ts -->
+<g id="node7" class="node">
+<title>lib/server/edit/writes/config&#45;key.ts</title>
+<polygon fill="none" stroke="currentColor" points="434.66,-251.38 364.9,-251.38 364.9,-229.78 434.66,-229.78 434.66,-251.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-237.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">config&#45;key.ts</text>
+</g>
+<!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/config&#45;key.ts -->
+<g id="edge18" class="edge">
+<title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/config&#45;key.ts: writeConfigKey</title>
+<path fill="none" stroke="currentColor" d="M177.47,-507.35C179.05,-468.69 189.69,-339.88 261.08,-274.58 287.04,-250.83 326.92,-243 357.1,-240.72"/>
+<polygon fill="currentColor" stroke="currentColor" points="357.18,-242.82 363.03,-240.34 356.91,-238.62 357.18,-242.82"/>
 </g>
 <!-- lib/server/edit/writes/deck.ts -->
-<g id="node7" class="node">
+<g id="node8" class="node">
 <title>lib/server/edit/writes/deck.ts</title>
-<polygon fill="none" stroke="currentColor" points="426.78,-127.8 372.78,-127.8 372.78,-106.2 426.78,-106.2 426.78,-127.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-114" font-family="Helvetica,Arial,sans-serif" font-size="10.00">deck.ts</text>
+<polygon fill="none" stroke="currentColor" points="426.78,-215.38 372.78,-215.38 372.78,-193.78 426.78,-193.78 426.78,-215.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-201.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">deck.ts</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/deck.ts -->
-<g id="edge18" class="edge">
+<g id="edge19" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/deck.ts: writeDeck</title>
-<path fill="none" stroke="currentColor" d="M179.14,-435.98C187.57,-389.26 222.32,-208.05 261.08,-167 288.48,-137.98 334.03,-125.75 365.18,-120.63"/>
-<polygon fill="currentColor" stroke="currentColor" points="365.27,-122.74 370.88,-119.76 364.63,-118.59 365.27,-122.74"/>
+<path fill="none" stroke="currentColor" d="M178.72,-507.36C185.67,-458.1 215.91,-261.59 261.08,-222.58 289.55,-198 334.45,-196.69 365.19,-199.42"/>
+<polygon fill="currentColor" stroke="currentColor" points="364.61,-201.47 370.79,-199.99 365.03,-197.29 364.61,-201.47"/>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/entries.ts -->
-<g id="edge19" class="edge">
+<g id="edge20" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/entries.ts: createEntry, removeEntry, reorderCollection, writeEntry</title>
-<path fill="none" stroke="currentColor" d="M179.96,-435.74C187.54,-407.32 211.52,-332.38 261.08,-296 362.55,-221.52 423.22,-289.56 538.48,-239 563.56,-228 565.67,-218.15 588.48,-203 589.97,-202.01 591.5,-201.01 593.06,-200.02"/>
-<polygon fill="currentColor" stroke="currentColor" points="593.86,-202 597.82,-197.02 591.62,-198.44 593.86,-202"/>
+<path fill="none" stroke="currentColor" d="M182.09,-507.48C192.85,-484.47 220.81,-431.45 261.08,-404.58 366.67,-334.12 420.28,-382.85 538.48,-336.58 558.27,-328.83 579.23,-317.05 594.66,-307.63"/>
+<polygon fill="currentColor" stroke="currentColor" points="595.63,-309.5 599.62,-304.55 593.41,-305.93 595.63,-309.5"/>
 </g>
 <!-- lib/server/edit/writes/manifest.ts -->
-<g id="node9" class="node">
+<g id="node10" class="node">
 <title>lib/server/edit/writes/manifest.ts</title>
-<polygon fill="none" stroke="currentColor" points="649.37,-231.8 588.48,-231.8 588.48,-210.2 649.37,-210.2 649.37,-231.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="618.92" y="-218" font-family="Helvetica,Arial,sans-serif" font-size="10.00">manifest.ts</text>
+<polygon fill="none" stroke="currentColor" points="649.37,-267.38 588.48,-267.38 588.48,-245.78 649.37,-245.78 649.37,-267.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="618.92" y="-253.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">manifest.ts</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/manifest.ts -->
-<g id="edge20" class="edge">
+<g id="edge21" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/manifest.ts: createIdea, writeManifest</title>
-<path fill="none" stroke="currentColor" d="M181.72,-435.92C191.95,-412.46 219.26,-357.86 261.08,-333 368.05,-269.42 426.06,-348.35 538.48,-295 566.33,-281.79 591.01,-255.26 605.21,-237.82"/>
-<polygon fill="currentColor" stroke="currentColor" points="606.58,-239.48 608.67,-233.47 603.29,-236.86 606.58,-239.48"/>
+<path fill="none" stroke="currentColor" d="M204.2,-507.78C260.59,-451.38 198.7,-387.27 261.08,-337.58 309.53,-298.99 480.53,-332.43 538.48,-310.58 564.1,-300.92 565.67,-289.73 588.48,-274.58 589.97,-273.59 591.5,-272.59 593.06,-271.59"/>
+<polygon fill="currentColor" stroke="currentColor" points="593.86,-273.57 597.82,-268.6 591.62,-270.02 593.86,-273.57"/>
 </g>
 <!-- lib/server/edit/writes/rail.ts -->
-<g id="node10" class="node">
+<g id="node11" class="node">
 <title>lib/server/edit/writes/rail.ts</title>
-<polygon fill="none" stroke="currentColor" points="426.78,-195.8 372.78,-195.8 372.78,-174.2 426.78,-174.2 426.78,-195.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-182" font-family="Helvetica,Arial,sans-serif" font-size="10.00">rail.ts</text>
+<polygon fill="none" stroke="currentColor" points="426.78,-163.38 372.78,-163.38 372.78,-141.78 426.78,-141.78 426.78,-163.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-149.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">rail.ts</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/rail.ts -->
-<g id="edge21" class="edge">
+<g id="edge22" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/rail.ts: writeRail</title>
-<path fill="none" stroke="currentColor" d="M177.21,-435.75C177.91,-396.44 185.97,-264.34 261.08,-203 290.09,-179.31 334.59,-177.74 365.11,-180.17"/>
-<polygon fill="currentColor" stroke="currentColor" points="364.87,-182.26 371.04,-180.72 365.26,-178.08 364.87,-182.26"/>
+<path fill="none" stroke="currentColor" d="M204.2,-507.78C306.71,-405.26 162.05,-292.46 261.08,-186.58 287.55,-158.27 333.52,-151.92 365.01,-151.23"/>
+<polygon fill="currentColor" stroke="currentColor" points="364.79,-153.33 370.77,-151.17 364.75,-149.13 364.79,-153.33"/>
 </g>
 <!-- lib/server/edit/writes/subtasks.ts -->
-<g id="node11" class="node">
+<g id="node12" class="node">
 <title>lib/server/edit/writes/subtasks.ts</title>
-<polygon fill="none" stroke="currentColor" points="429.95,-231.8 369.61,-231.8 369.61,-210.2 429.95,-210.2 429.95,-231.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-218" font-family="Helvetica,Arial,sans-serif" font-size="10.00">subtasks.ts</text>
+<polygon fill="none" stroke="currentColor" points="429.95,-303.38 369.61,-303.38 369.61,-281.78 429.95,-281.78 429.95,-303.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-289.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">subtasks.ts</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/subtasks.ts -->
-<g id="edge22" class="edge">
+<g id="edge23" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/subtasks.ts: careerRules, writeHost, writeSubtask, writeSubtaskAdd</title>
-<path fill="none" stroke="currentColor" d="M179.51,-435.91C186.41,-405.53 209.63,-320.1 261.08,-273 289.44,-247.04 332.02,-233.63 362.31,-226.99"/>
-<polygon fill="currentColor" stroke="currentColor" points="362.42,-229.11 367.87,-225.83 361.57,-225 362.42,-229.11"/>
+<path fill="none" stroke="currentColor" d="M176.2,-506.78C176.2,-413.4 187.12,-371.59 261.08,-314.58 289.72,-292.51 331.8,-288.7 361.9,-289.36"/>
+<polygon fill="currentColor" stroke="currentColor" points="361.7,-291.45 367.77,-289.56 361.85,-287.25 361.7,-291.45"/>
 </g>
 <!-- lib/server/edit/writes/undo.ts -->
-<g id="node12" class="node">
+<g id="node13" class="node">
 <title>lib/server/edit/writes/undo.ts</title>
-<polygon fill="none" stroke="currentColor" points="203.2,-231.8 149.2,-231.8 149.2,-210.2 203.2,-210.2 203.2,-231.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="176.2" y="-218" font-family="Helvetica,Arial,sans-serif" font-size="10.00">undo.ts</text>
+<polygon fill="none" stroke="currentColor" points="203.2,-303.38 149.2,-303.38 149.2,-281.78 203.2,-281.78 203.2,-303.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="176.2" y="-289.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">undo.ts</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/undo.ts -->
-<g id="edge23" class="edge">
+<g id="edge24" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/undo.ts: undoChange</title>
-<path fill="none" stroke="currentColor" d="M176.2,-436.08C176.2,-370.46 176.2,-304.83 176.2,-239.21"/>
-<polygon fill="currentColor" stroke="currentColor" points="178.3,-239.55 176.2,-233.55 174.1,-239.55 178.3,-239.55"/>
+<path fill="none" stroke="currentColor" d="M184.17,-313.59C204.25,-356 250.23,-455.34 203.2,-507.78"/>
+<polygon fill="currentColor" stroke="currentColor" points="184.49,-309.34 180.04,-304.81 180.69,-311.13 184.49,-309.34"/>
 </g>
 <!-- lib/server/files/fs/bookmarks.ts -->
-<g id="node13" class="node">
+<g id="node14" class="node">
 <title>lib/server/files/fs/bookmarks.ts</title>
-<polygon fill="none" stroke="currentColor" points="782.96,-266.8 712.08,-266.8 712.08,-245.2 782.96,-245.2 782.96,-266.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="747.52" y="-253" font-family="Helvetica,Arial,sans-serif" font-size="10.00">bookmarks.ts</text>
+<polygon fill="none" stroke="currentColor" points="782.96,-339.38 712.08,-339.38 712.08,-317.78 782.96,-317.78 782.96,-339.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="747.52" y="-325.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">bookmarks.ts</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/files/fs/bookmarks.ts -->
-<g id="edge24" class="edge">
+<g id="edge25" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/files/fs/bookmarks.ts: defaultBookmarksPath</title>
-<path fill="none" stroke="currentColor" d="M183.82,-435.79C196.19,-416.01 224.86,-375.3 261.08,-357 371.86,-301.05 417.3,-351.79 538.48,-325 601,-311.18 671.21,-285.72 711.99,-269.89"/>
-<polygon fill="currentColor" stroke="currentColor" points="712.54,-271.93 717.36,-267.79 711.01,-268.02 712.54,-271.93"/>
+<path fill="none" stroke="currentColor" d="M183.92,-507.55C196.45,-488.08 225.35,-447.83 261.08,-428.58 371.17,-369.27 416.15,-407.48 538.48,-381.58 596.56,-369.28 662.91,-351.77 704.75,-340.29"/>
+<polygon fill="currentColor" stroke="currentColor" points="705.07,-342.38 710.3,-338.76 703.95,-338.33 705.07,-342.38"/>
 </g>
 <!-- lib/server/sessions/overrides.ts -->
-<g id="node14" class="node">
+<g id="node15" class="node">
 <title>lib/server/sessions/overrides.ts</title>
-<polygon fill="none" stroke="currentColor" points="431.61,-389.8 367.95,-389.8 367.95,-368.2 431.61,-368.2 431.61,-389.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-376" font-family="Helvetica,Arial,sans-serif" font-size="10.00">overrides.ts</text>
+<polygon fill="none" stroke="currentColor" points="431.61,-461.38 367.95,-461.38 367.95,-439.78 431.61,-439.78 431.61,-461.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-447.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">overrides.ts</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/sessions/overrides.ts -->
-<g id="edge25" class="edge">
+<g id="edge26" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/sessions/overrides.ts: setFlag, setOverride</title>
-<path fill="none" stroke="currentColor" d="M203.48,-438.93C242.44,-426.98 315.72,-404.49 360.59,-390.72"/>
-<polygon fill="currentColor" stroke="currentColor" points="360.98,-392.8 366.1,-389.03 359.74,-388.78 360.98,-392.8"/>
+<path fill="none" stroke="currentColor" d="M203.48,-510.51C242.44,-498.55 315.72,-476.07 360.59,-462.3"/>
+<polygon fill="currentColor" stroke="currentColor" points="360.98,-464.38 366.1,-460.61 359.74,-460.36 360.98,-464.38"/>
 </g>
 <!-- lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses) -->
-<g id="node21" class="node">
+<g id="node22" class="node">
 <title>lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)</title>
-<polygon fill="none" stroke="none" points="423.99,-534.24 375.57,-534.24 375.57,-521.76 423.99,-521.76 423.99,-534.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-525.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">tokenedBody</text>
+<polygon fill="none" stroke="none" points="423.99,-600.82 375.57,-600.82 375.57,-588.34 423.99,-588.34 423.99,-600.82"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-592.18" font-family="Helvetica,Arial,sans-serif" font-size="8.00">tokenedBody</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses) -->
 <g id="edge11" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M195.63,-458.19C212.26,-467.91 237.65,-481.84 261.08,-491 300.04,-506.24 347.57,-517.48 375.38,-523.36"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M189.18,-529.68C204.56,-543.22 232.66,-565.64 261.08,-576.58 299.33,-591.3 347.5,-594.41 375.55,-594.83"/>
 </g>
 <!-- lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses) -->
-<g id="node22" class="node">
+<g id="node23" class="node">
 <title>lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses)</title>
-<polygon fill="none" stroke="none" points="197.52,-508.24 154.87,-508.24 154.87,-495.76 197.52,-495.76 197.52,-508.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="176.2" y="-499.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">isFeedKind</text>
+<polygon fill="none" stroke="none" points="197.52,-579.82 154.87,-579.82 154.87,-567.34 197.52,-567.34 197.52,-579.82"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="176.2" y="-571.18" font-family="Helvetica,Arial,sans-serif" font-size="8.00">isFeedKind</text>
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses) -->
 <g id="edge15" class="edge">
 <title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses)</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M176.2,-458.17C176.2,-470.61 176.2,-483.05 176.2,-495.49"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M176.2,-529.75C176.2,-542.19 176.2,-554.63 176.2,-567.07"/>
 </g>
 <!-- lib/server/edit/writes/audit&#45;mute.ts&#45;&gt;lib/server/core/json.ts -->
-<g id="edge27" class="edge">
+<g id="edge28" class="edge">
 <title>lib/server/edit/writes/audit&#45;mute.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
-<path fill="none" stroke="currentColor" d="M211.21,-107.99C226.36,-104.43 244.49,-100.76 261.08,-99 379.45,-86.44 701.79,-36.12 796.68,-108 867.29,-161.49 873.61,-281.12 873.27,-327.3"/>
-<polygon fill="currentColor" stroke="currentColor" points="871.17,-327.25 873.18,-333.29 875.37,-327.32 871.17,-327.25"/>
+<path fill="none" stroke="currentColor" d="M183.25,-141.58C195.09,-121.38 223.47,-78.94 261.08,-62.58 481.97,33.5 629.74,28.08 796.68,-145.58 867.08,-218.82 873.35,-351.54 873.15,-400.12"/>
+<polygon fill="currentColor" stroke="currentColor" points="871.05,-399.89 873.08,-405.92 875.25,-399.94 871.05,-399.89"/>
 </g>
 <!-- ? src/lib/server/edit/writes/audit&#45;mute.ts:68 -->
-<g id="node16" class="node">
+<g id="node17" class="node">
 <title>? src/lib/server/edit/writes/audit&#45;mute.ts:68</title>
-<polygon fill="none" stroke="currentColor" points="530.48,-37.8 269.08,-37.8 269.08,-16.2 530.48,-16.2 530.48,-37.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-24" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/audit&#45;mute.ts:68 SIGNATURE.test(</text>
+<polygon fill="none" stroke="currentColor" points="530.48,-95.38 269.08,-95.38 269.08,-73.78 530.48,-73.78 530.48,-95.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="399.78" y="-81.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/audit&#45;mute.ts:68 SIGNATURE.test(</text>
 </g>
 <!-- lib/server/edit/writes/audit&#45;mute.ts&#45;&gt;? src/lib/server/edit/writes/audit&#45;mute.ts:68 -->
-<g id="edge26" class="edge">
+<g id="edge27" class="edge">
 <title>lib/server/edit/writes/audit&#45;mute.ts&#45;&gt;? src/lib/server/edit/writes/audit&#45;mute.ts:68</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M196.43,-105.78C213.16,-96.29 238.24,-82.73 261.08,-73 290.88,-60.3 325.46,-48.76 352.52,-40.42"/>
-<polygon fill="currentColor" stroke="currentColor" points="353.01,-42.46 358.13,-38.7 351.78,-38.44 353.01,-42.46"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M211.33,-142.1C249.89,-130.27 312.75,-110.98 354.92,-98.04"/>
+<polygon fill="currentColor" stroke="currentColor" points="355.45,-100.07 360.57,-96.3 354.22,-96.06 355.45,-100.07"/>
+</g>
+<!-- lib/server/edit/writes/config&#45;key.ts&#45;&gt;lib/server/core/json.ts -->
+<g id="edge29" class="edge">
+<title>lib/server/edit/writes/config&#45;key.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
+<path fill="none" stroke="currentColor" d="M399.78,-252.38C399.78,-267.89 419.19,-252.44 434.66,-251.38 515.18,-245.85 730.09,-176.98 796.68,-222.58 856.81,-263.75 869.37,-359.95 871.99,-400.28"/>
+<polygon fill="currentColor" stroke="currentColor" points="869.88,-400.18 872.31,-406.05 874.08,-399.95 869.88,-400.18"/>
 </g>
 <!-- lib/server/edit/writes/deck.ts&#45;&gt;lib/server/core/json.ts -->
-<g id="edge28" class="edge">
+<g id="edge30" class="edge">
 <title>lib/server/edit/writes/deck.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
-<path fill="none" stroke="currentColor" d="M427.2,-114.68C506.1,-108.32 738.14,-93.76 796.68,-137 859.11,-183.12 870.35,-285.7 872.3,-327.62"/>
-<polygon fill="currentColor" stroke="currentColor" points="870.2,-327.5 872.52,-333.42 874.4,-327.35 870.2,-327.5"/>
+<path fill="none" stroke="currentColor" d="M399.78,-216.38C399.78,-228.39 414.78,-215.86 426.78,-215.38 591.13,-208.78 662.38,-108.61 796.68,-203.58 861.95,-249.74 871.53,-356.85 872.67,-400.03"/>
+<polygon fill="currentColor" stroke="currentColor" points="870.57,-399.85 872.77,-405.81 874.77,-399.78 870.57,-399.85"/>
 </g>
 <!-- lib/server/edit/writes/entries.ts&#45;&gt;lib/server/core/changes.ts -->
-<g id="edge29" class="edge">
+<g id="edge31" class="edge">
 <title>lib/server/edit/writes/entries.ts&#45;&gt;lib/server/core/changes.ts: plain</title>
-<path fill="none" stroke="currentColor" d="M646.12,-194.57C650.23,-196.88 654.17,-199.67 657.37,-203 689.92,-236.87 672.71,-261.31 699.37,-300 706.99,-311.08 717.56,-321.68 726.76,-329.91"/>
-<polygon fill="currentColor" stroke="currentColor" points="725.23,-331.36 731.14,-333.72 727.99,-328.2 725.23,-331.36"/>
+<path fill="none" stroke="currentColor" d="M642.35,-303.72C647.57,-306.85 652.9,-310.52 657.37,-314.58 680.92,-335.98 678.56,-348.49 699.37,-372.58 708.4,-383.04 719.42,-393.88 728.54,-402.41"/>
+<polygon fill="currentColor" stroke="currentColor" points="726.99,-403.84 732.82,-406.37 729.84,-400.75 726.99,-403.84"/>
 </g>
 <!-- lib/server/edit/writes/entries.ts&#45;&gt;lib/server/core/json.ts -->
-<g id="edge30" class="edge">
-<title>lib/server/edit/writes/entries.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
-<path fill="none" stroke="currentColor" d="M646.17,-181.69C683.11,-178.44 751.04,-177.8 796.68,-209 838.7,-237.73 859.9,-297.66 868.26,-327.83"/>
-<polygon fill="currentColor" stroke="currentColor" points="866.16,-328.1 869.73,-333.36 870.22,-327.02 866.16,-328.1"/>
-</g>
-<!-- lib/server/edit/writes/entries.ts&#45;&gt;lib/server/files/fs/bookmarks.ts -->
-<g id="edge31" class="edge">
-<title>lib/server/edit/writes/entries.ts&#45;&gt;lib/server/files/fs/bookmarks.ts: ensureBookmarksFile</title>
-<path fill="none" stroke="currentColor" d="M646.26,-190.37C650.01,-192.16 653.81,-194.09 657.37,-196 683.23,-209.87 712.3,-227.56 730.01,-240.39"/>
-<polygon fill="currentColor" stroke="currentColor" points="728.72,-242.05 734.78,-243.98 731.24,-238.69 728.72,-242.05"/>
-</g>
-<!-- lib/server/edit/writes/entries.ts&#45;&gt;lib/server/files/fs/bookmarks.ts -->
 <g id="edge32" class="edge">
+<title>lib/server/edit/writes/entries.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
+<path fill="none" stroke="currentColor" d="M646.27,-287.97C682.74,-283 749.45,-279.11 796.68,-306.58 833.28,-327.87 856.01,-374.69 866.26,-400.54"/>
+<polygon fill="currentColor" stroke="currentColor" points="864.29,-401.27 868.39,-406.12 868.22,-399.77 864.29,-401.27"/>
+</g>
+<!-- lib/server/edit/writes/entries.ts&#45;&gt;lib/server/files/fs/bookmarks.ts -->
+<g id="edge33" class="edge">
+<title>lib/server/edit/writes/entries.ts&#45;&gt;lib/server/files/fs/bookmarks.ts: ensureBookmarksFile</title>
+<path fill="none" stroke="currentColor" d="M646.15,-295.69C666.2,-300.28 693.89,-308.07 715.11,-315.04"/>
+<polygon fill="currentColor" stroke="currentColor" points="714.25,-316.97 720.61,-316.89 715.59,-312.98 714.25,-316.97"/>
+</g>
+<!-- lib/server/edit/writes/entries.ts&#45;&gt;lib/server/files/fs/bookmarks.ts -->
+<g id="edge34" class="edge">
 <title>lib/server/edit/writes/entries.ts&#45;&gt;lib/server/files/fs/bookmarks.ts: BOOKMARKS</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="1,5" d="M631.53,-196.25C638.99,-200.71 648.85,-205.43 657.37,-210 676,-219.99 696.29,-231.97 712.81,-241.33"/>
-<polygon fill="currentColor" stroke="currentColor" points="711.59,-243.06 717.85,-244.17 713.65,-239.39 711.59,-243.06"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="1,5" d="M644.63,-303.87C661.68,-309.72 684.77,-316.52 704.65,-321.64"/>
+<polygon fill="currentColor" stroke="currentColor" points="704.02,-323.65 710.35,-323.08 705.04,-319.58 704.02,-323.65"/>
 </g>
 <!-- lib/server/edit/writes/manifest.ts&#45;&gt;lib/server/core/changes.ts -->
-<g id="edge35" class="edge">
+<g id="edge37" class="edge">
 <title>lib/server/edit/writes/manifest.ts&#45;&gt;lib/server/core/changes.ts: plain</title>
-<path fill="none" stroke="currentColor" d="M631.2,-232.29C646.57,-247.65 674.98,-275.98 699.37,-300 709.49,-309.97 720.89,-321.09 729.94,-329.91"/>
-<polygon fill="currentColor" stroke="currentColor" points="728.4,-331.33 734.16,-334.01 731.33,-328.32 728.4,-331.33"/>
+<path fill="none" stroke="currentColor" d="M650.37,-245.78C693.09,-203.06 666.09,-322.15 699.37,-372.58 706.77,-383.8 717.32,-394.42 726.57,-402.62"/>
+<polygon fill="currentColor" stroke="currentColor" points="725.05,-404.09 730.97,-406.41 727.79,-400.91 725.05,-404.09"/>
 </g>
 <!-- lib/server/edit/writes/manifest.ts&#45;&gt;lib/server/core/json.ts -->
-<g id="edge36" class="edge">
+<g id="edge38" class="edge">
 <title>lib/server/edit/writes/manifest.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
-<path fill="none" stroke="currentColor" d="M649.73,-215.73C686.82,-210.75 750.85,-207.52 796.68,-234 833.34,-255.19 856.05,-302.05 866.28,-327.93"/>
-<polygon fill="currentColor" stroke="currentColor" points="864.31,-328.67 868.41,-333.53 868.23,-327.17 864.31,-328.67"/>
+<path fill="none" stroke="currentColor" d="M649.68,-253.18C687.31,-250.46 752.5,-251.2 796.68,-281.58 838.62,-310.42 859.85,-370.3 868.24,-400.43"/>
+<polygon fill="currentColor" stroke="currentColor" points="866.14,-400.7 869.71,-405.95 870.2,-399.61 866.14,-400.7"/>
 </g>
 <!-- lib/server/edit/writes/manifest.ts to file on disk (calls) -->
-<g id="node23" class="node">
+<g id="node24" class="node">
 <title>lib/server/edit/writes/manifest.ts to file on disk (calls)</title>
-<polygon fill="none" stroke="none" points="767.96,-444.24 727.09,-444.24 727.09,-431.76 767.96,-431.76 767.96,-444.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="747.52" y="-435.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">mkdirSync</text>
+<polygon fill="none" stroke="none" points="767.96,-241.82 727.09,-241.82 727.09,-229.34 767.96,-229.34 767.96,-241.82"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="747.52" y="-233.18" font-family="Helvetica,Arial,sans-serif" font-size="8.00">mkdirSync</text>
 </g>
 <!-- lib/server/edit/writes/manifest.ts&#45;&gt;lib/server/edit/writes/manifest.ts to file on disk (calls) -->
-<g id="edge33" class="edge">
+<g id="edge35" class="edge">
 <title>lib/server/edit/writes/manifest.ts&#45;&gt;lib/server/edit/writes/manifest.ts to file on disk (calls)</title>
-<path fill="none" stroke="currentColor" d="M620.74,-231.84C623.93,-265.97 638.52,-372.08 699.37,-426 706.83,-432.61 717.43,-435.68 726.69,-437.06"/>
+<path fill="none" stroke="currentColor" d="M649.61,-251.65C673.43,-247.7 706.21,-242.26 726.88,-238.84"/>
 </g>
 <!-- lib/server/edit/writes/rail.ts&#45;&gt;lib/server/core/json.ts -->
-<g id="edge37" class="edge">
+<g id="edge39" class="edge">
 <title>lib/server/edit/writes/rail.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
-<path fill="none" stroke="currentColor" d="M427.18,-174.9C495.51,-150.6 680.94,-96.7 796.68,-178 847.57,-213.75 864.99,-292.02 870.43,-327.66"/>
-<polygon fill="currentColor" stroke="currentColor" points="868.33,-327.84 871.26,-333.48 872.49,-327.25 868.33,-327.84"/>
+<path fill="none" stroke="currentColor" d="M399.78,-164.38C399.78,-185.35 567.51,-161.83 588.48,-161.58 637.76,-160.99 650.08,-160.8 699.37,-160.58 742.61,-160.38 762.04,-134.67 796.68,-160.58 836.15,-190.1 862.2,-346.39 870.13,-400.29"/>
+<polygon fill="currentColor" stroke="currentColor" points="868.01,-400.33 870.95,-405.97 872.17,-399.73 868.01,-400.33"/>
 </g>
 <!-- lib/server/edit/writes/subtasks.ts&#45;&gt;lib/server/core/changes.ts -->
-<g id="edge38" class="edge">
+<g id="edge40" class="edge">
 <title>lib/server/edit/writes/subtasks.ts&#45;&gt;lib/server/core/changes.ts: plain</title>
-<path fill="none" stroke="currentColor" d="M430.39,-223.14C458.69,-225.78 502.27,-231.44 538.48,-243 608.71,-265.42 684.79,-308.39 722.51,-331.09"/>
-<polygon fill="currentColor" stroke="currentColor" points="721.15,-332.72 727.36,-334.04 723.32,-329.13 721.15,-332.72"/>
+<path fill="none" stroke="currentColor" d="M430.26,-303.32C493.73,-326.45 643.07,-380.88 711.35,-405.76"/>
+<polygon fill="currentColor" stroke="currentColor" points="710.31,-407.62 716.67,-407.7 711.75,-403.67 710.31,-407.62"/>
 </g>
 <!-- lib/server/edit/writes/subtasks.ts&#45;&gt;lib/server/edit/writes/entries.ts -->
-<g id="edge39" class="edge">
+<g id="edge41" class="edge">
 <title>lib/server/edit/writes/subtasks.ts&#45;&gt;lib/server/edit/writes/entries.ts: identityOf, readCollection, saved</title>
-<path fill="none" stroke="currentColor" d="M430.45,-217.93C458.42,-214.84 501.45,-209.6 538.48,-203 553.66,-200.29 570.31,-196.63 584.43,-193.31"/>
-<polygon fill="currentColor" stroke="currentColor" points="584.74,-195.4 590.1,-191.97 583.77,-191.31 584.74,-195.4"/>
+<path fill="none" stroke="currentColor" d="M430.07,-292.58C470.14,-292.58 541.92,-292.58 584.2,-292.58"/>
+<polygon fill="currentColor" stroke="currentColor" points="583.97,-294.68 589.97,-292.58 583.97,-290.48 583.97,-294.68"/>
 </g>
 <!-- lib/server/edit/writes/subtasks.ts&#45;&gt;lib/server/edit/writes/manifest.ts -->
-<g id="edge40" class="edge">
+<g id="edge42" class="edge">
 <title>lib/server/edit/writes/subtasks.ts&#45;&gt;lib/server/edit/writes/manifest.ts: insideHub</title>
-<path fill="none" stroke="currentColor" d="M430.07,-221C469.05,-221 538.03,-221 580.68,-221"/>
-<polygon fill="currentColor" stroke="currentColor" points="580.55,-223.1 586.55,-221 580.55,-218.9 580.55,-223.1"/>
+<path fill="none" stroke="currentColor" d="M430.07,-287.72C469.05,-281.26 538.03,-269.82 580.68,-262.75"/>
+<polygon fill="currentColor" stroke="currentColor" points="580.99,-264.83 586.57,-261.78 580.3,-260.69 580.99,-264.83"/>
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/core/changes.ts -->
-<g id="edge41" class="edge">
-<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/core/changes.ts: same</title>
-<path fill="none" stroke="currentColor" d="M203.51,-226.78C295.77,-247.03 604.66,-314.85 710.54,-338.1"/>
-<polygon fill="currentColor" stroke="currentColor" points="710.02,-340.14 716.33,-339.37 710.92,-336.03 710.02,-340.14"/>
-</g>
-<!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/feeds.ts -->
-<g id="edge42" class="edge">
-<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/feeds.ts: deleteFeedEntry, isFeedKind, readFeedFile, restoreFeedEntry, writeFeedField</title>
-<path fill="none" stroke="currentColor" d="M178.56,-232.16C182.91,-266.11 200,-367.13 261.08,-416 290.43,-439.48 334.66,-443.34 365.03,-444.27"/>
-<polygon fill="currentColor" stroke="currentColor" points="364.87,-446.36 370.92,-444.41 364.98,-442.16 364.87,-446.36"/>
-</g>
-<!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/feeds.ts -->
 <g id="edge43" class="edge">
+<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/core/changes.ts: same</title>
+<path fill="none" stroke="currentColor" d="M203.64,-298.57C268.94,-313.35 443.04,-352.67 588.48,-384.58 630.53,-393.8 678.93,-404.18 710.98,-411.02"/>
+<polygon fill="currentColor" stroke="currentColor" points="710.17,-412.99 716.48,-412.19 711.04,-408.88 710.17,-412.99"/>
+</g>
+<!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/feeds.ts -->
+<g id="edge44" class="edge">
+<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/feeds.ts: deleteFeedEntry, isFeedKind, readFeedFile, restoreFeedEntry, writeFeedField</title>
+<path fill="none" stroke="currentColor" d="M178.56,-303.74C182.91,-337.69 200,-438.7 261.08,-487.58 290.43,-511.06 334.66,-514.91 365.03,-515.84"/>
+<polygon fill="currentColor" stroke="currentColor" points="364.87,-517.94 370.92,-515.99 364.98,-513.74 364.87,-517.94"/>
+</g>
+<!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/feeds.ts -->
+<g id="edge45" class="edge">
 <title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/feeds.ts: FEED_RULES</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="1,5" d="M177.92,-232.29C181.06,-268.16 196.45,-378.28 261.08,-430 290.43,-453.48 334.66,-457.34 365.03,-455.17"/>
-<polygon fill="currentColor" stroke="currentColor" points="365.15,-457.26 370.93,-454.63 364.77,-453.08 365.15,-457.26"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="1,5" d="M177.92,-303.87C181.06,-339.74 196.45,-449.86 261.08,-501.58 290.43,-525.06 334.66,-528.91 365.03,-526.74"/>
+<polygon fill="currentColor" stroke="currentColor" points="365.15,-528.84 370.93,-526.21 364.77,-524.66 365.15,-528.84"/>
+</g>
+<!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config&#45;key.ts -->
+<g id="edge46" class="edge">
+<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config&#45;key.ts: configKeyNow, writeConfigKey</title>
+<path fill="none" stroke="currentColor" d="M203.63,-281.7C219.95,-275.35 241.45,-267.61 261.08,-262.58 292.94,-254.41 329.77,-248.72 357.32,-245.17"/>
+<polygon fill="currentColor" stroke="currentColor" points="357.28,-247.29 362.97,-244.46 356.75,-243.12 357.28,-247.29"/>
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/deck.ts -->
-<g id="edge44" class="edge">
+<g id="edge47" class="edge">
 <title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/deck.ts: deckNow, writeDeck</title>
-<path fill="none" stroke="currentColor" d="M184.99,-209.78C198.29,-191.6 227.24,-156.03 261.08,-139 293.84,-122.52 336.03,-117.84 365.04,-116.76"/>
-<polygon fill="currentColor" stroke="currentColor" points="365.03,-118.86 370.97,-116.6 364.91,-114.67 365.03,-118.86"/>
+<path fill="none" stroke="currentColor" d="M186.72,-281.35C201.04,-265.32 229.81,-236.27 261.08,-222.58 294.43,-207.98 336.35,-204.34 365.12,-203.81"/>
+<polygon fill="currentColor" stroke="currentColor" points="365.01,-205.91 370.99,-203.75 364.97,-201.71 365.01,-205.91"/>
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/entries.ts -->
-<g id="edge45" class="edge">
+<g id="edge48" class="edge">
 <title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/entries.ts: createEntry, entryOf, idOfIdentity, identityOrder, readCollection, removeEntry, reorderCollection, writeEntry</title>
-<path fill="none" stroke="currentColor" d="M185.77,-209.9C199.52,-193.13 228.3,-162.01 261.08,-150 318.96,-128.79 478.16,-137.3 538.48,-150 557.28,-153.96 577.06,-162.65 592.17,-170.39"/>
-<polygon fill="currentColor" stroke="currentColor" points="591.14,-172.22 597.43,-173.15 593.1,-168.5 591.14,-172.22"/>
+<path fill="none" stroke="currentColor" d="M203.41,-285.46C219.84,-281.37 241.53,-276.65 261.08,-274.58 383.68,-261.57 415.96,-260.87 538.48,-274.58 553.8,-276.29 570.48,-279.81 584.58,-283.28"/>
+<polygon fill="currentColor" stroke="currentColor" points="583.9,-285.28 590.23,-284.72 584.93,-281.21 583.9,-285.28"/>
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/manifest.ts -->
-<g id="edge46" class="edge">
+<g id="edge49" class="edge">
 <title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/manifest.ts: manifestValue, writeManifest</title>
-<path fill="none" stroke="currentColor" d="M189.4,-209.86C204.78,-196.64 232.67,-175.35 261.08,-167 320.22,-149.61 479.81,-148.08 538.48,-167 564.54,-175.41 565.67,-187.85 588.48,-203 589.97,-203.99 591.5,-204.99 593.06,-205.98"/>
-<polygon fill="currentColor" stroke="currentColor" points="591.62,-207.56 597.82,-208.98 593.86,-204 591.62,-207.56"/>
+<path fill="none" stroke="currentColor" d="M181.88,-281.49C192.22,-258.63 219.46,-206.71 261.08,-186.58 288.83,-173.15 509.65,-175.69 538.48,-186.58 566.6,-197.2 591.21,-222.81 605.32,-239.93"/>
+<polygon fill="currentColor" stroke="currentColor" points="603.35,-240.83 608.75,-244.2 606.63,-238.2 603.35,-240.83"/>
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/rail.ts -->
-<g id="edge47" class="edge">
+<g id="edge50" class="edge">
 <title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/rail.ts: railNow, writeRail</title>
-<path fill="none" stroke="currentColor" d="M203.54,-214.77C220.01,-211.02 241.71,-206.34 261.08,-203 296.41,-196.91 337.16,-191.82 365.11,-188.63"/>
-<polygon fill="currentColor" stroke="currentColor" points="365.06,-190.75 370.78,-187.99 364.59,-186.57 365.06,-190.75"/>
+<path fill="none" stroke="currentColor" d="M181.5,-281.56C191.47,-257.63 218.59,-200.96 261.08,-174.58 292.56,-155.04 335.61,-151 365.15,-150.91"/>
+<polygon fill="currentColor" stroke="currentColor" points="364.82,-153 370.84,-150.95 364.85,-148.81 364.82,-153"/>
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/subtasks.ts -->
-<g id="edge48" class="edge">
+<g id="edge51" class="edge">
 <title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/subtasks.ts: hostStatus, restoreSubtask, subtaskValue, writeHost, writeSubtask, writeSubtaskAdd</title>
-<path fill="none" stroke="currentColor" d="M203.48,-221C242.82,-221 317.16,-221 361.9,-221"/>
-<polygon fill="currentColor" stroke="currentColor" points="361.85,-223.1 367.85,-221 361.85,-218.9 361.85,-223.1"/>
+<path fill="none" stroke="currentColor" d="M203.48,-292.58C242.82,-292.58 317.16,-292.58 361.9,-292.58"/>
+<polygon fill="currentColor" stroke="currentColor" points="361.85,-294.68 367.85,-292.58 361.85,-290.48 361.85,-294.68"/>
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/sessions/overrides.ts -->
-<g id="edge49" class="edge">
+<g id="edge52" class="edge">
 <title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/sessions/overrides.ts: overrides, setFlag, setOverride</title>
-<path fill="none" stroke="currentColor" d="M192.78,-232.11C231.63,-259.82 332.89,-332.02 377.33,-363.71"/>
-<polygon fill="currentColor" stroke="currentColor" points="375.88,-365.25 381.98,-367.02 378.32,-361.83 375.88,-365.25"/>
+<path fill="none" stroke="currentColor" d="M188.59,-303.8C204.24,-318.92 233.57,-346.29 261.08,-366.58 297.6,-393.5 343.04,-419.99 371.49,-435.81"/>
+<polygon fill="currentColor" stroke="currentColor" points="370.4,-437.61 376.67,-438.67 372.44,-433.93 370.4,-437.61"/>
 </g>
 <!-- lib/server/files/fs/bookmarks.ts&#45;&gt;lib/server/core/json.ts -->
-<g id="edge50" class="edge">
+<g id="edge53" class="edge">
 <title>lib/server/files/fs/bookmarks.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
-<path fill="none" stroke="currentColor" d="M763.99,-267.22C786.05,-283.2 826.59,-312.59 851.44,-330.61"/>
-<polygon fill="currentColor" stroke="currentColor" points="850.08,-332.22 856.17,-334.04 852.55,-328.81 850.08,-332.22"/>
+<path fill="none" stroke="currentColor" d="M763.99,-339.79C786.05,-355.78 826.59,-385.17 851.44,-403.18"/>
+<polygon fill="currentColor" stroke="currentColor" points="850.08,-404.79 856.17,-406.61 852.55,-401.39 850.08,-404.79"/>
 </g>
 <!-- lib/server/sessions/overrides.ts&#45;&gt;lib/server/core/changes.ts -->
-<g id="edge51" class="edge">
+<g id="edge54" class="edge">
 <title>lib/server/sessions/overrides.ts&#45;&gt;lib/server/core/changes.ts: plain</title>
-<path fill="none" stroke="currentColor" d="M431.9,-382.51C480.49,-387.2 577.12,-393.37 657.37,-379 660.25,-378.48 687.36,-368.39 710.94,-359.5"/>
-<polygon fill="currentColor" stroke="currentColor" points="711.5,-361.53 716.37,-357.45 710.02,-357.6 711.5,-361.53"/>
+<path fill="none" stroke="currentColor" d="M432.07,-447.68C496.39,-441.73 643.06,-428.15 710.9,-421.87"/>
+<polygon fill="currentColor" stroke="currentColor" points="710.7,-424 716.48,-421.36 710.31,-419.82 710.7,-424"/>
 </g>
 <!-- lib/server/sessions/overrides.ts&#45;&gt;lib/server/core/json.ts -->
-<g id="edge52" class="edge">
+<g id="edge55" class="edge">
 <title>lib/server/sessions/overrides.ts&#45;&gt;lib/server/core/json.ts: readJson, writeJsonAtomic</title>
-<path fill="none" stroke="currentColor" d="M431.91,-373.61C507.05,-360.62 692.68,-328.57 699.37,-328 742.46,-324.35 753.72,-322.98 796.68,-328 810.77,-329.65 826.03,-332.95 839.16,-336.29"/>
-<polygon fill="currentColor" stroke="currentColor" points="838.42,-338.26 844.75,-337.75 839.48,-334.2 838.42,-338.26"/>
+<path fill="none" stroke="currentColor" d="M431.89,-445.22C505.67,-432.55 686.06,-401.68 699.37,-400.58 742.47,-396.99 753.72,-395.56 796.68,-400.58 810.77,-402.22 826.03,-405.53 839.16,-408.87"/>
+<polygon fill="currentColor" stroke="currentColor" points="838.42,-410.84 844.75,-410.33 839.48,-406.78 838.42,-410.84"/>
 </g>
 <!-- routes/api/write/+server.ts -->
-<g id="node15" class="node">
+<g id="node16" class="node">
 <title>routes/api/write/+server.ts</title>
-<polygon fill="none" stroke="currentColor" points="73.41,-457.8 16.9,-457.8 16.9,-436.2 73.41,-436.2 73.41,-457.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="45.16" y="-444" font-family="Helvetica,Arial,sans-serif" font-size="10.00">+server.ts</text>
+<polygon fill="none" stroke="currentColor" points="73.41,-529.38 16.9,-529.38 16.9,-507.78 73.41,-507.78 73.41,-529.38"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="45.16" y="-515.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">+server.ts</text>
 </g>
 <!-- routes/api/write/+server.ts&#45;&gt;lib/server/edit/writes.ts -->
-<g id="edge53" class="edge">
+<g id="edge56" class="edge">
 <title>routes/api/write/+server.ts&#45;&gt;lib/server/edit/writes.ts: handleWrite, target</title>
-<path fill="none" stroke="currentColor" d="M73.84,-447C93.62,-447 120.36,-447 141.41,-447"/>
-<polygon fill="currentColor" stroke="currentColor" points="141.37,-449.1 147.37,-447 141.37,-444.9 141.37,-449.1"/>
+<path fill="none" stroke="currentColor" d="M73.84,-518.58C93.62,-518.58 120.36,-518.58 141.41,-518.58"/>
+<polygon fill="currentColor" stroke="currentColor" points="141.37,-520.68 147.37,-518.58 141.37,-516.48 141.37,-520.68"/>
 </g>
 <!-- file on disk -->
-<g id="node17" class="node">
+<g id="node18" class="node">
 <title>file on disk</title>
-<path fill="none" stroke="currentColor" d="M1175.37,-433.99C1175.37,-435.21 1161.41,-436.21 1144.23,-436.21 1127.05,-436.21 1113.09,-435.21 1113.09,-433.99 1113.09,-433.99 1113.09,-414.01 1113.09,-414.01 1113.09,-412.79 1127.05,-411.79 1144.23,-411.79 1161.41,-411.79 1175.37,-412.79 1175.37,-414.01 1175.37,-414.01 1175.37,-433.99 1175.37,-433.99"/>
-<path fill="none" stroke="currentColor" d="M1175.37,-433.99C1175.37,-432.77 1161.41,-431.77 1144.23,-431.77 1127.05,-431.77 1113.09,-432.77 1113.09,-433.99"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1144.23" y="-421" font-family="Helvetica,Arial,sans-serif" font-size="10.00">file on disk</text>
+<path fill="none" stroke="currentColor" d="M1175.37,-444.57C1175.37,-445.79 1161.41,-446.79 1144.23,-446.79 1127.05,-446.79 1113.09,-445.79 1113.09,-444.57 1113.09,-444.57 1113.09,-424.59 1113.09,-424.59 1113.09,-423.36 1127.05,-422.37 1144.23,-422.37 1161.41,-422.37 1175.37,-423.36 1175.37,-424.59 1175.37,-424.59 1175.37,-444.57 1175.37,-444.57"/>
+<path fill="none" stroke="currentColor" d="M1175.37,-444.57C1175.37,-443.34 1161.41,-442.35 1144.23,-442.35 1127.05,-442.35 1113.09,-443.34 1113.09,-444.57"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="1144.23" y="-431.58" font-family="Helvetica,Arial,sans-serif" font-size="10.00">file on disk</text>
 </g>
 <!-- lib/server/core/changes.ts to file on disk (calls)&#45;&gt;file on disk -->
 <g id="edge2" class="edge">
 <title>lib/server/core/changes.ts to file on disk (calls)&#45;&gt;file on disk</title>
-<path fill="none" stroke="currentColor" d="M1049.23,-408.72C1067.19,-411.64 1088.07,-415.03 1105.59,-417.88"/>
-<polygon fill="currentColor" stroke="currentColor" points="1105.12,-419.93 1111.38,-418.82 1105.8,-415.79 1105.12,-419.93"/>
+<path fill="none" stroke="currentColor" d="M1055.22,-444.33C1071.6,-442.52 1089.73,-440.51 1105.26,-438.79"/>
+<polygon fill="currentColor" stroke="currentColor" points="1105.41,-440.88 1111.15,-438.13 1104.95,-436.71 1105.41,-440.88"/>
 </g>
 <!-- lib/server/core/json.ts to file on disk (calls)&#45;&gt;file on disk -->
 <g id="edge5" class="edge">
 <title>lib/server/core/json.ts to file on disk (calls)&#45;&gt;file on disk</title>
-<path fill="none" stroke="currentColor" d="M1023.15,-371.65C1043.92,-380.71 1081.68,-397.17 1109.33,-409.22"/>
-<polygon fill="currentColor" stroke="currentColor" points="1108.4,-411.11 1114.74,-411.58 1110.08,-407.26 1108.4,-411.11"/>
+<path fill="none" stroke="currentColor" d="M1027.56,-422.61C1047.92,-424.72 1080.2,-428.06 1105.5,-430.67"/>
+<polygon fill="currentColor" stroke="currentColor" points="1105.07,-432.74 1111.26,-431.27 1105.51,-428.56 1105.07,-432.74"/>
 </g>
 <!-- lib/server/edit/feeds.ts to file on disk (calls)&#45;&gt;file on disk -->
 <g id="edge7" class="edge">
 <title>lib/server/edit/feeds.ts to file on disk (calls)&#45;&gt;file on disk</title>
-<path fill="none" stroke="currentColor" d="M1020.86,-485.48C1041.81,-474.95 1083.64,-453.94 1112.52,-439.43"/>
-<polygon fill="currentColor" stroke="currentColor" points="1113.43,-441.32 1117.85,-436.75 1111.54,-437.57 1113.43,-441.32"/>
+<path fill="none" stroke="currentColor" d="M1020.37,-499.93C1041.55,-488.67 1085.02,-465.55 1114.15,-450.05"/>
+<polygon fill="currentColor" stroke="currentColor" points="1114.85,-452.05 1119.16,-447.38 1112.88,-448.34 1114.85,-452.05"/>
 </g>
 <!-- lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)&#45;&gt;lib/server/core/auth.ts -->
 <g id="edge12" class="edge">
 <title>lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)&#45;&gt;lib/server/core/auth.ts</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M424.35,-527.06C471.57,-524.24 579.9,-513.08 657.37,-469 680.86,-455.63 680.03,-443.9 699.37,-425 708.72,-415.85 719.49,-405.99 728.36,-398.02"/>
-<polygon fill="currentColor" stroke="currentColor" points="729.69,-399.66 732.76,-394.09 726.89,-396.52 729.69,-399.66"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M424.2,-599.11C471.61,-607.03 580.96,-618.8 657.37,-576.58 699.73,-553.16 727.34,-500.13 739.46,-472.33"/>
+<polygon fill="currentColor" stroke="currentColor" points="741.34,-473.26 741.74,-466.91 737.48,-471.62 741.34,-473.26"/>
 </g>
 <!-- lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses)&#45;&gt;lib/server/edit/feeds.ts -->
 <g id="edge16" class="edge">
 <title>lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses)&#45;&gt;lib/server/edit/feeds.ts</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M197.64,-496.92C235.99,-487.41 318.99,-466.81 365.49,-455.26"/>
-<polygon fill="currentColor" stroke="currentColor" points="365.84,-457.34 371.16,-453.86 364.83,-453.26 365.84,-457.34"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M197.64,-568.5C235.99,-558.99 318.99,-538.38 365.49,-526.84"/>
+<polygon fill="currentColor" stroke="currentColor" points="365.84,-528.92 371.16,-525.43 364.83,-524.84 365.84,-528.92"/>
 </g>
 <!-- lib/server/edit/writes/manifest.ts to file on disk (calls)&#45;&gt;file on disk -->
-<g id="edge34" class="edge">
+<g id="edge36" class="edge">
 <title>lib/server/edit/writes/manifest.ts to file on disk (calls)&#45;&gt;file on disk</title>
-<path fill="none" stroke="currentColor" d="M768.36,-437.3C830.73,-435.08 1023.51,-428.25 1105.6,-425.33"/>
-<polygon fill="currentColor" stroke="currentColor" points="1105.29,-427.45 1111.21,-425.14 1105.14,-423.25 1105.29,-427.45"/>
+<path fill="none" stroke="currentColor" d="M768.05,-240.27C776.93,-242.65 787.48,-245.83 796.68,-249.58 921.97,-300.59 1061.16,-383.62 1117.49,-418.42"/>
+<polygon fill="currentColor" stroke="currentColor" points="1116.13,-420.05 1122.34,-421.43 1118.35,-416.48 1116.13,-420.05"/>
 </g>
 </g>
 </svg>
