@@ -70,9 +70,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   diagnosis: agents/reviews/Q109-diagnosis.md (three diagnoses; the third by agent add169c371291c833, claude-opus-5-5, 188,283 tokens, 50 tool uses, 19.8 min)
   shared_paths: package.json and package-lock.json with X3d (X3d adds seti-ui on the line after perfect-debounce, Q109 removes perfect-debounce and adds lodash-es; the lock is regenerated with npm install at the second landing); DESIGN.md and HELP.md with X3d (Q109 writes DESIGN 116 and HELP 127 and 221, X3d other lines)
   builder_usage: 110,010 tokens, 253 tool uses, 98.6 min (report read at 05:23)
-  reviewer_report: agents/reviews/Q109-refuter.md (reviewer a7e316a676da80877, launched 05:23, served claude-opus-5-5, running)
+  reviewer_report: agents/reviews/Q109-refuter.md (reviewer a7e316a676da80877, launched 05:23, served claude-opus-5-5, 276,828 tokens, 82 tool uses, 18.1 min; no item violated, no case unmet, seven findings)
   landing: not-started
-  round: 0
+  round: 1 (sent 05:42: agents/briefs/Q109-round1.md, eight rulings; the tree at the send is agents/reviews/Q109-round1-base.patch)
 - step: S3b
   executor: agent
   worker: claude:sonnet
@@ -655,6 +655,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 05:42. Q109's review in (a7e316a676da80877): no item violated, no case unmet, seven findings; repair round 1 sent with eight rulings (the usage rebuilds coalesced to at most one waiting, the FROZEN exemption ended by one binding, two doc sentences and one catalog text made true, the DESIGN.md:116 git-watcher clause, the report's quotations). In flight: X3d (round-1 review), Q109 (round 1), S3b (round-1 review). Open: Z138.
 - 2026-10-01 05:34. S3b's round-1 report in (every ruling claimed done, checks 7 passed); its reviewer over round 1 launched (claude-opus-5-5). In flight: X3d (round-1 review), Q109 (review), S3b (round-1 review). Open: Z138.
 - 2026-10-01 05:32. X3d's round-1 report in; its two new questions closed in automode (Z140 (2), one wall surface token at landing; Z141 (1), the letter's font as built); its reviewer over round 1 launched. In flight: X3d (round-1 review), Q109 (review), S3b (round 1). Open: Z138.
 - 2026-10-01 05:23. Q109's builder reported everything done but the looks, which are the landing's (report `agents/reviews/Q109-report.md`); its reviewer launched (claude-opus-5-5). In flight: X3d (round 1), Q109 (review), S3b (round 1). Open: Z138.

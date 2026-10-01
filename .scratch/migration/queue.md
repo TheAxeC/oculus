@@ -2,7 +2,7 @@
 
 In flight:
 - X3d (Source Control as VS Code's), prepared again with the Graph hang fix, the full-width button, the Seti icons and the lanes; round 1 built, its review running since 05:32; Z138 (the light-theme icon colours) waits on Axel.
-- Q109 (the terminal: lines after a pane move, the five watchers' capped debounce, a sole terminal's menu, four terminal options), built; its review running since 05:23.
+- Q109 (the terminal: lines after a pane move, the five watchers' capped debounce, a sole terminal's menu, four terminal options), reviewed; repair round 1 sent at 05:42.
 - S3b (the `config-key` write), repair round 1 built; its review running since 05:34.
 Open items: Z138 (X3d's light-theme Seti colours, yours). Choices made in automode, for review: `choices.md`.
 Queued, in order:
