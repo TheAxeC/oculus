@@ -747,6 +747,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z168 (2026-10-01): (b), a new step S4 after U3: editors for the 7 lists and the 5 key/value families and forms for the 15 record families, through a new confirmed write kind whose shape is Axel's at /spec, and the table of contents reachable below 700 px; `local.yml` stays link-only under Z94 (4) (b); (c), all links, was the lazy option (the user).
 - Builder effort experiment (2026-10-01): D35's builder runs as `ordo-medium` on Sonnet 5.5, every other agent as configured; decided by its landing report against the `ordo-high` builders' (tokens, tool uses, time, whether the first report passed its bar, the refuter's findings, the fixes at landing) (the user).
 - Open item Z169 (2026-10-01): (a), the Config view removed and the two system pages merged into one rail item, in S4: the Views and Settings layout kept with Settings and Catalogue swapped, Status, Findings, Audit, History and Gallery placed where they fit; (c), both kept, was the lazy option (the user).
+- Open item Z173 (2026-10-01): (a), the `meta` loops of the registry and collection readers and the `fields` loop of `normalise` skip an own `__proto__` key, fixed in Q85c's repair round 1 (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

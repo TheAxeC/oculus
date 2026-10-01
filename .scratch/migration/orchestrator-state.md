@@ -39,10 +39,11 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   launched: 2026-10-01 16:58 local
   report: agents/reviews/Q85c-report.md (saved from the builder's hand-back message; it wrote no report file)
   builder_usage: 138,304 tokens, 236 tool uses, 69.7 min (1 full-list run)
-  reviewer_report: agents/reviews/Q85c-refuter.md (reviewer a4424239736fa1dee, launched 18:10, claude-sonnet-5-5 read from its transcript; report pending)
+  reviewer_report: agents/reviews/Q85c-refuter.md (reviewer a4424239736fa1dee, claude-sonnet-5-5 read from its transcript; 339,515 tokens, 88 tool uses, 35.5 min; 3 Spec, 2 Proof, 9 Standards, 1 Behaviour)
+  round_1: agents/briefs/Q85c-round1.md (five rulings, Z173 among them; sent to the builder)
   brief_check: agents/reviews/Q85c-brief-check.md, every finding closed in the brief (its Closed heading, Z163 widened in automode); claude-sonnet-5-5, 272,378 tokens, 80 tool uses, 13.3 min
   landing: not-started
-  round: 0
+  round: 1
 - step: D31
   executor: agent
   worker: claude:sonnet
@@ -68,9 +69,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   session_id: a2609b2bc8bd7786d (launched 2026-10-01 17:20 local, the second builder, taking over the worktree on Z164 (b)); the first builder was ae3ab3b225611181e (launched 15:23)
   base: ab4d9084
   launched: 2026-10-01 15:23 local
-  report: agents/reviews/U3-report.md
+  report: agents/reviews/U3-report.md (saved from the second builder's hand-back message)
   cases: agents/briefs/U3-cases.md (round 0, Z161 and six corrections)
-  builder_usage: first run of the cases 302,766 tokens, 52 tool uses, 11.1 min
+  builder_usage: first run of the cases 302,766 tokens, 52 tool uses, 11.1 min; second builder 154,209 tokens, 414 tool uses, 84.5 min (1 full-list run)
   state: the first builder dead with no report (all seven agents stopped at 16:37); a second builder runs on Z164 (b), from `agents/reviews/U3-takeover.md`
   helpers: the builder started six general-purpose agents (G1 to G6, a5d7291ed63e97e69, ac32fd6bcdffe7ad2, a0bd1af5212f339c0, ac434b873d6ee5f00, a8ce99953d8e5bb84, a7aac8f1957bc071a), each served claude-sonnet-5-5, briefed from its scratch file `u3-view-brief.md`, before `agents/spec.md:34` forbade a builder to start an agent; all stopped by Axel's interrupt at 16:37 (each meta reads `stoppedByUser: true`); G3 handed back its group's report; what is known of each group is `agents/reviews/U3-takeover.md`; the review reads their work as the builder's, and the landing counts their usage
   brief_check: agents/reviews/U3-brief-check.md, every finding closed in the brief (its Closed heading, Z157 and Z160 in automode); agent a2d45e553bd8d1965 on claude-sonnet-5-5, 327,546 tokens, 88 tool uses, 14.4 min
@@ -176,6 +177,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z173, three maps of the data folder built from a hub file's keys (raised 2026-10-01 18:45 by Q85c's review, Spec 2): the `meta` loops of `sources/collections.ts:47-49` and `sources/registries.ts:80-82` and the `fields` loop of `snapshot/normalise.ts:485-487` let an own `__proto__` key replace the new map's prototype, which the sentence Q85c adds to `DESIGN.md:148` forbids. Closed by the orchestrator in automode, (a): fixed in Q85c's repair round 1, a case each. Not chosen: (b) a booking for a later step, the lazy option, leaving the step's own DESIGN sentence false.
 - Z169, the Config view and the two system rail pages (raised 2026-10-01 by Axel's question). The Config view (`views/system/config/Config.svelte`) cards the 6 top config files, the 7 files of `config/catalogs/` and `local.yml`, each with its text and an open control; the Settings view covers the options of the 6 top files and `local.yml` with a file-and-line link per row, and none of the 7 catalog files. The System page holds 6 views (status, findings, audit, history, config, gallery), Views and Settings 4 (catalogue, settings, account-setup, pages); a chord reaches only the first nine views of a group (`catalogue.ts:160`). (a) Recommended: the Config view removed, Settings gaining VS Code's open-the-file action per file and the 7 catalog files as open entries, HELP.md:3, :148 and :216 rewritten; the two pages merged into one rail item holding the 9 views left, Settings first. For: one place for oculus's own setup, nine views fit one chord, the raw `local.yml` card leaves the page. Against: the read-only text preview goes (the source tab shows the same text); one chord letter and one rail digit change. (b) Config removed, the two pages kept. (c) Both kept as they are, the lazy option. Ruled by Axel 2026-10-01: (a), in S4, with the merged page on the Views and Settings layout, Settings and Catalogue swapped, and the five system views placed where they fit best (the brief proposes the placement, the label and the chord, and the look on TEST shows it); a saved `info` page is carried over by a layout migration. Not chosen: (b); (c), the lazy option.
 - Z166, the 16 behaviour keys read only at start (raised 2026-10-01 by Axel's question whether config reloads outside dev mode): `usage_tiers`, `usage_refresh_min`, `usage_refresh_model`, the five `slurm.*`, the three `calendar.*`, the two `mail.*` and the three `notify.*` keys take a restart while the Settings view writes them. Ruled by Axel 2026-10-01: (a), a new step D35 makes them live (pollers and notification settings re-read at every config push, a refused hand edit keeps the old settings and is logged once, the `local.yml` keys say they take a restart). Not chosen: (b) a restart label only, the lazy option.
 - Z167, folder bookmarks (raised 2026-10-01 by Axel's question): bookmarks are files only (`Tree.svelte:10`, `files.yml:6`, `opening.ts:62-72`). Ruled by Axel 2026-10-01: (a), built in X3a: the star on folder rows, opening one reveals the folder expanded and selected, a folder icon in the rail menu, the bookmark shape unchanged. Not chosen: (b) files only, the lazy option.

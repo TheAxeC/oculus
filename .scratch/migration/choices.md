@@ -281,3 +281,10 @@ Where it is built: U3. Booked in the state file's closed log and `plan.md` Rulin
 - Not chosen: (b) keep the rule absolute and reverse Z83, the lazy option.
 
 Where it is built: D31. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z173 (2026-10-01 18:45, step Q85c)
+
+- Chosen (a): the `meta` loops of `sources/collections.ts` and `sources/registries.ts` and the `fields` loop of `snapshot/normalise.ts` skip an own `__proto__` key, with a case each, in Q85c's repair round 1, so the sentence Q85c adds to `DESIGN.md:148` holds for the data folder.
+- Not chosen: (b) a booking for a later step, the lazy option.
+
+Where it is built: Q85c. Booked in the state file's closed log and `plan.md` Rulings.
