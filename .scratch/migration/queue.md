@@ -8,7 +8,7 @@ In flight:
 - U2 (every view's look against VS Code's), repair round 2 sent at 09:55 after its round-1 review (the round cap's exception, item 3 unbuilt).
 - Q85a2 (zod in the edit, sessions and transcripts folders), repair round 1 sent at 10:00 after its review.
 - Q85a4 (zod in the other server folders), repair round 1 sent at 09:37 after its review.
-Open items: none. Z144 ruled (a) by Axel. Z145 ruled (b) by Axel: reviewers and brief checks on Sonnet 5.5. U2's grouping into build steps is Axel's, never automode. Z143 ruled (5) with terminals by Axel, built in L4. Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
+Open items: none. Z144 ruled (a) by Axel. Z145 ruled (b) by Axel: reviewers and brief checks on Sonnet 5.5. U2's grouping, and every look or layout choice in the steps after U2, are Axel's, never automode. Z143 ruled (5) with terminals by Axel, built in L4. Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - S3c (the Settings editor), S3a and S3b have landed.
 - Q85b and Q85c, then Q85d (zod after Q85a4).
