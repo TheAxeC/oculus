@@ -73,6 +73,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with D27, `Source.svelte` and `Merge.svelte` (D27 the lines that make or change a model's language; Q85d the instance-state readers, Merge's body read at 112 and the imports), `state/sources/fs.ts` (D27 the file-type reads; Q85d two exports beside `refShape` at 211), `tests/checks/tree/boundaries.test.ts` (D27 the state row's comment; Q85d the views' and shell's rows and the comment at 73-75), `tests/views/sources/source.test.ts` (D27 494-516; Q85d new cases at the end) and `tests/checks/tree/allow-audits.txt` (one line each), different hunks, a simple merge with the import blocks read at the second landing; no path shared with D35; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   round: 0
+- step: U4
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 21:29)
+  session_id: a9d3aad609c4df803 (launched 2026-10-01 21:29 local)
+  worktree: .agents/worktrees/U4
+  base: b240670e
+  launched: 2026-10-01 21:29 local
+  report: agents/reviews/U4-report.md
+  brief_check: agents/reviews/U4-brief-check.md, every finding closed in the brief (its Closed heading; Z180 raised to Axel, the step built with (b)); claude-sonnet-5-5, 306,765 tokens, 84 tool uses, 14.6 min
+  shared_paths: with Q85d, `SessionList.svelte`, `Band.svelte` and `CommandCenter.svelte` (Q85d their script readers; U4 their style blocks), different blocks, a simple merge; `DESIGN.md` (U4 369, 404, 408; D27 85, 171, 379; D35 224-235; Q85d 148, 323) and `HELP.md` (U4 100; D27 230; D35 216, 236), different lines; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

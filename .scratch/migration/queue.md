@@ -4,7 +4,7 @@ In flight:
 - D27 (the editor's languages), built and its report in; its review (/refute) running.
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), building on its round-0 case rulings.
 - Q85d (zod in the views, ui, shell and routes), building: its builder runs the first run of the cases.
-- U4 (Focus and Sessions brought to the other views' size, the commit dropdown aligned), its brief check closed, its builder being launched.
+- U4 (Focus and Sessions brought to the other views' size, the commit dropdown aligned), building: its builder runs the first run of the cases.
 - D32 (replace in Search), being prepared: brief written, its brief check running.
 
 
