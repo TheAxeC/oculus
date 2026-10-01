@@ -21,6 +21,23 @@ options:
             description: Text size of the terminal grid in CSS pixels. The grid paints its own text and cannot inherit the page's size; a value is clamped to 6 to 40. Leaving the key out makes the terminal follow the theme's --fs-md token.
             default: 12.5
             control: number
+        terminal.mac_option_is_meta:
+            description: Whether the Option key sends Meta on macOS, so Option+B and Option+F move by word in a shell. false types the characters Option makes, such as the accented letters of the US-International layout. A value that is not true or false counts as false.
+            default: false
+            control: toggle
+        terminal.copy_on_selection:
+            description: 'Whether a selection in the terminal grid is copied to the clipboard as soon as it is made, which includes Select All. false copies only when asked: Copy, Copy as HTML or the copy key. A value that is not true or false counts as false.'
+            default: false
+            control: toggle
+        terminal.cursor_style:
+            description: The shape of the terminal grid's cursor. block fills the cell, line draws a thin bar, underline draws a line under the cell. Any other value counts as block.
+            default: block
+            control: choice
+            values: [block, line, underline]
+        terminal.cursor_blinking:
+            description: Whether the terminal grid's cursor blinks. false keeps it steady. A value that is not true or false counts as false.
+            default: false
+            control: toggle
         wallpaper.dir:
             description: Folder holding the wallpaper images, relative to the hub and inside it. A missing folder, or one outside the hub, serves no image, which means no backdrop.
             default: tools/oculus/assets/wallpaper

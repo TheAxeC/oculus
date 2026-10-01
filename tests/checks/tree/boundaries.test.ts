@@ -274,7 +274,7 @@ const FROZEN = [
     'lib/state/shared/words/appearance.ts:paper',
     'lib/state/shared/words/appearance.ts:crt',
     'lib/state/shared/words/appearance.ts:codeTheme',
-    'lib/state/shared/words/appearance.ts:terminalFont',
+    'lib/state/shared/words/appearance.ts:terminal',
     'lib/state/shared/words/generation.svelte.ts:held',
     'lib/state/shared/words/glyphmode.svelte.ts:held'
 ];

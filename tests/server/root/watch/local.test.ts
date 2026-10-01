@@ -1,7 +1,7 @@
 // Layer 4, test. watchLocal against a config folder in a temporary directory: a write of
 // local.yml, whether in place or by a rename as every oculus write and most editors make it, is
-// one call after a short quiet; a write of any other file in the folder is none; a closed watcher
-// makes no call.
+// one call after a short quiet, and no later than the maximum wait while writes keep coming; a
+// write of any other file in the folder is none; a closed watcher makes no call.
 //
 // Every file is inside a directory of the case's own from scratchDir, which refuses a path outside
 // the system temporary directory before it makes one. The waits are how long a failure takes, not
@@ -10,8 +10,20 @@
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, expect, vi } from 'vitest';
-import { watchLocal, type LocalWatcher } from '../../../../src/lib/server/root/watch/local.ts';
-import { holdsDebounce, sleep, until, type HeldWatches } from './probe.ts';
+import {
+    DEBOUNCE as QUIET,
+    MAX_WAIT,
+    watchLocal,
+    type LocalWatcher
+} from '../../../../src/lib/server/root/watch/local.ts';
+import {
+    fakeClock,
+    holdsDebounce,
+    holdsQuietAndMaxWait,
+    sleep,
+    until,
+    type HeldWatches
+} from './probe.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const watches = vi.hoisted((): HeldWatches => ({ held: false, listeners: new Map() }));
@@ -72,11 +84,32 @@ it('makes no call after it is closed', async () => {
     expect(changed).toHaveBeenCalledTimes(0);
 });
 
+/** A watcher whose watch is held, on fake timers, and the event that stands for a write. */
+function held(debounce?: number): {
+    event: () => void;
+    count: () => number;
+    watcher: LocalWatcher;
+} {
+    const { root, config } = engine();
+    const changed = vi.fn();
+    watches.held = true;
+    fakeClock();
+    const watcher = watchLocal(root, changed, debounce === undefined ? {} : { debounce });
+    watchers.push(watcher);
+    const listener = watches.listeners.get(config);
+    expect(listener).toBeDefined();
+    return {
+        event: () => listener?.('rename', 'local.yml'),
+        count: () => changed.mock.calls.length,
+        watcher
+    };
+}
+
 it('debounces a burst into one call, waits the whole quiet again, and calls none after close', async () => {
     const { root, config } = engine();
     const changed = vi.fn();
     watches.held = true;
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    fakeClock();
     const watcher = watchLocal(root, changed, { debounce: DEBOUNCE });
     watchers.push(watcher);
     const listener = watches.listeners.get(config);
@@ -87,4 +120,14 @@ it('debounces a burst into one call, waits the whole quiet again, and calls none
         () => changed.mock.calls.length,
         () => watcher.close()
     );
+});
+
+holdsQuietAndMaxWait({
+    quiet: QUIET,
+    maxWait: MAX_WAIT,
+    what: 'call',
+    held: (debounce) => {
+        const { event, count, watcher } = held(debounce);
+        return { event, count, close: () => watcher.close() };
+    }
 });

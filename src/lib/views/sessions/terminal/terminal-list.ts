@@ -25,7 +25,11 @@
 import type { ISearchOptions } from '@xterm/addon-search';
 import { FILE_DRAG } from '$lib/state/sources/fs';
 import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
-import type { TerminalTabState } from '$lib/state/sessions/terminal/terminal-tabs';
+import {
+    TERMINAL_VIEW,
+    tabTerminals,
+    type TerminalTabState
+} from '$lib/state/sessions/terminal/terminal-tabs';
 import { COLOR_NAMES, colorToken } from '$lib/state/sessions/terminal/terminal-marks';
 import type { ComposerAgent } from '$lib/state/sessions/terminal/composer';
 import { stamp } from '$lib/state/shared/words/format';
@@ -54,31 +58,24 @@ export type TerminalListProps = {
     attachables: Attachable[];
     /** Called with a row's terminal when a pointer press shows it, before it is shown. */
     onshown: (terminal: string) => void;
-    /** Split the tab on a row's terminal, as the row's Split and its menu do. */
-    onsplit: (terminal: string) => void;
+    /**
+     * What a pick of a row's menu does, and what the row's own controls call: Split, Kill (a
+     * press of the row's Kill, a Delete or Backspace on it, or Kill Terminal from its menu, which
+     * is the tab's `pressKill`: it arms the terminal first and kills it on the second), and the
+     * double click that opens Rename. The bar's menu of a sole terminal is routed through the same
+     * object.
+     */
+    handlers: PickHandlers;
     /** The terminal whose title is being edited on its row, or ''. */
     renaming: string;
-    /** A double click on a row's name, or Rename on its menu. */
-    onrename: (terminal: string) => void;
     /** The rename field saved a value (an empty one clears the title). */
     onrenamed: (terminal: string, value: string) => void;
     /** The rename field was cancelled. */
     onrenamecancel: () => void;
-    /** Change Icon on a row's menu. */
-    onicon: (terminal: string) => void;
-    /** Change Color on a row's menu; the empty string is Default. */
-    oncolor: (terminal: string, color: string) => void;
-    /** Clear on a row's menu. */
-    onclear: (terminal: string) => void;
     /** The terminal whose Kill was pressed or picked once and waits for the second, or ''. */
     arming: string;
     /** A kill the server refused, said below the rows until the next one. */
     failure: string;
-    /**
-     * A press of a row's Kill, a Delete or Backspace on it, or Kill Terminal from its menu: the
-     * tab's `pressKill`, which arms the terminal first and kills it on the second.
-     */
-    onkill: (terminal: string) => void;
     /** Take the arm off, when the stop moves off the armed row or focus leaves the list. */
     ondisarm: () => void;
 };
@@ -97,6 +94,30 @@ export function markStyle(color: string): string | undefined {
 
 /** How long a bell marks its row, which is VS Code's `terminal.integrated.bellDuration` default. */
 export const BELL_MS = 1000;
+
+/**
+ * The bell's mark: `ring` marks a terminal through `mark` and takes the mark off after BELL_MS, the
+ * timer of an earlier ring replaced; `stop` takes the timer away, for a tab that goes.
+ */
+export function bellMark(mark: (terminal: string | null) => void): {
+    ring: (terminal: string) => void;
+    stop: () => void;
+} {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const stop = (): void => {
+        if (timer !== null) clearTimeout(timer);
+        timer = null;
+    };
+    const ring = (terminal: string): void => {
+        stop();
+        mark(terminal);
+        timer = setTimeout(() => {
+            timer = null;
+            mark(null);
+        }, BELL_MS);
+    };
+    return { ring, stop };
+}
 
 /**
  * The type a dragged row carries its terminal id under, which no other drag carries. A row dropped
@@ -426,6 +447,24 @@ export function terminalRowMenu(
 export type Attachable = { terminal: string; title: string };
 
 /**
+ * The terminals the Terminal tabs in `tabs` own other than `self`'s, each by its name, which Join
+ * Terminals on a menu offers to move into `self`. A terminal started elsewhere (`foreign`) is not
+ * one of them.
+ */
+export function ownedElsewhere(
+    tabs: readonly { id: string; view: string; state: unknown }[],
+    self: string,
+    terminalById: (id: string) => Terminal | null
+): Attachable[] {
+    return tabs
+        .filter((one) => one.view === TERMINAL_VIEW && one.id !== self)
+        .flatMap((one) => tabTerminals(one.state))
+        .map((id) => terminalById(id))
+        .filter((one): one is Terminal => one !== null && one.foreign !== true)
+        .map((one) => ({ terminal: one.id, title: one.name }));
+}
+
+/**
  * Attach to Session: a submenu of the running terminals no Terminal tab owns, each by the name it
  * is handed, in the order handed; no item at all while there is none.
  */
@@ -481,6 +520,47 @@ export function emptyListMenu(t: Words, attachable: readonly Attachable[]): Menu
 /** The terminal a Join Terminals pick names, or null for any other item. */
 export function joinedOf(id: string): string | null {
     return id.startsWith(JOIN) && id.length > JOIN.length ? id.slice(JOIN.length) : null;
+}
+
+/**
+ * What each item of a terminal's menu does, given the terminal the menu was opened on. A list row
+ * and the bar's name of a sole terminal open the same menu (`terminalRowMenu`) and route a pick
+ * through the same `routePick`, so a pick means one thing wherever it is made.
+ */
+export type PickHandlers = {
+    /** Split Terminal: one of the terminal's kind starts right of it. */
+    split: (terminal: string) => void;
+    /** Kill Terminal: arms the terminal, and kills it on the second pick. */
+    kill: (terminal: string) => void;
+    /** Unsplit Terminal: the terminal leaves the row the tab draws. */
+    unsplit: (terminal: string) => void;
+    /** Rename: the inline field opens. */
+    rename: (terminal: string) => void;
+    /** Change Icon: the glyph list opens. */
+    icon: (terminal: string) => void;
+    /** Clear: the grid and the terminal's history empty. */
+    clear: (terminal: string) => void;
+    /** Change Color: a colour name, or the empty string for Default. */
+    color: (terminal: string, color: string) => void;
+    /** Join Terminals: the terminal another tab owns moves in beside `terminal`. */
+    join: (terminal: string, moving: string) => void;
+};
+
+/**
+ * Do what a pick of a terminal's menu means to `terminal`, the one the menu was opened on. An id
+ * no item of the menu carries, and the heading of the colour and join lists, do nothing.
+ */
+export function routePick(pick: string, terminal: string, handlers: PickHandlers): void {
+    const joining = joinedOf(pick);
+    const color = colorOf(pick);
+    if (joining !== null) handlers.join(terminal, joining);
+    else if (color !== null) handlers.color(terminal, color);
+    else if (pick === MENU_SPLIT) handlers.split(terminal);
+    else if (pick === MENU_KILL) handlers.kill(terminal);
+    else if (pick === MENU_UNSPLIT) handlers.unsplit(terminal);
+    else if (pick === MENU_RENAME) handlers.rename(terminal);
+    else if (pick === MENU_ICON) handlers.icon(terminal);
+    else if (pick === MENU_CLEAR) handlers.clear(terminal);
 }
 
 /** The terminal an Attach to Session pick names, or null for any other item. */

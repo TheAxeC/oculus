@@ -19,9 +19,16 @@ import type { ITerminalOptions } from '@xterm/xterm';
 import {
     applyLook,
     findLook,
+    followTerminalOptions,
     gridLook,
-    gridOptions
+    gridOptions,
+    type OptionsTarget
 } from '../../../src/lib/views/sessions/terminal/grid/grid-look.ts';
+import {
+    copySelection,
+    type SelectionClipboard
+} from '../../../src/lib/views/sessions/terminal/grid/grid-actions.ts';
+import { setAppearance, terminalOptions } from '../../../src/lib/state/shared/words/appearance.ts';
 import {
     findCount,
     findKey,
@@ -176,6 +183,22 @@ describe('one terminal', () => {
         expect(textOf(body, 'data-terminal-description')).toBe('oculus');
         // the bar names the one terminal there is, and no menu of terminals is offered
         expect(body).not.toContain('data-session-picker');
+    });
+
+    // The right-click itself, and the browser's own menu staying shut, are seen at the look.
+    it('draws the bar name directly inside the context menu trigger a list row sits in', () => {
+        withTerminals(vim, claude);
+        const bar = html(owning([vim.id]));
+        const list = html(owning([vim.id, claude.id]));
+        /** The opening tag of the element a marker's element sits directly in, when it is a div. */
+        const parentTag = (markup: string, marker: string): string => {
+            const target = markup.lastIndexOf('<', markup.indexOf(marker));
+            const parent = markup.lastIndexOf('<div', target - 1);
+            const end = markup.indexOf('>', parent) + 1;
+            return markup.slice(end, target).trim() === '' ? markup.slice(parent, end) : '';
+        };
+        expect(parentTag(list, 'data-terminal-row="')).toContain('data-context-menu-trigger');
+        expect(parentTag(bar, 'data-terminal-shown')).toContain('data-context-menu-trigger');
     });
 });
 
@@ -442,6 +465,31 @@ describe("the grid's font and selection", () => {
         expect(gridOptions(gridLook(), undefined)).not.toHaveProperty('fontSize');
     });
 
+    it('sets no cursor or Option option on a grid built with none of the four keys', () => {
+        stubBody(TOKENS);
+        setAppearance({});
+        expect(terminalOptions()).toEqual({});
+        const options = gridOptions(gridLook(), 14, terminalOptions());
+        for (const name of ['cursorStyle', 'cursorBlink', 'macOptionIsMeta']) {
+            expect(options, name).not.toHaveProperty(name);
+        }
+        expect(gridOptions(gridLook(), 14)).toEqual(options);
+    });
+
+    it('builds a grid with the cursor and Option options the read holds, and none of its copy key', () => {
+        stubBody(TOKENS);
+        const options = gridOptions(gridLook(), 14, {
+            cursorStyle: 'bar',
+            cursorBlink: true,
+            macOptionIsMeta: true,
+            copyOnSelection: true
+        });
+        expect(options.cursorStyle).toBe('bar');
+        expect(options.cursorBlink).toBe(true);
+        expect(options.macOptionIsMeta).toBe(true);
+        expect(options).not.toHaveProperty('copyOnSelection');
+    });
+
     it('audits that a new look puts its font and its selection on a grid drawn in another', () => {
         stubBody(TOKENS);
         const options: ITerminalOptions = {
@@ -458,6 +506,162 @@ describe("the grid's font and selection", () => {
     it('audits that the selection is drawn in the ink before a theme sets its own colour', () => {
         stubBody({ ...TOKENS, '--on-accent-bg': '' });
         expect(gridLook().theme.selectionForeground).toBe('#111111');
+    });
+});
+
+describe('the terminal options on a mounted grid', () => {
+    /** A stand-in for xterm's terminal: its options, its selection and a spied resize. */
+    function stub(selected = '') {
+        const listeners: (() => void)[] = [];
+        const state = { selected, resized: vi.fn() };
+        const target: OptionsTarget = {
+            options: { fontSize: 12, cursorStyle: 'underline' },
+            getSelection: () => state.selected,
+            onSelectionChange: (listener) => {
+                listeners.push(listener);
+                return {
+                    dispose: () => {
+                        listeners.splice(listeners.indexOf(listener), 1);
+                    }
+                };
+            }
+        };
+        return {
+            target,
+            state,
+            listening: () => listeners.length,
+            select: (text: string) => {
+                state.selected = text;
+                for (const listener of [...listeners]) listener();
+            }
+        };
+    }
+
+    /** A clipboard that keeps what it was given. */
+    function clip(): { writes: string[]; clipboard: SelectionClipboard } {
+        const writes: string[] = [];
+        return {
+            writes,
+            clipboard: {
+                writeText: (text) => {
+                    writes.push(text);
+                    return Promise.resolve();
+                }
+            }
+        };
+    }
+
+    it('audits that the three xterm options follow the read, and the ones it leaves unset go back to the defaults', () => {
+        const held = stub();
+        const { clipboard } = clip();
+        followTerminalOptions(
+            held.target,
+            { cursorStyle: 'bar', cursorBlink: true, macOptionIsMeta: true },
+            () => clipboard
+        );
+        expect(held.target.options).toMatchObject({
+            cursorStyle: 'bar',
+            cursorBlink: true,
+            macOptionIsMeta: true,
+            fontSize: 12
+        });
+        followTerminalOptions(held.target, { cursorStyle: 'underline' }, () => clipboard);
+        expect(held.target.options).toMatchObject({
+            cursorStyle: 'underline',
+            cursorBlink: false,
+            macOptionIsMeta: false
+        });
+        followTerminalOptions(held.target, {}, () => clipboard);
+        expect(held.target.options).toMatchObject({ cursorStyle: 'block', cursorBlink: false });
+        expect(held.target.options.fontSize).toBe(12);
+    });
+
+    it('audits that no option change resizes the grid', () => {
+        const held = stub();
+        const terminal = Object.assign(held.target, { resize: held.state.resized });
+        followTerminalOptions(terminal, { cursorBlink: true }, () => undefined);
+        followTerminalOptions(terminal, {}, () => undefined);
+        expect(held.state.resized).not.toHaveBeenCalled();
+    });
+
+    it('audits that a selection is copied as it changes while the key is on, and an empty one writes nothing', () => {
+        const held = stub();
+        const { writes, clipboard } = clip();
+        followTerminalOptions(held.target, { copyOnSelection: true }, () => clipboard);
+        held.select('first');
+        held.select('');
+        held.select('second');
+        expect(writes).toEqual(['first', 'second']);
+    });
+
+    it('audits that a selection that stood when the key was turned on is not copied until it changes', () => {
+        const held = stub('already selected');
+        const { writes, clipboard } = clip();
+        followTerminalOptions(held.target, { copyOnSelection: true }, () => clipboard);
+        expect(writes).toEqual([]);
+        held.select('already selected, and more');
+        expect(writes).toEqual(['already selected, and more']);
+    });
+
+    it('audits that Select All copies the whole buffer while the key is on', () => {
+        const held = stub();
+        const { writes, clipboard } = clip();
+        followTerminalOptions(held.target, { copyOnSelection: true }, () => clipboard);
+        held.select('line one\nline two\nthe prompt');
+        expect(writes).toEqual(['line one\nline two\nthe prompt']);
+    });
+
+    it('audits that one call that turns the key on listens once, and none listens after the key is off or the call is undone', () => {
+        const held = stub();
+        const { writes, clipboard } = clip();
+        const undo = followTerminalOptions(held.target, { copyOnSelection: true }, () => clipboard);
+        expect(held.listening()).toBe(1);
+        undo();
+        expect(held.listening()).toBe(0);
+        const again = followTerminalOptions(
+            held.target,
+            { copyOnSelection: true },
+            () => clipboard
+        );
+        held.select('one');
+        expect(writes).toEqual(['one']);
+        again();
+        const off = followTerminalOptions(held.target, { copyOnSelection: false }, () => clipboard);
+        expect(held.listening()).toBe(0);
+        held.select('two');
+        expect(writes).toEqual(['one']);
+        off();
+    });
+});
+
+describe('copy on selection', () => {
+    it('audits that the selected text is written, and nothing for an empty selection', () => {
+        const writes: string[] = [];
+        const clipboard: SelectionClipboard = {
+            writeText: (text) => {
+                writes.push(text);
+                return Promise.resolve();
+            }
+        };
+        copySelection('selected', clipboard);
+        copySelection('', clipboard);
+        expect(writes).toEqual(['selected']);
+    });
+
+    it('audits that a clipboard that refuses, throws at once or is absent throws nothing', async () => {
+        const refusing: SelectionClipboard = {
+            writeText: () => Promise.reject(new Error('denied'))
+        };
+        const throwing: SelectionClipboard = {
+            writeText: () => {
+                throw new TypeError('no clipboard');
+            }
+        };
+        expect(() => copySelection('text', refusing)).not.toThrow();
+        expect(() => copySelection('text', throwing)).not.toThrow();
+        expect(() => copySelection('text', undefined)).not.toThrow();
+        // the refusal is handled, so no rejection is left to surface after the case
+        await new Promise((done) => setTimeout(done, 0));
     });
 });
 

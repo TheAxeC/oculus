@@ -2,14 +2,15 @@
 
 Landed 06:19: X3d (Source Control as VS Code's), `agents/reviews/X3d-landing.md`.
 Landed 06:36: S3b (the `config-key` write), `agents/reviews/S3b-landing.md`.
+Landed 06:55: Q109 (the terminal: lines after a pane move, the five watchers' capped debounce, a sole terminal's menu, four terminal options), `agents/reviews/Q109-landing.md`.
 
 In flight:
-- Q109 (the terminal: lines after a pane move, the five watchers' capped debounce, a sole terminal's menu, four terminal options), repair round 1 refuted; landing next.
+- Q85a2 (zod in the edit, sessions and transcripts folders), brief checked (29 findings); its builder launches once they are closed in the brief.
 Open items: Z138 (X3d's light-theme Seti colours, yours). Choices made in automode, for review: `choices.md`.
 Queued, in order:
-- U2 (every view's look against VS Code's), prepared; its builder launches once Q109 has landed.
+- U2 (every view's look against VS Code's), prepared; its builder launches next.
 - S3c (the Settings editor), S3a and S3b have landed.
-- Q85a2 and Q85a4 (zod in the other server folders, two steps), /spec when a slot frees; then Q85b and Q85c, then Q85d.
+- Q85a4 (zod in the other server folders), /spec when a slot frees; then Q85b and Q85c, then Q85d.
 - Q88b (the right-click menus' new capabilities), X3d has landed.
 - X3c (the tab strip as VS Code's), once Q88b has landed.
 - X3a (the Files view as VS Code's Explorer), once Q88b has landed.

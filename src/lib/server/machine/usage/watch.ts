@@ -2,13 +2,17 @@
 // complete usage channel. Claude status folders are watched here. The owning context injects its
 // session watcher signal for Codex rollout changes.
 //
-// The debounce is perfect-debounce's, handed a function that starts the rebuild and returns at
-// once: handed the rebuild's promise, it would run the next rebuild without the wait while one is
-// still pending, and a burst during a slow fold would rebuild at each event.
+// The debounce is lodash's, with a quiet (USAGE_DEBOUNCE) and a maximum wait (USAGE_MAX_WAIT) so a
+// source written more often than the quiet is still rebuilt. It is handed a function that starts
+// the rebuild and returns at once, since lodash does not wait on a promise. `refresh` never runs
+// two rebuilds at once and never keeps more than one waiting: a refresh that arrives while a
+// rebuild is folding waits for it and starts one rebuild after it, and every refresh that arrives
+// while that one waits joins it. A fold slower than the maximum wait under steady writes therefore
+// leaves one rebuild queued, built from what is on disk when it starts, not one per maximum wait.
 
 import { mkdirSync, watch } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { debounce as debounced } from 'perfect-debounce';
+import { debounce as debounced } from 'lodash-es';
 import type {
     UsageAccountConfig,
     UsagePayload,
@@ -18,7 +22,14 @@ import type { Hub } from '../../core/channels.ts';
 import { claudeAccountFile, defaultUsageRoot, usageAccounts, type UsageTiers } from './accounts.ts';
 import { UsageTranscriptFold } from './transcripts.ts';
 
+/** Milliseconds of quiet after the last change before one rebuild starts. */
 export const USAGE_DEBOUNCE = 500;
+/**
+ * Milliseconds the first change of a burst waits at most for its rebuild, however often changes
+ * keep coming. Each change restarts the quiet, so a transcript or a status folder written more
+ * often than the quiet would otherwise hold the usage channel back for as long as it is written.
+ */
+export const USAGE_MAX_WAIT = 2 * USAGE_DEBOUNCE;
 /**
  * A quiet hour still moves the reset durations and the live cutoff, so the payload is rebuilt on a
  * clock too.
@@ -66,7 +77,8 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
             watch(folder, { recursive: false }, (_event, filename) => changed(filename)));
     const handles: { close(): void }[] = [];
     let closed = false;
-    let pending = Promise.resolve();
+    let running: Promise<void> | null = null;
+    let waiting: Promise<void> | null = null;
 
     const build = async (): Promise<void> => {
         if (closed) return;
@@ -86,18 +98,52 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
         hub.publish('usage', payload);
     };
 
-    const refresh = (): Promise<void> => {
-        pending = pending.then(build, build);
-        return pending;
+    /**
+     * Start a rebuild now, one microtask later, and note it as the one running until it ends. A
+     * rebuild that fails is logged here, so neither a caller nor the rebuild that waits on it is
+     * handed the failure.
+     */
+    const start = (): Promise<void> => {
+        const run = Promise.resolve()
+            .then(build)
+            .catch((error: unknown) => {
+                console.error(`usage watch: cannot rebuild: ${reason(error)}`);
+            });
+        running = run;
+        const ended = (): void => {
+            if (running === run) running = null;
+        };
+        run.then(ended, ended);
+        return run;
     };
 
-    const queued = debounced(() => {
-        void refresh();
-    }, debounce);
+    /**
+     * Rebuild now when none runs. While one runs, the one rebuild that waits for it, which every
+     * refresh in that time shares and which starts when the running one has ended.
+     */
+    const refresh = (): Promise<void> => {
+        if (running === null) return start();
+        if (waiting === null) {
+            const after = (): Promise<void> => {
+                waiting = null;
+                return start();
+            };
+            waiting = running.then(after, after);
+        }
+        return waiting;
+    };
+
+    const queued = debounced(
+        () => {
+            void refresh();
+        },
+        debounce,
+        { maxWait: USAGE_MAX_WAIT }
+    );
 
     const queue = (): void => {
         if (closed) return;
-        void queued();
+        queued();
     };
 
     const open = (folder: string, changed: (filename: string | Buffer | null) => boolean): void => {

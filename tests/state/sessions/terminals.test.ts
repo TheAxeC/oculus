@@ -11,6 +11,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scalar } from '../../../src/lib/data/helpers/guards.ts';
 import {
+    RESIZE_WAIT,
     decodeBytes,
     encodeBytes,
     endedTerminals,
@@ -175,6 +176,7 @@ function terminal(over: Partial<Terminal> = {}): Terminal {
 afterEach(() => {
     disconnect();
     opened.length = 0;
+    vi.useRealTimers();
     vi.unstubAllGlobals();
 });
 
@@ -347,12 +349,57 @@ describe('the two messages a page writes on a pty channel', () => {
 });
 
 describe('subscribing to a terminal', () => {
-    it('asks for the channel and hands the scrollback over first', () => {
+    const GRID = { cols: 54, rows: 23 };
+    const grid = () => GRID;
+
+    /** The request bodies fetch was given, in the order made. */
+    type Requests = {
+        bodies: () => Record<string, unknown>[];
+        answer: (at: number, ok?: boolean) => void;
+    };
+
+    /**
+     * A fetch whose every request waits until the case answers it, the answer of a terminal that
+     * is there (`ok`) or of one that is not.
+     */
+    function gated(): Requests {
+        const calls: { init: RequestInit; reply: (response: Response) => void }[] = [];
+        vi.stubGlobal(
+            'fetch',
+            (_url: string, init: RequestInit) =>
+                new Promise<Response>((reply) => calls.push({ init, reply }))
+        );
+        return {
+            bodies: () =>
+                calls.map((call) => JSON.parse(scalar(call.init.body)) as Record<string, unknown>),
+            answer: (at, ok = true) =>
+                calls.at(at)?.reply(
+                    new Response(JSON.stringify(ok ? { ok: true, id: ID } : { error: 'gone' }), {
+                        status: ok ? 200 : 404,
+                        headers: { 'content-type': 'application/json' }
+                    })
+                )
+        };
+    }
+
+    const resize = (size: { cols: number; rows: number }) => ({
+        action: 'resize',
+        id: ID,
+        ...size
+    });
+    const subscribe = { type: 'subscribe', channels: ['sessions', CHANNEL], token: '' };
+
+    /** Let the requests and promises already due run, for a case that asserts nothing happened. */
+    const idle = (): Promise<void> => new Promise((done) => setTimeout(done, 20));
+
+    it('asks for the channel and hands the scrollback over first', async () => {
         const socket = connected();
+        serving(200, { ok: true, id: ID });
         const seen: { text: string; scrollback: boolean }[] = [];
-        subscribePty(ID, (bytes, scrollback) => {
+        subscribePty(ID, grid, (bytes, scrollback) => {
             seen.push({ text: new TextDecoder().decode(bytes), scrollback });
         });
+        await vi.waitFor(() => expect(socket.written()).toHaveLength(1));
 
         const subscribed = socket.written()[0];
         expect(subscribed.type).toBe('subscribe');
@@ -370,15 +417,18 @@ describe('subscribing to a terminal', () => {
 
     it('keeps the chunks out of entities, where only the latest would survive', () => {
         const socket = connected();
-        subscribePty(ID, () => undefined);
+        serving(200, { ok: true, id: ID });
+        subscribePty(ID, grid, () => undefined);
         socket.deliver(CHANNEL, 1, { bytes: encodeBytes('one chunk') });
         expect(message(CHANNEL)).toBe(null);
     });
 
-    it('stops handing them over, and stops asking for the channel on a reconnect', () => {
+    it('stops handing them over, and stops asking for the channel on a reconnect', async () => {
         const socket = connected();
+        serving(200, { ok: true, id: ID });
         const seen: string[] = [];
-        const off = subscribePty(ID, (bytes) => seen.push(new TextDecoder().decode(bytes)));
+        const off = subscribePty(ID, grid, (bytes) => seen.push(new TextDecoder().decode(bytes)));
+        await vi.waitFor(() => expect(socket.written()).toHaveLength(1));
         socket.deliver(CHANNEL, 1, { bytes: encodeBytes('before') });
         off();
         unsubscribePty(ID);
@@ -389,8 +439,151 @@ describe('subscribing to a terminal', () => {
         // already holds, so asking for it again writing a subscribe message is what says it is
         // gone.
         socket.sent = [];
-        subscribePty(ID, () => undefined);
+        subscribePty(ID, grid, () => undefined);
+        await vi.waitFor(() => expect(socket.written()).toHaveLength(1));
         expect(socket.written()[0].channels).toEqual(['sessions', CHANNEL]);
+    });
+
+    it('resizes the window to the grid before it asks for the channel', async () => {
+        const socket = connected();
+        const requests = gated();
+        subscribePty(ID, grid, () => undefined);
+        expect(requests.bodies()).toEqual([resize(GRID)]);
+        await idle();
+        expect(socket.written()).toEqual([]);
+
+        requests.answer(0);
+        await vi.waitFor(() => expect(socket.written()).toEqual([subscribe]));
+    });
+
+    it('asks for the channel when the resize is refused', async () => {
+        const socket = connected();
+        const requests = gated();
+        subscribePty(ID, grid, () => undefined);
+        requests.answer(0, false);
+        await vi.waitFor(() => expect(socket.written()).toEqual([subscribe]));
+    });
+
+    it('asks for nothing when the listener is taken off before the resize answered', async () => {
+        const socket = connected();
+        const requests = gated();
+        const off = subscribePty(ID, grid, () => undefined);
+        off();
+        requests.answer(0);
+        await idle();
+        expect(socket.written()).toEqual([]);
+        expect(requests.bodies()).toHaveLength(1);
+    });
+
+    it('posts the grid size again when it changed while the resize was out, and asks after that', async () => {
+        const socket = connected();
+        const requests = gated();
+        let size = GRID;
+        subscribePty(
+            ID,
+            () => size,
+            () => undefined
+        );
+        size = { cols: 90, rows: 12 };
+        requests.answer(0);
+        await vi.waitFor(() => expect(requests.bodies()).toHaveLength(2));
+        expect(requests.bodies()[1]).toEqual(resize({ cols: 90, rows: 12 }));
+        await idle();
+        expect(socket.written()).toEqual([]);
+
+        requests.answer(1);
+        await vi.waitFor(() => expect(socket.written()).toEqual([subscribe]));
+        expect(requests.bodies()).toHaveLength(2);
+    });
+
+    it('asks for the channel at RESIZE_WAIT when the resize never answers', async () => {
+        const socket = connected();
+        const requests = gated();
+        vi.useFakeTimers();
+        subscribePty(ID, grid, () => undefined);
+        expect(requests.bodies()).toHaveLength(1);
+        await vi.advanceTimersByTimeAsync(RESIZE_WAIT - 1);
+        expect(socket.written()).toEqual([]);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(socket.written()).toEqual([subscribe]);
+    });
+
+    it('posts the resize of a second subscribe after the first one answered, ending at the later size', async () => {
+        const socket = connected();
+        const requests = gated();
+        const later = { cols: 120, rows: 40 };
+        subscribePty(ID, grid, () => undefined);
+        subscribePty(
+            ID,
+            () => later,
+            () => undefined
+        );
+        await idle();
+        expect(requests.bodies()).toEqual([resize(GRID)]);
+
+        requests.answer(0);
+        await vi.waitFor(() => expect(requests.bodies()).toEqual([resize(GRID), resize(later)]));
+        requests.answer(1);
+        await vi.waitFor(() => expect(socket.written()).toEqual([subscribe]));
+        expect(requests.bodies().at(-1)).toEqual(resize(later));
+    });
+
+    it('posts the resize of a remount after the one of the grid taken off, and asks for the channel once', async () => {
+        const socket = connected();
+        const requests = gated();
+        const later = { cols: 120, rows: 40 };
+        const off = subscribePty(ID, grid, () => undefined);
+        off();
+        subscribePty(
+            ID,
+            () => later,
+            () => undefined
+        );
+        await idle();
+        expect(requests.bodies()).toEqual([resize(GRID)]);
+
+        requests.answer(0);
+        await vi.waitFor(() => expect(requests.bodies()).toEqual([resize(GRID), resize(later)]));
+        await idle();
+        expect(socket.written()).toEqual([]);
+        requests.answer(1);
+        await vi.waitFor(() => expect(socket.written()).toEqual([subscribe]));
+    });
+
+    it('holds input typed while the resize is out and writes it right after the subscribe, in order', async () => {
+        const socket = connected();
+        const requests = gated();
+        subscribePty(ID, grid, () => undefined);
+        expect(sendInput(ID, 'ls')).toBe(true);
+        expect(sendInput(ID, '\r')).toBe(true);
+        await idle();
+        expect(socket.written()).toEqual([]);
+
+        requests.answer(0);
+        await vi.waitFor(() => expect(socket.written()).toHaveLength(3));
+        expect(socket.written()).toEqual([
+            subscribe,
+            { type: 'input', channel: CHANNEL, bytes: encodeBytes('ls') },
+            { type: 'input', channel: CHANNEL, bytes: encodeBytes('\r') }
+        ]);
+        expect(sendInput(ID, 'x')).toBe(true);
+        expect(socket.written().at(-1)).toEqual({
+            type: 'input',
+            channel: CHANNEL,
+            bytes: encodeBytes('x')
+        });
+    });
+
+    it('drops the input held for a listener taken off, and the input given after that', async () => {
+        const socket = connected();
+        const requests = gated();
+        const off = subscribePty(ID, grid, () => undefined);
+        sendInput(ID, 'held');
+        off();
+        expect(sendInput(ID, 'after the off')).toBe(false);
+        requests.answer(0);
+        await idle();
+        expect(socket.written()).toEqual([]);
     });
 });
 

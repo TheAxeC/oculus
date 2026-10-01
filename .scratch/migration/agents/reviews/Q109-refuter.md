@@ -466,3 +466,13 @@ None. In the round's files, the only lines over 100 columns are test-name string
   - `void mine.finally(...)` in `pty-subscribe.ts` would leave an unhandled rejection if `size()` or `subscribe()` threw. The first review accepted it, and the round does not touch it.
 
 Reviewer usage: about 226,000 tokens (from the context counter, not exact), about 45 tool uses, minutes not measured.
+
+## Closed
+
+The findings of the run over repair round 1, each fixed at landing on main (`agents/reviews/Q109-landing.md`):
+
+- Proof 1 (the reset of `waiting` untested): `tests/server/machine/usage/watch.test.ts`, "makes a new rebuild wait for a refresh that comes while that one folds", a second waiting cycle that counts three folds.
+- Proof 2 (close while a rebuild waits): the same file, "starts no rebuild that waited once the watcher is closed".
+- Proof 3 (the helper's doc comment): `tests/server/root/watch/probe.ts` now says an injected quiet of 0 runs once per event.
+- Proof 4 (the bar's `own` and its arming): the look on TEST at landing. A right-click on a sole terminal's bar name opened the row menu and no outer menu; Rename opened the title field; Kill armed, and a second right-click read "Press again to kill this terminal".
+- Behaviour 1 (a rejected rebuild): `start` in `src/lib/server/machine/usage/watch.ts` catches and logs `usage watch: cannot rebuild: <reason>`, so neither the caller nor the waiting rebuild is handed the failure; `DESIGN.md:116` says so. The test "logs a rebuild that fails, whether it ran at once or waited, and leaves no rejection" failed without the catch (`AssertionError: promise rejected "Error: fold 2" instead of resolving`, and an unhandled rejection) and passes with it.

@@ -221,7 +221,13 @@ describe('the real config/catalogs/vocab.yml', () => {
             'type_color',
             'wallpaper'
         ]);
-        expect(vocab.terminal).toEqual({ font_px: 12.5 });
+        expect(vocab.terminal).toEqual({
+            font_px: 12.5,
+            mac_option_is_meta: false,
+            copy_on_selection: false,
+            cursor_style: 'block',
+            cursor_blinking: false
+        });
     });
 
     it('gives a hue to every type the portfolio uses', () => {

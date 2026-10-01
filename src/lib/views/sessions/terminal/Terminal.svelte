@@ -43,11 +43,12 @@
     // while no list is drawn; Change Icon opens the glyph list (ui/forms/choice/GlyphDialog.svelte)
     // and Change Color takes the picked colour; Clear empties the grid and the terminal's history.
     //
-    // The grid's and the list's right-click menus act through this tab: Split Terminal splits it as
-    // a row's Split does, Kill Terminal arms the terminal and kills it on a second pick or press,
-    // as the row's Kill does (terminal-list.ts, `pressKill`), the arm taken off when a terminal
-    // joins or leaves the tab, and Join Terminals is offered the terminals the other Terminal tabs
-    // own, each by its name.
+    // The grid's, the list's and the bar's right-click menus act through this tab (a right-click on
+    // the bar's name of a sole terminal opens a list row's menu, and `routePick` sends a pick of
+    // either to one set of handlers): Split Terminal splits it as a row's Split does, Kill Terminal
+    // arms the terminal and kills it on a second pick or press, as the row's Kill does
+    // (terminal-list.ts, `pressKill`), the arm taken off when a terminal joins or leaves the tab,
+    // and Join Terminals is offered the terminals the other Terminal tabs own, each by its name.
 
     import Composer from './Composer.svelte';
     import { SvelteMap } from 'svelte/reactivity';
@@ -64,12 +65,13 @@
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import {
         ROW_MIN,
+        joined,
         readTab,
         resizedShares,
         rowWidths,
+        showingOne,
         splitDrawn,
-        tabTerminals,
-        TERMINAL_VIEW,
+        unsplit,
         withLabel,
         withShares,
         withStarted,
@@ -79,17 +81,21 @@
     import { glyphNames } from '$lib/state/workbench/navigation/rail';
     import { tabsOf } from '$lib/state/workbench/layout';
     import {
-        BELL_MS,
+        bellMark,
         COMPOSER_REM,
         MENU_PROMPT,
         ROW_DRAG,
         attachedOf,
         kindsMenu,
         listDrawn,
+        ownedElsewhere,
         pressKill,
         profileOf,
+        routePick,
         tabRows,
-        terminalTip
+        terminalRowMenu,
+        terminalTip,
+        type PickHandlers
     } from './terminal-list';
     import { terminalLabel } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -140,18 +146,13 @@
     /** The rows marked current: the terminals the row draws, or the shown one alone. */
     const current = $derived(split ? tab.row : tab.shown === null ? [] : [tab.shown]);
 
-    /**
-     * The terminals the other Terminal tabs own, on every page, each by its name: what Join
-     * Terminals on a row offers to move into this tab.
-     */
+    /** The terminals the other Terminal tabs own, on every page: what Join Terminals offers. */
     const others = $derived(
-        pages()
-            .flatMap((one) => tabsOf(one.workbench.root))
-            .filter((one) => one.view === TERMINAL_VIEW && one.id !== instance.id)
-            .flatMap((one) => tabTerminals(one.state))
-            .map((id) => terminalById(id))
-            .filter((one): one is NonNullable<typeof one> => one !== null && one.foreign !== true)
-            .map((one) => ({ terminal: one.id, title: one.name }))
+        ownedElsewhere(
+            pages().flatMap((one) => tabsOf(one.workbench.root)),
+            instance.id,
+            terminalById
+        )
     );
 
     /**
@@ -176,7 +177,7 @@
 
     /** The terminal whose bell rang in this tab, while its mark shows. */
     let ringing: string | null = $state(null);
-    let bellTimer: ReturnType<typeof setTimeout> | null = null;
+    const bell = bellMark((which) => (ringing = which));
     /** The terminal a pointer press on its row asked for, whose grid takes focus. */
     let focusing: string | null = $state(null);
     /** The body, whose width gives each terminal of the row its width. */
@@ -223,9 +224,7 @@
     });
 
     // The bell's mark goes with the tab.
-    $effect(() => () => {
-        if (bellTimer !== null) clearTimeout(bellTimer);
-    });
+    $effect(() => bell.stop);
 
     /**
      * Split one of this tab's terminals: one of its kind starts in its folder and takes the place
@@ -288,19 +287,28 @@
         });
     }
 
+    /** Join Terminals: a terminal another tab owns moves in after `terminal`, shown beside it. */
+    function joinInto(terminal: string, moving: string): void {
+        moveTerminal(moving, instance.id, pageId(), tab.terminals.indexOf(terminal) + 1);
+        const moved = readTab(instanceLayoutState(instance.id));
+        restate(joined(showingOne(moved, terminal), moving));
+    }
+
+    /** What a pick of a terminal's menu does, on a list row and on the bar's name alike. */
+    const handlers: PickHandlers = {
+        split: splitOn,
+        kill,
+        unsplit: (which: string) => restate(unsplit(tab, which)),
+        rename,
+        icon: (which: string) => (iconFor = which),
+        clear: (which: string) => void clearOf(which),
+        color: (which: string, color: string) => void restyle(which, { color }),
+        join: joinInto
+    };
+
     /** What a start from the composer does: the terminal joins this tab (terminal-tabs.ts). */
     function started(made: string, label: string): void {
         restate(withStarted(tab, made, label));
-    }
-
-    /** Mark a terminal's row for the bell's moment, the timer of an earlier ring replaced. */
-    function ring(which: string): void {
-        if (bellTimer !== null) clearTimeout(bellTimer);
-        ringing = which;
-        bellTimer = setTimeout(() => {
-            bellTimer = null;
-            ringing = null;
-        }, BELL_MS);
     }
 
     /** A drag of the handle right of the terminal at `at`, in pixels, as a change of the shares. */
@@ -346,6 +354,15 @@
                 ringing={ringing === shownRow.terminal}
                 renaming={renaming === shownRow.terminal}
                 onrename={() => rename(shownRow.terminal)}
+                menu={() =>
+                    terminalRowMenu(
+                        tab,
+                        shownRow.terminal,
+                        others,
+                        arming === shownRow.terminal,
+                        t
+                    )}
+                onpick={(pick: string) => routePick(pick, shownRow.terminal, handlers)}
                 onsave={(value: string) => void renamed(shownRow.terminal, value)}
                 oncancel={() => (renaming = '')}
             />
@@ -383,7 +400,7 @@
         {id}
         {focusing}
         onfocused={() => (focusing = null)}
-        onbell={ring}
+        onbell={bell.ring}
         onsplit={splitOn}
         armed={arming === id}
         onkill={kill}
@@ -450,17 +467,12 @@
                 {others}
                 {attachables}
                 onshown={(one: string) => (focusing = one)}
-                onsplit={splitOn}
+                {handlers}
                 {renaming}
-                onrename={rename}
                 onrenamed={(which: string, value: string) => void renamed(which, value)}
                 onrenamecancel={() => (renaming = '')}
-                onicon={(which: string) => (iconFor = which)}
-                oncolor={(which: string, color: string) => void restyle(which, { color })}
-                onclear={(which: string) => void clearOf(which)}
                 {arming}
                 {failure}
-                onkill={kill}
                 ondisarm={() => (arming = '')}
             />
         {/if}

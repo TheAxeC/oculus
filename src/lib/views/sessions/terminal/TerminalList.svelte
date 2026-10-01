@@ -40,41 +40,29 @@
     // the end of the row. A right-click on the list's empty area offers New Terminal, a shell
     // started in the tab's folder as the bar's New starts it, New Terminal With Profile, the same
     // start of the kind picked, and Attach to Session, which joins a running terminal no Terminal
-    // tab owns to the end of this tab and shows it.
+    // tab owns to the end of this tab and shows it. A pick is routed by terminal-list.ts's
+    // `routePick`, the function the bar's menu of a sole terminal routes its own by, to the
+    // handlers the tab hands the list.
 
     import { untrack } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import {
-        joined,
-        readTab,
-        reordered,
-        showingOne,
-        showingRow,
-        unsplit
-    } from '$lib/state/sessions/terminal/terminal-tabs';
+    import { reordered, showingRow } from '$lib/state/sessions/terminal/terminal-tabs';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { TerminalChoice } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import { nextStop } from '$lib/ui/tree/roving';
     import RenameField from './RenameField.svelte';
     import {
-        MENU_CLEAR,
-        MENU_ICON,
-        MENU_KILL,
         MENU_NEW,
-        MENU_RENAME,
-        MENU_SPLIT,
-        MENU_UNSPLIT,
         ROW_DRAG,
         armKept,
         attachedOf,
-        colorOf,
         emptyListMenu,
-        joinedOf,
         markStyle,
         movedOrder,
         profileOf,
+        routePick,
         rowKey,
         terminalRowMenu,
         terminalTip,
@@ -93,22 +81,17 @@
         others,
         attachables,
         onshown,
-        onsplit,
+        handlers,
         renaming,
-        onrename,
         onrenamed,
         onrenamecancel,
-        onicon,
-        oncolor,
-        onclear,
         arming,
         failure,
-        onkill,
         ondisarm
     }: TerminalListProps = $props();
 
     const {
-        layout: { instanceLayoutState, restateInstance },
+        layout: { restateInstance },
         terminals: { attachTerminal, moveTerminal, startInTab, terminalById }
     } = useState();
 
@@ -149,29 +132,12 @@
 
     /** Split this terminal: one of its kind and folder starts right of it. */
     function split(row: TerminalChoice): void {
-        onsplit(row.terminal);
+        handlers.split(row.terminal);
     }
 
-    /**
-     * Join Terminals: the terminal another tab owns moves into this tab after the row, and the tab
-     * shows the row with it beside. The tab's state is read again after the move, which changed it.
-     */
-    function join(row: TerminalChoice, moving: string): void {
-        moveTerminal(moving, instance, page, tab.terminals.indexOf(row.terminal) + 1);
-        const moved = readTab(instanceLayoutState(instance));
-        restateInstance(instance, joined(showingOne(moved, row.terminal), moving));
-    }
-
+    /** A pick of a row's menu, routed as the bar's menu of a sole terminal routes its own. */
     function rowPicked(row: TerminalChoice, pick: string): void {
-        const joining = joinedOf(pick);
-        if (joining !== null) join(row, joining);
-        else if (pick === MENU_SPLIT) split(row);
-        else if (pick === MENU_KILL) kill(row);
-        else if (pick === MENU_UNSPLIT) restateInstance(instance, unsplit(tab, row.terminal));
-        else if (pick === MENU_RENAME) onrename(row.terminal);
-        else if (pick === MENU_ICON) onicon(row.terminal);
-        else if (pick === MENU_CLEAR) onclear(row.terminal);
-        else if (colorOf(pick) !== null) oncolor(row.terminal, colorOf(pick) ?? '');
+        routePick(pick, row.terminal, handlers);
     }
 
     /**
@@ -206,7 +172,7 @@
 
     /** The first press arms Kill and the second stops the terminal, as the Sessions list's does. */
     function kill(row: TerminalChoice): void {
-        onkill(row.terminal);
+        handlers.kill(row.terminal);
     }
 
     /**
@@ -345,7 +311,8 @@
                                     <span
                                         class="title"
                                         data-row-title
-                                        ondblclick={() => onrename(row.terminal)}>{row.title}</span
+                                        ondblclick={() => handlers.rename(row.terminal)}
+                                        >{row.title}</span
                                     >
                                     <span class="description" data-row-description
                                         >{row.description}</span

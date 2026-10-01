@@ -6,7 +6,9 @@
 
 import type { ISearchOptions } from '@xterm/addon-search';
 import type { ITerminalOptions, ITheme } from '@xterm/xterm';
+import type { TerminalOptions } from '$lib/state/shared/words/appearance';
 import { COLOR_NAMES, colorToken } from '$lib/state/sessions/terminal/terminal-marks';
+import { copySelection, type SelectionClipboard } from './grid-actions';
 
 /** The grid's palette and its font family, as the theme in force gives them. */
 export type GridLook = { theme: ITheme; fontFamily: string };
@@ -49,12 +51,52 @@ export function gridLook(): GridLook {
 /**
  * The options a new grid is built with: the look, a line feed drawn as the program wrote it
  * (`convertEol` off, so xterm adds no carriage return), the font size when there is one, xterm's
- * own size otherwise, and xterm's proposed API, which the search addon's match marks and the
- * wide-character tables (`term.unicode`) need and throw without.
+ * own size otherwise, xterm's proposed API, which the search addon's match marks and the
+ * wide-character tables (`term.unicode`) need and throw without, and the cursor and Option options
+ * the config holds (`terminal`). An option the config leaves out is left out, so xterm's own
+ * default stands; the copy key is the grid's to follow (`followTerminalOptions`), not xterm's.
  */
-export function gridOptions(look: GridLook, size: number | undefined): ITerminalOptions {
+export function gridOptions(
+    look: GridLook,
+    size: number | undefined,
+    terminal: TerminalOptions = {}
+): ITerminalOptions {
     const options: ITerminalOptions = { ...look, convertEol: false, allowProposedApi: true };
-    return size === undefined ? options : { ...options, fontSize: size };
+    if (size !== undefined) options.fontSize = size;
+    if (terminal.cursorStyle !== undefined) options.cursorStyle = terminal.cursorStyle;
+    if (terminal.cursorBlink !== undefined) options.cursorBlink = terminal.cursorBlink;
+    if (terminal.macOptionIsMeta !== undefined) options.macOptionIsMeta = terminal.macOptionIsMeta;
+    return options;
+}
+
+/** What `followTerminalOptions` needs of a grid: its options and its selection. */
+export type OptionsTarget = {
+    options: ITerminalOptions;
+    getSelection: () => string;
+    onSelectionChange: (listener: () => void) => { dispose: () => void };
+};
+
+/**
+ * Put the config's cursor and Option options on a grid that is already drawn, and follow its
+ * copy key. An option the config leaves out goes back to xterm's default (a block cursor that does
+ * not blink, Option not Meta), since a key taken out of the file is a change like any other. Only
+ * options are set, so the grid is neither refitted nor resized. While copy on selection is on, each
+ * change of the selection that leaves text selected writes it to the clipboard `clipboard` answers
+ * at that moment; the call returned stops following.
+ */
+export function followTerminalOptions(
+    term: OptionsTarget,
+    options: TerminalOptions,
+    clipboard: () => SelectionClipboard | undefined
+): () => void {
+    term.options.cursorStyle = options.cursorStyle ?? 'block';
+    term.options.cursorBlink = options.cursorBlink ?? false;
+    term.options.macOptionIsMeta = options.macOptionIsMeta ?? false;
+    if (options.copyOnSelection !== true) return () => undefined;
+    const listening = term.onSelectionChange(() => {
+        copySelection(term.getSelection(), clipboard());
+    });
+    return () => listening.dispose();
 }
 
 /**

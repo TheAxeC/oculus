@@ -1,10 +1,10 @@
 // Layer 2, client state. config/appearance.yml as the page reads it: the picker's order, the class
 // string each theme puts on the body, the words it is offered under and the glyph drawn before
-// them, the wallpaper's numbers, what the CRT overlay and terminal text size start as, and the code
-// theme the editors start on. It is
-// installed the way the tone vocabulary is - the server ships the `themes` key as the page's data
-// at first load, and every later edit of config/appearance.yml arrives on the `config` channel - so
-// a theme is added by editing YAML and nothing else.
+// them, the wallpaper's numbers, what the CRT overlay and terminal text size start as, the terminal
+// grid's cursor, Option key and copy-on-selection settings, and the code theme the editors start
+// on. It is installed the way the tone vocabulary is: the server ships the `themes` key as the
+// page's data at first load, and every later edit of config/appearance.yml arrives on the `config`
+// channel, so a theme is added by editing YAML and nothing else.
 //
 // This holds no runes of its own: every lookup is pure over what was last installed and reads the
 // configuration's generation, state/shared/words/generation.svelte.ts, so a component calling one
@@ -47,6 +47,22 @@ export type Wallpaper = {
     panelBlur: number;
 };
 
+/**
+ * The terminal grid's settings from `terminal:` of config/appearance.yml, in xterm's own names and
+ * values. A key the file leaves out, or writes with a value of the wrong type, is absent here, so
+ * the grid keeps what it would do without the key.
+ */
+export type TerminalOptions = {
+    /** Whether Option sends Meta on macOS, xterm's `macOptionIsMeta`. */
+    macOptionIsMeta?: boolean;
+    /** Whether a selection is copied to the clipboard as it is made. */
+    copyOnSelection?: boolean;
+    /** xterm's `cursorStyle`; the file's `line` is xterm's `bar`. */
+    cursorStyle?: 'block' | 'underline' | 'bar';
+    /** Whether the cursor blinks, xterm's `cursorBlink`. */
+    cursorBlink?: boolean;
+};
+
 /** The class the terminal palettes carry, and the one `themes: rice` selects on. */
 const RICE = 'rice';
 
@@ -58,7 +74,8 @@ let byName: Record<string, Theme | undefined> = {};
 let paper: Wallpaper | null = null;
 let crt = false;
 let codeTheme = CODE_TOKENS;
-let terminalFont: number | null = null;
+/** The terminal settings as last installed: the text size, and the four other keys. */
+let terminal: { fontPx: number | null; options: TerminalOptions } = { fontPx: null, options: {} };
 
 /** The string at `key` of a record, or nothing. */
 function stringAt(node: unknown, key: string): string | undefined {
@@ -80,6 +97,30 @@ function numberAt(node: unknown, key: string, fallback: number, low: number, hig
 function readTerminalFont(config: Record<string, unknown>): number | null {
     const value = numberAt(config.terminal, 'font_px', Number.NaN, 6, 40);
     return Number.isFinite(value) ? value : null;
+}
+
+/** The cursor styles the file names, each as xterm names it. */
+const CURSOR_STYLES: Record<string, TerminalOptions['cursorStyle']> = {
+    block: 'block',
+    underline: 'underline',
+    line: 'bar'
+};
+
+/** The four terminal keys that are not the size, each left out when it is absent or mistyped. */
+function readTerminalOptions(config: Record<string, unknown>): TerminalOptions {
+    const node = config.terminal;
+    if (!isMap(node)) return {};
+    const options: TerminalOptions = {};
+    if (typeof node.mac_option_is_meta === 'boolean') {
+        options.macOptionIsMeta = node.mac_option_is_meta;
+    }
+    if (typeof node.copy_on_selection === 'boolean') {
+        options.copyOnSelection = node.copy_on_selection;
+    }
+    const style = typeof node.cursor_style === 'string' ? node.cursor_style : '';
+    if (Object.hasOwn(CURSOR_STYLES, style)) options.cursorStyle = CURSOR_STYLES[style];
+    if (typeof node.cursor_blinking === 'boolean') options.cursorBlink = node.cursor_blinking;
+    return options;
 }
 
 /** A fraction as the percentage color-mix takes. */
@@ -124,7 +165,7 @@ export function setAppearance(config: Record<string, unknown>): void {
     paper = readWallpaper(config);
     crt = isMap(config.crt) && config.crt.default === true;
     codeTheme = isCodeTheme(config.code_theme) ? config.code_theme : CODE_TOKENS;
-    terminalFont = readTerminalFont(config);
+    terminal = { fontPx: readTerminalFont(config), options: readTerminalOptions(config) };
     const rows = config.themes;
     if (!Array.isArray(rows)) return;
     for (const row of rows) {
@@ -188,7 +229,13 @@ export function codeThemeDefault(): string {
 /** The terminal grid's configured CSS pixel size, or null when it follows the page's type scale. */
 export function terminalFontPx(): number | null {
     configGeneration();
-    return terminalFont;
+    return terminal.fontPx;
+}
+
+/** The terminal grid's cursor, Option key and copy settings the config holds; a copy. */
+export function terminalOptions(): TerminalOptions {
+    configGeneration();
+    return { ...terminal.options };
 }
 
 /** The wallpaper's numbers, or null when config/appearance.yml configures none. */

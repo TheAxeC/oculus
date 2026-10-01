@@ -22,7 +22,7 @@
 import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
-import { debounce as debounced } from 'perfect-debounce';
+import { debounce as debounced } from 'lodash-es';
 import { buildPortfolio, portfolioConfigFrom } from '../../../data/index.ts';
 import { AUDIT_PATHS, auditFindings, auditRules, mutedSignatures } from '../../content/audit.ts';
 import {
@@ -61,7 +61,10 @@ export type WatchPaths = {
 };
 
 export type WatchOptions = {
-    /** Milliseconds of quiet after the last event before one rebuild runs. */
+    /**
+     * Milliseconds of quiet after the last event before one rebuild runs. A value longer than
+     * MAX_WAIT is the wait, since lodash raises a maximum wait to at least the quiet.
+     */
     debounce?: number;
 };
 
@@ -70,7 +73,15 @@ export type Watcher = {
     close(): void;
 };
 
-const DEBOUNCE = 200;
+/** Milliseconds of quiet after the last event before one rebuild runs, lodash's `debounce` wait. */
+export const DEBOUNCE = 200;
+/**
+ * Milliseconds the first event of a burst waits at most for its rebuild, lodash's `maxWait`. Each
+ * event restarts the quiet, so a hub or a config folder written more often than the quiet (a sync
+ * tool, a script rewriting a registry) would otherwise hold every published channel back for as
+ * long as it is written. Twice the quiet keeps a burst that ends within one quiet to one rebuild.
+ */
+export const MAX_WAIT = 2 * DEBOUNCE;
 
 /** Folders whose contents never change what the snapshot holds. */
 const NEVER = ['code', 'attic'];
@@ -393,13 +404,17 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     };
 
     /** One rebuild for a burst of events, of what the events of the burst touched. */
-    const queued = debounced(() => {
-        const withConfig = configTouched;
-        const withFeeds = feedsTouched;
-        configTouched = false;
-        feedsTouched = false;
-        rebuild(withConfig, withFeeds);
-    }, debounce);
+    const queued = debounced(
+        () => {
+            const withConfig = configTouched;
+            const withFeeds = feedsTouched;
+            configTouched = false;
+            feedsTouched = false;
+            rebuild(withConfig, withFeeds);
+        },
+        debounce,
+        { maxWait: MAX_WAIT }
+    );
 
     function queue(isConfig: boolean, isFeed: boolean): void {
         if (closed) return;
@@ -408,7 +423,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             feedsTouched = true;
         }
         if (isFeed) feedsTouched = true;
-        void queued();
+        queued();
     }
 
     rebuild(true, true);

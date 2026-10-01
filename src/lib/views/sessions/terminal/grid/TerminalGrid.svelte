@@ -41,6 +41,9 @@
     // link (the web links addon), opened in a new tab on Cmd+click (Ctrl+click off macOS) and left
     // to the program on a plain click. The Unicode 11 width tables draw an emoji and a wide
     // character over two cells, as the shell counts them.
+    //
+    // The grid is subscribed once its window has the grid's size (`subscribePty`), and an effect of
+    // its own follows the `terminal:` cursor, Option and copy settings (grid-look.ts).
 
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
@@ -68,8 +71,21 @@
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { scheduleReflow } from './reflow';
-    import { applyLook, findLook, gridLook, gridOptions, type FindLook } from './grid-look';
-    import { clearGrid, copyAsHtml, type HtmlSerializer } from './grid-actions';
+    import {
+        applyLook,
+        findLook,
+        followTerminalOptions,
+        gridLook,
+        gridOptions,
+        type FindLook
+    } from './grid-look';
+    import {
+        clearGrid,
+        copyAsHtml,
+        copySelection,
+        pageClipboard,
+        type HtmlSerializer
+    } from './grid-actions';
     import FindBar from './FindBar.svelte';
     import {
         FIND_LIMIT,
@@ -84,6 +100,7 @@
     import { untrack } from 'svelte';
     import type { SearchAddon } from '@xterm/addon-search';
     import type { Terminal as Grid } from '@xterm/xterm';
+    import { terminalOptions } from '$lib/state/shared/words/appearance';
     import { useState } from '$lib/state/client/use';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
 
@@ -258,8 +275,7 @@
     async function copyHtml(): Promise<void> {
         if (grid === null || serializer === null) return;
         const item = typeof ClipboardItem === 'undefined' ? undefined : ClipboardItem;
-        const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
-        const failure = await copyAsHtml(serializer, grid.getSelection(), clipboard, item);
+        const failure = await copyAsHtml(serializer, grid.getSelection(), pageClipboard(), item);
         if (failure !== '') onsay(failure);
     }
 
@@ -270,9 +286,7 @@
         else if (pick === MENU_ICON) onicon(id);
         else if (colorOf(pick) !== null) oncolor(id, colorOf(pick) ?? '');
         else if (pick === MENU_COPY) {
-            const selected = grid?.getSelection() ?? '';
-            if (selected !== '')
-                void navigator.clipboard.writeText(selected).catch(() => undefined);
+            copySelection(grid?.getSelection() ?? '', pageClipboard());
         } else if (pick === MENU_PASTE) void pasteClipboard();
         else if (pick === MENU_SELECT_ALL) grid?.selectAll();
         else if (pick === MENU_SPLIT) onsplit(id);
@@ -327,7 +341,9 @@
             if (!alive) return;
             const fit = new addon.FitAddon();
             const size = gridFontSize(untrack(terminalFont), untrack(textScale) ?? 1);
-            const term = new xterm.Terminal(gridOptions(gridLook(), size));
+            const term = new xterm.Terminal(
+                gridOptions(gridLook(), size, untrack(terminalOptions))
+            );
             term.loadAddon(fit);
             const searcher = new finder.SearchAddon({ highlightLimit: FIND_LIMIT });
             term.loadAddon(searcher);
@@ -368,13 +384,17 @@
             // which xterm does not know and would print as the name itself; the title is dropped,
             // and a sequence cut across two chunks is carried to the next one.
             const titles = titleStripper();
-            const off = subscribePty(wanted, (bytes, scrollback) => {
-                // The scrollback is sent to this socket alone at version 0, so a reconnect hands it
-                // over again; repainting from it is what keeps a second copy off the grid.
-                if (scrollback) term.reset();
-                term.write(titles(bytes));
-            });
-            resized(wanted);
+            // The window takes the grid's size before the channel is asked for (`subscribePty`).
+            const off = subscribePty(
+                wanted,
+                () => ({ cols: term.cols, rows: term.rows }),
+                (bytes, scrollback) => {
+                    // The scrollback is sent to this socket alone at version 0, so a reconnect
+                    // hands it over again; repainting from it keeps a second copy off the grid.
+                    if (scrollback) term.reset();
+                    term.write(titles(bytes));
+                }
+            );
             let settle: ReturnType<typeof setTimeout> | null = null;
             const watcher = new ResizeObserver(() => {
                 if (settle !== null) clearTimeout(settle);
@@ -413,6 +433,14 @@
             alive = false;
             close?.();
         };
+    });
+
+    // The config's cursor, Option and copy settings follow onto the mounted grid, with no refit.
+    $effect(() => {
+        const held = grid;
+        const options = terminalOptions();
+        if (held === null) return;
+        return followTerminalOptions(held, options, pageClipboard);
     });
 
     // A theme or terminal-size change updates the mounted grid: xterm holds the values it was given

@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect } from 'vitest';
 import {
     CRT_CLASS,
     WALL_BLUR,
@@ -25,12 +25,14 @@ import {
     codeThemeDefault,
     setAppearance,
     terminalFontPx,
+    terminalOptions,
     themeClass,
     themeLabel,
     themes,
     wallpaperSettings
 } from '../../../src/lib/state/shared/words/appearance.ts';
 import { setGlyphMode, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { it, plantScratch } from '../../fixtures/scratch.ts';
 import { parseBlocks } from '../../../src/lib/themes/parse.ts';
 
 const THEMES_DIR = resolve(
@@ -209,6 +211,95 @@ describe('terminalFontPx', () => {
         setAppearance({ terminal: { font_px: 'large' } });
         expect(terminalFontPx()).toBeNull();
         setAppearance({ terminal: {} });
+        expect(terminalFontPx()).toBeNull();
+    });
+});
+
+describe('terminalOptions', () => {
+    it('is empty with none of the four keys, and for a terminal key that is not a map', () => {
+        setAppearance({ terminal: { font_px: 13 } });
+        expect(terminalOptions()).toEqual({});
+        setAppearance({});
+        expect(terminalOptions()).toEqual({});
+        for (const terminal of [5, [], ['a'], 'text', null, true]) {
+            setAppearance({ terminal });
+            expect(terminalOptions(), JSON.stringify(terminal)).toEqual({});
+        }
+    });
+
+    it('reads the cursor style as xterm names it: line is bar, block and underline are themselves', () => {
+        const styled = (cursor_style: unknown) => {
+            setAppearance({ terminal: { cursor_style } });
+            return terminalOptions();
+        };
+        expect(styled('line')).toEqual({ cursorStyle: 'bar' });
+        expect(styled('underline')).toEqual({ cursorStyle: 'underline' });
+        expect(styled('block')).toEqual({ cursorStyle: 'block' });
+        for (const value of ['beam', 'bar', 'Block', 7, '', null, true, ['line']]) {
+            expect(styled(value), JSON.stringify(value)).toEqual({});
+        }
+    });
+
+    it('leaves a key of the wrong type unset, and reads each of the three toggles on its own', () => {
+        setAppearance({
+            terminal: { cursor_blinking: 'yes', mac_option_is_meta: 1, copy_on_selection: null }
+        });
+        expect(terminalOptions()).toEqual({});
+        setAppearance({ terminal: { cursor_blinking: true } });
+        expect(terminalOptions()).toEqual({ cursorBlink: true });
+        setAppearance({ terminal: { mac_option_is_meta: true } });
+        expect(terminalOptions()).toEqual({ macOptionIsMeta: true });
+        setAppearance({ terminal: { copy_on_selection: false } });
+        expect(terminalOptions()).toEqual({ copyOnSelection: false });
+        setAppearance({
+            terminal: { cursor_blinking: false, mac_option_is_meta: false, copy_on_selection: true }
+        });
+        expect(terminalOptions()).toEqual({
+            cursorBlink: false,
+            macOptionIsMeta: false,
+            copyOnSelection: true
+        });
+    });
+
+    it('reads the four keys beside font_px without either taking the other', () => {
+        setAppearance({ terminal: { font_px: 13, cursor_style: 'line', cursor_blinking: true } });
+        expect(terminalFontPx()).toBe(13);
+        expect(terminalOptions()).toEqual({ cursorStyle: 'bar', cursorBlink: true });
+        setAppearance({ terminal: { font_px: 'large', cursor_style: 'line' } });
+        expect(terminalFontPx()).toBeNull();
+        expect(terminalOptions()).toEqual({ cursorStyle: 'bar' });
+    });
+
+    it('hands out a copy, so a caller cannot change what the next read returns', () => {
+        setAppearance({ terminal: { cursor_style: 'line' } });
+        const first = terminalOptions();
+        first.cursorStyle = 'underline';
+        expect(terminalOptions()).toEqual({ cursorStyle: 'bar' });
+    });
+
+    it("holds today's behaviour in the file as it ships", () => {
+        setAppearance(APPEARANCE);
+        expect(terminalOptions()).toEqual({
+            macOptionIsMeta: false,
+            copyOnSelection: false,
+            cursorStyle: 'block',
+            cursorBlink: false
+        });
+    });
+
+    it('is empty, with the file named as one that does not parse, when a key is written twice', () => {
+        const engine = plantScratch('oculus-appearance-', {
+            'config/appearance.yml': 'terminal:\n  cursor_style: line\n  cursor_style: block\n'
+        });
+        const { config, findings } = loadConfig(engine);
+        expect(
+            findings.filter(
+                (one) =>
+                    one.file.endsWith('appearance.yml') && one.message.includes('does_not_parse')
+            )
+        ).toHaveLength(1);
+        setAppearance(config);
+        expect(terminalOptions()).toEqual({});
         expect(terminalFontPx()).toBeNull();
     });
 });

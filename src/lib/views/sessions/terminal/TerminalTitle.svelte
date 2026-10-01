@@ -3,9 +3,14 @@
     // of terminals is drawn, as VS Code's panel names its one terminal in the view's header: the
     // title after what runs in it (or the title the reader gave it), the description muted after
     // it, its mark in the icon and colour it was given, and the bell mark while it rings. A double
-    // click on the title opens the rename field in its place.
+    // click on the title opens the rename field in its place. A right-click on it opens the menu of
+    // a list row on this terminal (`menu`), whose pick the tab routes as it routes a row's
+    // (terminal-list.ts, `routePick`); the menu is its own, so the rename field's text box keeps
+    // the text box menu.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import type { MenuItem } from '$lib/ui/menu/menu-items';
     import type { TerminalChoice } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import RenameField from './RenameField.svelte';
@@ -23,37 +28,44 @@
         renaming: boolean;
         /** A double click on the title asks for the rename field. */
         onrename: () => void;
+        /** The items of the terminal's menu, read when the right-click arrives. */
+        menu: () => MenuItem[];
+        /** A pick of that menu. */
+        onpick: (pick: string) => void;
         /** The rename field saved a value (an empty one clears the title). */
         onsave: (value: string) => void;
         /** The rename field was cancelled. */
         oncancel: () => void;
     };
 
-    let { shown, tip, ringing, renaming, onrename, onsave, oncancel }: Props = $props();
+    let { shown, tip, ringing, renaming, onrename, menu, onpick, onsave, oncancel }: Props =
+        $props();
 </script>
 
-<span class="shown" title={tip} data-terminal-shown>
-    <span class="mark" style={markStyle(shown.color)}>
-        <Glyph name={markGlyph(shown.kind, shown.icon)} />
-    </span>
-    {#if renaming}
-        <RenameField
-            value={shown.title}
-            label={t('sessions.terminal_rename_field')}
-            {onsave}
-            {oncancel}
-        />
-    {:else}
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <span class="title" data-terminal-title ondblclick={onrename}>{shown.title}</span>
-    {/if}
-    <span class="description" data-terminal-description>{shown.description}</span>
-    {#if ringing}
-        <span class="bell" data-bell title={t('sessions.terminal_bell')}>
-            <Glyph name="bell" />
+<ContextMenu label={shown.title} read={menu} own {onpick}>
+    <span class="shown" title={tip} data-terminal-shown>
+        <span class="mark" style={markStyle(shown.color)}>
+            <Glyph name={markGlyph(shown.kind, shown.icon)} />
         </span>
-    {/if}
-</span>
+        {#if renaming}
+            <RenameField
+                value={shown.title}
+                label={t('sessions.terminal_rename_field')}
+                {onsave}
+                {oncancel}
+            />
+        {:else}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <span class="title" data-terminal-title ondblclick={onrename}>{shown.title}</span>
+        {/if}
+        <span class="description" data-terminal-description>{shown.description}</span>
+        {#if ringing}
+            <span class="bell" data-bell title={t('sessions.terminal_bell')}>
+                <Glyph name="bell" />
+            </span>
+        {/if}
+    </span>
+</ContextMenu>
 
 <style>
     .shown {

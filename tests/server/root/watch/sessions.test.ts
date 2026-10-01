@@ -10,6 +10,8 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, vi } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import {
+    DEBOUNCE as QUIET,
+    MAX_WAIT,
     liveSignature,
     watchSessions,
     type SessionsWatcher,
@@ -19,7 +21,14 @@ import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts
 import type { Message, SessionsPayload, Terminal } from '../../../../src/lib/data/model/index.ts';
 import type { Probe } from '../../../../src/lib/server/sessions/registry.ts';
 import type { CodexProbe } from '../../../../src/lib/server/sessions/stores/codex.ts';
-import { holdsDebounce, recording, type HeldWatches } from './probe.ts';
+import {
+    fakeClock,
+    holdsDebounce,
+    holdsQuietAndMaxWait,
+    recording,
+    type HeldWatcher,
+    type HeldWatches
+} from './probe.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 import { CONTEXT, human as prompt, type Json } from '../../sessions/stores/transcript-fixture.ts';
@@ -494,7 +503,7 @@ describe('watchSessions', () => {
             }
         };
         watches.held = true;
-        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+        fakeClock();
         const started = start(fixture, 0, 0, source);
         await holdsDebounce(
             () => moved(),
@@ -502,6 +511,161 @@ describe('watchSessions', () => {
             () => started.got.length,
             () => watchers.pop()?.close()
         );
+    });
+
+    describe('while a session store is written more often than the quiet', () => {
+        type Writing = {
+            got: Message[];
+            moved: () => void;
+            set: (list: Terminal[]) => void;
+            written: () => number;
+        };
+
+        /**
+         * The watcher on its own quiet over `initial` terminals, its watches held, and a prompt
+         * appended to the transcript with the store's event fired every `every` ms from then on,
+         * for two seconds before the case changes anything.
+         */
+        async function writing(every: number, initial: Terminal[] = []): Promise<Writing> {
+            const fixture = new Fixture();
+            fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+            let terminals = initial;
+            let moved = noop;
+            const source: TerminalSource = {
+                list: () => terminals,
+                onChange: (listener) => {
+                    moved = listener;
+                    return noop;
+                }
+            };
+            watches.held = true;
+            fakeClock('setInterval', 'clearInterval');
+            const hub = new Hub();
+            const client = recording();
+            hub.subscribe(client.sink, ['sessions']);
+            watchers.push(
+                watchSessions(hub, {
+                    stores: [fixture.store],
+                    cache: fixture.cache,
+                    overrides: fixture.overrides,
+                    roots: [fixture.root],
+                    projectFolders: () => [],
+                    liveness: 0,
+                    rescanEvery: 0,
+                    terminals: source,
+                    probe: fixture.probe(),
+                    codexProbe: fixture.codexProbe()
+                })
+            );
+            await vi.advanceTimersByTimeAsync(0);
+            const event = watches.listeners.get(fixture.store);
+            expect(event).toBeDefined();
+            let written = 1;
+            setInterval(() => {
+                written += 1;
+                fixture.append([prompt('2026-09-10T10:00:01.000Z', `question ${written}`)]);
+                event?.('change', join(SLUG, `${SID}.jsonl`));
+            }, every);
+            await vi.advanceTimersByTimeAsync(2000);
+            return {
+                got: client.got,
+                moved: () => moved(),
+                set: (list) => (terminals = list),
+                written: () => written
+            };
+        }
+
+        /** The simulated ms until the channel's latest payload holds, or -1 past MAX_WAIT. */
+        async function publishedIn(
+            got: Message[],
+            holds: (payload: SessionsPayload) => boolean
+        ): Promise<number> {
+            for (let at = 10; at <= MAX_WAIT; at += 10) {
+                await vi.advanceTimersByTimeAsync(10);
+                if (holds(latest(got))) return at;
+            }
+            return -1;
+        }
+
+        for (const every of [100, 300, 450]) {
+            it(`publishes a started terminal within the maximum wait when the store is written every ${every} ms`, async () => {
+                const run = await writing(every);
+                run.set([terminal('a1b2c3-shell')]);
+                run.moved();
+                const at = await publishedIn(run.got, (payload) =>
+                    (payload.terminals ?? []).some((one) => one.id === 'a1b2c3-shell')
+                );
+                expect(at, `the started terminal published in ${at} ms`).toBeGreaterThan(0);
+            });
+        }
+
+        it('publishes a renamed terminal with a new icon and colour within the maximum wait', async () => {
+            const run = await writing(100, [terminal('a1b2c3-shell')]);
+            expect(latest(run.got).terminals?.map((one) => one.name)).toEqual(['a1b2c3-shell']);
+            run.set([
+                { ...terminal('a1b2c3-shell'), name: 'renamed', icon: 'flask', color: 'teal' }
+            ]);
+            run.moved();
+            const at = await publishedIn(run.got, (payload) =>
+                (payload.terminals ?? []).some(
+                    (one) => one.name === 'renamed' && one.icon === 'flask' && one.color === 'teal'
+                )
+            );
+            expect(at, `the renamed terminal published in ${at} ms`).toBeGreaterThan(0);
+        });
+
+        it("publishes the session's own appended prompts within the maximum wait", async () => {
+            const run = await writing(100);
+            const written = run.written();
+            expect(written).toBeGreaterThan(2);
+            const at = await publishedIn(
+                run.got,
+                (payload) => payload.records[0].prompts >= written
+            );
+            expect(at, `the ${written} prompts written published in ${at} ms`).toBeGreaterThan(0);
+        });
+    });
+
+    describe('the debounce with the terminals change as the event', () => {
+        /** The watcher with its watches held on fake timers; a terminals change is its event. */
+        function held(debounce?: number): HeldWatcher {
+            const fixture = new Fixture();
+            fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+            let moved = noop;
+            const source: TerminalSource = {
+                list: () => null,
+                onChange: (listener) => {
+                    moved = listener;
+                    return noop;
+                }
+            };
+            watches.held = true;
+            fakeClock();
+            const hub = new Hub();
+            const client = recording();
+            hub.subscribe(client.sink, ['sessions']);
+            const watcher = watchSessions(hub, {
+                stores: [fixture.store],
+                cache: fixture.cache,
+                overrides: fixture.overrides,
+                roots: [fixture.root],
+                projectFolders: () => [],
+                ...(debounce === undefined ? {} : { debounce }),
+                liveness: 0,
+                rescanEvery: 0,
+                terminals: source,
+                probe: fixture.probe(),
+                codexProbe: fixture.codexProbe()
+            });
+            watchers.push(watcher);
+            return {
+                event: () => moved(),
+                count: () => payloads(client.got).length,
+                close: () => watcher.close()
+            };
+        }
+
+        holdsQuietAndMaxWait({ quiet: QUIET, maxWait: MAX_WAIT, what: 'publish', held });
     });
 
     it('carries no terminal list when it was given no terminal source', async () => {

@@ -12,11 +12,23 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { afterEach, beforeEach, expect, vi } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
-import { watchBookmarks } from '../../../../src/lib/server/root/watch/bookmarks.ts';
+import {
+    DEBOUNCE as QUIET,
+    MAX_WAIT,
+    watchBookmarks
+} from '../../../../src/lib/server/root/watch/bookmarks.ts';
 import type { FilesPayload, Message } from '../../../../src/lib/data/model/index.ts';
 import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { holdsDebounce, recording, sleep, until, type HeldWatches } from './probe.ts';
+import {
+    fakeClock,
+    holdsDebounce,
+    holdsQuietAndMaxWait,
+    recording,
+    sleep,
+    until,
+    type HeldWatches
+} from './probe.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 vi.setConfig({ testTimeout: 20000 });
@@ -162,21 +174,36 @@ it('makes the folder it watches when the machine has none, and publishes for the
     expect(client.got).toHaveLength(1);
 });
 
-it('debounces a burst into one message, waits the whole quiet again, and sends none after close', async () => {
+/** A watcher over the bookmarks file with its watch held, on fake timers, and a write's event. */
+function held(debounce?: number): {
+    event: () => void;
+    count: () => number;
+    watcher: Watcher;
+} {
     const file = bookmarksFile();
     const hub = new Hub();
     const client = recording();
     hub.subscribe(client.sink, ['files']);
     watches.held = true;
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const watcher = watchBookmarks(hub, { file, debounce: DEBOUNCE });
+    fakeClock();
+    const watcher = watchBookmarks(hub, debounce === undefined ? { file } : { file, debounce });
     watchers.push(watcher);
     const listener = watches.listeners.get(file);
     expect(listener).toBeDefined();
-    await holdsDebounce(
-        () => listener?.(),
-        DEBOUNCE,
-        () => client.got.length,
-        () => watcher.close()
-    );
+    return { event: () => listener?.(), count: () => client.got.length, watcher };
+}
+
+it('debounces a burst into one message, waits the whole quiet again, and sends none after close', async () => {
+    const { event, count, watcher } = held(DEBOUNCE);
+    await holdsDebounce(event, DEBOUNCE, count, () => watcher.close());
+});
+
+holdsQuietAndMaxWait({
+    quiet: QUIET,
+    maxWait: MAX_WAIT,
+    what: 'message',
+    held: (debounce) => {
+        const { event, count, watcher } = held(debounce);
+        return { event, count, close: () => watcher.close() };
+    }
 });

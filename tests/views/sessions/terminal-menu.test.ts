@@ -1,27 +1,36 @@
 // Layer 3, view test. The Terminal view's right-click menus, built by
 // views/sessions/terminal/terminal-list.ts: the grid's, a list row's with Unsplit and Join
-// Terminals, the route a paste from the menu takes, which holds a paste of several lines for the
-// question a browser paste is asked, and Kill Terminal, which arms first as the row's Kill does.
+// Terminals, the same menu on the bar's name of a sole terminal, the one function that routes a
+// pick of it for the list and the bar, the route a paste from the menu takes, which holds a paste
+// of several lines for the question a browser paste is asked, and Kill Terminal, which arms first
+// as the row's Kill does.
 //
 // The words are a stand-in `t` that answers each key as `@key`.
 //
-// What this does NOT cover: the menus opened by a right-click or by Shift+F10, the clipboard read
-// and written, and the terminal moved and split by a join, which need a DOM and are seen at the
-// look.
+// What this does NOT cover: the menus opened by a right-click or by Shift+F10, the browser's own
+// menu staying shut on the bar, the rename field opening, the clipboard read and written, and the
+// terminal moved and split by a join, which need a DOM and are seen at the look.
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+    BELL_MS,
     attachedOf,
+    bellMark,
     emptyListMenu,
     gridMenu,
     joinedOf,
     kindsMenu,
+    ownedElsewhere,
     pasteRoute,
     pressKill,
     profileOf,
-    terminalRowMenu
+    routePick,
+    terminalRowMenu,
+    type PickHandlers
 } from '../../../src/lib/views/sessions/terminal/terminal-list.ts';
+import type { Terminal } from '../../../src/lib/data/model/index.ts';
 import { readTab } from '../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
+import { COLOR_NAMES } from '../../../src/lib/state/sessions/terminal/terminal-marks.ts';
 
 const words = (key: string, ...args: (string | number)[]): string =>
     args.length === 0 ? `@${key}` : `@${key}(${args.join(',')})`;
@@ -62,27 +71,27 @@ describe('the grid menu', () => {
     });
 });
 
-describe('Kill Terminal from a menu', () => {
-    /** The calls a kill makes, in order, over fakes of the tab's arm and the store's stop. */
-    function killer(refusal = '') {
-        const calls: string[] = [];
-        let armed = '';
-        const deps = {
-            arm: (one: string) => {
-                armed = one;
-                calls.push(`arm:${one}`);
-            },
-            stop: (one: string) => {
-                calls.push(`stop:${one}`);
-                return Promise.resolve({ ok: refusal === '', error: refusal });
-            },
-            fail: (error: string) => {
-                if (error !== '') calls.push(`fail:${error}`);
-            }
-        };
-        return { calls, press: (one: string) => pressKill(armed, one, deps) };
-    }
+/** The calls a kill makes, in order, over fakes of the tab's arm and the store's stop. */
+function killer(refusal = '') {
+    const calls: string[] = [];
+    let armed = '';
+    const deps = {
+        arm: (one: string) => {
+            armed = one;
+            calls.push(`arm:${one}`);
+        },
+        stop: (one: string) => {
+            calls.push(`stop:${one}`);
+            return Promise.resolve({ ok: refusal === '', error: refusal });
+        },
+        fail: (error: string) => {
+            if (error !== '') calls.push(`fail:${error}`);
+        }
+    };
+    return { calls, press: (one: string) => pressKill(armed, one, deps) };
+}
 
+describe('Kill Terminal from a menu', () => {
     // Revert: make pressKill call deps.stop on every press, the first included.
     it('audits that arms on the first pick and stops only on the second', async () => {
         const { calls, press } = killer();
@@ -302,5 +311,180 @@ describe('Attach to Session', () => {
         expect(attachedOf('attach:')).toBeNull();
         expect(attachedOf('new')).toBeNull();
         expect(attachedOf('')).toBeNull();
+    });
+});
+
+describe("the bar's menu of a sole terminal", () => {
+    const sole = readTab({ id: 't', terminals: [A], shown: A, row: [A], composing: false });
+    const others = [{ terminal: 't2-id', title: 't2' }];
+    const labelsOf = (items: { label: string }[]): string[] => items.map((item) => item.label);
+
+    it('audits that the bar menu offers the items of a list row, with Join Terminals while another tab owns a terminal, and no Unsplit', () => {
+        expect(labelsOf(terminalRowMenu(sole, A, others, false, words))).toEqual([
+            '@sessions.menu_split',
+            '@sessions.menu_kill',
+            '@sessions.menu_rename',
+            '@sessions.menu_icon',
+            '@sessions.menu_color',
+            '@sessions.menu_clear',
+            '@sessions.menu_join'
+        ]);
+        expect(labelsOf(terminalRowMenu(sole, A, [], false, words))).toEqual([
+            '@sessions.menu_split',
+            '@sessions.menu_kill',
+            '@sessions.menu_rename',
+            '@sessions.menu_icon',
+            '@sessions.menu_color',
+            '@sessions.menu_clear'
+        ]);
+    });
+});
+
+describe('the pick routing a row and the bar share', () => {
+    /** Every handler a pick can reach, each recording its call. */
+    function handlers(): { calls: string[]; handlers: PickHandlers } {
+        const calls: string[] = [];
+        const record =
+            (name: string) =>
+            (...args: string[]): void => {
+                calls.push(`${name}:${args.join(',')}`);
+            };
+        return {
+            calls,
+            handlers: {
+                split: record('split'),
+                kill: record('kill'),
+                unsplit: record('unsplit'),
+                rename: record('rename'),
+                icon: record('icon'),
+                clear: record('clear'),
+                color: record('color'),
+                join: record('join')
+            }
+        };
+    }
+
+    const split = readTab({ id: 't', terminals: [A, B], shown: A, row: [A, B], composing: false });
+    const others = [{ terminal: 't2-id', title: 't2' }];
+
+    /** The pick of every item a row's menu offers, the colours and joins inside their lists. */
+    function picks(items: ReturnType<typeof terminalRowMenu>): string[] {
+        return items.flatMap((item) => (item.items === undefined ? [item.id] : picks(item.items)));
+    }
+
+    it('audits that each pick of the row menu goes to its own handler with the terminal it was opened on', () => {
+        const { calls, handlers: given } = handlers();
+        for (const pick of picks(terminalRowMenu(split, B, others, false, words))) {
+            routePick(pick, B, given);
+        }
+        expect(calls).toEqual([
+            `split:${B}`,
+            `kill:${B}`,
+            `rename:${B}`,
+            `icon:${B}`,
+            ...['', ...COLOR_NAMES].map((name) => `color:${B},${name}`),
+            `clear:${B}`,
+            `unsplit:${B}`,
+            `join:${B},t2-id`
+        ]);
+    });
+
+    it('audits that a Rename picked on the bar opens the rename field of the shown terminal', () => {
+        const { calls, handlers: given } = handlers();
+        const sole = readTab({ id: 't', terminals: [A], shown: A, row: [A], composing: false });
+        const rename = terminalRowMenu(sole, A, [], false, words).find(
+            (item) => item.label === '@sessions.menu_rename'
+        );
+        routePick(rename?.id ?? '', A, given);
+        expect(calls).toEqual([`rename:${A}`]);
+    });
+
+    it('audits that Kill arms on the first pick from the bar and kills on the second', async () => {
+        const { calls: stops, press } = killer();
+        const { handlers: given } = handlers();
+        const kill = terminalRowMenu(
+            readTab({ id: 't', terminals: [A], shown: A, row: [A], composing: false }),
+            A,
+            [],
+            false,
+            words
+        ).find((item) => item.label === '@sessions.menu_kill');
+        const pending: Promise<void>[] = [];
+        const bar: PickHandlers = { ...given, kill: (one) => void pending.push(press(one)) };
+        routePick(kill?.id ?? '', A, bar);
+        await Promise.all(pending);
+        expect(stops).toEqual([`arm:${A}`]);
+        routePick(kill?.id ?? '', A, bar);
+        await Promise.all(pending);
+        expect(stops).toEqual([`arm:${A}`, 'arm:', `stop:${A}`]);
+    });
+
+    it('audits that the Join pick is handed the terminal the bar shows and the one to move', () => {
+        const { calls, handlers: given } = handlers();
+        const join = terminalRowMenu(
+            readTab({ id: 't', terminals: [A], shown: A, row: [A], composing: false }),
+            A,
+            others,
+            false,
+            words
+        ).find((item) => item.label === '@sessions.menu_join');
+        routePick(join?.items?.[0].id ?? '', A, given);
+        expect(calls).toEqual([`join:${A},t2-id`]);
+    });
+
+    it('audits that an id no item carries, and the headings of the colour and join lists, do nothing', () => {
+        const { calls, handlers: given } = handlers();
+        for (const pick of ['', 'nothing', 'join', 'join:', 'color', 'color:purple']) {
+            routePick(pick, A, given);
+        }
+        expect(calls).toEqual([]);
+    });
+});
+
+describe('the terminals Join Terminals offers', () => {
+    const named = (id: string, foreign = false) =>
+        ({ id, name: `name of ${id}`, foreign }) as unknown as Terminal;
+    const known: Record<string, Terminal> = {
+        [A]: named(A),
+        [B]: named(B),
+        [C]: named(C, true)
+    };
+    const byId = (id: string): Terminal | null => known[id] ?? null;
+
+    it('audits that it lists the terminals of the other Terminal tabs by name, without a foreign one', () => {
+        const tabs = [
+            { id: 'self', view: 'terminal', state: { terminals: [A] } },
+            { id: 'other', view: 'terminal', state: { terminals: [B, C, 'gone'] } },
+            { id: 'files', view: 'files', state: { terminals: [A] } }
+        ];
+        expect(ownedElsewhere(tabs, 'self', byId)).toEqual([
+            { terminal: B, title: `name of ${B}` }
+        ]);
+        expect(ownedElsewhere(tabs, 'other', byId)).toEqual([
+            { terminal: A, title: `name of ${A}` }
+        ]);
+        expect(ownedElsewhere([], 'self', byId)).toEqual([]);
+    });
+});
+
+describe("a terminal's bell mark", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('audits that it marks the terminal for BELL_MS, replaces an earlier ring, and stops with the tab', () => {
+        vi.useFakeTimers();
+        const marks: (string | null)[] = [];
+        const bell = bellMark((one) => marks.push(one));
+        bell.ring(A);
+        vi.advanceTimersByTime(BELL_MS - 1);
+        expect(marks).toEqual([A]);
+        bell.ring(B);
+        vi.advanceTimersByTime(BELL_MS - 1);
+        expect(marks).toEqual([A, B]);
+        vi.advanceTimersByTime(1);
+        expect(marks).toEqual([A, B, null]);
+        bell.ring(A);
+        bell.stop();
+        vi.advanceTimersByTime(BELL_MS * 2);
+        expect(marks).toEqual([A, B, null, A]);
     });
 });

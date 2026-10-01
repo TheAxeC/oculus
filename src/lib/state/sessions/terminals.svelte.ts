@@ -68,6 +68,7 @@ import { freshComposer, splitState } from './terminal/composer.ts';
 import { endedTerminals, unownedTerminals } from './terminal/terminal-lists.ts';
 import type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
 import { decodeBytes, encodeBytes } from './terminal/pty-bytes.ts';
+import { createPtyOrder, type PtySize } from './terminal/pty-subscribe.ts';
 import {
     postTerminal,
     readBusy,
@@ -81,6 +82,7 @@ export { endedTerminals, terminalLabel, unownedTerminals } from './terminal/term
 export type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
 
 export { decodeBytes, encodeBytes, titleStripper } from './terminal/pty-bytes.ts';
+export { RESIZE_WAIT } from './terminal/pty-subscribe.ts';
 
 // The three model types a view needs of a terminal. The boundary table lets `state/` import
 // `data/model` and lets a view import `state/`, so they reach a view from here, the way
@@ -172,7 +174,13 @@ export type TerminalsStore = {
     resizeTerminal: (id: string, cols: number, rows: number) => Promise<TerminalAnswer>;
     sendInput: (id: string, text: string) => boolean;
     sendResize: (id: string, cols: number, rows: number) => boolean;
-    subscribePty: (id: string, onBytes: PtyListener) => () => void;
+    /**
+     * Read one terminal's output once its window has the size `size()` answers: the scrollback is
+     * captured at the window's size with the cursor placed from the pane's top. The resize is
+     * posted again when `size` changed while it was out, and the channel is asked for after its
+     * answer, or at `RESIZE_WAIT`. The call returned takes the listener off.
+     */
+    subscribePty: (id: string, size: () => PtySize, onBytes: PtyListener) => () => void;
     unsubscribePty: (id: string) => void;
     /**
      * Show a terminal: in the tab that owns it, on its page, else in the Terminal tab of the page
@@ -650,6 +658,8 @@ export function createTerminals(
         return post({ action: 'resize', id, cols, rows });
     }
 
+    const order = createPtyOrder(resizeTerminal);
+
     /** The refusal a tab is showing, or the empty string. */
     function refusal(tab: string): string {
         return refused.words[tab] ?? '';
@@ -795,14 +805,15 @@ export function createTerminals(
         }
     }
 
-    /** Send keystrokes to a terminal. The text is what xterm.js's `onData` produced. */
+    /** Send keystrokes, which xterm.js's `onData` produced; held while a subscribe waits. */
     function sendInput(id: string, text: string): boolean {
         const input: TerminalInput = {
             type: 'input',
             channel: ptyChannel(id),
             bytes: encodeBytes(text)
         };
-        return socket.send(input);
+        const held = order.hold(id, input);
+        return held ?? socket.send(input);
     }
 
     /**
@@ -819,20 +830,23 @@ export function createTerminals(
         return socket.send(resize);
     }
 
-    /**
-     * Read one terminal's output. The listener is handed the scrollback first, then every chunk
-     * after it, and the call returned takes the listener off without unsubscribing, for a view that
-     * is swapping one terminal for another.
-     */
-    function subscribePty(id: string, onBytes: PtyListener): () => void {
+    function subscribePty(id: string, size: () => PtySize, onBytes: PtyListener): () => void {
         const channel = ptyChannel(id);
         const off = socket.listen(channel, (received) => {
             const payload = received.payload as PtyPayload | null;
             const encoded = typeof payload?.bytes === 'string' ? payload.bytes : '';
             onBytes(decodeBytes(encoded), received.version === 0);
         });
-        socket.subscribe([channel]);
-        return off;
+        const leave = order.attach(
+            id,
+            size,
+            () => socket.subscribe([channel]),
+            (message) => socket.send(message)
+        );
+        return () => {
+            leave();
+            off();
+        };
     }
 
     /**

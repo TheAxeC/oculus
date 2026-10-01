@@ -2,7 +2,9 @@
 // are handed so a test gives them fakes: Clear, which empties the grid and asks the server to empty
 // the terminal's history, and Copy as HTML, which writes the selection to the clipboard as
 // `text/html` (from the serialize addon) beside its plain text. Each answers the failure in words,
-// or the empty string when it worked, and the tab says a failure on its bar.
+// or the empty string when it worked, and the tab says a failure on its bar. Copy on selection,
+// which the grid does as the selection changes with nobody asking, answers nothing and says
+// nothing: a clipboard that is missing or refuses is left alone.
 
 import { t } from '$lib/state/shared/words/text';
 
@@ -60,4 +62,25 @@ export async function copyAsHtml(
     } catch {
         return t('sessions.copy_html_failed');
     }
+}
+
+/** What copy on selection needs of the clipboard: the async clipboard's `writeText`. */
+export type SelectionClipboard = { writeText: (text: string) => Promise<void> };
+
+/**
+ * Write a selection to the clipboard. An empty selection writes nothing, and a clipboard that is
+ * missing, throws or refuses is left alone, since the copy is nobody's request.
+ */
+export function copySelection(text: string, clipboard: SelectionClipboard | undefined): void {
+    if (text === '' || clipboard === undefined) return;
+    try {
+        clipboard.writeText(text).catch(() => undefined);
+    } catch {
+        // a clipboard that throws at once is left alone as one that refuses is
+    }
+}
+
+/** The browser's clipboard, or nothing where the page has none. */
+export function pageClipboard(): Clipboard | undefined {
+    return typeof navigator === 'undefined' ? undefined : navigator.clipboard;
 }

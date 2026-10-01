@@ -4,14 +4,17 @@
 // registry) of each Claude account and `<dir>/sessions` (the rollouts) of each Codex account, every
 // folder once by its real path (sessions/folders.ts).
 //
-// One debounce over every handle, perfect-debounce's. A transcript is appended to as a session
-// works, so a change there is an ordinary .jsonl write; a registry file appears when a session
-// starts, changes when it goes from busy to idle, and vanishes when it ends; a rollout appends
-// under YYYY/MM/DD, and a new day makes a new folder, which the recursive watch on the store's root
-// sees. One more is a file no session writes: the overrides file, which is api/write's, and without
-// it a dismissal or a pin made on one page would not reach another until a transcript happened to
-// change. The byte-offset cache in sessions/cache.ts is what makes the rescan cost the appended
-// bytes rather than the whole store.
+// One debounce over every handle, lodash's `debounce` with a quiet (DEBOUNCE) and a maximum wait
+// (MAX_WAIT). A transcript is appended to as a session works, so a change there is an ordinary
+// .jsonl write, and a working session writes more often than the quiet, which every write restarts;
+// the maximum wait is what still publishes a terminal started, renamed or ended, and the session's
+// own records, while it works. A registry file appears when a session starts, changes when it goes
+// from busy to idle, and vanishes when it ends; a rollout appends under YYYY/MM/DD, and a new day
+// makes a new folder, which the recursive watch on the store's root sees. One more is a file no
+// session writes: the overrides file, which is api/write's, and without it a dismissal or a pin
+// made on one page would not reach another until a transcript happened to change. The byte-offset
+// cache in sessions/cache.ts is what makes the rescan cost the appended bytes rather than the
+// whole store.
 //
 // The 15 s liveness re-check covers the changes to the payload no file event announces. A process
 // can die without its registry file changing, and a Codex rollout is live only while a codex
@@ -28,7 +31,7 @@
 import { watch } from 'node:fs';
 import { basename, dirname } from 'node:path';
 import type { FSWatcher } from 'node:fs';
-import { debounce as debounced } from 'perfect-debounce';
+import { debounce as debounced } from 'lodash-es';
 import type { SessionRecord, SessionsPayload, Terminal } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
 import { sessions } from '../../sessions/index.ts';
@@ -42,6 +45,15 @@ import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds of quiet after the last file event before one rescan runs. */
 export const DEBOUNCE = 500;
+/**
+ * Milliseconds the first event of a burst waits at most for its rescan, however often events keep
+ * coming. A session that is working appends to its transcript many times a second and each append
+ * restarts the quiet, so without a maximum wait neither a terminal started, renamed or ended nor
+ * the session's own records would be published for as long as it works. Twice the quiet keeps a
+ * burst that ends within one quiet to one rescan, and writes that never stop cost about one rescan
+ * a second.
+ */
+export const MAX_WAIT = 2 * DEBOUNCE;
 /** Milliseconds between two liveness re-checks. */
 export const LIVENESS = 15000;
 /**
@@ -206,13 +218,17 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
         }
     };
 
-    const queued = debounced(() => {
-        rescan();
-    }, debounce);
+    const queued = debounced(
+        () => {
+            rescan();
+        },
+        debounce,
+        { maxWait: MAX_WAIT }
+    );
 
     const queue = (): void => {
         if (closed) return;
-        void queued();
+        queued();
     };
 
     const open = (dir: string | undefined): void => {

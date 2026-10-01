@@ -25,23 +25,33 @@
 
 import { existsSync, mkdirSync, unwatchFile, watchFile } from 'node:fs';
 import { dirname } from 'node:path';
-import { debounce as debounced } from 'perfect-debounce';
+import { debounce as debounced } from 'lodash-es';
 import type { FilesPayload } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { Watcher } from './portfolio.ts';
 
 /**
- * Milliseconds of quiet after the last event before one message is published. It is the session
- * watcher's window rather than the portfolio's: a page that writes several bookmarks in a row is
- * one read on every other page instead of one per write, and half a second is no wait for a file
- * the reader edited by hand.
+ * Milliseconds of quiet after the last event before one message is published, the wait of
+ * lodash's `debounce`. It is the session watcher's window rather than the portfolio's: a page that
+ * writes several bookmarks in a row is one read on every other page instead of one per write, and
+ * half a second is no wait for a file the reader edited by hand.
  */
 export const DEBOUNCE = 500;
+/**
+ * Milliseconds the first event of a burst waits at most for its message, lodash's `maxWait`. Each
+ * event restarts the quiet, so a file written more often than the quiet (a script rewriting it)
+ * would otherwise hold its message back for as long as it is written. Twice the quiet keeps a
+ * burst that ends within one quiet to one message.
+ */
+export const MAX_WAIT = 2 * DEBOUNCE;
 
 export type BookmarksWatchOptions = {
     /** The reader's own bookmarks file; the machine's own path is resolved by the caller. */
     file: string;
-    /** Milliseconds of quiet after the last event before one message is published. */
+    /**
+     * Milliseconds of quiet after the last event before one message is published. A value longer
+     * than MAX_WAIT is the wait, since lodash raises a maximum wait to at least the quiet.
+     */
     debounce?: number;
 };
 
@@ -66,13 +76,17 @@ export function watchBookmarks(hub: Hub, options: BookmarksWatchOptions): Watche
         hub.publish('files', { root: '', bookmarks: true } satisfies FilesPayload);
     };
 
-    const queued = debounced(() => {
-        publish();
-    }, debounce);
+    const queued = debounced(
+        () => {
+            publish();
+        },
+        debounce,
+        { maxWait: MAX_WAIT }
+    );
 
     const queue = (): void => {
         if (closed) return;
-        void queued();
+        queued();
     };
 
     try {
