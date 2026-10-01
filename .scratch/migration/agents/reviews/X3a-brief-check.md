@@ -150,6 +150,39 @@ Findings: none.
 - The shared-file judgment for `fs.ts`, `opening.ts`, `Bookmarks.svelte`, `routes/+page.svelte`, `tokens.css`, `config/text/ui.yml`, `type-scale.test.ts` against Q85d, D27, U4, L4: the orchestrator's, after 3.1 is corrected.
 - Usage line of the template: left to the orchestrator.
 
-## Closed (to be filled by the session)
+## Closed
 
-Not written by this agent.
+Closed at /spec 2026-10-02 01:50 in the brief written on main at 698dc1e0, after Axel's Z187 (f) and with Z188 redone as Z199 to Z214 (`choices.md`), one decision each.
+
+- 1.1 Hits outside the paths: every file named is in "Paths this step writes" (`type-scale.test.ts`, `instance-state-files.test.ts`, `show-in-files.test.ts`, `config-folder.test.ts`, `routes/+page.svelte`, `bookmarks.ts`, `DESIGN.md:44` and `:128`, `server/core/git.ts`, `git.test.ts`) except `layout.svelte.ts`, which the step no longer writes ("What is on the tree", Show in Files; item 15 keeps `showInFiles`'s type) and `rail-config.test.ts`, covered by `tests/shell/`.
+- 2.1 Duplicate: Z206, Decision 8 and case 27's paste; VS Code 1.137.0 has no Duplicate command.
+- 2.2 Z182 on X3a's line: `plan.md` already carries it under X3a ("Z182 (a), automode"); the brief quotes it.
+- 3.1 Q85d premise: Q85d has landed (e77103dc); the brief reads `bookmarkRows` and `opening.ts` as they stand on main.
+- 3.2 D27 and L4 premises: D27 has landed; "What is on the tree" lists L4's, D35's and Q66's files this step shares, and the step writes none of L4's files but `routes/+page.svelte` if item 16 needs it, and no `tokens.css` or `ui.yml`.
+- 3.3 Folder limits: "What is on the tree" lists every folder at ten and the files near their size limits, and each item splits first.
+- 4.1 Roots write: Z199, item 4 (a new `roots` write on `list-edit.ts`; a configured root has no Remove in a named workspace).
+- 4.2 Options-catalog entry: Z203, item 9 (no entry; `DESIGN.md:44` and `config-folder.test.ts`).
+- 4.3 Ignored entries: Z204, item 8 (`ignored: true` from the listing's own read).
+- 4.4 Git tokens and letters: Z205, item 8 (the `--c-scm-*` tokens, `!` for a conflict).
+- 4.5 The file log: Z202, item 14 (`GET /api/git?log=`, `git.ts` split first, its form list and test updated, a literal pathspec, case 19).
+- 4.6 `local.yml` copied into history: item 14 and case 18 (never copied, by device and inode).
+- 4.7 Reading a copy back: Z202, item 14 (`&id=`, the id only from `entries.json`), case 19.
+- 4.8 The picker against "nothing outside a root served": Z187 (f), item 2 (the panel lists nothing; a path becomes a root only through the add).
+- 5.1 The look's gate: item 18 says the landing's look is its only gate.
+- 5.2 Z1's landing: item 15 and case 21's rooted tab; the landing in the right pane is read at the look.
+- 5.3 Light and dark: Z208, item 17, case 24.
+- 5.4 A copy read back: case 19.
+- 6.1 The picker clash: Axel's Z187 (f), item 2.
+- 6.2 The history folder's key: Z200, item 14.
+- 6.3 User-visible shapes: Z201 (layout), Z202 (routes), Z203 (nesting file), Z209 (commands), Z210 (Show in Files' state), Z214 (toggles and sections).
+- 6.4 The quick pick and the picker in the shell: Z209 (palette commands, no view imported), item 3; the panel is the server's, so no component of the Files view is needed on a page without one.
+- 6.5 Keys on other rows: item 7 and case 10.
+- 6.6 Folder bookmarks: Z211, item 16, case 23.
+- 6.7 Show in Files: Z210, item 15, case 21.
+- 6.8 Drag and drop: Z207, item 6, case 8 and 9.
+- 6.9 Compact folders: item 10, case 14.
+- 6.10 History edge inputs: item 14 (same millisecond, a failed copy, outside a repository), cases 18 and 19; a copy is kept by the file's real path, so a symlink and another root key reach the same history.
+- 6.11 Roots inputs: item 4 and case 3 (a second folder with the same name, reserved keys).
+- 6.12 Callers of changed functions: "What is on the tree" names them; `TreeItem` changes only through a Files flag; `showInFiles`'s type is kept.
+- 6.13 Folder and file limits: "What is on the tree" and each item's split.
+- Declined to judge, Decision 4 (sections collapsed): Z214.

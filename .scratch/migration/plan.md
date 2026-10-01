@@ -175,7 +175,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Step 0, from Q88b's brief check 2026-10-01 (Z151 decision 8): the Explorer's file-operation keys and their menu hints are X3a's; VS Code's macOS rename key is Enter, which opens a file in oculus's tree, a clash X3a's /spec raises to Axel.
   - Z182 (a), automode: the Explorer's problem decorations are D33's and the Outline's code symbols D23's; X3a builds the Outline from Markdown and LaTeX headings.
   - Step 0, stopped at /spec 2026-10-01 22:15 (Z187): the brief check (`agents/reviews/X3a-brief-check.md`) found Z76 (a)'s folder picker against its kept "nothing outside a root served"; Axel rules (a) home folder, (b) any folder, (c) roots plus a typed path, or (d) no picker. The other findings are closed in automode (Z188).
-  - Step 0, 2026-10-02: Axel ruled Z187 (f): a JavaScript for Automation helper opens macOS's folder panel and returns the paths; Z188 is redone at /spec (each finding judged on its own, the user-visible ones booked one by one).
+  - Step 0, 2026-10-02: Axel ruled Z187 (f): a JavaScript for Automation helper opens macOS's folder panel and returns the paths; Z188 is redone at /spec as Z199 to Z214, one decision each.
   - Step 0, ruled 2026-10-01 (Z181 (a)): in the Files view Enter renames, Cmd+Down opens, F2 renames too, as VS Code's macOS Explorer; every other tree keeps Enter opens.
   - Widened 2026-10-01 by Axel (ruling Z167): folder bookmarks; the star on folder rows, a folder bookmark opened from the Files view or the rail's Bookmarks menu reveals the folder in the Files view expanded and selected, a folder icon in the rail menu, the bookmark still `{ root, path }` in `~/.oculus/bookmarks.yml`. (ruling Z167)
 - ✅ X3b the Repositories view and the diff brought to VS Code's Source Control, every row of P1's Source Control table (split from X3 on 2026-09-25; brief `agents/briefs/X3b.md`)
@@ -805,6 +805,22 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z197 (2026-10-02): merge of Q114 and Q115: Q114 folded into X3a, whose History it extends; the search's "HTTP 200" error of Q115 folded into D32, which changes the same file; Q115 keeps the six other answers (the orchestrator, automode).
 - Z198 (2026-10-02): D35 taken back out of its landing and prepared again, every `local.yml` key made live, as Axel's question behind Z166 asked of every YAML file; the restart exception in Z166's option (a) and Z177, which removed the per-request re-reads, is withdrawn; Q115 folded whole into D32 (the orchestrator, automode).
 - D35 redo (2026-10-02): D35 keeps only the live behaviour keys; every line of its change that made `local.yml` read once at start (the removed per-request re-reads, the start-value hub, `claude_bin` and stores, the restart sentences, their tests) is removed, with no regression, before `local.yml` is made live (the user).
+- Open item Z199 (2026-10-02): (a), the default workspace's folders are `sources.yml` `roots:`, written through a new list-edit write; a configured root has no Remove in a named workspace (the orchestrator, automode).
+- Open item Z200 (2026-10-02): (a), a `history` key in `local.yml`, default `~/.oculus/history`, read at every request (the orchestrator, automode).
+- Open item Z201 (2026-10-02): (a), the history folder holds one folder per file (SHA-256 of the real path, 16 hex), `entries.json` and one copy per save named by its time (the orchestrator, automode).
+- Open item Z202 (2026-10-02): (a), `POST /api/folders/pick`, `GET /api/history` (with `&id=` one copy), the file log as `GET /api/git?log=` (the orchestrator, automode).
+- Open item Z203 (2026-10-02): (a), `file-nesting.yml` is `patterns:`, a map from a parent pattern to a list of child patterns, with no options-catalog entry (the orchestrator, automode).
+- Open item Z204 (2026-10-02): (a), a listed entry carries `ignored: true` when the ignored toggle shows it (the orchestrator, automode).
+- Open item Z205 (2026-10-02): (a), VS Code's git letters (`!` for a conflict) on the existing `--c-scm-*` tokens, untracked in the added hue (the orchestrator, automode).
+- Open item Z206 (2026-10-02): (a), Duplicate is Copy and Paste into the same folder, no menu item, as VS Code (the orchestrator, automode).
+- Open item Z207 (2026-10-02): (a), a folder row drags under its own type, taken only by the Files tree (the orchestrator, automode).
+- Open item Z208 (2026-10-02): (a), a theme is light when `--panel` is lighter than `--text`; Seti darkened to 3:1 on light themes only (the orchestrator, automode).
+- Open item Z209 (2026-10-02): (a), palette commands `:workspace`, `:workspace-save <name>` and `:folder` (the orchestrator, automode).
+- Open item Z210 (2026-10-02): (a), Show in Files of a folder roots a Files tab with `..`; of a file reveals it in the page's Files tab (the orchestrator, automode).
+- Open item Z211 (2026-10-02): (a), the bookmarks read answers each entry's `kind` (`file`, `folder`, `missing`) from a stat (the orchestrator, automode).
+- Open item Z212 (2026-10-02): (a), the Files view's operations recorded in History with undo, Cmd+Z and Shift+Cmd+Z in the view, a deleted file's content kept up to 5 MB, a folder back empty, as VS Code (the orchestrator, automode).
+- Open item Z213 (2026-10-02): (a), `files.confirm_delete` in `behavior.yml`, default true, with VS Code's "Do not ask me again" box (the orchestrator, automode).
+- Open item Z214 (2026-10-02): (a), the listing and nesting toggles in the header's `...` menu; Open Editors, Outline and Timeline start collapsed (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

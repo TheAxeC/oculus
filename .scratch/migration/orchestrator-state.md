@@ -41,7 +41,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/D35-brief-check.md (the first build's, not run again: the spec skill checks a step once); claude-sonnet-5-5, 279,072 tokens, 70 tool uses, 13.0 min
   shared_paths: with L4, Q66 and Q35, `DESIGN.md` (L4 210 and 358-365, Q66 194, Q35 367 and 378; D35 224-235), `HELP.md` (L4 27-45 and 127, Q35 120; D35 216 and 236), `options.yml` (L4 the `floats` entry at 336; D35 the behaviour descriptions and 591-622), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
-  round: 0
+  builder_usage: first run of the cases 257,278 tokens, 46 tool uses, 13.2 min (0 full-list runs)
+  round: 0 (agents/briefs/D35-cases.md, sent 01:48)
 - step: L4
   executor: agent
   worker: claude:sonnet
@@ -185,6 +186,22 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z214 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): the listing and nesting toggles in the header's `...` menu; Open Editors, Outline and Timeline start collapsed (the orchestrator, automode).
+- Z213 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): `files.confirm_delete` in `behavior.yml`, default true, with VS Code's "Do not ask me again" box (the orchestrator, automode).
+- Z212 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): the Files view's operations recorded in History with undo, Cmd+Z and Shift+Cmd+Z in the view, a deleted file's content kept up to 5 MB, a folder back empty, as VS Code (the orchestrator, automode).
+- Z211 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): the bookmarks read answers each entry's `kind` (`file`, `folder`, `missing`) from a stat (the orchestrator, automode).
+- Z210 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): Show in Files of a folder roots a Files tab with `..`; of a file reveals it in the page's Files tab (the orchestrator, automode).
+- Z209 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): palette commands `:workspace`, `:workspace-save <name>` and `:folder` (the orchestrator, automode).
+- Z208 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): a theme is light when `--panel` is lighter than `--text`; Seti darkened to 3:1 on light themes only (the orchestrator, automode).
+- Z207 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): a folder row drags under its own type, taken only by the Files tree (the orchestrator, automode).
+- Z206 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): Duplicate is Copy and Paste into the same folder, no menu item, as VS Code (the orchestrator, automode).
+- Z205 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): VS Code's git letters (`!` for a conflict) on the existing `--c-scm-*` tokens, untracked in the added hue (the orchestrator, automode).
+- Z204 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): a listed entry carries `ignored: true` when the ignored toggle shows it (the orchestrator, automode).
+- Z203 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): `file-nesting.yml` is `patterns:`, a map from a parent pattern to a list of child patterns, with no options-catalog entry (the orchestrator, automode).
+- Z202 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): `POST /api/folders/pick`, `GET /api/history` (with `&id=` one copy), the file log as `GET /api/git?log=` (the orchestrator, automode).
+- Z201 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): the history folder holds one folder per file (SHA-256 of the real path, 16 hex), `entries.json` and one copy per save named by its time (the orchestrator, automode).
+- Z200 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): a `history` key in `local.yml`, default `~/.oculus/history`, read at every request (the orchestrator, automode).
+- Z199 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): the default workspace's folders are `sources.yml` `roots:`, written through a new list-edit write; a configured root has no Remove in a named workspace (the orchestrator, automode).
 - Z198 (2026-10-02 00:58): D35 taken back out of its landing and prepared again with every `local.yml` key live; the restart exception of Z166 (a) and Z177 withdrawn; Q115 folded whole into D32 (the orchestrator, automode).
 - Z197 (2026-10-02 00:45): Q114 folded into X3a (its History); the search's "HTTP 200" error of Q115 folded into D32; Q115 keeps the six other answers (the orchestrator, automode).
 - Z187, the Files view's folder picker (raised 2026-10-01 22:15 by X3a's brief check). Ruled by Axel 2026-10-02: (f), the server runs a JavaScript for Automation helper (`osascript -l JavaScript`, no build step) that opens macOS's NSOpenPanel with folders only, several at once, the Add button and the default folder, brought to the front, and returns the paths; Electron's `dialog.showOpenDialog` replaces it when O30 lands. Not chosen: (a) to (d) pickers oculus draws; (e) AppleScript `choose folder`; (g) waiting for O30; (h) `showDirectoryPicker()`, which gives no path.

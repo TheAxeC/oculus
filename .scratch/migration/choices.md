@@ -431,3 +431,147 @@ The question: Axel's review that D35 was to end the exception that `local.yml` d
 - Not chosen: (b) D35 landed as built and `local.yml` made live later in S4, which lands a change that makes `local.yml` less live than before; (c) a step of its own for `local.yml`, and Q115 kept as a step, the small steps Axel rejected.
 
 Where it is built: D35 and D32. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z199 (2026-10-02 01:45, step X3a)
+
+The question: where Add Folder to Workspace and Remove Folder from Workspace write when the workspace in force is the default one (Z188 redone, its first decision).
+
+- Chosen (a): the default workspace's folders are the `roots:` of `config/sources.yml`, written through a new list-edit write of `sources.yml:roots` (each entry `{ key, dir }`, the file's comments kept), as Z76 (a) rules "the default workspace's folders edited from the page". A configured root shown inside a named workspace offers no Remove there, and `refused_root_fixed` says why; the hub and the engine's `config/` folder have no Remove anywhere.
+- Not chosen: (b) the default workspace kept in `~/.oculus/workspaces.json` like a named one, `sources.yml` never written, which leaves the configured roots uneditable from the page, against Z76 (a); (c) the Settings view's `config-key` write, which refuses a list of records (`not_single`, `config-key.ts:155-159`).
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z200 (2026-10-02 01:45, step X3a)
+
+The question: where the local history folder is set (brief check 6.2).
+
+- Chosen (a): a `history` key of `local.yml`, default `~/.oculus/history`, beside `workspaces`, `bookmarks`, `notes` and `changes`, in `LOCAL_KEYS`, the options catalog's `local.yml` block and HELP.md's list of the keys; read at every request, so a change of it is live as D35 rules every key; tests point it at a scratch folder.
+- Not chosen: (b) a fixed `~/.oculus/history` with no key, which no test can redirect and which breaks the rule that no test writes `~/.oculus`.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z201 (2026-10-02 01:45, step X3a)
+
+The question: the layout of the local history folder (brief check 6.3).
+
+- Chosen (a): one folder per file, named by the first 16 hex digits of the SHA-256 of the file's real path, holding `entries.json` (`{ path, saves: [{ id, at, size, kind }] }`, `kind` `save` or `delete`) and one copy per save named by its id (the time as `YYYYMMDDTHHMMSSmmm`, a `-n` suffix for a second save in the same millisecond); 50 copies of kind `save` kept per file, none over 256 KB (the 2026-09-25 ruling); a copy of kind `delete` up to 5 MB (Z212).
+- Not chosen: (b) the file's path as a folder tree under the history folder, which spreads the hub's tree into `~/.oculus` and breaks on a renamed root; (c) VS Code's own layout (`<hash>/entries.json` with random names), whose names say nothing to a reader of the folder.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z202 (2026-10-02 01:45, step X3a)
+
+The question: the names and answers of the step's three new reads and one new write (brief check 4.5, 4.7, 6.3).
+
+- Chosen (a): `POST /api/folders/pick` runs the JavaScript for Automation helper of Z187 and answers `{ ok: true, paths: [...] }` (empty when the panel is cancelled) or `{ error: 'unsupported' | 'failed' }`; `GET /api/history?root=<key>&path=<rel>` answers `{ ok: true, saves: [...] }` newest first, and with `&id=<id>` that copy's text, the id taken only from the file's own `entries.json`; the file's commits through the git reads' own form, `GET /api/git?log=<repository>&path=<rel>` beside `blame`, answering `{ ok: true, commits: [...] }`, 50 at most, `git log --follow` with the path after `--` as a literal pathspec. Each takes the token and answers with the `NO_STORE` headers of the other reads.
+- Not chosen: (b) `GET /api/folders?dir=` listing any folder's names, which Z187 replaced; (c) `GET /api/git/file-log`, a second convention beside the git reads'.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z203 (2026-10-02 01:45, step X3a)
+
+The question: the shape of `config/catalogs/file-nesting.yml` and whether the options catalog describes it (brief check 4.2, 6.3).
+
+- Chosen (a): one top-level key `patterns:`, a map from a parent pattern to the list of its children's patterns, seeded with VS Code 1.137.0's default `explorer.fileNesting.patterns`, `${capture}` and `${basename}` kept as VS Code writes them, with a head comment; no options-catalog entry, since no catalog file has one, and `DESIGN.md:44` and `tests/checks/config/config-folder.test.ts` name the file and pin its key.
+- Not chosen: (b) VS Code's own form, one comma-separated string per parent, which is harder to read and edit in YAML; (c) an options-catalog entry, a shape no catalog file has.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z204 (2026-10-02 01:45, step X3a)
+
+The question: how the Files view knows a listed entry is ignored by git, to draw it muted (brief check 4.3).
+
+- Chosen (a): a listed entry carries `ignored: true` when the ignored toggle shows ignored entries and git ignores it, from the same `ignoredIn` read and cache the listing uses to leave them out; the listing's other entries are unchanged.
+- Not chosen: (b) a second request per folder for its ignored names, which doubles the reads of every expanded folder; (c) no muted state, which leaves a row of VS Code's Explorer out.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z205 (2026-10-02 01:45, step X3a)
+
+The question: the letters and colours of the Explorer's git decorations (brief check 4.4).
+
+- Chosen (a): VS Code's git extension's letters: `M` modified, `U` untracked, `A` added, `D` deleted, `R` renamed, `!` conflict; drawn in the existing `--c-scm-added`, `--c-scm-modified`, `--c-scm-deleted`, `--c-scm-conflict` tokens and their `-txt` pairs, untracked in the added hue as VS Code's default themes draw both green, renamed in the modified hue; a folder holding a changed file takes the colour of the strongest change below it (conflict, then deleted, modified, added) with no letter; an ignored entry in the muted text colour.
+- Not chosen: (b) a new `--git-*` token family for the same hues, the duplication the rules file bans; (c) `C` for a conflict, which is VS Code's letter for a copy.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z206 (2026-10-02 01:45, step X3a)
+
+The question: what Duplicate is, which Z151 decision 8 gives X3a (brief check 2.1).
+
+- Chosen (a): Duplicate is Copy and then Paste into the same folder, which names the copy by VS Code's rule (`a copy.md`, `a copy 2.md`), as VS Code's Explorer does; no menu item, since VS Code 1.137.0 has none (`grep -o 'duplicate[A-Za-z]*File' workbench.desktop.main.js` prints nothing); a case proves it.
+- Not chosen: (b) a Duplicate menu item VS Code does not have.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z207 (2026-10-02 01:45, step X3a)
+
+The question: what a dragged folder row carries (brief check 6.8).
+
+- Chosen (a): a folder row drags under a drag type of its own, which only the Files tree takes as a drop; a file row keeps `FILE_DRAG`, so the composer and the terminal grid take files as today and never a folder.
+- Not chosen: (b) folders under `FILE_DRAG`, which hands the composer and the terminal grid a folder path they were never built for.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z208 (2026-10-02 01:45, step X3a)
+
+The question: which themes Z138's darker Seti colours apply to (brief check 5.3).
+
+- Chosen (a): a theme is light when its `--panel` has a higher WCAG luminance than its `--text`; on a light theme each `--seti-*` is darkened in its own hue until it clears 3:1 on `--panel`, the contrast WCAG asks of a graphic; on a dark theme the values stay seti-ui's.
+- Not chosen: (b) `readable` run on every theme, which would lighten `--seti-ignore` and `--seti-grey` on dark grounds, against Z138; (c) a light flag written into each theme, which adds a field every theme must carry.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z209 (2026-10-02 01:45, step X3a)
+
+The question: the palette commands for Switch Workspace, Save Workspace As and Open Folder (brief check 6.3, 6.4).
+
+- Chosen (a): three palette commands, `:workspace` (its results the saved workspaces and the default one, the one in force marked; a pick switches in place), `:workspace-save <name>` (saves the folders in force under the name, refusing an empty or taken name with the Workspaces section's words) and `:folder` (Open Folder: the folder panel, then a Files tab rooted at the chosen folder); the header's menu items open the palette with the command typed. The palette stays the shell's; the commands reach the fs store and the layout store, as the other commands do.
+- Not chosen: (b) a quick-pick mode of its own in the palette, a second input form the palette does not have; (c) a dialog of the Files view, which the shell cannot open when the page has no Files tab.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z210 (2026-10-02 01:45, step X3a)
+
+The question: what Show in Files opens for each of its five callers (brief check 6.7).
+
+- Chosen (a): Show in Files of a folder (a project card, a person's supervision folder) opens a Files tab rooted at that folder, or activates one already rooted there, with a `..` row that moves the top one folder up as far as the root that serves it; Show in Files of a file (an entry card's path, a venue card's path, the Repositories view's reveal) reveals it in the page's Files tab as today; the rooted top is the instance state's `top`, which `follow` already uses; a rooted tab draws its folder as its one top row and no workspace header.
+- Not chosen: (b) every caller rooting a new tab, which opens a tab per file shown; (c) every caller revealing in the page's tab, against Z1.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z211 (2026-10-02 01:45, step X3a)
+
+The question: how the page knows a bookmark names a folder, with the bookmark still `{ root, path }` (brief check 6.6).
+
+- Chosen (a): the bookmarks read answers each entry with a `kind` of `file`, `folder` or `missing`, from a stat of the path under its root at the read; `bookmarkRows` gives a folder the view `files`, which reveals it expanded and selected, and the rail draws a folder icon for it; a `missing` one is drawn as the Bookmarks section draws a gone file today.
+- Not chosen: (b) a guess from the name (no extension), wrong for `Makefile` and for `a.d`; (c) a `kind` written into the bookmarks file, against Z167's unchanged shape.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z212 (2026-10-02 01:45, step X3a)
+
+The question: how the Files view's operations go into History with undo (Q114, folded into X3a by Z197).
+
+- Chosen (a): each operation of `POST /api/ops` that changed something (create, rename, move, copy, paste, upload, trash, delete) is one change-log record (`key: files`, the field the operation, before and after the paths, a new undo kind `file`), drawn in History with its undo control, and Cmd+Z in the Files view undoes the newest one not yet undone, Shift+Cmd+Z takes that undo back, as VS Code's Explorer. The undo is checked as every undo is: a create or copy is moved to the Trash only while the file is as the operation left it (size and modification time), a rename or move goes back only while the target is there and the old name free, and a delete is undone by writing back each file whose content was kept before the delete, up to 5 MB a file as VS Code keeps it (`maxSize` 5e6 in VS Code 1.137.0), a folder coming back empty as in VS Code, the rest in the Trash; the content is kept in the local history (Z201, kind `delete`). The undo of a delete asks first, as VS Code's.
+- Not chosen: (b) the operations in History with no undo, which is not what Axel ruled; (c) a folder's files kept whole on delete, which copies a large folder's bytes before every delete for an undo VS Code does not offer.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z213 (2026-10-02 01:45, step X3a)
+
+The question: the setting behind the delete question (Q114, Z151 review).
+
+- Chosen (a): `files.confirm_delete` in `config/behavior.yml`, default `true`, as VS Code's `explorer.confirmDelete`; the delete question gains VS Code's "Do not ask me again" box, which writes `false` through the Settings view's `config-key` write; with it `false` a delete to the Trash goes without the question and a permanent delete still asks, as VS Code's; read again at every config push (D35); described in the options catalog and HELP.md. The drag-and-drop question stays fixed at VS Code's default, as the Settings ruling fixes the Explorer's other confirms.
+- Not chosen: (b) a key in `local.yml`, which holds this machine's paths and secrets and no behaviour; (c) the drag-and-drop confirm made a setting too, which the Settings ruling fixed.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z214 (2026-10-02 01:45, step X3a)
+
+The question: the place of the listing toggles and the starting state of the new sections (the brief's decisions 1 and 4).
+
+- Chosen (a): the hidden-files and ignored-files toggles and the File Nesting toggle sit in the workspace header's `...` menu as checked items, kept per tab, as VS Code puts a view's options in its `...` menu; Open Editors, Outline and Timeline start collapsed, as VS Code 1.137.0 registers its Outline (`collapsed:!0`), so the tree keeps its room until a reader opens one; each section's open state kept per tab.
+- Not chosen: (b) the toggles kept in the bar beside the filter, which VS Code's Explorer has no place for; (c) the sections open at first, which takes the tree's room before a reader asks for them.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
