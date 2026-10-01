@@ -772,6 +772,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z181 (2026-10-01): (a), the Files view's keys as VS Code's macOS Explorer, Enter renames, Cmd+Down opens, F2 renames too, every other tree keeps Enter opens; in X3a (the user)
 - Open item Z182 (2026-10-01): (a), the Explorer's problem decorations in D33 and the Outline's code symbols in D23; X3a builds the Outline with Markdown and LaTeX headings (the orchestrator, automode)
 - Open item Z183 (2026-10-01): (a), Z177 amended so `apps_dir` is read again on a change, as Axel's apps ruling C1 puts it beside the account folders; `DESIGN.md:236` says so, in D35 round 1 (the orchestrator, automode)
+- Open item Z184 (2026-10-01): (a), L4's floats reach saved layouts (the Focus page's HPC and Usage tabs move into the float), a view open in a float is activated there, a kept pane stays on every route, a float takes no attention and has no maximise; in L4 (the orchestrator, automode)
 - D35 premise corrected (2026-10-01): the three `notify.*` keys and `notify.stop` are already read at every hook request, so D35 makes the other 13 live and removes the unread start copies.
 
 ## Blocked, and by what

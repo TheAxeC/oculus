@@ -350,3 +350,10 @@ Where they are built: X3a, D23 and D33. Booked in the state file's closed log an
 - Not chosen: (b) `apps_dir` read at start only, with `DESIGN.md:244` and `:266` rewritten, which reverses Axel's ruling; (c) the two sentences left contradicting each other, the lazy option.
 
 Where they are built: D35 (repair round 1). Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z184 (2026-10-01 22:03, step L4)
+
+- Chosen (a): (1) a browser with a saved layout from before L4 gets the shipped floats, and the Live HPC and Usage tabs move from its Focus page into the docked float with their state; (2) a view opened while its tab sits in a float activates that tab; (3) a kept empty pane stays empty whatever removes its last tab; (4) a press in a float never makes the float the place a view opens; (5) a float has no maximise and stays drawn while a page pane is maximised; (6) a build older than L4 reads the new saved layout as none, since each port keeps its own browser storage.
+- Not chosen: (b) saved Focus pages left as they are, so existing browsers never see the float the plan line asks for "on every page", the lazy option; (c) a second instance opened beside the float's; (d) the kept rule on a close and a drag only, so an edge drop or a cross-page move removes a pane a close would keep.
+
+Where they are built: L4. Booked in the state file's closed log and `plan.md` Rulings.
