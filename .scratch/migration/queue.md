@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D31 (git auto fetch), being prepared.
+- D31 (git auto fetch), building.
 - Q85c (zod in the data folder), building.
 - U3 (every view on VS Code's scale, from U2's audit), building (a second builder took over the worktree).
 Queued, in order:
