@@ -87,6 +87,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with Q85d, `SessionList.svelte`, `Band.svelte` and `CommandCenter.svelte` (Q85d their script readers; U4 their style blocks), different blocks, a simple merge; `DESIGN.md` (U4 369, 404, 408; D27 85, 171, 379; D35 224-235; Q85d 148, 323) and `HELP.md` (U4 100; D27 230; D35 216, 236), different lines; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   builder_usage: the build to the report 311,295 tokens, 72 tool uses, 21.2 min (1 full-list run, passed)
+  reviewer_report: agents/reviews/U4-refuter.md (first run, reviewer af7ae20aeafc614df, claude-sonnet-5-5, launched 21:55; usage on its completion)
   round: 0
 ```
 
