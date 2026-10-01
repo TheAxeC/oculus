@@ -146,3 +146,80 @@ Read the "Paths this step writes" of `U3.md`, `Q85c.md`, `D31.md` and `D35.md` (
 Usage: Sonnet 5.5 (claude-sonnet-5-5)
 
 Usage (from the completion notice): claude-sonnet-5-5, 301,967 tokens, 104 tool uses, 16.6 min.
+
+## Closed
+
+Each finding is closed by a change to `agents/briefs/D27.md`, re-read on main at 1a60f8f2 (Q85c and D31 landed).
+
+Names
+1. The status bar and the picker: item 8 registers `svelte`, `rite` and `fortran-fixed` in highlight.js on wrapped grammars with no aliases, so `registered()` equals the map's languages plus plaintext and every alias keeps its owner (case 23 checks `html`, `svg`, `f90`, `h`); item 9 adds the `statusbar.language_<name>` keys with VS Code's display names (Z178, automode); `statusbar.yml`, `status.test.ts` and `keys.test.ts` are in the paths.
+2. `commands.ts:33` is in the paths and calls `ensureLanguage` (item 5); case 11 is the picker case.
+3. `boundaries.test.ts` (row and comment) and `DESIGN.md:171` are in the paths, item 11.
+4. The finder is `languageFindings` in a new `src/lib/data/sources/config/languages.ts`, re-exported from `data/sources/config.ts`, called from all three lists, `config-key.ts` `FINDERS` included (item 3).
+5. Item 12 names `DESIGN.md:85`, `:379`, `HELP.md:230` and the head of `sources.yml`.
+6. Item 8 rewrites the head comment lines 11-23 and `languageNamed`'s doc.
+7. The pinned tests are listed under "What is on the tree", `paint.test.ts` named in place of "the kit's load test"; item 13 says they are rewritten. `fs-shape.test.ts:107-109` holds again, since a language the editor does not colour is dropped (decision 10).
+8. Decision 7: `typeOfFile` answers the kind only; `languageOf(name, map)` alone takes the map; `fs.svelte.ts`, `File.svelte`, `Tree.svelte`, `opening.ts` and `+page.svelte` leave the paths.
+
+The step line
+1. `.pyi` is in item 1's python line; `.wren`, `.dot` and `.gv` are named as absent on purpose.
+2. Verify 5: `grep -rn "cathedra" src` prints only the rite module's head comment.
+3. Item 1 lists every ending per language; decision 4 gives `.h` to cpp, as VS Code's C++ language claims it, with the fence alias staying c.
+
+Premises
+1. Line numbers corrected: `file-type.ts:94-96`, `load.ts:126-128` (known at :125), `load.ts:204`.
+2. The reader follows `opens-in-program.ts` as Q85c left it on main; the sentence about Q85c's paths is gone (it has landed).
+3. `section: Files` is now ruled: Z178 (the orchestrator, automode), a new section Files.
+4. Noted; the brief asks no edit of `behavior.yml`.
+
+Cases and checks
+1. Decision 6: the rite files are carried as a TypeScript module with every value unchanged, so no ignore file and no audit is narrowed; Verify 4 is a deep-equality check against cathedra's files, quoted once. The lazy option, `.prettierignore` plus a `.json` skip in `history.test.ts`, is not taken.
+2. Item 5 states both behaviours before a grammar loads (Monarch for c, cpp, lua, ruby, scss, java, dart; plain for the other six); case 10 covers one of each.
+3. Item 5: every id registered with Monaco at `start()`, the load inside `painter`'s queue, `shikiToMonaco` run again with the wrap reset; the embedded grammars of svelte and jinja named.
+4. Case 22: the look on TEST plus a unit test of the configuration object, called an audit.
+5. Case 23 and item 8 give the mechanism for ` ```svelte ` (xml's grammar under the name svelte).
+6. Holds; case 2 asks for real Shiki.
+7. Case 15 names a selectors test plus the look.
+8. Item 2 answers a `Map`; case 19 adds `constructor`, `toString`, `__proto__` as file names.
+9. Case 6: every old name through the tracked map gives the old answer, except `.svelte` and the new names.
+10. Item 1 lists `.h` under cpp alone; decision 4.
+
+The question
+1. The name cases run over `languageMap(loadConfig(ENGINE_ROOT).config)` (the line above the cases).
+2. Case 7: real Shiki, every id loads and tokenizes into more than one scope; rite from its module.
+3. Case 10 covers a Monaco-known and an unknown language.
+4. Item 13 adds `portfolio.test.ts` and `config-key.test.ts` cases; both files are in the paths.
+5. Case 22's unit test reads the configuration given to `setLanguageConfiguration('rite', ...)`.
+6. Case 23 needs the svelte registration of item 8.
+7. Item 13 adds a `rows.test.ts` case for the `languages` row; case 25.
+8. Case 7 loads rite from its module with scope `source.rite`; case 22 checks the registration.
+9. Answered by the changes above.
+
+Implied inputs
+1. Kept: case 21's class of names; `README` stays plaintext (case 3's rule, `fs.test.ts:898`).
+2. Dotfiles are plaintext (item 2, case 21), and the Settings description says so (item 10).
+3. An entry with a slash or (as an extension) a second dot is dropped with a finding (item 2, case 18); `x.d.ts` and `CMakeLists.txt.in` in case 21.
+4. A language the editor does not colour is dropped with a finding (decision 10, case 18).
+5. An empty list: no effect, no finding; an absent key: no finding (decision 11); a value that is not a map: one finding (case 17).
+6. A duplicate inside one language is silent; a case-only clash across languages is the conflict of case 16 (case 20); an upper-case language name is dropped with a finding (case 18).
+7. Item 4: each caller is `$derived`, a removed language makes the file plaintext; `Editor.svelte:321` calls `ensureLanguage` (item 5).
+8. Cases 8, 9 and 14: in flight, interleaved with a paint, torn down.
+9. Case 12: one load for both diff models.
+10. Case 13: above the paint limit, no load.
+11. Case 23 states the fence results.
+12. Item 7 adds language settings for cmake, fortran, fortran-fixed, jinja and svelte; the others keep Monaco's.
+13. Item 2: the map is computed once per config in a `$derived` selector.
+
+ADRs: none, as the brief says.
+
+Merge claims
+1, 3, 9, 10, 11: as the report says; D31 and Q85c have landed, so only U3 is in flight.
+2. `config-key.ts` is in the paths; D31 has landed, so its import block is on main.
+4. The `options.yml` entry goes after `scan` (item 10); D35 is not in flight.
+5. `DESIGN.md:379` is apart from U3's lines (374-375 and 392); U3's round adds 410, also apart.
+6. `File.svelte` leaves the paths (decision 7); `Source.svelte`'s line 133 and import are apart from U3's hunks (28-30, 56-61, 124, 330 on).
+7. U3 does not change `ui/controls/editor/Editor.svelte` (`git diff ab4d9084 --stat` in its worktree).
+8. `source.test.ts` lines 494-516 are apart from U3's hunks, which end by line 314.
+
+Declined to judge: `.csv` and `.clo` are not in Z78's list, and the brief leaves them plain.
+

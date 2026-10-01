@@ -762,6 +762,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z176 (2026-10-01): (a), the extension-to-language map is `languages:` in `config/sources.yml`, a language's name to its endings (`.py` an extension, `makefile` a whole name), whole names first, in D27 (the orchestrator, automode).
 - Open item Z174, amended (2026-10-01): cadences from 1 to 35791 minutes, day windows 0 to 3650, `mail.per_signal` 1 to 500, in D35 (the orchestrator, automode).
 - Open item Z177 (2026-10-01): (a), every `local.yml` key but the four account keys read once at start and used from that value everywhere, in D35; (b), a sentence describing the split, was the lazy option (the orchestrator, automode).
+- Open item Z178 (2026-10-01): (a), the `languages` map in a new Settings section Files and VS Code's display names for the new languages in the status bar, in D27; (c), raw ids as names, was the lazy option (the orchestrator, automode).
 - D35 premise corrected (2026-10-01): the three `notify.*` keys and `notify.stop` are already read at every hook request, so D35 makes the other 13 live and removes the unread start copies.
 
 ## Blocked, and by what

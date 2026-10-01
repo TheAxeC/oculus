@@ -321,3 +321,11 @@ Where it is built: D27. Booked in the state file's closed log and `plan.md` Ruli
 - Not chosen: (b) the per-request re-reads kept with a sentence describing the split, the lazy option, which leaves a hand-edited `hub` writing to one hub while the page shows another until a restart; (c) every key made live, rebuilding the watchers on a `hub` change, a different concern from Z166, which ruled that these keys take a restart.
 
 Where they are built: D35. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z178 (2026-10-01 19:44, step D27)
+
+- Chosen (a): the `languages` map sits in a new Settings section named Files, the group VS Code's Settings editor puts `files.associations` under, and the status bar and the language picker show each new language by VS Code's own display name: C, C++, CMake, Lua, Ruby, SCSS, Java, Dart, Fortran, Fortran (Fixed Form), Jinja, Svelte and Rite.
+- Not chosen: (b) the map under an existing section (Code theme or Roots), which holds keys of another subject; (c) the raw ids (`cpp`, `fortran-fixed`) as display names, the lazy option, since the status bar then shows ids no other language there shows.
+
+Where they are built: D27. Booked in the state file's closed log and `plan.md` Rulings.
+

@@ -1,8 +1,8 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- U3 (every view on VS Code's scale, from U2's audit), repair round 1 building.
-- D27 (the editor's languages), brief check in, its findings being closed in the brief.
+- U3 (every view on VS Code's scale, from U2's audit), repair round 1 built, its review running.
+- D27 (the editor's languages), brief closed, builder starting.
 Queued, in order (34 steps):
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), brief checked, being prepared again on the new main.
 - Q85d (zod in the views, ui, shell and routes).
