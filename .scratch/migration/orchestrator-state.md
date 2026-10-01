@@ -54,6 +54,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/Q85a2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 228,189 tokens, 56 tool uses, 9.5 min
   landing: not-started
   round: 0 (the cases ruling `agents/briefs/Q85a2-cases.md`, sent 2026-10-01 07:28)
+- step: Q85a4
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 07:34)
+  session_id: a344f53186c6712f8 (launched 2026-10-01 07:34 local)
+  worktree: .agents/worktrees/Q85a4
+  base: a549ed92
+  launched: 2026-10-01 07:34 local
+  report: agents/reviews/Q85a4-report.md
+  brief_check: agents/reviews/Q85a4-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 322,964 tokens, 100 tool uses, 15.8 min
+  shared_paths: with Q85a2, `DESIGN.md` line 148 (one paragraph, rewritten by hand at the second landing to name both steps' folders), `src/lib/server/core/json.ts` (the comment at 91-92 and helpers left with no caller, settled on the merged tree at the second landing), `tests/checks/tree/allow-duplication.txt` (the union of the two steps' removed lines), `docs/diagrams/` (regenerated once on main); simple, since each is a union of line removals or one paragraph
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -622,6 +635,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 07:34. Q85a4's brief check closed in its brief and its builder launched; Q85a2's builder handed back at its first run (case 23's field, the time bound) and was resumed with the round-0 cases ruling at 07:28. In flight: U2, Q85a2, Q85a4 (builders). Next: their reports. Open: Z138.
 - 2026-10-01 07:05. U2's builder launched at 06:59 on a worktree rebuilt at main's head (86e6d8bb, its brief's premises rechecked); Q85a2's brief check closed in its brief (29 findings) and its builder launched at 07:05. In flight: U2, Q85a2 (builders). Next: /spec Q85a4 into the third slot. Open: Z138.
 - 2026-10-01 06:55. Q109 landed (a moved tab's lines, the five watchers' capped debounce, a sole terminal's bar menu, four `terminal:` keys), report `agents/reviews/Q109-landing.md`; five fixes at landing; the look on TEST taken. Q85a2's brief check in (29 findings). In flight: none building. Next: close Q85a2's findings in its brief and launch its builder; U2's builder; /spec Q85a4. Open: Z138.
 - 2026-10-01 06:36. S3b landed (the `config-key` write), report `agents/reviews/S3b-landing.md`; six fixes at landing. Q109's round-1 review in (a656c8c3d8e744fab): no item violated, five findings, all for landing. Next: /land Q109; /spec Q85a2 and Q85a4 into the free slots; U2's builder after Q109's landing look. In flight: Q109 (landing next). Open: Z138.

@@ -6,8 +6,8 @@ Landed 06:55: Q109 (the terminal: lines after a pane move, the five watchers' ca
 
 In flight:
 - U2 (every view's look against VS Code's), builder running since 06:59.
-- Q85a2 (zod in the edit, sessions and transcripts folders), builder running since 07:05.
-- Q85a4 (zod in the other server folders), brief check running since 07:13.
+- Q85a2 (zod in the edit, sessions and transcripts folders), builder running since 07:05, resumed at 07:28 with the round-0 cases ruling.
+- Q85a4 (zod in the other server folders), builder running since 07:34.
 Open items: Z138 (X3d's light-theme Seti colours, yours). Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - S3c (the Settings editor), S3a and S3b have landed.
