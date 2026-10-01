@@ -2,10 +2,12 @@
 // builds its row menu: which items a file, a folder and a root offer, in VS Code's groups, the two
 // paths the copy items put on the clipboard, and what each pick does. Only the items oculus can run
 // are offered, and each pick runs what the view or the stores already have: a file opened as a
-// press opens it but in a pane beside (opening.ts), a folder revealed in Finder through the open
-// endpoint, a shell started in the folder (state/shared/stores/shell.ts, `openShell`), the
+// press opens it but in a pane beside (opening.ts), a file or folder revealed in Finder through the
+// open endpoint, a shell started in the folder (state/shared/stores/shell.ts, `openShell`), the
 // file's bytes saved from api/file as the file view's link saves them, the Search view opened on
-// the root, the view's add-root form, and its removal behind its question.
+// the folder, the view's add-root form, and its removal behind its question. The items that write
+// (New File..., Cut, Paste, Rename..., Delete, Upload..., the compare items) are drawn here and
+// picked in row-ops.ts.
 //
 // The items are a pure function of the row, so which items a row offers is asserted without a
 // DOM, and the words come in as `t` so every label is a catalog key. The picks take the stores and
@@ -15,9 +17,23 @@ import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
 import { absoluteOf, languageOf, nameOf, type TreeRow } from '$lib/state/sources/fs';
 import { sourceTabState } from '$lib/state/sessions/source.svelte';
 import type { ClientState } from '$lib/state/client/context';
+import type { ExplorerStore } from '$lib/state/sources/explorer/ops.svelte';
 import { fileUrl } from '../../../shared/links/file-url';
 import { openRowBeside } from '../opening';
 import { openShell } from '$lib/state/shared/stores/shell';
+import {
+    ROW_COMPARE_SELECTED,
+    ROW_COMPARE_WITH,
+    ROW_COPY,
+    ROW_CUT,
+    ROW_DELETE,
+    ROW_NEW_FILE,
+    ROW_NEW_FOLDER,
+    ROW_PASTE,
+    ROW_RENAME,
+    ROW_SELECT_COMPARE,
+    ROW_UPLOAD
+} from './row-ops';
 
 type Words = (key: string, ...args: (string | number)[]) => string;
 
@@ -35,20 +51,41 @@ export const ROW_PREVIEW = 'preview';
 /**
  * What the menu is built from: a root's own line, a folder or a file, its path under its root,
  * for a root whether the reader added it, which is the root a removal takes, and whether the
- * view's add-root form can be opened, which it cannot while it is open already.
+ * view's add-root form can be opened, which it cannot while it is open already. Beside those, what
+ * the file operations read: whether the clipboard holds anything (Paste is drawn disabled without),
+ * the name of the file selected for compare when there is one and it is not this row, and how many
+ * rows are selected, which is one until the tree takes more.
  */
 export type RowMenuFacts = {
     kind: 'root' | 'dir' | 'file';
     path: string;
     removable: boolean;
     addable: boolean;
+    clipboard: boolean;
+    compareWith: string | null;
+    selection: number;
 };
 
 /** The facts of one row of the tree, with the root keys a removal refuses. */
-export function rowFacts(row: TreeRow, fixed: readonly string[], addable: boolean): RowMenuFacts {
+export function rowFacts(
+    row: TreeRow,
+    fixed: readonly string[],
+    addable: boolean,
+    explorer: Pick<ExplorerStore, 'clipboard' | 'compareFile'>
+): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
-    return { kind, path: row.path, removable, addable };
+    const held = explorer.compareFile();
+    const other = held !== null && !(held.root === row.root && held.path === row.path);
+    return {
+        kind,
+        path: row.path,
+        removable,
+        addable,
+        clipboard: explorer.clipboard() !== null,
+        compareWith: other ? nameOf(held.path) : null,
+        selection: 1
+    };
 }
 
 /** Whether a file is Markdown, which the source tab shows with its rendered half. */
@@ -57,32 +94,71 @@ function markdown(path: string): boolean {
 }
 
 /**
- * The row's items. A file: Open to the Side, Open in Integrated Terminal (a shell in its folder),
- * Download..., the two copies, and Open Preview on a Markdown file. A folder: Reveal in Finder, its
- * shell and the two copies. A root: those of a folder, Find in Workspace... after the shell, and
- * Add Folder to Workspace... with Remove Folder from Workspace on a root the reader added.
+ * The row's items, in VS Code's groups. A file: Open to the Side, Reveal in Finder and Open in
+ * Integrated Terminal (a shell in its folder), the compare items, Cut and Copy, Download..., the
+ * two copies, Open Preview on a Markdown file, then Rename... and Delete. A folder: New File... and
+ * New Folder..., Reveal in Finder and its shell, Find in Folder..., Cut, Copy and Paste, Upload...,
+ * the two copies, then Rename... and Delete. A root: those of a folder without Cut, Copy, Rename...
+ * and Delete, and Add Folder to Workspace... with Remove Folder from Workspace on a root the reader
+ * added. Compare with Selected needs a file selected for compare, and with two rows selected the
+ * compare items give way to Compare Selected.
  */
 export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string): MenuItem => ({ id, label });
     const terminal = item(ROW_TERMINAL, t('files.menu_terminal'));
+    const reveal = item(ROW_REVEAL, t('files.menu_reveal'));
     const copies = [
         item(ROW_COPY_PATH, t('files.menu_copy_path')),
         item(ROW_COPY_RELATIVE, t('files.menu_copy_relative'))
     ];
+    const cutCopy = [item(ROW_CUT, t('files.menu_cut')), item(ROW_COPY, t('files.menu_copy'))];
+    const modify = [
+        item(ROW_RENAME, t('files.menu_rename')),
+        item(ROW_DELETE, t('files.menu_delete'))
+    ];
+    const paste = { ...item(ROW_PASTE, t('files.menu_paste')), disabled: !facts.clipboard };
     if (facts.kind === 'file') {
+        const pair = facts.selection === 2;
         return grouped([
             [item(ROW_OPEN_SIDE, t('files.menu_open_side'))],
-            [terminal],
+            [reveal, terminal],
+            [
+                ...(!pair && facts.compareWith !== null
+                    ? [item(ROW_COMPARE_WITH, t('files.menu_compare_with'))]
+                    : []),
+                ...(!pair ? [item(ROW_SELECT_COMPARE, t('files.menu_select_compare'))] : []),
+                ...(pair ? [item(ROW_COMPARE_SELECTED, t('files.menu_compare_selected'))] : [])
+            ],
+            cutCopy,
             [item(ROW_DOWNLOAD, t('files.menu_download'))],
             copies,
-            markdown(facts.path) ? [item(ROW_PREVIEW, t('files.menu_preview'))] : []
+            markdown(facts.path) ? [item(ROW_PREVIEW, t('files.menu_preview'))] : [],
+            modify
         ]);
     }
-    const reveal = [item(ROW_REVEAL, t('files.menu_reveal')), terminal];
-    if (facts.kind === 'dir') return grouped([reveal, copies]);
+    const created = [
+        item(ROW_NEW_FILE, t('files.menu_new_file')),
+        item(ROW_NEW_FOLDER, t('files.menu_new_folder'))
+    ];
+    const find = [item(ROW_FIND, t('files.menu_find'))];
+    const upload = [item(ROW_UPLOAD, t('files.menu_upload'))];
+    if (facts.kind === 'dir') {
+        return grouped([
+            created,
+            [reveal, terminal],
+            find,
+            [...cutCopy, paste],
+            upload,
+            copies,
+            modify
+        ]);
+    }
     return grouped([
-        reveal,
-        [item(ROW_FIND, t('files.menu_find'))],
+        created,
+        [reveal, terminal],
+        find,
+        [paste],
+        upload,
         copies,
         [
             ...(facts.addable ? [item(ROW_ADD_ROOT, t('files.menu_add_root'))] : []),
@@ -113,6 +189,7 @@ export type RowStores = {
     keepPreview: ClientState['layout']['keepPreview'];
     readFileKind: ClientState['fs']['readFileKind'];
     openFile: ClientState['writes']['openFile'];
+    revealPath: ClientState['writes']['revealPath'];
     openFolder: ClientState['writes']['openFolder'];
     startTerminal: ClientState['terminals']['startTerminal'];
     showTerminal: ClientState['terminals']['showTerminal'];
@@ -129,6 +206,7 @@ export function rowStores(client: ClientState): RowStores {
         keepPreview: client.layout.keepPreview,
         readFileKind: client.fs.readFileKind,
         openFile: client.writes.openFile,
+        revealPath: client.writes.revealPath,
         openFolder: client.writes.openFolder,
         startTerminal: client.terminals.startTerminal,
         showTerminal: client.terminals.showTerminal,
@@ -156,14 +234,14 @@ export type RowPickDeps = RowStores & {
 /** What a pick from a row's menu does, over the calls handed in. */
 export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: string) => void {
     /**
-     * A folder by its root and path, and a root's own line by its folder, since the open endpoint
-     * takes no empty path under a root.
+     * A file or folder by its root and path, shown in Finder with the item selected, and a root's
+     * own line by its folder, since the open endpoint takes no empty path under a root.
      */
     async function reveal(row: TreeRow, absolute: string): Promise<void> {
         const answer =
             row.path === ''
                 ? await deps.openFolder(absolute)
-                : await deps.openFile(row.root, row.path);
+                : await deps.revealPath(row.root, row.path);
         if (!answer.ok) deps.say(t('files.reveal_failed', answer.error ?? ''));
     }
 
@@ -181,7 +259,7 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         else if (pick === ROW_REVEAL) void reveal(row, paths.absolute);
         else if (pick === ROW_TERMINAL) void shell(row, dir);
         else if (pick === ROW_FIND)
-            deps.setSearchState(deps.openView('search'), { root: row.root });
+            deps.setSearchState(deps.openView('search'), { root: row.root, under: row.path });
         else if (pick === ROW_DOWNLOAD) deps.download(fileUrl(row.root, row.path), row.name);
         else if (pick === ROW_COPY_PATH) deps.copy(paths.absolute);
         else if (pick === ROW_COPY_RELATIVE) deps.copy(paths.relative);

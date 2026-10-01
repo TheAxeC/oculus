@@ -12,13 +12,13 @@ digraph layers {
     "routes";
     "src" [label="entry"];
     "files: assets" [label="assets"];
-    "routes to data" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "routes to data" [label="11", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to data" [arrowhead=none];
     "routes to data" -> "data" [];
     "routes to files: assets" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to files: assets" [arrowhead=none];
     "routes to files: assets" -> "files: assets" [];
-    "routes to server" [label="49", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "routes to server" [label="51", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to server" [arrowhead=none];
     "routes to server" -> "server" [];
     "routes to shell" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -36,7 +36,7 @@ digraph layers {
     "routes to views" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to views" [arrowhead=none];
     "routes to views" -> "views" [];
-    "server to data" [label="138", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "server to data" [label="141", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "server" -> "server to data" [arrowhead=none];
     "server to data" -> "data" [];
     "shell to state" [label="67", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -54,7 +54,7 @@ digraph layers {
     "src to server" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "src" -> "src to server" [arrowhead=none];
     "src to server" -> "server" [];
-    "state to data" [label="152", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "state to data" [label="157", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "state" -> "state to data" [arrowhead=none];
     "state to data" -> "data" [];
     "ui to data" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -66,10 +66,10 @@ digraph layers {
     "ui to themes" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "ui" -> "ui to themes" [arrowhead=none];
     "ui to themes" -> "themes" [];
-    "views to state" [label="652", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "views to state" [label="660", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to state" [arrowhead=none];
     "views to state" -> "state" [];
-    "views to ui" [label="613", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "views to ui" [label="618", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to ui" [arrowhead=none];
     "views to ui" -> "ui" [];
 }

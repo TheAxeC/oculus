@@ -1,13 +1,13 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q88b (the Files view's file operations), review of repair round 1 running.
-- U3 (every view on VS Code's scale, from U2's audit), building after the ruling on its cases.
+- Q85c (zod in the data folder), brief closed, preparation next.
+- U3 (every view on VS Code's scale, from U2's audit), builder stopped with no report, waiting on Axel.
 Queued, in order:
-- Q85c (zod in the data folder); then Q85d.
-- Q88c (the Source Control rows' and the pane strip's new menu items), once Q88b has landed.
+- Q85d (zod in the views, ui, shell and routes).
+- Q88c (the Source Control rows' and the pane strip's new menu items).
 - X3c (the tab strip as VS Code's), once Q88c has landed.
-- X3a (the Files view as VS Code's Explorer), once Q88b has landed.
+- X3a (the Files view as VS Code's Explorer).
 - Q91 (the project view and its editor), once X3a has landed.
 - L4 (floating panes).
 - Q66 (a hidden tab defers its work).

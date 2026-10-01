@@ -11,7 +11,7 @@
 // still a pattern, and the directory to search is named as `.` rather than left out: ripgrep given
 // no path and a pipe for its standard input reads that pipe instead of the working directory, which
 // is what a server process hands a child, so a search with no path would wait for input nobody
-// sends.
+// sends. A search scoped to one folder (`under`) names `./<folder>` there instead.
 
 /** The root key that means every served root rather than one of them. */
 export const ALL_ROOTS = 'all';
@@ -42,17 +42,34 @@ export type SearchQuery = {
     regex: boolean;
     /** How many hits the answer may carry. */
     max: number;
+    /** A folder under the root the search is scoped to, `''` for the whole root. */
+    under: string;
 };
 
 /** Why a query was refused, as a key each side says in its own words. */
-export type SearchRefusal = 'empty' | 'too_long' | 'unknown_root';
+export type SearchRefusal = 'empty' | 'too_long' | 'unknown_root' | 'outside' | 'missing';
+
+const REFUSAL_WORDS: readonly string[] = [
+    'empty',
+    'too_long',
+    'unknown_root',
+    'outside',
+    'missing'
+];
+
+/** The refusal a server answer names, or null for a value that is none of them. */
+export function refusalFrom(value: unknown): SearchRefusal | null {
+    return typeof value === 'string' && REFUSAL_WORDS.includes(value)
+        ? (value as SearchRefusal)
+        : null;
+}
 
 /** The argument list a query runs as, or why it will not run. */
 export type SearchPlan = { ok: true; args: string[] } | { ok: false; refused: SearchRefusal };
 
 /** The query as it would be typed into a fresh view. */
 export function emptyQuery(max: number): SearchQuery {
-    return { q: '', root: ALL_ROOTS, word: false, case: false, regex: false, max };
+    return { q: '', root: ALL_ROOTS, word: false, case: false, regex: false, max, under: '' };
 }
 
 /**
@@ -69,7 +86,19 @@ export function refusalOf(query: SearchQuery, rootKeys: string[]): SearchRefusal
     if (query.q.trim() === '') return 'empty';
     if (query.q.length > MAX_QUERY) return 'too_long';
     if (query.root !== ALL_ROOTS && !rootKeys.includes(query.root)) return 'unknown_root';
+    if (query.under !== '' && !scopedInside(query)) return 'outside';
     return null;
+}
+
+/**
+ * Whether the folder a query is scoped to can lie under one root: a relative path with no `..`
+ * segment, on a query that names one root. Whether the folder is really there, and not a link out
+ * of the root, is the server's to read from the disk.
+ */
+function scopedInside(query: SearchQuery): boolean {
+    if (query.root === ALL_ROOTS) return false;
+    if (query.under.startsWith('/') || query.under.startsWith('\\')) return false;
+    return !query.under.split(/[\\/]/).includes('..');
 }
 
 /** The roots one query runs over: every served root, or the one it names. */
@@ -110,7 +139,7 @@ export function searchArgs(query: SearchQuery): string[] {
     if (!query.regex) args.push('--fixed-strings');
     if (query.word) args.push('--word-regexp');
     args.push(query.case ? '--case-sensitive' : '--ignore-case');
-    args.push('--regexp', query.q, SEARCH_PATH);
+    args.push('--regexp', query.q, query.under === '' ? SEARCH_PATH : `./${query.under}`);
     return args;
 }
 
@@ -146,9 +175,13 @@ export function trimAround(
     return { text: line.slice(from, from + width), column: column - from };
 }
 
-/** The parameter names GET /api/search reads, so the page writes what the server reads. */
+/**
+ * The parameter names GET /api/search reads, so the page writes what the server reads. `under` is
+ * written only when the search is scoped to a folder, so a search of a whole root is the address it
+ * always was.
+ */
 export function searchParams(query: SearchQuery): URLSearchParams {
-    return new URLSearchParams({
+    const parameters = new URLSearchParams({
         root: query.root,
         q: query.q,
         word: query.word ? '1' : '0',
@@ -156,6 +189,8 @@ export function searchParams(query: SearchQuery): URLSearchParams {
         regex: query.regex ? '1' : '0',
         max: String(query.max)
     });
+    if (query.under !== '') parameters.set('under', query.under);
+    return parameters;
 }
 
 /** The address one query is fetched at. */
@@ -173,7 +208,8 @@ export function queryFrom(parameters: URLSearchParams, cap: number): SearchQuery
         word: flag('word'),
         case: flag('case'),
         regex: flag('regex'),
-        max: clampMax(max, cap)
+        max: clampMax(max, cap),
+        under: parameters.get('under') ?? ''
     };
 }
 

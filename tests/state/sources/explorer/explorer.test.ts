@@ -12,7 +12,7 @@
 // switch; nor the close question over a typed root line.
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import {
     bookmarkLeft,
     collapseRoot,
@@ -37,10 +37,10 @@ import {
     workspaceChoices,
     type FsEntry,
     type FsRoot
-} from '../../../src/lib/state/sources/fs.ts';
-import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
-import { createClientState, type ClientState } from '../../fixtures/client.ts';
-import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
+} from '../../../../src/lib/state/sources/fs.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
+import { createClientState, type ClientState } from '../../../fixtures/client.ts';
+import { fakeStorage } from '../../workbench/layout/layout-fixture.ts';
 
 function file(name: string, size = 10): FsEntry {
     return { name, kind: 'file', size, mtime: 1 };
@@ -63,6 +63,9 @@ const NO_TOGGLES = { hidden: false, ignored: false } as const;
  * state/sources/fs.ts, leave `reveal`, `revealed` or `revealing` out of the record it returns.
  */
 const NO_REVEAL = { reveal: null, revealed: null, revealing: 0 } as const;
+
+/** The name being typed of a file browser nobody is typing one in. */
+const NO_NAMING = { naming: null } as const;
 
 /** The refusal and outcome lines of a file browser nothing has answered. */
 const NO_LINES = { note: '', said: '' } as const;
@@ -217,6 +220,7 @@ describe('the explorer over the rows', () => {
         ).toEqual({
             ...NO_FORM,
             ...NO_REVEAL,
+            ...NO_NAMING,
             ...NO_TOGGLES,
             expanded: ['hub:'],
             selected: { root: 'hub', path: 'code' },
@@ -228,6 +232,7 @@ describe('the explorer over the rows', () => {
         const empty = {
             ...NO_FORM,
             ...NO_REVEAL,
+            ...NO_NAMING,
             ...NO_LINES,
             ...NO_TOGGLES,
             expanded: [],

@@ -272,8 +272,9 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Z53 raised at the review 2026-09-29 (state file, Open items); in full in `agents/briefs/Q88.md`
   - Booked 2026-09-29: the right-click menus landed on main from base 2a72d052 through /spec, /refute (round 0 and round 1) and /land (85 files, 3841 lines added, 652 removed, the fixes at landing included); in full in `agents/briefs/Q88.md`
 - Removed by Z150 (the orchestrator, automode, 2026-10-01 11:40): Q88b, split by surface into Q88b, Q88c and Q88d below, which replace it; its lines kept whole in `agents/briefs/Q88b.md`.
-- Q88b the Files view's new right-click capabilities: New File, New Folder, Rename, Delete (to the macOS Trash through `trash`), Cut, Copy and Paste, Upload, Select for Compare and Compare Selected, Reveal in Finder for a file, and Find in Folder, each through a server route writing only under the served roots (ruling Z52) (ruling Z151)
+- ✅ Q88b the Files view's new right-click capabilities: New File, New Folder, Rename, Delete (to the macOS Trash through `trash`), Cut, Copy and Paste, Upload, Select for Compare and Compare Selected, Reveal in Finder for a file, and Find in Folder, each through a server route writing only under the served roots (ruling Z52) (ruling Z151)
   - Moved to Q102 2026-09-29 (Axel's terminal report): the terminal's Rename, Change Icon, Change Color, Clear and Copy as HTML, so the terminal is finished in one step.
+  - Booked 2026-10-01: the Files view's file operations through `/api/ops`, `local.yml` refused by identity (Z162); base 5ef2a351, one repair round refuted again; ten fixes at landing (the cut row's state, the Cancel word, `ui/forms/file/`, the guard read in the chain, `link` declared, the instance tables); `checks: 7 commands passed`; look on TEST; in full in `agents/reviews/Q88b-landing.md`.
 - Q88c the Source Control rows' and the pane strip's new right-click capabilities and the page-wide right-click handler, each item as the two sub-lines below list it; after Q88b and S3c (ruling Z52) (ruling Z55) (ruling Z70) (ruling Z152)
   - Source Control: Discard Changes on an untracked file (to the Trash), Add to .gitignore, Cherry Pick, Open File (HEAD), Compare with Workspace, Close Repository and Others, opening a worktree, Checkout (Detached), a branch and a tag from a commit, Compare with Remote, Merge Base and with..., Delete Branch.
   - The pane strip: Lock Group on an empty pane, New Text File, the Tab Bar and Editor Actions Position settings (Z70 (a)), and one page-wide handler that cancels every right click no oculus menu has taken (Z55 (a)).
@@ -333,7 +334,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - Removed by Z127 (Axel, 2026-10-01): Q85a5 (`files`, `content` and `git`), folded into Q85a4.
 - ✅ Q85b the same in the state layer (`src/lib/state`, 71 files, 506 check lines), after Q85a1, Q85a2 and Q85a4 (ruling The queue) (ruling Z73)
   - Booked 2026-10-01: `zod` schemas at the state layer's inputs, the redundant hand checks deleted, `shapes.ts` in `data/shapes/`; base 402437e8, one repair round refuted again; three fixes at landing (`tones.test.ts`'s `__PROTO__` rows, the customization fields required, a stale sentence closed); `checks: 7 commands passed`; no look; in full in `agents/reviews/Q85b-landing.md`.
-- Q85c the same in `src/lib/data` (26 files), after Q85a1, Q85a2 and Q85a4 (ruling The queue) (ruling Z73)
+- Q85c the same in `src/lib/data` (30 files, 196 check lines), after Q85a1, Q85a2 and Q85a4 (ruling The queue) (ruling Z73)
 - Q85d the same in the views, `ui/`, `shell/` and the routes (33 files), after Q85b (ruling The queue) (ruling Z73)
   - Counted 2026-09-30 on main: 206 files that mention `unknown` hold 1,269 lines of `typeof`, `Array.isArray`, `isMap` and `isRecord` checks, against LA7's "about 40 state files"; 29 files parse JSON or YAML.
 - ✅ Q86 the Map's layout tried on `@viz-js/viz` neato or fdp in the page; `d3-force` for the tick if the trial's layouts read worse (LA10; Axel 2026-09-26, library audit) (ruling The queue)
@@ -729,6 +730,8 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z159 (2026-10-01): (a), a Cut paste whose request never reached the server keeps the clipboard; a refused one clears it (the orchestrator, automode).
 - Open item Z160 (2026-10-01): (a), one new glyph `add` (Lucide `plus`) for the add actions in a view's header; other actions without a glyph go to the bar as text buttons (the orchestrator, automode).
 - Open item Z161 (2026-10-01): (A), U3 also changes `ui/tabs/TabFace.svelte`'s `.cells` size to `--fs-xs` and its focus ring to 1px offset -1px, with that file's type-scale pin, and nothing else of the tab strip, which stays X3c's (the orchestrator, automode).
+- Open item Z162 (2026-10-01): (a), Q88b's `protected` refuses by device and inode only; a path with nothing at it is never protected (the orchestrator, automode).
+- Open item Z163 (2026-10-01): (a), Q85c's paths gain `src/lib/data/sources/yaml-file.ts` and the rewrite of the moved tests' allowlist lines; its changed answers are `flattenText` and `loadConfig`'s merge skipping an own `__proto__` key (the orchestrator, automode).
 - Open item Z147 (2026-10-01): (c) widened, the cards kept and put on the same scale as everything else: they fit the pane's width, take one chip shape and titles on the type scale, and get groups 2 and 5; links lose the underline; Projects looked at on TEST after the step (the user).
 - Open item Z146 (2026-10-01): U2's seven groups as one step U3, with Z147 (c) widened and Z148 (1) (the user).
 

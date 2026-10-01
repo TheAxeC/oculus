@@ -18,6 +18,7 @@ digraph layer_ui {
         "folder ui/tabs to folder ui/menu" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/tabs to folder ui/tree" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/tabs to layer state" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder ui/tree to folder ui/controls" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/tree to folder ui/display" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/tree to folder ui/menu" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/forms to folder ui/controls" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -63,6 +64,8 @@ digraph layer_ui {
     "folder ui/tabs" -> "folder ui/tabs to layer state" [arrowhead=none, style=dashed];
     "folder ui/tabs to layer state" -> "layer state from folder ui/tabs" [style=dashed];
     { rank=same; "folder ui/tabs"; "folder ui/tabs to layer state"; "layer state from folder ui/tabs"; }
+    "folder ui/tree" -> "folder ui/tree to folder ui/controls" [arrowhead=none, minlen=1, weight=10];
+    "folder ui/tree to folder ui/controls" -> "folder ui/controls" [];
     "folder ui/tree" -> "folder ui/tree to folder ui/display" [arrowhead=none, minlen=5, weight=10];
     "folder ui/tree to folder ui/display" -> "folder ui/display" [];
     "folder ui/tree" -> "folder ui/tree to folder ui/menu" [arrowhead=none, minlen=3, weight=10];

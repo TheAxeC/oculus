@@ -11,9 +11,11 @@
 // server checks it with (data/helpers/search.ts), so a refusal is a sentence rather than a round
 // trip.
 
-import { readAnswer } from './fs-transport.ts';
+import { z } from 'zod';
+import { readAs, readJson } from '../../data/shapes/shapes.ts';
 import { answerOf, parseSearchState, queryOf, type SearchState } from './search.ts';
 import {
+    refusalFrom,
     refusalOf,
     searchCap,
     searchUrl,
@@ -23,10 +25,18 @@ import {
 import type { EntitiesStore, InstanceStates, WritesStore } from '../shared/stores/shapes.ts';
 import { t } from '../shared/words/text.ts';
 
+/** A refusal's body: the rule it broke, when it names one, and its sentence. */
+const refusalBodyShape = z.object({
+    refused: z.unknown().optional(),
+    error: z.string().optional().catch(undefined)
+});
+
 /** What each refusal is said with. The keys are literals, as every catalog read in the tree is. */
 function refusalWords(refused: SearchRefusal): string {
     if (refused === 'empty') return t('search.refused_empty');
     if (refused === 'too_long') return t('search.refused_too_long');
+    if (refused === 'outside') return t('search.refused_outside');
+    if (refused === 'missing') return t('search.refused_missing');
     return t('search.refused_unknown_root');
 }
 
@@ -58,8 +68,13 @@ export function createSearch(
         return parseSearchState(ui.instanceState(id), cap());
     }
 
+    /**
+     * A search is over the folder it was scoped to only while it is over that root, so a change
+     * that names a root and no folder leaves the whole root.
+     */
     function setSearchState(id: string, changes: Partial<SearchState>): void {
-        ui.setInstanceState(id, { ...searchState(id), ...changes });
+        const scoped = 'root' in changes && !('under' in changes) ? { under: '' } : {};
+        ui.setInstanceState(id, { ...searchState(id), ...scoped, ...changes });
     }
 
     function searchRunning(id: string): boolean {
@@ -102,9 +117,15 @@ async function ask(
         const response = await fetch(searchUrl(query), {
             headers: { 'x-oculus-token': token }
         });
-        const read = await readAnswer(response, `HTTP ${response.status}`);
-        if (!read.ok) return { ok: false, error: read.error };
-        const answer = answerOf(read.body);
+        const body = await readJson(response);
+        if (!response.ok) {
+            const held = readAs(refusalBodyShape, body);
+            const refused = refusalFrom(held?.refused);
+            if (refused !== null) return { ok: false, error: refusalWords(refused) };
+            return { ok: false, error: held?.error ?? `HTTP ${response.status}` };
+        }
+        if (body === undefined) return { ok: false, error: `HTTP ${response.status}` };
+        const answer = answerOf(body);
         if (answer === null) return { ok: false, error: t('search.failed') };
         return { ok: true, answer };
     } catch (error) {

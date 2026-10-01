@@ -10,6 +10,9 @@
 // window and launches nothing, so an application or installer bundle is shown rather than run. A
 // symlink named like a file that points at a folder is revealed as that folder.
 //
+// A file or a folder asked for with `reveal: true` is revealed the same way, whatever the file is
+// and has: Finder only selects it, so no application is named and nothing runs.
+//
 // A file is opened by the one application `open.program_ext` of config/behavior.yml names for its
 // extension, `open -b <bundle id>`, so neither a per-file Open With choice nor the machine's
 // default for the type decides the program. The extension of the name asked for and of the real
@@ -43,10 +46,13 @@ import { inside } from '../core/paths.ts';
 export type { Opener };
 
 /**
- * What the open endpoint hands to the operating system: a file and its application, or a folder.
+ * What the open endpoint hands to the operating system: a file and its application, a folder to
+ * reveal, or any file or folder to select in Finder without opening it (`reveal`).
  */
 export type OpenTarget =
-    { kind: 'file'; path: string; app: string } | { kind: 'folder'; path: string };
+    | { kind: 'file'; path: string; app: string }
+    | { kind: 'folder'; path: string }
+    | { kind: 'reveal'; path: string };
 
 /**
  * How a file or a folder reaches the operating system. It is injectable so route tests open
@@ -221,7 +227,8 @@ function allowed(path: string, roots: Root[]): string | null {
  * What macOpenPath will hand to the operating system, which is its own rule and not its caller's:
  * an absolute path that is already its own real path, a folder that is one, or a regular file with
  * no execute bit, no bookmark head and no alias flag, given with an application named by a bundle
- * id. The endpoint's `openTarget` is the narrowing and this is the floor under it.
+ * id, or a file or folder to reveal, which Finder only selects. The endpoint's `openTarget` is the
+ * narrowing and this is the floor under it.
  */
 export async function openable(
     target: OpenTarget,
@@ -232,6 +239,7 @@ export async function openable(
     try {
         if (realpathSync(path) !== path) return false;
         if (target.kind === 'folder') return statSync(path).isDirectory();
+        if (target.kind === 'reveal') return fileOrFolder(path);
         return isBundleId(target.app) && (await safeFile(path, reader));
     } catch {
         return false;
@@ -239,9 +247,9 @@ export async function openable(
 }
 
 /**
- * The arguments `open` is run with: `-b <bundle id> <path>` for a file, `-R <path>` for a folder.
- * `open`'s manual documents no `--` separator, so none is passed; the path is an absolute real
- * path, which starts with `/` and so is never read as an option.
+ * The arguments `open` is run with: `-b <bundle id> <path>` for a file, `-R <path>` for a folder or
+ * a reveal. `open`'s manual documents no `--` separator, so none is passed; the path is an absolute
+ * real path, which starts with `/` and so is never read as an option.
  */
 export function openArgs(target: OpenTarget): string[] {
     return target.kind === 'file' ? ['-b', target.app, target.path] : ['-R', target.path];
@@ -294,6 +302,8 @@ async function target(
 ): Promise<OpenTarget | Response> {
     const real = resolved(body, path, roots);
     if (real instanceof Response) return real;
+    // Finder only selects what it reveals, so no program is asked for and no file is run.
+    if (body.reveal === true) return { kind: 'reveal', path: real };
     return (await openTarget(real, path, apps, reader)) ?? refuse(403, 'path', RUNS);
 }
 

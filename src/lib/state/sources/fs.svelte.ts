@@ -237,6 +237,11 @@ export type FsStore = {
     readListing: (root: string, path: string, shown?: ListingShown) => Promise<Listing>;
     /** Ask again, on the next read of each, for every folder held under one pair of toggles. */
     relist: (shown: ListingShown) => void;
+    /**
+     * Ask again, on the next read, for one folder under every pair of toggles, and with `below` for
+     * every folder held under it too: the folders a file operation changed.
+     */
+    relistFolder: (root: string, path: string, below?: boolean) => void;
     workspaces: () => WorkspacesState;
     fileText: (root: string, path: string) => FileText;
     /**
@@ -261,6 +266,11 @@ export type FsStore = {
     bump: (root: string, path: string) => void;
     /** The reader's own bookmarks, asked for once a round like the workspaces. */
     bookmarks: () => BookmarksState;
+    /**
+     * The same bookmarks once they are answered: what is held for the round, or the answer of the
+     * one request made for them. A caller that has to rewrite the bookmarks awaits it.
+     */
+    bookmarksNow: () => Promise<BookmarksState>;
     /** Every scratch note, newest first. */
     notes: () => NotesState;
     /** One note's own text. */
@@ -387,6 +397,18 @@ export function createFs(
             const at = one.key[3];
             if (one.data !== undefined && typeof at === 'string' && at.startsWith(form)) {
                 queries.mark(one.key, 'drop');
+            }
+        }
+    }
+
+    function relistFolder(root: string, path: string, below = false): void {
+        const own = treeKey(root, path);
+        for (const one of queries.entries<Listing>(['fs', 'listing', root])) {
+            const at = one.key[3];
+            if (one.data === undefined || typeof at !== 'string') continue;
+            const folder = at.slice(at.indexOf('|') + 1);
+            if (folder === own || (below && folder.startsWith(`${own}/`))) {
+                queries.mark(one.key, 'replace');
             }
         }
     }
@@ -525,6 +547,13 @@ export function createFs(
     function bookmarks(): BookmarksState {
         const { data } = queries.read(BOOKMARKS, readBookmarks, { enabled: inBrowser() });
         return data ?? NO_BOOKMARKS;
+    }
+
+    async function bookmarksNow(): Promise<BookmarksState> {
+        const found = queries.peek<BookmarksState>(BOOKMARKS);
+        if (found.data !== undefined && !found.stale && !found.data.loading) return found.data;
+        if (!inBrowser()) return NO_BOOKMARKS;
+        return queries.fetch(BOOKMARKS, readBookmarks);
     }
 
     async function readBookmarks(_held: unknown, fetching: Fetching): Promise<BookmarksState> {
@@ -706,6 +735,7 @@ export function createFs(
         heldEntries,
         readListing,
         relist,
+        relistFolder,
         workspaces,
         fileText,
         readFileKind,
@@ -714,6 +744,7 @@ export function createFs(
         fileVersion,
         bump,
         bookmarks,
+        bookmarksNow,
         notes: noteList,
         note,
         addRoot: (dir: string) => act({ action: 'add-root', dir }),

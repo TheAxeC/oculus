@@ -33,6 +33,13 @@
     // and the context menu key on the focused row. A pick runs through the stores, and through the
     // view's own add-root form and its removal question, handed in; a pick the server refuses is
     // said on a line above the rows until the next pick.
+    //
+    // The picks that write (tree/row-ops.ts) run here too, over the explorer store: this component
+    // draws the questions they ask (../Questions.svelte), opens the file dialog for Upload..., and
+    // holds the name being typed. A row marked `editing` by treeRows() is drawn as an input
+    // (tree/NameInput.svelte) in place of its name: the pending row of a new file or folder, or the
+    // row being renamed. The name is the instance's own state (`naming`), written through `owner`,
+    // the id of the Files view this tree belongs to. A row on the clipboard as Cut is drawn faded.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
@@ -41,18 +48,31 @@
     import type { Attachment } from 'svelte/attachments';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import FileChooser from '$lib/ui/forms/file/FileChooser.svelte';
+    import NameInput from './NameInput.svelte';
+    import Questions from '../Questions.svelte';
     import { rowFacts, rowMenu, rowPicker, rowStores } from './row-menu';
+    import { holdsContents, rowNaming, rowOpsPicker, type AskedQuestion } from './row-ops';
+    import { onDestroy } from 'svelte';
     import { useState } from '$lib/state/client/use';
     import {
         FILE_DRAG,
         absoluteOf,
+        filesViewOf,
+        nameOf,
+        patchedFilesView,
         rowKey,
+        shownOf,
         treeKeyRows,
         typeOfFile,
+        type FilesView,
         type FsRoot,
         type RowRef,
         type TreeRow
     } from '$lib/state/sources/fs';
+    import { stemLength } from '$lib/state/sources/explorer/ops.svelte';
+    import { diffState } from '$lib/state/sources/repositories/repositories';
+    import { DIFF_VIEW } from '$lib/state/sources/repositories/repositories.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -62,6 +82,8 @@
         /** Whether a filter draws the rows, which holds the folders it draws open. */
         filtering: boolean;
         selected: RowRef | null;
+        /** The id of the Files view this tree is drawn for, which holds the name being typed. */
+        owner: string;
         /** The root keys a removal refuses, so a configured root offers no remove control. */
         fixed: string[];
         /** The row keys a bookmark of the reader's own names. */
@@ -86,6 +108,7 @@
         roots,
         filtering,
         selected,
+        owner,
         fixed,
         marked,
         onselect,
@@ -114,6 +137,106 @@
         },
         t
     );
+
+    const { explorer } = client;
+
+    /** What this tree's Files view remembers, read when a press or an answer needs it. */
+    function viewNow(): FilesView {
+        return filesViewOf(client.ui.instanceState(owner));
+    }
+
+    /** Write part of what the Files view remembers, and nothing when its tab has been closed. */
+    function patchView(part: Partial<FilesView>): void {
+        if (client.ui.instanceState(owner) === undefined) return;
+        client.ui.setInstanceState(owner, patchedFilesView(client.ui.instanceState(owner), part));
+    }
+
+    /** The question on screen and the call that answers it; none while nothing is asked. */
+    let asking: { ask: AskedQuestion; resolve: (confirmed: boolean) => void } | null =
+        $state.raw(null);
+
+    /** Ask a question and answer whether it was confirmed; a new question cancels the old. */
+    function ask(ask: AskedQuestion): Promise<boolean> {
+        asking?.resolve(false);
+        return new Promise((resolve) => {
+            asking = { ask, resolve };
+        });
+    }
+
+    function answered(confirmed: boolean): void {
+        const held = asking;
+        asking = null;
+        held?.resolve(confirmed);
+    }
+
+    /** The file dialog, and the call that takes the files it hands over. */
+    let chooser: { open: () => void } | null = $state(null);
+    let choosing: ((files: File[]) => void) | null = null;
+
+    function choose(): Promise<File[]> {
+        choosing?.([]);
+        return new Promise((resolve) => {
+            choosing = resolve;
+            chooser?.open();
+        });
+    }
+
+    onDestroy(() => {
+        asking?.resolve(false);
+        choosing?.([]);
+    });
+
+    const naming = rowNaming(
+        {
+            explorer,
+            view: viewNow,
+            patch: patchView,
+            say: (note: string) => (refused = note),
+            entries: (root: string, path: string) =>
+                client.fs.heldEntries(root, path, shownOf(viewNow()))
+        },
+        t
+    );
+
+    /** What a pick of the menu's file operations runs. */
+    const opsPicked = rowOpsPicker(
+        {
+            explorer,
+            say: (note: string) => (refused = note),
+            confirm: ask,
+            choose,
+            startName: naming.start,
+            openCompare: (file, against) => {
+                client.layout.openView(
+                    DIFF_VIEW,
+                    diffState(
+                        {
+                            root: file.root,
+                            path: file.path,
+                            staged: false,
+                            worktree: false,
+                            against
+                        },
+                        t('files.compare_title', nameOf(against.path), nameOf(file.path))
+                    )
+                );
+            },
+            draftOf: (row: TreeRow) =>
+                explorer.unsaved({ root: row.root, path: row.path }, holdsContents(row)),
+            selected: () =>
+                selected === null ? [] : [{ root: selected.root, path: selected.path }]
+        },
+        t
+    );
+
+    /** Whether a row is on the clipboard as Cut. */
+    function isCut(row: TreeRow): boolean {
+        const held = explorer.clipboard();
+        return (
+            held?.mode === 'cut' &&
+            held.items.some((one) => one.root === row.root && one.path === row.path)
+        );
+    }
 
     const keyRows = $derived(treeKeyRows(rows, filtering));
 
@@ -221,6 +344,21 @@
     <p class="refused" role="alert">{refused}</p>
 {/if}
 
+<FileChooser
+    bind:this={chooser}
+    accept=""
+    multiple
+    onchoose={(files: File[]) => {
+        const taker = choosing;
+        choosing = null;
+        taker?.(files);
+    }}
+/>
+
+{#if asking !== null}
+    <Questions question={asking.ask} onanswer={answered} />
+{/if}
+
 <TreeView
     label={t('files.tree')}
     rows={keyRows}
@@ -252,68 +390,102 @@
                         class:apart={row.depth === 0 && at > 0}
                         role="none"
                         data-fs-row={rowKey(row)}
-                        draggable={row.kind === 'file' && roots !== undefined ? 'true' : undefined}
+                        data-cut={isCut(row) ? '' : undefined}
+                        draggable={row.kind === 'file' &&
+                        roots !== undefined &&
+                        row.editing === undefined
+                            ? 'true'
+                            : undefined}
                         ondragstart={(event) => dragged(event, row)}
                         {@attach measure}
                     >
-                        <ContextMenu
-                            label={row.name}
-                            items={rowMenu(rowFacts(row, fixed, onaddroot !== undefined), t)}
-                            onpick={(pick: string) => {
-                                refused = '';
-                                picked(row, pick);
-                            }}
-                        >
-                            {#if row.depth === 0}
-                                <TreeItem
-                                    label={row.name}
-                                    id={rowKey(row)}
-                                    {nav}
-                                    level={1}
-                                    heading
-                                    expanded={row.open}
-                                    selected={isSelected(row)}
-                                    title={titleOf(row)}
-                                    onclick={() => pressed(row)}
-                                >
-                                    {#snippet actions(reach: number)}
-                                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                        {@render rootActions(row, reach)}
-                                    {/snippet}
-                                </TreeItem>
-                            {:else if row.kind === 'dir'}
-                                <TreeItem
-                                    label={row.name}
-                                    id={rowKey(row)}
-                                    {nav}
-                                    level={row.depth + 1}
-                                    glyph={glyphOf(row)}
-                                    depth={row.depth - 1}
-                                    expanded={row.open}
-                                    selected={isSelected(row)}
-                                    title={titleOf(row)}
-                                    onclick={() => pressed(row)}
-                                />
-                            {:else}
-                                <TreeItem
-                                    label={row.name}
-                                    id={rowKey(row)}
-                                    {nav}
-                                    level={row.depth + 1}
-                                    glyph={glyphOf(row)}
-                                    depth={row.depth - 1}
-                                    selected={isSelected(row)}
-                                    title={titleOf(row)}
-                                    onclick={() => pressed(row)}
-                                    ondblclick={() => onopen(row, false)}
-                                >
-                                    {#snippet actions(reach: number)}
-                                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                        {@render fileActions(row, reach)}
-                                    {/snippet}
-                                </TreeItem>
-                            {/if}
-                        </ContextMenu>
+                        {#if row.editing !== undefined}
+                            <TreeItem
+                                label=""
+                                name={t('files.name_label')}
+                                id={rowKey(row)}
+                                {nav}
+                                level={row.depth + 1}
+                                glyph={glyphOf(row)}
+                                depth={row.depth - 1}
+                                selected
+                            >
+                                {#snippet field()}
+                                    <NameInput
+                                        value={row.name}
+                                        select={row.editing === 'rename' && row.kind === 'file'
+                                            ? stemLength(row.name)
+                                            : undefined}
+                                        taken={naming.takenIn(row)}
+                                        onaccept={(text: string) => void naming.named(text)}
+                                        oncancel={() => patchView({ naming: null })}
+                                    />
+                                {/snippet}
+                            </TreeItem>
+                        {:else}
+                            <ContextMenu
+                                label={row.name}
+                                items={rowMenu(
+                                    rowFacts(row, fixed, onaddroot !== undefined, explorer),
+                                    t
+                                )}
+                                onpick={(pick: string) => {
+                                    refused = '';
+                                    picked(row, pick);
+                                    opsPicked(row, pick);
+                                }}
+                            >
+                                {#if row.depth === 0}
+                                    <TreeItem
+                                        label={row.name}
+                                        id={rowKey(row)}
+                                        {nav}
+                                        level={1}
+                                        heading
+                                        expanded={row.open}
+                                        selected={isSelected(row)}
+                                        title={titleOf(row)}
+                                        onclick={() => pressed(row)}
+                                    >
+                                        {#snippet actions(reach: number)}
+                                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                            {@render rootActions(row, reach)}
+                                        {/snippet}
+                                    </TreeItem>
+                                {:else if row.kind === 'dir'}
+                                    <TreeItem
+                                        label={row.name}
+                                        id={rowKey(row)}
+                                        {nav}
+                                        level={row.depth + 1}
+                                        glyph={glyphOf(row)}
+                                        depth={row.depth - 1}
+                                        expanded={row.open}
+                                        selected={isSelected(row)}
+                                        title={titleOf(row)}
+                                        onclick={() => pressed(row)}
+                                    />
+                                {:else}
+                                    <TreeItem
+                                        label={row.name}
+                                        id={rowKey(row)}
+                                        {nav}
+                                        level={row.depth + 1}
+                                        glyph={glyphOf(row)}
+                                        depth={row.depth - 1}
+                                        selected={isSelected(row)}
+                                        title={titleOf(row)}
+                                        onclick={() => pressed(row)}
+                                        ondblclick={() => onopen(row, false)}
+                                    >
+                                        {#snippet actions(reach: number)}
+                                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                            {@render fileActions(row, reach)}
+                                        {/snippet}
+                                    </TreeItem>
+                                {/if}
+                            </ContextMenu>
+                        {/if}
                     </li>
                 {/snippet}
             </VirtualRows>
@@ -346,5 +518,10 @@
        row. */
     .row.apart {
         padding-top: 6px;
+    }
+
+    /* A row on the clipboard as Cut shows through the token's share of its colour. */
+    .row[data-cut] {
+        opacity: var(--tree-cut-opacity);
     }
 </style>

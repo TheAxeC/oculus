@@ -27,7 +27,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import { clock, compactCount } from '$lib/state/shared/words/format';
-    import { nameOf } from '$lib/state/sources/file-type';
+    import { nameOf } from '$lib/state/sources/explorer/file-type';
     import { timelineTurns } from '$lib/state/sessions/folds';
     import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import type { SessionEvent } from '$lib/state/client/selectors.svelte';

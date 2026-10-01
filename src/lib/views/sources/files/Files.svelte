@@ -22,20 +22,19 @@
     // A folder is read one level at a time, when it is opened: a root is a whole checkout and
     // walking one to draw it would read a hundred thousand names to show twenty. Which folders are
     // open, the selected row, the filter text, which sections are closed, which form is open, the
-    // line typed into a root or a workspace form and the two toggles (hidden files, ignored files)
-    // live in the instance's own state, so a tree left half open is the same tree after a reload,
-    // and two file browsers on two pages are open at two different places and list the same folder
-    // each their own way. The refusal line (`note`) and the bookmark form's outcome line (`said`)
-    // are kept there too, since each answers a form that comes back. What stays in this component
-    // is the root the removal confirm is open for (`removing`), which a reload forgets.
+    // line typed into a root or a workspace form, the name being typed (`naming`) and the two
+    // listing toggles live in the instance's own state, so a tree left half open is the same tree
+    // after a reload, and two file browsers on two pages are open at two different places and list
+    // the same folder each their own way. The refusal line (`note`) and the bookmark form's outcome
+    // line (`said`) are kept there too, since each answers a form that comes back. What stays in
+    // this component is the root the removal confirm is open for (`removing`).
     //
     // A write closes its form on its answer, which may land after the reader has opened another
     // form, opened the same one again or closed the tab. The instance id and the forms are taken
     // before the request goes, and the answer closes only that opening in that instance
     // (formSettled). A bookmark the file no longer holds closes its form in every file browser the
-    // layout holds, which the fs store does on each bookmarks answer rather than this view on each
-    // render: a file browser on a page not drawn, or in a tab never shown, is mounted nowhere, and
-    // its form is closed there too.
+    // layout holds, which the fs store does on each bookmarks answer, since a file browser on a
+    // page not drawn, or in a tab never shown, is mounted nowhere.
     //
     // The three sections are files/sections/Sections.svelte's, which reads the workspaces, the
     // bookmarks and the notes for itself and answers a read of any of them that failed. What this
@@ -182,7 +181,8 @@
             follow.roots,
             (root, path) => entries(root, path, listed),
             view.expanded,
-            follow.top
+            follow.top,
+            view.naming
         )
     );
     const filtering = $derived(view.filter.trim() !== '');
@@ -471,6 +471,7 @@
                 roots={current.roots}
                 {filtering}
                 selected={view.selected}
+                owner={instance.id}
                 {fixed}
                 {marked}
                 onselect={selectRow}

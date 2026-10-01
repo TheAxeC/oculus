@@ -151,6 +151,29 @@ describe('one directory under a root', () => {
         expect(entries.find((entry) => entry.name === 'to-file')?.size).toBe(5);
     });
 
+    it('marks a link as a link and leaves the mark off a folder or a file', () => {
+        const dir = folder({ 'shared/docs/a.md': 'a\n', 'team/b.md': 'b\n' });
+        symlinkSync('../shared/docs', join(dir, 'team/docs'));
+        symlinkSync('b.md', join(dir, 'team/to-b'));
+        const roots = [{ key: 'one', dir }];
+        const team = listDir(roots, 'one', 'team');
+        const shared = listDir(roots, 'one', 'shared');
+
+        expect('entries' in team ? team.entries : []).toEqual([
+            expect.objectContaining({ name: 'docs', kind: 'dir', link: true }),
+            expect.objectContaining({ name: 'b.md', kind: 'file' }),
+            expect.objectContaining({ name: 'to-b', kind: 'file', link: true })
+        ]);
+        const plain =
+            'entries' in shared ? shared.entries.find((one) => one.name === 'docs') : null;
+        expect(plain).toEqual(expect.objectContaining({ name: 'docs', kind: 'dir' }));
+        // A real folder is not a link, so the entry carries no mark at all.
+        expect(plain).not.toHaveProperty('link');
+        const file = 'entries' in team ? team.entries.find((one) => one.name === 'b.md') : null;
+        // A real file is not a link either, so it carries no mark.
+        expect(file).not.toHaveProperty('link');
+    });
+
     it('leaves out a link pointing out of the root, and one pointing at nothing', () => {
         const outside = folder({ 'secret.txt': 's\n' });
         const dir = folder({ 'a.txt': 'a\n' });

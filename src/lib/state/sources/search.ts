@@ -35,6 +35,7 @@ export function emptySearchState(max: number): SearchState {
         case: false,
         regex: false,
         max,
+        under: '',
         answer: null,
         error: ''
     };
@@ -97,7 +98,8 @@ const searchStateShape = z.object({
     regex: z.boolean().catch(false),
     max: anyNumberShape.optional().catch(undefined),
     answer: z.unknown().optional(),
-    error: z.string().catch('')
+    error: z.string().catch(''),
+    under: z.string().catch('')
 });
 
 /** One instance's saved state, read back safely from whatever the store holds. */
@@ -111,6 +113,7 @@ export function parseSearchState(value: unknown, max: number): SearchState {
         case: held.case,
         regex: held.regex,
         max: clampMax(held.max ?? max, max),
+        under: held.under,
         answer: answerOf(held.answer),
         error: held.error
     };
@@ -124,7 +127,8 @@ export function queryOf(state: SearchState): SearchQuery {
         word: state.word,
         case: state.case,
         regex: state.regex,
-        max: state.max
+        max: state.max,
+        under: state.under
     };
 }
 

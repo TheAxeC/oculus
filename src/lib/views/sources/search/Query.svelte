@@ -1,6 +1,8 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/search/Search.svelte. What a search is asked for: the
-    // pattern, which root it runs over, and the three options.
+    // pattern, which root it runs over, the folder under that root it is scoped to, and the three
+    // options. The folder is a line of its own with a control that sends the search back to the
+    // whole root.
     //
     // Nothing here runs a search on a keystroke. Typing writes the tab's own state and stops there;
     // Enter in the box and the Search control are the two ways a run starts, since a search reads
@@ -17,6 +19,10 @@
         q: string;
         /** A served root's key, or ALL_ROOTS. */
         root: string;
+        /**
+         * The folder under the root the search is scoped to, the empty string for the whole root.
+         */
+        under: string;
         word: boolean;
         case: boolean;
         regex: boolean;
@@ -26,6 +32,7 @@
         running: boolean;
         onq: (value: string) => void;
         onroot: (value: string) => void;
+        onclearscope: () => void;
         onword: () => void;
         oncase: () => void;
         onregex: () => void;
@@ -35,6 +42,7 @@
     let {
         q,
         root,
+        under,
         word,
         case: matchCase,
         regex,
@@ -42,6 +50,7 @@
         running,
         onq,
         onroot,
+        onclearscope,
         onword,
         oncase,
         onregex,
@@ -54,38 +63,61 @@
     const choices = $derived(roots.map((key) => ({ id: key, label: key })));
 </script>
 
-<Toolbar label={t('search.toolbar')}>
-    <Search value={q} placeholder={t('search.placeholder')} oninput={onq} onenter={onrun} />
-    <Select
-        value={picked}
-        label={t('search.root')}
-        empty={t('search.root_all')}
-        {choices}
-        onchange={(value: string) => onroot(value === '' ? ALL_ROOTS : value)}
-    />
-    <ToolButton
-        label={t('search.word')}
-        title={t('search.word_title')}
-        pressed={word}
-        onclick={onword}
-    />
-    <ToolButton
-        label={t('search.case')}
-        title={t('search.case_title')}
-        pressed={matchCase}
-        onclick={oncase}
-    />
-    <ToolButton
-        label={t('search.regex')}
-        title={t('search.regex_title')}
-        pressed={regex}
-        onclick={onregex}
-    />
-    <ToolButton
-        label={t('search.run')}
-        glyph={t('search.run_glyph')}
-        title={t('search.run_title')}
-        disabled={running}
-        onclick={onrun}
-    />
-</Toolbar>
+<div class="query">
+    <Toolbar label={t('search.toolbar')}>
+        <Search value={q} placeholder={t('search.placeholder')} oninput={onq} onenter={onrun} />
+        <Select
+            value={picked}
+            label={t('search.root')}
+            empty={t('search.root_all')}
+            {choices}
+            onchange={(value: string) => onroot(value === '' ? ALL_ROOTS : value)}
+        />
+        <ToolButton
+            label={t('search.word')}
+            title={t('search.word_title')}
+            pressed={word}
+            onclick={onword}
+        />
+        <ToolButton
+            label={t('search.case')}
+            title={t('search.case_title')}
+            pressed={matchCase}
+            onclick={oncase}
+        />
+        <ToolButton
+            label={t('search.regex')}
+            title={t('search.regex_title')}
+            pressed={regex}
+            onclick={onregex}
+        />
+        <ToolButton
+            label={t('search.run')}
+            glyph={t('search.run_glyph')}
+            title={t('search.run_title')}
+            disabled={running}
+            onclick={onrun}
+        />
+    </Toolbar>
+    {#if under !== ''}
+        <p class="scope">
+            <span>{t('search.in_folder', root, under)}</span>
+            <ToolButton
+                label={t('search.clear_scope')}
+                glyph={t('search.clear_scope_glyph')}
+                compact
+                onclick={onclearscope}
+            />
+        </p>
+    {/if}
+</div>
+
+<style>
+    .scope {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        color: var(--muted-txt, var(--muted));
+    }
+</style>

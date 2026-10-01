@@ -208,7 +208,8 @@ const fsEntryShape = unchanged(
         name: z.string(),
         kind: z.enum(['file', 'dir']),
         size: anyNumberShape,
-        mtime: anyNumberShape
+        mtime: anyNumberShape,
+        link: z.literal(true).optional().catch(undefined)
     })
 ) satisfies z.ZodType<FsEntry>;
 

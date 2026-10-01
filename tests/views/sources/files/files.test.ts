@@ -30,6 +30,7 @@ import {
 import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
 import type { Instance } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../../../fixtures/doubles.ts';
+import { treePropsOver } from './files-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
 
 let client: ClientState;
@@ -65,21 +66,7 @@ const ROWS = treeRows(
 
 /** The tree's props, every callback a no-op, with the fields a case sets laid over them. */
 function treeProps(over: Record<string, unknown> = {}): ComponentProps<typeof Tree> {
-    return {
-        rows: ROWS,
-        filtering: false,
-        selected: null,
-        fixed: ['hub'],
-        marked: [],
-        onselect: noop,
-        ontoggle: noop,
-        onopen: noop,
-        onremove: noop,
-        onbookmark: noop,
-        onrefresh: noop,
-        oncollapse: noop,
-        ...over
-    };
+    return treePropsOver(ROWS, over);
 }
 
 /** One row of a rendering, from its attribute to the end of its list item. */

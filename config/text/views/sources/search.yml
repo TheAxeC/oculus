@@ -29,6 +29,11 @@ text:
         refused_empty: A search needs a pattern.
         refused_too_long: That pattern is longer than a search takes.
         refused_unknown_root: That root is not one oculus serves.
+        refused_outside: A folder is searched under one root, inside it.
+        refused_missing: That folder is not there.
+        in_folder: In {0}/{1}
+        clear_scope: Search the whole root
+        clear_scope_glyph: dismiss
         help: Finding every reference to a name is this view with the word toggle on, over a root that holds the code.
     views:
         search: Search

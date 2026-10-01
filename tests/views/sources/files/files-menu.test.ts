@@ -18,6 +18,7 @@ import {
     ROW_FIND,
     ROW_REVEAL,
     ROW_TERMINAL,
+    rowFacts,
     rowMenu,
     rowPaths,
     rowPicker,
@@ -38,8 +39,26 @@ function drawn(items: MenuItem[]): string[] {
     return items.map((item) => `${item.rule === true ? '| ' : ''}${item.label}`);
 }
 
+/** The facts of a row with the file operations' three at their defaults. */
+function facts(
+    kind: RowMenuFacts['kind'],
+    path: string,
+    changes: Partial<RowMenuFacts> = {}
+): RowMenuFacts {
+    return {
+        kind,
+        path,
+        removable: true,
+        addable: true,
+        clipboard: false,
+        compareWith: null,
+        selection: 1,
+        ...changes
+    };
+}
+
 function file(path: string): RowMenuFacts {
-    return { kind: 'file', path, removable: true, addable: true };
+    return facts('file', path);
 }
 
 describe('the Files row menu', () => {
@@ -47,11 +66,17 @@ describe('the Files row menu', () => {
     it('audits that offers a Markdown file every item it has, in order, with the rules between groups', () => {
         expect(drawn(rowMenu(file('notes/a.md'), words))).toEqual([
             '@files.menu_open_side',
-            '| @files.menu_terminal',
+            '| @files.menu_reveal',
+            '@files.menu_terminal',
+            '| @files.menu_select_compare',
+            '| @files.menu_cut',
+            '@files.menu_copy',
             '| @files.menu_download',
             '| @files.menu_copy_path',
             '@files.menu_copy_relative',
-            '| @files.menu_preview'
+            '| @files.menu_preview',
+            '| @files.menu_rename',
+            '@files.menu_delete'
         ]);
     });
 
@@ -59,39 +84,55 @@ describe('the Files row menu', () => {
     it('audits that offers a file that is no Markdown the same items without Open Preview', () => {
         expect(drawn(rowMenu(file('src/x.py'), words))).toEqual([
             '@files.menu_open_side',
-            '| @files.menu_terminal',
+            '| @files.menu_reveal',
+            '@files.menu_terminal',
+            '| @files.menu_select_compare',
+            '| @files.menu_cut',
+            '@files.menu_copy',
             '| @files.menu_download',
             '| @files.menu_copy_path',
-            '@files.menu_copy_relative'
+            '@files.menu_copy_relative',
+            '| @files.menu_rename',
+            '@files.menu_delete'
         ]);
     });
 
-    // Revert: offer Find in Workspace... on a folder as on a root.
-    it('audits that offers a folder its reveal, its shell and its two paths', () => {
-        const items = rowMenu(
-            { kind: 'dir', path: 'notes', removable: true, addable: true },
-            words
-        );
+    // Revert: offer Find in Folder... on a folder as on a root only.
+    it('audits that offers a folder its new items, its reveal and shell, Find in Folder..., the clipboard, its upload, its two paths and its changes', () => {
+        const items = rowMenu(facts('dir', 'notes'), words);
         expect(items.map((item) => item.label)).toEqual([
+            '@files.menu_new_file',
+            '@files.menu_new_folder',
             '@files.menu_reveal',
             '@files.menu_terminal',
+            '@files.menu_find',
+            '@files.menu_cut',
+            '@files.menu_copy',
+            '@files.menu_paste',
+            '@files.menu_upload',
             '@files.menu_copy_path',
-            '@files.menu_copy_relative'
+            '@files.menu_copy_relative',
+            '@files.menu_rename',
+            '@files.menu_delete'
         ]);
     });
 
     // Revert: offer Remove Folder from Workspace whatever `removable` says.
     it('audits that offers a configured root no removal, and a root the reader added its removal last', () => {
-        const fixed = rowMenu({ kind: 'root', path: '', removable: false, addable: true }, words);
+        const fixed = rowMenu(facts('root', '', { removable: false }), words);
         expect(fixed.map((item) => item.label)).toEqual([
+            '@files.menu_new_file',
+            '@files.menu_new_folder',
             '@files.menu_reveal',
             '@files.menu_terminal',
             '@files.menu_find',
+            '@files.menu_paste',
+            '@files.menu_upload',
             '@files.menu_copy_path',
             '@files.menu_copy_relative',
             '@files.menu_add_root'
         ]);
-        const added = rowMenu({ kind: 'root', path: '', removable: true, addable: true }, words);
+        const added = rowMenu(facts('root', ''), words);
         expect(added.map((item) => item.label)).toEqual([
             ...fixed.map((item) => item.label),
             '@files.menu_remove_root'
@@ -100,11 +141,15 @@ describe('the Files row menu', () => {
 
     // Revert: offer Add Folder to Workspace... whatever `addable` says.
     it('audits that offers no Add Folder to Workspace... while the add-root form is open', () => {
-        const open = rowMenu({ kind: 'root', path: '', removable: true, addable: false }, words);
+        const open = rowMenu(facts('root', '', { addable: false }), words);
         expect(open.map((item) => item.label)).toEqual([
+            '@files.menu_new_file',
+            '@files.menu_new_folder',
             '@files.menu_reveal',
             '@files.menu_terminal',
             '@files.menu_find',
+            '@files.menu_paste',
+            '@files.menu_upload',
             '@files.menu_copy_path',
             '@files.menu_copy_relative',
             '@files.menu_remove_root'
@@ -113,12 +158,8 @@ describe('the Files row menu', () => {
 
     // Revert: give Copy Relative Path the id ROW_COPY_PATH.
     it('audits that gives every item of every row an id of its own', () => {
-        for (const facts of [
-            file('notes/a.md'),
-            { kind: 'dir' as const, path: 'notes', removable: true, addable: true },
-            { kind: 'root' as const, path: '', removable: true, addable: true }
-        ]) {
-            const ids = rowMenu(facts, words).map((item) => item.id);
+        for (const row of [file('notes/a.md'), facts('dir', 'notes'), facts('root', '')]) {
+            const ids = rowMenu(row, words).map((item) => item.id);
             expect(new Set(ids).size).toBe(ids.length);
             expect(ids.every((id) => id !== '')).toBe(true);
         }
@@ -176,6 +217,10 @@ describe('what a pick from a row menu runs', () => {
                 calls.push(`openFile:${key},${path}`);
                 return Promise.resolve(answer);
             },
+            revealPath: (key: string, path: string) => {
+                calls.push(`revealPath:${key},${path}`);
+                return Promise.resolve(answer);
+            },
             startTerminal: (kind: string, cwd: string) => {
                 calls.push(`start:${kind},${cwd}`);
                 return Promise.resolve(
@@ -201,13 +246,18 @@ describe('what a pick from a row menu runs', () => {
         for (let turn = 0; turn < 5; turn += 1) await Promise.resolve();
     }
 
-    // Revert: reveal every row through openFile(row.root, row.path) in rowPicker.
-    it('audits that reveals a root by its folder and a folder by its root and path', async () => {
+    // Revert: reveal a file through openFile(row.root, row.path) in rowPicker, which opens it.
+    it('audits that reveals a root by its folder and a folder or a file by its root and path', async () => {
         const { pick, calls } = picker({ ok: true });
         pick(root, ROW_REVEAL);
         pick(folder, ROW_REVEAL);
+        pick(note, ROW_REVEAL);
         await settled();
-        expect(calls).toEqual(['openFolder:/tmp/r', 'openFile:r,notes']);
+        expect(calls).toEqual([
+            'openFolder:/tmp/r',
+            'revealPath:r,notes',
+            'revealPath:r,notes/a.md'
+        ]);
     });
 
     // Revert: drop the `say` call from reveal in rowPicker.
@@ -245,18 +295,246 @@ describe('what a pick from a row menu runs', () => {
     });
 
     // Revert: copy paths.absolute for ROW_COPY_RELATIVE in rowPicker.
-    it('audits that copies the absolute and the relative path, and opens Search on the root', () => {
+    it('audits that copies the absolute and the relative path, and opens Search on the root or the folder', () => {
         const { pick, calls } = picker({ ok: true });
         pick(note, ROW_COPY_PATH);
         pick(note, ROW_COPY_RELATIVE);
         pick(root, ROW_COPY_RELATIVE);
         pick(root, ROW_FIND);
+        pick(folder, ROW_FIND);
         expect(calls).toEqual([
             'copy:/tmp/r/notes/a.md',
             'copy:notes/a.md',
             'copy:.',
             'openView:search',
-            'search:tab-1,{"root":"r"}'
+            'search:tab-1,{"root":"r","under":""}',
+            'openView:search',
+            'search:tab-1,{"root":"r","under":"notes"}'
         ]);
+    });
+});
+
+describe('the Files row menu with file operations', () => {
+    /** The facts of a row, with the operations' three at their defaults. */
+    function facts(kind: RowMenuFacts['kind'], changes: Partial<RowMenuFacts> = {}): RowMenuFacts {
+        return {
+            kind,
+            path: kind === 'root' ? '' : kind === 'dir' ? 'notes' : 'notes/a.md',
+            removable: false,
+            addable: false,
+            clipboard: false,
+            compareWith: null,
+            selection: 1,
+            ...changes
+        };
+    }
+
+    const labelsOf = (items: MenuItem[]): string[] => items.map((item) => item.label);
+
+    /** The labels of the items between the rules, in order. */
+    function groupsOf(items: MenuItem[]): string[][] {
+        const groups: string[][] = [];
+        for (const item of items) {
+            if (item.rule === true || groups.length === 0) groups.push([]);
+            groups[groups.length - 1].push(item.label);
+        }
+        return groups;
+    }
+
+    // Revert: leave New File... out of the folder's menu in rowMenu.
+    it('audits that offers a folder every item of VS Code and the ones oculus has, and Paste disabled with no clipboard', () => {
+        const items = rowMenu(facts('dir'), words);
+        expect(labelsOf(items).toSorted()).toEqual(
+            [
+                '@files.menu_new_file',
+                '@files.menu_new_folder',
+                '@files.menu_reveal',
+                '@files.menu_terminal',
+                '@files.menu_upload',
+                '@files.menu_paste',
+                '@files.menu_find',
+                '@files.menu_cut',
+                '@files.menu_copy',
+                '@files.menu_copy_path',
+                '@files.menu_copy_relative',
+                '@files.menu_rename',
+                '@files.menu_delete'
+            ].toSorted()
+        );
+        const paste = items.find((item) => item.label === '@files.menu_paste');
+        expect(paste?.disabled).toBe(true);
+        for (const item of items) {
+            if (item !== paste) expect(item.disabled ?? false, item.label).toBe(false);
+        }
+    });
+
+    // Revert: draw Paste disabled whatever `clipboard` says.
+    it('audits that enables Paste once the clipboard holds something', () => {
+        const paste = rowMenu(facts('dir', { clipboard: true }), words).find(
+            (item) => item.label === '@files.menu_paste'
+        );
+        expect(paste).toBeDefined();
+        expect(paste?.disabled ?? false).toBe(false);
+    });
+
+    // Revert: put New File... and New Folder... in groups of their own.
+    it('audits that groups the folder items as VS Code does: the two news first, then cut, copy and paste together, then rename and delete last', () => {
+        const groups = groupsOf(rowMenu(facts('dir', { clipboard: true }), words));
+        expect(groups[0]).toEqual(['@files.menu_new_file', '@files.menu_new_folder']);
+        const clipboard = groups.find((one) => one.includes('@files.menu_cut'));
+        expect(clipboard).toEqual(['@files.menu_cut', '@files.menu_copy', '@files.menu_paste']);
+        expect(groups.at(-1)).toEqual(['@files.menu_rename', '@files.menu_delete']);
+        expect(groups.findIndex((one) => one === clipboard)).toBeLessThan(groups.length - 1);
+    });
+
+    // Revert: offer Cut, Rename... and Delete on a root.
+    it('audits that offers a root the folder items VS Code gives a workspace folder: no cut, copy, rename or delete, and Find in Folder in place of Find in Workspace', () => {
+        const items = rowMenu(facts('root', { addable: true, removable: true }), words);
+        const labels = labelsOf(items);
+        for (const wanted of [
+            '@files.menu_new_file',
+            '@files.menu_new_folder',
+            '@files.menu_upload',
+            '@files.menu_paste',
+            '@files.menu_find',
+            '@files.menu_add_root',
+            '@files.menu_remove_root'
+        ]) {
+            expect(labels, wanted).toContain(wanted);
+        }
+        for (const gone of [
+            '@files.menu_cut',
+            '@files.menu_copy',
+            '@files.menu_rename',
+            '@files.menu_delete'
+        ]) {
+            // A workspace folder cannot be cut, copied, renamed or deleted, so none of the four is
+            // drawn on a root.
+            expect(labels, gone).not.toContain(gone);
+        }
+        expect(labels.filter((label) => label === '@files.menu_find')).toHaveLength(1);
+    });
+
+    // Revert: offer a file Paste and Upload... as a folder has them.
+    it('audits that offers a file Select for Compare, Cut, Copy, Rename..., Delete and Reveal in Finder, and no Paste, Upload or New File', () => {
+        const labels = labelsOf(rowMenu(facts('file'), words));
+        for (const wanted of [
+            '@files.menu_select_compare',
+            '@files.menu_cut',
+            '@files.menu_copy',
+            '@files.menu_rename',
+            '@files.menu_delete',
+            '@files.menu_reveal'
+        ]) {
+            expect(labels, wanted).toContain(wanted);
+        }
+        for (const gone of [
+            '@files.menu_paste',
+            '@files.menu_upload',
+            '@files.menu_new_file',
+            '@files.menu_compare_with',
+            '@files.menu_compare_selected'
+        ]) {
+            // A file cannot take a paste, an upload or a new file, and the comparison items need a
+            // selection.
+            expect(labels, gone).not.toContain(gone);
+        }
+    });
+
+    // Revert: draw Reveal in Finder in a group of its own on a file.
+    it("draws a file's Reveal in Finder in the group of Open in Integrated Terminal", () => {
+        const groups = groupsOf(rowMenu(facts('file'), words));
+        expect(groups.find((one) => one.includes('@files.menu_terminal'))).toEqual(
+            expect.arrayContaining(['@files.menu_reveal', '@files.menu_terminal'])
+        );
+    });
+
+    // Revert: offer Compare with Selected whatever `compareWith` says.
+    it('audits that offers Compare with Selected only with a file selected for compare', () => {
+        const without = labelsOf(rowMenu(facts('file'), words));
+        // Nothing is selected for compare in this fixture, so the row has no file to compare
+        // against.
+        expect(without).not.toContain('@files.menu_compare_with');
+        const withOne = labelsOf(rowMenu(facts('file', { compareWith: 'b.md' }), words));
+        expect(withOne).toContain('@files.menu_compare_with');
+        expect(withOne).toContain('@files.menu_select_compare');
+    });
+
+    // Revert: draw Compare Selected whatever `selection` says.
+    it('audits that offers Compare Selected and neither of the other two when two rows are selected', () => {
+        const labels = labelsOf(
+            rowMenu(facts('file', { selection: 2, compareWith: 'b.md' }), words)
+        );
+        expect(labels).toContain('@files.menu_compare_selected');
+        // Two rows are selected, so the single-file selection item gives way to the pair
+        // comparison.
+        expect(labels).not.toContain('@files.menu_select_compare');
+        // Two rows are selected, so the comparison against a held file gives way to the pair
+        // comparison.
+        expect(labels).not.toContain('@files.menu_compare_with');
+        const one = labelsOf(rowMenu(facts('file', { compareWith: 'b.md' }), words));
+        // One row is selected, so a comparison of the selected pair has no pair to compare.
+        expect(one).not.toContain('@files.menu_compare_selected');
+    });
+
+    // Revert: leave a row's ids shared between two of its new items.
+    it('audits that gives every item of every row an id of its own', () => {
+        for (const row of [
+            facts('file', { compareWith: 'b.md', clipboard: true }),
+            facts('dir', { clipboard: true }),
+            facts('root', { clipboard: true, addable: true, removable: true })
+        ]) {
+            const ids = rowMenu(row, words).map((item) => item.id);
+            expect(new Set(ids).size).toBe(ids.length);
+            expect(ids.every((id) => id !== '')).toBe(true);
+        }
+    });
+});
+
+describe('the facts of a row', () => {
+    const row: TreeRow = {
+        root: 'hub',
+        path: 'notes/a.md',
+        name: 'a.md',
+        kind: 'file',
+        size: 1,
+        depth: 2,
+        open: false
+    };
+
+    /** An explorer store as far as the facts read it. */
+    const store = (
+        clipboard: unknown,
+        compare: { root: string; path: string } | null
+    ): Parameters<typeof rowFacts>[3] =>
+        ({ clipboard: () => clipboard, compareFile: () => compare }) as unknown as Parameters<
+            typeof rowFacts
+        >[3];
+
+    // Revert: read `clipboard` as false in rowFacts.
+    it('audits that reads the clipboard from the explorer store it is given', () => {
+        const empty = rowFacts(row, [], false, store(null, null));
+        expect(empty.clipboard).toBe(false);
+        const held = rowFacts(
+            row,
+            [],
+            false,
+            store({ mode: 'cut', items: [{ root: 'hub', path: 'x' }] }, null)
+        );
+        expect(held.clipboard).toBe(true);
+        expect(held.selection).toBe(1);
+    });
+
+    // Revert: set `compareWith` to the file whatever row it is read for.
+    it('audits that names the file selected for compare, and none for the row itself', () => {
+        const other = { root: 'hub', path: 'notes/b.md' };
+        expect(rowFacts(row, [], false, store(null, other)).compareWith).toBe('b.md');
+        expect(rowFacts(row, [], false, store(null, null)).compareWith).toBeNull();
+        expect(
+            rowFacts(row, [], false, store(null, { root: 'hub', path: 'notes/a.md' })).compareWith
+        ).toBeNull();
+        expect(
+            rowFacts(row, [], false, store(null, { root: 'other', path: 'notes/a.md' })).compareWith
+        ).toBe('a.md');
     });
 });

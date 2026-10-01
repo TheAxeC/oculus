@@ -50,9 +50,9 @@ export function writeTextAtomic(path: string, content: string, newMode?: number)
 }
 
 /**
- * Write bytes atomically, by the same temporary file and rename: the one write in oculus that
- * carries a picture rather than a document, and it must not leave a half-written image in a folder
- * the wall lists.
+ * Write bytes atomically, by the same temporary file and rename: the write that carries a picture
+ * or an uploaded file rather than a document, and it must not leave a half-written image in a
+ * folder the wall lists or a half-written upload in a folder the Files view lists.
  */
 export function writeBytesAtomic(path: string, content: Uint8Array, newMode?: number): void {
     writeAtomic(path, content, newMode);

@@ -1,4 +1,4 @@
-# Oculus text owned by the file browser: the explorer's header controls, its trees and their heads, its three sections, and what a refused workspace write says.
+# Oculus text owned by the file browser: the explorer's header controls, its trees and their heads, its three sections, what a refused workspace write says, and the file operations of its row menu: the menu words, the questions, the name messages, the refusals and the upload and compare lines.
 text:
     files:
         add: add
@@ -21,6 +21,16 @@ text:
         collapse_all: collapse all
         collapse_all_title: Close every folder under {0}
         collapse_title: Close {0}
+        compare_missing: One of the two files is not there.
+        compare_not_a_file: A folder cannot be compared with a file.
+        compare_outside: One of the two files is not inside a served root.
+        compare_title: '{0} vs {1}'
+        compare_too_large: One of the two files is too large to compare.
+        delete_button: Move to Trash
+        delete_detail: You can restore this file from the Trash.
+        delete_detail_unsaved: "Your changes will be lost if you don't save them."
+        delete_question: "Are you sure you want to delete '{0}'?"
+        delete_question_folder: "Are you sure you want to delete '{0}' and its contents?"
         expand_title: Open {0}
         file_glyph: paper
         filter: Filter the folders already read by name
@@ -37,15 +47,32 @@ text:
         listing_failed: '{0} could not be read: {1}'
         loading: Reading...
         menu_add_root: Add Folder to Workspace...
+        menu_compare_selected: Compare Selected
+        menu_compare_with: Compare with Selected
+        menu_copy: Copy
         menu_copy_path: Copy Path
         menu_copy_relative: Copy Relative Path
+        menu_cut: Cut
+        menu_delete: Delete
         menu_download: Download...
-        menu_find: Find in Workspace...
+        menu_find: Find in Folder...
+        menu_new_file: New File...
+        menu_new_folder: New Folder...
         menu_open_side: Open to the Side
+        menu_paste: Paste
         menu_preview: Open Preview
         menu_remove_root: Remove Folder from Workspace
+        menu_rename: Rename...
         menu_reveal: Reveal in Finder
+        menu_select_compare: Select for Compare
         menu_terminal: Open in Integrated Terminal
+        menu_upload: Upload...
+        name_empty: A file or folder name must be provided.
+        name_invalid: "The name '{0}' is not valid as a file or folder name. Please choose a different name."
+        name_label: Name of the file or folder
+        name_leading_slash: A file or folder name cannot start with a slash.
+        name_taken: "A file or folder '{0}' already exists at this location. Please choose a different name."
+        name_whitespace: Leading or trailing whitespace detected in file or folder name.
         none: No roots yet. Add a folder to this workspace.
         none_glyph: info
         note_delete: delete
@@ -58,6 +85,9 @@ text:
         notes_empty: No note yet.
         notes_failed: 'The notes could not be read: {0}'
         open_title: Open {0} as a tab
+        permanent_button: Delete Permanently
+        permanent_detail: 'This action is irreversible!'
+        permanent_question: Failed to delete using the Trash. Do you want to permanently delete instead?
         read_again: read again
         read_again_bookmarks: Read the bookmarks again
         read_again_notes: Read the notes again
@@ -66,7 +96,13 @@ text:
         read_offline: there is no page to read from
         refresh: refresh
         refresh_title: Read the roots, the open folders and the lists again
+        refused_denied: The folder does not allow that change.
+        refused_exists: A file or folder of that name is already there.
+        refused_into_itself: A folder cannot be put inside itself.
+        refused_invalid_name: That is not a name a file or folder can have.
+        refused_missing: It is not there any more.
         refused_name_held: A workspace already carries that name.
+        refused_network: The server could not be reached.
         refused_no_dir: Type the path of a folder.
         refused_no_name: Type a name for the workspace.
         refused_no_such_dir: There is no folder at that path.
@@ -74,14 +110,26 @@ text:
         refused_no_such_root: This workspace has no such root.
         refused_no_such_workspace: There is no workspace of that name.
         refused_not_a_directory: That path is a file, not a folder.
+        refused_not_a_folder: That is not a folder.
         refused_not_absolute: A root is an absolute path, or one starting with ~/.
+        refused_not_an_action: The server did not recognise that operation.
+        refused_not_base64: The file could not be read correctly.
         refused_other: 'The server refused that: {0}'
+        refused_outside: It is not inside a served root.
+        refused_protected: "This machine's settings file cannot be changed here."
+        refused_root: A root cannot be changed here.
         refused_root_fixed: A configured root is in every workspace and cannot be removed.
         refused_root_held: That folder is already a root of this workspace.
+        refused_token: The write token was refused; reload the page.
+        refused_too_large: That file is larger than an upload may be.
+        refused_trash_failed: The Trash could not take it.
         remove_root: remove
         remove_root_confirm: Take {0} out of this workspace?
         remove_root_detail: The folder stays on this machine; this workspace stops serving it.
         remove_root_title: Take {0} out of this workspace
+        replace_button: Replace
+        replace_detail_upload: 'This action is irreversible!'
+        replace_question: "A file or folder with the name '{0}' already exists in the destination folder. Do you want to replace it?"
         reserved: 'Left out of this workspace, since the configuration owns the name: {0}'
         reveal_missing: '{0} is not there; {1}, the nearest folder on its way, is selected.'
         reveal_no_root: '{0} cannot be shown: this workspace has no root {1}.'
@@ -105,6 +153,8 @@ text:
         show_ignored_title: List the files git ignores in a repository
         toolbar: File browser controls
         tree: Roots and folders
+        upload_done: 'Files uploaded: {0}.'
+        upload_refused: '{0} was not uploaded: {1}'
         workspace: Workspace
         workspace_default: Configured roots
         workspace_glyph: folder

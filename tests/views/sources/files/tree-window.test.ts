@@ -40,6 +40,7 @@ function treeProps(rows: ReturnType<typeof treeRows>, fixed: string[]) {
         rows,
         filtering: false,
         selected: null,
+        owner: 'files-one',
         fixed,
         marked: [],
         onselect: noop,

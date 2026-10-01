@@ -151,6 +151,7 @@ export type WritesStore = {
     writeManifest: (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
     openFolder: (path: string) => Promise<WriteAnswer>;
     openFile: (root: string, path: string) => Promise<WriteAnswer>;
+    revealPath: (root: string, path: string) => Promise<WriteAnswer>;
     writeSession: (id: string, fields: SessionFields) => Promise<WriteAnswer>;
     writeEntry: (
         collection: string,

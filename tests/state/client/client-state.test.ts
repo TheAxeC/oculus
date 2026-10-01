@@ -42,6 +42,7 @@ const STORES: (keyof ClientState)[] = [
     'present',
     'repositories',
     'search',
+    'explorer',
     'usageRefresh',
     'selectors',
     'railBadges',

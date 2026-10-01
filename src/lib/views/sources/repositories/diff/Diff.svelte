@@ -49,6 +49,7 @@
     import type { DiffCommand, EditorAction } from '$lib/ui/controls/editor/types';
     import DiffBar from './DiffBar.svelte';
     import DiffSection from './DiffSection.svelte';
+    import { compareSentence } from './compare-words';
     import {
         countsOf,
         diffActions,
@@ -188,7 +189,11 @@
             if (mine !== asked) return;
             if (!ok || !Array.isArray(body.files)) {
                 failure =
-                    typeof body.error === 'string' ? body.error : t('repositories.diff_failed');
+                    state.against !== undefined
+                        ? compareSentence(body.error, t)
+                        : typeof body.error === 'string'
+                          ? body.error
+                          : t('repositories.diff_failed');
             } else {
                 // A read that changed nothing keeps the files drawn, and with them the view.
                 if (!sameFiles(files, body.files)) {

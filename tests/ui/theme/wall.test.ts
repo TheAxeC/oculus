@@ -110,6 +110,7 @@ const SOLID: Record<string, string> = {
         'a button inside a box that is already translucent',
     'src/lib/ui/forms/DateInput.svelte .date': 'an input, whose text is typed and read back',
     'src/lib/ui/tree/Disclosure.svelte .disclosure': 'a control, pressed to open a section',
+    'src/lib/ui/tree/NameField.svelte .field': 'an input, whose text is typed and read back',
     'src/lib/ui/menu/MenuOpener.svelte .opener': 'a control, the button a list hangs off',
     'src/lib/ui/menu/MenuOpener.svelte .opener.bare:hover':
         'a hover response, saying the bare opener is under the pointer',

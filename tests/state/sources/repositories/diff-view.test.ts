@@ -6,6 +6,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+    diffActs,
     diffState,
     diffUrl,
     fileDiffUrl,
@@ -166,5 +167,65 @@ describe('the state a diff pane holds', () => {
             group: undefined,
             line: 0
         });
+    });
+});
+
+describe('a diff pane over two files', () => {
+    const subject = {
+        root: 'hub',
+        path: 'notes/a.md',
+        staged: false,
+        worktree: false,
+        against: { root: 'work', path: 'old/b.md' }
+    };
+
+    it('reads the comparison address, the file first and the file selected for compare second', () => {
+        expect(diffUrl(subject)).toBe(
+            '/api/ops?root=hub&path=notes%2Fa.md&withRoot=work&withPath=old%2Fb.md'
+        );
+    });
+
+    it('keeps a well-formed against and drops a malformed one', () => {
+        expect(
+            heldDiff({ root: 'hub', path: 'a', against: { root: 'work', path: 'b' } })
+        ).toMatchObject({
+            against: { root: 'work', path: 'b' }
+        });
+        for (const against of [
+            'work:b',
+            null,
+            [],
+            { root: 'work' },
+            { path: 'b' },
+            { root: 7, path: 'b' },
+            { root: 'work', path: 7 },
+            { root: '', path: 'b' }
+        ]) {
+            expect(
+                heldDiff({ root: 'hub', path: 'a', against }).against,
+                JSON.stringify(against)
+            ).toBeUndefined();
+        }
+        expect(heldDiff({ root: 'hub', path: 'a' }).against).toBeUndefined();
+    });
+
+    it('does not act on hunks of a comparison', () => {
+        expect(diffActs(subject)).toBe(false);
+        expect(diffActs({ ...subject, against: undefined })).toBe(true);
+    });
+
+    it('makes two comparisons two panes, and neither the pane of the file alone', () => {
+        const one = diffState(subject, 'a vs b');
+        const other = diffState(
+            { ...subject, against: { root: 'work', path: 'old/c.md' } },
+            'a vs c'
+        );
+        const swapped = diffState(
+            { ...subject, path: 'old/b.md', against: { root: 'hub', path: 'notes/a.md' } },
+            'b vs a'
+        );
+        const alone = diffState({ ...subject, against: undefined }, 'a');
+        expect(new Set([one.id, other.id, swapped.id, alone.id]).size).toBe(4);
+        expect(diffState(subject, 'a vs b').id).toBe(one.id);
     });
 });

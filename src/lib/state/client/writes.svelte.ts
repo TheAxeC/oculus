@@ -215,6 +215,14 @@ export function createWrites(
     }
 
     /**
+     * Ask the local server to reveal one file or folder in Finder without opening it, addressed
+     * as `openFile` addresses it.
+     */
+    async function revealPath(root: string, path: string): Promise<WriteAnswer> {
+        return send({ root, path, reveal: true }, OPEN_PATH);
+    }
+
+    /**
      * Dismiss one session or bring it back, pin it to an area or unpin it, rename it or clear the
      * name. It is the same endpoint and the same token as a manifest write; what it writes is the
      * per-session overrides file rather than a project.yml, and the answer's `refused` names a
@@ -520,6 +528,7 @@ export function createWrites(
         writeManifest,
         openFolder,
         openFile,
+        revealPath,
         writeSession,
         writeEntry,
         writeSubtask,

@@ -179,7 +179,10 @@ describe('what is refused', () => {
     it('refuses an empty pattern with 400 and starts nothing', async () => {
         const response = await handleSearch(request('q='), TOKEN, options());
         expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: 'the search carries no pattern' });
+        expect(await response.json()).toEqual({
+            error: 'the search carries no pattern',
+            refused: 'empty'
+        });
         expect(ran).toEqual([]);
     });
 
@@ -187,14 +190,18 @@ describe('what is refused', () => {
         const response = await handleSearch(request(`q=${'x'.repeat(1001)}`), TOKEN, options());
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({
-            error: 'the pattern is longer than a search takes'
+            error: 'the pattern is longer than a search takes',
+            refused: 'too_long'
         });
     });
 
     it('refuses a root outside the served list with 400 and starts nothing', async () => {
         const response = await handleSearch(request('q=needle&root=elsewhere'), TOKEN, options());
         expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: 'that root is not one oculus serves' });
+        expect(await response.json()).toEqual({
+            error: 'that root is not one oculus serves',
+            refused: 'unknown_root'
+        });
         expect(ran).toEqual([]);
     });
 

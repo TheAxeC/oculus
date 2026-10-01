@@ -76,6 +76,7 @@ describe('what a tab holds', () => {
             case: false,
             regex: false,
             max: 500,
+            under: '',
             answer: null,
             error: ''
         });
@@ -165,6 +166,7 @@ describe('the pure readers', () => {
             'q',
             'regex',
             'root',
+            'under',
             'word'
         ]);
     });
@@ -392,6 +394,7 @@ describe('a saved tab read back', () => {
             'case',
             'regex',
             'max',
+            'under',
             'answer',
             'error'
         ]);
@@ -472,5 +475,56 @@ describe('the answer of the endpoint', () => {
             Promise.resolve(new Response('<html>gateway</html>', { status: 502 }))
         );
         expect(held).toStrictEqual({ error: 'HTTP 502', answer: null });
+    });
+});
+
+describe('the folder a tab is scoped to', () => {
+    it('reads a state held without under as the whole root', () => {
+        expect(parseSearchState({ q: 'x', root: 'hub' }, 500).under).toBe('');
+        expect(parseSearchState({ q: 'x', root: 'hub', under: 7 }, 500).under).toBe('');
+        expect(parseSearchState({ q: 'x', root: 'hub', under: 'src/lib' }, 500).under).toBe(
+            'src/lib'
+        );
+    });
+
+    it('carries under into the query and the request', async () => {
+        const held = stub(ANSWER);
+        client.search.setSearchState('one', { q: 'needle', root: 'hub', under: 'src/lib' });
+        expect(queryOf(client.search.searchState('one')).under).toBe('src/lib');
+        await client.search.runSearch('one', ['hub']);
+        expect(held.calls[0].url).toBe(
+            '/api/search?root=hub&q=needle&word=0&case=0&regex=0&max=500&under=src%2Flib'
+        );
+    });
+
+    it('clears under when a root is chosen, and keeps it when the change names under too', () => {
+        client.search.setSearchState('one', { root: 'hub', under: 'a' });
+        expect(client.search.searchState('one').under).toBe('a');
+        client.search.setSearchState('one', { root: 'engine' });
+        expect(client.search.searchState('one').under).toBe('');
+        client.search.setSearchState('one', { root: 'hub', under: 'b' });
+        expect(client.search.searchState('one').under).toBe('b');
+        client.search.setSearchState('one', { q: 'x' });
+        expect(client.search.searchState('one').under).toBe('b');
+    });
+
+    it('says a refused folder as a sentence of the search words, not as the key', async () => {
+        const held = stub({ error: 'outside' }, false);
+        client.search.setSearchState('one', { q: 'needle', root: 'all', under: 'src' });
+        await client.search.runSearch('one', ['hub']);
+        expect(held.calls).toHaveLength(0);
+        const error = client.search.searchState('one').error;
+        expect(error).not.toBe('');
+        expect(error).not.toBe('outside');
+    });
+
+    it('says a folder the server found missing as the search words, and any other refusal text as it came', async () => {
+        stub({ error: 'the folder is not there', refused: 'missing' }, false);
+        client.search.setSearchState('one', { q: 'needle', root: 'hub', under: 'gone' });
+        await client.search.runSearch('one', ['hub']);
+        expect(client.search.searchState('one').error).toBe(t('search.refused_missing'));
+        stub({ error: 'the write token is missing or stale' }, false);
+        await client.search.runSearch('one', ['hub']);
+        expect(client.search.searchState('one').error).toBe('the write token is missing or stale');
     });
 });

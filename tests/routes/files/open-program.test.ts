@@ -17,7 +17,8 @@ import {
     openable,
     openableAddress,
     readFinderInfo,
-    type FinderInfoReader
+    type FinderInfoReader,
+    type OpenTarget
 } from '../../../src/lib/server/files/open.ts';
 import { APPS, TOKEN, checkedIn, opened, request, withFiles } from './open-fixture.ts';
 import { it } from '../../fixtures/scratch.ts';
@@ -369,5 +370,81 @@ describe('what macOS open is run with and the floor under it', () => {
         expect(openableAddress('file:///tmp/x')).toBe(false);
         expect(openableAddress('-a')).toBe(false);
         expect(openableAddress('/Applications/Calculator.app')).toBe(false);
+    });
+});
+
+describe('Reveal in Finder for a file', () => {
+    // The argument list and the floor are read here, never macOpenPath itself: a call that passed
+    // would run Finder.
+    it('reveals a file or a folder with -R, the path last', () => {
+        expect(openArgs({ kind: 'reveal', path: '/hub/notes.txt' })).toEqual([
+            '-R',
+            '/hub/notes.txt'
+        ]);
+    });
+
+    it('takes a real file and a real folder, whatever the file is and has', async () => {
+        const { folder, report } = withFiles();
+        const script = join(realpathSync(folder), 'reproduce.sh');
+        writeFileSync(script, '#!/bin/sh\n', { mode: 0o755 });
+        const plain = join(realpathSync(folder), 'plain.unlisted');
+        writeFileSync(plain, 'x');
+        for (const path of [folder, report, script, plain]) {
+            expect(await openable({ kind: 'reveal', path: realpathSync(path) })).toBe(true);
+        }
+    });
+
+    it('refuses a path that is missing, relative, not its own real path or an option', async () => {
+        const { hub, folder } = withFiles();
+        const real = realpathSync(folder);
+        const link = join(realpathSync(hub), 'link-to-folder');
+        symlinkSync(real, link);
+        // The same folder by its own real path is taken, so each refusal below is the rule named.
+        expect(await openable({ kind: 'reveal', path: real })).toBe(true);
+        expect(await openable({ kind: 'reveal', path: join(real, 'nothing-here') })).toBe(false);
+        expect(await openable({ kind: 'reveal', path: 'projects/active/alpha' })).toBe(false);
+        expect(await openable({ kind: 'reveal', path: link })).toBe(false);
+        expect(await openable({ kind: 'reveal', path: '-n' })).toBe(false);
+    });
+
+    it('hands the opener a reveal for a file the endpoint is asked to reveal, one with no application too', async () => {
+        const { folder, report, roots } = withFiles();
+        const plain = join(folder, 'plain.unlisted');
+        writeFileSync(plain, 'x');
+        const script = join(folder, 'reproduce.sh');
+        writeFileSync(script, '#!/bin/sh\n', { mode: 0o755 });
+        const opener = vi.fn();
+        for (const name of ['report.docx', 'plain.unlisted', 'reproduce.sh']) {
+            const response = await handleOpen(
+                request({ root: 'hub', path: `projects/active/alpha/${name}`, reveal: true }),
+                TOKEN,
+                roots,
+                checkedIn,
+                opener
+            );
+            expect(response.status, name).toBe(200);
+        }
+        expect(opener.mock.calls).toEqual([
+            [{ kind: 'reveal', path: realpathSync(report) }],
+            [{ kind: 'reveal', path: realpathSync(plain) }],
+            [{ kind: 'reveal', path: realpathSync(script) }]
+        ]);
+    });
+
+    it('reveals a folder asked for with reveal, and refuses a missing path, a path out of its root and a root not served', async () => {
+        const { folder, roots } = withFiles();
+        const opener = vi.fn();
+        const asked = async (body: Record<string, unknown>) =>
+            handleOpen(request({ reveal: true, ...body }), TOKEN, roots, checkedIn, opener);
+        const folderAnswer = await asked({ root: 'hub', path: 'projects/active/alpha' });
+        expect(folderAnswer.status).toBe(200);
+        expect(openArgs(opener.mock.calls[0][0] as OpenTarget)).toEqual([
+            '-R',
+            realpathSync(folder)
+        ]);
+        expect((await asked({ root: 'hub', path: 'projects/gone.txt' })).status).toBe(404);
+        expect((await asked({ root: 'hub', path: '../../../../x' })).status).toBe(403);
+        expect((await asked({ root: 'nowhere', path: 'a' })).status).toBe(400);
+        expect(opener).toHaveBeenCalledOnce();
     });
 });

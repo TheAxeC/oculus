@@ -76,6 +76,7 @@ import {
     type RepositoriesStore
 } from '../sources/repositories/repositories.svelte.ts';
 import { createSelection, type SelectionStore } from '../workbench/selection.svelte.ts';
+import { createExplorer, type ExplorerStore } from '../sources/explorer/ops.svelte.ts';
 import { createSearch, type SearchStore } from '../sources/search.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
@@ -126,6 +127,8 @@ export type ClientState = {
     present: PresentStore;
     repositories: RepositoriesStore;
     search: SearchStore;
+    /** The Files view's file operations, clipboard and compare selection. */
+    explorer: ExplorerStore;
     usageRefresh: UsageRefreshStore;
     selectors: SelectorsStore;
     railBadges: RailBadgesStore;
@@ -274,6 +277,16 @@ export function createClientState(): ClientState {
         setInstanceState: ui.setInstanceState
     });
     const search = createSearch(entities, writes, ui);
+    const explorer = createExplorer(
+        writes,
+        fs,
+        {
+            tabs: () => layout.pages().flatMap((page) => tabsOf(page.workbench.root)),
+            restateInstance: layout.restateInstance
+        },
+        ui,
+        source
+    );
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);
     const manifestDraft = createManifestDraft(ui, selectors.projectOf);
@@ -350,6 +363,7 @@ export function createClientState(): ClientState {
         present,
         repositories,
         search,
+        explorer,
         usageRefresh,
         selectors,
         railBadges,

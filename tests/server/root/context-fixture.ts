@@ -77,6 +77,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         local,
         engine: overrides.engine ?? '/fixture/engine',
         fsWrites: overrides.fsWrites ?? fsWrites(),
+        opsWrites: overrides.opsWrites ?? fsWrites(),
         ignoredCache: overrides.ignoredCache ?? ignoredCache(),
         hpcLogPaths: new Map(),
         calendarConnects: new ConnectStates(),

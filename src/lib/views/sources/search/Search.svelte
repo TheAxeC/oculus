@@ -69,6 +69,7 @@
         <Query
             q={held.q}
             root={held.root}
+            under={held.under}
             word={held.word}
             case={held.case}
             regex={held.regex}
@@ -76,6 +77,7 @@
             {running}
             onq={(q: string) => setSearchState(instance.id, { q })}
             onroot={(root: string) => setSearchState(instance.id, { root })}
+            onclearscope={() => setSearchState(instance.id, { under: '' })}
             onword={() => setSearchState(instance.id, { word: !held.word })}
             oncase={() => setSearchState(instance.id, { case: !held.case })}
             onregex={() => setSearchState(instance.id, { regex: !held.regex })}

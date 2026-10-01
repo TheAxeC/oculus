@@ -1,0 +1,591 @@
+// Layer 2, server. The file operations of the Files view under the served roots: create, rename,
+// move to the Trash, delete for good, paste (copy or move) and upload, as POST /api/ops, and the
+// comparison of two files as GET /api/ops. src/routes/api/(files)/ops/+server.ts is the few lines
+// that join the request to the roots and the write chain.
+//
+// Every path is a root's key and a path under it. A path that is a symbolic link is acted on as the
+// link: its parent folder is resolved by real path and its own name is kept, so a rename, a move,
+// a trash or a delete of a link never reaches what it points at. The folder an item lands in is
+// resolved by real path as well and must lie inside its root, so no segment of a name walks out.
+//
+// The refusals are made in one order: `outside`, `missing`, `root`, `protected`, `invalid_name`,
+// `exists`, `into_itself`, `not_a_folder`, and then what the system answers. `protected` is the
+// machine's own config/local.yml and every folder that holds it, compared by device and inode, so
+// every spelling the volume accepts is refused. A list of items runs in order and stops at the
+// first that fails, naming the items done before it and the one it stopped at.
+//
+// Each operation runs behind the write chain `opsWrites`, apart from the workspace chain, so a long
+// copy holds up another file operation and nothing else. The Trash is a parameter of the entry
+// point, so a test hands in a spy and moves nothing to the real Trash.
+
+import { json } from '@sveltejs/kit';
+import { constants, lstatSync, readFileSync, statSync } from 'node:fs';
+import { cp, lstat, mkdir, open, rename, rm } from 'node:fs/promises';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+import trashLibrary from 'trash';
+import { z } from 'zod';
+import {
+    MAX_UPLOAD_BYTES,
+    TEXT_LIMIT,
+    checkName,
+    freeName,
+    type OpsAnswer,
+    type OpsRefusal,
+    type OpsRequest
+} from '../../../data/file-ops.ts';
+import { LOCAL_NAME } from '../../../data/sources/config.ts';
+import type { DiffSides } from '../../../data/model/index.ts';
+import { tokenedBody } from '../../core/auth.ts';
+import { chained, writeBytesAtomic, type FsWrites } from '../../core/json.ts';
+import { below, inside, realPath } from '../../core/paths.ts';
+import { ENGINE_ROOT, resolveRootPath, type Root } from '../files.ts';
+import { isBinaryFile } from '../source.ts';
+
+/** What an operation runs over: the roots it may touch and the chain that orders its writes. */
+export type OpsTarget = {
+    roots: Root[];
+    writes: FsWrites;
+    /** The machine's local.yml when it is not the engine root's own, for the route to name. */
+    local?: string;
+};
+
+/** The two calls a test replaces: the Trash, and a step held inside the write chain. */
+export type OpsDeps = {
+    trash?: (path: string, options: { glob: false }) => Promise<void>;
+    slow?: () => Promise<void>;
+};
+
+/** What every answer of this route carries besides its type: nothing of it is cached. */
+const NO_STORE = { 'cache-control': 'no-store' };
+
+/** A refusal before any item, or the stop of an operation with no items. */
+type Fail = { ok: false; error: OpsRefusal };
+
+const fail = (error: OpsRefusal): Fail => ({ ok: false, error });
+
+/** Whether a step answered a refusal rather than its value. */
+function refused(step: object): step is Fail {
+    return 'ok' in step && step.ok === false;
+}
+
+/** What one operation runs with: the roots, the files it never changes, and the Trash. */
+type Scope = {
+    roots: Root[];
+    locals: Guard;
+    trash: NonNullable<OpsDeps['trash']>;
+};
+
+const place = z.object({ root: z.string(), path: z.string() });
+
+/** The body of POST /api/ops, one shape per operation. */
+const opsShape = z.discriminatedUnion('op', [
+    z.object({
+        op: z.literal('create'),
+        root: z.string(),
+        path: z.string(),
+        name: z.string(),
+        folder: z.boolean()
+    }),
+    z.object({ op: z.literal('rename'), root: z.string(), path: z.string(), name: z.string() }),
+    z.object({ op: z.literal('trash'), root: z.string(), paths: z.array(z.string()) }),
+    z.object({ op: z.literal('delete'), root: z.string(), paths: z.array(z.string()) }),
+    z.object({
+        op: z.literal('paste'),
+        mode: z.enum(['copy', 'move']),
+        items: z.array(place),
+        root: z.string(),
+        path: z.string(),
+        replace: z.boolean()
+    }),
+    z.object({
+        op: z.literal('upload'),
+        root: z.string(),
+        path: z.string(),
+        name: z.string(),
+        data: z.string(),
+        replace: z.boolean()
+    })
+]) satisfies z.ZodType<OpsRequest>;
+
+/** The refusal a system error stands for, or null for one that is not a refusal. */
+function refusalOf(error: unknown): OpsRefusal | null {
+    const code = (error as NodeJS.ErrnoException | null)?.code;
+    if (code === 'EACCES' || code === 'EPERM' || code === 'EROFS') return 'denied';
+    if (code === 'ENAMETOOLONG') return 'invalid_name';
+    if (code === 'ENOENT') return 'missing';
+    if (code === 'EEXIST' || code === 'ENOTEMPTY') return 'exists';
+    if (code === 'ENOTDIR') return 'not_a_folder';
+    return null;
+}
+
+/** Run a change to the disk, answering a refusal for an error the system gives, else rethrowing. */
+async function attempt(change: () => Promise<unknown>): Promise<Fail | null> {
+    try {
+        await change();
+        return null;
+    } catch (error) {
+        const why = refusalOf(error);
+        if (why === null) throw error;
+        return fail(why);
+    }
+}
+
+/** The stat of a path itself, a link not followed, or null when nothing is there. */
+async function lstatOrNull(path: string): Promise<Awaited<ReturnType<typeof lstat>> | null> {
+    try {
+        return await lstat(path);
+    } catch {
+        return null;
+    }
+}
+
+/** The real path of a served root's folder, `outside` for a key not served, `missing` if gone. */
+function rootFolder(roots: Root[], key: string): string | Fail {
+    const root = roots.find((one) => one.key === key);
+    if (root === undefined) return fail('outside');
+    return realPath(root.dir) ?? fail('missing');
+}
+
+/** An item as an operation names it: where it really is, and whether it is its root's folder. */
+type Item = { real: string; rootFolder: string; isRoot: boolean };
+
+/**
+ * The item a root's key and a path name, a link taken as the link: its parent folder is resolved by
+ * real path and must lie in the root, and the item's own name is kept.
+ */
+function resolveItem(roots: Root[], key: string, path: string): Item | Fail {
+    const folder = rootFolder(roots, key);
+    if (typeof folder !== 'string') return folder;
+    const candidate = resolve(folder, path);
+    if (!inside(candidate, folder)) return fail('outside');
+    if (candidate === folder) return { real: folder, rootFolder: folder, isRoot: true };
+    const parent = resolveRootPath(roots, key, relative(folder, dirname(candidate)));
+    if ('error' in parent) return fail(parent.error);
+    const real = join(parent.path, basename(candidate));
+    if (!pathExists(real)) return fail('missing');
+    return { real, rootFolder: folder, isRoot: false };
+}
+
+/** The folder a root's key and a path name, which must be a folder. */
+function resolveFolder(roots: Root[], key: string, path: string): Item | Fail {
+    const folder = rootFolder(roots, key);
+    if (typeof folder !== 'string') return folder;
+    const found = resolveRootPath(roots, key, path);
+    if ('error' in found) return fail(found.error);
+    try {
+        if (!statSync(found.path).isDirectory()) return fail('not_a_folder');
+    } catch {
+        return fail('missing');
+    }
+    return { real: found.path, rootFolder: folder, isRoot: found.path === folder };
+}
+
+/** The path of an item under its root, with `/` between segments. */
+function under(rootDir: string, real: string): string {
+    return relative(rootDir, real).split(sep).join('/');
+}
+
+/**
+ * The deepest folder of a name's leading segments that exists, starting at `from`, and the segments
+ * after it that are still to be made. A segment that is a file is `not_a_folder`, and one that is
+ * a link out of the root is `outside`.
+ */
+function walkTo(
+    rootDir: string,
+    from: string,
+    segments: string[]
+): { dir: string; rest: string[] } | Fail {
+    let dir = from;
+    for (const [index, segment] of segments.entries()) {
+        const next = join(dir, segment);
+        if (!pathExists(next)) return { dir, rest: segments.slice(index) };
+        const real = realPath(next);
+        if (real === null) return fail('not_a_folder');
+        if (!inside(real, rootDir)) return fail('outside');
+        if (!statSync(real).isDirectory()) return fail('not_a_folder');
+        dir = real;
+    }
+    return { dir, rest: [] };
+}
+
+/** Whether anything is at the path, a link counting for itself. */
+function pathExists(path: string): boolean {
+    try {
+        lstatSync(path);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * What the server never changes, by identity: the device and inode of each protected file and of
+ * every folder that holds one, and the folders the files are named in, for a file not made yet.
+ */
+/** The device and inode of each protected file and of every folder above one. */
+type Guard = Set<string>;
+
+/** The device and inode of what is at a path, a link not followed, or null when nothing is. */
+function identityOf(path: string): string | null {
+    try {
+        const info = lstatSync(path, { bigint: true });
+        return `${info.dev}:${info.ino}`;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * The files of the machine this server never changes: the engine root's local.yml and the route's,
+ * and the folders that hold them, up to the top of the volume.
+ */
+function protectedFiles(target: OpsTarget): Guard {
+    const guard: Guard = new Set();
+    const engine = target.roots.find((one) => one.key === ENGINE_ROOT);
+    const folders = [engine?.dir, target.local === undefined ? undefined : dirname(target.local)];
+    const names = [LOCAL_NAME, target.local === undefined ? LOCAL_NAME : basename(target.local)];
+    for (const [index, dir] of folders.entries()) {
+        const real = dir === undefined ? null : realPath(dir);
+        if (real === null) continue;
+        const name = names[index] ?? LOCAL_NAME;
+        const file = identityOf(join(real, name));
+        if (file !== null) guard.add(file);
+        for (let up = real; ; up = dirname(up)) {
+            const id = identityOf(up);
+            if (id !== null) guard.add(id);
+            if (dirname(up) === up) break;
+        }
+    }
+    return guard;
+}
+
+/**
+ * Whether a path is a file the server never changes, or a folder that holds one, by the device and
+ * inode of what is at it: the same file under any spelling the volume accepts. A path with nothing
+ * at it is never protected, since it changes no file.
+ */
+function holdsProtected(scope: Scope, path: string): boolean {
+    const id = identityOf(path);
+    return id !== null && scope.locals.has(id);
+}
+
+/** Move one item to the Trash, answering `trash_failed` when the call fails. */
+async function sendToTrash(scope: Scope, real: string): Promise<Fail | null> {
+    try {
+        await scope.trash(real, { glob: false });
+        return null;
+    } catch {
+        return fail('trash_failed');
+    }
+}
+
+/** The answer of an operation over a list of items that stopped at one of them. */
+function stopped(error: OpsRefusal, done: string[], failed: string): OpsAnswer {
+    return { ok: false, error, done, failed };
+}
+
+/** An empty file made at the path, which fails when something is already there. */
+async function newFile(path: string): Promise<void> {
+    const handle = await open(path, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY);
+    await handle.close();
+}
+
+/** A new empty file or folder, with the folders its name names made between. */
+async function createItem(
+    scope: Scope,
+    request: Extract<OpsRequest, { op: 'create' }>
+): Promise<OpsAnswer> {
+    const folder = resolveFolder(scope.roots, request.root, request.path);
+    if (refused(folder)) return folder;
+    const made = checkName(request.name);
+    if (!made.ok) return fail('invalid_name');
+    const walked = walkTo(folder.rootFolder, folder.real, made.segments.slice(0, -1));
+    if (refused(walked)) return walked;
+    const target = join(walked.dir, ...walked.rest, made.segments.at(-1) ?? '');
+    if (holdsProtected(scope, target)) return fail('protected');
+    if (walked.rest.length === 0 && pathExists(target)) return fail('exists');
+    const outcome = await attempt(async () => {
+        if (walked.rest.length > 0) await mkdir(dirname(target), { recursive: true });
+        if (request.folder) await mkdir(target);
+        else await newFile(target);
+    });
+    return outcome ?? { ok: true, path: under(folder.rootFolder, target) };
+}
+
+/**
+ * Whether two paths are one file under two spellings of its name, as a volume that ignores case.
+ */
+async function sameFile(first: string, second: string): Promise<boolean> {
+    if (dirname(first) !== dirname(second)) return false;
+    if (basename(first).toLowerCase() !== basename(second).toLowerCase()) return false;
+    const [one, other] = await Promise.all([lstatOrNull(first), lstatOrNull(second)]);
+    return one !== null && other !== null && one.ino === other.ino && one.dev === other.dev;
+}
+
+/** One item renamed in its folder, or moved into the folders its new name names. */
+async function renameItem(
+    scope: Scope,
+    request: Extract<OpsRequest, { op: 'rename' }>
+): Promise<OpsAnswer> {
+    const item = resolveItem(scope.roots, request.root, request.path);
+    if (refused(item)) return item;
+    if (item.isRoot) return fail('root');
+    if (holdsProtected(scope, item.real)) return fail('protected');
+    const made = checkName(request.name);
+    if (!made.ok) return fail('invalid_name');
+    const name = made.segments.at(-1) ?? '';
+    const middle = made.segments.slice(0, -1);
+    const lexical = join(dirname(item.real), ...made.segments);
+    const isFolder = (await lstatOrNull(item.real))?.isDirectory() === true;
+    if (isFolder && below(lexical, item.real)) return fail('into_itself');
+    const walked = walkTo(item.rootFolder, dirname(item.real), middle);
+    if (refused(walked)) return walked;
+    const target = join(walked.dir, ...walked.rest, name);
+    if (holdsProtected(scope, target)) return fail('protected');
+    if (isFolder && below(target, item.real)) return fail('into_itself');
+    if (target !== item.real && walked.rest.length === 0 && pathExists(target)) {
+        if (!(await sameFile(item.real, target))) return fail('exists');
+    }
+    const outcome = await attempt(async () => {
+        if (walked.rest.length > 0) await mkdir(dirname(target), { recursive: true });
+        if (target !== item.real) await rename(item.real, target);
+    });
+    return outcome ?? { ok: true, path: under(item.rootFolder, target) };
+}
+
+/**
+ * The items of a list that are to be acted on: one a path appears for twice is kept once, and one
+ * that lies inside another item of the list is dropped, since acting on the folder acts on it. An
+ * item that could not be resolved stays, so the list stops at it in its place.
+ */
+function distinct<T extends { found: Item | Fail }>(items: T[]): T[] {
+    const reals = items.flatMap((one) => (refused(one.found) ? [] : [one.found.real]));
+    const seen = new Set<string>();
+    return items.filter((one) => {
+        if (refused(one.found)) return true;
+        const real = one.found.real;
+        if (seen.has(real)) return false;
+        seen.add(real);
+        return !reals.some((other) => below(real, other));
+    });
+}
+
+/** Each item of a list moved to the Trash, or removed for good, in order. */
+async function removeItems(
+    scope: Scope,
+    request: Extract<OpsRequest, { op: 'trash' | 'delete' }>
+): Promise<OpsAnswer> {
+    const folder = rootFolder(scope.roots, request.root);
+    if (typeof folder !== 'string') return folder;
+    const listed = request.paths.map((path) => ({
+        path,
+        found: resolveItem(scope.roots, request.root, path)
+    }));
+    const done: string[] = [];
+    for (const { path, found } of distinct(listed)) {
+        if (refused(found)) return stopped(found.error, done, path);
+        if (found.isRoot) return stopped('root', done, path);
+        if (holdsProtected(scope, found.real)) return stopped('protected', done, path);
+        const outcome =
+            request.op === 'trash'
+                ? await sendToTrash(scope, found.real)
+                : await attempt(() => rm(found.real, { recursive: true }));
+        if (outcome !== null) return stopped(outcome.error, done, path);
+        done.push(path);
+    }
+    return { ok: true };
+}
+
+/** Copy `from` to `to`, a link kept a link with its target as written. */
+function copyItem(from: string, to: string): Promise<void> {
+    return cp(from, to, {
+        recursive: true,
+        verbatimSymlinks: true,
+        errorOnExist: true,
+        force: false
+    });
+}
+
+/** Move `from` to `to`, a copy then a removal where the two are on different volumes. */
+async function moveItem(from: string, to: string): Promise<void> {
+    try {
+        await rename(from, to);
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EXDEV') throw error;
+        await copyItem(from, to);
+        await rm(from, { recursive: true });
+    }
+}
+
+/** Each item of a list copied or moved into a folder, in order. */
+async function pasteItems(
+    scope: Scope,
+    request: Extract<OpsRequest, { op: 'paste' }>
+): Promise<OpsAnswer> {
+    const dest = resolveFolder(scope.roots, request.root, request.path);
+    if (refused(dest)) return dest;
+    const listed = request.items.map((one) => ({
+        path: one.path,
+        found: resolveItem(scope.roots, one.root, one.path)
+    }));
+    const done: string[] = [];
+    const paths: string[] = [];
+    for (const { path, found } of distinct(listed)) {
+        if (refused(found)) return stopped(found.error, done, path);
+        if (found.isRoot && request.mode === 'move') return stopped('root', done, path);
+        if (holdsProtected(scope, found.real)) return stopped('protected', done, path);
+        const name = basename(found.real);
+        const taken = join(dest.real, name);
+        if (holdsProtected(scope, taken)) return stopped('protected', done, path);
+        const isFolder = (await lstatOrNull(found.real))?.isDirectory() === true;
+        if (isFolder && inside(dest.real, found.real)) return stopped('into_itself', done, path);
+        let landed = taken;
+        if (request.mode === 'copy') {
+            landed = join(
+                dest.real,
+                freeName(name, (one) => pathExists(join(dest.real, one)), isFolder)
+            );
+            const outcome = await attempt(() => copyItem(found.real, landed));
+            if (outcome !== null) return stopped(outcome.error, done, path);
+        } else if (dirname(found.real) !== dest.real) {
+            if (pathExists(taken)) {
+                if (!request.replace) return stopped('exists', done, path);
+                if (below(found.real, taken)) return stopped('into_itself', done, path);
+                const trashed = await sendToTrash(scope, taken);
+                if (trashed !== null) return stopped(trashed.error, done, path);
+            }
+            const outcome = await attempt(() => moveItem(found.real, taken));
+            if (outcome !== null) return stopped(outcome.error, done, path);
+        }
+        done.push(path);
+        paths.push(under(dest.rootFolder, landed));
+    }
+    return { ok: true, paths };
+}
+
+/** The bytes of a base64 text, or the refusal: `too_large` over the cap, `not_base64` otherwise. */
+function decoded(data: string): Buffer | Fail {
+    if (data.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(data)) return fail('not_base64');
+    const padding = data.endsWith('==') ? 2 : data.endsWith('=') ? 1 : 0;
+    if ((data.length / 4) * 3 - padding > MAX_UPLOAD_BYTES) return fail('too_large');
+    return Buffer.from(data, 'base64');
+}
+
+/** One file's bytes written into a folder under a single-segment name. */
+async function uploadItem(
+    scope: Scope,
+    request: Extract<OpsRequest, { op: 'upload' }>
+): Promise<OpsAnswer> {
+    const dest = resolveFolder(scope.roots, request.root, request.path);
+    if (refused(dest)) return dest;
+    const made = checkName(request.name);
+    const single = made.ok && made.segments.length === 1 && !/[\\/]/.test(request.name);
+    if (!made.ok || !single) return fail('invalid_name');
+    const target = join(dest.real, made.segments[0] ?? '');
+    if (holdsProtected(scope, target)) return fail('protected');
+    const bytes = decoded(request.data);
+    if (refused(bytes)) return bytes;
+    const there = await lstatOrNull(target);
+    if (there !== null) {
+        if (!request.replace) return fail('exists');
+        if (there.isDirectory()) return fail('not_a_folder');
+        const trashed = await sendToTrash(scope, target);
+        if (trashed !== null) return trashed;
+        // The library writes through a link, so a link the Trash left standing is unlinked first.
+        if ((await lstatOrNull(target))?.isSymbolicLink() === true) {
+            const unlinked = await attempt(() => rm(target));
+            if (unlinked !== null) return unlinked;
+        }
+    }
+    const outcome = await attempt(() => {
+        writeBytesAtomic(target, bytes);
+        return Promise.resolve();
+    });
+    return outcome ?? { ok: true, path: under(dest.rootFolder, target) };
+}
+
+/** Run one operation. */
+function run(scope: Scope, request: OpsRequest): Promise<OpsAnswer> {
+    switch (request.op) {
+        case 'create':
+            return createItem(scope, request);
+        case 'rename':
+            return renameItem(scope, request);
+        case 'trash':
+        case 'delete':
+            return removeItems(scope, request);
+        case 'paste':
+            return pasteItems(scope, request);
+        case 'upload':
+            return uploadItem(scope, request);
+    }
+}
+
+/**
+ * POST /api/ops: one operation, behind the process's token and in its place in the write chain.
+ * A body that is no operation is `not-an-action`.
+ */
+export async function handleOps(
+    request: Request,
+    token: string,
+    into: OpsTarget,
+    deps: OpsDeps = {}
+): Promise<Response> {
+    const read = await tokenedBody(request, token, {
+        headers: NO_STORE,
+        words: { token: 'token', json: 'not-json' }
+    });
+    if (read instanceof Response) return read;
+    const body = opsShape.safeParse(read.body);
+    if (!body.success) return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
+    const trash = deps.trash ?? ((path, options) => trashLibrary(path, options));
+    const answer = await chained(into.writes, async () => {
+        await deps.slow?.();
+        // Read when the operation runs, so a local.yml saved while it waited is the one guarded.
+        const scope: Scope = { roots: into.roots, locals: protectedFiles(into), trash };
+        return run(scope, body.data);
+    });
+    return json(answer, { status: answer.ok ? 200 : 400, headers: NO_STORE });
+}
+
+/** One side of a comparison: the file's text and whether it is binary, or why it is refused. */
+function side(roots: Root[], key: string, path: string): { text: string; binary: boolean } | Fail {
+    const found = resolveRootPath(roots, key, path);
+    if ('error' in found) return fail(found.error);
+    const info = statSync(found.path);
+    if (!info.isFile()) return fail(info.isDirectory() ? 'not_a_folder' : 'missing');
+    if (info.size > TEXT_LIMIT) return fail('too_large');
+    if (isBinaryFile(found.path)) return { text: '', binary: true };
+    return { text: readFileSync(found.path, 'utf8'), binary: false };
+}
+
+/**
+ * GET /api/ops: the comparison of two files as the diff pane reads one. `with*` is the file
+ * selected for compare and is the left side; `root` and `path` are the file asked for, the right.
+ */
+export function handleCompare(url: URL, roots: Root[]): Response {
+    const get = (key: string): string => url.searchParams.get(key) ?? '';
+    const [root, path, withRoot, withPath] = [
+        get('root'),
+        get('path'),
+        get('withRoot'),
+        get('withPath')
+    ];
+    const modified = side(roots, root, path);
+    if (refused(modified)) return json(modified, { status: 400, headers: NO_STORE });
+    const original = side(roots, withRoot, withPath);
+    if (refused(original)) return json(original, { status: 400, headers: NO_STORE });
+    const binary = original.binary || modified.binary;
+    const files: DiffSides[] = [
+        {
+            oldPath: `${withRoot}:${withPath}`,
+            newPath: `${root}:${path}`,
+            head: [],
+            binary,
+            encoded: false,
+            original: binary ? '' : original.text,
+            modified: binary ? '' : modified.text
+        }
+    ];
+    return json({ ok: true, files }, { headers: NO_STORE });
+}

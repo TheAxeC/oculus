@@ -33,11 +33,23 @@ export function scratchDir(prefix: string): string {
 }
 
 /**
- * A new scratch directory holding the given files, by their paths relative to it. Each path is
- * checked to stay inside the directory before it is written, so a planted `../` writes nothing.
+ * A new scratch directory holding the given files, by their paths relative to it, and the given
+ * empty folders. Each path is checked to stay inside the directory before it is written, so a
+ * planted `../` writes nothing.
  */
-export function plantScratch(prefix: string, files: Record<string, string>): string {
+export function plantScratch(
+    prefix: string,
+    files: Record<string, string>,
+    folders: string[] = []
+): string {
     const dir = scratchDir(prefix);
+    for (const rel of folders) {
+        const full = join(dir, rel);
+        if (!resolve(full).startsWith(resolve(dir) + sep)) {
+            throw new Error(`the planted folder is outside its scratch directory: ${rel}`);
+        }
+        mkdirSync(full, { recursive: true });
+    }
     for (const [rel, body] of Object.entries(files)) {
         const full = join(dir, rel);
         if (!resolve(full).startsWith(resolve(dir) + sep)) {

@@ -28,7 +28,7 @@
     import type { Column } from '$lib/ui/display/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { clock } from '$lib/state/shared/words/format';
-    import { nameOf } from '$lib/state/sources/file-type';
+    import { nameOf } from '$lib/state/sources/explorer/file-type';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import {

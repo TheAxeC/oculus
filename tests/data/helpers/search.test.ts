@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     ALL_ROOTS,
+    emptyQuery,
     MAX_QUERY,
     clampMax,
     queryFrom,
@@ -27,15 +28,7 @@ const ROOTS = ['hub', 'engine', 'cathedra'];
 
 /** A query with everything at its default, and whatever a case wants instead. */
 function query(changes: Partial<SearchQuery> = {}): SearchQuery {
-    return {
-        q: 'needle',
-        root: ALL_ROOTS,
-        word: false,
-        case: false,
-        regex: false,
-        max: 500,
-        ...changes
-    };
+    return { ...emptyQuery(500), q: 'needle', ...changes };
 }
 
 describe('the argument list', () => {
@@ -198,7 +191,8 @@ describe('the parameters', () => {
             word: false,
             case: false,
             regex: false,
-            max: 500
+            max: 500,
+            under: ''
         });
     });
 
@@ -213,5 +207,49 @@ describe('the configured cap', () => {
         expect(searchCap({ search: { max_hits: 120 } })).toBe(120);
         expect(searchCap({})).toBe(0);
         expect(searchCap({ search: { max_hits: 'many' } })).toBe(0);
+    });
+});
+
+describe('the folder a search is scoped to', () => {
+    const held = (changes: Partial<SearchQuery> = {}): SearchQuery => ({
+        ...query(),
+        under: '',
+        ...changes
+    });
+
+    it('opens a fresh query on the whole root', () => {
+        expect(emptyQuery(500).under).toBe('');
+    });
+
+    it('ends the arguments with the folder as ./<under>, and with . for the whole root', () => {
+        const scoped = searchArgs(held({ under: 'src/lib' }));
+        expect(scoped.slice(-3)).toEqual(['--regexp', 'needle', './src/lib']);
+        const whole = searchArgs(held());
+        expect(whole.slice(-3)).toEqual(['--regexp', 'needle', '.']);
+    });
+
+    it('refuses a folder that climbs out or is absolute, and any folder with every root', () => {
+        for (const under of ['../x', 'a/../../x', '..', '/etc', '\\etc']) {
+            expect({ under, why: refusalOf(held({ under, root: 'hub' }), ROOTS) }).toEqual({
+                under,
+                why: 'outside'
+            });
+        }
+        expect(refusalOf(held({ under: 'src', root: ALL_ROOTS }), ROOTS)).toBe('outside');
+        expect(refusalOf(held({ under: '', root: ALL_ROOTS }), ROOTS)).toBeNull();
+        expect(refusalOf(held({ under: 'src/lib', root: 'hub' }), ROOTS)).toBeNull();
+    });
+
+    it('answers a plan with the refusal for a folder that climbs out', () => {
+        expect(searchQuery(held({ under: '../x', root: 'hub' }), ROOTS)).toEqual({
+            ok: false,
+            refused: 'outside'
+        });
+    });
+
+    it('writes under into the parameters and reads it back, and reads a request without it as the whole root', () => {
+        const scoped = held({ q: 'a b', root: 'hub', under: 'src/lib', max: 20 });
+        expect(queryFrom(searchParams(scoped), 500)).toEqual(scoped);
+        expect(queryFrom(new URLSearchParams({ q: 'x' }), 500).under).toBe('');
     });
 });

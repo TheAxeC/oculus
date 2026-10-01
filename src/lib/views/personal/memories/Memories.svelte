@@ -40,7 +40,8 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import FileChooser from '$lib/ui/forms/FileChooser.svelte';
+    import FileChooser from '$lib/ui/forms/file/FileChooser.svelte';
+    import { encoded } from '$lib/ui/forms/file/file-data';
     import { t } from '$lib/state/shared/words/text';
     import { readMessage, tooLarge, uploadMessage } from '$lib/state/life/memories';
     import { tileRatio } from '$lib/state/life/memories.svelte';
@@ -145,16 +146,6 @@
         if (event.key !== 'Escape') return;
         event.preventDefault();
         void close();
-    }
-
-    /** One file as base64, which is what the endpoint takes. */
-    function encoded(file: File): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onerror = () => reject(new Error(t('memories.reading')));
-            reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-            reader.readAsDataURL(file);
-        });
     }
 
     /**

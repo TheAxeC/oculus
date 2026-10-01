@@ -41,6 +41,7 @@ const VIEW = {
     revealing: 3,
     note: 'n',
     said: 's',
+    naming: { mode: 'file', root: 'hub', path: 'a' },
     hidden: true,
     ignored: true
 };
@@ -59,6 +60,7 @@ const VIEW_WRONG = {
     revealing: '3',
     note: 3,
     said: 3,
+    naming: 3,
     hidden: 'yes',
     ignored: 1
 };
@@ -90,6 +92,7 @@ const viewFallback = {
     revealing: 0,
     note: '',
     said: '',
+    naming: null,
     hidden: false,
     ignored: false
 };
@@ -112,6 +115,7 @@ const viewValid = {
     revealing: 3,
     note: 'n',
     said: 's',
+    naming: { mode: 'file', root: 'hub', path: 'a' },
     hidden: true,
     ignored: true
 };
@@ -266,6 +270,7 @@ const READERS: Reader[] = [
             'wrong revealing': { ...viewValid, revealing: 0 },
             'wrong note': { ...viewValid, note: '' },
             'wrong said': { ...viewValid, said: '' },
+            'wrong naming': { ...viewValid, naming: null },
             'wrong hidden': { ...viewValid, hidden: false },
             'wrong ignored': { ...viewValid, ignored: false },
             'all wrong': viewFallback,

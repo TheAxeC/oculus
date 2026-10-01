@@ -60,11 +60,22 @@ const ATTACHED = 'dev server';
 const ATTACHED_TOO = 'notes shell';
 const NAMES = [BRANCH, TAG, TERMINAL, ATTACHED, ATTACHED_TOO];
 
+/**
+ * The facts that give a row's menu its most items: removable, addable, a clipboard, a compare file.
+ */
+const ROW_OPS = {
+    removable: true,
+    addable: true,
+    clipboard: true,
+    compareWith: 'b.md',
+    selection: 1
+};
+
 function everyMenu(): MenuItem[][] {
     return [
-        rowMenu({ kind: 'file', path: 'a.md', removable: true, addable: true }, words),
-        rowMenu({ kind: 'dir', path: 'a', removable: true, addable: true }, words),
-        rowMenu({ kind: 'root', path: '', removable: true, addable: true }, words),
+        rowMenu({ kind: 'file', path: 'a.md', ...ROW_OPS }, words),
+        rowMenu({ kind: 'dir', path: 'a', ...ROW_OPS }, words),
+        rowMenu({ kind: 'root', path: '', ...ROW_OPS }, words),
         changeMenu('changed', false, words),
         changeMenu('staged', false, words),
         changeMenu('untracked', false, words),

@@ -1,5 +1,6 @@
 // Layer 2, client state. The pure half of the file browser: what the tree draws. What a name says
-// about a file is state/sources/file-type.ts's, exported from here with the rest of the browser.
+// about a file is state/sources/explorer/file-type.ts's, exported from here with the rest of the
+// browser.
 //
 // The tree is a flat list rather than a component that renders itself. A row carries its depth, so
 // one `each` draws the whole tree and the view holds no recursion; and because the list is computed
@@ -17,11 +18,13 @@ export {
     typeOfFile,
     type FileKind,
     type FileType
-} from './file-type.ts';
+} from './explorer/file-type.ts';
 import { z } from 'zod';
+import { TEXT_LIMIT } from '../../data/file-ops.ts';
 import { fieldItemsShape, readAs } from '../../data/shapes/shapes.ts';
 import { deepestHolding } from '../../data/helpers/files/paths.ts';
 import { isMap } from '../../data/helpers/guards.ts';
+import type { Naming } from './explorer/naming.ts';
 
 /** The root api/file serves the hub itself under, for a link that is a path inside the hub. */
 export const HUB_ROOT = 'hub';
@@ -53,7 +56,14 @@ export function normalisePath(path: string): string {
 export const ENGINE_ROOT = 'engine';
 
 /** One entry of one directory, as /api/fs answers it. */
-export type FsEntry = { name: string; kind: 'file' | 'dir'; size: number; mtime: number };
+export type FsEntry = {
+    name: string;
+    kind: 'file' | 'dir';
+    size: number;
+    mtime: number;
+    /** True for a symbolic link, whose `kind` is that of what it points at. */
+    link?: true;
+};
 
 /** One root as /api/fs answers it: `fixed` is a configured root, which a removal refuses. */
 export type FsRoot = { key: string; dir: string; fixed: boolean };
@@ -76,12 +86,22 @@ export type TreeRow = {
     kind: 'file' | 'dir';
     /** The file's size in bytes, and zero for a folder. */
     size: number;
+    /** True for a symbolic link, whose `kind` is that of what it points at. */
+    link?: true;
     depth: number;
     open: boolean;
+    /**
+     * Set on the row where a name is typed: `new` for the pending row of a new file or folder,
+     * which has no name yet, and `rename` for the row whose name the input replaces.
+     */
+    editing?: 'new' | 'rename';
 };
 
-/** The largest text a code window draws. A longer file is cut here and the view says so. */
-export const TEXT_LIMIT = 2 * 1024 * 1024;
+/**
+ * The largest text a code window draws, which is data/file-ops.ts's. A longer file is cut here and
+ * the view says so.
+ */
+export { TEXT_LIMIT };
 
 /** How one open folder is addressed in the set of open folders, and in a listing's own cache. */
 export function treeKey(root: string, path: string): string {
@@ -156,6 +176,8 @@ export type FilesView = FilesForms &
         note: string;
         /** What the bookmark form's last write answered, which is a report and not a refusal. */
         said: string;
+        /** The name being typed for a new file or folder, or a renamed row; null for none. */
+        naming: Naming | null;
     };
 
 /**
@@ -210,6 +232,13 @@ const selectedShape = z.object({ root: z.string().min(1), path: z.string() });
 /** The open form a saved record names, and no form for a name that is none of the three. */
 const formShape = z.enum(['', 'root', 'workspace', 'bookmark']).catch('');
 
+/** The pending name a saved record holds: a kind, a named root and a path. */
+const namingShape = z.object({
+    mode: z.enum(['file', 'folder', 'rename']),
+    root: z.string().min(1),
+    path: z.string()
+}) satisfies z.ZodType<Naming>;
+
 /** A file browser's instance state with every field defaulted, so a state from any source draws. */
 const filesViewShape = z
     .object({
@@ -226,13 +255,16 @@ const filesViewShape = z
         revealing: countShape,
         note: z.string().catch(''),
         said: z.string().catch(''),
+        naming: namingShape.nullable().catch(null),
         hidden: z.boolean().catch(false),
         ignored: z.boolean().catch(false)
     })
     .transform((held): FilesView => ({
         ...held,
         editing: held.form === 'bookmark' ? held.editing : '',
-        typed: isLineForm(held.form) ? held.typed : ''
+        typed: isLineForm(held.form) ? held.typed : '',
+        // A rename names the row it renames, so a rename of no path is none.
+        naming: held.naming?.mode === 'rename' && held.naming.path === '' ? null : held.naming
     }));
 
 /** The file browser's instance state, every field defaulted, so a state from any source draws. */
@@ -256,6 +288,7 @@ function emptyFilesView(): FilesView {
         revealing: 0,
         note: '',
         said: '',
+        naming: null,
         hidden: false,
         ignored: false
     };
@@ -498,6 +531,7 @@ export function filterRows(
                 name: entry.name,
                 kind: entry.kind,
                 size: entry.size,
+                ...(entry.link === true ? { link: true as const } : {}),
                 depth,
                 open: below.length > 0
             });
@@ -614,27 +648,51 @@ export function collapseRoot(expanded: string[], root: string, from = ''): strin
 /**
  * The lines of the tree: every root, and under each open folder the entries the server answered for
  * it. A folder that is open but whose listing has not arrived contributes its own line and nothing
- * under it, so the tree grows as the answers land rather than waiting for all of them.
+ * under it, so the tree grows as the answers land rather than waiting for all of them. The name
+ * being typed (`naming`) is a row too: for a new file or folder the first row under its folder,
+ * and for a rename the renamed row itself, each marked `editing`.
  */
 export function treeRows(
     roots: FsRoot[],
     entriesOf: (root: string, path: string) => FsEntry[],
     expanded: string[],
-    top: TreeTop | null = null
+    top: TreeTop | null = null,
+    naming: Naming | null = null
 ): TreeRow[] {
     const rows: TreeRow[] = [];
     const walk = (root: string, path: string, depth: number): void => {
+        if (
+            naming !== null &&
+            naming.mode !== 'rename' &&
+            naming.root === root &&
+            naming.path === path
+        ) {
+            rows.push({
+                root,
+                path: `${path}/`,
+                name: '',
+                kind: naming.mode === 'folder' ? 'dir' : 'file',
+                size: 0,
+                depth,
+                open: false,
+                editing: 'new'
+            });
+        }
         for (const entry of entriesOf(root, path)) {
             const child = childPath(path, entry.name);
             const open = entry.kind === 'dir' && expanded.includes(treeKey(root, child));
+            const renaming =
+                naming?.mode === 'rename' && naming.root === root && naming.path === child;
             rows.push({
                 root,
                 path: child,
                 name: entry.name,
                 kind: entry.kind,
                 size: entry.size,
+                ...(entry.link === true ? { link: true as const } : {}),
                 depth,
-                open
+                open,
+                ...(renaming ? { editing: 'rename' as const } : {})
             });
             if (open) walk(root, child, depth + 1);
         }

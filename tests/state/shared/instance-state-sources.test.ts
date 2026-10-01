@@ -46,6 +46,7 @@ const heldDiffFallback = {
     commit: '',
     stash: '',
     group: undefined,
+    against: undefined,
     line: 0
 };
 const heldDiffValid = {
@@ -58,6 +59,7 @@ const heldDiffValid = {
     commit: 'c',
     stash: 's',
     group: 'staged',
+    against: { root: 'a', path: 'b' },
     line: 4
 };
 const diffViewFallback = { mode: 'side', views: {}, unchanged: 'folded', folded: [] };
@@ -252,6 +254,7 @@ const READERS: Reader[] = [
             commit: 'c',
             stash: 's',
             group: 'staged',
+            against: { root: 'a', path: 'b' },
             line: 4
         },
         wrong: {
@@ -264,6 +267,7 @@ const READERS: Reader[] = [
             commit: 3,
             stash: 3,
             group: 'both',
+            against: 3,
             line: '4'
         },
         edge: {
@@ -295,6 +299,7 @@ const READERS: Reader[] = [
             'wrong commit': { ...heldDiffValid, commit: '' },
             'wrong stash': { ...heldDiffValid, stash: '' },
             'wrong group': { ...heldDiffValid, group: undefined },
+            'wrong against': { ...heldDiffValid, against: undefined },
             'wrong line': { ...heldDiffValid, line: 0 },
             'all wrong': heldDiffFallback,
             'group changed': { ...heldDiffValid, group: 'changed' },
@@ -310,6 +315,7 @@ const READERS: Reader[] = [
                 staged: true,
                 worktree: true,
                 group: 'staged',
+                against: { root: 'a', path: 'b' },
                 line: 4
             },
             'no booleans': { ...heldDiffValid, staged: false, worktree: false }

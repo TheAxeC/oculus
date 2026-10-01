@@ -100,6 +100,11 @@ export type ServerContext = {
     engine: string;
     /** The write chain of the workspaces file, so two POSTs cannot lose one another's change. */
     fsWrites: FsWrites;
+    /**
+     * The write chain of the file operations under the served roots, apart from `fsWrites` so a
+     * long copy holds up another file operation and not the workspace, bookmark and note writes.
+     */
+    opsWrites: FsWrites;
     /** The ignored names the file browser's listings asked git for lately. */
     ignoredCache: IgnoredCache;
     /** The log path found per HPC job id. */
@@ -357,6 +362,7 @@ export function createServerContext(
         local,
         engine,
         fsWrites: writes,
+        opsWrites: fsWrites(),
         ignoredCache: ignoredCache(),
         hpcLogPaths,
         calendarConnects: new ConnectStates(),

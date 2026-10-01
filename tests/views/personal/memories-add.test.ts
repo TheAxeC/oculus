@@ -10,7 +10,7 @@
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Memories from '../../../src/lib/views/personal/memories/Memories.svelte';
-import FileChooser from '../../../src/lib/ui/forms/FileChooser.svelte';
+import FileChooser from '../../../src/lib/ui/forms/file/FileChooser.svelte';
 import {
     engineDir,
     glyphCatalog,
@@ -21,7 +21,7 @@ import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
-vi.mock('../../../src/lib/ui/forms/FileChooser.svelte', async (original) =>
+vi.mock('../../../src/lib/ui/forms/file/FileChooser.svelte', async (original) =>
     (await import('../../checks/diagrams/counted.ts')).counted(
         await original<Record<string, unknown>>(),
         'default'

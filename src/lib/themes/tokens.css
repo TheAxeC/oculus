@@ -161,6 +161,8 @@
     --tree-font: 13px;
     --tree-indent: 12px;
     --tree-heading-font: 11px;
+    /* How much of a tree row shows while the row is on the clipboard as Cut. */
+    --tree-cut-opacity: 0.5;
     /* The count pill of a tree row: the size of its box and of its number, and the width of one
        lane of the source graph, all at the text's own size. */
     --tree-badge-size: 18px;

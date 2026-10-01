@@ -26,6 +26,7 @@ import type {
     GitWorktree
 } from '../../../data/model/index.ts';
 import { z } from 'zod';
+import { compareUrl } from '../../../data/file-ops.ts';
 import {
     anyNumberShape,
     fieldItemsShape,
@@ -109,8 +110,9 @@ export function worktreeDiffUrl(root: string, path: string): string {
 /**
  * What one diff pane is over: a file under a root, staged or not; a whole worktree; one commit's
  * change to a file (`commit`); a whole stash (`stash`); or every path of a change group (`group`).
- * `line` is the line of the new side the
- * pane opens at, 0 for its top.
+ * `against` is the file selected for compare, which makes the pane the comparison of two files:
+ * the file at `root` and `path` on the right and `against` on the left. `line` is the line of the
+ * new side the pane opens at, 0 for its top.
  */
 export type DiffSubject = {
     root: string;
@@ -121,6 +123,8 @@ export type DiffSubject = {
     stash?: string;
     /** Every path of a change group, for the diff pane a group head opens; the path is empty. */
     group?: 'staged' | 'changed';
+    /** The file selected for compare, for the pane over two files. */
+    against?: { root: string; path: string };
     line?: number;
 };
 
@@ -131,6 +135,8 @@ export type DiffState = DiffSubject & { id: string; label: string };
 
 /** Which diff a subject is, the part of its id that is not the root and the path. */
 function sideOf(subject: DiffSubject): string {
+    if (subject.against !== undefined)
+        return `compare@${subject.against.root}:${subject.against.path}`;
     if ((subject.group ?? '') !== '') return `group@${subject.group ?? ''}`;
     if (subject.worktree) return 'worktree';
     if ((subject.commit ?? '') !== '') return `commit@${subject.commit ?? ''}`;
@@ -147,6 +153,9 @@ export function diffState(subject: DiffSubject, label: string): DiffState {
     return { ...subject, id: `${sideOf(subject)}:${subject.root}:${subject.path}`, label };
 }
 
+/** The file selected for compare: a named root and a path, both filled. */
+const againstShape = z.object({ root: z.string().min(1), path: z.string().min(1) });
+
 /** The fields of a diff pane's state, each read as itself and otherwise as its empty value. */
 const heldDiffShape = z
     .object({
@@ -159,6 +168,7 @@ const heldDiffShape = z
         commit: z.string().catch(''),
         stash: z.string().catch(''),
         group: z.enum(['staged', 'changed']).optional().catch(undefined),
+        against: againstShape.optional().catch(undefined),
         line: anyNumberShape.catch(0)
     })
     .transform((held): DiffState => ({
@@ -171,6 +181,7 @@ const heldDiffShape = z
         commit: held.commit,
         stash: held.stash,
         group: held.group,
+        against: held.against,
         line: held.line
     }));
 
@@ -187,6 +198,7 @@ export function heldDiff(state: unknown): DiffState {
             commit: '',
             stash: '',
             group: undefined,
+            against: undefined,
             line: 0
         }
     );
@@ -194,6 +206,7 @@ export function heldDiff(state: unknown): DiffState {
 
 /** The address one diff pane reads, by what it is over. */
 export function diffUrl(state: DiffSubject): string {
+    if (state.against !== undefined) return compareUrl(state, state.against);
     if (state.worktree) return worktreeDiffUrl(state.root, state.path);
     if ((state.commit ?? '') !== '') return commitUrl(state.root, state.commit ?? '', state.path);
     if ((state.stash ?? '') !== '') return stashUrl(state.root, state.stash ?? '');
@@ -209,7 +222,8 @@ export function diffActs(state: DiffSubject): boolean {
         !state.worktree &&
         (state.commit ?? '') === '' &&
         (state.stash ?? '') === '' &&
-        (state.group ?? '') === ''
+        (state.group ?? '') === '' &&
+        state.against === undefined
     );
 }
 

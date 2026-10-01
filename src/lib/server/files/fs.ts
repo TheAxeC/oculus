@@ -36,7 +36,7 @@
 // (`inside`, `realPath`).
 
 import { json } from '@sveltejs/kit';
-import { readdirSync, statSync } from 'node:fs';
+import { lstatSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, isAbsolute, join } from 'node:path';
 import { z } from 'zod';
@@ -49,8 +49,17 @@ import { deleteNote, listNotes, readNote, saveNote } from './fs/notes.ts';
 import { chained, readJson, writeJsonAtomic, type FsWrites } from '../core/json.ts';
 import { inside, realPath } from '../core/paths.ts';
 
-/** One entry of one directory, as the tree draws it. */
-export type Entry = { name: string; kind: 'file' | 'dir'; size: number; mtime: number };
+/**
+ * One entry of one directory, as the tree draws it. `link` is true for a symbolic link, whose
+ * `kind` is that of what it points at, and is absent for anything else.
+ */
+export type Entry = {
+    name: string;
+    kind: 'file' | 'dir';
+    size: number;
+    mtime: number;
+    link?: true;
+};
 
 /** One saved workspace: the name the reader gave it, and the roots they added to it. */
 export type SavedWorkspace = { name: string; roots: Root[] };
@@ -284,10 +293,12 @@ function skipped(name: string): boolean {
  */
 function described(dir: string, name: string): Entry | null {
     try {
-        const stat = statSync(join(dir, name));
-        if (stat.isDirectory()) return { name, kind: 'dir', size: 0, mtime: stat.mtimeMs };
+        const path = join(dir, name);
+        const stat = statSync(path);
+        const link = lstatSync(path).isSymbolicLink() ? ({ link: true } as const) : {};
+        if (stat.isDirectory()) return { name, kind: 'dir', size: 0, mtime: stat.mtimeMs, ...link };
         if (!stat.isFile()) return null;
-        return { name, kind: 'file', size: stat.size, mtime: stat.mtimeMs };
+        return { name, kind: 'file', size: stat.size, mtime: stat.mtimeMs, ...link };
     } catch {
         return null;
     }

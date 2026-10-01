@@ -6,7 +6,7 @@
 // for word. The last group runs the real binary of the `@vscode/ripgrep` dependency over mkdtemp
 // folders, which is where the dependency itself and ripgrep's own --max-count are exercised.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
@@ -18,7 +18,8 @@ import {
     type RunOutcome,
     type SearchRunner
 } from '../../../src/lib/server/files/search.ts';
-import { ALL_ROOTS, type SearchQuery } from '../../../src/lib/data/helpers/search.ts';
+import { handleSearch } from '../../../src/lib/server/files/search-routes.ts';
+import { ALL_ROOTS, emptyQuery, type SearchQuery } from '../../../src/lib/data/helpers/search.ts';
 import type { SearchHit } from '../../../src/lib/data/model/index.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
@@ -32,15 +33,7 @@ const ROOTS: Root[] = [
 const TIMEOUT = 10000;
 
 function query(changes: Partial<SearchQuery> = {}): SearchQuery {
-    return {
-        q: 'needle',
-        root: ALL_ROOTS,
-        word: false,
-        case: false,
-        regex: false,
-        max: 500,
-        ...changes
-    };
+    return { ...emptyQuery(500), q: 'needle', ...changes };
 }
 
 /**
@@ -598,5 +591,103 @@ describe('the JSON stream with records of an odd shape', () => {
             total: 0,
             truncated: false
         });
+    });
+});
+
+describe('the folder a search is scoped to', () => {
+    /** A root holding a folder, a file and a link to a folder outside it. */
+    function scoped(): { dir: string; roots: Root[] } {
+        const dir = realpathSync(scratch());
+        mkdirSync(join(dir, 'src/lib'), { recursive: true });
+        writeFileSync(join(dir, 'f.txt'), 'needle');
+        const outside = realpathSync(scratch());
+        symlinkSync(outside, join(dir, 'out'));
+        return { dir, roots: [{ key: 'hub', dir }] };
+    }
+
+    const scopedQuery = (under: string) => query({ root: 'hub', under });
+
+    it('runs in the root with the folder as the path argument', async () => {
+        const { dir, roots } = scoped();
+        const ran: { dir: string; args: string[] }[] = [];
+        const outcome = await runSearch(roots, scopedQuery('src/lib'), {
+            run: (where, args) => {
+                ran.push({ dir: where, args });
+                return Promise.resolve(quiet());
+            },
+            timeout: TIMEOUT
+        });
+        expect(outcome.ok).toBe(true);
+        expect(ran.map((one) => one.dir)).toEqual([dir]);
+        expect(ran[0].args.slice(-3)).toEqual(['--regexp', 'needle', './src/lib']);
+    });
+
+    it('refuses a link to a folder outside the root as outside, before any process starts', async () => {
+        const { roots } = scoped();
+        let started = 0;
+        const outcome = await runSearch(roots, scopedQuery('out'), {
+            run: () => {
+                started += 1;
+                return Promise.resolve(quiet());
+            },
+            timeout: TIMEOUT
+        });
+        expect(outcome).toEqual({ ok: false, refused: 'outside' });
+        expect(started).toBe(0);
+    });
+
+    it('refuses a folder that is not there and a path that is a file as missing', async () => {
+        const { roots } = scoped();
+        let started = 0;
+        const options = {
+            run: () => {
+                started += 1;
+                return Promise.resolve(quiet());
+            },
+            timeout: TIMEOUT
+        };
+        expect(await runSearch(roots, scopedQuery('nowhere'), options)).toEqual({
+            ok: false,
+            refused: 'missing'
+        });
+        expect(await runSearch(roots, scopedQuery('f.txt'), options)).toEqual({
+            ok: false,
+            refused: 'missing'
+        });
+        expect(started).toBe(0);
+    });
+
+    it('answers the route a 400 with a sentence of its own for each of the two refusals', async () => {
+        const { roots } = scoped();
+        const sentences: string[] = [];
+        const words: string[] = [];
+        for (const under of ['out', 'nowhere', '../x']) {
+            const response = await handleSearch(
+                new Request(
+                    `http://localhost/api/search?${new URLSearchParams({ q: 'needle', root: 'hub', under })}`,
+                    { headers: { 'x-oculus-token': 'tok' } }
+                ),
+                'tok',
+                { roots, cap: 500, timeout: TIMEOUT, run: () => Promise.resolve(quiet()) }
+            );
+            expect(response.status, under).toBe(400);
+            const body = (await response.json()) as { error: string; refused: string };
+            sentences.push(body.error);
+            words.push(body.refused);
+        }
+        expect(words).toEqual(['outside', 'missing', 'outside']);
+        expect(sentences.every((one) => one !== '')).toBe(true);
+        expect(sentences[0]).toBe(sentences[2]);
+        expect(sentences[1]).not.toBe(sentences[0]);
+    });
+
+    it('searches a hidden folder it is given whole, with the real binary', async () => {
+        const { dir, roots } = scoped();
+        mkdirSync(join(dir, '.hidden'));
+        writeFileSync(join(dir, '.hidden/h.txt'), 'needle in a hidden folder');
+        const outcome = await runSearch(roots, scopedQuery('.hidden'), { timeout: TIMEOUT });
+        expect(outcome.ok && outcome.answer.files.map((one) => one.path)).toEqual([
+            '.hidden/h.txt'
+        ]);
     });
 });

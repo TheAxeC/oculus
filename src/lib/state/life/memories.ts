@@ -6,11 +6,11 @@
 // deck write is that the view shows a sentence of its own per refusal, and this is that map for the
 // wall. A word this does not know gets the general sentence.
 //
-// The limit is the server's, imported through no server module: `state/` may not reach `server/`,
-// so the number is declared here and `server/content/memories.ts` is what enforces it, with the
-// same value named in both files and pinned equal by
-// tests/state/life/memories-message.test.ts.
+// The limit is data/file-ops.ts's, which the server enforces in server/content/memories.ts and the
+// file operations of the Files view enforce for an upload, so the page and the server hold one
+// number; tests/state/life/memories-message.test.ts pins the two exports equal.
 
+import { MAX_UPLOAD_BYTES } from '../../data/file-ops.ts';
 import { t } from '../shared/words/text.ts';
 
 /** What the upload endpoint answered, as much of it as the sentence depends on. */
@@ -23,13 +23,16 @@ export type UploadAnswer = {
 };
 
 /**
- * The largest picture the wall takes, in whole megabytes. The page refuses a larger file before it
- * reads one, so a picture that the server would refuse is never encoded or sent.
+ * The largest picture the wall takes, in bytes, which is what a chosen file's own size is measured
+ * in.
  */
-export const MAX_UPLOAD_MB = 32;
+export { MAX_UPLOAD_BYTES };
 
-/** The same limit in bytes, which is what a chosen file's own size is measured in. */
-export const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
+/**
+ * The same limit in whole megabytes, which is what the reader is told. The page refuses a larger
+ * file before it reads one, so a picture that the server would refuse is never encoded or sent.
+ */
+export const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / (1024 * 1024);
 
 /** The sentence one answer reads as, and the empty string for a picture that was written. */
 export function uploadMessage(answer: UploadAnswer): string {

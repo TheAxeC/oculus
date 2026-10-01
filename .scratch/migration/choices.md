@@ -253,3 +253,17 @@ Where it is built: U3. Booked in the state file's closed log and `plan.md` Rulin
 - Not chosen: (B) except `ui/tabs/` from case 8's greps (the lazy option).
 
 Where it is built: U3. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z162 (2026-10-01 16:00, step Q88b)
+
+- Chosen (a): `protected` refuses by identity only (device and inode); making a file where none is at the path is never refused.
+- Not chosen: (b) refuse by name in any letter case even where nothing is at the path.
+
+Where it is built: Q88b's landing. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z163 (2026-10-01 16:55, step Q85c)
+
+- Chosen (a): the step's paths gain `src/lib/data/sources/yaml-file.ts`, where the `readFile` clone of the five source readers is folded, and the rewrite of allowlist lines 46 and 51-54 to the moved test paths; the changed answers are `flattenText` and `loadConfig`'s merge skipping an own `__proto__` key.
+- Not chosen: (b) book the fold and the `loadConfig` defect as later steps, the lazy option.
+
+Where it is built: Q85c. Booked in the state file's closed log and `plan.md` Rulings.

@@ -19,6 +19,7 @@
 // a key that is not one of them is refused before any process starts.
 
 import { spawn } from 'node:child_process';
+import { statSync } from 'node:fs';
 import { rgPath } from '@vscode/ripgrep';
 import { z } from 'zod';
 import {
@@ -31,7 +32,7 @@ import {
 } from '../../data/helpers/search.ts';
 import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model/index.ts';
 import { anyNumberShape } from '../../data/shapes/shapes.ts';
-import type { Root } from './files.ts';
+import { resolveRootPath, type Root } from './files.ts';
 
 /**
  * How much of one root's output is read while the fold still has room for what it carries, counted
@@ -343,6 +344,22 @@ export function foldStream(
 }
 
 /**
+ * Why the folder a query is scoped to cannot be searched, or null. It is resolved by real path
+ * under the root it names, so a link to a folder outside the root is `outside`, and a folder that
+ * is not there, or a path that is a file, is `missing`.
+ */
+function scopeRefusal(roots: Root[], query: SearchQuery): 'outside' | 'missing' | null {
+    if (query.under === '') return null;
+    const found = resolveRootPath(roots, query.root, query.under);
+    if ('error' in found) return found.error;
+    try {
+        return statSync(found.path).isDirectory() ? null : 'missing';
+    } catch {
+        return 'missing';
+    }
+}
+
+/**
  * The query over one root or every one of them. Each root is searched in turn and the cap is the
  * whole answer's, so a first root full of hits leaves the later ones unsearched and the answer says
  * it was cut rather than pretending the rest held nothing.
@@ -361,6 +378,8 @@ export async function runSearch(
         roots.map((one) => one.key)
     );
     if (!plan.ok) return { ok: false, refused: plan.refused };
+    const scope = scopeRefusal(roots, query);
+    if (scope !== null) return { ok: false, refused: scope };
     const run = options.run ?? runRipgrep;
     const clock = options.now ?? Date.now;
     const started = clock();

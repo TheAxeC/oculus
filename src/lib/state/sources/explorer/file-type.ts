@@ -7,10 +7,10 @@
 // data/helpers/files/text-kind.ts, because a name says nothing reliable about that and a list of
 // extensions is wrong about every name nobody put on it.
 
-import { isTextBytes } from '../../data/helpers/files/text-kind.ts';
-import { extensionOf } from '../../data/helpers/files/opens-in-program.ts';
-import { nameOf } from '../../data/helpers/files/paths.ts';
-import { languageNamed, registered } from '../shared/words/languages.ts';
+import { isTextBytes } from '../../../data/helpers/files/text-kind.ts';
+import { extensionOf } from '../../../data/helpers/files/opens-in-program.ts';
+import { nameOf } from '../../../data/helpers/files/paths.ts';
+import { languageNamed, registered } from '../../shared/words/languages.ts';
 
 export { extensionOf, nameOf };
 

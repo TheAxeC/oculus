@@ -11,7 +11,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import { stamp } from '$lib/state/shared/words/format';
-    import { nameOf } from '$lib/state/sources/file-type';
+    import { nameOf } from '$lib/state/sources/explorer/file-type';
     import {
         terminalLabel,
         type Terminal,

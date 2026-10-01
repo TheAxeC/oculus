@@ -7,8 +7,7 @@
 // carrying a path is refused, only the four picture extensions are served, and every request is
 // judged by where it came from. What is here is the wall's own half: the list the view draws its
 // tiles from, each picture's name with its width and height so a tile has its picture's shape
-// before the picture arrives, and the upload, which is the one write in oculus that lands bytes
-// rather than text.
+// before the picture arrives, and the upload of one picture into that folder.
 //
 // An upload is behind the write token as well as the origin guard, and the name is reduced to its
 // last segment before anything is done with it, so a name that tried to reach out of the folder is
@@ -23,6 +22,7 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
+import { MAX_UPLOAD_BYTES } from '../../data/file-ops.ts';
 import type { Picture } from '../../data/model/index.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { writeBytesAtomic } from '../core/json.ts';
@@ -41,12 +41,13 @@ const MAGIC: Record<string, number[][]> = {
 };
 
 /**
- * The largest picture the wall takes, in bytes. It is the decoded size, so the request that carries
- * it is a third larger again; `BODY_LIMIT_BYTES` is what the server tells its own request parser
- * and `src/server.ts` is where that is set. The page checks the file against this before it encodes
- * one, so an oversized picture reads a sentence rather than a refused request.
+ * The largest picture the wall takes, in bytes, which is data/file-ops.ts's limit for one uploaded
+ * file. It is the decoded size, so the request that carries it is a third larger again;
+ * `BODY_LIMIT_BYTES` is what the server tells its own request parser and `src/server.ts` is where
+ * that is set. The page checks the file against this before it encodes one, so an oversized
+ * picture reads a sentence rather than a refused request.
  */
-export const MAX_UPLOAD_BYTES = 32 * 1024 * 1024;
+export { MAX_UPLOAD_BYTES };
 
 /** The same limit in whole megabytes, which is what the reader is told. */
 export const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / (1024 * 1024);

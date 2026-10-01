@@ -3,7 +3,7 @@
 // the fixture is touched. What may be opened, and the floor under the opener, are
 // tests/routes/files/open-program.test.ts.
 
-import { existsSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 import { scalar } from '../../../src/lib/data/helpers/guards.ts';
@@ -517,5 +517,43 @@ describe('the open client', () => {
         expect((await openFolder(folder)).ok).toBe(true);
         expect(sent).toEqual(['old-token', TOKEN]);
         expect(opener).toHaveBeenCalledOnce();
+    });
+});
+
+describe('the reveal client', () => {
+    it('posts a file by its root and path with reveal: true to the open endpoint with the token', async () => {
+        const { report, roots } = withFiles();
+        const opener = vi.fn();
+        setToken(TOKEN);
+        const fetcher = vi.fn(async (_url: string, init: RequestInit) =>
+            handleOpen(
+                request(
+                    JSON.parse(scalar(init.body)),
+                    new Headers(init.headers).get('x-oculus-token') ?? ''
+                ),
+                TOKEN,
+                roots,
+                checkedIn,
+                opener
+            )
+        );
+        vi.stubGlobal('fetch', fetcher);
+
+        const answer = await client.writes.revealPath('hub', 'projects/active/alpha/report.docx');
+
+        expect(answer.ok).toBe(true);
+        expect(fetcher).toHaveBeenCalledOnce();
+        const [url, init] = fetcher.mock.calls[0];
+        expect(url).toBe(OPEN_PATH);
+        expect(new Headers(init.headers).get('x-oculus-token')).toBe(TOKEN);
+        expect(JSON.parse(scalar(init.body))).toEqual({
+            root: 'hub',
+            path: 'projects/active/alpha/report.docx',
+            reveal: true
+        });
+        expect(opener).toHaveBeenCalledExactlyOnceWith({
+            kind: 'reveal',
+            path: realpathSync(report)
+        });
     });
 });

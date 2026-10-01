@@ -29,7 +29,9 @@ export type SearchRouteOptions = SearchOptions & {
 const REFUSALS: Record<SearchRefusal, string> = {
     empty: 'the search carries no pattern',
     too_long: 'the pattern is longer than a search takes',
-    unknown_root: 'that root is not one oculus serves'
+    unknown_root: 'that root is not one oculus serves',
+    outside: 'the folder is not inside the root',
+    missing: 'the folder is not there'
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -54,9 +56,9 @@ export async function handleSearch(
     const outcome = await runSearch(options.roots, query, options);
     if (!outcome.ok) {
         return json(
-            {
-                error: 'refused' in outcome ? REFUSALS[outcome.refused] : outcome.error
-            },
+            'refused' in outcome
+                ? { error: REFUSALS[outcome.refused], refused: outcome.refused }
+                : { error: outcome.error },
             { status: 400, headers: NO_STORE }
         );
     }
