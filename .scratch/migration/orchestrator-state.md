@@ -70,6 +70,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/Q66-brief-check.md, every finding closed in the brief (its Closed heading, in automode); claude-sonnet-5-5, 330,279 tokens, 118 tool uses, 18.7 min
   shared_paths: with Q85d, `Changes.svelte` (Q85d the body read at 77-79; Q66 the effect at 59-70), `Diff.svelte` (Q85d a `typeof` at 333 and readers; Q66 the effects at 216-241), `Graph.svelte` and `Source.svelte` (Q85d the readers; Q66 the gutter and load effects), `File.svelte` (Q85d the instance-state readers at 90-92; Q66 the address at 95-97); with L4, `PaneBody.svelte` (L4 the float body; Q66 the head comment at 8-9) and `File.svelte` (L4 only if its close needs the rule); `tests/shell/panes/` (L4 changed cases in existing files; Q66 two new files, the folder at 6); `DESIGN.md` (Q66 194; others as their entries say), different hunks, a simple merge with Diff.svelte's size read after both; `docs/diagrams/`, regenerated at each landing
   landing: not-started
+  builder_usage: continuation builder a7c7904a6d1025f78 to the report 249,200 tokens, 87 tool uses, 43.3 min (2 full-list runs, the last passed)
+  reviewer_report: agents/reviews/Q66-refuter.md (first run, reviewer a93e9f989b66e2e0d, claude-sonnet-5-5 read at 01:50, launched 2026-10-02 01:50; usage on its completion)
   round: 0
 - step: Q35
   executor: agent
@@ -84,7 +86,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with Q85d, `Audit.svelte` (Q85d the reader at 53-61 and one import; Q35 the head comment, the `Card` import, markup and style), `tests/views/system/audit.test.ts` (Q85d one new case; Q35 the cards' describe rewritten and the source-text case removed), `tests/checks/tree/allow-audits.txt` (Q85d line 58; Q35 line 11), `type-scale.test.ts` if Q85d touches it, different hunks, a simple merge with the import block read at the second landing; with Q66, none; `DESIGN.md` (Q35 367, 378) and `HELP.md` (Q35 120 and the Changes passage) against the other entries' lines; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   cases: agents/briefs/Q35-cases.md (round 0: case 8's `fit(100, 50)` corrected to 50 / 720 by item 5's rule)
-  builder_usage: first run of the cases 260,277 tokens, 65 tool uses, 12.7 min (0 full-list runs)
+  builder_usage: first run of the cases 260,277 tokens, 65 tool uses, 12.7 min (0 full-list runs); continuation builder a7e830c8a488197ee to the report 219,390 tokens, 63 tool uses, 42.7 min (5 full-list runs, the last passed)
+  reviewer_report: agents/reviews/Q35-refuter.md (first run, reviewer a20db24a8714e7263, claude-sonnet-5-5 read at 01:50, launched 2026-10-02 01:50; usage on its completion)
   round: 0 (agents/briefs/Q35-cases.md, sent 23:27)
 - step: X3a
   executor: agent
@@ -166,6 +169,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
+
+- Z215, the brief checks of D35 and X3a (raised 2026-10-02 01:50 on Axel's question). Both briefs were rewritten with new scope after their brief check ran: D35's on 2026-10-01 for the first build (`D35-brief-check.md`), before items 9 to 17 (every `local.yml` key live, the port move); X3a's on 2026-10-01 on the earlier draft (`X3a-brief-check.md`), before the folder panel of Z187 (f), Q114's undo and the delete setting (items 2, 21, 22) and Z199 to Z214. The spec skill checks a step once ("a `/spec` run after a stop or a ruling does not check the step again"), so neither was checked again and the new parts have had no independent read before their builders started; both builders are running. This is a clash between that rule and a brief whose scope changed after its check.
+  - (a) A fresh brief check of each rewritten brief now, read-only, on the brief as committed; its findings closed in the brief and sent to the running builder as a round-0 ruling (as D35's hand-back was), or raised here when they change scope. For: the new parts get the independent read every other step had, before the builders are far in. Against: about 300,000 tokens and 15 minutes per check; a finding may make a builder redo work; it departs from the skill's once-per-step rule, which is why it is yours to rule.
+  - (b) No new check; the refuter reads the new parts at review. For: no extra cost now. Against: a wrong premise is found after the build, a repair round later. The lazy option.
+  - Recommendation (a).
 
 
 

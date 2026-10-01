@@ -1,6 +1,6 @@
-# Q35 report: stopped after the first run, on case 8
+# Q35 report: the session views' last gaps, the Audit view as a list and the Present deck filling its pane
 
-NOT done: everything in the brief. The first run on the unchanged tree shows that case 8 states a value its own rule does not give, so the step stops here and nothing is built or verified. The worktree is not at main's head: source and test files were edited before the case 8 value was checked (listed under "State of the worktree"); none of those edits has been run since.
+Everything in the brief is done. Not verified: the duplicate-signature case in a client runtime (case 5, below), and everything the look on TEST is for (frame fit, centring, letterbox, scroll, first paint, hover reveal, the arrow keys on Audit rows, the Customizations row opening). The first run of the cases on the unchanged tree is the previous builder's measurement, carried here; I could not rerun it without a git command.
 
 ## Open items of the state file, verbatim
 
@@ -19,62 +19,96 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
   - (d) No editors, the description and the link as today. The lazy option, which Z168 already declined.
   - Recommendation (a): the shape VS Code uses, one write for all three families, with `base` so a stale editor never overwrites an edit made meanwhile. S4 waits on this ruling.
 
+## The cases' first run
 
+On the tree as I found it (the first builder's edits in the worktree, none run before), run once before I changed anything: `npx vitest run --reporter=dot tests/views/system/audit.test.ts tests/views/academic/present.test.ts tests/state/life/present.test.ts tests/views/shared/prose/jump.test.ts tests/state/shared/words/format.test.ts tests/views/sessions/changes.test.ts tests/server/sessions/stores/customizations.test.ts tests/views/whole/type-scale.test.ts tests/views/whole/tinted.test.ts` printed `Test Files  9 passed (9)`, `Tests  494 passed (494)`. Cases 1 to 11 pass there in their final form, case 8 with `toBeCloseTo(50 / 720, 12)` for `fit(100, 50)` as `Q35-cases.md` rules (`tests/state/life/present.test.ts:838`).
 
+On the unchanged tree (main's sources, the first builder's run of the same tests written in the form each case has now; carried from its report, not rerun by me): `Test Files 7 failed (7)`, `Tests 19 failed | 181 passed (200)`.
 
-
-
-
-
-## The case the brief's rule gets wrong
-
-Case 8 of the brief: "`fit`: 1920 by 720 gives 1; 1280 by 1440 gives 1; 640 by 360 gives 0.5; 100 by 50 gives 0.078125; 0 by 0, -5 by 10 and NaN give 0."
-
-The rule of item 5: "`fit(w, h)` is `min(w / 1280, h / 720)`, and 0 for a non-positive or non-finite size".
-
-Command: `node -e "const fit=(w,h)=>!(w>0)||!(h>0)||!isFinite(w)||!isFinite(h)?0:Math.min(w/1280,h/720); ..."` printed:
-
-```
-1920 720 1
-1280 1440 1
-640 360 0.5
-100 50 0.06944444444444445
-0 0 0
--5 10 0
-NaN 360 0
-```
-
-The rule gives 0.06944444444444445 for 100 by 50, not 0.078125: 100/1280 = 0.078125 is the width ratio, and 50/720 = 0.0694... is the smaller height ratio, which `min` takes. The other six values of the case agree with the rule. Either the case's input or its expected value is wrong: 100 by 56.25 gives 0.078125 under the rule, and 100 by 50 gives 0.06944444444444445 (in a test, `50 / 720`). Which of the two the brief means is the orchestrator's to rule; the rule itself (`min`, letterboxed uniform scale) is what items 5 and 6 build on.
-
-## The cases' first run on the unchanged tree
-
-Tests written in the form each case has after the change, then run with `npx vitest run` over `tests/views/system/audit.test.ts tests/views/academic/present.test.ts tests/state/life/present.test.ts tests/views/shared/prose/jump.test.ts tests/state/shared/words/format.test.ts tests/views/sessions/changes.test.ts tests/server/sessions/stores/customizations.test.ts` with the sources of main (the run was before any source edit): `Test Files 7 failed (7)`, `Tests 19 failed | 181 passed (200)`.
-
-| Case | First run on the unchanged tree |
+| Case | Unchanged tree |
 | --- | --- |
-| 1 Audit, two in `todo` and one in `data` | fails: `expected [] to deeply equal [ Array(3) ]`; the view draws `article.card`, no `li[data-card]` |
-| 2 backtick as code; markup and an unmatched backtick as text | card form passes (probe run of the same assertions against `article[data-card]`); the row form (`li`) fails only on the `li` selector |
-| 3 mute on an open row, un-mute on a parked one, no muted section with nothing parked | card form passes (probe); the row form fails on the `li` selector. The control disabled while a write is out has no case on the tree that presses a control; it is written as an audit over the source (`disabled={busy}`, `if (busy) return;`), which passes |
-| 4 search by place, none, only a parked match, empty | the card form passes (probe); in the row form the first and last fail on the `li` selector, the parked-only case passes |
-| 5 two findings, one signature, one section | stated outcome on the unchanged tree: the server render does not throw and draws two `article` elements carrying the same `data-card` (probe: `articles=2`). Kept as: two rows. A keyed `each` on a duplicate key is not exercised in a client runtime here (no DOM): not verified |
-| 6 empty scope or empty place | the mute control is drawn (passes); the card draws an empty `<span class="where">` and an empty `h4` title, so the "no empty element" part fails on the unchanged tree |
-| 7 Present frame | fails: `expected '' to contain 'width: 1280px'` and `expected '' to contain 'visibility: hidden'`; the empty deck and the grid outside any frame pass |
-| 8 `fit` | `TypeError: fit is not a function`; and see above: the value of the fourth input is wrong in the brief |
-| 9 `jump.ts` in a box scaled by 0.5 | fails: `expected 100 to be 200`; the unscaled case and the zero-height case pass |
-| 10 Changes, 90-character path | fails: the span holds `.../deep/...` (the elided form) and not the whole path; `expected [ 'PATH_MAX', 'compactCount', ...(8) ] to not include 'elide'` |
-| 11 Customizations links | three of four fail: `expected { name: 'out', ... } to deeply equal ...` (link path listed), `expected '.../links-.../agents/in.md' to be '.../root-.../CLAUDE.md'`, `expected null to be '# out'`; the dangling link and the plain file pass |
+| 1 Audit, two in `todo` and one in `data` | fails: `expected [] to deeply equal [ Array(3) ]`, the view drew `article.card` and no `li[data-card]` |
+| 2 backtick as code; markup with an unmatched backtick as text | passes in the card form, the row form fails on the `li` selector |
+| 3 mute on an open row, un-mute on a parked one, no muted section with nothing parked, control disabled while a write is out | card form passes, row form fails on the `li` selector; the disabled control is an audit over source (`disabled={busy}`, `if (busy) return;`) |
+| 4 search by place, none, only a parked match, empty | card form passes, row form fails on the `li` selector except the parked-only case |
+| 5 two findings with one signature in one section | outcome on the unchanged tree: the server render does not throw and draws two `article` elements carrying the same `data-card`. Kept as two rows (`tests/views/system/audit.test.ts`, "draws two findings carrying one signature as two rows"). A keyed `each` over a duplicate key in a client runtime is not exercised (no DOM): not verified |
+| 6 empty scope or empty place | the control was drawn; the card drew an empty `<span class="where">` and an empty `h4`, so the "no empty element" part fails |
+| 7 Present frame | fails: `expected '' to contain 'width: 1280px'`, `expected '' to contain 'visibility: hidden'`; the empty deck and the grid outside any frame pass |
+| 8 `fit` | `TypeError: fit is not a function`; fourth value corrected by the cases ruling to `50 / 720` |
+| 9 `jump.ts` in a box scaled by 0.5 | fails: `expected 100 to be 200`; the unscaled and zero-height cases pass |
+| 10 Changes, 90-character path | fails: the span held the elided `.../deep/...` form; `expected [ 'PATH_MAX', 'compactCount', ...(8) ] to not include 'elide'` |
+| 11 Customizations links | three of four fail: link path listed, `expected '.../links-.../agents/in.md' to be '.../root-.../CLAUDE.md'`, `expected null to be '# out'`; the dangling link and the plain file pass |
 
-The probes were temporary files under `tests/` and are removed. On this machine `os.tmpdir()` is `/var/folders/...`, a link to `/private/var/folders/...`; the Customizations test file takes `realpathSync` of its scratch folders so the existing path comparisons keep their meaning once the listing gives real paths.
+## DONE / NOT DONE
 
-## State of the worktree
+| Row | State | Command and output |
+| --- | --- | --- |
+| 1 Changes paths cut at the end; `elide`, `PATH_MAX`, `sessions.ch_elide` removed | DONE | `grep -rn "elide" src config` prints nothing (exit 1). The three callers draw the whole path with `overflow: hidden; text-overflow: ellipsis; white-space: nowrap` and the whole path in `title`: `ChangesTouched.svelte` `.pa`, `ChangeGroups.svelte` `.pa`, `Repo.svelte:290` `.path`. `tests/views/sessions/changes.test.ts:192` "draws a path of 90 characters whole, with the whole path as its title"; `tests/state/shared/words/format.test.ts:128` asserts `elide` and `PATH_MAX` are gone |
+| 2 Aligned columns in Changes | DONE | `ChangesTouched.svelte` `.files` grid `max-content minmax(0, 1fr) max-content max-content`, `.file` takes it by `grid-template-columns: subgrid`; `ChangeGroups.svelte` `.rows` grid of five columns by subgrid; the count is `--font-num`, right-aligned. Seen only at the look |
+| 3 Customizations open where the file is | DONE | `customizations.ts` `realPath()` applied to every item in `rowOf()`; `Customizations.svelte` unchanged. `tests/server/sessions/stores/customizations.test.ts` cases 353, 362, 368 (case 11) |
+| 4 Audit as a list | DONE | `Audit.svelte` (304 lines): `<ul>` per section, `<li data-card={signature}>`, scope `span`, message through `CodeText`, `where` in mono `--fs-sm`, compact `ToolButton` in `.act` revealed by `--row-reveal` on hover, focus-within, and always under `(hover: none)`, `li:hover` takes `--chip`, `<Pane ... tinted>`. `grep -n "Card" src/lib/views/system/audit/Audit.svelte` prints nothing (exit 1) |
+| 5 Present filling its pane | DONE | `Present.svelte`: deck box `height: 100%`, `overflow: hidden` when framed; `.stage` of `1280 * s` by `720 * s` px; `.frame` 1280 by 720 with `transform: scale(s)`, `transform-origin: 0 0`, `visibility: hidden` while `s` is 0; `bind:clientWidth`/`bind:clientHeight`; surface `var(--card)`, translucent mix under `body.wall`. `fit` at `src/lib/state/life/present.ts:114` |
+| 6 The slide laid out for its frame | DONE | `.frame` sets `--slide-fs-title` 56, `-h` 36, `-sub` 28, `-body` 24, `-small` 18 px times `--text-scale`, 64 px padding, `overflow-y: auto`, `data-scroll`; `Slide.svelte` `.reading` is `max-width: var(--slide-reading)` (1040 px) centred; Title and Closing centre both ways; no `ch` cap remains in `parts/`; `jump.ts` `scaleOf()` divides the scroll distance by the scale |
+| 7 Tests | DONE | see the test run below; `tests/checks/tree/allow-audits.txt` no longer lists the Audit card case |
+| 8 Docs | DONE | `DESIGN.md:367` (frame), `DESIGN.md:378` (rows), `HELP.md:120` (present), `HELP.md:130` (changes: path cut at its end, columns), `HELP.md:139` (audit rows) |
+| Case 5 in a client runtime | NOT verified | no DOM in the suite; the row `each` is keyed by `finding.signature` as the card list was |
+| Look on TEST | NOT done | the orchestrator's look |
 
-Edited, not run since the edit:
-- tests: `tests/views/system/audit.test.ts`, `tests/views/academic/present.test.ts`, `tests/state/life/present.test.ts`, `tests/views/shared/prose/jump.test.ts` (new), `tests/state/shared/words/format.test.ts`, `tests/views/sessions/changes.test.ts`, `tests/server/sessions/stores/customizations.test.ts`.
-- source: `src/lib/state/shared/words/format.ts` (`elide`, `PATH_MAX` removed), `config/text/views/sessions/changes.yml` (`ch_elide` removed), `src/lib/views/sessions/changes/ChangesTouched.svelte`, `src/lib/views/shared/changes/ChangeGroups.svelte`, `src/lib/views/sources/repositories/Repo.svelte`, `src/lib/server/sessions/stores/customizations.ts`, `src/lib/views/system/audit/Audit.svelte`.
-- Not started: `fit` in `present.ts`, `Present.svelte`, `Slide.svelte`, `parts/`, `jump.ts`, the docs, `type-scale.test.ts`, `allow-audits.txt` line 11, the verify list. No full-list run was made (0).
+Test run after the last change, scoped: `npx vitest run --reporter=dot tests/views/shared/prose/jump.test.ts tests/checks/source/comment-width.test.ts tests/checks/tree/audits.test.ts tests/checks/tree/negatives.test.ts` printed `Test Files  4 passed (4)`, `Tests  27 passed (27)`.
 
-## To go on
+Brief verify, step 3: `grep -n "Card" src/lib/views/system/audit/Audit.svelte` prints nothing; `grep -rn "elide" src config` prints nothing; `sh utils/folder-check.sh` exits 0; the ASCII gate (`LC_ALL=C perl -ne ... $(find src tests config -type f ! -name local.yml)`) prints nothing; `LC_ALL=C grep -n '[^ -~]' DESIGN.md HELP.md` prints nothing. The brief's gate names `bin` too and the worktree has no `bin` folder; `find` printed `bfs: error: bin: No such file or directory` and the gate printed nothing for the rest.
 
-Rule on case 8: (a) keep 100 by 50 and change the expected value to `50 / 720` (0.06944444444444445), or (b) keep 0.078125 and change the input to 100 by 56.25. Both leave `fit = min(w / 1280, h / 720)` as the brief writes it. The lazy option is a test that accepts either value or drops the case. The builder continues from the edits above on the ruling.
+Full list, 5 runs (`npm run diagrams` ran before each and exited 0):
+- Runs 2 and 3: red for reasons inside files I changed, fixed and rerun alone each time (run 2 stopped at `npm run test:checks`, run 3 at `npm run lint`): `tests/checks/source/comment-width.test.ts` (three comment lines past column 100: `Summary.svelte:83`, `jump.ts:18`, `jump.test.ts:3`), `tests/checks/tree/audits.test.ts` (the three `jump.test.ts` cases rendered nothing and were not named audits), `tests/checks/tree/negatives.test.ts` (nine absences in `audit.test.ts` and `present.test.ts` without a reason above them), and `npm run lint` (`tests/views/shared/prose/jump.test.ts:44` `no-this-alias`).
+- Runs 1 and 4: `npm test` stopped on five to eight 5000 ms timeouts in files this step did not change: `tests/routes/edit/config-key.test.ts`, `tests/server/edit/config-key.test.ts`, `tests/server/git/autofetch.test.ts`. Rerun alone: `npx vitest run --reporter=dot tests/routes/edit/config-key.test.ts tests/server/edit/config-key.test.ts tests/server/git/autofetch.test.ts` printed `Test Files  3 passed (3)`, `Tests  96 passed (96)`; the second rerun of the last two printed `Test Files  2 passed (2)`, `Tests  82 passed (82)`. checks.sh stops at its first red command, so those runs did not reach the other six commands, which is why the list was run again.
+- Run 5, the last, quoted from checks.sh:
 
-Model: claude-sonnet-5-5. Usage as far as known: not measured by a command.
+```
+$ npm test
+ Test Files  424 passed | 22 skipped (446)
+      Tests  11100 passed | 619 skipped (11719)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  442 passed | 9 skipped (451)
+$ npm run check
+1790898119148 COMPLETED 2957 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+Number of full-list runs: 5.
+
+## Files changed (line counts now)
+
+Source: `src/lib/views/system/audit/Audit.svelte` 304; `src/lib/views/academic/present/Present.svelte` 288; `Slide.svelte` 69; `parts/Closing.svelte` 63, `Equation.svelte` 61, `Framing.svelte` 94, `Ideas.svelte` 109, `Project.svelte` 250, `Summary.svelte` 101, `Title.svelte` 65, `Words.svelte` 55; `Panel.svelte` 174; `src/lib/state/life/present.ts` 460 (`FRAME_WIDTH`, `FRAME_HEIGHT`, `fit`); `src/lib/views/shared/prose/jump.ts` 89; `src/lib/state/shared/words/format.ts` 116; `config/text/views/sessions/changes.yml` 79; `src/lib/views/sessions/changes/ChangesTouched.svelte` 124; `src/lib/views/shared/changes/ChangeGroups.svelte` 311; `src/lib/views/sources/repositories/Repo.svelte` 322; `src/lib/server/sessions/stores/customizations.ts` 469.
+Tests: `tests/views/system/audit.test.ts` 311; `tests/views/academic/present.test.ts` 353; `tests/state/life/present.test.ts` 849; `tests/views/shared/prose/jump.test.ts` 113 (new); `tests/state/shared/words/format.test.ts` 131; `tests/views/sessions/changes.test.ts` 475; `tests/server/sessions/stores/customizations.test.ts` 381; `tests/views/whole/type-scale.test.ts` 388; `tests/checks/tree/allow-audits.txt` 120.
+Docs: `DESIGN.md` 419, `HELP.md` 302, `docs/diagrams/` (layer-state, layer-views, layers regenerated by `npm run diagrams`).
+
+## Decisions the brief did not cover (each reversible)
+
+1. `realPath()` is applied to every item of every Customizations row (instructions, skills, agents, hooks, MCP, plugins, tools), in `rowOf()`, so one rule serves all rows rather than three call sites. A path that does not resolve keeps the path as found.
+2. The frame carries `data-frame` (the marker the test reads) and `data-scroll` (the brief's; it also makes the shell's scroll keys scroll the slide).
+3. `FRAME_WIDTH` and `FRAME_HEIGHT` are exported from `state/life/present.ts` beside `fit`, so the view and `fit` read one size.
+4. The three `jump.test.ts` cases are named "audits that ..." because the suite has no DOM and they run over stubs; `tests/checks/tree/audits.test.ts` requires the word for a case that draws nothing. They are reported as audits, not coverage.
+5. Absences in `audit.test.ts` and `present.test.ts` each carry a reason comment above them, as `tests/checks/tree/negatives.test.ts` requires.
+6. A Customizations row with no root holding its real file opens the Customization viewer (a fallback the brief names), and a link into a root opens a source tab.
+
+## Limitations and sharp edges
+
+- The client decides "a root holds this file" by comparing strings with the roots' configured `dir` (`state/sources/fs.ts:731` `rootHolding`), while the server compares real paths. A root that is itself configured as a link, now that Customizations gives real paths, would send a row to the viewer, not to a source tab. The viewer shows the file, so nothing 404s.
+- A slide taller than the frame scrolls inside it, and the frame's `data-scroll` marker makes PageUp and PageDown scroll the frame as well as being the deck's slide keys; which key wins is a DOM behaviour seen at the look.
+- Duplicate signatures in one section (case 5) are drawn as two rows; the client-side keyed `each` over a duplicate key is not verified.
+- The unit suite does not see the frame's fit, centring, letterbox, scroll or first paint, the row hover reveal, or the aligned columns; the look does.
+
+## Before and after for the look (TEST)
+
+- **Audit**, any pane width, with a hub that has findings: before, each finding was a bordered card with an `h4` scope; after, a flat list under each section head, one row per finding at the tree-row height, scope in the row's main words, message in muted ink with backticked words as code, place in mono, the mute control appearing at the row's end under the pointer or with the focus inside; narrow pane: rows wrap by whole lines; the arrow keys still step through the rows.
+- **Present**, narrow, wide, tall pane and the full page, then with a rice wallpaper theme and with the text size raised: before, the slide used the left part of the pane at the interface's type size; after, a 16:9 frame letterboxed and centred, scaled with the pane, its words scaling with it, its own surface so the words never sit on the picture; Title and Closing centred both ways; a long narrative slide scrolls inside the frame and a `#` link lands on its heading. The grid (`O`) and the empty deck are not framed.
+- **Changes**, a session with long paths in a narrow pane: before, the path was cut at its start (`.../deep/...`) and the verb floated; after, the whole path is cut at its end with an ellipsis and the verb and count start at one x in every row; the same for the Staged, Changed and Untracked rows and the root path of Repositories.
+- **Customizations**, the row `~/.claude/agents/ordo-high.md`: before, `Cannot open: HTTP 404`; after, it opens its file.
+
+Model: claude-sonnet-5-5. Usage: not measured by a command.
