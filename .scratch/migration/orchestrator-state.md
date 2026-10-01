@@ -68,8 +68,10 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   executor: agent
   worker: claude:sonnet
   worktree: .agents/worktrees/U3
-  base: BASE
-  launched: not yet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 15:23)
+  session_id: ae3ab3b225611181e (launched 2026-10-01 15:23 local)
+  base: ab4d9084
+  launched: 2026-10-01 15:23 local
   report: agents/reviews/U3-report.md
   brief_check: agents/reviews/U3-brief-check.md, every finding closed in the brief (its Closed heading, Z157 and Z160 in automode); agent a2d45e553bd8d1965 on claude-sonnet-5-5, 327,546 tokens, 88 tool uses, 14.4 min
   shared_paths: with Q85b, `src/lib/state/sources/search.svelte.ts` (U3 adds at most one retry function; Q85b rewrites its readers into schemas) and `DESIGN.md` (different lines). With Q88b, the Files view (`views/sources/files/Files.svelte`, `tree/Tree.svelte`), `views/sources/search/Query.svelte`, `views/sources/repositories/diff/Diff.svelte`, `views/life/memories/Memories.svelte`, `ui/tree/TreeItem.svelte`, `search.svelte.ts`, `tests/views/sources/files/` and `DESIGN.md` (different lines): U3 changes style blocks and moves header controls into the bar, Q88b adds menus, handlers and new components, so the hunks meet only where both edit one toolbar snippet, merged by reading both at U3's landing, which comes after both; the new components Q88b adds (`NameInput.svelte`, the questions component) are put on the scale at that landing. `docs/diagrams/` is regenerated at each landing
