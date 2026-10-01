@@ -378,3 +378,11 @@ Where it is built: Q35. Booked in the state file's closed log and `plan.md` Ruli
 - Not chosen: (b) D11 built now with `before` left out and added by D17, which moves part of D11's ruled scope into another step, the lazy option; (c) D11 building its own reader of `commands.yml`, which D17 then rebuilds.
 
 Where it is built: D11, after D17. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z193 (2026-10-01 23:13, step Q35)
+
+- Chosen (a): Z189 amended. The slide parts are laid out for the 1280 by 720 frame: a slide type scale on the frame in px at the design size (56, 36, 28, 24, 18, times the text size), 64 px padding, Title and Closing centred, reading widths at most 1040 px and centred in place of the `ch` caps, a slide taller than the frame scrolling inside it with `jump.ts` correcting for the scale. Q35's brief check showed that the frame with the parts at the UI's tokens fills about a third of the frame's width and draws words at 6 to 7 px in a 700 px pane.
+- Not chosen: (b) the frame with the parts unchanged, which leaves the slide in the frame's left third, the lazy option; (c) no scaling, the deck box stretched and the parts centred, which keeps the UI's sizes but is no slide shape a projector shows.
+
+Where it is built: Q35. Booked in the state file's closed log and `plan.md` Rulings.
+
