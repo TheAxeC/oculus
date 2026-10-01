@@ -1,16 +1,16 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D35 (every configuration file live, `local.yml` included, by Z198 and Axel's D35 redo ruling), taken back out of main; /spec prepares it again, builder at ordo-high.
-- L4 (floating panes and kept empty panes), built; review running on a fresh reviewer.
-- Q66 (a hidden tab defers its work), a continuation builder taking over the worktree.
-- Q35 (Changes, Customizations, Audit, Present), a continuation builder taking over the worktree.
+- D35 (every configuration file live, `local.yml` included, by Z198 and Axel's D35 redo ruling), builder at ordo-high building after its first-run rulings.
+- L4 (floating panes and kept empty panes), repair round 1 with the builder.
+- Q66 (a hidden tab defers its work), built; review next.
+- Q35 (Changes, Customizations, Audit, Present), built; review next.
+- X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), builder at ordo-high.
 
 
 Three queued steps are kept prepared ahead (Z185).
 
-Queued, in order (30 steps):
-- X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a); problem decorations to D33 and code symbols to D23 by Z182; Add Folder through macOS's own folder panel by Z187 (f); file operations undone from History, folded in from Q114), /spec again: Z188 redone finding by finding.
+Queued, in order (29 steps):
 - D32 (replace in Search, and the seven state-layer answers Z154 accepted judged one by one, by Z198), once D35 has landed (both change the write target and the undo table); its brief check is in.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), Z190 ruled (a); /spec runs again.
 - Q88c (the Source Control rows' and the pane strip's new menu items), brief checked (`agents/reviews/Q88c-brief-check.md`); waits for L4's landing, since both change the `Pane` type and the layout tree's pane literals.

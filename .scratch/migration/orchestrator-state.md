@@ -86,6 +86,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   cases: agents/briefs/Q35-cases.md (round 0: case 8's `fit(100, 50)` corrected to 50 / 720 by item 5's rule)
   builder_usage: first run of the cases 260,277 tokens, 65 tool uses, 12.7 min (0 full-list runs)
   round: 0 (agents/briefs/Q35-cases.md, sent 23:27)
+- step: X3a
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 01:49)
+  session_id: acf8c525dec67af39 (launched 2026-10-02 01:49 local)
+  worktree: .agents/worktrees/X3a
+  base: fab398d6
+  launched: 2026-10-02 01:49 local
+  report: agents/reviews/X3a-report.md
+  brief_check: agents/reviews/X3a-brief-check.md (run 2026-10-01 on the earlier draft, not run again: the spec skill checks a step once); 306,645 tokens, 101 tool uses, 12.7 min; served model not recorded at the time
+  shared_paths: with D35, `options.yml` (D35 the behaviour descriptions and the `local.yml` block; X3a the `roots` description, a `files` behaviour entry and one `history` line in that block), `data/sources/config/settings.ts` (X3a one read of `files.confirm_delete`), `DESIGN.md` (D35 224-235; X3a 44, 128 and the Files lines) and `HELP.md` (D35 216 and 236; X3a one key added to 236's list): added lines beside D35's, a simple merge; with L4, `routes/+page.svelte` only if item 16 needs it (one derived line); with Q66, `fs.svelte.ts` (Q66 line 11, a comment); `docs/diagrams/` regenerated at landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
