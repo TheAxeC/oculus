@@ -57,6 +57,20 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   builder_usage: first run (handed back at case 31) 338,293 tokens, 103 tool uses, 24.8 min; after the round-0 ruling 345,679 tokens, 480 tool uses, 161.8 min (report read at 03:36)
   reviewer_report: agents/reviews/X3d-refuter.md (reviewer a0069f4ae7f73ca18, launched 03:37, served claude-opus-5-5, running)
   round: 0 (sent 01:19: agents/briefs/X3d-cases.md, six rulings on the cases under Axel's Seti ruling of 2026-09-25)
+- step: Q109
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 03:44)
+  session_id: a575ed6b15ebe1eb6 (launched 2026-10-01 03:44 local)
+  worktree: .agents/worktrees/Q109
+  base: f5b3290b
+  launched: 2026-10-01 03:44 local
+  report: agents/reviews/Q109-report.md
+  brief_check: agents/reviews/Q109-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 84 tool uses, 279,074 tokens, 15.0 min
+  diagnosis: agents/reviews/Q109-diagnosis.md (three diagnoses; the third by agent add169c371291c833, claude-opus-5-5, 188,283 tokens, 50 tool uses, 19.8 min)
+  shared_paths: package.json and package-lock.json with X3d (X3d adds seti-ui on the line after perfect-debounce, Q109 removes perfect-debounce and adds lodash-es; the lock is regenerated with npm install at the second landing); DESIGN.md and HELP.md with X3d (Q109 writes DESIGN 116 and HELP 127 and 221, X3d other lines)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

@@ -5,8 +5,8 @@ In flight:
 Open items: Z138 (X3d's light-theme Seti colours, yours). Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
-- Q109 (the terminal: lines after a pane move, the five watchers' capped debounce, a sole terminal's menu, four terminal options), brief written, its brief check running.
-- S3b (the `config-key` write), brief written, its brief check running.
+- Q109 (the terminal: lines after a pane move, the five watchers' capped debounce, a sole terminal's menu, four terminal options), builder running since 03:44.
+- S3b (the `config-key` write), brief checked, its findings being closed in the brief.
 - S3c (the Settings editor), once S3a and S3b have landed.
 - Q85a2 and Q85a4 (zod in the other server folders, two steps), /spec when a slot frees; then Q85b and Q85c, then Q85d.
 - Q88b (the right-click menus' new capabilities), once X3d has landed.
