@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- S3c (the Settings editor), builder (Sonnet) running since 11:11.
+- S3c (the Settings editor), built; its reviewer (Sonnet) running since 12:30.
 - Q85b (zod in the state layer), builder (Sonnet) running since 11:51.
 - Q88b (the Files view's file operations), builder (Sonnet) running since 12:05.
 Open items: Z146 (U2's grouping into build steps), Z147 (collections as rows or cards), Z148 (the icon set), all three Axel's, in `orchestrator-state.md`'s Open items. Choices made in automode, for review: `choices.md`.
