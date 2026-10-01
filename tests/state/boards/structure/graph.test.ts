@@ -261,6 +261,19 @@ describe('relationship graph', () => {
         );
     });
 
+    it('names a project node by the label mode: the full title under full, the short name otherwise', () => {
+        const data = snapshot();
+        data.entities.projects.alpha.short = 'Al';
+        data.entities.projects.alpha.title = 'Alpha, the whole title';
+        const labelUnder = (labelMode: string): string | undefined =>
+            buildGraph(data, { labelMode }).nodes.find((node) => node.id === 'project::alpha')
+                ?.label;
+        expect(labelUnder('full')).toBe('Alpha, the whole title');
+        expect(labelUnder('short')).toBe('Al');
+        expect(labelUnder('title')).toBe('Al');
+        expect(labelUnder('')).toBe('Al');
+    });
+
     it('keeps a saved start seed and drops a malformed one or an old tuning', () => {
         expect(parseMapState({ start: { key: 'k', seed: 3 } }).start).toEqual({
             key: 'k',

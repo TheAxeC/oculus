@@ -80,7 +80,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
         id: `project::${project.id}`,
         entityId: project.id,
         label:
-            options.labelMode === 'title' || project.short?.trim() === ''
+            options.labelMode === 'full' || project.short?.trim() === ''
                 ? project.title
                 : (project.short ?? project.title),
         kind: 'project',

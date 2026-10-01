@@ -9,7 +9,7 @@ import { entryDate, manifestsBehind, type ManifestBehind } from './focus-lanes.t
 import {
     deadlineMet,
     entriesOf,
-    labelOf,
+    focusLabel,
     live,
     setting,
     settled,
@@ -184,6 +184,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     const horizon = setting(config, 'deadline_horizon_days', 90);
     const months = setting(config, 'conf_horizon_months', 1);
     const warn = setting(config, 'venue_conc_warn', 4);
+    const labelMode = config.focus_label_mode;
     const projects = Object.values(snapshot.entities.projects).filter(live);
     const collections = snapshot.entities.collections;
 
@@ -203,7 +204,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         const days = daysUntil(project.deadline ?? '', now);
         if (days === null || settled(project, config)) continue;
         if (days > horizon) continue;
-        const line = item('paper', GLYPHS.paper, labelOf(project), days, {
+        const line = item('paper', GLYPHS.paper, focusLabel(project, labelMode), days, {
             id: project.id,
             target: { kind: 'manifest', id: project.id }
         });
@@ -322,10 +323,16 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         for (const { note, days } of dueFollowups(project.followups, now)) {
             notes.push({
                 days,
-                line: item('followup', GLYPHS.followup, `${labelOf(project)} - ${note.do}`, days, {
-                    id: project.id,
-                    target: { kind: 'followup', id: project.id }
-                })
+                line: item(
+                    'followup',
+                    GLYPHS.followup,
+                    `${focusLabel(project, labelMode)} - ${note.do}`,
+                    days,
+                    {
+                        id: project.id,
+                        target: { kind: 'followup', id: project.id }
+                    }
+                )
             });
         }
     }
@@ -364,7 +371,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     for (const project of Object.values(snapshot.entities.projects)) {
         for (const line of subtaskLines(
             project.subtasks,
-            labelOf(project),
+            focusLabel(project, labelMode),
             '',
             now,
             { id: project.id },

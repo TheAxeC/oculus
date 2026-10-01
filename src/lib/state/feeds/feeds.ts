@@ -10,15 +10,12 @@
 // through the catalogs under config/text/.
 
 import type { Snapshot } from '../../data/model/index.ts';
-import { isMap } from '../../data/helpers/guards.ts';
+import { byKey, isMap } from '../../data/helpers/guards.ts';
 import { daysUntil } from '../boards/board/index.ts';
 import { venueLoad } from '../boards/ticker.ts';
 
 /** The three feeds a nudge can be about, in the order the group lists them. */
 export const FEEDS = ['litwatch', 'inbox', 'scout'];
-
-/** The thresholds of `stale_days` for a config that holds none. */
-const STALE_DAYS: Record<string, number> = { litwatch: 14, inbox: 10, scout: 7 };
 
 /**
  * One "needs attention" line. `kind` says what it is and the view words it: `inbox` counts threads
@@ -53,16 +50,15 @@ export function daysSince(date: string | null, now: number): number | null {
     return ahead === null ? null : -ahead;
 }
 
-/** How many days old a feed may be before it is nudged: `stale_days`, then `refresh_stale_days`. */
+/**
+ * How many days old a feed may be before it is nudged: its number under `refresh_stale_days`. A
+ * feed that key does not name, or names with a value that is not a finite number, is never nudged,
+ * so the answer is `Infinity`; the config file is the only place a threshold comes from.
+ */
 export function staleAfter(config: Record<string, unknown>, feed: string): number {
-    let days = STALE_DAYS[feed] ?? 0;
-    for (const key of ['stale_days', 'refresh_stale_days']) {
-        const held = config[key];
-        if (!isMap(held)) continue;
-        const value = held[feed];
-        if (typeof value === 'number' && Number.isFinite(value)) days = value;
-    }
-    return days;
+    const held = config.refresh_stale_days;
+    const value = isMap(held) ? byKey(held, feed) : undefined;
+    return typeof value === 'number' && Number.isFinite(value) ? value : Infinity;
 }
 
 /**
@@ -100,9 +96,10 @@ export function attention(
 
 /**
  * The lines of the "Refresh live data" group, one per feed that is older than its threshold. A feed
- * whose file is not on this machine is not nudged about: there is nothing to refresh. The radar is
- * the one feed a present file with no run date still nudges for, since a radar that has never run
- * is exactly what the nudge is for.
+ * whose file is not on this machine is not nudged about: there is nothing to refresh. A feed that
+ * `refresh_stale_days` does not name is not nudged whether or not it has run. The radar is the one
+ * feed a present file with no run date still nudges for, since a radar that has never run is
+ * exactly what the nudge is for.
  *
  * The inbox nudge is about the triage notes rather than a feed file: the plate itself is read live,
  * and what ages is the classification the triage skill writes, whose own run date the `inbox`
@@ -117,11 +114,10 @@ export function refresh(
     const out: RefreshItem[] = [];
     const feeds = snapshot.entities.feeds;
 
-    if (feeds.radar !== null) {
+    const radarAfter = staleAfter(config, 'litwatch');
+    if (feeds.radar !== null && radarAfter !== Infinity) {
         const days = daysSince(feeds.radar.lastRun, now);
-        if (days === null || days >= staleAfter(config, 'litwatch')) {
-            out.push({ feed: 'litwatch', days });
-        }
+        if (days === null || days >= radarAfter) out.push({ feed: 'litwatch', days });
     }
     if (notesRun !== null) {
         const days = daysSince(notesRun, now);

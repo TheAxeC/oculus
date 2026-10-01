@@ -17,12 +17,14 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { firstSentence } from '$lib/state/boards/board';
-    import { labelOf, type Project } from '$lib/state/boards/focus';
+    import type { Project } from '$lib/state/boards/focus';
     import { t } from '$lib/state/shared/words/text';
     import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/shared/words/tones';
 
     type Props = {
         project: Project;
+        /** The name the card draws, which the lanes work out from `focus_label_mode`. */
+        label: string;
         /** Whether the instance's keyboard cursor is on this card. */
         current: boolean;
         /** The deadline badge, or null for a project with none. */
@@ -43,6 +45,7 @@
 
     let {
         project,
+        label,
         current,
         due,
         wait,
@@ -102,7 +105,7 @@
             </span>
         {/each}
         <span class="name">
-            <ToolButton plain cut label={labelOf(project)} onclick={onopen} />
+            <ToolButton plain cut {label} onclick={onopen} />
         </span>
         {#if due}
             <span class="due">

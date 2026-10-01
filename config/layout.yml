@@ -120,8 +120,8 @@ arrangements:
             - { kind: pane, view: pages }
 
 
-# Board (Projects / Archive / Coauthor) chrome: list-view column headers, the per-board search placeholder,
-# and the synthetic "No funding" aggregate card. The column words map positionally to the fixed span classes.
+# Board (Projects / Archive / Coauthor) chrome: list-view column headers and the per-board search placeholder.
+# The column words map positionally to the fixed span classes.
 board:
   cols_project: [Project, Authors, Venue, Status, Focus, Next]
   cols_archive: [Paper, Authors, Venue, Domain, Pillar, Funding]
@@ -129,9 +129,6 @@ board:
     projects: "Search title | eli5 | results | ideas | doc text ..."
     archive:  "Search archive | title | eli5 | outcome | doc text ..."
     coauthor: "Search coauthor | title | eli5 | outcome | doc text ..."
-  no_funding:
-    label: "No funding"
-    sub: "Projects with no grant attached - auto-aggregated."
 
 
 # Tab-button count rollups: the little N|N|N split on the Archive/Coauthor tab buttons (like the projects
@@ -168,7 +165,7 @@ nav_live:
 # Project-title label mode per surface - `short` = a manifest's `short:` if set, else the full title (NO id is
 # ever shown); `full` = always the full title. Projects + Archive also have a live Aa toggle in the UI that
 # overrides their default below (persisted per browser). The full title is always on hover.
-focus_label_mode: short      # Focus board cards and the "This week" ticker
+focus_label_mode: short      # Focus board cards and the week's ticker lines
 
 project_label_mode: short    # Projects tab cards / list rows (live Aa toggle overrides)
 

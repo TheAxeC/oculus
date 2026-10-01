@@ -316,6 +316,14 @@ export function labelOf(project: Project): string {
     return short === '' ? project.title : short;
 }
 
+/**
+ * The name a Focus card and a ticker line carry for a project under `focus_label_mode`: the whole
+ * title under `full`, the short handle (`labelOf`) under anything else.
+ */
+export function focusLabel(project: Project, mode: unknown): string {
+    return mode === 'full' ? project.title : labelOf(project);
+}
+
 /** The projects quick add may write to: those of the three live tiers, in the order given. */
 export function liveProjects(projects: Project[]): Project[] {
     return projects.filter((one) => ['ideas', 'active', 'manuscripts'].includes(one.tier));

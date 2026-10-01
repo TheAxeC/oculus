@@ -810,7 +810,7 @@ describe('attention and refresh', () => {
         expect(refresh(never, config, NOW, null)[0]).toEqual({ feed: 'litwatch', days: null });
     });
 
-    it('reads the threshold of each feed out of refresh_stale_days over stale_days', () => {
+    it('reads the threshold of each feed out of refresh_stale_days', () => {
         expect(staleAfter(config, 'litwatch')).toBe(14);
         expect(staleAfter(config, 'inbox')).toBe(2);
         expect(staleAfter(config, 'scout')).toBe(7);

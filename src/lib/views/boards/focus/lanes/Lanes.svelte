@@ -21,6 +21,7 @@
         backlog,
         CLUSTERS,
         flamesOf,
+        focusLabel,
         holdingTone,
         laneItems,
         lanes,
@@ -214,6 +215,7 @@
             {#each held as project (project.id)}
                 <LaneCard
                     {project}
+                    label={focusLabel(project, config.focus_label_mode)}
                     current={cursor === project.id}
                     due={deadline(project)}
                     wait={waitLine(project)}

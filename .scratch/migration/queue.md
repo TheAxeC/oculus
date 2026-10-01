@@ -2,11 +2,10 @@
 
 In flight:
 - X3d (Source Control as VS Code's), taken back out of main at its look (the page hung); diagnosed: the hang is on main (a Graph commit press); prepared again with the Graph hang fix, the full-width button, the Seti icons, lanes under Outgoing and the builder's own look; its builder handed back case 31 at its first run, ruled at round 0 (`agents/briefs/X3d-cases.md`) and resumed.
-- S3a (the options catalog), repair round 1 sent (`agents/briefs/S3a-round1.md`); its landing waits on open item Z131.
-Open items: Z131 (S3a's ticker clause, yours). Choices made in automode, for review: `choices.md`.
+Open items: none. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - U2 (every view's look against VS Code's), prepared; its builder launches once X3d has landed.
-- Q109 (the terminal: name, icon and colour; a sole terminal renamed; four terminal options), /spec running: the two causes being diagnosed before the brief.
+- Q109 (the terminal: name, icon and colour; a sole terminal renamed; four terminal options), /spec running: all three diagnoses done (`agents/reviews/Q109-diagnosis.md`); the brief is written and prepared from main once S3a has landed, since its four terminal keys need entries in S3a's `config/catalogs/options.yml`.
 - S3b (the `config-key` write), /spec once S3a has landed (its writer reads S3a's catalog module).
 - S3c (the Settings editor), once S3a and S3b have landed.
 - Q85a2 and Q85a4 (zod in the other server folders, two steps), /spec when a slot frees; then Q85b and Q85c, then Q85d.

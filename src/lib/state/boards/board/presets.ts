@@ -187,7 +187,7 @@ const COLUMNS: Record<string, string[]> = {
     cols_archive: ['title', 'authors', 'venue', 'domain', 'pillar', 'funding']
 };
 
-/** Which `*_label_mode` of config/behavior.yml a board starts in. */
+/** Which `*_label_mode` of config/layout.yml a board starts in. */
 const LABEL_KEY: Record<string, string> = {
     projects: 'project_label_mode',
     archive: 'archive_label_mode',

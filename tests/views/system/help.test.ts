@@ -15,6 +15,7 @@ import { newestAnswer } from '../../../src/lib/views/system/help/newest.ts';
 import { NAMES, OUT } from '../../../utils/diagrams/diagrams.mjs';
 import { renderManual, renderManualParts } from '../../../src/lib/server/content/docs.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { LOCAL_KEYS } from '../../../src/lib/data/sources/config/local.ts';
 import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
 import { sheetRows } from '../../../src/lib/ui/menu/keys/key-rows.ts';
 import {
@@ -333,12 +334,7 @@ describe('the manual itself', () => {
     });
 
     it('names every key the machine-local file may carry', () => {
-        const source = readFileSync(
-            join(engineDir(), 'src', 'lib', 'data', 'sources', 'config', 'local.ts'),
-            'utf8'
-        );
-        const block = /const LOCAL_KEYS = \[([^\]]*)\]/.exec(source)?.[1] ?? '';
-        const keys = [...block.matchAll(/'([a-z_]+)'/g)].map((found) => found[1]);
+        const keys = [...LOCAL_KEYS];
         expect(keys).toContain('claude_bin');
         const paragraph = MANUAL.split('\n\n').filter((one) => one.includes('`local.yml` sits'));
         expect(paragraph).toHaveLength(1);

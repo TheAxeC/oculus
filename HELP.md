@@ -213,17 +213,19 @@ Removing the worktree is a second control and never part of the merge. It refuse
 
 ## The configuration
 
-The files below sit in the `config/` folder of the engine, `tools/oculus/config/`, the vocabularies in its `catalogs/` folder. Every one but `local.yml`, which is this machine's own, is read on every load and merged into one map by its top-level keys, so a key moves between files without a reader noticing. The Config view shows the same list, each file with its text and a control that opens it for editing; an edit saved there is picked up and pushed to the page without a reload.
+The files below sit in the `config/` folder of the engine, `tools/oculus/config/`, the vocabularies and the options catalog in its `catalogs/` folder. Every one but `local.yml`, which is this machine's own, is read on every load and merged into one map by its top-level keys, so a key moves between files without a reader noticing. The Config view shows the same list, each file with its text and a control that opens it for editing; an edit saved there is picked up and pushed to the page without a reload.
 
 | File | What it holds |
 |---|---|
+| `catalogs/agents.yml` | The composer of a new agent session: per agent, the models, efforts and permission modes it offers, each with the words it shows and the flag it passes, and each list with its default. |
 | `appearance.yml` | The UI theme list with the glyph each theme is offered under, the wallpaper behind the panels, the Memories wall's folder, the CRT default, the code theme of the editors and the terminal text size. The `code_theme` key is `tokens`, or the id of a Shiki theme such as `dark-plus`, and is what a browser that has not picked in the Code theme menu starts on. |
-| `behavior.yml` | Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git and chat. |
+| `behavior.yml` | Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh strip, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git and chat. |
 | `catalogs/glyphs.yml` | The glyph vocabulary: each name with the ASCII stand-in, one to three characters, that a terminal theme draws in place of its icon. |
 | `catalogs/icons.yml` | The line icon each glyph name is drawn as, one row per name in the glyph vocabulary. |
 | `layout.yml` | How things are arranged: the rail's pages and the arrangements each starts as, the view catalogue's groups, the hub documents, the board chrome, the tab rollups and the live badges. |
 | `catalogs/manifest-schema.yml` | The project.yml edit form as data: its sections, its fields, the widget each field is edited by, and where a widget takes its choices from. |
 | `catalogs/meta.yml` | The tool identity: the title and the subtitle the window carries. |
+| `catalogs/options.yml` | Every option of every config file: what it does, its default, and the control it is set with. |
 | `present.yml` | The public deck the Present view draws: the deck slides, the domain themes, the tag tones and the order. |
 | `sources.yml` | What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from. |
 | `catalogs/vocab.yml` | Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers, the venue and dataset theme words and the radar buckets. |

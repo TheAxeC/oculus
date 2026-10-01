@@ -109,7 +109,6 @@ describe("oculus's own config directory", () => {
         'present.yml': ['deck'],
         'behavior.yml': [
             'read_limits',
-            'stale_days',
             'context_window',
             'usage_tiers',
             'usage_refresh_min',
@@ -160,6 +159,7 @@ describe("oculus's own config directory", () => {
         ],
         'catalogs/manifest-schema.yml': ['manifest_schema'],
         'catalogs/meta.yml': ['meta'],
+        'catalogs/options.yml': ['options'],
         'sources.yml': [
             'scan',
             'venues_file',
@@ -169,7 +169,6 @@ describe("oculus's own config directory", () => {
             'people_file',
             'organisations_file',
             'collections',
-            'indexes',
             'leads_file',
             'radar_file',
             'publications_file',
@@ -471,19 +470,12 @@ describe("oculus's own config directory", () => {
     it('uses glyph names for every configured icon', () => {
         const { config } = loadConfig(engineDir());
         const glyphs = glyphCatalog(config);
-        const collections = config.collections as { key: string; icon?: string }[];
         const hosts = config.career_host_status as Record<string, { icon: string }>;
         const statuses = config.status_legend as { key: string; icon: string }[];
         const icons = [
-            ...collections.flatMap((entry) => (entry.icon === undefined ? [] : [entry.icon])),
             ...Object.values(hosts).map((entry) => entry.icon),
             ...statuses.map((entry) => entry.icon)
         ];
-        expect(
-            collections
-                .filter((entry) => entry.icon !== undefined && !(entry.icon in glyphs))
-                .map((entry) => entry.key)
-        ).toEqual([]);
         expect(
             Object.entries(hosts)
                 .filter(([, entry]) => !(entry.icon in glyphs))

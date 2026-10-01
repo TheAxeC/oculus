@@ -1,0 +1,596 @@
+# ===========================================================================
+# catalogs/options.yml
+# Every option of every config file, described once: what it does and what changing it changes, the value the tracked file holds (`default`), and the control it is set with. Merged with the other catalogs by loadConfig(), so its one top-level key, `options:`, is read through catalogOf() in src/lib/data/sources/config/options.ts. tests/checks/config/options-catalog.test.ts holds it to the tracked files.
+# ===========================================================================
+
+# Shape. `options:` maps a config file name (appearance.yml, behavior.yml, layout.yml, present.yml, sources.yml, and local.yml for the machine's own keys) to a map of dotted key path to an entry.
+# An option is a leaf of its file: a scalar, a null or a list. A map is walked into, so `slurm.poll_min` is the key path of `poll_min` under `slurm`, and a list is one option, set as a whole.
+# A family is a list of records, or a map whose keys are names the data or the reader chooses (page names, tier names, field names, project types, tag names, file extensions, theme names) rather than names oculus reads. A family is one entry whose `fields` describe the record once; every other leaf is an option.
+# An option's entry holds `description`, `default` (the value the tracked file holds), `control` (toggle, number, text, choice or list), `values` (the words a `choice` accepts) and an optional `section`, the heading the option is shown under (the first segment of the key path when absent). A family's entry holds `description` and `fields`, and a local.yml entry holds `description` alone.
+# A reader clamps or refuses a value it cannot use, so a description gives the range where the reader applies one.
+options:
+    appearance.yml:
+        themes:
+            description: The UI themes of the theme picker, in picker order. A row with no name, or repeating a name an earlier row gave, is dropped.
+            fields:
+                name: the name the viewer's choice is saved under
+                class: the classes put on the page body, empty for the light theme
+                glyph: the glyph name drawn before the label
+                label: the words the picker shows, the name when the row has none
+        terminal.font_px:
+            description: Text size of the terminal grid in CSS pixels. The grid paints its own text and cannot inherit the page's size; a value is clamped to 6 to 40. Leaving the key out makes the terminal follow the theme's --fs-md token.
+            default: 12.5
+            control: number
+        wallpaper.dir:
+            description: Folder holding the wallpaper images, relative to the hub and inside it. A missing folder, or one outside the hub, serves no image, which means no backdrop.
+            default: tools/oculus/assets/wallpaper
+            control: text
+        wallpaper.file:
+            description: Name of the image to use, the whole file name or any part of it, matched without regard to case. Empty leaves the choice to pick. A name matching no image uses the first image of the folder, and a name holding a path separator or .. names no image.
+            default: wallhaven-83
+            control: text
+        wallpaper.pick:
+            description: Which image is used when file is empty. first is the first image in the folder, random is one image chosen at random and kept until the server restarts. Any other value serves no image.
+            default: first
+            control: choice
+            values: [first, random]
+        wallpaper.dim:
+            description: How far the image is darkened, from 0 (the raw image) to 1 (fully hidden); a value is clamped to that range. Busy images want 0.7 to 0.85.
+            default: 0.72
+            control: number
+        wallpaper.blur:
+            description: Blur of the image itself in pixels, from 0 (sharp) to 64. Raise it only for a busy picture.
+            default: 0
+            control: number
+        wallpaper.themes:
+            description: Which UI themes show the wallpaper. rice shows it on the terminal-style themes only, all shows it on the light and dark themes too. Any other value counts as rice.
+            default: rice
+            control: choice
+            values: [rice, all]
+        wallpaper.panel_opacity:
+            description: How solid the panels stay over the image, from 0 to 1 (1 is opaque); a value is clamped to that range. The value is applied as a whole percentage.
+            default: 0.76
+            control: number
+        wallpaper.popover_opacity:
+            description: How solid dropdowns and popovers are, from 0 to 1. They float over a panel, so at the panel's own opacity they would be read through two translucent layers. Leaving the key out sets it three quarters of the way from panel_opacity to solid.
+            default: 0.97
+            control: number
+        wallpaper.panel_blur:
+            description: Backdrop blur behind each panel in pixels, from 0 to 64. It keeps text crisp without smearing the image.
+            default: 2
+            control: number
+        memories.dir:
+            description: Folder of the photo wall, relative to the hub and inside it. Every .jpg, .jpeg, .png and .webp in it is a tile, and the wall's add control puts new pictures here.
+            default: tools/oculus/assets/memories
+            control: text
+        crt.default:
+            description: Whether the CRT overlay (scanlines and vignette, cosmetic only) is on in a browser that has never been told otherwise. The Settings view's CRT toggle saves the viewer's own choice, which takes over.
+            default: false
+            control: toggle
+        code_theme:
+            section: Code theme
+            description: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens, and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours while the editor's background and chrome stay on the UI theme. An id Shiki does not bundle is reported as a finding and read as tokens. The Settings view's menu saves the viewer's own choice.
+            default: tokens
+            control: text
+    behavior.yml:
+        read_limits:
+            section: Audit
+            description: Soft limits, in characters, for the audit's readability warnings. A manifest field longer than its limit earns a finding, and a field with no limit here is not checked.
+            fields:
+                key: the manifest field, status.line, next, latest or eli5, or results for each entry of the results list
+                value: the most characters the field may hold before it earns a finding
+        data_domains:
+            section: Audit
+            description: Domains expected to have a dataset. The audit reports an active or manuscript project in one of these domains that has no datasets entry.
+            default: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
+            control: list
+        waiting_status:
+            section: Audit
+            description: Collection-entry statuses that wait on someone else, compared without regard to case. The audit asks for a date on an entry in one of them, so that it can be tracked.
+            default: [submitted, pending, under review, under-review]
+            control: list
+        audit_ignore:
+            section: Audit
+            description: The finding signatures the reader has parked, each the twelve hex characters the Audit view's mute control writes here. A parked finding stays true and is drawn in the muted section.
+            default: []
+            control: list
+        stale_lag_days:
+            section: Audit
+            description: How many days a project's manifest `updated` date may trail the newest content of the project before the audit and the Focus board call the manifest behind.
+            default: 1
+            control: number
+        context_window:
+            section: Usage and sessions
+            description: The token window the session detail meter measures the last turn against, unless the transcript names its own window. A value that is not above zero leaves the meter without a window.
+            default: 1000000
+            control: number
+        usage_tiers:
+            section: Usage and sessions
+            description: The words shown for the subscription tier ids that the supported command-line agents report. The server refuses to start when the map holds a value that is not text.
+            fields:
+                key: a tier id as the agent reports it
+                value: the words shown for that tier
+        usage_refresh_min:
+            section: Usage and sessions
+            description: Minutes between refreshes of each account's cached usage figures, which hidden usage sessions make. The server refuses to start unless it is above zero, and the Usage view reads the same number as its cadence.
+            default: 10
+            control: number
+        usage_refresh_model:
+            section: Usage and sessions
+            description: The model the hidden usage sessions are started with, passed to the Claude command line as --model. The server refuses to start when it is empty.
+            default: haiku
+            control: text
+        refresh_stale_days.litwatch:
+            section: Thresholds and horizons
+            description: Days after which the Focus refresh strip prompts to refresh the literature radar, counted from meta.last_run of the radar file. A radar that has never run is prompted for while this key is present. Removing the key stops the prompt for this feed.
+            default: 14
+            control: number
+        refresh_stale_days.inbox:
+            section: Thresholds and horizons
+            description: Days after which the Focus refresh strip prompts to triage the inbox again, counted from the run date the triage skill writes at the top of triage.json under mail_dir. A note that the page's triage action writes keeps that date, so it does not reset the count, and with no run date there is no prompt. Removing the key stops the prompt for this feed.
+            default: 2
+            control: number
+        refresh_stale_days.scout:
+            section: Thresholds and horizons
+            description: Days after which the Focus refresh strip prompts to run the position scout again, counted from the newest meta.log date of the position-leads file. A scout that has never run gives no prompt. Removing the key stops the prompt for this feed.
+            default: 7
+            control: number
+        deadline_horizon_days:
+            section: Thresholds and horizons
+            description: How many days ahead the week's ticker lists a dated item, among them a project's submission deadline, a funding scheme's deadline, a conference call with an exact date, and the dated entries of talks, teaching, tasks, positions and joint work.
+            default: 90
+            control: number
+        leads_horizon_days:
+            section: Thresholds and horizons
+            description: How many days ahead the week's ticker lists the deadline of an open position lead from the position-leads file.
+            default: 21
+            control: number
+        conf_horizon_months:
+            section: Thresholds and horizons
+            description: How many whole months ahead the week's ticker lists a conference call that has a usual month but no exact date. 1 lists this month and the next.
+            default: 1
+            control: number
+        leads_badge_days:
+            section: Thresholds and horizons
+            description: Position Leads counts an open lead whose deadline falls from today through this many days ahead in the count badge of its rail entry.
+            default: 14
+            control: number
+        venue_conc_warn:
+            section: Thresholds and horizons
+            description: The number of in-flight papers aimed at one venue at which the Focus board raises its venue load line and the board statistics flag the venue.
+            default: 4
+            control: number
+        linkedin_cadence_days:
+            section: Thresholds and horizons
+            description: Days since the newest LinkedIn post beyond which the Focus board raises its LinkedIn line and the LinkedIn rail entry shows its red mark.
+            default: 30
+            control: number
+        file_index.enabled:
+            description: Whether project cards list the project's files. false turns the file finder off.
+            default: true
+            control: toggle
+        file_index.max_per_project:
+            description: How many files the finder lists for one project, the newest first. A value that is not a number above zero means 400.
+            default: 400
+            control: number
+        file_index.ext:
+            description: The extensions, each with its dot, of the files the finder lists, compared in lower case. An empty list means the built-in list of common document and code extensions.
+            default:
+                [
+                    .pdf,
+                    .tex,
+                    .bib,
+                    .md,
+                    .yml,
+                    .yaml,
+                    .py,
+                    .sh,
+                    .slurm,
+                    .ipynb,
+                    .csv,
+                    .json,
+                    .png,
+                    .jpg,
+                    .svg,
+                    .txt,
+                    .docx,
+                    .xlsx,
+                    .pptx
+                ]
+            control: list
+        slurm.host:
+            description: The ssh host the Live HPC poller queries, an alias of the ssh configuration. The machine's own hpc_host in local.yml takes precedence. The server refuses to start when it is empty.
+            default: utwente
+            control: text
+        slurm.days:
+            description: How many days back the Live HPC poll asks the scheduler's accounting for finished jobs, and for the job working directories of the log prewarm.
+            default: 3
+            control: number
+        slurm.poll_min:
+            description: Minutes between two Live HPC polls of the job queue.
+            default: 20
+            control: number
+        slurm.quota_min:
+            description: Minutes between two reads of the cluster's disk quota.
+            default: 60
+            control: number
+        slurm.prewarm:
+            description: Whether the poller resolves the log paths of finished jobs behind the page, so that opening a log is quick. false defers that resolution.
+            default: true
+            control: toggle
+        chat.model:
+            description: The model an in-page chat session is started with, passed to the Claude command line. Empty leaves the choice to the command line.
+            default: opus
+            control: text
+        tasks.skip_permissions:
+            description: Whether the four update tasks start with --dangerously-skip-permissions. false starts them as ordinary Claude sessions, whose permission prompts the reader answers in the terminal pane. true runs them unattended, and the update tray then asks for a confirmation before each task.
+            default: false
+            control: toggle
+        calendar.poll_min:
+            description: Minutes between two reads of the calendar accounts.
+            default: 15
+            control: number
+        calendar.days_back:
+            description: How many days before now the calendar window opens.
+            default: 31
+            control: number
+        calendar.days_ahead:
+            description: How many days after now the calendar window closes.
+            default: 62
+            control: number
+        mail.poll_min:
+            description: Minutes between two reads of the inbox plate.
+            default: 10
+            control: number
+        mail.per_signal:
+            description: How many threads each of the plate's three signals is read at most.
+            default: 25
+            control: number
+        notify.enabled:
+            description: Whether a hook event of a Claude session pushes a macOS notification.
+            default: true
+            control: toggle
+        notify.events:
+            description: The hook events that push a notification. A name is the notification type of a Notification event, or stop for a Stop event. An entry that is not text is dropped.
+            default: [permission_prompt, idle_prompt, stop]
+            control: list
+        notify.quiet_seconds:
+            description: Seconds during which a session's repeat of a notification is suppressed after one was pushed.
+            default: 3
+            control: number
+        editor.paint_limit_kb:
+            description: Size in kilobytes above which the source editor opens a file as plaintext. The editor colours a file by running its grammar over the text in the page as it is typed, and the read-only code window, painted once, colours every size. The server refuses to start unless it is above zero.
+            default: 64
+            control: number
+        writes.timeout_seconds:
+            description: Seconds a save waits for the server's answer before it is given up and its form says so. A value that is not above zero makes a save wait as long as the request does.
+            default: 30
+            control: number
+        notes.autosave_ms:
+            description: Milliseconds a scratch note waits after the last keystroke before it is written.
+            default: 800
+            control: number
+        changes.keep:
+            description: How many changes the change log holds. Every write that changed something is recorded in ~/.oculus/changes.jsonl, or where the changes key of local.yml puts it, and the file is rewritten down to this number once it has grown past twice it. A value that is not a whole number above zero is refused.
+            default: 500
+            control: number
+        git.message_model:
+            description: The model the Changes view asks for a suggested commit message. Empty uses the command line's own default model.
+            default: ''
+            control: text
+        search.max_hits:
+            description: How many hits one answer of the Search view carries before it says it was cut. Must be above zero.
+            default: 500
+            control: number
+        search.timeout_s:
+            description: Seconds one root's ripgrep search is given. Must be above zero.
+            default: 10
+            control: number
+        open.program_ext:
+            description: The extensions a file may carry to be handed to a program on this machine, each with the bundle id of the one application it opens in. A file of any other extension, and a listed file with an execute bit or marked as a Finder alias, is refused, and a folder is shown in Finder rather than opened. Read again at every request.
+            fields:
+                key: an extension with its dot, compared in lower case
+                value: the bundle id of the application that opens it
+    layout.yml:
+        rail:
+            section: Rail and pages
+            description: The rail's pages, one button per page, drawn in this order with the digits 1 to 9 showing the first nine. A page key named twice, or naming no arrangement, draws no second button and is a finding. The Settings view edits this list.
+            fields:
+                label: the words of the button
+                glyph: a glyph name of catalogs/glyphs.yml
+                page: a key of arrangements, which is what the page is first made from and what the saved page stays tied to
+        nav_groups:
+            section: Rail and pages
+            description: The view catalogue's groups, in the order the Views view lists them. A group with no registered views is not listed.
+            fields:
+                key: the page key of a rail entry, which is the key of the group
+                label: the words of the group heading
+                glyph: the heading's glyph name, one that no view of the group carries
+                chord: the one-letter keyboard prefix of the group, then a digit for the entry's place in the group
+        direct_chord:
+            section: Rail and pages
+            description: The one lowercase letter that reaches, with a digit after it, the views of groups that name no chord and the views no group holds. A value that is not one lowercase letter means no such prefix.
+            default: v
+            control: text
+        arrangements:
+            section: Rail and pages
+            description: What each rail page is first made from, and what Reset gives it back. After the first press the page is the one the reader arranged, kept in the saved layout. An arrangement that does not add up makes no page.
+            fields:
+                key: a page key that a rail entry names
+                root: the page's one layout tree, a split of dir, sizes and children or a pane of view, where view is one view id or a list of tabs and a tab may be a view id or a view with its own state
+        docs:
+            section: Rail and pages
+            description: Hub documents listed in the view catalogue. Each is one entry inside its group, listed after the group's views, and opens the doc view. An entry that is not three non-empty strings is dropped, and a path with no file there draws the view's own missing line.
+            fields:
+                label: the words of the tab
+                path: the document's path relative to the research hub
+                group: a key of nav_groups
+        board.cols_project:
+            description: The list-view column headings of the Projects board, written in the order of the fixed columns title, authors, venue, status, focus and next. A column with no heading here shows its cell name.
+            default: [Project, Authors, Venue, Status, Focus, Next]
+            control: list
+        board.cols_archive:
+            description: The list-view column headings of the Archive and Coauthor boards, written in the order of the fixed columns title, authors, venue, domain, pillar and funding. A column with no heading here shows its cell name.
+            default: [Paper, Authors, Venue, Domain, Pillar, Funding]
+            control: list
+        board.search.projects:
+            description: The placeholder of the Projects board's search box.
+            default: Search title | eli5 | results | ideas | doc text ...
+            control: text
+        board.search.archive:
+            description: The placeholder of the Archive board's search box.
+            default: Search archive | title | eli5 | outcome | doc text ...
+            control: text
+        board.search.coauthor:
+            description: The placeholder of the Coauthor board's search box.
+            default: Search coauthor | title | eli5 | outcome | doc text ...
+            control: text
+        tab_split:
+            section: Tab badges
+            description: The colours of the count split on the Projects tab button, one cell per project type. A type with no colour here, or one that is not a lowercase hue name, draws in the unknown tone.
+            fields:
+                key: a project type, active, manuscript or idea
+                value: the palette hue name the type's count wears
+        tab_rollup:
+            section: Tab badges
+            description: The count buckets of each board. The Archive and Coauthor tab buttons draw their counts split by bucket, and the category facet of a board's filter takes the bucket's colour. Buckets are mutually exclusive, and a card lands in the first bucket whose keys its type or one of its status chips matches.
+            fields:
+                key: a board id, projects, archive or coauthor
+                label: the words of the bucket, which also give its id
+                keys: the project types and status chips the bucket counts
+                color: the colour of the bucket's count
+        nav_live:
+            section: Tab badges
+            description: The live count badges on collection tabs. The badge counts the entries whose status matches, in the colour of that status unless a tone forces an urgency class.
+            fields:
+                key: a collection key
+                match: the entry statuses that count, compared without regard to case
+                label: the tooltip word for the count
+                tone: an urgency class, red, amber or green, used where a count means act
+        focus_label_mode:
+            section: Project labels
+            description: How the Focus board's lane cards and the week's ticker lines name a project. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The project tab opened from a card and the quick-add picker keep the short name. A lane card shows the full title on hover; a ticker line has no hover title.
+            default: short
+            control: choice
+            values: [short, full]
+        project_label_mode:
+            section: Project labels
+            description: How the Projects board names a project when it opens. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The board's Aa toggle overrides it for the viewer.
+            default: short
+            control: choice
+            values: [short, full]
+        archive_label_mode:
+            section: Project labels
+            description: How the Archive and Coauthor boards name a project when they open. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The board's Aa toggle overrides it for the viewer.
+            default: short
+            control: choice
+            values: [short, full]
+        map_label_mode:
+            section: Project labels
+            description: How the Map names a project node. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short.
+            default: short
+            control: choice
+            values: [short, full]
+    present.yml:
+        deck.equations_dir:
+            description: Folder of rendered equation images, relative to the hub, that a slide may name instead of LaTeX. Empty when the deck names none.
+            default: tools/present/assets/equations
+            control: text
+        deck.tag_tones:
+            description: The hue a slide's status chip wears, by the chip's class.
+            fields:
+                key: a slide tag class
+                value: a palette hue name
+        deck.meta.kicker:
+            description: The small line above the headline of the title slide.
+            default: Research portfolio | technical briefing | June 2026
+            control: text
+        deck.meta.title_html:
+            description: The headline of the title slide. It may use a line break tag, as the tracked value does.
+            default: Structured models,<br>everywhere they hide
+            control: text
+        deck.meta.lede:
+            description: The paragraph under the headline of the title slide.
+            default: 'A dozen active projects spanning brain, heart, liver and immunity. A shared thesis: clinical data is intrinsically <b>multi-way</b> (modality x time x space x leads), and <b>block-term tensor structure</b>, interpolating CP and Tucker, buys interpretability and parameter efficiency that flattening throws away.'
+            control: text
+        deck.meta.legend:
+            description: The colour legend of the title slide, one chip per research line.
+            fields:
+                label: the words of the chip
+                color: the chip's colour, read as the palette hue it stands for
+        deck.meta.hint:
+            description: The line of keyboard hints at the foot of the title slide.
+            default: 'left / right to move | <b>O</b> for the overview | each project slide: equation | specs | method | results'
+            control: text
+        deck.meta.closing_kicker:
+            description: The small line above the headline of the closing slide.
+            default: Thank you
+            control: text
+        deck.meta.closing_title_html:
+            description: The headline of the closing slide. It may use a line break tag, as the tracked value does.
+            default: Questions &amp;<br>collaborations welcome
+            control: text
+        deck.meta.closing_lede:
+            description: The paragraph under the headline of the closing slide.
+            default: 'Happy to go deeper on any one: the clinical motivation, the optimization and theory, or the data pipeline. Several are open to collaborators across computer science, psychology, and medicine.'
+            control: text
+        deck.meta.contact:
+            description: The contact line of the closing slide.
+            default: axel.faes@gmail.com
+            control: text
+        deck.themes:
+            description: A research domain's colour and the words its project slides wear. A project's slide is themed by the first of its domains that the deck names.
+            fields:
+                key: a research domain id, the domain value of a project.yml
+                color: the domain's colour, read as the palette hue it stands for
+                label: the words the slide shows for the domain
+        deck.order:
+            description: The deck's table of contents. A project slide that the list does not name is placed before the closing slide, and a project line the mounted hub does not declare places nothing.
+            fields:
+                slide: what the line places, title, framing, project, summary, ideas or closing
+                ref: for a framing or summary line the key it names in deck.framing or deck.summaries, for a project line a slide id, which is a project id or project/slug
+        deck.framing:
+            description: Section slides, each a heading and a lede with up to three cards, a legend and a hint.
+            fields:
+                key: the framing key that a framing line of deck.order names
+                title: the heading of the slide
+                lede: the paragraph under the heading
+                hint: the line at the foot of the slide
+                cards: a list of cards, each with n (its number), title and body
+                legend: a list of chips, each with label and color
+        deck.summaries:
+            description: Cross-project tables written by hand. When a project's headline number changes, its row here changes with it.
+            fields:
+                key: the summary key that a summary line of deck.order names
+                title: the heading of the slide
+                foot: the line at the foot of the slide
+                rows: a list of rows, each with field, color, project, mechanism and headline
+        deck.ideas.title:
+            description: The heading of the idea grid slide.
+            default: The idea pipeline, what is next
+            control: text
+        deck.ideas.lede:
+            description: The paragraph under the heading of the idea grid slide.
+            default: Early-stage directions seeding the next wave. Most reuse the federated, block-term and longitudinal machinery above, plus meta-science and methods bets.
+            control: text
+        deck.ideas.hint:
+            description: The line at the foot of the idea grid slide.
+            default: 'Maturity: nascent (concept) | scoping (lit-check and framing) | de-risking (feasibility experiment). Each gated on a novelty check before committing.'
+            control: text
+        deck.ideas.items:
+            description: The ideas of the idea grid, one card each.
+            fields:
+                title: the heading of the card
+                desc: the sentence under the heading
+                color: the card's colour, read as the palette hue it stands for
+                maturity: nascent, scoping or de-risking, which drives the chip colour
+    sources.yml:
+        scan:
+            section: Project scan
+            description: Where to find projects, with paths relative to the hub. A project is any subfolder that holds a project.yml, and its tier is the last segment of the rule's dir (projects/active gives active). A rule with no dir is dropped, and a folder that is not there is a finding unless the rule is optional.
+            fields:
+                dir: the folder scanned, relative to the hub
+                type: the type every project of the folder takes, absent when a nested rule reads it from each manifest
+                nested: true when the folder holds category folders of projects, so that the type comes from each manifest
+                optional: true when a hub without the folder reports nothing
+                tier: the board whose tab splits its count by this rule's type; projects puts the rule's type in the split of the Projects tab, and any other word adds no type to it
+        venues_file:
+            section: Registry and feed files
+            description: The venue catalogue, journals and conferences, that the Venues tab and the venue audit read.
+            default: registries/venues.yml
+            control: text
+        datasets_file:
+            section: Registry and feed files
+            description: The dataset registry that the Data tab reads, with the provenance and recovery recipe of each dataset.
+            default: registries/data.yml
+            control: text
+        pillars_file:
+            section: Registry and feed files
+            description: The pillars registry that the Pillars tab reads. A project's pillar is matched to its keys.
+            default: registries/pillars.yml
+            control: text
+        domains_file:
+            section: Registry and feed files
+            description: The domains registry that the Domains tab reads. A project's domain is matched to its keys.
+            default: registries/domains.yml
+            control: text
+        people_file:
+            section: Registry and feed files
+            description: The people registry, one entry per human the hub names, that a project's collaborators and waiting-on, a joint-work entry's person and the Person view read. Exactly one entry carries self, the hub's owner.
+            default: registries/people.yml
+            control: text
+        organisations_file:
+            section: Registry and feed files
+            description: The organisations registry, the universities, hospitals, funders and companies that a person's affiliations and a funding scheme's funder point at.
+            default: registries/organisations.yml
+            control: text
+        collections:
+            section: Collections
+            description: The collection tabs, each a generic card list from one YAML file. An entry needs a key and a file, and two entries with one key are a finding, the later file winning. Each key except venues, datasets, pillars, domains and data also becomes a collection view.
+            fields:
+                key: the collection's key, which the view and the entries' cross-links use
+                file: the YAML file of the collection, relative to the hub
+        leads_file:
+            section: Registry and feed files
+            description: The position scout's YAML that the Position Leads view reads as cards. Its search specification belongs to the research-cockpit skill.
+            default: feeds/position-leads.yml
+            control: text
+        radar_file:
+            section: Registry and feed files
+            description: The literature scout's accumulated radar that the Lit Watch view reads. The refresh workflow deduplicates by URL and appends entries.
+            default: feeds/literature-radar.yml
+            control: text
+        publications_file:
+            section: Registry and feed files
+            description: The public website's publications feed, cross-checked in the Audit view for missing, leaked, wrong-section and untracked entries. The check is skipped when the file is not checked out.
+            default: theaxec.github.io/_data/publications.yml
+            control: text
+        linkedin_dir:
+            section: Registry and feed files
+            description: The folder of the LinkedIn posts pipeline on the website, where a numbered file is posted and an xx- file is an idea.
+            default: theaxec.github.io/_linkedin
+            control: text
+        career_file:
+            section: Registry and feed files
+            description: The career strategy file, whose order of work, hosts, eligibility and dropped routes surface on the Focus board's Career strategy panel. The per-scheme statements surface on the Funding tab.
+            default: registries/career.yml
+            control: text
+        roots:
+            section: Roots
+            description: The roots the server may serve local files from, one directory per key. A relative dir is a finding, and a dir that is not on this machine is a finding and its root serves nothing. Nothing outside a root is served, since both ends are resolved through realpath.
+            fields:
+                key: the root's key, which the file address api/file/key/path and a bookmark use
+                dir: the directory, absolute or starting with ~/
+    local.yml:
+        hub:
+            description: Absolute path of the research hub whose YAML the portfolio is built from. A relative path is resolved against the engine directory. Without it the hub is two directories above tools/oculus.
+        port:
+            description: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it the port is 8790.
+        hpc_host:
+            description: This machine's ssh alias for the Live HPC view. It takes precedence over slurm.host of behavior.yml.
+        sessions_cache:
+            description: Where the session layer keeps its byte-offset cache. Without it the file is ~/.oculus/transcript-cache.json.
+        sessions_overrides:
+            description: Where the per-session overrides live. Without it the file is ~/.oculus/sessions.json.
+        workspaces:
+            description: Where the file browser's saved workspaces live. Without it the file is ~/.oculus/workspaces.json.
+        bookmarks:
+            description: Where the reader's own bookmarks live. Without it the file is ~/.oculus/bookmarks.yml.
+        notes:
+            description: Where the scratch notes live. Without it the folder is ~/.oculus/notes.
+        changes:
+            description: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl.
+        claude_bin:
+            description: The Claude command line that the update tasks and the chat terminal are started with, an absolute path or a name resolved on PATH. Without it the name is claude.
+        open_bin:
+            description: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to macOS's /usr/bin/open.
+        accounts:
+            description: The Claude and Codex configuration folders that the Usage view reads, a list of tool (claude or codex), dir and label. Without it the two default folders, ~/.claude and ~/.codex, are read. A Claude label must stay unique once reduced to lowercase letters, digits and dashes.
+        calendars:
+            description: The calendar accounts that the Calendar view reads, a list of provider (google, microsoft or ics) and label. The label is lowercase letters, digits and dashes and is unique per provider. Without it no calendar is read.
+        calendar_dir:
+            description: Where the per-account calendar credential files live. Without it the folder is ~/.oculus/calendar.
+        mail:
+            description: The mail accounts that the Inbox view reads, a list of provider (google or microsoft) and label. The label is lowercase letters, digits and dashes and is unique per provider. Without it no mail is read.
+        mail_dir:
+            description: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail.

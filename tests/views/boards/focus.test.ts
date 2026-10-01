@@ -211,6 +211,35 @@ describe('a card', () => {
         expect(statusTone('submitted')).not.toBe(UNKNOWN_TONE);
     });
 
+    // The card's container carries the whole title as its hover text in every mode, so the name is
+    // read from the button that draws it. The project tab a press opens is named by the short
+    // handle (Focus.openProject), which needs a DOM and is not run here.
+    it('names a card by its whole title under focus_label_mode full and by its handle under short', () => {
+        function named(mode: string): string {
+            receive({
+                channel: 'config',
+                version: 20,
+                payload: {
+                    config: { ...config, focus_label_mode: mode },
+                    text: catalog,
+                    findings: []
+                }
+            });
+            const drawn = html(client);
+            const from = drawn.indexOf('data-card="alpha"');
+            const rest = drawn.slice(from);
+            const next = rest.indexOf('data-card="', 1);
+            const held = next < 0 ? rest : rest.slice(0, next);
+            return (
+                /<span class="name[^"]*">[\s\S]*?<span class="label">([^<]*)<\/span>/.exec(
+                    held
+                )?.[1] ?? ''
+            );
+        }
+        expect(named('full')).toBe('Alpha, the whole title');
+        expect(named('short')).toBe('Alpha');
+    });
+
     it('says what a card is waiting on', () => {
         expect(body).toContain('Some One');
     });

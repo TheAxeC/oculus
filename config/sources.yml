@@ -48,25 +48,18 @@ organisations_file: registries/organisations.yml
 # Collection tabs - a generic card list from one YAML (entries: title/sub/status/date/meta/tags/related/link/url/note).
 # Schema: README.md. Files are editable in served mode. `related:` ids cross-link to project cards.
 collections:
-  - { key: data,           title: "Data",               file: "registries/data.yml" }
-  - { key: venues,         title: "Venues",             file: "registries/venues.yml" }
-  - { key: pillars,       title: "Pillars",            file: "registries/pillars.yml" }
-  - { key: domains,        title: "Domains",            file: "registries/domains.yml" }
-  - { key: statements,     title: "Statements",          icon: section, file: "registries/boilerplate.yml" }
-  - { key: funding,        title: "Funding",             icon: funding, file: "funding/funding.yml" }
-  - { key: events,         title: "Talks & Events",      icon: events, file: "network/events.yml" }
-  - { key: education,      title: "Education & Service", icon: teaching, file: "education/education.yml" }
-  - { key: applications,   title: "Applications",        icon: applications, file: "applications/applications.yml" }
-  - { key: joint-work,     title: "Joint work",          icon: collab, file: "network/joint-work.yml" }
-  - { key: tasks,          title: "Tasks & Service",     icon: tasks, file: "tasks/tasks.yml" }
-  - { key: code,           title: "Code",                icon: code, file: "registries/repos.yml" }
-
-
-# Auto-index tabs - a searchable file listing from a folder scan (no curation, no YAML).
-# Shape: { key, title, icon, dir, ext: [".pdf"] }. Keep this an explicit [] when empty; a bare
-# "indexes:" parses as null and page.py iterates it directly.
-# Lit Watch reads research intelligence from feeds/literature-radar.yml; no PDF-library index is configured.
-indexes: []
+  - { key: data,           file: "registries/data.yml" }
+  - { key: venues,         file: "registries/venues.yml" }
+  - { key: pillars,        file: "registries/pillars.yml" }
+  - { key: domains,        file: "registries/domains.yml" }
+  - { key: statements,     file: "registries/boilerplate.yml" }
+  - { key: funding,        file: "funding/funding.yml" }
+  - { key: events,         file: "network/events.yml" }
+  - { key: education,      file: "education/education.yml" }
+  - { key: applications,   file: "applications/applications.yml" }
+  - { key: joint-work,     file: "network/joint-work.yml" }
+  - { key: tasks,          file: "tasks/tasks.yml" }
+  - { key: code,           file: "registries/repos.yml" }
 
 
 # Position Leads reads the scout's YAML as cards. Its search specification belongs to the research-cockpit skill.

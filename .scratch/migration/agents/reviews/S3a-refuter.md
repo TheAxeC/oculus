@@ -236,3 +236,202 @@ None. The report states each change with its before and after:
 - **The look on TEST.** Not taken; the reviewer starts no server and opens no page.
 
 Reviewer usage: about 285,000 tokens (from the context counter), 75 tool uses, minutes not measured.
+
+## Repair round 1, refuted
+
+Reviewed in the worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/S3a against base 2ac1a5cb. The diff since the base: `git status --short` lists 27 modified paths and 6 untracked ones. The round added two paths that were not in the 31 of the round base: src/lib/state/boards/structure/graph.ts and tests/state/boards/structure/graph.test.ts. Today's `git diff --binary 2ac1a5cb | shasum` is 309ca424..., and the round base's was 5ee29d52....
+
+How I found the round's delta: eleven files were modified after the round was sent at 02:25 (`stat -f "%Sm %N"`):
+- config/catalogs/options.yml
+- src/lib/data/sources/config/options.ts
+- tests/checks/config/options-findings.ts
+- tests/checks/config/options-catalog.test.ts
+- config/text/views/system/config.yml
+- HELP.md
+- config/layout.yml
+- config/sources.yml
+- src/lib/state/boards/structure/graph.ts
+- tests/state/boards/structure/graph.test.ts
+- tests/checks/config/config-folder.test.ts
+
+I read each of these in full, and judged them against the whole diff since the base.
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams          (worktree tools/oculus)
+exit 0; git status --short lists the same six diagram files as before (layer-data, layer-views, layers .dot/.svg)
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md
+$ npm test
+ Test Files  352 passed | 20 skipped (372)
+      Tests  5418 passed | 572 skipped (5990)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  438 passed | 9 skipped (447)
+$ npm run check
+1790815544012 COMPLETED 2484 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+built in 5.34s
+built in 11.55s
+   (each of the two lines opens with a check-mark glyph, left out here under the ASCII rule)
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+(exit 0)
+
+$ npx vitest run tests/checks/config tests/views/system/help.test.ts tests/views/system/config.test.ts tests/state/boards tests/views/boards/focus.test.ts tests/state/feeds/feeds.test.ts --testTimeout 0
+ Test Files  28 passed (28)
+      Tests  566 passed (566)
+
+Round report row 7, rerun:
+$ npx vitest run tests/checks/config tests/data tests/views/structure --testTimeout 0
+ Test Files  33 passed (33)
+      Tests  557 passed (557)          (matches the report)
+
+Round report row 3, rerun on the step's code:
+$ npx vitest run tests/checks/config/options-catalog.test.ts -t "not read from a local.yml" --testTimeout 0
+ Test Files  1 passed (1)
+      Tests  1 passed | 62 skipped (63)   (matches the report)
+
+Round report row 5, rerun:
+$ grep -rn "stale days\|stale_days" src tests config HELP.md DESIGN.md README.md --exclude=local.yml | grep -v refresh_stale_days
+src/lib/views/shared/card/ProjectCard.svelte:60 (the manifest-age warning), options-walk.test.ts:21-22,45-46, config.test.ts:374-505 (fixture keys), feeds.test.ts:156,162
+(the same hits the report names; no false sentence left)
+
+"Failed before" claims, reproduced on a scratch copy under $TMPDIR (rsync of the worktree's tools/oculus without node_modules, .svelte-kit, build, .scratch and config/local.yml; node_modules symlinked; `test -e config/local.yml` printed no-local). The copy passed graph.test.ts and options-catalog.test.ts unchanged: Test Files 2 passed, Tests 83 passed.
+
+1. Ruling 6, with graph.ts:83 changed back to `options.labelMode === 'title'` in the copy only:
+ FAIL |unit| tests/state/boards/structure/graph.test.ts > relationship graph > names a project node by the label mode: the full title under full, the short name otherwise
+AssertionError: expected 'Al' to be 'Alpha, the whole title' // Object.is equality
+      Tests  1 failed | 19 passed (20)
+Restored afterwards, `cmp` equal to the worktree file.
+
+2. Ruling 3, with a mutant of findingsOf in the copy only. The mutant reads <engine>/config/local.yml with yaml and adds its keys to localKeys:
+ FAIL |unit| tests/checks/config/options-catalog.test.ts > the machine-local keys > come from the reader of the file and are not read from a local.yml of the engine
+AssertionError: expected [ Array(1) ] to deeply equal []
++   "local.yml: not_a_key: has no catalog entry",
+      Tests  1 failed | 62 passed (63)
+Restored afterwards, `cmp` equal. The only local.yml the mutant read was the test's own planted fixture; the copy has none, and the scratch copy has been removed.
+
+Case 15 rerun (python3 over yaml.safe_load: each non-family default compared with the current file's value at its path; the round changed no value of an option that has a default):
+checked 87 differences 0 families 21 {'appearance.yml': 14, 'behavior.yml': 44, 'layout.yml': 17, 'present.yml': 19, 'sources.yml': 14, 'local.yml': 16}
+The same script compared each list family's `fields` with the record fields in the tracked file and printed no file-only field. In the first review it printed `scan: ['tier']` and `collections: ['icon', 'title']`.
+
+spec.md ASCII gate (perl over src tests config, local.yml excluded): prints nothing. LC_ALL=C grep over HELP.md and DESIGN.md: nothing.
+yaml.safe_load of options.yml, sources.yml, layout.yml, behavior.yml and text/views/system/config.yml: ok.
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- **Item 1: violated, on one sentence (Findings, Spec 1). Fixable at landing.**
+  - Spec 1 of the first review is closed: the `scan` family's `fields` now include `tier` (options.yml:496), true to rail-badges.svelte.ts:172-182, and preset.id is the view id 'projects' (selectors.svelte.ts:144-146).
+  - Spec 2 of the first review is closed. I checked each corrected description against its reader:
+    - (a) inbox: triage.ts:61-78 reads `run`, and `writeNote` (triage.ts:99-124) writes back `held` with `run` kept.
+    - (b) hover: LaneCard.svelte:75 has `title={project.title}`; Ticker.svelte:303-322 has no title.
+    - (c) port: local.ts:247-250 checks for an integer only.
+  - The two corrections beyond the rulings are inside item 1 and case 17, and both are true:
+    - `wallpaper.file` matches wallpaper.ts:47-57.
+    - options.yml:7 matches options.ts:10.
+  - Still true: everything else the first review found holding, and case 15 with 0 differences.
+- **Item 2: holds.** The head comment of options.ts still describes callers that do not exist (Findings, Standards 1).
+- **Item 3: holds.** The local.yml guard now fails under the mutant (above).
+- **Item 4: holds.** HELP.md:222 and `desc_behavior` (config/text/views/system/config.yml:6) now name `refresh_stale_days`. help.test.ts:331 requires the manual to contain each `desc_<name>` text, so the two had to change together.
+- **Item 5: holds as built.**
+  - focus.ts:323, Lanes.svelte:218 and ticker.ts:187, :207, :329 and :374 are unchanged since the round base.
+  - The catalog entry at options.yml:370-375 now limits the hover sentence to the lane cards.
+  - The ticker clause is Z131, Axel's; see "Declined to judge".
+- **Item 6: holds.** HELP.md no longer names `stale days`.
+
+The round's own rulings:
+
+- **Ruling 6 (Z132): holds.**
+  - graph.ts:83 reads `'full'`.
+  - The catalog entry gives `values: [short, full]`.
+  - graph.test.ts:264 fails before the change (reproduced above).
+  - Map.svelte:66-70 passes the string through unchanged.
+  - The per-key comment at layout.yml:174 is back to the base text "Map tab nodes", not the "short|full" the ruling wrote. I judge this met: the block comment directly above, at :165-167, defines `short` and `full` for all four keys, and no reader is misled.
+- **Ruling 7 (Z133): holds.**
+  - The `collections` rows keep only `key` and `file` (sources.yml:51-62). No reader takes `title` or `icon` on a row: data/index.ts:61-69, view-source.ts:45-53, normalise.ts:60-69, entries.ts:72, undo.ts:79, pty/context.ts:46 and portfolio.ts:124 and :172 read `key` or `file`.
+  - The two lines the round removed from config-folder.test.ts ("uses glyph names for every configured icon") read `icon` on those rows, so with the field gone they would have checked nothing. The next test, "names a glyph only where the source or another config file reads it", still passes, so no glyph lost its last reader when the icons were removed. No check guarding a live behaviour was removed.
+
+The cases ruling (S3a-cases.md):
+
+- Ruling 1 holds. A grep for `no_funding` and `indexes` over src, tests, config (with --exclude=local.yml), HELP.md, DESIGN.md and README.md finds only text-catalog words and unrelated identifiers.
+- Ruling 2 holds (`isNoFamily`, options-findings.ts:91-94).
+- Ruling 3 holds (feeds.ts:116-120; the test in feeds.test.ts that leaves a never-run radar alone).
+- Ruling 4 holds: neither `deck.selection` nor `deck.slide_order` is in options.yml.
+
+Cases of the brief's "Cases":
+
+- 1: met. The shipped-tree test passes inside test:checks.
+- 2 to 11: met. options-catalog.test.ts has one row per input, all passing.
+- 12: met, now by a test as well as by reading. Planting `hub: /x` and `not_a_key: 1` beside the sound fixture gives `toEqual([])`, and that fails under the mutant that reads the planted file.
+- 13: met.
+- 14: met (options-walk.test.ts).
+- 15: met (0 differences, rerun above).
+- 16a, 16c, 16d, 16e, and case 16 beside 16d (from the cases ruling): met. None of these files changed in the round, and they pass in the focused run.
+- 16b: partial. The card half is met. The tab-name half has no test; ruling 8 sends it to the landing look (Findings, Spec 2).
+- 16: met. help.test.ts, config-folder.test.ts and config.test.ts pass.
+- 17: partial. The scan description has one false sentence (Findings, Spec 1). Every other description the round touched is true to its reader in code.
+
+### Findings
+
+- **Spec 1. config/catalogs/options.yml:490 (scan entry, rewritten in this round under ruling 1).**
+  - The text: "A project is any subfolder that holds a project.yml, and the project's own tier is the last segment of its folder."
+  - What is wrong: "its folder" reads as the project's own folder. The last segment of that folder is the project's id (manifests.ts:126, `const id = folder.split('/').pop()`). The tier is the last segment of the scan rule's `dir` (manifests.ts:210, `const tier = (rule.dir.split('/').pop() ?? rule.dir)`), so a nested rule's projects at projects/coauthor/<category>/<id> all get the tier `coauthor`. Ruling 1 asked for the entry's true meaning.
+  - Failure scenario: a reader of the catalog, or of the S3c Settings row drawn from it, concludes that the project in projects/active/hccnet has the tier `hccnet`. They then file projects expecting the folder name to set the tier, while the walk gives `active`.
+  - Fix at landing, one phrase: "the project's own tier is the last segment of the rule's dir (projects/active gives active)".
+  - Verdict: item 1 violated, case 17 partial.
+
+- **Spec 2. Carried from the first review's Spec 4: case 16b's tab-name half.**
+  - Where: tests/views/boards/focus.test.ts:214-216, "The project tab a press opens is named by the short handle (Focus.openProject), which needs a DOM and is not run here."
+  - What is wrong: no test checks that the tab opened from a card is named by the short handle. Ruling 8 sends this to the look at landing; the round made no change, as ruled. By reading it holds: Focus.svelte is outside the diff and calls `labelOf`.
+  - Failure scenario: a later change routes `openProject` through `focusLabel`, and no test fails.
+  - Verdict: case 16b partial. Disposition per ruling 8: the landing look opens a lane card with the key at `full` and reads the tab's name.
+
+- **Standards 1. src/lib/data/sources/config/options.ts:7-8 and tests/checks/config/options-findings.ts:3-5. The first review's Standards 1 is only partly closed.**
+  - The text, options.ts: "An editor of the settings and a write of one key look an option up here, so a key path has one meaning wherever it is used."
+  - The text, options-findings.ts: "the shape an editor of the settings and a write of one key look up".
+  - What is wrong: ruling 4 asked the comments to "name no editor or write as existing" and gave the purpose form ("for an editor of the settings and a write of one key to look up"). The new text states in the present tense that an editor and a write look options up here. `grep -rn "catalogOf\|optionPaths\|config/options" src tests` finds no caller outside the check's own files (options-findings.ts:16-19, :195, :274; options-walk.test.ts). The round report's row 4 says "no editor or write is named as existing", which the present tense contradicts. The history clause in options-catalog.test.ts is gone, and that part of ruling 4 holds.
+  - Failure scenario: a reader of options.ts looks for the editor or the write that looks an option up, finds neither, and cannot tell whether one is missing. Or a maintainer changing the catalog's shape holds back, believing an editor depends on it.
+  - Fix at landing, a few words in each comment: "for an editor of the settings and a write of one key to look an option up".
+  - Verdict: none.
+
+- **Behaviour 1. The builder's report, "User-visible changes", item 5 (S3a-report.md:112), together with round row 6.**
+  - The text: "`config/layout.yml:174` comment: `map_label_mode: short        # Map tab nodes; its word for the full title is `title``."
+  - What is wrong: that comment no longer exists. `git diff 2ac1a5cb` shows no change at layout.yml:174, which is back to the base text "# Map tab nodes". The round's opening paragraph (S3a-report.md:288) lists what it supersedes and does not name this item.
+  - The round's host-visible change has no before and after in that section:
+    - Before: `map_label_mode: title` drew full titles on the Map, and `full` drew the short handle.
+    - After: `full` draws full titles, and `title` draws the short handle (graph.ts:83; graph.test.ts:271-274).
+    - The tracked value is `short`, so the tracked hub shows no change.
+  - Failure scenario: the landing look reads "User-visible changes" as the spec's rules say. It looks for a comment that is not there, and it is not told that a hand-set `title` now gives the short handle.
+  - Fix at landing: rewrite item 5 with the before and after above.
+  - Verdict: none.
+
+No Proof finding:
+- The three rerun claims reproduce: the graph test fails before the change, the local.yml guard fails under the mutant, and the 33-file run matches.
+- No check was loosened.
+- The config-folder.test.ts edit is judged under ruling 7 above.
+
+### Declined to judge
+
+- **Z131, the ticker clause**, is Axel's ruling: whether the week's ticker lines follow `focus_label_mode` (as built, ticker.ts:187, :207, :329, :374) or keep the short handle (his Z120 (a) text). I judged item 5 as built.
+- **The round's exact delta inside the four untracked files** (options.yml, options.ts, options-findings.ts, options-catalog.test.ts), and inside tracked files both rounds changed: only a shasum of the round base was recorded, so no diff against the round base exists. I read each file in full and judged the whole diff since the base. A change in them that the report's rows do not name could not be singled out as round work, but it was still read.
+- **Descriptions outside the round:** not re-sampled beyond the first review's sample of about 30 entries and every entry this round touched.
+- **The builder's proposal of a check comparing a family's `fields` with the tracked records:** a new computed check needs Axel's approval of what it computes (scripts-compute-facts), so it is not a finding here.
+- **src/lib/data/sources/config/local.ts:83, "the reserved port 8787 is never used":** a sentence that existed before the step, outside the diff. Nothing refuses 8787 (local.ts:247-250). The diff does not make it false, so it is not a finding of this step.
+- **The look on TEST:** not taken. The reviewer starts no server and opens no page.
+
+Reviewer usage (completion notice): reviewer a193060d0c81340e9, served claude-opus-5-5, 239,655 tokens, 70 tool uses, 23.7 min.
+
+## Closed
+
+The run over repair round 1 is the run over the last round the cap allows, so none of its findings goes back to the builder. Each is small and inside the brief, and each is fixed on main at S3a's landing:
+
+- Spec 1: `config/catalogs/options.yml:490`, the `scan` description names the tier as the last segment of the rule's `dir` (`projects/active` gives `active`), true to `manifests.ts:210`.
+- Spec 2: the landing look opens a lane card with `focus_label_mode: full` and reads the name of the project tab it opens, per ruling 8 of `agents/briefs/S3a-round1.md`.
+- Standards 1: `src/lib/data/sources/config/options.ts:7-8` and `tests/checks/config/options-findings.ts:3-5` state the purpose form, "for an editor of the settings and a write of one key to look an option up".
+- Behaviour 1: item 5 of the report's "User-visible changes" (`agents/reviews/S3a-report.md:112`) is rewritten with the before and after of `map_label_mode` (`title` now gives the short handle, `full` the full title; the tracked value `short` shows no change).

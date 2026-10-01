@@ -8,10 +8,6 @@
 read_limits: { status.line: 220, next: 300, latest: 200, eli5: 360, results: 300 }
 
 
-# Hand-triggered feed staleness nudges (days).
-stale_days: { litwatch: 14, inbox: 10, scout: 7, audit: 7 }
-
-
 # The session detail meter measures the last turn against this token window unless the transcript names one.
 context_window: 1000000
 
@@ -42,7 +38,7 @@ audit_ignore: []
 stale_lag_days: 1
 
 
-# The Focus refresh strip prompts for live feeds older than these numbers of days.
+# The Focus refresh strip prompts for live feeds older than these numbers of days. A feed not listed here is never prompted for.
 refresh_stale_days:
   litwatch: 14  # /research-cockpit litwatch (meta.last_run in literature-radar.yml)
   inbox: 2  # /research-cockpit inbox (the triage notes under `mail_dir`)

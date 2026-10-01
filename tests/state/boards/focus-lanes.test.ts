@@ -9,6 +9,7 @@ import {
     manifestsBehind,
     stageItemCount
 } from '../../../src/lib/state/boards/focus-lanes.ts';
+import { focusLabel } from '../../../src/lib/state/boards/focus.ts';
 import { ticker } from '../../../src/lib/state/boards/ticker.ts';
 import type { Entry, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
@@ -233,5 +234,60 @@ describe('whether the band holds a card', () => {
             }) as unknown as Parameters<typeof bandHasCards>[0];
         expect(bandHasCards(band(0, 0, 1))).toBe(true);
         expect(bandHasCards(band(0, 0, 0))).toBe(false);
+    });
+});
+
+describe('focusLabel', () => {
+    const titled = {
+        ...project('hcc', 0),
+        title: 'Hepatocellular carcinoma network',
+        short: 'HCC'
+    };
+    const plain = { ...project('plain', 0), title: 'Plain title' };
+
+    it('gives the short name under short and the whole title under full', () => {
+        expect(focusLabel(titled, 'short')).toBe('HCC');
+        expect(focusLabel(titled, 'full')).toBe('Hepatocellular carcinoma network');
+    });
+
+    it('gives the short name for a mode that is missing or unknown', () => {
+        expect(focusLabel(titled, undefined)).toBe('HCC');
+        expect(focusLabel(titled, 'wide')).toBe('HCC');
+    });
+
+    it('gives the title under every mode for a project with no short name', () => {
+        expect(focusLabel(plain, 'short')).toBe('Plain title');
+        expect(focusLabel(plain, 'full')).toBe('Plain title');
+    });
+});
+
+describe('the project labels of the ticker', () => {
+    const title = 'Hepatocellular carcinoma network';
+    const titled: Project = {
+        ...project('hcc', 0),
+        title,
+        short: 'HCC',
+        deadline: '2026-09-20',
+        followups: [{ do: 'chase', after: '2026-09-01' }],
+        subtasks: [{ key: 'a', do: 'redraw', deadline: '2026-09-15', done: false }]
+    };
+    const held = snapshot();
+    held.entities.projects = { hcc: titled };
+
+    function labels(mode: string): (string | undefined)[] {
+        const week = ticker(held, { focus_label_mode: mode }, Date.UTC(2026, 8, 11, 12));
+        return [
+            week.deadlines.find((one) => one.kind === 'paper')?.label,
+            week.followups[0]?.label,
+            week.subtasks[0]?.label
+        ];
+    }
+
+    it('names a project by its short name in the paper, follow-up and subtask lines under short', () => {
+        expect(labels('short')).toEqual(['HCC', 'HCC - chase', 'HCC: redraw']);
+    });
+
+    it('names it by the whole title in the same three lines under full', () => {
+        expect(labels('full')).toEqual([title, `${title} - chase`, `${title}: redraw`]);
     });
 });

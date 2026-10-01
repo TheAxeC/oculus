@@ -88,7 +88,8 @@ export const DEFAULT_PORT = 8790;
  */
 export const LOCAL_NAME = 'local.yml';
 
-const LOCAL_KEYS = [
+/** The keys local.yml may carry, which loadLocal reads and the options catalog describes. */
+export const LOCAL_KEYS = [
     'hub',
     'port',
     'hpc_host',
