@@ -2,7 +2,7 @@
 
 In flight:
 - S3c (the Settings editor), review of repair round 1 running.
-- Q85b (zod in the state layer), building.
+- Q85b (zod in the state layer), built; review running.
 - Q88b (the Files view's file operations), building.
 Queued, in order:
 - U3 (every view on VS Code's scale, from U2's audit), once S3c has landed.

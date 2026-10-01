@@ -183,3 +183,12 @@ The question: the Terminal text size box and a config number row read a number b
 - Not chosen: (b) exponents refused in both, which changes a config row's answer; (c) a second rule only for the box.
 
 Where it is built: S3c's round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z154 (2026-10-01 14:12, step Q85b)
+
+The question: seven answers of the state layer that Q85b's rulings did not name, N1 to N7 of its final report.
+
+- Chosen (a), as built: a channel payload checked once per frame by the socket; an agents answer with lists of the wrong type a failed read; a deposit state that is not whole read as none; a lookup by `constructor` or `__proto__` answers nothing; a search body that is null or not JSON says `HTTP 200`; a terminal counts as busy only when `busy` is `true`; a start answer with an id of the wrong type started with no id.
+- Not chosen: a schema pass on every read of a payload; partial values whose type says they are whole; the old answers.
+
+Where it is built: Q85b. Booked in the state file's closed log and `plan.md` Rulings.
