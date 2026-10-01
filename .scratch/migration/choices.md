@@ -575,3 +575,12 @@ The question: the place of the listing toggles and the starting state of the new
 - Not chosen: (b) the toggles kept in the bar beside the filter, which VS Code's Explorer has no place for; (c) the sections open at first, which takes the tree's room before a reader asks for them.
 
 Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z216 (2026-10-02 01:57, step D24)
+
+The question: how the Personal board finds the six repositories that carry a `.oculus/project.yml` (the ruling of 2026-09-25 left it to /spec, a new config key being Axel's).
+
+- Chosen (a): the board reads every Files root; ordo, scotoma, officium and youtube-downloader join cathedra and game-engine under `roots:` in `config/sources.yml`, so the six are roots of the default workspace and no key is added.
+- Not chosen: (b) a new list key the board reads, which the ruling makes a stop and which repeats what `roots:` holds; (c) the saved workspace of `~/.oculus/workspaces.json`, which holds only `~/.claude` and is this machine's file.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.

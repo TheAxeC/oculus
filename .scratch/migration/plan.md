@@ -429,6 +429,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Ruled 2026-09-30 by Axel, Z72, Z74 (4), Z79 (4), Z80 and Z92 (2); each in the Rulings section, the texts in full in `agents/briefs/D23.md`.
 - D23b the language features that edit files no tab holds (rename, code actions, `workspace/applyEdit`) through oculus's write chain, workspace symbols, call and type hierarchy, and the TypeScript and Svelte servers from npm as pyright's is (D34); after D23; in full in `agents/briefs/D23b.md` (ruling Z72) (ruling Z88)
 - D24 a Personal board: side projects drawn as cards, from `side-projects/<slug>/project.yml` in the hub and `<repo>/.oculus/project.yml` in each Files root, status one of idea, building, running, parked (Axel 2026-09-22, widened 2026-09-25; brief `agents/briefs/D24.md`, the ruling in full there) (ruling The queue)
+  - Step 0, stopped at /spec 2026-10-02 01:57: none of the six repositories has a `.oculus/project.yml`, and nothing in the plan may write into another repository; open item Z217 in the state file.
 - D25 the editor's options: per-language tab size and spaces-or-tabs, word wrap (Alt+Z) and rulers, plus the minimap, whitespace and sticky scroll, each a key of oculus's config with its Settings control, a repository's `.oculus/settings.yml` overriding the per-language keys; after S3c; in full in `agents/briefs/D25.md` (ruling Z74) (ruling Z89) (ruling Z81)
   - Widened 2026-10-01 by the Settings ruling (fixed choices written in DESIGN.md or HELP.md), from the Cut table of `agents/reviews/Z74-inventory.md`: every editor setting outside Z81's keys stays at Monaco's default, said in HELP.md.
 - Removed by Z126 (the orchestrator, automode, 2026-10-01 00:08): D26 (the rite language) folded into D27, its line kept whole in `agents/briefs/D27.md`.
@@ -821,6 +822,8 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z212 (2026-10-02): (a), the Files view's operations recorded in History with undo, Cmd+Z and Shift+Cmd+Z in the view, a deleted file's content kept up to 5 MB, a folder back empty, as VS Code (the orchestrator, automode).
 - Open item Z213 (2026-10-02): (a), `files.confirm_delete` in `behavior.yml`, default true, with VS Code's "Do not ask me again" box (the orchestrator, automode).
 - Open item Z214 (2026-10-02): (a), the listing and nesting toggles in the header's `...` menu; Open Editors, Outline and Timeline start collapsed (the orchestrator, automode).
+- Open item Z215 (2026-10-02): (b), no new brief check of D35 and X3a, whose builders are already building; their refuters read the rewritten parts (the user).
+- Open item Z216 (2026-10-02): (a), D24 finds the six repositories as Files roots: ordo, scotoma, officium and youtube-downloader join cathedra and game-engine under `roots:` in `config/sources.yml`, no new key (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

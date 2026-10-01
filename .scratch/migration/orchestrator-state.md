@@ -170,10 +170,12 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z215, the brief checks of D35 and X3a (raised 2026-10-02 01:50 on Axel's question). Both briefs were rewritten with new scope after their brief check ran: D35's on 2026-10-01 for the first build (`D35-brief-check.md`), before items 9 to 17 (every `local.yml` key live, the port move); X3a's on 2026-10-01 on the earlier draft (`X3a-brief-check.md`), before the folder panel of Z187 (f), Q114's undo and the delete setting (items 2, 21, 22) and Z199 to Z214. The spec skill checks a step once ("a `/spec` run after a stop or a ruling does not check the step again"), so neither was checked again and the new parts have had no independent read before their builders started; both builders are running. This is a clash between that rule and a brief whose scope changed after its check.
-  - (a) A fresh brief check of each rewritten brief now, read-only, on the brief as committed; its findings closed in the brief and sent to the running builder as a round-0 ruling (as D35's hand-back was), or raised here when they change scope. For: the new parts get the independent read every other step had, before the builders are far in. Against: about 300,000 tokens and 15 minutes per check; a finding may make a builder redo work; it departs from the skill's once-per-step rule, which is why it is yours to rule.
-  - (b) No new check; the refuter reads the new parts at review. For: no extra cost now. Against: a wrong premise is found after the build, a repair round later. The lazy option.
-  - Recommendation (a).
+- Z217, D24's six repository manifests (raised at /spec 2026-10-02 01:57). The ruling of 2026-09-25 says cathedra, game-engine, ordo, scotoma, officium and youtube-downloader carry a `.oculus/project.yml`; on the tree none does (`ls ~/workspace/<repo>/.oculus/project.yml` for each: No such file or directory). A builder works only in its worktree of this repository and the orchestrator does no step work, so no one in the plan can write the six files.
+  - (a) D24's builder drafts the six manifests (title, status, eli5, next, links) from each repository's README and tree, read-only, in its report; the refuter checks each against its repository; at the landing the orchestrator writes each verbatim to `<repo>/.oculus/project.yml` and commits it in that repository by path, no push. Pro: six filled cards on the day D24 lands, the drafts reviewed like code. Con: commits in six other repositories outside the cherry-pick rule, allowed by this ruling for D24 only.
+  - (b) The board draws a Files root without a manifest as a card from its folder name and README's first paragraph, marked as having no manifest, with an action that writes `.oculus/project.yml` from the card. Pro: nothing outside this repository; covers every later repository. Con: a wider step (a new write kind), and the six cards carry no status until the action is used on each, which is work left to Axel.
+  - (c) Axel writes the six files himself. Con: work left to Axel; the lazy option.
+  - Recommendation: (a), since it delivers what the ruling of 2026-09-25 asked for and the drafts get the same review as code.
+
 
 
 
@@ -207,6 +209,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z216 (2026-10-02 01:57, D24): the six repositories found as Files roots, ordo, scotoma, officium and youtube-downloader added under `roots:` in `config/sources.yml` beside cathedra and game-engine, no new key (the orchestrator, automode).
+- Z215, the brief checks of D35 and X3a after their briefs were rewritten (raised 2026-10-02 01:50 on Axel's question). Ruled by Axel 2026-10-02: (b), no new check, since both builders are already building; the refuters read the new parts at review. Not chosen: (a) a fresh brief check of each rewritten brief.
 - Z214 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): the listing and nesting toggles in the header's `...` menu; Open Editors, Outline and Timeline start collapsed (the orchestrator, automode).
 - Z213 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): `files.confirm_delete` in `behavior.yml`, default true, with VS Code's "Do not ask me again" box (the orchestrator, automode).
 - Z212 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): the Files view's operations recorded in History with undo, Cmd+Z and Shift+Cmd+Z in the view, a deleted file's content kept up to 5 MB, a folder back empty, as VS Code (the orchestrator, automode).
