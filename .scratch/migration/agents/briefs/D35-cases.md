@@ -1,0 +1,11 @@
+# D35, the cases ruled after the first run (round 0)
+
+The builder's first run, handed back before any source change, found that item 8 (the bounds of ruling Z174, amended) contradicts existing tests under `tests/data`, which the brief's paths left out. Each ruling below is what to build; everything else of the brief stands.
+
+1. **The bounds' tests are rewritten to the ruled bounds.** Three paths join the step: `tools/oculus/tests/data/sources/config/settings.test.ts`, `tools/oculus/tests/data/sources/config/calendar-config.test.ts` and `tools/oculus/tests/data/sources/config/mail-config.test.ts`. The cases that read every finite value of `slurm.days`, `calendar.days_back` and `mail.per_signal`, and the refusals that expect the unbounded sentences (`... must be a number` and the calendar and mail equivalents, `calendar-config.test.ts:121-126`, `mail-config.test.ts:126-127`), change to the bounds item 8 states and their sentences. Each case changed is named in the report with its before and after. Each fails on the unchanged tree in its new form, and that failure is quoted. Keeping the readers unbounded was the lazy option, since it leaves Z174's defect (a zero cadence polling at once, a timer past 2^31-1 ms firing every millisecond) in place.
+2. **`loadLocalOrDefaults`'s own tests go with it.** `tools/oculus/tests/routes/files/file.test.ts:215-245` tests `loadLocalOrDefaults` (its defaults, and the bad file printed once). Item 9 removes the function once nothing in `src` or `vite.config.ts` calls it, so those cases are deleted with it, and the report names them. If the function stays, they stay unedited.
+3. **The test files that follow the new signatures** are in the step: `tests/server/root/hooks.test.ts`, `tests/server/root/context-fixture.ts`, `tests/routes/sessions/hook.test.ts`, and the Z177 tests of config-key, wallpaper, memories, images and project-files under `tests/routes` and `tests/server`. The report lists each file with what changed.
+
+The report copies the open items of `orchestrator-state.md` verbatim, as the brief's Report section says.
+
+The rest of the round is the brief's: build items 1 to 12, the full verify list once after the last change (`agents/spec.md:25`), a failed command rerun alone and then the full list once more, the count of full-list runs in the report, and this ruling carried in the report.

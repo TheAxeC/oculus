@@ -41,6 +41,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/D27-brief-check.md, every finding closed in the brief (its Closed heading, Z178 in automode); claude-sonnet-5-5, 301,967 tokens, 104 tool uses, 16.6 min
   shared_paths: with U3, `Source.svelte` (D27 the import and line 133; U3 hunks at 28-30, 56-61, 124 and from 330), `tests/views/sources/source.test.ts` (D27 494-516; U3 up to 314) and `DESIGN.md` (D27 85, 171, 379; U3 158, 216-222, 374-375, 392, 405, 410), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
+  cases: agents/briefs/D27-cases.md (round 0: R1 the finder kept in FINDERS with two tests, R2 the builder's reading of case 23, R3 Tree.svelte and files-menu.test.ts added)
+  builder_usage: first run of the cases 330,199 tokens, 84 tool uses, 16.4 min (0 full-list runs)
   round: 0
 - step: D35
   executor: agent
@@ -54,6 +56,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/D35-brief-check.md, every finding closed in the brief (its Closed heading, Z174 amended and Z177 in automode); claude-sonnet-5-5, 279,072 tokens, 70 tool uses, 13.0 min
   shared_paths: with D27, `context.ts` (D27 the findings list 250-253 and an import; D35 the comment 215-217, the hook target 239-240, the start of liveSettings after the pollers, `close()`), `config-key.ts` (D27 FINDERS 104-112 and an import; D35 line 232 and the function's parameters), `options.yml` (D27 a `languages` entry after `scan` at 509; D35 the descriptions at 124-262 and from 585), `DESIGN.md` (D27 85, 171, 379; D35 224-235) and `HELP.md` (D27 230; D35 216, 236), different lines, a simple merge with the import blocks read at the second landing; no path shared with U3; `docs/diagrams/`, regenerated at each landing
   landing: not-started
+  cases: agents/briefs/D35-cases.md (round 0: the bounds' tests under tests/data rewritten to Z174, loadLocalOrDefaults' tests removed with it, the signature-following tests in the step)
+  builder_usage: first run of the cases 99,350 tokens, 88 tool uses, 19.1 min (0 full-list runs)
   round: 0
 ```
 
