@@ -700,6 +700,7 @@ describe('the diff pane', () => {
 function section(file: DiffSides, key: string): string {
     const noop = (): void => undefined;
     return render(DiffSection, {
+        context: clientContext(client),
         props: {
             file,
             index: 0,

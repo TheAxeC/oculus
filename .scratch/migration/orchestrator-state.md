@@ -29,23 +29,6 @@ workers_at_once: 5           # Axel, 2026-10-01 18:49: five, to see the impact (
 
 ```yaml
 dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
-- step: D27
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 19:49)
-  session_id: a796c6ad2701fd677 (launched 2026-10-01 19:49 local)
-  worktree: .agents/worktrees/D27
-  base: 193479a8
-  launched: 2026-10-01 19:49 local
-  report: agents/reviews/D27-report.md
-  reviewer_report: agents/reviews/D27-refuter.md (first run, reviewer a91c680d389523352, claude-sonnet-5-5, launched 21:24; 229,093 tokens, 47 tool uses, 19.2 min)
-  brief_check: agents/reviews/D27-brief-check.md, every finding closed in the brief (its Closed heading, Z178 in automode); claude-sonnet-5-5, 301,967 tokens, 104 tool uses, 16.6 min
-  shared_paths: with U3, `Source.svelte` (D27 the import and line 133; U3 hunks at 28-30, 56-61, 124 and from 330), `tests/views/sources/source.test.ts` (D27 494-516; U3 up to 314) and `DESIGN.md` (D27 85, 171, 379; U3 158, 216-222, 374-375, 392, 405, 410), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
-  landing: not-started
-  cases: agents/briefs/D27-cases.md (round 0: R1 the finder kept in FINDERS with two tests, R2 the builder's reading of case 23, R3 Tree.svelte and files-menu.test.ts added; R4 three test paths added after the build)
-  builder_usage: first run of the cases 330,199 tokens, 84 tool uses, 16.4 min (0 full-list runs); the build to its stop on R4 265,047 tokens, 202 tool uses, 34.8 min (0 full-list runs); R4 to the report 343,131 tokens, 32 tool uses, 16.3 min (3 full-list starts: the first from the worktree root, where the R4 message had put it, failed at npm test reading no package.json; the second stopped on help.test.ts, fixed; the third passed); round 1 76,794 tokens, 33 tool uses, 23.0 min (2 full-list runs: the first timed out on one config-key case under load 12.8, the second passed)
-  round: 1 (agents/briefs/D27-round1.md, sent 21:43)
-  reviewer_report (round 1): agents/reviews/D27-refuter.md, Repair round 1 (reviewer ae564bfa65fb1cca6, claude-sonnet-5-5, launched 22:08; 222,449 tokens, 60 tool uses, 21.0 min; 0 Spec, 0 Proof, 2 Standards, 0 Behaviour)
 - step: D35
   executor: agent
   worker: claude:sonnet at ordo-medium (Axel's effort experiment)
@@ -60,8 +43,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   landing: not-started
   reviewer_report: agents/reviews/D35-refuter.md (first run, reviewer a5b43146ac6990bdc, claude-sonnet-5-5, launched 21:31; 308,262 tokens, 65 tool uses, 18.5 min; 3 Spec, 3 Proof, 3 Standards, 3 Behaviour)
   cases: agents/briefs/D35-cases.md (round 0: the bounds' tests under tests/data rewritten to Z174, loadLocalOrDefaults' tests removed with it, the signature-following tests in the step)
-  builder_usage: first run of the cases 99,350 tokens, 88 tool uses, 19.1 min (0 full-list runs); the build to the report 123,962 tokens, 149 tool uses, 58.7 min (3 full-list runs: the first failed at npm test, the second at npm run test:checks, the third passed)
+  builder_usage: first run of the cases 99,350 tokens, 88 tool uses, 19.1 min (0 full-list runs); the build to the report 123,962 tokens, 149 tool uses, 58.7 min (3 full-list runs: the first failed at npm test, the second at npm run test:checks, the third passed); round 1 260,642 tokens, 104 tool uses, 50.6 min (2 full-list runs: the first failed at npm run test:checks, the second passed)
   round: 1 (agents/briefs/D35-round1.md, sent 21:54)
+  reviewer_report (round 1): agents/reviews/D35-refuter.md, Repair round 1 (reviewer a816f9f04f144459b, claude-sonnet-5-5, launched 22:48; usage on its completion)
 - step: Q85d
   executor: agent
   worker: claude:sonnet

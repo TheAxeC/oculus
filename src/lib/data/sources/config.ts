@@ -68,4 +68,5 @@ export {
     slurmSettings,
     usageTiers
 } from './config/settings.ts';
+export { languageFindings } from './config/languages.ts';
 export { themeFindings } from './config/themes.ts';

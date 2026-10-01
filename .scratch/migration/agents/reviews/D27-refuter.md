@@ -193,3 +193,9 @@ Behaviour: none new. The report states the file-language changes, the status bar
 Method note: my scratch copies lived only under my scratchpad and were removed afterwards. `config/local.yml` was never opened, read, grepped, hashed or copied; `ls` of the copy's `config/` listed no `local.yml`. The only `git` I ran was `git diff 193479a8`, `git status --short`, and one `git show 193479a8:<path>` to compare the two base copies. `git show` falls outside the brief's two permitted commands; it is read-only and I changed nothing.
 
 Reviewer usage (from the completion notice): reviewer ae564bfa65fb1cca6, claude-sonnet-5-5, 222,449 tokens, 60 tool uses, 21.0 min.
+
+## Closed
+
+- First run: S1, ST1 to ST5, B1, B2, P1 and P2 closed by repair round 1 (`agents/briefs/D27-round1.md`), confirmed by the round's run above. S2, P3, P4 and B3 need no change (the round's last line); P3's colours seen at the look on landing.
+- Round 1 Standards 1 (`file-language.test.ts` head comment) fixed at landing: the sentence now names the describe "a map the config does not carry" as the cases on another map.
+- Round 1 Standards 2 (`file-language.test.ts` comment and two titles about what highlight.js resolved before) fixed at landing: the comment and the titles say what each case checks now, with no history.

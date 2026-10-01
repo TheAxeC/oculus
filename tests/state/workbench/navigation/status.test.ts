@@ -30,11 +30,15 @@ import type {
 } from '../../../../src/lib/data/model/index.ts';
 import { git } from '../../../fixtures/sessions-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { languageMap } from '../../../../src/lib/data/helpers/files/languages.ts';
 import { registered } from '../../../../src/lib/state/shared/words/languages.ts';
+import { languageOf, languages } from '../../../../src/lib/state/sources/fs.ts';
 import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import { allFindings, entityCount } from '../../../../src/lib/state/workbench/navigation/status.ts';
 
-setCatalog(textCatalog(loadConfig(engineDir()).config));
+const CONFIG = loadConfig(engineDir()).config;
+
+setCatalog(textCatalog(CONFIG));
 
 /** A usage payload whose accounts carry refreshers in these states. */
 function usage(...states: string[]): UsagePayload {
@@ -251,6 +255,29 @@ describe('the source items words', () => {
         for (const name of registered()) expect(languageName(name)).not.toContain('statusbar.');
         expect(languageName('python')).toBe('Python');
         expect(languageName('cobol')).toBe(t('statusbar.language_plaintext'));
+    });
+
+    it('names a C++ file C++, the new languages by their display names, and lists every language of the map', () => {
+        const map = languageMap(CONFIG);
+        expect(languageName(languageOf('rite.cpp', map))).toBe('C++');
+        expect(
+            ['c', 'cmake', 'lua', 'ruby', 'scss', 'java', 'dart', 'fortran', 'fortran-fixed'].map(
+                languageName
+            )
+        ).toEqual([
+            'C',
+            'CMake',
+            'Lua',
+            'Ruby',
+            'SCSS',
+            'Java',
+            'Dart',
+            'Fortran',
+            'Fortran (Fixed Form)'
+        ]);
+        expect(['jinja', 'svelte', 'rite'].map(languageName)).toEqual(['Jinja', 'Svelte', 'Rite']);
+        const listed = languageMatches('').map((found) => found.choice.name);
+        expect([...listed].sort()).toEqual(languages(map).sort());
     });
 
     it('lists Plain Text first and the rest by name, and narrows the list to a query by score', () => {

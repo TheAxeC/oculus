@@ -5,46 +5,24 @@
 // same answer has to serve a tree drawn before anything is opened, and a name is what the reader
 // picks by. Whether anything else is text is the file's own first bytes, through
 // data/helpers/files/text-kind.ts, because a name says nothing reliable about that and a list of
-// extensions is wrong about every name nobody put on it.
+// extensions is wrong about every name nobody put on it. The language is the config's: the map of
+// config/sources.yml (data/helpers/files/languages.ts), handed in by the caller, so a file's
+// language moves with the map and the kind of a file never waits for it.
 
 import { isTextBytes } from '../../../data/helpers/files/text-kind.ts';
 import { extensionOf } from '../../../data/helpers/files/opens-in-program.ts';
+import type { LanguageMap } from '../../../data/helpers/files/languages.ts';
 import { nameOf } from '../../../data/helpers/files/paths.ts';
-import { languageNamed, registered } from '../../shared/words/languages.ts';
 
 export { extensionOf, nameOf };
 
 /** How a file opens: an HTML document, a code window, an image, a PDF, or a name and a link. */
 export type FileKind = 'html' | 'text' | 'image' | 'pdf' | 'other';
 
-/** A file's type, and for a text file the highlighter's name for its language. */
-export type FileType = { kind: FileKind; language: string };
+/** A file's type: how it opens. */
+export type FileType = { kind: FileKind };
 
-/**
- * The extensions highlight.js does not resolve to a registered language by their own name, and the
- * language each is painted in. Every other extension is asked of highlight.js first, and a text
- * file neither knows is painted as plain text.
- */
-const LANGUAGES: Record<string, string[]> = {
-    json: ['.ipynb'],
-    bash: ['.slurm'],
-    latex: ['.bib', '.sty', '.cls'],
-    xml: ['.svelte'],
-    lisp: ['.el', '.scm'],
-    ocaml: ['.mli'],
-    matlab: ['.m'],
-    julia: ['.jl']
-};
-
-/**
- * The whole names a language claims, for a file that carries no extension to be read from. The name
- * is compared lowercased, which is what makes `Makefile` and `makefile` the same file to a reader.
- */
-const NAMES: Record<string, string[]> = {
-    makefile: ['makefile']
-};
-
-/** What the highlighter calls a file it has no language for. */
+/** What the editor calls a file the map has no language for. */
 const PLAIN = 'plaintext';
 
 /** The extensions drawn as a picture. */
@@ -54,21 +32,15 @@ const IMAGES = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
 const PAGES = ['.html', '.htm'];
 
 /**
- * The highlighter's name for a file's language: the one highlight.js resolves the extension to,
- * else the one LANGUAGES gives the extension, else the one NAMES gives the whole name.
+ * The name of the language a file opens in: the map's entry for its whole name lowercased, else for
+ * its extension, else plain text. A name that starts with a dot has no extension to read, so a
+ * dotfile is plain text, and the whole-name lookup leaves it alone for the same reason: `.py` is a
+ * file called `.py`, not an extension.
  */
-export function languageOf(name: string): string {
-    const suffix = extensionOf(name);
-    const known = languageNamed(suffix.slice(1));
-    if (known !== null) return known;
-    for (const [language, list] of Object.entries(LANGUAGES)) {
-        if (list.includes(suffix)) return language;
-    }
+export function languageOf(name: string, map: LanguageMap): string {
     const bare = nameOf(name).toLowerCase();
-    for (const [language, list] of Object.entries(NAMES)) {
-        if (list.includes(bare)) return language;
-    }
-    return PLAIN;
+    const whole = bare.startsWith('.') ? undefined : map.get(bare);
+    return whole ?? map.get(extensionOf(name)) ?? PLAIN;
 }
 
 /**
@@ -80,17 +52,14 @@ export function languageOf(name: string): string {
  */
 export function typeOfFile(name: string, bytes?: Uint8Array): FileType {
     const suffix = extensionOf(name);
-    if (PAGES.includes(suffix)) return { kind: 'html', language: PLAIN };
-    if (IMAGES.includes(suffix)) return { kind: 'image', language: PLAIN };
-    if (suffix === '.pdf') return { kind: 'pdf', language: PLAIN };
+    if (PAGES.includes(suffix)) return { kind: 'html' };
+    if (IMAGES.includes(suffix)) return { kind: 'image' };
+    if (suffix === '.pdf') return { kind: 'pdf' };
     const text = bytes !== undefined && isTextBytes(bytes);
-    return { kind: text ? 'text' : 'other', language: languageOf(name) };
+    return { kind: text ? 'text' : 'other' };
 }
 
-/**
- * Every language a name can resolve to: each grammar the code window registers, which `languageOf`
- * reaches through highlight.js's names and aliases, and those LANGUAGES and NAMES give.
- */
-export function languages(): string[] {
-    return [...new Set([...registered(), ...Object.keys(LANGUAGES), ...Object.keys(NAMES)])];
+/** Every language a name can resolve to: those the map names, and plain text. */
+export function languages(map: LanguageMap): string[] {
+    return [...new Set([...map.values(), PLAIN])];
 }

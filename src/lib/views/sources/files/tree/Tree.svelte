@@ -427,7 +427,13 @@
                             <ContextMenu
                                 label={row.name}
                                 items={rowMenu(
-                                    rowFacts(row, fixed, onaddroot !== undefined, explorer),
+                                    rowFacts(
+                                        row,
+                                        fixed,
+                                        onaddroot !== undefined,
+                                        explorer,
+                                        client.selectors.languages()
+                                    ),
                                     t
                                 )}
                                 onpick={(pick: string) => {

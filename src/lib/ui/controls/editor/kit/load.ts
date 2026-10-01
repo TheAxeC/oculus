@@ -1,4 +1,4 @@
-// Layer 3, primitive. Loading the editor: Monaco, the Shiki grammars of the eighteen coloured
+// Layer 3, primitive. Loading the editor: Monaco, the Shiki grammars of the eighteen first
 // languages, the bridge between them, the workers, and the keys the editor gives up. Each editor on
 // a page awaits the one promise this module holds, so the load runs once per page, the first time
 // an editor mounts. A code theme's file is loaded the first time it is painted, from Shiki's
@@ -17,28 +17,43 @@
 // from the tokens in force and the code theme chosen (`tokens`, or the id of a Shiki theme whose
 // scoped syntax rules replace the tokens' rules, kit/theme.ts's `codeRules`) and sets it on every
 // editor, doing nothing when neither has moved, so each editor may call it on every theme change.
-// Shiki's bridge (`shikiToMonaco`)
-// defines a Monaco theme for each theme a highlighter holds, wraps Monaco's `setTheme` and `create`
-// to keep its tokens coloured by the theme set, and gives each language a tokens provider over that
-// highlighter. Shiki caches a theme by its name inside one highlighter, so a changed theme under
-// the same name would keep the old colours there: each paint makes a new highlighter holding the
-// one theme `oculus` and the grammars, bridges it over the calls as Monaco made them (so the wraps
-// never stack), and disposes the highlighter before it. Monaco's `defineTheme` replaces the theme
-// of that name and redraws it where it is in force, and each language's new provider replaces its
-// old one, so a session of theme switches holds one theme and one highlighter. A paint of a code
-// theme awaits its file, so the paints are queued and the last one asked is the one in force; a
-// file that fails to load rejects that paint and leaves the theme before it in force.
+// Shiki's bridge (`shikiToMonaco`) defines a Monaco theme for each theme a highlighter holds,
+// wraps Monaco's `setTheme` and `create` to keep its tokens coloured by the theme set, and gives
+// each language a tokens provider over that highlighter, for the languages the highlighter has
+// loaded and Monaco lists at the moment of the call. Shiki caches a theme by its name inside one
+// highlighter, so a changed theme under the same name would keep the old colours there: each
+// paint makes a new highlighter holding the one theme `oculus` and every grammar loaded so far,
+// bridges it over the calls as Monaco made them (so the wraps never stack), and disposes the
+// highlighter before it. Monaco's `defineTheme` replaces the theme of that name and redraws it
+// where it is in force, and each language's new provider replaces its old one, so a session of
+// theme switches holds one theme and one highlighter. A paint of a code theme awaits its file, so
+// the paints are queued and the last one asked is the one in force; a file that fails to load
+// rejects that paint and leaves the theme before it in force.
+//
+// The eighteen first languages load with the first editor. Every language of grammars.ts is
+// registered with Monaco at the start, so a model can be made under any of them, and the others'
+// grammars load when the first model of their language is made, set or picked: `ensureLanguage`
+// loads the grammar into the highlighter in force, through the queue the paints run in so that a
+// load and a paint never interleave, and bridges it again, which gives the language its tokens
+// provider. A second ask for a language whose load is in flight waits on the same load. Until the
+// grammar has loaded, a model of c, cpp, lua, ruby, scss, java or dart draws Monaco's own colours
+// and a model of the other languages draws plain, and both take Shiki's colours when the load
+// ends. A grammar that fails to load leaves its files as they were, logs one line and does not
+// stop the next language's load. `close` is the page's teardown: it disposes the highlighter in
+// force, and a load in flight at that moment bridges and loads nothing more.
 //
 // Monaco's TypeScript service checks a file against the files of its project, which an editor
 // holding one file has none of, so its semantic check is off and its syntax check stays on.
 
 import type * as Monaco from 'monaco-editor';
-import { SHIKI_LANGUAGES } from './grammars';
+import { FIRST_LANGUAGES, PLAINTEXT, SHIKI_LANGUAGES, shikiId } from './grammars';
 import { freedKeys, type KeyPress } from '../chords';
+import { RITE_GRAMMAR } from './rite/rite';
+import { registerSettings } from './rite/settings';
 import { codeRules, editorTheme } from './theme';
 import type { EditorEnding } from '../types';
 import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
-import type { BundledTheme, ThemeRegistration } from 'shiki';
+import type { BundledLanguage, BundledTheme, LanguageRegistration, ThemeRegistration } from 'shiki';
 
 /**
  * Paint the page's theme from a reading of the tokens and a code theme (`tokens`, the default, or
@@ -46,7 +61,7 @@ import type { BundledTheme, ThemeRegistration } from 'shiki';
  */
 export type Paint = (read: (token: string) => string, code?: string) => Promise<string>;
 
-/** What an editor needs of the loaded page: Monaco, and the one call that sets its theme. */
+/** What an editor needs of the loaded page: Monaco, and the calls that set theme and grammars. */
 export type EditorKit = {
     monaco: typeof Monaco;
     /** Whether the page runs on macOS, which is what Cmd and Ctrl+K mean there. */
@@ -56,6 +71,12 @@ export type EditorKit = {
      * of the page; the theme's name, `oculus`.
      */
     paint: Paint;
+    /**
+     * Load the grammar of one of oculus's language names once its first model is made, set or
+     * picked; answers when the grammar is in, or at once for a language that needs none or whose
+     * grammar failed to load. Never rejects.
+     */
+    ensureLanguage: (name: string) => Promise<void>;
 };
 
 /** The one load of the page, started by the first editor that mounts. */
@@ -126,22 +147,30 @@ async function start(): Promise<EditorKit> {
     for (const id of SHIKI_LANGUAGES) {
         if (!known.has(id)) monaco.languages.register({ id });
     }
-    const paint = painter({
+    registerSettings(monaco);
+    const { paint, ensureLanguage, close } = painter({
         monaco,
         createHighlighter: shiki.createHighlighter,
         shikiToMonaco: bridge.shikiToMonaco,
-        langs: SHIKI_LANGUAGES,
+        langs: FIRST_LANGUAGES,
+        source: (id) => (id === 'rite' ? RITE_GRAMMAR : (id as BundledLanguage)),
         codeIds: bundledThemesInfo.map((info) => info.id),
         loadTheme: async (id) => (await bundledThemes[id as BundledTheme]()).default
     });
-    return { monaco, mac, paint };
+    self.addEventListener('pagehide', (event) => {
+        if (!event.persisted) close();
+    });
+    return { monaco, mac, paint, ensureLanguage };
 }
 
 /** The page's one theme name, in Shiki and in Monaco. */
 export const THEME = 'oculus';
 
-/** A highlighter as painting holds it: something to bridge and, once replaced, to dispose. */
-type Held = { dispose: () => void };
+/** What a highlighter is loaded a grammar from: a Shiki id, or a grammar of oculus's own. */
+type Grammar = BundledLanguage | LanguageRegistration;
+
+/** A highlighter as painting holds it: something to bridge, load grammars into and dispose. */
+type Held = { dispose: () => void; loadLanguage: (grammar: Grammar) => Promise<void> };
 
 /** What a paint needs: Monaco, Shiki's highlighter maker, the bridge and the grammars to load. */
 export type PaintParts<H extends Held> = {
@@ -149,13 +178,24 @@ export type PaintParts<H extends Held> = {
         editor: Pick<typeof Monaco.editor, 'defineTheme' | 'setTheme' | 'create'>;
         languages: Pick<typeof Monaco.languages, 'getLanguages' | 'setTokensProvider'>;
     };
-    createHighlighter: (options: { themes: ThemeRegistration[]; langs: string[] }) => Promise<H>;
+    createHighlighter: (options: { themes: ThemeRegistration[]; langs: Grammar[] }) => Promise<H>;
     shikiToMonaco: (highlighter: H, monaco: never) => void;
+    /** The ids of the grammars every highlighter starts with. */
     langs: readonly string[];
+    /** What the grammar of an id is loaded from: the id for a grammar Shiki bundles. */
+    source: (id: string) => Grammar;
     /** The ids of the Shiki themes a paint may be asked for; any other paints as `tokens`. */
     codeIds: readonly string[];
     /** One Shiki theme's registration, loaded from its file. */
     loadTheme: (id: string) => Promise<ThemeRegistration>;
+};
+
+/** What the page holds of the editor's highlighting: the theme paint and the grammar loads. */
+export type Painting = {
+    paint: Paint;
+    ensureLanguage: (name: string) => Promise<void>;
+    /** End the page's highlighting: dispose the highlighter and load nothing more. */
+    close: () => void;
 };
 
 /**
@@ -166,15 +206,36 @@ export type PaintParts<H extends Held> = {
  * The calls run in the order they were made, so two editors never set half a theme each and the
  * last one asked is the one in force, and a paint that failed leaves the theme before it in force
  * while the next still runs.
+ *
+ * `ensureLanguage` loads a language's grammar into the highlighter in force, as a job of the same
+ * queue, and bridges it again; each highlighter a later paint makes holds every grammar loaded so
+ * far. A language is loaded once, a second ask waits on the first, and a load asked before the
+ * first paint waits for that paint.
  */
-export function painter<H extends Held>(parts: PaintParts<H>): Paint {
+export function painter<H extends Held>(parts: PaintParts<H>): Painting {
     const editor = parts.monaco.editor;
     const made = { setTheme: editor.setTheme, create: editor.create };
     const known = new Set(parts.codeIds);
     const rules = new Map<string, ReturnType<typeof codeRules>>();
+    const loads = new Map<string, Promise<void>>();
+    const loaded: string[] = [];
     let painted = '';
     let held: H | null = null;
-    let queue: Promise<string> = Promise.resolve(THEME);
+    let closed = false;
+    /** Whether `close` has been called, read through a call so a wait does not narrow it. */
+    const ended = (): boolean => closed;
+    let queue: Promise<unknown> = Promise.resolve();
+    let opened: () => void = () => undefined;
+    const ready = new Promise<void>((resolve) => {
+        opened = resolve;
+    });
+
+    /** Run a job after the ones before it, whether or not they failed. */
+    function enqueue<T>(job: () => Promise<T>): Promise<T> {
+        const run = queue.catch(() => undefined).then(job);
+        queue = run;
+        return run;
+    }
 
     /**
      * A code theme's syntax rules, from the file the first time and from the store after. Shiki
@@ -190,7 +251,14 @@ export function painter<H extends Held>(parts: PaintParts<H>): Paint {
         return structuredClone(kept);
     }
 
+    /** Give a highlighter's loaded languages their tokens providers, with the wraps reset. */
+    function bridge(highlighter: H): void {
+        Object.assign(editor, made);
+        parts.shikiToMonaco(highlighter, parts.monaco as never);
+    }
+
     async function paintNow(read: (token: string) => string, code: string): Promise<string> {
+        if (ended()) return THEME;
         const { textmate } = editorTheme(read, THEME);
         const id = known.has(code) ? code : '';
         const signature = JSON.stringify([
@@ -201,17 +269,56 @@ export function painter<H extends Held>(parts: PaintParts<H>): Paint {
         ]);
         if (signature === painted) return THEME;
         const theme = id === '' ? textmate : { ...textmate, tokenColors: await rulesOf(id) };
-        const next = await parts.createHighlighter({ themes: [theme], langs: [...parts.langs] });
-        Object.assign(editor, made);
-        parts.shikiToMonaco(next, parts.monaco as never);
+        const langs = [...parts.langs, ...loaded].map(parts.source);
+        const next = await parts.createHighlighter({ themes: [theme], langs });
+        if (ended()) {
+            next.dispose();
+            return THEME;
+        }
+        bridge(next);
         held?.dispose();
         held = next;
         painted = signature;
+        opened();
         return THEME;
     }
 
-    return (read, code = '') => {
-        queue = queue.catch(() => THEME).then(() => paintNow(read, code));
-        return queue;
+    /** Load one grammar into the highlighter in force. A failure is logged and forgotten. */
+    async function loadNow(id: string): Promise<void> {
+        const target = held;
+        if (ended() || target === null) return;
+        try {
+            await target.loadLanguage(parts.source(id));
+        } catch (error) {
+            loads.delete(id);
+            if (!ended()) console.error(`editor: the grammar ${id} did not load`, error);
+            return;
+        }
+        if (ended()) return;
+        loaded.push(id);
+        bridge(target);
+    }
+
+    function ensureLanguage(name: string): Promise<void> {
+        const id = shikiId(name);
+        if (ended() || id === PLAINTEXT || parts.langs.includes(id)) return Promise.resolve();
+        let load = loads.get(id);
+        if (load === undefined) {
+            load = ready.then(() => enqueue(() => loadNow(id)));
+            loads.set(id, load);
+        }
+        return load;
+    }
+
+    function close(): void {
+        closed = true;
+        held?.dispose();
+        opened();
+    }
+
+    return {
+        paint: (read, code = '') => enqueue(() => paintNow(read, code)),
+        ensureLanguage,
+        close
     };
 }

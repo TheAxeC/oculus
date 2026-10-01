@@ -269,6 +269,7 @@
         for (const one of [held.original, held.modified]) {
             if (one.getLanguageId() !== id) kit.monaco.editor.setModelLanguage(one, id);
         }
+        void kit.ensureLanguage(language);
     });
 
     $effect(() => {

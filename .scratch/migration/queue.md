@@ -1,8 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D27 (the editor's languages), repair round 1 built and refuted (two comment findings, fixed at landing); landing next.
-- D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), reviewed (no red check, 12 findings); repair round 1 building.
+- D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), repair round 1 built (12 rulings done, the full list passed); its review over the round running.
 - Q85d (zod in the views, ui, shell and routes), built and its report in; its review (/refute) running.
 - L4 (floating panes and kept empty panes), building.
 
@@ -13,10 +12,10 @@ Queued, in order (31 steps):
 - X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a); problem decorations to D33 and code symbols to D23 by Z182), stopped: brief checked; waits for Axel's ruling Z187 (the folder picker), its other findings closed by Z188.
 - D32 (replace in Search), once D35 has landed (both change the write target and the undo table); its brief check is in.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), once D27 has landed (both change `config-key.ts`'s single-value refusal).
-- Q88c (the Source Control rows' and the pane strip's new menu items), being prepared ahead.
+- Q88c (the Source Control rows' and the pane strip's new menu items), brief checked (`agents/reviews/Q88c-brief-check.md`); waits for L4's landing, since both change the `Pane` type and the layout tree's pane literals.
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - Q91 (the project view and its editor), once X3a has landed.
-- Q66 (a hidden tab defers its work), being prepared ahead.
+- Q66 (a hidden tab defers its work), brief written; its brief check running.
 - Q35 (the session views), being prepared ahead.
 - D11 and D14 (the rite debug client; LaTeX everywhere).
 - D25 (the editor's options), once S4 has landed.

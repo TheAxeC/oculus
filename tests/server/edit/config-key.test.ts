@@ -36,6 +36,37 @@ vi.mock('../../../src/lib/server/content/docs.ts', async (original) => {
     };
 });
 
+/**
+ * Which calls of the languages finder give a finding: the writer calls it once on the merged
+ * configuration as it stands and once on the one holding the edit, so call 1 is before and call 2
+ * is after.
+ */
+const languagesFinder = vi.hoisted(() => ({ calls: 0, findOn: [] as number[] }));
+
+// The languages finder as it is, except that the calls a case names give the finding of an ending
+// two languages claim. No single value of a tracked file can make it give one: the map is a family,
+// which is edited as text, so the call is where the writer's use of the finder is held.
+vi.mock('../../../src/lib/data/sources/config/languages.ts', async (original) => {
+    const actual =
+        await original<typeof import('../../../src/lib/data/sources/config/languages.ts')>();
+    return {
+        ...actual,
+        languageFindings: (...args: Parameters<typeof actual.languageFindings>) => {
+            languagesFinder.calls += 1;
+            const found = actual.languageFindings(...args);
+            if (!languagesFinder.findOn.includes(languagesFinder.calls)) return found;
+            return [
+                ...found,
+                {
+                    file: 'sources.yml',
+                    key: 'languages.cpp',
+                    message: 'ending .h is listed under c and under cpp; c keeps it'
+                }
+            ];
+        }
+    };
+});
+
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
 
 /** One of the writer's own reason sentences, out of config/text/server.yml. */
@@ -582,6 +613,37 @@ describe('the readers that give findings', () => {
         expect(outcome.refused).toEqual([]);
         expect(outcome.changed).toEqual([KEEP]);
         expect(held(engine)).toContain('keep: 300  # how many');
+    });
+
+    it('refuses a write after which the languages finder gives a finding it did not give before', () => {
+        languagesFinder.calls = 0;
+        languagesFinder.findOn = [2];
+        const engine = keepEngine();
+        const before = held(engine);
+        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
+        expect(refusedWith(outcome, KEEP)).toBe(
+            'ending .h is listed under c and under cpp; c keeps it'
+        );
+        expect(held(engine)).toBe(before);
+    });
+
+    it('writes when the languages finder gives the same finding before and after the edit', () => {
+        languagesFinder.calls = 0;
+        languagesFinder.findOn = [1, 2];
+        const engine = keepEngine();
+        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
+        expect(outcome.refused).toEqual([]);
+        expect(languagesFinder.calls).toBe(2);
+    });
+
+    it('refuses the languages map itself, which is a family and not a value', () => {
+        languagesFinder.calls = 0;
+        languagesFinder.findOn = [];
+        const engine = scratchEngine();
+        const before = held(engine, 'sources.yml');
+        const outcome = writeConfigKey(engine, 'sources.yml', 'languages', '.h');
+        expect(refusedWith(outcome, 'sources.yml:languages')).toBe(why('not_single'));
+        expect(held(engine, 'sources.yml')).toBe(before);
     });
 
     it('writes when a finder gives the same finding before and after the edit', () => {

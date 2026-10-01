@@ -105,7 +105,7 @@ tests/views/sessions/sessions.test.ts :: updates the grid one frame before it fi
 tests/views/shared/links/source-button.test.ts :: carries the line a caller named into the tab it opens | the case draws nothing and asserts over findInstance(client.layout.layout(), id)?.instance.state
 tests/views/shared/links/source-button.test.ts :: opens the file as a source tab and a second press reuses the same one | the case draws nothing and asserts over findInstance(client.layout.layout(), id)?.instance
 tests/views/sources/source.test.ts :: paints a Lisp, an OCaml, an R and a MATLAB snippet with the highlighter classes | the case draws nothing and asserts over codeHtml('(defun add (a b
-tests/views/sources/source.test.ts :: paints each of them under a language the highlighter has registered | the case draws nothing and asserts over [name, languageOf(name)]
+tests/views/sources/source.test.ts :: paints each of them under a language the highlighter has registered | the case draws nothing and asserts over [name, languageOf(name, MAP)]
 tests/views/sources/source.test.ts :: paints the highlighter classes the theme colours, and escapes the file text | the case draws nothing and asserts over painted
 tests/views/sources/source.test.ts :: paints the three that carry a research tree to its build and its settings | the case draws nothing and asserts over codeHtml('function add(a, b)\nend\n', 'julia')
 tests/views/system/status.test.ts :: presses that control through the toolbar primitive | the case draws nothing and asserts over source

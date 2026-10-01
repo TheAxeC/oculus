@@ -64,6 +64,7 @@
 
     const {
         repositories,
+        selectors: { languages },
         ui: { codeTheme, theme, textScale }
     } = useState();
 
@@ -88,7 +89,7 @@
     const result = $derived(pieces.join(''));
     const left = $derived(openCount(regions, choices));
     const busy = $derived(repositories.busy(root));
-    const language = $derived(languageOf(path));
+    const language = $derived(languageOf(path, languages()));
     const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
 
     function read(state: unknown, key: string): string {

@@ -4,6 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ENGINE_ROOT, TEXT_LIMIT, languageOf } from '../../../../src/lib/state/sources/fs.ts';
 import { FS_PATH, NOTE_GONE } from '../../../../src/lib/state/sources/fs.svelte.ts';
+import { languageMap } from '../../../../src/lib/data/helpers/files/languages.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../../fixtures/client.ts';
@@ -757,25 +758,19 @@ describe('the store reading the endpoints', () => {
 
             const first = client.fs.readFileKind('hub', 'code/run.py');
             const second = client.fs.readFileKind('hub', 'code/run.py');
-            expect(await first).toEqual({ kind: 'text', language: 'python' });
-            expect(await second).toEqual({ kind: 'text', language: 'python' });
+            expect(await first).toEqual({ kind: 'text' });
+            expect(await second).toEqual({ kind: 'text' });
             // The three asks a double click makes, and the file view's own, share one request.
-            expect(await client.fs.readFileKind('hub', 'code/run.py')).toEqual({
-                kind: 'text',
-                language: 'python'
-            });
+            expect(await client.fs.readFileKind('hub', 'code/run.py')).toEqual({ kind: 'text' });
             expect(asked).toEqual(['/api/file/hub/code/run.py']);
-            expect(client.fs.heldFileKind('hub', 'code/run.py')).toEqual({
-                kind: 'text',
-                language: 'python'
-            });
+            expect(client.fs.heldFileKind('hub', 'code/run.py')).toEqual({ kind: 'text' });
         });
 
         it('holds a head the read failed on as the download, so the view stops reading', async () => {
             serving(() => {
                 throw new Error('stream broke');
             });
-            const kind = { kind: 'other', language: 'plaintext' };
+            const kind = { kind: 'other' };
             expect(await client.fs.readFileKind('hub', 'code/broken.dat')).toEqual(kind);
             expect(client.fs.heldFileKind('hub', 'code/broken.dat')).toEqual(kind);
             expect(asked).toEqual(['/api/file/hub/code/broken.dat']);
@@ -795,14 +790,8 @@ describe('the store reading the endpoints', () => {
         it('answers a name the browser draws itself without asking at all', async () => {
             serving(() => bytesOf(new Uint8Array(0)));
 
-            expect(await client.fs.readFileKind('hub', 'docs/plot.png')).toEqual({
-                kind: 'image',
-                language: 'plaintext'
-            });
-            expect(client.fs.heldFileKind('hub', 'paper.pdf')).toEqual({
-                kind: 'pdf',
-                language: 'plaintext'
-            });
+            expect(await client.fs.readFileKind('hub', 'docs/plot.png')).toEqual({ kind: 'image' });
+            expect(client.fs.heldFileKind('hub', 'paper.pdf')).toEqual({ kind: 'pdf' });
             expect(asked).toEqual([]);
         });
 
@@ -814,10 +803,7 @@ describe('the store reading the endpoints', () => {
             );
             serving(() => bytesOf(body));
 
-            expect(await client.fs.readFileKind('hub', 'long.csv')).toEqual({
-                kind: 'text',
-                language: 'plaintext'
-            });
+            expect(await client.fs.readFileKind('hub', 'long.csv')).toEqual({ kind: 'text' });
         });
 
         it('reads a file whose bytes are not text as a download, whatever its name says', async () => {
@@ -825,29 +811,22 @@ describe('the store reading the endpoints', () => {
                 bytesOf(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01, 0x02, 0x03]))
             );
 
-            expect(await client.fs.readFileKind('hub', 'data.txt')).toEqual({
-                kind: 'other',
-                language: 'plaintext'
-            });
+            expect(await client.fs.readFileKind('hub', 'data.txt')).toEqual({ kind: 'other' });
         });
 
         it('answers a download for a file the route refused, and holds it for the round', async () => {
             serving(() => new Response('no', { status: 403 }));
 
-            expect(await client.fs.readFileKind('hub', 'secret.txt')).toEqual({
-                kind: 'other',
-                language: 'plaintext'
-            });
-            expect(client.fs.heldFileKind('hub', 'secret.txt')).toEqual({
-                kind: 'other',
-                language: 'plaintext'
-            });
+            expect(await client.fs.readFileKind('hub', 'secret.txt')).toEqual({ kind: 'other' });
+            expect(client.fs.heldFileKind('hub', 'secret.txt')).toEqual({ kind: 'other' });
         });
     });
 });
 
 describe('the language a file is painted in', () => {
-    /** Every extension the table named, with the language it gave, and the one whole name. */
+    const MAP = languageMap(loadConfig(engineDir()).config);
+
+    /** Names and endings with the language the shipped map gives each. */
     const NAMED: [string, string][] = [
         ['x.ts', 'typescript'],
         ['x.tsx', 'typescript'],
@@ -873,7 +852,7 @@ describe('the language a file is painted in', () => {
         ['x.cls', 'latex'],
         ['x.css', 'css'],
         ['x.xml', 'xml'],
-        ['x.svelte', 'xml'],
+        ['x.svelte', 'svelte'],
         ['x.lisp', 'lisp'],
         ['x.el', 'lisp'],
         ['x.scm', 'lisp'],
@@ -889,12 +868,12 @@ describe('the language a file is painted in', () => {
         ['DATA.YML', 'yaml']
     ];
 
-    it('gives every extension and name the language it has always been painted in', () => {
-        expect(NAMED.map(([name]) => [name, languageOf(name)])).toEqual(NAMED);
+    it('gives every name and ending in the list the language the shipped map gives it', () => {
+        expect(NAMED.map(([name]) => [name, languageOf(name, MAP)])).toEqual(NAMED);
     });
 
     it('paints a name nothing claims as plain text', () => {
-        expect(languageOf('x.unknownext')).toBe('plaintext');
-        expect(languageOf('README')).toBe('plaintext');
+        expect(languageOf('x.unknownext', MAP)).toBe('plaintext');
+        expect(languageOf('README', MAP)).toBe('plaintext');
     });
 });

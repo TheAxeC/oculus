@@ -2,11 +2,12 @@
 // the pure logic beside it, over what the socket delivered. A component reads a selector and never
 // joins anything itself, so what a card shows is decided in one place and tested without a browser.
 //
-// There is no $derived in this file, and that is deliberate. A selector reads the entities store
-// inside the caller's reactive scope, so a component writing `const items =
-// $derived(board(preset))` gets a derived that re-runs when the snapshot changes, exactly as if the
-// join were written in the component. A $derived created inside a function would be a second
-// derived per call and would say nothing more.
+// A selector is a plain function: it reads the entities store inside the caller's reactive scope,
+// so a component writing `const items = $derived(board(preset))` gets a derived that re-runs when
+// the snapshot changes, exactly as if the join were written in the component. A $derived created
+// inside a function would be a second derived per call and would say nothing more. The one
+// $derived here is `languageMapNow`, made once per store: it holds the file name to language map so
+// that the config is parsed once per message rather than once per tree row or per view that asks.
 //
 // The path rules come from data/helpers/files/paths.ts (`pathUnder`).
 
@@ -28,6 +29,7 @@ import { byKey } from '../../data/helpers/guards.ts';
 import { readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
 import { paintLimit } from '../../data/helpers/editor.ts';
+import { languageMap, type LanguageMap } from '../../data/helpers/files/languages.ts';
 import { programApps, type ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
@@ -89,6 +91,7 @@ export type SelectorsStore = {
     configMap: () => Record<string, unknown>;
     paintLimit: () => number | null;
     programApps: () => ProgramApps;
+    languages: () => LanguageMap;
     boardPreset: (view: string) => BoardPreset;
     board: (preset: BoardPreset) => BoardItem[];
     boardStats: (items: BoardItem[]) => BoardStats;
@@ -147,6 +150,13 @@ export function createSelectors(
     function programAppsOf(): ProgramApps {
         return programApps(configMap()) ?? {};
     }
+
+    /**
+     * The map from a file name to its language, `languages` of config/sources.yml, and an empty
+     * map until the config channel has spoken. It is parsed once per config message: the
+     * derived re-runs only when the entities store holds another config.
+     */
+    const languageMapNow = $derived(languageMap(configMap()));
 
     /** The preset of one view id, over the config as it currently stands. */
     function boardPreset(view: string): BoardPreset {
@@ -467,6 +477,7 @@ export function createSelectors(
         configMap,
         paintLimit: editorPaintLimit,
         programApps: programAppsOf,
+        languages: () => languageMapNow,
         boardPreset,
         board,
         boardStats,

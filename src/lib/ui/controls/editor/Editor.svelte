@@ -319,6 +319,7 @@
         const id = shikiId(language);
         if (held === null || kit === null) return;
         if (held.getLanguageId() !== id) kit.monaco.editor.setModelLanguage(held, id);
+        void kit.ensureLanguage(language);
     });
 
     $effect(() => {
@@ -377,7 +378,7 @@
             waiting.push(command);
             return;
         }
-        runCommand(kit.monaco, editor, model, command);
+        runCommand(kit, editor, model, command);
     }
 
     function flush(): void {

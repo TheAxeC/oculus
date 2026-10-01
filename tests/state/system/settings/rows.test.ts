@@ -412,6 +412,18 @@ describe('the shipped catalog over the shipped texts', () => {
     });
 });
 
+describe('the language map over the shipped sources.yml', () => {
+    it('is a family row of the section Files, set, with the language as key and the endings as value', () => {
+        const content = readFileSync(join(engineDir(), 'config', 'sources.yml'), 'utf8');
+        const result = fileRows('sources.yml', shipped['sources.yml'], text(content));
+        expect(result.status).toBe('rows');
+        const row = result.rows.find((one) => one.key === 'languages');
+        expect(row).toMatchObject({ control: 'family', state: 'set', section: 'Files' });
+        expect(Object.keys(row?.fields ?? {})).toEqual(['key', 'value']);
+        expect(row?.description).toContain('plain text');
+    });
+});
+
 describe('the This browser rows', () => {
     /** A store over a plain object, with the appearance a browser that saved nothing starts on. */
     function storeWith(saved: Record<string, unknown> | null) {

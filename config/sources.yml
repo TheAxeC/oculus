@@ -5,6 +5,7 @@
 # from. Which files open for editing is no key: the file's own first bytes say whether it is text, and
 # its mode on this machine says whether it can be written. Merged with the other config/*.yml
 # by loadConfig(); every key here is a top-level key of the merged map.
+# It also holds the map from a file name to the language the editor colours it in (languages).
 # ===========================================================================
 
 
@@ -91,3 +92,39 @@ career_file: registries/career.yml
 roots:
   - { key: cathedra,    dir: ~/workspace/cathedra }
   - { key: game-engine, dir: ~/workspace/game-engine }
+
+
+# The language each file name opens in, which the editor, the code window and the status bar colour and name it by. One language per line, the editor's own lowercase name, then the endings it claims: an entry that starts with a dot is an extension (.py), any other entry is a whole file name compared lowercased (makefile, cmakelists.txt). A whole name is matched before an extension, and a file no entry matches, a dotfile included, opens as plain text. A language the editor does not colour is refused, and an ending two languages claim belongs to the first one listed.
+languages:
+  bash:          [.sh, .bash, .zsh, .slurm]
+  css:           [.css]
+  diff:          [.diff, .patch]
+  ini:           [.ini, .toml]
+  javascript:    [.js, .jsx, .mjs, .cjs, .javascript]
+  json:          [.json, .jsonc, .json5, .ipynb]
+  julia:         [.jl, .julia]
+  latex:         [.tex, .latex, .bib, .sty, .cls]
+  lisp:          [.lisp, .el, .scm]
+  makefile:      [.mk, .mak, .make, .makefile, makefile]
+  markdown:      [.md, .markdown, .mkdown, .mkd]
+  matlab:        [.m, .matlab]
+  ocaml:         [.ml, .mli, .ocaml]
+  python:        [.py, .pyi, .gyp, .ipython, .python]
+  r:             [.r]
+  typescript:    [.ts, .tsx, .mts, .cts, .typescript]
+  xml:           [.xml, .html, .xhtml, .rss, .atom, .xjb, .xsd, .xsl, .plist, .wsf, .svg]
+  yaml:          [.yml, .yaml]
+  plaintext:     [.txt, .text, .plaintext]
+  c:             [.c, .i]
+  cpp:           [.cpp, .cc, .cxx, .c++, .hpp, .hh, .hxx, .h++, .h, .ii, .ino, .inl, .ipp, .tpp]
+  cmake:         [.cmake, cmakelists.txt]
+  lua:           [.lua]
+  ruby:          [.rb, .rbi, .rake, .gemspec, .podspec, .ru, gemfile, rakefile, podfile, vagrantfile]
+  scss:          [.scss]
+  java:          [.java, .jav]
+  dart:          [.dart]
+  fortran:       [.f90, .f95, .f03, .f08]
+  fortran-fixed: [.f, .for, .f77]
+  jinja:         [.jinja, .jinja2, .j2]
+  svelte:        [.svelte]
+  rite:          [.rite]

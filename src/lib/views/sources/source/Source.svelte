@@ -101,7 +101,7 @@
         fs: { workspaces },
         layout: { keepPreview },
         repositories,
-        selectors: { gitFor, gitRoots, programApps },
+        selectors: { gitFor, gitRoots, languages, programApps },
         source: {
             revertSourceDraft,
             editSourceDraft,
@@ -135,7 +135,9 @@
     /** Whether the editor is drawn, which is when the text controls have text to act on. */
     const editing = $derived(error === '' && draft.loaded && locked === '');
     /** The language the tab paints in: the one chosen from the status bar, or the name's. */
-    const language = $derived(draft.language === '' ? languageOf(path) : draft.language);
+    const language = $derived(
+        draft.language === '' ? languageOf(path, languages()) : draft.language
+    );
     /** The indentation Tab inserts: the one chosen from the status bar, or the file's own. */
     const indent = $derived(draft.indent ?? detectIndent(draft.text));
     const ending = $derived(lineEnding(draft.text));

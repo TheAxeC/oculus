@@ -227,7 +227,7 @@ The files below sit in the `config/` folder of the engine, `tools/oculus/config/
 | `catalogs/meta.yml` | The tool identity: the title and the subtitle the window carries. |
 | `catalogs/options.yml` | Every option of every config file: what it does, its default, and the control it is set with. |
 | `present.yml` | The public deck the Present view draws: the deck slides, the domain themes, the tag tones and the order. |
-| `sources.yml` | What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from. |
+| `sources.yml` | What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from, and the language each file name opens in. The language map is `languages:`, a language's name against its extensions with their dot and its whole file names; it colours the file in the editor and names it in the status bar, and a file no entry matches opens as plain text. |
 | `catalogs/vocab.yml` | Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers, the venue and dataset theme words and the radar buckets. |
 | `local.yml` | This machine's own values, read on their own and never merged into the configuration: the hub path, the port, the ssh alias of the cluster, the Claude command, the program an address is opened with, the account folders, the calendar accounts, the mail accounts and where the machine-local state is kept. |
 

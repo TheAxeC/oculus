@@ -12,6 +12,7 @@ import {
     iconFindings,
     iconSet,
     type IconMemory,
+    languageFindings,
     loadConfig,
     loadLocal,
     localFile,
@@ -248,6 +249,7 @@ export function createServerContext(
     reportFindings([
         ...iconFindings(engine, config),
         ...behaviorFindings(engine, config),
+        ...languageFindings(engine, config),
         ...themeFindings(engine, config),
         ...docFindings(config, local.hub, layoutFile(engine))
     ]);

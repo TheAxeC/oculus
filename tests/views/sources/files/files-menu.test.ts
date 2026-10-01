@@ -11,6 +11,8 @@
 // need a DOM and are seen at the look.
 
 import { describe, expect, it, vi } from 'vitest';
+import { languageMap } from '../../../../src/lib/data/helpers/files/languages.ts';
+import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
 import { openShell } from '../../../../src/lib/state/shared/stores/shell.ts';
 import {
     ROW_COPY_PATH,
@@ -53,6 +55,7 @@ function facts(
         clipboard: false,
         compareWith: null,
         selection: 1,
+        markdown: path.endsWith('.md'),
         ...changes
     };
 }
@@ -325,6 +328,7 @@ describe('the Files row menu with file operations', () => {
             clipboard: false,
             compareWith: null,
             selection: 1,
+            markdown: false,
             ...changes
         };
     }
@@ -502,6 +506,9 @@ describe('the facts of a row', () => {
         open: false
     };
 
+    /** The language map of the tracked config/sources.yml, which names `.md` as Markdown. */
+    const map = languageMap(loadConfig(engineDir()).config);
+
     /** An explorer store as far as the facts read it. */
     const store = (
         clipboard: unknown,
@@ -513,13 +520,14 @@ describe('the facts of a row', () => {
 
     // Revert: read `clipboard` as false in rowFacts.
     it('audits that reads the clipboard from the explorer store it is given', () => {
-        const empty = rowFacts(row, [], false, store(null, null));
+        const empty = rowFacts(row, [], false, store(null, null), map);
         expect(empty.clipboard).toBe(false);
         const held = rowFacts(
             row,
             [],
             false,
-            store({ mode: 'cut', items: [{ root: 'hub', path: 'x' }] }, null)
+            store({ mode: 'cut', items: [{ root: 'hub', path: 'x' }] }, null),
+            map
         );
         expect(held.clipboard).toBe(true);
         expect(held.selection).toBe(1);
@@ -528,13 +536,34 @@ describe('the facts of a row', () => {
     // Revert: set `compareWith` to the file whatever row it is read for.
     it('audits that names the file selected for compare, and none for the row itself', () => {
         const other = { root: 'hub', path: 'notes/b.md' };
-        expect(rowFacts(row, [], false, store(null, other)).compareWith).toBe('b.md');
-        expect(rowFacts(row, [], false, store(null, null)).compareWith).toBeNull();
+        expect(rowFacts(row, [], false, store(null, other), map).compareWith).toBe('b.md');
+        expect(rowFacts(row, [], false, store(null, null), map).compareWith).toBeNull();
         expect(
-            rowFacts(row, [], false, store(null, { root: 'hub', path: 'notes/a.md' })).compareWith
+            rowFacts(row, [], false, store(null, { root: 'hub', path: 'notes/a.md' }), map)
+                .compareWith
         ).toBeNull();
         expect(
-            rowFacts(row, [], false, store(null, { root: 'other', path: 'notes/a.md' })).compareWith
+            rowFacts(row, [], false, store(null, { root: 'other', path: 'notes/a.md' }), map)
+                .compareWith
         ).toBe('a.md');
+    });
+    it('audits that reads whether a file is Markdown from the language map it is given', () => {
+        const facts = (path: string, languages = map) =>
+            rowFacts(
+                { ...row, path, name: path.split('/').pop() ?? path },
+                [],
+                false,
+                store(null, null),
+                languages
+            );
+        expect(facts('notes/a.md').markdown).toBe(true);
+        expect(facts('notes/a.MARKDOWN').markdown).toBe(true);
+        expect(facts('src/x.py').markdown).toBe(false);
+        expect(facts('notes/a.md', new Map()).markdown).toBe(false);
+        expect(facts('notes/a.md', new Map([['.md', 'plaintext']])).markdown).toBe(false);
+        expect(
+            rowFacts({ ...row, kind: 'dir', path: 'a.md' }, [], false, store(null, null), map)
+                .markdown
+        ).toBe(false);
     });
 });

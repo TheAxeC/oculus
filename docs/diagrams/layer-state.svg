@@ -124,7 +124,7 @@
 <g id="node20" class="node">
 <title>folder state/client to layer data</title>
 <polygon fill="none" stroke="none" points="301.88,-976.28 288.12,-976.28 288.12,-963.8 301.88,-963.8 301.88,-976.28"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="295" y="-967.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="295" y="-967.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">12</text>
 </g>
 <!-- folder state/client&#45;&gt;folder state/client to layer data -->
 <g id="edge28" class="edge">
@@ -437,7 +437,7 @@
 <g id="node44" class="node">
 <title>folder state/sources to folder state/shared</title>
 <polygon fill="none" stroke="none" points="188.88,-180.68 175.12,-180.68 175.12,-168.2 188.88,-168.2 188.88,-180.68"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="182" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="182" y="-172.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">10</text>
 </g>
 <!-- folder state/sources&#45;&gt;folder state/sources to folder state/shared -->
 <g id="edge76" class="edge">

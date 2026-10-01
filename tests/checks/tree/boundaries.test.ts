@@ -31,12 +31,12 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/guards`, `data/accounts/calendar`, `data/accounts/mail`, `data/accounts/connect`,
 // `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/deck`, `data/helpers/editor`,
 // `data/accounts/leads`, `data/helpers/worktrees`, `data/helpers/files/text-kind`,
-// `data/helpers/files/opens-in-program`, `data/helpers/tasks` and `data/helpers/search` and
-// `data/helpers/finding-text` and `data/helpers/code-themes` join `data/model` in the state row as
-// pure helpers with no reader and no I/O. `data/accounts/calendar` and `data/accounts/mail` are
-// there because how a connector account is named, and how old a thread is, are read by the server
-// that builds the credential file and reads the mailbox and by the page that presses Connect and
-// draws the age on a card;
+// `data/helpers/files/opens-in-program`, `data/helpers/files/languages`, `data/helpers/tasks` and
+// `data/helpers/search` and `data/helpers/finding-text` and `data/helpers/code-themes` join
+// `data/model` in the state row as pure helpers with no reader and no I/O. `data/accounts/calendar`
+// and `data/accounts/mail` are there because how a connector account is named, and how old a thread
+// is, are read by the server that builds the credential file and reads the mailbox and by the page
+// that presses Connect and draws the age on a card;
 // `data/accounts/connect` because the rule a new account's label and a provider's client half are
 // held to is read by the Add form and the setup page before they send and by the server before it
 // writes, and a copy on each side would let them disagree; `data/helpers/deck` because the deck's
@@ -49,8 +49,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // opens in and the source route refusing a save over bytes no editor could have read;
 // `data/helpers/files/opens-in-program`, the open endpoint opening only a file whose extension
 // `open.program_ext` lists and the cards and the file view offering the control for that name
-// alone; `data/helpers/tasks`, the server building an update task's argv from the `tasks:` block
-// and the update tray asking that block whether the task it is about to start runs unattended;
+// alone; `data/helpers/files/languages`, the reader of the `languages:` map: the server words
+// its findings from it, and the file browser, the source tab and the diff and merge views read a
+// file's language through it, so the two cannot disagree about which entries the map dropped;
+// `data/helpers/tasks`, the server building an update task's argv from the `tasks:` block and the
+// update tray asking that block whether the task it is about to start runs unattended;
 // `data/helpers/editor`, the server requiring `editor.paint_limit_kb` at start and the source
 // editor reading the same cap out of the configuration it was sent; and `data/helpers/search`, the
 // Search view refusing a query before it sends it and the search route refusing the same query when
@@ -133,6 +136,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/worktrees',
         'data/helpers/files/text-kind',
         'data/helpers/files/opens-in-program',
+        'data/helpers/files/languages',
         'data/helpers/tasks',
         'data/helpers/editor',
         'data/helpers/search',

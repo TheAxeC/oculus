@@ -68,7 +68,8 @@ const ROW_OPS = {
     addable: true,
     clipboard: true,
     compareWith: 'b.md',
-    selection: 1
+    selection: 1,
+    markdown: false
 };
 
 function everyMenu(): MenuItem[][] {

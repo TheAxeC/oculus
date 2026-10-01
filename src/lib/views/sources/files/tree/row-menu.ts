@@ -14,7 +14,13 @@
 // the view's own form, question and refusal line as calls handed in, so a test hands in fakes.
 
 import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
-import { absoluteOf, languageOf, nameOf, type TreeRow } from '$lib/state/sources/fs';
+import {
+    absoluteOf,
+    languageOf,
+    nameOf,
+    type LanguageMap,
+    type TreeRow
+} from '$lib/state/sources/fs';
 import { sourceTabState } from '$lib/state/sessions/source.svelte';
 import type { ClientState } from '$lib/state/client/context';
 import type { ExplorerStore } from '$lib/state/sources/explorer/ops.svelte';
@@ -64,6 +70,7 @@ export type RowMenuFacts = {
     clipboard: boolean;
     compareWith: string | null;
     selection: number;
+    markdown: boolean;
 };
 
 /** The facts of one row of the tree, with the root keys a removal refuses. */
@@ -71,7 +78,8 @@ export function rowFacts(
     row: TreeRow,
     fixed: readonly string[],
     addable: boolean,
-    explorer: Pick<ExplorerStore, 'clipboard' | 'compareFile'>
+    explorer: Pick<ExplorerStore, 'clipboard' | 'compareFile'>,
+    languages: LanguageMap
 ): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
@@ -84,13 +92,9 @@ export function rowFacts(
         addable,
         clipboard: explorer.clipboard() !== null,
         compareWith: other ? nameOf(held.path) : null,
-        selection: 1
+        selection: 1,
+        markdown: kind === 'file' && languageOf(row.path, languages) === 'markdown'
     };
-}
-
-/** Whether a file is Markdown, which the source tab shows with its rendered half. */
-function markdown(path: string): boolean {
-    return languageOf(path) === 'markdown';
 }
 
 /**
@@ -132,7 +136,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
             cutCopy,
             [item(ROW_DOWNLOAD, t('files.menu_download'))],
             copies,
-            markdown(facts.path) ? [item(ROW_PREVIEW, t('files.menu_preview'))] : [],
+            facts.markdown ? [item(ROW_PREVIEW, t('files.menu_preview'))] : [],
             modify
         ]);
     }

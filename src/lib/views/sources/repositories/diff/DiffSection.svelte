@@ -53,6 +53,7 @@
         type DiffSides
     } from '$lib/state/sources/repositories/repositories';
     import { languageOf } from '$lib/state/sources/fs';
+    import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -140,6 +141,10 @@
     /** The hunk a reveal asked for while the editor was not ready, done once it is. */
     let pending: number | null = null;
     let selections: DiffSelections = $state({ original: [], modified: [] });
+
+    const {
+        selectors: { languages }
+    } = useState();
 
     const path = $derived(file.newPath === '' ? file.oldPath : file.newPath);
     const equal = $derived(!file.binary && file.original === file.modified);
@@ -329,7 +334,7 @@
                     bind:this={editor}
                     original={file.original}
                     modified={file.modified}
-                    language={languageOf(path)}
+                    language={languageOf(path, languages())}
                     {model}
                     {path}
                     originalPath={file.oldPath === '' ? path : file.oldPath}

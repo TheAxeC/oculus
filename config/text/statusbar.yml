@@ -71,14 +71,23 @@ text:
         line_ending_readonly: This file is read only, so its line endings are not changed here.
         language_tip: Select language mode
         language_bash: Shell Script
+        language_c: C
+        language_cmake: CMake
+        language_cpp: C++
         language_css: CSS
+        language_dart: Dart
         language_diff: Diff
+        language_fortran: Fortran
+        language_fortran-fixed: Fortran (Fixed Form)
         language_ini: INI
+        language_java: Java
         language_javascript: JavaScript
+        language_jinja: Jinja
         language_json: JSON
         language_julia: Julia
         language_latex: LaTeX
         language_lisp: Lisp
+        language_lua: Lua
         language_makefile: Makefile
         language_markdown: Markdown
         language_matlab: MATLAB
@@ -86,6 +95,10 @@ text:
         language_plaintext: Plain Text
         language_python: Python
         language_r: R
+        language_rite: Rite
+        language_ruby: Ruby
+        language_scss: SCSS
+        language_svelte: Svelte
         language_typescript: TypeScript
         language_xml: XML
         language_yaml: YAML

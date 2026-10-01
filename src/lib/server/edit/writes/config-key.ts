@@ -33,6 +33,7 @@ import {
     changesKeep,
     configDir,
     iconFindings,
+    languageFindings,
     loadConfig,
     loadLocalOrDefaults,
     mailSettings,
@@ -107,6 +108,7 @@ const READERS: ((config: Merged) => unknown)[] = [
 const FINDERS: ((config: Merged, engine: string, hub: string) => Finding[])[] = [
     (config, engine) => iconFindings(engine, config),
     (config, engine) => behaviorFindings(engine, config),
+    (config, engine) => languageFindings(engine, config),
     (config, engine) => themeFindings(engine, config),
     (config, engine, hub) => docFindings(config, hub, layoutFile(engine)),
     (config, engine) => railFindings(config, layoutFile(engine), textCatalog(config))

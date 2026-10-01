@@ -7,20 +7,26 @@
 // `codeColour`, and the page paints the read-only code window the source tab and the Config view
 // draw (views/shared/code/Code.svelte) and a preview's Markdown, the window reaching it through
 // state/shared/words/languages.ts, which re-exports it for the page layers. The file browser's
-// state asks it too, which language a file's extension names, so the table of names and aliases
-// is highlight.js's own and oculus keeps only the extensions it does not know. Its names are also
-// the languages the source tab's editor opens a file under and the status bar lists; the editor
-// colours them through Shiki's grammars (ui/controls/editor/kit/grammars.ts), not this
-// highlighter.
+// state reads the extension-to-language map of config/sources.yml
+// (data/helpers/files/languages.ts), whose languages are the names registered here. Its names are
+// also the languages the source tab's editor opens a file under and the status bar lists; the
+// editor colours them through Shiki's grammars (ui/controls/editor/kit/grammars.ts), not this
+// highlighter. A fence in a Markdown render asks for a language by highlight.js's own names and
+// aliases (`languageNamed`), so a fence called `h` is C and one called `django` is plain text.
 //
 // The core build rather than the whole package, which carries close to two hundred languages
-// against the eighteen a research tree actually holds. The registration runs once at load and is
-// never written after, because the library keeps its own registry and there is nothing per reader
-// about which languages exist.
+// against the thirty-two names a research tree actually holds. The registration runs once at load
+// and is never written after, because the library keeps its own registry and there is nothing per
+// reader about which languages exist.
 //
-// There is no Svelte grammar in the package, so a component file is painted as xml: its markup and
-// its style block colour, a `<script>` block without a `lang` attribute colours as JavaScript, and
-// the `<script lang="ts">` block every component here writes does not.
+// Three names are not highlight.js's own. The package has no Svelte, rite or fixed-form Fortran
+// grammar, so `svelte` is painted with xml's grammar (its markup and style block colour, a
+// `<script>` block without a `lang` attribute colours as JavaScript, and the `<script lang="ts">`
+// block every component here writes does not), `rite` is plain text, and `fortran-fixed` is painted
+// with the free-form grammar. `jinja` is the package's django grammar. Each of the three
+// borrowed grammars is registered without its aliases, so an alias keeps the language that owns it
+// (`html` and `svg` stay xml's, `f90` stays fortran's) and a fence called `svelte`, `rite` or
+// `fortran-fixed` finds only its own name. The editor colours these in Shiki's own grammars.
 //
 // The text is escaped by highlight.js before any span is emitted, which is what lets the code
 // window and a rendered document put the result in the document; nothing else here touches the
@@ -29,14 +35,22 @@
 import hljs from 'highlight.js/lib/core';
 import type { LanguageFn } from 'highlight.js';
 import bash from 'highlight.js/lib/languages/bash';
+import c from 'highlight.js/lib/languages/c';
+import cmake from 'highlight.js/lib/languages/cmake';
+import cpp from 'highlight.js/lib/languages/cpp';
 import css from 'highlight.js/lib/languages/css';
+import dart from 'highlight.js/lib/languages/dart';
 import diff from 'highlight.js/lib/languages/diff';
+import django from 'highlight.js/lib/languages/django';
+import fortran from 'highlight.js/lib/languages/fortran';
 import ini from 'highlight.js/lib/languages/ini';
+import java from 'highlight.js/lib/languages/java';
 import javascript from 'highlight.js/lib/languages/javascript';
 import json from 'highlight.js/lib/languages/json';
 import julia from 'highlight.js/lib/languages/julia';
 import latex from 'highlight.js/lib/languages/latex';
 import lisp from 'highlight.js/lib/languages/lisp';
+import lua from 'highlight.js/lib/languages/lua';
 import makefile from 'highlight.js/lib/languages/makefile';
 import markdown from 'highlight.js/lib/languages/markdown';
 import matlab from 'highlight.js/lib/languages/matlab';
@@ -44,6 +58,8 @@ import ocaml from 'highlight.js/lib/languages/ocaml';
 import plaintext from 'highlight.js/lib/languages/plaintext';
 import python from 'highlight.js/lib/languages/python';
 import r from 'highlight.js/lib/languages/r';
+import ruby from 'highlight.js/lib/languages/ruby';
+import scss from 'highlight.js/lib/languages/scss';
 import typescript from 'highlight.js/lib/languages/typescript';
 import xml from 'highlight.js/lib/languages/xml';
 import yaml from 'highlight.js/lib/languages/yaml';
@@ -53,17 +69,31 @@ import { markedHighlight } from 'marked-highlight';
 /** What the highlighter falls back to for a name it has no language for. */
 export const PLAIN = 'plaintext';
 
+/** A grammar registered under a name of its own without the aliases it carries. */
+function withoutAliases(definition: LanguageFn): LanguageFn {
+    return (hljs) => ({ ...definition(hljs), aliases: [] });
+}
+
 /** Every language the window registers. A name outside this map is drawn as plain text. */
 const REGISTERED: Record<string, LanguageFn> = {
     bash,
+    c,
+    cmake,
+    cpp,
     css,
+    dart,
     diff,
+    fortran,
+    'fortran-fixed': withoutAliases(fortran),
     ini,
+    java,
     javascript,
+    jinja: django,
     json,
     julia,
     latex,
     lisp,
+    lua,
     makefile,
     markdown,
     matlab,
@@ -71,6 +101,10 @@ const REGISTERED: Record<string, LanguageFn> = {
     plaintext,
     python,
     r,
+    rite: withoutAliases(plaintext),
+    ruby,
+    scss,
+    svelte: withoutAliases(xml),
     typescript,
     xml,
     yaml
@@ -89,7 +123,8 @@ export function registered(): string[] {
  * The registered name of the language highlight.js resolves a name or an alias to, or null when it
  * resolves none: `ts` and `tsx` are typescript's aliases, and the name a language was registered
  * under is the one whose definition is the same object. The lookup is highlight.js's own table of
- * names and aliases, so an extension it knows needs no line of oculus's.
+ * names and aliases, which is what a Markdown fence asks for a language by; a file's language is
+ * the map of config/sources.yml's.
  */
 export function languageNamed(alias: string): string | null {
     if (alias === '') return null;

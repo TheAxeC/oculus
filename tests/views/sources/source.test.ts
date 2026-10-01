@@ -22,6 +22,9 @@ import {
 } from '../../../src/lib/state/shared/words/languages.ts';
 import { paintLimit, requirePaintLimit } from '../../../src/lib/data/helpers/editor.ts';
 import { TEXT_LIMIT, languageOf } from '../../../src/lib/state/sources/fs.ts';
+import { languageMap } from '../../../src/lib/data/helpers/files/languages.ts';
+import { codeColour, languageNamed } from '../../../src/lib/data/prose/languages.ts';
+import { Marked } from 'marked';
 import { sourceTabState } from '../../../src/lib/state/sessions/source.svelte.ts';
 import {
     engineDir,
@@ -383,6 +386,35 @@ describe('the source editor', () => {
         ).toContain('data-language="plaintext"');
     });
 
+    it('opens a file under the language the config map gives its name, plaintext before the config arrives and when the map drops it', () => {
+        const text = 'x = 1\n';
+        const opened = (state: ClientState, path: string): string =>
+            render(Editor, {
+                context: clientContext(state),
+                props: { path, text, ...actions }
+            }).body;
+        expect(opened(client, 'code/stubs.pyi')).toContain('data-language="python"');
+        expect(opened(client, 'ui/View.svelte')).toContain('data-language="svelte"');
+        expect(opened(client, 'src/main.cpp')).toContain('data-language="cpp"');
+        expect(opened(client, 'graph.dot')).toContain('data-language="plaintext"');
+
+        expect(opened(createClientState(), 'code/stubs.pyi')).toContain(
+            'data-language="plaintext"'
+        );
+
+        receive({
+            channel: 'config',
+            version: 2,
+            payload: {
+                config: { ...config, languages: { python: ['.py'] } },
+                text: catalog,
+                findings: []
+            }
+        });
+        expect(opened(client, 'code/stubs.pyi')).toContain('data-language="plaintext"');
+        expect(opened(client, 'code/run.py')).toContain('data-language="python"');
+    });
+
     it('draws the rendered half beside a Markdown file and nothing beside a YAML one', () => {
         const drawn = (path: string): string =>
             render(Editor, {
@@ -577,12 +609,14 @@ describe('the languages a research tree asks for', () => {
         ['job.slurm', 'bash'],
         ['refs.bib', 'latex'],
         ['run.ipynb', 'json'],
-        ['View.svelte', 'xml']
+        ['View.svelte', 'svelte']
     ];
+
+    const MAP = languageMap(loadConfig(engineDir()).config);
 
     it('paints each of them under a language the highlighter has registered', () => {
         for (const [name, language] of NAMED) {
-            expect([name, languageOf(name)]).toEqual([name, language]);
+            expect([name, languageOf(name, MAP)]).toEqual([name, language]);
             expect([name, registered().includes(language)]).toEqual([name, true]);
         }
     });
@@ -600,5 +634,87 @@ describe('the languages a research tree asks for', () => {
         expect(codeHtml('function add(a, b)\nend\n', 'julia')).toContain('hljs-keyword');
         expect(codeHtml('name = "oculus"\n', 'ini')).toContain('hljs-attr');
         expect(codeHtml('all:\n\techo one\n', 'makefile')).toContain('hljs-section');
+    });
+
+    it('audits that paints a snippet of each language the editor colours beyond the first eighteen', () => {
+        const snippets: [string, string][] = [
+            ['c', '#include <stdio.h>\nint main(void) { return 0; }\n'],
+            ['cpp', 'template <typename T> class Box { public: T value; };\n'],
+            ['cmake', 'cmake_minimum_required(VERSION 3.20)\nproject(demo)\n'],
+            ['lua', 'local function add(a, b) return a + b end\n'],
+            ['ruby', 'def add(a, b)\n  a + b\nend\n'],
+            ['scss', '$gap: 4px;\n.a { .b { margin: $gap; } }\n'],
+            ['java', 'public class A { public static void main(String[] a) {} }\n'],
+            ['dart', 'void main() { final x = 1; print(x); }\n'],
+            ['fortran', 'program demo\n  implicit none\n  integer :: i\nend program demo\n'],
+            ['fortran-fixed', '      PROGRAM DEMO\n      INTEGER I\n      END\n'],
+            ['jinja', '{% for item in items %}{{ item.name }}{% endfor %}\n']
+        ];
+        for (const [language, snippet] of snippets) {
+            expect([language, codeHtml(snippet, language).includes('hljs-')]).toEqual([
+                language,
+                true
+            ]);
+        }
+    });
+
+    it('audits that paints a Svelte component with the grammar of xml, and a rite file as plain text', () => {
+        const component = '<script lang="ts">let x = 1;</script>\n<p class="a">{x}</p>\n';
+        expect(codeHtml(component, 'svelte')).toBe(codeHtml(component, 'xml'));
+        expect(codeHtml(component, 'svelte')).toContain('hljs-tag');
+        expect(codeHtml('(def x "a")\n', 'rite')).toBe('(def x &quot;a&quot;)\n');
+    });
+
+    it('audits that registers the languages of the map and plaintext, and no other', () => {
+        const names = [...new Set(MAP.values())].sort();
+        expect(names).toEqual([...registered()].sort());
+    });
+
+    it('audits that resolves a fence by highlight.js names and aliases, every alias keeping its owner', () => {
+        const answers = ['html', 'svg', 'xhtml', 'f90', 'f95', 'h', 'c', 'cpp', 'hpp', 'jinja'].map(
+            (alias) => [alias, languageNamed(alias)]
+        );
+        expect(answers).toEqual([
+            ['html', 'xml'],
+            ['svg', 'xml'],
+            ['xhtml', 'xml'],
+            ['f90', 'fortran'],
+            ['f95', 'fortran'],
+            ['h', 'c'],
+            ['c', 'c'],
+            ['cpp', 'cpp'],
+            ['hpp', 'cpp'],
+            ['jinja', 'jinja']
+        ]);
+        expect(['django', 'cobol', ''].map((name) => languageNamed(name))).toEqual([
+            null,
+            null,
+            null
+        ]);
+        expect(languageNamed('svelte')).toBe('svelte');
+        expect(languageNamed('fortran-fixed')).toBe('fortran-fixed');
+        expect(languageNamed('rite')).toBe('rite');
+    });
+
+    it('audits that paints a Markdown fence by its language: highlight.js names, django and rite as plain text', () => {
+        const marked = new Marked(codeColour);
+        const fenced = (language: string, code: string): string =>
+            marked.parse(['```' + language, code, '```', ''].join('\n')) as string;
+        const cpp = fenced('cpp', 'class A { public: int x; };');
+        expect(cpp).toContain('<code class="hljs language-cpp">');
+        expect(cpp).toContain('hljs-keyword');
+        expect(fenced('c', 'int x;')).toBe(
+            fenced('h', 'int x;').replace('language-h', 'language-c')
+        );
+        expect(fenced('c', 'int x;')).toContain('hljs-type');
+        expect(fenced('jinja', '{% if a %}x{% endif %}')).toContain('hljs-template-tag');
+        // The highlighter registers jinja and no name django, so a fence of django stays plain.
+        expect(fenced('django', '{% if a %}x{% endif %}')).not.toContain('hljs-');
+        // The highlighter holds no grammar of rite's own, so a fence of rite stays plain.
+        expect(fenced('rite', '(def x 1)')).not.toContain('hljs-');
+        const svelte = '<p class="a">{x}</p>';
+        expect(fenced('svelte', svelte).replace('language-svelte', 'language-html')).toBe(
+            fenced('html', svelte)
+        );
     });
 });

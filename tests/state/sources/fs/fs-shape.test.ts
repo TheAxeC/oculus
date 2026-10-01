@@ -18,6 +18,7 @@ import {
     type FsRoot
 } from '../../../../src/lib/state/sources/fs.ts';
 import { fileBytesUrl, listingUrl } from '../../../../src/lib/state/sources/fs.svelte.ts';
+import { languageMap } from '../../../../src/lib/data/helpers/files/languages.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { registered } from '../../../../src/lib/state/shared/words/languages.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
@@ -37,6 +38,8 @@ import {
 import type { Entry } from '../../../../src/lib/data/model/index.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
+
+const MAP = languageMap(loadConfig(engineDir()).config);
 
 /** One file entry, since only the name and the kind matter to these cases. */
 function file(name: string, size = 10): FsEntry {
@@ -67,20 +70,31 @@ describe('what a file opens as', () => {
     });
 
     it('names the language of a code file and plain text for the rest of the text ones', () => {
-        const held = bytes('one\n');
-        expect(typeOfFile('run.ts', held)).toEqual({ kind: 'text', language: 'typescript' });
-        expect(typeOfFile('run.py', held)).toEqual({ kind: 'text', language: 'python' });
-        expect(typeOfFile('config/sources.yml', held)).toEqual({ kind: 'text', language: 'yaml' });
-        expect(typeOfFile('main.tex', held)).toEqual({ kind: 'text', language: 'latex' });
-        expect(typeOfFile('job.slurm', held)).toEqual({ kind: 'text', language: 'bash' });
-        expect(typeOfFile('View.svelte', held)).toEqual({ kind: 'text', language: 'xml' });
-        expect(typeOfFile('notes.txt', held)).toEqual({ kind: 'text', language: 'plaintext' });
+        const names = [
+            'run.ts',
+            'run.py',
+            'config/sources.yml',
+            'main.tex',
+            'job.slurm',
+            'View.svelte',
+            'notes.txt'
+        ];
+        expect(names.map((name) => languageOf(name, MAP))).toEqual([
+            'typescript',
+            'python',
+            'yaml',
+            'latex',
+            'bash',
+            'svelte',
+            'plaintext'
+        ]);
+        expect(typeOfFile('run.ts', bytes('one\n'))).toEqual({ kind: 'text' });
     });
 
     it('reads a language off a whole name for a file that carries no extension', () => {
-        const held = bytes('all:\n');
-        expect(typeOfFile('Makefile', held)).toEqual({ kind: 'text', language: 'makefile' });
-        expect(typeOfFile('code/makefile', held)).toEqual({ kind: 'text', language: 'makefile' });
+        expect(languageOf('Makefile', MAP)).toBe('makefile');
+        expect(languageOf('code/makefile', MAP)).toBe('makefile');
+        expect(typeOfFile('Makefile', bytes('all:\n'))).toEqual({ kind: 'text' });
     });
 
     it('reads the bytes and not the name, so a name says nothing about what is in the file', () => {
@@ -105,8 +119,8 @@ describe('what a file opens as', () => {
     });
 
     it('names only languages the code window has registered', () => {
-        expect(languages().filter((one) => !registered().includes(one))).toEqual([]);
-        expect(registered().filter((one) => !languages().includes(one))).toEqual([]);
+        expect(languages(MAP).filter((one) => !registered().includes(one))).toEqual([]);
+        expect(registered().filter((one) => !languages(MAP).includes(one))).toEqual([]);
         const names = [
             'a.ts',
             'a.js',
@@ -133,7 +147,7 @@ describe('what a file opens as', () => {
             'a.txt',
             'a.unknown'
         ];
-        expect(names.filter((name) => !registered().includes(languageOf(name)))).toEqual([]);
+        expect(names.filter((name) => !registered().includes(languageOf(name, MAP)))).toEqual([]);
     });
 
     it('reads an extension and a name off a path', () => {

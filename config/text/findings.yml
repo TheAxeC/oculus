@@ -57,6 +57,12 @@ text:
             icon_not_shipped: the icon package ships no {0}.svg
             skip_permissions_retired: 'chat.skip_permissions is not read; the key is tasks.skip_permissions'
             paint_limit: editor.paint_limit_kb must be a number above zero; the editor paints without colour until it is
+            languages_not_a_map: languages is not a map of language name to a list of endings; every file opens as plain text
+            language_unknown: language {0} is not one the editor colours; its endings are not read
+            language_not_a_list: language {0} is not a list of endings; its endings are not read
+            language_ending: language {0} lists {1}, which is not a file name or an extension with one dot; the entry is not read
+            language_empty: language {0} lists an empty file name
+            language_claimed: ending {0} is listed under {1} and under {2}; {1} keeps it
         shape:
             is_null: 'null'
             is_list: a list

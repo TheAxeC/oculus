@@ -620,6 +620,35 @@ describe('watchPortfolio', () => {
         expect(payload.findings[0].file).toBe(join(started.engine, 'config', 'layout.yml'));
     });
 
+    it('reports a language map that gives one ending to two languages, and none for the tracked map', async () => {
+        const bad = start((_hub, engine) => {
+            write(
+                engine,
+                'config/sources.yml',
+                'languages:\n  c: [.h, .c]\n  cpp: [.h, .cpp]\n  cobol: [.cbl]\n'
+            );
+        });
+        await until(() => on(bad.got, 'config').length >= 1, 2000);
+        const payload = on(bad.got, 'config')[0].payload as ConfigPayload;
+        expect(payload.findings.map((finding) => finding.key)).toEqual([
+            'languages.cpp',
+            'languages.cobol'
+        ]);
+        expect(payload.findings[0].message).toContain('ending .h is listed under c and under cpp');
+        expect(payload.findings[0].file).toBe(join(bad.engine, 'config', 'sources.yml'));
+
+        const tracked = start((_hub, engine) => {
+            write(
+                engine,
+                'config/sources.yml',
+                readFileSync(join(engineDir(), 'config', 'sources.yml'), 'utf8')
+            );
+        });
+        await until(() => on(tracked.got, 'config').length >= 1, 2000);
+        const clean = on(tracked.got, 'config')[0].payload as ConfigPayload;
+        expect(clean.findings.filter((finding) => finding.key.startsWith('languages'))).toEqual([]);
+    });
+
     it('republishes the config after a config file is saved through handleSource', async () => {
         const started = start();
         await quiet(started.got);

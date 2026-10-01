@@ -174,7 +174,8 @@ describe("oculus's own config directory", () => {
             'publications_file',
             'linkedin_dir',
             'career_file',
-            'roots'
+            'roots',
+            'languages'
         ],
         'catalogs/vocab.yml': [
             'palette',

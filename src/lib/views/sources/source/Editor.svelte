@@ -43,7 +43,7 @@
     import { t } from '$lib/state/shared/words/text';
 
     const {
-        selectors: { paintLimit },
+        selectors: { languages, paintLimit },
         ui: { codeTheme, theme, textScale }
     } = useState();
 
@@ -106,7 +106,7 @@
     /** How far the editor is scrolled through its text, which is what the rendered half follows. */
     let fraction = $state(0);
 
-    const language = $derived(chosen ?? languageOf(path));
+    const language = $derived(chosen ?? languageOf(path, languages()));
     /** The language the editor opens the text under, plaintext past the paint limit. */
     const shown = $derived(shownLanguage(language, text, paintLimit()));
     /** Whether this file has a rendered half at all, which is what a Markdown file has. */

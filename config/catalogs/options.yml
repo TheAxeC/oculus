@@ -515,6 +515,12 @@ options:
                 nested: true when the folder holds category folders of projects, so that the type comes from each manifest
                 optional: true when a hub without the folder reports nothing
                 tier: the board whose tab splits its count by this rule's type; projects puts the rule's type in the split of the Projects tab, and any other word adds no type to it
+        languages:
+            section: Files
+            description: The language each file opens in, for its colours, its comment keys and the status bar. A file's language is the first match of its whole name lowercased, then of its extension lowercased, so a file called CMakeLists.txt is CMake before its .txt is read; a file no entry matches opens as plain text, a dotfile such as .bashrc included, since it has no extension. A language the editor does not colour is refused, and so is an entry that is not an extension with its dot or a file name without a slash; two languages that claim one ending keep the first in the file.
+            fields:
+                key: the language's name as the editor and the status bar show it
+                value: the extensions (with their dot) and whole file names of that language
         venues_file:
             section: Registry and feed files
             description: The venue catalogue, journals and conferences, that the Venues tab and the venue audit read.

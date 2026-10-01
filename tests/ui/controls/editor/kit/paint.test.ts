@@ -2,17 +2,24 @@
 // in Monaco, the scopes its tokens provider answers, and what a second paint leaves behind.
 //
 // Monaco is a stand-in that records what the bridge calls, `defineTheme` and `setTokensProvider`,
-// and the grammar loaded is markdown alone, which is where bold and italic are. A code theme is
-// painted through the real Shiki theme files, loaded by a counting loader.
-// What this does NOT cover: that Monaco draws a defined theme, which the look does.
+// and the grammar every highlighter starts with is markdown alone, which is where bold and italic
+// are. A code theme is painted through the real Shiki theme files, loaded by a counting loader. The
+// grammars loaded on first use (`ensureLanguage`) are the real ones, through a highlighter whose
+// `loadLanguage` is recorded, gated or made to fail by the case.
+// What this does NOT cover: that Monaco draws a defined theme or a model takes the tokens of a
+// provider set after it was made, and the editor components calling `ensureLanguage` when they make
+// or change a model, which the look does.
 
 import { shikiToMonaco } from '@shikijs/monaco';
 import { createHighlighter } from 'shiki';
-import type { ThemeRegistration } from 'shiki';
+import type { BundledLanguage, ThemeRegistration } from 'shiki';
 import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { THEME, painter } from '../../../../../src/lib/ui/controls/editor/kit/load.ts';
 import { editorTheme } from '../../../../../src/lib/ui/controls/editor/kit/theme.ts';
+import { RITE_GRAMMAR } from '../../../../../src/lib/ui/controls/editor/kit/rite/rite.ts';
+import { runCommand } from '../../../../../src/lib/ui/controls/editor/commands.ts';
+import { shownLanguage } from '../../../../../src/lib/state/workbench/navigation/editor-text.ts';
 
 type Rule = { token: string; foreground?: string; fontStyle?: string };
 type Theme = { rules: Rule[]; colors: Record<string, string> };
@@ -36,6 +43,9 @@ function distinct(from: number): (token: string) => string {
     };
 }
 
+/** The languages the stand-in Monaco lists, as `start()` leaves it once every id is registered. */
+const MONACO_IDS = ['markdown', 'lua', 'cmake', 'java', 'rite', 'javascript', 'typescript', 'css'];
+
 /** A stand-in Monaco recording the themes defined and the tokens providers set. */
 function standIn() {
     const defined = new Map<string, Theme>();
@@ -47,7 +57,7 @@ function standIn() {
             create: () => undefined
         },
         languages: {
-            getLanguages: () => [{ id: 'markdown' }],
+            getLanguages: () => MONACO_IDS.map((id) => ({ id })),
             setTokensProvider: (id: string, provider: Provider) => void providers.set(id, provider)
         }
     };
@@ -61,30 +71,66 @@ async function shipped(id: string): Promise<ThemeRegistration> {
 
 const IDS = bundledThemesInfo.map((info) => info.id);
 
-/** A painter over the stand-in, counting the highlighters it makes and the ones it disposes. */
-function counted(loadTheme: (id: string) => Promise<ThemeRegistration> = shipped) {
+/** What a case does to the grammar loads of the highlighters its painter makes. */
+type Loads = {
+    /** Awaited before a load runs; a rejection fails the load. */
+    before?: (id: string) => Promise<void> | void;
+    /** What a grammar is loaded from: its id, unless the case gives a grammar of its own. */
+    source?: (id: string) => BundledLanguage | typeof RITE_GRAMMAR;
+};
+
+/** One call of a highlighter's `loadLanguage`, and whether the highlighter was disposed by then. */
+type Load = { id: string; disposed: boolean };
+
+/**
+ * A painter over the stand-in, counting the highlighters it makes and the ones it disposes, with
+ * the grammars each was made holding and every `loadLanguage` it was asked.
+ */
+function counted(
+    loadTheme: (id: string) => Promise<ThemeRegistration> = shipped,
+    loads: Loads = {}
+) {
     const stand = standIn();
-    const made: { disposed: boolean; registered: ThemeRegistration }[] = [];
-    const paint = painter({
+    const made: {
+        disposed: boolean;
+        registered: ThemeRegistration;
+        langs: unknown[];
+        highlighter: Awaited<ReturnType<typeof createHighlighter>>;
+    }[] = [];
+    const asked: Load[] = [];
+    const bridged: unknown[] = [];
+    const parts = painter({
         monaco: stand.monaco as never,
         loadTheme,
         codeIds: IDS,
         createHighlighter: async (options) => {
             const registered = structuredClone(options.themes[0]);
             const highlighter = await createHighlighter(options);
-            const entry = { disposed: false, registered };
+            const entry = { disposed: false, registered, langs: [...options.langs], highlighter };
             made.push(entry);
             const dispose = highlighter.dispose.bind(highlighter);
             highlighter.dispose = () => {
                 entry.disposed = true;
                 dispose();
             };
+            const load = highlighter.loadLanguage.bind(highlighter);
+            highlighter.loadLanguage = async (...langs: Parameters<typeof load>) => {
+                const first = langs[0] as string | { name: string };
+                const id = typeof first === 'string' ? first : first.name;
+                asked.push({ id, disposed: entry.disposed });
+                await loads.before?.(id);
+                return load(...langs);
+            };
             return highlighter;
         },
-        shikiToMonaco: shikiToMonaco as never,
-        langs: ['markdown']
+        shikiToMonaco: (highlighter: unknown, monaco: never) => {
+            bridged.push(highlighter);
+            shikiToMonaco(highlighter as never, monaco);
+        },
+        langs: ['markdown'],
+        source: loads.source ?? ((id: string) => id as BundledLanguage)
     });
-    return { ...stand, made, paint };
+    return { ...stand, made, asked, bridged, ...parts };
 }
 
 /** The scope the markdown provider answers for the token that starts at `text` in `line`. */
@@ -310,5 +356,199 @@ describe('the paint with a code theme', () => {
         expect(asked).toEqual([]);
         expect(made).toHaveLength(1);
         expect(made[0].registered.tokenColors).toEqual(editorTheme(read).textmate.tokenColors);
+    });
+});
+
+afterEach(() => vi.restoreAllMocks());
+
+/** The ids of every `loadLanguage` a painter's highlighters were asked. */
+function loaded(asked: Load[]): string[] {
+    return asked.map((load) => load.id);
+}
+
+describe('the grammars loaded on first use', () => {
+    // Red when ensureLanguage loads nothing, loads again for a second ask, or loads a grammar the
+    // first highlighter holds already.
+    it('loads the Lua grammar once, for the first model of the language and for no later one', async () => {
+        const { asked, providers, paint, ensureLanguage } = counted();
+        await paint(distinct(1));
+        expect(providers.has('lua')).toBe(false);
+        await ensureLanguage('lua');
+        expect(loaded(asked)).toEqual(['lua']);
+        const provider = providers.get('lua');
+        expect(scopeAt(provider, 'local x = 1', 'local')).toBeTruthy();
+        await ensureLanguage('lua');
+        await ensureLanguage('lua');
+        expect(loaded(asked)).toEqual(['lua']);
+        await ensureLanguage('markdown');
+        await ensureLanguage('plaintext');
+        await ensureLanguage('cobol');
+        expect(loaded(asked)).toEqual(['lua']);
+    });
+
+    // Red when a second model made while the first load is in flight starts a load of its own.
+    it('makes no second load for a model made while the first load is in flight', async () => {
+        let release: () => void = () => undefined;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const { asked, providers, paint, ensureLanguage } = counted(shipped, {
+            before: () => gate
+        });
+        await paint(distinct(1));
+        const first = ensureLanguage('lua');
+        const second = ensureLanguage('lua');
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(loaded(asked)).toEqual(['lua']);
+        expect(providers.has('lua')).toBe(false);
+        release();
+        await Promise.all([first, second]);
+        expect(loaded(asked)).toEqual(['lua']);
+        expect(providers.has('lua')).toBe(true);
+    });
+
+    // Red when a paint builds its highlighter from the first grammars alone: the theme change then
+    // draws Lua uncoloured again.
+    it('keeps the Lua colours through a theme change, the new highlighter holding the grammar', async () => {
+        const { made, providers, asked, paint, ensureLanguage } = counted();
+        await paint(distinct(1));
+        await ensureLanguage('lua');
+        const before = providers.get('lua');
+        await paint(distinct(0x100));
+        expect(made).toHaveLength(2);
+        expect(made[1].langs).toEqual(['markdown', 'lua']);
+        expect(providers.get('lua')).not.toBe(before);
+        expect(scopeAt(providers.get('lua'), 'local x = 1', 'local')).toBeTruthy();
+        expect(loaded(asked)).toEqual(['lua']);
+    });
+
+    // Red when a load and a paint interleave: the grammar is loaded into a highlighter the paint
+    // then replaces, or into one it has disposed.
+    it.each([
+        ['the paint asked first', true],
+        ['the load asked first', false]
+    ])(
+        'ends with the highlighter in force holding the grammar when a paint and a load start together, %s',
+        async (_label, paintFirst) => {
+            const { made, asked, providers, paint, ensureLanguage } = counted();
+            await paint(distinct(1));
+            const read = distinct(0x100);
+            const settled = paintFirst
+                ? [paint(read), ensureLanguage('lua')]
+                : [ensureLanguage('lua'), paint(read)];
+            await Promise.all(settled);
+            const inForce = made.filter((entry) => !entry.disposed);
+            expect(inForce).toHaveLength(1);
+            expect(inForce[0].highlighter.getLoadedLanguages()).toContain('lua');
+            expect(loaded(asked)).toEqual(['lua']);
+            expect(asked.every((load) => !load.disposed)).toBe(true);
+            expect(scopeAt(providers.get('lua'), 'local x = 1', 'local')).toBeTruthy();
+            await paint(distinct(0x200));
+            expect(made.at(-1)?.langs).toContain('lua');
+        }
+    );
+
+    // Red when a load asked before the first paint runs on no highlighter, or never runs.
+    it('waits for the first paint when a model is made before the theme is set', async () => {
+        const { asked, providers, paint, ensureLanguage } = counted();
+        const early = ensureLanguage('lua');
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(loaded(asked)).toEqual([]);
+        await paint(distinct(1));
+        await early;
+        expect(loaded(asked)).toEqual(['lua']);
+        expect(providers.has('lua')).toBe(true);
+    });
+
+    // Red when a failed load is kept: the next theme change builds a highlighter with a grammar
+    // that fails, or the next language is not loaded.
+    it('leaves a file as it was when its grammar fails to load, logs one line, and loads the next language', async () => {
+        const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const { made, asked, providers, paint, ensureLanguage } = counted(shipped, {
+            before: (id) => {
+                if (id === 'cmake' || id === 'lua') throw new Error(`no grammar ${id}`);
+            }
+        });
+        await paint(distinct(1));
+        await expect(ensureLanguage('cmake')).resolves.toBeUndefined();
+        await expect(ensureLanguage('lua')).resolves.toBeUndefined();
+        expect(log).toHaveBeenCalledTimes(2);
+        expect(providers.has('cmake')).toBe(false);
+        expect(providers.has('lua')).toBe(false);
+
+        await ensureLanguage('java');
+        expect(providers.has('java')).toBe(true);
+        expect(loaded(asked)).toEqual(['cmake', 'lua', 'java']);
+
+        await paint(distinct(0x100));
+        expect(made.at(-1)?.langs).toEqual(['markdown', 'java']);
+        expect(log).toHaveBeenCalledTimes(2);
+    });
+
+    // Red when the grammar of the module is passed as its id: Shiki bundles no grammar named rite.
+    it('loads a grammar from the source the painter was given, not by its id', async () => {
+        const { asked, providers, made, paint, ensureLanguage } = counted(shipped, {
+            source: (id) => (id === 'rite' ? RITE_GRAMMAR : (id as BundledLanguage))
+        });
+        await paint(distinct(1));
+        await ensureLanguage('rite');
+        expect(loaded(asked)).toEqual(['rite']);
+        expect(made[0].highlighter.getLoadedLanguages()).toContain('rite');
+        expect(providers.has('rite')).toBe(true);
+        await paint(distinct(0x100));
+        expect(made[1].highlighter.getLoadedLanguages()).toContain('rite');
+    });
+
+    // Red when the picker's language is set without the load: the model would stay uncoloured.
+    it('loads the grammar the picker chooses, once, and sets the model under its id', async () => {
+        const { asked, paint, ensureLanguage } = counted();
+        await paint(distinct(1));
+        const set: string[] = [];
+        const kit = {
+            monaco: { editor: { setModelLanguage: (_model: unknown, id: string) => set.push(id) } },
+            ensureLanguage
+        };
+        runCommand(kit as never, {} as never, {} as never, { kind: 'language', language: 'lua' });
+        runCommand(kit as never, {} as never, {} as never, { kind: 'language', language: 'lua' });
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(set).toEqual(['lua', 'lua']);
+        expect(loaded(asked)).toEqual(['lua']);
+    });
+
+    // Red when a file past the paint limit, handed to the editor as plaintext, loads its grammar.
+    it('loads no grammar for a 5 MB Lua file above the paint limit', async () => {
+        const { asked, paint, ensureLanguage } = counted();
+        await paint(distinct(1));
+        const shown = shownLanguage('lua', 'x'.repeat(5 * 1024 * 1024), 64 * 1024);
+        expect(shown).toBe('plaintext');
+        await ensureLanguage(shown);
+        expect(loaded(asked)).toEqual([]);
+    });
+
+    // Red when a load in flight at teardown goes on to bridge, throw or load the next language.
+    it('loads nothing more and throws nothing when the page is torn down mid-load', async () => {
+        let release: () => void = () => undefined;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const { made, asked, bridged, paint, ensureLanguage, close } = counted(shipped, {
+            before: () => gate
+        });
+        await paint(distinct(1));
+        const bridges = bridged.length;
+        const inFlight = ensureLanguage('lua');
+        const queued = ensureLanguage('java');
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        close();
+        release();
+        await expect(inFlight).resolves.toBeUndefined();
+        await expect(queued).resolves.toBeUndefined();
+        await expect(ensureLanguage('cmake')).resolves.toBeUndefined();
+        await expect(paint(distinct(0x100))).resolves.toBe(THEME);
+        expect(loaded(asked)).toEqual(['lua']);
+        expect(bridged).toHaveLength(bridges);
+        expect(made.every((entry) => entry.disposed)).toBe(true);
+        expect(log).not.toHaveBeenCalled();
     });
 });
