@@ -137,6 +137,12 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
+- Z145, the reviewers' model (raised 2026-10-01 by Axel: "Can we maybe switch reviewer to sonnet as well"). Today `reviewer: claude:opus` in `.agents/plan.yaml` and the configuration block; the brief checks run on the reviewer's model too, so they would switch with it. No Sonnet reviewer has run in this plan, so there is no evidence on how much a Sonnet review catches. On the 16 Sonnet-built steps the Opus review is what sent each first report back (0 of 16 passed, `agents/reviews/sonnet-vs-opus.md`), and each review costs 10 to 20 minutes and 176k to 285k tokens by its completion notice.
+  - (a) Keep Opus reviewers and brief checks. For: the one independent check before main stays as strong as it is. Against: the cost question stays unanswered.
+  - (b) Switch reviewers and brief checks to Sonnet 5.5 now. For: cheaper and faster from the next review. Against: no measure of what a Sonnet review misses; a miss lands on main. This is the lazy option.
+  - (c) A measured trial: the next three steps that reach review get a Sonnet reviewer beside the Opus one, neither told of the other; the Opus report drives the round as today; the orchestrator compares the two lists finding by finding (each read and checked as real or not) and the comparison goes to Axel to rule (a) or (b). For: the ruling rests on evidence. Against: three extra reviews; /refute names one reviewer per run, so this departs from the skill's text for three steps, which needs Axel's yes.
+  - Recommendation: (c).
+
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
