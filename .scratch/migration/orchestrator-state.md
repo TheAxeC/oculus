@@ -87,6 +87,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with Q85d, `Changes.svelte` (Q85d the body read at 77-79; Q66 the effect at 59-70), `Diff.svelte` (Q85d a `typeof` at 333 and readers; Q66 the effects at 216-241), `Graph.svelte` and `Source.svelte` (Q85d the readers; Q66 the gutter and load effects), `File.svelte` (Q85d the instance-state readers at 90-92; Q66 the address at 95-97); with L4, `PaneBody.svelte` (L4 the float body; Q66 the head comment at 8-9) and `File.svelte` (L4 only if its close needs the rule); `tests/shell/panes/` (L4 changed cases in existing files; Q66 two new files, the folder at 6); `DESIGN.md` (Q66 194; others as their entries say), different hunks, a simple merge with Diff.svelte's size read after both; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   round: 0
+- step: Q35
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 23:15)
+  session_id: a4808d97d811f004d (launched 2026-10-01 23:15 local)
+  worktree: .agents/worktrees/Q35
+  base: f9d13777
+  launched: 2026-10-01 23:15 local
+  report: agents/reviews/Q35-report.md
+  brief_check: agents/reviews/Q35-brief-check.md, every finding closed in the brief (its Closed heading, Z193 in automode); claude-sonnet-5-5, 283,148 tokens, 102 tool uses, 16.1 min
+  shared_paths: with Q85d, `Audit.svelte` (Q85d the reader at 53-61 and one import; Q35 the head comment, the `Card` import, markup and style), `tests/views/system/audit.test.ts` (Q85d one new case; Q35 the cards' describe rewritten and the source-text case removed), `tests/checks/tree/allow-audits.txt` (Q85d line 58; Q35 line 11), `type-scale.test.ts` if Q85d touches it, different hunks, a simple merge with the import block read at the second landing; with Q66, none; `DESIGN.md` (Q35 367, 378) and `HELP.md` (Q35 120 and the Changes passage) against the other entries' lines; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

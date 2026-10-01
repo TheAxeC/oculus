@@ -5,19 +5,19 @@ In flight:
 - Q85d (zod in the views, ui, shell and routes), reviewed (no red check, 7 findings); repair round 1 building.
 - L4 (floating panes and kept empty panes), building.
 - Q66 (a hidden tab defers its work: no re-read or follow while hidden, one catch-up on show; a Terminal keeps its stream), building.
+- Q35 (Changes' paths cut at the end and aligned columns, Customizations opening the real file, Audit as a list, Present's slide in a scaled 16:9 frame laid out for it), building.
 
 
 Three queued steps are kept prepared ahead (Z185).
 
-Queued, in order (30 steps):
+Queued, in order (29 steps):
 - X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a); problem decorations to D33 and code symbols to D23 by Z182), stopped: brief checked; waits for Axel's ruling Z187 (the folder picker), its other findings closed by Z188.
 - D32 (replace in Search), once D35 has landed (both change the write target and the undo table); its brief check is in.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), stopped at /spec: waits for Axel's ruling Z190 (the shape of the new confirmed write for lists, maps and records).
 - Q88c (the Source Control rows' and the pane strip's new menu items), brief checked (`agents/reviews/Q88c-brief-check.md`); waits for L4's landing, since both change the `Pane` type and the layout tree's pane literals.
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - Q91 (the project view and its editor), once X3a has landed.
-- Q35 (the Audit view as a list and the Present deck filling its pane; the rest of its line is on the tree or in D25 and S4), brief written; its brief check running.
-- D14 (LaTeX everywhere).
+- D14 (LaTeX on any folder, with build on save, magic comments, outline, word count, lint and hover preview), brief written; its brief check running.
 - D25 (the editor's options), once S4 has landed.
 - D17 (project commands).
 - D23 and D15 (language servers; PDF reading, once D14 has landed).
