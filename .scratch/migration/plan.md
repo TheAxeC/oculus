@@ -716,6 +716,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z150 (2026-10-01): (a), Q88b split by surface into Q88b (the Files view's file operations), Q88c (the Source Control rows' git operations, after Q88b, which brings `trash`) and Q88d (the pane strip and the page-wide right-click handler); X3c waits for Q88d, X3a for Q88b (the orchestrator, automode).
 - Open item Z151 (2026-10-01): (a), Q88b's choices as its brief's Decisions 1 to 11: no History record, `/api/ops`, `{left} vs {right}`, VS Code's name rule, 32 MiB uploads, the delete question always, a page-wide clipboard, keys and multi-select X3a's, local.yml protected, Find in Folder on roots, no writable flag (the orchestrator, automode).
 - Open item Z152 (2026-10-01): Q88c and Q88d merged into one step Q88c, the Source Control rows' and the pane strip's new right-click capabilities with the page-wide handler, after Q88b and S3c; X3c waits for Q88c (the user).
+- Open item Z148 (2026-10-01): (1), Lucide kept and every icon drawn at 16 px; built in the step Z146 makes (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
