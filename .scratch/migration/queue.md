@@ -35,6 +35,7 @@ Queued, in order (34 steps):
 Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers.
 
 Landed, newest first:
+- D31 (git auto fetch), 2026-10-01, 0209aa42.
 - Q88b (the Files view's file operations), 2026-10-01, 5dca2568.
 - Q85b (zod in the state layer), 2026-10-01, 83318e94.
 - S3c (the Settings editor), 2026-10-01, 209c0cbf.
