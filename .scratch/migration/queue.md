@@ -37,6 +37,7 @@ Queued, in order (31 steps):
 Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers.
 
 Landed, newest first:
+- D27 (the editor's languages), 2026-10-01, c431d27f.
 - U4 (Focus and Sessions at the other views' size), 2026-10-01, 8adc354c.
 - U3 (every view on VS Code's scale), 2026-10-01, b0a2190e.
 - Q85c (zod in the data folder), 2026-10-01, cbedc0c8.
