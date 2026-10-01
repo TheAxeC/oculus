@@ -32,6 +32,7 @@ Queued, in order:
 Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers.
 
 Landed, newest first:
+- Q88b (the Files view's file operations), 2026-10-01, 5dca2568.
 - Q85b (zod in the state layer), 2026-10-01, 83318e94.
 - S3c (the Settings editor), 2026-10-01, 209c0cbf.
 - Q85a2 (zod in the edit, sessions and transcripts folders), 2026-10-01, 0b38c14c.
