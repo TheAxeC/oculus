@@ -33,7 +33,7 @@ Queued, in order:
 Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers.
 
 Landed, newest first:
-- S3c (the Settings editor), 2026-10-01, 0445bcb2.
+- S3c (the Settings editor), 2026-10-01, 209c0cbf.
 - Q85a2 (zod in the edit, sessions and transcripts folders), 2026-10-01, 0b38c14c.
 - U2 (every view's look against VS Code), 2026-10-01, e8b517c0.
 - Q85a4 (zod in the other server folders), 2026-10-01, 58b860a0.
