@@ -41,8 +41,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/D27-brief-check.md, every finding closed in the brief (its Closed heading, Z178 in automode); claude-sonnet-5-5, 301,967 tokens, 104 tool uses, 16.6 min
   shared_paths: with U3, `Source.svelte` (D27 the import and line 133; U3 hunks at 28-30, 56-61, 124 and from 330), `tests/views/sources/source.test.ts` (D27 494-516; U3 up to 314) and `DESIGN.md` (D27 85, 171, 379; U3 158, 216-222, 374-375, 392, 405, 410), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
-  cases: agents/briefs/D27-cases.md (round 0: R1 the finder kept in FINDERS with two tests, R2 the builder's reading of case 23, R3 Tree.svelte and files-menu.test.ts added)
-  builder_usage: first run of the cases 330,199 tokens, 84 tool uses, 16.4 min (0 full-list runs)
+  cases: agents/briefs/D27-cases.md (round 0: R1 the finder kept in FINDERS with two tests, R2 the builder's reading of case 23, R3 Tree.svelte and files-menu.test.ts added; R4 three test paths added after the build)
+  builder_usage: first run of the cases 330,199 tokens, 84 tool uses, 16.4 min (0 full-list runs); the build to its stop on R4 265,047 tokens, 202 tool uses, 34.8 min (0 full-list runs)
   round: 0
 - step: D35
   executor: agent

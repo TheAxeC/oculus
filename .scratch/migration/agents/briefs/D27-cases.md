@@ -10,3 +10,15 @@ The builder's first run, handed back before any source change, found two cases t
 U3 has landed on main (b0a2190e) since this step's base. `Tree.svelte` and `files-menu.test.ts` carry U3's and Q88b's changes there; the merge is the landing's, and the builder works on its worktree's base as it stands.
 
 The rest of the round is the brief's: build items 1 to 12 against the tests, the full verify list once after the last change (`agents/spec.md:25`), a failed command rerun alone and then the full list once more, the count of full-list runs in the report, and this ruling carried in the report.
+
+## Three more paths (R4, after the build)
+
+The builder stopped before the full verify list on three test files that changes the brief and R3 require break. Each is inside the step's scope, and each joins the step's paths:
+
+1. `tools/oculus/tests/ui/menu/menu-words.test.ts`: `ROW_OPS` (line 66) gains `markdown: false`, the fact R3 made required.
+2. `tools/oculus/tests/views/sources/repositories/repositories.test.ts`: the helper `section()` (line 670) renders `DiffSection` with `context: clientContext(client)`, as the file's other renders do, since `DiffSection` reads the language map from the client's selectors. Passing `language` as a prop from `Diff.svelte` instead would add a second route to the same map and is not built.
+3. `tools/oculus/tests/checks/config/config-folder.test.ts`: `EXPECTED['sources.yml']` (line 163) gains `'languages'`, the key item 1 adds.
+
+The report names each with its before and after. The builder's notes on Verify 5 (three `cathedra` comment lines, none reading cathedra), item 6 (`surroundingPairs` turned into objects for Monaco in `kit/rite/settings.ts`), item 5 (one `ensureLanguage` call in each component's language `$effect`) and case 15 stand, and the report states each.
+
+The rest of the round stands as above: the full verify list once after the last change, a failed command rerun alone and then the full list once more, and the count of full-list runs in the report.
