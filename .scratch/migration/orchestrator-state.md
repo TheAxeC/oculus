@@ -83,7 +83,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/S3b-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 75 tool uses, 216,498 tokens, 11.0 min
   shared_paths: DESIGN.md and HELP.md with X3d and Q109 (S3b writes DESIGN 313 and HELP 256; X3d DESIGN 373 and 389, HELP 112, 130, 176, 180 and 198; Q109 DESIGN 116, HELP 127 and 221); docs/diagrams regenerated at each landing; no two change the same line
   landing: not-started
-  round: 0
+  round: 0 (sent 04:00: agents/briefs/S3b-cases.md, case 4's -0 moved to calendar.days_back, notifyConfig left out of the readers, DESIGN.md:313 lists config-key)
 ```
 
 ## The standing demands (from Axel, in force)
