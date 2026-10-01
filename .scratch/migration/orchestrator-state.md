@@ -82,6 +82,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   report: agents/reviews/S3b-report.md
   brief_check: agents/reviews/S3b-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 75 tool uses, 216,498 tokens, 11.0 min
   shared_paths: DESIGN.md and HELP.md with X3d and Q109 (S3b writes DESIGN 313 and HELP 256; X3d DESIGN 373 and 389, HELP 112, 130, 176, 180 and 198; Q109 DESIGN 116, HELP 127 and 221); docs/diagrams regenerated at each landing; no two change the same line
+  builder_usage: first run (handed back at case 4) 317,363 tokens, 67 tool uses, 11.3 min
   landing: not-started
   round: 0 (sent 04:00: agents/briefs/S3b-cases.md, case 4's -0 moved to calendar.days_back, notifyConfig left out of the readers, DESIGN.md:313 lists config-key)
 ```
@@ -649,6 +650,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 04:00. S3b's first run handed back case 4 (`-0` on `changes.keep` meets case 3's refusal) and two points; ruled at round 0 (`agents/briefs/S3b-cases.md`) and the builder resumed. In flight: X3d (round 1), Q109, S3b. Open: Z138.
 - 2026-10-01 03:56. X3d's review in (a0069f4ae7f73ca18): the Seti matching order departs from ruling 5, unreported badge colours, partial pruning of collapsed folders, the session panel's look not taken, and doc, test and behaviour findings; repair round 1 sent with 23 rulings and Z139 (1). In flight: X3d (round 1), Q109, S3b. Open: Z138.
 - 2026-10-01 03:50. Q109 and S3b prepared and their builders launched (both claude-sonnet-5-5): Q109 at 03:44 on base f5b3290b, after its brief check found es-toolkit's `maxWait` misses the bound and Z136 was corrected to lodash-es in automode; S3b at 03:49 on base 41177dcf, its brief check's findings closed (the full readers list, a reachable undo case, the route-test paths). Three steps in flight: X3d (reviewer a0069f4ae7f73ca18 running), Q109, S3b. Next: X3d's repair round 1 on its review; Q85a2 and Q85a4 when a slot frees. Open: Z138.
 - 2026-10-01 03:16. S3a landed (the options catalog; Z131 ruled (a) on Axel's "you decide"), report `agents/reviews/S3a-landing.md`. Axel: keep all three slots filled. Next: /spec Q109 and /spec S3b from main, beside X3d's builder. In flight: X3d (builder), U2 (after X3d). Open: none.
