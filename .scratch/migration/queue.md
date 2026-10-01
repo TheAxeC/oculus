@@ -3,7 +3,7 @@
 In flight:
 - S3c (the Settings editor), builder (Sonnet) running since 11:11.
 - Q85b (zod in the state layer), builder (Sonnet) running since 11:51.
-- Q88b (the Files view's file operations), brief written, its brief check (Sonnet) running since 11:45.
+- Q88b (the Files view's file operations), builder (Sonnet) running since 12:05.
 Open items: Z146 (U2's grouping into build steps), Z147 (collections as rows or cards), Z148 (the icon set), all three Axel's, in `orchestrator-state.md`'s Open items. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - Q85c, once Q85b has landed (it reads `data/shapes/shapes.ts`, which Q85b makes), then Q85d.
