@@ -43,6 +43,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   landing: not-started
   note: 2026-10-01 11:32, the orchestrator added one requirement by message, inside the rules: every new reader of an untyped value (the instance-state blob, YAML values read as plain values) reads through a zod schema, as DESIGN.md:148's rule, which Q85b extends to the state layer
   round: 0
+- step: Q85b
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 11:51)
+  session_id: a6a1b87f656ece55d (launched 2026-10-01 11:51 local)
+  worktree: .agents/worktrees/Q85b
+  base: 402437e8
+  launched: 2026-10-01 11:51 local
+  report: agents/reviews/Q85b-report.md
+  brief_check: agents/reviews/Q85b-brief-check.md, every finding closed in the brief (its Closed heading); agent a1788569a3166e1e8 on claude-sonnet-5-5, 321,979 tokens, 91 tool uses, 14.5 min
+  shared_paths: with S3c, `src/lib/state/workbench/ui.svelte.ts` (Q85b's readers at 300-420 and `boundedTextScale` at 491-495; S3c's resets near `setWallpaper` 471 and `setCodeTheme` 509), `DESIGN.md:171` and the state row of `tests/checks/tree/boundaries.test.ts` (each step adds its own entry), merged by reading both hunks at the second landing; any reader S3c adds is converted then. With Q88b (prepared next), `heldDiff`, `parseSearchState` and `SearchQuery` gain a field that the second landing adds to Q85b's schemas. `docs/diagrams/` is regenerated at each landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
