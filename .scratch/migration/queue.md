@@ -5,6 +5,7 @@ In flight:
 - Q85b (zod in the state layer), building.
 - Q88b (the Files view's file operations), building.
 Queued, in order:
+- U3 (every view on VS Code's scale, from U2's audit), once S3c has landed.
 - Q85c (zod in the data folder), once Q85b has landed; then Q85d.
 - Q88c (the Source Control rows' and the pane strip's new menu items), once Q88b and S3c have landed.
 - X3c (the tab strip as VS Code's), once Q88c has landed.
