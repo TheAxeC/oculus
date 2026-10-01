@@ -264,3 +264,4 @@ How each finding is closed. The step waits for D31 and Q85c to land (M1, M2), so
 - C5: cases 13 and 17 stated as audits, case 17 checking the sink count returns to its start value.
 - C7, section 5, section 6: a case per uncovered key and per group's refusal, a bound case per key, and the implied inputs 1 to 13 as cases with the expected results the report proposes, input 2 decided as: a host change clears the rows, `lastOk`, the quota and the resolved log paths; input 5 decided as: a `pollMin` change republishes.
 - C10: new test files allowed in `tests/server/accounts/calendar` and `mail`.
+- Applied in `agents/briefs/D35.md` as written on main at 483fcef9, the cases renumbered: the audits of C5 are cases 18 and 24, the log line of C4 is case 16, the parse-error case of P1/C1 is case 20, the account rule of C2 is item 3 and cases 9 and 11, the bounds of S1 are item 8 and case 22, the implied inputs of C7 are cases 1 to 15, 21, 23 and 26.
