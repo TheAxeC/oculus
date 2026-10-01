@@ -3,7 +3,15 @@
 // open folders that failed to list) and bounded response reads, kept apart from the store because
 // they depend only on the wire and the response stream.
 
+import { z } from 'zod';
 import type { Entry, SchemaField } from '../../data/model/index.ts';
+import {
+    anyNumberShape,
+    readAs,
+    readJson,
+    survivorsShape,
+    unchanged
+} from '../../data/shapes/shapes.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
 import { SHOWN_DEFAULT, type FsEntry, type FsRoot, type ListingShown, type TreeRow } from './fs.ts';
 
@@ -172,20 +180,53 @@ export const LISTING_FORMS = [false, true].flatMap((hidden) =>
     [false, true].map((ignored) => listingForm({ hidden, ignored }))
 );
 
+/** What a read of an endpoint came to: the body of a successful answer, or why the read failed. */
+export type Answered = { ok: true; body: unknown } | { ok: false; error: string };
+
+/** The `error` text of a refused answer's body, and nothing for a body that carries none. */
+const refusalShape = z.object({ error: z.string() });
+
+/**
+ * A response read as an endpoint's answer. A body that is JSON null or is not JSON is a failed
+ * read whatever the status, worded with `status`; a refused answer is worded with the body's own
+ * `error` when it is text and with `status` otherwise; any other body of a successful answer is
+ * handed on to be read for its fields.
+ */
+export async function readAnswer(
+    response: Response,
+    status = String(response.status)
+): Promise<Answered> {
+    const body = await readJson(response);
+    if (body === undefined) return { ok: false, error: status };
+    if (!response.ok) return { ok: false, error: readAs(refusalShape, body)?.error ?? status };
+    return { ok: true, body };
+}
+
+/** One entry of a listing, answered as the endpoint sent it. */
+const fsEntryShape = unchanged(
+    z.object({
+        name: z.string(),
+        kind: z.enum(['file', 'dir']),
+        size: anyNumberShape,
+        mtime: anyNumberShape
+    })
+) satisfies z.ZodType<FsEntry>;
+
+/** The part of a successful listing this reads: its entries, the well-formed ones only. */
+const listingShape = z.object({
+    entries: survivorsShape(fsEntryShape).catch([])
+}) satisfies z.ZodType<{ entries: FsEntry[] }>;
+
 /**
  * One directory's answer as the tree holds it: its entries, or the reason the request failed,
  * read off the endpoint's own error word or the status.
  */
 export async function listingAnswer(url: string): Promise<Listing> {
     try {
-        const response = await fetch(url);
-        const body = (await response.json()) as { entries?: unknown; error?: unknown };
-        if (response.ok) {
-            const entries = Array.isArray(body.entries) ? (body.entries as FsEntry[]) : [];
-            return { entries, error: '', loading: false };
-        }
-        const error = typeof body.error === 'string' ? body.error : String(response.status);
-        return { entries: [], error, loading: false };
+        const answer = await readAnswer(await fetch(url));
+        if (!answer.ok) return { entries: [], error: answer.error, loading: false };
+        const entries = readAs(listingShape, answer.body)?.entries ?? [];
+        return { entries, error: '', loading: false };
     } catch (error) {
         return {
             entries: [],

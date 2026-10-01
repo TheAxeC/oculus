@@ -29,24 +29,6 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 
 ```yaml
 dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
-- step: Q85b
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 11:51)
-  session_id: a6a1b87f656ece55d (launched 2026-10-01 11:51 local)
-  worktree: .agents/worktrees/Q85b
-  base: 402437e8
-  launched: 2026-10-01 11:51 local
-  report: agents/reviews/Q85b-report.md
-  builder_usage: first run (stopped on nine cases) 375,438 tokens, 96 tool uses, 50.5 min; resumed 12:43 with the round-0 ruling; after round 0: 248,778 tokens, 285 tool uses, 89.4 min; final report appended to the report 14:12; round 1: 308,429 tokens, 15 tool uses, 13.4 min (the completion notice), its report appended under "Repair round 1"
-  reviewer: launched 2026-10-01 14:13 local, agent a43362095d8a4a100 on claude-sonnet-5-5 (read from its record)
-  reviewer_report: agents/reviews/Q85b-refuter.md, claude-sonnet-5-5, 238,344 tokens, 131 tool uses, 32.2 min; 0 Spec, 2 Proof, 2 Standards, 3 Behaviour findings
-  reviewer_round1: launched 2026-10-01 15:10, agent ac704900797de0d3b on ordo-high, served claude-sonnet-5-5
-  cases: agents/briefs/Q85b-cases.md, nine cases and the crashes outside the cases ruled at the first run, sent back by message at round 0
-  brief_check: agents/reviews/Q85b-brief-check.md, every finding closed in the brief (its Closed heading); agent a1788569a3166e1e8 on claude-sonnet-5-5, 321,979 tokens, 91 tool uses, 14.5 min
-  shared_paths: with S3c, `src/lib/state/workbench/ui.svelte.ts` (Q85b's readers at 300-420 and `boundedTextScale` at 491-495; S3c's resets near `setWallpaper` 471 and `setCodeTheme` 509), `DESIGN.md:171` and the state row of `tests/checks/tree/boundaries.test.ts` (each step adds its own entry), merged by reading both hunks at the second landing; any reader S3c adds is converted then. With Q88b (prepared next), `heldDiff`, `parseSearchState` and `SearchQuery` gain a field that the second landing adds to Q85b's schemas. `docs/diagrams/` is regenerated at each landing
-  landing: not-started
-  round: 1 (agents/briefs/Q85b-round1.md, sent 14:56)
 - step: Q88b
   executor: agent
   worker: claude:sonnet
@@ -56,12 +38,13 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: 5ef2a351
   launched: 2026-10-01 12:05 local
   report: agents/reviews/Q88b-report.md
-  builder_usage: first run (stopped on two cases) 332,448 tokens, 166 tool uses, 31 min; resumed 12:37 with the round-0 ruling; to the report 352,900 tokens, 562 tool uses, 168.1 min in all (the completion notice); report saved at agents/reviews/Q88b-report.md
+  builder_usage: first run (stopped on two cases) 332,448 tokens, 166 tool uses, 31 min; resumed 12:37 with the round-0 ruling; to the report 352,900 tokens, 562 tool uses, 168.1 min in all (the completion notice); report saved at agents/reviews/Q88b-report.md; round 1: 228,696 tokens, 82 tool uses, 24.0 min (the completion notice), its report under "Repair round 1"
   cases: agents/briefs/Q88b-cases.md, two cases ruled at the first run (Copy on a root, the name length), sent back by message at round 0
   brief_check: agents/reviews/Q88b-brief-check.md, every finding closed in the brief (its Closed heading, Z151 widened in automode); agent af4840b5613852da9 on claude-sonnet-5-5, 317,240 tokens, 107 tool uses, 15.8 min
   shared_paths: with Q85b, `state/sources/repositories/repositories.ts` (`heldDiff` gains `against`), `state/sources/search.ts` and `search.svelte.ts` (`under`), `state/sources/fs.svelte.ts` and `fs.ts` (a per-folder re-read, `TEXT_LIMIT` re-exported, the pending name), `state/client/context.ts`, `state/client/writes.svelte.ts`, `state/life/memories.ts`, `tests/state/sources/`, `tests/checks/tree/boundaries.test.ts`'s state row and `DESIGN.md:148,171`: Q85b rewrites those readers into schemas and Q88b adds a field or a call beside them, so the second landing adds Q88b's fields to Q85b's schemas and converts Q88b's new state readers, by reading both; the boundaries row and DESIGN lines take both entries. With S3c, `state/client/context.ts` (each registers one store) and `DESIGN.md:171`, both entries kept. `docs/diagrams/` is regenerated at each landing
   reviewer: launched 2026-10-01 14:57, agent a145c86cd62c5a835 on ordo-high, served claude-sonnet-5-5 (the transcript's message.model)
   reviewer_report: agents/reviews/Q88b-refuter.md, claude-sonnet-5-5, 340,522 tokens, 99 tool uses, 16.4 min; 3 Spec, 2 Proof, 5 Standards, 3 Behaviour findings
+  reviewer_round1: launched 2026-10-01 15:39, agent afda3e1b0bed5d2a0 on ordo-high, served claude-sonnet-5-5; report to go under "Repair round 1, refuted" in agents/reviews/Q88b-refuter.md
   landing: not-started
   round: 1 (agents/briefs/Q88b-round1.md, sent 15:14)
 - step: U3
@@ -73,6 +56,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: ab4d9084
   launched: 2026-10-01 15:23 local
   report: agents/reviews/U3-report.md
+  cases: agents/briefs/U3-cases.md (round 0, Z161 and six corrections)
+  builder_usage: first run of the cases 302,766 tokens, 52 tool uses, 11.1 min
   brief_check: agents/reviews/U3-brief-check.md, every finding closed in the brief (its Closed heading, Z157 and Z160 in automode); agent a2d45e553bd8d1965 on claude-sonnet-5-5, 327,546 tokens, 88 tool uses, 14.4 min
   shared_paths: with Q85b, `src/lib/state/sources/search.svelte.ts` (U3 adds at most one retry function; Q85b rewrites its readers into schemas) and `DESIGN.md` (different lines). With Q88b, the Files view (`views/sources/files/Files.svelte`, `tree/Tree.svelte`), `views/sources/search/Query.svelte`, `views/sources/repositories/diff/Diff.svelte`, `views/life/memories/Memories.svelte`, `ui/tree/TreeItem.svelte`, `search.svelte.ts`, `tests/views/sources/files/` and `DESIGN.md` (different lines): U3 changes style blocks and moves header controls into the bar, Q88b adds menus, handlers and new components, so the hunks meet only where both edit one toolbar snippet, merged by reading both at U3's landing, which comes after both; the new components Q88b adds (`NameInput.svelte`, the questions component) are put on the scale at that landing. `docs/diagrams/` is regenerated at each landing
   landing: not-started
@@ -171,6 +156,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Z146, U2's grouping into build steps (raised 2026-10-01 at U2's audit): ruled by Axel 2026-10-01, one step U3 for all seven groups, since with Z147 (c) every group changes the same shared parts (`Pane.svelte`, `Toolbar.svelte`, `ToolButton.svelte`, `Card.svelte`, `Empty.svelte`, `Glyph.svelte`, the `--fs-*` tokens). Not chosen: four steps, seven steps, no steps. `plan.md` Rulings and U3's line.
 - Z147, collections as rows or cards (raised 2026-10-01 at U2's audit): ruled by Axel 2026-10-01, (c) widened: cards kept, fit to the pane's width (difference 14), one chip shape (difference 10), titles on the type scale (difference 9), groups 2 and 5 applied, links without underline (difference 15); Projects looked at on TEST after U3. Not chosen: (a) rows everywhere, (b) rows on Projects first. `plan.md` Rulings and U3's line.
 - Z148, the icon set (raised 2026-10-01 at U2's audit, difference 19): ruled by Axel 2026-10-01, (1), Lucide kept and every icon drawn at 16 px, the 1em rule of `ui/display/Glyph.svelte:61-66` replaced; built in the step Z146 makes. Not chosen: (2) codicons through `config/catalogs/icons.yml`. `plan.md` Rulings.
+- Z161, U3's case 8 against `ui/tabs/` left unchanged (raised 2026-10-01 15:36 by U3's builder in its first run of the cases): `TabFace.svelte:214` reads the removed `--fs-xxs` and `:313-314` draws a 2px ring, so the greps of case 8 cannot print nothing. Closed by the orchestrator in automode, (A): those two rules change (`--fs-xs`; 1px, offset -1px) with the file's pin in `type-scale.test.ts`, nothing else of the tab strip. Not chosen: (B) except `ui/tabs/` from the greps, the lazy option (a loosened check and a rule reading a removed token). Ruled in `agents/briefs/U3-cases.md` 1.
 - Z160, a glyph for the add actions U3 moves into the header (raised 2026-10-01 15:22 by U3's brief check, F17): the vocabulary has no `add`. Closed by the orchestrator in automode, (a): one new glyph name `add` (Lucide `plus`, ASCII `[+]`) for the add actions; every other action without a glyph goes to the bar as a text button. Not chosen: (b) a new glyph for every action that lacks one, which grows the vocabulary for words that read better as words; (c) the add actions as text buttons in the bar, which drops the commonest action from the header. `plan.md` Rulings and `choices.md`.
 - Z158, a link to a folder in the Files listing (raised 2026-10-01 15:14 by Q88b's review, Spec 2): the brief's item 11 gives a link to a folder the file message of the Delete question, and the listing carries no link flag. Closed by the orchestrator in automode, (a): the listing's entry gains `link: true` for a symbolic link, read with `lstat`, an internal field between oculus's server and page. Not chosen: (b) keep the folder message for a link, which tells the reader the folder behind it is deleted, the lazy option. `plan.md` Rulings and `choices.md`.
 - Z159, the clipboard after a Cut paste that never reached the server (raised 2026-10-01 15:14 by Q88b's review, Spec 3): the brief said a cut paste clears the clipboard when it fails. Closed by the orchestrator in automode, (a): a paste whose request never reached the server keeps the Cut, since nothing moved, with a test and the rule in DESIGN.md; a paste the server refused still clears it. Not chosen: (b) clear it on every failure, which makes the reader Cut again for a paste that did nothing. `plan.md` Rulings and `choices.md`.
@@ -674,6 +660,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 15:38. Q85b landed (zod at the state layer's inputs), report `agents/reviews/Q85b-landing.md`; three fixes at landing; no look. U3's builder handed back at its first run of the cases (case 8 against `ui/tabs/`), ruled Z161 in automode and resumed on `agents/briefs/U3-cases.md`. In flight: Q88b (round 1), U3 (builder). Next: /spec Q85c into the freed slot. Open items: none.
 - 2026-10-01 14:53. S3c landed (the Settings editor over the options catalog), report `agents/reviews/S3c-landing.md`; five fixes at landing; look on TEST. Q85b's review is in (Sonnet). In flight: Q85b (review in, repair round next), Q88b (builder). Next: Q85b's repair round, /spec U3 into the freed slot. Open items: none.
 - 2026-10-01 11:25. Q85a2 landed (zod in `edit`, `sessions` and `transcripts`, the shared schemas in `core/shapes.ts`), report `agents/reviews/Q85a2-landing.md`; seven fixes at landing. In flight: S3c (builder since 11:11). Next: /spec Q85b and Q85c into the free slots. Open items Z146, Z147, Z148 are Axel's.
 - 2026-10-01 11:03. U2 landed (the audit of every view against VS Code), report `agents/reviews/U2-landing.md`; eight fixes at landing; its choices raised as Z146 (the grouping into build steps), Z147 (collections as rows or cards) and Z148 (the icon set), Axel's. S3c's brief check in (Sonnet). In flight: Q85a2 (its round-1 review). Next: S3c's brief closed and its builder launched; /spec Q85b. Open: Z146, Z147, Z148.

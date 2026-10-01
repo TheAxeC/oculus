@@ -14,6 +14,7 @@
 // the file holds. The Leads view and the collection view call these; nothing here draws.
 
 import { APPLIED } from '../../data/accounts/leads.ts';
+import { readAs, textOrNumberShape } from '../../data/shapes/shapes.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
 import { parseCollectionState, type FormField } from '../boards/collection.ts';
 import { formKey, type TypedField } from '../forms/form-drafts.svelte.ts';
@@ -54,8 +55,7 @@ const ADD_FORM = formKey(APPLICATIONS, null);
 
 /** One field of a lead as text, or the empty string for a field the lead does not hold. */
 function text(entry: LeadEntry, field: string): string {
-    const value = entry[field];
-    return typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+    return (readAs(textOrNumberShape, entry[field]) ?? '').trim();
 }
 
 /**
@@ -102,8 +102,7 @@ export function prefillFromLead(
         });
     }
     // The lead is named as the feed write names it, the title as the file holds it, untrimmed.
-    const title = entry.title;
-    const lead = typeof title === 'string' || typeof title === 'number' ? String(title) : '';
+    const lead = readAs(textOrNumberShape, entry.title) ?? '';
     tab.setInstanceState(id, {
         ...parseCollectionState(tab.instanceState(id)),
         adding: true,

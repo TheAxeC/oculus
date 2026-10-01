@@ -4,6 +4,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Turn } from '../../../src/lib/data/model/index.ts';
+import type { TurnsState } from '../../../src/lib/state/sessions/transcript.svelte.ts';
 import { createClientState, stubHeld, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;
@@ -217,5 +218,124 @@ describe('the tail of a session', () => {
 
         expect(turnsFor('one').pending).toBe(true);
         expect(turnsFor('one').turns).toEqual([]);
+    });
+});
+
+describe('an answer whose fields are of the wrong type', () => {
+    const user: Turn = { at: null, role: 'user', text: 'a', html: 'a', cut: false, tool: null };
+    const call: Turn = {
+        ...user,
+        role: 'tool',
+        tool: { id: 't', name: 'Bash', summary: 'ls', ok: null }
+    };
+    const NOTHING: TurnsState = { turns: [], offset: 0, pending: false, error: '' };
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    /** The turns a fresh store holds for a session once the endpoint answered `text`. */
+    async function answeredWith(text: string, status = 200): Promise<TurnsState> {
+        vi.stubGlobal('window', {});
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
+        const fresh = createClientState();
+        fresh.transcripts.turnsFor('one');
+        await new Promise((wake) => setTimeout(wake, 0));
+        return fresh.transcripts.turnsFor('one');
+    }
+
+    it.each([
+        ['an offset that is null', { turns: [user], offset: null }, { ...NOTHING, turns: [user] }],
+        [
+            'results that are a list',
+            { turns: [user], offset: 2, results: [] },
+            { ...NOTHING, turns: [user], offset: 2 }
+        ],
+        [
+            'results that are a string',
+            { turns: [user], offset: 2, results: 'x' },
+            { ...NOTHING, turns: [user], offset: 2 }
+        ],
+        ['turns that are null', { turns: null, offset: 3 }, { ...NOTHING, offset: 3 }],
+        ['a list as the body', [], NOTHING],
+        ['an empty map as the body', {}, NOTHING]
+    ])('answers %s as the turns it names', async (_name, body, expected) => {
+        expect(await answeredWith(JSON.stringify(body))).toStrictEqual(expected);
+    });
+
+    it('keeps an offset that is infinite, since a number is a number', async () => {
+        expect(await answeredWith('{"turns":[],"offset":1e999}')).toStrictEqual({
+            ...NOTHING,
+            offset: Infinity
+        });
+    });
+
+    it('answers a refusal as its sentence, and as its status when it names none', async () => {
+        expect(await answeredWith('{"error":"x"}', 500)).toStrictEqual({ ...NOTHING, error: 'x' });
+        expect(await answeredWith('[]', 500)).toStrictEqual({ ...NOTHING, error: '500' });
+    });
+
+    it.each([
+        ['turns that are a string', { turns: 'x', offset: 3 }, { ...NOTHING, offset: 3 }],
+        ['turns that are a map', { turns: {}, offset: 3 }, { ...NOTHING, offset: 3 }],
+        [
+            'turns holding a null, a number and a turn',
+            { turns: [null, 3, user], offset: 2 },
+            { ...NOTHING, turns: [user], offset: 2 }
+        ],
+        [
+            'an offset that is a string',
+            { turns: [user], offset: '4' },
+            { ...NOTHING, turns: [user] }
+        ],
+        [
+            'turns holding maps without a role, with a text that is a number and with a tool that is a number',
+            {
+                turns: [{ ...user, role: 'x' }, { ...user, text: 3 }, { ...user, tool: 3 }, user],
+                offset: 2
+            },
+            { ...NOTHING, turns: [user], offset: 2 }
+        ],
+        [
+            'a result that is no boolean',
+            { turns: [call], offset: 2, results: { t: 'yes' } },
+            { ...NOTHING, turns: [call], offset: 2 }
+        ]
+    ])(
+        'answers %s as the turns that are well-formed, and the offset as a number',
+        async (_name, body, expected) => {
+            expect(await answeredWith(JSON.stringify(body))).toStrictEqual(expected);
+        }
+    );
+
+    it('answers a refusal whose error is a number as its status', async () => {
+        expect(await answeredWith('{"error":3}', 500)).toStrictEqual({ ...NOTHING, error: '500' });
+    });
+
+    it('answers a body that is null or not JSON as the failed read with its status', async () => {
+        for (const text of ['null', 'nope']) {
+            expect(await answeredWith(text)).toStrictEqual({ ...NOTHING, error: '200' });
+            expect(await answeredWith(text, 500)).toStrictEqual({ ...NOTHING, error: '500' });
+        }
+    });
+
+    it('keeps the turns it holds when a later read answers null or text that is not JSON', async () => {
+        vi.stubGlobal('window', {});
+        const bodies = [JSON.stringify({ turns: [user], offset: 2 }), 'null', 'nope'];
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(bodies.shift())));
+        const fresh = createClientState();
+        fresh.transcripts.turnsFor('one');
+        await new Promise((wake) => setTimeout(wake, 0));
+        fresh.transcripts.follow('one', '0');
+        for (const stamp of ['1', '2']) {
+            fresh.transcripts.follow('one', stamp);
+            await new Promise((wake) => setTimeout(wake, 0));
+            expect(fresh.transcripts.turnsFor('one')).toStrictEqual({
+                turns: [user],
+                offset: 2,
+                pending: false,
+                error: '200'
+            });
+        }
     });
 });

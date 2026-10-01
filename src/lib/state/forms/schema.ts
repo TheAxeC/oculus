@@ -11,8 +11,16 @@
 // more. Eleven of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens
 // them empty; the write itself handles them like any other, since it reads the manifest from disk.
 
+import { z } from 'zod';
 import type { Id, Project, Snapshot } from '../../data/model/index.ts';
-import { isMap, scalar } from '../../data/helpers/guards.ts';
+import { byKey, scalar } from '../../data/helpers/guards.ts';
+import {
+    filledTextShape,
+    mapShape,
+    readAs,
+    rowsShape,
+    stringItemsShape
+} from '../../data/shapes/shapes.ts';
 
 /** One field of the form, in the order config/catalogs/manifest-schema.yml lists it. */
 export type FormField = {
@@ -54,23 +62,40 @@ export const NOT_IN_MODEL = [
     'paths'
 ];
 
-/** Not data/helpers/guards' `text`: an empty string is no label here, so it reads as undefined. */
-function text(value: unknown): string | undefined {
-    return typeof value === 'string' && value !== '' ? value : undefined;
+/** The word a value holds, and undefined for an empty text and for anything that is no text. */
+function filled(value: unknown): string | undefined {
+    return filledTextShape.safeParse(value).data;
 }
 
-/** The `manifest_schema` map of the merged config. */
-function schemaOf(config: Record<string, unknown>): Record<string, unknown> {
-    const schema = config.manifest_schema;
-    return isMap(schema) ? schema : {};
+/**
+ * The two maps of the `manifest_schema` of the merged config: the sections, and the fields keyed by
+ * their name. A part that is no map reads as absent.
+ */
+const manifestSchemaShape = z.object({
+    sections: mapShape.optional().catch(undefined),
+    fields: mapShape.optional().catch(undefined)
+});
+
+/** The `manifest_schema` of the merged config as its two maps, either absent. */
+function schemaOf(config: Record<string, unknown>): z.infer<typeof manifestSchemaShape> {
+    return readAs(manifestSchemaShape, config.manifest_schema) ?? {};
 }
 
 /** The section names, in the order the schema lists them, under whatever they are displayed as. */
 export function formSections(config: Record<string, unknown>): string[] {
     const sections = schemaOf(config).sections;
-    if (!isMap(sections)) return [];
-    return Object.values(sections).filter((name): name is string => typeof name === 'string');
+    return sections === undefined ? [] : (readAs(stringItemsShape, Object.values(sections)) ?? []);
 }
+
+/** One row of the schema's `fields:` map: the words it carries, each absent unless it is text. */
+const fieldRowShape = z.object({
+    label: filledTextShape,
+    help: filledTextShape,
+    type: filledTextShape,
+    section: filledTextShape,
+    from: filledTextShape,
+    options: rowsShape(z.string()).optional().catch(undefined)
+});
 
 /**
  * Every field of the form, in file order. A field without a `type` or a `section` is still
@@ -79,37 +104,41 @@ export function formSections(config: Record<string, unknown>): string[] {
  */
 export function formFields(config: Record<string, unknown>): FormField[] {
     const fields = schemaOf(config).fields;
-    if (!isMap(fields)) return [];
+    if (fields === undefined) return [];
     const found: FormField[] = [];
-    for (const [name, raw] of Object.entries(fields)) {
-        if (!isMap(raw)) continue;
-        const options = Array.isArray(raw.options)
-            ? raw.options.filter((one): one is string => typeof one === 'string')
-            : undefined;
+    for (const name of Object.keys(fields)) {
+        const row = readAs(fieldRowShape, fields[name]);
+        if (row === null) continue;
         found.push({
             field: name,
-            label: text(raw.label) ?? name,
-            help: text(raw.help),
-            type: text(raw.type) ?? '',
-            section: text(raw.section) ?? '',
-            from: text(raw.from),
-            options
+            label: row.label ?? name,
+            help: row.help,
+            type: row.type ?? '',
+            section: row.section ?? '',
+            from: row.from,
+            options: row.options
         });
     }
     return found;
 }
 
+/**
+ * One entry of a keyed vocabulary list: a word is its own choice, and a map with a `key` is the
+ * choice of that key under its `label`, or under the key when it has no label.
+ */
+const choiceShape = z.union([
+    z.string().transform((id) => ({ id, label: id })),
+    z
+        .object({ key: z.string(), label: filledTextShape })
+        .transform((row) => ({ id: row.key, label: row.label ?? row.key }))
+]) satisfies z.ZodType<Choice>;
+
+/** The entries of one keyed vocabulary list of config/catalogs/vocab.yml, as choices. */
+const vocabChoicesShape = rowsShape(choiceShape);
+
 /** The entries of one keyed vocabulary list of config/catalogs/vocab.yml, as choices. */
 function vocabChoices(raw: unknown): Choice[] {
-    if (!Array.isArray(raw)) return [];
-    const found: Choice[] = [];
-    for (const item of raw) {
-        if (typeof item === 'string') found.push({ id: item, label: item });
-        else if (isMap(item) && typeof item.key === 'string') {
-            found.push({ id: item.key, label: text(item.label) ?? item.key });
-        }
-    }
-    return found;
+    return readAs(vocabChoicesShape, raw) ?? [];
 }
 
 /** The entities of one kind, as choices, by id. */
@@ -122,7 +151,7 @@ function entityChoices(
         .sort()
         .map((id) => {
             const entity = entities[id];
-            const label = keys.map((key) => text(entity[key])).find((one) => one !== undefined);
+            const label = keys.map((key) => filled(entity[key])).find((one) => one !== undefined);
             return { id, label: label ?? id };
         });
 }
@@ -149,7 +178,7 @@ export function choicesFor(
     if (from === 'projects') return entityChoices(entities?.projects, ['short', 'title']);
     if (from === 'people') return entityChoices(entities?.people, ['name']);
     if (from === 'organisations') return entityChoices(entities?.organisations, ['name']);
-    return vocabChoices(config[from]);
+    return vocabChoices(byKey(config, from));
 }
 
 /**
@@ -198,20 +227,30 @@ export function fieldValues(project: Project): Record<string, unknown> {
     };
 }
 
+/** A list for a list widget: the words of a list, or a word that is not empty as a list of one. */
+const listShape = z.union([
+    rowsShape(z.string()),
+    z
+        .string()
+        .min(1)
+        .transform((one) => [one])
+]);
+
 /** One value as the widget's own kind: a list for a list widget, text for the rest. */
 export function asList(value: unknown): string[] {
-    if (Array.isArray(value)) return value.filter((one): one is string => typeof one === 'string');
-    if (typeof value === 'string' && value !== '') return [value];
-    return [];
+    return readAs(listShape, value) ?? [];
 }
+
+/** A list as one item per line, which `lines` writes back. */
+const linesShape = z
+    .array(z.unknown())
+    .transform((items) => items.map((one) => scalar(one)).join('\n'));
 
 /**
  * One value as the text a control shows. A list is one item per line, which `lines` writes back.
  */
 export function asText(value: unknown): string {
-    if (value === undefined || value === null) return '';
-    if (Array.isArray(value)) return value.map((one) => scalar(one)).join('\n');
-    return scalar(value);
+    return readAs(linesShape, value) ?? scalar(value);
 }
 
 /** The fields of one section of the manifest form, in file order. */

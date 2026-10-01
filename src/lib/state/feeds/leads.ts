@@ -1,7 +1,16 @@
 // Layer 2, client state. Pure Position Leads status, deadline, fit, ordering, search, and saved
 // view state. The view receives ready-to-draw live and expired lists and owns no feed rules.
 
+import { z } from 'zod';
 import { scalar } from '../../data/helpers/guards.ts';
+import {
+    anyNumberShape,
+    mapShape,
+    readAs,
+    rowsShape,
+    searchRevealShape,
+    textOrNumberShape
+} from '../../data/shapes/shapes.ts';
 import {
     APPLIED,
     DECLINED,
@@ -43,15 +52,28 @@ const FITS: FitKey[] = ['strong', 'moderate', 'reach'];
 const DATE = /\d{4}-\d{2}-\d{2}/;
 const TONE = /^c-([a-z][a-z0-9-]*)$/;
 
-function record(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
+/** The vocabulary's two maps a lead's fit colour is read through. */
+const fitVocabShape = z.object({ leads_fit: mapShape, palette: mapShape });
 
+/** A colour word or a palette token: a string and nothing else. */
+const colorWordShape = z.string();
+
+/** The fields a view instance keeps of the leads, each read as absent when of the wrong type. */
+const leadsStateShape = searchRevealShape.extend({
+    expiredOpen: z.boolean().catch(false),
+    runlogOpen: z.boolean().catch(false),
+    logAll: z.boolean().catch(false),
+    adding: z.boolean().catch(false),
+    showDeclined: z.unknown().optional(),
+    showDismissed: z.unknown().optional()
+});
+
+/** The lines of a run log: the text lines and the numbers, written out. */
+const runLogShape = rowsShape(z.union([z.string(), anyNumberShape.transform(String)]));
+
+/** A text of the lead's, or a number written out, and the empty text for anything else. */
 function word(entry: LeadEntry, field: string): string {
-    const value = entry[field];
-    return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+    return readAs(textOrNumberShape, entry[field]) ?? '';
 }
 
 /** A lead's stable id: its posting URL, or its title and institution, reduced to a slug. */
@@ -106,14 +128,12 @@ export function fitKey(fit: unknown): FitKey | null {
 /** Resolve a lead's fit colour through `leads_fit` and `palette` from vocab.yml. */
 export function fitTone(fit: unknown, vocab: unknown): string {
     const key = fitKey(fit);
-    const config = record(vocab);
-    const colors = record(config?.leads_fit);
-    const palette = record(config?.palette);
-    if (key === null || colors === null || palette === null) return 'grey';
-    const color = colors[key];
-    if (typeof color !== 'string') return 'grey';
-    const token = palette[color.toLowerCase()];
-    if (typeof token !== 'string') return 'grey';
+    const config = readAs(fitVocabShape, vocab);
+    if (key === null || config === null) return 'grey';
+    const color = readAs(colorWordShape, config.leads_fit[key]);
+    if (color === null) return 'grey';
+    const token = readAs(colorWordShape, config.palette[color.toLowerCase()]);
+    if (token === null) return 'grey';
     return TONE.exec(token)?.[1] ?? 'grey';
 }
 
@@ -157,27 +177,21 @@ export function leadsSearch(entries: LeadEntry[], search: string): LeadEntry[] {
  * `showDismissed` in place of `showDeclined` is read as the same toggle.
  */
 export function parseLeadsState(raw: unknown): LeadsState {
-    const held = record(raw);
+    const held = readAs(leadsStateShape, raw);
     const showing = held?.showDeclined ?? held?.showDismissed;
     const state: LeadsState = {
-        search: typeof held?.search === 'string' ? held.search : '',
-        expiredOpen: held?.expiredOpen === true,
-        runlogOpen: held?.runlogOpen === true,
-        logAll: held?.logAll === true,
-        adding: held?.adding === true,
+        search: held?.search ?? '',
+        expiredOpen: held?.expiredOpen ?? false,
+        runlogOpen: held?.runlogOpen ?? false,
+        logAll: held?.logAll ?? false,
+        adding: held?.adding ?? false,
         showDeclined: showing === true
     };
-    if (typeof held?.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;
 }
 
 /** The run log the leads feed's `meta.log` carries, each line as text, newest first as written. */
 export function runLog(meta: Record<string, unknown> | undefined): string[] {
-    const log = meta?.log;
-    if (!Array.isArray(log)) return [];
-    return log
-        .filter(
-            (line): line is string | number => typeof line === 'string' || typeof line === 'number'
-        )
-        .map(String);
+    return readAs(runLogShape, meta?.log) ?? [];
 }

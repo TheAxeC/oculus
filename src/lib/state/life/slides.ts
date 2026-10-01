@@ -9,6 +9,8 @@
 // the two out of step, and the view then draws what the file says and says that the unsaved work
 // was dropped, rather than saving an order over a deck that has moved underneath it.
 
+import { z } from 'zod';
+import { fieldItemsShape, readAs } from '../../data/shapes/shapes.ts';
 import { movedOrder } from '../boards/collection.ts';
 import { t } from '../shared/words/text.ts';
 
@@ -33,26 +35,19 @@ export type SlidesState = SlidePicks & {
 /** What a write answered, as much of it as the status line depends on. */
 export type SaveAnswer = { ok: boolean; error?: string; network?: boolean };
 
-/** A list of words out of unknown data, and the empty list for anything else. */
-function words(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter((one): one is string => typeof one === 'string');
-}
+/** The fields a Slides pane keeps, each read as absent when it is of the wrong type. */
+const slidesStateShape = z.object({
+    at: z.string().catch(''),
+    order: fieldItemsShape,
+    picked: fieldItemsShape,
+    said: z.string().catch('')
+});
 
 /**
  * One pane's own state out of whatever its instance holds, with the defaults for what is missing.
  */
 export function parseSlidesState(value: unknown): SlidesState {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-        return { at: '', order: [], picked: [], said: '' };
-    }
-    const held = value as Record<string, unknown>;
-    return {
-        at: typeof held.at === 'string' ? held.at : '',
-        order: words(held.order),
-        picked: words(held.picked),
-        said: typeof held.said === 'string' ? held.said : ''
-    };
+    return readAs(slidesStateShape, value) ?? { at: '', order: [], picked: [], said: '' };
 }
 
 /**

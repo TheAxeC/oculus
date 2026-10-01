@@ -1,7 +1,9 @@
 // Layer 2, client state. Pure LinkedIn cadence, ordering, snippets, search, and saved view state.
 // The view receives ready-to-draw ideas and posts and owns no folder or calendar rules.
 
+import { z } from 'zod';
 import { scalar } from '../../data/helpers/guards.ts';
+import { readAs, searchRevealShape, textOrNumberShape } from '../../data/shapes/shapes.ts';
 
 export { localDate } from '../../data/helpers/dates.ts';
 export type { SchemaField } from '../../data/model/index.ts';
@@ -28,15 +30,12 @@ export type SplitLinkedin = { ideas: LinkedinEntry[]; posts: LinkedinEntry[] };
 
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-function record(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
+/** The fields a view instance keeps of LinkedIn, each read as absent when of the wrong type. */
+const linkedinStateShape = searchRevealShape.extend({ adding: z.boolean().catch(false) });
 
+/** A text of the entry's, or a number written out, and the empty text for anything else. */
 function text(entry: Record<string, unknown>, field: string): string {
-    const value = entry[field];
-    return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+    return readAs(textOrNumberShape, entry[field]) ?? '';
 }
 
 /** One strict ISO calendar date as a UTC timestamp, or null when it is not a real date. */
@@ -93,8 +92,9 @@ export function snippet(body: unknown): string {
 }
 
 /** Coerce the folder feed and split it into filename-ordered ideas and newest-first posts. */
-export function splitPosts(entries: Record<string, unknown>[]): SplitLinkedin {
+export function splitPosts(entries: (Record<string, unknown> | null)[]): SplitLinkedin {
     const parsed = entries
+        .filter((entry): entry is Record<string, unknown> => entry !== null)
         .map((entry): LinkedinEntry | null => {
             const file = text(entry, 'file');
             const idea = file.startsWith('xx-');
@@ -136,11 +136,8 @@ export function linkedinSearch(entries: LinkedinEntry[], search: string): Linked
 
 /** Read search and add-form state from one view instance. */
 export function parseLinkedinState(raw: unknown): LinkedinState {
-    const held = record(raw);
-    const state: LinkedinState = {
-        search: typeof held?.search === 'string' ? held.search : '',
-        adding: held?.adding === true
-    };
-    if (typeof held?.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    const held = readAs(linkedinStateShape, raw);
+    const state: LinkedinState = { search: held?.search ?? '', adding: held?.adding ?? false };
+    if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;
 }

@@ -2,7 +2,15 @@
 // ticker timing changes independently of the Focus board lanes.
 
 import type { Collection, Followup, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
-import { isMap, text as str } from '../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { text as str } from '../../data/helpers/guards.ts';
+import {
+    keyedRowsShape,
+    listOrOneShape,
+    readAs,
+    rowsShape,
+    wordShape
+} from '../../data/shapes/shapes.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
 import { DEADLINE_SOON, daysUntil } from './board/index.ts';
 import { entryDate, manifestsBehind, type ManifestBehind } from './focus-lanes.ts';
@@ -465,50 +473,48 @@ export function monthsAhead(month: string, now: number): number | null {
     return (at - new Date(now).getMonth() + 12) % 12;
 }
 
+/** One `followup:` note: a string, or a map with `do` and `after`; no words is no note. */
+const followupShape = z
+    .union([
+        z.string().transform((note) => ({ do: note, after: '' })),
+        z.object({ do: wordShape, after: wordShape })
+    ])
+    .refine((note) => note.do.trim() !== '')
+    .transform((note): Followup => (note.after === '' ? { do: note.do } : note));
+
+const followupsShape = rowsShape(followupShape);
+
 /** The `followup:` of a collection entry, in the three shapes a file may write it in. */
 function followupsOf(value: unknown): Followup[] {
-    const items = Array.isArray(value) ? value : [value];
-    const out: Followup[] = [];
-    for (const held of items) {
-        const text = typeof held === 'string' ? held : isMap(held) ? str(held.do) : '';
-        if (text.trim() === '') continue;
-        const after = isMap(held) ? str(held.after) : '';
-        out.push(after === '' ? { do: text } : { do: text, after });
-    }
-    return out;
+    return readAs(followupsShape, readAs(listOrOneShape, value)) ?? [];
 }
 
+type SubtaskRow = { key: string; do: string; deadline?: string; done: boolean; snooze?: string };
+
+/** One line of an entry's checklist: a string, or a map with `do`, `deadline`, `done`, `snooze`. */
+const subtaskShape = z
+    .union([
+        z.string().transform((line) => ({ do: line, deadline: '', done: false, snooze: '' })),
+        z.object({
+            do: wordShape,
+            deadline: wordShape,
+            done: z.boolean().catch(false),
+            snooze: wordShape
+        })
+    ])
+    .refine((line) => line.do.trim() !== '');
+
 /** The `subtasks:` of a collection entry, as a map of lines or a list of them. */
-function subtasksOf(value: unknown): {
-    key: string;
-    do: string;
-    deadline?: string;
-    done: boolean;
-    snooze?: string;
-}[] {
-    const rows: [string, unknown][] = Array.isArray(value)
-        ? value.map((held, at) => [String(at), held])
-        : isMap(value)
-          ? Object.entries(value)
-          : [];
-    const out = [];
-    for (const [key, held] of rows) {
-        const text = typeof held === 'string' ? held : isMap(held) ? str(held.do) : '';
-        if (text.trim() === '') continue;
-        out.push({
-            key,
-            do: text,
-            deadline: isMap(held) ? str(held.deadline) : '',
-            done: isMap(held) && held.done === true,
-            snooze: isMap(held) ? str(held.snooze) : ''
-        });
-    }
-    return out;
+function subtasksOf(value: unknown): SubtaskRow[] {
+    return (readAs(keyedRowsShape, value) ?? []).flatMap(([key, held]) => {
+        const line = readAs(subtaskShape, held);
+        return line === null ? [] : [{ key, ...line }];
+    });
 }
 
 /** The pending lines of one checklist, each carrying its parent's `kind` as its grouping word. */
 function subtaskLines(
-    rows: { key: string; do: string; deadline?: string; done: boolean; snooze?: string }[],
+    rows: SubtaskRow[],
     parent: string,
     kind: string,
     now: number,

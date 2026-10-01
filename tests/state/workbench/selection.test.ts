@@ -49,3 +49,28 @@ describe('the pin a view instance keeps', () => {
         expect(pinnedSession(['session'])).toBe(null);
     });
 });
+
+describe('the pin over a state of the wrong type', () => {
+    const rows: [string, () => unknown, unknown][] = [
+        ['an array', () => pinnedSession([]), null],
+        ['null', () => pinnedSession(null), null],
+        ['undefined', () => pinnedSession(undefined), null],
+        ['a string', () => pinnedSession('s'), null],
+        ['a number', () => pinnedSession(3), null],
+        ['a map with no session', () => pinnedSession({ id: 's' }), null],
+        ['a session that is a number', () => pinnedSession({ session: 3 }), null],
+        ['a session that is a list', () => pinnedSession({ session: ['s'] }), null],
+        ['a session that is null', () => pinnedSession({ session: null }), null],
+        ['an empty session', () => pinnedSession({ session: '' }), null],
+        ['a session that is a string', () => pinnedSession({ session: 's' }), 's'],
+        [
+            'a map with an own __proto__ key',
+            () => pinnedSession(JSON.parse('{"__proto__":{"session":"p"},"b":1}')),
+            null
+        ]
+    ];
+
+    it.each(rows)('%s', (_name, run, expected) => {
+        expect(run()).toStrictEqual(expected);
+    });
+});

@@ -10,7 +10,7 @@
 // server/edit/writes.ts is the route and re-exports everything here.
 
 import { z } from 'zod';
-import { anyNumberShape, mapShape, readAs, unchanged } from '../../core/shapes.ts';
+import { anyNumberShape, mapShape, readAs, unchanged } from '../../../data/shapes/shapes.ts';
 import type { SubtaskAction, SubtaskTarget } from './subtasks.ts';
 
 /** The body a write carries. `kind` is the discriminator later writes are added on. */

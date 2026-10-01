@@ -156,3 +156,28 @@ describe('the calendar store readers', () => {
         }
     });
 });
+
+describe('a refusal whose code is not text', () => {
+    /** The sentence the calendar store says for a command answered with this text and status. */
+    async function said(text: string, status: number): Promise<string> {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
+        return client.calendar.refresh();
+    }
+
+    it('says the general refusal when the code is a number, a boolean, a list, a map or empty', async () => {
+        for (const code of ['0', '2.5', 'false', '[]', '{"x":1}', '""', 'null']) {
+            expect(await said(`{"error":${code}}`, 409)).toBe(t('calendar.refused', ''));
+        }
+    });
+
+    it('says the general refusal when the whole body is not a map', async () => {
+        for (const text of ['[1]', 'null', '"error"', '7', 'true']) {
+            expect(await said(text, 500)).toBe(t('calendar.refused', ''));
+        }
+    });
+
+    it('takes a command answered below 400 as taken, whatever the body holds', async () => {
+        for (const text of ['{"error":3}', '[]', 'null', '"x"'])
+            expect(await said(text, 200)).toBe('');
+    });
+});

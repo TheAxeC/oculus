@@ -17,7 +17,14 @@
 // onUnwritten; the store that sent it says its failure in its own view.
 
 import { tick } from 'svelte';
+import { z } from 'zod';
 import { fields } from '../../data/helpers/guards.ts';
+import {
+    optionalTextShape,
+    readJson,
+    survivorsShape,
+    unchanged
+} from '../../data/shapes/shapes.ts';
 import { t } from '../shared/words/text.ts';
 import type {
     SendOptions,
@@ -46,18 +53,44 @@ export const MEMORIES_PATH = '/api/memories';
 /** One write's answer, and whether the server gave it or the write got none. */
 type Exchange = { answer: WriteAnswer; answered: boolean };
 
+/** One refusal the endpoint names, answered as the endpoint sent it. */
+const refusalShape = unchanged(z.object({ field: z.string(), reason: z.string() }));
+
+/** One branch row of a deposit `branches` answer, as the endpoint sent it. */
+const branchShape = unchanged(
+    z.object({ name: z.string(), upstream: z.string(), current: z.boolean() })
+);
+
+/**
+ * The parts of a write's answer the page reads, each with the value it takes when the answer has
+ * none: a list that is no list is empty (`branches` absent), a text that is no text is absent, and
+ * an item a list should hold and does not is left out of it.
+ */
+const answerShape = z.object({
+    error: optionalTextShape,
+    changed: survivorsShape(z.string()).catch([]),
+    refused: survivorsShape(refusalShape).catch([]),
+    output: optionalTextShape,
+    branches: survivorsShape(branchShape).optional().catch(undefined),
+    id: optionalTextShape
+}) satisfies z.ZodType<
+    Pick<WriteAnswer, 'error' | 'changed' | 'refused' | 'output' | 'branches' | 'id'>
+>;
+
+/** The refusals an answer lists, however many of them are well formed. */
+const refusalsShape = z.object({ refused: z.array(z.unknown()).catch([]) });
+
+/** The configured wait: `writes.timeout_seconds`, a positive number. */
+const timeoutShape = z.object({ writes: z.object({ timeout_seconds: z.number().positive() }) });
+
 /**
  * How long a write waits for its answer before it is given up, in milliseconds, from
  * `writes.timeout_seconds` of config/behavior.yml; null when the configuration names no positive
  * number, and then a write waits as long as the request does.
  */
 export function writeTimeout(config: Record<string, unknown> | null): number | null {
-    const group = config?.writes;
-    if (typeof group !== 'object' || group === null || Array.isArray(group)) return null;
-    const seconds = (group as Record<string, unknown>).timeout_seconds;
-    return typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0
-        ? seconds * 1000
-        : null;
+    const parsed = timeoutShape.safeParse(config);
+    return parsed.success ? parsed.data.writes.timeout_seconds * 1000 : null;
 }
 
 /**
@@ -407,6 +440,13 @@ export function createWrites(
         return tell(await exchange(request, path), options);
     }
 
+    /** A write whose request failed or whose answer could not be read, said as a failed read. */
+    function failedRead(error: string): Exchange {
+        state.error = error;
+        const answer = { ok: false, changed: [], refused: [], error, network: true };
+        return { answered: false, answer };
+    }
+
     /**
      * One write, with the one retry a stale token gets. The whole of it, the retry and the reading
      * of each answer included, is given up once the configured time has passed with no answer, so a
@@ -420,11 +460,8 @@ export function createWrites(
         const timer = wait === null ? null : setTimeout(() => gate.abort(), wait);
         try {
             let response = await post(request, path, gate.signal);
-            let body = (await response.json()) as Partial<WriteAnswer>;
-            if (
-                response.status === 403 &&
-                !(Array.isArray(body.refused) && body.refused.length > 0)
-            ) {
+            let body = await readJson(response);
+            if (response.status === 403 && refusalsShape.parse(fields(body)).refused.length === 0) {
                 // The import is here rather than at the top so nothing but a stale token pulls
                 // Kit's navigation module in, and a server-rendered page never touches it.
                 const { invalidateAll } = await import('$app/navigation');
@@ -434,24 +471,28 @@ export function createWrites(
                 // below carries the token the reload minted and not the stale one.
                 await tick();
                 response = await post(request, path, gate.signal);
-                body = (await response.json()) as Partial<WriteAnswer>;
+                body = await readJson(response);
             }
+            const held = answerShape.parse(fields(body));
             if (!response.ok) {
-                const error =
-                    typeof body.error === 'string' ? body.error : `HTTP ${response.status}`;
+                const error = held.error ?? `HTTP ${response.status}`;
                 state.error = error;
-                const refused = Array.isArray(body.refused) ? body.refused : [];
-                return { answered: true, answer: { ok: false, changed: [], refused, error } };
+                return {
+                    answered: true,
+                    answer: { ok: false, changed: [], refused: held.refused, error }
+                };
             }
+            // A successful status whose body is JSON null or is not JSON is a read that failed.
+            if (body === undefined) return failedRead(`HTTP ${response.status}`);
             return {
                 answered: true,
                 answer: {
                     ok: true,
-                    changed: Array.isArray(body.changed) ? body.changed : [],
-                    refused: Array.isArray(body.refused) ? body.refused : [],
-                    output: typeof body.output === 'string' ? body.output : undefined,
-                    branches: Array.isArray(body.branches) ? body.branches : undefined,
-                    id: typeof body.id === 'string' ? body.id : undefined
+                    changed: held.changed,
+                    refused: held.refused,
+                    output: held.output,
+                    branches: held.branches,
+                    id: held.id
                 }
             };
         } catch (error) {
@@ -463,10 +504,7 @@ export function createWrites(
                     answer: { ok: false, changed: [], refused: [], error: words }
                 };
             }
-            const message = error instanceof Error ? error.message : String(error);
-            state.error = message;
-            const answer = { ok: false, changed: [], refused: [], error: message, network: true };
-            return { answered: false, answer };
+            return failedRead(error instanceof Error ? error.message : String(error));
         } finally {
             if (timer !== null) clearTimeout(timer);
             state.pending -= 1;

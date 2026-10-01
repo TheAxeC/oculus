@@ -246,3 +246,10 @@ The question: the header keeps icon actions only, and the add actions have no gl
 - Not chosen: (b) a glyph for every such action; (c) the add actions in the bar.
 
 Where it is built: U3. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z161 (2026-10-01 15:36, step U3)
+
+- Chosen (A): U3 changes `TabFace.svelte`'s `.cells` to `--fs-xs` and its focus ring to 1px offset -1px, with that file's type-scale pin; nothing else of the tab strip.
+- Not chosen: (B) except `ui/tabs/` from case 8's greps (the lazy option).
+
+Where it is built: U3. Booked in the state file's closed log and `plan.md` Rulings.

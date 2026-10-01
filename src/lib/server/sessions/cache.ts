@@ -12,7 +12,7 @@ import type { SessionTool } from '../../data/model/index.ts';
 import type { TranscriptFile } from '../transcripts/stores.ts';
 import { z } from 'zod';
 import { readJson, writeJsonAtomic } from '../core/json.ts';
-import { mapShape, readAs, unchanged } from '../core/shapes.ts';
+import { mapShape, readAs, unchanged } from '../../data/shapes/shapes.ts';
 import { accShape, newAcc, type Acc } from './record.ts';
 
 /**

@@ -15,7 +15,9 @@ import type {
 } from '../../../../src/lib/data/model/index.ts';
 import {
     createNoticeSources,
+    feedRuns,
     jobFinished,
+    notesRuns,
     waitingOf,
     waitsOnReader
 } from '../../../../src/lib/state/workbench/navigation/notice-sources.ts';
@@ -358,4 +360,102 @@ describe('a write that does not land', () => {
             ]);
         }
     );
+});
+
+describe('the payloads the notifications read, of any shape', () => {
+    const hook = { event: 'notification', kind: 'permission_prompt', at: '1' };
+    const waiting = (id: string, title = id) => ({ key: `${id}@1`, id, title, kind: 'permission' });
+
+    it.each([
+        ['no payload', null, []],
+        ['a payload with no records', {}, []],
+        ['records that are a string', { records: 'x' }, []],
+        ['records that are a map', { records: {} }, []],
+        ['a record with no hook', { records: [{ id: 'a', title: 'A' }] }, []],
+        ['a record whose hook is a string', { records: [{ id: 'a', title: 'A', hook: 'x' }] }, []],
+        ['a title that is empty', { records: [{ id: 'a', title: '', hook }] }, [waiting('a')]],
+        [
+            'a record that is a list',
+            { records: [[], { id: 'b', title: 'B', hook }] },
+            [waiting('b', 'B')]
+        ]
+    ])('reads the waiting sessions of %s', (_name, payload, expected) => {
+        expect(waitingOf(payload)).toStrictEqual(expected);
+    });
+
+    it('leaves out a record that is no session record', () => {
+        const payload = { records: [null, { id: 'a', title: 'A', hook }] };
+        expect(waitingOf(payload)).toStrictEqual([waiting('a', 'A')]);
+    });
+
+    it('leaves out a record whose id is not text', () => {
+        const payload = {
+            records: [
+                { id: 5, title: 'Five', hook },
+                { id: 'a', title: 'A', hook }
+            ]
+        };
+        expect(waitingOf(payload)).toStrictEqual([waiting('a', 'A')]);
+    });
+
+    it.each([
+        ['no payload', null, { litwatch: '', scout: '', linkedin: '' }],
+        ['no entities', {}, { litwatch: '', scout: '', linkedin: '' }],
+        [
+            'entities that are a string',
+            { entities: 'x' },
+            { litwatch: '', scout: '', linkedin: '' }
+        ],
+        [
+            'feeds that are a list',
+            { entities: { feeds: [] } },
+            { litwatch: '', scout: '', linkedin: '' }
+        ],
+        [
+            'a feed that is a number',
+            { entities: { feeds: { radar: 3 } } },
+            { litwatch: '', scout: '', linkedin: '' }
+        ],
+        [
+            'a run date of null',
+            { entities: { feeds: { radar: { lastRun: null }, scout: { lastRun: 'b' } } } },
+            { litwatch: '', scout: 'b', linkedin: '' }
+        ],
+        [
+            'the three run dates',
+            {
+                entities: {
+                    feeds: {
+                        radar: { lastRun: 'a' },
+                        scout: { lastRun: 'b' },
+                        linkedin: { lastPost: 'c' }
+                    }
+                }
+            },
+            { litwatch: 'a', scout: 'b', linkedin: 'c' }
+        ]
+    ])('reads the run dates of %s', (_name, snapshot, expected) => {
+        expect(feedRuns(snapshot)).toStrictEqual(expected);
+    });
+
+    it('reads a run date that is not text as no run date', () => {
+        const snapshot = { entities: { feeds: { radar: { lastRun: 3 } } } };
+        expect(feedRuns(snapshot)).toStrictEqual({ litwatch: '', scout: '', linkedin: '' });
+        expect(notesRuns({ notesRun: 3 })).toStrictEqual({ inbox: '' });
+    });
+
+    it.each([
+        ['no payload', null, ''],
+        ['a null date', { notesRun: null }, ''],
+        ['a date', { notesRun: '2026-09-21' }, '2026-09-21']
+    ])('reads the triage date of %s', (_name, inbox, expected) => {
+        expect(notesRuns(inbox)).toStrictEqual({ inbox: expected });
+    });
+
+    it('leaves out an ended job that is no job, and still tells the others', () => {
+        receive('hpc', hpc('ok', []));
+        const job = { id: '2', name: 'job-2', state: 'FAILED', exit: '1:0' };
+        receive('hpc', { ...hpc('ok', []), recent: [null, 7, { id: '9' }, job] });
+        expect(said()).toEqual([t('statusbar.notice_job_failed', 'job-2', '2', 'FAILED', '1:0')]);
+    });
 });

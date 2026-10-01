@@ -7,9 +7,11 @@
 // empty metalist row, "a,b" over "a, b" in a tags field, a raw field's JSON spaced differently) is
 // never counted as unsaved.
 //
-// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
+// A parsed value is taken for a map by data/shapes/shapes.ts's `mapShape`, and the rows of a
+// metalist are read through `metaRowShape`.
 
-import { isMap } from '../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { mapShape, readAs, rowsShape, textOrNumberShape } from '../../data/shapes/shapes.ts';
 
 /** Anything YAML writes under a raw block: a scalar, a list of them, or a map of them. */
 export type RawFieldValue =
@@ -20,8 +22,8 @@ export type RawFieldAnswer =
 
 /** A raw block as the one-line JSON text the textarea edits, nested lists and maps included. */
 export function rawFieldText(value: unknown): string {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return '';
-    return JSON.stringify(value);
+    const map = readAs(mapShape, value);
+    return map === null ? '' : JSON.stringify(map);
 }
 
 /** Whether a parsed JSON value is one YAML can write: a scalar, or a list or map of such. */
@@ -47,14 +49,25 @@ export function parseRawField(text: string): RawFieldAnswer {
     } catch {
         return { ok: false };
     }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
-        return { ok: false };
-    if (!isRawValue(parsed)) return { ok: false };
-    return { ok: true, value: parsed as Record<string, RawFieldValue> };
+    const map = readAs(mapShape, parsed);
+    if (map === null || !isRawValue(map)) return { ok: false };
+    return { ok: true, value: map };
 }
 
 /** One row of a `metalist` control: a label and a value the file saves as one flat map. */
 export type MetaRow = { label: string; value: string };
+
+/** One row of a metalist as the control holds it: a part that is no text is the empty text. */
+const metaRowShape = z.object({
+    label: z.string().catch(''),
+    value: z.string().catch('')
+}) satisfies z.ZodType<MetaRow>;
+
+/** The rows of a metalist: the ones that are maps, as `metaRowShape` reads them. */
+const metaRowsShape = rowsShape(metaRowShape);
+
+/** The words of a tags value: the string items of a list, a new list. */
+const wordsShape = rowsShape(z.string());
 
 /** What one control of the form holds: a line of text, a tick, or the rows of a metalist. */
 export type FormValue = string | boolean | MetaRow[];
@@ -67,16 +80,14 @@ export type SavedValue = boolean | string | string[] | MetaRow[];
 /** One value of an entry as the control for its field holds it: a list is a line of commas. */
 export function controlValue(value: unknown, kind: string): FormValue {
     if (kind === 'checkbox') return value === true;
-    if (kind === 'metalist' && Array.isArray(value)) {
-        return value.filter(isMap).map((one) => ({
-            label: typeof one.label === 'string' ? one.label : '',
-            value: typeof one.value === 'string' ? one.value : ''
-        }));
+    if (kind === 'metalist') {
+        const rows = readAs(metaRowsShape, value);
+        if (rows !== null) return rows;
     }
     if (kind === 'raw') return rawFieldText(value);
-    if (Array.isArray(value)) return value.filter((one) => typeof one === 'string').join(', ');
-    if (typeof value === 'string' || typeof value === 'number') return String(value);
-    return '';
+    const words = readAs(wordsShape, value);
+    if (words !== null) return words.join(', ');
+    return readAs(textOrNumberShape, value) ?? '';
 }
 
 /**

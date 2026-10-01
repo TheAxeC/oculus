@@ -1,7 +1,9 @@
 // Layer 2, client state. Pure venue filtering, project joins, tones and conference timing.
 // The view receives ready-to-draw groups and month columns, so its markup contains no data rules.
 
+import { z } from 'zod';
 import type { Project, Venue } from '../../data/model/index.ts';
+import { fieldItemsShape, readAs, searchRevealShape } from '../../data/shapes/shapes.ts';
 import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 
 export type VenueUse = { projects: Project[]; concentrated: boolean };
@@ -26,12 +28,6 @@ export type VenuesState = OpenForms & {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const LIVE_TYPES = ['active', 'manuscript'];
-
-function strings(value: unknown): string[] {
-    return Array.isArray(value)
-        ? value.filter((item): item is string => typeof item === 'string')
-        : [];
-}
 
 /** The projects included in venue use and concentration counts. */
 export function realProjects(projects: Project[], dead: string[]): Project[] {
@@ -143,25 +139,24 @@ export function venueSearch(venues: Venue[], words: string | string[]): Venue[] 
     });
 }
 
+/** The fields a Venues instance keeps beside its open forms, each read as absent when wrong. */
+const venuesStateShape = searchRevealShape.extend({
+    off: fieldItemsShape,
+    journalsOpen: z.boolean().catch(true),
+    conferencesOpen: z.boolean().catch(true)
+});
+
 /** Saved state of one Venues instance, with defaults for malformed or absent fields. */
 export function parseVenuesState(raw: unknown): VenuesState {
-    const fallback: VenuesState = {
-        search: '',
-        off: [],
-        journalsOpen: true,
-        conferencesOpen: true,
-        ...parseOpenForms(undefined)
-    };
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return fallback;
-    const held = raw as Record<string, unknown>;
+    const held = readAs(venuesStateShape, raw);
     const state: VenuesState = {
-        search: typeof held.search === 'string' ? held.search : '',
-        off: strings(held.off),
-        journalsOpen: typeof held.journalsOpen === 'boolean' ? held.journalsOpen : true,
-        conferencesOpen: typeof held.conferencesOpen === 'boolean' ? held.conferencesOpen : true,
+        search: held?.search ?? '',
+        off: held?.off ?? [],
+        journalsOpen: held?.journalsOpen ?? true,
+        conferencesOpen: held?.conferencesOpen ?? true,
         ...parseOpenForms(raw)
     };
-    if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;
 }
 

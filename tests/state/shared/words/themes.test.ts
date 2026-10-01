@@ -57,3 +57,56 @@ describe('themeWordLabels and themeWordLabel', () => {
         expect(themeWordLabel(own, 'constructor')).toBe('constructor');
     });
 });
+
+describe('themeWordLabels over rows of the wrong type', () => {
+    it('keeps a row whose label is empty, and draws the word with that empty label', () => {
+        const labels = themeWordLabels([{ key: 'eeg', label: '' }]);
+        expect([...labels]).toStrictEqual([['eeg', '']]);
+        expect(themeWordLabel(labels, 'eeg')).toBe('');
+    });
+
+    it('passes over a row with a label of the wrong type and takes the first valid row of the key', () => {
+        const labels = themeWordLabels([
+            { key: 'eeg', label: 3 },
+            { key: 'eeg', label: null },
+            { key: 'eeg', label: ['EEG'] },
+            { key: 'eeg', label: 'EEG' },
+            { key: 'eeg', label: 'Later' }
+        ]);
+        expect([...labels]).toStrictEqual([['eeg', 'EEG']]);
+    });
+
+    it.each([
+        ['a key that is a number', { key: 7, label: 'Seven' }],
+        ['a key that is a list', { key: ['eeg'], label: 'EEG' }],
+        ['a key that is null', { key: null, label: 'EEG' }],
+        ['an empty key', { key: '', label: 'EEG' }],
+        ['no key', { label: 'EEG' }],
+        ['no label', { key: 'eeg' }],
+        ['a row that is a list', ['eeg', 'EEG']],
+        ['a row that is a string', 'eeg'],
+        ['a row that is a number', 3],
+        ['a row that is null', null]
+    ])('passes over a row with %s', (_name, row) => {
+        expect([...themeWordLabels([row])]).toStrictEqual([]);
+    });
+
+    it('keeps the rows that pass, in order, and ignores the keys a row holds beyond the two', () => {
+        const labels = themeWordLabels([
+            { key: 'b', label: 'B', extra: 1 },
+            null,
+            { key: 'a', label: 'A' }
+        ]);
+        expect([...labels]).toStrictEqual([
+            ['b', 'B'],
+            ['a', 'A']
+        ]);
+    });
+
+    it.each([[{}], [{ key: 'eeg', label: 'EEG' }], ['eeg'], [3], [true], [null], [undefined]])(
+        'reads %j, which is no list, as no labels',
+        (rows) => {
+            expect(themeWordLabels(rows).size).toBe(0);
+        }
+    );
+});

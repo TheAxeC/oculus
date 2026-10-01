@@ -8,6 +8,8 @@
 // same limit the file route's readers use, and a draft that was cut saves nothing: writing back a
 // copy that stops at two megabytes would take the rest of the file off the disk.
 
+import { z } from 'zod';
+import { optionalTextShape, readAs, readJson } from '../../data/shapes/shapes.ts';
 import { TEXT_LIMIT } from '../sources/fs.ts';
 import { readCapped } from '../sources/fs.svelte.ts';
 import type { WriteAnswer, WritesStore, InstanceStates } from '../shared/stores/shapes.ts';
@@ -72,14 +74,39 @@ export type SourceDraft = {
     indent: Indent | null;
 };
 
-/** An indentation kept in storage, or null for anything that is not one. */
-function indentOf(value: unknown): Indent | null {
-    if (typeof value !== 'object' || value === null) return null;
-    const held = value as Record<string, unknown>;
-    const size = held.size;
-    if (typeof held.tabs !== 'boolean' || typeof size !== 'number') return null;
-    return Number.isInteger(size) && size >= 1 && size <= 8 ? { tabs: held.tabs, size } : null;
-}
+/** An indentation kept in storage: tabs or spaces, and a width of one to eight whole steps. */
+const indentShape = z.object({
+    tabs: z.boolean(),
+    size: z.int().min(1).max(8)
+}) satisfies z.ZodType<Indent>;
+
+/**
+ * The fields of a draft kept in the instance's state, each as typed or at its default. A tab that
+ * has never been told otherwise shows the rendered half, so opening a Markdown file reads as the
+ * document it is without a control being found first.
+ */
+const draftShape = z
+    .object({
+        text: z.string().catch(''),
+        saved: z.string().catch(''),
+        loaded: z.boolean().catch(false),
+        readIn: optionalTextShape,
+        error: z.string().catch(''),
+        message: z.string().catch(''),
+        failed: z.boolean().catch(false),
+        rendered: z.boolean().catch(true),
+        blame: z.boolean().catch(false),
+        readonly: z.boolean().catch(false),
+        truncated: z.boolean().catch(false),
+        file: z.string().catch(''),
+        language: z.string().catch(''),
+        indent: indentShape.nullable().catch(null)
+        // A draft always carries `readIn`, with undefined when the state names none.
+    })
+    .transform((draft) => ({ readIn: undefined, ...draft })) satisfies z.ZodType<SourceDraft>;
+
+/** Whether the file's own facts say its mode refuses a write. */
+const modeShape = z.object({ readonly: z.boolean().catch(false) });
 
 /** One token per page lifetime: a draft carrying it was read from disk since the page loaded. */
 const LIFETIME = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -132,12 +159,7 @@ export async function loadSourceReadonly(root: string, path: string): Promise<bo
     try {
         const response = await fetch(sourceInfoUrl(root, path));
         if (!response.ok) return false;
-        const held: unknown = await response.json();
-        return (
-            typeof held === 'object' &&
-            held !== null &&
-            (held as Record<string, unknown>).readonly === true
-        );
+        return readAs(modeShape, await readJson(response))?.readonly ?? false;
     } catch {
         return false;
     }
@@ -163,28 +185,8 @@ export function createSource(writes: WritesStore, ui: InstanceStates): SourceSto
 
     /** Working and saved copies belong to the instance, not its currently mounted component. */
     function sourceDraft(id: string): SourceDraft {
-        const value = ui.instanceState(id);
-        const held = (
-            typeof value === 'object' && value !== null ? value : {}
-        ) as Partial<SourceDraft>;
-        return {
-            text: typeof held.text === 'string' ? held.text : '',
-            saved: typeof held.saved === 'string' ? held.saved : '',
-            loaded: held.loaded === true,
-            readIn: typeof held.readIn === 'string' ? held.readIn : undefined,
-            error: typeof held.error === 'string' ? held.error : '',
-            message: typeof held.message === 'string' ? held.message : '',
-            failed: held.failed === true,
-            // A tab that has never been told otherwise shows the rendered half, so opening a
-            // Markdown file reads as the document it is without a control being found first.
-            rendered: held.rendered !== false,
-            blame: held.blame === true,
-            readonly: held.readonly === true,
-            truncated: held.truncated === true,
-            file: typeof held.file === 'string' ? held.file : '',
-            language: typeof held.language === 'string' ? held.language : '',
-            indent: indentOf(held.indent)
-        };
+        // State that is no map holds no draft, so every field is at its default.
+        return draftShape.safeParse(ui.instanceState(id)).data ?? draftShape.parse({});
     }
 
     /**

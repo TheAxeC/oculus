@@ -6,15 +6,18 @@
 // tone through tones.ts, never a hex. That is what keeps the vocabulary in config and this file
 // free of both.
 
+import { z } from 'zod';
 import type { Collection, Entry, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 // `str` here is the shared `text`: a config or entry value of the wrong type reads as the empty
 // string. The alias also keeps the name off the several `const text` locals in this file.
-import { isMap, byKey, text as str } from '../../data/helpers/guards.ts';
+import { byKey, text as str } from '../../data/helpers/guards.ts';
+import { mapShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the three model types
 // the Focus view names reach it from here, beside the functions that take and return them.
 export type { Id, Project, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
+export { setting } from './board/index.ts';
 import { UNKNOWN_TONE, toneOf } from '../shared/words/tones.ts';
 import { waitingLabel } from './waiting.ts';
 
@@ -57,16 +60,11 @@ export type Waiting = {
     hosts: string[];
 };
 
-function num(value: unknown): number {
-    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
-}
-
 /** One flag of a `status_palette` row, over the status as the data writes it. */
 export function statusFlag(config: Record<string, unknown>, status: string, flag: string): boolean {
-    const palette = config.status_palette;
-    if (!isMap(palette)) return false;
-    const row = palette[status.trim().toLowerCase()];
-    return isMap(row) && row[flag] === true;
+    const palette = readAs(mapShape, config.status_palette);
+    if (palette === null) return false;
+    return readAs(mapShape, palette[status.trim().toLowerCase()])?.[flag] === true;
 }
 
 /** Whether a status takes its entry off the deadline radar. */
@@ -101,32 +99,28 @@ export function snoozed(value: unknown, now: number): boolean {
     return days !== null && days > 0;
 }
 
-/**
- * A number out of `behavior.yml`, and the fallback that file's comment names when it holds none.
- */
-export function setting(config: Record<string, unknown>, key: string, fallback: number): number {
-    const held = config[key];
-    return typeof held === 'number' && Number.isFinite(held) ? held : fallback;
-}
+/** One row of `focus_lanes`: a map with a key; its label is the key when it names none. */
+const laneShape = z
+    .object({
+        key: wordShape.refine((key) => key !== ''),
+        label: wordShape,
+        sub: wordShape,
+        color: wordShape,
+        cluster: wordShape
+    })
+    .transform((row): Lane => ({
+        key: row.key,
+        label: row.label === '' ? row.key : row.label,
+        sub: row.sub,
+        tone: toneOf(row.color),
+        cluster: row.cluster
+    }));
+
+const lanesShape = rowsShape(laneShape);
 
 /** The lanes of `focus_lanes`, in the config's order, each hue already a tone. */
 export function lanes(config: Record<string, unknown>): Lane[] {
-    const rows = config.focus_lanes;
-    if (!Array.isArray(rows)) return [];
-    const out: Lane[] = [];
-    for (const row of rows) {
-        if (!isMap(row)) continue;
-        const key = str(row.key);
-        if (key === '') continue;
-        out.push({
-            key,
-            label: str(row.label) === '' ? key : str(row.label),
-            sub: str(row.sub),
-            tone: toneOf(str(row.color)),
-            cluster: str(row.cluster)
-        });
-    }
-    return out;
+    return readAs(lanesShape, config.focus_lanes) ?? [];
 }
 
 /** The tone of the ideas backlog, the `holding_color` of vocab.yml. */
@@ -135,22 +129,24 @@ export function holdingTone(config: Record<string, unknown>): string {
     return hex === '' ? UNKNOWN_TONE : toneOf(hex);
 }
 
+/** One row of `priority_levels`: a map with a key; its label is the key when it names none. */
+const priorityShape = z
+    .object({
+        key: wordShape.refine((key) => key !== ''),
+        label: wordShape,
+        flames: z.number().catch(0)
+    })
+    .transform((row): Priority => ({
+        key: row.key,
+        label: row.label === '' ? row.key : row.label,
+        flames: row.flames
+    }));
+
+const prioritiesShape = rowsShape(priorityShape);
+
 /** The priority levels of `priority_levels`, in the config's order. */
 export function priorities(config: Record<string, unknown>): Priority[] {
-    const rows = config.priority_levels;
-    if (!Array.isArray(rows)) return [];
-    const out: Priority[] = [];
-    for (const row of rows) {
-        if (!isMap(row)) continue;
-        const key = str(row.key);
-        if (key === '') continue;
-        out.push({
-            key,
-            label: str(row.label) === '' ? key : str(row.label),
-            flames: num(row.flames)
-        });
-    }
-    return out;
+    return readAs(prioritiesShape, config.priority_levels) ?? [];
 }
 
 /** How many flames a project's `priority:` draws, and none for a project carrying no priority. */

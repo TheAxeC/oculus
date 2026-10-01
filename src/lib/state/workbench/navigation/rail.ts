@@ -13,6 +13,7 @@ import {
     type RailProblem,
     type RailRead
 } from '../../../data/sources/config/rail.ts';
+import { fields, isMap } from '../../../data/helpers/guards.ts';
 import { t } from '../../shared/words/text.ts';
 
 export { arrangementKeys, glyphNames, readRail };
@@ -29,11 +30,7 @@ export type RailPage = RailEntry & { node: unknown };
  */
 export function railPages(config: Record<string, unknown> | undefined): RailPage[] {
     if (config === undefined) return [];
-    const raw = config.arrangements;
-    const arrangements =
-        typeof raw === 'object' && raw !== null && !Array.isArray(raw)
-            ? (raw as Record<string, unknown>)
-            : {};
+    const arrangements = fields(config.arrangements);
     const read = readRail(config.rail, arrangementKeys(arrangements), glyphNames(config));
     return read.entries.map((entry) => ({
         ...entry,
@@ -50,16 +47,12 @@ export const SETTINGS_VIEW = 'settings';
  * away from and after a reload, as every form's typing is.
  */
 export function railDraft(state: unknown): RailEntry[] | null {
-    if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
-    return railRows((state as Record<string, unknown>).rail);
+    return isMap(state) ? railRows(state.rail) : null;
 }
 
 /** A Settings tab's state with the list being typed set, or taken away when it is null. */
 export function withRailDraft(state: unknown, rail: RailEntry[] | null): Record<string, unknown> {
-    const held =
-        typeof state === 'object' && state !== null && !Array.isArray(state)
-            ? { ...(state as Record<string, unknown>) }
-            : {};
+    const held = isMap(state) ? { ...state } : {};
     if (rail === null) delete held.rail;
     else held.rail = rail;
     return held;

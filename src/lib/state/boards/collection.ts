@@ -10,8 +10,21 @@
 //
 // A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
+import { z } from 'zod';
 import { ADDRESSED, HOSTED, isHubPath } from '../../data/hub-address.ts';
 import { isMap } from '../../data/helpers/guards.ts';
+import {
+    anyNumberShape,
+    anyValueShape,
+    fieldItemsShape,
+    filledTextShape,
+    itemsShape,
+    keyedRowsShape,
+    listOrOneShape,
+    readAs,
+    rowsShape,
+    searchRevealShape
+} from '../../data/shapes/shapes.ts';
 import type { Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
 import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
@@ -86,36 +99,36 @@ export function emptyCollectionState(): CollectionState {
     return { search: '', statuses: [], hidden: [], more: [], ...parseOpenForms(undefined) };
 }
 
-/** The strings of a saved list, and nothing when what was saved is not a list. */
-function savedList(value: unknown): string[] {
-    return Array.isArray(value)
-        ? value.filter((item): item is string => typeof item === 'string')
-        : [];
-}
+/** The fields of a saved instance, each read apart so a wrong one costs that field alone. */
+const collectionStateShape = searchRevealShape.extend({
+    statuses: fieldItemsShape,
+    hidden: fieldItemsShape,
+    more: fieldItemsShape,
+    lead: z
+        .string()
+        .refine((lead) => lead.trim() !== '')
+        .optional()
+        .catch(undefined)
+});
 
 /** The saved state of one instance, with anything that is not the shape above replaced by it. */
 export function parseCollectionState(raw: unknown): CollectionState {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw))
-        return emptyCollectionState();
-    const held = raw as {
-        search?: unknown;
-        statuses?: unknown;
-        hidden?: unknown;
-        more?: unknown;
-        reveal?: unknown;
-        lead?: unknown;
-    };
+    const held = readAs(collectionStateShape, raw);
+    if (held === null) return emptyCollectionState();
     const state: CollectionState = {
-        search: typeof held.search === 'string' ? held.search : '',
-        statuses: savedList(held.statuses),
-        hidden: savedList(held.hidden),
-        more: savedList(held.more),
+        search: held.search,
+        statuses: held.statuses,
+        hidden: held.hidden,
+        more: held.more,
         ...parseOpenForms(raw)
     };
-    if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
-    if (typeof held.lead === 'string' && held.lead.trim() !== '') state.lead = held.lead;
+    if (held.reveal !== undefined) state.reveal = held.reveal;
+    if (held.lead !== undefined) state.lead = held.lead;
     return state;
 }
+
+/** A string and nothing else, for a value the data layer types as unknown. */
+const stringShape = z.string();
 
 /** The `options_from:` value of a schema field whose value is a key of the people registry. */
 export const PEOPLE_OPTIONS = 'people';
@@ -179,23 +192,27 @@ function mapPairs(value: unknown): string[] {
 
 /** The words of a list value; a lone string is one word and a map is none. */
 function wordsOf(value: unknown): string[] {
-    const items = Array.isArray(value) ? value : [value];
+    const items = readAs(listOrOneShape, value) ?? [];
     return items.map(textOf).filter((word): word is string => word !== undefined);
 }
+
+/** A `{ label, value }` pair of a metalist, over any two values. */
+const pairShape = z.object({ label: anyValueShape, value: anyValueShape });
 
 /**
  * One chip per `{ label, value }` pair of a metalist, the two joined; a pair with neither is none.
  */
 function pairsOf(value: unknown): string[] {
-    if (!Array.isArray(value)) return wordsOf(value);
+    const list = readAs(itemsShape, value);
+    if (list === null) return wordsOf(value);
     const chips: string[] = [];
-    for (const item of value) {
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+    for (const item of list) {
+        const pair = readAs(pairShape, item);
+        if (pair === null) {
             const word = textOf(item);
             if (word !== undefined) chips.push(word);
             continue;
         }
-        const pair = item as { label?: unknown; value?: unknown };
         const label = textOf(pair.label);
         const words = textOf(pair.value);
         if (label !== undefined && words !== undefined) chips.push(`${label}${PAIR}${words}`);
@@ -297,8 +314,8 @@ const HUB_ONLY_FIELDS = ['folder'];
 export function hubPathsOf(fields: Record<string, unknown>): string[] {
     const found: string[] = [];
     for (const field of PATH_FIELDS) {
-        const value = fields[field];
-        if (typeof value !== 'string') continue;
+        const value = readAs(stringShape, fields[field]);
+        if (value === null) continue;
         const held = value.trim();
         const path = HUB_ONLY_FIELDS.includes(field)
             ? held !== '' && !ADDRESSED.test(held)
@@ -315,8 +332,7 @@ export function hubPathsOf(fields: Record<string, unknown>): string[] {
 
 /** The entry's status, when it has one as a word. */
 export function entryStatus(entry: Entry): string | undefined {
-    const status = entry.fields[STATUS_FIELD];
-    return typeof status === 'string' && status !== '' ? status : undefined;
+    return readAs(filledTextShape, entry.fields[STATUS_FIELD]) ?? undefined;
 }
 
 /** Whether the file's schema names a status field, which is what decides the facet is offered. */
@@ -344,11 +360,7 @@ function haystack(value: unknown): string {
     if (typeof value === 'string') return value;
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);
     if (Array.isArray(value)) return value.map(haystack).join(' ');
-    if (typeof value === 'object' && value !== null) {
-        return Object.values(value as Record<string, unknown>)
-            .map(haystack)
-            .join(' ');
-    }
+    if (isMap(value)) return Object.values(value).map(haystack).join(' ');
     return '';
 }
 
@@ -388,15 +400,17 @@ export function identityField(schema: SchemaField[] | undefined): string {
     return first === undefined ? TITLE_FIELD : first.field;
 }
 
+/** An identity a file writes as a string or a number, answered as text. */
+const identityShape = z.union([z.string(), anyNumberShape.transform(String)]);
+
 /**
  * The value a write addresses one entry by. It is not the id: funding.yml's schema opens with
  * `title` while three of its entries carry a `key`, and the id the reader made is that key, so a
  * write names the identity field's own value and the server finds the entry by it.
  */
 export function identityValue(entry: Entry, schema: SchemaField[] | undefined): string {
-    const held = entry.fields[identityField(schema)];
-    if (typeof held === 'string' || typeof held === 'number') return String(held);
-    return entry.title === '' ? entry.id : entry.title;
+    const held = readAs(identityShape, entry.fields[identityField(schema)]);
+    return held ?? (entry.title === '' ? entry.id : entry.title);
 }
 
 /** The identity of every entry the file holds, in the order the file holds them. */
@@ -457,26 +471,27 @@ export function offeredStatuses(
     return schema === undefined ? facets.map((facet) => facet.value) : [];
 }
 
+/** The fields of a subtask written as a map: `done` is true only when it is the boolean true. */
+const subtaskFieldsShape = z.object({
+    do: anyValueShape,
+    done: z.boolean().catch(false),
+    deadline: anyValueShape,
+    snooze: anyValueShape
+});
+
 /**
  * The `subtasks:` of one entry as the block draws them. A list is keyed by position and a map by
  * its own keys, which is what the write path addresses a line by; a line with no `do` is no line.
  */
 export function entrySubtasks(entry: Entry): Subtask[] {
-    const held = entry.fields.subtasks;
-    const rows: [string, unknown][] = Array.isArray(held)
-        ? held.map((item, at) => [String(at), item])
-        : typeof held === 'object' && held !== null
-          ? Object.entries(held as Record<string, unknown>)
-          : [];
     const lines: Subtask[] = [];
-    for (const [key, item] of rows) {
-        const map = typeof item === 'object' && item !== null && !Array.isArray(item);
-        const record = map ? (item as Record<string, unknown>) : {};
-        const text = typeof item === 'string' ? item : textOf(record.do);
+    for (const [key, item] of readAs(keyedRowsShape, entry.fields.subtasks) ?? []) {
+        const record = readAs(subtaskFieldsShape, item);
+        const text = readAs(stringShape, item) ?? textOf(record?.do);
         if (text === undefined || text.trim() === '') continue;
-        const line: Subtask = { key, do: text, done: record.done === true };
-        const deadline = textOf(record.deadline);
-        const snooze = textOf(record.snooze);
+        const line: Subtask = { key, do: text, done: record?.done ?? false };
+        const deadline = textOf(record?.deadline);
+        const snooze = textOf(record?.snooze);
         if (deadline !== undefined) line.deadline = deadline;
         if (snooze !== undefined) line.snooze = snooze;
         lines.push(line);
@@ -518,7 +533,7 @@ export function crossLinks(
     if (collectionKey === FUNDING) {
         named = projects.filter((project) => project.fundingIds.includes(entry.id));
     } else if (collectionKey === JOINT_WORK) {
-        const person = typeof entry.fields.person === 'string' ? entry.fields.person : entry.id;
+        const person = readAs(stringShape, entry.fields.person) ?? entry.id;
         named = projects.filter((project) => project.collaborators.includes(person));
     } else {
         const ids = wordsOf(entry.fields.related);
@@ -590,16 +605,10 @@ export type FormField = {
     help?: string;
 };
 
-const KINDS: FormKind[] = [
-    'text',
-    'textarea',
-    'select',
-    'tags',
-    'date',
-    'metalist',
-    'checkbox',
-    'raw'
-];
+/** The kind a schema field's type names, and text for a word no control is written for. */
+const kindShape = z
+    .enum(['text', 'textarea', 'select', 'tags', 'date', 'metalist', 'checkbox', 'raw'])
+    .catch('text') satisfies z.ZodType<FormKind>;
 
 /**
  * The controls the add and edit form draws, in the file's own field order. The type is the file's
@@ -613,7 +622,7 @@ export function formFields(
     return (schema ?? []).map((field) => ({
         field: field.field,
         label: field.label ?? field.field,
-        kind: KINDS.includes(field.type as FormKind) ? (field.type as FormKind) : 'text',
+        kind: readAs(kindShape, field.type) ?? 'text',
         options: field.options ?? optionsFrom(config[field.optionsFrom ?? '']),
         required: field.required === true,
         ...(field.help === undefined ? {} : { help: field.help })
@@ -661,7 +670,7 @@ export function refusedField(
 ): string | null {
     for (const field of fields) {
         const value = valueOf(field.field);
-        const text = typeof value === 'string' ? value.trim() : '';
+        const text = readAs(stringShape, value)?.trim() ?? '';
         if (text === '') continue;
         if (field.kind === 'select' && !field.options.includes(text)) return field.field;
         if (field.kind === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(text)) return field.field;
@@ -669,20 +678,20 @@ export function refusedField(
     return null;
 }
 
+/** One select choice: a string, or the key of a keyed row that is not marked unassignable. */
+const optionShape = z.union([
+    z.string(),
+    z
+        .object({ key: z.string(), assignable: anyValueShape })
+        .refine((row) => row.assignable !== false)
+        .transform((row) => row.key)
+]);
+
+const optionsShape = rowsShape(optionShape);
+
 /** Select choices read from one merged-config value: strings, or assignable keyed rows. */
 function optionsFrom(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    const options: string[] = [];
-    for (const item of value) {
-        if (typeof item === 'string') {
-            options.push(item);
-            continue;
-        }
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) continue;
-        const row = item as { key?: unknown; assignable?: unknown };
-        if (typeof row.key === 'string' && row.assignable !== false) options.push(row.key);
-    }
-    return options;
+    return readAs(optionsShape, value) ?? [];
 }
 
 /** The project types the Funding view's synthetic card counts: the work that is still running. */

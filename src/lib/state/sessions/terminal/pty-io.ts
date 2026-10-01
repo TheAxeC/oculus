@@ -3,7 +3,16 @@
 // words, and the busy read that says which terminals run a program other than their shell. Both go
 // through `fetch`, which a test replaces.
 
+import { z } from 'zod';
 import type { Terminal } from '../../../data/model/index.ts';
+import {
+    mapShape,
+    optionalTextShape,
+    readAs,
+    readJson,
+    rowsShape,
+    unchangedAs
+} from '../../../data/shapes/shapes.ts';
 
 /** What an action answered: the terminal it names, or what the server refused it with. */
 export type TerminalAnswer = {
@@ -20,6 +29,43 @@ export type TerminalAnswer = {
 export type BusyTerminal = { id: string; name: string; command: string };
 
 /**
+ * The terminal a start answered, handed on as it came. Only its id is read here: the store lists
+ * the terminal from the `sessions` payload once that names it.
+ */
+const startedShape = unchangedAs<Terminal>(z.looseObject({ id: z.string() }));
+
+/** What an action answers: the terminal a start made, its id, and a refusal's sentence. */
+const actionAnswerShape = z.object({
+    id: optionalTextShape,
+    terminal: startedShape.optional().catch(undefined),
+    error: optionalTextShape
+});
+
+/** One terminal of a busy read: the busy ones are named, with the program they run. */
+const busyShape = z.object({
+    id: z.string(),
+    busy: z.boolean().catch(false),
+    command: z.string().catch('')
+});
+
+const busyItemsShape = rowsShape(busyShape);
+
+/**
+ * The `busy` field of a busy read: a list is read item by item, and an absent, null or text value
+ * names no terminal. Any other value is no answer.
+ */
+const busyListShape = z
+    .union([
+        busyItemsShape,
+        z.null().transform((): z.output<typeof busyItemsShape> => []),
+        z.string().transform((): z.output<typeof busyItemsShape> => [])
+    ])
+    .optional();
+
+/** The body of a busy read. */
+const busyAnswerShape = z.object({ busy: busyListShape });
+
+/**
  * Post one action with the write token. A page rendered on the server has no fetch and posts
  * nothing.
  */
@@ -31,21 +77,16 @@ export async function postTerminal(body: unknown, token: string): Promise<Termin
             headers: { 'content-type': 'application/json', 'x-oculus-token': token },
             body: JSON.stringify(body)
         });
-        const answer = (await response.json()) as {
-            ok?: boolean;
-            id?: string;
-            terminal?: Terminal;
-            error?: string;
-        };
-        if (!response.ok) {
-            const error = typeof answer.error === 'string' ? answer.error : String(response.status);
-            return { ok: false, id: '', error };
-        }
+        const raw = await readJson(response);
+        if (raw === undefined) throw new Error(String(response.status));
+        const answer = readAs(actionAnswerShape, raw);
+        if (!response.ok)
+            return { ok: false, id: '', error: answer?.error ?? String(response.status) };
         return {
             ok: true,
-            id: answer.terminal?.id ?? answer.id ?? '',
+            id: answer?.terminal?.id ?? answer?.id ?? '',
             error: '',
-            terminal: answer.terminal
+            terminal: answer?.terminal
         };
     } catch (error) {
         return { ok: false, id: '', error: error instanceof Error ? error.message : String(error) };
@@ -70,10 +111,14 @@ export async function readBusy(
         try {
             const response = await fetch(`/api/terminal?busy=${group.join(',')}`);
             if (!response.ok) throw new Error(String(response.status));
-            const body = (await response.json()) as {
-                busy?: { id: string; busy: boolean; command: string }[];
-            };
-            for (const one of body.busy ?? []) {
+            const raw = await readJson(response);
+            if (raw === undefined) throw new Error(String(response.status));
+            // A body that is no map names no terminal; a map whose `busy` is no list is no answer.
+            const body = readAs(mapShape, raw);
+            if (body === null) continue;
+            const answer = readAs(busyAnswerShape, body);
+            if (answer === null) throw new Error(String(response.status));
+            for (const one of answer.busy ?? []) {
                 if (!one.busy) continue;
                 found.push({ id: one.id, name: labelOf(one.id), command: one.command });
             }

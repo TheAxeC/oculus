@@ -30,7 +30,7 @@ import {
     type SearchRefusal
 } from '../../data/helpers/search.ts';
 import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model/index.ts';
-import { anyNumberShape } from '../core/shapes.ts';
+import { anyNumberShape } from '../../data/shapes/shapes.ts';
 import type { Root } from './files.ts';
 
 /**

@@ -21,7 +21,7 @@ import {
 } from '../../../src/lib/state/life/present.ts';
 import { engineDir, loadConfig, vocabCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
-import type { PresentSlide, Project } from '../../../src/lib/data/model/index.ts';
+import type { Deck, PresentSlide, Project } from '../../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 setVocab(vocabCatalog(loadConfig(engineDir()).config));
@@ -535,5 +535,296 @@ describe('the present store', () => {
         expect(client.present.slideOf('alpha/data')?.id).toBe('alpha/data');
         expect(client.present.projectOf('framing:engine')).toBeNull();
         expect(client.present.slideOf('framing:engine')).toBeNull();
+    });
+});
+
+describe('deckFrom over a config whose values are of the wrong type', () => {
+    /** The deck of a config holding `deck:` as given. */
+    const deckOf = (deck: unknown): Deck => deckFrom({ deck });
+    const EMPTY: Deck = {
+        meta: { legend: [] },
+        themes: {},
+        order: [],
+        framing: {},
+        summaries: {},
+        ideas: null,
+        selection: null,
+        slideOrder: null,
+        equationsDir: '',
+        tagTones: {}
+    };
+
+    it.each([[[]], [null], ['x'], [3], [true], [{}]])(
+        'reads the deck %j as the empty deck',
+        (deck) => {
+            expect(deckOf(deck)).toStrictEqual(EMPTY);
+        }
+    );
+
+    it('reads a meta that is not a map as an empty legend and a legend that is not a list the same', () => {
+        expect(deckOf({ meta: [] }).meta).toStrictEqual({ legend: [] });
+        expect(deckOf({ meta: { legend: 'x' } }).meta).toStrictEqual({ legend: [] });
+    });
+
+    it('reads a legend chip from each map row, its label and its colour as the grey hue when unreadable', () => {
+        const legend = [
+            1,
+            null,
+            [],
+            { label: 3 },
+            { color: 3 },
+            { label: 'a' },
+            { label: 'a', color: '#e2374d' },
+            { label: 'b', color: '' },
+            { label: 'c', color: '#zzzzzz' }
+        ];
+        expect(deckOf({ meta: { legend } }).meta.legend).toStrictEqual([
+            { label: '', tone: 'grey' },
+            { label: '', tone: 'grey' },
+            { label: 'a', tone: 'grey' },
+            { label: 'a', tone: 'crimson' },
+            { label: 'b', tone: 'grey' },
+            { label: 'c', tone: 'grey' }
+        ]);
+    });
+
+    it('keeps a meta word only when it is text, an empty one included, and puts the keys in a fixed order', () => {
+        const wrong = {
+            contact: NaN,
+            closing_lede: true,
+            closing_title_html: {},
+            closing_kicker: 'ok',
+            hint: '',
+            lede: [],
+            title_html: null,
+            kicker: 3
+        };
+        const meta = deckOf({ meta: wrong }).meta;
+        expect(meta).toStrictEqual({ legend: [], hint: '', closingKicker: 'ok' });
+        const written = Object.fromEntries(
+            Object.keys(wrong).map((key) => [key, key.toUpperCase()])
+        );
+        expect(Object.keys(deckOf({ meta: written }).meta)).toEqual([
+            'legend',
+            'kicker',
+            'titleHtml',
+            'lede',
+            'hint',
+            'closingKicker',
+            'closingTitleHtml',
+            'closingLede',
+            'contact'
+        ]);
+    });
+
+    it.each([[[]], ['x'], [null]])('reads the themes %j as none', (themes) => {
+        expect(deckOf({ themes }).themes).toStrictEqual({});
+    });
+
+    it('keeps a theme only for a map, with the grey hue and an empty label for what is unreadable', () => {
+        const themes = {
+            a: 'x',
+            b: 1,
+            c: null,
+            d: [],
+            e: {},
+            f: { color: 3, label: 3 },
+            g: { color: '#e2374d' },
+            h: { label: 'L' },
+            i: { color: '', label: '' },
+            j: { color: '#zzzzzz', label: 'Z' }
+        };
+        const read = deckOf({ themes }).themes;
+        expect(read).toStrictEqual({
+            e: { tone: 'grey', label: '' },
+            f: { tone: 'grey', label: '' },
+            g: { tone: 'crimson', label: '' },
+            h: { tone: 'grey', label: 'L' },
+            i: { tone: 'grey', label: '' },
+            j: { tone: 'grey', label: 'Z' }
+        });
+        expect(Object.keys(read)).toEqual(['e', 'f', 'g', 'h', 'i', 'j']);
+    });
+
+    it('keeps the order lines that name a kind and a ref that is text, and none when it is not a list', () => {
+        const order = [
+            1,
+            null,
+            [],
+            { slide: 3 },
+            { slide: 'title', ref: 3 },
+            { slide: 'framing', ref: 'e' },
+            { slide: 'project' },
+            { slide: 'interlude' },
+            { slide: 'ideas', ref: '' }
+        ];
+        expect(deckOf({ order }).order).toStrictEqual([
+            { slide: 'title' },
+            { slide: 'framing', ref: 'e' },
+            { slide: 'project' },
+            { slide: 'ideas', ref: '' }
+        ]);
+        for (const other of [{}, 'x', null, 3]) expect(deckOf({ order: other }).order).toEqual([]);
+    });
+
+    it.each([[[]], ['x'], [null]])('reads the framing %j as none', (framing) => {
+        expect(deckOf({ framing }).framing).toStrictEqual({});
+    });
+
+    it('reads a framing slide from any value, empty cards and legend for what is unreadable', () => {
+        const framing = {
+            a: 'x',
+            b: [],
+            c: {},
+            d: { title: 3, lede: null, hint: [], cards: {}, legend: 'x' },
+            e: {
+                cards: [1, null, [], { n: 3, title: 't', body: null }, { n: '1' }, {}],
+                legend: [{ label: 'a', color: '#e2374d' }],
+                title: 'T',
+                lede: '',
+                hint: 'H'
+            }
+        };
+        const bare = { cards: [], legend: [] };
+        const read = deckOf({ framing }).framing;
+        expect(read).toStrictEqual({
+            a: bare,
+            b: bare,
+            c: bare,
+            d: bare,
+            e: {
+                cards: [{ title: 't' }, { n: '1' }, {}],
+                legend: [{ label: 'a', tone: 'crimson' }],
+                title: 'T',
+                lede: '',
+                hint: 'H'
+            }
+        });
+        expect(Object.keys(read.e)).toEqual(['cards', 'legend', 'title', 'lede', 'hint']);
+    });
+
+    it.each([[[]], ['x'], [null]])('reads the summaries %j as none', (summaries) => {
+        expect(deckOf({ summaries }).summaries).toStrictEqual({});
+    });
+
+    it('reads a summary slide from any value, its rows from the map rows with the fields that are text', () => {
+        const summaries = {
+            a: 'x',
+            b: { rows: {} },
+            c: {
+                title: 3,
+                foot: null,
+                rows: [
+                    1,
+                    null,
+                    { field: 3, project: 'p', mechanism: [], headline: null, color: 3 },
+                    { color: '#e2374d' },
+                    { color: '' },
+                    {}
+                ]
+            },
+            d: { title: 'T', foot: '', rows: [] }
+        };
+        expect(deckOf({ summaries }).summaries).toStrictEqual({
+            a: { rows: [] },
+            b: { rows: [] },
+            c: { rows: [{ project: 'p' }, { tone: 'crimson' }, {}, {}] },
+            d: { rows: [], title: 'T', foot: '' }
+        });
+    });
+
+    it.each([[[]], ['x'], [null], [3]])('reads the ideas %j as none', (ideas) => {
+        expect(deckOf({ ideas }).ideas).toBe(null);
+    });
+
+    it('reads an ideas map with no list of items as no items, and drops an item that is not a map', () => {
+        expect(deckOf({ ideas: {} }).ideas).toStrictEqual({ items: [] });
+        expect(deckOf({ ideas: { items: {} } }).ideas).toStrictEqual({ items: [] });
+        expect(deckOf({ ideas: { items: 'x' } }).ideas).toStrictEqual({ items: [] });
+        const ideas = {
+            items: [
+                1,
+                null,
+                [],
+                { title: 3, desc: null, maturity: [], color: 3 },
+                { title: 'a', color: '#ea580c' },
+                {}
+            ],
+            title: 3,
+            lede: 'L',
+            hint: ''
+        };
+        const read = deckOf({ ideas }).ideas;
+        expect(read).toStrictEqual({
+            items: [{}, { title: 'a', tone: 'orange' }, {}],
+            lede: 'L',
+            hint: ''
+        });
+        expect(Object.keys(read ?? {})).toEqual(['items', 'lede', 'hint']);
+    });
+
+    it('keeps the strings of a saved selection and slide order, and none when it is not a list', () => {
+        for (const other of ['x', {}, null, 3]) {
+            const deck = deckOf({ selection: other, slide_order: other });
+            expect([deck.selection, deck.slideOrder]).toEqual([null, null]);
+        }
+        const mixed = [1, 'a', null, 'b', ''];
+        const deck = deckOf({ selection: mixed, slide_order: mixed });
+        expect([deck.selection, deck.slideOrder]).toStrictEqual([
+            ['a', 'b', ''],
+            ['a', 'b', '']
+        ]);
+        expect(deckOf({ selection: [], slide_order: [] }).selection).toStrictEqual([]);
+    });
+
+    it('reads the equations folder only as text', () => {
+        for (const other of [3, null, []])
+            expect(deckOf({ equations_dir: other }).equationsDir).toBe('');
+        expect(deckOf({ equations_dir: 'tools/x' }).equationsDir).toBe('tools/x');
+    });
+
+    it('keeps the tag tones that are non-empty text, and none when it is not a map', () => {
+        for (const other of [[], 'x', null])
+            expect(deckOf({ tag_tones: other }).tagTones).toStrictEqual({});
+        const tones = { a: 3, b: '', c: 'green', d: null, e: ['x'], f: 'Red' };
+        expect(deckOf({ tag_tones: tones }).tagTones).toStrictEqual({ c: 'green', f: 'Red' });
+        const parsed: unknown = JSON.parse('{"tag_tones":{"__proto__":"green","a":"red"}}');
+        const held = deckOf(parsed).tagTones;
+        expect(held).toStrictEqual({ a: 'red' });
+        expect(Object.keys(held)).toEqual(['a']);
+    });
+
+    it.each(['themes', 'framing', 'summaries'] as const)(
+        'skips an own __proto__ key of the %s map and keeps its plain prototype',
+        (name) => {
+            const body = '{"__proto__":{"title":"T","color":"#e2374d"},"x":{"title":"X"}}';
+            const deck = deckFrom({ deck: JSON.parse(`{"${name}":${body}}`) });
+            const read = deck[name];
+            expect(Object.keys(read)).toEqual(['x']);
+            expect(Object.getPrototypeOf(read)).toBe(Object.prototype);
+        }
+    );
+});
+
+describe('parsePresentState over input of the wrong type', () => {
+    it.each([
+        [[]],
+        ['x'],
+        [3],
+        [null],
+        [{ slide: null }],
+        [{ slide: ['a'], overview: 1 }],
+        [{ overview: 'true' }]
+    ])('reads %j as the first slide and a closed grid', (value) => {
+        expect(parsePresentState(value)).toStrictEqual({ slide: '', overview: false });
+    });
+
+    it('reads an empty slide key and an own __proto__ key as they stand', () => {
+        expect(parsePresentState({ slide: '', overview: true })).toStrictEqual({
+            slide: '',
+            overview: true
+        });
+        const parsed: unknown = JSON.parse('{"__proto__":{"overview":true},"slide":"s"}');
+        expect(parsePresentState(parsed)).toStrictEqual({ slide: 's', overview: false });
     });
 });

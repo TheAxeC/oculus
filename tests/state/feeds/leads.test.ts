@@ -10,6 +10,7 @@ import {
     isClosed,
     isDeclined,
     isExpired,
+    isOpen,
     leadsSearch,
     leadId,
     leadIdents,
@@ -189,5 +190,131 @@ describe('the run log of the leads feed', () => {
         expect(runLog({ log: ['one', 2, null, { a: 1 }] })).toEqual(['one', '2']);
         expect(runLog({ log: 'not a list' })).toEqual([]);
         expect(runLog(undefined)).toEqual([]);
+    });
+});
+
+describe('the lead readers over fields of the wrong type', () => {
+    it.each([
+        [{ url: 5, title: 'T', inst: 'I' }, 't-i'],
+        [{ url: 'http://x.org/a', title: 3 }, 'http-x-org-a'],
+        [{ url: 'httpx', title: 'T', inst: 'I' }, 'httpx'],
+        [{ title: true, inst: ['a'] }, ''],
+        [{ title: NaN, inst: Infinity }, 'nan-infinity'],
+        [{ url: null, title: 'T' }, 't']
+    ])(
+        'slugs the lead %j to %j, a number as its digits and any other type as nothing',
+        (entry, id) => {
+            expect(leadId(entry)).toBe(id);
+        }
+    );
+
+    it('searches a number or a NaN field as its text and never a boolean or a list', () => {
+        const entries = [{ title: 3, typ: true, focus: ['x'], inst: NaN }];
+        expect(leadsSearch(entries, '3')).toHaveLength(1);
+        expect(leadsSearch(entries, 'nan')).toHaveLength(1);
+        expect(leadsSearch(entries, 'true')).toEqual([]);
+        expect(leadsSearch(entries, 'x')).toEqual([]);
+    });
+
+    it.each([
+        [true, null],
+        [5, null],
+        [null, null],
+        [{}, null],
+        [['2026-09-20'], null],
+        [20260920, null],
+        [NaN, null],
+        ['2026-09-20', '2026-09-20'],
+        ['a 2026-09-20 b', '2026-09-20']
+    ])('reads the deadline %j as %j', (deadline, found) => {
+        expect(deadlineOf(deadline)).toBe(found);
+    });
+
+    it('reads a status that is not text as no status at all', () => {
+        for (const status of [3, null, ['declined'], true, undefined, {}]) {
+            expect([isDeclined(status), isClosed(status), isOpen(status)]).toEqual([
+                false,
+                false,
+                false
+            ]);
+        }
+        expect([isDeclined(' Declined '), isClosed(' Declined '), isOpen(' Declined ')]).toEqual([
+            true,
+            true,
+            false
+        ]);
+        const entries = [
+            { status: 3 },
+            { status: null },
+            { status: ['declined'] },
+            { status: ' Declined ' },
+            { status: 'open' }
+        ];
+        expect(visibleLeads(entries, false)).toEqual([
+            entries[0],
+            entries[1],
+            entries[2],
+            entries[4]
+        ]);
+        expect(declinedCount([...entries, {}])).toBe(1);
+        expect(isExpired({ status: 3, deadline: '2026-01-01' }, '2026-09-12')).toBe(true);
+        expect(isExpired({ status: ['applied'] }, '2026-09-12')).toBe(false);
+        expect(isExpired({ status: true }, '2026-09-12')).toBe(false);
+        expect(isExpired({ status: 'open', deadline: ['2026-01-01'] }, '2026-09-12')).toBe(false);
+    });
+
+    it('keeps a lead whose deadline is not a date string live, after the dated ones', () => {
+        const entries = [
+            { title: 'a', deadline: 20260101 },
+            { title: 'b', deadline: ['2026-01-01'] },
+            { title: 'c', deadline: true },
+            { title: 'd', deadline: '2026-01-02' },
+            { title: 'e', status: 3, deadline: '2099-01-01' }
+        ];
+        const split = splitLeads(entries, '2026-09-12');
+        expect(split.live).toEqual([entries[4], entries[0], entries[1], entries[2]]);
+        expect(split.expired).toEqual([entries[3]]);
+    });
+
+    it.each([3, null, ['strong'], true, NaN, {}])('reads the fit %j as no fit key', (fit) => {
+        expect(fitKey(fit)).toBe(null);
+    });
+
+    const palette = { green: 'c-green', teal: 'c-teal-2', bad: 'c-Bad', num: 3 };
+    it.each([
+        [[], 'grey'],
+        [null, 'grey'],
+        ['x', 'grey'],
+        [{ leads_fit: [], palette: {} }, 'grey'],
+        [{ leads_fit: { strong: 3 }, palette }, 'grey'],
+        [{ leads_fit: { strong: 'Green' }, palette }, 'green'],
+        [{ leads_fit: { strong: 'TEAL' }, palette }, 'teal-2'],
+        [{ leads_fit: { strong: 'bad' }, palette }, 'grey'],
+        [{ leads_fit: { strong: 'num' }, palette }, 'grey'],
+        [{ leads_fit: { strong: 'constructor' }, palette }, 'grey'],
+        [{ leads_fit: { strong: 'green' }, palette: [] }, 'grey'],
+        [{ leads_fit: { strong: 'green' }, palette: 'x' }, 'grey'],
+        [{ leads_fit: { moderate: 'green' }, palette }, 'grey'],
+        [{ leads_fit: 'x', palette }, 'grey'],
+        [{ palette }, 'grey']
+    ])('resolves a strong fit through the vocabulary %j to %j', (vocab, tone) => {
+        expect(fitTone('strong fit', vocab)).toBe(tone);
+    });
+
+    it('resolves no tone for a fit that is not text', () => {
+        expect(fitTone(3, { leads_fit: { strong: 'green' }, palette })).toBe('grey');
+    });
+
+    it.each([
+        [undefined, []],
+        [{}, []],
+        [{ log: 3 }, []],
+        [{ log: null }, []],
+        [{ log: 'abc' }, []],
+        [{ log: { 0: 'a' } }, []],
+        [{ log: [1, 'a', {}] }, ['1', 'a']],
+        [{ log: [NaN, Infinity, true, null, [1], 'x'] }, ['NaN', 'Infinity', 'x']]
+    ])('reads the run log of the meta %j as %j', (meta, lines) => {
+        expect(runLog(meta)).toEqual(lines);
     });
 });

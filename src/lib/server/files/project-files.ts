@@ -23,7 +23,7 @@ import { loadLocalOrDefaults } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import type { PortfolioConfig } from '../../data/model/index.ts';
 import { inside } from '../core/paths.ts';
-import { anyNumberShape } from '../core/shapes.ts';
+import { anyNumberShape } from '../../data/shapes/shapes.ts';
 
 /**
  * What a file listing needs: the hub, its scan rules, and the merged config `file_index` sits in.

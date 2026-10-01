@@ -2,6 +2,7 @@
 // Nothing here renders or starts a terminal.
 
 import { beforeAll, describe, expect, it } from 'vitest';
+import { describeOffFacets } from './off-facets.ts';
 import {
     accessSummary,
     accessTone,
@@ -152,3 +153,5 @@ describe('the projects a dataset names as its users', () => {
         expect(datasetUsers(['b', 'gone', 'a'], projects).map((one) => one.id)).toEqual(['b', 'a']);
     });
 });
+
+describeOffFacets('data', (off) => parseDataState({ off }).off);

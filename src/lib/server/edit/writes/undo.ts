@@ -18,7 +18,7 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { z } from 'zod';
 import { scalar } from '../../../data/helpers/guards.ts';
 import { same } from '../../core/changes.ts';
-import { mapShape, stringItemsShape } from '../../core/shapes.ts';
+import { mapShape, stringItemsShape } from '../../../data/shapes/shapes.ts';
 import { feedValueShape } from './bodies.ts';
 import {
     FEED_RULES,

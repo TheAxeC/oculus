@@ -14,17 +14,37 @@
 // below that version is dropped: it is the hub's replay of a read made before the page's, and
 // installing it would put the values from before a config change back for the watcher's debounce.
 
-import { isMap } from '../../data/helpers/guards.ts';
+import { z } from 'zod';
+import {
+    anyNumberShape,
+    mapOfShape,
+    mapShape,
+    readAs,
+    unchanged
+} from '../../data/shapes/shapes.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
+import { payloadShapes } from './payloads.ts';
 import { configInstalled } from '../shared/words/generation.svelte.ts';
 import { setCatalog, setGlyphs, setIcons } from '../shared/words/text.ts';
 import { setAppearance } from '../shared/words/appearance.ts';
 import { setVocab } from '../shared/words/tones.ts';
 import type { WritesStore } from './writes.svelte.ts';
 import type { ConfigPayload, Message, Subscription } from '../../data/model/index.ts';
+import { byKey } from '../../data/helpers/guards.ts';
 import type { SocketStore, Status } from '../shared/stores/shapes.ts';
 
 export type { SocketStore, Status };
+
+/**
+ * A frame the server sends: its channel, its version (any number, as the wire has always taken
+ * one) and a payload that is a map, answered as the parsed frame itself.
+ */
+const frameShape = unchanged(
+    z.object({ channel: z.string(), version: anyNumberShape, payload: mapShape })
+) satisfies z.ZodType<Message>;
+
+/** The strings of a config key's map: the map's own entries whose value is a string. */
+const stringMapShape = mapOfShape(z.string());
 
 /** The first wait after a drop, and the ceiling it doubles to. */
 const FIRST = 250;
@@ -184,20 +204,6 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     }
 
     /**
-     * A map of strings out of a config key, or null when the key holds no map. Not
-     * data/helpers/guards' `strings`: it reads the string values of a map, not the string items of
-     * a list.
-     */
-    function strings(raw: unknown): Record<string, string> | null {
-        if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
-        const map: Record<string, string> = {};
-        for (const [name, value] of Object.entries(raw)) {
-            if (typeof value === 'string') map[name] = value;
-        }
-        return map;
-    }
-
-    /**
      * Install a config push into the stores the page draws from. The colours and the chip
      * vocabulary ride the same push as the strings: they are keys of the merged config, so an edit
      * to config/catalogs/vocab.yml recolours the page without a reload, an edit to
@@ -216,9 +222,9 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         setCatalog(payload.text);
         setVocab(payload.config);
         setAppearance(payload.config);
-        const glyphs = strings(payload.config.glyphs);
+        const glyphs = readAs(stringMapShape, payload.config.glyphs);
         if (glyphs !== null) setGlyphs(glyphs);
-        const icons = strings(payload.icons);
+        const icons = readAs(stringMapShape, payload.icons);
         if (icons !== null) setIcons(icons);
         configInstalled();
     }
@@ -241,12 +247,13 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         } catch {
             return;
         }
-        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return;
-        const message = parsed as Message;
-        if (typeof message.channel !== 'string' || typeof message.version !== 'number') return;
-        // Every channel carries a map, so a frame whose payload is anything else is dropped here
-        // and each channel's reader may take its own payload type as read.
-        if (!isMap(message.payload)) return;
+        const frame = frameShape.safeParse(parsed);
+        if (!frame.success) return;
+        const message = frame.data;
+        // A channel the page types is checked on its top-level fields, so each channel's reader
+        // takes its payload as the type the data model declares.
+        const shape = byKey<z.ZodType>(payloadShapes, message.channel);
+        if (shape !== undefined && !shape.safeParse(message.payload).success) return;
         if (message.channel === 'config' && message.version <= seededThrough) return;
         const heard = listeners.get(message.channel);
         if (heard !== undefined && heard.size > 0) {
@@ -254,7 +261,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
             return;
         }
         entities.receive(message);
-        if (message.channel === 'config') installConfig(message.payload as ConfigPayload);
+        if (message.channel === 'config') installConfig(entities.payloadOf(message, 'config'));
     }
 
     return {

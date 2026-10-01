@@ -1,18 +1,21 @@
 // Layer 2, client state. Refresh refusals belong to the usage payload current when the response
 // arrives. A newer payload clears the visible refusal in every Usage view without an effect.
 
+import { z } from 'zod';
 import type { UsagePayload } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
+import { optionalTextShape, readAs, readJson } from '../../data/shapes/shapes.ts';
 import type { EntitiesStore, WritesStore } from '../shared/stores/shapes.ts';
 import { t } from '../shared/words/text.ts';
+
+/** What the route answers a refusal with: the words of its error, absent when it is no text. */
+const refusalShape = z.object({ error: optionalTextShape });
 
 /**
  * The route's error words, each answered by a catalog string; anything else is the request failing.
  */
 function refusalText(body: unknown): string {
-    const error =
-        typeof body === 'object' && body !== null && 'error' in body ? body.error : undefined;
-    switch (error) {
+    switch (readAs(refusalShape, body)?.error) {
         case 'forbidden':
             return t('usage.refusal_forbidden');
         case 'bad body':
@@ -53,7 +56,7 @@ export function createUsageRefresh(
                 },
                 body: JSON.stringify({ account: label })
             });
-            if (!response.ok) reason = refusalText(await response.json().catch(() => null));
+            if (!response.ok) reason = refusalText(await readJson(response));
         } catch {
             reason = t('usage.refusal_failed');
         }

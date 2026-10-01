@@ -13,6 +13,7 @@
 // it, and otherwise the endpoint's refusal or the reason no answer could be read.
 
 import type { CalendarPayload } from '../../data/model/index.ts';
+import { optionalTextShape, readAs } from '../../data/shapes/shapes.ts';
 import { remainingToday } from './calendar.ts';
 import { t } from '../shared/words/text.ts';
 import type { ClockStore, EntitiesStore, WritesStore } from '../shared/stores/shapes.ts';
@@ -43,8 +44,8 @@ export function createCalendar(
     async function command(body: Record<string, string>): Promise<string> {
         const answer = await writes.postCommand('/api/calendar', body);
         if (answer.ok) return '';
-        const code = answer.body.error;
-        if (typeof code === 'string') return t('calendar.refused', code);
+        const code = readAs(optionalTextShape, answer.body.error);
+        if (code !== undefined && code !== null) return t('calendar.refused', code);
         if (answer.failed === 'unreachable') return t('accounts.unreachable');
         if (answer.failed === 'unreadable') return t('accounts.unreadable');
         return t('calendar.refused', '');

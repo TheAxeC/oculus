@@ -26,12 +26,15 @@
 // target (localDrafts) with the same shape, and draftTarget() is the one place a form is given one
 // or the other.
 //
-// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
+// A saved record is read through the schemas below (`typedFieldShape`, `addedEntryShape`), which
+// leave out what is not the shape a form saves.
 
-import type { Collection, Entry, Snapshot } from '../../data/model/index.ts';
+import { z } from 'zod';
+import type { Entry, Snapshot } from '../../data/model/index.ts';
 import { controlValue, sameSaved, type FormValue } from './form-values.ts';
 import type { InstanceStates } from '../shared/stores/shapes.ts';
-import { isMap } from '../../data/helpers/guards.ts';
+import { byKey } from '../../data/helpers/guards.ts';
+import { mapOfShape, readAs } from '../../data/shapes/shapes.ts';
 
 /**
  * One typed field: what the control holds, its kind, and what the control held when it was typed.
@@ -69,6 +72,9 @@ export function formKey(collection: string, entry: string | null): string {
     return JSON.stringify([collection, entry]);
 }
 
+/** The two parts of a form key: a collection, and an entry's id or null for adding. */
+const formKeyShape = z.tuple([z.string(), z.string().nullable()]);
+
 /** The collection and the entry a form key names, or null for a key no form makes. */
 export function parseFormKey(form: string): { collection: string; entry: string | null } | null {
     let held: unknown;
@@ -77,43 +83,38 @@ export function parseFormKey(form: string): { collection: string; entry: string 
     } catch {
         return null;
     }
-    if (!Array.isArray(held) || held.length !== 2) return null;
-    const [collection, entry] = held as unknown[];
-    if (typeof collection !== 'string') return null;
-    if (entry !== null && typeof entry !== 'string') return null;
-    return { collection, entry };
+    const key = readAs(formKeyShape, held);
+    return key === null ? null : { collection: key[0], entry: key[1] };
 }
 
-/** One saved control value, or null when what was saved is not a shape a control holds. */
-function formValue(raw: unknown): FormValue | null {
-    if (typeof raw === 'string' || typeof raw === 'boolean') return raw;
-    if (!Array.isArray(raw)) return null;
-    const rows: { label: string; value: string }[] = [];
-    for (const one of raw) {
-        if (!isMap(one) || typeof one.label !== 'string' || typeof one.value !== 'string') {
-            return null;
-        }
-        rows.push({ label: one.label, value: one.value });
-    }
-    return rows;
-}
+/**
+ * One saved control value: text, a toggle, or the rows of a list of label and value, every row
+ * whole.
+ */
+const formValueShape = z.union([
+    z.string(),
+    z.boolean(),
+    z.array(z.object({ label: z.string(), value: z.string() }))
+]) satisfies z.ZodType<FormValue>;
+
+/** One saved typed field: what the control held, its kind, and what it held when it was typed. */
+const typedFieldShape = z.object({
+    value: formValueShape,
+    kind: z.string(),
+    base: formValueShape
+}) satisfies z.ZodType<TypedField>;
+
+/** One form's saved fields, by name; a field that is not whole is left out. */
+const formDraftShape = mapOfShape(typedFieldShape);
 
 /** The drafts an instance saved, with anything that is not the shape above left out. */
 export function parseDrafts(raw: unknown): Drafts {
-    if (!isMap(raw)) return {};
-    const drafts: Drafts = {};
-    for (const [form, fields] of Object.entries(raw)) {
-        if (parseFormKey(form) === null || !isMap(fields)) continue;
-        const kept: FormDraft = {};
-        for (const [field, typed] of Object.entries(fields)) {
-            if (!isMap(typed) || typeof typed.kind !== 'string') continue;
-            const value = formValue(typed.value);
-            const base = formValue(typed.base);
-            if (value !== null && base !== null) kept[field] = { value, kind: typed.kind, base };
-        }
-        if (Object.keys(kept).length > 0) drafts[form] = kept;
-    }
-    return drafts;
+    const forms = readAs(mapOfShape(formDraftShape), raw) ?? {};
+    return Object.fromEntries(
+        Object.entries(forms).filter(
+            ([form, fields]) => parseFormKey(form) !== null && Object.keys(fields).length > 0
+        )
+    );
 }
 
 /**
@@ -129,16 +130,18 @@ export type AddedEntry = {
 /** The entries one instance's add forms made, by form key. */
 type Added = Record<string, AddedEntry>;
 
+/** One saved added entry: the id the file gave it, which is not empty, and its identity value. */
+const addedEntryShape = z.object({
+    id: z.string().min(1),
+    value: z.string()
+}) satisfies z.ZodType<AddedEntry>;
+
 /** The added entries an instance saved, with anything that is not the shape above left out. */
 export function parseAdded(raw: unknown): Added {
-    if (!isMap(raw)) return {};
-    const kept: Added = {};
-    for (const [form, held] of Object.entries(raw)) {
-        if (parseFormKey(form) === null || !isMap(held)) continue;
-        if (typeof held.id !== 'string' || typeof held.value !== 'string') continue;
-        if (held.id !== '') kept[form] = { id: held.id, value: held.value };
-    }
-    return kept;
+    const forms = readAs(mapOfShape(addedEntryShape), raw) ?? {};
+    return Object.fromEntries(
+        Object.entries(forms).filter(([form]) => parseFormKey(form) !== null)
+    );
 }
 
 /**
@@ -153,7 +156,7 @@ export function snapshotEntries(portfolio: () => Snapshot | null): EntryLookup {
     return (collection, id) => {
         const snapshot = portfolio();
         if (snapshot === null) return undefined;
-        const held = snapshot.entities.collections[collection] as Collection | undefined;
+        const held = byKey(snapshot.entities.collections, collection);
         if (held === undefined) return undefined;
         return held.entries.find((one) => one.id === id) ?? null;
     };

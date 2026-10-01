@@ -11,8 +11,9 @@
 // no total, no time) is held as a failed read naming what was wrong, never as a table with fewer
 // rows.
 
-import { isMap } from '../../data/helpers/guards.ts';
+import { z } from 'zod';
 import type { FolderLines, LanguageLines, LineCount, LineTally } from '../../data/model/index.ts';
+import { optionalTextShape, readAs, readJson } from '../../data/shapes/shapes.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 import { t } from '../shared/words/text.ts';
@@ -31,63 +32,59 @@ export type Lines = {
 /** What the view reads before its first answer arrives. */
 const PENDING: Lines = { count: null, error: '', loading: true };
 
-/** The five sums of a tally when every one is a whole count, or null. */
-function tally(value: unknown): LineTally | null {
-    if (!isMap(value)) return null;
-    const read: Record<string, number> = {};
-    for (const key of ['files', 'blank', 'comment', 'code', 'todo']) {
-        const one = value[key];
-        if (typeof one !== 'number' || !Number.isInteger(one) || one < 0) return null;
-        read[key] = one;
-    }
-    return {
-        files: read.files,
-        blank: read.blank,
-        comment: read.comment,
-        code: read.code,
-        todo: read.todo
-    };
-}
+/** One sum of a tally: a whole count. */
+const countShape = z.number().refine((one) => Number.isInteger(one) && one >= 0);
 
-/** One language row, or null when it is not one. */
-function language(value: unknown): LanguageLines | null {
-    const sums = tally(value);
-    if (sums === null || !isMap(value) || typeof value.language !== 'string') return null;
-    return { language: value.language, ...sums };
-}
+/** The five sums of a tally, which a row, a language and the total each carry. */
+const tallyFields = {
+    files: countShape,
+    blank: countShape,
+    comment: countShape,
+    code: countShape,
+    todo: countShape
+};
 
-/** One folder row with its languages, or null when it or any of its languages is not one. */
-function folder(value: unknown): FolderLines | null {
-    const sums = tally(value);
-    if (sums === null || !isMap(value) || typeof value.folder !== 'string') return null;
-    if (!Array.isArray(value.languages)) return null;
-    const languages: LanguageLines[] = [];
-    for (const item of value.languages as unknown[]) {
-        const one = language(item);
-        if (one === null) return null;
-        languages.push(one);
-    }
-    return { folder: value.folder, ...sums, languages };
-}
+const tallyShape = z.object(tallyFields) satisfies z.ZodType<LineTally>;
+
+const languageShape = z.object({
+    language: z.string(),
+    ...tallyFields
+}) satisfies z.ZodType<LanguageLines>;
+
+const folderShape = z.object({
+    folder: z.string(),
+    ...tallyFields,
+    languages: z.array(languageShape)
+}) satisfies z.ZodType<FolderLines>;
+
+/** The time of a count: a text that reads as a date. */
+const countedShape = z.string().refine((one) => !Number.isNaN(Date.parse(one)));
+
+/** The parts of an answer that are read one at a time, so each can name what is wrong. */
+const countHeadShape = z.object({
+    rows: z.array(z.unknown()),
+    total: z.unknown().optional(),
+    counted: z.unknown().optional()
+});
 
 /**
  * The count an answer holds, or the sentence saying what makes it not one: the first row that is
  * not a folder's count is named by its place, counted from one.
  */
 export function readCount(body: unknown): { count: LineCount } | { error: string } {
-    if (!isMap(body) || !Array.isArray(body.rows)) return { error: t('status.lines_bad_rows') };
+    const head = readAs(countHeadShape, body);
+    if (head === null) return { error: t('status.lines_bad_rows') };
     const rows: FolderLines[] = [];
-    for (const [at, item] of (body.rows as unknown[]).entries()) {
-        const row = folder(item);
+    for (const [at, item] of head.rows.entries()) {
+        const row = readAs(folderShape, item);
         if (row === null) return { error: t('status.lines_bad_row', at + 1) };
         rows.push(row);
     }
-    const total = tally(body.total);
+    const total = readAs(tallyShape, head.total);
     if (total === null) return { error: t('status.lines_bad_total') };
-    if (typeof body.counted !== 'string' || Number.isNaN(Date.parse(body.counted))) {
-        return { error: t('status.lines_bad_counted') };
-    }
-    return { count: { rows, total, counted: body.counted } };
+    const counted = readAs(countedShape, head.counted);
+    if (counted === null) return { error: t('status.lines_bad_counted') };
+    return { count: { rows, total, counted } };
 }
 
 /** The line counts, held for one client. */
@@ -100,14 +97,8 @@ export type LinesStore = {
 /** The query key of the count. */
 const KEY = ['lines'];
 
-/** The answer's body, or null when it is not JSON (a proxy's page, a crashed server). */
-async function bodyOf(response: Response): Promise<unknown> {
-    try {
-        return (await response.json()) as unknown;
-    } catch {
-        return null;
-    }
-}
+/** The sentence a refused answer carries, or nothing. */
+const refusalShape = z.object({ error: optionalTextShape });
 
 /**
  * Ask for the count. A failed count is the sentence over the last table read, which stays on
@@ -121,10 +112,10 @@ async function count(held: Lines | undefined): Promise<Lines> {
     });
     try {
         const response = await fetch('/api/lines');
-        const body = await bodyOf(response);
-        if (body === null) return failed(t('status.lines_bad_body', response.status));
+        const body = await readJson(response);
+        if (body === undefined) return failed(t('status.lines_bad_body', response.status));
         if (!response.ok) {
-            const said = isMap(body) && typeof body.error === 'string' ? body.error : '';
+            const said = readAs(refusalShape, body)?.error ?? '';
             return failed(said === '' ? t('status.lines_bad_status', response.status) : said);
         }
         const read = readCount(body);

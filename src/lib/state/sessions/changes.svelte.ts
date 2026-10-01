@@ -13,6 +13,15 @@
 // server-rendered page holds nothing and asks for nothing. A page asked for while a request is out
 // is dropped, and the older page is merged into the rows held inside the request.
 
+import { z } from 'zod';
+import {
+    anyNumberShape,
+    optionalTextShape,
+    readAs,
+    readJson,
+    survivorsShape,
+    unchangedAs
+} from '../../data/shapes/shapes.ts';
 import type { Fetcher, Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 
@@ -64,8 +73,27 @@ export function matching(rows: Change[], filter: string): Change[] {
     return rows.filter((row) => haystack(row).includes(wanted));
 }
 
-/** One answer of the endpoint. */
-type Answer = { changes?: Change[]; page?: number; error?: string };
+/**
+ * One recorded write, handed on as the endpoint wrote it. A row needs the four fields the log's own
+ * reader needs (server/core/changes.ts), and a line oculus did not write may lack the rest, so the
+ * rest is not asked for.
+ */
+const changeShape = unchangedAs<Change>(
+    z.looseObject({ at: z.string(), kind: z.string(), file: z.string(), field: z.string() })
+);
+
+/**
+ * One answer of the endpoint, each field as typed or absent: the rows that read as changes, the
+ * size of a full page, and the sentence of a refusal.
+ */
+const answerShape = z.object({
+    changes: survivorsShape(changeShape).catch([]),
+    page: anyNumberShape.optional().catch(undefined),
+    error: optionalTextShape
+});
+
+/** What a body that is not a map says: no rows, no page size and no sentence. */
+const NO_ANSWER = { changes: [], page: undefined, error: undefined };
 
 /** What is held: the rows, whether the first page is still to come, what failed, and more. */
 type Held = { rows: Change[]; loading: boolean; error: string; more: boolean };
@@ -87,11 +115,13 @@ async function page(held: Held | undefined, before?: string): Promise<Held> {
     try {
         const query = before === undefined ? '' : `?before=${encodeURIComponent(before)}`;
         const response = await fetch(`/api/changes${query}`);
-        const body = (await response.json()) as Answer;
+        const raw = await readJson(response);
+        if (raw === undefined) throw new Error(String(response.status));
+        const body = readAs(answerShape, raw) ?? NO_ANSWER;
         if (!response.ok) {
             return { rows, more, error: body.error ?? String(response.status), loading: false };
         }
-        const next = body.changes ?? [];
+        const next = body.changes;
         return {
             rows: before === undefined ? next : [...rows, ...next],
             more: body.page !== undefined && next.length >= body.page,

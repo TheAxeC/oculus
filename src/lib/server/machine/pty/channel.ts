@@ -28,7 +28,7 @@ import type {
     TerminalResize
 } from '../../../data/model/index.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
-import { anyNumberShape } from '../../core/shapes.ts';
+import { anyNumberShape } from '../../../data/shapes/shapes.ts';
 import {
     captureArgs,
     cursorArgs,

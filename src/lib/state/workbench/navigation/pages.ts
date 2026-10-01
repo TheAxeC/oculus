@@ -9,11 +9,16 @@
 // answer for an instance id, so a view that keeps unsaved text registers its rule once and none of
 // the closes is edited for it.
 
+import { z } from 'zod';
 import { tabsOf, type Instance, type Page } from '../layout/index.ts';
+import { filledTextShape, readAs } from '../../../data/shapes/shapes.ts';
 import { registrationLabel, type Registration } from './registry.ts';
 import { t } from '../../shared/words/text.ts';
 import { parseArrangement } from './arrangement.ts';
 import type { BusyTerminal } from '../ui.svelte.ts';
+
+/** The field of a tab's state that names the tab. */
+const tabLabelShape = z.object({ label: filledTextShape });
 
 /**
  * What a page is called: its own name, or its position in the page list when it has none. Every
@@ -39,11 +44,8 @@ export function tabNameOf(
     instance: Instance,
     viewFor: (id: string) => Pick<Registration, 'label'> | undefined
 ): string {
-    const state = instance.state;
-    if (typeof state === 'object' && state !== null && !Array.isArray(state)) {
-        const own = (state as Record<string, unknown>).label;
-        if (typeof own === 'string' && own !== '') return own;
-    }
+    const own = readAs(tabLabelShape, instance.state)?.label;
+    if (own !== undefined) return own;
     const found = viewFor(instance.view);
     return found === undefined ? instance.view : registrationLabel(found);
 }

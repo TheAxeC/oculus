@@ -25,7 +25,7 @@ import {
     subtaskValues
 } from '../entry-edit/index.ts';
 import { plain } from '../../core/changes.ts';
-import { mapShape } from '../../core/shapes.ts';
+import { mapShape } from '../../../data/shapes/shapes.ts';
 import { insideHub } from './manifest.ts';
 import { identityOf, readCollection, saved } from './entries.ts';
 import type { ChangeRecord } from '../../core/changes.ts';

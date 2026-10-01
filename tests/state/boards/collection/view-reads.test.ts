@@ -15,15 +15,15 @@ import {
     hasTasks,
     taskGroups,
     type TickerItem
-} from '../../../src/lib/state/boards/ticker.ts';
-import { portfolioProjects, waitingTotal } from '../../../src/lib/state/boards/focus.ts';
+} from '../../../../src/lib/state/boards/ticker.ts';
+import { portfolioProjects, waitingTotal } from '../../../../src/lib/state/boards/focus.ts';
 import {
     fileOrder,
     offeredStatuses,
     unfundedBy,
     type StatusFacet
-} from '../../../src/lib/state/boards/collection.ts';
-import type { Entry, Project } from '../../../src/lib/data/model/index.ts';
+} from '../../../../src/lib/state/boards/collection.ts';
+import type { Entry, Project } from '../../../../src/lib/data/model/index.ts';
 
 describe('the tasks section, the awaiting strip and the portfolio projects', () => {
     const item = (kind: string, subtask?: string) =>

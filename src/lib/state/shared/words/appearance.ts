@@ -12,12 +12,15 @@
 // viewer picked out of this list is state/workbench/ui.svelte.ts's, which is the store that
 // persists.
 //
-// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
+// Each key of the file is read through a schema below that repairs a value of the wrong type to
+// its default, so a half-edited file still draws a page.
 
+import { z } from 'zod';
 import { configGeneration } from './generation.svelte.ts';
 import { hasGlyph } from './text.ts';
 import { CODE_TOKENS, isCodeTheme } from '../../../data/helpers/code-themes.ts';
-import { isMap } from '../../../data/helpers/guards.ts';
+import { byKey } from '../../../data/helpers/guards.ts';
+import { anyNumberShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 
 export { CODE_TOKENS, codeThemeInfo, isCodeTheme } from '../../../data/helpers/code-themes.ts';
 
@@ -77,26 +80,12 @@ let codeTheme = CODE_TOKENS;
 /** The terminal settings as last installed: the text size, and the four other keys. */
 let terminal: { fontPx: number | null; options: TerminalOptions } = { fontPx: null, options: {} };
 
-/** The string at `key` of a record, or nothing. */
-function stringAt(node: unknown, key: string): string | undefined {
-    if (!isMap(node)) return undefined;
-    const value = node[key];
-    return typeof value === 'string' ? value : undefined;
-}
-
-/**
- * The number at `key` of a record, clamped to `low`..`high`, or the fallback when it is not one.
- */
-function numberAt(node: unknown, key: string, fallback: number, low: number, high: number): number {
-    const value = isMap(node) ? node[key] : undefined;
-    if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
-    return Math.min(high, Math.max(low, value));
-}
-
-/** The bounded terminal size, or null when the key is absent or not a finite number. */
-function readTerminalFont(config: Record<string, unknown>): number | null {
-    const value = numberAt(config.terminal, 'font_px', Number.NaN, 6, 40);
-    return Number.isFinite(value) ? value : null;
+/** A finite number cut to `low`..`high`; any other value reads as `fallback`. */
+function clamped(fallback: number, low: number, high: number): z.ZodType<number> {
+    return z
+        .number()
+        .transform((value) => Math.min(high, Math.max(low, value)))
+        .catch(fallback);
 }
 
 /** The cursor styles the file names, each as xterm names it. */
@@ -106,21 +95,39 @@ const CURSOR_STYLES: Record<string, TerminalOptions['cursorStyle']> = {
     line: 'bar'
 };
 
-/** The four terminal keys that are not the size, each left out when it is absent or mistyped. */
-function readTerminalOptions(config: Record<string, unknown>): TerminalOptions {
-    const node = config.terminal;
-    if (!isMap(node)) return {};
-    const options: TerminalOptions = {};
-    if (typeof node.mac_option_is_meta === 'boolean') {
-        options.macOptionIsMeta = node.mac_option_is_meta;
-    }
-    if (typeof node.copy_on_selection === 'boolean') {
-        options.copyOnSelection = node.copy_on_selection;
-    }
-    const style = typeof node.cursor_style === 'string' ? node.cursor_style : '';
-    if (Object.hasOwn(CURSOR_STYLES, style)) options.cursorStyle = CURSOR_STYLES[style];
-    if (typeof node.cursor_blinking === 'boolean') options.cursorBlink = node.cursor_blinking;
-    return options;
+/** A flag that is left out when the file does not write it as a boolean. */
+const flagShape = z.boolean().optional().catch(undefined);
+
+/**
+ * The `terminal:` key: the size, bounded and null when the key is absent or not a finite number,
+ * and the four other keys, each left out when it is absent or mistyped.
+ */
+const terminalShape = z
+    .object({
+        font_px: z
+            .number()
+            .transform((value) => Math.min(40, Math.max(6, value)))
+            .nullable()
+            .catch(null),
+        mac_option_is_meta: flagShape,
+        copy_on_selection: flagShape,
+        cursor_style: z.string().catch(''),
+        cursor_blinking: flagShape
+    })
+    .transform((node) => {
+        const options: TerminalOptions = {};
+        if (node.mac_option_is_meta !== undefined)
+            options.macOptionIsMeta = node.mac_option_is_meta;
+        if (node.copy_on_selection !== undefined) options.copyOnSelection = node.copy_on_selection;
+        const style = byKey(CURSOR_STYLES, node.cursor_style);
+        if (style !== undefined) options.cursorStyle = style;
+        if (node.cursor_blinking !== undefined) options.cursorBlink = node.cursor_blinking;
+        return { fontPx: node.font_px, options };
+    });
+
+/** The terminal settings the config holds, and none for a key that is no map. */
+function readTerminal(config: Record<string, unknown>): typeof terminal {
+    return readAs(terminalShape, config.terminal) ?? { fontPx: null, options: {} };
 }
 
 /** A fraction as the percentage color-mix takes. */
@@ -129,27 +136,61 @@ function percent(fraction: number): number {
 }
 
 /**
- * The `wallpaper` key of the merged config, or null when it holds none. An unset `popover_opacity`
- * is three quarters of the way from the panel's own opacity to solid, since a menu is read through
- * the pane beneath it as well as through the picture.
+ * The `wallpaper` key of the merged config. An unset `popover_opacity` is three quarters of the
+ * way from the panel's own opacity to solid, since a menu is read through the pane beneath it as
+ * well as through the picture. A `popover_opacity` that is a number but not a finite one is the
+ * default of a menu.
  */
-function readWallpaper(config: Record<string, unknown>): Wallpaper | null {
-    const raw = config.wallpaper;
-    if (!isMap(raw)) return null;
-    const panel = percent(numberAt(raw, 'panel_opacity', 0.86, 0, 1));
-    const popover =
-        typeof raw.popover_opacity === 'number'
-            ? percent(numberAt(raw, 'popover_opacity', 0.97, 0, 1))
-            : Math.min(100, Math.round(panel + (100 - panel) * 0.75));
-    return {
-        dim: numberAt(raw, 'dim', 0.72, 0, 1),
-        blur: numberAt(raw, 'blur', 0, 0, 64),
-        themes: stringAt(raw, 'themes') === 'all' ? 'all' : RICE,
-        panel,
-        popover,
-        panelBlur: numberAt(raw, 'panel_blur', 6, 0, 64)
-    };
-}
+const wallpaperShape = z
+    .object({
+        dim: clamped(0.72, 0, 1),
+        blur: clamped(0, 0, 64),
+        themes: z.enum([RICE, 'all']).catch(RICE),
+        panel_opacity: clamped(0.86, 0, 1),
+        popover_opacity: anyNumberShape
+            .transform((value) => (Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0.97))
+            .optional()
+            .catch(undefined),
+        panel_blur: clamped(6, 0, 64)
+    })
+    .transform((raw): Wallpaper => {
+        const panel = percent(raw.panel_opacity);
+        return {
+            dim: raw.dim,
+            blur: raw.blur,
+            themes: raw.themes,
+            panel,
+            popover:
+                raw.popover_opacity === undefined
+                    ? Math.min(100, Math.round(panel + (100 - panel) * 0.75))
+                    : percent(raw.popover_opacity),
+            panelBlur: raw.panel_blur
+        };
+    });
+
+/** One row of the `themes` key: the name is a word that is not empty and not `__proto__`. */
+const themeRowShape = z
+    .object({
+        name: z
+            .string()
+            .min(1)
+            .refine((name) => name !== '__proto__'),
+        class: z.string().catch(''),
+        glyph: z.string().catch(''),
+        label: z.string().optional().catch(undefined)
+    })
+    .transform((row): Theme => ({
+        name: row.name,
+        class: row.class,
+        glyph: row.glyph,
+        label: row.label ?? row.name
+    }));
+
+/** The rows of the `themes` key that are themes, in the config's order. */
+const themeRowsShape = rowsShape(themeRowShape);
+
+/** The `crt` key: whether the overlay starts on. */
+const crtShape = z.object({ default: z.boolean().catch(false) });
 
 /**
  * Install the theme list from the merged config's `themes` key. A row with no `name` is dropped,
@@ -162,23 +203,14 @@ function readWallpaper(config: Record<string, unknown>): Wallpaper | null {
 export function setAppearance(config: Record<string, unknown>): void {
     list = [];
     byName = {};
-    paper = readWallpaper(config);
-    crt = isMap(config.crt) && config.crt.default === true;
+    paper = readAs(wallpaperShape, config.wallpaper);
+    crt = readAs(crtShape, config.crt)?.default ?? false;
     codeTheme = isCodeTheme(config.code_theme) ? config.code_theme : CODE_TOKENS;
-    terminal = { fontPx: readTerminalFont(config), options: readTerminalOptions(config) };
-    const rows = config.themes;
-    if (!Array.isArray(rows)) return;
-    for (const row of rows) {
-        const name = stringAt(row, 'name');
-        if (name === undefined || name.length === 0 || Object.hasOwn(byName, name)) continue;
-        const theme: Theme = {
-            name,
-            class: stringAt(row, 'class') ?? '',
-            glyph: stringAt(row, 'glyph') ?? '',
-            label: stringAt(row, 'label') ?? name
-        };
+    terminal = readTerminal(config);
+    for (const theme of readAs(themeRowsShape, config.themes) ?? []) {
+        if (Object.hasOwn(byName, theme.name)) continue;
         list.push(theme);
-        byName[name] = theme;
+        byName[theme.name] = theme;
     }
 }
 
@@ -195,13 +227,13 @@ export function themes(): Theme[] {
 /** The body class string a theme lands on the document as. The light theme's is empty. */
 export function themeClass(name: string): string {
     configGeneration();
-    return byName[name]?.class ?? '';
+    return byKey(byName, name)?.class ?? '';
 }
 
 /** A theme's words in the picker, and the theme's own name for one the config does not list. */
 export function themeLabel(name: string): string {
     configGeneration();
-    return byName[name]?.label ?? name;
+    return byKey(byName, name)?.label ?? name;
 }
 
 /** The theme a browser that has saved none starts on: the first the config lists. */

@@ -24,7 +24,10 @@ import {
     domainTone,
     toneOf,
     paletteTone,
-    typeTone
+    typeTone,
+    dataAccessTone,
+    domainLabel,
+    namedTone
 } from '../../../../src/lib/state/shared/words/tones.ts';
 import { setGlyphMode, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
 import { chipTone, chipsByTone } from '../../../../src/lib/state/shared/words/tones.ts';
@@ -281,4 +284,234 @@ describe('the hues the chips of the vocabulary wear', () => {
             { tone: 'grey', key: 'nothing', count: 1 }
         ]);
     });
+});
+
+describe('a vocabulary whose rows are of the wrong type', () => {
+    const MESSY = {
+        palette: {
+            '#AAA111': 'c-red',
+            '#bbb222': 3,
+            '#ccc333': null,
+            '#ddd444': ['c-blue'],
+            '#EEE555': 'c-blue',
+            '#eee555': 'c-green'
+        },
+        status_palette: {
+            ok: { color: '#aaa111' },
+            str: '#aaa111',
+            num: { color: 3 },
+            list: [{ color: '#aaa111' }],
+            nul: null,
+            UP: { color: '#AAA111' },
+            7: { color: '#aaa111' },
+            true: { color: '#eee555' }
+        },
+        type_color: { manuscript: '#aaa111', idea: { color: '#aaa111' }, n: 3, Mixed: '#EEE555' },
+        domains: {
+            heart: { color: '#aaa111', label: 'Heart' },
+            lung: { color: 3, label: '' },
+            liver: 'x',
+            Brain: { label: 'Brain', color: '#eee555' },
+            empty: {}
+        },
+        data_access: { open: '#aaa111', closed: { color: '#aaa111' }, odd: 3 },
+        status_legend: [
+            'x',
+            null,
+            [],
+            { key: 3, label: 'three' },
+            { key: '', label: 'empty' },
+            { key: 'dup', icon: 'check', label: 'First' },
+            { key: 'dup', icon: 3, label: 4 },
+            { key: 'bare', icon: 5, label: '' },
+            { icon: 'check', label: 'no key' }
+        ]
+    };
+
+    it('reads a palette entry that is not a string as no entry, and the later of two cases', () => {
+        setVocab(MESSY);
+        expect(toneOf('#aaa111')).toBe('red');
+        expect(toneOf('#AAA111')).toBe('red');
+        expect(toneOf('#bbb222')).toBe(UNKNOWN_TONE);
+        expect(toneOf('#ccc333')).toBe(UNKNOWN_TONE);
+        expect(toneOf('#ddd444')).toBe(UNKNOWN_TONE);
+        expect(toneOf('#eee555')).toBe('green');
+    });
+
+    it.each([
+        ['ok', 'red'],
+        ['UP', 'red'],
+        ['up', 'red'],
+        ['str', UNKNOWN_TONE],
+        ['num', UNKNOWN_TONE],
+        ['list', UNKNOWN_TONE],
+        ['nul', UNKNOWN_TONE],
+        [7, 'red'],
+        [true, 'green'],
+        [null, UNKNOWN_TONE],
+        [undefined, UNKNOWN_TONE],
+        [['ok'], UNKNOWN_TONE],
+        [{ ok: 1 }, UNKNOWN_TONE]
+    ])('gives the status %j the tone %s', (status, expected) => {
+        setVocab(MESSY);
+        expect(statusTone(status)).toBe(expected);
+    });
+
+    it.each([
+        ['manuscript', 'red'],
+        ['MANUSCRIPT', 'red'],
+        ['idea', UNKNOWN_TONE],
+        ['n', UNKNOWN_TONE],
+        ['mixed', 'green'],
+        [3, UNKNOWN_TONE],
+        [null, UNKNOWN_TONE]
+    ])('gives the type %j the tone %s', (type, expected) => {
+        setVocab(MESSY);
+        expect(typeTone(type)).toBe(expected);
+    });
+
+    it.each([
+        ['heart', 'red', 'Heart'],
+        ['lung', UNKNOWN_TONE, ''],
+        ['liver', UNKNOWN_TONE, 'liver'],
+        ['Brain', 'green', 'Brain'],
+        ['brain', 'green', 'Brain'],
+        ['empty', UNKNOWN_TONE, 'empty'],
+        [7, UNKNOWN_TONE, '7'],
+        [null, UNKNOWN_TONE, ''],
+        [{}, UNKNOWN_TONE, '']
+    ])('gives the domain %j the tone %s and the words %j', (domain, tone, words) => {
+        setVocab(MESSY);
+        expect(domainTone(domain)).toBe(tone);
+        expect(domainLabel(domain)).toBe(words);
+    });
+
+    it.each([
+        ['open', 'red'],
+        ['OPEN', 'red'],
+        ['closed', UNKNOWN_TONE],
+        ['odd', UNKNOWN_TONE],
+        [3, UNKNOWN_TONE],
+        [null, UNKNOWN_TONE]
+    ])('gives the data access %j the tone %s', (access, expected) => {
+        setVocab(MESSY);
+        expect(dataAccessTone(access)).toBe(expected);
+    });
+
+    it.each([
+        ['red', 'red'],
+        [' red ', 'red'],
+        ['Red', UNKNOWN_TONE],
+        ['blue', UNKNOWN_TONE],
+        ['green', 'green'],
+        ['r e d', UNKNOWN_TONE],
+        ['', UNKNOWN_TONE],
+        [3, UNKNOWN_TONE],
+        [true, UNKNOWN_TONE],
+        [null, UNKNOWN_TONE],
+        [['red'], UNKNOWN_TONE],
+        [undefined, UNKNOWN_TONE]
+    ])('names the hue %j as the tone %s', (name, expected) => {
+        setVocab(MESSY);
+        expect(namedTone(name)).toBe(expected);
+    });
+
+    it.each([
+        ['#aaa111', 'red'],
+        [' #AAA111 ', 'red'],
+        [3, undefined],
+        [null, undefined],
+        [['#aaa111'], undefined],
+        [undefined, undefined]
+    ])('gives the hex %j the palette tone %s', (hex, expected) => {
+        setVocab(MESSY);
+        expect(paletteTone(hex)).toBe(expected);
+    });
+
+    it('reads a legend row with a key, a later row of one key replacing the earlier', () => {
+        setVocab(MESSY);
+        expect(chipKeys()).toStrictEqual(['', 'dup', 'bare']);
+        expect(chipLabel('dup')).toBe('dup');
+        expect(chipGlyphName('dup')).toBe('');
+        expect(chipLabel('bare')).toBe('');
+        expect(chipGlyphName('bare')).toBe('');
+        expect(chipLabel('')).toBe('empty');
+        expect(chipLabel('no key')).toBe('no key');
+    });
+
+    it.each([
+        ['palette', { palette: [] }, () => toneOf('#aaa111'), UNKNOWN_TONE],
+        ['status_palette', { status_palette: 'x' }, () => statusTone('ok'), UNKNOWN_TONE],
+        ['type_color', { type_color: ['manuscript'] }, () => typeTone('manuscript'), UNKNOWN_TONE],
+        ['domains', { domains: null }, () => domainTone('heart'), UNKNOWN_TONE],
+        ['data_access', { data_access: 3 }, () => dataAccessTone('open'), UNKNOWN_TONE],
+        ['status_legend', { status_legend: { key: 'a' } }, () => chipKeys(), []]
+    ])('reads a %s that is no map or list as empty', (_name, config, read, expected) => {
+        setVocab({ ...MESSY, ...config });
+        expect(read()).toStrictEqual(expected);
+    });
+});
+
+describe('a legend row named __proto__', () => {
+    it('is left out, and its name reads as no chip', () => {
+        setVocab({
+            status_legend: [
+                { key: '__proto__', icon: 'check', label: 'Proto' },
+                { key: 'a', icon: 'check', label: 'A' }
+            ]
+        });
+        expect(chipKeys()).toStrictEqual(['a']);
+        expect(chipLabel('__proto__')).toBe('__proto__');
+        expect(chipGlyphName('__proto__')).toBe('');
+    });
+});
+
+describe('a name that is a property of every object', () => {
+    const NAMES = ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf'];
+
+    it.each(NAMES)('is no hex, status, type, domain or chip when asked for as %s', (name) => {
+        setVocab({
+            palette: { '#aaa111': 'c-red' },
+            status_palette: { ok: { color: '#aaa111' } },
+            type_color: { manuscript: '#aaa111' },
+            domains: { heart: { color: '#aaa111', label: 'Heart' } },
+            data_access: { open: '#aaa111' },
+            status_legend: [{ key: 'a', icon: 'check', label: 'A' }]
+        });
+        expect(toneOf(name)).toBe(UNKNOWN_TONE);
+        expect(paletteTone(name)).toBeUndefined();
+        expect(statusTone(name)).toBe(UNKNOWN_TONE);
+        expect(typeTone(name)).toBe(UNKNOWN_TONE);
+        expect(domainTone(name)).toBe(UNKNOWN_TONE);
+        expect(dataAccessTone(name)).toBe(UNKNOWN_TONE);
+        expect(domainLabel(name)).toBe(name);
+        expect(chipLabel(name)).toBe(name);
+        expect(chipGlyphName(name)).toBe('');
+        expect(statusMarkTone(name)).toBe(UNKNOWN_TONE);
+        expect(namedTone(name)).toBe(UNKNOWN_TONE);
+    });
+});
+
+describe('a vocabulary key whose lower-cased form is __proto__', () => {
+    it.each(['palette', 'status_palette', 'type_color', 'domains', 'data_access'])(
+        'holds no entry for the key __PROTO__ of %s',
+        (key) => {
+            const row = key === 'domains' ? { color: '#aaa111', label: 'Hidden' } : '#aaa111';
+            setVocab({
+                palette: { '#aaa111': 'c-red' },
+                status_palette: key === 'status_palette' ? { __PROTO__: { color: '#aaa111' } } : {},
+                type_color: key === 'type_color' ? { __PROTO__: row } : {},
+                domains: key === 'domains' ? { __PROTO__: row } : {},
+                data_access: key === 'data_access' ? { __PROTO__: row } : {},
+                ...(key === 'palette' ? { palette: { __PROTO__: 'c-red' } } : {})
+            });
+            expect(toneOf('__proto__')).toBe(UNKNOWN_TONE);
+            expect(paletteTone('__proto__')).toBeUndefined();
+            expect(statusTone('__proto__')).toBe(UNKNOWN_TONE);
+            expect(typeTone('__proto__')).toBe(UNKNOWN_TONE);
+            expect(domainTone('__proto__')).toBe(UNKNOWN_TONE);
+            expect(dataAccessTone('__proto__')).toBe(UNKNOWN_TONE);
+            expect(domainLabel('__proto__')).toBe('__proto__');
+        }
+    );
 });

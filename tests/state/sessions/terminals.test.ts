@@ -24,6 +24,7 @@ import { isTerminalId } from '../../../src/lib/state/sessions/terminal/terminal-
 import type { Terminal } from '../../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
+import { openOwning, tabOf, terminalTabsOf } from '../client/terminal/terminal-tabs-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 
@@ -743,5 +744,102 @@ describe('a message with no terminal list', () => {
             .pages()
             .some((one) => JSON.stringify(one.workbench.root).includes(`"${tab}"`));
         expect(tabs).toBe(false);
+    });
+});
+
+describe('a sessions payload whose terminals are of the wrong shape', () => {
+    const OWNED = ['a1a1a1-shell', 'b2b2b2-shell'];
+    const OTHER = 'c3c3c3-claude';
+    const T = (id: string) => terminal({ id });
+
+    /** A Terminal tab owning both terminals, and a reader of what it owns after a message. */
+    function owner(): { tab: string; owns: () => string[] | null } {
+        client.layout.loadLayout(fakeStorage());
+        const tab = openOwning(client, client.layout.currentPage().id, OWNED);
+        const owns = () =>
+            terminalTabsOf(client).some((one) => one.id === tab)
+                ? tabOf(client, tab).terminals
+                : null;
+        return { tab, owns };
+    }
+
+    const list = (terminals: unknown, version: number) =>
+        receive({
+            channel: 'sessions',
+            version,
+            payload: { records: [], workspaces: [], terminals }
+        });
+
+    it.each(['x', {}, null, 3])(
+        'does not hear a terminals value of %j, so the next list is the first',
+        (value) => {
+            const { owns } = owner();
+            list(value, 1);
+            expect(owns()).toStrictEqual(OWNED);
+            expect(terminals()).toStrictEqual([]);
+            expect(terminalById(OWNED[0])).toBe(null);
+            list([], 2);
+            expect(owns()).toBe(null);
+        }
+    );
+
+    it('hears the ids that are strings of a list holding anything else, and takes out the terminals it lacks', () => {
+        const { owns } = owner();
+        const junk = [T(OWNED[0]), null, 3, { id: 3 }, 'x', [], T(OTHER)];
+        list(junk, 1);
+        expect(owns()).toStrictEqual([OWNED[0]]);
+    });
+
+    it('hands on the list of the payload itself when every item is a terminal', () => {
+        const held = [terminal(), terminal({ id: 'b2b2b2-claude', kind: 'claude' })];
+        list(held, 1);
+        expect(terminals()).toBe(held);
+    });
+
+    it('leaves out an item of the list that is no terminal', () => {
+        list([terminal(), null, 3, 'x', [], T(OTHER)], 1);
+        expect(terminals().map((one) => one.id)).toStrictEqual([ID, OTHER]);
+        expect(client.terminals.attachable().map((one) => one.id)).toStrictEqual([ID, OTHER]);
+    });
+});
+
+describe('a pty chunk whose frame or payload is of the wrong shape', () => {
+    const frame = (version: string, payload: string) =>
+        `{"channel":"${CHANNEL}","version":${version},"payload":${payload}}`;
+    const bytes = (text: string) => `{"bytes":"${encodeBytes(text)}"}`;
+    const NONE = [['', false]];
+
+    it.each([
+        ['bytes that are a number', frame('2', '{"bytes":3}'), NONE],
+        ['bytes that are null', frame('2', '{"bytes":null}'), NONE],
+        ['bytes that are a list', frame('2', '{"bytes":["a"]}'), NONE],
+        ['bytes that are not base64', frame('2', '{"bytes":"!!!"}'), NONE],
+        ['no bytes', frame('2', '{}'), NONE],
+        [
+            'more keys than the bytes',
+            frame('2', `{"more":1,"bytes":"${encodeBytes('ex')}"}`),
+            [['ex', false]]
+        ],
+        [
+            'an own __proto__ key holding the bytes',
+            frame('3', `{"__proto__":${bytes('pp')}}`),
+            NONE
+        ],
+        ['a version of minus zero', frame('-0', bytes('zero')), [['zero', true]]],
+        ['an infinite version', frame('1e999', bytes('inf')), [['inf', false]]],
+        ['a version that is a string', frame('"0"', bytes('x')), []],
+        ['a payload that is a list', frame('1', '[]'), []],
+        ['a payload that is null', frame('1', 'null'), []]
+    ])('hands %s to the listener as the chunk it reads', (_name, data, expected) => {
+        const socket = connected();
+        serving(200, { ok: true, id: ID });
+        const seen: [string, boolean][] = [];
+        subscribePty(
+            ID,
+            () => ({ cols: 54, rows: 23 }),
+            (chunk, scrollback) => seen.push([new TextDecoder().decode(chunk), scrollback])
+        );
+        socket.fire('message', { data });
+        expect(seen).toStrictEqual(expected);
     });
 });

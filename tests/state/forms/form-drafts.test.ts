@@ -568,3 +568,257 @@ describe('the entry an add form made', () => {
         expect(target.added(after)).toBeNull();
     });
 });
+
+describe('a saved record of the wrong shape', () => {
+    const OK = { value: 'v', kind: 'text', base: 'b' };
+
+    it.each([
+        ['["c",null]', { collection: 'c', entry: null }],
+        ['["c","e"]', { collection: 'c', entry: 'e' }],
+        ['["c",3]', null],
+        ['["c"]', null],
+        ['["c","e","x"]', null],
+        ['["c",["e"]]', null],
+        ['["c",true]', null],
+        ['[3,null]', null],
+        ['[null,null]', null],
+        ['{"0":"c","1":null,"length":2}', null],
+        ['"c"', null],
+        ['null', null],
+        ['', null]
+    ])('reads the form key %s as %j', (form, expected) => {
+        expect(parseFormKey(form)).toStrictEqual(expected);
+    });
+
+    it('answers the collection before the entry', () => {
+        expect(Object.keys(parseFormKey('["c","e"]') ?? {})).toStrictEqual(['collection', 'entry']);
+    });
+
+    it.each([
+        [
+            'a string value and base',
+            { value: 's', kind: 'text', base: 'b' },
+            { value: 's', kind: 'text', base: 'b' }
+        ],
+        [
+            'a ticked value over an unticked base',
+            { value: true, kind: 'checkbox', base: false },
+            { value: true, kind: 'checkbox', base: false }
+        ],
+        ['an empty kind', { value: '', kind: '', base: '' }, { value: '', kind: '', base: '' }],
+        [
+            'metalist rows with a key more than a row has',
+            { value: [{ label: 'a', value: 'b', extra: 1 }], kind: 'metalist', base: [] },
+            { value: [{ label: 'a', value: 'b' }], kind: 'metalist', base: [] }
+        ]
+    ])('keeps a field holding %s', (_name, typed, expected) => {
+        expect(parseDrafts({ [ADD]: { f: typed } })).toStrictEqual({ [ADD]: { f: expected } });
+    });
+
+    it.each([
+        ['a kind that is a number', { value: 'x', kind: 3, base: '' }],
+        ['a kind that is missing', { value: 'x', base: '' }],
+        ['a value that is a number', { value: 3, kind: 'text', base: '' }],
+        ['a value that is null', { value: null, kind: 'text', base: '' }],
+        ['a value that is a map', { value: {}, kind: 'text', base: '' }],
+        ['a value that is missing', { kind: 'text', base: '' }],
+        ['a base that is missing', { value: 'x', kind: 'text' }],
+        ['a base that is a number', { value: 'x', kind: 'text', base: 0 }],
+        ['a base that is null', { value: 'x', kind: 'text', base: null }],
+        [
+            'a metalist value holding a number',
+            {
+                value: [{ label: 'a', value: 3 }],
+                kind: 'metalist',
+                base: []
+            }
+        ],
+        [
+            'a metalist base holding a number',
+            {
+                value: [],
+                kind: 'metalist',
+                base: [{ label: 3, value: 'a' }]
+            }
+        ],
+        ['a metalist row that is null', { value: [null], kind: 'metalist', base: [] }],
+        ['a metalist row that is a list', { value: [['a', 'b']], kind: 'metalist', base: [] }],
+        ['a metalist row without a value', { value: [{ label: 'a' }], kind: 'metalist', base: [] }],
+        ['a typed value that is null', null],
+        ['a typed value that is a list', [OK]],
+        ['a typed value that is a string', 'x'],
+        ['a typed value that is a number', 3]
+    ])('leaves out a field holding %s', (_name, typed) => {
+        expect(parseDrafts({ [ADD]: { f: typed } })).toStrictEqual({});
+    });
+
+    it('keeps an empty metalist on both sides', () => {
+        const typed = { value: [], kind: 'metalist', base: [] };
+        expect(parseDrafts({ [ADD]: { f: typed } })).toStrictEqual({ [ADD]: { f: typed } });
+    });
+
+    it('answers a field as its value, kind and base, in that order, and nothing else', () => {
+        const kept = parseDrafts({
+            [ADD]: { f: { base: 'b', extra: 1, kind: 'text', value: 'v' } }
+        });
+        expect(Object.keys(kept[ADD].f)).toStrictEqual(['value', 'kind', 'base']);
+    });
+
+    it('answers the forms and the fields in the order the record holds them', () => {
+        const kept = parseDrafts({
+            [EDIT]: { z: OK, a: OK },
+            [ADD]: { m: OK }
+        });
+        expect(Object.keys(kept)).toStrictEqual([EDIT, ADD]);
+        expect(Object.keys(kept[EDIT])).toStrictEqual(['z', 'a']);
+    });
+
+    it.each([
+        ['a form key with a number entry', formKeyOf(['c', 3])],
+        ['a form key without an entry', formKeyOf(['c'])],
+        ['a form key that is no JSON', 'not json'],
+        ['a form key of the prototype', '__proto__']
+    ])('leaves out the fields of %s', (_name, form) => {
+        expect(parseDrafts({ [form]: { f: OK } })).toStrictEqual({});
+    });
+
+    it.each([
+        ['a list', []],
+        ['a list of fields', [OK]],
+        ['a string', 'f'],
+        ['a number', 3],
+        ['null', null],
+        ['a map with no field', {}]
+    ])('leaves out a form whose fields are %s', (_name, fields) => {
+        expect(parseDrafts({ [ADD]: fields })).toStrictEqual({});
+    });
+
+    it('keeps the fields of a form that pass beside the ones that do not', () => {
+        const kept = parseDrafts({
+            [ADD]: { good: OK, bad: { value: 3, kind: 'text', base: '' } }
+        });
+        expect(kept).toStrictEqual({ [ADD]: { good: OK } });
+    });
+
+    it.each([[undefined], [null], [[]], [[ADD]], ['x'], [3], [true]])(
+        'answers no drafts for the record %j',
+        (raw) => {
+            expect(parseDrafts(raw)).toStrictEqual({});
+        }
+    );
+
+    it('answers a draft a plain object of its own', () => {
+        const kept = parseDrafts({ [ADD]: { f: OK } });
+        expect(Object.getPrototypeOf(kept)).toBe(Object.prototype);
+        expect(Object.getPrototypeOf(kept[ADD])).toBe(Object.prototype);
+    });
+
+    it('skips an own __proto__ field of a draft and keeps the others', () => {
+        const fields = parsed(
+            '{"__proto__":{"kind":"text","value":"x","base":""},"title":{"kind":"text","value":"t","base":""}}'
+        );
+        const kept = parseDrafts({ [ADD]: fields });
+        expect(Object.keys(kept)).toStrictEqual([ADD]);
+        expect(Object.keys(kept[ADD])).toStrictEqual(['title']);
+        expect(Object.getPrototypeOf(kept[ADD])).toBe(Object.prototype);
+        expect(kept).toStrictEqual({ [ADD]: { title: { value: 't', kind: 'text', base: '' } } });
+    });
+
+    it('keeps no form whose only field is an own __proto__ key', () => {
+        const fields = parsed('{"__proto__":{"kind":"text","value":"x","base":""}}');
+        expect(parseDrafts({ [ADD]: fields })).toStrictEqual({});
+    });
+
+    it('keeps no field of a draft whose typed values carry no base, __proto__ among them', () => {
+        const fields = parsed(
+            '{"__proto__":{"kind":"text","value":"x"},"title":{"kind":"text","value":"t"}}'
+        );
+        expect(parseDrafts({ [ADD]: fields })).toStrictEqual({});
+    });
+
+    it('leaves out a record whose own key is __proto__', () => {
+        const raw = parsed('{"__proto__":{"f":{"kind":"text","value":"x","base":""}}}');
+        expect(parseDrafts(raw)).toStrictEqual({});
+    });
+
+    it.each([
+        ['an id and a value', { id: 'a', value: 'b' }, { id: 'a', value: 'b' }],
+        ['an empty value', { id: 'a', value: '' }, { id: 'a', value: '' }],
+        ['more keys than it wrote', { value: 'b', extra: 1, id: 'a' }, { id: 'a', value: 'b' }],
+        ['an empty id', { id: '', value: 'b' }, undefined],
+        ['a number id', { id: 3, value: 'b' }, undefined],
+        ['a number value', { id: 'a', value: 3 }, undefined],
+        ['no value', { id: 'a' }, undefined],
+        ['no id', { value: 'b' }, undefined],
+        ['null', null, undefined],
+        ['a list', ['a', 'b'], undefined],
+        ['a string', 'a', undefined]
+    ])('reads the added entry %s', (_name, held, expected) => {
+        const kept = parseAdded({ [ADD]: held });
+        expect(kept).toStrictEqual(expected === undefined ? {} : { [ADD]: expected });
+        if (expected !== undefined) {
+            expect(Object.keys(kept[ADD])).toStrictEqual(['id', 'value']);
+        }
+    });
+
+    it.each([
+        ['a form key with a number entry', formKeyOf(['c', 3])],
+        ['a form key without an entry', formKeyOf(['c'])],
+        ['a form key that is no JSON', 'not json']
+    ])('leaves out the added entry of %s', (_name, form) => {
+        expect(parseAdded({ [form]: { id: 'a', value: 'b' } })).toStrictEqual({});
+    });
+
+    it.each([[undefined], [null], [[]], [[{ id: 'a', value: 'b' }]], ['x'], [3]])(
+        'answers no added entries for the record %j',
+        (raw) => {
+            expect(parseAdded(raw)).toStrictEqual({});
+        }
+    );
+
+    it('answers the added entries in the order the record holds them', () => {
+        const kept = parseAdded({
+            [EDIT]: { id: 'e', value: 'e' },
+            [ADD]: { id: 'a', value: 'a' }
+        });
+        expect(Object.keys(kept)).toStrictEqual([EDIT, ADD]);
+    });
+
+    it('leaves out an own __proto__ key of the added entries, which no form key names', () => {
+        const raw = parsed('{"__proto__":{"id":"a","value":"b"}}');
+        expect(parseAdded(raw)).toStrictEqual({});
+    });
+});
+
+/** A form key written by hand, for the shapes formKey does not make. */
+function formKeyOf(parts: unknown[]): string {
+    return JSON.stringify(parts);
+}
+
+describe('the snapshot lookup over a collection named like a property of every object', () => {
+    it.each([['constructor'], ['__proto__'], ['toString'], ['hasOwnProperty']])(
+        'knows nothing of the collection %s',
+        (collection) => {
+            const snapshot = {
+                entities: { collections: { tasks: { id: 'tasks', entries: [entry('probe', {})] } } }
+            } as unknown as Snapshot;
+            expect(snapshotEntries(() => snapshot)(collection, 'probe')).toBeUndefined();
+        }
+    );
+
+    it('keeps a draft of such a collection without asking the snapshot anything that throws', () => {
+        const form = formKey('constructor', 'probe');
+        const lookup = snapshotEntries(
+            () => ({ entities: { collections: {} } }) as unknown as Snapshot
+        );
+        createFormDrafts(client.ui, lookup).setFormField('one', form, 'title', typed('typed'));
+        const again = createFormDrafts(client.ui, lookup);
+        expect(again.formEdits('one', form)).toStrictEqual({ title: 'typed' });
+        expect(again.formsDirty('one')).toBe(true);
+    });
+});
+
+/** A JSON text read as the unknown value a saved record or a config holds. */
+function parsed(text: string): unknown {
+    return JSON.parse(text) as unknown;
+}

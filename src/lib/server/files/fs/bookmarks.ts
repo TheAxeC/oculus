@@ -27,7 +27,7 @@ import { z } from 'zod';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import type { Entry, SchemaField } from '../../../data/model/index.ts';
 import { writeTextAtomic } from '../../core/json.ts';
-import { anyNumberShape, mapShape } from '../../core/shapes.ts';
+import { anyNumberShape, mapShape } from '../../../data/shapes/shapes.ts';
 
 /** The collection key the write path resolves to the reader's own file. */
 export const BOOKMARKS = 'bookmarks';

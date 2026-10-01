@@ -10,9 +10,12 @@
 // configuration's generation, state/shared/words/generation.svelte.ts, so a component calling one
 // during its first render gets the page's data and draws again when a push replaces it.
 //
-// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
+// A name is looked up among the record's own keys, so a name every object has, such as
+// `constructor`, finds nothing.
 
-import { isMap, scalar } from '../../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { byKey, scalar } from '../../../data/helpers/guards.ts';
+import { mapOfShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 import { configGeneration } from './generation.svelte.ts';
 
 /** The tone anything unknown gets: a hue every theme defines and nothing means. */
@@ -33,28 +36,41 @@ let domainColor: Record<string, string | undefined> = {};
 let domainText: Record<string, string | undefined> = {};
 let dataAccess: Record<string, string | undefined> = {};
 
-/** The string at `key` of a record, or nothing. */
-function stringAt(node: unknown, key: string): string | undefined {
-    if (!isMap(node)) return undefined;
-    const value = node[key];
-    return typeof value === 'string' ? value : undefined;
-}
+/** A value that is a string. */
+const hexShape = z.string();
+
+/** A record holding its string at `color`, read as that string. */
+const colorShape = z.object({ color: z.string() }).transform((row) => row.color);
+
+/** A record holding its string at `label`, read as that string. */
+const labelShape = z.object({ label: z.string() }).transform((row) => row.label);
 
 /**
- * A map of name to string, from a map whose values are either that string (`key` null) or a record
- * holding it at `key`. It reads the hexes of `palette` and `type_color`, and the `color` and the
- * `label` of a `domains` entry, which are the same shape read twice.
+ * A map of lower-cased name to string, from a map whose values `value` reads: the string itself, or
+ * the string a record holds. It reads the hexes of `palette` and `type_color`, and the `color` and
+ * the `label` of a `domains` entry, which are the same shape read twice. A value `value` refuses
+ * leaves its name out.
  */
-function stringMap(node: unknown, key: string | null): Record<string, string> {
-    const map: Record<string, string> = {};
-    if (!isMap(node)) return map;
-    for (const [name, value] of Object.entries(node)) {
-        const hex =
-            key === null ? (typeof value === 'string' ? value : undefined) : stringAt(value, key);
-        if (hex !== undefined) map[name.toLowerCase()] = hex;
-    }
-    return map;
+function stringMap(node: unknown, value: z.ZodType<string>): Record<string, string> {
+    const held = readAs(mapOfShape(value), node) ?? {};
+    return Object.fromEntries(
+        Object.entries(held)
+            .map(([name, one]) => [name.toLowerCase(), one] as const)
+            .filter(([name]) => name !== '__proto__')
+    );
 }
+
+/** One row of `status_legend`: the key, and the icon and label the row may leave out. */
+const legendRowShape = z
+    .object({
+        key: z.string(),
+        icon: z.string().catch(''),
+        label: z.string().optional().catch(undefined)
+    })
+    .transform((row): Legend => ({ key: row.key, icon: row.icon, label: row.label ?? row.key }));
+
+/** The rows of `status_legend` that are rows, in order. */
+const legendRowsShape = rowsShape(legendRowShape);
 
 /**
  * Install the vocabulary from the merged config: `palette` (hex to token name), `status_palette`
@@ -63,26 +79,17 @@ function stringMap(node: unknown, key: string | null): Record<string, string> {
  * unknown case rather than throwing: a half-read config still renders a page.
  */
 export function setVocab(config: Record<string, unknown>): void {
-    palette = stringMap(config.palette, null);
-    statusPalette = stringMap(config.status_palette, 'color');
-    typeColor = stringMap(config.type_color, null);
-    domainColor = stringMap(config.domains, 'color');
-    domainText = stringMap(config.domains, 'label');
-    dataAccess = stringMap(config.data_access, null);
-
-    legend = {};
-    const rows = config.status_legend;
-    if (Array.isArray(rows)) {
-        for (const row of rows) {
-            const key = stringAt(row, 'key');
-            if (key === undefined) continue;
-            legend[key] = {
-                key,
-                icon: stringAt(row, 'icon') ?? '',
-                label: stringAt(row, 'label') ?? key
-            };
-        }
-    }
+    palette = stringMap(config.palette, hexShape);
+    statusPalette = stringMap(config.status_palette, colorShape);
+    typeColor = stringMap(config.type_color, hexShape);
+    domainColor = stringMap(config.domains, colorShape);
+    domainText = stringMap(config.domains, labelShape);
+    dataAccess = stringMap(config.data_access, hexShape);
+    legend = Object.fromEntries(
+        (readAs(legendRowsShape, config.status_legend) ?? [])
+            .filter((row) => row.key !== '__proto__')
+            .map((row) => [row.key, row])
+    );
 }
 
 /**
@@ -109,7 +116,7 @@ export function namedTone(name: unknown): string {
 /** A palette hue, or undefined when the value has no usable palette token. */
 export function paletteTone(hex: unknown): string | undefined {
     configGeneration();
-    const token = palette[scalar(hex).trim().toLowerCase()];
+    const token = byKey(palette, scalar(hex).trim().toLowerCase());
     if (!token?.startsWith('c-')) return undefined;
     const tone = token.slice('c-'.length);
     return TONE.test(tone) ? tone : undefined;
@@ -118,28 +125,28 @@ export function paletteTone(hex: unknown): string | undefined {
 /** The dataset access colour from `data_access`, with an unknown value kept neutral. */
 export function dataAccessTone(access: unknown): string {
     configGeneration();
-    const hex = dataAccess[scalar(access).toLowerCase()];
+    const hex = byKey(dataAccess, scalar(access).toLowerCase());
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** The tone of a collection entry's status, through `status_palette`. */
 export function statusTone(status: unknown): string {
     configGeneration();
-    const hex = statusPalette[scalar(status).toLowerCase()];
+    const hex = byKey(statusPalette, scalar(status).toLowerCase());
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** The tone of a project type, through `type_color`. */
 export function typeTone(type: unknown): string {
     configGeneration();
-    const hex = typeColor[scalar(type).toLowerCase()];
+    const hex = byKey(typeColor, scalar(type).toLowerCase());
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** The tone of a research domain, through `domains`. */
 export function domainTone(domain: unknown): string {
     configGeneration();
-    const hex = domainColor[scalar(domain).toLowerCase()];
+    const hex = byKey(domainColor, scalar(domain).toLowerCase());
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
@@ -152,13 +159,13 @@ export function domainTone(domain: unknown): string {
 export function domainLabel(domain: unknown): string {
     configGeneration();
     const text = scalar(domain);
-    return domainText[text.toLowerCase()] ?? text;
+    return byKey(domainText, text.toLowerCase()) ?? text;
 }
 
 /** The glyph name a status chip carries, and nothing for a chip the legend does not list. */
 export function chipGlyphName(chip: string): string {
     configGeneration();
-    return legend[chip]?.icon ?? '';
+    return byKey(legend, chip)?.icon ?? '';
 }
 
 /**
@@ -187,14 +194,14 @@ const ICON_HUES: Record<string, string> = {
  */
 export function statusMarkTone(chip: string): string {
     configGeneration();
-    if (statusPalette[chip.toLowerCase()] !== undefined) return statusTone(chip);
-    return ICON_HUES[legend[chip]?.icon ?? ''] ?? UNKNOWN_TONE;
+    if (byKey(statusPalette, chip.toLowerCase()) !== undefined) return statusTone(chip);
+    return byKey(ICON_HUES, byKey(legend, chip)?.icon ?? '') ?? UNKNOWN_TONE;
 }
 
 /** A status chip's words, and the chip's own key for one the legend does not list. */
 export function chipLabel(chip: string): string {
     configGeneration();
-    return legend[chip]?.label ?? chip;
+    return byKey(legend, chip)?.label ?? chip;
 }
 
 /** Every chip the legend lists, in the config's order. */

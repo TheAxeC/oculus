@@ -86,3 +86,47 @@ describe('the file a view is drawn from', () => {
         ).toEqual({ root: HUB_ROOT, path: 'network/events.yml' });
     });
 });
+
+describe('the file a view is drawn from, over a configuration of the wrong shape', () => {
+    it('answers nothing for a collections key that is a map, and for a row that is a list', () => {
+        expect(
+            viewSourceFile('collection', { collections: { key: 'f', file: 'a.yml' } }, 'f')
+        ).toBeNull();
+        expect(viewSourceFile('collection', { collections: [['f', 'a.yml']] }, 'f')).toBeNull();
+    });
+
+    it('answers the file of the first row that carries the key, whether or not the file is a path', () => {
+        const rows = [
+            { key: 'f', file: 3 },
+            { key: 'f', file: 'b.yml' }
+        ];
+        expect(viewSourceFile('collection', { collections: rows }, 'f')).toBeNull();
+        expect(
+            viewSourceFile('collection', { collections: [{ key: 'f', file: '' }] }, 'f')
+        ).toBeNull();
+    });
+
+    it('trims a path, and reads an empty key like any other', () => {
+        expect(
+            viewSourceFile('collection', { collections: [{ key: 'f', file: ' a.yml ' }] }, 'f')
+        ).toEqual({ root: HUB_ROOT, path: 'a.yml' });
+        expect(
+            viewSourceFile('collection', { collections: [{ key: '', file: 'z.yml' }] }, '')
+        ).toEqual({ root: HUB_ROOT, path: 'z.yml' });
+        expect(viewSourceFile('leads', { leads_file: ' a.yml ' })).toEqual({
+            root: HUB_ROOT,
+            path: 'a.yml'
+        });
+    });
+
+    it('answers nothing for a feed path that is a list or null, or that sits behind an own __proto__ key', () => {
+        expect(viewSourceFile('leads', { leads_file: ['a'] })).toBeNull();
+        expect(viewSourceFile('leads', { leads_file: null })).toBeNull();
+        expect(
+            viewSourceFile(
+                'leads',
+                JSON.parse('{"__proto__":{"leads_file":"p"}}') as Record<string, unknown>
+            )
+        ).toBeNull();
+    });
+});

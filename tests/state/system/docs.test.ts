@@ -550,3 +550,232 @@ describe('whether a root holds a file', () => {
         expect(holds('/', '/a/x.md')).toBe(true);
     });
 });
+
+describe('an answer of the wrong shape', () => {
+    /** The document the store holds for a project pair once the stub has answered. */
+    async function read(answer: Answer): Promise<ReturnType<typeof document>> {
+        serving(answer);
+        document('alpha', 'README.md');
+        await settle();
+        return document('alpha', 'README.md');
+    }
+
+    it.each([
+        ['an html that is a number', { html: 3 }, ''],
+        ['an html that is null', { html: null }, ''],
+        ['no html', {}, ''],
+        ['an empty html', { html: '' }, ''],
+        ['an html', { html: '<p>x</p>' }, '<p>x</p>']
+    ])('holds %s', async (_name, body, html) => {
+        expect(await read({ status: 200, body })).toStrictEqual({
+            html,
+            frontmatter: null,
+            error: '',
+            loading: false,
+            parts: []
+        });
+    });
+
+    it.each([
+        ['a list', ['a'], null],
+        ['null', null, null],
+        ['a string', 'x', null],
+        ['a number', 3, null],
+        ['an empty map', {}, {}],
+        ['a map', { stage: 'run', tags: ['a'] }, { stage: 'run', tags: ['a'] }]
+    ])('holds frontmatter that is %s', async (_name, frontmatter, expected) => {
+        const held = await read({ status: 200, body: { html: 'h', frontmatter } });
+        expect(held.frontmatter).toStrictEqual(expected);
+    });
+
+    it('holds the keys of a frontmatter map as they came, an own __proto__ key included', async () => {
+        const text = '{"html":"h","frontmatter":{"b":1,"__proto__":{"x":1},"a":2}}';
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status: 200 })));
+        document('alpha', 'README.md');
+        await settle();
+        const held = document('alpha', 'README.md').frontmatter;
+        expect(Object.keys(held ?? {})).toStrictEqual(['b', '__proto__', 'a']);
+    });
+
+    it.each([
+        ['a list', []],
+        ['a list of rows', [{ html: 'x' }]],
+        ['a string', 'x'],
+        ['a number', 3]
+    ])('holds an empty document for a body that is %s', async (_name, body) => {
+        expect(await read({ status: 200, body })).toStrictEqual({
+            html: '',
+            frontmatter: null,
+            error: '',
+            loading: false,
+            parts: []
+        });
+    });
+
+    it.each([
+        ['an html run', { kind: 'html', html: '<p>x</p>' }, { kind: 'html', html: '<p>x</p>' }],
+        ['an empty html run', { kind: 'html', html: '' }, { kind: 'html', html: '' }],
+        [
+            'an html run with a key more',
+            { kind: 'html', html: 'x', extra: 1 },
+            { kind: 'html', html: 'x' }
+        ],
+        [
+            'a diagram run',
+            { kind: 'diagram', name: 'n', alt: 'a' },
+            { kind: 'diagram', name: 'n', alt: 'a' }
+        ],
+        [
+            'a diagram run with its keys in another order',
+            { alt: 'a', extra: 1, name: 'n', kind: 'diagram' },
+            { kind: 'diagram', name: 'n', alt: 'a' }
+        ],
+        ['an html run whose html is a number', { kind: 'html', html: 3 }, undefined],
+        ['an html run without html', { kind: 'html' }, undefined],
+        ['a diagram run without alt', { kind: 'diagram', name: 'n' }, undefined],
+        ['a diagram run without a name', { kind: 'diagram', alt: 'a' }, undefined],
+        ['a diagram run whose name is a number', { kind: 'diagram', name: 3, alt: 'a' }, undefined],
+        ['a diagram run whose alt is null', { kind: 'diagram', name: 'n', alt: null }, undefined],
+        ['an image run', { kind: 'image', name: 'n', alt: 'a' }, undefined],
+        ['a run of no kind', { html: 'x' }, undefined],
+        ['a run that is null', null, undefined],
+        ['a run that is a list', ['html', 'x'], undefined],
+        ['a run that is a string', 'x', undefined],
+        ['a run that is a number', 3, undefined]
+    ])('reads the manual run %s', async (_name, run, expected) => {
+        const held = await read({ status: 200, body: { html: 'h', parts: [run] } });
+        expect(held.parts).toStrictEqual(expected === undefined ? [] : [expected]);
+        if (expected !== undefined) {
+            expect(Object.keys(held.parts[0])).toStrictEqual(Object.keys(expected));
+        }
+    });
+
+    it('keeps the runs that pass, in order, beside the ones that do not', async () => {
+        const parts = [
+            { kind: 'html', html: 'one' },
+            { kind: 'html', html: 3 },
+            { kind: 'diagram', name: 'n', alt: 'a' },
+            null,
+            { kind: 'html', html: 'two' }
+        ];
+        const held = await read({ status: 200, body: { html: 'h', parts } });
+        expect(held.parts).toStrictEqual([
+            { kind: 'html', html: 'one' },
+            { kind: 'diagram', name: 'n', alt: 'a' },
+            { kind: 'html', html: 'two' }
+        ]);
+    });
+
+    it.each([
+        ['a map', { 0: { kind: 'html', html: 'x' } }],
+        ['a string', 'x'],
+        ['null', null],
+        ['a number', 3]
+    ])('reads runs that are %s as none', async (_name, parts) => {
+        const held = await read({ status: 200, body: { html: 'h', parts } });
+        expect(held.parts).toStrictEqual([]);
+    });
+
+    it.each([
+        ['an error that is a word', { error: 'gone' }, 404, 'gone'],
+        ['an error that is empty', { error: '' }, 404, ''],
+        ['an error that is a number', { error: 3 }, 404, '404'],
+        ['an error that is null', { error: null }, 404, '404'],
+        ['no error', {}, 500, '500'],
+        ['a body that is a list', [], 500, '500'],
+        ['a body that is a string', 'x', 502, '502']
+    ])('holds a refusal with %s', async (_name, body, status, error) => {
+        const held = await read({ status, body });
+        expect(held).toStrictEqual({
+            html: '',
+            frontmatter: null,
+            error,
+            loading: false,
+            parts: []
+        });
+    });
+
+    it('treats a file that is not a string as no file, which any write under a root asks again', async () => {
+        serving({ status: 200, body: { html: 'one', file: 3 } });
+        document('alpha', 'README.md');
+        await settle();
+        asked = [];
+        wrote('/anywhere/else');
+        document('alpha', 'README.md');
+        await settle();
+        expect(asked).toStrictEqual(['/api/docs?project=alpha&name=README.md']);
+    });
+
+    it.each([
+        ['a list', []],
+        ['a string', 'x'],
+        ['a number', 3],
+        ['a map without a root', { bookmarks: true }],
+        ['a map whose root is a number', { root: 3 }],
+        ['a map whose root is a list', { root: [HUB] }],
+        ['a map whose root is empty', { root: '' }]
+    ])('asks nothing again for a files message whose payload is %s', async (_name, payload) => {
+        serving({ status: 200, body: { html: 'one', file: APPROACH } });
+        hubDocument('docs/RESEARCH-APPROACH.md');
+        document('alpha', 'README.md');
+        await settle();
+        asked = [];
+        version += 1;
+        receive({ channel: 'files', version, payload });
+        hubDocument('docs/RESEARCH-APPROACH.md');
+        document('alpha', 'README.md');
+        await settle();
+        expect(asked).toStrictEqual([]);
+        // The message was heard: the next one is the version after it, so it is no gap.
+        serving({ status: 200, body: { html: 'two', file: APPROACH } });
+        wrote('/elsewhere');
+        document('alpha', 'README.md');
+        await settle();
+        expect(asked).toStrictEqual([]);
+    });
+});
+
+describe('an answer that is no JSON map', () => {
+    it.each([
+        { name: 'JSON null', text: 'null', status: 200 },
+        { name: 'JSON null', text: 'null', status: 502 },
+        { name: 'a page that is no JSON', text: '<html>Bad Gateway</html>', status: 200 },
+        { name: 'a page that is no JSON', text: '<html>Bad Gateway</html>', status: 502 }
+    ])('holds the status of $name sent with status $status', async ({ text, status }) => {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
+        document('alpha', 'README.md');
+        await settle();
+        expect(document('alpha', 'README.md')).toStrictEqual({
+            html: '',
+            frontmatter: null,
+            error: String(status),
+            loading: false,
+            parts: []
+        });
+    });
+});
+
+describe('a 200 answer whose body is no JSON map, for a document already drawn', () => {
+    it.each([
+        { name: 'JSON null', text: 'null' },
+        { name: 'a page that is no JSON', text: '<html>Proxy</html>' }
+    ])('keeps the drawn document and asks again on the next write for $name', async ({ text }) => {
+        serving({ status: 200, body: { html: '<h1>One</h1>', file: APPROACH } });
+        hubDocument('docs/RESEARCH-APPROACH.md');
+        await settle();
+
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status: 200 })));
+        wrote(HUB);
+        hubDocument('docs/RESEARCH-APPROACH.md');
+        await settle();
+        const held = hubDocument('docs/RESEARCH-APPROACH.md');
+        expect(held.html).toBe('<h1>One</h1>');
+        expect(held.error).toBe('');
+
+        serving({ status: 200, body: { html: '<h1>Two</h1>', file: APPROACH } });
+        hubDocument('docs/RESEARCH-APPROACH.md');
+        await settle();
+        expect(asked).toStrictEqual(['/api/docs?hub=docs%2FRESEARCH-APPROACH.md']);
+        expect(hubDocument('docs/RESEARCH-APPROACH.md').html).toBe('<h1>Two</h1>');
+    });
+});

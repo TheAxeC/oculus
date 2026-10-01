@@ -14,6 +14,7 @@ import type {
     CalendarPayload,
     ConfigPayload,
     FeedsPayload,
+    FilesPayload,
     GitPayload,
     HpcPayload,
     InboxPayload,
@@ -23,6 +24,21 @@ import type {
     UsagePayload
 } from '../../../data/model/index.ts';
 
+/** The payload each channel the page types carries, by channel. */
+export type Payloads = {
+    portfolio: Snapshot;
+    config: ConfigPayload;
+    sessions: SessionsPayload;
+    feeds: FeedsPayload;
+    git: GitPayload;
+    hpc: HpcPayload;
+    calendar: CalendarPayload;
+    inbox: InboxPayload;
+    usage: UsagePayload;
+    audit: AuditPayload;
+    files: FilesPayload;
+};
+
 /** What every channel of the wire reads as, one instance per client. */
 export type EntitiesStore = {
     receive: (message: Message) => void;
@@ -31,6 +47,12 @@ export type EntitiesStore = {
     /** Hear every message kept, after it is kept. */
     afterReceive: (listener: (message: Message) => void) => void;
     message: (channel: string) => Message | null;
+    /**
+     * The payload of a message typed by its channel, or null when the message is of another
+     * channel or its payload does not read as that channel's. A store that hears a message through
+     * `afterReceive` reads its payload this way.
+     */
+    payloadOf: <K extends keyof Payloads>(message: Message, channel: K) => Payloads[K] | null;
     portfolio: () => Snapshot | null;
     config: () => ConfigPayload | null;
     sessions: () => SessionsPayload | null;

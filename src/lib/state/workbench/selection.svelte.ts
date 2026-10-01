@@ -14,7 +14,12 @@
 // below are the whole of the difference. Which Terminal tab shows a terminal is not the
 // selection's: a Terminal tab owns its terminals (state/sessions/terminal/terminal-tabs.ts).
 
+import { z } from 'zod';
+import { filledTextShape, readAs } from '../../data/shapes/shapes.ts';
 import { isTerminalId } from '../sessions/terminal/terminal-tabs.ts';
+
+/** The one field of a view's saved state that pins a session. */
+const pinShape = z.object({ session: filledTextShape });
 
 /**
  * The session a view instance pinned, from the state it saved, or null when it follows the
@@ -22,9 +27,7 @@ import { isTerminalId } from '../sessions/terminal/terminal-tabs.ts';
  * nothing about the pin needs a second store.
  */
 export function pinnedSession(state: unknown): string | null {
-    if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
-    const held = (state as Record<string, unknown>).session;
-    return typeof held === 'string' && held !== '' ? held : null;
+    return readAs(pinShape, state)?.session ?? null;
 }
 
 /** The workbench's current session or terminal, for one client. */

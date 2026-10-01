@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
     checkWorkbench,
     panes,
+    type Layout,
     type Workbench
 } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { LAYOUT_KEY } from '../../../../src/lib/state/workbench/layout.svelte.ts';
@@ -543,5 +544,247 @@ describe('the store: a rail page', () => {
             expect(currentPage().rail).toBe(entry.page);
         }
         expect(pages()).toHaveLength(rail.length + 1);
+    });
+});
+
+/**
+ * A parsed arrangement without its minted ids, as one line: a split is `dir sizes (children)`, a
+ * pane is its tabs as `view` or `view:state` with the index of its active tab after `@`.
+ */
+function outline(value: unknown): string {
+    const parsed = parseArrangement(value);
+    if (parsed === null) return 'null';
+    const walk = (node: Layout): string => {
+        if (node.kind === 'split') {
+            return `${node.dir} [${node.sizes.join(',')}] (${node.children.map(walk).join(' | ')})`;
+        }
+        if (node.kind !== 'pane') return node.kind;
+        const tabs = node.tabs.map((tab) => {
+            const state = JSON.stringify(tab.state);
+            return state === '{}' ? tab.view : `${tab.view}:${state}`;
+        });
+        return `${tabs.join(' ')}@${node.tabs.findIndex((tab) => tab.id === node.active)}`;
+    };
+    return `${Object.keys(parsed).join()} ${walk(parsed.root)}`;
+}
+
+/** A split of two panes over the sizes and the extra fields handed in. */
+function twoPanes(sizes: unknown, over: Record<string, unknown> = {}): unknown {
+    return {
+        root: {
+            kind: 'split',
+            dir: 'row',
+            sizes,
+            children: [
+                { kind: 'pane', view: 'timeline' },
+                { kind: 'pane', view: 'agents' }
+            ],
+            ...over
+        }
+    };
+}
+
+/** The outline of a root made of one pane naming `view`. */
+const paneOf = (view: unknown): string => outline({ root: { kind: 'pane', view } });
+
+/** The outline of a root that is `node`. */
+const rootOf = (node: unknown): string => outline({ root: node });
+
+/** The root a two-pane arrangement is read into. */
+function splitRoot(): Workbench['root'] {
+    const read = parseArrangement(twoPanes([0.5, 0.5]));
+    if (read === null) throw new Error('a two-pane arrangement is refused');
+    return read.root;
+}
+
+/** The outline of a split of two panes over `sizes` and the extra fields handed in. */
+const splitOf = (sizes: unknown, over: Record<string, unknown> = {}): string =>
+    outline(twoPanes(sizes, over));
+
+describe('the arrangement reader over values of the wrong type', () => {
+    const rows: [string, () => unknown, unknown][] = [
+        ['an array', () => outline([]), 'null'],
+        ['null', () => outline(null), 'null'],
+        ['a string', () => outline('root'), 'null'],
+        ['a number', () => outline(3), 'null'],
+        ['a map with no root', () => outline({}), 'null'],
+        ['a root that is an array', () => rootOf([]), 'null'],
+        ['a root that is null', () => rootOf(null), 'null'],
+        ['a root that is a string', () => rootOf('pane'), 'null'],
+        ['a root with no kind', () => rootOf({ view: 'a' }), 'null'],
+        ['a root of an unknown kind', () => rootOf({ kind: 'page', view: 'a' }), 'null'],
+        ['a kind that is a number', () => rootOf({ kind: 3, view: 'a' }), 'null'],
+        ['a pane naming one view', () => paneOf('a'), 'root a@0'],
+        ['a pane naming an empty view', () => paneOf(''), 'null'],
+        ['a pane whose view is a number', () => paneOf(3), 'null'],
+        ['a pane whose view is a map', () => paneOf({ view: 'a' }), 'null'],
+        ['a pane whose view is null', () => paneOf(null), 'null'],
+        ['a pane with no view', () => rootOf({ kind: 'pane' }), 'null'],
+        ['a pane naming an empty list', () => paneOf([]), 'root @-1'],
+        ['a pane naming a list with an empty name', () => paneOf(['a', '']), 'null'],
+        ['a pane naming a list with a number', () => paneOf(['a', 3]), 'null'],
+        ['a pane naming a list with null', () => paneOf(['a', null]), 'null'],
+        ['a pane naming a list with a list', () => paneOf([['a']]), 'null'],
+        ['a pane naming two views', () => paneOf(['a', 'b']), 'root a b@0'],
+        ['a pane naming a view twice', () => paneOf(['a', 'a']), 'root a a@0'],
+        [
+            'a pane whose tab is a map',
+            () => paneOf([{ view: 'a', state: { z: 1, a: 2 } }]),
+            'root a:{"z":1,"a":2}@0'
+        ],
+        ['a pane whose tab is a map with no state', () => paneOf([{ view: 'a' }]), 'root a@0'],
+        [
+            'a pane whose tab is a map with an undefined state',
+            () => paneOf([{ view: 'a', state: undefined }]),
+            'root a@0'
+        ],
+        ['a pane whose tab state is null', () => paneOf([{ view: 'a', state: null }]), 'null'],
+        ['a pane whose tab state is a list', () => paneOf([{ view: 'a', state: [] }]), 'null'],
+        ['a pane whose tab state is a string', () => paneOf([{ view: 'a', state: 's' }]), 'null'],
+        ['a pane whose tab state is a number', () => paneOf([{ view: 'a', state: 0 }]), 'null'],
+        [
+            'a pane whose tab has a view that is a number',
+            () => paneOf([{ view: 3, state: {} }]),
+            'null'
+        ],
+        ['a pane whose tab has an empty view', () => paneOf([{ view: '', state: {} }]), 'null'],
+        ['a pane whose tab has no view', () => paneOf([{ state: {} }]), 'null'],
+        [
+            'a pane whose tab state has an own __proto__ key',
+            () =>
+                paneOf([
+                    { view: 'a', state: JSON.parse('{"__proto__":{"x":1},"y":2}') as unknown }
+                ]),
+            'root a:{"__proto__":{"x":1},"y":2}@0'
+        ],
+        ['a pane whose tab is named __proto__', () => paneOf('__proto__'), 'root __proto__@0'],
+        [
+            'a split of two panes',
+            () => splitOf([0.5, 0.5]),
+            'root row [0.5,0.5] (timeline@0 | agents@0)'
+        ],
+        ['a split whose sizes are a map', () => splitOf({ 0: 0.5, 1: 0.5 }), 'null'],
+        ['a split whose sizes are a string', () => splitOf('half'), 'null'],
+        ['a split whose sizes are null', () => splitOf(null), 'null'],
+        ['a split whose sizes hold a string', () => splitOf([0.5, '0.5']), 'null'],
+        ['a split whose sizes hold NaN', () => splitOf([Number.NaN, 0.5]), 'null'],
+        ['a split whose sizes hold Infinity', () => splitOf([Infinity, 0.5]), 'null'],
+        ['a split whose sizes hold a negative infinity', () => splitOf([-Infinity, 0.5]), 'null'],
+        ['a split whose sizes hold null', () => splitOf([0.5, null]), 'null'],
+        ['a split with one size for two children', () => splitOf([1]), 'null'],
+        ['a split with three sizes for two children', () => splitOf([0.3, 0.3, 0.4]), 'null'],
+        ['a split whose sizes do not sum to one', () => splitOf([0.5, 0.6]), 'null'],
+        ['a split with a child under the minimum', () => splitOf([0.99, 0.01]), 'null'],
+        [
+            'a split with a direction that is not one',
+            () => splitOf([0.5, 0.5], { dir: 'sideways' }),
+            'null'
+        ],
+        [
+            'a split with a direction that is a number',
+            () => splitOf([0.5, 0.5], { dir: 1 }),
+            'null'
+        ],
+        ['a split with no direction', () => splitOf([0.5, 0.5], { dir: undefined }), 'null'],
+        [
+            'a split whose children are a string',
+            () => splitOf([0.5, 0.5], { children: 'two' }),
+            'null'
+        ],
+        ['a split whose children are a map', () => splitOf([0.5, 0.5], { children: {} }), 'null'],
+        ['a split whose children are null', () => splitOf([0.5, 0.5], { children: null }), 'null'],
+        [
+            'a split whose children hold null',
+            () => splitOf([0.5, 0.5], { children: [{ kind: 'pane', view: 'a' }, null] }),
+            'null'
+        ],
+        [
+            'a split whose children hold a pane naming a number',
+            () =>
+                splitOf([0.5, 0.5], {
+                    children: [
+                        { kind: 'pane', view: 'a' },
+                        { kind: 'pane', view: 3 }
+                    ]
+                }),
+            'null'
+        ],
+        [
+            'a split with one child',
+            () => splitOf([1], { children: [{ kind: 'pane', view: 'a' }] }),
+            'null'
+        ],
+        [
+            'a split with a folded list',
+            () => splitOf([0.5, 0.5], { folded: [0] }),
+            'root row [0.5,0.5] (timeline@0 | agents@0)'
+        ],
+        [
+            'a split holding a split',
+            () =>
+                rootOf({
+                    kind: 'split',
+                    dir: 'col',
+                    sizes: [0.5, 0.5],
+                    children: [
+                        { kind: 'pane', view: 'a' },
+                        {
+                            kind: 'split',
+                            dir: 'row',
+                            sizes: [0.4, 0.6],
+                            children: [
+                                { kind: 'pane', view: 'a' },
+                                { kind: 'pane', view: ['c', 'd'] }
+                            ]
+                        }
+                    ]
+                }),
+            'root col [0.5,0.5] (a@0 | row [0.4,0.6] (a@0 | c d@0))'
+        ],
+        [
+            'a root with fields it does not read',
+            () => outline({ root: { kind: 'pane', view: 'a', extra: 1 }, other: 2 }),
+            'root a@0'
+        ],
+        [
+            'the keys of the workbench',
+            () => Object.keys(parseArrangement(twoPanes([0.5, 0.5])) ?? {}),
+            ['root']
+        ],
+        [
+            'the keys of the split',
+            () => Object.keys(splitRoot()),
+            ['kind', 'dir', 'sizes', 'children']
+        ],
+        [
+            'the keys of the pane',
+            () => Object.keys(panes(splitRoot())[0].pane),
+            ['kind', 'tabs', 'active']
+        ],
+        [
+            'the keys of the tab',
+            () => Object.keys(panes(splitRoot())[0].pane.tabs[0]),
+            ['id', 'view', 'state']
+        ]
+    ];
+
+    it.each(rows)('%s', (_name, run, expected) => {
+        expect(run()).toStrictEqual(expected);
+    });
+});
+
+describe('the state a tab of an arrangement opens with', () => {
+    it('is a copy of the state written, with the same own keys in the same order', () => {
+        const written = JSON.parse('{"b":1,"__proto__":{"x":1},"a":2}') as Record<string, unknown>;
+        const made = present(
+            parseArrangement({ root: { kind: 'pane', view: [{ view: 'files', state: written }] } }),
+            'arrangement'
+        );
+        const state = panes(made.root)[0].pane.tabs[0].state as Record<string, unknown>;
+        expect(state).not.toBe(written);
+        expect(Object.keys(state)).toStrictEqual(['b', '__proto__', 'a']);
+        expect(Object.getPrototypeOf(state)).toBe(Object.prototype);
+        expect(state.b).toBe(1);
+        expect(state.a).toBe(2);
     });
 });

@@ -11,6 +11,7 @@
 // server checks it with (data/helpers/search.ts), so a refusal is a sentence rather than a round
 // trip.
 
+import { readAnswer } from './fs-transport.ts';
 import { answerOf, parseSearchState, queryOf, type SearchState } from './search.ts';
 import {
     refusalOf,
@@ -101,14 +102,9 @@ async function ask(
         const response = await fetch(searchUrl(query), {
             headers: { 'x-oculus-token': token }
         });
-        const body: unknown = await response.json();
-        const held =
-            typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {};
-        if (!response.ok) {
-            const error = typeof held.error === 'string' ? held.error : `HTTP ${response.status}`;
-            return { ok: false, error };
-        }
-        const answer = answerOf(held);
+        const read = await readAnswer(response, `HTTP ${response.status}`);
+        if (!read.ok) return { ok: false, error: read.error };
+        const answer = answerOf(read.body);
         if (answer === null) return { ok: false, error: t('search.failed') };
         return { ok: true, answer };
     } catch (error) {

@@ -299,3 +299,47 @@ describe('the findings and the entity counts the page reads', () => {
         expect(entityCount(null, 'venues')).toBe(0);
     });
 });
+
+describe('the file a tab names over a state of the wrong type', () => {
+    const rows: [string, () => unknown, unknown][] = [
+        ['an array', () => tabFile([]), null],
+        ['null', () => tabFile(null), null],
+        ['undefined', () => tabFile(undefined), null],
+        ['a string', () => tabFile('r/p'), null],
+        ['a number', () => tabFile(3), null],
+        ['an empty map', () => tabFile({}), null],
+        ['a root and a path', () => tabFile({ root: 'r', path: 'p' }), { root: 'r', path: 'p' }],
+        ['a root alone', () => tabFile({ root: 'r' }), null],
+        ['a path alone', () => tabFile({ path: 'p' }), null],
+        ['an empty root', () => tabFile({ root: '', path: 'p' }), null],
+        ['an empty path', () => tabFile({ root: 'r', path: '' }), { root: 'r', path: '' }],
+        ['a root that is a number', () => tabFile({ root: 3, path: 'p' }), null],
+        ['a path that is a number', () => tabFile({ root: 'r', path: 3 }), null],
+        ['a path that is null', () => tabFile({ root: 'r', path: null }), null],
+        ['a root that is a list', () => tabFile({ root: ['r'], path: 'p' }), null],
+        [
+            'more keys than the two',
+            () => tabFile({ extra: 1, path: 'p', root: 'r', id: 'i' }),
+            { root: 'r', path: 'p' }
+        ],
+        [
+            'the keys it answers, in order',
+            () => Object.keys(tabFile({ path: 'p', root: 'r' }) ?? {}),
+            ['root', 'path']
+        ],
+        [
+            'a map with an own __proto__ key',
+            () => tabFile(JSON.parse('{"__proto__":{"root":"p","path":"q"},"b":1}')),
+            null
+        ],
+        [
+            'a map with an own __proto__ key beside the two',
+            () => tabFile(JSON.parse('{"__proto__":1,"root":"r","path":"p"}')),
+            { root: 'r', path: 'p' }
+        ]
+    ];
+
+    it.each(rows)('%s', (_name, run, expected) => {
+        expect(run()).toStrictEqual(expected);
+    });
+});

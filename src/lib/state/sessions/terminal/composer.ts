@@ -18,7 +18,14 @@ import type {
     ComposeStart,
     Workspace
 } from '../../../data/model/index.ts';
+import { z } from 'zod';
 import { isMap } from '../../../data/helpers/guards.ts';
+import {
+    filledTextShape,
+    mapOfShape,
+    readAs,
+    stringItemsShape
+} from '../../../data/shapes/shapes.ts';
 
 /** What the composer starts: one of the two agents, or the reader's shell. */
 export type ComposerAgent = AgentId | 'shell';
@@ -49,36 +56,33 @@ export const COMPOSER_EMPTY: ComposerRecord = {
     picks: {}
 };
 
-/** A plain map, or null. */
-function mapOf(value: unknown): Record<string, unknown> | null {
-    return isMap(value) ? value : null;
-}
+/** A map of keys to the filled texts it holds, and none for anything that is not a map. */
+const wordsShape = mapOfShape(z.string().min(1)).catch({});
 
-function wordsOf(value: unknown): Record<string, string> {
-    const map = mapOf(value);
-    if (map === null) return {};
-    const kept: Record<string, string> = {};
-    for (const [key, one] of Object.entries(map)) {
-        if (typeof one === 'string' && one !== '') kept[key] = one;
-    }
-    return kept;
-}
+/** The picks of the two agents, a map each, and no picks for anything that is not a map. */
+const picksShape = z
+    .object({ claude: wordsShape, codex: wordsShape })
+    .catch(() => ({ claude: {}, codex: {} }));
+
+/** The record a tab keeps, each field as typed or unset; the split is absent unless it is named. */
+const composerShape = z
+    .object({
+        workspace: z.string().catch(''),
+        agent: z.enum(['claude', 'codex', 'shell']).catch('claude'),
+        accounts: wordsShape.transform((words) => ({ claude: words.claude, codex: words.codex })),
+        picks: picksShape,
+        split: filledTextShape
+    })
+    .transform(({ split, ...record }) =>
+        split === undefined ? record : { ...record, split }
+    ) satisfies z.ZodType<ComposerRecord>;
+
+/** A tab's instance state as far as its composer: the record under `composer`, which is a map. */
+const composerHolderShape = z.object({ [COMPOSER_FIELD]: composerShape });
 
 /** The composer record out of a tab's instance state, with anything malformed read as unset. */
 export function composerOf(state: unknown): ComposerRecord {
-    const held = mapOf(mapOf(state)?.[COMPOSER_FIELD]);
-    if (held === null) return COMPOSER_EMPTY;
-    const agent = held.agent;
-    const accounts = wordsOf(held.accounts);
-    const picks = mapOf(held.picks) ?? {};
-    const record: ComposerRecord = {
-        workspace: typeof held.workspace === 'string' ? held.workspace : '',
-        agent: agent === 'codex' || agent === 'shell' ? agent : 'claude',
-        accounts: { claude: accounts.claude, codex: accounts.codex },
-        picks: { claude: wordsOf(picks.claude), codex: wordsOf(picks.codex) }
-    };
-    if (typeof held.split === 'string' && held.split !== '') record.split = held.split;
-    return record;
+    return readAs(composerHolderShape, state)?.composer ?? COMPOSER_EMPTY;
 }
 
 /**
@@ -109,7 +113,7 @@ export function composerWorkspace(
 
 /** The tab's instance state with the composer record in place of the one it held. */
 export function withComposer(state: unknown, record: ComposerRecord): Record<string, unknown> {
-    return { ...(mapOf(state) ?? {}), [COMPOSER_FIELD]: record };
+    return { ...(isMap(state) ? state : {}), [COMPOSER_FIELD]: record };
 }
 
 /**
@@ -300,19 +304,21 @@ export type CustomizationScopeState = {
 /** The section's field of the list's instance state. */
 export const CUSTOM_FIELD = 'custom';
 
+/** The section's scope as the list keeps it, each field as typed or at its default. */
+const scopeShape = z.object({
+    open: z.boolean().catch(true),
+    agent: z.enum(['claude', 'codex']).catch('claude'),
+    account: z.string().catch(''),
+    workspace: z.string().catch(''),
+    expanded: stringItemsShape.catch([])
+}) satisfies z.ZodType<CustomizationScopeState>;
+
+/** A list's instance state as far as the section's scope: the scope under `custom`, a map. */
+const scopeHolderShape = z.object({ [CUSTOM_FIELD]: scopeShape });
+
 /** The section's scope out of the list's instance state, anything malformed read as unset. */
 export function customizationScopeOf(state: unknown): CustomizationScopeState {
-    const held = mapOf(mapOf(state)?.[CUSTOM_FIELD]);
-    const expanded = held?.expanded;
-    return {
-        open: held?.open !== false,
-        agent: held?.agent === 'codex' ? 'codex' : 'claude',
-        account: typeof held?.account === 'string' ? held.account : '',
-        workspace: typeof held?.workspace === 'string' ? held.workspace : '',
-        expanded: Array.isArray(expanded)
-            ? expanded.filter((one): one is string => typeof one === 'string')
-            : []
-    };
+    return readAs(scopeHolderShape, state)?.custom ?? scopeShape.parse({});
 }
 
 /** The list's instance state with the section's scope in place of the one it held. */
@@ -320,5 +326,5 @@ export function withCustomizationScope(
     state: unknown,
     scope: CustomizationScopeState
 ): Record<string, unknown> {
-    return { ...(mapOf(state) ?? {}), [CUSTOM_FIELD]: scope };
+    return { ...(isMap(state) ? state : {}), [CUSTOM_FIELD]: scope };
 }

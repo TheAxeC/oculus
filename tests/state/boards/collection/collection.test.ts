@@ -36,8 +36,8 @@ import {
     type SchemaField,
     entryById,
     openSubtaskCount
-} from '../../../src/lib/state/boards/collection.ts';
-import { parseRawField, rawFieldText } from '../../../src/lib/state/forms/form-values.ts';
+} from '../../../../src/lib/state/boards/collection.ts';
+import { parseRawField, rawFieldText } from '../../../../src/lib/state/forms/form-values.ts';
 
 const FILE = '/hub/network/events.yml';
 

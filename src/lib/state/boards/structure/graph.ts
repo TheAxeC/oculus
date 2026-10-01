@@ -5,8 +5,16 @@
 // it can be checked without a browser. It sits in state/boards/structure beside the Pillars and
 // Domains joins, the pure halves of the Structure views.
 
+import { z } from 'zod';
 import type { Project, Snapshot } from '../../../data/model/index.ts';
-import { byKey } from '../../../data/helpers/guards.ts';
+import { byKey, strings } from '../../../data/helpers/guards.ts';
+import {
+    anyNumberShape,
+    fieldItemsShape,
+    mapShape,
+    optionalTextShape,
+    readAs
+} from '../../../data/shapes/shapes.ts';
 import { personNames } from '../person.ts';
 
 export type GraphKind = 'project' | 'line' | 'collaborator';
@@ -308,13 +316,10 @@ export function archiveStatuses(
             found.add(project.type);
         }
     }
-    const map =
-        typeof colors === 'object' && colors !== null && !Array.isArray(colors)
-            ? (colors as Record<string, unknown>)
-            : {};
+    const map = readAs(mapShape, colors) ?? {};
     return [...found].map((status) => {
-        const color = map[status];
-        return { status, ...(typeof color === 'string' ? { color } : {}) };
+        const color = readAs(optionalTextShape, map[status]) ?? undefined;
+        return { status, ...(color === undefined ? {} : { color }) };
     });
 }
 
@@ -329,9 +334,7 @@ export function typeFilters(
     order: unknown,
     types: string[]
 ): { type: string; count: number; shown: boolean }[] {
-    const ordered = (Array.isArray(order) ? order : []).filter(
-        (one): one is string => typeof one === 'string'
-    );
+    const ordered = strings(order);
     const counted = typeCounts(drawn);
     const names = Object.keys(typeCounts(base));
     const rest = names.filter((type) => !ordered.includes(type)).sort();
@@ -416,19 +419,22 @@ export type MapState = GraphFilter & {
     start?: { key: string; seed: number };
 };
 
-/** The strings of a saved list, and an empty list for anything that was not one. */
-function stringList(raw: unknown): string[] {
-    return Array.isArray(raw) ? raw.filter((one): one is string => typeof one === 'string') : [];
-}
+/** A saved start seed: a key and a non-negative safe integer, else none. */
+const startShape = z.object({
+    key: z.string(),
+    seed: anyNumberShape.refine((seed) => Number.isSafeInteger(seed) && seed >= 0)
+});
 
-/** A saved start seed, and nothing for a value no layout could be started from. */
-function savedStart(raw: unknown): { key: string; seed: number } | undefined {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined;
-    const held = raw as Record<string, unknown>;
-    if (typeof held.key !== 'string' || typeof held.seed !== 'number') return undefined;
-    if (!Number.isSafeInteger(held.seed) || held.seed < 0) return undefined;
-    return { key: held.key, seed: held.seed };
-}
+/** The fields of a saved Map instance, each read apart so a wrong one costs that field alone. */
+const mapStateShape = z.object({
+    collaborators: z.boolean().catch(false),
+    enabled: fieldItemsShape,
+    linkMode: z.boolean().catch(false),
+    types: fieldItemsShape,
+    lines: fieldItemsShape,
+    connected: z.boolean().catch(false),
+    start: startShape.optional().catch(undefined)
+});
 
 /**
  * The seed the Map lays the node set it draws now out from: the one the pane saved for this set,
@@ -449,18 +455,15 @@ export function nextStart(state: MapState, nodes: GraphNode[]): { key: string; s
  * The saved state of one Map instance, with anything that is not the shape above replaced by it.
  */
 export function parseMapState(raw: unknown): MapState {
-    const held =
-        typeof raw === 'object' && raw !== null && !Array.isArray(raw)
-            ? (raw as Record<string, unknown>)
-            : {};
-    const start = savedStart(held.start);
-    return {
-        collaborators: held.collaborators === true,
-        enabled: stringList(held.enabled),
-        linkMode: held.linkMode === true,
-        types: stringList(held.types),
-        lines: stringList(held.lines),
-        connected: held.connected === true,
-        ...(start === undefined ? {} : { start })
+    const held = readAs(mapStateShape, raw) ?? {
+        collaborators: false,
+        enabled: [],
+        linkMode: false,
+        types: [],
+        lines: [],
+        connected: false,
+        start: undefined
     };
+    const { start, ...fields } = held;
+    return { ...fields, ...(start === undefined ? {} : { start }) };
 }

@@ -2,8 +2,16 @@
 // are derived from the supplied snapshot and config; the view resolves configured colours through
 // toneOf.
 
+import { z } from 'zod';
 import type { Entry, Id, Project, Snapshot } from '../../data/model/index.ts';
-import { isMap, byKey, numericSetting, text as str } from '../../data/helpers/guards.ts';
+import { byKey, numericSetting, text as str } from '../../data/helpers/guards.ts';
+import {
+    anyValueShape,
+    fieldItemsShape,
+    readAs,
+    rowsShape,
+    wordShape
+} from '../../data/shapes/shapes.ts';
 
 /**
  * The manifest-lag attention line, with the four project links it draws and the remainder count.
@@ -71,26 +79,26 @@ export function manifestsBehind(
     };
 }
 
+/** One row of `fund_stages`: its words and the statuses it gathers, lowercased. */
+const stageShape = z
+    .object({ label: wordShape, color: wordShape, statuses: fieldItemsShape })
+    .transform((row) => ({
+        label: row.label,
+        color: row.color,
+        statuses: row.statuses.map((one) => one.toLowerCase())
+    }));
+
+const stagesShape = rowsShape(stageShape);
+
 /** The stages of `fund_stages`, and the statuses each one gathers. */
 function fundStages(
     config: Record<string, unknown>
 ): { label: string; color: string; statuses: string[] }[] {
-    const rows = config.fund_stages;
-    if (!Array.isArray(rows)) return [];
-    const out: { label: string; color: string; statuses: string[] }[] = [];
-    for (const row of rows) {
-        if (!isMap(row)) continue;
-        const statuses = Array.isArray(row.statuses)
-            ? row.statuses.filter((one): one is string => typeof one === 'string')
-            : [];
-        out.push({
-            label: str(row.label),
-            color: str(row.color),
-            statuses: statuses.map((one) => one.toLowerCase())
-        });
-    }
-    return out;
+    return readAs(stagesShape, config.fund_stages) ?? [];
 }
+
+/** The `focus_lane_tones` of the band: a colour for each column, empty where none is named. */
+const tonesShape = z.object({ funding: wordShape, jobs: wordShape, teaching: wordShape });
 
 /** A band card sorts by its date, and by its title when it has none. */
 function bandOrder(a: BandItem, b: BandItem): number {
@@ -140,11 +148,10 @@ export function collectionLanes(snapshot: Snapshot, config: Record<string, unkno
         .filter((entry) => str(entry.fields.status).trim().toLowerCase() === 'ongoing')
         .map((entry) => bandItem(entry, 'education'))
         .sort(bandOrder);
-    const held = isMap(config.focus_lane_tones) ? config.focus_lane_tones : {};
-    const tones = {
-        funding: str(held.funding),
-        jobs: str(held.jobs),
-        teaching: str(held.teaching)
+    const tones = readAs(tonesShape, config.focus_lane_tones) ?? {
+        funding: '',
+        jobs: '',
+        teaching: ''
     };
     return { funding, applications, education, tones };
 }
@@ -172,15 +179,19 @@ export function entryDeadline(entry: Entry): string {
     return metaDeadline(entry);
 }
 
+/** A metadata row labelled Deadline, as the ISO day its value holds, and none for another row. */
+const deadlineRowShape = z
+    .object({
+        label: wordShape.refine((label) => label.trim().toLowerCase() === 'deadline'),
+        value: anyValueShape
+    })
+    .transform((row) => isoDate(row.value));
+
+const deadlineRowsShape = rowsShape(deadlineRowShape);
+
 /** The first valid Deadline metadata row, or nothing. */
 function metaDeadline(entry: Entry): string {
-    const rows = Array.isArray(entry.fields.meta) ? entry.fields.meta : [];
-    for (const row of rows) {
-        if (!isMap(row) || str(row.label).trim().toLowerCase() !== 'deadline') continue;
-        const date = isoDate(row.value);
-        if (date !== '') return date;
-    }
-    return '';
+    return (readAs(deadlineRowsShape, entry.fields.meta) ?? []).find((date) => date !== '') ?? '';
 }
 
 /** How many items the band's stages hold together, which is what a lane's head counts. */

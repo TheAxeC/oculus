@@ -1,7 +1,15 @@
 // Layer 2, client state. Board filters and saved state live here because they change which items a
 // board shows and what its controls remember.
 
-import { isMap, byKey, strings } from '../../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { byKey } from '../../../data/helpers/guards.ts';
+import {
+    fieldItemsShape,
+    mapShape,
+    optionalTextShape,
+    readAs,
+    stringItemsShape
+} from '../../../data/shapes/shapes.ts';
 import { facetValues } from './facets.ts';
 import {
     FACETS,
@@ -60,24 +68,36 @@ export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
     };
 }
 
+/** The fields of a saved board state, each read apart, so a wrong one costs that field alone. */
+const boardStateShape = z.object({
+    mode: z.enum(['list', 'cards']).optional().catch(undefined),
+    labels: z.enum(['full', 'short']).optional().catch(undefined),
+    search: optionalTextShape,
+    stale: z.boolean().catch(false),
+    dated: z.boolean().catch(false),
+    hiddenTypes: fieldItemsShape,
+    expanded: fieldItemsShape,
+    more: fieldItemsShape,
+    filters: mapShape.optional().catch(undefined)
+});
+
 /** Read a saved board state, falling back one field at a time when a value is invalid. */
 export function parseBoardState(value: unknown, labels: LabelMode = 'short'): BoardState {
     const state = emptyBoardState(labels);
-    if (!isMap(value)) return state;
-    if (value.mode === 'list' || value.mode === 'cards') state.mode = value.mode;
-    if (value.labels === 'full' || value.labels === 'short') state.labels = value.labels;
-    if (typeof value.search === 'string') state.search = value.search;
-    state.stale = value.stale === true;
-    state.dated = value.dated === true;
-    state.hiddenTypes = strings(value.hiddenTypes);
-    state.expanded = strings(value.expanded);
-    state.more = strings(value.more);
-    if (isMap(value.filters)) {
-        for (const [facet, selected] of Object.entries(value.filters)) {
-            if (!FACETS.includes(facet)) continue;
-            const values = strings(selected);
-            if (values.length > 0) state.filters[facet] = values;
-        }
+    const held = readAs(boardStateShape, value);
+    if (held === null) return state;
+    if (held.mode !== undefined) state.mode = held.mode;
+    if (held.labels !== undefined) state.labels = held.labels;
+    if (held.search !== undefined) state.search = held.search;
+    state.stale = held.stale;
+    state.dated = held.dated;
+    state.hiddenTypes = held.hiddenTypes;
+    state.expanded = held.expanded;
+    state.more = held.more;
+    for (const [facet, selected] of Object.entries(held.filters ?? {})) {
+        if (!FACETS.includes(facet)) continue;
+        const values = readAs(stringItemsShape, selected) ?? [];
+        if (values.length > 0) state.filters[facet] = values;
     }
     return state;
 }

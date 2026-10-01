@@ -12,6 +12,8 @@
 // holding a quote, a space or a backslash needs no escaping and comes back under the same id.
 
 import type { Viz } from '@viz-js/viz';
+import { z } from 'zod';
+import { readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 import {
     DEFAULT_BOUNDS,
     LINK_LENGTH,
@@ -124,17 +126,25 @@ function graphDot(graph: Graph, seed: number): string {
     return lines.join('\n');
 }
 
+/** One object of Graphviz's JSON: a node named `n<index>` with a `pos` of two finite numbers. */
+const objectShape = z
+    .object({
+        name: z
+            .string()
+            .regex(/^n\d+$/)
+            .transform((name) => Number(name.slice(1))),
+        pos: z.string().transform((pos) => pos.split(',').map(Number))
+    })
+    .transform(({ name, pos: [x, y] }) => ({ at: name, x, y }))
+    .refine((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+
+/** What Graphviz's JSON answers of the layout: the objects that name a node and a position. */
+const graphvizShape = z.object({ objects: rowsShape(objectShape).catch([]) });
+
 /** Each node's position as Graphviz answered it, by the node's index. */
 function positions(json: unknown, count: number): { x: number; y: number }[] {
-    const objects = (json as { objects?: unknown }).objects;
     const found = new Map<number, { x: number; y: number }>();
-    for (const object of Array.isArray(objects) ? objects : []) {
-        const { name, pos } = object as { name?: unknown; pos?: unknown };
-        const at = typeof name === 'string' ? /^n(\d+)$/.exec(name) : null;
-        if (at === null || typeof pos !== 'string') continue;
-        const [x, y] = pos.split(',').map(Number);
-        if (Number.isFinite(x) && Number.isFinite(y)) found.set(Number(at[1]), { x, y });
-    }
+    for (const { at, x, y } of readAs(graphvizShape, json)?.objects ?? []) found.set(at, { x, y });
     return Array.from({ length: count }, (_, at) => {
         const point = found.get(at);
         if (point === undefined) throw new Error(`Graphviz placed no position for node ${at}`);

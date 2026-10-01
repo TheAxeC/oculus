@@ -8,8 +8,9 @@
 // folder rather than a file is answered as it is written: whether a folder can be opened as one
 // file is the view's own question, not this rule's.
 
+import { z } from 'zod';
+import { readAs } from '../../data/shapes/shapes.ts';
 import { HUB_ROOT } from '../sources/fs.ts';
-import { isMap } from '../../data/helpers/guards.ts';
 import type { FeedKind } from '../../data/model/index.ts';
 
 /** One file of the hub, addressed the way the source tab addresses it. */
@@ -35,21 +36,21 @@ const FILE_KEYS: Record<Exclude<ViewSourceKind, 'collection'>, string> = {
     domains: 'domains_file'
 };
 
-/** A configured path, and null for a value that is not one. */
-function pathOf(value: unknown): string | null {
-    if (typeof value !== 'string') return null;
-    const held = value.trim();
-    return held === '' ? null : held;
-}
+/** A configured path: a string with something in it once trimmed, answered trimmed. */
+const pathShape = z.string().trim().min(1);
+
+/** The entries of the config's `collections:` list, each read apart. */
+const collectionsShape = z.array(z.unknown());
+
+/** One entry of that list: the key it is found by and the file it names, read by `pathShape`. */
+const collectionShape = z.object({ key: z.string(), file: z.unknown().optional() });
 
 /** The `file:` of the entry of the config's `collections:` list that carries this key. */
 function collectionPath(config: Record<string, unknown>, key: string | undefined): string | null {
     if (key === undefined) return null;
-    const rows = config.collections;
-    if (!Array.isArray(rows)) return null;
-    for (const row of rows) {
-        if (!isMap(row)) continue;
-        if (row.key === key) return pathOf(row.file);
+    for (const row of readAs(collectionsShape, config.collections) ?? []) {
+        const held = readAs(collectionShape, row);
+        if (held?.key === key) return readAs(pathShape, held.file);
     }
     return null;
 }
@@ -63,6 +64,6 @@ export function viewSourceFile(
     const file =
         kind === 'collection'
             ? collectionPath(config, collection)
-            : pathOf(config[FILE_KEYS[kind]]);
+            : readAs(pathShape, config[FILE_KEYS[kind]]);
     return file === null ? null : { root: HUB_ROOT, path: file };
 }

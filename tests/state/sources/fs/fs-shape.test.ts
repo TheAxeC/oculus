@@ -9,18 +9,19 @@ import {
     languages,
     nameOf,
     toggleExpanded,
+    markedKeys,
     treeKey,
     treeRows,
     typeOfFile,
     TEXT_LIMIT,
     type FsEntry,
     type FsRoot
-} from '../../../src/lib/state/sources/fs.ts';
-import { fileBytesUrl, listingUrl } from '../../../src/lib/state/sources/fs.svelte.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { registered } from '../../../src/lib/state/shared/words/languages.ts';
-import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
-import { createClientState } from '../../fixtures/client.ts';
+} from '../../../../src/lib/state/sources/fs.ts';
+import { fileBytesUrl, listingUrl } from '../../../../src/lib/state/sources/fs.svelte.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { registered } from '../../../../src/lib/state/shared/words/languages.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
+import { createClientState } from '../../../fixtures/client.ts';
 import {
     bookmarkAt,
     bookmarkById,
@@ -32,8 +33,8 @@ import {
     openFailures,
     rootKeysOf,
     workspaceNames
-} from '../../../src/lib/state/sources/fs-transport.ts';
-import type { Entry } from '../../../src/lib/data/model/index.ts';
+} from '../../../../src/lib/state/sources/fs-transport.ts';
+import type { Entry } from '../../../../src/lib/data/model/index.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -341,5 +342,24 @@ describe('the file browser lookups over what its store holds', () => {
         expect(rootKeysOf({ ...saved, error: 'unreadable' })).toBeNull();
         const marks = [{ id: 'm1', title: 'One', fields: {} }] as unknown as Entry[];
         expect(bookmarkTitles(marks)).toEqual(['One']);
+    });
+});
+
+describe("the rows the reader's bookmarks name", () => {
+    const marked = (fields: Record<string, unknown>): { fields: Record<string, unknown> } => ({
+        fields
+    });
+
+    it('are the root and path of each bookmark that holds both as text, in the order held', () => {
+        const entries = [
+            marked({ root: 'hub', path: 'a' }),
+            marked({ root: 3, path: 'a' }),
+            marked({ root: 'hub', path: null }),
+            marked({ root: '', path: '' }),
+            marked({ root: 'hub', path: ['a'] }),
+            marked({}),
+            marked({ root: 'hub', path: 'a', label: 'x' })
+        ];
+        expect(markedKeys(entries)).toEqual(['hub:a', ':', 'hub:a']);
     });
 });

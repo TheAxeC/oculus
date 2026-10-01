@@ -13,7 +13,8 @@
 // not have meant (no list, a picture with no name, a name twice) is held as a failed read naming
 // what was wrong, rather than as a wall with fewer tiles or none.
 
-import { isMap } from '../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { itemsShape, optionalTextShape, readAs, readJson } from '../../data/shapes/shapes.ts';
 import type { Picture } from '../../data/model/index.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
@@ -51,9 +52,25 @@ export function tileRatio(picture: Picture): string | undefined {
 }
 
 /** A side of a picture as the answer gave it, when it is a whole number of pixels above zero. */
-function side(value: unknown): number | null {
-    return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : null;
-}
+const sideShape = z.number().refine(Number.isInteger).positive().nullable().catch(null);
+
+/**
+ * One picture of the answer: its name, and its size when both sides read, else no size. An item
+ * that is no map, or whose name is no text, fails.
+ */
+const pictureShape = z
+    .object({ name: z.string(), width: sideShape, height: sideShape })
+    .transform((item): Picture => {
+        const sized = item.width !== null && item.height !== null;
+        return {
+            name: item.name,
+            width: sized ? item.width : null,
+            height: sized ? item.height : null
+        };
+    });
+
+/** The body of the answer: the pictures as they came, and the reason a refusal gives. */
+const answerShape = z.object({ images: z.unknown().optional(), error: optionalTextShape });
 
 /** Why an answer is not a list of pictures, as the word the wall's `error` holds. */
 type Malformed = 'images_not_a_list' | 'image_without_name' | 'image_name_repeated';
@@ -64,18 +81,16 @@ type Malformed = 'images_not_a_list' | 'image_without_name' | 'image_name_repeat
  * two whole positive numbers is read as none, which is a picture drawn in the default box.
  */
 function pictures(value: unknown): { images: Picture[] } | { malformed: Malformed } {
-    if (!Array.isArray(value)) return { malformed: 'images_not_a_list' };
+    const list = readAs(itemsShape, value);
+    if (list === null) return { malformed: 'images_not_a_list' };
     const seen = new Set<string>();
     const read: Picture[] = [];
-    for (const item of value as unknown[]) {
-        if (!isMap(item) || typeof item.name !== 'string')
-            return { malformed: 'image_without_name' };
-        if (seen.has(item.name)) return { malformed: 'image_name_repeated' };
-        seen.add(item.name);
-        const width = side(item.width);
-        const height = side(item.height);
-        const sized = width !== null && height !== null;
-        read.push({ name: item.name, width: sized ? width : null, height: sized ? height : null });
+    for (const item of list) {
+        const picture = readAs(pictureShape, item);
+        if (picture === null) return { malformed: 'image_without_name' };
+        if (seen.has(picture.name)) return { malformed: 'image_name_repeated' };
+        seen.add(picture.name);
+        read.push(picture);
     }
     return { images: read };
 }
@@ -96,11 +111,15 @@ const KEY = ['memories'];
 async function ask(): Promise<Wall> {
     try {
         const response = await fetch('/api/memories');
-        const body = (await response.json()) as { images?: unknown; error?: string };
-        if (!response.ok) {
-            return { images: [], error: body.error ?? String(response.status), loading: false };
+        const raw = await readJson(response);
+        if (raw === undefined) {
+            return { images: [], error: String(response.status), loading: false };
         }
-        const answer = pictures(body.images);
+        const body = readAs(answerShape, raw);
+        if (!response.ok) {
+            return { images: [], error: body?.error ?? String(response.status), loading: false };
+        }
+        const answer = pictures(body?.images);
         return 'malformed' in answer
             ? { images: [], error: answer.malformed, loading: false }
             : { images: answer.images, error: '', loading: false };

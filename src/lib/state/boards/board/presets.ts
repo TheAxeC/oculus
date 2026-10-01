@@ -1,9 +1,11 @@
 // Layer 2, client state. Board presets, shared types and display helpers live here because board
 // configuration changes independently of items, filters and statistics.
 
+import { z } from 'zod';
 import type { Id, Project, Tier, Venue } from '../../../data/model/index.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
-import { isMap, strings, text as str } from '../../../data/helpers/guards.ts';
+import { fields, strings, text as str } from '../../../data/helpers/guards.ts';
+import { fieldItemsShape, readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
 export const NONE = '__none__';
@@ -228,6 +230,14 @@ export const COMPUTE_VALUES = ['hpc', 'local', NONE];
 export const CODE_VALUES = ['deposited', 'review-anon', 'none', NONE];
 export const REPRODUCED_VALUES = ['1', '0'];
 
+/** A finite number of the merged config, and no number for any other value. */
+const finiteShape = z.number().optional().catch(undefined);
+
+/** A number out of the merged config, and the fallback behavior.yml's own comment names. */
+export function setting(config: Record<string, unknown>, key: string, fallback: number): number {
+    return readAs(finiteShape, config[key]) ?? fallback;
+}
+
 /** A JIF the registry wrote as nothing at all; the venue line leaves it out. */
 const NO_JIF = ['', '-', 'none'];
 
@@ -270,35 +280,33 @@ export function slug(label: string): string {
         .replace(/^-+|-+$/g, '');
 }
 
+/** One bucket of `tab_rollup`: a row with words, its id the slug of them, its keys the strings. */
+const bucketShape = z
+    .object({ label: z.string().min(1), keys: fieldItemsShape, color: wordShape })
+    .transform((row) => ({
+        id: slug(row.label),
+        label: row.label,
+        keys: row.keys,
+        color: row.color
+    })) satisfies z.ZodType<RollupBucket>;
+
+const bucketsShape = rowsShape(bucketShape);
+
 /** The `tab_rollup` buckets of one board, in the config's order. */
 function rollupOf(config: Record<string, unknown>, id: string): RollupBucket[] {
-    const all = config.tab_rollup;
-    if (!isMap(all)) return [];
-    const rows = all[id];
-    if (!Array.isArray(rows)) return [];
-    const buckets: RollupBucket[] = [];
-    for (const row of rows) {
-        if (!isMap(row)) continue;
-        const label = str(row.label);
-        if (label === '') continue;
-        buckets.push({ id: slug(label), label, keys: strings(row.keys), color: str(row.color) });
-    }
-    return buckets;
+    return readAs(bucketsShape, fields(config.tab_rollup)[id]) ?? [];
 }
 
 /** The columns of one board: the cells of its list, with the words `board:` gives each of them. */
 function columnsOf(config: Record<string, unknown>, id: string): BoardColumn[] {
     const key = COLUMN_KEY[id] ?? COLUMN_KEY[DEFAULT_BOARD];
-    const board = isMap(config.board) ? config.board : {};
-    const words = strings(board[key]);
+    const words = strings(fields(config.board)[key]);
     return COLUMNS[key].map((cell, at) => ({ key: cell, label: words[at] ?? cell }));
 }
 
 /** The `board.search` placeholder of one board. */
 function searchOf(config: Record<string, unknown>, id: string): string {
-    const board = isMap(config.board) ? config.board : {};
-    const search = isMap(board.search) ? board.search : {};
-    return str(search[id]);
+    return str(fields(fields(config.board).search)[id]);
 }
 
 /** The `*_label_mode` of one board; anything but `full` is the short handle. */
@@ -349,12 +357,18 @@ export function venueText(venue: Venue): string {
     return parts.filter((part) => part !== '').join(' | ');
 }
 
+/** The authors field: a line as written, or a list of one name or more joined by commas. */
+const authorsShape = z.union([
+    z.string(),
+    z
+        .array(z.unknown())
+        .min(1)
+        .transform((names) => names.join(', '))
+]);
+
 /** The authors as one line: the list joined, the line as written, or the lead on its own. */
 export function authorLine(project: Project): string {
-    const authors = project.authors;
-    if (typeof authors === 'string') return authors;
-    if (Array.isArray(authors) && authors.length > 0) return authors.join(', ');
-    return project.lead ?? '';
+    return readAs(authorsShape, project.authors) ?? project.lead ?? '';
 }
 
 /**

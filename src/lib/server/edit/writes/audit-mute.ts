@@ -17,7 +17,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { z } from 'zod';
 import { writeTextAtomic } from '../../core/json.ts';
-import { stringItemsShape } from '../../core/shapes.ts';
+import { stringItemsShape } from '../../../data/shapes/shapes.ts';
 import { othersThan, readBack, setList } from '../list-edit.ts';
 import { SIGNATURE } from '../../content/audit.ts';
 

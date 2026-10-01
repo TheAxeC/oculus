@@ -22,7 +22,7 @@ import type {
     UsageWindow
 } from '../../../data/model/index.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
-import { mapShape } from '../../core/shapes.ts';
+import { mapShape } from '../../../data/shapes/shapes.ts';
 import { codexRollouts } from '../../transcripts/stores.ts';
 import { USAGE_PREFIX } from '../pty/sessions.ts';
 

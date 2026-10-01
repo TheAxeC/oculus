@@ -177,3 +177,76 @@ describe('the refresh thresholds', () => {
         expect(nudged).toEqual([]);
     });
 });
+
+describe('the thresholds of a config whose values are of the wrong type', () => {
+    const now = Date.UTC(2026, 8, 11, 12);
+
+    it.each([
+        [{ refresh_stale_days: { inbox: 3 } }, 3],
+        [{ refresh_stale_days: { inbox: -2 } }, -2],
+        [{ refresh_stale_days: { inbox: 0 } }, 0],
+        [{ refresh_stale_days: { inbox: '3' } }, Infinity],
+        [{ refresh_stale_days: { inbox: Infinity } }, Infinity],
+        [{ refresh_stale_days: { inbox: -Infinity } }, Infinity],
+        [{ refresh_stale_days: { inbox: NaN } }, Infinity],
+        [{ refresh_stale_days: { inbox: [3] } }, Infinity],
+        [{ refresh_stale_days: { inbox: null } }, Infinity],
+        [{ refresh_stale_days: [] }, Infinity],
+        [{ refresh_stale_days: null }, Infinity],
+        [{ refresh_stale_days: 'inbox' }, Infinity],
+        [{ refresh_stale_days: { scout: 3 } }, Infinity],
+        [JSON.parse('{"refresh_stale_days":{"__proto__":4,"inbox":2}}'), 2]
+    ])('reads the limit of the inbox feed from %j as %j', (config, limit) => {
+        expect(staleAfter(config as Record<string, unknown>, 'inbox')).toBe(limit);
+    });
+
+    it('nudges a feed whose limit is a finite number the feed is past, and never one given as text', () => {
+        const radar = { entities: { feeds: { ...NO_FEEDS, radar: { lastRun: '2026-09-01' } } } };
+        const held = radar as unknown as Snapshot;
+        const nudged = (limit: unknown): string[] =>
+            refresh(held, { refresh_stale_days: { litwatch: limit } }, now, null).map(
+                (one) => one.feed
+            );
+        expect(nudged(3)).toEqual(['litwatch']);
+        expect(nudged(0)).toEqual(['litwatch']);
+        expect(nudged(-2)).toEqual(['litwatch']);
+        expect(nudged(30)).toEqual([]);
+        for (const limit of ['3', Infinity, NaN, [3], null]) expect(nudged(limit)).toEqual([]);
+    });
+
+    /** `attention` reads the feeds, the projects and the venues of a snapshot and nothing else. */
+    function holding(venued: number): Snapshot {
+        const projects = Object.fromEntries(
+            Array.from({ length: venued }, (_, at) => [
+                `p${at}`,
+                { id: `p${at}`, tier: 'active', venueId: 'journal' }
+            ])
+        );
+        const venues = { journal: { id: 'journal', name: 'Journal', short: 'J', themes: [] } };
+        const feeds = { ...NO_FEEDS, linkedin: { lastPost: '2026-08-01' } };
+        return { entities: { feeds, projects, venues } } as unknown as Snapshot;
+    }
+    const kinds = (config: Record<string, unknown>, venued: number): string[] =>
+        attention(holding(venued), config, now, 0).map((one) => one.kind);
+
+    it('counts the days since the last post against the cadence only when it is a finite number', () => {
+        expect(kinds({}, 0)).toEqual(['linkedin']);
+        expect(kinds({ linkedin_cadence_days: 45 }, 0)).toEqual([]);
+        expect(kinds({ linkedin_cadence_days: 41 }, 0)).toEqual([]);
+        expect(kinds({ linkedin_cadence_days: 40 }, 0)).toEqual(['linkedin']);
+        for (const cadence of ['45', Infinity, NaN, [45], null]) {
+            expect(kinds({ linkedin_cadence_days: cadence }, 0)).toEqual(['linkedin']);
+        }
+    });
+
+    it('warns of a venue at the limit only when the limit is a finite number', () => {
+        expect(kinds({}, 3)).toEqual(['linkedin']);
+        expect(kinds({}, 4)).toEqual(['linkedin', 'venue']);
+        expect(kinds({ venue_conc_warn: 2 }, 3)).toEqual(['linkedin', 'venue']);
+        expect(kinds({ venue_conc_warn: 6 }, 5)).toEqual(['linkedin']);
+        for (const warn of ['2', Infinity, NaN, [2], null]) {
+            expect(kinds({ venue_conc_warn: warn }, 3)).toEqual(['linkedin']);
+            expect(kinds({ venue_conc_warn: warn }, 4)).toEqual(['linkedin', 'venue']);
+        }
+    });
+});

@@ -234,3 +234,63 @@ describe('the save of a form opened from a lead', () => {
         expect(leadAddFor(tab, writes, 'app-1', APPLICATIONS)).toBe(undefined);
     });
 });
+
+describe('a lead whose fields are of the wrong type', () => {
+    it.each([
+        [{ title: [1] }, {}],
+        [{ title: 5, inst: true }, { title: '5' }],
+        [
+            { title: NaN, inst: ' I ' },
+            { title: 'NaN', sub: 'I' }
+        ],
+        [{ title: '  ', url: 3, deadline: ['x'] }, { url: '3' }],
+        [
+            { title: 'T', inst: null, url: { a: 1 }, deadline: 20260101 },
+            { title: 'T', deadline: '20260101' }
+        ],
+        [{}, {}]
+    ])('fills the form from the lead %j with %j and the status', (lead, filled) => {
+        expect(applicationFromLead(lead)).toStrictEqual({ ...filled, status: NOT_APPLIED });
+    });
+
+    it.each([
+        [[1], undefined],
+        [5, '5'],
+        [NaN, 'NaN'],
+        [true, undefined],
+        [null, undefined],
+        ['  ', undefined],
+        [' T ', ' T ']
+    ])('names no lead or the title %j as the lead %j in the tab state', (title, lead) => {
+        const { tab, states } = tabOf();
+        states.set('app-1', [1, 2]);
+        prefillFromLead(tab, 'app-1', { title, inst: 'N' }, SCHEMA);
+        expect(states.get('app-1')).toStrictEqual({
+            ...parseCollectionState(null),
+            adding: true,
+            lead
+        });
+    });
+
+    it('sets no title field for a title that is not text or a number', () => {
+        const { tab, calls } = tabOf();
+        prefillFromLead(tab, 'app-1', { title: [1], inst: 'N' }, SCHEMA);
+        expect(calls).toEqual(['clear ' + ADD, 'set sub', 'set status']);
+    });
+
+    it('offers an add of its own only for a lead the state holds as text', () => {
+        const { tab, states } = tabOf();
+        const { writes } = recording({ ok: true, changed: [], refused: [] });
+        states.set('app-1', { lead: 5, search: 3 });
+        expect(leadAddFor(tab, writes, 'app-1', APPLICATIONS)).toBe(undefined);
+        states.set('app-1', { lead: ' ' });
+        expect(leadAddFor(tab, writes, 'app-1', APPLICATIONS)).toBe(undefined);
+        states.set('app-1', 'junk');
+        closeAddForm(tab, 'app-1');
+        expect(states.get('app-1')).toStrictEqual({
+            ...parseCollectionState(null),
+            adding: false,
+            lead: undefined
+        });
+    });
+});

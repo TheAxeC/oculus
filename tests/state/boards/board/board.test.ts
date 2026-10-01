@@ -19,7 +19,8 @@ import {
     PROJECTS,
     ITEMS,
     ids,
-    item
+    item,
+    over
 } from './board-fixture.ts';
 
 describe('waitingLine', () => {
@@ -234,5 +235,104 @@ describe('boardItems, the joins', () => {
         expect(item('alpha').bucket).toBe('in-progress');
         expect(item('charlie').bucket).toBe('idea');
         expect(item('echo').bucket).toBe('');
+    });
+});
+
+describe('presetFor, a config of the wrong types', () => {
+    it('reads board only as a map, and its search only as a map of words', () => {
+        for (const board of [[], 'x', null]) {
+            const bare = presetFor('projects', { board });
+            expect(bare.search).toBe('');
+            expect(bare.columns.map((column) => column.label)).toStrictEqual([
+                'title',
+                'authors',
+                'venue',
+                'status',
+                'focus',
+                'next'
+            ]);
+        }
+        for (const search of [3, [], 'x']) {
+            expect(presetFor('projects', { board: { search } }).search).toBe('');
+        }
+        const search = { projects: 'P', archive: 3, coauthor: 'C' };
+        expect(presetFor('archive', { board: { search } }).search).toBe('');
+        expect(presetFor('coauthor', { board: { search } }).search).toBe('C');
+        expect(presetFor('nonesuch', { board: { search } }).search).toBe('P');
+    });
+
+    it('names a column by the string at its position among the strings of the list', () => {
+        const labels = (cols: unknown) =>
+            presetFor('projects', { board: { cols_project: cols } }).columns.map(
+                (column) => column.label
+            );
+        expect(labels(['A', 3, 'C', null, 'E'])).toStrictEqual([
+            'A',
+            'C',
+            'E',
+            'status',
+            'focus',
+            'next'
+        ]);
+        expect(labels('x')).toStrictEqual(['title', 'authors', 'venue', 'status', 'focus', 'next']);
+    });
+
+    it('keeps the buckets that carry words, reads their keys as the strings of a list', () => {
+        const projects = [
+            [],
+            null,
+            'x',
+            { label: 3 },
+            { label: '' },
+            { label: 'Hello World!', keys: ['a', 3, 'b'], color: '#fff' },
+            { label: 'B', keys: 'x', color: 4 },
+            { label: 'C' }
+        ];
+        expect(presetFor('projects', { tab_rollup: { projects } }).rollup).toStrictEqual([
+            { id: 'hello-world', label: 'Hello World!', keys: ['a', 'b'], color: '#fff' },
+            { id: 'b', label: 'B', keys: [], color: '' },
+            { id: 'c', label: 'C', keys: [], color: '' }
+        ]);
+        for (const tab_rollup of [[], { projects: 'x' }, { projects: { a: 1 } }, 'x']) {
+            expect(presetFor('projects', { tab_rollup }).rollup).toStrictEqual([]);
+        }
+    });
+
+    it('reads the type order as the strings of a list and the label mode as the word full', () => {
+        const order = (type_order: unknown) => presetFor('projects', { type_order }).typeOrder;
+        expect(order(['a', 3, 'b'])).toStrictEqual(['a', 'b']);
+        expect(order('x')).toStrictEqual([]);
+        expect(order({ 0: 'a' })).toStrictEqual([]);
+        const labels = (held: unknown) => [
+            presetFor('projects', { project_label_mode: held }).labels,
+            presetFor('archive', { archive_label_mode: held }).labels,
+            presetFor('coauthor', { project_label_mode: held }).labels
+        ];
+        expect(labels('full')).toStrictEqual(['full', 'full', 'short']);
+        for (const held of ['Full', 3, ['full'], undefined]) {
+            expect(labels(held)).toStrictEqual(['short', 'short', 'short']);
+        }
+    });
+});
+
+describe('the venue concentration setting of the stats', () => {
+    const rows: [string, unknown, boolean][] = [
+        ['a number at the count', 2, true],
+        ['zero', 0, true],
+        ['a negative number', -1, true],
+        ['a number written as a string', '2', false],
+        ['NaN', NaN, false],
+        ['Infinity', Infinity, false],
+        ['null', null, false],
+        ['true', true, false]
+    ];
+
+    it.each(rows)('reads %s', (_, venue_conc_warn, warn) => {
+        const { snapshot: snap } = over({ bravo: { venueId: 'bspc' } });
+        const { venues } = stats(boardItems(snap, PROJECTS), snap.entities.venues, {
+            ...CONFIG,
+            venue_conc_warn
+        });
+        expect(venues[0]).toMatchObject({ count: 2, warn });
     });
 });

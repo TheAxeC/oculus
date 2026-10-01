@@ -7,8 +7,9 @@
 // the catalog.
 
 import type { Career, Host } from '../../data/model/index.ts';
-// `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
-import { isMap, scalar, text as str } from '../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { scalar } from '../../data/helpers/guards.ts';
+import { mapShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the two model types
 // the career panel names reach it from here.
@@ -33,42 +34,48 @@ export type ScoreDim = {
     label: string;
 };
 
+/** The label, icon and colour of one `career_host_status` row, each the empty text if absent. */
+const hostStatusShape = z.object({ label: wordShape, icon: wordShape, color: wordShape });
+
 /**
  * The host statuses of `career_host_status`, in the config's order, each icon kept as a glyph name
  * and each hue already resolved to a tone.
  */
 export function hostStatuses(config: Record<string, unknown>): HostStatus[] {
-    const rows = config.career_host_status;
-    if (!isMap(rows)) return [];
-    const out: HostStatus[] = [];
-    for (const [key, row] of Object.entries(rows)) {
-        if (!isMap(row)) continue;
-        out.push({
-            key,
-            label: str(row.label) === '' ? key : str(row.label),
-            glyph: str(row.icon),
-            tone: str(row.color) === '' ? UNKNOWN_TONE : toneOf(str(row.color))
-        });
-    }
-    return out;
+    const rows = readAs(mapShape, config.career_host_status);
+    if (rows === null) return [];
+    return Object.entries(rows).flatMap(([key, row]) => {
+        const held = readAs(hostStatusShape, row);
+        if (held === null) return [];
+        return [
+            {
+                key,
+                label: held.label === '' ? key : held.label,
+                glyph: held.icon,
+                tone: held.color === '' ? UNKNOWN_TONE : toneOf(held.color)
+            }
+        ];
+    });
 }
+
+/** One row of `career_score_dims`: a map with a field; the badge is the field's first letter. */
+const scoreDimShape = z
+    .object({
+        field: wordShape.refine((field) => field !== ''),
+        badge: wordShape,
+        label: wordShape
+    })
+    .transform((row): ScoreDim => ({
+        field: row.field,
+        badge: row.badge === '' ? row.field.slice(0, 1).toUpperCase() : row.badge,
+        label: row.label === '' ? row.field : row.label
+    }));
+
+const scoreDimsShape = rowsShape(scoreDimShape);
 
 /** The scored axes of `career_score_dims`, in the config's order. */
 export function scoreDims(config: Record<string, unknown>): ScoreDim[] {
-    const rows = config.career_score_dims;
-    if (!Array.isArray(rows)) return [];
-    const out: ScoreDim[] = [];
-    for (const row of rows) {
-        if (!isMap(row)) continue;
-        const field = str(row.field);
-        if (field === '') continue;
-        out.push({
-            field,
-            badge: str(row.badge) === '' ? field.slice(0, 1).toUpperCase() : str(row.badge),
-            label: str(row.label) === '' ? field : str(row.label)
-        });
-    }
-    return out;
+    return readAs(scoreDimsShape, config.career_score_dims) ?? [];
 }
 
 /**

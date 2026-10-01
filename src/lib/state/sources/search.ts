@@ -7,8 +7,10 @@
 // match, and what follows. The view therefore emboldens without matching the pattern a second time,
 // which is the only way a regular-expression hit can be drawn at all.
 
+import { z } from 'zod';
 import { ALL_ROOTS, clampMax, type SearchQuery } from '../../data/helpers/search.ts';
 import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model/index.ts';
+import { anyNumberShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
 
 // The view layer reads the wire shapes and the all-roots key through this module: DESIGN.md's
 // boundary table lets a view import `state/` and not `data/`, so the one place that names both is
@@ -38,61 +40,46 @@ export function emptySearchState(max: number): SearchState {
     };
 }
 
-function flag(value: unknown): boolean {
-    return value === true;
-}
+/** One hit out of stored or fetched data: a line and its text, the rest with its defaults. */
+const hitShape = z.object({
+    line: anyNumberShape,
+    column: anyNumberShape.catch(1),
+    length: anyNumberShape.catch(0),
+    text: z.string()
+}) satisfies z.ZodType<SearchHit>;
 
-function words(value: unknown): string {
-    return typeof value === 'string' ? value : '';
-}
+/** One file's hits out of stored or fetched data: a root and a path, and the hits it can read. */
+const fileShape = z.object({
+    root: z.string(),
+    path: z.string(),
+    hits: rowsShape(hitShape).catch([])
+}) satisfies z.ZodType<SearchFile>;
 
-/** One hit out of stored or fetched data, and null for anything that is not one. */
-function hitOf(value: unknown): SearchHit | null {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-    const held = value as Record<string, unknown>;
-    if (typeof held.line !== 'number' || typeof held.text !== 'string') return null;
-    return {
-        line: held.line,
-        column: typeof held.column === 'number' ? held.column : 1,
-        length: typeof held.length === 'number' ? held.length : 0,
-        text: held.text
-    };
-}
+/** One failed root out of stored or fetched data. */
+const failureShape = z.object({
+    root: z.string(),
+    reason: z.string().catch('')
+}) satisfies z.ZodType<SearchFailure>;
 
-/** One file's hits out of stored or fetched data, and null for anything that is not one. */
-function fileOf(value: unknown): SearchFile | null {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-    const held = value as Record<string, unknown>;
-    if (typeof held.root !== 'string' || typeof held.path !== 'string') return null;
-    const hits = Array.isArray(held.hits)
-        ? held.hits.map(hitOf).filter((hit): hit is SearchHit => hit !== null)
-        : [];
-    return { root: held.root, path: held.path, hits };
-}
-
-/** One failed root out of stored or fetched data, and null for anything that is not one. */
-function failureOf(value: unknown): SearchFailure | null {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-    const held = value as Record<string, unknown>;
-    if (typeof held.root !== 'string') return null;
-    return { root: held.root, reason: typeof held.reason === 'string' ? held.reason : '' };
-}
+/** One answer out of stored or fetched data; `total` is absent when it is not a number. */
+const answerShape = z.object({
+    files: rowsShape(fileShape),
+    total: anyNumberShape.optional().catch(undefined),
+    truncated: z.boolean().catch(false),
+    ms: anyNumberShape.catch(0),
+    failed: rowsShape(failureShape).catch([])
+});
 
 /** One answer out of stored or fetched data, and null for anything that is not one. */
 export function answerOf(value: unknown): SearchAnswer | null {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-    const held = value as Record<string, unknown>;
-    if (!Array.isArray(held.files)) return null;
-    const files = held.files.map(fileOf).filter((file): file is SearchFile => file !== null);
-    const failed = Array.isArray(held.failed)
-        ? held.failed.map(failureOf).filter((one): one is SearchFailure => one !== null)
-        : [];
+    const held = readAs(answerShape, value);
+    if (held === null) return null;
     return {
-        files,
-        total: typeof held.total === 'number' ? held.total : countHits(files),
-        truncated: held.truncated === true,
-        ms: typeof held.ms === 'number' ? held.ms : 0,
-        failed
+        files: held.files,
+        total: held.total ?? countHits(held.files),
+        truncated: held.truncated,
+        ms: held.ms,
+        failed: held.failed
     };
 }
 
@@ -101,20 +88,31 @@ export function countHits(files: SearchFile[]): number {
     return files.reduce((sum, file) => sum + file.hits.length, 0);
 }
 
+/** What a tab's saved state is read for; the answer is read by `answerOf` and `max` by the cap. */
+const searchStateShape = z.object({
+    q: z.string().catch(''),
+    root: z.string().optional().catch(''),
+    word: z.boolean().catch(false),
+    case: z.boolean().catch(false),
+    regex: z.boolean().catch(false),
+    max: anyNumberShape.optional().catch(undefined),
+    answer: z.unknown().optional(),
+    error: z.string().catch('')
+});
+
 /** One instance's saved state, read back safely from whatever the store holds. */
 export function parseSearchState(value: unknown, max: number): SearchState {
-    const empty = emptySearchState(max);
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return empty;
-    const held = value as Record<string, unknown>;
+    const held = readAs(searchStateShape, value);
+    if (held === null) return emptySearchState(max);
     return {
-        q: words(held.q),
-        root: held.root === undefined ? ALL_ROOTS : words(held.root),
-        word: flag(held.word),
-        case: flag(held.case),
-        regex: flag(held.regex),
-        max: clampMax(typeof held.max === 'number' ? held.max : max, max),
+        q: held.q,
+        root: held.root ?? ALL_ROOTS,
+        word: held.word,
+        case: held.case,
+        regex: held.regex,
+        max: clampMax(held.max ?? max, max),
         answer: answerOf(held.answer),
-        error: words(held.error)
+        error: held.error
     };
 }
 

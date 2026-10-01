@@ -9,6 +9,7 @@
 // data/helpers/files/paths.ts, the rule the source tab's gutter reads a repository by too, on the
 // file's whole path built by the same file's joinPath.
 
+import { z } from 'zod';
 import type {
     GitPayload,
     HostInfo,
@@ -18,6 +19,7 @@ import type {
 } from '../../../data/model/index.ts';
 import type { FsRoot } from '../../sources/fs.ts';
 import { deepestHolding, joinPath } from '../../../data/helpers/files/paths.ts';
+import { readAs } from '../../../data/shapes/shapes.ts';
 import { PLAIN, registered } from '../../shared/words/languages.ts';
 import { t } from '../../shared/words/text.ts';
 import { byScore, fuzzyMatches, textParts, type TextPart } from '../../shared/words/fuzzy.ts';
@@ -98,6 +100,12 @@ export const NO_STATUS: StatusWords = {
 /** A file one tab holds, by the root key the file routes serve it under and its path there. */
 export type TabFile = { root: string; path: string };
 
+/** The two fields of a tab's state that name its file: a root that is named, and a path in it. */
+const tabFileShape = z.object({
+    root: z.string().min(1),
+    path: z.string()
+}) satisfies z.ZodType<TabFile>;
+
 /** The socket's state in the bar's own short words. */
 export function socketWords(state: SocketState): string {
     if (state === 'connecting') return t('statusbar.server_connecting');
@@ -144,12 +152,7 @@ export function liveCount(sessions: SessionsPayload | null): number {
 
 /** The file a tab's state names, or null for a tab that names none. */
 export function tabFile(state: unknown): TabFile | null {
-    if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
-    const held = state as Record<string, unknown>;
-    const root = held.root;
-    const path = held.path;
-    if (typeof root !== 'string' || root === '' || typeof path !== 'string') return null;
-    return { root, path };
+    return readAs(tabFileShape, state);
 }
 
 /** The last folder of a path, which is what the tooltip calls a repository. */

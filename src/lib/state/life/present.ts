@@ -13,6 +13,7 @@
 // contrast.test.ts measures.
 
 import { decodeHTML } from 'entities';
+import { z } from 'zod';
 import {
     PRESENT_DOC,
     catalogKeys,
@@ -24,7 +25,8 @@ import {
     savedKeys,
     slideKey
 } from '../../data/helpers/deck.ts';
-import { byKey, fields, isMap, str } from '../../data/helpers/guards.ts';
+import { byKey } from '../../data/helpers/guards.ts';
+import { mapOfShape, optionalTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import { toneOf, UNKNOWN_TONE } from '../shared/words/tones.ts';
 import type {
     Deck,
@@ -85,12 +87,18 @@ export type PresentState = {
     overview: boolean;
 };
 
+/** The fields a Present pane keeps, each read as absent when it is of the wrong type. */
+const presentStateShape = z.object({
+    slide: optionalTextShape,
+    overview: z.boolean().catch(false)
+});
+
 /**
  * One pane's own state out of whatever its instance holds, with the defaults for what is missing.
  */
 export function parsePresentState(value: unknown): PresentState {
-    const held = fields(value);
-    return { slide: str(held.slide) ?? '', overview: held.overview === true };
+    const held = readAs(presentStateShape, value);
+    return { slide: held?.slide ?? '', overview: held?.overview ?? false };
 }
 
 export { PRESENT_DOC, slideKey };
@@ -108,160 +116,206 @@ export function plainTitle(html: string): string {
 
 /** The palette hue a colour the deck wrote stands for, and nothing when it wrote none. */
 function hue(value: unknown): string | undefined {
-    const written = str(value);
-    return written === undefined || written === '' ? undefined : toneOf(written);
+    const written = readAs(optionalTextShape, value);
+    return written ? toneOf(written) : undefined;
 }
 
-/** The `tag_tones:` map, a hue name per `tag.class`, dropping anything that is not a name. */
-function tagTones(value: unknown): Record<string, string> {
-    const held: Record<string, string> = {};
-    for (const [key, item] of Object.entries(fields(value))) {
-        const tone = str(item);
-        if (tone !== undefined && tone !== '') held[key] = tone;
-    }
-    return held;
-}
+/** A legend chip: the label it is written with, and the hue of its colour. */
+const chipShape = z
+    .object({ label: optionalTextShape, color: z.unknown().optional() })
+    .transform((row): DeckChip => ({
+        label: row.label ?? '',
+        tone: hue(row.color) ?? UNKNOWN_TONE
+    }));
 
-function chips(value: unknown): DeckChip[] {
-    if (!Array.isArray(value)) return [];
-    const held: DeckChip[] = [];
-    for (const item of value) {
-        if (!isMap(item)) continue;
-        held.push({ label: str(item.label) ?? '', tone: hue(item.color) ?? UNKNOWN_TONE });
-    }
-    return held;
-}
+/** The chips of a legend, from the rows that are maps; none for a legend that is no list. */
+const chipsShape = rowsShape(chipShape).catch(() => []);
 
-function meta(value: unknown): DeckMeta {
-    const map = fields(value);
-    const held: DeckMeta = { legend: chips(map.legend) };
-    const words = (key: string, field: keyof DeckMeta): void => {
-        const text = str(map[key]);
-        if (text !== undefined) Object.assign(held, { [field]: text });
-    };
-    words('kicker', 'kicker');
-    words('title_html', 'titleHtml');
-    words('lede', 'lede');
-    words('hint', 'hint');
-    words('closing_kicker', 'closingKicker');
-    words('closing_title_html', 'closingTitleHtml');
-    words('closing_lede', 'closingLede');
-    words('contact', 'contact');
-    return held;
-}
+/** The words of the deck's `meta:` map and the `DeckMeta` field each one is kept under. */
+const META_WORDS = [
+    ['kicker', 'kicker'],
+    ['title_html', 'titleHtml'],
+    ['lede', 'lede'],
+    ['hint', 'hint'],
+    ['closing_kicker', 'closingKicker'],
+    ['closing_title_html', 'closingTitleHtml'],
+    ['closing_lede', 'closingLede'],
+    ['contact', 'contact']
+] as const;
 
-function themes(value: unknown): Record<string, DeckTheme> {
-    const held: Record<string, DeckTheme> = {};
-    for (const [key, item] of Object.entries(fields(value))) {
-        if (!isMap(item)) continue;
-        held[key] = { tone: hue(item.color) ?? UNKNOWN_TONE, label: str(item.label) ?? '' };
-    }
-    return held;
-}
+const metaShape = z
+    .object({
+        legend: chipsShape,
+        kicker: optionalTextShape,
+        title_html: optionalTextShape,
+        lede: optionalTextShape,
+        hint: optionalTextShape,
+        closing_kicker: optionalTextShape,
+        closing_title_html: optionalTextShape,
+        closing_lede: optionalTextShape,
+        contact: optionalTextShape
+    })
+    .transform((map): DeckMeta => {
+        const held: DeckMeta = { legend: map.legend };
+        for (const [from, to] of META_WORDS) {
+            const text = map[from];
+            if (text !== undefined) Object.assign(held, { [to]: text });
+        }
+        return held;
+    })
+    .catch(() => ({ legend: [] }));
 
-function cards(value: unknown): DeckCard[] {
-    if (!Array.isArray(value)) return [];
-    const held: DeckCard[] = [];
-    for (const item of value) {
-        if (!isMap(item)) continue;
+/** A theme: the hue of its colour and its label. */
+const themeShape = z
+    .object({ color: z.unknown().optional(), label: optionalTextShape })
+    .transform((item): DeckTheme => ({
+        tone: hue(item.color) ?? UNKNOWN_TONE,
+        label: item.label ?? ''
+    }));
+
+/** A framing card: the fields it is written with, a field it lacks left out. */
+const cardShape = z
+    .object({ n: optionalTextShape, title: optionalTextShape, body: optionalTextShape })
+    .transform((item): DeckCard => {
         const card: DeckCard = {};
-        const n = str(item.n);
-        const title = str(item.title);
-        const body = str(item.body);
-        if (n !== undefined) card.n = n;
-        if (title !== undefined) card.title = title;
-        if (body !== undefined) card.body = body;
-        held.push(card);
-    }
-    return held;
-}
+        if (item.n !== undefined) card.n = item.n;
+        if (item.title !== undefined) card.title = item.title;
+        if (item.body !== undefined) card.body = item.body;
+        return card;
+    });
 
-function framing(value: unknown): Record<string, DeckFraming> {
-    const held: Record<string, DeckFraming> = {};
-    for (const [key, item] of Object.entries(fields(value))) {
-        const map = fields(item);
-        const one: DeckFraming = { cards: cards(map.cards), legend: chips(map.legend) };
-        const title = str(map.title);
-        const lede = str(map.lede);
-        const hint = str(map.hint);
-        if (title !== undefined) one.title = title;
-        if (lede !== undefined) one.lede = lede;
-        if (hint !== undefined) one.hint = hint;
-        held[key] = one;
-    }
-    return held;
-}
+/** A framing slide, the empty one for a value that is no map. */
+const framingShape = z
+    .object({
+        title: optionalTextShape,
+        lede: optionalTextShape,
+        hint: optionalTextShape,
+        cards: rowsShape(cardShape).catch(() => []),
+        legend: chipsShape
+    })
+    .transform((map): DeckFraming => {
+        const one: DeckFraming = { cards: map.cards, legend: map.legend };
+        if (map.title !== undefined) one.title = map.title;
+        if (map.lede !== undefined) one.lede = map.lede;
+        if (map.hint !== undefined) one.hint = map.hint;
+        return one;
+    })
+    .catch(() => ({ cards: [], legend: [] }));
 
-function rows(value: unknown): DeckSummaryRow[] {
-    if (!Array.isArray(value)) return [];
-    const held: DeckSummaryRow[] = [];
-    for (const item of value) {
-        if (!isMap(item)) continue;
+/** A summary row: the four texts it is written with and the hue of its colour. */
+const summaryRowShape = z
+    .object({
+        field: optionalTextShape,
+        project: optionalTextShape,
+        mechanism: optionalTextShape,
+        headline: optionalTextShape,
+        color: z.unknown().optional()
+    })
+    .transform((item): DeckSummaryRow => {
         const row: DeckSummaryRow = {};
         for (const key of ['field', 'project', 'mechanism', 'headline'] as const) {
-            const text = str(item[key]);
+            const text = item[key];
             if (text !== undefined) row[key] = text;
         }
         const tone = hue(item.color);
         if (tone !== undefined) row.tone = tone;
-        held.push(row);
-    }
-    return held;
-}
+        return row;
+    });
 
-function summaries(value: unknown): Record<string, DeckSummary> {
-    const held: Record<string, DeckSummary> = {};
-    for (const [key, item] of Object.entries(fields(value))) {
-        const map = fields(item);
-        const one: DeckSummary = { rows: rows(map.rows) };
-        const title = str(map.title);
-        const foot = str(map.foot);
-        if (title !== undefined) one.title = title;
-        if (foot !== undefined) one.foot = foot;
-        held[key] = one;
-    }
-    return held;
-}
+/** A summary slide, the empty one for a value that is no map. */
+const summaryShape = z
+    .object({
+        title: optionalTextShape,
+        foot: optionalTextShape,
+        rows: rowsShape(summaryRowShape).catch(() => [])
+    })
+    .transform((map): DeckSummary => {
+        const one: DeckSummary = { rows: map.rows };
+        if (map.title !== undefined) one.title = map.title;
+        if (map.foot !== undefined) one.foot = map.foot;
+        return one;
+    })
+    .catch(() => ({ rows: [] }));
 
-function ideas(value: unknown): DeckIdeas | null {
-    if (!isMap(value)) return null;
-    const items: DeckIdea[] = [];
-    for (const item of Array.isArray(value.items) ? value.items : []) {
-        if (!isMap(item)) continue;
+/** An idea: the three texts it is written with and the hue of its colour. */
+const ideaShape = z
+    .object({
+        title: optionalTextShape,
+        desc: optionalTextShape,
+        maturity: optionalTextShape,
+        color: z.unknown().optional()
+    })
+    .transform((item): DeckIdea => {
         const one: DeckIdea = {};
         for (const key of ['title', 'desc', 'maturity'] as const) {
-            const text = str(item[key]);
+            const text = item[key];
             if (text !== undefined) one[key] = text;
         }
         const tone = hue(item.color);
         if (tone !== undefined) one.tone = tone;
-        items.push(one);
-    }
-    const held: DeckIdeas = { items };
-    const title = str(value.title);
-    const lede = str(value.lede);
-    const hint = str(value.hint);
-    if (title !== undefined) held.title = title;
-    if (lede !== undefined) held.lede = lede;
-    if (hint !== undefined) held.hint = hint;
-    return held;
-}
+        return one;
+    });
+
+/** The ideas slide, none for a value that is no map. */
+const ideasShape = z
+    .object({
+        title: optionalTextShape,
+        lede: optionalTextShape,
+        hint: optionalTextShape,
+        items: rowsShape(ideaShape).catch(() => [])
+    })
+    .transform((map): DeckIdeas | null => {
+        const held: DeckIdeas = { items: map.items };
+        if (map.title !== undefined) held.title = map.title;
+        if (map.lede !== undefined) held.lede = map.lede;
+        if (map.hint !== undefined) held.hint = map.hint;
+        return held;
+    })
+    .catch(() => null);
+
+/** The `deck:` map of the merged config. */
+const deckShape = z
+    .object({
+        meta: metaShape,
+        themes: mapOfShape(themeShape).catch(() => ({})),
+        order: z.unknown().optional().transform(deckOrder),
+        framing: mapOfShape(framingShape).catch(() => ({})),
+        summaries: mapOfShape(summaryShape).catch(() => ({})),
+        ideas: ideasShape,
+        selection: z.unknown().optional().transform(savedKeys),
+        slide_order: z.unknown().optional().transform(savedKeys),
+        equations_dir: z.string().catch(''),
+        tag_tones: mapOfShape(z.string().min(1)).catch(() => ({}))
+    })
+    .transform((map): Deck => ({
+        meta: map.meta,
+        themes: map.themes,
+        order: map.order,
+        framing: map.framing,
+        summaries: map.summaries,
+        ideas: map.ideas,
+        selection: map.selection,
+        slideOrder: map.slide_order,
+        equationsDir: map.equations_dir,
+        tagTones: map.tag_tones
+    }));
 
 /** The deck of the merged config, empty in every part when the config holds no `deck:` map. */
 export function deckFrom(config: Record<string, unknown>): Deck {
-    const map = fields(config.deck);
-    return {
-        meta: meta(map.meta),
-        themes: themes(map.themes),
-        order: deckOrder(map.order),
-        framing: framing(map.framing),
-        summaries: summaries(map.summaries),
-        ideas: ideas(map.ideas),
-        selection: savedKeys(map.selection),
-        slideOrder: savedKeys(map.slide_order),
-        equationsDir: str(map.equations_dir) ?? '',
-        tagTones: tagTones(map.tag_tones)
-    };
+    return (
+        readAs(deckShape, config.deck) ?? {
+            meta: { legend: [] },
+            themes: {},
+            order: [],
+            framing: {},
+            summaries: {},
+            ideas: null,
+            selection: null,
+            slideOrder: null,
+            equationsDir: '',
+            tagTones: {}
+        }
+    );
 }
 
 /** The framing slide a ref names, or nothing when the deck declares none under that key. */

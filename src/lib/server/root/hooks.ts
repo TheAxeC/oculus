@@ -22,7 +22,7 @@ import { basename } from 'node:path';
 import { z } from 'zod';
 import type { HookEvent, SessionRecord, SessionsPayload } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
-import { filledTextShape } from '../core/shapes.ts';
+import { filledTextShape } from '../../data/shapes/shapes.ts';
 import { HookStore, patchPayload, type HubLike } from '../sessions/stores/hooks.ts';
 
 export const MAX_BODY_BYTES = 64 * 1024;

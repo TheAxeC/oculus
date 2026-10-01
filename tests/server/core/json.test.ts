@@ -2,7 +2,7 @@
 // with, the folder a write makes, and what a write that throws leaves behind: the old content and
 // the folder as it was, with no temporary file beside them.
 //
-// The last cases are of `quickly` in server/core/shapes.ts, the quick path over a schema, which
+// The last cases are of `quickly` in data/shapes/shapes.ts, the quick path over a schema, which
 // refuses the schema forms it cannot rebuild.
 //
 // Every file is under a scratch directory of the case's own, asserted inside it before the write.
@@ -22,7 +22,7 @@ import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { z } from 'zod';
 import { writeTextAtomic } from '../../../src/lib/server/core/json.ts';
-import { quickly } from '../../../src/lib/server/core/shapes.ts';
+import { quickly } from '../../../src/lib/data/shapes/shapes.ts';
 import * as fold from '../../../src/lib/server/sessions/fold.ts';
 import * as codex from '../../../src/lib/server/sessions/stores/codex.ts';
 import * as turns from '../../../src/lib/server/sessions/stores/turns.ts';

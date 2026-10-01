@@ -391,3 +391,73 @@ describe('the Map chips over a graph', () => {
         expect(hasRelationships(null)).toBe(false);
     });
 });
+
+describe('the Map chips, config values of another type', () => {
+    const archived = (type: string) => ({ tier: 'archive', type });
+    const snapshot = {
+        entities: {
+            projects: {
+                a: archived('dropped'),
+                b: { tier: 'coauthor', type: 'coauthor' },
+                c: { tier: 'active', type: 'active' },
+                d: archived('constructor'),
+                e: archived('')
+            }
+        }
+    } as unknown as Parameters<typeof archiveStatuses>[0];
+    const bare = [{ status: 'dropped' }, { status: 'coauthor' }, { status: 'constructor' }];
+
+    it('draw no archive colour from colors held as a list, a string, a number, null or nothing', () => {
+        for (const colors of [[], 'x', null, undefined, 3, {}]) {
+            expect(archiveStatuses(snapshot, colors)).toStrictEqual(bare);
+        }
+    });
+
+    it('take a colour for a status only when its value is a string, an empty one included', () => {
+        expect(archiveStatuses(snapshot, { dropped: '' })).toStrictEqual([
+            { status: 'dropped', color: '' },
+            { status: 'coauthor' },
+            { status: 'constructor' }
+        ]);
+        expect(archiveStatuses(snapshot, { dropped: ['x'], coauthor: null })).toStrictEqual(bare);
+        expect(archiveStatuses(snapshot, { constructor: 'x' })[2]).toStrictEqual({
+            status: 'constructor',
+            color: 'x'
+        });
+    });
+
+    it('read the colour of a status named __proto__ off an own key of that name', () => {
+        const proto = {
+            entities: { projects: { a: archived('__proto__') } }
+        } as unknown as Parameters<typeof archiveStatuses>[0];
+        const colors: unknown = JSON.parse('{"__proto__":"p"}');
+        expect(archiveStatuses(proto, colors)).toStrictEqual([{ status: '__proto__', color: 'p' }]);
+        const named: unknown = JSON.parse('{"dropped":"d","__proto__":"p"}');
+        expect(archiveStatuses(snapshot, named)[0]).toStrictEqual({
+            status: 'dropped',
+            color: 'd'
+        });
+    });
+
+    it('order the type chips by the strings of type_order and by name when it is no list', () => {
+        const typed = (...types: string[]) =>
+            ({
+                nodes: types.map((type, at) => ({
+                    id: `p${at}`,
+                    kind: 'project',
+                    entityId: `p${at}`,
+                    label: '',
+                    type
+                })),
+                edges: []
+            }) as unknown as Parameters<typeof typeFilters>[0];
+        const base = typed('active', 'idea', 'accepted');
+        const types = (order: unknown) =>
+            typeFilters(base, typed('active'), order, []).map((chip) => chip.type);
+        expect(types([1, 'idea'])).toStrictEqual(['idea', 'accepted', 'active']);
+        expect(types(['idea', 3, 'active'])).toStrictEqual(['idea', 'active', 'accepted']);
+        for (const order of ['idea', { 0: 'idea' }, null, undefined, [], ['absent']]) {
+            expect(types(order)).toStrictEqual(['accepted', 'active', 'idea']);
+        }
+    });
+});

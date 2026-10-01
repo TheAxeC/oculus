@@ -56,8 +56,16 @@
 // byte it tells a cut by, and the answer is held until it is marked, so the tree, the tab it opens
 // and a second click on the same row ask the server once.
 
-import type { Entry, FilesPayload, SchemaField } from '../../data/model/index.ts';
+import { z } from 'zod';
+import type { Entry, SchemaField } from '../../data/model/index.ts';
 import { TEXT_SNIFF_READ } from '../../data/helpers/files/text-kind.ts';
+import {
+    anyNumberShape,
+    mapShape,
+    readAs,
+    survivorsShape,
+    unchanged
+} from '../../data/shapes/shapes.ts';
 import type { EntitiesStore, WriteAnswer, WritesStore } from '../shared/stores/shapes.ts';
 import type { Fetcher, Fetching, Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
@@ -76,6 +84,7 @@ import {
     listingKey as keyOfListing,
     listingUrl,
     noteUrl,
+    readAnswer,
     readCapped,
     readCappedBytes,
     type BookmarksState,
@@ -149,6 +158,65 @@ const NOTES = ['fs', 'notes'];
 const ALL = ['fs'];
 
 const NOTE = ['fs', 'note'];
+
+/** One root of a workspace, and one workspace, answered as the endpoint sent them. */
+const fsRootShape = z.object({ key: z.string(), dir: z.string(), fixed: z.boolean() });
+
+const workspaceShape = unchanged(
+    z.object({ name: z.string(), roots: z.array(fsRootShape) })
+) satisfies z.ZodType<{ name: string; roots: FsRoot[] }>;
+
+/** The workspaces answer: the current one's name, every workspace, the keys the server dropped. */
+const workspacesShape = z.object({
+    current: z.string().catch(''),
+    workspaces: survivorsShape(workspaceShape).catch([]),
+    dropped: survivorsShape(z.string()).catch([])
+});
+
+/** One bookmark, answered as the endpoint sent it. */
+const bookmarkShape = unchanged(
+    z.object({
+        id: z.string(),
+        title: z.string(),
+        fields: mapShape,
+        file: z.string(),
+        index: anyNumberShape
+    })
+) satisfies z.ZodType<Entry>;
+
+/** One field of the bookmarks file's own schema, answered as the endpoint sent it. */
+const schemaFieldShape = unchanged(
+    z.object({
+        field: z.string(),
+        type: z.string(),
+        label: z.string().optional(),
+        options: z.array(z.string()).optional(),
+        optionsFrom: z.string().optional(),
+        required: z.boolean().optional(),
+        help: z.string().optional()
+    })
+) satisfies z.ZodType<SchemaField>;
+
+/** The bookmarks answer: the well-formed entries and the well-formed fields of the schema. */
+const bookmarksShape = z.object({
+    entries: survivorsShape(bookmarkShape).catch([]),
+    schema: survivorsShape(schemaFieldShape).catch([])
+});
+
+/** One note of the list, answered as the endpoint sent it. */
+const noteRowShape = unchanged(
+    z.object({ id: z.string(), title: z.string(), modified: anyNumberShape })
+) satisfies z.ZodType<NoteRow>;
+
+/** The notes answer: the well-formed notes. */
+const notesShape = z.object({ notes: survivorsShape(noteRowShape).catch([]) });
+
+/** One note's own answer: its title, its text and when it was written. */
+const noteShape = z.object({
+    title: z.string().catch(''),
+    body: z.string().catch(''),
+    modified: anyNumberShape.catch(0)
+});
 
 /** The file browser's fetched state, one per client. */
 export type FsStore = {
@@ -275,7 +343,7 @@ export function createFs(
      */
     let onDisk = 0;
     entities.afterReceive((message) => {
-        const named = message.channel === 'files' && (message.payload as FilesPayload).bookmarks;
+        const named = entities.payloadOf(message, 'files')?.bookmarks;
         if (named !== true || message.version <= onDisk) return;
         onDisk = message.version;
         queries.mark(BOOKMARKS, 'replace');
@@ -363,26 +431,13 @@ export function createFs(
 
     async function readWorkspaces(): Promise<WorkspacesState> {
         try {
-            const response = await fetch(FS_PATH);
-            const body = (await response.json()) as {
-                current?: unknown;
-                workspaces?: unknown;
-                dropped?: unknown;
-                error?: unknown;
-            };
-            if (!response.ok) {
-                return {
-                    ...NO_WORKSPACES,
-                    error: typeof body.error === 'string' ? body.error : String(response.status),
-                    loading: false
-                };
-            }
+            const answer = await readAnswer(await fetch(FS_PATH));
+            if (!answer.ok) return { ...NO_WORKSPACES, error: answer.error, loading: false };
+            const body = readAs(workspacesShape, answer.body);
             return {
-                current: typeof body.current === 'string' ? body.current : '',
-                workspaces: Array.isArray(body.workspaces)
-                    ? (body.workspaces as { name: string; roots: FsRoot[] }[])
-                    : [],
-                dropped: Array.isArray(body.dropped) ? (body.dropped as string[]) : [],
+                current: body?.current ?? '',
+                workspaces: body?.workspaces ?? [],
+                dropped: body?.dropped ?? [],
                 error: '',
                 loading: false
             };
@@ -475,22 +530,12 @@ export function createFs(
     async function readBookmarks(_held: unknown, fetching: Fetching): Promise<BookmarksState> {
         let answer: BookmarksState;
         try {
-            const response = await fetch(`${FS_PATH}?bookmarks=1`);
-            const body = (await response.json()) as {
-                entries?: unknown;
-                schema?: unknown;
-                error?: unknown;
-            };
-            if (!response.ok) {
-                return {
-                    ...NO_BOOKMARKS,
-                    error: typeof body.error === 'string' ? body.error : String(response.status),
-                    loading: false
-                };
-            }
+            const read = await readAnswer(await fetch(`${FS_PATH}?bookmarks=1`));
+            if (!read.ok) return { ...NO_BOOKMARKS, error: read.error, loading: false };
+            const body = readAs(bookmarksShape, read.body);
             answer = {
-                entries: Array.isArray(body.entries) ? (body.entries as Entry[]) : [],
-                schema: Array.isArray(body.schema) ? (body.schema as SchemaField[]) : [],
+                entries: body?.entries ?? [],
+                schema: body?.schema ?? [],
                 error: '',
                 loading: false
             };
@@ -525,17 +570,10 @@ export function createFs(
 
     async function readNotes(): Promise<NotesState> {
         try {
-            const response = await fetch(`${FS_PATH}?notes=1`);
-            const body = (await response.json()) as { notes?: unknown; error?: unknown };
-            if (!response.ok) {
-                return {
-                    ...NO_NOTES,
-                    error: typeof body.error === 'string' ? body.error : String(response.status),
-                    loading: false
-                };
-            }
+            const answer = await readAnswer(await fetch(`${FS_PATH}?notes=1`));
+            if (!answer.ok) return { ...NO_NOTES, error: answer.error, loading: false };
             return {
-                notes: Array.isArray(body.notes) ? (body.notes as NoteRow[]) : [],
+                notes: readAs(notesShape, answer.body)?.notes ?? [],
                 error: '',
                 loading: false
             };
@@ -558,26 +596,14 @@ export function createFs(
 
     async function readNote(id: string): Promise<NoteState> {
         try {
-            const response = await fetch(noteUrl(id));
-            const body = (await response.json()) as {
-                title?: unknown;
-                body?: unknown;
-                modified?: unknown;
-                error?: unknown;
-            };
-            if (!response.ok) {
-                return {
-                    ...NO_NOTE,
-                    id,
-                    error: typeof body.error === 'string' ? body.error : String(response.status),
-                    loading: false
-                };
-            }
+            const answer = await readAnswer(await fetch(noteUrl(id)));
+            if (!answer.ok) return { ...NO_NOTE, id, error: answer.error, loading: false };
+            const body = readAs(noteShape, answer.body);
             return {
                 id,
-                title: typeof body.title === 'string' ? body.title : '',
-                body: typeof body.body === 'string' ? body.body : '',
-                modified: typeof body.modified === 'number' ? body.modified : 0,
+                title: body?.title ?? '',
+                body: body?.body ?? '',
+                modified: body?.modified ?? 0,
                 error: '',
                 loading: false
             };

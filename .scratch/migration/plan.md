@@ -331,7 +331,8 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ Q85a4 the same in `src/lib/server/machine`, `accounts`, `files`, `content` and `git` (44 files, 222 check lines), with the two config casts of `root/context.ts:266-267` whose check is `machine/usage/refresh.ts:139-142`, and the head comment of `data/helpers/guards.ts:3-5` corrected, after Q85a1 (ruling Z73) (ruling Z96) (ruling Z127)
   - Booked 2026-10-01: `zod` reads the untyped input of `machine`, `accounts`, `files`, `content` and `git`, from base a549ed92 through /spec, /refute (one repair round, refuted again on Sonnet) and /land; four fixes at landing (`paths.test.ts`, `root/hooks.ts`, `byKey` in two git tables, a head comment); in full in `agents/reviews/Q85a4-landing.md`.
 - Removed by Z127 (Axel, 2026-10-01): Q85a5 (`files`, `content` and `git`), folded into Q85a4.
-- Q85b the same in the state layer (`src/lib/state`, 71 files, 506 check lines), after Q85a1, Q85a2 and Q85a4 (ruling The queue) (ruling Z73)
+- ✅ Q85b the same in the state layer (`src/lib/state`, 71 files, 506 check lines), after Q85a1, Q85a2 and Q85a4 (ruling The queue) (ruling Z73)
+  - Booked 2026-10-01: `zod` schemas at the state layer's inputs, the redundant hand checks deleted, `shapes.ts` in `data/shapes/`; base 402437e8, one repair round refuted again; three fixes at landing (`tones.test.ts`'s `__PROTO__` rows, the customization fields required, a stale sentence closed); `checks: 7 commands passed`; no look; in full in `agents/reviews/Q85b-landing.md`.
 - Q85c the same in `src/lib/data` (26 files), after Q85a1, Q85a2 and Q85a4 (ruling The queue) (ruling Z73)
 - Q85d the same in the views, `ui/`, `shell/` and the routes (33 files), after Q85b (ruling The queue) (ruling Z73)
   - Counted 2026-09-30 on main: 206 files that mention `unknown` hold 1,269 lines of `typeof`, `Array.isArray`, `isMap` and `isRecord` checks, against LA7's "about 40 state files"; 29 files parse JSON or YAML.
@@ -727,6 +728,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z158 (2026-10-01): (a), the Files listing's entry carries `link: true` for a symbolic link, so a link to a folder takes the file message of the Delete question (the orchestrator, automode).
 - Open item Z159 (2026-10-01): (a), a Cut paste whose request never reached the server keeps the clipboard; a refused one clears it (the orchestrator, automode).
 - Open item Z160 (2026-10-01): (a), one new glyph `add` (Lucide `plus`) for the add actions in a view's header; other actions without a glyph go to the bar as text buttons (the orchestrator, automode).
+- Open item Z161 (2026-10-01): (A), U3 also changes `ui/tabs/TabFace.svelte`'s `.cells` size to `--fs-xs` and its focus ring to 1px offset -1px, with that file's type-scale pin, and nothing else of the tab strip, which stays X3c's (the orchestrator, automode).
 - Open item Z147 (2026-10-01): (c) widened, the cards kept and put on the same scale as everything else: they fit the pane's width, take one chip shape and titles on the type scale, and get groups 2 and 5; links lose the underline; Projects looked at on TEST after the step (the user).
 - Open item Z146 (2026-10-01): U2's seven groups as one step U3, with Z147 (c) widened and Z148 (1) (the user).
 

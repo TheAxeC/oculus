@@ -30,7 +30,7 @@ import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { z } from 'zod';
 import { byKey, isMap } from '../../data/helpers/guards.ts';
 import type { RemovedText } from '../core/changes.ts';
-import { unchanged } from '../core/shapes.ts';
+import { unchanged } from '../../data/shapes/shapes.ts';
 
 /** One row of a metalist: a flat map whose keys and values are strings. */
 export type FlatStringMap = Record<string, string>;

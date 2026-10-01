@@ -131,3 +131,82 @@ describe('LinkedIn state', () => {
         expect(parseLinkedinState(null)).toEqual({ search: '', adding: false });
     });
 });
+
+describe('the LinkedIn readers over fields of the wrong type', () => {
+    const blank = { date: '', category: '', body: '' };
+
+    it('reads a field as its text when it is text or a number and as nothing otherwise', () => {
+        const split = splitPosts([
+            { file: 3 },
+            {
+                file: '12-x',
+                title: 3,
+                date: 20260101,
+                category: true,
+                body: null
+            },
+            { file: 'xx-a', title: ['t'], date: true },
+            { file: 'xx-b', title: '', body: NaN },
+            { file: '7-', title: 'ok', date: '2026-01-01', category: 5, body: 'b' },
+            { file: ['xx-c'] },
+            {}
+        ]);
+        expect(split).toStrictEqual({
+            ideas: [
+                { file: 'xx-a', title: 'xx-a', ...blank, idea: true },
+                { file: 'xx-b', title: 'xx-b', date: '', category: '', body: 'NaN', idea: true }
+            ],
+            posts: [
+                {
+                    file: '7-',
+                    title: 'ok',
+                    date: '2026-01-01',
+                    category: '5',
+                    body: 'b',
+                    idea: false
+                },
+                { file: '12-x', title: '3', date: '20260101', category: '', body: '', idea: false }
+            ]
+        });
+    });
+
+    it('titles an idea whose title is the number zero by its digit', () => {
+        const split = splitPosts([{ file: 'xx-z' }, { file: 'xx-a' }, { file: 'xx-m', title: 0 }]);
+        expect(split.ideas.map((idea) => [idea.file, idea.title])).toEqual([
+            ['xx-a', 'xx-a'],
+            ['xx-m', '0'],
+            ['xx-z', 'xx-z']
+        ]);
+        expect(split.posts).toEqual([]);
+    });
+
+    it('leaves a null entry out of the ideas and the posts', () => {
+        const split = splitPosts([null, { file: 'xx-a' }, { file: '1-a' }]);
+        expect(split.ideas.map((idea) => idea.file)).toEqual(['xx-a']);
+        expect(split.posts.map((post) => post.file)).toEqual(['1-a']);
+    });
+
+    it('orders posts by a date that is a real ISO date string, the others after by filename', () => {
+        const split = splitPosts([
+            { file: '1-a', date: '2026-02-01' },
+            { file: '2-b', date: 20260301 },
+            { file: '3-c', date: '2026-03-01' },
+            { file: '4-d', date: '2026-02-31' },
+            { file: '5-e' }
+        ]);
+        expect(split.posts.map((post) => post.file)).toEqual(['3-c', '1-a', '2-b', '4-d', '5-e']);
+    });
+
+    it.each([
+        [3, '3...'],
+        [true, 'true...'],
+        [NaN, 'NaN...'],
+        [null, '...'],
+        [undefined, '...'],
+        [['a'], '...'],
+        [{ a: 1 }, '...'],
+        ['a  b\n c', 'a b c...']
+    ])('writes the snippet of the body %j as %j', (body, written) => {
+        expect(snippet(body)).toBe(written);
+    });
+});

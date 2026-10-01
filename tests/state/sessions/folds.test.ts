@@ -14,6 +14,7 @@ import {
     hiddenCounts,
     isTop,
     keptByFilter,
+    LIST_FILTER,
     listFilterOf,
     listGroups,
     liveCount,
@@ -32,6 +33,7 @@ import type {
     GroupedSession,
     SessionAgent,
     SessionEvent,
+    SizedAgent,
     Workspace
 } from '../../../src/lib/data/model/index.ts';
 
@@ -358,5 +360,81 @@ describe("the Terminal view's list of terminals", () => {
         expect(terminalChoices([outside, shell], sessions).map((one) => one.terminal)).toEqual([
             'a1b2c3-shell'
         ]);
+    });
+});
+
+describe("the list's filter out of an instance state of the wrong shape", () => {
+    it.each([
+        [
+            'states that are a string, an agent list holding a number, a query that is a number',
+            { states: 'x', agents: [1, 'claude'], query: 3 },
+            { states: [], agents: ['claude'], query: '' }
+        ],
+        [
+            'states repeated and out of order, which come back once each in the menu order',
+            { states: ['working', 'archived', 'working'] },
+            { states: ['working', 'archived'], agents: [], query: '' }
+        ],
+        [
+            'every state, a word that is no state and a number',
+            { states: ['archived', 'input', 'ended', 'idle', 'working', 'bogus', 3] },
+            { states: ['input', 'working', 'idle', 'ended', 'archived'], agents: [], query: '' }
+        ],
+        [
+            'agents repeated and out of order',
+            { agents: ['codex', 'claude', 'codex'] },
+            { states: [], agents: ['claude', 'codex'], query: '' }
+        ],
+        [
+            'states and agents that are maps',
+            { states: {}, agents: {} },
+            { states: [], agents: [], query: '' }
+        ],
+        [
+            'a query kept as it was typed',
+            { query: ' a b ' },
+            { states: [], agents: [], query: ' a b ' }
+        ],
+        ['an empty map', {}, { states: [], agents: [], query: '' }],
+        ['a string', 'x', { states: [], agents: [], query: '' }],
+        ['a number', 3, { states: [], agents: [], query: '' }],
+        [
+            'an own __proto__ key beside a query',
+            JSON.parse('{"__proto__":{"query":"p"},"query":"q"}'),
+            { states: [], agents: [], query: 'q' }
+        ]
+    ])('reads %s', (_name, state, expected) => {
+        expect(listFilterOf(state)).toStrictEqual(expected);
+    });
+
+    it('answers the shared unset filter itself for a state that is no map, and a new one for a map', () => {
+        for (const state of [null, undefined, [], 'x', 3]) {
+            expect(listFilterOf(state)).toBe(LIST_FILTER);
+        }
+        expect(listFilterOf({})).not.toBe(LIST_FILTER);
+    });
+});
+
+describe("an agent's tokens out of a result of the wrong shape", () => {
+    const tokens = (value: unknown) => agentTokens({ id: 'a', tokens: value } as SizedAgent);
+
+    it.each([
+        ['a whole number', 3, 3],
+        ['a fraction', 1.5, 1.5],
+        ['zero', 0, 0],
+        ['the largest finite number', Number.MAX_VALUE, Number.MAX_VALUE],
+        ['negative zero', -0, -0],
+        ['infinity', Infinity, null],
+        ['minus infinity', -Infinity, null],
+        ['null', null, null],
+        ['true', true, null],
+        ['a list holding a number', [5], null],
+        ['a map', {}, null]
+    ])('is the tokens of %s', (_name, value, expected) => {
+        expect(tokens(value)).toBe(expected);
+    });
+
+    it('is null for an agent whose result reports none', () => {
+        expect(agentTokens({ id: 'a' } as SizedAgent)).toBe(null);
     });
 });

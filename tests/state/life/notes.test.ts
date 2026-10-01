@@ -92,6 +92,10 @@ describe('when a note says it was saved', () => {
         expect(stamp(0)).toBe('');
         expect(stamp(Number.NaN)).toBe('');
     });
+
+    it('is nothing for a time that is infinite or before the epoch', () => {
+        for (const when of [Infinity, -Infinity, -1]) expect(stamp(when)).toBe('');
+    });
 });
 
 describe('how long the wait is', () => {
@@ -107,6 +111,38 @@ describe('how long the wait is', () => {
         expect(autosaveMs({ notes: 'soon' })).toBe(before);
         expect(autosaveMs({ notes: { autosave_ms: 'soon' } })).toBe(before);
         expect(autosaveMs({ notes: { autosave_ms: -5 } })).toBe(before);
+    });
+});
+
+describe('how long the wait is for a config of the wrong type', () => {
+    const before = autosaveMs({});
+
+    it.each([
+        [{ notes: { autosave_ms: -1 } }],
+        [{ notes: { autosave_ms: '5' } }],
+        [{ notes: { autosave_ms: NaN } }],
+        [{ notes: { autosave_ms: Infinity } }],
+        [{ notes: { autosave_ms: -Infinity } }],
+        [{ notes: { autosave_ms: [5] } }],
+        [{ notes: { autosave_ms: null } }],
+        [{ notes: { autosave_ms: true } }],
+        [{ notes: {} }],
+        [{ notes: [] }],
+        [{ notes: null }],
+        [{ notes: 5 }]
+    ])('is the built-in number for the config %j', (config) => {
+        expect(autosaveMs(config)).toBe(before);
+    });
+
+    it.each([0, 1, 1.5, 250, 60000])('is the number %j when the config carries it', (ms) => {
+        expect(autosaveMs({ notes: { autosave_ms: ms } })).toBe(ms);
+    });
+
+    it('reads the key off a parsed config that also holds an own __proto__ key', () => {
+        const parsed: unknown = JSON.parse(
+            '{"__proto__":{"notes":{"autosave_ms":9}},"notes":{"autosave_ms":7}}'
+        );
+        expect(autosaveMs(parsed as Record<string, unknown>)).toBe(7);
     });
 });
 

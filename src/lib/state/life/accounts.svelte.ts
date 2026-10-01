@@ -17,6 +17,7 @@
 // are the server's answer to `GET /api/connect`; the page holds no copy of them. Nothing here keeps
 // a client id or a secret past the request that carries it.
 
+import { z } from 'zod';
 import { publishedLink } from '../../data/accounts/calendar.ts';
 import {
     accountRefusal,
@@ -31,6 +32,7 @@ import type {
     ConnectProvider,
     ConnectSetup
 } from '../../data/model/index.ts';
+import { optionalTextShape, readAs, readJson, unchanged } from '../../data/shapes/shapes.ts';
 import { t } from '../shared/words/text.ts';
 import type { EntitiesStore, WritesStore } from '../shared/stores/shapes.ts';
 
@@ -105,6 +107,21 @@ function refusalWords(code: string, label: string, reason: string): string {
     }
 }
 
+/** One provider's word for each of the two connectors, or one flag for each provider. */
+const perProvider = <T extends z.ZodType>(item: T) => z.object({ google: item, microsoft: item });
+
+/** The setup page's facts, read as the server sent them: the body itself when it is complete. */
+const connectSetupShape = unchanged(
+    z.object({
+        ready: perProvider(z.boolean()),
+        redirects: z.object({ calendar: z.string(), mail: z.string() }),
+        scopes: z.object({
+            calendar: perProvider(z.string()),
+            mail: perProvider(z.string())
+        })
+    })
+) satisfies z.ZodType<ConnectSetup>;
+
 /** A server's answer: whether it took the command, and its refusal code and reason when not. */
 type Answer = { ok: boolean; error: string; reason: string };
 
@@ -128,8 +145,8 @@ export function createAccounts(
         const { error, reason } = answer.body;
         return {
             ok: answer.ok,
-            error: typeof error === 'string' ? error : answer.failed,
-            reason: typeof reason === 'string' ? reason : ''
+            error: readAs(optionalTextShape, error) ?? answer.failed,
+            reason: readAs(optionalTextShape, reason) ?? ''
         };
     }
 
@@ -151,13 +168,13 @@ export function createAccounts(
             setupFailed = t('accounts.unreachable');
             return;
         }
-        try {
-            if (!response.ok) throw new Error('refused');
-            setup = (await response.json()) as ConnectSetup;
-            setupFailed = '';
-        } catch {
+        const body = response.ok ? readAs(connectSetupShape, await readJson(response)) : null;
+        if (body === null) {
             setupFailed = t('accounts.unreadable');
+            return;
         }
+        setup = body;
+        setupFailed = '';
     }
 
     /** Hold an Add until its provider is set up, and open the page that sets it up. */

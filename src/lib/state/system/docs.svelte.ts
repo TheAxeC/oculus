@@ -24,9 +24,10 @@
 // answer, a 304 keeps the held object as it is, and an answer equal to the held one keeps the held
 // object too, so an unchanged document rebuilds no markup and reloads no figure.
 
-import { fields } from '../../data/helpers/guards.ts';
-import type { FilesPayload, ManualPart, Message } from '../../data/model/index.ts';
-import type { EntitiesStore, Fetcher, Queries } from '../shared/stores/shapes.ts';
+import { z } from 'zod';
+import type { ManualPart, Message } from '../../data/model/index.ts';
+import { mapShape, optionalTextShape, readJson, rowsShape } from '../../data/shapes/shapes.ts';
+import type { EntitiesStore, Fetcher, Fetching, Queries } from '../shared/stores/shapes.ts';
 
 export type { ManualPart };
 
@@ -70,14 +71,30 @@ const KIND = 'docs';
 const HUB = 'hub';
 const MANUAL = 'manual';
 
-/** What api/docs answers in JSON, every field optional since an error answer carries fewer. */
-type Body = {
-    html?: string;
-    frontmatter?: unknown;
-    error?: string;
-    file?: unknown;
-    parts?: unknown;
-};
+/**
+ * One run of the manual as the answer carries it: a string of HTML, or a diagram with a name and
+ * its words. Any other run is left out by `bodyShape`.
+ */
+const manualPartShape = z.union([
+    z.object({ kind: z.literal('html'), html: z.string() }),
+    z.object({ kind: z.literal('diagram'), name: z.string(), alt: z.string() })
+]) satisfies z.ZodType<ManualPart>;
+
+/**
+ * What api/docs answers in JSON, every field read as absent when it is of the wrong type, since an
+ * error answer carries fewer. The runs of the manual that fail their shape are dropped, and an
+ * answer without runs reads as none.
+ */
+const bodyShape = z.object({
+    html: z.string().catch(''),
+    frontmatter: mapShape.nullable().catch(null),
+    error: optionalTextShape,
+    file: z.string().catch(''),
+    parts: rowsShape(manualPartShape).catch([])
+});
+
+/** What an answer that is no map of fields reads as. */
+const NO_BODY = bodyShape.parse({});
 
 /** HTTP's answer to a request whose entity tag is still the file's. */
 const NOT_MODIFIED = 304;
@@ -192,8 +209,7 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
         if (heard === message.version) return;
         const gap = heard === null || message.version !== heard + 1;
         heard = message.version;
-        const payload = message.payload as FilesPayload | null;
-        const root = typeof payload?.root === 'string' ? payload.root : '';
+        const root = entities.payloadOf(message, 'files')?.root ?? '';
         for (const one of queries.entries<Held>([KIND])) {
             if (concerns(one.data, root, gap)) queries.mark(one.key, 'again');
         }
@@ -209,44 +225,50 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
                     tag === '' ? undefined : { headers: { 'if-none-match': tag } }
                 );
                 if (response.status === NOT_MODIFIED && held !== undefined) return held;
-                const body = await readBody(response);
-                if (body instanceof Error) {
+                const raw = await readJson(response);
+                if (raw === undefined) {
                     // The server answered, but with a body that is not the endpoint's (a proxy's
-                    // page, an empty 5xx): that is news too, so it replaces what is held.
-                    const reason = response.ok ? body.message : String(response.status);
-                    return failure(held, reason);
+                    // page, an empty 5xx). A refusal replaces what is held; an answer that claims
+                    // success reads as a request that went wrong on the way.
+                    if (!response.ok) return failure(held, String(response.status));
+                    return unreached(held, fetching, String(response.status));
                 }
-                const file = typeof body.file === 'string' ? body.file : '';
-                const tagged = response.ok ? (response.headers.get('etag') ?? '') : '';
+                const body = bodyShape.safeParse(raw).data ?? NO_BODY;
                 if (!response.ok) {
-                    return failure(held, body.error ?? String(response.status), file);
+                    return failure(held, body.error ?? String(response.status), body.file);
                 }
                 return keep(held, {
                     doc: {
-                        html: typeof body.html === 'string' ? body.html : '',
-                        frontmatter: readFrontmatter(body.frontmatter),
-                        parts: readParts(body.parts),
+                        html: body.html,
+                        frontmatter: body.frontmatter,
+                        parts: body.parts,
                         error: '',
                         loading: false
                     },
-                    file,
-                    tag: tagged
+                    file: body.file,
+                    tag: response.headers.get('etag') ?? ''
                 });
             } catch (error) {
-                // A request that never reached the server (a restart, a dropped connection) says
-                // nothing about the file, so a drawn document stays drawn and stays marked: the
-                // next call for it asks again.
-                if (held?.doc.error === '' && !held.doc.loading) {
-                    fetching.leaveStale();
-                    return held;
-                }
-                return failure(
+                return unreached(
                     held,
-                    error instanceof Error ? error.message : String(error),
-                    held?.file ?? ''
+                    fetching,
+                    error instanceof Error ? error.message : String(error)
                 );
             }
         };
+    }
+
+    /**
+     * What a request that went wrong on the way leaves: it says nothing about the file, so a drawn
+     * document stays drawn and stays marked and the next call for it asks again; a pair not drawn
+     * reads as the failure.
+     */
+    function unreached(held: Held | undefined, fetching: Fetching, reason: string): Held {
+        if (held?.doc.error === '' && !held.doc.loading) {
+            fetching.leaveStale();
+            return held;
+        }
+        return failure(held, reason, held?.file ?? '');
     }
 
     /** An answer that says the request failed, replacing what is held. */
@@ -260,42 +282,5 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
         return next;
     }
 
-    /** The endpoint's JSON body, or the error its parse threw when the body is not JSON. */
-    async function readBody(response: Response): Promise<Body | Error> {
-        try {
-            return (await response.json()) as Body;
-        } catch (error) {
-            return error instanceof Error ? error : new Error(String(error));
-        }
-    }
-
-    function readFrontmatter(value: unknown): Record<string, unknown> | null {
-        if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
-        return value as Record<string, unknown>;
-    }
-
     return { document, hubDocument, manual };
-}
-
-/**
- * The manual's runs as the answer carries them, each checked for its shape: a run that is neither a
- * string of HTML nor a diagram with a name and its words is dropped, and an answer without runs
- * reads as none.
- */
-function readParts(value: unknown): ManualPart[] {
-    if (!Array.isArray(value)) return [];
-    return value.flatMap((one): ManualPart[] => {
-        const held = fields(one);
-        if (held.kind === 'html' && typeof held.html === 'string') {
-            return [{ kind: 'html', html: held.html }];
-        }
-        if (
-            held.kind === 'diagram' &&
-            typeof held.name === 'string' &&
-            typeof held.alt === 'string'
-        ) {
-            return [{ kind: 'diagram', name: held.name, alt: held.alt }];
-        }
-        return [];
-    });
 }

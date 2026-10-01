@@ -36,7 +36,7 @@ import {
 } from '../entry-edit/index.ts';
 import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
-import { anyNumberShape } from '../../core/shapes.ts';
+import { anyNumberShape } from '../../../data/shapes/shapes.ts';
 import { BOOKMARKS, ensureBookmarksFile } from '../../files/fs/bookmarks.ts';
 import { NOT_A_FIELD_VALUE, asFieldValue } from '../yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';

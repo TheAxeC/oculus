@@ -64,3 +64,44 @@ describe('what the inbox store commands answer', () => {
         });
     });
 });
+
+describe('a refusal whose code is not text', () => {
+    /** Answer every request with the JSON text given and the status given. */
+    function answering(body: string, status: number): void {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(body, { status })));
+    }
+
+    it.each([
+        ['{"error":3}'],
+        ['{"error":null}'],
+        ['{"error":["x"]}'],
+        ['{"error":{"code":"x"}}'],
+        ['{"error":""}'],
+        ['{"error":true}'],
+        ['[]'],
+        ['null'],
+        ['"x"'],
+        ['3']
+    ])('says the general refusal for the body %s of a refused command', async (body) => {
+        answering(body, 400);
+        expect(await client.inbox.archive(THREAD)).toStrictEqual({
+            ok: false,
+            error: t('inbox.refused', '')
+        });
+    });
+
+    it('takes a command the endpoint answered with a status below 400 as taken, whatever the body', async () => {
+        for (const body of ['{"error":3}', '[]', 'null', '"x"']) {
+            answering(body, 200);
+            expect(await client.inbox.archive(THREAD)).toStrictEqual({ ok: true });
+        }
+    });
+
+    it('says the code of a refusal only when it is text', async () => {
+        answering('{"error":"stale","reason":3}', 409);
+        expect(await client.inbox.triage(THREAD, { triaged: true })).toStrictEqual({
+            ok: false,
+            error: t('inbox.refused', 'stale')
+        });
+    });
+});

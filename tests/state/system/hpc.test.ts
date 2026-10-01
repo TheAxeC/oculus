@@ -186,3 +186,177 @@ describe('the HPC pill', () => {
         expect(pill(2, 3)).toBe('2 HPC jobs running | 3 pending');
     });
 });
+
+describe('the HPC command over an answer of the wrong shape', () => {
+    it.each([
+        ['a list', '[]'],
+        ['a list of maps', '[{"status":"ok"}]'],
+        ['JSON null', 'null'],
+        ['a number', '3'],
+        ['a string', '"ok"']
+    ])('reads an answer that is %s as no fields at all', async (_name, text) => {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status: 200 })));
+        expect(await command({ action: 'refresh' })).toStrictEqual({});
+    });
+
+    it('hands the map on whole, whatever it holds', async () => {
+        answering({ status: 3, extra: [1, { a: null }], log: undefined });
+        expect(await command({ action: 'refresh' })).toStrictEqual({
+            status: 3,
+            extra: [1, { a: null }]
+        });
+    });
+
+    it('refuses an answer that is no JSON, with the parser error', async () => {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('<html>', { status: 502 })));
+        await expect(command({ action: 'refresh' })).rejects.toBeInstanceOf(SyntaxError);
+    });
+
+    it.each([
+        [
+            'a status that is a number',
+            { status: 3, log: 'text' },
+            { status: 'error', output: 'text' }
+        ],
+        ['a status that is empty', { status: '', log: 'text' }, { status: '', output: 'text' }],
+        [
+            'a status that is null',
+            { status: null, log: 'text' },
+            { status: 'error', output: 'text' }
+        ],
+        ['a log that is a number', { status: 'ok', log: 4 }, { status: 'ok', output: '' }],
+        ['a log that is a list', { status: 'ok', log: ['a'] }, { status: 'ok', output: '' }],
+        ['a log that is empty', { status: 'ok', log: '' }, { status: 'ok', output: '' }],
+        [
+            'an output key instead of a log',
+            { status: 'ok', output: 'x' },
+            { status: 'ok', output: '' }
+        ]
+    ])('folds an answer with %s into a status and a text', async (_name, body, expected) => {
+        answering(body);
+        expect(await jobLog('4711')).toStrictEqual(expected);
+    });
+
+    it.each([[[]], [null], ['ok'], [3]])(
+        'folds an answer that is %j into the error status and no text',
+        async (body) => {
+            answering(body);
+            expect(await jobLog('4711')).toStrictEqual({ status: 'error', output: '' });
+        }
+    );
+});
+
+describe('the Live HPC held state over a key of the wrong type', () => {
+    it.each([
+        ['a key that is the word true', { capacity: 'true', sinfo: 'true' }],
+        ['a key that is a number', { capacity: 0, sinfo: 1 }],
+        ['a key that is a map', { capacity: {}, sinfo: {} }],
+        ['a key that is a list', { capacity: [true], sinfo: [false] }]
+    ])('reads %s as the defaults', (_name, raw) => {
+        expect(parseHpcState(raw)).toStrictEqual({ capacity: true, sinfo: false });
+    });
+
+    it('answers the capacity before the sinfo, and only those keys', () => {
+        const held = parseHpcState({ sinfo: true, capacity: false, extra: 1 });
+        expect(Object.keys(held)).toStrictEqual(['capacity', 'sinfo']);
+        expect(held).toStrictEqual({ capacity: false, sinfo: true });
+    });
+
+    it('reads a held map one key at a time', () => {
+        expect(parseHpcState({ capacity: 'true', sinfo: true })).toStrictEqual({
+            capacity: true,
+            sinfo: true
+        });
+        expect(parseHpcState({ capacity: false, sinfo: 'true' })).toStrictEqual({
+            capacity: false,
+            sinfo: false
+        });
+    });
+});
+
+describe('the walltime of a job over times that are not clock times', () => {
+    const running = (time: string, limit: string) =>
+        ({
+            state: 'RUNNING',
+            time,
+            limit
+        }) as unknown as Parameters<typeof walltimeFraction>[0];
+
+    it.each([
+        ['01:00', '02:00', 0.5],
+        ['1-00:00:00', '2-00:00:00', 0.5],
+        ['05', '10', 0.5],
+        ['3:00:00', '1:00:00', 1],
+        ['', '1:00', 0],
+        ['x', '1:00', null],
+        ['1:00', 'UNLIMITED', null],
+        ['1:00', 'INVALID', null],
+        ['1:00', '', null],
+        ['1:00', '0:00', null],
+        ['1:00', '0', null],
+        ['Infinity', '1:00', 1],
+        ['1:00', 'Infinity', 0],
+        ['1:xx', '2:00', null]
+    ])('reads %j of %j as %j', (time, limit, expected) => {
+        expect(walltimeFraction(running(time, limit))).toStrictEqual(expected);
+    });
+
+    it('reads a job that is not running as none', () => {
+        const job = { state: 'PENDING', time: '1:00', limit: '2:00' };
+        expect(
+            walltimeFraction(job as unknown as Parameters<typeof walltimeFraction>[0])
+        ).toBeNull();
+    });
+});
+
+describe('the HPC words over values that are not the ones expected', () => {
+    it.each([
+        ['2026-09-11T12:30:00', '09-11 12:30'],
+        ['2026-09-11T12:30', '09-11 12:30'],
+        ['2026-09-11 12:30:00', '2026-09-11 12:30:00'],
+        ['N/A', 'N/A'],
+        ['', ''],
+        ['Unknown', 'Unknown']
+    ])('labels the start %j as %j', (value, expected) => {
+        expect(startLabel(value)).toBe(expected);
+    });
+
+    it.each([
+        [100, 'green'],
+        [90, 'green'],
+        [89.9, 'amber'],
+        [25, 'amber'],
+        [24.9, 'red'],
+        [0, 'red'],
+        [-1, 'red'],
+        [Number.POSITIVE_INFINITY, 'green'],
+        [Number.NaN, 'amber'],
+        [null, undefined]
+    ])('tones an efficiency of %j as %j', (pct, expected) => {
+        expect(efficiencyTone(pct)).toBe(expected);
+    });
+
+    it.each([
+        ['RUNNING', 'green'],
+        ['PENDING', 'amber'],
+        ['running', 'slate'],
+        ['', 'slate'],
+        ['COMPLETED', 'slate']
+    ])('tones the state %j as %j', (state, expected) => {
+        expect(stateTone(state)).toBe(expected);
+    });
+
+    it('counts a partition row by the start of its state, whatever the case', () => {
+        const rows = [
+            { partition: 'gpu', avail: 'up', nodes: 1, state: 'IDLE', gres: '' },
+            { partition: 'gpu', avail: 'up', nodes: 2, state: 'Mixed', gres: '' },
+            { partition: 'gpu', avail: 'up', nodes: 4, state: 'drained', gres: '' },
+            { partition: 'cpu', avail: 'up', nodes: 8, state: 'idle~', gres: 'gpu:1' },
+            { partition: 'cpu', avail: 'up', nodes: 16, state: '', gres: '' }
+        ];
+        expect(partitionMeters(rows)).toStrictEqual([
+            { name: 'gpu', idle: 1, mixed: 2, allocated: 4, total: 7, gpu: true },
+            { name: 'cpu', idle: 8, mixed: 0, allocated: 16, total: 24, gpu: true }
+        ]);
+    });
+});

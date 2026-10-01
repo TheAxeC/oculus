@@ -2,6 +2,7 @@
 // Fixtures keep each rule independent of Svelte and the live hub.
 
 import { describe, expect, it } from 'vitest';
+import { describeOffFacets } from './off-facets.ts';
 import {
     freeTone,
     isBiennial,
@@ -244,3 +245,101 @@ describe('the venues by category', () => {
         expect(split.conferences.map((one) => one.id)).toEqual(['c1']);
     });
 });
+
+describe('the month a timeline is read at', () => {
+    const venues = [
+        venue('a', { deadlineMonth: 'Mar', heldMonth: 'Sep' }),
+        venue('b', { deadlineMonth: 'Dec' }),
+        venue('c', { deadlineMonth: 'jan' }),
+        venue('d', { deadlineMonth: 'Mar' })
+    ];
+    const fromDecember = [
+        ['b', 12, 0],
+        ['c', 1, 1],
+        ['a', 3, 3],
+        ['d', 3, 3]
+    ];
+    const fromJanuary = [
+        ['c', 1, 0],
+        ['a', 3, 2],
+        ['d', 3, 2],
+        ['b', 12, 11]
+    ];
+
+    it.each([
+        ['text of a number', '5', [], fromDecember],
+        ['text of a number above the months', '12', [], fromDecember],
+        ['an empty word', '', [], fromDecember],
+        ['a word that is no month', 'xyz', [], fromDecember],
+        [
+            'a month word',
+            'May',
+            [5],
+            [
+                ['b', 12, 7],
+                ['c', 1, 8],
+                ['a', 3, 10],
+                ['d', 3, 10]
+            ]
+        ],
+        [
+            'a month word with spaces and case',
+            ' may ',
+            [5],
+            [
+                ['b', 12, 7],
+                ['c', 1, 8],
+                ['a', 3, 10],
+                ['d', 3, 10]
+            ]
+        ],
+        [
+            'a longer month word',
+            'Sept',
+            [9],
+            [
+                ['b', 12, 3],
+                ['c', 1, 4],
+                ['a', 3, 6],
+                ['d', 3, 6]
+            ]
+        ],
+        ['December', 12, [12], fromDecember],
+        ['January', 1, [1], fromJanuary],
+        ['zero', 0, [1], fromJanuary],
+        ['below the months', -3, [1], fromJanuary],
+        ['minus infinity', -Infinity, [1], fromJanuary],
+        ['above the months', 13, [12], fromDecember],
+        ['infinity', Infinity, [12], fromDecember],
+        [
+            'between two months',
+            5.5,
+            [],
+            [
+                ['b', 12, 6.5],
+                ['c', 1, 7.5],
+                ['a', 3, 9.5],
+                ['d', 3, 9.5]
+            ]
+        ],
+        [
+            'NaN',
+            NaN,
+            [],
+            [
+                ['a', 3, NaN],
+                ['b', 12, NaN],
+                ['c', 1, NaN],
+                ['d', 3, NaN]
+            ]
+        ]
+    ])('reads %s', (_label, today, current, next) => {
+        const read = timeline(venues, today);
+        expect(read.months.filter((month) => month.current).map((month) => month.index)).toEqual(
+            current
+        );
+        expect(read.next.map((one) => [one.venue.id, one.month, one.distance])).toEqual(next);
+    });
+});
+
+describeOffFacets('venues', (off) => parseVenuesState({ off }).off);

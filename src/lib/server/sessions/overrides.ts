@@ -14,7 +14,7 @@ import { isAbsolute, join } from 'node:path';
 import { plain } from '../core/changes.ts';
 import { z } from 'zod';
 import { isMap, readJson, writeJsonAtomic } from '../core/json.ts';
-import { mapShape, readAs } from '../core/shapes.ts';
+import { mapShape, readAs } from '../../data/shapes/shapes.ts';
 import type { ChangeRecord } from '../core/changes.ts';
 
 /** What one session's entry may hold. Any other key the file carries is kept but not read. */

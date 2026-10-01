@@ -14,7 +14,8 @@ import {
     choicesFor,
     fieldValues,
     formFields,
-    formSections
+    formSections,
+    type FormField
 } from '../../../src/lib/state/forms/schema.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { Id, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
@@ -265,3 +266,259 @@ describe('the fields of one section of the manifest form', () => {
         expect(fieldsOfSection(fields, 'one').map((one) => one.field)).toEqual(['a', 'c']);
     });
 });
+
+/** A merged config holding only this `manifest_schema`. */
+function withSchema(schema: unknown): Record<string, unknown> {
+    return { manifest_schema: schema };
+}
+
+/** The field of a schema row that says nothing: every key present, the empty ones undefined. */
+function bare(field: string, over: Record<string, unknown> = {}): Record<string, unknown> {
+    return {
+        field,
+        label: field,
+        help: undefined,
+        type: '',
+        section: '',
+        from: undefined,
+        options: undefined,
+        ...over
+    };
+}
+
+describe('the sections of a schema of the wrong shape', () => {
+    it.each([
+        ['no manifest_schema', {}, []],
+        ['a manifest_schema that is a list', withSchema([]), []],
+        ['a manifest_schema that is a string', withSchema('x'), []],
+        ['a manifest_schema that is null', withSchema(null), []],
+        ['no sections', withSchema({}), []],
+        ['sections that are an empty list', withSchema({ sections: [] }), []],
+        ['sections that are a list of names', withSchema({ sections: ['a', 'b'] }), []],
+        ['sections that are a string', withSchema({ sections: 'x' }), []],
+        ['sections that are null', withSchema({ sections: null }), []],
+        [
+            'sections naming some words and some not',
+            withSchema({ sections: { a: 'A', b: 3, c: null, d: ['D'], e: 'E', f: '' } }),
+            ['A', 'E', '']
+        ],
+        [
+            'a section keyed __proto__',
+            withSchema({ sections: parsed('{"__proto__":"Proto","a":"A"}') }),
+            ['Proto', 'A']
+        ]
+    ])('reads %s', (_name, config, expected) => {
+        expect(formSections(config)).toStrictEqual(expected);
+    });
+});
+
+describe('the fields of a schema of the wrong shape', () => {
+    it.each([
+        ['no manifest_schema', {}],
+        ['a manifest_schema that is a list', withSchema([])],
+        ['no fields', withSchema({})],
+        ['fields that are an empty list', withSchema({ fields: [] })],
+        ['fields that are a list of rows', withSchema({ fields: [{ label: 'A' }] })],
+        ['fields that are a string', withSchema({ fields: 'x' })],
+        ['fields that are null', withSchema({ fields: null })]
+    ])('reads %s as no fields', (_name, config) => {
+        expect(formFields(config)).toStrictEqual([]);
+    });
+
+    it('leaves out a field row that is no map, and keeps the order of the rest', () => {
+        const found = formFields(
+            withSchema({ fields: { a: 'x', b: [], c: null, d: {}, e: 3, f: { label: 'F' } } })
+        );
+        expect(found).toStrictEqual([bare('d'), bare('f', { label: 'F' })]);
+    });
+
+    it('reads a key of the wrong type as the key it leaves out', () => {
+        const row = { label: 3, help: 4, type: 5, section: 6, from: 7, options: 8 };
+        expect(formFields(withSchema({ fields: { e: row } }))).toStrictEqual([bare('e')]);
+    });
+
+    it('reads an empty word as no word, a label as the field name', () => {
+        const row = { label: '', help: '', type: '', section: '', from: '', options: [] };
+        expect(formFields(withSchema({ fields: { f: row } }))).toStrictEqual([
+            bare('f', { options: [] })
+        ]);
+    });
+
+    it('keeps every word a field row carries', () => {
+        const row = { label: 'G', help: 'H', type: 'text', section: 's', from: 'venues' };
+        expect(formFields(withSchema({ fields: { g: row } }))).toStrictEqual([
+            bare('g', { label: 'G', help: 'H', type: 'text', section: 's', from: 'venues' })
+        ]);
+    });
+
+    it.each([
+        ['strings and other things', ['a', 1, null, 'b', {}, ['c'], ''], ['a', 'b', '']],
+        ['a number', [1], []],
+        ['nothing', [], []],
+        ['a map', { 0: 'a' }, undefined],
+        ['a number instead of a list', 1, undefined],
+        ['a string instead of a list', 'a', undefined],
+        ['null', null, undefined]
+    ])('reads options holding %s', (_name, options, expected) => {
+        const found = formFields(withSchema({ fields: { f: { options } } }));
+        expect(found).toStrictEqual([bare('f', { options: expected })]);
+    });
+
+    it('answers a field as its name, label, help, type, section, from and options, all present', () => {
+        const found = formFields(withSchema({ fields: { f: {} } }));
+        expect(Object.keys(found[0])).toStrictEqual([
+            'field',
+            'label',
+            'help',
+            'type',
+            'section',
+            'from',
+            'options'
+        ]);
+    });
+
+    it('keeps a field named __proto__', () => {
+        const fields = parsed('{"__proto__":{"label":"P","type":"text"},"a":{}}');
+        expect(formFields(withSchema({ fields })).map((one) => one.field)).toStrictEqual([
+            '__proto__',
+            'a'
+        ]);
+    });
+});
+
+describe('the choices of a vocabulary of the wrong shape', () => {
+    const field = (over: Partial<FormField> = {}): FormField => ({
+        field: 'f',
+        label: 'f',
+        type: 'select',
+        section: 's',
+        ...over
+    });
+
+    it('reads a vocabulary list item by item', () => {
+        const vocab = [
+            'a',
+            3,
+            null,
+            { key: 'k' },
+            { key: 'k2', label: '' },
+            { key: 3, label: 'x' },
+            { label: 'only' },
+            { key: 'k3', label: 'L3' },
+            ['k4'],
+            'a',
+            { key: 'k5', label: 5 }
+        ];
+        const found = choicesFor(field({ from: 'vocab' }), null, { vocab });
+        expect(found).toStrictEqual([
+            { id: 'a', label: 'a' },
+            { id: 'k', label: 'k' },
+            { id: 'k2', label: 'k2' },
+            { id: 'k3', label: 'L3' },
+            { id: 'a', label: 'a' },
+            { id: 'k5', label: 'k5' }
+        ]);
+        expect(Object.keys(found[1])).toStrictEqual(['id', 'label']);
+    });
+
+    it.each([
+        ['a map', { a: 'b' }],
+        ['a string', 'a'],
+        ['null', null],
+        ['a number', 3],
+        ['nothing', undefined]
+    ])('offers nothing for a vocabulary that is %s', (_name, vocab) => {
+        expect(choicesFor(field({ from: 'vocab' }), null, { vocab })).toStrictEqual([]);
+    });
+
+    it.each([['__proto__'], ['constructor'], ['toString'], ['missing']])(
+        'offers nothing for a source named %s',
+        (from) => {
+            expect(choicesFor(field({ from }), null, {})).toStrictEqual([]);
+        }
+    );
+
+    it('offers a literal list of options before any source, an empty list included', () => {
+        expect(choicesFor(field({ options: [], from: 'venues' }), snapshot(), {})).toStrictEqual(
+            []
+        );
+        expect(choicesFor(field({ options: ['a'], from: 'vocab' }), null, {})).toStrictEqual([
+            { id: 'a', label: 'a' }
+        ]);
+    });
+
+    it('labels an entity by the first of its keys that is a word, and else by its id', () => {
+        const held = snapshot();
+        held.entities.venues = {
+            c: { id: 'c', short: 'S', name: 'x' },
+            b: { id: 'b', short: 3, name: 'N' },
+            a: { id: 'a', short: '', name: '' }
+        } as unknown as Snapshot['entities']['venues'];
+        expect(choicesFor(field({ from: 'venues' }), held, {})).toStrictEqual([
+            { id: 'a', label: 'a' },
+            { id: 'b', label: 'N' },
+            { id: 'c', label: 'S' }
+        ]);
+    });
+});
+
+describe('the values and the text of a form over the wrong type', () => {
+    it('opens a pin as ticked only when the project says true', () => {
+        for (const [pin, expected] of [
+            [true, true],
+            [false, false],
+            ['true', false],
+            [1, false],
+            [undefined, false]
+        ] as [unknown, boolean][]) {
+            expect(fieldValues(project({ pin } as Partial<Project>)).pin).toBe(expected);
+        }
+    });
+
+    it('opens the fields of a project without code availability or a domain as undefined', () => {
+        const values = fieldValues(project({ domainIds: [] }));
+        expect(values.domain).toBeUndefined();
+        expect('domain' in values).toBe(true);
+        expect(values['code_availability.status']).toBeUndefined();
+        expect('code_availability.status' in values).toBe(true);
+        expect(values['reproduced.date']).toBeUndefined();
+    });
+
+    it.each([
+        [
+            ['a', 1, null, 'b', {}, ['c']],
+            ['a', 'b']
+        ],
+        [[], []],
+        ['', []],
+        ['a', ['a']],
+        [3, []],
+        [{}, []],
+        [null, []],
+        [undefined, []],
+        [true, []]
+    ])('reads %j as a list of %j', (value, expected) => {
+        expect(asList(value)).toStrictEqual(expected);
+    });
+
+    it.each([
+        [undefined, ''],
+        [null, ''],
+        ['a', 'a'],
+        [3, '3'],
+        [Number.NaN, 'NaN'],
+        [Number.POSITIVE_INFINITY, 'Infinity'],
+        [true, 'true'],
+        [{}, ''],
+        [{ a: 'b' }, ''],
+        [[], ''],
+        [['a', 1, null, {}, true, ['b'], undefined], 'a\n1\n\n\ntrue\n\n']
+    ])('shows %j as the text %j', (value, expected) => {
+        expect(asText(value)).toStrictEqual(expected);
+    });
+});
+
+/** A JSON text read as the unknown value a saved record or a config holds. */
+function parsed(text: string): unknown {
+    return JSON.parse(text) as unknown;
+}

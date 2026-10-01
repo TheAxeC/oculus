@@ -25,7 +25,7 @@ import { readManifests } from '../../../data/sources/manifests.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
-import { mapShape, readAs } from '../../core/shapes.ts';
+import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import { insertRemoved, renderScalar, setFields } from '../yaml-edit.ts';
 import type { ChangeRecord, RemovedText } from '../../core/changes.ts';
 import type { FieldValue, Refusal, SetFieldsResult } from '../yaml-edit.ts';

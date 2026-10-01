@@ -16,7 +16,7 @@ import { collectionSchema } from '../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../data/snapshot/validate.ts';
 import { plain } from '../core/changes.ts';
 import { writeTextAtomic } from '../core/json.ts';
-import { mapShape, unchanged } from '../core/shapes.ts';
+import { mapShape, unchanged } from '../../data/shapes/shapes.ts';
 import {
     appendEntry,
     deleteEntry,

@@ -25,6 +25,14 @@ import type {
     GitTag,
     GitWorktree
 } from '../../../data/model/index.ts';
+import { z } from 'zod';
+import {
+    anyNumberShape,
+    fieldItemsShape,
+    mapOfShape,
+    mapShape,
+    readAs
+} from '../../../data/shapes/shapes.ts';
 import { worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
 import { t } from '../../shared/words/text.ts';
 import { changeTree, folderId, visibleRows } from './change-tree.ts';
@@ -139,22 +147,49 @@ export function diffState(subject: DiffSubject, label: string): DiffState {
     return { ...subject, id: `${sideOf(subject)}:${subject.root}:${subject.path}`, label };
 }
 
+/** The fields of a diff pane's state, each read as itself and otherwise as its empty value. */
+const heldDiffShape = z
+    .object({
+        id: z.string().catch(''),
+        label: z.string().catch(''),
+        root: z.string().catch(''),
+        path: z.string().catch(''),
+        staged: z.boolean().catch(false),
+        worktree: z.boolean().catch(false),
+        commit: z.string().catch(''),
+        stash: z.string().catch(''),
+        group: z.enum(['staged', 'changed']).optional().catch(undefined),
+        line: anyNumberShape.catch(0)
+    })
+    .transform((held): DiffState => ({
+        id: held.id,
+        label: held.label,
+        root: held.root,
+        path: held.path,
+        staged: held.staged,
+        worktree: held.worktree,
+        commit: held.commit,
+        stash: held.stash,
+        group: held.group,
+        line: held.line
+    }));
+
 /** The diff pane's state out of what an instance carries, each field read defensively. */
 export function heldDiff(state: unknown): DiffState {
-    const map = (state ?? {}) as Partial<DiffState>;
-    const text = (value: unknown): string => (typeof value === 'string' ? value : '');
-    return {
-        id: text(map.id),
-        label: text(map.label),
-        root: text(map.root),
-        path: text(map.path),
-        staged: map.staged === true,
-        worktree: map.worktree === true,
-        commit: text(map.commit),
-        stash: text(map.stash),
-        group: map.group === 'staged' || map.group === 'changed' ? map.group : undefined,
-        line: typeof map.line === 'number' ? map.line : 0
-    };
+    return (
+        readAs(heldDiffShape, state) ?? {
+            id: '',
+            label: '',
+            root: '',
+            path: '',
+            staged: false,
+            worktree: false,
+            commit: '',
+            stash: '',
+            group: undefined,
+            line: 0
+        }
+    );
 }
 
 /** The address one diff pane reads, by what it is over. */
@@ -240,12 +275,13 @@ export type DiffView = {
     folded: string[];
 };
 
-/** A plain object, and nothing else, as the instance state stores one. */
-function objectOf(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
+/** A diff pane's remembered choices as the instance state stores them, each one repaired alone. */
+const diffViewShape = z.object({
+    mode: z.enum(['side', 'inline']).catch('side'),
+    views: mapOfShape(mapShape).catch(() => ({})),
+    unchanged: z.enum(['folded', 'shown']).catch('folded'),
+    folded: fieldItemsShape
+});
 
 /**
  * A diff pane's remembered choices, every field defaulted: side by side, the unchanged runs
@@ -254,23 +290,17 @@ function objectOf(value: unknown): Record<string, unknown> | null {
  * not among them is dropped the same way.
  */
 export function diffViewOf(state: unknown, paths?: readonly string[]): DiffView {
-    const map = objectOf(state) ?? {};
-    const views: Record<string, object> = {};
-    for (const [path, view] of Object.entries(objectOf(map.views) ?? {})) {
-        const kept = objectOf(view);
-        if (kept !== null && (paths === undefined || paths.includes(path))) views[path] = kept;
-    }
-    const folded = Array.isArray(map.folded)
-        ? map.folded.filter(
-              (one): one is string =>
-                  typeof one === 'string' && (paths === undefined || paths.includes(one))
-          )
-        : [];
+    const held = readAs(diffViewShape, state) ?? {
+        mode: 'side' as const,
+        views: {},
+        unchanged: 'folded' as const,
+        folded: []
+    };
+    const among = (path: string): boolean => paths === undefined || paths.includes(path);
     return {
-        mode: map.mode === 'inline' ? 'inline' : 'side',
-        views,
-        unchanged: map.unchanged === 'shown' ? 'shown' : 'folded',
-        folded
+        ...held,
+        views: Object.fromEntries(Object.entries(held.views).filter(([path]) => among(path))),
+        folded: held.folded.filter(among)
     };
 }
 
@@ -406,23 +436,27 @@ export type RepositoriesView = {
     reveal: '' | 'branches';
 };
 
+const repositoriesViewShape = z.object({
+    root: z.string().catch(''),
+    collapsed: fieldItemsShape,
+    commit: z.string().catch(''),
+    mode: z.enum(['list', 'tree']).catch('list'),
+    reveal: z.enum(['', 'branches']).catch('')
+}) satisfies z.ZodType<RepositoriesView>;
+
 /**
  * The Repositories view's instance state, every field defaulted, so a state from any source draws.
  */
 export function repositoriesViewOf(state: unknown): RepositoriesView {
-    const map =
-        typeof state === 'object' && state !== null && !Array.isArray(state)
-            ? (state as Record<string, unknown>)
-            : {};
-    return {
-        root: typeof map.root === 'string' ? map.root : '',
-        collapsed: Array.isArray(map.collapsed)
-            ? map.collapsed.filter((one): one is string => typeof one === 'string')
-            : [],
-        commit: typeof map.commit === 'string' ? map.commit : '',
-        mode: map.mode === 'tree' ? 'tree' : 'list',
-        reveal: map.reveal === 'branches' ? 'branches' : ''
-    };
+    return (
+        readAs(repositoriesViewShape, state) ?? {
+            root: '',
+            collapsed: [],
+            commit: '',
+            mode: 'list',
+            reveal: ''
+        }
+    );
 }
 
 /**

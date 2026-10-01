@@ -1,9 +1,9 @@
 // Layer 2, server. Reading and writing small JSON and text files whole and atomically, the map
 // guard `isMap` re-exported for the readers of those files, and the one write chain a process
-// holds. The zod helpers the readers share are in shapes.ts, which cannot reach the disk. The
-// sessions layer's transcript cache and per-session overrides, the file browser's workspaces and
-// notes, the change log, the chat launcher and the image uploads all write through this module,
-// which is why it sits in server/core, the bottom of the server's folder order.
+// holds. The zod helpers the readers share are in data/shapes/shapes.ts, which cannot reach the
+// disk. The sessions layer's transcript cache and per-session overrides, the file browser's
+// workspaces and notes, the change log, the chat launcher and the image uploads all write through
+// this module, which is why it sits in server/core, the bottom of the server's folder order.
 //
 // A file is written whole and atomically, by write-file-atomic: a half-written overrides file would
 // lose the user's pins, and a half-written cache would be discarded on the next read anyway. The

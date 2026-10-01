@@ -183,6 +183,14 @@ describe('what a diff pane keeps of its files', () => {
         expect(diffViewOf({ folded: ['a', 4, null] }).folded).toEqual(['a']);
     });
 
+    it('skips an own __proto__ key of the view states, which would replace the map prototype', () => {
+        const saved = JSON.parse('{"views":{"__proto__":{"a":1},"x.txt":{}}}') as unknown;
+        const views = diffViewOf(saved).views;
+        expect(Object.keys(views)).toEqual(['x.txt']);
+        expect(Object.getPrototypeOf(views)).toBe(Object.prototype);
+        expect((views as { a?: number }).a).toBeUndefined();
+    });
+
     it('drops a folded file that is not among the files of the diff', () => {
         expect(diffViewOf({ folded: ['a', 'gone'] }, ['a', 'b']).folded).toEqual(['a']);
         expect(diffViewOf({ folded: ['a', 'gone'] }).folded).toEqual(['a', 'gone']);

@@ -70,8 +70,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // decide which links to look for on disk. `data/helpers/files/paths` holds the `/` path rules (a
 // path's last name, the path under a folder, the deepest folder holding a target) that the file
 // browser, the source tab and the status bar read a root or a repository by, so the three agree on
-// which one holds a file. The model's own concern modules (`data/model-*`) are reached through the
-// facade only, which is why they are not listed here.
+// which one holds a file. `data/shapes/shapes` holds the zod helpers (a schema that answers its
+// input, the map and number schemas, the quick path) that the server's readers and the state
+// layer's readers of untyped input share, so both read by one rule. The model's own concern
+// modules (`data/model-*`) are reached through the facade only, which is why they are not listed
+// here.
 //
 // `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
@@ -117,6 +120,7 @@ const ALLOWED: Record<string, string[]> = {
         'state/**',
         'data/model',
         'data/helpers/guards',
+        'data/shapes/shapes',
         'data/accounts/calendar',
         'data/accounts/mail',
         'data/accounts/connect',

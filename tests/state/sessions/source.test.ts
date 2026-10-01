@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     loadSource,
+    loadSourceReadonly,
     sourceFileUrl,
     sourceInfoUrl,
     sourceTabState
@@ -457,5 +458,119 @@ describe('a save whose draft went while it was out', () => {
             message: ''
         });
         expect(sourceDirty(tab)).toBe(false);
+    });
+});
+
+describe('a draft read from an instance state of the wrong shape', () => {
+    const NO_DRAFT = {
+        text: '',
+        saved: '',
+        loaded: false,
+        readIn: undefined,
+        error: '',
+        message: '',
+        failed: false,
+        rendered: true,
+        blame: false,
+        readonly: false,
+        truncated: false,
+        file: '',
+        language: '',
+        indent: null
+    };
+
+    it.each([
+        [
+            'a text that is a number, a read-in that is null, a rendered flag that is a string',
+            { text: 3, readIn: null, rendered: 'no', language: 3 },
+            NO_DRAFT
+        ],
+        [
+            'flags that are truthy and not true',
+            { loaded: 1, failed: 'true', blame: 1, readonly: 'x', truncated: 1, rendered: 0 },
+            NO_DRAFT
+        ],
+        ['a list', [], NO_DRAFT],
+        ['a string', 'x', NO_DRAFT],
+        ['null', null, NO_DRAFT],
+        ['nothing held', undefined, NO_DRAFT],
+        [
+            'every field of its type',
+            {
+                text: 't',
+                saved: 's',
+                loaded: true,
+                readIn: 'r',
+                error: 'e',
+                message: 'm',
+                failed: true,
+                rendered: false,
+                blame: true,
+                readonly: true,
+                truncated: true,
+                file: 'f',
+                language: 'l',
+                indent: { tabs: false, size: 2 }
+            },
+            {
+                text: 't',
+                saved: 's',
+                loaded: true,
+                readIn: 'r',
+                error: 'e',
+                message: 'm',
+                failed: true,
+                rendered: false,
+                blame: true,
+                readonly: true,
+                truncated: true,
+                file: 'f',
+                language: 'l',
+                indent: { tabs: false, size: 2 }
+            }
+        ]
+    ])('answers %s as the draft it names, with every key present', (_name, held, expected) => {
+        client.ui.setInstanceState('one', held);
+        const draft = sourceDraft('one');
+        expect(draft).toStrictEqual(expected);
+        expect(Object.keys(draft).toSorted()).toStrictEqual(Object.keys(NO_DRAFT).toSorted());
+    });
+
+    it.each([
+        ['tabs and a size of 4', { tabs: true, size: 4 }, { tabs: true, size: 4 }],
+        ['no tabs and a size of 1', { tabs: false, size: 1 }, { tabs: false, size: 1 }],
+        ['tabs and a size of 8', { tabs: true, size: 8 }, { tabs: true, size: 8 }],
+        ['a key beyond the two', { tabs: true, size: 4, extra: 1 }, { tabs: true, size: 4 }],
+        ['tabs that are a string', { tabs: 'yes', size: 4 }, null],
+        ['a size of 9', { tabs: true, size: 9 }, null],
+        ['a size of 0', { tabs: false, size: 0 }, null],
+        ['a size that is not whole', { tabs: true, size: 1.5 }, null],
+        ['a size that is NaN', { tabs: true, size: Number.NaN }, null],
+        ['a size that is infinite', { tabs: true, size: Infinity }, null],
+        ['a size that is a string', { tabs: true, size: '4' }, null],
+        ['a list', [], null],
+        ['null', null, null]
+    ])('reads an indentation of %s', (_name, indent, expected) => {
+        client.ui.setInstanceState('one', { indent });
+        expect(sourceDraft('one').indent).toStrictEqual(expected);
+    });
+});
+
+describe('the answer of the route that says whether a file is locked', () => {
+    async function lockedBy(text: string, status = 200): Promise<boolean> {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
+        return loadSourceReadonly('hub', 'a.md');
+    }
+
+    it.each([
+        ['readonly true', '{"readonly":true}', 200, true],
+        ['readonly the string true', '{"readonly":"true"}', 200, false],
+        ['readonly absent', '{}', 200, false],
+        ['a list', '[]', 200, false],
+        ['null', 'null', 200, false],
+        ['text that is not JSON', 'nope', 200, false],
+        ['a refusal that says readonly true', '{"readonly":true}', 500, false]
+    ])('is the answer of %s', async (_name, text, status, expected) => {
+        expect(await lockedBy(text, status)).toBe(expected);
     });
 });

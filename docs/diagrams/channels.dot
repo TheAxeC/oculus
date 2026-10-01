@@ -42,6 +42,7 @@ digraph channels {
     }
     subgraph "cluster_lost" {
         label="not placed"; style=dashed;
+        "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:71" [label="src/lib/state/client/queries.svelte.ts:71 .subscribe((event)"];
         "? src/lib/state/system/config/rows.ts:217" [label="src/lib/state/system/config/rows.ts:217 message('loading', file)"];
         "? src/lib/state/system/config/rows.ts:219" [label="src/lib/state/system/config/rows.ts:219 message('unreadable', file, held.error)"];
@@ -62,6 +63,7 @@ digraph channels {
     subgraph "cluster_read state" {
         label="state"; style=solid;
         "state/client/context";
+        "state/client/entities";
         "state/client/queries";
         "state/client/selectors";
         "state/client/socket";
@@ -71,7 +73,6 @@ digraph channels {
         "state/life/calendar";
         "state/life/present";
         "state/sessions/terminals";
-        "state/sources/fs";
         "state/sources/search";
         "state/system/audit";
         "state/system/config/browser";
@@ -108,6 +109,7 @@ digraph channels {
         label="routes"; style=solid;
         "routes/+page";
     }
+    "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
     "? src/lib/state/client/queries.svelte.ts:71" -> "state/client/queries";
     "? src/lib/state/system/config/rows.ts:217" -> "state/system/config/rows";
     "? src/lib/state/system/config/rows.ts:219" -> "state/system/config/rows";
@@ -150,7 +152,6 @@ digraph channels {
     "ch feeds" -> "routes/+page" [style=dashed];
     "ch feeds" -> "state/feeds/feeds";
     "ch files" -> "routes/+page" [style=dashed];
-    "ch files" -> "state/sources/fs";
     "ch files" -> "state/system/docs";
     "ch git" -> "routes/+page" [style=dashed];
     "ch git" -> "routes/+page";

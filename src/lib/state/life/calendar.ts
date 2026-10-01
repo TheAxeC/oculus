@@ -11,10 +11,11 @@
 // A moment's day in the page's own zone is data/helpers/dates.ts's localDate, handed on from here
 // to the view.
 
+import { z } from 'zod';
 import { calendarKey } from '../../data/accounts/calendar.ts';
 import { fillPlaceholders } from '../../data/helpers/finding-text.ts';
 import { localDate } from '../../data/helpers/dates.ts';
-import { isMap } from '../../data/helpers/guards.ts';
+import { readAs } from '../../data/shapes/shapes.ts';
 import type { CalendarAccount, CalendarEvent, CalendarPayload } from '../../data/model/index.ts';
 export { calendarKey } from '../../data/accounts/calendar.ts';
 export { localDate } from '../../data/helpers/dates.ts';
@@ -102,11 +103,12 @@ function ahead(event: CalendarEvent, now: Date): boolean {
     return Number.isNaN(end.getTime()) || end.getTime() > now.getTime();
 }
 
+/** The view a Calendar instance names, an unknown one read as the week. */
+const calendarStateShape = z.object({ view: z.enum(CALENDAR_VIEWS).catch(DEFAULT_VIEW) });
+
 /** The instance state a Calendar keeps, a missing or unknown view read as the week. */
 export function parseCalendarState(raw: unknown): CalendarState {
-    const view = isMap(raw) ? raw.view : undefined;
-    const known = CALENDAR_VIEWS.find((one) => one === view);
-    return { view: known ?? DEFAULT_VIEW };
+    return readAs(calendarStateShape, raw) ?? { view: DEFAULT_VIEW };
 }
 
 /**

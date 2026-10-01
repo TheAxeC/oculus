@@ -5,7 +5,13 @@ import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts'
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
 import { t } from '../../shared/words/text.ts';
 import { waitingLabel } from '../waiting.ts';
-import type { BoardItem, BoardStats, TypeCount, VenueCount } from './presets.ts';
+import {
+    setting,
+    type BoardItem,
+    type BoardStats,
+    type TypeCount,
+    type VenueCount
+} from './presets.ts';
 
 /** The status chip the stats strip counts as ready to go out. */
 const SUBMIT_READY = 'submit-ready';
@@ -53,12 +59,6 @@ export function waitingLine(
         return { kind: 'blocked', text: t('project.helper.blocked_external') };
     }
     return null;
-}
-
-/** A number out of the merged config, and the fallback behavior.yml's own comment names. */
-function setting(config: Record<string, unknown>, key: string, fallback: number): number {
-    const value = config[key];
-    return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
 /**

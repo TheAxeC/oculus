@@ -10,6 +10,7 @@
 // the view says what a refused write said and never reads a provider itself. A command whose answer
 // never came, or came unreadable, is said in the same sentences the account controls use.
 
+import { optionalTextShape, readAs } from '../../data/shapes/shapes.ts';
 import type { InboxKind, InboxPayload, InboxThread } from '../../data/model/index.ts';
 import { splitInbox, untriagedActionable, type SplitInbox } from './inbox.ts';
 import { t } from '../shared/words/text.ts';
@@ -28,7 +29,8 @@ export type MailAnswer = { ok: boolean; error?: string };
 
 /** The sentence for a command the endpoint refused, or whose answer could not be read. */
 function refusal(code: unknown, failed: PostFailure): string {
-    if (typeof code === 'string') return t('inbox.refused', code);
+    const named = readAs(optionalTextShape, code);
+    if (named !== undefined && named !== null) return t('inbox.refused', named);
     if (failed === 'unreachable') return t('accounts.unreachable');
     if (failed === 'unreadable') return t('accounts.unreadable');
     return t('inbox.refused', '');

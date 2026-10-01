@@ -23,7 +23,9 @@ import {
     stats
 } from '../boards/board/index.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
+import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
+import { readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
 import { paintLimit } from '../../data/helpers/editor.ts';
 import { programApps, type ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
@@ -75,6 +77,12 @@ function inFolder(path: string | null, folder: string): boolean {
     if (path === null || path === '') return false;
     return pathUnder(folder, path) !== null;
 }
+
+/** `stale_lag_days`: a finite number. */
+const staleLagShape = z.number();
+
+/** `context_window`: a finite number above zero. */
+const contextWindowShape = z.number().gt(0);
 
 /** The joins over what the socket delivered, for one client. */
 export type SelectorsStore = {
@@ -165,8 +173,7 @@ export function createSelectors(
 
     /** `stale_lag_days` of config/behavior.yml: how far behind its documents a manifest may be. */
     function staleLag(): number {
-        const value = configMap().stale_lag_days;
-        return typeof value === 'number' && Number.isFinite(value) ? value : STALE_LAG;
+        return readAs(staleLagShape, configMap().stale_lag_days) ?? STALE_LAG;
     }
 
     /** The events and education entries that name one project. Empty before the first snapshot. */
@@ -223,7 +230,7 @@ export function createSelectors(
     function collectionOf(key: string): Collection | null {
         const snapshot = entities.portfolio();
         if (snapshot === null) return null;
-        return snapshot.entities.collections[key] ?? null;
+        return byKey(snapshot.entities.collections, key) ?? null;
     }
 
     /**
@@ -249,7 +256,8 @@ export function createSelectors(
      * hold.
      */
     function projectOf(id: Id): Project | null {
-        return entities.portfolio()?.entities.projects[id] ?? null;
+        const snapshot = entities.portfolio();
+        return snapshot === null ? null : (byKey(snapshot.entities.projects, id) ?? null);
     }
 
     /**
@@ -277,10 +285,7 @@ export function createSelectors(
 
     /** Dead archive outcomes from the merged vocabulary. */
     function archiveDead(): string[] {
-        const value = configMap().archive_dead;
-        return Array.isArray(value)
-            ? value.filter((item): item is string => typeof item === 'string')
-            : [];
+        return readAs(stringItemsShape, configMap().archive_dead) ?? [];
     }
 
     /** The edit form as config/catalogs/manifest-schema.yml describes it, in file order. */
@@ -309,8 +314,7 @@ export function createSelectors(
 
     /** The context window a meter measures against, `context_window` in config/behavior.yml. */
     function contextWindow(): number {
-        const held = configMap().context_window;
-        return typeof held === 'number' && Number.isFinite(held) && held > 0 ? held : 0;
+        return readAs(contextWindowShape, configMap().context_window) ?? 0;
     }
 
     /** Every grouped session of the payload, in the tree's own order. */
@@ -416,7 +420,8 @@ export function createSelectors(
     /** The git state of one workspace root, or null when the payload carries none for it. */
     function gitFor(workspace: string): GitState | null {
         if (workspace === '') return null;
-        return entities.git()?.[workspace] ?? null;
+        const states = entities.git();
+        return states === null ? null : (byKey(states, workspace) ?? null);
     }
 
     /**

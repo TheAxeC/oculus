@@ -10,7 +10,9 @@
 // display name alone, with the address beside it in smaller words, or the address when the line
 // names nobody.
 
+import { z } from 'zod';
 import { ageOf, mailKey } from '../../data/accounts/mail.ts';
+import { fieldItemsShape, readAs, searchRevealShape } from '../../data/shapes/shapes.ts';
 import { t } from '../shared/words/text.ts';
 export { ageOf, mailKey } from '../../data/accounts/mail.ts';
 export type { Age } from '../../data/accounts/mail.ts';
@@ -44,11 +46,11 @@ export type InboxState = {
     reveal?: string;
 };
 
-function record(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
+/** The fields a view instance keeps of the Inbox, each read as absent when of the wrong type. */
+const inboxStateShape = searchRevealShape.extend({
+    triagedOpen: z.boolean().catch(false),
+    drafts: fieldItemsShape
+});
 
 /** What a thread was classified as, and nothing when no note has classified it. */
 export function kindOf(thread: InboxThread): InboxKind | null {
@@ -150,14 +152,13 @@ export function archiveConfirm(thread: InboxThread, account: string): string {
 
 /** Read search and the triaged disclosure from one view instance. */
 export function parseInboxState(raw: unknown): InboxState {
-    const held = record(raw);
-    const drafts = Array.isArray(held?.drafts) ? held.drafts : [];
+    const held = readAs(inboxStateShape, raw) ?? { search: '', triagedOpen: false, drafts: [] };
     const state: InboxState = {
-        search: typeof held?.search === 'string' ? held.search : '',
-        triagedOpen: held?.triagedOpen === true,
-        drafts: drafts.filter((one): one is string => typeof one === 'string')
+        search: held.search,
+        triagedOpen: held.triagedOpen,
+        drafts: held.drafts
     };
-    if (typeof held?.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    if (held.reveal !== undefined) state.reveal = held.reveal;
     return state;
 }
 

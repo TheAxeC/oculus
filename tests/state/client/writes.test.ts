@@ -7,7 +7,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
-import { createWrites, writeTimeout } from '../../../src/lib/state/client/writes.svelte.ts';
+import {
+    createWrites,
+    writeTimeout,
+    type WriteAnswer
+} from '../../../src/lib/state/client/writes.svelte.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -39,6 +43,17 @@ describe('the time a write waits', () => {
         expect(writeTimeout({ writes: { timeout_seconds: 0 } })).toBeNull();
         expect(writeTimeout({ writes: { timeout_seconds: -3 } })).toBeNull();
         expect(writeTimeout({ writes: { timeout_seconds: '30' } })).toBeNull();
+    });
+
+    it.each([
+        [0, null],
+        [-1, null],
+        ['5', null],
+        [Number('1e999'), null],
+        [5, 5000],
+        [undefined, null]
+    ])('is read from a timeout_seconds of %p as %p', (seconds, wait) => {
+        expect(writeTimeout({ writes: { timeout_seconds: seconds } })).toBe(wait);
     });
 });
 
@@ -136,5 +151,102 @@ describe('a setting written by the page', () => {
         const sent = { kind: 'config-key', file: 'behavior.yml', key: 'changes.keep', value: 300 };
         expect(seen[0].init?.body).toBe(JSON.stringify(sent));
         expect(answer.changed).toEqual(['behavior.yml:changes.keep']);
+    });
+});
+
+/** A response object whose `json()` answers `body` itself, so a case can compare identity. */
+function answering(body: unknown, status = 200): Response {
+    return {
+        ok: status >= 200 && status < 300,
+        status,
+        json: () => Promise.resolve(body)
+    } as Response;
+}
+
+/** What the page makes of one write answered with `response`. */
+async function answered(response: Response): Promise<WriteAnswer> {
+    vi.stubGlobal('fetch', () => Promise.resolve(response));
+    return createWrites().send({ kind: 'manifest' });
+}
+
+const NOTHING = { output: undefined, branches: undefined, id: undefined };
+
+describe("a write's answer", () => {
+    it('hands on the lists and the strings of a body that has them', async () => {
+        const body = {
+            ok: true as const,
+            changed: ['a'],
+            refused: [{ field: 'f', reason: 'r' }],
+            output: 'o',
+            branches: [{ name: 'main', upstream: 'origin/main', current: true }],
+            id: 'x'
+        };
+        const answer = await answered(answering(body));
+        expect(answer).toStrictEqual(body);
+        expect(answer.changed).toBe(body.changed);
+        expect(answer.refused).toBe(body.refused);
+        expect(answer.branches).toBe(body.branches);
+    });
+
+    it.each([
+        ['a changed that is a string', { ok: true, changed: 'a' }],
+        ['a body that is a list', []],
+        ['an error that is a number on a 200', { ok: false, error: 3 }]
+    ])('is the empty success for %s', async (_name, body) => {
+        const answer = await answered(answering(body, 200));
+        expect(answer).toStrictEqual({ ok: true, changed: [], refused: [], ...NOTHING });
+    });
+
+    it.each([
+        ['an error that is a number', { ok: false, error: 3 }],
+        ['a body that is a list', []],
+        ['a refused that is a string', { refused: 'x' }]
+    ])('is HTTP 500 for %s on a 500', async (_name, body) => {
+        const answer = await answered(answering(body, 500));
+        expect(answer).toStrictEqual({ ok: false, changed: [], refused: [], error: 'HTTP 500' });
+    });
+
+    it('says the error text a failing answer carries', async () => {
+        const answer = await answered(answering({ error: 'no' }, 400));
+        expect(answer).toStrictEqual({ ok: false, changed: [], refused: [], error: 'no' });
+    });
+
+    it.each([
+        ['JSON null', () => answering(null, 200)],
+        ['text that is not JSON', () => new Response('<html>', { status: 200 })]
+    ])('is a failed read with the status text for %s on a 200', async (_name, make) => {
+        const answer = await answered(make());
+        expect(answer).toStrictEqual({
+            ok: false,
+            changed: [],
+            refused: [],
+            error: 'HTTP 200',
+            network: true
+        });
+    });
+
+    it.each([
+        ['JSON null', () => answering(null, 500)],
+        ['text that is not JSON', () => new Response('<html>', { status: 500 })]
+    ])('is the refusal with the status text for %s on a 500', async (_name, make) => {
+        const answer = await answered(make());
+        expect(answer).toStrictEqual({ ok: false, changed: [], refused: [], error: 'HTTP 500' });
+    });
+
+    it('leaves out the items of a list that are not what the list holds', async () => {
+        const good = { field: 'f', reason: 'r' };
+        const branch = { name: 'main', upstream: 'origin/main', current: false };
+        const answer = await answered(
+            answering({
+                changed: ['a', 3],
+                refused: [3, good, { field: 'g' }],
+                branches: [{}, branch]
+            })
+        );
+        expect(answer.changed).toStrictEqual(['a']);
+        expect(answer.refused).toStrictEqual([good]);
+        expect(answer.refused[0]).toBe(good);
+        expect(answer.branches).toStrictEqual([branch]);
+        expect(answer.branches?.[0]).toBe(branch);
     });
 });

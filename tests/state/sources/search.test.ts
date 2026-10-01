@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ALL_ROOTS } from '../../../src/lib/data/helpers/search.ts';
 import {
     answerOf,
+    emptySearchState,
     firstLine,
     hitParts,
     parseSearchState,
@@ -19,7 +20,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, setGlyphs, t } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
@@ -190,5 +191,286 @@ describe('the pure readers', () => {
             })
         ).toBe(9);
         expect(firstLine({ root: 'hub', path: 'a', hits: [] })).toBe(1);
+    });
+});
+
+/** An answer with `over` laid on the fields an empty answer holds. */
+function answerWith(over: Record<string, unknown>): Record<string, unknown> {
+    return { files: [], total: 0, truncated: false, ms: 0, failed: [], ...over };
+}
+
+const FILE_AT = { root: 'r', path: 'p' };
+
+/** A file of the hub's answer holding `hits` under a root and a path. */
+function fileOf(hits: unknown): unknown {
+    return { ...FILE_AT, hits };
+}
+
+describe('an answer read from stored or fetched data', () => {
+    it.each([
+        ['a hit whose line is text', [{ line: '3', text: 'x' }], []],
+        ['a hit whose text is a number', [{ line: 3, text: 7 }], []],
+        ['an item that is not a map', [null, [], 'x', 3], []],
+        [
+            'a hit holding text and a line only',
+            [{ line: 3, text: 'x' }],
+            [{ line: 3, column: 1, length: 0, text: 'x' }]
+        ],
+        [
+            'a hit whose column and length are text',
+            [{ line: 3, text: 'x', column: '2', length: '4' }],
+            [{ line: 3, column: 1, length: 0, text: 'x' }]
+        ],
+        [
+            'a hit whose numbers are not finite',
+            [{ line: NaN, text: 'x', column: Infinity, length: -1 }],
+            [{ line: NaN, column: Infinity, length: -1, text: 'x' }]
+        ],
+        [
+            'a hit with an empty text and an extra key',
+            [{ line: 1, text: '', extra: true, column: 4, length: 2 }],
+            [{ line: 1, column: 4, length: 2, text: '' }]
+        ]
+    ])('keeps of %s what it can read', (_label, hits, expected) => {
+        const held = answerOf({ files: [fileOf(hits)] });
+        expect(held).toStrictEqual(
+            answerWith({ files: [fileOf(expected)], total: expected.length })
+        );
+    });
+
+    it.each([
+        ['hits that are a map', {}],
+        ['hits that are text', 'x'],
+        ['hits that are null', null],
+        ['no hits at all', undefined]
+    ])('gives a file with %s no hits', (_label, hits) => {
+        const held = answerOf({ files: [{ ...FILE_AT, hits }] });
+        expect(held).toStrictEqual(answerWith({ files: [fileOf([])] }));
+    });
+
+    it.each([
+        ['without a path', { root: 'r', hits: [] }],
+        ['without a root', { path: 'p', hits: [] }],
+        ['whose root is a number', { root: 3, path: 'p', hits: [] }],
+        ['that is a list', []],
+        ['that is text', 'x'],
+        ['that is null', null]
+    ])('leaves out a file %s', (_label, file) => {
+        expect(answerOf({ files: [file, fileOf([])] })).toStrictEqual(
+            answerWith({ files: [fileOf([])] })
+        );
+    });
+
+    it('keeps a file whose root and path are empty', () => {
+        const held = answerOf({ files: [{ root: '', path: '', hits: [] }] });
+        expect(held?.files).toStrictEqual([{ root: '', path: '', hits: [] }]);
+    });
+
+    it.each([
+        ['a reason that is a number', [{ root: 'hub', reason: 3 }], [{ root: 'hub', reason: '' }]],
+        ['no reason', [{ root: 'hub' }], [{ root: 'hub', reason: '' }]],
+        ['a root that is a number', [{ root: 3, reason: 'r' }], []],
+        ['items that are not maps', [null, [], 'x', 7], []]
+    ])('reads a failure with %s', (_label, failed, expected) => {
+        expect(answerOf({ files: [], failed })).toStrictEqual(answerWith({ failed: expected }));
+    });
+
+    it.each([[{}], ['x'], [null], [[]]])('reads failed roots that are %j as none', (failed) => {
+        expect(answerOf({ files: [], failed })).toStrictEqual(answerWith({}));
+    });
+
+    it.each([[{}], ['x'], [null], [7], [undefined]])(
+        'refuses an answer whose files are %j',
+        (files) => {
+            expect(answerOf({ files })).toBeNull();
+        }
+    );
+
+    it.each([[null], [[]], ['x'], [5], [undefined], [true]])('refuses %j as an answer', (value) => {
+        expect(answerOf(value)).toBeNull();
+    });
+
+    it.each([
+        ['text', { total: '9' }, { total: 1 }],
+        ['NaN', { total: NaN }, { total: NaN }],
+        ['infinite', { total: Infinity }, { total: Infinity }],
+        ['negative', { total: -1 }, { total: -1 }],
+        ['more than the hits', { total: 5 }, { total: 5 }],
+        ['a milliseconds text', { ms: '5' }, { total: 1 }],
+        ['a milliseconds NaN', { ms: NaN }, { total: 1, ms: NaN }],
+        ['a milliseconds infinity', { ms: Infinity }, { total: 1, ms: Infinity }],
+        ['truncated as text', { truncated: 'true' }, { total: 1 }],
+        ['truncated as one', { truncated: 1 }, { total: 1 }],
+        ['truncated', { truncated: true }, { total: 1, truncated: true }]
+    ])('reads a count that is %s', (_label, over, expected) => {
+        const file = fileOf([{ line: 1, text: 'x' }]);
+        const hit = { line: 1, column: 1, length: 0, text: 'x' };
+        expect(answerOf({ files: [file], ...over })).toStrictEqual(
+            answerWith({ files: [fileOf([hit])], ...expected })
+        );
+    });
+
+    it('reads fields off the answer and not off an own __proto__ key of it', () => {
+        const parsed = JSON.parse(
+            '{"files":[{"root":"r","path":"p","hits":[{"line":1,"text":"x","__proto__":{"column":9}}]}],' +
+                '"__proto__":{"total":9}}'
+        ) as unknown;
+        const held = answerOf(parsed);
+        expect(held?.total).toBe(1);
+        expect(held?.files[0].hits[0].column).toBe(1);
+    });
+
+    it('answers its fields in one order, and no field it was not asked for', () => {
+        const held = answerOf({
+            files: [{ ...FILE_AT, extra: 1, hits: [{ text: 'x', length: 1, line: 1, column: 1 }] }],
+            failed: [{ reason: 'r', root: 'hub', extra: 1 }],
+            extra: 1
+        });
+        expect(Object.keys(held ?? {})).toEqual(['files', 'total', 'truncated', 'ms', 'failed']);
+        expect(Object.keys(held?.files[0] ?? {})).toEqual(['root', 'path', 'hits']);
+        expect(Object.keys(held?.files[0].hits[0] ?? {})).toEqual([
+            'line',
+            'column',
+            'length',
+            'text'
+        ]);
+        expect(Object.keys(held?.failed[0] ?? {})).toEqual(['root', 'reason']);
+    });
+});
+
+describe('a saved tab read back', () => {
+    const empty = emptySearchState(500);
+
+    it.each([[undefined], [null], [[]], ['x'], [5], [true]])(
+        'opens on the empty state for %j',
+        (saved) => {
+            expect(parseSearchState(saved, 500)).toStrictEqual(empty);
+        }
+    );
+
+    it.each([
+        ['a root that is absent', {}, ALL_ROOTS],
+        ['a root that is null', { root: null }, ''],
+        ['a root that is a number', { root: 3 }, ''],
+        ['a root that is empty', { root: '' }, ''],
+        ['a root that is named', { root: 'hub' }, 'hub']
+    ])('reads %s', (_label, saved, root) => {
+        expect(parseSearchState(saved, 500)).toStrictEqual({ ...empty, root });
+    });
+
+    it('reads a field of the wrong type as its default', () => {
+        const saved = {
+            q: 3,
+            word: 'true',
+            case: 1,
+            regex: null,
+            error: 3,
+            answer: { files: 'x' }
+        };
+        expect(parseSearchState(saved, 500)).toStrictEqual(empty);
+    });
+
+    it.each([
+        ['text', '9', 500],
+        ['NaN', NaN, 500],
+        ['infinite', Infinity, 500],
+        ['zero', 0, 500],
+        ['negative', -1, 500],
+        ['fractional', 7.9, 7],
+        ['above the cap', 1e9, 500],
+        ['within the cap', 100, 100]
+    ])('reads a max that is %s', (_label, max, expected) => {
+        expect(parseSearchState({ max }, 500).max).toBe(expected);
+    });
+
+    it('answers its fields in one order, and no field it was not asked for', () => {
+        const held = parseSearchState({ q: 'a', zzz: 1, error: 'e' }, 500);
+        expect(Object.keys(held)).toEqual([
+            'q',
+            'root',
+            'word',
+            'case',
+            'regex',
+            'max',
+            'answer',
+            'error'
+        ]);
+        expect(held).toMatchObject({ q: 'a', error: 'e' });
+    });
+
+    it('reads a field off the saved map and not off an own __proto__ key of it', () => {
+        expect(parseSearchState(JSON.parse('{"__proto__":{"q":"p"},"q":"s"}'), 500).q).toBe('s');
+        expect(parseSearchState(JSON.parse('{"__proto__":{"q":"p"}}'), 500).q).toBe('');
+    });
+});
+
+describe('the answer of the endpoint', () => {
+    /** Run one search whose request is answered by `response`, and read the tab afterwards. */
+    async function ran(response: () => Promise<Response>): Promise<ReturnType<typeof tabOf>> {
+        vi.stubGlobal('fetch', response);
+        client.search.setSearchState('one', { q: 'needle', root: 'hub' });
+        await client.search.runSearch('one', ['hub']);
+        return tabOf();
+    }
+
+    function tabOf(): { error: string; answer: unknown } {
+        const { error, answer } = client.search.searchState('one');
+        return { error, answer };
+    }
+
+    /** A response with a status and a json() of its own. */
+    function json(body: unknown, status: number): () => Promise<Response> {
+        const ok = status < 300;
+        return () => Promise.resolve({ ok, status, json: () => Promise.resolve(body) } as Response);
+    }
+
+    it.each([[[]], ['x'], [7], [{ files: 'x' }], [{}]])(
+        'says the search failed for a successful body %j without an answer in it',
+        async (body) => {
+            expect(await ran(json(body, 200))).toStrictEqual({
+                error: t('search.failed'),
+                answer: null
+            });
+        }
+    );
+
+    it.each([
+        [{ error: 'bad' }, 'bad'],
+        [{ error: '' }, ''],
+        [{ error: 3 }, 'HTTP 400'],
+        [{ error: null }, 'HTTP 400'],
+        [{}, 'HTTP 400'],
+        [[], 'HTTP 400'],
+        [null, 'HTTP 400'],
+        ['x', 'HTTP 400'],
+        [7, 'HTTP 400']
+    ])('says what a refused body %j said', async (body, error) => {
+        expect(await ran(json(body, 400))).toStrictEqual({ error, answer: null });
+    });
+
+    it('says the reason a request that failed gave', async () => {
+        expect(await ran(() => Promise.reject(new Error('offline')))).toStrictEqual({
+            error: 'offline',
+            answer: null
+        });
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- a reason that is no Error
+        expect(await ran(() => Promise.reject('down'))).toStrictEqual({
+            error: 'down',
+            answer: null
+        });
+    });
+
+    it.each([[() => Promise.resolve(new Response('<html>gateway</html>'))], [json(null, 200)]])(
+        'says the status of a successful body that is null or not JSON',
+        async (response) => {
+            expect(await ran(response)).toStrictEqual({ error: 'HTTP 200', answer: null });
+        }
+    );
+
+    it('says the status of a refused body that is not JSON', async () => {
+        const held = await ran(() =>
+            Promise.resolve(new Response('<html>gateway</html>', { status: 502 }))
+        );
+        expect(held).toStrictEqual({ error: 'HTTP 502', answer: null });
     });
 });

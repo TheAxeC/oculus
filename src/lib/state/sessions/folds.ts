@@ -5,6 +5,8 @@
 // a row says it last moved is data/helpers/dates.ts's ago, handed on from here to the views.
 // Pure over the payloads they are handed, so every one is checked without a browser.
 
+import { z } from 'zod';
+import { readAs } from '../../data/shapes/shapes.ts';
 import type {
     Area,
     GroupedSession,
@@ -95,15 +97,24 @@ export type ListFilter = { states: ListStateKey[]; agents: string[]; query: stri
 /** The filter a list starts with: everything but what was archived, and no search. */
 export const LIST_FILTER: ListFilter = { states: [], agents: [], query: '' };
 
+/** The entries of `known` that a held list names, in the order of `known`; none for a non-list. */
+function namedIn<T>(known: readonly T[]) {
+    return z
+        .array(z.unknown())
+        .catch([])
+        .transform((held) => known.filter((one) => held.includes(one)));
+}
+
+/** The filter an instance state names, each field as typed or unset. */
+const listFilterShape = z.object({
+    states: namedIn(LIST_STATES),
+    agents: namedIn(LIST_AGENTS),
+    query: z.string().catch('')
+}) satisfies z.ZodType<ListFilter>;
+
 /** The list's filter out of its instance state, anything malformed read as unset. */
 export function listFilterOf(state: unknown): ListFilter {
-    if (typeof state !== 'object' || state === null || Array.isArray(state)) return LIST_FILTER;
-    const held: Record<string, unknown> = { ...state };
-    const heldStates: unknown[] = Array.isArray(held.states) ? held.states : [];
-    const heldAgents: unknown[] = Array.isArray(held.agents) ? held.agents : [];
-    const states = LIST_STATES.filter((one) => heldStates.includes(one));
-    const agents = LIST_AGENTS.filter((one) => heldAgents.includes(one));
-    return { states, agents, query: typeof held.query === 'string' ? held.query : '' };
+    return readAs(listFilterShape, state) ?? LIST_FILTER;
 }
 
 /** A list with one entry taken out when it holds it and put in when it does not. */
@@ -209,10 +220,12 @@ export function timelineTurns(events: readonly SessionEvent[]): TimelineTurn[] {
     return turns;
 }
 
+/** The tokens an agent reports spending: a finite count, zero or more. */
+const tokensShape = z.number().min(0);
+
 /** The tokens an agent spent where its result reports them, else null. */
 export function agentTokens(agent: SizedAgent): number | null {
-    const tokens = agent.tokens;
-    return typeof tokens === 'number' && Number.isFinite(tokens) && tokens >= 0 ? tokens : null;
+    return readAs(tokensShape, agent.tokens);
 }
 
 /** Whether the reader pinned a session to the top of its group, from the overrides file. */

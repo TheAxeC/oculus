@@ -1,8 +1,12 @@
 // Layer 2, client state. Layout invariants and saved-form parsing live here because changes to the
 // persisted shape do not change workbench operations.
 //
-// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
+// A saved value is read part by part, each part through its own schema, so the sentence a refusal
+// gives names the part that failed first. A parsed value is taken for a map by
+// data/helpers/guards.ts's `isMap`; what the schemas leave to the checks below is how the parts
+// add up: sizes that sum to one, a minimum size, a folded index inside the children.
 
+import { z } from 'zod';
 import { tabsOf } from '../instance.ts';
 import {
     LAYOUT_VERSION,
@@ -22,9 +26,89 @@ import { refusedLeaves, settlePageLeaves, type Refusal } from '../nested.ts';
 import { normaliseSizes } from '../tree.ts';
 import { focusedPane, settleFocus } from '../workbench.ts';
 import { isMap } from '../../../../data/helpers/guards.ts';
+import { filledTextShape, mapShape, readAs, unchanged } from '../../../../data/shapes/shapes.ts';
 
 const SUM_EPS = 1e-6;
 const EPS = 1e-9;
+
+/** A list of anything; the items are read one by one where their sentence is. */
+const listShape = z.array(z.unknown());
+
+/** A page leaf's page: a name that carries something. */
+const leafPageShape = z.string().min(1);
+
+/** A split's direction. */
+const dirShape = z.enum(['row', 'col']);
+
+/** A split's sizes: finite numbers, answered as the list the file held. */
+const sizesShape = unchanged(z.array(z.number()));
+
+/** A whole number, which is what a folded index and a step of a path are. */
+const wholeNumberShape = z.number().refine(Number.isInteger);
+
+/** A tab's identity: an id that carries something, with the fields the tab keeps beside it. */
+const tabIdShape = z.object({
+    id: z.string().min(1),
+    view: z.unknown().optional(),
+    state: z.unknown().optional(),
+    preview: z.unknown().optional()
+});
+
+/** A tab's view, which is any text. */
+const tabViewShape = z.string();
+
+/** The id of the tab that is active: any text, the empty text for a pane with no tab. */
+const activeShape = z.string();
+
+/** A saved focus path: whole, non-negative steps, answered as the list the file held. */
+const pathShape = unchanged(z.array(wholeNumberShape.pipe(z.number().nonnegative())));
+
+/** A saved focus: the path of the pane it names. */
+const focusShape = z.object({ path: pathShape });
+
+/** A saved focus of two trees: which tree it named and the path inside it. */
+const dockedFocusShape = z.object({ target: z.enum(['main', 'panel']), path: pathShape });
+
+/** A saved one-tree workbench: its tree and its focus, each read where it is used. */
+const workbenchShape = z.object({
+    root: z.unknown().optional(),
+    focus: z.unknown().optional()
+});
+
+/** The share of the window a saved panel took when its own share cannot be read. */
+const PANEL_SHARE = 0.3;
+
+/** A saved workbench of two trees: where the panel docks, and how much of the window it took. */
+const dockedShape = z.object({
+    main: z.unknown().optional(),
+    panel: z.unknown().optional(),
+    dock: z.enum(['right', 'bottom', 'hidden']),
+    panelSize: z.number().catch(PANEL_SHARE),
+    focus: z.unknown().optional()
+});
+
+/** A page of the pages envelope: its id and label, with its tree and its rail key read apart. */
+const savedPageShape = z.object({
+    id: z.string(),
+    label: z.string(),
+    workbench: z.unknown().optional(),
+    rail: filledTextShape
+});
+
+/** The pages envelope's own fields: the saved pages and the id of the current one. */
+const pagesEnvelopeShape = z.object({ pages: listShape, current: z.string() });
+
+/** A saved envelope: a map, or the text of one. */
+const envelopeShape = z.union([mapShape, z.string().transform(jsonOf).pipe(mapShape)]);
+
+/** The value a text parses to, or undefined for text that is not JSON. */
+function jsonOf(text: string): unknown {
+    try {
+        return JSON.parse(text);
+    } catch {
+        return undefined;
+    }
+}
 
 /**
  * Every violation in a tree, and an empty array for a tree the shell can render. Handed the page
@@ -79,9 +163,9 @@ function readPageLeaf(
     problems: string[],
     where: string
 ): Layout | null {
-    const page = value.page;
-    if (typeof page !== 'string' || page === '') {
-        problems.push(`${where}: page is ${JSON.stringify(page)}, which names no page`);
+    const page = readAs(leafPageShape, value.page);
+    if (page === null) {
+        problems.push(`${where}: page is ${JSON.stringify(value.page)}, which names no page`);
         return null;
     }
     return pageLeaf(page);
@@ -95,13 +179,13 @@ function readSplit(
     ids: Set<string>,
     where: string
 ): Layout | null {
-    const dir = value.dir;
-    if (dir !== 'row' && dir !== 'col') {
-        problems.push(`${where}: dir is ${JSON.stringify(dir)}, not row or col`);
+    const dir = readAs(dirShape, value.dir);
+    if (dir === null) {
+        problems.push(`${where}: dir is ${JSON.stringify(value.dir)}, not row or col`);
         return null;
     }
-    const rawChildren = value.children;
-    if (!Array.isArray(rawChildren)) {
+    const rawChildren = readAs(listShape, value.children);
+    if (rawChildren === null) {
         problems.push(`${where}: children is not an array`);
         return null;
     }
@@ -114,15 +198,11 @@ function readSplit(
         if (child === null) return null;
         children.push(child);
     }
-    const rawSizes = value.sizes;
-    const numbers =
-        Array.isArray(rawSizes) &&
-        rawSizes.every((size) => typeof size === 'number' && Number.isFinite(size));
-    if (!numbers) {
+    const sizes = readAs(sizesShape, value.sizes);
+    if (sizes === null) {
         problems.push(`${where}: sizes is not an array of numbers`);
         return null;
     }
-    const sizes = rawSizes as number[];
     if (sizes.length !== children.length) {
         problems.push(`${where}: ${sizes.length} sizes for ${children.length} children`);
     } else {
@@ -152,14 +232,16 @@ function readFolded(
     where: string
 ): number[] | null {
     if (value === undefined) return [];
-    if (!Array.isArray(value)) {
+    const listed = readAs(listShape, value);
+    if (listed === null) {
         problems.push(`${where}: folded is not an array`);
         return null;
     }
     const folded: number[] = [];
-    for (const index of value) {
-        if (typeof index !== 'number' || !Number.isInteger(index) || index < 0 || index >= count) {
-            problems.push(`${where}: folded names ${JSON.stringify(index)}, which is not a child`);
+    for (const raw of listed) {
+        const index = readAs(wholeNumberShape, raw);
+        if (index === null || index < 0 || index >= count) {
+            problems.push(`${where}: folded names ${JSON.stringify(raw)}, which is not a child`);
             return null;
         }
         if (!folded.includes(index)) folded.push(index);
@@ -178,32 +260,34 @@ function readPane(
     ids: Set<string>,
     where: string
 ): Layout | null {
-    const rawTabs = value.tabs;
-    if (!Array.isArray(rawTabs)) {
+    const rawTabs = readAs(listShape, value.tabs);
+    if (rawTabs === null) {
         problems.push(`${where}: tabs is not an array`);
         return null;
     }
     const tabs: Instance[] = [];
     for (const [index, raw] of rawTabs.entries()) {
-        if (!isMap(raw) || typeof raw.id !== 'string' || raw.id === '') {
+        const held = readAs(tabIdShape, raw);
+        if (held === null) {
             problems.push(`${where}: tab ${index} has no id`);
             return null;
         }
-        if (typeof raw.view !== 'string') {
+        const view = readAs(tabViewShape, held.view);
+        if (view === null) {
             problems.push(`${where}: tab ${index} has no view`);
             return null;
         }
-        if (ids.has(raw.id))
-            problems.push(`${where}: tab ${index} repeats the instance id ${raw.id}`);
-        ids.add(raw.id);
-        const tab: Instance = { id: raw.id, view: raw.view, state: raw.state };
+        if (ids.has(held.id))
+            problems.push(`${where}: tab ${index} repeats the instance id ${held.id}`);
+        ids.add(held.id);
+        const tab: Instance = { id: held.id, view, state: held.state };
         // The flag is optional, so a layout saved before there were preview tabs reads as one whose
         // tabs are all kept, and a reader who left one open finds it as it was.
-        if (raw.preview === true) tab.preview = true;
+        if (held.preview === true) tab.preview = true;
         tabs.push(tab);
     }
-    const active = value.active;
-    if (typeof active !== 'string') {
+    const active = readAs(activeShape, value.active);
+    if (active === null) {
         problems.push(`${where}: active is not a string`);
         return null;
     }
@@ -285,13 +369,13 @@ export function parseLayout(value: unknown, label: string): Pages | null {
     }
     const version = envelope.version;
     if (version !== LAYOUT_VERSION && version !== PAGES_VERSION) return null;
-    const saved = envelope.pages;
-    const current = envelope.current;
-    if (!Array.isArray(saved) || typeof current !== 'string') return null;
+    const held = readAs(pagesEnvelopeShape, envelope);
+    if (held === null) return null;
+    const { current } = held;
     const pages: Page[] = [];
-    for (const entry of saved) {
-        if (!isMap(entry)) return null;
-        if (typeof entry.id !== 'string' || typeof entry.label !== 'string') return null;
+    for (const raw of held.pages) {
+        const entry = readAs(savedPageShape, raw);
+        if (entry === null) return null;
         const workbench =
             version === LAYOUT_VERSION
                 ? readWorkbench(entry.workbench)
@@ -313,8 +397,8 @@ export function parseLayout(value: unknown, label: string): Pages | null {
  * an earlier page already carries, is read as none: one rail button is one page, and the later of
  * two becomes a page of its own rather than a second page behind the same button.
  */
-function railKey(value: unknown, earlier: Page[]): string | null {
-    if (typeof value !== 'string' || value === '') return null;
+function railKey(value: string | undefined, earlier: Page[]): string | null {
+    if (value === undefined) return null;
     return earlier.some((page) => page.rail === value) ? null : value;
 }
 
@@ -325,15 +409,7 @@ function defaultPagesOf(page: Page): Pages {
 
 /** Read an envelope object, parsing JSON when needed. */
 function asEnvelope(value: unknown): Record<string, unknown> | null {
-    let envelope: unknown = value;
-    if (typeof envelope === 'string') {
-        try {
-            envelope = JSON.parse(envelope);
-        } catch {
-            return null;
-        }
-    }
-    return isMap(envelope) ? envelope : null;
+    return readAs(envelopeShape, value);
 }
 
 /** Read one workbench from the envelope a browser held before a page was one tree. */
@@ -345,17 +421,15 @@ export function parseWorkbench(value: unknown): Workbench | null {
 
 /** Read one saved workbench after its envelope has been removed. */
 function readWorkbench(value: unknown): Workbench | null {
-    if (!isMap(value)) return null;
+    const held = readAs(workbenchShape, value);
+    if (held === null) return null;
     const problems: string[] = [];
-    const root = readTree(value.root, 'root', problems, new Set<string>());
+    const root = readTree(held.root, 'root', problems, new Set<string>());
     if (root === null || problems.length > 0) return null;
     const workbench: Workbench = { root };
-    const focus = readPath(value.focus);
-    return focus === null ? workbench : settleFocus({ ...workbench, focus: { path: focus } });
+    const focus = readAs(focusShape, held.focus);
+    return focus === null ? workbench : settleFocus({ ...workbench, focus: { path: focus.path } });
 }
-
-/** The share of the window a saved panel took when its own share cannot be read. */
-const PANEL_SHARE = 0.3;
 
 /**
  * One saved workbench of two trees as one tree. A panel holding no tab at all is dropped and the
@@ -365,23 +439,22 @@ const PANEL_SHARE = 0.3;
  * inside that hidden panel is not carried, since a folded child cannot be the one shown alone.
  */
 function readDockedWorkbench(value: unknown): Workbench | null {
-    if (!isMap(value)) return null;
+    const saved = readAs(dockedShape, value);
+    if (saved === null) return null;
+    const { dock } = saved;
     const problems: string[] = [];
     const ids = new Set<string>();
-    const main = readTree(value.main, 'main', problems, ids);
-    const panel = readTree(value.panel, 'panel', problems, ids);
-    const dock = value.dock;
-    if (dock !== 'right' && dock !== 'bottom' && dock !== 'hidden') return null;
+    const main = readTree(saved.main, 'main', problems, ids);
+    const panel = readTree(saved.panel, 'panel', problems, ids);
     if (main === null || panel === null || problems.length > 0) return null;
     const held = tabsOf(panel).length > 0;
-    const focus = readDockedFocus(value.focus);
+    const focus = readAs(dockedFocusShape, saved.focus);
     if (!held) {
         const only: Workbench = { root: main };
         const inMain = focus !== null && focus.target === 'main';
         return settleFocus(inMain ? { ...only, focus: { path: focus.path } } : only);
     }
-    const share = value.panelSize;
-    const size = typeof share === 'number' && Number.isFinite(share) ? share : PANEL_SHARE;
+    const size = saved.panelSize;
     const split: Layout = {
         kind: 'split',
         dir: dock === 'bottom' ? 'col' : 'row',
@@ -393,26 +466,6 @@ function readDockedWorkbench(value: unknown): Workbench | null {
     if (focus === null || (dock === 'hidden' && focus.target === 'panel')) return workbench;
     const at = focus.target === 'main' ? 0 : 1;
     return settleFocus({ ...workbench, focus: { path: [at, ...focus.path] } });
-}
-
-/** A saved focus of two trees: which tree it named and the path inside it. */
-function readDockedFocus(value: unknown): { target: 'main' | 'panel'; path: number[] } | null {
-    if (!isMap(value)) return null;
-    const target = value.target;
-    if (target !== 'main' && target !== 'panel') return null;
-    const path = readPath(value);
-    return path === null ? null : { target, path };
-}
-
-/** A saved focus path: a list of whole, non-negative steps. */
-function readPath(value: unknown): number[] | null {
-    if (!isMap(value)) return null;
-    const path = value.path;
-    if (!Array.isArray(path)) return null;
-    if (!path.every((step) => typeof step === 'number' && Number.isInteger(step) && step >= 0)) {
-        return null;
-    }
-    return path as number[];
 }
 
 /** Read one saved tree and prefix its violations with the tree name. */

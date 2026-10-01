@@ -13,7 +13,17 @@
 // request, which reads what is held first. A tool call whose result arrives in that tail is
 // patched on a copy of its turn, since the call's own turn was read before the result existed.
 
+import { z } from 'zod';
+import { byKey } from '../../data/helpers/guards.ts';
 import type { Turn } from '../../data/model/index.ts';
+import {
+    anyNumberShape,
+    mapOfShape,
+    optionalTextShape,
+    readAs,
+    readJson,
+    survivorsShape
+} from '../../data/shapes/shapes.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 
@@ -38,6 +48,37 @@ const PENDING: TurnsState = { turns: [], offset: 0, pending: true, error: '' };
 /** What no session at all reads as: an empty id asks nothing and waits for nothing. */
 const NOTHING: TurnsState = { turns: [], offset: 0, pending: false, error: '' };
 
+/** One turn as the server writes it: a turn missing a field the view draws is left out. */
+const turnShape = z.object({
+    at: z.string().nullable(),
+    role: z.enum(['user', 'assistant', 'tool']),
+    text: z.string(),
+    html: z.string(),
+    cut: z.boolean(),
+    tool: z
+        .object({
+            id: z.string(),
+            name: z.string(),
+            summary: z.string(),
+            ok: z.boolean().nullable()
+        })
+        .nullable()
+}) satisfies z.ZodType<Turn>;
+
+/**
+ * An answer of the transcript route, each field as typed or absent: the turns that read as turns,
+ * the offset to ask from next, the outcome of each tool call by id, and the refusal's sentence.
+ */
+const bodyShape = z.object({
+    turns: survivorsShape(turnShape).catch([]),
+    offset: anyNumberShape.optional().catch(undefined),
+    results: mapOfShape(z.boolean()).catch({}),
+    error: optionalTextShape
+});
+
+/** What a body that is not a map says: no turns, no offset, no outcomes and no sentence. */
+const NO_BODY = { turns: [], offset: undefined, results: {}, error: undefined };
+
 /** The turns of each session, held for one client while an instance shows it. */
 export type TranscriptsStore = {
     turnsFor: (id: string) => TurnsState;
@@ -58,13 +99,13 @@ function merged(
     from: number,
     turns: Turn[],
     offset: number,
-    results: Record<string, boolean | undefined>
+    results: Record<string, boolean>
 ): TurnsState {
     const base = from === 0 ? [] : (held?.turns ?? []);
     const whole = [...base, ...turns].map((turn) => {
         const tool = turn.tool;
         if (tool === null || tool.id === '') return turn;
-        const ok = results[tool.id];
+        const ok = byKey(results, tool.id);
         return ok === undefined || ok === tool.ok ? turn : { ...turn, tool: { ...tool, ok } };
     });
     return { turns: whole, offset, pending: false, error: '' };
@@ -80,12 +121,9 @@ async function tail(id: string, held: TurnsState | undefined): Promise<TurnsStat
     try {
         const url = `/api/transcript?id=${encodeURIComponent(id)}&from=${from}`;
         const response = await fetch(url);
-        const body = (await response.json()) as {
-            turns?: Turn[];
-            offset?: number;
-            results?: Record<string, boolean>;
-            error?: string;
-        };
+        const raw = await readJson(response);
+        if (raw === undefined) throw new Error(String(response.status));
+        const body = readAs(bodyShape, raw) ?? NO_BODY;
         if (!response.ok) {
             return {
                 turns: kept,
@@ -94,7 +132,7 @@ async function tail(id: string, held: TurnsState | undefined): Promise<TurnsStat
                 error: body.error ?? String(response.status)
             };
         }
-        return merged(held, from, body.turns ?? [], body.offset ?? from, body.results ?? {});
+        return merged(held, from, body.turns, body.offset ?? from, body.results);
     } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
         return { turns: kept, offset: from, pending: false, error: reason };

@@ -208,3 +208,116 @@ describe('the project files a filter keeps', () => {
         expect(matchingFiles(rows, 'qqq')).toEqual([]);
     });
 });
+
+describe('the answer of the project files endpoint', () => {
+    const none = { rows: [], truncated: false, folder: '', error: '', loading: false };
+
+    /** What the store holds for the id after one request that `response` answers. */
+    async function read(response: Response): Promise<unknown> {
+        vi.stubGlobal('fetch', () => Promise.resolve(response));
+        files('kilo');
+        await settle();
+        return files('kilo');
+    }
+
+    /** A response whose json() answers `body` itself, with the status given. */
+    function json(body: unknown, status = 200): Response {
+        const ok = status >= 200 && status < 300;
+        return { ok, status, json: () => Promise.resolve(body) } as unknown as Response;
+    }
+
+    it.each([
+        ['a row without a path', [{ size: 1 }], []],
+        ['a row with an empty path', [{ path: '' }], []],
+        ['a row whose path is a number', [{ path: 3 }], []],
+        ['items that are not maps', [3, null, 'x'], []],
+        ['items that are lists', [[], ['a']], []],
+        ['a size that is text', [{ path: 'a', size: '1' }], [{ path: 'a', size: 0, mtime: 0 }]],
+        ['a time that is null', [{ path: 'a', mtime: null }], [{ path: 'a', size: 0, mtime: 0 }]],
+        [
+            'numbers that are not finite',
+            [{ path: 'a', size: NaN, mtime: Infinity }],
+            [{ path: 'a', size: NaN, mtime: Infinity }]
+        ],
+        [
+            'numbers that are negative or fractional',
+            [{ path: 'a', size: -1, mtime: 1.5 }],
+            [{ path: 'a', size: -1, mtime: 1.5 }]
+        ],
+        [
+            'a row with a key it was not asked for',
+            [{ extra: 1, mtime: 2, size: 1, path: 'a' }],
+            [{ path: 'a', size: 1, mtime: 2 }]
+        ]
+    ])('reads %s', async (_label, rows, expected) => {
+        const held = (await read(json({ rows }))) as { rows: unknown[] };
+        expect(held).toStrictEqual({ ...none, rows: expected });
+        expect(held.rows.map((row) => Object.keys(row as object))).toEqual(
+            expected.map((row) => Object.keys(row))
+        );
+    });
+
+    it('holds a new list of new rows and not the list it was given', async () => {
+        const rows = [{ path: 'a', size: 1, mtime: 2 }];
+        const held = (await read(json({ rows }))) as { rows: unknown[] };
+        expect(held.rows).not.toBe(rows);
+        expect(held.rows[0]).not.toBe(rows[0]);
+    });
+
+    it.each([[{}], ['x'], [null], [3], [undefined]])(
+        'holds no rows for rows that are %j',
+        async (rows) => {
+            expect(await read(json({ rows }))).toStrictEqual(none);
+        }
+    );
+
+    it.each([[[]], ['x'], [7], [true]])('holds nothing for a successful body %j', async (body) => {
+        expect(await read(json(body))).toStrictEqual(none);
+    });
+
+    it.each([
+        [{ truncated: 'true' }, none],
+        [{ truncated: 1 }, none],
+        [{ truncated: true }, { ...none, truncated: true }],
+        [{ folder: 3 }, none],
+        [{ folder: 'projects/one' }, { ...none, folder: 'projects/one' }]
+    ])('reads the fields beside the rows of %j', async (body, expected) => {
+        expect(await read(json(body))).toStrictEqual(expected);
+    });
+
+    it.each([
+        [{ error: 'no such project' }, 404, 'no such project'],
+        [{ error: '' }, 404, ''],
+        [{ error: null }, 404, '404'],
+        [{}, 500, '500'],
+        [[], 500, '500'],
+        ['x', 502, '502'],
+        [7, 500, '500']
+    ])('says why a refused read %j at %i was refused', async (body, status, error) => {
+        expect(await read(json(body, status))).toStrictEqual({ ...none, error });
+    });
+
+    it.each([[{ error: 3 }], [{ error: ['a'] }]])(
+        'says the status for a refused read whose error is not text: %j',
+        async (body) => {
+            expect(await read(json(body, 404))).toStrictEqual({ ...none, error: '404' });
+        }
+    );
+
+    it.each([['null'], ['<html>gateway</html>']])(
+        'says the status of a refused read whose body is %s',
+        async (text) => {
+            expect(await read(new Response(text, { status: 503 }))).toStrictEqual({
+                ...none,
+                error: '503'
+            });
+        }
+    );
+
+    it.each([['null'], ['<html>gateway</html>']])(
+        'says the status of a successful read whose body is %s',
+        async (text) => {
+            expect(await read(new Response(text))).toStrictEqual({ ...none, error: '200' });
+        }
+    );
+});

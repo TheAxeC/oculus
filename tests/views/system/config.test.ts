@@ -6,7 +6,7 @@
 // state/sources/fs.svelte.ts makes and the click that opens a file.
 //
 // The refresh the view asks for on a config push is recorded by the double rather than followed:
-// what the store does with it is tests/state/sources/fs.test.ts's.
+// what the store does with it is tests/state/sources/fs/fs.test.ts's.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -167,7 +167,7 @@ describe('the Config view', () => {
 
     it('hands that version to the file browser store, for the engine root and no other', () => {
         // The effect runs in a browser and this suite has no DOM, so what the effect does is
-        // pinned by its source; what the store does with it is tests/state/sources/fs.test.ts.
+        // pinned by its source; what the store does with it is tests/state/sources/fs/fs.test.ts.
         const source = readFileSync(
             join(engineDir(), 'src', 'lib', 'views', 'system', 'config', 'Config.svelte'),
             'utf8'

@@ -5,7 +5,11 @@
 // endpoint answers and asserts what the store holds after it.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createLines, type LinesStore } from '../../../src/lib/state/system/lines.svelte.ts';
+import {
+    createLines,
+    readCount,
+    type LinesStore
+} from '../../../src/lib/state/system/lines.svelte.ts';
 import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
 import { stubHeld } from '../../fixtures/client.ts';
 import { COUNT } from '../../server/machine/line-counts.ts';
@@ -214,5 +218,187 @@ describe('the line count store', () => {
         store.lines();
         await settle();
         expect(asked).toEqual([]);
+    });
+});
+
+describe('an answer that is not a count', () => {
+    const SUMS = { files: 1, blank: 2, comment: 3, code: 4, todo: 5 };
+    const COUNTED = '2026-09-28T10:00:00.000Z';
+    const lang = (over: Record<string, unknown> = {}) => ({
+        language: 'TypeScript',
+        ...SUMS,
+        ...over
+    });
+    const row = (over: Record<string, unknown> = {}) => ({
+        folder: 'src',
+        ...SUMS,
+        languages: [lang()],
+        ...over
+    });
+    const body = (over: Record<string, unknown> = {}) => ({
+        rows: [row()],
+        total: SUMS,
+        counted: COUNTED,
+        ...over
+    });
+    const said = (key: string, at?: number): { error: string } => ({
+        error: at === undefined ? catalog[key] : catalog[key].replace('{0}', String(at))
+    });
+
+    it('holds a whole answer as the count, keys in the order the view reads them', () => {
+        const read = readCount(body()) as { count: { rows: Record<string, unknown>[] } };
+        expect(read).toStrictEqual({
+            count: { rows: [row()], total: SUMS, counted: COUNTED }
+        });
+        expect(Object.keys(read.count)).toStrictEqual(['rows', 'total', 'counted']);
+        expect(Object.keys(read.count.rows[0])).toStrictEqual([
+            'folder',
+            'files',
+            'blank',
+            'comment',
+            'code',
+            'todo',
+            'languages'
+        ]);
+        expect(Object.keys((read.count.rows[0].languages as object[])[0])).toStrictEqual([
+            'language',
+            'files',
+            'blank',
+            'comment',
+            'code',
+            'todo'
+        ]);
+    });
+
+    it('leaves out the keys a row, a language and the total carry beyond the ones read', () => {
+        const read = readCount(
+            body({
+                rows: [row({ extra: 1, languages: [lang({ extra: 2 })] })],
+                total: { ...SUMS, extra: 3 }
+            })
+        );
+        expect(read).toStrictEqual({ count: { rows: [row()], total: SUMS, counted: COUNTED } });
+    });
+
+    it('holds a row with no language as a folder with an empty list', () => {
+        const read = readCount(body({ rows: [row({ languages: [] })] }));
+        expect(read).toStrictEqual({
+            count: { rows: [row({ languages: [] })], total: SUMS, counted: COUNTED }
+        });
+    });
+
+    it.each([
+        ['a body that is a list', [body()]],
+        ['a body that is null', null],
+        ['a body that is a string', 'x'],
+        ['a body that is a number', 3],
+        ['no rows', body({ rows: undefined })],
+        ['rows that are a map', body({ rows: { 0: row() } })],
+        ['rows that are a string', body({ rows: 'x' })],
+        ['rows that are null', body({ rows: null })]
+    ])('says the rows are bad for %s', (_name, value) => {
+        expect(readCount(value)).toStrictEqual(said('status.lines_bad_rows'));
+    });
+
+    it.each([
+        ['a row that is a string', 'x'],
+        ['a row that is null', null],
+        ['a row that is a list', []],
+        ['a folder that is a number', row({ folder: 3 })],
+        ['no folder', row({ folder: undefined })],
+        ['no languages', row({ languages: undefined })],
+        ['languages that are a map', row({ languages: { 0: lang() } })],
+        ['languages that are a string', row({ languages: 'x' })],
+        ['a language that is null', row({ languages: [null] })],
+        ['a language that is a string', row({ languages: ['x'] })],
+        ['a language named by a number', row({ languages: [lang({ language: 3 })] })],
+        ['a language with no name', row({ languages: [lang({ language: undefined })] })],
+        ['a language with a negative sum', row({ languages: [lang({ code: -1 })] })],
+        ['a good language beside a bad one', row({ languages: [lang(), lang({ blank: 1.5 })] })],
+        ['a negative sum', row({ files: -1 })],
+        ['a fractional sum', row({ code: 1.5 })],
+        ['a sum that is NaN', row({ blank: Number.NaN })],
+        ['a sum that is infinite', row({ comment: Number.POSITIVE_INFINITY })],
+        ['a sum that is a string', row({ todo: '3' })],
+        ['a sum that is null', row({ files: null })],
+        ['a sum that is missing', row({ todo: undefined })]
+    ])('names the place of a bad row: %s', (_name, bad) => {
+        expect(readCount(body({ rows: [row(), bad] }))).toStrictEqual(
+            said('status.lines_bad_row', 2)
+        );
+        expect(readCount(body({ rows: [bad, row()] }))).toStrictEqual(
+            said('status.lines_bad_row', 1)
+        );
+    });
+
+    it.each([
+        ['no total', undefined],
+        ['a total that is null', null],
+        ['a total that is a list', []],
+        ['a total that is a string', 'x'],
+        ['a total with a negative sum', { ...SUMS, code: -1 }],
+        ['a total with a fractional sum', { ...SUMS, files: 1.5 }],
+        ['a total with a string sum', { ...SUMS, todo: '5' }],
+        ['a total with a missing sum', { ...SUMS, blank: undefined }],
+        ['a total with an infinite sum', { ...SUMS, comment: Number.POSITIVE_INFINITY }]
+    ])('says the total is bad for %s', (_name, total) => {
+        expect(readCount(body({ total }))).toStrictEqual(said('status.lines_bad_total'));
+    });
+
+    it.each([
+        ['no time', undefined],
+        ['a time that is null', null],
+        ['a time that is a number', 1790000000000],
+        ['a time that is empty', ''],
+        ['a time that is not a date', 'not a date'],
+        ['a time that is a list', [COUNTED]]
+    ])('says the time is bad for %s', (_name, counted) => {
+        expect(readCount(body({ counted }))).toStrictEqual(said('status.lines_bad_counted'));
+    });
+
+    it.each([['2026-09-28'], ['2026-09-28T10:00:00+02:00'], ['Sep 28 2026']])(
+        'holds the time %j as written',
+        (counted) => {
+            expect(readCount(body({ counted }))).toStrictEqual({
+                count: { rows: [row()], total: SUMS, counted }
+            });
+        }
+    );
+
+    it('holds a sum of zero, of negative zero and of an integer beyond the safe range', () => {
+        const wide = { files: 0, blank: -0, comment: 2 ** 60, code: 1e21, todo: 0 };
+        const read = readCount(body({ rows: [row({ ...wide, languages: [] })], total: wide }));
+        expect(read).toStrictEqual({
+            count: { rows: [row({ ...wide, languages: [] })], total: wide, counted: COUNTED }
+        });
+    });
+
+    it('names the rows before the total and the total before the time', () => {
+        const bad = body({ rows: [row({ files: -1 })], total: null, counted: 'x' });
+        expect(readCount(bad)).toStrictEqual(said('status.lines_bad_row', 1));
+        expect(readCount({ ...bad, rows: [row()] })).toStrictEqual(said('status.lines_bad_total'));
+        expect(readCount({ ...bad, rows: [row()], total: SUMS })).toStrictEqual(
+            said('status.lines_bad_counted')
+        );
+    });
+
+    it.each([
+        ['a JSON null', 200, 'null', 'status.lines_bad_body'],
+        ['a JSON null', 500, 'null', 'status.lines_bad_body'],
+        ['an error that is a number', 500, '{"error":3}', 'status.lines_bad_status'],
+        ['an empty error', 500, '{"error":""}', 'status.lines_bad_status'],
+        ['a list', 500, '[]', 'status.lines_bad_status'],
+        ['a string', 500, '"x"', 'status.lines_bad_status'],
+        ['a list', 200, '[]', 'status.lines_bad_rows'],
+        ['a string', 200, '"x"', 'status.lines_bad_rows']
+    ])('holds %s sent with status %i as that sentence', async (_name, status, text, key) => {
+        answers = [{ status, text }];
+        store.lines();
+        await settle();
+        expect(store.lines()).toStrictEqual({
+            count: null,
+            error: catalog[key].replace('{0}', String(status)),
+            loading: false
+        });
     });
 });

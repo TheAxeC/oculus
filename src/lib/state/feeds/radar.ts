@@ -1,8 +1,15 @@
 // Layer 2, client state. Pure Lit Watch grouping, searching, ordering, joins, and saved view state.
 // The view receives ready-to-draw groups and seeds while this module names no component.
 
+import { z } from 'zod';
 import type { Project } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
+import {
+    readAs,
+    rowsShape,
+    searchRevealShape,
+    textOrNumberShape
+} from '../../data/shapes/shapes.ts';
 
 export type { Project };
 
@@ -11,28 +18,27 @@ export type RadarBucket = { key: string; glyph: string; label: string; color: st
 export type RadarGroup = { bucket: RadarBucket; entries: RadarEntry[] };
 export type RadarState = { search: string; dismissedOpen: boolean; reveal?: string };
 
+/** One bucket row of the vocabulary: four texts, and nothing else of the row. */
+const radarBucketShape = z.object({
+    key: z.string(),
+    glyph: z.string(),
+    label: z.string(),
+    color: z.string()
+}) satisfies z.ZodType<RadarBucket>;
+
+/** The fields a view instance keeps of the radar, each read as absent when of the wrong type. */
+const radarStateShape = searchRevealShape.extend({ dismissedOpen: z.boolean().catch(false) });
+
+const radarBucketsShape = rowsShape(radarBucketShape);
+
 /** Valid bucket rows from the merged vocabulary, preserving its order. */
 export function radarBuckets(raw: unknown): RadarBucket[] {
-    if (!Array.isArray(raw)) return [];
-    return raw.flatMap((row) => {
-        if (typeof row !== 'object' || row === null || Array.isArray(row)) return [];
-        const item = row as Record<string, unknown>;
-        if (
-            typeof item.key !== 'string' ||
-            typeof item.glyph !== 'string' ||
-            typeof item.label !== 'string' ||
-            typeof item.color !== 'string'
-        ) {
-            return [];
-        }
-        return [{ key: item.key, glyph: item.glyph, label: item.label, color: item.color }];
-    });
+    return readAs(radarBucketsShape, raw) ?? [];
 }
 
+/** A text of the entry's, or a number written out, and the empty text for anything else. */
 function word(entry: RadarEntry, field: string): string {
-    const value = entry[field];
-    if (typeof value === 'string' || typeof value === 'number') return String(value);
-    return '';
+    return readAs(textOrNumberShape, entry[field]) ?? '';
 }
 
 /** Live entries grouped in vocabulary order, with unknown buckets counted as adjacent. */
@@ -50,17 +56,20 @@ export function bucketsOf(entries: RadarEntry[], buckets: RadarBucket[]): RadarG
 }
 
 /** Newest discovery first, then high, medium, and low relevance. */
-export function sortBucket(entries: RadarEntry[]): RadarEntry[] {
+export function sortBucket(entries: (RadarEntry | null)[]): RadarEntry[] {
     const rank: Record<string, number> = { high: 3, med: 2, low: 1 };
-    return [...entries].sort(
-        (left, right) =>
-            word(right, 'found').localeCompare(word(left, 'found')) ||
-            (rank[word(right, 'relevance')] ?? 0) - (rank[word(left, 'relevance')] ?? 0)
-    );
+    return entries
+        .filter((entry): entry is RadarEntry => entry !== null)
+        .sort(
+            (left, right) =>
+                word(right, 'found').localeCompare(word(left, 'found')) ||
+                (byKey(rank, word(right, 'relevance')) ?? 0) -
+                    (byKey(rank, word(left, 'relevance')) ?? 0)
+        );
 }
 
 export function isNew(entry: RadarEntry, lastRun: unknown): boolean {
-    const run = typeof lastRun === 'string' || typeof lastRun === 'number' ? String(lastRun) : '';
+    const run = readAs(textOrNumberShape, lastRun) ?? '';
     return run !== '' && word(entry, 'found') === run;
 }
 
@@ -115,15 +124,12 @@ export function crossLinksOf(entry: RadarEntry, projects: Record<string, Project
 }
 
 export function parseRadarState(raw: unknown): RadarState {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-        return { search: '', dismissedOpen: false };
-    }
-    const held = raw as Record<string, unknown>;
+    const held = readAs(radarStateShape, raw);
     const state: RadarState = {
-        search: typeof held.search === 'string' ? held.search : '',
-        dismissedOpen: held.dismissedOpen === true
+        search: held?.search ?? '',
+        dismissedOpen: held?.dismissedOpen ?? false
     };
-    if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;
 }
 

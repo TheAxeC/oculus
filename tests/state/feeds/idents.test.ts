@@ -50,3 +50,34 @@ describe('the strings nested in an entry', () => {
         expect(nestedStrings({ a: '', b: ['x', { c: 'y' }], d: 3, e: null })).toEqual(['x', 'y']);
     });
 });
+
+describe('the identity of an entry whose fields are of the wrong type', () => {
+    it.each([
+        ['radar', { title: 3 }, 'radar'],
+        ['radar', { title: null, x: 'first' }, 'first'],
+        ['radar', { title: ['a', 'b'], z: { y: 'deep' } }, 'a'],
+        ['radar', { title: '', other: '', n: 5 }, 'radar'],
+        ['radar', {}, 'radar'],
+        ['linkedin', { file: 3, title: 'T' }, 'T'],
+        ['linkedin', { file: 'f.md', title: 'T' }, 'f.md'],
+        ['linkedin', { title: 'T' }, 'T'],
+        ['leads', { file: 'f' }, 'f']
+    ] as const)('is the %s entry %j named %j', (kind, entry, identity) => {
+        expect(feedIdentity(kind, entry)).toBe(identity);
+    });
+
+    it('gives a null entry the kind as its identity and a place in the list as its id', () => {
+        expect(feedIdentity('radar', null as never)).toBe('radar');
+        const entries = [null as never, { title: 'A' }];
+        const identOf = feedIdents('radar', entries);
+        expect([identOf(entries[0]), identOf(entries[1])]).toEqual(['radar#0', 'A']);
+    });
+
+    it('collects the strings of a parsed map including an own __proto__ key, and none of a number or a date', () => {
+        const parsed: unknown = JSON.parse(
+            '{"__proto__":"x","a":["b",{"c":"d","e":3}],"f":null,"g":true}'
+        );
+        expect(nestedStrings(parsed)).toEqual(['x', 'b', 'd']);
+        expect(nestedStrings(['', 3, [[], ['q']], new Date(0), undefined])).toEqual(['q']);
+    });
+});

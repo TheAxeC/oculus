@@ -4,15 +4,10 @@
 
 import { dataAccessTone } from '../shared/words/tones.ts';
 import type { Dataset, Project } from '../../data/model/index.ts';
+import { fieldItemsShape, readAs, searchRevealShape } from '../../data/shapes/shapes.ts';
 import { parseOpenForms, type OpenForms } from '../forms/open-forms.ts';
 
 export type DataState = OpenForms & { search: string; off: string[]; reveal?: string };
-
-function strings(value: unknown): string[] {
-    return Array.isArray(value)
-        ? value.filter((item): item is string => typeof item === 'string')
-        : [];
-}
 
 /** Counts by access value, most frequent first and lexical inside a tie. */
 export function accessSummary(datasets: Dataset[]): string {
@@ -58,18 +53,18 @@ export function recoveryCommand(key: string): string {
     return `python3 tools/data/redownload.py ${quoted}`;
 }
 
+/** The fields a Data instance keeps beside its open forms, each read as absent when wrong. */
+const dataStateShape = searchRevealShape.extend({ off: fieldItemsShape });
+
 /** Saved state of one Data instance, with defaults for malformed or absent fields. */
 export function parseDataState(raw: unknown): DataState {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-        return { search: '', off: [], ...parseOpenForms(raw) };
-    }
-    const held = raw as Record<string, unknown>;
+    const held = readAs(dataStateShape, raw);
     const state: DataState = {
-        search: typeof held.search === 'string' ? held.search : '',
-        off: strings(held.off),
+        search: held?.search ?? '',
+        off: held?.off ?? [],
         ...parseOpenForms(raw)
     };
-    if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;
 }
 

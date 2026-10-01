@@ -18,7 +18,10 @@ export {
     type FileKind,
     type FileType
 } from './file-type.ts';
+import { z } from 'zod';
+import { fieldItemsShape, readAs } from '../../data/shapes/shapes.ts';
 import { deepestHolding } from '../../data/helpers/files/paths.ts';
+import { isMap } from '../../data/helpers/guards.ts';
 
 /** The root api/file serves the hub itself under, for a link that is a path inside the hub. */
 export const HUB_ROOT = 'hub';
@@ -90,14 +93,14 @@ export function childPath(path: string, name: string): string {
     return path === '' ? name : `${path}/${name}`;
 }
 
+/** The one field of an instance's state that holds its open folders. */
+const expandedHeldShape = z.object({ expanded: fieldItemsShape });
+
 /**
  * The open folders an instance's state holds, which is what the tree remembers across a tab switch.
  */
 export function expandedOf(state: unknown): string[] {
-    if (typeof state !== 'object' || state === null || Array.isArray(state)) return [];
-    const held = (state as Record<string, unknown>).expanded;
-    if (!Array.isArray(held)) return [];
-    return held.filter((one): one is string => typeof one === 'string');
+    return readAs(expandedHeldShape, state)?.expanded ?? [];
 }
 
 /** The same set with one folder opened or closed. */
@@ -179,91 +182,88 @@ function isLineForm(form: FilesForm): boolean {
     return form === 'root' || form === 'workspace';
 }
 
+/** A count a saved record holds, and 0 for anything that is not a whole number from 0 up. */
+const countShape = z.number().int().min(0).catch(0);
+
+/** A row a saved record names: a root key and a path. */
+const refShape = z.object({ root: z.string(), path: z.string() }) satisfies z.ZodType<RowRef>;
+
+/** The ask a saved record holds: a named root, a path, which ask it is and if it is settled. */
+const askShape = z.object({
+    root: z.string().min(1),
+    path: z.string(),
+    asked: z.number().int().min(1),
+    settled: z.boolean()
+}) satisfies z.ZodType<RevealAsk>;
+
+/** The outcome a saved record holds: a kind, the row asked, the row shown and the reason. */
+const outcomeShape = z.object({
+    kind: z.enum(['found', 'missing', 'unread', 'no-root', 'no-roots']),
+    asked: refShape,
+    shown: refShape.nullable().catch(null),
+    error: z.string().catch('')
+}) satisfies z.ZodType<RevealOutcome>;
+
+/** The row selected, which names a root. */
+const selectedShape = z.object({ root: z.string().min(1), path: z.string() });
+
 /** The open form a saved record names, and no form for a name that is none of the three. */
-function formOf(raw: unknown): FilesForm {
-    return raw === 'root' || raw === 'workspace' || raw === 'bookmark' ? raw : '';
-}
+const formShape = z.enum(['', 'root', 'workspace', 'bookmark']).catch('');
+
+/** A file browser's instance state with every field defaulted, so a state from any source draws. */
+const filesViewShape = z
+    .object({
+        expanded: fieldItemsShape,
+        selected: selectedShape.nullable().catch(null),
+        filter: z.string().catch(''),
+        collapsed: fieldItemsShape,
+        form: formShape,
+        editing: z.string().catch(''),
+        typed: z.string().catch(''),
+        opening: countShape,
+        reveal: askShape.nullable().catch(null),
+        revealed: outcomeShape.nullable().catch(null),
+        revealing: countShape,
+        note: z.string().catch(''),
+        said: z.string().catch(''),
+        hidden: z.boolean().catch(false),
+        ignored: z.boolean().catch(false)
+    })
+    .transform((held): FilesView => ({
+        ...held,
+        editing: held.form === 'bookmark' ? held.editing : '',
+        typed: isLineForm(held.form) ? held.typed : ''
+    }));
 
 /** The file browser's instance state, every field defaulted, so a state from any source draws. */
 export function filesViewOf(state: unknown): FilesView {
-    const map =
-        typeof state === 'object' && state !== null && !Array.isArray(state)
-            ? (state as Record<string, unknown>)
-            : {};
-    const picked = map.selected as Record<string, unknown> | null | undefined;
-    const selected =
-        typeof picked === 'object' &&
-        picked !== null &&
-        typeof picked.root === 'string' &&
-        typeof picked.path === 'string' &&
-        picked.root !== ''
-            ? { root: picked.root, path: picked.path }
-            : null;
-    const collapsed = Array.isArray(map.collapsed)
-        ? map.collapsed.filter((one): one is string => typeof one === 'string')
-        : [];
-    const form = formOf(map.form);
+    return readAs(filesViewShape, state) ?? emptyFilesView();
+}
+
+/** A file browser with nothing open, selected or typed. */
+function emptyFilesView(): FilesView {
     return {
-        expanded: expandedOf(state),
-        selected,
-        filter: typeof map.filter === 'string' ? map.filter : '',
-        collapsed,
-        form,
-        editing: form === 'bookmark' && typeof map.editing === 'string' ? map.editing : '',
-        typed: isLineForm(form) && typeof map.typed === 'string' ? map.typed : '',
-        opening: countOf(map.opening),
-        reveal: askOf(map.reveal),
-        revealed: outcomeOf(map.revealed),
-        revealing: countOf(map.revealing),
-        note: typeof map.note === 'string' ? map.note : '',
-        said: typeof map.said === 'string' ? map.said : '',
-        hidden: map.hidden === true,
-        ignored: map.ignored === true
+        expanded: [],
+        selected: null,
+        filter: '',
+        collapsed: [],
+        form: '',
+        editing: '',
+        typed: '',
+        opening: 0,
+        reveal: null,
+        revealed: null,
+        revealing: 0,
+        note: '',
+        said: '',
+        hidden: false,
+        ignored: false
     };
 }
 
 /** The two toggles of one file browser, which is what each of its listings is asked with. */
 export function shownOf(view: ListingShown): ListingShown {
     return { hidden: view.hidden, ignored: view.ignored };
-}
-
-/** A count a saved record holds, and 0 for anything that is not a whole number from 0 up. */
-function countOf(raw: unknown): number {
-    return typeof raw === 'number' && Number.isSafeInteger(raw) && raw >= 0 ? raw : 0;
-}
-
-/** A row a saved record names, or null for anything that is not a root key and a path. */
-function refOf(raw: unknown): RowRef | null {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
-    const held = raw as Record<string, unknown>;
-    if (typeof held.root !== 'string' || typeof held.path !== 'string') return null;
-    return { root: held.root, path: held.path };
-}
-
-/** The ask a saved record holds, or null for anything that is not one. */
-function askOf(raw: unknown): RevealAsk | null {
-    const row = refOf(raw);
-    if (row === null || row.root === '') return null;
-    const held = raw as Record<string, unknown>;
-    if (countOf(held.asked) === 0 || typeof held.settled !== 'boolean') return null;
-    return { ...row, asked: countOf(held.asked), settled: held.settled };
-}
-
-const OUTCOMES: RevealOutcome['kind'][] = ['found', 'missing', 'unread', 'no-root', 'no-roots'];
-
-/** The outcome a saved record holds, or null for anything that is not one. */
-function outcomeOf(raw: unknown): RevealOutcome | null {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
-    const held = raw as Record<string, unknown>;
-    const kind = OUTCOMES.find((one) => one === held.kind);
-    const asked = refOf(held.asked);
-    if (kind === undefined || asked === null) return null;
-    return {
-        kind,
-        asked,
-        shown: refOf(held.shown),
-        error: typeof held.error === 'string' ? held.error : ''
-    };
 }
 
 /**
@@ -275,7 +275,7 @@ function outcomeOf(raw: unknown): RevealOutcome | null {
  * goes with it.
  */
 export function revealAsked(state: unknown, path: string, root: string = HUB_ROOT): object {
-    const kept = typeof state === 'object' && state !== null && !Array.isArray(state) ? state : {};
+    const kept = isMap(state) ? state : {};
     const revealing = filesViewOf(state).revealing + 1;
     const reveal: RevealAsk = { root, path: normalisePath(path), asked: revealing, settled: false };
     return { ...kept, filter: '', reveal, revealed: null, revealing };
@@ -418,8 +418,7 @@ export const FILES_VIEW = 'files';
  * be anything at all, so a record that is not a map is read as an empty one.
  */
 export function patchedFilesView(kept: unknown, part: Partial<FilesView>): Record<string, unknown> {
-    const held = typeof kept === 'object' && kept !== null && !Array.isArray(kept) ? kept : {};
-    return { ...held, ...part };
+    return { ...(isMap(kept) ? kept : {}), ...part };
 }
 
 /**
@@ -556,11 +555,10 @@ export function treeKeyRows(
  * root or path is not a string names no row.
  */
 export function markedKeys(entries: { fields: Record<string, unknown> }[]): string[] {
-    return entries.flatMap((one) =>
-        typeof one.fields.root === 'string' && typeof one.fields.path === 'string'
-            ? [treeKey(one.fields.root, one.fields.path)]
-            : []
-    );
+    return entries.flatMap((one) => {
+        const row = readAs(refShape, one.fields);
+        return row === null ? [] : [treeKey(row.root, row.path)];
+    });
 }
 
 /**
@@ -681,12 +679,7 @@ export function rootHolding(roots: FsRoot[], dir: string): { root: FsRoot; path:
  * instance's layout state, which the sessions arrangement gives its Files tab.
  */
 export function followsSession(state: unknown): boolean {
-    return (
-        typeof state === 'object' &&
-        state !== null &&
-        !Array.isArray(state) &&
-        (state as Record<string, unknown>).follow === true
-    );
+    return isMap(state) && state.follow === true;
 }
 
 /**
@@ -754,8 +747,7 @@ export function followedDirOf(
 
 /** A tab's layout state with follow mode set on or off, the rest of it kept. */
 export function withFollow(state: unknown, on: boolean): Record<string, unknown> {
-    const kept = typeof state === 'object' && state !== null && !Array.isArray(state) ? state : {};
-    return { ...kept, follow: on };
+    return { ...(isMap(state) ? state : {}), follow: on };
 }
 
 /**

@@ -9,17 +9,22 @@
 // `__proto__` finds no label it was never given. When two rows name one key the first row wins,
 // which is the row a reader of the file meets first.
 
+import { z } from 'zod';
+import { readAs, rowsShape } from '../../../data/shapes/shapes.ts';
+
+/** One row of a theme list: a key that is not empty, and its label. */
+const themeRowShape = z.object({ key: z.string().min(1), label: z.string() });
+
+/** The rows of a theme list that are rows, in order. */
+const themeRowsShape = rowsShape(themeRowShape);
+
 /** Theme word to its label; a word with no row has no entry. */
 export type ThemeWordLabels = ReadonlyMap<string, string>;
 
 /** The word-to-label map of one theme list; a row without a string key or label is passed over. */
 export function themeWordLabels(rows: unknown): ThemeWordLabels {
     const labels = new Map<string, string>();
-    if (!Array.isArray(rows)) return labels;
-    for (const row of rows) {
-        if (typeof row !== 'object' || row === null || Array.isArray(row)) continue;
-        const { key, label } = row as Record<string, unknown>;
-        if (typeof key !== 'string' || key === '' || typeof label !== 'string') continue;
+    for (const { key, label } of readAs(themeRowsShape, rows) ?? []) {
         if (!labels.has(key)) labels.set(key, label);
     }
     return labels;

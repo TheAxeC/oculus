@@ -2,12 +2,12 @@
 // and the guards that stop stale answers and duplicate requests.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ENGINE_ROOT, TEXT_LIMIT, languageOf } from '../../../src/lib/state/sources/fs.ts';
-import { FS_PATH, NOTE_GONE } from '../../../src/lib/state/sources/fs.svelte.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
-import { createClientState, type ClientState } from '../../fixtures/client.ts';
-import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
+import { ENGINE_ROOT, TEXT_LIMIT, languageOf } from '../../../../src/lib/state/sources/fs.ts';
+import { FS_PATH, NOTE_GONE } from '../../../../src/lib/state/sources/fs.svelte.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
+import { createClientState, type ClientState } from '../../../fixtures/client.ts';
+import { fakeStorage } from '../../workbench/layout/layout-fixture.ts';
 
 // A case that opens a tab reads the view's own label out of the catalog, as the page does.
 setCatalog(textCatalog(loadConfig(engineDir()).config));

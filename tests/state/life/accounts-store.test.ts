@@ -364,6 +364,90 @@ describe('a press whose request fails', () => {
     });
 });
 
+describe('a refusal whose code or reason is not text', () => {
+    const GENERAL = t('accounts.refused', '');
+    const BAD_CODES = [3, null, ['taken'], { code: 'taken' }, true, ''];
+
+    it('says the general refusal of an Add, a Remove, a Connect and a Save whose code is not text', async () => {
+        for (const error of BAD_CODES) {
+            answers.set('POST /api/mail', { status: 400, body: { error } });
+            answers.set('POST /api/calendar', { status: 400, body: { error } });
+            answers.set('POST /api/connect', { status: 400, body: { error } });
+            expect(await store.add('mail', 'google', 'home')).toBe(GENERAL);
+            expect(await store.remove('calendar', WORK)).toBe(GENERAL);
+            expect(await store.connect('calendar', WORK)).toBe(GENERAL);
+            const half = { clientId: GOOGLE_ID, clientSecret: 'the-secret', tenant: '' };
+            expect(await store.saveHalf('google', half)).toBe(GENERAL);
+        }
+    });
+
+    it('says the general refusal when the whole body of a refused command is not a map', async () => {
+        for (const body of [[], null, 'taken', 3]) {
+            answers.set('POST /api/mail', { status: 500, body });
+            expect(await store.add('mail', 'google', 'home')).toBe(GENERAL);
+        }
+    });
+
+    it('takes a command answered below 400 as taken whatever code the body holds', async () => {
+        answers.set('POST /api/mail', { status: 200, body: { error: 3 } });
+        expect(await store.add('mail', 'google', 'home')).toBe('');
+        answers.set('POST /api/mail', { status: 200, body: [] });
+        expect(await store.add('mail', 'google', 'home')).toBe('');
+    });
+
+    it('opens the setup page for the code setup only when it is text', async () => {
+        answers.set('POST /api/mail', { status: 409, body: { error: ['setup'] } });
+        expect(await store.add('mail', 'google', 'home')).toBe(GENERAL);
+        expect(opened).toEqual([]);
+        expect(store.waiting()).toBe(null);
+    });
+
+    it('says the reason of a file refusal only when it is text', async () => {
+        answers.set('POST /api/mail', { status: 400, body: { error: 'file', reason: 3 } });
+        expect(await store.add('mail', 'google', 'home')).toBe(t('accounts.refused_file', ''));
+        answers.set('POST /api/mail', { status: 400, body: { error: 'file', reason: 'no space' } });
+        expect(await store.add('mail', 'google', 'home')).toBe(
+            t('accounts.refused_file', 'no space')
+        );
+    });
+});
+
+describe('the setup answer read from a body of the wrong shape', () => {
+    it('holds a complete setup body as it came, a key beyond the type kept', async () => {
+        const body = { ...setupWith({ google: true, microsoft: true }), extra: 1 };
+        answers.set('GET /api/connect', { status: 200, body });
+        await store.loadSetup();
+        expect(store.setup()).toStrictEqual(body);
+        expect(store.setupFailed()).toBe('');
+    });
+
+    it('holds nothing and says it could not be read for a body that is JSON null', async () => {
+        answers.set('GET /api/connect', { status: 200, body: null });
+        await store.loadSetup();
+        expect(store.setup()).toBe(null);
+        expect(store.setupFailed()).toBe(t('accounts.unreadable'));
+    });
+
+    it('holds nothing and says it could not be read for a body that is not a setup map', async () => {
+        for (const body of [[], 'x', 3, {}, { ready: 3 }]) {
+            answers.set('GET /api/connect', { status: 200, body });
+            await store.loadSetup();
+            expect(store.setup()).toBe(null);
+            expect(store.setupFailed()).toBe(t('accounts.unreadable'));
+        }
+    });
+
+    it('keeps the setup it holds when a later answer is refused', async () => {
+        const body = setupWith({ google: true, microsoft: false });
+        answers.set('GET /api/connect', { status: 200, body });
+        await store.loadSetup();
+        answers.set('GET /api/connect', { status: 500, body: { error: 'x' } });
+        await store.loadSetup();
+        expect(store.setup()).toStrictEqual(body);
+        expect(store.setupFailed()).toBe(t('accounts.unreadable'));
+    });
+});
+
 describe('the scopes the setup page lists', () => {
     it('lists each scope of one provider once, across both connectors, in first-seen order', () => {
         expect(scopesOf(setupWith({ google: true, microsoft: true }), 'microsoft')).toEqual([

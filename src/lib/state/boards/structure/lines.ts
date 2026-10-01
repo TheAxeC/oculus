@@ -2,9 +2,16 @@
 // order their collection file lists them, membership, portfolio status, the venue tiers the config
 // names and their counts, and the archival groups. The views receive ready-to-draw lists.
 
+import { z } from 'zod';
 import type { Domain, Pillar, Project, Snapshot, Venue } from '../../../data/model/index.ts';
+import {
+    optionalTextShape,
+    readAs,
+    rowsShape,
+    searchRevealShape,
+    wordShape
+} from '../../../data/shapes/shapes.ts';
 import { parseOpenForms, type OpenForms } from '../../forms/open-forms.ts';
-import { asText } from '../../forms/schema.ts';
 import { realProjects } from '../../sources/venues.ts';
 
 export type { Domain, Pillar, Project, Venue } from '../../../data/model/index.ts';
@@ -18,12 +25,14 @@ export type ArchiveGroup = { type: string; count: number; projects: Project[] };
 export type PillarsState = OpenForms & { reveal?: string };
 export type DomainsState = OpenForms & { reveal?: string };
 
+/** The palette destination a saved state names, absent unless it is a non-empty text. */
+const revealShape = searchRevealShape.pick({ reveal: true });
+
 /** The open forms and the optional palette destination shared by the two registry-line views. */
 function parseRevealState(raw: unknown): OpenForms & { reveal?: string } {
     const open = parseOpenForms(raw);
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return open;
-    const reveal = (raw as Record<string, unknown>).reveal;
-    return typeof reveal === 'string' && reveal !== '' ? { ...open, reveal } : open;
+    const reveal = readAs(revealShape, raw)?.reveal;
+    return reveal === undefined ? open : { ...open, reveal };
 }
 
 /** Saved state of one Pillars instance. */
@@ -153,20 +162,27 @@ export function lineKinds(lines: Pillar[]): {
     };
 }
 
+/** One row of `venue_tiers`: a map with a key, a label that is a string and a string colour. */
+const tierRowShape = z
+    .object({
+        key: wordShape.refine((key) => key !== ''),
+        label: optionalTextShape,
+        color: optionalTextShape
+    })
+    .transform((row): TierRow => ({
+        key: row.key,
+        label: row.label ?? row.key,
+        ...(row.color === undefined ? {} : { color: row.color })
+    }));
+
+const tierRowsShape = rowsShape(tierRowShape);
+
 /**
  * The venue tiers `venue_tiers` of the merged config names, in its order: a row without a key is
  * dropped, a row without a label is labelled by its key, and a colour is kept where it is a string.
  */
 export function venueTiers(value: unknown): TierRow[] {
-    if (!Array.isArray(value)) return [];
-    return value
-        .filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null)
-        .map((row) => ({
-            key: typeof row.key === 'string' ? row.key : '',
-            label: typeof row.label === 'string' ? row.label : asText(row.key),
-            ...(typeof row.color === 'string' ? { color: row.color } : {})
-        }))
-        .filter((row) => row.key !== '');
+    return readAs(tierRowsShape, value) ?? [];
 }
 
 /** How many projects the archival groups hold together. */

@@ -11,6 +11,8 @@
 // $derived never writes state while a derived is running. It is only ever made in the browser: a
 // server-rendered page holds nothing and asks for nothing.
 
+import { z } from 'zod';
+import { optionalTextShape, readJson } from '../../data/shapes/shapes.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 
@@ -43,6 +45,42 @@ export type MirrorState = {
     plan: Plan | null;
 };
 
+const findingShape = z.object({
+    kind: z.string(),
+    path: z.string(),
+    mb: z.number()
+}) satisfies z.ZodType<Finding>;
+
+const changeShape = z.object({ path: z.string(), letters: z.string() }) satisfies z.ZodType<Change>;
+
+const planShape = z.object({
+    repo: z.string(),
+    mirror: z.string(),
+    branch: z.string(),
+    remote: z.string(),
+    files: z.array(z.string()),
+    changes: z.array(changeShape),
+    findings: z.array(findingShape)
+}) satisfies z.ZodType<Plan>;
+
+/** A state whose every field is of its type; one that is not whole reads as no state. */
+const mirrorStateShape = z.object({
+    id: z.string(),
+    repo: z.string(),
+    mirror: z.string(),
+    exists: z.boolean(),
+    branch: z.string(),
+    remote: z.string(),
+    ahead: z.number(),
+    plan: planShape.nullable()
+}) satisfies z.ZodType<MirrorState>;
+
+/** What GET /api/deposit answers: the state, or the error a refusal carries. */
+const bodyShape = z.object({
+    state: mirrorStateShape.nullable().catch(null),
+    error: optionalTextShape
+});
+
 /** What the panel reads for one project. */
 export type Held = {
     state: MirrorState | null;
@@ -65,23 +103,23 @@ export type DepositStore = {
     reload: (id: string) => void;
 };
 
+/** What a request that failed leaves held: no state, and the sentence saying why. */
+function failed(error: string): Held {
+    return { state: null, error, loading: false };
+}
+
 export function createDeposit(queries: Queries): DepositStore {
     /** Ask for one project's mirror, answering what came back as the panel's held shape. */
     async function ask(id: string): Promise<Held> {
         try {
             const response = await fetch(`/api/deposit?id=${encodeURIComponent(id)}`);
-            const body = (await response.json()) as { state?: MirrorState; error?: string };
-            if (!response.ok) {
-                return {
-                    state: null,
-                    error: body.error ?? String(response.status),
-                    loading: false
-                };
-            }
-            return { state: body.state ?? null, error: '', loading: false };
+            const raw = await readJson(response);
+            if (raw === undefined) return failed(String(response.status));
+            const body = bodyShape.safeParse(raw).data;
+            if (!response.ok) return failed(body?.error ?? String(response.status));
+            return { state: body?.state ?? null, error: '', loading: false };
         } catch (error) {
-            const reason = error instanceof Error ? error.message : String(error);
-            return { state: null, error: reason, loading: false };
+            return failed(error instanceof Error ? error.message : String(error));
         }
     }
 

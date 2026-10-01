@@ -18,7 +18,9 @@
 // the store listens for the browser's `storage` event and takes the saved records when another tab
 // saves, leaving the appearance as this tab has it (`takeSavedInstances`).
 
+import { z } from 'zod';
 import type { BusyTerminal } from '../sessions/terminal/pty-io.ts';
+import { mapOfShape, mapShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import { followKey } from '../shared/stores/storage-events.ts';
 import {
     codeThemeDefault,
@@ -41,6 +43,42 @@ export const UI_VERSION = 2;
  * choice and is read as none.
  */
 const UI_VERSION_UNCHOSEN = 1;
+
+/**
+ * The saved envelope, a field at a time. A field of the wrong type reads as the value the viewer
+ * never set: absent for a choice, none for a list, off for the quiet flag. The theme, the text
+ * scale and the code theme are read as they came, since each is checked against the lists the
+ * appearance config holds. The instance records are a fresh map of the saved ones, an own
+ * `__proto__` key included.
+ */
+const savedUiShape = z.object({
+    version: z.union([z.literal(UI_VERSION), z.literal(UI_VERSION_UNCHOSEN)]),
+    theme: z.unknown().optional(),
+    crt: z.boolean().optional().catch(undefined),
+    wallpaper: z.boolean().optional().catch(undefined),
+    icons: z.boolean().optional().catch(undefined),
+    unicode: z.boolean().optional().catch(undefined),
+    textScale: z.unknown().optional(),
+    terminalFont: z.number().optional().catch(undefined),
+    codeTheme: z.unknown().optional(),
+    statusHidden: rowsShape(z.string().min(1))
+        .transform((items) => [...new Set(items)])
+        .catch(() => []),
+    statusQuiet: z.boolean().catch(false),
+    instances: mapShape.transform((records) => ({ ...records })).catch(() => ({}))
+});
+
+/** A saved envelope as `savedUiShape` reads it. */
+type SavedUi = z.infer<typeof savedUiShape>;
+
+/** A number that is not `NaN` or an infinity: a text scale that can be rounded. */
+const finiteNumberShape = z.number();
+
+/**
+ * The instance records of the storage with an own `__proto__` key left out, because assigning to
+ * it would replace the prototype of the map a save builds instead of adding a record.
+ */
+const savedRecordsShape = mapOfShape(z.unknown());
 
 /** What the store needs of a Storage, so a test can hand it a plain object. */
 type Storable = Pick<Storage, 'getItem' | 'setItem'>;
@@ -353,39 +391,27 @@ export function createUi(): UiStore {
         const held = savedHeld(storage);
         if (held === null) return false;
 
-        const instances = instancesOf(held);
+        const { instances } = held;
         const started = defaultUi();
         store.current = {
             theme: known(held.theme),
-            crt: typeof held.crt === 'boolean' ? held.crt : started.crt,
-            wallpaper:
-                held.version === UI_VERSION && typeof held.wallpaper === 'boolean'
-                    ? held.wallpaper
-                    : null,
-            icons: typeof held.icons === 'boolean' ? held.icons : held.unicode === true,
+            crt: held.crt ?? started.crt,
+            wallpaper: held.version === UI_VERSION ? (held.wallpaper ?? null) : null,
+            icons: held.icons ?? held.unicode === true,
             textScale: boundedTextScale(held.textScale),
             terminalFont:
-                typeof held.terminalFont === 'number' && Number.isFinite(held.terminalFont)
-                    ? Math.min(40, Math.max(6, held.terminalFont))
-                    : null,
+                held.terminalFont === undefined
+                    ? null
+                    : Math.min(40, Math.max(6, held.terminalFont)),
             codeTheme: isCodeTheme(held.codeTheme) ? held.codeTheme : null,
-            statusHidden: Array.isArray(held.statusHidden)
-                ? [
-                      ...new Set(
-                          held.statusHidden.filter(
-                              (item): item is string => typeof item === 'string' && item !== ''
-                          )
-                      )
-                  ]
-                : [],
-            statusQuiet: held.statusQuiet === true,
+            statusHidden: held.statusHidden,
+            statusQuiet: held.statusQuiet,
             instances
         };
         synced = textsOf(instances);
         // A value saved under the field's older name, `unicode`, and not under `icons` is read
         // above and written back here under `icons`, so a browser keeps the choice it made.
-        if (typeof held.icons !== 'boolean' && typeof held.unicode === 'boolean')
-            save(store.current);
+        if (held.icons === undefined && held.unicode !== undefined) save(store.current);
         return true;
     }
 
@@ -394,7 +420,7 @@ export function createUi(): UiStore {
      * nothing saved, a storage that refuses to be read, a value that does not parse, or another
      * shape.
      */
-    function savedHeld(storage: Storable): Record<string, unknown> | null {
+    function savedHeld(storage: Storable): SavedUi | null {
         let raw: string | null;
         try {
             raw = storage.getItem(UI_KEY);
@@ -409,18 +435,7 @@ export function createUi(): UiStore {
         } catch {
             return null;
         }
-        if (typeof saved !== 'object' || saved === null || Array.isArray(saved)) return null;
-        const held = saved as Record<string, unknown>;
-        if (held.version !== UI_VERSION && held.version !== UI_VERSION_UNCHOSEN) return null;
-        return held;
-    }
-
-    /** The instance records of a saved envelope, none when it holds no map of them. */
-    function instancesOf(held: Record<string, unknown>): Record<string, unknown> {
-        const instances = held.instances;
-        return typeof instances === 'object' && instances !== null && !Array.isArray(instances)
-            ? { ...(instances as Record<string, unknown>) }
-            : {};
+        return readAs(savedUiShape, saved);
     }
 
     /** Each record as its JSON text. */
@@ -443,13 +458,14 @@ export function createUi(): UiStore {
     function mergedInstances(mine: Record<string, unknown>): Record<string, unknown> {
         const held = backing === null ? null : savedHeld(backing);
         if (held === null) return mine;
-        const saved = instancesOf(held);
+        const saved = readAs(savedRecordsShape, held.instances) ?? {};
+        const own = readAs(savedRecordsShape, mine) ?? {};
         const texts = textsOf(mine);
         const merged: Record<string, unknown> = {};
         for (const [id, state] of Object.entries(saved)) {
             if (id in mine || !(id in synced)) merged[id] = state;
         }
-        for (const [id, state] of Object.entries(mine)) {
+        for (const [id, state] of Object.entries(own)) {
             if (texts[id] !== synced[id]) merged[id] = state;
         }
         return merged;
@@ -463,7 +479,7 @@ export function createUi(): UiStore {
         if (backing === null) return;
         const held = savedHeld(backing);
         if (held === null) return;
-        const instances = instancesOf(held);
+        const { instances } = held;
         store.current = { ...store.current, instances };
         synced = textsOf(instances);
     }
@@ -519,8 +535,9 @@ export function createUi(): UiStore {
 
     /** Normalise saved and chosen scale values to the ten supported steps and the null default. */
     function boundedTextScale(scale: unknown): number | null {
-        if (typeof scale !== 'number' || !Number.isFinite(scale)) return null;
-        const bounded = Math.min(1.6, Math.max(0.7, Math.round(scale * 10) / 10));
+        const finite = readAs(finiteNumberShape, scale);
+        if (finite === null) return null;
+        const bounded = Math.min(1.6, Math.max(0.7, Math.round(finite * 10) / 10));
         return bounded === 1 ? null : bounded;
     }
 

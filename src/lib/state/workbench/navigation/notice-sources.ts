@@ -13,23 +13,37 @@
 // store keeps what each channel has shown and hears every message the entities store keeps, wired
 // in state/client/context.ts, as it hears every write that did not land from the writes store.
 
-import type {
-    HookEvent,
-    HpcPayload,
-    HpcRecent,
-    InboxPayload,
-    Message,
-    SessionsPayload,
-    Snapshot
-} from '../../../data/model/index.ts';
+import { z } from 'zod';
+import type { HookEvent, Message } from '../../../data/model/index.ts';
+import { readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 import type { NoticeAction, NoticesStore } from './notices.svelte.ts';
 import { t } from '../../shared/words/text.ts';
+
+/** The words of a hook the notifications compare: what happened and what kind of notification. */
+type HookWords = { event: string; kind?: string };
+
+/** A session's last hook as far as the notifications read it. */
+const hookShape = z.object({
+    event: z.string(),
+    kind: z.string().optional().catch(undefined),
+    at: z.string()
+});
+
+/** A session record as far as the notifications read it. */
+const waitingRecordShape = z.object({
+    id: z.string(),
+    title: z.string().catch(''),
+    hook: hookShape.nullable().catch(null)
+});
+
+/** The records of a sessions payload that read as sessions; none where the payload has no list. */
+const waitingShape = z.object({ records: rowsShape(waitingRecordShape).catch([]) });
 
 /**
  * Whether a session's last hook leaves it waiting on a permission prompt, Claude Code's
  * `permission_prompt`, which is what the page's waiting count and the window title count.
  */
-export function waitsOnReader(hook: HookEvent | null | undefined): boolean {
+export function waitsOnReader(hook: HookEvent | HookWords | null | undefined): boolean {
     return hook?.event === 'notification' && hook.kind === 'permission_prompt';
 }
 
@@ -41,7 +55,7 @@ export type WaitKind = 'permission' | 'idle';
  * `idle_prompt`, sent when it has finished its turn and waits for the reader's input; null for
  * any other hook and for none.
  */
-export function waitOf(hook: HookEvent | null | undefined): WaitKind | null {
+export function waitOf(hook: HookEvent | HookWords | null | undefined): WaitKind | null {
     if (waitsOnReader(hook)) return 'permission';
     return hook?.event === 'notification' && hook.kind === 'idle_prompt' ? 'idle' : null;
 }
@@ -54,8 +68,8 @@ export type Waiting = { key: string; id: string; title: string; kind: WaitKind }
  * a session answered that waits again later is a new event, and one still waiting on the next push
  * is not.
  */
-export function waitingOf(payload: SessionsPayload | null): Waiting[] {
-    return listOf(payload?.records).flatMap((record) => {
+export function waitingOf(payload: unknown): Waiting[] {
+    return (readAs(waitingShape, payload)?.records ?? []).flatMap((record) => {
         const hook = record.hook;
         const kind = waitOf(hook);
         if (hook === null || kind === null) return [];
@@ -70,25 +84,26 @@ export function waitingOf(payload: SessionsPayload | null): Waiting[] {
     });
 }
 
-/** A list the wire carries, or none where a payload left it out. */
-function listOf<T>(value: readonly T[] | undefined | null): readonly T[] {
-    return Array.isArray(value) ? (value as readonly T[]) : [];
-}
+/** An ended job as far as the notifications read it. */
+const endedJobShape = z.object({
+    id: z.string(),
+    name: z.string(),
+    state: z.string(),
+    exit: z.string()
+});
 
 /**
- * The jobs the Live HPC poll lists as ended, `recent`, from a poll the cluster answered, and none
- * from one it did not: a failed poll says nothing about which jobs ended.
+ * The poll's status and the jobs of it that read as ended jobs. Only a poll the cluster answered
+ * lists ended jobs: a failed poll says nothing about which jobs ended.
  */
-export function endedJobs(payload: HpcPayload | null): readonly HpcRecent[] {
-    return payload?.status === 'ok' ? listOf(payload.recent) : [];
-}
+const pollShape = z.object({ status: z.string(), recent: rowsShape(endedJobShape).catch([]) });
 
 /**
  * Whether an ended job finished: Slurm's COMPLETED with a zero exit code, or no code given. Any
  * other state (FAILED, TIMEOUT, OUT_OF_MEMORY, CANCELLED and the rest) or a non-zero code is a
  * failure.
  */
-export function jobFinished(job: Pick<HpcRecent, 'state' | 'exit'>): boolean {
+export function jobFinished(job: { state: string; exit: string }): boolean {
     const exit = job.exit.trim();
     return job.state.trim() === 'COMPLETED' && (exit === '' || exit === '0:0');
 }
@@ -107,22 +122,47 @@ export const TASK_VIEW: Record<Task, string> = {
     inbox: 'inbox'
 };
 
+/** When a task last ran, as the text the portfolio or the inbox carries; empty otherwise. */
+const stampShape = z.string().catch('');
+
+/** A feed summary that carries a `lastRun`. */
+const lastRunShape = z.object({ lastRun: stampShape }).catch({ lastRun: '' });
+
+/** The three feed summaries of a portfolio; a snapshot still being built carries none. */
+const feedRunsShape = z.object({
+    entities: z
+        .object({
+            feeds: z
+                .object({
+                    radar: lastRunShape,
+                    scout: lastRunShape,
+                    linkedin: z.object({ lastPost: stampShape }).catch({ lastPost: '' })
+                })
+                .catch({
+                    radar: { lastRun: '' },
+                    scout: { lastRun: '' },
+                    linkedin: { lastPost: '' }
+                })
+        })
+        .optional()
+});
+
 /** The run dates of the three tasks the portfolio's feed summary carries, empty for none. */
-export function feedRuns(snapshot: Snapshot | null): TaskRuns {
-    // A snapshot that carries no entities, as a portfolio message still being built may, has no
-    // feed summary to read.
-    const entities: Snapshot['entities'] | undefined = snapshot?.entities;
-    const feeds = entities?.feeds;
+export function feedRuns(snapshot: unknown): TaskRuns {
+    const feeds = readAs(feedRunsShape, snapshot)?.entities?.feeds;
     return {
-        litwatch: feeds?.radar?.lastRun ?? '',
-        scout: feeds?.scout?.lastRun ?? '',
-        linkedin: feeds?.linkedin?.lastPost ?? ''
+        litwatch: feeds?.radar.lastRun ?? '',
+        scout: feeds?.scout.lastRun ?? '',
+        linkedin: feeds?.linkedin.lastPost ?? ''
     };
 }
 
+/** The date the inbox triage last ran, which its own channel carries. */
+const notesShape = z.object({ notesRun: stampShape });
+
 /** The run date of the inbox triage, which its own channel carries. */
-export function notesRuns(inbox: InboxPayload | null): TaskRuns {
-    return { inbox: inbox?.notesRun ?? '' };
+export function notesRuns(inbox: unknown): TaskRuns {
+    return { inbox: readAs(notesShape, inbox)?.notesRun ?? '' };
 }
 
 /** What the store opens for a notification's action. */
@@ -178,7 +218,7 @@ export function createNoticeSources(
         return [{ label: t('statusbar.notice_open'), run }];
     }
 
-    function sessionsHeard(payload: SessionsPayload): void {
+    function sessionsHeard(payload: unknown): void {
         const now = waitingOf(payload);
         for (const key of sessions(now.map((one) => one.key))) {
             const one = now.find((wait) => wait.key === key);
@@ -198,9 +238,10 @@ export function createNoticeSources(
      * A poll the cluster did not answer is not read at all, so it neither starts the reading nor
      * makes the jobs of the next answered poll look new.
      */
-    function hpcHeard(payload: HpcPayload): void {
-        if (payload.status !== 'ok') return;
-        const now = endedJobs(payload);
+    function hpcHeard(payload: unknown): void {
+        const poll = readAs(pollShape, payload);
+        if (poll?.status !== 'ok') return;
+        const now = poll.recent;
         for (const id of jobs(now.map((job) => job.id))) {
             const job = now.find((one) => one.id === id);
             if (job === undefined) continue;
@@ -229,13 +270,13 @@ export function createNoticeSources(
 
     function heard(message: Message): void {
         if (message.channel === 'sessions') {
-            sessionsHeard(message.payload as SessionsPayload);
+            sessionsHeard(message.payload);
         } else if (message.channel === 'hpc') {
-            hpcHeard(message.payload as HpcPayload);
+            hpcHeard(message.payload);
         } else if (message.channel === 'portfolio') {
-            runsHeard(feeds, feedRuns(message.payload as Snapshot));
+            runsHeard(feeds, feedRuns(message.payload));
         } else if (message.channel === 'inbox') {
-            runsHeard(notes, notesRuns(message.payload as InboxPayload));
+            runsHeard(notes, notesRuns(message.payload));
         }
     }
 

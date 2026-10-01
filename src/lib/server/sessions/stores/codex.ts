@@ -21,7 +21,7 @@ import {
     type UsageEvent,
     type UsageTotals
 } from '../../transcripts/usage.ts';
-import { mapShape, quickly, wholeShape } from '../../core/shapes.ts';
+import { mapShape, quickly, wholeShape } from '../../../data/shapes/shapes.ts';
 import type { Acc } from '../record.ts';
 import {
     PROMPT_CHARS,
@@ -33,7 +33,7 @@ import {
     textShape,
     touch
 } from '../record.ts';
-import { filledTextShape } from '../../core/shapes.ts';
+import { filledTextShape } from '../../../data/shapes/shapes.ts';
 
 /** A rollout written more recently than this, with a codex process up, counts as live. */
 export const CODEX_FRESH_SECONDS = 120;

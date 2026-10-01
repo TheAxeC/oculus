@@ -2,7 +2,9 @@
 // drawn in the view catalogue and on pane tabs.
 // The snapshot summary remains the starting and read-error fallback until a usable feed arrives.
 
+import { z } from 'zod';
 import { scalar, isMap, numericSetting } from '../../data/helpers/guards.ts';
+import { readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import type { EntitiesStore } from '../shared/stores/shapes.ts';
 import type { FeedsStore, FeedState } from '../feeds/feeds.svelte.ts';
 import type { AuditStore } from '../system/audit.svelte.ts';
@@ -26,6 +28,12 @@ import type { Collection } from '../../data/model/index.ts';
 
 /** One coloured count drawn as a cell on a pane tab. `color` is a theme hue name. */
 export type BadgeCell = { count: number; color: string; label: string };
+
+/** A `scan` row that names the board tier it belongs to and the project type it holds. */
+const scanTypeShape = z.object({ tier: z.unknown().optional(), type: z.string() });
+
+/** The rows of `scan` that name a type, and none for a value that is not a list. */
+const scanTypesShape = rowsShape(scanTypeShape);
 
 /** A socket feed with readable entries that can supply a badge count. */
 function available(feed: FeedState | null): feed is FeedState {
@@ -171,17 +179,8 @@ export function createRailBadges(
     /** The project-board types from `scan`, in the vocabulary's configured type order. */
     function projectTypeOrder(): string[] {
         const preset = selectors.boardPreset('projects');
-        const rows = selectors.configMap().scan;
-        if (!Array.isArray(rows)) return [];
-        const types = new Set(
-            rows.flatMap((row) => {
-                if (typeof row !== 'object' || row === null || Array.isArray(row)) return [];
-                const value = row as Record<string, unknown>;
-                return value.tier === preset.id && typeof value.type === 'string'
-                    ? [value.type]
-                    : [];
-            })
-        );
+        const rows = readAs(scanTypesShape, selectors.configMap().scan) ?? [];
+        const types = new Set(rows.filter((row) => row.tier === preset.id).map((row) => row.type));
         return preset.typeOrder.filter((type) => types.has(type));
     }
 

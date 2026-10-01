@@ -2,34 +2,32 @@
 // storage. It sits in the layout folder beside the tree its lookups walk, which every layout module
 // reads it for, and the client folder above reads it from here.
 
+import { z } from 'zod';
 import type { Instance, Layout, Pane, ViewId } from './index.ts';
-import { item } from '../../../data/helpers/guards.ts';
+import { isMap, item } from '../../../data/helpers/guards.ts';
+import { filledTextShape, readAs } from '../../../data/shapes/shapes.ts';
+
+/** The field of a view's saved state that holds its keyboard-selected card. */
+const cursorShape = z.object({ cursor: filledTextShape });
+
+/** The fields of a view's saved state that tell which record the instance shows. */
+const identityShape = z.object({
+    id: filledTextShape,
+    session: filledTextShape,
+    root: filledTextShape,
+    path: filledTextShape
+});
 
 /** The card id held by an instance, or null when keyboard navigation has selected none. */
 export function cardCursor(state: unknown): string | null {
-    if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
-    const cursor = (state as Record<string, unknown>).cursor;
-    return typeof cursor === 'string' && cursor !== '' ? cursor : null;
+    return readAs(cursorShape, state)?.cursor ?? null;
 }
 
 /** Preserve a view's own state while setting or removing its held card cursor. */
 export function withCardCursor(state: unknown, cursor: string | null): unknown {
-    if (cursor !== null) {
-        const held =
-            typeof state === 'object' && state !== null && !Array.isArray(state)
-                ? (state as Record<string, unknown>)
-                : {};
-        return { ...held, cursor };
-    }
-    if (
-        typeof state !== 'object' ||
-        state === null ||
-        Array.isArray(state) ||
-        !Object.hasOwn(state, 'cursor')
-    ) {
-        return state;
-    }
-    const held = { ...(state as Record<string, unknown>) };
+    if (cursor !== null) return { ...(isMap(state) ? state : {}), cursor };
+    if (!isMap(state) || !Object.hasOwn(state, 'cursor')) return state;
+    const held = { ...state };
     delete held.cursor;
     return held;
 }
@@ -90,16 +88,11 @@ export function activePath(layout: Layout, id: string | null): number[] {
  * its existing instance.
  */
 export function stateId(state: unknown): string | null {
-    if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
-    const held = state as Record<string, unknown>;
-    if (typeof held.id === 'string' && held.id !== '') return held.id;
-    if (typeof held.session === 'string' && held.session !== '') return held.session;
-    if (
-        typeof held.root === 'string' &&
-        held.root !== '' &&
-        typeof held.path === 'string' &&
-        held.path !== ''
-    ) {
+    const held = readAs(identityShape, state);
+    if (held === null) return null;
+    if (held.id !== undefined) return held.id;
+    if (held.session !== undefined) return held.session;
+    if (held.root !== undefined && held.path !== undefined) {
         return JSON.stringify([held.root, held.path]);
     }
     return null;

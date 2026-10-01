@@ -1,7 +1,8 @@
 // Layer 2, client state. Pure formatting and tone choices for the Live HPC view keep display policy
 // out of its components.
 import type { HpcJob, HpcPartition } from '../../data/model/index.ts';
-import { fields } from '../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { readAs } from '../../data/shapes/shapes.ts';
 export type {
     HpcJob,
     HpcPartition,
@@ -79,12 +80,15 @@ export type HpcViewState = { capacity: boolean; sinfo: boolean };
 /** The folds a new pane shows: the capacity open, since it is the glance, and the table closed. */
 const HPC_DEFAULTS: HpcViewState = { capacity: true, sinfo: false };
 
+/** The held state of a Live HPC pane: each missing or non-boolean key is read as its default. */
+const hpcStateShape = z.object({
+    capacity: z.boolean().catch(HPC_DEFAULTS.capacity),
+    sinfo: z.boolean().catch(HPC_DEFAULTS.sinfo)
+}) satisfies z.ZodType<HpcViewState>;
+
 /** The held state of a Live HPC pane, each missing or non-boolean key read as its default. */
 export function parseHpcState(raw: unknown): HpcViewState {
-    const held = fields(raw);
-    const flag = (key: keyof HpcViewState): boolean =>
-        typeof held[key] === 'boolean' ? held[key] : HPC_DEFAULTS[key];
-    return { capacity: flag('capacity'), sinfo: flag('sinfo') };
+    return readAs(hpcStateShape, raw) ?? { ...HPC_DEFAULTS };
 }
 
 /**

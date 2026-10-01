@@ -39,15 +39,12 @@ import { t } from '../shared/words/text.ts';
 import type {
     ComposeStart,
     SessionRecord,
-    SessionsPayload,
-    PtyPayload,
     Terminal,
     TerminalKind,
     TerminalInput,
     TerminalResize,
     TerminalResume
 } from '../../data/model/index.ts';
-import { isMap } from '../../data/helpers/guards.ts';
 import { tabMarkOf } from './terminal/terminal-marks.ts';
 import {
     TERMINAL_VIEW,
@@ -69,6 +66,7 @@ import { endedTerminals, unownedTerminals } from './terminal/terminal-lists.ts';
 import type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
 import { decodeBytes, encodeBytes } from './terminal/pty-bytes.ts';
 import { createPtyOrder, type PtySize } from './terminal/pty-subscribe.ts';
+import { ptyBytesOf, terminalsReader } from './terminal/terminal-payloads.ts';
 import {
     postTerminal,
     readBusy,
@@ -119,11 +117,6 @@ export function resumeRefusal(error: string): string {
     if (error === 'sessions.resume_live') return t('sessions.resume_live');
     if (error === 'sessions.resume_unknown') return t('sessions.resume_unknown');
     return error;
-}
-
-/** A plain map, or null. */
-function mapOf(value: unknown): Record<string, unknown> | null {
-    return isMap(value) ? value : null;
 }
 
 /** The terminals one client owns, and the actions it runs on them. */
@@ -258,6 +251,9 @@ export function createTerminals(
     const seen = new Set<string>();
     let heard = false;
 
+    /** The terminals of a payload's list, read once for each list. */
+    const readTerminals = terminalsReader();
+
     /**
      * What each start answered, kept until the payload lists the terminal: a terminal started a
      * moment ago is not in the payload yet, but its kind and folder are known, and it is running.
@@ -297,15 +293,12 @@ export function createTerminals(
     entities.afterReceive((message) => {
         if (message.channel === 'portfolio') releaseHubWaiters();
         if (message.channel !== 'sessions') return;
-        const payload = mapOf(message.payload);
-        const list = payload?.terminals;
+        const list = readTerminals(entities.payloadOf(message, 'sessions')?.terminals);
         // A message with no list says nothing about any terminal, so it is not the first one.
-        if (!Array.isArray(list)) return;
+        if (list === null) return;
         const first = !heard;
         heard = true;
-        const now = list
-            .map((one: unknown) => mapOf(one)?.id)
-            .filter((id): id is string => typeof id === 'string');
+        const now = list.map((one) => one.id);
         if (workbench !== undefined) {
             const selected = workbench.selected();
             const held = terminalTabs().flatMap((tab) => readTab(tab.state).terminals);
@@ -481,10 +474,7 @@ export function createTerminals(
 
     /** Every terminal oculus owns, as the last `sessions` payload reported them. */
     function terminals(): Terminal[] {
-        const held = entities.message('sessions');
-        if (held === null) return [];
-        const payload = held.payload as SessionsPayload;
-        return Array.isArray(payload.terminals) ? payload.terminals : [];
+        return readTerminals(entities.sessions()?.terminals) ?? [];
     }
 
     /** One terminal by id, or null when the payload does not hold it. */
@@ -833,9 +823,7 @@ export function createTerminals(
     function subscribePty(id: string, size: () => PtySize, onBytes: PtyListener): () => void {
         const channel = ptyChannel(id);
         const off = socket.listen(channel, (received) => {
-            const payload = received.payload as PtyPayload | null;
-            const encoded = typeof payload?.bytes === 'string' ? payload.bytes : '';
-            onBytes(decodeBytes(encoded), received.version === 0);
+            onBytes(decodeBytes(ptyBytesOf(received.payload)), received.version === 0);
         });
         const leave = order.attach(
             id,

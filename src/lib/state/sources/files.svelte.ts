@@ -15,9 +15,12 @@
 // fetches again. The portfolio's version cannot answer this: the snapshot is rebuilt only for a
 // file the config names.
 
+import { z } from 'zod';
+import { anyNumberShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import type { EntitiesStore } from '../shared/stores/shapes.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { byScore, fuzzyMatches } from '../shared/words/fuzzy.ts';
+import { readAnswer } from './fs-transport.ts';
 
 /** One file of a project folder, as the finder draws it. */
 export type FileRow = { path: string; size: number; mtime: number };
@@ -32,6 +35,20 @@ export function matchingFiles(all: FileRow[], needle: string): FileRow[] {
         .sort(byScore)
         .map((found) => found.row);
 }
+
+/** One row of an answer: a row with no path is not one, and the page never draws a nameless row. */
+const fileRowShape = z.object({
+    path: z.string().min(1),
+    size: anyNumberShape.catch(0),
+    mtime: anyNumberShape.catch(0)
+}) satisfies z.ZodType<FileRow>;
+
+/** What a successful answer carries: the rows it can read, whether it was cut, and the folder. */
+const filesShape = z.object({
+    rows: rowsShape(fileRowShape).catch([]),
+    truncated: z.boolean().catch(false),
+    folder: z.string().catch('')
+});
 
 /** One project's files as the view reads them. */
 export type FilesState = {
@@ -94,23 +111,13 @@ export function createFiles(entities: EntitiesStore, queries: Queries): FilesSto
     async function load(id: string): Promise<FilesState> {
         try {
             const response = await fetch(`/api/project-files?id=${encodeURIComponent(id)}`);
-            const body = (await response.json()) as {
-                rows?: unknown;
-                truncated?: unknown;
-                folder?: unknown;
-                error?: string;
-            };
-            if (!response.ok) {
-                return {
-                    ...PENDING,
-                    error: body.error ?? String(response.status),
-                    loading: false
-                };
-            }
+            const answer = await readAnswer(response);
+            if (!answer.ok) return { ...PENDING, error: answer.error, loading: false };
+            const body = readAs(filesShape, answer.body);
             return {
-                rows: readRows(body.rows),
-                truncated: body.truncated === true,
-                folder: typeof body.folder === 'string' ? body.folder : '',
+                rows: body?.rows ?? [],
+                truncated: body?.truncated ?? false,
+                folder: body?.folder ?? '',
                 error: '',
                 loading: false
             };
@@ -118,25 +125,6 @@ export function createFiles(entities: EntitiesStore, queries: Queries): FilesSto
             const reason = error instanceof Error ? error.message : String(error);
             return { ...PENDING, error: reason, loading: false };
         }
-    }
-
-    /**
-     * The rows of an answer, keeping only what carries a path: the page never draws a nameless row.
-     */
-    function readRows(value: unknown): FileRow[] {
-        if (!Array.isArray(value)) return [];
-        const rows: FileRow[] = [];
-        for (const one of value) {
-            if (typeof one !== 'object' || one === null) continue;
-            const row = one as Record<string, unknown>;
-            if (typeof row.path !== 'string' || row.path === '') continue;
-            rows.push({
-                path: row.path,
-                size: typeof row.size === 'number' ? row.size : 0,
-                mtime: typeof row.mtime === 'number' ? row.mtime : 0
-            });
-        }
-        return rows;
     }
 
     return { files, invalidate };

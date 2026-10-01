@@ -14,6 +14,7 @@ export {
     daysUntil,
     firstSentence,
     presetFor,
+    setting,
     slug,
     venueText
 } from './presets.ts';

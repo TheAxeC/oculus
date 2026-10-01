@@ -14,6 +14,7 @@ import {
     mapPlacement,
     placeGraph,
     placement,
+    type Placement,
     placementKey,
     drawnAt
 } from '../../../../src/lib/state/boards/structure/layout.ts';
@@ -262,5 +263,101 @@ describe('the Map placed by neato', () => {
         const mutual = { ...edge('a', 'b', 'related'), direction: 'mutual' as const };
         expect(edgeEnds(mutual, placed)).toEqual({ x1: 114, y1: 100, x2: 286, y2: 100 });
         expect(edgeEnds(edge('a', 'gone', 'membership'), placed)).toBeNull();
+    });
+});
+
+describe("the positions of Graphviz's answer", () => {
+    const stub = (json: unknown) => ({ renderJSON: () => json }) as unknown as Viz;
+    const one: Graph = { nodes: [node('project::a')], edges: [] };
+    const two: Graph = { nodes: [node('project::a'), node('project::b')], edges: [] };
+    const NONE = { error: 'Graphviz placed no position for node 0' };
+    const n1 = { name: 'n1', pos: '5,6' };
+
+    /** The error of a placement, or the page position of each node it placed. */
+    function placed(answer: Placement): unknown {
+        return 'error' in answer ? answer : answer.nodes.map((one) => [one.x, one.y]);
+    }
+
+    it('keeps a node when an item beside its position is not a map', () => {
+        const held = { name: 'n0', pos: '1,2' };
+        for (const extra of [3, 'x', []]) {
+            expect(placed(placement(stub({ objects: [held, extra] }), one, 1))).toStrictEqual([
+                [500, 340]
+            ]);
+        }
+    });
+
+    it('places no node for names that are not n and an index, or positions that are no pair', () => {
+        const rows = [
+            [{ name: 'a', pos: '1,2' }, { name: 3 }],
+            [{ name: 'N0', pos: '1,2' }],
+            [{ name: 'n0x', pos: '1,2' }],
+            [{ name: 'n-1', pos: '1,2' }],
+            [{ name: 'n1', pos: '3,4' }],
+            [{ name: 'n0', pos: '1' }],
+            [{ name: 'n0', pos: '1,x' }],
+            [{ name: 'n0', pos: 'a,2' }],
+            [{ name: 'n0', pos: '' }],
+            [{ name: 'n0', pos: 'Infinity,2' }],
+            [{ name: 'n0', pos: 12 }],
+            [{ name: 'n0', pos: null }]
+        ];
+        for (const objects of rows) {
+            expect(placement(stub({ objects }), one, 1)).toStrictEqual(NONE);
+        }
+    });
+
+    it('places no node for objects that are no list, or an answer that holds none', () => {
+        const held = { name: 'n0', pos: '1,2' };
+        for (const objects of [undefined, null, 'x', {}, 3, { 0: held }]) {
+            expect(placement(stub({ objects }), one, 1)).toStrictEqual(NONE);
+        }
+        for (const json of ['x', [], {}]) {
+            expect(placement(stub(json), one, 1)).toStrictEqual(NONE);
+        }
+    });
+
+    it('reads a position written with spaces, an exponent or a third number, and an index with zeros', () => {
+        const at = (name: string, pos: string) =>
+            placed(placement(stub({ objects: [{ name, pos }, n1] }), two, 1));
+        expect(at('n00', '1,2')).toStrictEqual([
+            [497, 343],
+            [503, 337]
+        ]);
+        expect(at('n0', ' 1 , 2 ')).toStrictEqual([
+            [497, 343],
+            [503, 337]
+        ]);
+        expect(at('n0', '1,2,3')).toStrictEqual([
+            [497, 343],
+            [503, 337]
+        ]);
+        expect(at('n0', '1e3,2')).toStrictEqual([
+            [952, 341.8170854271357],
+            [48, 338.1829145728643]
+        ]);
+    });
+
+    it('takes the last of two positions for one node and ignores a node and a key it has no use for', () => {
+        const objects = [{ name: 'n0', pos: '1,2' }, { name: 'n0', pos: '3,4' }, n1];
+        expect(placed(placement(stub({ objects }), two, 1))).toStrictEqual([
+            [498.5, 341.5],
+            [501.5, 338.5]
+        ]);
+        const wider = [{ name: 'n0', pos: '1,2', extra: 1 }, n1, { name: 'n9', pos: '7,8' }];
+        expect(placed(placement(stub({ objects: wider }), two, 1))).toStrictEqual([
+            [497, 343],
+            [503, 337]
+        ]);
+    });
+
+    it('leaves out an item that is null, as it does one that is a number', () => {
+        const objects = [{ name: 'a', pos: '1,2' }, { name: 3 }, null];
+        expect(placement(stub({ objects }), one, 1)).toStrictEqual(NONE);
+    });
+
+    it('places the node a position beside an item that is null names', () => {
+        const objects = [null, { name: 'n0', pos: '1,2' }];
+        expect(placed(placement(stub({ objects }), one, 1))).toStrictEqual([[500, 340]]);
     });
 });

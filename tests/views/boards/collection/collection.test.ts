@@ -6,7 +6,7 @@
 //
 // What this does NOT cover: anything needing a DOM. No menu opens and no key is typed here; the
 // state a click would write is written through setInstanceState instead, and the pure rules behind
-// it are tests/state/boards/collection.test.ts.
+// it are tests/state/boards/collection/collection.test.ts.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { statusTone } from '../../../../src/lib/state/shared/words/tones.ts';

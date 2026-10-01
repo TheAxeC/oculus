@@ -5,19 +5,24 @@
 // form open when the tab was switched away from, or when the page was reloaded, is open again with
 // what was typed into it.
 
+import { z } from 'zod';
+import { readAs } from '../../data/shapes/shapes.ts';
+
 /** The open forms of one instance: whether the add form is open, and the entry edited or ''. */
 export type OpenForms = { adding: boolean; editing: string };
+
+/**
+ * The two fields an instance's record holds: a flag that is not a boolean is closed, and a name
+ * that is not text is none.
+ */
+const openFormsShape = z.object({
+    adding: z.boolean().catch(false),
+    editing: z.string().catch('')
+}) satisfies z.ZodType<OpenForms>;
 
 /**
  * The open forms a saved record names, and none for a record that names none or names them wrongly.
  */
 export function parseOpenForms(raw: unknown): OpenForms {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-        return { adding: false, editing: '' };
-    }
-    const held = raw as Record<string, unknown>;
-    return {
-        adding: held.adding === true,
-        editing: typeof held.editing === 'string' ? held.editing : ''
-    };
+    return readAs(openFormsShape, raw) ?? { adding: false, editing: '' };
 }

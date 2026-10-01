@@ -25,7 +25,7 @@ import {
     touch,
     type Acc
 } from './record.ts';
-import { filledTextShape } from '../core/shapes.ts';
+import { filledTextShape } from '../../data/shapes/shapes.ts';
 import {
     contentTextShape,
     isLaunch,
@@ -33,7 +33,7 @@ import {
     takeLaunch,
     takeNotices
 } from './stores/background.ts';
-import { quickly, readAs, wholeShape } from '../core/shapes.ts';
+import { quickly, readAs, wholeShape } from '../../data/shapes/shapes.ts';
 
 /** The tools whose call is an edit rather than a read. */
 export const EDIT_TOOLS = ['Edit', 'Write', 'NotebookEdit', 'MultiEdit'];

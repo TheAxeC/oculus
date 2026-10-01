@@ -291,3 +291,398 @@ describe('commands', () => {
         expect(names(':')).toEqual(list.map((command) => command.name));
     });
 });
+
+/** The index over feed entries of one kind, and nothing else. */
+function feedIndex(kind: 'leads' | 'radar' | 'linkedin', entries: Record<string, unknown>[]) {
+    return buildIndex(null, { [kind]: { entries } }, []);
+}
+
+/** The index over one entry of a collection, and nothing else. */
+function collectionIndex(entry: Record<string, unknown>) {
+    const held = {
+        entities: { projects: {}, venues: {}, collections: { c: { id: 'c', entries: [entry] } } }
+    } as unknown as Snapshot;
+    return buildIndex(held, {}, []);
+}
+
+describe('the palette readers over config and entries of the wrong type', () => {
+    const rows: [string, () => unknown, unknown][] = [
+        [
+            'themes of a config with none',
+            () => commands({})[0],
+            { name: 'theme', hint: '<>', available: false }
+        ],
+        [
+            'themes that are a map',
+            () => commands({ themes: { name: 'a' } })[0],
+            { name: 'theme', hint: '<>', available: false }
+        ],
+        [
+            'themes that are a string',
+            () => commands({ themes: 'a' })[0],
+            { name: 'theme', hint: '<>', available: false }
+        ],
+        [
+            'themes that are null',
+            () => commands({ themes: null })[0],
+            { name: 'theme', hint: '<>', available: false }
+        ],
+        [
+            'themes that are empty',
+            () => commands({ themes: [] })[0],
+            { name: 'theme', hint: '<>', available: false }
+        ],
+        [
+            'themes with a name that is a number and a row that is a string',
+            () => commands({ themes: [{ name: 3 }, 'x'] })[0],
+            { name: 'theme', hint: '<>', available: false }
+        ],
+        [
+            'themes with rows that are not maps',
+            () => commands({ themes: [null, 3, [], 'a', { name: 'b' }] })[0],
+            { name: 'theme', hint: '<b>', available: true }
+        ],
+        [
+            'themes with an empty name',
+            () => commands({ themes: [{ name: '' }, { name: 'b' }] })[0],
+            { name: 'theme', hint: '<b>', available: true }
+        ],
+        [
+            'themes with a name that is a list',
+            () => commands({ themes: [{ name: ['a'] }, { name: 'b' }] })[0],
+            { name: 'theme', hint: '<b>', available: true }
+        ],
+        [
+            'themes with a name that is null',
+            () => commands({ themes: [{ name: null }, { name: 'b' }] })[0],
+            { name: 'theme', hint: '<b>', available: true }
+        ],
+        [
+            'themes with a blank name',
+            () => commands({ themes: [{ name: ' ' }] })[0],
+            { name: 'theme', hint: '< >', available: true }
+        ],
+        [
+            'themes with extra fields',
+            () => commands({ themes: [{ name: 'a', extra: 1 }, { name: 'b' }] })[0],
+            { name: 'theme', hint: '<a | b>', available: true }
+        ],
+        [
+            'themes in the order the list holds them',
+            () => commands({ themes: [{ name: 'b' }, { name: 'a' }] })[0],
+            { name: 'theme', hint: '<b | a>', available: true }
+        ],
+        [
+            'the commands of a config with themes of the wrong type',
+            () => commands({ themes: [{ name: 3 }] }).map((command) => command.available),
+            [false, true, false, true, true, false, false, true]
+        ],
+        [
+            'a lead with a title that is a number and a subject',
+            () => feedIndex('leads', [{ title: 3, subject: 's' }]),
+            [
+                {
+                    id: 'feed:leads:s',
+                    kind: 'feed',
+                    label: 's',
+                    title: 's',
+                    text: 's',
+                    view: 'leads',
+                    state: { reveal: 's', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a lead with a title and a subject',
+            () => feedIndex('leads', [{ title: 'T', subject: 'S' }]),
+            [
+                {
+                    id: 'feed:leads:T',
+                    kind: 'feed',
+                    label: 'T',
+                    title: 'T',
+                    text: 'T S',
+                    view: 'leads',
+                    state: { reveal: 'T', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a lead with an empty title and a subject',
+            () => feedIndex('leads', [{ title: '', subject: 'S' }]),
+            [
+                {
+                    id: 'feed:leads:S',
+                    kind: 'feed',
+                    label: 'S',
+                    title: 'S',
+                    text: 'S',
+                    view: 'leads',
+                    state: { reveal: 'S', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a lead with a title that is a number and a subject that is a number',
+            () => feedIndex('leads', [{ title: 3, subject: 3, company: 'c' }]),
+            [
+                {
+                    id: 'feed:leads:c',
+                    kind: 'feed',
+                    label: 'c',
+                    title: 'c',
+                    text: 'c',
+                    view: 'leads',
+                    state: { reveal: 'c', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a lead with an empty title and an empty subject',
+            () => feedIndex('leads', [{ title: '', subject: '', company: 'c' }]),
+            [
+                {
+                    id: 'feed:leads:c',
+                    kind: 'feed',
+                    label: 'c',
+                    title: 'c',
+                    text: 'c',
+                    view: 'leads',
+                    state: { reveal: 'c', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a lead with a title that is null and a subject that is a list',
+            () => feedIndex('leads', [{ title: null, subject: ['x'], company: 'c' }]),
+            [
+                {
+                    id: 'feed:leads:x',
+                    kind: 'feed',
+                    label: 'x',
+                    title: 'x',
+                    text: 'x c',
+                    view: 'leads',
+                    state: { reveal: 'x', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a lead with no title and a subject',
+            () => feedIndex('leads', [{ subject: 'S' }]),
+            [
+                {
+                    id: 'feed:leads:S',
+                    kind: 'feed',
+                    label: 'S',
+                    title: 'S',
+                    text: 'S',
+                    view: 'leads',
+                    state: { reveal: 'S', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a lead with nothing a string',
+            () => feedIndex('leads', [{ title: 3, subject: 4 }]),
+            [
+                {
+                    id: 'feed:leads:leads#0',
+                    kind: 'feed',
+                    label: 'leads#0',
+                    title: 'leads#0',
+                    text: '',
+                    view: 'leads',
+                    state: { reveal: 'leads#0', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a lead that is empty',
+            () => feedIndex('leads', [{}]),
+            [
+                {
+                    id: 'feed:leads:leads#0',
+                    kind: 'feed',
+                    label: 'leads#0',
+                    title: 'leads#0',
+                    text: '',
+                    view: 'leads',
+                    state: { reveal: 'leads#0', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'two leads with one title',
+            () => feedIndex('leads', [{ title: 'T' }, { title: 'T', subject: 'S' }]),
+            [
+                {
+                    id: 'feed:leads:T#0',
+                    kind: 'feed',
+                    label: 'T',
+                    title: 'T',
+                    text: 'T',
+                    view: 'leads',
+                    state: { reveal: 'T#0', expiredOpen: true }
+                },
+                {
+                    id: 'feed:leads:T#1',
+                    kind: 'feed',
+                    label: 'T',
+                    title: 'T',
+                    text: 'T S',
+                    view: 'leads',
+                    state: { reveal: 'T#1', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a lead whose fields nest strings',
+            () =>
+                feedIndex('leads', [{ title: 'T', fit: { why: ['a', 3, null, { deeper: 'b' }] } }]),
+            [
+                {
+                    id: 'feed:leads:T',
+                    kind: 'feed',
+                    label: 'T',
+                    title: 'T',
+                    text: 'T a b',
+                    view: 'leads',
+                    state: { reveal: 'T', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a radar entry with a title that is a number and a subject',
+            () => feedIndex('radar', [{ title: 3, subject: 's' }]),
+            [
+                {
+                    id: 'feed:radar:s',
+                    kind: 'feed',
+                    label: 's',
+                    title: 's',
+                    text: 's',
+                    view: 'radar',
+                    state: { reveal: 's', dismissedOpen: true }
+                }
+            ]
+        ],
+        [
+            'a radar entry with a title',
+            () => feedIndex('radar', [{ title: 'R', subject: 'S' }]),
+            [
+                {
+                    id: 'feed:radar:R',
+                    kind: 'feed',
+                    label: 'R',
+                    title: 'R',
+                    text: 'R S',
+                    view: 'radar',
+                    state: { reveal: 'R', dismissedOpen: true }
+                }
+            ]
+        ],
+        [
+            'a linkedin entry with a file that is a number and a title',
+            () => feedIndex('linkedin', [{ file: 3, title: 't' }]),
+            [
+                {
+                    id: 'feed:linkedin:t',
+                    kind: 'feed',
+                    label: 't',
+                    title: 't',
+                    text: 't',
+                    view: 'linkedin',
+                    state: { reveal: 't' }
+                }
+            ]
+        ],
+        [
+            'a linkedin entry with a file and a subject that is a number',
+            () => feedIndex('linkedin', [{ file: 'f.md', title: 3, subject: 4 }]),
+            [
+                {
+                    id: 'feed:linkedin:f.md',
+                    kind: 'feed',
+                    label: 'f.md',
+                    title: 'f.md',
+                    text: 'f.md',
+                    view: 'linkedin',
+                    state: { reveal: 'f.md' }
+                }
+            ]
+        ],
+        [
+            'a linkedin entry with an empty file and a title',
+            () => feedIndex('linkedin', [{ file: '', title: 't' }]),
+            [
+                {
+                    id: 'feed:linkedin:t',
+                    kind: 'feed',
+                    label: 't',
+                    title: 't',
+                    text: 't',
+                    view: 'linkedin',
+                    state: { reveal: 't' }
+                }
+            ]
+        ],
+        [
+            'a feed entry with an own __proto__ key',
+            () =>
+                feedIndex('leads', [
+                    JSON.parse('{"__proto__":{"title":"P"},"title":"T"}') as Record<string, unknown>
+                ]),
+            [
+                {
+                    id: 'feed:leads:T',
+                    kind: 'feed',
+                    label: 'T',
+                    title: 'T',
+                    text: 'P T',
+                    view: 'leads',
+                    state: { reveal: 'T', expiredOpen: true }
+                }
+            ]
+        ],
+        [
+            'a collection entry with an empty title',
+            () => collectionIndex({ id: 'e', title: '', fields: { note: 'n' } }),
+            [
+                {
+                    id: 'collection:c:e',
+                    kind: 'collection',
+                    label: 'e',
+                    title: 'e',
+                    text: 'n',
+                    view: 'c',
+                    state: { reveal: 'e' }
+                }
+            ]
+        ],
+        [
+            'a collection entry with fields of every type',
+            () =>
+                collectionIndex({
+                    id: 'e',
+                    title: 'E',
+                    fields: { a: 1, b: null, c: ['x', 2, { d: 'y' }], e: true, f: '' }
+                }),
+            [
+                {
+                    id: 'collection:c:e',
+                    kind: 'collection',
+                    label: 'E',
+                    title: 'E',
+                    text: 'x y',
+                    view: 'c',
+                    state: { reveal: 'e' }
+                }
+            ]
+        ]
+    ];
+
+    it.each(rows)('%s', (_name, run, expected) => {
+        expect(run()).toStrictEqual(expected);
+    });
+});

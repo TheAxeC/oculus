@@ -7,7 +7,9 @@
 // timer of its own. The day of a saved stamp is data/helpers/dates.ts's localDate, the one every
 // other local day is written by.
 
+import { z } from 'zod';
 import { localDate } from '../../data/helpers/dates.ts';
+import { readAs } from '../../data/shapes/shapes.ts';
 
 /** Two digits, which is what every part of a note's id is except the milliseconds. */
 function pad(value: number, width = 2): string {
@@ -58,11 +60,11 @@ export function stamp(when: number): string {
  */
 const AUTOSAVE_MS = 800;
 
+/** The `notes:` map of the merged config, read for the wait: a finite number from zero up. */
+const notesShape = z.object({ autosave_ms: z.number().min(0) });
+
 export function autosaveMs(config: Record<string, unknown>): number {
-    const held = config.notes;
-    if (typeof held !== 'object' || held === null || Array.isArray(held)) return AUTOSAVE_MS;
-    const value = (held as Record<string, unknown>).autosave_ms;
-    return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : AUTOSAVE_MS;
+    return readAs(notesShape, config.notes)?.autosave_ms ?? AUTOSAVE_MS;
 }
 
 /**

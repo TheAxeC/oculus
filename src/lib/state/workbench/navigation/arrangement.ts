@@ -2,8 +2,10 @@
 // `arrangements:` of config/layout.yml read into the workbench state/workbench/layout holds. It is
 // its own module because it is its own concern and a hand-written shape read once.
 //
-// A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
+// The shape of a node is read by the zod schemas below; what the workbench checks of a tree, the
+// sizes adding up among them, is checkWorkbench's.
 
+import { z } from 'zod';
 import {
     checkWorkbench,
     emptyPane,
@@ -12,7 +14,52 @@ import {
     type Layout,
     type Workbench
 } from '../layout/index.ts';
-import { isMap } from '../../../data/helpers/guards.ts';
+import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
+
+/** A view id: a name that is not empty, made into an instance with a fresh id. */
+const viewIdShape = z
+    .string()
+    .min(1)
+    .transform((view) => newInstance(view));
+
+/** A tab written out: its view id and, when it has one, the map its instance opens with. */
+const stateTabShape = z
+    .object({ view: z.string().min(1), state: mapShape.optional() })
+    .transform(({ view, state }) =>
+        state === undefined ? newInstance(view) : newInstance(view, { ...state })
+    );
+
+/** One tab of a pane: a view id, or a view id with the state its instance opens in. */
+const arrangementTabShape = z.union([viewIdShape, stateTabShape]) satisfies z.ZodType<Instance>;
+
+/** A pane's `view`: one view id or a list of tabs. An empty list is an empty pane. */
+const arrangementPaneShape = z
+    .object({
+        kind: z.literal('pane'),
+        view: z.union([viewIdShape.transform((tab) => [tab]), z.array(arrangementTabShape)])
+    })
+    .transform(({ view: tabs }): Layout =>
+        tabs.length === 0 ? emptyPane() : { kind: 'pane', tabs, active: tabs[0].id }
+    );
+
+/** A split of nodes over sizes that are numbers; checkWorkbench checks how they add up. */
+const arrangementSplitShape = z
+    .object({
+        kind: z.literal('split'),
+        dir: z.enum(['row', 'col']),
+        children: z.array(z.lazy(() => arrangementNodeShape)),
+        sizes: z.array(z.number())
+    })
+    .transform(({ dir, sizes, children }): Layout => ({ kind: 'split', dir, sizes, children }));
+
+/** One node of an arrangement: a split with its children, or a pane with the views it holds. */
+const arrangementNodeShape: z.ZodType<Layout> = z.discriminatedUnion('kind', [
+    arrangementPaneShape,
+    arrangementSplitShape
+]);
+
+/** An arrangement: the tree under `root`. */
+const arrangementShape = z.object({ root: arrangementNodeShape });
 
 /**
  * One arrangement of `arrangements:` in config/layout.yml as a workbench, with a fresh instance id
@@ -23,63 +70,8 @@ import { isMap } from '../../../data/helpers/guards.ts';
  * does not add up leaves the workbench the user had rather than replacing it with a broken one.
  */
 export function parseArrangement(value: unknown): Workbench | null {
-    if (!isMap(value)) return null;
-    const root = readArrangement(value.root);
-    if (root === null) return null;
-    const workbench: Workbench = { root };
+    const read = readAs(arrangementShape, value);
+    if (read === null) return null;
+    const workbench: Workbench = { root: read.root };
     return checkWorkbench(workbench).length === 0 ? workbench : null;
-}
-
-/** One node of an arrangement: a split with its children, or a pane with the views it holds. */
-function readArrangement(value: unknown): Layout | null {
-    if (!isMap(value)) return null;
-    if (value.kind === 'pane') return readArrangementPane(value.view);
-    if (value.kind !== 'split') return null;
-    const dir = value.dir;
-    if (dir !== 'row' && dir !== 'col') return null;
-    const rawChildren = value.children;
-    const rawSizes = value.sizes;
-    if (!Array.isArray(rawChildren) || !Array.isArray(rawSizes)) return null;
-    const children: Layout[] = [];
-    for (const raw of rawChildren) {
-        const child = readArrangement(raw);
-        if (child === null) return null;
-        children.push(child);
-    }
-    const sizes: number[] = [];
-    for (const raw of rawSizes) {
-        if (typeof raw !== 'number' || !Number.isFinite(raw)) return null;
-        sizes.push(raw);
-    }
-    return { kind: 'split', dir, sizes, children };
-}
-
-/**
- * A pane's tabs from its `view`, which is one view id or a list of them. A tab of the list may be
- * `{ view, state }` instead of an id, for a tab the arrangement opens in a state of its own (the
- * sessions page's Files tab, which follows the selected session); the state is a map, and anything
- * else refuses the arrangement. An empty list is an empty pane, which is where a view opened for
- * something (a project, a document, a file) lands on the page.
- */
-function readArrangementPane(view: unknown): Layout | null {
-    const names = typeof view === 'string' ? [view] : Array.isArray(view) ? view : null;
-    if (names === null) return null;
-    if (names.length === 0) return emptyPane();
-    const tabs: Instance[] = [];
-    for (const name of names) {
-        const tab = readArrangementTab(name);
-        if (tab === null) return null;
-        tabs.push(tab);
-    }
-    return { kind: 'pane', tabs, active: tabs[0].id };
-}
-
-/** One tab of a pane: a view id, or a view id with the state its instance opens in. */
-function readArrangementTab(value: unknown): Instance | null {
-    if (typeof value === 'string') return value === '' ? null : newInstance(value);
-    if (!isMap(value)) return null;
-    const { view, state } = value;
-    if (typeof view !== 'string' || view === '') return null;
-    if (state === undefined) return newInstance(view);
-    return isMap(state) ? newInstance(view, { ...state }) : null;
 }

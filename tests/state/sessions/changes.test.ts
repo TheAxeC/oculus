@@ -196,3 +196,83 @@ describe('the rows a filter keeps', () => {
         expect(matching(rows, 'a new line')).toEqual([]);
     });
 });
+
+describe('an answer whose fields are of the wrong type', () => {
+    const row = change('2026-09-15T10:00:00.000Z');
+    const NOTHING = { rows: [], more: false, error: '', loading: false };
+
+    /** What a fresh store holds once the endpoint answered `text` with `status`. */
+    async function heldAfter(text: string, status = 200) {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
+        const fresh = createChanges(createQueries());
+        fresh.rows();
+        await settle();
+        return {
+            rows: fresh.rows(),
+            more: fresh.more(),
+            error: fresh.error(),
+            loading: fresh.loading()
+        };
+    }
+
+    it.each([
+        ['changes that are null', { changes: null, page: 2 }, NOTHING],
+        ['a page of 0 over no rows', { changes: [], page: 0 }, { ...NOTHING, more: true }],
+        ['a list as the body', [], NOTHING],
+        ['an empty map as the body', {}, NOTHING]
+    ])('answers %s as the rows it names', async (_name, body, expected) => {
+        expect(await heldAfter(JSON.stringify(body))).toStrictEqual(expected);
+    });
+
+    it('is not full when the page is infinite, and not asked for when the page is absent', async () => {
+        const infinite = `{"changes":${JSON.stringify([row])},"page":1e999}`;
+        expect(await heldAfter(infinite)).toStrictEqual({ ...NOTHING, rows: [row] });
+        const absent = `{"changes":${JSON.stringify([row])}}`;
+        expect(await heldAfter(absent)).toStrictEqual({ ...NOTHING, rows: [row] });
+    });
+
+    it('answers a refusal as its sentence, and as its status when it names none', async () => {
+        expect(await heldAfter('{"error":"x"}', 500)).toStrictEqual({ ...NOTHING, error: 'x' });
+        expect(await heldAfter('[]', 500)).toStrictEqual({ ...NOTHING, error: '500' });
+    });
+
+    it.each([
+        ['changes that are a string', { changes: 'x', page: 2 }, NOTHING],
+        ['changes that are a map', { changes: {}, page: 2 }, NOTHING],
+        [
+            'changes holding a null, a number and a row',
+            { changes: [null, 3, row], page: 1 },
+            { ...NOTHING, rows: [row], more: true }
+        ],
+        ['a page that is a string', { changes: [row], page: '1' }, { ...NOTHING, rows: [row] }]
+    ])(
+        'answers %s as the rows that are well-formed, and the page as a number',
+        async (_name, body, expected) => {
+            expect(await heldAfter(JSON.stringify(body))).toStrictEqual(expected);
+        }
+    );
+
+    it('answers a refusal whose error is a number as its status', async () => {
+        const held = await heldAfter('{"error":3}', 500);
+        expect(held).toStrictEqual({ ...NOTHING, error: '500' });
+    });
+
+    it('answers a body that is null or not JSON as the failed read with its status', async () => {
+        for (const text of ['null', 'nope']) {
+            const [fine, refused] = [await heldAfter(text), await heldAfter(text, 500)];
+            expect(fine).toStrictEqual({ ...NOTHING, error: '200' });
+            expect(refused).toStrictEqual({ ...NOTHING, error: '500' });
+        }
+    });
+
+    it('answers a row missing one of the four fields of a change as left out', async () => {
+        const body = { changes: [{ ...row, at: 3 }, { ...row, kind: null }, { at: 'x' }, row] };
+        expect(await heldAfter(JSON.stringify(body))).toStrictEqual({ ...NOTHING, rows: [row] });
+    });
+
+    it('keeps a row of a line oculus did not write, which lacks the key and the values', async () => {
+        const bare = { at: 'a', kind: 'k', file: 'f', field: 'x' };
+        const held = await heldAfter(JSON.stringify({ changes: [bare], page: 5 }));
+        expect(held).toStrictEqual({ ...NOTHING, rows: [bare] });
+    });
+});

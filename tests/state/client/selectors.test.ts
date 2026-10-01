@@ -8,6 +8,7 @@ import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts'
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { area, git, payload, record, workspace } from '../../fixtures/sessions-fixture.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { STALE_LAG } from '../../../src/lib/state/boards/board/index.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -239,4 +240,120 @@ describe('sessionFor and the context window', () => {
     it('reads the window out of the config', () => {
         expect(contextWindow()).toBe(1000000);
     });
+});
+
+describe('the config values the selectors read', () => {
+    /** Put a config with these keys over the real one into the client, as the socket would. */
+    function configured(over: Record<string, unknown>): void {
+        receive({
+            channel: 'config',
+            version: 2,
+            payload: { config: { ...config, ...over }, text: textCatalog(config), findings: [] }
+        });
+    }
+
+    it.each([
+        [5, 5],
+        [0, 0],
+        [-1, -1],
+        [0.5, 0.5],
+        ['5', STALE_LAG],
+        [Number.NaN, STALE_LAG],
+        [Number.POSITIVE_INFINITY, STALE_LAG],
+        [Number.NEGATIVE_INFINITY, STALE_LAG],
+        [null, STALE_LAG],
+        [true, STALE_LAG],
+        [[5], STALE_LAG],
+        [{}, STALE_LAG]
+    ])('reads a stale_lag_days of %j as %j', (value, expected) => {
+        configured({ stale_lag_days: value });
+        expect(client.selectors.staleLag()).toBe(expected);
+    });
+
+    it('reads a config without stale_lag_days, and no config yet, as the default lag', () => {
+        const { stale_lag_days: _gone, ...rest } = config;
+        receive({
+            channel: 'config',
+            version: 2,
+            payload: { config: rest, text: textCatalog(config), findings: [] }
+        });
+        expect(client.selectors.staleLag()).toBe(STALE_LAG);
+        expect(createClientState().selectors.staleLag()).toBe(STALE_LAG);
+    });
+
+    it.each([
+        [200000, 200000],
+        [0.5, 0.5],
+        [0, 0],
+        [-1, 0],
+        ['5', 0],
+        [Number.NaN, 0],
+        [Number.POSITIVE_INFINITY, 0],
+        [Number.NEGATIVE_INFINITY, 0],
+        [null, 0],
+        [true, 0],
+        [[5], 0],
+        [{}, 0]
+    ])('reads a context_window of %j as %j', (value, expected) => {
+        configured({ context_window: value });
+        expect(client.selectors.contextWindow()).toBe(expected);
+    });
+
+    it('reads no config yet as a window of 0', () => {
+        expect(createClientState().selectors.contextWindow()).toBe(0);
+    });
+
+    it.each([
+        [
+            ['dead', 'withdrawn'],
+            ['dead', 'withdrawn']
+        ],
+        [
+            ['a', 1, null, 'b', {}, ['c'], true, ''],
+            ['a', 'b', '']
+        ],
+        [[], []],
+        ['dead', []],
+        [{ 0: 'dead' }, []],
+        [3, []],
+        [null, []],
+        [undefined, []]
+    ])('reads an archive_dead of %j as %j', (value, expected) => {
+        configured({ archive_dead: value });
+        expect(client.selectors.archiveDead()).toStrictEqual(expected);
+    });
+
+    it('reads no config yet as no dead outcomes', () => {
+        expect(createClientState().selectors.archiveDead()).toStrictEqual([]);
+    });
+
+    it('answers the merged map of the last config message, and an empty map before any', () => {
+        configured({ stale_lag_days: 7 });
+        expect(client.selectors.configMap().stale_lag_days).toBe(7);
+        expect(createClientState().selectors.configMap()).toStrictEqual({});
+    });
+});
+
+describe('a name that is a property of every object', () => {
+    beforeEach(() => {
+        receive({
+            channel: 'portfolio',
+            version: 3,
+            payload: {
+                version: 3,
+                entities: { projects: {}, collections: {}, venues: {}, datasets: {} },
+                relations: {},
+                findings: []
+            }
+        });
+    });
+
+    it.each([['constructor'], ['toString'], ['hasOwnProperty'], ['__proto__']])(
+        'is no project, no collection and no workspace git state when it is %s',
+        (name) => {
+            expect(client.selectors.projectOf(name)).toBeNull();
+            expect(client.selectors.collectionOf(name)).toBeNull();
+            expect(gitFor(name)).toBeNull();
+        }
+    );
 });

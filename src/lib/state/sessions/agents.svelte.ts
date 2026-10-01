@@ -9,7 +9,15 @@
 // and a refresh cancels the request still out for its key, so an answer that would land after the
 // key was asked again is never held.
 
+import { z } from 'zod';
 import type { AgentsAnswer, CustomizationsAnswer, AgentId } from '../../data/model/index.ts';
+import {
+    itemsShape,
+    optionalTextShape,
+    readAs,
+    readJson,
+    unchangedAs
+} from '../../data/shapes/shapes.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 
 export type {
@@ -35,6 +43,29 @@ const PENDING = { value: null, pending: true, error: '' };
 
 /** The text of one customization file, as the viewer reads it. */
 export type CustomizationText = { path: string; text: string };
+
+/** The lists of `agents` answers, all required, handed on as the answer they are declared to be. */
+const agentsAnswerShape = unchangedAs<AgentsAnswer>(
+    z.looseObject({ agents: itemsShape, accounts: itemsShape, findings: itemsShape })
+);
+
+/** The fields of a customizations answer, all required, handed on as it came. */
+const customizationsAnswerShape = unchangedAs<CustomizationsAnswer>(
+    z.looseObject({
+        agent: z.string(),
+        account: z.string(),
+        workspace: z.string(),
+        rows: itemsShape
+    })
+);
+
+/** The text of a customization file, both fields required, handed on as declared. */
+const customizationTextShape = unchangedAs<CustomizationText>(
+    z.looseObject({ path: z.string(), text: z.string() })
+);
+
+/** The sentence a refusal carries, when it carries one. */
+const refusalShape = z.object({ error: optionalTextShape });
 
 /** The scope one Customizations read is for. */
 export type CustomizationScope = { agent: AgentId; account: string; workspace: string };
@@ -64,55 +95,57 @@ export function exportUrl(id: string): string {
 
 export function createAgents(queries: Queries): AgentsStore {
     /** Ask one URL, answering what came back as the key's held shape. */
-    async function ask(url: string): Promise<Held<unknown>> {
+    async function ask<T>(url: string, shape: z.ZodType<T>): Promise<Held<T>> {
         try {
             const response = await fetch(url);
-            const body = (await response.json()) as { error?: unknown };
-            return response.ok
-                ? { value: body, pending: false, error: '' }
-                : {
-                      value: null,
-                      pending: false,
-                      error: typeof body.error === 'string' ? body.error : String(response.status)
-                  };
+            const body = await readJson(response);
+            if (body === undefined) throw new Error(String(response.status));
+            if (!response.ok) {
+                return failed(readAs(refusalShape, body)?.error ?? String(response.status));
+            }
+            const value = readAs(shape, body);
+            return value === null
+                ? failed(String(response.status))
+                : { value, pending: false, error: '' };
         } catch (error) {
-            return {
-                value: null,
-                pending: false,
-                error: error instanceof Error ? error.message : String(error)
-            };
+            return failed(error instanceof Error ? error.message : String(error));
         }
     }
 
+    /** The held shape of a request that failed, with what it failed with. */
+    function failed<T>(error: string): Held<T> {
+        return { value: null, pending: false, error };
+    }
+
     /** One key's answer, asked for the first time it is read. */
-    function read<T>(key: string, url: string): Held<T> {
-        const { data } = queries.read(['agents', key], () => ask(url), {
+    function read<T>(key: string, url: string, shape: z.ZodType<T>): Held<T> {
+        const { data } = queries.read<Held<T>>(['agents', key], () => ask(url, shape), {
             enabled: typeof fetch === 'function'
         });
-        return (data ?? PENDING) as Held<T>;
+        return data ?? PENDING;
     }
 
     function agentChoices(account = ''): Held<AgentsAnswer> {
         const query = account === '' ? '' : `?${new URLSearchParams({ account }).toString()}`;
-        return read<AgentsAnswer>(`agents:${account}`, `/api/agents${query}`);
+        return read(`agents:${account}`, `/api/agents${query}`, agentsAnswerShape);
     }
 
     function customizations(scope: CustomizationScope): Held<CustomizationsAnswer> {
         const query = scopeQuery(scope);
-        return read<CustomizationsAnswer>(`custom:${query}`, `/api/customizations?${query}`);
+        return read(`custom:${query}`, `/api/customizations?${query}`, customizationsAnswerShape);
     }
 
     function customizationText(scope: CustomizationScope, path: string): Held<CustomizationText> {
         const query = `${scopeQuery(scope)}&${new URLSearchParams({ file: path }).toString()}`;
-        return read<CustomizationText>(`file:${query}`, `/api/customizations?${query}`);
+        return read(`file:${query}`, `/api/customizations?${query}`, customizationTextShape);
     }
 
     /** Ask the scope's rows again; the held rows stay drawn until the new ones land. */
     function refreshCustomizations(scope: CustomizationScope): void {
         const query = scopeQuery(scope);
-        queries.refetch(
+        queries.refetch<Held<CustomizationsAnswer>>(
             ['agents', `custom:${query}`],
-            () => ask(`/api/customizations?${query}`),
+            () => ask(`/api/customizations?${query}`, customizationsAnswerShape),
             'replace'
         );
     }

@@ -10,7 +10,8 @@
 // through the catalogs under config/text/.
 
 import type { Snapshot } from '../../data/model/index.ts';
-import { byKey, isMap } from '../../data/helpers/guards.ts';
+import { numericSetting } from '../../data/helpers/guards.ts';
+import { mapShape, readAs } from '../../data/shapes/shapes.ts';
 import { daysUntil } from '../boards/board/index.ts';
 import { venueLoad } from '../boards/ticker.ts';
 
@@ -39,8 +40,7 @@ export type RefreshItem = {
 
 /** A number out of the merged config, and the fallback when it holds none. */
 function setting(config: Record<string, unknown>, key: string, fallback: number): number {
-    const held = config[key];
-    return typeof held === 'number' && Number.isFinite(held) ? held : fallback;
+    return numericSetting(config, key) ?? fallback;
 }
 
 /** Whole days since an ISO date, and null when there is no date to count from. */
@@ -56,9 +56,8 @@ export function daysSince(date: string | null, now: number): number | null {
  * so the answer is `Infinity`; the config file is the only place a threshold comes from.
  */
 export function staleAfter(config: Record<string, unknown>, feed: string): number {
-    const held = config.refresh_stale_days;
-    const value = isMap(held) ? byKey(held, feed) : undefined;
-    return typeof value === 'number' && Number.isFinite(value) ? value : Infinity;
+    const held = readAs(mapShape, config.refresh_stale_days);
+    return (held === null ? null : numericSetting(held, feed)) ?? Infinity;
 }
 
 /**

@@ -17,7 +17,8 @@
 // composer. The tab's `id` is its identity for the layout, which opens a new tab for a state whose
 // identity no tab carries (state/workbench/layout/instance.ts, `stateId`).
 
-import { isMap } from '../../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { anyNumberShape, rowsShape } from '../../../data/shapes/shapes.ts';
 
 /** The view a Terminal tab is. */
 export const TERMINAL_VIEW = 'terminal';
@@ -47,13 +48,16 @@ export type TerminalTabState = {
     label: string;
 };
 
+/** The shape of a terminal id, six hex digits and the kind. */
+const terminalIdShape = z.string().regex(/^[0-9a-f]{6}-(claude|codex|shell)$/);
+
 /**
  * Whether an id names a terminal. It is the same shape the server's `isTerminalId` tests, six hex
  * digits and the kind, and it cannot collide with a Claude session id (a UUID) or a Codex slug (a
  * day path), which is why a terminal selects through the one selection the session views share.
  */
 export function isTerminalId(id: unknown): id is string {
-    return typeof id === 'string' && /^[0-9a-f]{6}-(claude|codex|shell)$/.test(id);
+    return terminalIdShape.safeParse(id).success;
 }
 
 /** A tab that owns no terminal and shows the composer. */
@@ -102,6 +106,29 @@ function settled(state: TerminalTabState): TerminalTabState {
 }
 
 /**
+ * The fields a saved state is read from, each as typed or unset. `terminals` and `row` are absent
+ * unless the state holds a list, since the shape of the state is told by which of them it holds;
+ * a list holds the terminal ids it names. `shares` are the numbers a row was saved with, and a
+ * share that is no number is NaN, which `mendedShares` refuses. `share` is an older tab's left
+ * half, half unless it is a number inside the bounds.
+ */
+const savedTabShape = z.object({
+    id: z
+        .string()
+        .min(1)
+        .catch(() => freshId()),
+    label: z.string().catch(''),
+    terminals: rowsShape(terminalIdShape).optional().catch(undefined),
+    session: terminalIdShape.optional().catch(undefined),
+    shown: terminalIdShape.nullable().catch(null),
+    composing: z.boolean().catch(false),
+    row: rowsShape(terminalIdShape).optional().catch(undefined),
+    shares: z.array(anyNumberShape.catch(Number.NaN)).catch([]),
+    beside: terminalIdShape.optional().catch(undefined),
+    share: z.number().min(SHARE_MIN).max(SHARE_MAX).catch(0.5)
+});
+
+/**
  * A saved state read into the tab's shape. An old `{ session, label }` reads as that one terminal
  * shown; an old `{}`, `{ id }` or `{ id, follow }` as a tab with no terminal, composing; an old
  * `{ shown, beside, share }` as a row of both, `share` the left one's. Ids that are not terminal
@@ -109,38 +136,30 @@ function settled(state: TerminalTabState): TerminalTabState {
  * none is given a fresh one.
  */
 export function readTab(state: unknown): TerminalTabState {
-    const held = isMap(state) ? state : {};
-    const id = typeof held.id === 'string' && held.id !== '' ? held.id : freshId();
-    const label = typeof held.label === 'string' ? held.label : '';
-    if (!Array.isArray(held.terminals)) {
-        const pinned = isTerminalId(held.session) ? held.session : null;
+    // A state that is no map is read as an empty one.
+    const held = savedTabShape.safeParse(state).data ?? savedTabShape.parse({});
+    const { id, label, composing, shown } = held;
+    if (held.terminals === undefined) {
+        const pinned = held.session ?? null;
         const tab = emptyTab(id);
         if (pinned === null) return { ...tab, label };
         return settled({ ...tab, terminals: [pinned], shown: pinned, composing: false, label });
     }
-    const terminals = held.terminals.filter(isTerminalId);
-    const shown = isTerminalId(held.shown) ? held.shown : null;
-    const composing = held.composing === true;
-    if (Array.isArray(held.row)) {
-        const shares = Array.isArray(held.shares)
-            ? held.shares.map((one: unknown) => (typeof one === 'number' ? one : Number.NaN))
-            : [];
+    const { terminals } = held;
+    if (held.row !== undefined) {
         return settled({
             id,
             terminals,
-            row: held.row.filter(isTerminalId),
-            shares,
+            row: held.row,
+            shares: held.shares,
             shown,
             composing,
             label
         });
     }
     // The older two-terminal shape: `beside` is the second half and `share` the left half's.
-    const beside = isTerminalId(held.beside) && held.beside !== shown ? held.beside : null;
-    const left =
-        typeof held.share === 'number' && held.share >= SHARE_MIN && held.share <= SHARE_MAX
-            ? held.share
-            : 0.5;
+    const beside = held.beside !== undefined && held.beside !== shown ? held.beside : null;
+    const left = held.share;
     const paired = shown !== null && beside !== null && terminals.includes(beside);
     return settled({
         id,

@@ -1,7 +1,14 @@
 // Layer 2, client state. Pure rail-badge counts over collection and feed records. The reactive
 // adapter beside it supplies the snapshot, socket feeds, config and current time.
 
-import { scalar } from '../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { byKey, fields, scalar } from '../../data/helpers/guards.ts';
+import {
+    filledTextShape,
+    optionalTextShape,
+    readAs,
+    stringItemsShape
+} from '../../data/shapes/shapes.ts';
 import { daysUntil } from '../boards/board/index.ts';
 import { deadlineOf, isClosed } from '../feeds/leads.ts';
 import { daysSince } from '../feeds/feeds.ts';
@@ -20,23 +27,22 @@ export type SplitCount = { count: number; label: string };
 /** One count in a configured rollup, carrying the bucket's configured colour. */
 export type RollupCount = SplitCount & { color: string };
 
-function record(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
+/** A `nav_live` row: the statuses it counts, normalised, and its optional label and tone. */
+const liveRuleShape = z.object({
+    match: stringItemsShape.transform((statuses) =>
+        statuses.map((status) => status.trim().toLowerCase())
+    ),
+    label: optionalTextShape,
+    tone: filledTextShape
+});
 
 /** One collection's rule from `nav_live`: the statuses counted and an optional urgency tone. */
 export function liveRule(config: Record<string, unknown>, key: string): LiveRule | null {
-    const row = record(record(config.nav_live)?.[key]);
-    if (row === null || !Array.isArray(row.match)) return null;
-    const match = row.match
-        .filter((status): status is string => typeof status === 'string')
-        .map((status) => status.trim().toLowerCase());
-    if (match.length === 0) return null;
-    const rule: LiveRule = { match };
-    if (typeof row.label === 'string') rule.label = row.label;
-    if (typeof row.tone === 'string' && row.tone !== '') rule.tone = row.tone;
+    const row = readAs(liveRuleShape, byKey(fields(config.nav_live), key));
+    if (row === null || row.match.length === 0) return null;
+    const rule: LiveRule = { match: row.match };
+    if (row.label !== undefined) rule.label = row.label;
+    if (row.tone !== undefined) rule.tone = row.tone;
     return rule;
 }
 

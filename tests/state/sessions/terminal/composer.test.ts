@@ -19,6 +19,7 @@ import {
     composerPlaces,
     composerWorkspace,
     customizationScopeOf,
+    freshComposer,
     insertMention,
     isImage,
     mention,
@@ -61,6 +62,9 @@ const ACCOUNTS: AgentAccount[] = [
     { tool: 'claude', label: 'Uni', dir: '/u' },
     { tool: 'codex', label: 'Work', dir: '/h/.codex' }
 ];
+
+/** A state read from JSON text, which can hold an own `__proto__` key that a literal cannot. */
+const json = (text: string): unknown => JSON.parse(text);
 
 describe("a tab's composer record", () => {
     it('reads the agent, the workspace, the accounts and the picks, anything malformed as unset', () => {
@@ -383,5 +387,145 @@ describe('the branch the composer shows', () => {
         expect(branchOf('/elsewhere', git)).toBe('');
         expect(branchOf('', git)).toBe('');
         expect(branchOf('/hub', null)).toBe('');
+    });
+});
+
+describe('a composer record out of a state of the wrong shape', () => {
+    const UNSET = {
+        workspace: '',
+        agent: 'claude',
+        accounts: { claude: undefined, codex: undefined },
+        picks: { claude: {}, codex: {} }
+    };
+
+    it('keeps the picks that are non-empty words, and leaves no split behind an empty one', () => {
+        const record = composerOf({
+            composer: { picks: { claude: { a: 'b', c: 1, '': 'x' } }, split: '' }
+        });
+        expect(record).toStrictEqual({
+            ...UNSET,
+            picks: { claude: { a: 'b', '': 'x' }, codex: {} }
+        });
+        expect('split' in record).toBe(false);
+    });
+
+    it('answers the empty record itself for a state with no map under composer', () => {
+        for (const state of ['x', 3, undefined, { composer: [] }, { composer: null }]) {
+            expect(composerOf(state)).toBe(COMPOSER_EMPTY);
+        }
+    });
+
+    it.each([
+        ['an empty record', { composer: {} }, UNSET],
+        [
+            'a workspace and a split that are numbers, an agent in the wrong case',
+            { composer: { workspace: 3, agent: 'Codex', split: 3 } },
+            UNSET
+        ],
+        ['a codex agent', { composer: { agent: 'codex' } }, { ...UNSET, agent: 'codex' }],
+        [
+            'accounts with an empty word and a word',
+            { composer: { accounts: { claude: '', codex: 'c' } } },
+            { ...UNSET, accounts: { claude: undefined, codex: 'c' } }
+        ],
+        ['accounts and picks that are lists', { composer: { accounts: [], picks: [] } }, UNSET],
+        [
+            'picks that are a list and a string',
+            { composer: { picks: { claude: [], codex: 'x' } } },
+            UNSET
+        ]
+    ])('reads %s', (_name, state, expected) => {
+        expect(composerOf(state)).toStrictEqual(expected);
+    });
+
+    it('skips an own __proto__ key of a pick map or an account map, as it skips any value that is no word', () => {
+        const picks = composerOf({
+            composer: {
+                picks: {
+                    claude: json('{"__proto__":"x","a":"b"}'),
+                    codex: json('{"__proto__":{"z":"y"},"a":"b"}')
+                }
+            }
+        }).picks;
+        expect(Object.keys(picks.claude ?? {})).toStrictEqual(['a']);
+        expect(Object.keys(picks.codex ?? {})).toStrictEqual(['a']);
+        expect(picks).toStrictEqual({ claude: { a: 'b' }, codex: { a: 'b' } });
+        const accounts = composerOf({
+            composer: { accounts: json('{"__proto__":"x","claude":"a"}') }
+        }).accounts;
+        expect(accounts).toStrictEqual({ claude: 'a', codex: undefined });
+    });
+
+    it('does not read an own __proto__ key as the record it holds', () => {
+        const state = json('{"composer":{"__proto__":{"agent":"codex"},"workspace":"w"}}');
+        expect(composerOf(state)).toStrictEqual({ ...UNSET, workspace: 'w' });
+        expect(composerOf(json('{"__proto__":{"composer":{"agent":"codex"}}}'))).toBe(
+            COMPOSER_EMPTY
+        );
+    });
+
+    it('writes a record beside the keys of the state it was handed, an own __proto__ key among them', () => {
+        const held = json('{"__proto__":{"x":1},"k":1}');
+        expect(Object.keys(withComposer(held, COMPOSER_EMPTY))).toStrictEqual([
+            '__proto__',
+            'k',
+            'composer'
+        ]);
+        for (const state of [[], null, 'x']) {
+            expect(withComposer(state, COMPOSER_EMPTY)).toStrictEqual({
+                composer: COMPOSER_EMPTY
+            });
+        }
+    });
+
+    it('opens a split and a fresh composer on a state that is no map as on an empty one', () => {
+        expect(splitState('/f', 'codex', [])).toStrictEqual({
+            composer: { workspace: '/f', agent: 'codex', accounts: {}, picks: {}, split: '/f' }
+        });
+        expect(freshComposer('x')).toStrictEqual({
+            composer: { workspace: '', agent: 'claude', accounts: {}, picks: {} }
+        });
+    });
+});
+
+describe("the Customizations section's scope out of a state of the wrong shape", () => {
+    const UNSET = { open: true, agent: 'claude', account: '', workspace: '', expanded: [] };
+
+    it.each([
+        ['a list', []],
+        ['null', null],
+        ['a list under custom', { custom: [] }],
+        ['a string under custom', { custom: 'x' }],
+        [
+            'every field of the wrong type',
+            { custom: { open: 'no', agent: 3, account: null, workspace: 4, expanded: 'x' } }
+        ],
+        ['an open flag that is 0', { custom: { open: 0 } }]
+    ])('reads %s as the scope nothing was kept for', (_name, state) => {
+        expect(customizationScopeOf(state)).toStrictEqual(UNSET);
+    });
+
+    it('reads a closed section, a codex agent and the rows opened with their repeats', () => {
+        expect(customizationScopeOf({ custom: { open: false } })).toStrictEqual({
+            ...UNSET,
+            open: false
+        });
+        expect(
+            customizationScopeOf({ custom: { agent: 'codex', expanded: ['a', 1, null, 'a'] } })
+        ).toStrictEqual({ ...UNSET, agent: 'codex', expanded: ['a', 'a'] });
+    });
+
+    it('does not read an own __proto__ key as the scope it holds, and writes the scope beside it', () => {
+        const state = json('{"custom":{"__proto__":{"agent":"codex"},"account":"a"}}');
+        expect(customizationScopeOf(state)).toStrictEqual({ ...UNSET, account: 'a' });
+        const held = json('{"__proto__":{"x":1},"k":1}');
+        expect(Object.keys(withCustomizationScope(held, { ...UNSET, agent: 'claude' }))).toEqual([
+            '__proto__',
+            'k',
+            'custom'
+        ]);
+        expect(withCustomizationScope([], { ...UNSET, agent: 'claude' })).toStrictEqual({
+            custom: UNSET
+        });
     });
 });

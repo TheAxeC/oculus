@@ -20,7 +20,7 @@
 import { Marked } from 'marked';
 import { z } from 'zod';
 import { codeColour } from '../../../data/prose/languages.ts';
-import { mapShape, quickly } from '../../core/shapes.ts';
+import { mapShape, quickly } from '../../../data/shapes/shapes.ts';
 import { stampShape, textShape } from '../record.ts';
 import { foldFrom } from './transcripts.ts';
 import type { SessionTool, Turn, TurnTool } from '../../../data/model/index.ts';

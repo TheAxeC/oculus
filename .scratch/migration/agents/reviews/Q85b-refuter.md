@@ -121,3 +121,144 @@ none
 - That the page works in a browser: not run; the brief's verification list does not include it.
 
 Reviewer usage: about 600,000 tokens (the session counter went from 15,000,000 to 14,417,626 across the whole run); tool uses and minutes were not counted.
+
+## Repair round 1, refuted
+
+# Step Q85b refuter report over repair round 1 (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q85b, base 402437e8)
+
+Result: all six rulings are closed in the code, and each failing-first claim I reran reproduced. Nothing was closed by removing a check, and the fixes stay inside their findings. I have 2 Proof findings and 1 Standards finding, all small, and none about behaviour.
+
+One fault of mine that changes what you should check. In the shared scratchpad `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad` I ran `rm -rf $SCR/*.orig $SCR/*.patch` after my probes. I created `mem.orig`, `tones.orig`, `agents.orig`, `mem.patch` and `tones.patch` there. I cannot tell whether any other `.orig` or `.patch` file of the orchestrator's session matched the globs and was deleted. I also wrote `checks.out`, `diagrams.out`, `paths.txt`, `status-before.txt` and `status-after.txt` there with `>`, which may have overwritten files of the same names from earlier. Nothing under the worktree or the ledger was touched. `git status --short` is the same 205 lines before and after my `npm run diagrams` and `checks.sh` run (diffed). I created and removed a scratch copy of `tools/oculus` under that scratchpad (`ws`, with a symlinked `node_modules`, unlinked before the removal), and the worktree's `node_modules` is intact (239 entries).
+
+## Verification (rerun by the reviewer, from the worktree's tools/oculus)
+
+```
+$ npm run diagrams
+(exit 0; the files it lists are docs/diagrams/*.dot and *.svg)
+$ sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md
+$ npm test
+ Test Files  387 passed | 21 skipped (408)
+      Tests  10147 passed | 615 skipped (10762)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  442 passed | 9 skipped (451)
+$ npm run check
+1790860501223 COMPLETED 2862 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+(exit 0)
+```
+
+Commands the round's report quotes, rerun:
+
+```
+$ npx vitest run tests/state/client/socket-timing.test.ts --tagsFilter slow --reporter=verbose --disableConsoleIntercept
+socket-timing: 50000 frames in 262.8 ms        (report: 244.5 ms; machine-dependent)   Tests 1 passed (1)
+$ du -sk .svelte-kit/output/client                                   30156   (report: 30156)
+$ grep -rl '\$ZodType' .svelte-kit/output/client/_app/immutable | xargs wc -c
+ 2033196 .../nodes/2.1flvJsMI.js      (one chunk; 2033179 bytes in the first review, the 17-byte difference is this round's agents change)
+$ grep -rnE "\.issues|prettifyError|treeifyError" src/lib/state | wc -l                                  0
+$ grep -rnE "^(export )?const [a-zA-Z]+ = z" src/lib/state src/lib/data/shapes | grep -vcE "const [a-zA-Z]+Shape = z"   0
+$ grep -rnE "\.json\(\)\)? as |\) as \{|as (Entry|SchemaField|NoteRow|FsEntry|string)\[\]\)|as Body|as Answer|as ConnectSetup|as Partial<" src/lib/state | wc -l   0
+$ grep -rnE "core/shapes|in shapes\.ts" src tests | wc -l                                                  0
+$ grep -rnE "function (record|objectOf|mapOf)\b" src/lib/state | wc -l                                    0
+$ grep -rnE "typeof |Array\.isArray|isRecord\(|isMap\(" src/lib/state | wc -l                            62   (report: 62; the four delta source files add none: only agents.svelte.ts:123,158 environment tests)
+```
+
+Ruling 6, the per-file total, recomputed:
+
+```
+80 files, lines 58, files with a line 29      (git status --short src/lib/state | grep -v '^ D', directories expanded, grep -c summed; report: 80 / 58)
+base 71 files (grep -l unknown at 402437e8, check lines > 0): before 506, after 59   (so the older "506 -> 59 in these 71 files" is also true)
+```
+
+Failing-first claims, run in a scratch copy of the worktree under the session scratchpad (the worktree was not edited):
+
+```
+ruling 1: memories.svelte.ts sideShape set back to .multipleOf(1).positive()
+  tests/state/life/memories-message.test.ts: 2 failed | 24 passed -- "reads a picture side of 1e-20 pixels as none" and "of 5e-324" (0.5 passes). With the fix: 26 passed.
+  memories.svelte.ts patched back to the base text (git diff reversed with patch -R): 2 failed | 24 passed (26); the 2 failures are "reads a refusal whose error is a number as its status" and "reads a body that is JSON null or is not JSON as a failed read carrying the status". None of the three new side rows fails on the base text. This matches the report.
+ruling 2: the .filter(([name]) => name !== '__proto__') line removed from stringMap
+  tests/state/shared/words/tones.test.ts: 3 failed | 96 passed -- "holds no entry for the key __PROTO__ of type_color", "of domains", "of data_access". The palette and status_palette rows pass without the fix (Proof 1). With the fix: 101 passed (including my two probe cases, removed afterwards).
+ruling 3: itemsShape made .optional() in agentsAnswerShape and customizationsAnswerShape
+  tests/state/sessions/agents.test.ts: 5 failed | 19 passed (the five tests the report names). With the fix: 24 passed.
+```
+
+## Verdicts (again, for the whole diff since the base)
+
+The delta is the eight files below, found by the files modified after the round was sent at 14:56 (`find -newermt`): the four source files, the three test files and `refusal-fixture.ts`. I read all eight, and the whole diff of the four source files, in full. The verdicts for the rest of the diff rest on the first refuter's read, plus this run's `checks.sh` and greps above, plus my read of the files they touch. I did not re-read the other 170 files line by line.
+
+Items of the brief's "What to build":
+
+- 1: holds. The two answers the first review found changed without being named are fixed: the `memories` side (`memories.svelte.ts:55`) and the lower-cased `__proto__` key (`tones.ts:56-61`). Every const I grepped ends in `Shape`, no `.issues` is read, and the `.refine` calls are value checks laid over a zod type (`Number.isInteger`, `> 0`) that match the hand checks.
+- 2: holds. `shapes.ts` is at `src/lib/data/shapes/shapes.ts`, the stale-path grep prints 0, and `test:checks` passes (import order and boundaries among them).
+- 3: holds. The one remaining cast is `entities.svelte.ts:66`, ruled by Z154 N1. The cast grep prints 0.
+- 4: holds. The cast grep prints 0. `agentsAnswerShape` and `customizationsAnswerShape` now require the lists the model declares (Z155). The finding under Standards below is a related field the ruling did not name.
+- 5: holds. `loadUi`, `saved.ts` and `form-drafts` are unchanged this round and `test:checks` and `npm test` pass.
+- 6: holds. The instance readers are unchanged this round, and `arrangement.ts` now reads its tab with `satisfies`.
+- 7: holds. `tones.ts` is fixed; the other configuration readers are unchanged this round.
+- 8: holds for the readers the first review read; unchanged this round.
+- 9: holds. The grep prints 0.
+- 10: holds. The 62 check lines are the report's.
+- 11: holds. A grep of the added lines of the eight delta files for step ids, ruling ids, "previous", "no longer" and "used to" prints nothing. The `DESIGN.md` text is unchanged this round.
+- 12: holds. The one existing case this round edits is `tests/state/sessions/agents.test.ts` `is pending until it lands...`, whose body `{ agents: [], accounts: [] }` becomes `{ agents: [], accounts: [], findings: [] }` (`git diff -U0` shows exactly those two removed lines). The report names it, and Z155 is the changed answer it follows. No other existing line is removed in the three delta test files except the `memories-message` head comment, an import and the `tones.test.ts` import list.
+- 13: holds. 262.8 ms for 50,000 frames; the first review measured a ratio of about 1.33 against the 1.5 bound. The delta does not touch a per-frame reader.
+- 14: holds. The bundle is 30156 and the zod chunk is 2033196 bytes; the baseline 30064 is the report's and was not reproduced.
+- 15: holds. The three named defects hold. Z155 (an agents or customizations body missing a list is the failed read with the status) is a further changed answer. It was ruled in `orchestrator-state.md` (Z155), is in the round brief, and is named with before and after in the report.
+
+Cases of the brief's "Cases":
+
+- 1 to 20: met, as in the first review; each case's test file passes in the 10147 tests. The delta changes none of their readers except case 18's `tones.ts` (met; `tones.test.ts` 99 tests pass) and case 14's untouched suites.
+- 21: met as ruled. The `memories` row is met (`memories-message.test.ts`, the `1e-20`, `5e-324` and `0.5` rows). The `agents` row's "a body missing the answer's list" is met as Z155 changes it (`agents.test.ts`, the four "carries ..." rows and the "customizations body without rows" row). The `deposit`, `usage-refresh` and `pty-io` rows are unchanged and pass.
+- 22: met. The suite passes, and the only edit to an existing case is the one named above.
+- 23: met.
+
+## Findings
+
+### 1. Spec
+
+none
+
+### 2. Proof
+
+- `tests/state/shared/words/tones.test.ts:497-506`: `const row = key === 'domains' ? { color: '#aaa111', label: 'Hidden' } : '#aaa111';` with `status_palette: key === 'status_palette' ? { __PROTO__: row } : {}` and `palette: { __PROTO__: row }`. What is wrong: the claim is that each of the five keys has a case that fails without the fix. Reverting the one filter line fails only the `type_color`, `domains` and `data_access` rows (3 failed | 96 passed). The `status_palette` row gives a string where the reader needs `{ color }`, so `colorShape` refuses it and the guard is never reached. The `palette` row maps the key to `'#aaa111'`, which `toneOf` rejects because it does not start with `c-`. I ran two probes against the reverted line: `status_palette: { __PROTO__: { color: '#aaa111' } }` with `statusTone('__proto__')`, and `palette: { __PROTO__: 'c-red' }` with `paletteTone('__proto__')`. Both fail without the fix and pass with it. The report says these two rows pass before the fix because their lookups do not reach an own `__proto__` entry. For `status_palette` the stated reason is not the reason (the row is refused first). Failure scenario: someone later changes the `status_palette` or `palette` branch of `stringMap`, for example by dropping the filter for those two, and the suite stays green. Fix at landing: give those two rows `{ color: '#aaa111' }` and `'c-red'`.
+- Report section 2 of the round-1 hand-back (the first line of the round and "# 2. Decisions of mine beyond the rulings (each needs your ruling...)"): "Seven decisions of mine (section 2) still need your ruling". N1 to N7 were closed by Z154 in `orchestrator-state.md` (Z154, closed log). Failure scenario: a reader of the saved report takes N1 to N7 as open. Small, and the orchestrator's Closed section settles it.
+
+### 3. Standards
+
+- `src/lib/state/sessions/agents.svelte.ts:53-64`: `agent: z.string().optional(), account: z.string().optional(), workspace: z.string().optional(), rows: itemsShape` inside `unchangedAs<CustomizationsAnswer>(...)`, and `customizationTextShape ... path: z.string().optional(), text: z.string().optional()` inside `unchangedAs<CustomizationText>(...)`. What is wrong: `model-agents.ts:96-101` declares `agent`, `account`, `workspace` required, and `CustomizationText` is `{ path: string; text: string }` (`agents.svelte.ts` line 45). This is the same gap Z155 ended for the lists: a check wider than the declared type it is cast to. The ruling named the lists and `rows`, so the builder followed its letter. The server always sends all of them (`customizations.ts:448-454` and `:446`). Failure scenario: a 200 `{}` on a customization file read is held as `{ value: {}, error: '' }` and `CustomizationView.svelte:70-71` draws an empty path and an empty text where a failed read would show the status; a 200 `{"rows":[]}` is held as a `CustomizationsAnswer` with `account` undefined. No view reads `agent`, `account` or `workspace` today (`Customizations.svelte:59` reads `rows` only). Fix at landing: make `path` and `text` required, and `agent`, `account` and `workspace` required, in the two shapes, with a case each.
+
+### 4. Behaviour
+
+none. The only answer the delta changes beyond the first review's list is Z155 (a body missing a list is a failed read), ruled and named.
+
+## Declined to judge
+
+- Rulings 4 and 5 (the fixture tag and the `satisfies`): read directly. `refusal-fixture.ts:1` reads "// Layer 4, test fixture." and `arrangement.ts:38` reads `... satisfies z.ZodType<Instance>;`. `npm run check` passes with 0 errors, so the type holds. I did not test that a drift of the union's output from `Instance` would fail the check.
+- Whether `npm run diagrams` produced the same files the builder left in the worktree: I did not hash them before running it. `tests/checks/diagrams/diagrams.test.ts` is in `test:checks`, which passes. I did not read what it asserts.
+- The 170 files outside the delta, and the new test files the first review did not read line by line (listed in its "Declined to judge"): not re-read this round. This run's `npm test`, `test:checks` and the greps above are the evidence.
+- The bundle baseline 30064 and the per-round timing values of the first review: not reproduced here.
+- The page in a browser: not run (no browser, and the brief's verify list has none).
+- Read-only git beyond `git diff` and `git status --short`: I also ran `git show 402437e8:...` and `git grep ... 402437e8` to count check lines at the base. They read only and wrote nothing.
+
+Reviewer usage: about 210,000 tokens (the session counter went from about 15,000,000 to 14,792,000), about 55 tool uses, about 17 minutes.
+
+## Closed
+
+First run:
+- Proof 1 (the count 506 -> 59): closed in repair round 1, ruling 6.
+- Proof 2 (four names counted, not read): no defect; the reviewer read the removed lines itself.
+- Standards 1 (the fixture's layer tag): closed in repair round 1, ruling 4.
+- Standards 2 (the annotation on `arrangementTabShape`): closed in repair round 1, ruling 5.
+- Behaviour 1 (`multipleOf(1)` in `memories.svelte.ts`): closed in repair round 1, ruling 1.
+- Behaviour 2 (a lower-cased `__PROTO__` key in `tones.ts`): closed in repair round 1, ruling 2.
+- Behaviour 3 (an agents body missing a list): ruled Z155 in automode, closed in repair round 1, ruling 3.
+
+Run over repair round 1, each fixed at landing on main:
+- Proof 1: in `tests/state/shared/words/tones.test.ts`, the `status_palette` row gives `{ color: '#aaa111' }` and the `palette` row `'c-red'`, and the case also asks `paletteTone('__proto__')`. With the filter in `stringMap` replaced by `.filter(() => true)`, all five rows fail (`npx vitest run tests/state/shared/words/tones.test.ts`: the five `holds no entry for the key __PROTO__ of ...` cases marked failed); with it, 99 passed.
+- Proof 2: N1 to N7 of the round-1 report were closed by Z154 before the round was sent; the report's sentence that they need a ruling is stale, and nothing is open.
+- Standards 1: `customizationsAnswerShape` requires `agent`, `account`, `workspace` and `rows`, and `customizationTextShape` requires `path` and `text`, as `CustomizationsAnswer` and `CustomizationText` declare them. `tests/state/sessions/agents.test.ts` gains a case per field; with the step's optional shapes, 5 failed | 24 passed; with the fix, the file gives 29 passed. The two existing cases whose bodies lacked the scope fields carry them now.

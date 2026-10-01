@@ -16,7 +16,7 @@ import type { LiveEntry, SessionRecord } from '../../data/model/index.ts';
 import { distinctFolders } from './folders.ts';
 import { z } from 'zod';
 import { readJson } from '../core/json.ts';
-import { readAs, wholeShape } from '../core/shapes.ts';
+import { readAs, wholeShape } from '../../data/shapes/shapes.ts';
 
 /** Seconds of disagreement allowed between the registry's stamp and what `ps` reports. */
 export const PROC_START_SLACK = 2;

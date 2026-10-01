@@ -38,6 +38,7 @@ export const ORDER: Record<string, string[]> = {
         'data/sources',
         'data/snapshot',
         'data/accounts',
+        'data/shapes',
         'data/helpers',
         'data/prose',
         'data/model'

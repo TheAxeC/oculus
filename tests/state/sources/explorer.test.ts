@@ -202,7 +202,7 @@ describe('the explorer over the rows', () => {
 
     // Revert: read `selected` without checking that root and path are strings; or, for the
     // `...NO_REVEAL` expectations, default `reveal` or `revealed` to anything but null or
-    // `revealing` to anything but 0 in filesViewOf (askOf, outcomeOf, countOf of
+    // `revealing` to anything but 0 in filesViewShape (askShape, outcomeShape, countShape of
     // state/sources/fs.ts).
     it('reads what the instance keeps, and a default for anything it cannot read', () => {
         expect(

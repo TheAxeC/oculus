@@ -1,0 +1,13 @@
+# U3, the cases ruled (round 0)
+
+The builder's first run of the cases found one case the brief's rules get wrong, and six corrections. Each is ruled here; the brief and the rules file hold otherwise.
+
+1. Case 8 against "`ui/tabs/` is not changed" (Z161, the orchestrator, automode, option A): the step's paths gain `src/lib/ui/tabs/TabFace.svelte` for two rules only, and `tests/views/whole/type-scale.test.ts`'s pin of that file follows. `.cells` (line 214) reads `var(--fs-xs)` in place of the removed `--fs-xxs`; `.face:focus-visible` (lines 313-314) draws the one focus ring, `outline: 1px solid var(--accent); outline-offset: -1px`. No other line of `ui/tabs/` changes: no size, token, class, markup or behaviour of the tab strip, which stays X3c's. Case 8's three greps stay as written and print nothing. Not chosen: (B) except `ui/tabs/` from the greps, the lazy option, which loosens the check and leaves `.cells` reading a removed token.
+2. `tests/checks/imports/order.ts` is not changed: it places a layer's first sub-folders only, and `ui/frame` already covers `ui/frame/toolbar/`. The brief's line that adds `ui/frame/toolbar` to `ORDER.ui` does not apply.
+3. The search retry is `runSearch(id, roots)` in `src/lib/state/sources/search.svelte.ts`, which already runs the held query and leaves a second press alone while one runs; that file is not changed, and the error state's retry button calls it.
+4. The chip's padding is `3px 5px`, VS Code's count badge (css:309), which the brief's list of VS Code values quotes; the `3px 6px` in item 7 is the small text button's value (css:257), copied into the wrong line.
+5. `--header-action` is declared `calc(20px * var(--text-scale, 1))`, as `--tab-action` is, so case 18 gives 30 px at text scale 1.5.
+6. Case 11: a control the header has no room for is out of the tab order; the overflow opener holds it in its popover. When the focus reaches the opener and the popover opens (by Enter, Space or a press), the focus moves to the first control in the popover, and Escape closes it and returns the focus to the opener. The `more` button is that opener. Case 11 is met when a Tab from the last shown control reaches the opener, its opening puts the focus on the first clipped control's copy, and that control's action runs from there.
+7. Projects' `board.new_idea` is an add action: a header icon on the `add` glyph (Z160), with its words as the label and its `active={adding}` state kept as `aria-pressed`.
+
+Resume the build from your proposed order. The report carries this ruling, and case 8's and case 11's tests as they run after the change.

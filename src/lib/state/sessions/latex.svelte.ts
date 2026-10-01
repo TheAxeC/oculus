@@ -17,6 +17,14 @@
 // A PDF whose time moved is bumped in the fs store, which moves the address the file view draws it
 // at: an open PDF tab then fetches the new build instead of the bytes the browser cached.
 
+import { z } from 'zod';
+import {
+    anyNumberShape,
+    optionalTextShape,
+    readAs,
+    readJson,
+    rowsShape
+} from '../../data/shapes/shapes.ts';
 import { HUB_ROOT } from '../sources/fs.ts';
 import type { EntitiesStore, Queries } from '../shared/stores/shapes.ts';
 import type { FsStore } from '../sources/fs.svelte.ts';
@@ -65,6 +73,36 @@ export type LatexStore = {
 
 /** What every project's query key opens with. */
 const KIND = 'latex';
+
+/** One issue of a build: a number is a number, and a row without a message draws nothing. */
+const issueShape = z.object({
+    file: z.string().catch(''),
+    line: anyNumberShape.nullable().catch(null),
+    message: z.string().min(1)
+}) satisfies z.ZodType<LatexIssue>;
+
+/** The issues of one main: those that carry a message, and none for anything but a list. */
+const issuesShape = rowsShape(issueShape).catch([]);
+
+/** One main of an answer: a row without a name draws nothing. */
+const mainShape = z.object({
+    main: z.string().min(1),
+    pdfPath: z.string().catch(''),
+    pdf: anyNumberShape.nullable().catch(null),
+    log: anyNumberShape.nullable().catch(null),
+    errors: issuesShape,
+    warnings: issuesShape
+}) satisfies z.ZodType<LatexMain>;
+
+/** The body of an answer: its mains and folder as typed or at their fallback, and its sentence. */
+const bodyShape = z.object({
+    mains: rowsShape(mainShape).catch([]),
+    folder: z.string().catch(''),
+    error: optionalTextShape
+});
+
+/** What a body that is not a map says: no mains, no folder and no sentence. */
+const NO_BODY = { mains: [], folder: '', error: undefined };
 
 export function createLatex(
     entities: EntitiesStore,
@@ -115,11 +153,9 @@ export function createLatex(
     async function load(id: string, held: LatexState | undefined): Promise<LatexState> {
         try {
             const response = await fetch(`/api/latex?id=${encodeURIComponent(id)}`);
-            const body = (await response.json()) as {
-                mains?: unknown;
-                folder?: unknown;
-                error?: string;
-            };
+            const raw = await readJson(response);
+            if (raw === undefined) throw new Error(String(response.status));
+            const body = readAs(bodyShape, raw) ?? NO_BODY;
             if (!response.ok) {
                 return {
                     ...PENDING,
@@ -128,8 +164,8 @@ export function createLatex(
                 };
             }
             const next: LatexState = {
-                mains: readMains(body.mains),
-                folder: typeof body.folder === 'string' ? body.folder : '',
+                mains: body.mains,
+                folder: body.folder,
                 error: '',
                 loading: false
             };
@@ -162,43 +198,6 @@ export function createLatex(
             if (was === undefined || was.pdf === main.pdf) continue;
             fs.bump(HUB_ROOT, `${next.folder}/${main.pdfPath}`);
         }
-    }
-
-    /** The mains of an answer, keeping only what carries a name: a nameless row draws nothing. */
-    function readMains(value: unknown): LatexMain[] {
-        if (!Array.isArray(value)) return [];
-        const rows: LatexMain[] = [];
-        for (const one of value) {
-            if (typeof one !== 'object' || one === null) continue;
-            const row = one as Record<string, unknown>;
-            if (typeof row.main !== 'string' || row.main === '') continue;
-            rows.push({
-                main: row.main,
-                pdfPath: typeof row.pdfPath === 'string' ? row.pdfPath : '',
-                pdf: typeof row.pdf === 'number' ? row.pdf : null,
-                log: typeof row.log === 'number' ? row.log : null,
-                errors: readIssues(row.errors),
-                warnings: readIssues(row.warnings)
-            });
-        }
-        return rows;
-    }
-
-    /** The issues of one main, keeping only what carries a message. */
-    function readIssues(value: unknown): LatexIssue[] {
-        if (!Array.isArray(value)) return [];
-        const rows: LatexIssue[] = [];
-        for (const one of value) {
-            if (typeof one !== 'object' || one === null) continue;
-            const row = one as Record<string, unknown>;
-            if (typeof row.message !== 'string' || row.message === '') continue;
-            rows.push({
-                file: typeof row.file === 'string' ? row.file : '',
-                line: typeof row.line === 'number' ? row.line : null,
-                message: row.message
-            });
-        }
-        return rows;
     }
 
     return { state, watch, invalidate };

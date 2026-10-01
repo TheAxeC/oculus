@@ -1,11 +1,10 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q85b (zod in the state layer), review of repair round 1 running.
-- Q88b (the Files view's file operations), repair round 1 running.
-- U3 (every view on VS Code's scale, from U2's audit), building.
+- Q88b (the Files view's file operations), review of repair round 1 running.
+- U3 (every view on VS Code's scale, from U2's audit), building after the ruling on its cases.
 Queued, in order:
-- Q85c (zod in the data folder), once Q85b has landed; then Q85d.
+- Q85c (zod in the data folder); then Q85d.
 - Q88c (the Source Control rows' and the pane strip's new menu items), once Q88b has landed.
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - X3a (the Files view as VS Code's Explorer), once Q88b has landed.
@@ -33,6 +32,7 @@ Queued, in order:
 Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers.
 
 Landed, newest first:
+- Q85b (zod in the state layer), 2026-10-01, landing commit.
 - S3c (the Settings editor), 2026-10-01, 209c0cbf.
 - Q85a2 (zod in the edit, sessions and transcripts folders), 2026-10-01, 0b38c14c.
 - U2 (every view's look against VS Code), 2026-10-01, e8b517c0.

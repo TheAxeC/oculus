@@ -175,3 +175,38 @@ describe('the venue tiers the config names', () => {
         ).toBe(5);
     });
 });
+
+describe('the venue tiers, rows and lists of another type', () => {
+    it('drops a row whose key is not a string and keeps a colour only when it is a string', () => {
+        expect(venueTiers([{ key: 3 }, { key: 'a', color: 1 }])).toStrictEqual([
+            { key: 'a', label: 'a' }
+        ]);
+        const rows = [
+            [],
+            { key: ['a'] },
+            { key: 'b', label: 3 },
+            { key: 'c', label: '' },
+            { key: 'd', label: ['x'], color: '' },
+            { key: 'e', label: 'E', color: null },
+            { key: '' },
+            { key: '', label: 'x' },
+            undefined,
+            4,
+            'x',
+            { key: 'f', label: 'F', color: '#fff', extra: 1 }
+        ];
+        expect(venueTiers(rows)).toStrictEqual([
+            { key: 'b', label: 'b' },
+            { key: 'c', label: '' },
+            { key: 'd', label: 'd', color: '' },
+            { key: 'e', label: 'E' },
+            { key: 'f', label: 'F', color: '#fff' }
+        ]);
+    });
+
+    it('is empty for anything that is not a list', () => {
+        for (const held of [{}, 'x', null, 3, { 0: { key: 'a' } }]) {
+            expect(venueTiers(held)).toStrictEqual([]);
+        }
+    });
+});

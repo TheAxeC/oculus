@@ -7,6 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { terminal } from '../../fixtures/sessions-fixture.ts';
 import type { SessionsPayload } from '../../../src/lib/data/model/index.ts';
+import type { LatexState } from '../../../src/lib/state/sessions/latex.svelte.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;
@@ -253,4 +254,147 @@ describe('the build the store is waiting on', () => {
 
         expect(client.fs.fileVersion('hub', path)).toBe(0);
     });
+});
+
+describe('an answer whose fields are of the wrong type', () => {
+    const NOTHING_HELD: LatexState = { mains: [], folder: '', error: '', loading: false };
+
+    /** The state a fresh store holds for an id once the endpoint answered `text` with `status`. */
+    async function answeredWith(text: string, status = 200): Promise<LatexState> {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
+        const fresh = createClientState();
+        fresh.latex.state('p');
+        await settle();
+        return fresh.latex.state('p');
+    }
+
+    it('keeps the mains that carry a name and the issues that carry a message, each field as typed or at its fallback', async () => {
+        const body = {
+            folder: 'f',
+            mains: [
+                { main: '' },
+                { main: 'm', pdf: '1' },
+                {
+                    main: 'a',
+                    pdf: 5,
+                    log: 7,
+                    pdfPath: 'p.pdf',
+                    errors: [{ message: 'x', line: 3, file: 'f.tex' }]
+                },
+                {
+                    main: 'b',
+                    pdfPath: 3,
+                    log: 'x',
+                    errors: [
+                        { message: 'x', line: '3' },
+                        null,
+                        { message: '' },
+                        { message: 'ok', file: 3, line: 4 },
+                        3,
+                        []
+                    ],
+                    warnings: {}
+                },
+                null,
+                3,
+                'x',
+                [],
+                { main: 3 }
+            ]
+        };
+        expect(await answeredWith(JSON.stringify(body))).toStrictEqual({
+            mains: [
+                { main: 'm', pdfPath: '', pdf: null, log: null, errors: [], warnings: [] },
+                {
+                    main: 'a',
+                    pdfPath: 'p.pdf',
+                    pdf: 5,
+                    log: 7,
+                    errors: [{ file: 'f.tex', line: 3, message: 'x' }],
+                    warnings: []
+                },
+                {
+                    main: 'b',
+                    pdfPath: '',
+                    pdf: null,
+                    log: null,
+                    errors: [
+                        { file: '', line: null, message: 'x' },
+                        { file: '', line: 4, message: 'ok' }
+                    ],
+                    warnings: []
+                }
+            ],
+            folder: 'f',
+            error: '',
+            loading: false
+        });
+    });
+
+    it('keeps a time or a line that is infinite, since a number is a number', async () => {
+        const text =
+            '{"folder":"f","mains":[{"main":"m","pdf":1e999,"log":-1e999,"errors":[{"message":"x","line":1e999}]}]}';
+        expect(await answeredWith(text)).toStrictEqual({
+            mains: [
+                {
+                    main: 'm',
+                    pdfPath: '',
+                    pdf: Infinity,
+                    log: -Infinity,
+                    errors: [{ file: '', line: Infinity, message: 'x' }],
+                    warnings: []
+                }
+            ],
+            folder: 'f',
+            error: '',
+            loading: false
+        });
+    });
+
+    it.each([
+        [
+            'a folder that is a number and mains that are a map',
+            '{"folder":3,"mains":{}}',
+            200,
+            NOTHING_HELD
+        ],
+        [
+            'mains that are a string',
+            '{"folder":"f","mains":"x"}',
+            200,
+            { ...NOTHING_HELD, folder: 'f' }
+        ],
+        ['a list as the body', '[]', 200, NOTHING_HELD],
+        ['an empty map as the body', '{}', 200, NOTHING_HELD],
+        ['an error that is a number on a 200', '{"error":3}', 200, NOTHING_HELD],
+        ['a list as the body of a refusal', '[]', 500, { ...NOTHING_HELD, error: '500' }],
+        [
+            'a refusal with its sentence',
+            '{"error":"boom"}',
+            500,
+            { ...NOTHING_HELD, error: 'boom' }
+        ],
+        ['a refusal with an empty sentence', '{"error":""}', 500, NOTHING_HELD]
+    ])('answers %s as the state it names', async (_name, text, status, expected) => {
+        expect(await answeredWith(text, status)).toStrictEqual(expected);
+    });
+
+    it('answers the status for a refusal whose error is a number', async () => {
+        expect(await answeredWith('{"error":3}', 500)).toStrictEqual({
+            ...NOTHING_HELD,
+            error: '500'
+        });
+    });
+
+    it.each([
+        ['null', 'null', 200, { ...NOTHING_HELD, error: '200' }],
+        ['text that is not JSON', 'nope', 200, { ...NOTHING_HELD, error: '200' }],
+        ['null on a refusal', 'null', 500, { ...NOTHING_HELD, error: '500' }],
+        ['text that is not JSON on a refusal', 'nope', 500, { ...NOTHING_HELD, error: '500' }]
+    ])(
+        'answers a body that is %s as the failed read with the status text',
+        async (_name, text, status, expected) => {
+            expect(await answeredWith(text, status)).toStrictEqual(expected);
+        }
+    );
 });

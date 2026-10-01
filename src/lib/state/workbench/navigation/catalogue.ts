@@ -7,7 +7,10 @@
 // The readers of the three `layout.yml` keys the fold is built from are here too, since the page
 // hands the shell what they read and the Views view reads them for itself.
 
+import { z } from 'zod';
 import { registrationGlyph, type Registration } from './registry.ts';
+import { isMap } from '../../../data/helpers/guards.ts';
+import { optionalTextShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 import { t } from '../../shared/words/text.ts';
 
 /** One configured group. View registrations name its stable id and their own order. */
@@ -175,26 +178,26 @@ export function groupGlyph(section: Section): string {
     return registrationGlyph(section.items[0]);
 }
 
-/** A map of a parsed value, or null for anything that is not one. */
-function mapOf(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
+/** A chord: one lowercase letter. */
+const chordShape = z.string().regex(/^[a-z]$/);
+
+/** One group of `nav_groups`: a label, and a glyph and a chord when they are readable. */
+const navGroupShape = z.object({
+    label: z.string(),
+    glyph: optionalTextShape,
+    chord: chordShape.optional().catch(undefined)
+});
 
 /** The `nav_groups` map of config/layout.yml in order. Registrations name each group by id. */
 export function readGroups(raw: unknown): NavGroup[] {
-    const held = mapOf(raw);
-    if (held === null) return [];
+    if (!isMap(raw)) return [];
     const found: NavGroup[] = [];
-    for (const [id, entry] of Object.entries(held)) {
-        const group = mapOf(entry);
-        if (group === null || typeof group.label !== 'string') continue;
+    for (const [id, entry] of Object.entries(raw)) {
+        const group = readAs(navGroupShape, entry);
+        if (group === null) continue;
         const read: NavGroup = { id, label: group.label };
-        if (typeof group.glyph === 'string') read.glyph = group.glyph;
-        if (typeof group.chord === 'string' && /^[a-z]$/.test(group.chord)) {
-            read.chord = group.chord;
-        }
+        if (group.glyph !== undefined) read.glyph = group.glyph;
+        if (group.chord !== undefined) read.chord = group.chord;
         found.push(read);
     }
     return found;
@@ -206,8 +209,18 @@ export function readGroups(raw: unknown): NavGroup[] {
  * letter leaves the chord unset.
  */
 export function readChord(raw: unknown): string | undefined {
-    return typeof raw === 'string' && /^[a-z]$/.test(raw) ? raw : undefined;
+    return readAs(chordShape, raw) ?? undefined;
 }
+
+/** One document of `docs`: a label, a path and a group, each a string that carries something. */
+const docEntryShape = z.object({
+    label: z.string().min(1),
+    path: z.string().min(1),
+    group: z.string().min(1)
+}) satisfies z.ZodType<DocEntry>;
+
+/** The `docs` list: the entries that are documents, and none when the value is not a list. */
+const docsShape = rowsShape(docEntryShape);
 
 /**
  * The `docs` list of config/layout.yml, in order: one Markdown document of the hub per entry,
@@ -215,18 +228,26 @@ export function readChord(raw: unknown): string | undefined {
  * than drawn half-formed; the server reports it as a finding.
  */
 export function readDocs(raw: unknown): DocEntry[] {
-    if (!Array.isArray(raw)) return [];
-    const found: DocEntry[] = [];
-    for (const entry of raw) {
-        const doc = mapOf(entry);
-        if (doc === null) continue;
-        if (typeof doc.label !== 'string' || doc.label === '') continue;
-        if (typeof doc.path !== 'string' || doc.path === '') continue;
-        if (typeof doc.group !== 'string' || doc.group === '') continue;
-        found.push({ label: doc.label, path: doc.path, group: doc.group });
-    }
-    return found;
+    return readAs(docsShape, raw) ?? [];
 }
+
+/**
+ * The fields of an arrangement's node that say which views it holds: `root` where the node is an
+ * arrangement, `kind` and `view` where it is a pane, `children` where it is a split. A `view` that
+ * is not a list is read as a list of that one value.
+ */
+const nodeHoldsShape = z.object({
+    root: z.unknown().optional(),
+    kind: z.unknown().optional(),
+    view: z.union([
+        z.array(z.unknown()),
+        z
+            .unknown()
+            .optional()
+            .transform((one) => [one])
+    ]),
+    children: z.array(z.unknown()).catch([])
+});
 
 /**
  * Whether an arrangement's tree holds the view anywhere: a pane naming it alone or among its tabs,
@@ -234,13 +255,11 @@ export function readDocs(raw: unknown): DocEntry[] {
  * arrangement carries its tree under `root`.
  */
 export function nodeHolds(node: unknown, view: string): boolean {
-    const held = mapOf(node);
+    const held = readAs(nodeHoldsShape, node);
     if (held === null) return false;
     if (held.root !== undefined) return nodeHolds(held.root, view);
-    if (held.kind === 'pane') {
-        return Array.isArray(held.view) ? held.view.includes(view) : held.view === view;
-    }
-    return Array.isArray(held.children) && held.children.some((child) => nodeHolds(child, view));
+    if (held.kind === 'pane') return held.view.includes(view);
+    return held.children.some((child) => nodeHolds(child, view));
 }
 
 /**

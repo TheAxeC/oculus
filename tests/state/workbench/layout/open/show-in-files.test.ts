@@ -191,7 +191,7 @@ describe('the ask showInFiles writes', () => {
         });
     });
 
-    // Revert: in askOf of state/sources/fs.ts, accept an empty root key.
+    // Revert: in askShape of state/sources/fs.ts, accept an empty root key.
     it('holds no ask for an empty root key, which names no root', () => {
         const id = client.layout.showInFiles('README.md', '');
         expect(filesViewOf(client.ui.instanceState(id)).reveal).toBeNull();
@@ -398,7 +398,7 @@ describe('what an answer writes', () => {
         expect(revealScrolled(filesViewOf(undefined), done)).toBeNull();
     });
 
-    // Revert: in askOf or outcomeOf of state/sources/fs.ts, take the record as it is.
+    // Revert: in askShape or outcomeShape of state/sources/fs.ts, take the record as it is.
     it('reads an ask and an outcome out of a saved record, and nothing out of anything else', () => {
         expect(
             filesViewOf({ reveal: { root: 'hub', path: 'a', asked: 0, settled: false } }).reveal

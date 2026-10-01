@@ -393,3 +393,286 @@ describe('the entry a saved document tab shows', () => {
         expect(followDoc([unnamed], HELD.path, '')).toEqual({ entry: null, moved: false });
     });
 });
+
+describe('the readers of layout.yml over values of the wrong type', () => {
+    const rows: [string, () => unknown, unknown][] = [
+        ['groups of an array', () => readGroups([]), []],
+        ['groups of null', () => readGroups(null), []],
+        ['groups of a string', () => readGroups('a'), []],
+        ['groups of a number', () => readGroups(3), []],
+        ['groups of an empty map', () => readGroups({}), []],
+        ['groups holding an array', () => readGroups({ a: [] }), []],
+        ['groups holding null', () => readGroups({ a: null }), []],
+        ['groups holding a string', () => readGroups({ a: 'A' }), []],
+        ['a group with a label that is a number', () => readGroups({ a: { label: 3 } }), []],
+        ['a group with a label that is null', () => readGroups({ a: { label: null } }), []],
+        ['a group with no label', () => readGroups({ a: { glyph: 'g', chord: 'a' } }), []],
+        [
+            'a group with an empty label',
+            () => readGroups({ a: { label: '' } }),
+            [{ id: 'a', label: '' }]
+        ],
+        [
+            'a group with a glyph that is a number',
+            () => readGroups({ a: { label: 'A', glyph: 3 } }),
+            [{ id: 'a', label: 'A' }]
+        ],
+        [
+            'a group with an empty glyph',
+            () => readGroups({ a: { label: 'A', glyph: '' } }),
+            [{ id: 'a', label: 'A', glyph: '' }]
+        ],
+        [
+            'a group with a chord of two letters',
+            () => readGroups({ a: { label: 'A', chord: 'AB' } }),
+            [{ id: 'a', label: 'A' }]
+        ],
+        [
+            'a group with a chord that is a capital',
+            () => readGroups({ a: { label: 'A', chord: 'A' } }),
+            [{ id: 'a', label: 'A' }]
+        ],
+        [
+            'a group with a chord that is a number',
+            () => readGroups({ a: { label: 'A', chord: 3 } }),
+            [{ id: 'a', label: 'A' }]
+        ],
+        [
+            'a group with an empty chord',
+            () => readGroups({ a: { label: 'A', chord: '' } }),
+            [{ id: 'a', label: 'A' }]
+        ],
+        [
+            'a group with a chord of one letter',
+            () => readGroups({ a: { label: 'A', chord: 'q' } }),
+            [{ id: 'a', label: 'A', chord: 'q' }]
+        ],
+        [
+            'a group with a chord of one letter and a newline',
+            () => readGroups({ a: { label: 'A', chord: 'q\n' } }),
+            [{ id: 'a', label: 'A' }]
+        ],
+        [
+            'a group with every field',
+            () => readGroups({ a: { label: 'A', glyph: 'g', chord: 'a', extra: 1 } }),
+            [{ id: 'a', label: 'A', glyph: 'g', chord: 'a' }]
+        ],
+        [
+            'the keys of a group',
+            () => Object.keys(readGroups({ a: { chord: 'a', glyph: 'g', label: 'A' } })[0]),
+            ['id', 'label', 'glyph', 'chord']
+        ],
+        [
+            'groups in the order the map holds them',
+            () => readGroups({ b: { label: 'B' }, a: { label: 'A' } }),
+            [
+                { id: 'b', label: 'B' },
+                { id: 'a', label: 'A' }
+            ]
+        ],
+        [
+            'groups of a map with an own __proto__ key',
+            () => readGroups(JSON.parse('{"__proto__":{"label":"P"},"a":{"label":"A"}}')),
+            [
+                { id: '__proto__', label: 'P' },
+                { id: 'a', label: 'A' }
+            ]
+        ],
+        ['a chord that is a letter', () => readChord('a'), 'a'],
+        ['a chord that is two letters', () => readChord('ab'), undefined],
+        ['a chord that is a capital', () => readChord('A'), undefined],
+        ['a chord that is a digit', () => readChord('1'), undefined],
+        ['a chord that is empty', () => readChord(''), undefined],
+        ['a chord that is a number', () => readChord(3), undefined],
+        ['a chord that is null', () => readChord(null), undefined],
+        ['a chord that is a list', () => readChord(['a']), undefined],
+        ['a chord that is a letter and a newline', () => readChord('a\n'), undefined],
+        ['docs of a map', () => readDocs({}), []],
+        ['docs of null', () => readDocs(null), []],
+        ['docs of a string', () => readDocs('x'), []],
+        ['docs holding things that are not maps', () => readDocs([null, 3, 'x', []]), []],
+        ['a doc with no label', () => readDocs([{ path: 'p', group: 'g' }]), []],
+        [
+            'a doc with a label that is a number',
+            () => readDocs([{ label: 3, path: 'p', group: 'g' }]),
+            []
+        ],
+        ['a doc with an empty label', () => readDocs([{ label: '', path: 'p', group: 'g' }]), []],
+        ['a doc with an empty path', () => readDocs([{ label: 'l', path: '', group: 'g' }]), []],
+        [
+            'a doc with a path that is a number',
+            () => readDocs([{ label: 'l', path: 3, group: 'g' }]),
+            []
+        ],
+        ['a doc with an empty group', () => readDocs([{ label: 'l', path: 'p', group: '' }]), []],
+        [
+            'a doc with a group that is null',
+            () => readDocs([{ label: 'l', path: 'p', group: null }]),
+            []
+        ],
+        [
+            'a doc with fields it does not read',
+            () => readDocs([{ group: 'g', extra: 1, path: 'p', label: 'l' }]),
+            [{ label: 'l', path: 'p', group: 'g' }]
+        ],
+        [
+            'the keys of a doc',
+            () => Object.keys(readDocs([{ group: 'g', path: 'p', label: 'l' }])[0]),
+            ['label', 'path', 'group']
+        ],
+        [
+            'docs with a bad doc between two good ones',
+            () =>
+                readDocs([
+                    { label: 'a', path: 'a', group: 'g' },
+                    { label: 3 },
+                    { label: 'b', path: 'b', group: 'g' }
+                ]),
+            [
+                { label: 'a', path: 'a', group: 'g' },
+                { label: 'b', path: 'b', group: 'g' }
+            ]
+        ],
+        [
+            'docs with an own __proto__ key',
+            () => readDocs([JSON.parse('{"__proto__":1,"label":"l","path":"p","group":"g"}')]),
+            [{ label: 'l', path: 'p', group: 'g' }]
+        ],
+        ['a node that is an array', () => nodeHolds([], 'v'), false],
+        ['a node that is null', () => nodeHolds(null, 'v'), false],
+        ['a node that is a string', () => nodeHolds('v', 'v'), false],
+        ['a node that is a number', () => nodeHolds(3, 'v'), false],
+        ['a node with no kind', () => nodeHolds({ view: 'v' }, 'v'), false],
+        ['a pane naming the view', () => nodeHolds({ kind: 'pane', view: 'v' }, 'v'), true],
+        ['a pane naming another view', () => nodeHolds({ kind: 'pane', view: 'w' }, 'v'), false],
+        [
+            'a pane naming the view in a list',
+            () => nodeHolds({ kind: 'pane', view: ['w', 'v'] }, 'v'),
+            true
+        ],
+        [
+            'a pane naming a list without the view',
+            () => nodeHolds({ kind: 'pane', view: ['w', 3] }, 'v'),
+            false
+        ],
+        [
+            'a pane whose view is a list holding a map',
+            () => nodeHolds({ kind: 'pane', view: [{ view: 'v' }] }, 'v'),
+            false
+        ],
+        [
+            'a pane whose view is a map',
+            () => nodeHolds({ kind: 'pane', view: { v: 1 } }, 'v'),
+            false
+        ],
+        ['a pane whose view is a number', () => nodeHolds({ kind: 'pane', view: 3 }, 'v'), false],
+        ['a pane with no view', () => nodeHolds({ kind: 'pane' }, 'v'), false],
+        [
+            'a node of a kind that is not a pane holding the view',
+            () => nodeHolds({ kind: 'box', view: 'v' }, 'v'),
+            false
+        ],
+        [
+            'a split holding the view',
+            () =>
+                nodeHolds(
+                    {
+                        kind: 'split',
+                        children: [
+                            { kind: 'pane', view: 'w' },
+                            { kind: 'pane', view: 'v' }
+                        ]
+                    },
+                    'v'
+                ),
+            true
+        ],
+        [
+            'a split whose children are a map',
+            () => nodeHolds({ kind: 'split', children: { 0: { kind: 'pane', view: 'v' } } }, 'v'),
+            false
+        ],
+        [
+            'a split whose children are a string',
+            () => nodeHolds({ kind: 'split', children: 'v' }, 'v'),
+            false
+        ],
+        [
+            'a split whose children hold null',
+            () =>
+                nodeHolds({ kind: 'split', children: [null, 3, { kind: 'pane', view: 'v' }] }, 'v'),
+            true
+        ],
+        [
+            'a node with children and no kind',
+            () => nodeHolds({ children: [{ kind: 'pane', view: 'v' }] }, 'v'),
+            true
+        ],
+        [
+            'a root that is a pane',
+            () => nodeHolds({ root: { kind: 'pane', view: 'v' } }, 'v'),
+            true
+        ],
+        ['a root that is null', () => nodeHolds({ root: null }, 'v'), false],
+        [
+            'a root that is a list',
+            () => nodeHolds({ root: [{ kind: 'pane', view: 'v' }] }, 'v'),
+            false
+        ],
+        [
+            'a root beside a pane',
+            () => nodeHolds({ root: { kind: 'pane', view: 'w' }, kind: 'pane', view: 'v' }, 'v'),
+            false
+        ],
+        [
+            'a root that is undefined beside a pane',
+            () => nodeHolds({ root: undefined, kind: 'pane', view: 'v' }, 'v'),
+            true
+        ],
+        [
+            'a root inside a root',
+            () => nodeHolds({ root: { root: { kind: 'pane', view: 'v' } } }, 'v'),
+            true
+        ],
+        [
+            'a page that is not a rail page',
+            () =>
+                onCataloguePage(
+                    'x',
+                    [{ page: 'a', node: { root: { kind: 'pane', view: 'v' } } }],
+                    'v'
+                ),
+            false
+        ],
+        [
+            'a rail page whose node holds the view',
+            () =>
+                onCataloguePage(
+                    'a',
+                    [{ page: 'a', node: { root: { kind: 'pane', view: 'v' } } }],
+                    'v'
+                ),
+            true
+        ],
+        [
+            'a rail page whose node is null',
+            () => onCataloguePage('a', [{ page: 'a', node: null }], 'v'),
+            false
+        ],
+        [
+            'a rail page whose node is a list',
+            () => onCataloguePage('a', [{ page: 'a', node: [] }], 'v'),
+            false
+        ],
+        [
+            'no rail page',
+            () =>
+                onCataloguePage(undefined, [{ page: 'a', node: { kind: 'pane', view: 'v' } }], 'v'),
+            false
+        ]
+    ];
+
+    it.each(rows)('%s', (_name, run, expected) => {
+        expect(run()).toStrictEqual(expected);
+    });
+});

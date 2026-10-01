@@ -7,7 +7,9 @@
 // opens the palette from inside it. Each is under the editor's own label with its keys as the
 // hint, none for an action without keys, and choosing one asks that tab to run it.
 
+import { z } from 'zod';
 import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
+import { filledTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import { feedIdents, nestedStrings } from '../feeds/idents.ts';
 import type { SourceOnScreen } from './navigation/editor-status.svelte.ts';
 import {
@@ -19,6 +21,14 @@ import {
 } from '../shared/words/fuzzy.ts';
 
 export type PaletteView = { id: string; label: string };
+
+/** The two fields a feed entry may be named by, each absent unless it is non-empty text. */
+const feedNameShape = z.object({ title: filledTextShape, subject: filledTextShape });
+
+/** The names of the `themes:` rows that have one, and none for a value that is not a list. */
+const themeNamesShape = rowsShape(
+    z.object({ name: z.string().min(1) }).transform((row) => row.name)
+);
 
 export type PaletteFeed = { entries: FeedEntry[] } | null;
 
@@ -114,12 +124,8 @@ export function buildIndex(
         const identOf = feedIdents(kind, entries);
         for (const entry of entries) {
             const id = identOf(entry);
-            const label =
-                typeof entry.title === 'string' && entry.title !== ''
-                    ? entry.title
-                    : typeof entry.subject === 'string' && entry.subject !== ''
-                      ? entry.subject
-                      : id;
+            const named = readAs(feedNameShape, entry);
+            const label = named?.title ?? named?.subject ?? id;
             found.push({
                 id: `feed:${kind}:${id}`,
                 kind: 'feed',
@@ -225,13 +231,7 @@ export function lineQuery(parsed: ParsedCommand | null): number | null {
  * whether a source tab is on screen, which is what `language` changes.
  */
 export function commands(config: Record<string, unknown>, source = false): PaletteCommand[] {
-    const themes = Array.isArray(config.themes)
-        ? config.themes.flatMap((row) => {
-              if (typeof row !== 'object' || row === null || Array.isArray(row)) return [];
-              const name = (row as Record<string, unknown>).name;
-              return typeof name === 'string' && name !== '' ? [name] : [];
-          })
-        : [];
+    const themes = readAs(themeNamesShape, config.themes) ?? [];
     return [
         { name: 'theme', hint: `<${themes.join(' | ')}>`, available: themes.length > 0 },
         { name: 'crt', hint: '', available: true },

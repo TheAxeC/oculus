@@ -9,7 +9,9 @@
 // rule the form marks a changed field by, so whether the tab holds unsaved work and what the form
 // says is waiting to be saved are one answer.
 
+import { z } from 'zod';
 import type { Project } from '../../data/model/index.ts';
+import { mapShape, readAs } from '../../data/shapes/shapes.ts';
 import { asText, fieldValues } from './schema.ts';
 import type { InstanceStates } from '../shared/stores/shapes.ts';
 
@@ -25,14 +27,20 @@ export function editDiffers(edit: unknown, value: unknown): boolean {
     return asText(edit).trim() !== asText(value).trim();
 }
 
+/**
+ * A saved draft: a project name that is not empty, and the edits as the map the record holds. The
+ * edits are copied by spread, which keeps an own `__proto__` key as a key.
+ */
+const manifestDraftShape = z
+    .object({ project: z.string().min(1), edits: mapShape })
+    .transform((held) => ({
+        project: held.project,
+        edits: { ...held.edits }
+    })) satisfies z.ZodType<ManifestDraft>;
+
 /** The saved draft of an instance, or null when what the record holds is not one. */
 export function parseManifestDraft(raw: unknown): ManifestDraft | null {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
-    const held = raw as Record<string, unknown>;
-    const edits = held.edits;
-    if (typeof held.project !== 'string' || held.project === '') return null;
-    if (typeof edits !== 'object' || edits === null || Array.isArray(edits)) return null;
-    return { project: held.project, edits: { ...(edits as Record<string, unknown>) } };
+    return readAs(manifestDraftShape, raw);
 }
 
 /** The manifest editor's drafts, for one client. */

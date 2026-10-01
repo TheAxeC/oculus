@@ -267,3 +267,60 @@ describe('disseminated', () => {
         expect(disseminated(SNAPSHOT, 'alpha')).toEqual([]);
     });
 });
+
+describe('authorLine, an authors field of another type', () => {
+    const line = (authors: unknown, lead?: string) =>
+        authorLine(project('x', 'ideas', { authors, lead } as never));
+    const rows: [string, unknown, string][] = [
+        ['a number', 3, 'L'],
+        ['an empty list', [], 'L'],
+        ['null', null, 'L'],
+        ['a map', { 0: 'a' }, 'L'],
+        ['a list of two names', ['a', 'b'], 'a, b'],
+        ['a list holding a number', ['a', 3], 'a, 3'],
+        ['a list of one number', [3], '3'],
+        ['a line', 'line', 'line'],
+        ['an empty line', '', '']
+    ];
+
+    it.each(rows)('reads %s', (_, authors, expected) => {
+        expect(line(authors, 'L')).toBe(expected);
+    });
+
+    it('is empty for a number and no lead', () => {
+        expect(line(3)).toBe('');
+    });
+});
+
+describe('disseminated, entry fields of another type', () => {
+    it('reads related as the strings of a list and role as the word attend', () => {
+        const snap = snapshot();
+        const entry = (id: Id, fields: Record<string, unknown>) => ({
+            id,
+            title: id,
+            fields,
+            file: '',
+            index: 0
+        });
+        snap.entities.collections.events = {
+            id: 'events',
+            title: '',
+            file: '',
+            entries: [
+                entry('a', { related: ['p'] }),
+                entry('b', { related: 'p' }),
+                entry('c', { related: [1, 'p'] }),
+                entry('d', { related: ['p'], role: 'attend' }),
+                entry('e', { related: ['p'], role: 3 }),
+                entry('f', { related: ['p'], role: ['attend'] }),
+                entry('g', {}),
+                entry('h', { related: { 0: 'p' } }),
+                entry('i', { related: null }),
+                entry('j', { related: ['p'], role: ' attend ' })
+            ]
+        };
+        expect(disseminated(snap, 'p')).toStrictEqual(
+            ['a', 'c', 'e', 'f', 'j'].map((id) => ({ collection: 'events', id, title: id }))
+        );
+    });
+});

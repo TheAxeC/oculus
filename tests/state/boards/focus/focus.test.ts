@@ -11,11 +11,11 @@
 // tests/views/boards/focus.test.ts.
 
 import { describe, expect, it } from 'vitest';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
-import { attention, refresh, staleAfter } from '../../../src/lib/state/feeds/feeds.ts';
-import { engineDir, loadConfig, vocabCatalog } from '../../../src/lib/data/sources/config.ts';
-import { scalar } from '../../../src/lib/data/helpers/guards.ts';
-import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
+import { NO_FEEDS } from '../../../fixtures/entities-fixture.ts';
+import { attention, refresh, staleAfter } from '../../../../src/lib/state/feeds/feeds.ts';
+import { engineDir, loadConfig, vocabCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { scalar } from '../../../../src/lib/data/helpers/guards.ts';
+import { setVocab } from '../../../../src/lib/state/shared/words/tones.ts';
 import {
     backlog,
     holdingTone,
@@ -30,14 +30,14 @@ import {
     nextPriority,
     type Lane,
     type Priority
-} from '../../../src/lib/state/boards/focus.ts';
+} from '../../../../src/lib/state/boards/focus.ts';
 import {
     ticker,
     venueLoad,
     deadlinesByCategory,
     runsByKind,
     type TickerItem
-} from '../../../src/lib/state/boards/ticker.ts';
+} from '../../../../src/lib/state/boards/ticker.ts';
 import type {
     Collection,
     Entry,
@@ -48,7 +48,7 @@ import type {
     Snapshot,
     Tier,
     Venue
-} from '../../../src/lib/data/model/index.ts';
+} from '../../../../src/lib/data/model/index.ts';
 
 const { config } = loadConfig(engineDir());
 setVocab(vocabCatalog(config));

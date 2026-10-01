@@ -4,20 +4,21 @@
 // state/workbench, above the feeds folder, reads it from here.
 
 import type { FeedKind } from '../../data/model/index.ts';
+import { filledTextShape, mapShape, readAs } from '../../data/shapes/shapes.ts';
 
 /** Every string nested in a value, in property order. */
 export function nestedStrings(value: unknown): string[] {
     if (typeof value === 'string') return value === '' ? [] : [value];
     if (Array.isArray(value)) return value.flatMap(nestedStrings);
     if (typeof value !== 'object' || value === null) return [];
-    return Object.values(value as Record<string, unknown>).flatMap(nestedStrings);
+    return Object.values(value).flatMap(nestedStrings);
 }
 
 /** The identity one entry carries on its own, before the feed is asked whether it is unique. */
 export function feedIdentity(kind: FeedKind, entry: object): string {
     const key = kind === 'linkedin' ? 'file' : 'title';
-    const value = (entry as Record<string, unknown>)[key];
-    if (typeof value === 'string' && value !== '') return value;
+    const named = readAs(filledTextShape, readAs(mapShape, entry)?.[key]);
+    if (named !== undefined && named !== null) return named;
     return nestedStrings(entry)[0] ?? kind;
 }
 

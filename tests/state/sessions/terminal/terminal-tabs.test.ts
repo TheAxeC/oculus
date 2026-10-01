@@ -278,3 +278,131 @@ describe('the Terminal tab of a page for a terminal no tab owns', () => {
         expect(pageTarget([{ id: 'files', view: 'files' }], 'files')).toBe(null);
     });
 });
+
+describe('a saved state of the wrong shape read into a tab', () => {
+    const FORM = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+    /** The tab with a fresh identity written `fresh`, so the rest of it is compared whole. */
+    function read(state: unknown): TerminalTabState {
+        const tab = readTab(state);
+        return { ...tab, id: FORM.test(tab.id) ? 'fresh' : tab.id };
+    }
+
+    /** A tab that owns nothing and composes, the answer to a state that names no terminal. */
+    const none = (id: string, label = ''): TerminalTabState => ({
+        id,
+        terminals: [],
+        row: [],
+        shares: [],
+        shown: null,
+        composing: true,
+        label
+    });
+
+    /** A tab of A and B in a row with these shares, the first shown. */
+    const pair = (shares: number[], over: Partial<TerminalTabState> = {}): TerminalTabState => ({
+        id: 'q',
+        terminals: [A, B],
+        row: [A, B],
+        shares,
+        shown: A,
+        composing: false,
+        label: '',
+        ...over
+    });
+
+    /** A tab of A and B saved in the older two-terminal shape, with this `share`. */
+    const beside = (share: unknown) => ({ id: 'q', terminals: [A, B], shown: A, beside: B, share });
+
+    /** A saved tab of A and B with a row and these shares. */
+    const withShares = (shares: unknown) => ({ id: 'q', terminals: [A, B], row: [A, B], shares });
+
+    it.each([
+        [
+            'an id that is a number, a label that is null, terminals that are a string',
+            { id: 3, label: null, terminals: 'x' },
+            none('fresh')
+        ],
+        ['a row and shares without terminals', { row: [1], shares: ['a', 0.5] }, none('fresh')],
+        ['a share without terminals', { share: 2 }, none('fresh')],
+        ['a list', [], none('fresh')],
+        ['null', null, none('fresh')],
+        ['a string', 'x', none('fresh')],
+        ['an id that is empty', { id: '' }, none('fresh')],
+        ['a label that is a number', { id: 'q', label: 3 }, none('q')],
+        [
+            'a session that is a number beside a label',
+            { id: 'q', session: 3, label: 'l' },
+            none('q', 'l')
+        ],
+        ['a session that is no terminal id', { id: 'q', session: 'nope' }, none('q')],
+        [
+            'an own __proto__ key holding a state',
+            JSON.parse('{"__proto__":{"id":"p","terminals":["a1b2c3-shell"]},"label":"l"}'),
+            none('fresh', 'l')
+        ],
+        [
+            'terminals that are null beside a session',
+            { id: 'q', terminals: null, session: A },
+            { ...pair([1]), terminals: [A], row: [A] }
+        ]
+    ])('reads %s as a tab that owns what it names', (_name, state, expected) => {
+        expect(read(state)).toStrictEqual(expected);
+    });
+
+    it.each([
+        ['a share that is a string', withShares(['a', 0.5]), pair([0.5, 0.5])],
+        ['a share that is infinite', withShares([1, Infinity]), pair([0.5, 0.5])],
+        ['a share that is NaN', withShares([Number.NaN, 1]), pair([0.5, 0.5])],
+        ['shares that are a map', withShares({}), pair([0.5, 0.5])],
+        ['more shares than terminals', withShares([1, 2, 3]), pair([1 / 3, 2 / 3])],
+        [
+            'shares scaled to sum to 1',
+            { ...withShares([1, 3]), shown: B },
+            pair([0.25, 0.75], { shown: B })
+        ],
+        [
+            'a row that is a string',
+            { id: 'q', terminals: [A, B], row: 'x', shown: A },
+            pair([1], { row: [A] })
+        ],
+        ['a share of 0.3', beside(0.3), pair([0.3, 0.7])],
+        ['a share of 0.1', beside(0.1), pair([0.1, 0.9])],
+        ['a share of 0.9', beside(0.9), pair([0.9, 0.09999999999999998])],
+        ['a share of 0.95', beside(0.95), pair([0.5, 0.5])],
+        ['a share that is NaN beside a second terminal', beside(Number.NaN), pair([0.5, 0.5])],
+        ['a share that is infinite beside a second terminal', beside(Infinity), pair([0.5, 0.5])],
+        ['a share that is a string beside a second terminal', beside('0.3'), pair([0.5, 0.5])],
+        [
+            'a second terminal the tab does not own',
+            { id: 'q', terminals: [A], shown: A, beside: B, share: 0.3 },
+            pair([1], { terminals: [A], row: [A] })
+        ],
+        [
+            'a composing flag that is a string',
+            { id: 'q', terminals: [A], shown: A, composing: 'yes' },
+            pair([1], { terminals: [A], row: [A] })
+        ],
+        [
+            'a shown terminal that is a number',
+            { id: 'q', terminals: [A], shown: 3 },
+            pair([1], { terminals: [A], row: [A] })
+        ],
+        [
+            'terminals that are a number, null, a word and a repeat',
+            { id: 'q', terminals: [A, 3, null, 'x', B, A] },
+            pair([1], { row: [A] })
+        ]
+    ])('reads %s as the row it makes', (_name, state, expected) => {
+        expect(read(state)).toStrictEqual(expected);
+    });
+
+    it('reads a tab that composes with no terminal shown as a tab with an empty row', () => {
+        const state = { id: 'q', terminals: [A], shown: null, composing: true };
+        expect(read(state)).toStrictEqual({
+            ...pair([], { terminals: [A], row: [] }),
+            shown: null,
+            composing: true
+        });
+    });
+});

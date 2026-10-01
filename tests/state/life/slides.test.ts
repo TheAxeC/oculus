@@ -80,6 +80,31 @@ describe('parseSlidesState', () => {
     });
 });
 
+describe('the lists of words a pane state holds', () => {
+    it('keeps the items that are text, an empty one and a repeated one included, in their order', () => {
+        const held = parseSlidesState({
+            order: ['a', 1, null, ['b'], { x: 1 }, '', 'c', 'a', true, NaN],
+            picked: ['', '', 'z']
+        });
+        expect(held.order).toStrictEqual(['a', '', 'c', 'a']);
+        expect(held.picked).toStrictEqual(['', '', 'z']);
+    });
+
+    it('reads a list that is a map, a string, a number or null as none', () => {
+        for (const other of [{ 0: 'a' }, 'abc', 3, null, true]) {
+            const held = parseSlidesState({ order: other, picked: other });
+            expect([held.order, held.picked]).toStrictEqual([[], []]);
+        }
+    });
+
+    it('gives lists of its own, not the lists the instance holds', () => {
+        const order = ['a'];
+        const held = parseSlidesState({ order });
+        expect(held.order).toStrictEqual(order);
+        expect(held.order).not.toBe(order);
+    });
+});
+
 describe('withTick', () => {
     const held = fileState(KEYS, ['title'], OPEN);
 
