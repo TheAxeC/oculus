@@ -20,6 +20,7 @@ text:
         kind_observed: '{0} (read-only)'
         kind_shell: Shell
         kind_shell_glyph: terminal_shell
+        menu_attach: Attach to Session
         menu_clear: Clear
         menu_color: Change Color...
         menu_copy: Copy

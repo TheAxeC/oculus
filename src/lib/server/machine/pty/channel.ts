@@ -12,6 +12,12 @@
 // tmux's own `%session-changed` and its relatives say when the terminal list moved; while none is,
 // a `list-sessions` does, every five seconds while a page is attached to a terminal and once a
 // minute while none is, since nothing but a hand-made session can move the list then.
+//
+// Reads of the list run side by side and may answer in any order, so every read takes a turn
+// when it starts and its answer is taken only while no read that started later has been taken: an
+// older answer never puts back a list that a newer one has replaced. An answer of "no server" is
+// read again before it is taken as an empty list, because tmux refuses a connection for a moment
+// and that one answer would otherwise tell every page that all its terminals have ended.
 
 import type {
     Message,
@@ -27,13 +33,21 @@ import {
     isTerminalId,
     listArgs,
     parseTerminals,
+    serverPid,
     resizeArgs,
     inputArgs,
     screenAt,
     sessionName,
     SCROLLBACK_LINES
 } from './sessions.ts';
-import { control, run, RESTART_MS, type ControlClient, type TmuxOptions } from './tmux.ts';
+import {
+    control,
+    run,
+    tmuxRuns,
+    RESTART_MS,
+    type ControlClient,
+    type TmuxOptions
+} from './tmux.ts';
 
 /** The prefix of a terminal channel. */
 export const CHANNEL_PREFIX = 'pty:';
@@ -50,6 +64,14 @@ export const POLL_MS = 5000;
  * minute is soon enough and costs a twelfth of the calls the attached rate does.
  */
 export const IDLE_POLL_MS = 60000;
+
+/**
+ * How many further reads confirm an answer of "no server" before it is taken as the empty list, and
+ * the milliseconds before each. A tmux that has really exited says so on every read; one that
+ * refused a single connection does not.
+ */
+export const NO_SERVER_CONFIRMS = 2;
+export const NO_SERVER_CONFIRM_MS = 300;
 
 /** The tmux notifications that mean the terminal list or the pane map moved. */
 const CHANGE_EVENTS = new Set([
@@ -138,6 +160,11 @@ export type TerminalDriver = {
     attached(ids: string[]): void;
     /** Whether a control client is open, which is what turns the poll off. */
     live(): boolean;
+    /**
+     * Whether the process with this pid is a running tmux. It is asked of the operating system and
+     * not of tmux, so it answers while the socket of a running server cannot be reached.
+     */
+    serverRuns(pid: number): Promise<boolean>;
     close(): void;
 };
 
@@ -234,6 +261,7 @@ export function tmuxDriver(options: TmuxOptions = {}): TerminalDriver {
             for (const client of clients.values()) if (client.live()) return true;
             return false;
         },
+        serverRuns: tmuxRuns,
         close(): void {
             closed = true;
             for (const id of [...clients.keys()]) drop(id);
@@ -281,6 +309,13 @@ export class Terminals {
      */
     #period = 0;
     #closed = false;
+    /** The turn of the read that started last, and of the newest read whose answer was taken. */
+    #issued = 0;
+    #applied = 0;
+    /** The pid of the tmux server that gave the last list taken, null when that list named none. */
+    #serverPid: number | null = null;
+    /** The waits between a no-server answer and the read that confirms it, each with its waker. */
+    #pauses = new Set<() => void>();
 
     constructor(hub: Hub, options: TerminalsOptions = {}) {
         this.#hub = hub;
@@ -330,18 +365,88 @@ export class Terminals {
         return () => this.#listeners.delete(listener);
     }
 
-    /** Re-read the list and tell the listeners when it moved. */
+    /**
+     * Re-read the list and tell the listeners when it moved. Another read may be in flight: the
+     * answer of this one is dropped when a read that started after it has been taken already.
+     */
     refresh(): void {
         if (this.#closed) return;
-        void this.#driver
-            .run(listArgs())
-            .then((text) => this.#took(parseTerminals(text)))
-            .catch((error: unknown) => {
-                // No server is the one failure that is a list: the last session exited and tmux
-                // with it. Any other failure (a timeout, a busy server) says nothing about the
-                // terminals, and an empty list would have every page close its Terminal tabs.
-                if (noServer(reason(error))) this.#took([]);
-            });
+        this.#issued += 1;
+        this.#read(this.#issued).catch((error: unknown) => {
+            console.error(`pty: the terminal list could not be taken: ${reason(error)}`);
+        });
+    }
+
+    /**
+     * One read and what follows its answer. Any failure but "no server" says nothing about the
+     * terminals (a timeout, a busy server), so the last list stands and an empty one would have
+     * every page close its Terminal tabs. "No server" is the answer of a tmux that has exited and
+     * of one whose socket could not be reached for a while, and a control client tells them
+     * apart in two ways. A control client's process ends with the tmux server, so while one runs
+     * tmux runs too. With none, the pid of the server that gave the last list is asked of the
+     * operating system (serverRuns), which answers while the socket is unreachable. The answer is
+     * read again NO_SERVER_CONFIRMS times, NO_SERVER_CONFIRM_MS apart, and is the empty list only
+     * when every read gave it and neither holds: no control client runs, and no kept pid is a
+     * running tmux (none is kept before a list was read, or when it names none). In the other two
+     * cases the read is given up and the last list stands, however long the socket stays
+     * unreachable, and the list is read again at the next change tmux reports or the next poll.
+     */
+    async #read(turn: number): Promise<void> {
+        for (let confirmed = 0; ; confirmed += 1) {
+            let text: string;
+            try {
+                text = await this.#driver.run(listArgs());
+            } catch (error) {
+                if (!noServer(reason(error))) return;
+                if (confirmed >= NO_SERVER_CONFIRMS) {
+                    if (!this.#driver.live() && !(await this.#serverKeptRuns()))
+                        this.#take(turn, []);
+                    return;
+                }
+                await this.#pause(NO_SERVER_CONFIRM_MS);
+                if (this.#stale(turn)) return;
+                continue;
+            }
+            if (!this.#stale(turn)) this.#serverPid = serverPid(text);
+            this.#take(turn, parseTerminals(text));
+            return;
+        }
+    }
+
+    /**
+     * Whether the tmux server that gave the last list still runs. False when no list named a
+     * server, and when the driver cannot tell, which is the same as a server that does not run.
+     */
+    async #serverKeptRuns(): Promise<boolean> {
+        const pid = this.#serverPid;
+        if (pid === null) return false;
+        return this.#driver.serverRuns(pid).catch(() => false);
+    }
+
+    /** Whether a read's answer no longer counts: the channels closed, or a newer read was taken. */
+    #stale(turn: number): boolean {
+        return this.#closed || turn < this.#applied;
+    }
+
+    /** Take the answer of the read of a turn, unless it is stale. */
+    #take(turn: number, terminals: Terminal[]): void {
+        if (this.#stale(turn)) return;
+        this.#applied = turn;
+        this.#took(terminals);
+    }
+
+    /** Wait, and wake early when the channels close, so a waiting read does not outlive them. */
+    #pause(ms: number): Promise<void> {
+        return new Promise((resolve) => {
+            const wake = (): void => {
+                clearTimeout(timer);
+                this.#pauses.delete(wake);
+                resolve();
+            };
+            const timer = setTimeout(wake, ms);
+            if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();
+            this.#pauses.add(wake);
+        });
     }
 
     /**
@@ -407,6 +512,7 @@ export class Terminals {
         if (this.#timer !== null) clearInterval(this.#timer);
         this.#timer = null;
         this.#period = 0;
+        for (const wake of [...this.#pauses]) wake();
         for (const id of this.#attached.keys()) this.#hub.merge(ptyChannel(id), null);
         this.#listeners.clear();
         this.#attached.clear();
@@ -517,7 +623,10 @@ export class Terminals {
     }
 }
 
-/** Whether tmux's error says no server runs, which is an empty list rather than a failed one. */
+/**
+ * Whether tmux's error says no server runs: an empty list once every read of a run says it (see
+ * `#read`), and a failed read until then.
+ */
 export function noServer(said: string): boolean {
     return (
         said.includes('no server running on') ||

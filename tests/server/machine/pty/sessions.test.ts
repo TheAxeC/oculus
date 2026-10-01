@@ -8,11 +8,12 @@
 // @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync, rmSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, renameSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import {
     isSessionId,
+    listArgs,
     listTerminals,
     parseTerminal,
     resizeArgs,
@@ -22,6 +23,7 @@ import {
     screenAt,
     scrollback,
     sendBytesArgs,
+    serverPid,
     sessionName,
     steerArgs,
     steerTerminal,
@@ -35,7 +37,8 @@ import {
     control,
     inputChunks,
     INPUT_MOST,
-    run
+    run,
+    tmuxRuns
 } from '../../../../src/lib/server/machine/pty/tmux.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { it, scratchDir, test } from '../../../fixtures/scratch.ts';
@@ -82,10 +85,10 @@ test.afterAll(() => {
 });
 
 /** Wait until the collected output holds the text, or fail by timing out. */
-async function until(has: () => boolean, what: string): Promise<void> {
+async function until(has: () => boolean | Promise<boolean>, what: string): Promise<void> {
     const deadline = Date.now() + 10000;
     while (Date.now() < deadline) {
-        if (has()) return;
+        if (await has()) return;
         await new Promise((resolve) => setTimeout(resolve, 50));
     }
     throw new Error(`timed out waiting for ${what}`);
@@ -456,3 +459,31 @@ describe('the screen an attaching page is given', () => {
         expect(screen).toContain('row 43');
     });
 });
+
+// The server of a second private socket of its own, killed at the end of the case.
+it.skipIf(!TMUX)(
+    'tells a tmux server that runs from one that exited, with its socket file present or not',
+    async () => {
+        const own = { socket: join(scratchDir('oculus-tmux-pid-'), 'server.sock') };
+        try {
+            await run(['new-session', '-d', '-s', 'oculus-a1b2c3-shell', '--', 'cat'], own);
+            const pid = serverPid(await run(listArgs(), own));
+            expect(pid).toBeGreaterThan(1);
+            expect(await tmuxRuns(pid ?? 0)).toBe(true);
+            // This process is alive and is not tmux.
+            expect(await tmuxRuns(process.pid)).toBe(false);
+            // The socket file gone: tmux cannot be reached, and it still runs.
+            renameSync(own.socket, `${own.socket}.away`);
+            await expect(run(listArgs(), own)).rejects.toThrow(/No such file or directory/);
+            expect(await tmuxRuns(pid ?? 0)).toBe(true);
+            renameSync(`${own.socket}.away`, own.socket);
+            spawnSync('tmux', ['-S', own.socket, 'kill-server'], { encoding: 'utf8' });
+            await until(
+                async () => !(await tmuxRuns(pid ?? 0)),
+                'the killed server to stop running'
+            );
+        } finally {
+            spawnSync('tmux', ['-S', own.socket, 'kill-server'], { encoding: 'utf8' });
+        }
+    }
+);

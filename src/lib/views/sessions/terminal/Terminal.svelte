@@ -28,8 +28,10 @@
     // composer of a start with a prompt shows right of the row while `composing`.
     //
     // The bar's `new terminal` starts a shell at once in the tab's folder, and the kinds dropdown
-    // beside it starts Shell, Claude or Codex the same way or shows the composer (With a Prompt),
-    // in the shown terminal's kind. The bar's Split splits the shown terminal. A start the server
+    // beside it starts Shell, Claude or Codex the same way, shows the composer (With a Prompt) in
+    // the shown terminal's kind, or, under Attach to Session, joins a running terminal no Terminal
+    // tab owns to the end of this tab and shows it alone. The bar's Split splits the shown
+    // terminal; the font buttons beside it are TerminalFontTools.svelte. A start the server
     // refuses, a Split of a terminal the page knows nothing of, and a failed Copy as HTML are said
     // on the bar and change nothing. From two terminals on, the tab's list (TerminalList.svelte) is
     // drawn on the right of the body, and with one while the composer shows; a tab showing its only
@@ -52,6 +54,7 @@
     import GlyphDialog from '$lib/ui/forms/choice/GlyphDialog.svelte';
     import TerminalGrid from './grid/TerminalGrid.svelte';
     import TerminalList from './TerminalList.svelte';
+    import TerminalFontTools from './TerminalFontTools.svelte';
     import TerminalTitle from './TerminalTitle.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -80,7 +83,7 @@
         COMPOSER_REM,
         MENU_PROMPT,
         ROW_DRAG,
-        gridFontSize,
+        attachedOf,
         kindsMenu,
         listDrawn,
         pressKill,
@@ -88,6 +91,7 @@
         tabRows,
         terminalTip
     } from './terminal-list';
+    import { terminalLabel } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -97,6 +101,8 @@
         layout: { instanceLayoutState, pages, restateInstance },
         selectors: { sessionsByWorkspace },
         terminals: {
+            attachable,
+            attachTerminal,
             clearHistory,
             composeInTab,
             moveTerminal,
@@ -109,8 +115,7 @@
             stopTerminal,
             terminalById,
             terminals
-        },
-        ui: { setTerminalFont, terminalFont, textScale }
+        }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -147,6 +152,14 @@
             .map((id) => terminalById(id))
             .filter((one): one is NonNullable<typeof one> => one !== null && one.foreign !== true)
             .map((one) => ({ terminal: one.id, title: one.name }))
+    );
+
+    /**
+     * The running terminals no Terminal tab owns, each by the name the Sessions view labels it
+     * with: what Attach to Session offers to join to the end of this tab.
+     */
+    const attachables = $derived(
+        attachable().map((one) => ({ terminal: one.id, title: terminalLabel(one) }))
     );
 
     /**
@@ -193,7 +206,7 @@
     // its name.
     $effect(() => {
         const live = terminal;
-        const named = live === null ? '' : live.title === '' ? live.name : live.title;
+        const named = live === null ? '' : terminalLabel(live);
         if (live === null || named === '' || tab.label === named) return;
         restate(withLabel(tab, named));
     });
@@ -214,12 +227,6 @@
         if (bellTimer !== null) clearTimeout(bellTimer);
     });
 
-    /** Move the chosen size by one CSS pixel from the value currently in force. */
-    function stepFont(by: number): void {
-        const current = gridFontSize(terminalFont(), textScale() ?? 1);
-        if (current !== undefined) setTerminalFont(current + by);
-    }
-
     /**
      * Split one of this tab's terminals: one of its kind starts in its folder and takes the place
      * right of it, which the list row's Split, both menus and the bar's Split do. A refusal is said
@@ -229,11 +236,16 @@
         void splitTerminal(instance.id, terminal);
     }
 
-    /** The kinds dropdown: a kind starts at once, With a Prompt shows the composer. */
+    /**
+     * The kinds dropdown: a kind starts at once, With a Prompt shows the composer, and a terminal
+     * under Attach to Session joins this tab.
+     */
     function kindPicked(pick: string): void {
         const kind = profileOf(pick);
+        const attaching = attachedOf(pick);
         if (pick === MENU_PROMPT) composeInTab(instance.id, terminal?.kind);
         else if (kind !== null) void startInTab(instance.id, kind);
+        else if (attaching !== null) attachTerminal(instance.id, attaching);
     }
 
     /** Open the rename field on a terminal's row, or on the bar's title while no list is drawn. */
@@ -346,7 +358,7 @@
         />
         <Menu
             label={t('sessions.new_kinds')}
-            items={kindsMenu(t)}
+            items={kindsMenu(t, attachables)}
             glyph="disclosure"
             compact
             bare
@@ -362,24 +374,7 @@
                 onclick={() => tab.shown !== null && splitOn(tab.shown)}
             />
         {/if}
-        <ToolButton
-            label={t('sessions.terminal_smaller')}
-            glyph="collapse"
-            compact
-            onclick={() => stepFont(-1)}
-        />
-        <ToolButton
-            label={t('sessions.terminal_larger')}
-            glyph="expand"
-            compact
-            onclick={() => stepFont(1)}
-        />
-        <ToolButton
-            label={t('sessions.terminal_reset')}
-            glyph="refresh"
-            compact
-            onclick={() => setTerminalFont(null)}
-        />
+        <TerminalFontTools />
     </Toolbar>
 {/snippet}
 
@@ -453,6 +448,7 @@
                 {current}
                 {ringing}
                 {others}
+                {attachables}
                 onshown={(one: string) => (focusing = one)}
                 onsplit={splitOn}
                 {renaming}

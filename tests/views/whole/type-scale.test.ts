@@ -194,6 +194,7 @@ const VIEWS: Record<string, string> = {
     'sessions/terminal/Composer.svelte': '.branch=fs-sm | .findings=fs-sm | .failure=fs-md',
     'sessions/terminal/TerminalList.svelte': '.title=fs-sm | .description=fs-xs | .failure=fs-xs',
     'sessions/terminal/TerminalTitle.svelte': '.title=fs-sm | .description=fs-xs',
+    'sessions/terminal/TerminalFontTools.svelte': '',
     'sessions/session-list/TerminalRows.svelte':
         '.head=fs-xs | .confirm=fs-xs | .top .nm=fs-md | .meta=fs-xs',
     'sessions/timeline/Timeline.svelte': '.turn-h=fs-sm | .event=fs-sm | .ts=fs-xs',

@@ -22,6 +22,7 @@ function terminalDriver(): TerminalDriver {
         onChange: noop,
         attached: noop,
         live: () => false,
+        serverRuns: () => Promise.resolve(false),
         close: noop
     };
 }

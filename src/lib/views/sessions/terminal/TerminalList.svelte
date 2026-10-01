@@ -38,8 +38,9 @@
     // row of more than one, which takes it out of the row (it stays in the tab), and Join
     // Terminals, which moves a terminal another Terminal tab owns into this tab and appends it to
     // the end of the row. A right-click on the list's empty area offers New Terminal, a shell
-    // started in the tab's folder as the bar's New starts it, and New Terminal With Profile, the
-    // same start of the kind picked.
+    // started in the tab's folder as the bar's New starts it, New Terminal With Profile, the same
+    // start of the kind picked, and Attach to Session, which joins a running terminal no Terminal
+    // tab owns to the end of this tab and shows it.
 
     import { untrack } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -50,8 +51,7 @@
         reordered,
         showingOne,
         showingRow,
-        unsplit,
-        type TerminalTabState
+        unsplit
     } from '$lib/state/sessions/terminal/terminal-tabs';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { TerminalChoice } from '$lib/state/sessions/folds';
@@ -68,6 +68,7 @@
         MENU_UNSPLIT,
         ROW_DRAG,
         armKept,
+        attachedOf,
         colorOf,
         emptyListMenu,
         joinedOf,
@@ -76,56 +77,11 @@
         profileOf,
         rowKey,
         terminalRowMenu,
-        terminalTip
+        terminalTip,
+        type TerminalListProps
     } from './terminal-list';
     import { markGlyph } from '$lib/state/sessions/terminal/terminal-marks';
     import { useState } from '$lib/state/client/use';
-
-    type Props = {
-        /** The Terminal tab the list is drawn in. */
-        instance: string;
-        /** The page holding that tab. */
-        page: string;
-        /** The tab's own state. */
-        tab: TerminalTabState;
-        /** The rows, in the order they are drawn. */
-        rows: TerminalChoice[];
-        /** The terminals the tab shows now: every terminal of its row, or the shown one alone. */
-        current: string[];
-        /** The terminal whose bell is ringing in this tab, or null. */
-        ringing: string | null;
-        /** The terminals the other Terminal tabs own, by name, which Join Terminals offers. */
-        others: { terminal: string; title: string }[];
-        /** Called with a row's terminal when a pointer press shows it, before it is shown. */
-        onshown: (terminal: string) => void;
-        /** Split the tab on a row's terminal, as the row's Split and its menu do. */
-        onsplit: (terminal: string) => void;
-        /** The terminal whose title is being edited on its row, or ''. */
-        renaming: string;
-        /** A double click on a row's name, or Rename on its menu. */
-        onrename: (terminal: string) => void;
-        /** The rename field saved a value (an empty one clears the title). */
-        onrenamed: (terminal: string, value: string) => void;
-        /** The rename field was cancelled. */
-        onrenamecancel: () => void;
-        /** Change Icon on a row's menu. */
-        onicon: (terminal: string) => void;
-        /** Change Color on a row's menu; the empty string is Default. */
-        oncolor: (terminal: string, color: string) => void;
-        /** Clear on a row's menu. */
-        onclear: (terminal: string) => void;
-        /** The terminal whose Kill was pressed or picked once and waits for the second, or ''. */
-        arming: string;
-        /** A kill the server refused, said below the rows until the next one. */
-        failure: string;
-        /**
-         * A press of a row's Kill, a Delete or Backspace on it, or Kill Terminal from its menu: the
-         * tab's `pressKill`, which arms the terminal first and kills it on the second.
-         */
-        onkill: (terminal: string) => void;
-        /** Take the arm off, when the stop moves off the armed row or focus leaves the list. */
-        ondisarm: () => void;
-    };
 
     let {
         instance,
@@ -135,6 +91,7 @@
         current,
         ringing,
         others,
+        attachables,
         onshown,
         onsplit,
         renaming,
@@ -148,11 +105,11 @@
         failure,
         onkill,
         ondisarm
-    }: Props = $props();
+    }: TerminalListProps = $props();
 
     const {
         layout: { instanceLayoutState, restateInstance },
-        terminals: { moveTerminal, startInTab, terminalById }
+        terminals: { attachTerminal, moveTerminal, startInTab, terminalById }
     } = useState();
 
     let list: HTMLDivElement | null = $state(null);
@@ -217,11 +174,16 @@
         else if (colorOf(pick) !== null) oncolor(row.terminal, colorOf(pick) ?? '');
     }
 
-    /** New Terminal, or New Terminal With Profile: a terminal of the kind starts at once. */
+    /**
+     * New Terminal, or New Terminal With Profile: a terminal of the kind starts at once. Attach to
+     * Session: a running terminal no tab owns joins the end of this tab.
+     */
     function emptyPicked(pick: string): void {
         const kind = profileOf(pick);
+        const attaching = attachedOf(pick);
         if (pick === MENU_NEW) void startInTab(instance, 'shell');
         else if (kind !== null) void startInTab(instance, kind);
+        else if (attaching !== null) attachTerminal(instance, attaching);
     }
 
     /** A press on a row: a pointer's hands the keyboard to the grid, a key's leaves it here. */
@@ -311,7 +273,11 @@
 
 <!-- The drag handlers report where a dragged row would land and take the drop, and focus leaving
      the list disarms Kill; the rows' own controls carry the keyboard. -->
-<ContextMenu label={t('sessions.terminal_list')} items={emptyListMenu(t)} onpick={emptyPicked}>
+<ContextMenu
+    label={t('sessions.terminal_list')}
+    items={emptyListMenu(t, attachables)}
+    onpick={emptyPicked}
+>
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
         class="list"

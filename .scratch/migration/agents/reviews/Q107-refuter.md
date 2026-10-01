@@ -368,3 +368,292 @@ None. The report's "User-visible changes" table has a before and after for each 
 ### Usage
 
 Reviewer a498a23d465b6bf60, served claude-opus-5-5 (the transcript's message.model): 209,457 tokens, 47 tool uses, 18.8 min (its completion notice).
+
+## Repair round 2, refuted
+
+Three things stay open after this round. None of them needs another round, and each fix fits at landing.
+
+- **Odd first row (Spec 1).** `serverPid` reads field 11 of the list's first row. If that row's folder holds a tab or a newline, or its name option holds a newline, no pid is kept. Then a "no server" read with no control client ends every running terminal again. On a real tmux list, `serverPid` answered null for all three shapes.
+- **Stale guard untested (Proof 1).** Nothing tests the guard that stops a superseded read from setting the kept pid.
+- **Slow-only test (Proof 2).** The `ps` half of `tmuxRuns` is the ruling's guard against a reused pid. It is tested only in a file tagged slow, which `npm test` and `test:checks` leave out.
+- **Doc comment (Standards 1).** The comment on `LIST_FORMAT` contradicts itself.
+
+Every closure the round claims reproduces. `noserverhidden` is green on the final tree and RED without the pid guard, and the default run is green. I found no check removed to close a finding. `isTmuxCommand` accepting `tmux:` goes beyond the ruling's words but stays within its concern (judged under Closures).
+
+### Verification (rerun from tools/oculus in the worktree, Node v24.21.0 first on PATH)
+
+```
+$ printenv CLAUDE_CODE_EFFORT_LEVEL   exit=1
+$ printenv TMUX                       exit=1
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
+exit=0; cat docs/diagrams/* | shasum before and after: 47da03971864d0c5c8dabe0a87735da6e33acf63 both times
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md
+exit=0 (762 lines; the $ lines and result lines, build asset lines left out)
+$ npm test
+ Test Files  353 passed | 19 skipped (372)
+      Tests  5409 passed | 561 skipped (5970)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+$ npm run build
+$ npm run format:check
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+(same as the report)
+
+$ npx vitest run tests/state/sessions tests/state/client/terminal tests/views/sessions tests/server/machine/pty tests/ui/menu tests/state/workbench --reporter=dot
+ Test Files  65 passed (65)
+      Tests  1166 passed (1166)            (same as the report)
+
+$ npx vitest run tests/server/machine/pty/sessions.test.ts tests/server/machine/pty/tmux.test.ts tests/server/machine/pty/channel-list.test.ts tests/routes/sessions/terminal-edit.test.ts tests/state/workbench/ui-shared.test.ts tests/server/root
+ Test Files  21 passed (21)
+      Tests  280 passed (280)
+
+$ spec.md's perl ASCII gate over src tests config (! -name local.yml), plus DESIGN.md HELP.md, the probe and the report
+prints nothing, exit 0
+$ sh utils/folder-check.sh   exit 0
+
+$ name grep (grep -rcF --exclude=local.yml over src tests config HELP.md DESIGN.md README.md)
+serverPid: sessions.ts 2, channel.ts 4, sessions.test.ts 8
+serverRuns: channel.ts 4, channel.test.ts 1, channel-list.test.ts 1, context-fixture.ts 1, context.test.ts 1
+tmuxRuns: channel.ts 2, tmux.ts 1, sessions.test.ts 5
+isTmuxCommand: tmux.ts 2, tmux.test.ts 5
+SERVER_FIELD: sessions.ts 2 | serverKeptRuns: channel.ts 2 | LIST_FORMAT: sessions.ts 3, terminal-edit.test.ts 3
+(same files as the report; README.md names none)
+
+Probe, on a scratch copy of the worktree's tools/oculus under ${TMPDIR}q7c (config/local.yml excluded from the copy and never read, node_modules an APFS clone, .svelte-kit copied), Q107_PORT=8813, Q107_SCRATCH=${TMPDIR}q7s; printenv TMUX exit=1 and lsof -iTCP:8813 -sTCP:LISTEN exit=1 before each run:
+
+$ node .scratch/migration/agents/reviews/Q107-probe.mjs            (final tree), exit=0
+green save / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green save / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+    the socket of the open client closed, so the dev server restarted
+green restart / reload 1 / reconnect 3, 0 answered (2 running)
+green reconnect / reload 1 / reconnect 3, 0 answered (2 running)
+green burst / reload 7 / reconnect 9, 0 answered (62 running)
+green noserver / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+green noserver / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+    while the socket is away (2000 ms) tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+green noserver400 / reload 2 / reconnect 4, 0 answered (4 running)
+green ended / both shapes, 0 answered (1 running); the killed terminal was answered
+green usage / reload 0 / reconnect 2, 0 answered (2 running)
+green oddcwd / reload 1 / reconnect 3, 0 answered (3 running)
+green oddname / reload 1 / reconnect 3, 0 answered (3 running)
+RESULT: green
+
+$ node .scratch/migration/agents/reviews/Q107-probe.mjs noserverhidden            (final tree), exit=0
+green noserverhidden / page shape reload: 0 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green noserverhidden / page shape reconnect: 2 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+    while the socket is away tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+RESULT: green
+
+$ same, channel.ts:402-403 replaced in the copy by `if (!this.#driver.live()) this.#take(turn, []);` (the round's pid guard taken out), exit=1
+RED noserverhidden / page shape reload: 1 lists, endedTerminals answers 2 terminal(s) tmux still lists (2 running)
+    answered 4d96b7-shell at list 0; that list held []
+    answered c468db-shell at list 0; that list held []
+RED noserverhidden / page shape reconnect: 3 lists, endedTerminals answers 2 terminal(s) tmux still lists (2 running)
+    answered 4d96b7-shell at list 2; that list held []
+    answered c468db-shell at list 2; that list held []
+RESULT: RED
+$ npx vitest run tests/server/machine/pty/channel-list.test.ts   (same mutant)
+ FAIL ... is never the empty list while the server that last listed is a running tmux
+ FAIL ... is the empty list after the confirming reads when that server does not run
+ FAIL ... asks about the server of the list read last, not of an earlier one
+      Tests  3 failed | 16 passed (19)            (same 3 as the report)
+
+After each probe run: lsof -iTCP:8813 -sTCP:LISTEN exit=1; ls ${TMPDIR}q7s "No such file or directory".
+
+Mutants on the scratch copy, each restored and cmp-checked against the worktree:
+- ui.svelte.ts:416-417 as `const saved = held === null ? {} : instancesOf(held);` -> ui-shared.test.ts "Tests 1 failed | 10 passed (11)", "write every record they hold when the stored value becomes unreadable after a save": "expected { b: 2 } to deeply equal { a: 1, b: 2 }"
+- ui.svelte.ts:416 line removed (the report's form) -> "Failed Tests 11", TypeError: Cannot read properties of null (reading 'instances')   (same as the report)
+- channel.ts:410 `this.#serverPid = serverPid(text);` without the stale guard -> npx vitest run tests/server/machine/pty tests/server/root: "Tests 294 passed (294)"
+- tmux.ts:108 `resolve(true)` (no ps check) -> npx vitest run tests/server/machine/pty tests/server/root --tagsFilter '!slow': "Tests 240 passed | 54 skipped (294)"; sessions.test.ts alone: "FAIL tells a tmux server that runs from one that exited, with its socket file present or not", "Tests 1 failed | 20 passed (21)"
+- terminals.svelte.ts:412 `const target = terminalTabs()[0];` -> "Tests 2 failed | 448 passed (450)"
+- storage.ts:89 `return () => {};` -> tests/state/workbench "Tests 4 failed | 606 passed (610)"
+
+serverPid over real lists (a scratch vitest file in the copy, own socket ${TMPDIR}q7o/s, killed and removed):
+plain "oculus-zzzzzz-shell\t...\t/private/var/.../tools/oculus\t\t\t\t\t\t60420\n" -> 60420
+newline cwd first "oculus-aaaaaa-shell\t...\t/private/var/.../q7o/odd\nfolder\t\t\t\t\t\t60420\noculus-zzzzzz-shell\t...\t60420\n" -> null [ 'aaaaaa-shell', 'zzzzzz-shell' ]
+tab cwd first "oculus-aaaaab-shell\t...\t/private/var/.../q7o/tab\tfolder\t\t\t\t\t\t60420\noculus-zzzzzz-shell\t...\t60420\n" -> null [ 'aaaaab-shell', 'zzzzzz-shell' ]
+newline name first "oculus-aaaaac-shell\t...\t/private/var/.../tools/oculus\ttwo\nlines\t\t\t\t\t60420\noculus-zzzzzz-shell\t...\t60420\n" -> null [ 'aaaaac-shell', 'zzzzzz-shell' ]
+
+ps on macOS for a tmux server on my own socket: `ps -o comm= -p 64002` printed "tmux"; kill -0 after kill-server exit=1.
+
+At the end: ls $TMPDIR | grep -c '^q7' -> 0; pgrep -fl 'q7s|q7o|q7p|q7c' exit=1; lsof -iTCP:8813 -sTCP:LISTEN exit=1; git status --short | wc -l 45; git diff dcef00c9 | shasum 94a34f7aa0d5694a10b4ece5cdcd4989a819ad38 (same as at my start).
+```
+
+### The round's delta, as I identified it
+
+- **Seven new paths.** `git status --short` went from 38 to 45 paths:
+  - `src/lib/server/machine/pty/sessions.ts`
+  - `src/lib/server/machine/pty/tmux.ts`
+  - `tests/server/machine/pty/sessions.test.ts`
+  - `tests/server/machine/pty/tmux.test.ts`
+  - `tests/routes/sessions/terminal-edit.test.ts`
+  - `tests/server/root/context-fixture.ts`
+  - `tests/server/root/context.test.ts`
+- **Changed after the round was sent (01:08), by `stat`:**
+  - `channel.ts` (01:27)
+  - `channel-list.test.ts` (01:08:53)
+  - `channel.test.ts` (01:13)
+  - `DESIGN.md` (01:13)
+  - `ui-shared.test.ts` (01:12)
+  - `ui.svelte.ts` (01:12). The report says this is the ruling-2 mutant put back, and the line the round 1 review quoted is still at `:416`.
+- **Unchanged since before the round:** `terminals.svelte.ts`, `HELP.md`, the probe and the layout files (mtimes 00:16 to 00:19).
+- **Test changes read.** The round's changes to existing tests only add `serverRuns` to the fake drivers. The one exception is `terminal-edit.test.ts:369`, which gains the `#{pid}` field. No assertion was loosened and no check was removed.
+
+### Closures
+
+- **Ruling 1: closed as ruled, with Spec 1 and the two Proof findings left.**
+  - The pid is read (`sessions.ts:85`, `serverPid` `:290`) and kept (`channel.ts:410`).
+  - It is asked through the driver (`serverRuns`, `channel.ts:167`, `:264`) with `kill -0` plus `ps` (`tmux.ts:94-112`).
+  - The guard sits at `channel.ts:402`, and the doc comment of `#read` gives the three cases.
+  - Tests (d), (e) and (f) are present, plus a case for a failing driver answer and one for "the latest pid".
+  - `noserverhidden` is green on the final tree and RED without the guard, both reproduced above. The default run is green.
+- **The addition beyond the ruling (`isTmuxCommand` accepting `tmux:` and a title): sound, and within the finding's concern.**
+  - On Linux, tmux renames its processes through `prctl(PR_SET_NAME)` to "tmux: server". I did not verify this on a Linux host; it comes from tmux's compat `setproctitle`. Without the addition, the ruling's check could never hold on Linux.
+  - On macOS, `ps -o comm=` printed "tmux" (above).
+  - It also accepts "tmux: client". A kept pid is always a server pid, so that would matter only if the pid were reused by a tmux client. I raise nothing on it.
+- **Ruling 2: closed.**
+  - The new case `ui-shared.test.ts:106` fails on its own assertion under a mutant that treats an unreadable value as an empty saved map ("expected { b: 2 } to deeply equal { a: 1, b: 2 }").
+  - The report's own form, with the line removed, fails all 11 cases through a TypeError. That shows a crash, and the specific binding is what my mutant shows.
+- **Ruling 3: closed as ruled.** The first line says "Everything in the brief is done." Both probe runs the ruling names are green in my reruns. Spec 1 was not known to the builder.
+
+### Verdicts, whole diff since dcef00c9
+
+**Items of "What to build"**
+
+- **1: holds.**
+  - The probe is at the ledger path, identical in the worktree and main's ledger (`cmp` exit 0).
+  - It is isolated by port, `HOME`, `TMUX_TMPDIR` and `-S`.
+  - The list path is RED on the tree before each fix (`noserver` in the earlier reviews, `noserverhidden` above).
+  - The layout path is red without the listener (4 failed).
+- **2: violated, narrowly (Spec 1).**
+  - With a control client, a kept running-tmux pid, or an outage shorter than the confirmations, no running terminal is ended (probe green in every scenario).
+  - A list whose first row holds a tab or newline keeps no pid, so the no-client outage ends the running terminals again.
+  - The layout path and the ui store hold (mutants above).
+  - The no-pid-at-start limit is ruling 1 (f): see Declined to judge.
+- **3: holds.** The attach-target mutant fails 2 tests. The code is unchanged since round 1.
+- **4: holds.** The report quotes `lsof` and `ls`, and my runs left port 8813 free and the scratch folder gone.
+- **5: violated, narrowly (Standards 1).**
+  - `DESIGN.md:361` states the running-tmux check and Attach to Session.
+  - `HELP.md:127` states Attach to Session.
+  - `HELP.md:146` and `DESIGN.md:154` state what is shared.
+  - The doc comment of the changed `LIST_FORMAT` now contradicts itself.
+
+**Cases**
+
+| Case | Verdict | Evidence |
+|---|---|---|
+| 1 | met | Probe RED before the fixes (`noserverhidden` without the guard, above), green after. |
+| 2 | met | 3 `channel-list` tests fail without the guard; 4 layout tests fail without the listener; 1 `ui-shared` case fails under the null-as-empty mutant. |
+| 3 | met | Probe `ended` green in both shapes. |
+| 4 | met | Store tests pass (1166 run). |
+| 5 | met | Store tests pass. |
+| 6 | met | `terminals.test.ts` passes. |
+| 7 | met | `terminal-menu.test.ts` passes. |
+| 8 | met | The target mutant fails it. |
+| 9 | met | Store test passes. |
+| 10 | met | Store tests pass. |
+| 11 | met | The target mutant fails it. |
+| 12 | met | `menu-words.test.ts` passes. |
+| 13 | met | Report quotes and my cleanup lines. |
+| 14 | met | Every probe event, `noserverhidden` included, is green in both page shapes. |
+| 15 | met | Red without the listener. |
+| 16 | met | `channel-list` out-of-order tests pass; the pid kept from a superseded read is untested (Proof 1). |
+| 17 | partial | Met with a control client or a kept pid. Unmet when the list's first row holds a tab or newline and no control client runs (Spec 1). |
+| 18 | met | Probe `usage` green. |
+| 19 | met | Tests pass. |
+| 20 | met | Tests pass. |
+| 21 | met | Tests pass. |
+
+### 1. Spec
+
+- **`src/lib/server/machine/pty/sessions.ts:283-294`**:
+  ```
+  const SERVER_FIELD = 11;
+  ...
+  const row = text.split('\n').find((line) => line !== '');
+  const field = row?.split('\t')[SERVER_FIELD];
+  ```
+  - **What is wrong.** Ruling 1 says the channel keeps the pid of its last list read that succeeded. `serverPid` takes field 11 of the first physical line.
+    - A tab in the first row's folder shifts the fields.
+    - A newline in its folder or name option cuts the row.
+    - In each case the read succeeds, `parseTerminals` still lists every terminal, and `channel.ts:410` sets the kept pid to null.
+    - Real tmux lists on my own socket gave null for a tab folder, a newline folder and a newline name. The pid 60420 was still the last field of the text each time.
+    - The probe's own `oddcwd` and `oddname` scenarios treat these rows as real inputs.
+    - The test at `sessions.test.ts:463` is titled "reads the tmux server pid from the last field of any row of the list". Its rows have exactly 12 fields, so it cannot tell field 11 from the last field.
+  - **Fix.** Read the last tab field of the last non-empty line, which is always the pid. Add a test with a tab and a newline in the first row. Both are small and fit at landing.
+  - **Failure scenario.**
+    1. A shell in a Terminal tab `cd`s into a folder whose name holds a tab, and its session sorts first.
+    2. Every Terminal tab has been off screen for longer than `IDLE_MS`.
+    3. The socket is unreachable across an idle poll tick.
+    4. The channel holds no pid, so it takes `[]` after the confirmations. Every page ends the running terminals and closes the tabs left with none.
+  - **Verdict:** item 2 violated (narrowly); case 17 partial.
+
+### 2. Proof
+
+- **`src/lib/server/machine/pty/channel.ts:410`**: `if (!this.#stale(turn)) this.#serverPid = serverPid(text);`
+  - **What is wrong.** No test binds the stale guard. With it removed, `npx vitest run tests/server/machine/pty tests/server/root` gives "Tests 294 passed (294)".
+    - `agents/spec.md`, "What every package obeys", requires every asynchronous path to be exercised "superseded by a later one".
+    - The `channel-list` case "asks about the server of the list read last" resolves the reads in order, so it does not cover a superseded one.
+  - **Failure scenario.**
+    1. Tmux server A exits and B starts while A's slow list read is in flight.
+    2. B's read is taken, then A's read answers late. Without the guard, A's pid would be kept.
+    3. With B's socket unreachable and no control client, the channel asks about A, which has exited, and publishes `[]` over B's running terminals.
+    4. A later edit that drops the guard fails no test.
+- **`src/lib/server/machine/pty/tmux.ts:108`**: `resolve(error === null && isTmuxCommand(stdout));`
+  - **What is wrong.** Ruling 1 requires that a pid the system gave to another process is not tmux. The only test of that half is `sessions.test.ts:487`, `expect(await tmuxRuns(process.pid)).toBe(false)`, in a file tagged `// @module-tag slow`.
+    - `agents/spec.md` says a slow file is left out of both `npm test` and `test:checks`, "the tests ... and nothing else".
+    - With the `ps` check replaced by `resolve(true)`, the unit suite's filter gives "Tests 240 passed | 54 skipped (294)".
+    - The assertion needs no tmux, and it fits in `tmux.test.ts`, which the suite runs.
+  - **Failure scenario.**
+    1. A later change drops the `ps` half, and `checks.sh` stays green.
+    2. Tmux exits after its last terminal is killed, and the system gives its pid to another process.
+    3. The channel then never takes the empty list, and the ended terminals stay listed and their tabs stay open for as long as that process lives.
+
+### 3. Standards
+
+- **`src/lib/server/machine/pty/sessions.ts:68-71`**: "and the last three the title, icon and colour the reader gave, ... The last is the pid of the tmux server that answered".
+  - **What is wrong.** With `#{pid}` appended, the last three fields are icon, colour and pid. The unchanged first sentence is now false, and it contradicts the added one. `agents/spec.md` says "A sentence in a document or a head comment that the change makes false is a defect of the change", and item 5 asks for every such sentence to be corrected.
+  - **Failure scenario.** A reader counts fields from the end as the comment says, puts the title at the wrong index in a new parser, and reads the icon as the title.
+  - **Verdict:** item 5 violated (narrowly).
+
+### 4. Behaviour
+
+None. The round's "User-visible changes" table gives a before and after for each change:
+- tmux unreachable with no page attached;
+- tmux really exited;
+- a fresh server with tmux unreachable at its first list;
+- the unreadable stored ui value.
+
+I found no user-visible change of the round that it leaves out.
+
+### Declined to judge
+
+- **No kept pid at start (ruling 1 (f)).** A dev server that has just started (for example after a save of `channel.ts`, the Z99 context) keeps no pid. A confirmed "no server" answer to its first list is then the empty list, and a restored page ends every terminal its tabs hold. The report states this as a limit, and ruling 1 (f) asks for this behaviour. Whether it is acceptable against item 2's "no `sessions` message leaves out a terminal tmux still runs" is the orchestrator's or the user's call.
+- **`tmux: server` on Linux.** Not run on a Linux host. My judgment rests on tmux's `setproctitle` compat code, not on a run.
+- **Browser behaviour.** The look of Attach to Session and live following between two browser tabs are DOM behaviour, for the look at landing.
+- **Cause of the Z99 sighting.** Not established, and neither a read nor a rerun can settle it.
+- **Side effects of my own commands**, stated so they are not taken for the builder's:
+  - In the worktree: `npm run diagrams` (diagram hash unchanged) and `checks.sh` (build output, `.svelte-kit` and vitest caches are git-ignored). Status is still 45 lines and the shasum is unchanged.
+  - The probe and the mutants ran only in `${TMPDIR}q7c`, now removed. That copy was made without `config/local.yml`, which was never read.
+  - Each of my three probe server starts ran the Live HPC poller's read-only queries, which the brief accepts.
+  - Every tmux command I ran named my own socket (`${TMPDIR}q7o/s`, `${TMPDIR}q7p/s`) or the probe's (`${TMPDIR}q7s`). All are killed and removed.
+  - The checks output file is in my session scratchpad (`checks-r2.txt`).
+
+Reviewer usage: tokens not visible to me; about 37 tool uses; about 30 minutes.
+
+## Closed
+
+The four findings of the run over repair round 2, each small and inside the brief, fixed on main at landing:
+
+- Spec 1 (`serverPid` read field 11 of the first row): `serverPid` reads the last tab field of the last non-empty line, which is always the pid of the last row. The test "is found when the first row holds a tab or a newline in its folder or its title" (`tests/server/machine/pty/channel-list.test.ts`) failed on the unfixed code ("expected null to be 60420") and passes after. The pure `serverPid` cases moved from the slow `sessions.test.ts` into `channel-list.test.ts`, which `npm test` runs.
+- Proof 1 (the stale guard on the kept pid untested): the case "keeps the server of a newer list when an older read answers after it" fails with the guard taken out of `channel.ts:410` ("expected [ 9003 ] to deeply equal [ 9002 ]") and passes with it.
+- Proof 2 (the `ps` half of `tmuxRuns` tested only in a slow file): `tests/server/machine/pty/tmux.test.ts` gains "is not a running tmux for a live process that runs another command, or for no pid", which fails with the `ps` check replaced by `resolve(true)` ("expected true to be false") and passes with it.
+- Standards 1 (the `LIST_FORMAT` comment contradicted itself): it now names the ninth to the eleventh fields as title, icon and colour and the twelfth and last as the pid.
+
+Declined to judge, ruling 1 (f): a dev server that has just started keeps no pid, so a confirmed "no server" answer to its first list is the empty list. That is what round 2's ruling 1 (f) asks; it stays as ruled and is named in the landing report.

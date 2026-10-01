@@ -10,6 +10,8 @@ import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import type { Sink } from '../../../../src/lib/server/core/channels.ts';
 import {
     IDLE_POLL_MS,
+    NO_SERVER_CONFIRMS,
+    NO_SERVER_CONFIRM_MS,
     POLL_MS,
     Terminals,
     channelTerminal,
@@ -92,6 +94,7 @@ function driver(): {
                 ids = [...next];
             },
             live: () => false,
+            serverRuns: () => Promise.resolve(false),
             close: noop
         }
     };
@@ -404,24 +407,30 @@ describe('the terminal list', () => {
         off();
     });
 
-    it('is empty when tmux says no server runs, in either of its words', async () => {
-        for (const said of [
-            'no server running on /private/tmp/tmux-501/default',
-            'error connecting to /private/tmp/tmux-501/default (No such file or directory)'
-        ]) {
-            const record = driver();
-            const { held } = terminals(record);
-            await settle();
-            let moved = 0;
-            const off = held.onChange(() => {
-                moved += 1;
-            });
-            record.list(new Error(said));
-            held.refresh();
-            await settle();
-            expect(held.list()).toEqual([]);
-            expect(moved).toBe(1);
-            off();
+    it('is empty when every read says no server runs, in either of its words', async () => {
+        vi.useFakeTimers();
+        try {
+            for (const said of [
+                'no server running on /private/tmp/tmux-501/default',
+                'error connecting to /private/tmp/tmux-501/default (No such file or directory)'
+            ]) {
+                const record = driver();
+                const { held } = terminals(record);
+                await settle();
+                let moved = 0;
+                const off = held.onChange(() => {
+                    moved += 1;
+                });
+                record.list(new Error(said));
+                held.refresh();
+                await vi.advanceTimersByTimeAsync(NO_SERVER_CONFIRM_MS * NO_SERVER_CONFIRMS);
+                await settle();
+                expect(held.list()).toEqual([]);
+                expect(moved).toBe(1);
+                off();
+            }
+        } finally {
+            vi.useRealTimers();
         }
     });
 

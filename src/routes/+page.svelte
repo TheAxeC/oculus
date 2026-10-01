@@ -45,11 +45,11 @@
     const {
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
         fs: { bookmarks: savedBookmarks, workspaces },
-        layout: { activeInstance, loadLayout, openView },
+        layout: { activeInstance, loadLayout, openView, stopFollowing },
         repositories,
         selectors: { waitingCount },
         socket: { connect, disconnect, seedConfig, status: socketStatus },
-        ui: { instanceState, loadUi, setInstanceState },
+        ui: { instanceState, loadUi, setInstanceState, stopFollowing: stopFollowingUi },
         writes: { setToken, writeRail }
     } = client;
 
@@ -206,9 +206,13 @@
             'feeds',
             'audit'
         ]);
-        loadUi();
-        loadLayout();
-        return () => disconnect();
+        loadUi(localStorage, window);
+        loadLayout(localStorage, window);
+        return () => {
+            disconnect();
+            stopFollowing();
+            stopFollowingUi();
+        };
     });
 </script>
 

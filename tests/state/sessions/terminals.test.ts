@@ -15,7 +15,9 @@ import {
     encodeBytes,
     endedTerminals,
     ptyChannel,
-    titleStripper
+    terminalLabel,
+    titleStripper,
+    unownedTerminals
 } from '../../../src/lib/state/sessions/terminals.svelte.ts';
 import { isTerminalId } from '../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
 import type { Terminal } from '../../../src/lib/data/model/index.ts';
@@ -446,6 +448,90 @@ describe('the terminals that ended', () => {
 
     it('name each terminal once, whether a tab holds it or an earlier message listed it', () => {
         expect(endedTerminals(new Set(['a']), [], true, ['a', 'a'])).toEqual(['a']);
+    });
+});
+
+describe('the terminals the page hears in both shapes it is given them', () => {
+    const lists = [
+        ['a', 'b'],
+        ['a', 'b'],
+        ['a', 'b', 'c']
+    ];
+
+    /** The page's own loop: each list is judged against the ones heard before it. */
+    function ended(held: string[], carried: Set<string>, first: boolean): string[][] {
+        const seen = new Set(carried);
+        return lists.map((now, at) => {
+            const gone = endedTerminals(seen, now, first && at === 0, at === 0 ? held : []);
+            for (const id of now) seen.add(id);
+            return gone;
+        });
+    }
+
+    it('end none of the terminals a list keeps, after a reload, where the tabs hold them and nothing is seen', () => {
+        expect(ended(['a', 'b'], new Set(), true)).toEqual([[], [], []]);
+    });
+
+    it('end none of the terminals a list keeps, after a reconnect, where the lists heard before are carried', () => {
+        expect(ended([], new Set(['a', 'b']), false)).toEqual([[], [], []]);
+    });
+});
+
+describe('the terminals no Terminal tab owns', () => {
+    const A = 'aaaaaa-shell';
+    const B = 'bbbbbb-shell';
+    const C = 'cccccc-claude';
+
+    /** A listed terminal with only what the rule reads. */
+    function entry(id: string, over: Partial<Terminal> = {}): Terminal {
+        return {
+            id,
+            name: id,
+            title: '',
+            icon: '',
+            color: '',
+            kind: 'shell',
+            cwd: '/hub',
+            command: 'zsh',
+            pid: 1,
+            created: '2026-09-11T08:00:00.000Z',
+            attached: false,
+            resumes: null,
+            ...over
+        };
+    }
+
+    /** A Terminal tab owning these terminals, in the shape a layout holds it. */
+    const tab = (...owned: string[]) => ({
+        state: { id: `tab-${owned.join('-')}`, terminals: owned }
+    });
+
+    it('are the listed ones no tab on any page owns, in list order', () => {
+        const list = [entry(A), entry(B), entry(C)];
+        expect(unownedTerminals(list, [tab(A), tab(C)]).map((one) => one.id)).toEqual([B]);
+        expect(unownedTerminals(list, [tab(A, B, C)])).toEqual([]);
+        expect(unownedTerminals(list, []).map((one) => one.id)).toEqual([A, B, C]);
+    });
+
+    it('are none while no list has been heard', () => {
+        expect(unownedTerminals(null, [tab(A)])).toEqual([]);
+        expect(unownedTerminals(null, [])).toEqual([]);
+    });
+
+    it('leave out a terminal a tab owns that the list does not name, and count none the list lacks', () => {
+        expect(unownedTerminals([entry(A)], [tab(B)]).map((one) => one.id)).toEqual([A]);
+    });
+
+    it('leave out a foreign terminal, as Join Terminals does', () => {
+        const list = [entry(A, { foreign: true }), entry(B)];
+        expect(unownedTerminals(list, []).map((one) => one.id)).toEqual([B]);
+    });
+});
+
+describe("a terminal's label", () => {
+    it('is its title when it has been renamed, and its name when the title is empty', () => {
+        expect(terminalLabel({ name: 'zsh', title: 'build' })).toBe('build');
+        expect(terminalLabel({ name: 'zsh', title: '' })).toBe('zsh');
     });
 });
 

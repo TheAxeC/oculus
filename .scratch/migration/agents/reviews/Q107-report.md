@@ -1209,3 +1209,292 @@ What the green results do not cover: no browser was opened, so a second browser 
 | tmux unreachable with no page attached to a terminal | The empty list after 0.6 s at an idle poll tick. | The same: the hidden-tab run above is RED. |
 | Two browser tabs and a view's own state (a Terminal tab's composer record, a view's forms and filters) | Each tab wrote the whole record set, so one tab's save dropped the records the other wrote, and the other tab never saw them. | A save keeps the records another tab saved, and each tab takes the other's records when it saves; theme, CRT, wallpaper, icons, text size, terminal font, code theme and status bar stay each browser tab's own. Two tabs changing the same record at once end with the last write. |
 | `HELP.md:146` `pages` row | Said pages, tabs and Terminal tabs are shared. | Says the arrangement and each tab's own state are shared, and the appearance is not. |
+
+## Repair round 2
+
+Everything in the three rulings is done. Nothing is left undone; one limit of ruling 1 stands by the ruling and is stated under it. This section amends the paragraph at the head of "Repair round 1" that says the hidden-tab case is RED and stands: it is green on the final tree (probe run below).
+
+### Ruling 1: a "no server" read with no control client, while tmux runs
+
+Change:
+- `src/lib/server/machine/pty/sessions.ts:85` `LIST_FORMAT` ends with `'#{pid}'`, the pid of the tmux server that answered, on every row. `sessions.ts:290` `serverPid(text)` returns the pid in the twelfth field (`SERVER_FIELD`, `:283`) of the first non-empty row, null for an empty list, a row without that field, a field that is not digits, or `0`.
+- `src/lib/server/machine/pty/tmux.ts:94` `tmuxRuns(pid)` is true when `process.kill(pid, 0)` succeeds and `ps -o comm= -p <pid>` prints a command for which `isTmuxCommand` (`tmux.ts:83`) holds: the base name is `tmux`, or `tmux:` and a title. It is false for a pid of 1 or less, and for any failure of either call. Neither call needs the socket.
+- `src/lib/server/machine/pty/channel.ts:167` `TerminalDriver` gains `serverRuns(pid)`; the tmux driver sets it to `tmuxRuns` (`:264`), so a fake driver answers either way. `Terminals` keeps `#serverPid` (`:316`), set at `:410` from each read that succeeds and is not stale (null when the list names none).
+- `channel.ts:394` `#read`: at the last confirming "no server" answer the empty list is taken at `:402` only `if (!this.#driver.live() && !(await this.#serverKeptRuns()))`. `#serverKeptRuns` (`:420`) is false when no pid is kept and when the driver's answer rejects. Otherwise the read is given up, the last list stands, and the next poll or change reads again. The doc comment of `#read` (`:380`) states the three cases: a live control client, a kept pid that is a running tmux, neither.
+- `DESIGN.md:361` names the running-tmux check in the sentence about the empty list.
+- The fake drivers of `tests/server/machine/pty/channel.test.ts:97`, `tests/server/root/context-fixture.ts:25` and `tests/server/root/context.test.ts:28` answer `serverRuns` with false. `tests/routes/sessions/terminal-edit.test.ts:369` asserts the list format's fields from the ninth on are title, icon, colour and `#{pid}`.
+
+One addition beyond the ruling's wording: `isTmuxCommand` accepts `tmux: server` as well as `tmux`, because a tmux server on Linux names itself that way in `ps`; on macOS `ps -o comm=` printed `tmux`. `tmuxinator` and `tmux-helper` are refused (`tests/server/machine/pty/tmux.test.ts:176`).
+
+Limit that stands by the ruling: a dev server that has just started has no kept pid, so a "no server" answer to its first list, confirmed, is the empty list (case (f) below). A tmux that is running and unreachable at that first read is not told apart.
+
+Tests, failing first. On the tree before any source change, `npx vitest run tests/server/machine/pty/channel-list.test.ts` (new describe at `tests/server/machine/pty/channel-list.test.ts:327`, on the fake driver whose `live()` and `serverRuns()` the case sets):
+
+```
+ > tests/server/machine/pty/channel-list.test.ts (19 tests | 3 failed) 17ms
+     FAIL is never the empty list while the server that last listed is a running tmux 4ms
+     FAIL is the empty list after the confirming reads when that server does not run 1ms
+     FAIL asks about the server of the list read last, not of an earlier one 1ms
+------- Failed Tests 3 -------
+ FAIL  tests/server/machine/pty/channel-list.test.ts > a no-server answer with no control client, while the tmux server runs > is never the empty list while the server that last listed is a running tmux
+AssertionError: expected [] to deeply equal [ 'a1b2c3-shell' ]
+- Expected
++ Received
+- [
+-   "a1b2c3-shell",
+- ]
++ []
+ > tests/server/machine/pty/channel-list.test.ts:345:36
+    343|             await refuseAll(made, said);
+    344|             await vi.advanceTimersByTimeAsync(NO_SERVER_CONFIRM_MS * (...
+    345|             expect(ids(made.held)).toEqual([A]);
+       |                                    ^
+    346|             expect(made.seen).toEqual([]);
+    347|             expect(made.client.asked).toEqual([SERVER]);
+------------------------[1/3]-
+ FAIL  tests/server/machine/pty/channel-list.test.ts > a no-server answer with no control client, while the tmux server runs > is the empty list after the confirming reads when that server does not run
+AssertionError: expected [] to deeply equal [ 9001 ]
+- Expected
++ Received
+- [
+-   9001,
+- ]
++ []
+ > tests/server/machine/pty/channel-list.test.ts:359:35
+    357|         expect(ids(made.held)).toEqual([]);
+    358|         expect(made.seen).toEqual([[]]);
+    359|         expect(made.client.asked).toEqual([SERVER]);
+       |                                   ^
+    360|     });
+    361|
+------------------------[2/3]-
+ FAIL  tests/server/machine/pty/channel-list.test.ts > a no-server answer with no control client, while the tmux server runs > asks about the server of the list read last, not of an earlier one
+AssertionError: expected [] to deeply equal [ 9002 ]
+- Expected
++ Received
+- [
+-   9002,
+- ]
++ []
+ > tests/server/machine/pty/channel-list.test.ts:393:35
+    391|         made.held.refresh();
+    392|         await refuseAll(made, NO_SERVER);
+    393|         expect(made.client.asked).toEqual([9002]);
+       |                                   ^
+    394|     });
+    395| });
+------------------------[3/3]-
+ Test Files  1 failed (1)
+      Tests  3 failed | 16 passed (19)
+```
+
+The five cases, all passing on the final tree:
+- (d) `:338` "is never the empty list while the server that last listed is a running tmux": `live()` false, server said to run, every read "no server" past the confirmations: no empty list, the list stays `[A]`, the driver was asked about pid 9001.
+- (e) `:352` "is the empty list after the confirming reads when that server does not run".
+- `:362` "is the empty list when asking whether the server runs fails".
+- (f) `:370` "is the empty list after the confirming reads when no read ever named a server": with `serverRuns` true, the driver is never asked.
+- `:385` "asks about the server of the list read last, not of an earlier one" (pids 9001 then 9002).
+
+The fails-case and (f) pass on the tree before the change because that tree takes the empty list in both; they pin the behaviour that stays.
+
+`npx vitest run tests/server/machine/pty/sessions.test.ts tests/server/machine/pty/tmux.test.ts` before the change:
+
+```
+ > tests/server/machine/pty/tmux.test.ts (20 tests | 2 failed) 9ms
+     FAIL is tmux by its base name, as ps prints it on macOS and on Linux 2ms
+     FAIL is not tmux for another command, an empty answer, or a name that only holds tmux 0ms
+ > tests/server/machine/pty/sessions.test.ts (21 tests | 2 failed) 997ms
+   FAIL reads the tmux server pid from the last field of any row of the list 2ms
+   FAIL tells a tmux server that runs from one that exited, with its socket file present or not 38ms
+------- Failed Tests 4 -------
+ FAIL  tests/server/machine/pty/sessions.test.ts > reads the tmux server pid from the last field of any row of the list
+TypeError: serverPid is not a function
+ > tests/server/machine/pty/sessions.test.ts:466:12
+    464|     const row = (name: string, server: string): string =>
+    465|         [name, '1757500000', '0', 'zsh', '4242', '/ws', '', '', '', ''...
+    466|     expect(serverPid(`${row('oculus-a1b2c3-shell', '9001')}\n${row('mi...
+       |            ^
+    467|     // A session that is not an oculus terminal still says which serve...
+    468|     expect(serverPid(`${row('mine', '77')}\n`)).toBe(77);
+------------------------[1/4]-
+ FAIL  tests/server/machine/pty/sessions.test.ts > tells a tmux server that runs from one that exited, with its socket file present or not
+TypeError: serverPid is not a function
+ > tests/server/machine/pty/sessions.test.ts:483:25
+    481|         try {
+    482|             await run(['new-session', '-d', '-s', 'oculus-a1b2c3-shell...
+    483|             const pid = serverPid(await run(listArgs(), own));
+       |                         ^
+    484|             expect(pid).toBeGreaterThan(1);
+    485|             expect(await tmuxRuns(pid ?? 0)).toBe(true);
+------------------------[2/4]-
+ FAIL  tests/server/machine/pty/tmux.test.ts > the command of a process that may be a tmux server > is tmux by its base name, as ps prints it on macOS and on Linux
+TypeError: isTmuxCommand is not a function
+ > tests/server/machine/pty/tmux.test.ts:178:16
+    176| describe('the command of a process that may be a tmux server', () => {
+    177|     it('is tmux by its base name, as ps prints it on macOS and on Linu...
+    178|         expect(isTmuxCommand('tmux\n')).toBe(true);
+       |                ^
+    179|         expect(isTmuxCommand('/opt/homebrew/bin/tmux\n')).toBe(true);
+    180|         expect(isTmuxCommand('tmux: server\n')).toBe(true);
+------------------------[3/4]-
+ FAIL  tests/server/machine/pty/tmux.test.ts > the command of a process that may be a tmux server > is not tmux for another command, an empty answer, or a name that only holds tmux
+TypeError: isTmuxCommand is not a function
+ > tests/server/machine/pty/tmux.test.ts:192:20
+    190|             'tmux-helper\n'
+    191|         ]) {
+    192|             expect(isTmuxCommand(other)).toBe(false);
+       |                    ^
+    193|         }
+    194|     });
+------------------------[4/4]-
+ Test Files  2 failed (2)
+      Tests  4 failed | 37 passed (41)
+```
+
+`sessions.test.ts:463` is the parse of the server pid; `sessions.test.ts:477` starts a tmux server on a private socket and checks `tmuxRuns` true for its pid, false for `process.pid`, still true with the socket file moved away (while `list-sessions` fails with "No such file or directory"), and false after `kill-server`.
+
+`npx vitest run tests/routes/sessions/terminal-edit.test.ts` with the `'#{pid}'` line taken out of `LIST_FORMAT` (changed assertion at `:369`):
+
+```
+ > tests/routes/sessions/terminal-edit.test.ts (21 tests | 1 failed) 487ms
+     FAIL reads them as title, icon and color, empty when the line carries none 4ms
+------- Failed Tests 1 -------
+ FAIL  tests/routes/sessions/terminal-edit.test.ts > a list line with the title, icon and colour > reads them as title, icon and color, empty when the line carries none
+AssertionError: expected [ '#{@oculus_title}', ...(2) ] to deeply equal [ '#{@oculus_title}', ...(3) ]
+- Expected
++ Received
+  [
+    "#{@oculus_title}",
+    "#{@oculus_icon}",
+    "#{@oculus_color}",
+-   "#{pid}",
+  ]
+ > tests/routes/sessions/terminal-edit.test.ts:369:50
+    367|         // The line the list asks tmux for carries the three options, ...
+    368|         // pid of the server that answers.
+    369|         expect(LIST_FORMAT.split('\t').slice(8)).toEqual([
+       |                                                  ^
+    370|             '#{@oculus_title}',
+    371|             '#{@oculus_icon}',
+------------------------[1/1]-
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+```
+
+With the change, the same file: Test Files 1 passed, Tests 21 passed.
+
+Probe, `noserverhidden`, before the change:
+
+```
+RED noserverhidden / page shape reload: 1 lists, endedTerminals answers 2 terminal(s) tmux still lists (2 running)
+    answered 63a4a6-shell at list 0; that list held []
+    answered 3b52d1-shell at list 0; that list held []
+RED noserverhidden / page shape reconnect: 3 lists, endedTerminals answers 2 terminal(s) tmux still lists (2 running)
+    answered 3b52d1-shell at list 2; that list held []
+    answered 63a4a6-shell at list 2; that list held []
+    while the socket is away tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+RESULT: RED
+exit=1
+```
+
+After the change (final tree):
+
+```
+green noserverhidden / page shape reload: 0 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green noserverhidden / page shape reconnect: 2 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+    while the socket is away tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+RESULT: green
+exit=0
+```
+
+Default run after the change (final tree):
+
+```
+green save / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green save / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+    the socket of the open client closed, so the dev server restarted
+green restart / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green restart / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green reconnect / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green reconnect / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green burst / page shape reload: 7 lists, endedTerminals answers 0 terminal(s) tmux still lists (62 running)
+green burst / page shape reconnect: 9 lists, endedTerminals answers 0 terminal(s) tmux still lists (62 running)
+green noserver / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+green noserver / page shape reconnect: 4 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+    while the socket is away (2000 ms) tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+green noserver400 / page shape reload: 2 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+green noserver400 / page shape reconnect: 4 lists, endedTerminals answers 0 terminal(s) tmux still lists (4 running)
+    while the socket is away (400 ms) tmux says: error connecting to <scratch>/tm/tmux-502/default (No such file or directory)
+green ended / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (1 running); the killed terminal was answered
+green ended / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (1 running); the killed terminal was answered
+green usage / page shape reload: 0 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green usage / page shape reconnect: 2 lists, endedTerminals answers 0 terminal(s) tmux still lists (2 running)
+green oddcwd / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (3 running)
+green oddcwd / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (3 running)
+green oddname / page shape reload: 1 lists, endedTerminals answers 0 terminal(s) tmux still lists (3 running)
+green oddname / page shape reconnect: 3 lists, endedTerminals answers 0 terminal(s) tmux still lists (3 running)
+RESULT: green
+```
+
+`printenv TMUX` exit 1 before each run; after the last, `lsof -iTCP:8797 -sTCP:LISTEN` exit 1 and `ls $TMPDIR/q107s` "No such file or directory". Only port 8797 was used, with HOME and TMUX_TMPDIR set on that one process; every tmux command named the probe's socket with `-S`.
+
+### Ruling 2: the unreadable stored value
+
+Test: `tests/state/workbench/ui-shared.test.ts:106` "write every record they hold when the stored value becomes unreadable after a save": a store saves `a`, the stored value is then made `{ not the ui state`, the store saves `b`, and the storage holds `a` and `b`. It passes on the final tree (`npx vitest run tests/state/workbench/ui-shared.test.ts`: Tests 11 passed).
+
+With `if (held === null) return mine;` (`src/lib/state/workbench/ui.svelte.ts:416`, in `mergedInstances`) taken out, the new case fails:
+
+```
+     FAIL write every record they hold when the stored value becomes unreadable after a save 0ms
+ FAIL  tests/state/workbench/ui-shared.test.ts > two browser tabs saving the state their views remember > write every record they hold when the stored value becomes unreadable after a save
+TypeError: Cannot read properties of null (reading 'instances')
+ > instancesOf src/lib/state/workbench/ui.svelte.ts:391:32
+    389|     /** The instance records of a saved envelope, none when it holds n...
+    390|     function instancesOf(held: Record<string, unknown>): Record<string...
+    391|         const instances = held.instances;
+       |                                ^
+    392|         return typeof instances === 'object' && instances !== null && ...
+    393|             ? { ...(instances as Record<string, unknown>) }
+ > mergedInstances src/lib/state/workbench/ui.svelte.ts:416:23
+ > save src/lib/state/workbench/ui.svelte.ts:446:27
+ Test Files  1 failed (1)
+      Tests  11 failed (11)
+```
+
+With the line out, all 11 cases of the file fail (Tests 11 failed); the new case is the one that stores a value that was readable and then is not. The line is back (`cmp` against the copy made before the edit: identical).
+
+### Ruling 3: the report's first line
+
+The first line of this report reads "Everything in the brief is done." The probe's default run and `noserverhidden` are both green on the final tree (outputs above).
+
+### Verification
+
+`npm run diagrams` exit 0 (it rewrote `docs/diagrams/channels.{dot,svg}` and `writes.{dot,svg}`). `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` exit 0 on the final tree:
+
+```
+$ npm test
+ Test Files  353 passed | 19 skipped (372)
+      Tests  5409 passed | 561 skipped (5970)
+$ npm run test:checks
+ Test Files  27 passed | 2 skipped (29)
+      Tests  365 passed | 9 skipped (374)
+$ npm run check
+$ npm run build
+$ npm run format:check
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+`npx vitest run tests/state/sessions tests/state/client/terminal tests/views/sessions tests/server/machine/pty tests/ui/menu tests/state/workbench` exit 0: Test Files 65 passed (65), Tests 1166 passed (1166). The ASCII gate over `src tests config` prints nothing (exit 0). `sh utils/folder-check.sh` exit 0. Name grep (`grep -rn`, `--exclude=local.yml`, over `src tests config HELP.md DESIGN.md README.md`): `serverPid`, `serverRuns`, `tmuxRuns` and `isTmuxCommand` appear in `src/lib/server/machine/pty/{sessions,tmux,channel}.ts`, `tests/server/machine/pty/{sessions,tmux,channel,channel-list}.test.ts`, `tests/server/root/context-fixture.ts` and `tests/server/root/context.test.ts` only, nowhere else; line counts: `channel.ts` 639, `tmux.ts` 412, `sessions.ts` 530.
+
+What the green results do not cover: the `ps` answer `tmux: server` is tested as text, not against a Linux host; no browser was opened.
+
+### User-visible changes
+
+| Change | Before | After |
+|---|---|---|
+| tmux unreachable (socket moved or removed) with no page attached to a terminal, the server running | At the idle poll tick the list was published empty after 0.6 s and pages ended their terminals. | The last list stands; the next poll reads again. |
+| tmux really exited, no control client | The empty list after the confirming reads. | The same, once the kept pid is no running tmux. |
+| A dev server just started and tmux unreachable at its first list | The empty list after the confirming reads. | The same (no pid is kept yet). |
+| The state a browser tab saves after the stored value became unreadable | Covered by no test. | Covered by `ui-shared.test.ts:106`: the tab writes every record it holds. |

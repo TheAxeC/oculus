@@ -65,9 +65,11 @@ export function isSessionId(id: unknown): id is string {
 
 /**
  * The fields a terminal is read from. The first six are the session and its active pane; the
- * seventh is the label the starter gave, the eighth the session it resumes, and the last three the
- * title, icon and colour the reader gave, each kept as a tmux user option so tmux stays the only
- * store.
+ * seventh is the label the starter gave, the eighth the session it resumes, and the ninth to the
+ * eleventh the title, icon and colour the reader gave, each kept as a tmux user option so tmux
+ * stays the only store. The twelfth and last is the pid of the tmux server that answered, the same
+ * on every row, which names that server to whoever cannot reach it by its socket later (see
+ * serverPid).
  */
 export const LIST_FORMAT = [
     '#{session_name}',
@@ -80,7 +82,8 @@ export const LIST_FORMAT = [
     `#{${RESUMES_OPTION}}`,
     `#{${TITLE_OPTION}}`,
     `#{${ICON_OPTION}}`,
-    `#{${COLOR_OPTION}}`
+    `#{${COLOR_OPTION}}`,
+    '#{pid}'
 ].join('\t');
 
 export type StartRequest = {
@@ -275,6 +278,21 @@ export function parseTerminals(text: string): Terminal[] {
         if (terminal !== null) found.push(terminal);
     }
     return found;
+}
+
+/**
+ * The pid of the tmux server that answered a list, the last field of its last row; null when the
+ * list has no row or that field is no pid. The last field is read because a folder or a title may
+ * hold a tab or a newline, which moves the fields of its own row and cuts it, while the list's text
+ * always ends with the pid of its last row. It is a number the operating system can be asked about
+ * after the server's socket file is gone, which tmux itself cannot be.
+ */
+export function serverPid(text: string): number | null {
+    const row = text.split('\n').findLast((line) => line !== '');
+    const field = row?.split('\t').at(-1);
+    if (field === undefined || !/^\d+$/.test(field)) return null;
+    const pid = Number(field);
+    return pid > 0 ? pid : null;
 }
 
 /**

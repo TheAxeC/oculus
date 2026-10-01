@@ -1,6 +1,8 @@
 // The control-mode protocol, on recorded text. No tmux runs here: every case feeds the parser the
 // bytes a `tmux -C attach-session` child printed on this machine, so the decoding, the reply
 // pairing and the cutting of typed input are checked without a process, a socket or a session.
+// The last cases ask whether a process is a running tmux, of this test's own process, which `ps`
+// names as node.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -9,6 +11,8 @@ import {
     decodeOutput,
     inputChunks,
     INPUT_MOST,
+    isTmuxCommand,
+    tmuxRuns,
     quote,
     type ControlEvent,
     type ControlReply
@@ -169,5 +173,32 @@ describe('the input pieces', () => {
 
     it('gives no piece for no input', () => {
         expect(inputChunks(Buffer.alloc(0))).toEqual([]);
+    });
+});
+
+describe('the command of a process that may be a tmux server', () => {
+    it('is tmux by its base name, as ps prints it on macOS and on Linux', () => {
+        expect(isTmuxCommand('tmux\n')).toBe(true);
+        expect(isTmuxCommand('/opt/homebrew/bin/tmux\n')).toBe(true);
+        expect(isTmuxCommand('tmux: server\n')).toBe(true);
+    });
+
+    it('is not tmux for another command, an empty answer, or a name that only holds tmux', () => {
+        for (const other of [
+            'node\n',
+            '',
+            '\n',
+            '/usr/bin/tmuxinator\n',
+            'mytmux\n',
+            'tmux-helper\n'
+        ]) {
+            expect(isTmuxCommand(other)).toBe(false);
+        }
+    });
+    it('is not a running tmux for a live process that runs another command, or for no pid', async () => {
+        // This process is alive, so kill -0 succeeds, and ps prints node: only the command tells.
+        expect(await tmuxRuns(process.pid)).toBe(false);
+        expect(await tmuxRuns(1)).toBe(false);
+        expect(await tmuxRuns(0)).toBe(false);
     });
 });

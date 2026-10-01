@@ -29,6 +29,7 @@ import { stripMenu } from '../../../src/lib/shell/panes/pane-view.ts';
 import {
     emptyListMenu,
     gridMenu,
+    kindsMenu,
     terminalRowMenu
 } from '../../../src/lib/views/sessions/terminal/terminal-list.ts';
 import { readTab } from '../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
@@ -55,7 +56,9 @@ const B = 'bbbbbb-shell';
 const BRANCH = 'feature/x';
 const TAG = 'v1.0';
 const TERMINAL = 'build watcher';
-const NAMES = [BRANCH, TAG, TERMINAL];
+const ATTACHED = 'dev server';
+const ATTACHED_TOO = 'notes shell';
+const NAMES = [BRANCH, TAG, TERMINAL, ATTACHED, ATTACHED_TOO];
 
 function everyMenu(): MenuItem[][] {
     return [
@@ -82,7 +85,8 @@ function everyMenu(): MenuItem[][] {
             true,
             words
         ),
-        emptyListMenu(words),
+        emptyListMenu(words, [{ terminal: B, title: ATTACHED }]),
+        kindsMenu(words, [{ terminal: A, title: ATTACHED_TOO }]),
         textMenu({ selection: true, readonly: false }, words),
         proseMenu(
             { selection: true, image: 'http://h/api/file/hub/a.png', origin: 'http://h' },
@@ -122,6 +126,15 @@ describe('the words of every right-click menu', () => {
                 .flatMap((item) => (item.items ?? []).map((one) => one.label))
                 .filter((label) => !label.startsWith('@'))
         ).toEqual([TERMINAL]);
+        const attach = [
+            ...emptyListMenu(words, [{ terminal: B, title: ATTACHED }]),
+            ...kindsMenu(words, [{ terminal: A, title: ATTACHED_TOO }])
+        ];
+        expect(
+            attach
+                .flatMap((item) => (item.items ?? []).map((one) => one.label))
+                .filter((label) => !label.startsWith('@'))
+        ).toEqual([ATTACHED, ATTACHED_TOO]);
     });
 
     // Revert: rename the key menu_open_changes in config/text/views/sources/repositories.yml.

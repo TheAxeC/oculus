@@ -12,7 +12,11 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import { stamp } from '$lib/state/shared/words/format';
     import { nameOf } from '$lib/state/sources/file-type';
-    import type { Terminal, TerminalKind } from '$lib/state/sessions/terminals.svelte';
+    import {
+        terminalLabel,
+        type Terminal,
+        type TerminalKind
+    } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { terminalRowItems } from './session-list';
     import { useState } from '$lib/state/client/use';
@@ -54,7 +58,7 @@
             <span class="top"
                 ><Glyph name={kindGlyph(entry.kind)} />
                 <Tag label={entry.kind} />
-                <span class="nm">{entry.title === '' ? entry.name : entry.title}</span></span
+                <span class="nm">{terminalLabel(entry)}</span></span
             >
             <span class="meta"
                 ><span class="act">{nameOf(entry.cwd)}</span>

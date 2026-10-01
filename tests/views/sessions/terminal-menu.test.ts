@@ -11,9 +11,11 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    attachedOf,
     emptyListMenu,
     gridMenu,
     joinedOf,
+    kindsMenu,
     pasteRoute,
     pressKill,
     profileOf,
@@ -202,7 +204,7 @@ describe('a list row menu', () => {
 describe('the list empty area menu', () => {
     // Revert: list the profile items of emptyListMenu as Claude, Codex, Shell.
     it('audits that offers New Terminal and a profile submenu of the kinds the composer starts', () => {
-        const items = emptyListMenu(words);
+        const items = emptyListMenu(words, []);
         expect(items.map((item) => item.label)).toEqual([
             '@sessions.menu_new',
             '@sessions.menu_new_profile'
@@ -215,5 +217,90 @@ describe('the list empty area menu', () => {
         ]);
         expect(kinds.map((item) => profileOf(item.id))).toEqual(['shell', 'claude', 'codex']);
         expect(profileOf('new')).toBeNull();
+    });
+});
+
+describe('Attach to Session', () => {
+    const unowned = [
+        { terminal: A, title: 'build' },
+        { terminal: B, title: 'zsh' }
+    ];
+    const labelsOf = (items: { label: string }[]): string[] => items.map((item) => item.label);
+
+    it('audits that the kinds dropdown and the list empty area menu each hold a submenu of the unowned terminals, in the order handed', () => {
+        for (const items of [kindsMenu(words, unowned), emptyListMenu(words, unowned)]) {
+            const attach = items.filter((item) => item.label === '@sessions.menu_attach');
+            expect(attach).toHaveLength(1);
+            expect(labelsOf(attach[0].items ?? [])).toEqual(['build', 'zsh']);
+            expect((attach[0].items ?? []).map((item) => attachedOf(item.id))).toEqual([A, B]);
+        }
+    });
+
+    it('audits that the item is drawn only while a terminal can be attached, and the menus are as before without it', () => {
+        expect(labelsOf(kindsMenu(words, []))).toEqual([
+            '@sessions.kind_shell',
+            '@sessions.kind_claude',
+            '@sessions.kind_codex',
+            '@sessions.menu_with_prompt'
+        ]);
+        expect(labelsOf(emptyListMenu(words, []))).toEqual([
+            '@sessions.menu_new',
+            '@sessions.menu_new_profile'
+        ]);
+    });
+
+    it('audits that the submenu sits after the kinds and the prompt in the dropdown, and after New Terminal in the empty area menu', () => {
+        expect(labelsOf(kindsMenu(words, unowned)).slice(-2)).toEqual([
+            '@sessions.menu_with_prompt',
+            '@sessions.menu_attach'
+        ]);
+        expect(labelsOf(emptyListMenu(words, unowned))).toEqual([
+            '@sessions.menu_new',
+            '@sessions.menu_new_profile',
+            '@sessions.menu_attach'
+        ]);
+    });
+
+    it('audits that two terminals of one label are two entries with different pick ids', () => {
+        const same = [
+            { terminal: A, title: 'build' },
+            { terminal: B, title: 'build' }
+        ];
+        const entries = emptyListMenu(words, same).find(
+            (item) => item.label === '@sessions.menu_attach'
+        )?.items;
+        expect(labelsOf(entries ?? [])).toEqual(['build', 'build']);
+        expect(new Set((entries ?? []).map((item) => item.id)).size).toBe(2);
+    });
+
+    it('audits that an Attach pick is not read as a Join or a Profile pick, and theirs are not read as an Attach pick', () => {
+        const pick = emptyListMenu(words, unowned)
+            .find((item) => item.label === '@sessions.menu_attach')
+            ?.items?.at(0)?.id;
+        expect(pick).toBeDefined();
+        expect(joinedOf(pick ?? '')).toBeNull();
+        expect(profileOf(pick ?? '')).toBeNull();
+        const join = terminalRowMenu(
+            readTab({ id: 't', terminals: [A], shown: A }),
+            A,
+            [{ terminal: C, title: 'other' }],
+            false,
+            words
+        ).find((item) => item.label === '@sessions.menu_join')?.items?.[0].id;
+        expect(attachedOf(join ?? '')).toBeNull();
+        const profile = emptyListMenu(words, []).find(
+            (item) => item.label === '@sessions.menu_new_profile'
+        )?.items?.[0].id;
+        expect(attachedOf(profile ?? '')).toBeNull();
+    });
+
+    it('audits that the list item, an empty pick and another item name no terminal', () => {
+        const list = emptyListMenu(words, unowned).find(
+            (item) => item.label === '@sessions.menu_attach'
+        )?.id;
+        expect(attachedOf(list ?? '')).toBeNull();
+        expect(attachedOf('attach:')).toBeNull();
+        expect(attachedOf('new')).toBeNull();
+        expect(attachedOf('')).toBeNull();
     });
 });

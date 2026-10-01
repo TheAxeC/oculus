@@ -1,6 +1,7 @@
 // Hand-built layout trees and a fake Storage, shared by the two suites over state/workbench/layout:
-// the tree operations in layout.test.ts, the saved form and its migrations in layout-saved.test.ts,
-// and the named arrangements in arrangement.test.ts. Nothing here touches localStorage or the DOM.
+// the tree operations in layout.test.ts, the saved form and its migrations in
+// saved/layout-saved.test.ts, and the named arrangements in arrangement.test.ts. Nothing here
+// touches localStorage or the DOM.
 
 import {
     WORKBENCH_VERSION,

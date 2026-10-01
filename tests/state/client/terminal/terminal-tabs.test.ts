@@ -321,6 +321,127 @@ describe('showing a terminal', () => {
     });
 });
 
+describe('attaching a terminal no tab owns', () => {
+    /** The ids of the terminals the store offers to attach. */
+    const offered = () => client.terminals.attachable().map((one) => one.id);
+
+    it('offers the listed terminals no Terminal tab on any page owns, in list order', () => {
+        const p1 = client.layout.currentPage().id;
+        owning(p1, [A]);
+        client.layout.openPage('Other');
+        const p2 = client.layout.currentPage().id;
+        owning(p2, [C]);
+        expect(offered()).toEqual([]);
+        listed([A, B, C, D]);
+        expect(offered()).toEqual([B, D]);
+    });
+
+    it('does not offer a terminal started here and not listed yet, nor once it is listed and its tab owns it', () => {
+        const page = client.layout.currentPage().id;
+        owning(page, [A]);
+        listed([A]);
+        owning(page, [D]);
+        listed([A]);
+        expect(offered()).toEqual([]);
+        listed([A, D]);
+        expect(offered()).toEqual([]);
+    });
+
+    it('puts the chosen terminal at the end of the tab it is chosen from, the second Terminal tab of the page, shows it in the row and activates the tab; no other tab changes', () => {
+        const page = client.layout.currentPage().id;
+        const first = owning(page, [C]);
+        const here = owning(page, [A, B]);
+        listed([A, B, C, D]);
+        client.layout.activateInstance(first, page);
+        const before = JSON.stringify(tab(first));
+
+        client.terminals.attachTerminal(here, D);
+        expect(tab(here)).toMatchObject({
+            terminals: [A, B, D],
+            row: [D],
+            shown: D,
+            composing: false
+        });
+        expect(client.layout.activeInstance(page)?.id).toBe(here);
+        expect(JSON.stringify(tab(first))).toBe(before);
+        expect(offered()).toEqual([]);
+    });
+
+    it('takes a tab composing alone out of its composer: the tab owns the terminal and shows it', () => {
+        const page = client.layout.currentPage().id;
+        const composing = client.layout.openView(
+            'terminal',
+            { id: 'composing-none', terminals: [], shown: null, composing: true },
+            page
+        );
+        listed([D]);
+        client.terminals.attachTerminal(composing, D);
+        expect(tab(composing)).toMatchObject({
+            terminals: [D],
+            row: [D],
+            shown: D,
+            composing: false
+        });
+    });
+
+    it('changes nothing for a terminal the latest list no longer names', () => {
+        const page = client.layout.currentPage().id;
+        const here = owning(page, [A]);
+        listed([A, D]);
+        listed([A]);
+        const before = JSON.stringify(terminalTabs());
+        client.terminals.attachTerminal(here, D);
+        expect(JSON.stringify(terminalTabs())).toBe(before);
+    });
+
+    it('changes nothing for a terminal another Terminal tab took after the menu was opened', () => {
+        const page = client.layout.currentPage().id;
+        const here = owning(page, [A]);
+        const took = owning(page, [B]);
+        listed([A, B, D]);
+        expect(offered()).toEqual([D]);
+        client.terminals.moveTerminal(D, took, page, 1);
+        const before = JSON.stringify(terminalTabs());
+        client.terminals.attachTerminal(here, D);
+        expect(JSON.stringify(terminalTabs())).toBe(before);
+        expect(tab(took).terminals).toEqual([B, D]);
+        expect(tab(here).terminals).toEqual([A]);
+    });
+
+    it('changes nothing for a tab no page holds, an id that is not a terminal, or a foreign terminal', () => {
+        const page = client.layout.currentPage().id;
+        const here = owning(page, [A]);
+        listed([A, D]);
+        client.entities.receive({
+            channel: 'sessions',
+            version: 99,
+            payload: {
+                records: [],
+                workspaces: [],
+                terminals: [terminal(A), { ...terminal(D), foreign: true }]
+            }
+        });
+        const before = JSON.stringify(terminalTabs());
+        client.terminals.attachTerminal('no-such-tab', D);
+        client.terminals.attachTerminal(here, 'fix-one');
+        client.terminals.attachTerminal(here, D);
+        expect(JSON.stringify(terminalTabs())).toBe(before);
+    });
+
+    it('joins the tab it is chosen from, the only Terminal tab of the second page, and not the first Terminal tab of the first page', () => {
+        const p1 = client.layout.currentPage().id;
+        const first = owning(p1, [A]);
+        client.layout.openPage('Other');
+        const p2 = client.layout.currentPage().id;
+        const here = owning(p2, [C]);
+        listed([A, C, D]);
+
+        client.terminals.attachTerminal(here, D);
+        expect(tab(here).terminals).toEqual([C, D]);
+        expect(tab(first).terminals).toEqual([A]);
+    });
+});
+
 describe('a Terminal tab closed', () => {
     // Revert: make closeInstance skip access.ui.endTerminals.
     it('ends its terminals, and a terminal no tab owns is taken by a tab only when shown', () => {

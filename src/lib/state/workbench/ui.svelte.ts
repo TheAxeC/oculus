@@ -10,8 +10,16 @@
 //
 // It saves the same way the layout store does, under its own key and through the same small slice
 // of Storage, so a test hands it a plain object and no test touches localStorage.
+//
+// Every browser tab of one server writes the one key, and the appearance is each tab's own while
+// the instance records are the views' state that belongs with the arrangement the layout store
+// shares. A save therefore reads the saved value first and writes the saved records with the ones
+// this tab changed or removed laid over them, so it never drops a record another tab saved; and
+// the store listens for the browser's `storage` event and takes the saved records when another tab
+// saves, leaving the appearance as this tab has it (`takeSavedInstances`).
 
 import type { BusyTerminal } from '../sessions/terminal/pty-io.ts';
+import { followKey } from '../shared/stores/storage-events.ts';
 import {
     codeThemeDefault,
     crtDefault,
@@ -105,7 +113,8 @@ export type UiStore = {
     updateTrayRequested: () => number;
     requestCardMove: (instance: string, card: string, step: -1 | 1) => void;
     cardMoveRequested: (instance: string) => CardMove | null;
-    loadUi: (storage?: Storable) => boolean;
+    loadUi: (storage?: Storable, source?: EventTarget) => boolean;
+    stopFollowing: () => void;
     setTheme: (name: string) => void;
     setCrt: (on: boolean) => void;
     setWallpaper: (on: boolean) => void;
@@ -156,6 +165,15 @@ export function createUi(): UiStore {
 
     /** Where save() writes, once loadUi has named it. Nothing is saved before that. */
     let backing: Storable | null = null;
+
+    /**
+     * The instance records as last read from or written to the storage, each as its JSON text: what
+     * a save compares this tab's records with to tell the ones this tab changed or removed.
+     */
+    let synced: Record<string, string> = {};
+
+    /** Stops listening for another browser tab's save, once loadUi was given a window. */
+    let unfollow: () => void = () => undefined;
 
     /** What the stores holding unsaved text registered, asked in turn by unsaved(). */
     const unsavedReports: ((id: string) => boolean)[] = [];
@@ -296,29 +314,17 @@ export function createUi(): UiStore {
      * The default argument is evaluated at the call and not at the import, so a test that never
      * calls this touches no localStorage.
      */
-    function loadUi(storage: Storable = localStorage): boolean {
+    function loadUi(storage: Storable = localStorage, source?: EventTarget): boolean {
         backing = storage;
-        let raw: string | null;
-        try {
-            raw = storage.getItem(UI_KEY);
-        } catch {
-            // A browser with storage refused still runs; it just forgets the theme.
-            raw = null;
-        }
+        unfollow();
+        unfollow =
+            source === undefined ? () => undefined : followKey(source, UI_KEY, takeSavedInstances);
         store.current = defaultUi();
-        if (raw === null) return false;
+        synced = {};
+        const held = savedHeld(storage);
+        if (held === null) return false;
 
-        let saved: unknown;
-        try {
-            saved = JSON.parse(raw);
-        } catch {
-            return false;
-        }
-        if (typeof saved !== 'object' || saved === null || Array.isArray(saved)) return false;
-        const held = saved as Record<string, unknown>;
-        if (held.version !== UI_VERSION && held.version !== UI_VERSION_UNCHOSEN) return false;
-
-        const instances = held.instances;
+        const instances = instancesOf(held);
         const started = defaultUi();
         store.current = {
             theme: known(held.theme),
@@ -344,11 +350,9 @@ export function createUi(): UiStore {
                   ]
                 : [],
             statusQuiet: held.statusQuiet === true,
-            instances:
-                typeof instances === 'object' && instances !== null && !Array.isArray(instances)
-                    ? { ...(instances as Record<string, unknown>) }
-                    : {}
+            instances
         };
+        synced = textsOf(instances);
         // A value saved under the field's older name, `unicode`, and not under `icons` is read
         // above and written back here under `icons`, so a browser keeps the choice it made.
         if (typeof held.icons !== 'boolean' && typeof held.unicode === 'boolean')
@@ -356,13 +360,98 @@ export function createUi(): UiStore {
         return true;
     }
 
-    function save(next: Ui): void {
-        store.current = next;
-        if (backing === null) return;
+    /**
+     * The saved envelope of a storage when it holds one of a version this store reads, else null:
+     * nothing saved, a storage that refuses to be read, a value that does not parse, or another
+     * shape.
+     */
+    function savedHeld(storage: Storable): Record<string, unknown> | null {
+        let raw: string | null;
         try {
-            backing.setItem(UI_KEY, JSON.stringify({ version: UI_VERSION, ...next }));
+            raw = storage.getItem(UI_KEY);
         } catch {
-            // A full or refused storage loses the appearance at the next load and nothing else.
+            // A browser with storage refused still runs; it just forgets the theme.
+            return null;
+        }
+        if (raw === null) return null;
+        let saved: unknown;
+        try {
+            saved = JSON.parse(raw);
+        } catch {
+            return null;
+        }
+        if (typeof saved !== 'object' || saved === null || Array.isArray(saved)) return null;
+        const held = saved as Record<string, unknown>;
+        if (held.version !== UI_VERSION && held.version !== UI_VERSION_UNCHOSEN) return null;
+        return held;
+    }
+
+    /** The instance records of a saved envelope, none when it holds no map of them. */
+    function instancesOf(held: Record<string, unknown>): Record<string, unknown> {
+        const instances = held.instances;
+        return typeof instances === 'object' && instances !== null && !Array.isArray(instances)
+            ? { ...(instances as Record<string, unknown>) }
+            : {};
+    }
+
+    /** Each record as its JSON text. */
+    function textsOf(instances: Record<string, unknown>): Record<string, string> {
+        return Object.fromEntries(
+            Object.entries(instances).map(([id, state]) => [
+                id,
+                (JSON.stringify(state) as string | undefined) ?? ''
+            ])
+        );
+    }
+
+    /**
+     * The records a save writes: the ones the storage holds, with the ones this tab changed or
+     * added laid over them and the ones this tab removed taken out. A record this tab holds as it
+     * last read or wrote it is left as the storage has it, so another tab's newer record stands and
+     * one it removed stays removed. Where the storage holds nothing readable, every record this tab
+     * holds is written.
+     */
+    function mergedInstances(mine: Record<string, unknown>): Record<string, unknown> {
+        const held = backing === null ? null : savedHeld(backing);
+        if (held === null) return mine;
+        const saved = instancesOf(held);
+        const texts = textsOf(mine);
+        const merged: Record<string, unknown> = {};
+        for (const [id, state] of Object.entries(saved)) {
+            if (id in mine || !(id in synced)) merged[id] = state;
+        }
+        for (const [id, state] of Object.entries(mine)) {
+            if (texts[id] !== synced[id]) merged[id] = state;
+        }
+        return merged;
+    }
+
+    /**
+     * Another browser tab saved: take the instance records it left in the storage. The appearance
+     * stays as this tab has it, and nothing is written back.
+     */
+    function takeSavedInstances(): void {
+        if (backing === null) return;
+        const held = savedHeld(backing);
+        if (held === null) return;
+        const instances = instancesOf(held);
+        store.current = { ...store.current, instances };
+        synced = textsOf(instances);
+    }
+
+    function save(next: Ui): void {
+        if (backing === null) {
+            store.current = next;
+            return;
+        }
+        const instances = mergedInstances(next.instances);
+        store.current = { ...next, instances };
+        try {
+            backing.setItem(UI_KEY, JSON.stringify({ version: UI_VERSION, ...store.current }));
+            synced = textsOf(instances);
+        } catch {
+            // A full or refused storage loses the appearance at the next load and nothing else; the
+            // records stay as they were last saved, so the next save writes them again.
         }
     }
 
@@ -433,6 +522,12 @@ export function createUi(): UiStore {
         save({ ...store.current, statusQuiet: on });
     }
 
+    /** Stop taking another browser tab's saved records, which `loadUi` given a window started. */
+    function stopFollowing(): void {
+        unfollow();
+        unfollow = () => undefined;
+    }
+
     /** What a view instance wants remembered. */
     function setInstanceState(id: string, state: unknown): void {
         save({ ...store.current, instances: { ...store.current.instances, [id]: state } });
@@ -470,6 +565,7 @@ export function createUi(): UiStore {
         requestCardMove,
         cardMoveRequested,
         loadUi,
+        stopFollowing,
         setTheme,
         setCrt,
         setWallpaper,

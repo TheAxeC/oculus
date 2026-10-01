@@ -354,7 +354,7 @@ describe('the terminal toolbar', () => {
         const source = readFileSync('src/lib/views/sessions/terminal/Terminal.svelte', 'utf8');
         expect(source).toContain('restate(withLabel(tab, named))');
         expect(source).toContain('tab.label === named');
-        expect(source).toContain("live.title === '' ? live.name : live.title");
+        expect(source).toContain('terminalLabel(live)');
     });
 
     it("audits that the bar's New starts a shell in this tab at once", () => {

@@ -1,6 +1,6 @@
 // The layout tree: every operation on hand-built trees, and every invariant shown violated once.
-// The store is layout-store.test.ts and the older envelopes and their migration are
-// layout-saved.test.ts, both beside this. Nothing here touches localStorage or the DOM: the pure
+// The store is layout-store.test.ts beside this and the older envelopes and their migration are
+// saved/layout-saved.test.ts. Nothing here touches localStorage or the DOM: the pure
 // half is state/workbench/layout/.
 
 import { describe, expect, it } from 'vitest';

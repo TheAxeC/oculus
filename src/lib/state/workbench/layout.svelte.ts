@@ -89,7 +89,9 @@ export type LayoutStore = {
      * Keep a preview tab, which is what a double click, a keystroke, a drag and a split do to one.
      */
     keepPreview: (id: string) => void;
-    loadLayout: (storage?: Storable) => boolean;
+    loadLayout: (storage?: Storable, source?: EventTarget) => boolean;
+    /** Stop taking the arrangement another browser tab saves, which a load with a source began. */
+    stopFollowing: () => void;
     /**
      * Show the page of one rail button, made from its arrangement the first time and switched to
      * after that. It answers whether a page is on screen for the button.
@@ -286,15 +288,40 @@ export function createLayout(ui: UiStore): LayoutStore {
         instances.splitInstance
     );
 
+    /** Ends the listening a load began for the arrangement other browser tabs save. */
+    let unfollow: () => void = () => undefined;
+
+    /**
+     * Take the arrangement another browser tab saved under the same key. Its pages replace this
+     * tab's; the page this tab shows stays the one shown while it is still a page, since which page
+     * a browser tab is looking at is that tab's own. Nothing is written back, so the save that
+     * reached this tab does not travel on to the tab it came from. A value that does not parse
+     * changes nothing.
+     */
+    function takeSaved(): void {
+        const raw = storage.read(LAYOUT_KEY);
+        const saved = raw === null ? null : parseLayout(raw, t('ui.page_default', 1));
+        if (saved === null) return;
+        const shown = store.current.current;
+        fresh = false;
+        store.current = {
+            pages: saved.pages,
+            current: saved.pages.some((page) => page.id === shown) ? shown : saved.current
+        };
+    }
+
     /**
      * Read the saved arrangement and make it current, falling back to the default when there is
      * none or the saved value fails parseLayout. Returns whether a saved arrangement was restored,
      * which is how a page knows whether it is looking at the default. The default argument is
      * evaluated at the call and not at the import, so a test that never calls this touches no
-     * localStorage.
+     * localStorage. A source of the browser's `storage` events (the window) makes this tab follow
+     * the arrangement the other browser tabs of the server save; without one it follows none.
      */
-    function loadLayout(held: Storable = localStorage): boolean {
+    function loadLayout(held: Storable = localStorage, source?: EventTarget): boolean {
         storage.attach(held);
+        unfollow();
+        unfollow = source === undefined ? () => undefined : storage.follow(source, takeSaved);
         const first = t('ui.page_default', 1);
         const raw = storage.read(LAYOUT_KEY);
         const parsed = raw === null ? null : parseLayout(raw, first);
@@ -597,6 +624,10 @@ export function createLayout(ui: UiStore): LayoutStore {
         unpinInstance: instances.unpinInstance,
         keepPreview: instances.keepPreview,
         loadLayout,
+        stopFollowing: () => {
+            unfollow();
+            unfollow = () => undefined;
+        },
         openRailPage,
         startOnRailPage,
         startingFresh: () => fresh,

@@ -25,6 +25,7 @@ const driver = (close: () => void = noop): TerminalDriver => ({
     onChange: noop,
     attached: noop,
     live: () => false,
+    serverRuns: () => Promise.resolve(false),
     close
 });
 

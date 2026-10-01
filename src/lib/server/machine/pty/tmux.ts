@@ -15,6 +15,7 @@
 
 import { execFile, spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+import { basename } from 'node:path';
 
 /**
  * The binary. Resolved on PATH, since a homebrew tmux and a system tmux sit in different places.
@@ -69,6 +70,42 @@ export function run(
                 }
                 const said = stderr.trim();
                 reject(new Error(said === '' ? error.message : said));
+            }
+        );
+    });
+}
+
+/**
+ * Whether the command `ps` printed for a process is tmux: its base name is `tmux`, or `tmux:` and
+ * a title, which is how a tmux server names itself on Linux. A name that only holds `tmux`, such as
+ * `tmuxinator`, is another program.
+ */
+export function isTmuxCommand(printed: string): boolean {
+    const name = basename(printed.trim().split('\n')[0] ?? '');
+    return name === 'tmux' || name.startsWith('tmux:');
+}
+
+/**
+ * Whether the process with this pid is a running tmux: the operating system knows the pid
+ * (`kill -0`) and the command it runs is tmux (`ps`). Neither needs the server's socket, so the
+ * answer holds while the socket file is moved or removed, and turns false when the server exits or
+ * the pid goes to another program.
+ */
+export async function tmuxRuns(pid: number): Promise<boolean> {
+    if (!Number.isInteger(pid) || pid <= 1) return false;
+    try {
+        process.kill(pid, 0);
+    } catch {
+        // No such process, or one of another user (EPERM), which is not this user's tmux.
+        return false;
+    }
+    return new Promise((resolve) => {
+        execFile(
+            'ps',
+            ['-o', 'comm=', '-p', String(pid)],
+            { timeout: TIMEOUT_MS, encoding: 'utf8' },
+            (error, stdout) => {
+                resolve(error === null && isTmuxCommand(stdout));
             }
         );
     });

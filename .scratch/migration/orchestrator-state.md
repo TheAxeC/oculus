@@ -39,21 +39,6 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/U2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 70 tool uses, 160,458 tokens, 9.9 min
   landing: not-started
   round: 0
-- step: Q107
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 22:18)
-  session_id: a47f5dbf141e5a482 (launched 2026-09-30 22:17 local)
-  worktree: .agents/worktrees/Q107
-  base: dcef00c9
-  launched: 2026-09-30 22:17 local
-  report: agents/reviews/Q107-report.md (with agents/reviews/Q107-probe.mjs)
-  brief_check: agents/reviews/Q107-brief-check.md, every finding closed in the brief (its "Closed" heading), the layout path's fix waiting on Z115 and Attach to Session's place on Z116; claude-opus-5-5, 223,547 tokens, 87 tool uses, 12.3 min
-  shared_paths: DESIGN.md with E3 and Q111 (Q107 writes line 361, E3 236-327, Q111 140 and 376); HELP.md with Q111 (Q107 writes 127, Q111 254); no two change the same line
-  builder_usage: 233,656 tokens, 208 tool uses, 87.1 min (report read at 23:45); repair round 1 (same builder, resumed) 332,448 tokens, 48 tool uses, 36.1 min (report read at 00:47; diff since base shasum e3cbf0efca9a246778e4924855ef432c8499ac17, 38 paths)
-  reviewer_report: agents/reviews/Q107-refuter.md (reviewer ad54a4d0f4137b7ba, launched 23:46, served claude-opus-5-5; 259,978 tokens, 59 tool uses, 22.2 min); round 1 reviewer a498a23d465b6bf60, launched 00:48, served claude-opus-5-5; 209,457 tokens, 47 tool uses, 18.8 min; its run appended under "Repair round 1, refuted"
-  landing: not-started
-  round: 2 (sent 01:08: agents/briefs/Q107-round2.md, three rulings, the round cap's second round for item 2 left unbuilt with no control client; round base diff shasum e3cbf0efca9a246778e4924855ef432c8499ac17, 38 paths); round 1 sent 00:10 (agents/briefs/Q107-round1.md, four rulings)
 - step: S3a
   executor: agent
   worker: claude:sonnet
@@ -66,7 +51,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/S3a-brief-check.md, every finding closed in the brief (its Closed heading)
   shared_paths: HELP.md with Q107 (S3a writes 214-230, Q107 127 and 146); DESIGN.md with Q107 (S3a writes 44 and 85, Q107 154 and 361); no two change the same line
   landing: not-started
-  builder_usage: 318,463 tokens, 79 tool uses, 16.2 min (the first run, handed back at case 17; report read at 01:08)
+  builder_usage: 318,463 tokens, 79 tool uses, 16.2 min (the first run, handed back at case 17; report read at 01:08); after the round-0 ruling 64,669 tokens, 175 tool uses, 54.9 min (report read at 02:04)
   round: 0 (sent 01:09: agents/briefs/S3a-cases.md, Z130 (a) and three rulings on the cases)
 - step: X3d
   executor: agent
@@ -642,6 +627,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 02:09. Q107 landed (a Terminal tab never closes while its terminals run; Attach to Session), report `agents/reviews/Q107-landing.md`. In flight: X3d (builder, round 0 ruled), S3a (first review running). Next: /spec Q109. Open: none.
 - 2026-10-01 01:19. X3d's first run handed back case 31 (no `package.json` entry in Seti's table) and four gaps in item 17; ruled at round 0 under Axel's Seti ruling (its own table, font and colours, the colours as `--seti-*` tokens) and the builder resumed. In flight: X3d, S3a, Q107 (round 2). Open: none.
 - 2026-10-01 01:09. S3a's first run handed back case 17; ruled at round 0 (Z130 (a), automode: the three unread config keys removed) and the builder resumed. In flight: X3d, S3a, Q107 (round 2). Open: none.
 - 2026-10-01 01:08. Q107's round 1 refuted: item 2 unbuilt with no control client (tmux's server pid separates the cases), one untested branch, the report's first line; round 2 sent under the round cap. In flight: X3d, S3a, Q107 (round 2). Open: none.

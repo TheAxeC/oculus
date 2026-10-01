@@ -6,7 +6,12 @@
 // saved arrangement has been read and a store nobody has loaded touches no localStorage. A browser
 // whose storage is full or refused still runs; it forgets the arrangement at the next load and
 // nothing else, since what the shell renders is the arrangement in memory.
+//
+// Every browser tab of one server writes the same key, so each one also listens for the browser's
+// `storage` event, which is fired in the other tabs when one of them writes: the store is told when
+// the arrangement was saved elsewhere and reads it (layout.svelte.ts, `takeSaved`).
 
+import { followKey } from '../../../shared/stores/storage-events.ts';
 import type { Pages } from '../model.ts';
 import { serialiseLayout } from './saved.ts';
 
@@ -35,6 +40,12 @@ export type LayoutStorage = {
     remember: (key: string, value: string) => void;
     /** Write a set of pages under LAYOUT_KEY, which is what every change to them ends in. */
     write: (next: Pages) => void;
+    /**
+     * Call `changed` whenever another browser tab saved the arrangement, as `source` (the window)
+     * reports it; answers how to stop. The browser fires the event in every tab but the writer's,
+     * so a save made here never calls it, and a write to any other key is not heard.
+     */
+    follow: (source: EventTarget, changed: () => void) => () => void;
 };
 
 export function createStorage(): LayoutStorage {
@@ -74,5 +85,9 @@ export function createStorage(): LayoutStorage {
         }
     }
 
-    return { attach, read, remember, write };
+    function follow(source: EventTarget, changed: () => void): () => void {
+        return followKey(source, LAYOUT_KEY, changed);
+    }
+
+    return { attach, read, remember, write, follow };
 }

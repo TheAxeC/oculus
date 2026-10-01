@@ -66,10 +66,10 @@ digraph layers {
     "ui to themes" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "ui" -> "ui to themes" [arrowhead=none];
     "ui to themes" -> "themes" [];
-    "views to state" [label="591", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "views to state" [label="595", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to state" [arrowhead=none];
     "views to state" -> "state" [];
-    "views to ui" [label="577", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "views to ui" [label="578", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to ui" [arrowhead=none];
     "views to ui" -> "ui" [];
 }

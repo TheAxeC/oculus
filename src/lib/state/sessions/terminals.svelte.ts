@@ -13,7 +13,9 @@
 // over every page's Terminal tabs (the rules over one tab's state are state/sessions/terminal/
 // terminal-tabs.ts): `showTerminal` shows a terminal in the tab that owns it, switching to its
 // page, or hands a terminal no tab owns to the Terminal tab of the page on screen, or a new one;
-// `moveTerminal` moves one from its tab to another; `startInTab` starts a terminal of a kind at
+// `moveTerminal` moves one from its tab to another; `attachable` lists the running terminals no
+// tab owns, and `attachTerminal` joins one of them to the end of a Terminal tab and shows it
+// there (the tab's Attach to Session); `startInTab` starts a terminal of a kind at
 // once in the tab's folder and shows it, `newTerminalIn` does the same in a Terminal tab of one
 // pane, and `splitTerminal` starts one of the split terminal's kind and folder right of it in the
 // tab's row; `composeIn` puts the composer of a start with a prompt in the page's Terminal tab, in
@@ -63,6 +65,8 @@ import {
     type TerminalTabState
 } from './terminal/terminal-tabs.ts';
 import { freshComposer, splitState } from './terminal/composer.ts';
+import { endedTerminals, unownedTerminals } from './terminal/terminal-lists.ts';
+import type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
 import { decodeBytes, encodeBytes } from './terminal/pty-bytes.ts';
 import {
     postTerminal,
@@ -72,6 +76,9 @@ import {
 } from './terminal/pty-io.ts';
 
 export type { BusyTerminal, TerminalAnswer };
+
+export { endedTerminals, terminalLabel, unownedTerminals } from './terminal/terminal-lists.ts';
+export type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
 
 export { decodeBytes, encodeBytes, titleStripper } from './terminal/pty-bytes.ts';
 
@@ -116,59 +123,6 @@ export function resumeRefusal(error: string): string {
 function mapOf(value: unknown): Record<string, unknown> | null {
     return isMap(value) ? value : null;
 }
-
-/**
- * The terminals that have ended, as one `sessions` message says: those not in its list that an
- * earlier message listed, and, on the first message the page hears, those a tab or the selection
- * holds, which ended while the page was away. A terminal started from this page after the first
- * message and not listed yet has not ended, since no message listed it. A message with no list
- * says nothing about any terminal.
- */
-export function endedTerminals(
-    before: ReadonlySet<string>,
-    now: readonly string[] | null,
-    first: boolean,
-    held: readonly string[]
-): string[] {
-    if (now === null) return [];
-    const listed = new Set(now);
-    const known = first ? [...before, ...held] : [...before];
-    return [...new Set(known)].filter((id) => !listed.has(id));
-}
-
-/** One tab of any page, as the layout holds it: its view is read to find the Terminal tabs. */
-export type TerminalTab = { id: string; page: string; view: string; state: unknown };
-
-/**
- * What the terminals store needs of the workbench to keep which tab owns which terminal: the tabs
- * of every page in page and tab order (a hidden page mounts no view, so no view can be the one that
- * keeps it), a tab's state replaced, a tab activated, a page switched to, the page on screen, the
- * active tab of a page's focused pane, a tab opened on a page with a state (answering its id), a
- * tab closed, and the selection as it stands.
- */
-export type TerminalTabs = {
-    tabs: () => TerminalTab[];
-    restate: (id: string, page: string, state: TerminalTabState) => void;
-    activate: (id: string, page: string) => void;
-    switchPage: (page: string) => void;
-    currentPage: () => string;
-    activeTab: (page: string) => string | null;
-    open: (page: string, state: TerminalTabState) => string;
-    close: (id: string, page: string) => void;
-    /** A tab's instance state, which holds its composer record. */
-    instanceState: (id: string) => unknown;
-    setInstanceState: (id: string, state: unknown) => void;
-    selected: () => string | null;
-    select: (id: string | null) => void;
-    /** The hub's absolute path, or the empty string before the first portfolio snapshot. */
-    hubRoot: () => string;
-    /** Whether the first portfolio snapshot has arrived, so an empty hub root is final. */
-    portfolioHeard: () => boolean;
-    /** The Terminal tab of the pane at a path of a page that a New there starts in, or null. */
-    paneTab: (page: string, path: number[]) => string | null;
-    /** A new Terminal tab in the pane at a path of a page, answering its id. */
-    openIn: (page: string, path: number[], state: TerminalTabState) => string;
-};
 
 /** The terminals one client owns, and the actions it runs on them. */
 export type TerminalsStore = {
@@ -231,6 +185,15 @@ export type TerminalsStore = {
      * unless the reader is composing in it.
      */
     moveTerminal: (id: string, toTab: string, toPage: string, index: number) => void;
+    /** The running terminals no Terminal tab on any page owns, in the order the list names them. */
+    attachable: () => Terminal[];
+    /**
+     * Attach to Session: a running terminal no tab owns joins the end of a Terminal tab's order and
+     * is shown alone there, the tab is activated, and a composer the tab showed is gone. An id the
+     * latest list does not name, one a tab owns by now, a foreign one, and a tab no page holds
+     * change nothing.
+     */
+    attachTerminal: (tab: string, id: string) => void;
     /**
      * New: the composer in the Terminal tab of a page (the one on screen by default), or a new one.
      */
@@ -430,6 +393,26 @@ export function createTerminals(
         const before = held.terminals.indexOf(id);
         const at = before >= 0 && before < index ? index - 1 : index;
         workbench.restate(target.id, target.page, withTerminal(held, id, at));
+        workbench.activate(target.id, target.page);
+    }
+
+    /** The running terminals no Terminal tab owns, from the latest list and every page's tabs. */
+    function attachable(): Terminal[] {
+        return unownedTerminals(terminals(), terminalTabs());
+    }
+
+    /**
+     * Join a terminal no tab owns to the end of one Terminal tab and show it alone there, the rule
+     * `showTerminal` holds for such a terminal applied to the tab it is asked of rather than the
+     * page's. The terminal is checked against the latest list at the pick, so one that ended or
+     * that another tab took since a menu offered it changes nothing.
+     */
+    function attachTerminal(tab: string, id: string): void {
+        if (workbench === undefined || !isTerminalId(id)) return;
+        const target = terminalTabs().find((one) => one.id === tab);
+        if (target === undefined || !attachable().some((one) => one.id === id)) return;
+        const held = readTab(target.state);
+        workbench.restate(target.id, target.page, withTerminal(held, id, held.terminals.length));
         workbench.activate(target.id, target.page);
     }
 
@@ -883,6 +866,8 @@ export function createTerminals(
         unsubscribePty,
         showTerminal,
         moveTerminal,
+        attachable,
+        attachTerminal,
         composeIn,
         composeInTab,
         startInTab,

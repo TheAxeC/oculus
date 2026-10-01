@@ -17,9 +17,9 @@ import {
     type Instance,
     type Layout,
     type Workbench
-} from '../../../../src/lib/state/workbench/layout/index.ts';
-import { normaliseSizes } from '../../../../src/lib/state/workbench/layout/tree.ts';
-import { bench, docked, envelope, folded, pane, split, three, viewsOf } from './layout-fixture.ts';
+} from '../../../../../src/lib/state/workbench/layout/index.ts';
+import { normaliseSizes } from '../../../../../src/lib/state/workbench/layout/tree.ts';
+import { bench, docked, envelope, folded, pane, split, three, viewsOf } from '../layout-fixture.ts';
 
 describe('checkLayout over a folded split', () => {
     it('reports a folded index that is not a child', () => {

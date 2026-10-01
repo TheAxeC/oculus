@@ -13,12 +13,14 @@
 // (Split Terminal and Kill Terminal, Rename, Change Icon, Change Color and Clear, Unsplit Terminal
 // on a terminal of the row the tab shows, Join Terminals over the terminals other Terminal tabs
 // own) and the list's empty area's (New Terminal, and New Terminal With Profile over the kinds,
-// each starting that kind at once). The bar's kinds dropdown lists the same kinds and With a
-// Prompt, which shows the composer. Kill Terminal goes through the row's Kill (`pressKill`): the
+// each starting that kind at once, and Attach to Session over the running terminals no Terminal tab
+// owns). The bar's kinds dropdown lists the same kinds, With a Prompt, which shows the composer,
+// and the same Attach to Session. Kill Terminal goes through the row's Kill (`pressKill`): the
 // first pick arms the terminal and the item then reads as the armed control does, and a second pick
 // or press kills it. The context menu key and Shift+F10 open the grid's menu, which xterm would
 // otherwise send to the shell (`holdMenuKeys`). Every label is `t(...)` of a catalog key, except a
-// terminal's own name in Join Terminals, which is passed through as the list hands it.
+// terminal's own name in Join Terminals and Attach to Session, which is passed through as the list
+// hands it.
 
 import type { ISearchOptions } from '@xterm/addon-search';
 import { FILE_DRAG } from '$lib/state/sources/fs';
@@ -30,6 +32,56 @@ import { stamp } from '$lib/state/shared/words/format';
 import { t } from '$lib/state/shared/words/text';
 import { terminalFontPx } from '$lib/state/shared/words/appearance';
 import type { Terminal } from '$lib/state/sessions/terminals.svelte';
+import type { TerminalChoice } from '$lib/state/sessions/folds';
+
+/** What a Terminal tab hands the list it draws. */
+export type TerminalListProps = {
+    /** The Terminal tab the list is drawn in. */
+    instance: string;
+    /** The page holding that tab. */
+    page: string;
+    /** The tab's own state. */
+    tab: TerminalTabState;
+    /** The rows, in the order they are drawn. */
+    rows: TerminalChoice[];
+    /** The terminals the tab shows now: every terminal of its row, or the shown one alone. */
+    current: string[];
+    /** The terminal whose bell is ringing in this tab, or null. */
+    ringing: string | null;
+    /** The terminals the other Terminal tabs own, by name, which Join Terminals offers. */
+    others: Attachable[];
+    /** The running terminals no Terminal tab owns, by name, which Attach to Session offers. */
+    attachables: Attachable[];
+    /** Called with a row's terminal when a pointer press shows it, before it is shown. */
+    onshown: (terminal: string) => void;
+    /** Split the tab on a row's terminal, as the row's Split and its menu do. */
+    onsplit: (terminal: string) => void;
+    /** The terminal whose title is being edited on its row, or ''. */
+    renaming: string;
+    /** A double click on a row's name, or Rename on its menu. */
+    onrename: (terminal: string) => void;
+    /** The rename field saved a value (an empty one clears the title). */
+    onrenamed: (terminal: string, value: string) => void;
+    /** The rename field was cancelled. */
+    onrenamecancel: () => void;
+    /** Change Icon on a row's menu. */
+    onicon: (terminal: string) => void;
+    /** Change Color on a row's menu; the empty string is Default. */
+    oncolor: (terminal: string, color: string) => void;
+    /** Clear on a row's menu. */
+    onclear: (terminal: string) => void;
+    /** The terminal whose Kill was pressed or picked once and waits for the second, or ''. */
+    arming: string;
+    /** A kill the server refused, said below the rows until the next one. */
+    failure: string;
+    /**
+     * A press of a row's Kill, a Delete or Backspace on it, or Kill Terminal from its menu: the
+     * tab's `pressKill`, which arms the terminal first and kills it on the second.
+     */
+    onkill: (terminal: string) => void;
+    /** Take the arm off, when the stop moves off the armed row or focus leaves the list. */
+    ondisarm: () => void;
+};
 
 /** The width the composer keeps at the right of a row that is being composed into, in rem. */
 export const COMPOSER_REM = 20;
@@ -222,6 +274,8 @@ export const MENU_UNSPLIT = 'unsplit';
 export const MENU_NEW = 'new';
 const JOIN_LIST = 'join';
 const JOIN = 'join:';
+const ATTACH_LIST = 'attach';
+const ATTACH = 'attach:';
 const PROFILE_LIST = 'profile';
 const PROFILE = 'profile:';
 
@@ -368,11 +422,33 @@ export function terminalRowMenu(
     ]);
 }
 
-/** The kinds the bar's dropdown lists, then With a Prompt, which shows the composer. */
-export function kindsMenu(t: Words): MenuItem[] {
+/** A terminal as a menu lists it: its id and the name it is listed by. */
+export type Attachable = { terminal: string; title: string };
+
+/**
+ * Attach to Session: a submenu of the running terminals no Terminal tab owns, each by the name it
+ * is handed, in the order handed; no item at all while there is none.
+ */
+function attachItems(attachable: readonly Attachable[], t: Words): MenuItem[] {
+    if (attachable.length === 0) return [];
+    return [
+        {
+            id: ATTACH_LIST,
+            label: t('sessions.menu_attach'),
+            items: attachable.map((one) => ({ id: `${ATTACH}${one.terminal}`, label: one.title }))
+        }
+    ];
+}
+
+/**
+ * The kinds the bar's dropdown lists, then With a Prompt, which shows the composer, then Attach to
+ * Session over the running terminals no Terminal tab owns.
+ */
+export function kindsMenu(t: Words, attachable: readonly Attachable[]): MenuItem[] {
     return grouped([
         PROFILES.map((kind) => ({ id: `${PROFILE}${kind}`, label: kindLabel(kind, t) })),
-        [{ id: MENU_PROMPT, label: t('sessions.menu_with_prompt') }]
+        [{ id: MENU_PROMPT, label: t('sessions.menu_with_prompt') }],
+        attachItems(attachable, t)
     ]);
 }
 
@@ -383,8 +459,11 @@ function kindLabel(kind: ComposerAgent, t: Words): string {
     return t('sessions.kind_shell');
 }
 
-/** The list's empty area: New Terminal, and New Terminal With Profile over the kinds. */
-export function emptyListMenu(t: Words): MenuItem[] {
+/**
+ * The list's empty area: New Terminal, New Terminal With Profile over the kinds, and Attach to
+ * Session over the running terminals no Terminal tab owns.
+ */
+export function emptyListMenu(t: Words, attachable: readonly Attachable[]): MenuItem[] {
     return [
         { id: MENU_NEW, label: t('sessions.menu_new') },
         {
@@ -394,13 +473,19 @@ export function emptyListMenu(t: Words): MenuItem[] {
                 id: `${PROFILE}${kind}`,
                 label: kindLabel(kind, t)
             }))
-        }
+        },
+        ...attachItems(attachable, t)
     ];
 }
 
 /** The terminal a Join Terminals pick names, or null for any other item. */
 export function joinedOf(id: string): string | null {
     return id.startsWith(JOIN) && id.length > JOIN.length ? id.slice(JOIN.length) : null;
+}
+
+/** The terminal an Attach to Session pick names, or null for any other item. */
+export function attachedOf(id: string): string | null {
+    return id.startsWith(ATTACH) && id.length > ATTACH.length ? id.slice(ATTACH.length) : null;
 }
 
 /**
