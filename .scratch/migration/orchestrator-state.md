@@ -29,6 +29,18 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 
 ```yaml
 dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
+- step: Q85c
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 16:58)
+  session_id: a5d6f19f5a6360b3b (launched 2026-10-01 16:58 local)
+  worktree: .agents/worktrees/Q85c
+  base: 8db30ca2
+  launched: 2026-10-01 16:58 local
+  report: agents/reviews/Q85c-report.md
+  brief_check: agents/reviews/Q85c-brief-check.md, every finding closed in the brief (its Closed heading, Z163 widened in automode); claude-sonnet-5-5, 272,378 tokens, 80 tool uses, 13.3 min
+  landing: not-started
+  round: 0
 - step: U3
   executor: agent
   worker: claude:sonnet
@@ -652,7 +664,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-01 16:55. Q88b landed (the Files view's file operations), report `agents/reviews/Q88b-landing.md`; ten fixes at landing; look on TEST. U3's builder and the six agents it started stopped at 16:37 with no report; how U3 continues is Z164, Axel's. Q85c's brief is closed under Z163. In flight: none. Next: Q85c's preparation and builder; /spec Q88c. Open items: Z164.
+- 2026-10-01 16:55. Q88b landed (the Files view's file operations), report `agents/reviews/Q88b-landing.md`; ten fixes at landing; look on TEST. U3's builder and the six agents it started stopped at 16:37 with no report; how U3 continues is Z164, Axel's. Q85c's brief is closed under Z163. In flight: Q85c (builder since 16:58). Next: /spec Q88c. Open items: Z164.
 - 2026-10-01 15:38. Q85b landed (zod at the state layer's inputs), report `agents/reviews/Q85b-landing.md`; three fixes at landing; no look. U3's builder handed back at its first run of the cases (case 8 against `ui/tabs/`), ruled Z161 in automode and resumed on `agents/briefs/U3-cases.md`. In flight: Q88b (round 1), U3 (builder). Next: /spec Q85c into the freed slot. Open items: none.
 - 2026-10-01 14:53. S3c landed (the Settings editor over the options catalog), report `agents/reviews/S3c-landing.md`; five fixes at landing; look on TEST. Q85b's review is in (Sonnet). In flight: Q85b (review in, repair round next), Q88b (builder). Next: Q85b's repair round, /spec U3 into the freed slot. Open items: none.
 - 2026-10-01 11:25. Q85a2 landed (zod in `edit`, `sessions` and `transcripts`, the shared schemas in `core/shapes.ts`), report `agents/reviews/Q85a2-landing.md`; seven fixes at landing. In flight: S3c (builder since 11:11). Next: /spec Q85b and Q85c into the free slots. Open items Z146, Z147, Z148 are Axel's.

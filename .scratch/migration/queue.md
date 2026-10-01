@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- Q85c (zod in the data folder), brief closed, preparation next.
+- Q85c (zod in the data folder), building.
 - U3 (every view on VS Code's scale, from U2's audit), builder stopped with no report, waiting on Axel.
 Queued, in order:
 - Q85d (zod in the views, ui, shell and routes).
