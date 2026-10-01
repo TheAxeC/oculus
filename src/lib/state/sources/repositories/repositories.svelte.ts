@@ -17,6 +17,7 @@
 // terminals, panes and roots, and no component is mounted.
 
 import { diffState, plannedPath, repositoriesViewOf, type DiffSubject } from './repositories.ts';
+import { isFolderPath, withoutClosedCommits } from './change-tree.ts';
 import { tabOfFile, type ServedRoot } from './file-git.ts';
 import type { PatchMode } from './diff-patch.ts';
 import type { WritesStore } from '../../shared/stores/shapes.ts';
@@ -55,6 +56,11 @@ export type RepositoriesStore = {
     stage: (root: string, path: string) => Promise<void>;
     unstage: (root: string, path: string) => Promise<void>;
     discard: (root: string, path: string) => Promise<void>;
+    /** Stage, unstage or throw away several paths in one write, a folder's worth at a time. */
+    stagePaths: (root: string, paths: readonly string[]) => Promise<void>;
+    unstagePaths: (root: string, paths: readonly string[]) => Promise<void>;
+    /** Throw away the changes to several tracked paths; the view asks first. */
+    discardPaths: (root: string, paths: readonly string[]) => Promise<void>;
     stageAll: (root: string, group: ChangeGroup) => Promise<void>;
     unstageAll: (root: string) => Promise<void>;
     discardAll: (root: string) => Promise<void>;
@@ -222,6 +228,8 @@ export function createRepositories(
     }
 
     function openFile(root: string, path: string, line?: number): boolean {
+        // A folder (an untracked directory) has no source tab; the Files view shows it.
+        if (isFolderPath(path)) return revealFile(root, path);
         const tab = tabOfFile(access.served(), { root, path });
         if (tab === null) {
             say(root, t('repositories.open_unserved', path));
@@ -262,6 +270,18 @@ export function createRepositories(
         }
     }
 
+    async function stagePaths(root: string, paths: readonly string[]): Promise<void> {
+        await act(root, 'stage', { paths: [...paths] });
+    }
+
+    async function unstagePaths(root: string, paths: readonly string[]): Promise<void> {
+        await act(root, 'unstage', { paths: [...paths] });
+    }
+
+    async function discardPaths(root: string, paths: readonly string[]): Promise<void> {
+        await act(root, 'discard', { paths: [...paths] }, true);
+    }
+
     return {
         busy,
         outcome,
@@ -270,15 +290,12 @@ export function createRepositories(
         suggesting: (root) => state.suggesting.includes(root),
         suggest,
         commit,
-        async stage(root, path) {
-            await act(root, 'stage', { paths: [path] });
-        },
-        async unstage(root, path) {
-            await act(root, 'unstage', { paths: [path] });
-        },
-        async discard(root, path) {
-            await act(root, 'discard', { paths: [path] }, true);
-        },
+        stage: (root, path) => stagePaths(root, [path]),
+        unstage: (root, path) => unstagePaths(root, [path]),
+        discard: (root, path) => discardPaths(root, [path]),
+        stagePaths,
+        unstagePaths,
+        discardPaths,
         async stageAll(root, group) {
             await act(root, 'stageAll', { group });
         },
@@ -357,7 +374,11 @@ export function createRepositories(
                 ...held,
                 root,
                 commit: hash,
-                collapsed: held.collapsed.filter((one) => one !== 'graph')
+                collapsed: withoutClosedCommits(
+                    held.collapsed.filter((one) => one !== 'graph'),
+                    root,
+                    hash
+                )
             });
         }
     };

@@ -174,7 +174,7 @@ const COMPUTED_PREFIXES = [
     {
         // A change row is named by its path and the word its git status stands for, an unmerged
         // pair by the conflict it is; a letter git adds later reads as `changed`.
-        file: 'lib/views/sources/repositories/Changes.svelte',
+        file: 'lib/views/sources/repositories/changes/ChangeRow.svelte',
         start: 't(statusWordKey(',
         keys: () =>
             ['M', 'A', 'D', 'R', 'C', '?', 'U', 'UU', 'AA', 'DD', 'AU', 'UA', 'DU', 'UD'].map(

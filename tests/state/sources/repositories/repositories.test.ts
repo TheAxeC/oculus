@@ -13,9 +13,7 @@ vi.mock('../../../../src/lib/state/shared/stores/shell.ts', { spy: true });
 import type { GitEntry, GitState } from '../../../../src/lib/data/model/index.ts';
 import { git } from '../../../fixtures/sessions-fixture.ts';
 import {
-    diffState,
     diffUrl,
-    fileDiffUrl,
     plannedPath,
     changeGroups,
     repositoriesViewOf,
@@ -26,7 +24,6 @@ import {
     statusStyle,
     statusWordKey,
     validName,
-    worktreeDiffUrl,
     worktreeLabel,
     worktreePath,
     worktreesDir,
@@ -123,35 +120,35 @@ describe('the repository a view shows', () => {
     it('reads what the instance keeps, and a default for anything it cannot read', () => {
         expect(
             repositoriesViewOf({ root: '/hub', collapsed: ['graph', 4], commit: 'abc' })
-        ).toEqual({
-            root: '/hub',
-            collapsed: ['graph'],
-            commit: 'abc'
-        });
-        expect(repositoriesViewOf(null)).toEqual({ root: '', collapsed: [], commit: '' });
-        expect(repositoriesViewOf({ root: 7, collapsed: 'log', commit: 3 })).toEqual({
-            root: '',
-            collapsed: [],
-            commit: ''
-        });
+        ).toEqual({ root: '/hub', collapsed: ['graph'], commit: 'abc', mode: 'list', reveal: '' });
+        const none = { root: '', collapsed: [], commit: '', mode: 'list', reveal: '' };
+        expect(repositoriesViewOf(null)).toEqual(none);
+        expect(repositoriesViewOf({ root: 7, collapsed: 'log', commit: 3 })).toEqual(none);
     });
 
     it('reads a diff pane layout and its view state per file, side by side by default', () => {
         const kept = { original: {}, modified: {}, modelState: { collapsedRegions: [] } };
         // The folds a pane opened before its diffs were Monaco's are dropped.
+        const kept0 = { unchanged: 'folded', folded: [] };
         expect(diffViewOf({ mode: 'inline', opened: [4, 12] })).toEqual({
             mode: 'inline',
-            views: {}
+            views: {},
+            ...kept0
         });
-        expect(diffViewOf({ mode: 'odd' })).toEqual({ mode: 'side', views: {} });
-        expect(diffViewOf(null)).toEqual({ mode: 'side', views: {} });
+        expect(diffViewOf({ mode: 'odd' })).toEqual({ mode: 'side', views: {}, ...kept0 });
+        expect(diffViewOf(null)).toEqual({ mode: 'side', views: {}, ...kept0 });
         // A stored view state comes back for its file, to be handed to the diff editor again.
         expect(diffViewOf({ views: { 'a.txt': kept } }, ['a.txt']).views['a.txt']).toEqual(kept);
         // One that is not an object is dropped, and so is one keyed to a file not in the diff.
-        expect(diffViewOf({ views: 'scrolled' }, ['a.txt'])).toEqual({ mode: 'side', views: {} });
+        expect(diffViewOf({ views: 'scrolled' }, ['a.txt'])).toEqual({
+            mode: 'side',
+            views: {},
+            ...kept0
+        });
         expect(diffViewOf({ views: { 'a.txt': 7, 'b.txt': [] } }, ['a.txt', 'b.txt'])).toEqual({
             mode: 'side',
-            views: {}
+            views: {},
+            ...kept0
         });
         expect(diffViewOf({ views: { 'a.txt': kept, 'gone.txt': kept } }, ['a.txt']).views).toEqual(
             { 'a.txt': kept }
@@ -351,41 +348,6 @@ describe('the rows of one repository', () => {
     });
 });
 
-describe('what one diff pane is over', () => {
-    it('names the file and the side, so two sides of one path are two panes', () => {
-        const changed = diffState(
-            { root: ROOT, path: 'a.txt', staged: false, worktree: false },
-            'a'
-        );
-        const staged = diffState({ root: ROOT, path: 'a.txt', staged: true, worktree: false }, 'a');
-        expect(changed.id).not.toBe(staged.id);
-        expect(changed.label).toBe('a');
-        expect(
-            diffState({ root: ROOT, path: 'a.txt', staged: false, worktree: false }, 'a').id
-        ).toBe(changed.id);
-    });
-
-    it('reads a file from the diff address and a worktree from its own', () => {
-        expect(fileDiffUrl(ROOT, 'a b.txt', true)).toBe(
-            '/api/git?diff=%2Fhub&path=a+b.txt&staged=1'
-        );
-        expect(fileDiffUrl(ROOT, 'a.txt', false)).toBe('/api/git?diff=%2Fhub&path=a.txt&staged=0');
-        // The repository is named beside the worktree: a worktree of the hub is a root of its own
-        // on the channel, so the server never works the repository out from the path.
-        expect(worktreeDiffUrl(ROOT, '/hub/.agents/worktrees/one')).toBe(
-            '/api/git?worktree=%2Fhub%2F.agents%2Fworktrees%2Fone&root=%2Fhub'
-        );
-        expect(
-            diffUrl({
-                root: ROOT,
-                path: '/hub/.agents/worktrees/one',
-                staged: false,
-                worktree: true
-            })
-        ).toBe(worktreeDiffUrl(ROOT, '/hub/.agents/worktrees/one'));
-    });
-});
-
 describe('the writes store over the git endpoint', () => {
     afterEach(() => {
         vi.unstubAllGlobals();
@@ -472,6 +434,7 @@ describe('what a press leaves behind', () => {
         const opened: { view: string; state: unknown; beside: boolean }[] = [];
         const shells: { kind: string; cwd: string }[] = [];
         const shown: { id: string; label: string }[] = [];
+        const revealed: { path: string; root: string | undefined }[] = [];
         const writes = {
             writeGit: (action: string, root: string, fields: Record<string, unknown> = {}) => {
                 sent.push({ action, root, fields });
@@ -496,6 +459,10 @@ describe('what a press leaves behind', () => {
             openBeside: (view: string, state?: unknown) => {
                 opened.push({ view, state, beside: true });
                 return 'one';
+            },
+            showInFiles: (path: string, at?: string) => {
+                revealed.push({ path, root: at });
+                return 'one';
             }
         } as unknown as LayoutStore;
         // The hub is served under the key `hub`, so a file of it opens in a source tab; `/other`
@@ -506,7 +473,7 @@ describe('what a press leaves behind', () => {
             setInstanceState: (id: string, state: unknown) => kept.set(id, state)
         };
         const store = createRepositories(writes, terminals, layout, access);
-        return { store, sent, opened, shells, shown, kept };
+        return { store, sent, opened, shells, shown, kept, revealed };
     }
 
     it('holds one root busy at a time and leaves every other root live', async () => {
@@ -622,6 +589,9 @@ describe('what a press leaves behind', () => {
         await store.stage(ROOT, 'a.txt');
         await store.unstage(ROOT, 'a.txt');
         await store.discard(ROOT, 'a.txt');
+        await store.stagePaths(ROOT, ['d/a.txt', 'd/b.txt']);
+        await store.unstagePaths(ROOT, ['d/a.txt', 'd/b.txt']);
+        await store.discardPaths(ROOT, ['d/a.txt', 'd/b.txt']);
         await store.createBranch(ROOT, 'one');
         await store.switchBranch(ROOT, 'one');
         await store.removeWorktree(ROOT, plannedPath(ROOT, 'one'));
@@ -630,10 +600,22 @@ describe('what a press leaves behind', () => {
             ['stage', false],
             ['unstage', false],
             ['discard', true],
+            ['stage', false],
+            ['unstage', false],
+            ['discard', true],
             ['createBranch', true],
             ['switchBranch', true],
             ['removeWorktree', true],
             ['merge', true]
+        ]);
+        // one write per call, carrying every path of the folder
+        expect(sent.slice(0, 6).map((one) => one.fields.paths)).toEqual([
+            ['a.txt'],
+            ['a.txt'],
+            ['a.txt'],
+            ['d/a.txt', 'd/b.txt'],
+            ['d/a.txt', 'd/b.txt'],
+            ['d/a.txt', 'd/b.txt']
         ]);
     });
 
@@ -774,12 +756,37 @@ describe('what a press leaves behind', () => {
         );
     });
 
+    it('shows an untracked folder in the Files view and opens no source tab for it', () => {
+        const { store, opened, revealed } = harness();
+        expect(store.openFile(ROOT, 'newdir/')).toBe(true);
+        expect(opened).toEqual([]);
+        expect(revealed).toEqual([{ path: 'newdir', root: 'hub' }]);
+        expect(store.openFile(ROOT, 'a.txt')).toBe(true);
+        expect(opened).toHaveLength(1);
+        expect(revealed).toHaveLength(1);
+    });
+
     it('opens a blamed commit in the graph of the Repositories view, the graph opened', () => {
         const { store, opened, kept } = harness();
-        kept.set('one', { root: '/elsewhere', collapsed: ['graph', 'tags'], commit: '' });
+        kept.set('one', {
+            root: '/elsewhere',
+            collapsed: [
+                'graph',
+                'tags',
+                `dir:${ROOT}:commit-log-def456:src`,
+                `dir:${ROOT}:commit-log-abc123:lib`
+            ],
+            commit: ''
+        });
         store.openCommit(ROOT, 'abc123');
         expect(opened[0].view).toBe('repositories');
-        expect(kept.get('one')).toEqual({ root: ROOT, collapsed: ['tags'], commit: 'abc123' });
+        expect(kept.get('one')).toEqual({
+            root: ROOT,
+            collapsed: ['tags', `dir:${ROOT}:commit-log-abc123:lib`],
+            commit: 'abc123',
+            mode: 'list',
+            reveal: ''
+        });
     });
 });
 

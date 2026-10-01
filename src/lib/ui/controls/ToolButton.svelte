@@ -77,6 +77,17 @@
          */
         plain?: boolean;
         /**
+         * The action button of a form, drawn as VS Code draws its buttons: the width of the box it
+         * is in (its tooltip wrapper is as wide as that box too), the glyph and then the words, in
+         * the accent fill with the text colour that reads on it.
+         */
+        primary?: boolean;
+        /**
+         * A primary button followed by a dropdown part: its right corners are square and a
+         * separator parts it from the dropdown, which the caller draws next to it.
+         */
+        joined?: boolean;
+        /**
          * Words that may be longer than the room: the button is never wider than its parent, and a
          * label that does not fit is cut with an ellipsis, so the caller gives the whole words as
          * `title` for the tooltip. The parent is what sets the room, a flex box its width capped.
@@ -126,6 +137,8 @@
         status = false,
         cell = false,
         plain = false,
+        primary = false,
+        joined = false,
         cut = false,
         dataView,
         dataDoc,
@@ -152,7 +165,7 @@
     text={tip}
     placement={rail ? 'beside' : status ? 'above' : 'below'}
     presentational={checked !== undefined}
-    block={rail || cell}
+    block={rail || cell || primary}
 >
     <button
         type="button"
@@ -164,6 +177,8 @@
         class:status
         class:cell
         class:plain
+        class:primary
+        class:joined
         class:cut
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
@@ -337,6 +352,49 @@
         text-decoration: inherit;
         text-transform: inherit;
         white-space: inherit;
+    }
+
+    /* The action button of a form (VS Code's button): the width of its box, 4px above and below and
+       8px beside its line, the input radius, and the accent fill. */
+    .tool.primary {
+        justify-content: center;
+        box-sizing: border-box;
+        width: 100%;
+        padding: 4px 8px;
+        border: 1px solid var(--accent);
+        border-radius: var(--input-radius);
+        background: var(--accent);
+        color: var(--on-accent);
+        font-size: calc(var(--button-font) * var(--text-scale, 1));
+        line-height: calc(var(--button-line) * var(--text-scale, 1));
+    }
+
+    .tool.primary:hover:not(:disabled) {
+        filter: brightness(1.1);
+    }
+
+    /* Followed by a dropdown part: square on the right, and a 1px line in the text colour at 40%
+       between the two that leaves 4px above and below. */
+    .tool.primary.joined {
+        position: relative;
+        min-width: 0;
+        border-radius: var(--input-radius) 0 0 var(--input-radius);
+    }
+
+    .tool.primary.joined::after {
+        content: '';
+        position: absolute;
+        top: 4px;
+        right: 0;
+        bottom: 4px;
+        width: 0;
+        border-left: 1px solid var(--on-accent);
+        opacity: 0.4;
+    }
+
+    /* A terminal palette draws the button as a bracketed word, and no separator. */
+    :global(body.rice) .tool.primary.joined::after {
+        display: none;
     }
 
     /* Words cut to the room: the button is capped at its parent's width, and the label, the one

@@ -92,6 +92,7 @@
         id="worktrees"
         {nav}
         count={others.length}
+        badge
         {open}
         {ontoggle}
     >

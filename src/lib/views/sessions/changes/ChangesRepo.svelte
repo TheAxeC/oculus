@@ -1,9 +1,10 @@
 <script lang="ts">
-    // Layer 3, sessions view partial. The repository a session works in: its branch line with push,
-    // the new-branch field, its changes and the commit box. The commit box is
+    // Layer 3, sessions view partial. The repository a session works in: its branch line, the
+    // new-branch field, its changes and the commit box. The commit box is
     // views/shared/changes/CommitBox.svelte, the one the Repositories view draws, so a message
-    // typed here is the message that view shows for the same repository, and the four ways to
-    // commit are the same four.
+    // typed here is the message that view shows for the same repository, the four ways to commit
+    // are the same four, and its one button says Sync Changes or Publish Branch where there is
+    // nothing to commit, which is how this panel pushes.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -19,13 +20,11 @@
         root: string;
         state: GitState;
         branchItems: MenuItem[];
-        upstream: string;
         busy: boolean;
         branchName: string;
         outcome: string;
         shared: (path: string) => string[];
         onswitch: (name: string) => void;
-        onpush: () => void;
         onbranch: () => void;
         onbranchname: (name: string) => void;
         onstage: (path: string) => void;
@@ -40,13 +39,11 @@
         root,
         state,
         branchItems,
-        upstream,
         busy,
         branchName,
         outcome,
         shared,
         onswitch,
-        onpush,
         onbranch,
         onbranchname,
         onstage,
@@ -56,16 +53,6 @@
         ongroup,
         onopen
     }: Props = $props();
-
-    /**
-     * The git state says whether the branch tracks anything before the branch listing names the
-     * upstream: `upstream === false` is a branch with none, and anything else with no error is a
-     * state git has not answered for yet. The push control says "no upstream" only for the first;
-     * until the listing answers for the rest it says the upstream is being looked up, and it is
-     * disabled either way.
-     */
-    const noUpstream = $derived(state.upstream === false);
-    const pending = $derived(upstream === '' && !noUpstream && state.error === null);
 </script>
 
 {#snippet mark(entry: GitEntry)}
@@ -83,22 +70,7 @@
         <span class="lb">{t('sessions.ch_branch')}</span>
         <Menu label={state.branch} items={branchItems} placement="down" onpick={onswitch} />
         <span class="mt">{branchState(state)}</span>
-        <ToolButton
-            label={t('git.push')}
-            title={upstream !== ''
-                ? t('git.push_title', state.ahead, upstream)
-                : pending
-                  ? t('git.push_pending')
-                  : t('git.push_none')}
-            disabled={upstream === '' || busy}
-            onclick={onpush}
-        />
     </div>
-    {#if pending}
-        <p class="none">{t('git.push_pending')}</p>
-    {:else if upstream === ''}
-        <p class="none">{t('git.push_none')}</p>
-    {/if}
     <div class="newbranch">
         <span class="lb">{t('git.branch_new')}</span>
         <TextInput value={branchName} label={t('git.branch_new_label')} oninput={onbranchname} />

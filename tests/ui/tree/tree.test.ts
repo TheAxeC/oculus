@@ -6,6 +6,7 @@
 // runs, and the sizes a row is drawn at. Each case names the change to the primitive that turns it
 // red.
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import { createRawSnippet } from 'svelte';
@@ -178,6 +179,162 @@ describe('one explorer row', () => {
 
         expect(body).toContain('>4</span>');
         expect(body.indexOf('class="count')).toBeGreaterThan(body.indexOf('class="actions'));
+    });
+});
+
+describe('the count of a row drawn as a badge', () => {
+    const counted = { label: 'Changes', heading: true, count: 3, onclick: noop };
+
+    it('audits that draws a count as plain text in the number font when the row is given no badge', () => {
+        const { body } = render(TreeItem, { context, props: counted });
+
+        expect(body).toContain('class="count');
+        expect(body).toContain('>3</span>');
+        expect(body).not.toContain('badge');
+    });
+
+    // Revert: leave the badge rule of TreeItem.svelte without its own font, so it takes the number
+    // font of the plain count.
+    it('audits that draws a badge in the interface font with tabular figures and a plain count in the number font', () => {
+        const source = readFileSync('src/lib/ui/tree/TreeItem.svelte', 'utf8');
+        const rule = (selector: string): string => {
+            const at = source.indexOf(`${selector} {`);
+            return at < 0 ? '' : source.slice(at, source.indexOf('}', at));
+        };
+
+        expect(rule('    .count.badge,\n    .item.selected .count.badge')).toContain(
+            'font-family: var(--font-ui)'
+        );
+        expect(rule('    .count.badge,\n    .item.selected .count.badge')).toContain(
+            'font-variant-numeric: tabular-nums'
+        );
+        // the plain count's own rule follows a blank line; the shared rule above it does not
+        expect(rule('\n\n    .count,\n    .end')).toContain('font-family: var(--font-num)');
+    });
+
+    it('draws the count as a pill when the row is given the badge', () => {
+        const { body } = render(TreeItem, { context, props: { ...counted, badge: true } });
+
+        expect(body).toMatch(/class="count[^"]*\bbadge\b[^"]*"[^>]*>3<\/span>/);
+    });
+
+    it('carries the words of the count as its hover words', () => {
+        const { body } = render(TreeItem, {
+            context,
+            props: { ...counted, badge: true, countTitle: '3 changes' }
+        });
+
+        expect(body).toMatch(/class="count[^"]*"[^>]*title="3 changes"/);
+        expect(render(TreeItem, { context, props: counted }).body).not.toContain('title="3');
+    });
+
+    it('draws a section head with the badge it is given', () => {
+        const rows = markup('<li role="none">one</li>');
+        const { body } = render(TreeSection, {
+            context,
+            props: {
+                label: 'Notes',
+                id: 'head',
+                count: 2,
+                badge: true,
+                ontoggle: noop,
+                open: true,
+                children: rows
+            }
+        });
+
+        expect(body).toMatch(/class="count[^"]*\bbadge\b[^"]*"[^>]*>2<\/span>/);
+    });
+});
+
+describe('the parts of a row beyond its name', () => {
+    it('draws the end before the controls when the row is trailing, and after the count otherwise', () => {
+        const end = markup('<span data-tail>pills</span>');
+        const props = { label: 'commit', onclick: noop, actions: control, count: 1, end };
+        const plain = render(TreeItem, { context, props }).body;
+        const trailing = render(TreeItem, { context, props: { ...props, trailing: true } }).body;
+
+        expect(plain.indexOf('data-tail')).toBeGreaterThan(plain.indexOf('class="actions'));
+        expect(trailing.indexOf('data-tail')).toBeLessThan(trailing.indexOf('class="actions'));
+    });
+
+    it('draws a strong row with no check, and a row in force with its check', () => {
+        const strong = render(TreeItem, {
+            context,
+            props: { label: 'HEAD commit', strong: true, onclick: noop }
+        }).body;
+        const current = render(TreeItem, {
+            context,
+            props: { label: 'main', current: true, onclick: noop }
+        }).body;
+
+        expect(itemTag(strong)).toContain('strong');
+        expect(strong).not.toContain('class="mark');
+        expect(itemTag(current)).not.toContain('strong');
+        expect(current).toContain('class="mark');
+    });
+
+    it('draws a struck row and the style of its name', () => {
+        const { body } = render(TreeItem, {
+            context,
+            props: {
+                label: 'gone.txt',
+                struck: true,
+                nameStyle: '--tone-txt: var(--c-scm-deleted-txt)',
+                onclick: noop
+            }
+        });
+
+        expect(itemTag(body)).toContain('struck');
+        expect(body).toMatch(
+            /class="name[^"]*"[^>]*style="--tone-txt: var\(--c-scm-deleted-txt\)"/
+        );
+        expect(
+            itemTag(render(TreeItem, { context, props: { label: 'kept.txt' } }).body)
+        ).not.toContain('struck');
+    });
+
+    it('lets the controls of a yielding row give way before the name', () => {
+        const { body } = render(TreeItem, {
+            context,
+            props: {
+                label: 'hub',
+                onclick: noop,
+                actions: control,
+                yielding: true,
+                showActions: true
+            }
+        });
+
+        expect(body).toMatch(/class="actions[^"]*\byielding\b/);
+        expect(body).toMatch(/class="actions[^"]*\bshown\b/);
+    });
+});
+
+describe('the look of a row, read from the source', () => {
+    const source = readFileSync('src/lib/ui/tree/TreeItem.svelte', 'utf8');
+    const rule = (selector: string): string => {
+        const at = source.indexOf(`${selector} {`);
+        return at < 0 ? '' : source.slice(at, source.indexOf('}', at));
+    };
+
+    it('audits that draws a heading row in capitals, not small capitals, at weight 700 in the ink', () => {
+        const heading = rule('.heading .main');
+
+        expect(heading).toContain('text-transform: uppercase');
+        expect(heading).toContain('font-weight: 700');
+        expect(source).not.toContain('small-caps');
+        expect(rule('.heading:not(.selected) .main')).toBe('');
+    });
+
+    it('audits that draws the detail, the count and the end at the small size, as every tree view does', () => {
+        expect(rule('.detail,\n    .count,\n    .end')).toContain('font-size: var(--fs-sm)');
+    });
+
+    it('audits that sets its own background as `--row-bg` in each state, the values a graph row repeats for its lanes', () => {
+        expect(source).toContain('--row-bg: var(--panel)');
+        expect(source).toContain('--row-bg: var(--chip)');
+        expect(source).toContain('--row-bg: var(--accent-bg)');
     });
 });
 

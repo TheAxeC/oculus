@@ -75,6 +75,21 @@
     --c-scm-added-bg: #c5e5d6;
     --c-scm-deleted-bg: #edcccf;
     --c-scm-conflict-bg: #e1caea;
+    /* The colours of a file's Seti icon, one per colour name seti-ui's table uses, each the value
+       seti-ui's ui-variables.less gives it. They are the same in every theme, as VS Code's Seti
+       colours are. ui/display/FileIcon.svelte reads the token named for a file's colour. */
+    --seti-white: #d4d7d6;
+    --seti-red: #cc3e44;
+    --seti-blue: #519aba;
+    --seti-green: #8dc149;
+    --seti-purple: #a074c4;
+    --seti-yellow: #cbcb41;
+    --seti-grey-light: #6d8086;
+    --seti-ignore: #41535b;
+    --seti-pink: #f55385;
+    --seti-orange: #e37933;
+    --seti-grey: #4d5a5e;
+    --seti-primary: #519aba;
     --map-line: #475569;
     --map-collab: #0891b2;
     --map-edge: #94a3b8;
@@ -146,6 +161,26 @@
     --tree-font: 13px;
     --tree-indent: 12px;
     --tree-heading-font: 11px;
+    /* The count pill of a tree row: the size of its box and of its number, and the width of one
+       lane of the source graph, all at the text's own size. */
+    --tree-badge-size: 18px;
+    --tree-badge-font: 11px;
+    --graph-lane: 11px;
+    /* How much of a surface shows over a wallpaper. ui/theme.ts's applyWallpaper sets it on the
+       page while a wallpaper is on; with none the surface is whole. */
+    --wall-panel: 100%;
+    /* The box of an icon in a tree row: a file's Seti icon, the status letter's decoration box and
+       the glyph of a row's icon control, at the text's own size. */
+    --icon-box: 16px;
+    /* How far a tree row's last part (its count or status letter) sits from the row's right edge.
+       A section head keeps 6px; a view whose rows VS Code pads by 12px sets this on its root. */
+    --tree-end-inset: 6px;
+    /* The full-width action button of a form (the commit box's): the height of its line and the
+       size of its words, which a graph row's ref pills also use; and the corner radius of an input
+       and of that button. */
+    --button-line: 16px;
+    --button-font: 12px;
+    --input-radius: 4px;
     /* A split's handle, in pixels that do not grow with the text, since the gap the layout gives it
        is a fixed number too: how far past that gap a pointer still catches it, which is the 1px
        border of what sits either side; the accent line drawn while it is hovered or dragged, and
@@ -161,4 +196,11 @@
     --sash-line: 2px;
     --sash-focus-line: 4px;
     --sash-delay: 300ms;
+}
+
+/* The chip surface at the wallpaper's opacity, the one translucent fill the views share under
+   `body.wall`. It is declared on body, where a theme sets `--chip`, so the mix takes the theme's
+   chip and not the default one. */
+body {
+    --chip-on-wall: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
 }

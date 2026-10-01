@@ -24,10 +24,12 @@
 // the same with `--wall-popover` or with any other of the surfaces. That is how a surface goes
 // translucent over the wallpaper. The colour is still the surface's own, so the pair the contrast
 // test measured is the pair that paints; what changes is how much of the picture shows through. The
-// token is written as a percentage by ui/theme.ts's applyWallpaper and by nothing else, and a hue
-// inside a `color-mix` is refused exactly as before, which the negative fixture at the foot of the
-// file shows. The surfaces are the four a reader looks at a view through, `--bg`, `--panel`,
-// `--card` and `--chip`; `--line` and `--accent` are not among them.
+// token is written as a percentage by ui/theme.ts's applyWallpaper, over the whole surface
+// themes/tokens.css gives it, and by nothing else; a hue inside a `color-mix` is refused as any raw
+// colour is, which the negative fixture at the foot of the file shows. The surfaces are the four a
+// reader looks at a view through, `--bg`, `--panel`, `--card` and `--chip`; `--line` and
+// `--accent` are not among them. `var(--chip-on-wall)`, the token themes/tokens.css declares as
+// that form over `--chip`, passes the same way, and a test holds its declaration to the form.
 //
 // A `var()` of a custom property the component sets itself is read through to what it was set from,
 // so the hue a Chip puts on `--tone` is checked exactly as if the rule named the hue. That covers
@@ -383,6 +385,19 @@ function wallMix(value: string): boolean {
     return found !== null && WALL_SURFACES.includes(found[1].toLowerCase());
 }
 
+/**
+ * The token themes/tokens.css declares as that form over `--chip`, which the views fill with in
+ * place of writing the mix out. The test below holds the declaration to the form, so a fill of the
+ * token is a measured pair exactly as the mix is.
+ */
+export const WALL_TOKEN = '--chip-on-wall';
+
+/** Whether a value is the wall token, bare. */
+function wallToken(value: string): boolean {
+    const found = variable(value);
+    return found !== null && found.name === WALL_TOKEN && found.fallback === null;
+}
+
 /** A token a component may paint text with: the derived families and nothing else. */
 function textToken(name: string): boolean {
     return name.endsWith('-txt') || name.startsWith('--on-');
@@ -451,7 +466,8 @@ export function findColourViolations(base: string, roots: string[]): string[] {
             const say = (one: Declaration): string =>
                 `${root}/${rel}: ${one.selector}: ${one.property}: ${one.value}`;
             for (const one of found) {
-                if (one.property === 'background' && wallMix(one.value)) continue;
+                const wall = wallMix(one.value) || wallToken(one.value);
+                if (one.property === 'background' && wall) continue;
                 if (rawColour(one.value)) {
                     violations.push(`${say(one)} (raw colour)`);
                     continue;
@@ -625,6 +641,12 @@ describe('the colour rule', () => {
         expect(findColourViolations(SRC, ROOTS)).toEqual([]);
     });
 
+    it('declares the wall token as a surface at the wallpaper fraction', () => {
+        const css = readFileSync(join(SRC, 'lib', 'themes', 'tokens.css'), 'utf8');
+        const found = new RegExp(`${WALL_TOKEN}:\\s*([^;]+);`).exec(css);
+        expect(wallMix((found?.[1] ?? '').replace(/\s+/g, ' '))).toBe(true);
+    });
+
     it('reads the components at all', () => {
         const files = ROOTS.flatMap((root) => svelteFiles(join(SRC, root)));
         expect(files.length).toBeGreaterThan(10);
@@ -641,6 +663,7 @@ describe('the colour rule', () => {
                 '    .d::before { content: "["; }',
                 '    .e { background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent); }',
                 '    .f { background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent); }',
+                '    .g { background: var(--chip-on-wall); }',
                 '</style>'
             ].join('\n'),
             'ui/Hex.svelte': '<style>\n    .a { color: #ff0000; }\n</style>',
@@ -658,6 +681,7 @@ describe('the colour rule', () => {
                 '    .a { background: color-mix(in srgb, var(--c-teal) var(--wall-panel), transparent); }',
                 '    .b { color: color-mix(in srgb, var(--panel) var(--wall-panel), transparent); }',
                 '    .c { background: color-mix(in srgb, var(--accent) var(--wall-panel), transparent); }',
+                '    .d { color: var(--chip-on-wall); }',
                 '</style>'
             ].join('\n')
         });
@@ -671,6 +695,7 @@ describe('the colour rule', () => {
             'ui/Mix.svelte: .a: background: color-mix(in srgb, var(--c-teal) var(--wall-panel), transparent) (raw colour)',
             'ui/Mix.svelte: .b: color: color-mix(in srgb, var(--panel) var(--wall-panel), transparent) (raw colour)',
             'ui/Mix.svelte: .c: background: color-mix(in srgb, var(--accent) var(--wall-panel), transparent) (raw colour)',
+            'ui/Mix.svelte: .d: color: var(--chip-on-wall) (not a -txt or --on- token)',
             'ui/Named.svelte: .a: border-color: rebeccapurple (raw colour)',
             'ui/Unset.svelte: .a: background: var(--nonesuch) (not a surface or a hue)'
         ]);

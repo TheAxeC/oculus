@@ -3,6 +3,9 @@
 // is one the row's or the head's own controls already offer, and a pick runs the function that
 // control calls, a Discard behind the question the row's Discard control asks.
 //
+// A folder row of the tree mode offers the actions of its group over every path under it: Unstage
+// in Staged, Stage and Discard in Changes, Stage in Untracked.
+//
 // The merge group keeps its own controls and gets no menu. An untracked file offers no Discard: the
 // server restores tracked paths only (server/git/git-write.ts, `discard`). While a write is in
 // flight on the repository its controls are disabled, so the menus offer no write either.
@@ -78,6 +81,55 @@ export function groupMenu(group: MenuGroupId, count: number, busy: boolean, t: W
         { id: GROUP_STAGE_ALL, label: t('git.stage_all') },
         { id: GROUP_DISCARD_ALL, label: t('git.discard_all') }
     ];
+}
+
+/**
+ * A folder row's items, the ones its controls offer over every path under the folder: Unstage
+ * Changes in Staged, Stage Changes and Discard Changes in Changes, Stage Changes in Untracked.
+ */
+export function folderMenu(group: MenuGroupId, busy: boolean, t: Words): MenuItem[] {
+    if (busy) return [];
+    const item = (id: string, label: string): MenuItem => ({ id, label });
+    if (group === 'staged') return [item(CHANGE_UNSTAGE, t('repositories.menu_unstage'))];
+    const stage = item(CHANGE_STAGE, t('repositories.menu_stage'));
+    if (group === 'untracked') return [stage];
+    return grouped([[stage], [item(CHANGE_DISCARD, t('repositories.menu_discard'))]]);
+}
+
+/** The calls a pick from a folder row's menu runs, and its Discard control's question. */
+export type FolderDeps = {
+    ask: (message: string, detail: string, act: () => void) => void;
+    stagePaths: (root: string, paths: readonly string[]) => void;
+    unstagePaths: (root: string, paths: readonly string[]) => void;
+    discardPaths: (root: string, paths: readonly string[]) => void;
+};
+
+/** Ask before throwing away every change under a folder, naming how many paths and the folder. */
+export function askDiscardFolder(
+    target: { root: string; folder: string; paths: readonly string[] },
+    deps: Pick<FolderDeps, 'ask' | 'discardPaths'>,
+    t: Words
+): void {
+    const { root, folder, paths } = target;
+    deps.ask(
+        t('repositories.folder_discard_confirm', paths.length, folder),
+        t('git.discard_all_detail'),
+        () => {
+            deps.discardPaths(root, paths);
+        }
+    );
+}
+
+/** Run a pick from a folder row's menu. */
+export function folderPicked(
+    pick: string,
+    target: { root: string; folder: string; paths: readonly string[] },
+    deps: FolderDeps,
+    t: Words
+): void {
+    if (pick === CHANGE_STAGE) deps.stagePaths(target.root, target.paths);
+    else if (pick === CHANGE_UNSTAGE) deps.unstagePaths(target.root, target.paths);
+    else if (pick === CHANGE_DISCARD) askDiscardFolder(target, deps, t);
 }
 
 /** The calls a pick runs: the Source Control store's, the view's question and the Files view's. */

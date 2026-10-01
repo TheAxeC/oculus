@@ -16,34 +16,38 @@
 
 <script lang="ts">
     // Layer 3, view. One diff as its own tab, as VS Code's diff editor: a file of a repository,
-    // staged or as the worktree has it, one commit's change to a file, a whole stash, or
-    // everything a worktree holds that its repository's branch does not.
+    // staged or as the worktree has it, one commit's change to a file, a whole stash, everything a
+    // worktree holds that its repository's branch does not, or every path of the staged or the
+    // changed group (read a few files at a time, and read-only).
     //
-    // The bar holds the layout toggle (side by side or inline, kept as the pane's own state),
-    // Previous Change and Next Change, which Shift+Alt+F5 and Alt+F5 press while the pane holds the
-    // focus and which cross from one file to the next, Open File, and a re-read. Each file is
-    // views/sources/repositories/diff/DiffSection.svelte, Monaco's diff editor over the file's two
-    // versions, which the server answers whole. For a file's own diff each hunk can be staged,
-    // unstaged or reverted whole or for the lines the selections choose in it, the patch cut by
-    // state/sources/repositories/diff-patch.ts and applied by git. A revert throws work away, so
-    // it asks first.
+    // The bar (diff/DiffBar.svelte) holds icon buttons: Open File (a file's own diff), Previous
+    // Change and Next Change, which Shift+Alt+F5 and Alt+F5 press while the pane holds the focus
+    // and which cross from one file to the next and open a folded file they step onto, and Collapse
+    // Unchanged Regions, a toggle that is on at the start; then a `...` menu holding Inline View, a
+    // checked item that switches the layout between side by side and inline, and Refresh, which
+    // reads the diff again. The layout, the toggle and the folded files are kept as the pane's own
+    // state. Each file is views/sources/repositories/diff/DiffSection.svelte under a header row
+    // (diff/FileHeader.svelte) that folds it when the diff holds several, Monaco's diff editor over
+    // the file's two versions, which the server answers whole. For a file's own diff each hunk can
+    // be staged, unstaged or reverted whole or for the lines the selections choose in it, the patch
+    // cut by state/sources/repositories/diff-patch.ts and applied by git. A revert throws work
+    // away, so it asks first.
     //
-    // The files are read when the pane opens, again when the instance is pointed at something
-    // else, and again whenever the repository's state on the `git` channel moves, so a hunk staged
-    // here or anywhere else redraws the pane; a read that changes nothing keeps what is drawn. Each
+    // The files are read when the pane opens, again when the instance is pointed at something else,
+    // and again whenever the repository's state on the `git` channel moves, so a hunk staged here
+    // or anywhere else redraws the pane; a read that changes nothing keeps what is drawn. Each
     // file's diff editor view state (the runs revealed, the scroll and the caret) is kept in the
     // instance state by the file's key (its path, or for a path git lists again the path and its
-    // place, from `fileKeys`), so a pane drawn again while its tab stays open shows what it
-    // showed. The pane lists its editor's actions for the palette as a source tab does, and runs
-    // the one asked for.
+    // place, from `fileKeys`), so a pane drawn again while its tab stays open shows what it showed.
+    // The pane lists its editor's actions for the palette as a source tab does, and runs the one
+    // asked for.
 
     import { onDestroy, untrack } from 'svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
     import type { DiffCommand, EditorAction } from '$lib/ui/controls/editor/types';
+    import DiffBar from './DiffBar.svelte';
     import DiffSection from './DiffSection.svelte';
     import {
         countsOf,
@@ -61,11 +65,18 @@
         diffActs,
         diffUrl,
         diffViewOf,
+        fileDiffUrl,
         fileKeys,
+        groupFrom,
+        groupPaths,
+        groupWaits,
+        heldDiff,
+        readAll,
         sameFiles,
+        toggleFolded,
+        unfolded,
         viewKeeper,
         type DiffAttributes,
-        type DiffMode,
         type DiffSides,
         type DiffState
     } from '$lib/state/sources/repositories/repositories';
@@ -76,7 +87,7 @@
 
     const {
         repositories,
-        selectors: { gitFor },
+        selectors: { gitFor, gitRoots },
         editorStatus: { asked: askedOf, forget, publish },
         layout: { instanceView },
         ui: { codeTheme, instanceState, setInstanceState, theme, textScale }
@@ -84,18 +95,22 @@
 
     let { instance }: ViewProps = $props();
 
+    /** How many files of a group's diff are read at once. */
+    const GROUP_READS = 6;
+
     /** How long the view states wait before they are kept, so a scroll is one write. */
     const KEEP_AFTER_MS = 400;
 
-    const held = $derived(read(instance.state));
+    const held = $derived(heldDiff(instance.state));
 
     let files: DiffSides[] = $state([]);
     let attributes: DiffAttributes | null = $state(null);
     /** Whether the path of a file's own diff is in conflict, which allows no action on it. */
     let conflicted = $state(false);
     let failure = $state('');
-    let reading = $state(false);
     let loaded = $state(false);
+    /** Whether a read is in flight, which Refresh waits for. */
+    let reading = $state(false);
     /** What the last read was over, so a new subject is read once and a redraw is not. */
     let taken = $state('');
     /** Each file's hunk count once its editor has drawn it, null before. */
@@ -124,7 +139,8 @@
     const keys = $derived(fileKeys(files));
     const view = $derived(diffViewOf(instanceState(instance.id), loaded ? keys : undefined));
     const acts = $derived(diffActs(held) && held.path !== '');
-    const subject = $derived(held.path !== '' || (held.stash ?? '') !== '');
+    const grouped = $derived((held.group ?? '') !== '');
+    const subject = $derived(held.path !== '' || (held.stash ?? '') !== '' || grouped);
     const title = $derived(held.label === '' ? t('views.repositories_diff') : held.label);
     const busy = $derived(repositories.busy(held.root));
     const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
@@ -133,24 +149,34 @@
     const several = $derived(files.length > 1);
     const stops = $derived(counts.some((count) => count !== 0));
 
-    function read(state: unknown): DiffState {
-        const map = (state ?? {}) as Partial<DiffState>;
-        const text = (value: unknown): string => (typeof value === 'string' ? value : '');
-        return {
-            id: text(map.id),
-            label: text(map.label),
-            root: text(map.root),
-            path: text(map.path),
-            staged: map.staged === true,
-            worktree: map.worktree === true,
-            commit: text(map.commit),
-            stash: text(map.stash),
-            line: typeof map.line === 'number' ? map.line : 0
-        };
-    }
-
     /** The number of the last read asked for, so an older answer that lands late is dropped. */
     let asked = 0;
+
+    type Answer = {
+        files?: DiffSides[];
+        attributes?: DiffAttributes;
+        conflicted?: boolean;
+        error?: string;
+    };
+
+    /** What one address answered: its body, and whether the server took the request. */
+    async function answer(url: string): Promise<{ ok: boolean; body: Answer }> {
+        const response = await fetch(url);
+        return { ok: response.ok, body: (await response.json()) as Answer };
+    }
+
+    /** The reads a diff is made of: the one address, or one per path of a group. */
+    async function reads(state: DiffState): Promise<{ ok: boolean; body: Answer }> {
+        const group = state.group;
+        if (group === undefined) return answer(diffUrl(state));
+        const paths = repo === null ? [] : groupPaths(repo, group);
+        const answers = await readAll(paths, GROUP_READS, (path) =>
+            answer(fileDiffUrl(state.root, path, group === 'staged'))
+        );
+        const bad = answers.find((one) => !one.ok || !Array.isArray(one.body.files));
+        if (bad !== undefined) return bad;
+        return { ok: true, body: { files: answers.flatMap((one) => one.body.files ?? []) } };
+    }
 
     async function load(state: DiffState): Promise<void> {
         asked += 1;
@@ -158,15 +184,9 @@
         reading = true;
         failure = '';
         try {
-            const response = await fetch(diffUrl(state));
-            const body = (await response.json()) as {
-                files?: DiffSides[];
-                attributes?: DiffAttributes;
-                conflicted?: boolean;
-                error?: string;
-            };
+            const { ok, body } = await reads(state);
             if (mine !== asked) return;
-            if (!response.ok || !Array.isArray(body.files)) {
+            if (!ok || !Array.isArray(body.files)) {
                 failure =
                     typeof body.error === 'string' ? body.error : t('repositories.diff_failed');
             } else {
@@ -190,6 +210,7 @@
     $effect(() => {
         const wanted = held;
         if (!subject || wanted.id === taken) return;
+        if (grouped && groupWaits(repo, gitRoots())) return;
         taken = wanted.id;
         at = null;
         placed = -1;
@@ -199,10 +220,11 @@
     /** The state the pane last read against, so the first state is not a second read. */
     let seen: unknown = null;
 
-    // A file's own diff follows the repository: every new state the channel sends reads it again.
+    // A file's own diff and a group's follow the repository: every new state the channel sends
+    // reads it again.
     $effect(() => {
         const now = repo;
-        if (now === null || !acts) return;
+        if (now === null || !(acts || grouped)) return;
         if (seen === null || seen === now) {
             seen = now;
             return;
@@ -227,10 +249,19 @@
         }
     }
 
-    /** Put the pane at one change and bring it into view; a file not drawn yet is drawn first. */
+    /**
+     * Put the pane at one change and bring it into view; a file not drawn yet is drawn first, and
+     * a folded file is opened first.
+     */
     function go(next: ChangeAt | null): void {
         if (next === null || (next.hunk < 0 && counts[next.file] !== null)) return;
         at = next;
+        if (view.folded.includes(keys[next.file])) {
+            setInstanceState(instance.id, {
+                ...view,
+                folded: unfolded(view.folded, keys[next.file])
+            });
+        }
         sections[next.file]?.reveal(next.hunk);
     }
 
@@ -292,9 +323,22 @@
         return attributes === null ? 'none' : diffActions(file, attributes, conflicted);
     }
 
-    function setMode(mode: DiffMode): void {
-        setInstanceState(instance.id, { ...view, mode });
+    /** Keep part of what the pane remembers, the rest as it was. */
+    function keep(part: Partial<typeof view>): void {
+        setInstanceState(instance.id, { ...view, ...part });
     }
+
+    /**
+     * The path a file's header opens, the file being on disk for a file's own diff or a group's.
+     */
+    function pathOf(file: DiffSides): string {
+        return file.newPath === '' ? file.oldPath : file.newPath;
+    }
+
+    /** Whether a diff's files are on disk to open. */
+    const onDisk = $derived(
+        !held.worktree && (held.commit ?? '') === '' && (held.stash ?? '') === ''
+    );
 
     // The palette lists the editor's actions while the pane draws a diff, as for a source tab.
     $effect(() => {
@@ -332,54 +376,21 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('views.repositories_diff')}>
-        <ToolButton
-            label={t('repositories.diff_side')}
-            glyph="side_by_side"
-            compact
-            pressed={view.mode === 'side'}
-            onclick={() => setMode('side')}
-        />
-        <ToolButton
-            label={t('repositories.diff_inline')}
-            glyph="inline_diff"
-            compact
-            pressed={view.mode === 'inline'}
-            onclick={() => setMode('inline')}
-        />
-        <ToolButton
-            label={t('repositories.change_prev')}
-            title={t('repositories.change_prev_title')}
-            glyph="prev_change"
-            compact
-            disabled={!stops}
-            onclick={() => step(-1)}
-        />
-        <ToolButton
-            label={t('repositories.change_next')}
-            title={t('repositories.change_next_title')}
-            glyph="next_change"
-            compact
-            disabled={!stops}
-            onclick={() => step(1)}
-        />
-        {#if held.path !== '' && !held.worktree && (held.commit ?? '') === ''}
-            <ToolButton
-                label={t('repositories.open_file')}
-                glyph="open_file"
-                compact
-                onclick={() => repositories.openFile(held.root, held.path, openLine())}
-            />
-        {/if}
-        <ToolButton
-            label={t('repositories.diff')}
-            title={t('repositories.diff_title')}
-            glyph="refresh"
-            compact
-            disabled={reading || !subject}
-            onclick={() => void load(held)}
-        />
-    </Toolbar>
+    <DiffBar
+        openable={held.path !== '' && !held.worktree && (held.commit ?? '') === ''}
+        {stops}
+        {reading}
+        {subject}
+        unchanged={view.unchanged === 'folded'}
+        inline={view.mode === 'inline'}
+        onopen={() => repositories.openFile(held.root, held.path, openLine())}
+        onstep={step}
+        ontoggle={() => keep({ unchanged: view.unchanged === 'folded' ? 'shown' : 'folded' })}
+        oninline={() => keep({ mode: view.mode === 'inline' ? 'side' : 'inline' })}
+        onrefresh={() => {
+            if (subject && !reading) void load(held);
+        }}
+    />
 {/snippet}
 
 <Pane {title} toolbar={tools}>
@@ -422,6 +433,13 @@
                         codeTheme={codeTheme()}
                         {several}
                         headed={several || !acts}
+                        foldable={several}
+                        folded={view.folded.includes(keys[index])}
+                        unchanged={view.unchanged === 'folded'}
+                        openable={onDisk}
+                        from={held.group === undefined
+                            ? ''
+                            : groupFrom(repo, held.group, pathOf(file))}
                         scroller={box}
                         view={view.views[keys[index]] ?? null}
                         actions={actionsOf(file)}
@@ -430,6 +448,13 @@
                         {busy}
                         current={at?.file === index ? at.hunk : -1}
                         onchanges={(next: LineChange[]) => drawn(index, next)}
+                        ontoggle={() => keep({ folded: toggleFolded(view.folded, keys[index]) })}
+                        onopen={() =>
+                            repositories.openFile(
+                                held.root,
+                                pathOf(file),
+                                index === (at?.file ?? 0) ? openLine() : 0
+                            )}
                         onview={(state: object) => keeper.viewed(keys[index], state)}
                         onactions={(offered: EditorAction[]) => (actions = offered)}
                         onact={(
@@ -488,7 +513,7 @@
     }
 
     :global(body.wall) .files {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
     }
 

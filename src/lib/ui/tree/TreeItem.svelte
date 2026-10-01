@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, primitive. One row of an explorer: a line of one fixed height holding the indent
-    // guides of its depth, the expand arrow of a row that opens, a glyph, the name and a muted
-    // detail, then the row's own controls, and at the right edge a count or a mark. A heading row
-    // is the same line drawn as the head of a section, its name in small capitals.
+    // guides of its depth, the expand arrow of a row that opens, a glyph or a file's Seti icon, the
+    // name and a muted detail, then the row's own controls, and at the right edge a count or a
+    // mark. A heading row is the same line drawn as the head of a section, its name in capitals.
     //
     // A row with something to do when pressed carries a button over its name, which is what a
     // pointer presses, and the row itself answers a press on the space beyond its parts, so the
@@ -27,15 +27,29 @@
     //
     // Selected is the reader's cursor and is drawn with the accent tint under the ink; current is
     // what is in force (a checked-out branch, the workspace in use) and is drawn as a bold name
-    // with a check, never as a selection.
+    // with a check, never as a selection. A strong row is drawn at weight 600 with no check, for
+    // the commit the checkout is on; a struck row has its name struck through, and `nameStyle`
+    // sets custom properties on the name (a status tone).
+    //
+    // A count is plain text in the number font, or with `badge` a pill (the count of a section or
+    // a group); `countTitle` says what it counts. A `trailing` row draws its `end` before its
+    // controls, both at the right edge, for the pills of a graph row. A `yielding` row's controls
+    // are the part of the line that gives way first when the pane is narrow, and are cut before
+    // the name is.
+    //
+    // The row sets `--row-bg` to its own background in each state (rest, hover, selected). A holder
+    // that draws beside the row rather than inside it, as a graph row does its lanes (CommitRow,
+    // GraphHead), sets the same values on itself, and the rings of its circles are drawn in those.
     //
     // The tooltip sits inside the button, around the line, so it opens for a pointer resting on the
     // row and never for the keyboard's focus: a tooltip opened by an arrow key would cover the row
     // the next arrow key goes to.
 
     import type { Snippet } from 'svelte';
+    import FileIcon from '../display/FileIcon.svelte';
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
+    import TreeActions from './TreeActions.svelte';
     import type { TreeNav } from './tree-keys.ts';
 
     type Props = {
@@ -43,6 +57,8 @@
         label: string;
         /** A name in `glyphs:`, drawn before the name. */
         glyph?: string;
+        /** A file's name or path, drawn before the name as its Seti icon (display/FileIcon). */
+        file?: string;
         /** How many indent guides the row draws. */
         depth?: number;
         /**
@@ -61,11 +77,26 @@
         /** The row's accessible name, when it says more than the label drawn. */
         name?: string;
         /**
-         * Draw the name muted, or in the warning or the error hue, for a row that says something.
+         * Draw the name muted, or in the warning or the error hue, for a row that says something;
+         * `link` is a row that does something, its words centred in the link colour.
          */
-        tone?: 'muted' | 'warn' | 'error';
+        tone?: 'muted' | 'warn' | 'error' | 'link';
         /** A number drawn at the right edge, for a heading or a group that counts its rows. */
         count?: number;
+        /** Draw the count as a pill. */
+        badge?: boolean;
+        /** The hover words of the count. */
+        countTitle?: string;
+        /** Draw the name at weight 600 with no check. */
+        strong?: boolean;
+        /** Draw the name struck through. */
+        struck?: boolean;
+        /** Custom properties and declarations set on the name. */
+        nameStyle?: string;
+        /** Draw `end` before the controls, both at the right edge. */
+        trailing?: boolean;
+        /** Let the controls give way before the name when the row is narrow. */
+        yielding?: boolean;
         /** The tooltip, when it says more than the name does. */
         title?: string;
         /** The row's id in the tree it is drawn in. */
@@ -91,6 +122,7 @@
         label,
         name,
         glyph,
+        file,
         depth = 0,
         level,
         expanded,
@@ -99,6 +131,13 @@
         heading = false,
         tone,
         count,
+        badge = false,
+        countTitle,
+        strong = false,
+        struck = false,
+        nameStyle,
+        trailing = false,
+        yielding = false,
         title,
         id,
         nav,
@@ -160,10 +199,12 @@
             <Glyph name="chevron" />
         {/if}
     </span>
-    {#if glyph !== undefined}
+    {#if file !== undefined}
+        <FileIcon name={file} />
+    {:else if glyph !== undefined}
         <Glyph name={glyph} />
     {/if}
-    <span class="name">{label}</span>
+    <span class="name" style={nameStyle}>{label}</span>
     {#if current}
         <span class="mark" aria-hidden="true">
             <Glyph name="check" />
@@ -179,9 +220,12 @@
     class:selected
     class:current
     class:heading
+    class:strong
+    class:struck
     class:muted={tone === 'muted'}
     class:warn={tone === 'warn'}
     class:error={tone === 'error'}
+    class:link={tone === 'link'}
     role={level === undefined ? undefined : 'treeitem'}
     aria-label={level === undefined ? undefined : (name ?? label)}
     aria-level={level}
@@ -228,13 +272,18 @@
             </Tooltip>
         </button>
     {/if}
+    {#if trailing && end !== undefined}
+        <span class="end">{@render end()}</span>
+    {/if}
     {#if actions !== undefined}
-        <span class="actions" class:shown={showActions}>{@render actions(inside ? 0 : -1)}</span>
+        <TreeActions shown={showActions} {yielding}>
+            {@render actions(inside ? 0 : -1)}
+        </TreeActions>
     {/if}
     {#if count !== undefined}
-        <span class="count">{count}</span>
+        <span class="count" class:badge title={countTitle}>{count}</span>
     {/if}
-    {#if end !== undefined}
+    {#if !trailing && end !== undefined}
         <span class="end">{@render end()}</span>
     {/if}
 </div>
@@ -251,14 +300,23 @@
         border-radius: var(--radius-sm);
         color: var(--ink-txt, var(--ink));
         font-size: calc(var(--tree-font) * var(--text-scale, 1));
+        --row-bg: var(--panel);
     }
 
     /* A row that only says something (no bookmark yet, nothing changed) has nothing to point at. */
     .item:not(.muted, .warn, .error):hover {
+        --row-bg: var(--chip);
         background: var(--chip);
     }
 
+    /* The controls are shown while the pointer is over the row or the focus is inside it. */
+    .item:hover,
+    .item:focus-within {
+        --actions-opacity: 1;
+    }
+
     .item.selected {
+        --row-bg: var(--accent-bg);
         background: var(--accent-bg);
         color: var(--on-accent-bg, var(--ink));
     }
@@ -347,10 +405,20 @@
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
+        color: var(--tone-txt, currentcolor);
     }
 
     .current .name {
         font-weight: 700;
+    }
+
+    .strong .name,
+    .strong .detail {
+        font-weight: 600;
+    }
+
+    .struck .name {
+        text-decoration: line-through;
     }
 
     .mark {
@@ -368,6 +436,18 @@
 
     .error .name {
         color: var(--c-red-txt, var(--muted));
+    }
+
+    .link .name {
+        color: var(--accent-txt, var(--accent));
+    }
+
+    .link .line {
+        justify-content: center;
+    }
+
+    .link .twisty {
+        display: none;
     }
 
     .detail,
@@ -399,8 +479,40 @@
     .count,
     .end {
         flex: 0 0 auto;
-        padding: 0 6px 0 4px;
+        padding: 0 var(--tree-end-inset) 0 4px;
         font-family: var(--font-num);
+    }
+
+    /* A slot given nothing to show takes no room. */
+    .end:empty {
+        display: none;
+    }
+
+    /* A section head keeps its count 6px from the edge whatever the view's rows keep. */
+    .heading .count {
+        padding-right: 6px;
+    }
+
+    /* The count as a pill: the number in the small size on the line fill, at least a square of
+       the badge size, `--tree-end-inset` from the row's edge (a section head's: 6px). */
+    .count.badge,
+    .item.selected .count.badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        min-width: calc(var(--tree-badge-size) * var(--text-scale, 1));
+        min-height: calc(var(--tree-badge-size) * var(--text-scale, 1));
+        margin-right: var(--tree-end-inset);
+        padding: 3px 5px;
+        border-radius: 11px;
+        background: var(--line);
+        color: var(--on-line);
+        font-family: var(--font-ui);
+        font-variant-numeric: tabular-nums;
+        font-size: calc(var(--tree-badge-font) * var(--text-scale, 1));
+        line-height: calc(var(--tree-badge-font) * var(--text-scale, 1));
+        text-align: center;
     }
 
     .field {
@@ -416,48 +528,12 @@
         font-size: calc(var(--tree-heading-font) * var(--text-scale, 1));
     }
 
+    .heading .count.badge {
+        margin-right: 6px;
+    }
+
     .heading .main {
         font-weight: 700;
-        font-variant-caps: all-small-caps;
-        letter-spacing: 0.04em;
-    }
-
-    .heading:not(.selected) .main {
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .actions {
-        display: flex;
-        flex: 0 0 auto;
-        align-items: center;
-        gap: 1px;
-        padding-right: 2px;
-        opacity: 0;
-    }
-
-    .item:hover .actions,
-    .item:focus-within .actions,
-    .actions.shown {
-        opacity: 1;
-    }
-
-    /* A screen with no pointer that hovers shows them all the time: they are pressable there too,
-       and a control pressed where nothing is drawn is one nobody can aim at. */
-    @media (hover: none) {
-        .actions {
-            opacity: 1;
-        }
-    }
-
-    /* A control on a row is a glyph on the row's own surface: the box a toolbar button draws would
-       make every line of the tree a line of boxes. */
-    .actions :global(.tool) {
-        border-color: transparent;
-        background: none;
-        padding: 1px 3px;
-    }
-
-    .actions :global(.tool:hover:not(:disabled)) {
-        border-color: var(--line);
+        text-transform: uppercase;
     }
 </style>

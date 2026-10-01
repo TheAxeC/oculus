@@ -32,9 +32,12 @@ const PROP = 'tinted';
 /** What a view writes on a partial's tag to take that partial's own surface away. */
 const BARE_PROP = 'surface={false}';
 
-/** A surface kept over the picture: one of the surface tokens at the wallpaper's fraction. */
+/**
+ * A surface kept over the picture: one of the surface tokens at the wallpaper's fraction, written
+ * out or as `--chip-on-wall`, the token themes/tokens.css declares as that form over `--chip`.
+ */
 const WALL_MIX =
-    /background:\s*color-mix\(\s*in\s+srgb\s*,\s*var\(\s*--(?:bg|panel|card|chip)\s*\)\s+var\(\s*--wall-(?:panel|popover)\s*\)\s*,\s*transparent\s*\)/;
+    /background:\s*(?:color-mix\(\s*in\s+srgb\s*,\s*var\(\s*--(?:bg|panel|card|chip)\s*\)\s+var\(\s*--wall-(?:panel|popover)\s*\)\s*,\s*transparent\s*\)|var\(\s*--chip-on-wall\s*\))/;
 
 /** The body class every wallpaper rule hangs off, in a rule's own selector. */
 const WALL = /:global\(body[^)]*\bwall\b[^)]*\)/;
@@ -301,6 +304,12 @@ describe('the rule over a pair of sources', () => {
         expect(audit({ 'Form.svelte': FORM, 'One.svelte': view(' tinted', '<Form />') })).toEqual({
             missing: [],
             extra: [one]
+        });
+        // the wall token is the same surface as the mix it stands for
+        const token = FORM.replace(/color-mix\([^;]+\)/, 'var(--chip-on-wall)');
+        expect(audit({ 'Form.svelte': token, 'One.svelte': view('', '<Form />') })).toEqual({
+            missing: [],
+            extra: []
         });
     });
 

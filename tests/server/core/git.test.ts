@@ -311,6 +311,22 @@ describe('the shape', () => {
         expect(found.unstaged).toEqual([]);
     });
 
+    // Revert: leave `--renames` out of the status read in server/core/git.ts, or `from` out of
+    // statusLists in git-parse.ts.
+    it('gives a staged rename its old path, with rename detection on whatever the config says', () => {
+        git(repo, 'config', 'status.renames', 'false');
+        git(repo, 'config', 'diff.renames', 'false');
+        renameSync(join(repo, 'kept.txt'), join(repo, 'moved.txt'));
+        write('plain.txt', 'p\n');
+        git(repo, 'add', '-A');
+        write('plain.txt', 'p\nq\n');
+        const found = state();
+
+        expect(byPath(found.staged)['moved.txt']).toMatchObject({ status: 'R', from: 'kept.txt' });
+        expect(Object.hasOwn(byPath(found.staged)['plain.txt'], 'from')).toBe(false);
+        expect(Object.hasOwn(byPath(found.unstaged)['plain.txt'], 'from')).toBe(false);
+    });
+
     it('survives the NUL parsing with a path holding a space', () => {
         write('sub dir/deep file.txt', 'a\n');
         git(repo, 'add', '.');

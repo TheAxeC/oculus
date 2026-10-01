@@ -31,9 +31,15 @@ export function keptRange(range: Range, kept: readonly number[]): number[] {
  * The rows the virtualizer draws now and the height held around them. The virtualizer counts a
  * row's start from the top of the scroll box, the list's own offset in it being its scroll margin,
  * so each gap is measured from the list's top or from the end of the row drawn before it.
+ *
+ * Handed the window the list holds, it gives that same window back when nothing in it moved, so
+ * the list writes nothing and the rows drawn from it are not run again. A row whose effect makes
+ * the list configure itself again (the open commit's files, whose rows the Graph's kept items are
+ * counted from) would otherwise be run again by the window it caused, and again, without end.
  */
 export function rowWindow<S extends Element | Window, I extends Element>(
-    virtualizer: Virtualizer<S, I>
+    virtualizer: Virtualizer<S, I>,
+    held?: RowWindow
 ): RowWindow {
     const items = virtualizer.getVirtualItems();
     const total = virtualizer.getTotalSize();
@@ -44,7 +50,20 @@ export function rowWindow<S extends Element | Window, I extends Element>(
         end = item.end;
         return { index: item.index, gap };
     });
-    return { rows, after: Math.max(0, total - (end - margin)), total };
+    const next = { rows, after: Math.max(0, total - (end - margin)), total };
+    return held !== undefined && sameWindow(held, next) ? held : next;
+}
+
+/** Whether two windows draw the same rows with the same heights held around them. */
+export function sameWindow(one: RowWindow, two: RowWindow): boolean {
+    return (
+        one.after === two.after &&
+        one.total === two.total &&
+        one.rows.length === two.rows.length &&
+        one.rows.every(
+            (row, at) => row.index === two.rows[at].index && row.gap === two.rows[at].gap
+        )
+    );
 }
 
 /**

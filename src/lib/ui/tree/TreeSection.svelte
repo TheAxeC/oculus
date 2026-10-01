@@ -17,6 +17,10 @@
         nav?: TreeNav;
         /** How many rows the section holds, drawn on its head. */
         count?: number;
+        /** Draw the count as a pill. */
+        badge?: boolean;
+        /** The hover words of the count. */
+        countTitle?: string;
         open: boolean;
         ontoggle: () => void;
         /** The tooltip of the head, when it says more than the name does. */
@@ -37,6 +41,8 @@
         id,
         nav,
         count,
+        badge = false,
+        countTitle,
         open,
         ontoggle,
         title,
@@ -54,6 +60,8 @@
         level={1}
         heading
         {count}
+        {badge}
+        {countTitle}
         expanded={open}
         {title}
         onclick={ontoggle}

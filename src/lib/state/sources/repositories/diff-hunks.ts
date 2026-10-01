@@ -210,6 +210,31 @@ export function stepFiles(
     return stops[stepChange(current, stops.length, direction)];
 }
 
+/** What a section does with a reveal asked of it, and what it keeps. */
+export type RevealStep = {
+    /** The hunk to bring into view now, or null when there is none to bring. */
+    now: number | null;
+    /** The hunk the section keeps for when its editor reports its changes, or null. */
+    pending: number | null;
+};
+
+/**
+ * What a reveal of one hunk does. A section whose editor is drawn and has reported its changes
+ * reveals it at once. A folded section, or one whose editor is not made yet, has no editor to
+ * reveal in, so it keeps the hunk (a later reveal replaces it) for `revealDue`. A negative hunk
+ * is a step onto a file whose changes are not known: the pane asks again with a real hunk when
+ * they are, so nothing is kept for it.
+ */
+export function revealAsked(ready: boolean, hunk: number): RevealStep {
+    if (ready) return { now: hunk, pending: null };
+    return { now: null, pending: hunk < 0 ? null : hunk };
+}
+
+/** What the section's editor reporting its changes does with the hunk it kept: it is revealed. */
+export function revealDue(pending: number | null): RevealStep {
+    return { now: pending, pending: null };
+}
+
 /** Whether a file's two texts differ only in their line endings, which Monaco does not draw as a
  * change: the pane says so at the file's head. */
 export function endingsOnly(sides: DiffSides): boolean {

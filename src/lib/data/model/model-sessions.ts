@@ -327,6 +327,8 @@ export type GitEntry = {
     /** Null where git reported a binary file, and 0 where no count applies. */
     added: number | null;
     deleted: number | null;
+    /** The old path of a rename or a copy, which `path` is the new name of; absent otherwise. */
+    from?: string;
 };
 
 /** One commit of a branch's newest history, as the log list draws it. */

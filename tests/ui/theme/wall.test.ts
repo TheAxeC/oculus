@@ -30,16 +30,23 @@ const WALL_MIX =
     /^color-mix\(\s*in\s+srgb\s*,\s*var\(\s*--(?:bg|panel|card|chip)\s*\)\s+var\(\s*--wall-(?:panel|popover)\s*\)\s*,\s*transparent\s*\)$/i;
 
 /**
+ * The chip at the wallpaper's fraction as one token, which themes/tokens.css declares in the form
+ * above; colours.test.ts holds the declaration to that form.
+ */
+const WALL_TOKEN = 'var(--chip-on-wall)';
+
+/**
  * Whether a rule under `body.wall` answers for the surface it names. Two answers count: the surface
- * at the wallpaper's fraction, and nothing at all. Any other background covers the picture exactly
- * as the flat rule did, so a rule that sets one is no answer and leaves the surface unpaired.
+ * at the wallpaper's fraction, written out or as the wall token, and nothing at all. Any other
+ * background covers the picture exactly as the flat rule did, so a rule that sets one is no answer
+ * and leaves the surface unpaired.
  */
 export function answersForWallpaper(body: string): boolean {
     const found = [...body.matchAll(/background:\s*([^;}]+)/g)];
     if (found.length === 0) return false;
     return found.every((match) => {
         const value = match[1].trim().replace(/\s+/g, ' ');
-        return value === 'transparent' || WALL_MIX.test(value);
+        return value === 'transparent' || value === WALL_TOKEN || WALL_MIX.test(value);
     });
 }
 
@@ -179,6 +186,7 @@ describe('the wallpaper rule', () => {
             )
         ).toBe(true);
         expect(answersForWallpaper('background: transparent;')).toBe(true);
+        expect(answersForWallpaper('background: var(--chip-on-wall);')).toBe(true);
         // A rule under the class that repaints the flat surface, mixes a token no reader looks
         // through, or sets no background at all leaves the surface covering the picture.
         expect(answersForWallpaper('background: var(--panel);')).toBe(false);

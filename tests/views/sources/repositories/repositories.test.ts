@@ -10,6 +10,7 @@
 // layouts, Previous Change and Next Change, Open File and the re-read) and the merge editor with
 // its count of open conflicts and Complete Merge.
 
+import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import Repositories from '../../../../src/lib/views/sources/repositories/Repositories.svelte';
@@ -22,25 +23,20 @@ import type { Component } from 'svelte';
 import type { ViewProps } from '../../../../src/lib/state/workbench/navigation/registry.ts';
 import { shapeBadgeTone } from '../../../../src/lib/views/shared/changes/repo-shape.ts';
 import type { DiffSides, GitState } from '../../../../src/lib/data/model/index.ts';
-import {
-    engineDir,
-    glyphCatalog,
-    loadConfig,
-    textCatalog
-} from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
 import type { Instance } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { OVERSCAN } from '../../../../src/lib/ui/tree/virtual.ts';
-import { git } from '../../../fixtures/sessions-fixture.ts';
+import {
+    HUB,
+    HUB_LOG,
+    OTHER,
+    catalog,
+    count,
+    git,
+    group,
+    hold as holdOn,
+    hubGit
+} from './harness.ts';
 import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
-
-const { config } = loadConfig(engineDir());
-const catalog = textCatalog(config);
-setCatalog(catalog);
-setGlyphs(glyphCatalog(config));
-
-const HUB = '/hub';
-const OTHER = '/other';
 
 let client: ClientState;
 
@@ -55,29 +51,15 @@ function instance(view = 'repositories', state: unknown = {}): Instance {
 /**
  * The hub's state as these cases read it: one of each kind of change, a log, branches, a worktree.
  */
-const HUB_GIT = git({
-    branch: 'main',
-    ahead: 2,
-    staged: [{ path: 'code/one.py', status: 'M', added: 4, deleted: 1 }],
-    unstaged: [{ path: 'README.md', status: 'M', added: 2, deleted: 0 }],
-    untracked: [{ path: 'loose.txt', status: '?', added: 0, deleted: 0 }],
+const HUB_GIT = hubGit({
     log: [
-        {
-            hash: 'a'.repeat(40),
-            short: 'aaaaaaa',
-            subject: 'Add the thing',
-            when: '2026-09-15T10:00:00+02:00'
-        },
+        ...HUB_LOG,
         {
             hash: 'b'.repeat(40),
             short: 'bbbbbbb',
             subject: 'Take the other thing back',
             when: '2026-09-14T10:00:00+02:00'
         }
-    ],
-    branches: [
-        { name: 'main', upstream: 'origin/main', current: true },
-        { name: 'package-one', upstream: '', current: false }
     ],
     worktrees: [
         { path: HUB, branch: 'main', head: 'a'.repeat(40), main: true },
@@ -92,12 +74,7 @@ const HUB_GIT = git({
 });
 
 function hold(payload: Record<string, unknown>): void {
-    client.entities.receive({ channel: 'git', version: 1, payload });
-    client.entities.receive({
-        channel: 'config',
-        version: 1,
-        payload: { config, text: catalog, findings: [] }
-    });
+    holdOn(client, payload);
 }
 
 function html(
@@ -114,10 +91,6 @@ function html(
     }).body;
 }
 
-function count(body: string, needle: string): number {
-    return body.split(needle).length - 1;
-}
-
 /**
  * One repository partial rendered on its own, for a state the view around it would have to be put
  * into a particular shape to hand it. The cases that go through the whole view are above.
@@ -132,6 +105,9 @@ function repo(state: GitState, root = OTHER): string {
             git: state,
             collapsed: [],
             commit: '',
+            mode: 'list',
+            reveal: '',
+            onrevealed: noop,
             ontoggle: noop,
             oncommit: noop,
             ask: noop,
@@ -143,14 +119,6 @@ function repo(state: GitState, root = OTHER): string {
             onterminal: noop
         }
     }).body;
-}
-
-/** The markup of one section of a rendering, from its group attribute to the next group. */
-function group(body: string, id: string): string {
-    const at = body.indexOf(`data-group="${id}"`);
-    if (at < 0) return '';
-    const next = body.indexOf('data-group=', at + 1);
-    return body.slice(at, next < 0 ? undefined : next);
 }
 
 describe('the Repositories view', () => {
@@ -207,32 +175,40 @@ describe('the Repositories view', () => {
         expect(hub.slice(0, hub.indexOf('</li>'))).not.toContain('aria-current="true"');
     });
 
-    it('says on each row its branch, its distance from the upstream and how many paths it changed', () => {
+    it('says on each row how many paths it changed', () => {
         const body = html({ [HUB]: { ...HUB_GIT, upstream: true } });
         const row = group(body, 'repos');
-        expect(row).toContain(
-            catalog['repositories.list_sync'].replace('{0}', '0').replace('{1}', '2')
-        );
         expect(row).toContain(
             `title="${catalog['repositories.list_changes'].replace('{0}', '3')}"`
         );
     });
 
-    it('draws the branch line with the distance from the upstream', () => {
-        const body = html({ [HUB]: HUB_GIT });
-        expect(body).toContain('main');
-        expect(body).toContain(catalog['sessions.ch_ahead'].replace('{0}', '2'));
+    it("draws the distance from the upstream as the words of the row's Sync control", () => {
+        // The Sync control is drawn only for a branch that tracks an upstream.
+        const tracked = {
+            ...HUB_GIT,
+            upstream: true,
+            branches: [{ name: 'main', upstream: 'origin/main', current: true }]
+        };
+        const body = html({ [HUB]: tracked });
+        expect(body).toContain('>main<');
+        expect(body).toContain(`aria-label="${catalog['sessions.ch_ahead'].replace('{0}', '2')}`);
     });
 
-    it('says in step on the branch line only for a branch with an upstream', () => {
-        // A repository with no commit yet has no upstream, and reads the line saying so instead.
+    it('says in step on the repository row only for a branch with an upstream', () => {
+        // A repository with no commit yet has no upstream, so it has no Sync control to say it.
         const fresh = html({ [HUB]: git({ branch: 'start', log: [], branches: [] }) });
         expect(fresh).toContain('>start<');
-        // Nothing to be in step with, so the line about tracking must not be drawn at all.
+        // Nothing to be in step with, so the words about tracking must not be drawn at all.
         expect(fresh).not.toContain(catalog['sessions.ch_insync']);
 
-        const tracked = html({ [HUB]: git({ upstream: true }) });
-        expect(tracked).toContain(catalog['sessions.ch_insync']);
+        const tracked = html({
+            [HUB]: git({
+                upstream: true,
+                branches: [{ name: 'main', upstream: 'origin/main', current: true }]
+            })
+        });
+        expect(tracked).toContain(`aria-label="${catalog['sessions.ch_insync']}`);
     });
 
     it('says a folder that is not there is not there, and one that is no repository is neither', () => {
@@ -256,23 +232,25 @@ describe('the Repositories view', () => {
     it('draws the Changes section with its count and the three groups with theirs', () => {
         const changes = group(html({ [HUB]: HUB_GIT }), 'changes');
         expect(changes).toContain(`aria-label="${catalog['repositories.changes']}"`);
-        expect(changes).toContain('>3</span>');
+        const badge = (n: number): RegExp =>
+            new RegExp(`class="count[^"]*\\bbadge\\b[^"]*"[^>]*>${String(n)}</span>`, 'g');
+        expect(changes).toMatch(badge(3));
         expect(changes).toContain(catalog['sessions.ch_staged']);
         expect(changes).toContain(catalog['sessions.ch_changed']);
         expect(changes).toContain(catalog['sessions.ch_untracked']);
-        expect(count(changes, '>1</span>')).toBe(3);
+        expect(changes.match(badge(1))).toHaveLength(3);
     });
 
-    it('draws each change row with its diff, Open File, its staging and, for a changed path, its discard', () => {
+    it('draws each change row with Open File, its staging and, for a changed path, its discard', () => {
         const changes = group(html({ [HUB]: HUB_GIT }), 'changes');
         expect(changes).toContain('data-entry="code/one.py"');
         expect(changes).toContain('one.py');
-        // An untracked path has no diff: its row opens the file itself.
-        expect(count(changes, `aria-label="${catalog['repositories.diff']}"`)).toBe(2);
+        // Pressing a row opens its diff, so no row carries a Diff control of its own.
+        expect(count(changes, `aria-label="${catalog['repositories.diff']}"`)).toBe(0);
         expect(count(changes, `aria-label="${catalog['repositories.open_file']}"`)).toBe(3);
         expect(changes).toContain(catalog['repositories.open_file_title']);
-        // The row itself and its diff control each say which side they show.
-        expect(count(changes, catalog['repositories.diff_staged_title'])).toBe(2);
+        // The row says which side it shows.
+        expect(count(changes, catalog['repositories.diff_staged_title'])).toBe(1);
         // A row is named by its whole path, so two README.md files do not sound the same.
         expect(changes).toContain(
             `aria-label="code/one.py, ${catalog['repositories.status_modified']}"`
@@ -296,6 +274,17 @@ describe('the Repositories view', () => {
         expect(box).toBeGreaterThan(0);
         expect(box).toBeLessThan(body.indexOf('data-group="changes"'));
         expect(body).toContain(`aria-label="${catalog['git.commit_more']}"`);
+    });
+
+    it('audits that holds the commit box 11px in from the left of the row and 12px from its right', () => {
+        const source = readFileSync('src/lib/views/sources/repositories/Repo.svelte', 'utf8');
+        const at = source.indexOf('    .commit {');
+        const rule = at < 0 ? '' : source.slice(at, source.indexOf('}', at));
+
+        expect(rule).toContain('padding: 0 12px 0 11px');
+        expect(html({ [HUB]: HUB_GIT })).toMatch(
+            /class="commit[^"]*"[^>]*>\s*<[^>]*data-commit-box/
+        );
     });
 
     it('draws the Graph section, whose commits the page reads when it opens', () => {
@@ -666,19 +655,6 @@ describe('the diff pane', () => {
         expect(pane(Diff, 'repositories-diff', FILE)).toContain('README.md');
     });
 
-    it('draws the two layouts, side by side pressed unless the pane keeps inline', () => {
-        const side = pane(Diff, 'repositories-diff', FILE);
-        const pressed = (body: string, key: string): boolean => {
-            const at = body.indexOf(`aria-label="${catalog[key]}"`);
-            const open = body.lastIndexOf('<button', at);
-            return body.slice(open, body.indexOf('>', at)).includes('aria-pressed="true"');
-        };
-        expect(pressed(side, 'repositories.diff_side')).toBe(true);
-        expect(pressed(side, 'repositories.diff_inline')).toBe(false);
-        const inline = pane(Diff, 'repositories-diff', { ...FILE, mode: 'inline' });
-        expect(pressed(inline, 'repositories.diff_inline')).toBe(true);
-    });
-
     it('offers Previous Change, Next Change and Open File for a file, and no Open File for a commit', () => {
         const file = pane(Diff, 'repositories-diff', FILE);
         expect(file).toContain(`aria-label="${catalog['repositories.change_prev']}"`);
@@ -704,6 +680,10 @@ function section(file: DiffSides, key: string): string {
             codeTheme: 'tokens',
             several: false,
             headed: true,
+            foldable: false,
+            folded: false,
+            unchanged: true,
+            openable: false,
             scroller: undefined,
             view: null,
             actions: 'read',
@@ -713,7 +693,9 @@ function section(file: DiffSides, key: string): string {
             onchanges: noop,
             onview: noop,
             onactions: noop,
-            onact: noop
+            onact: noop,
+            ontoggle: noop,
+            onopen: noop
         }
     }).body;
 }

@@ -28,9 +28,9 @@ digraph layer_views {
         "folder views/sessions to folder views/shared" [label="18", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sessions to layer state" [label="85", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sessions to layer ui" [label="74", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/sources to folder views/shared" [label="31", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/sources to layer state" [label="145", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/sources to layer ui" [label="149", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/sources to folder views/shared" [label="32", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/sources to layer state" [label="164", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/sources to layer ui" [label="166", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/structure to folder views/shared" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/structure to layer state" [label="35", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/structure to layer ui" [label="29", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -38,7 +38,7 @@ digraph layer_views {
         "folder views/system to layer state" [label="77", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/system to layer ui" [label="87", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/shared to layer state" [label="86", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/shared to layer ui" [label="71", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/shared to layer ui" [label="72", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "layer state from folder views/academic" [label="state", style=dashed];
     "layer ui from folder views/academic" [label="ui", style=dashed];

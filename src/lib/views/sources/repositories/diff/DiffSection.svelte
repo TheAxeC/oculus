@@ -1,7 +1,9 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/repositories/diff/Diff.svelte. One file of a diff: its path
-    // above it when the diff holds several or is not a file's own, and Monaco's diff editor over
-    // its two versions (ui/controls/editor/DiffEditor.svelte). A binary file is a note, and a file
+    // Layer 3, partial of views/sources/repositories/diff/Diff.svelte. One file of a diff: its
+    // header row (diff/FileHeader.svelte) above it when the diff holds several or is not a file's
+    // own, and Monaco's diff editor over its two versions (ui/controls/editor/DiffEditor.svelte).
+    // A folded file draws its header alone. The editor hides the unchanged runs of the file, or
+    // draws them all, as the pane says. A binary file is a note, and a file
     // whose two texts are equal (a rename or a mode change alone, a new empty file) is git's head
     // lines for it. A file whose line endings alone changed, which Monaco draws as no change, says
     // so at its head and shows all its lines.
@@ -9,6 +11,9 @@
     // In a diff of several files the section's editor is made when the section first comes within
     // one screen of the pane's view, since each is two editors, and until then the section holds
     // the height of its lines. Each such editor grows to its content, so the pane scrolls one list.
+    // A change the pane asks this section to bring into view while its editor is not there (the
+    // file is folded, or not made yet) is kept and brought into view once the editor reports its
+    // changes.
     //
     // Above each hunk (git's grouping of Monaco's line changes, state/sources/repositories/
     // diff-hunks.ts) is a bar with git's hunk head and the actions the file allows: Stage Block and
@@ -25,6 +30,7 @@
         EditorAction
     } from '$lib/ui/controls/editor/types';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import FileHeader from './FileHeader.svelte';
     import {
         CONTEXT,
         chosenRows,
@@ -33,13 +39,19 @@
         hunkHead,
         hunkRows,
         hunksOf,
+        revealAsked,
+        revealDue,
         type ChosenRows,
         type DiffActions,
         type Hunk,
         type LineChange
     } from '$lib/state/sources/repositories/diff-hunks';
     import type { PatchMode } from '$lib/state/sources/repositories/diff-patch';
-    import type { DiffMode, DiffSides } from '$lib/state/sources/repositories/repositories';
+    import {
+        fileDeleted,
+        type DiffMode,
+        type DiffSides
+    } from '$lib/state/sources/repositories/repositories';
     import { languageOf } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
 
@@ -56,8 +68,18 @@
         codeTheme: string;
         /** Whether the diff holds several files: the editor grows to its content and waits. */
         several: boolean;
-        /** Whether to draw the path above the file. */
+        /** Whether to draw the file's header row above it. */
         headed: boolean;
+        /** Whether the header folds the file: the diff holds several. */
+        foldable: boolean;
+        /** Whether the file is folded, which draws its header and nothing else. */
+        folded: boolean;
+        /** Whether the editor hides the unchanged runs of the file. */
+        unchanged: boolean;
+        /** Whether the file is on disk, which the header's Open File opens. */
+        openable: boolean;
+        /** The old path of a rename the git state lists, for a file whose read shows it created. */
+        from?: string;
         /** The pane's scrolled box, which the section's nearness is read against. */
         scroller: HTMLElement | undefined;
         view: object | null;
@@ -73,6 +95,10 @@
         onview: (view: object) => void;
         onactions: (actions: EditorAction[]) => void;
         onact: (changes: LineChange[], rows: ChosenRows, mode: PatchMode, count: number) => void;
+        /** The header's chevron folded or unfolded the file. */
+        ontoggle: () => void;
+        /** The header's Open File. */
+        onopen: () => void;
     };
 
     let {
@@ -85,6 +111,11 @@
         codeTheme,
         several,
         headed,
+        foldable,
+        folded,
+        unchanged,
+        openable,
+        from = '',
         scroller,
         view,
         actions,
@@ -95,19 +126,33 @@
         onchanges,
         onview,
         onactions,
-        onact
+        onact,
+        ontoggle,
+        onopen
     }: Props = $props();
 
     let section: HTMLElement | undefined = $state();
     let editor: DiffHandle | undefined = $state();
     let near = $state(false);
     let changes: LineChange[] = $state([]);
+    /** Whether the editor now drawn has reported its changes; a fold removes the editor. */
+    let reported = $state(false);
+    /** The hunk a reveal asked for while the editor was not ready, done once it is. */
+    let pending: number | null = null;
     let selections: DiffSelections = $state({ original: [], modified: [] });
 
     const path = $derived(file.newPath === '' ? file.oldPath : file.newPath);
     const equal = $derived(!file.binary && file.original === file.modified);
     const endings = $derived(endingsOnly(file));
     const drawn = $derived(!several || near);
+    /** The path the file was renamed from, or the empty string for a file that was not. */
+    const renamedFrom = $derived(
+        file.oldPath !== '' && file.newPath !== '' && file.oldPath !== file.newPath
+            ? file.oldPath
+            : from
+    );
+    /** Whether the header offers Open File: the file is on disk, which a deleted file is not. */
+    const present = $derived(openable && !fileDeleted(file));
     const hunks = $derived(hunksOf(changes));
     const bars = $derived(
         hunks.map((hunk, at) => ({ id: String(at), after: hunk.modified.from - 1 }))
@@ -130,15 +175,35 @@
         return () => seen.disconnect();
     });
 
+    // A folded file has no editor, so the next one starts without a report.
+    $effect(() => {
+        if (folded) reported = false;
+    });
+
     function changed(next: LineChange[]): void {
         changes = next;
+        reported = true;
         onchanges(next);
+        const due = revealDue(pending);
+        pending = due.pending;
+        if (due.now !== null) place(due.now);
     }
 
-    /** Bring the section into view, which makes its editor, and a hunk's first line with it. */
+    /**
+     * Bring the section into view, which makes its editor, and a hunk's first line with it. A
+     * folded section or one whose editor is not made or has not reported keeps the hunk and
+     * brings it into view when the editor reports (`revealAsked`, `revealDue`).
+     */
     export function reveal(hunk: number): void {
         near = true;
         section?.scrollIntoView({ block: 'nearest' });
+        const asked = revealAsked(!folded && reported, hunk);
+        pending = asked.pending;
+        if (asked.now !== null) place(asked.now);
+    }
+
+    /** Bring one hunk of the drawn editor into view. */
+    function place(hunk: number): void {
         const target = hunks.at(hunk);
         if (target === undefined) return;
         editor?.perform({ kind: 'reveal', line: target.modified.from });
@@ -204,7 +269,7 @@
                     label={count > 0
                         ? t('repositories.lines_unstage', count)
                         : t('repositories.hunk_unstage')}
-                    glyph="collapse"
+                    glyph="unstage"
                     disabled={busy}
                     onclick={() => act(hunk, 'unstage')}
                 />
@@ -213,7 +278,7 @@
                     label={count > 0
                         ? t('repositories.lines_stage', count)
                         : t('repositories.hunk_stage')}
-                    glyph="expand"
+                    glyph="stage"
                     disabled={busy}
                     onclick={() => act(hunk, 'stage')}
                 />
@@ -240,42 +305,52 @@
     style:--lines={lines}
 >
     {#if headed}
-        <p class="path">{path}</p>
+        <FileHeader
+            {path}
+            oldPath={renamedFrom}
+            {foldable}
+            {folded}
+            openable={present}
+            {ontoggle}
+            {onopen}
+        />
     {/if}
-    {#if endings}
-        <p class="note">{t('repositories.diff_eol_only')}</p>
-    {/if}
-    {#if file.binary}
-        <p class="note">{t('repositories.diff_binary')}</p>
-    {:else if equal}
-        <pre class="heads">{file.head.join('\n')}</pre>
-    {:else if drawn}
-        <div class="editor">
-            <DiffEditor
-                bind:this={editor}
-                original={file.original}
-                modified={file.modified}
-                language={languageOf(path)}
-                {model}
-                {path}
-                originalPath={file.oldPath === '' ? path : file.oldPath}
-                {mode}
-                context={CONTEXT}
-                hideUnchanged={!endings}
-                {look}
-                {codeTheme}
-                sized={several}
-                {view}
-                {bars}
-                bar={hunkBar}
-                onchanges={changed}
-                onselect={(next: DiffSelections) => (selections = next)}
-                {onview}
-                {onactions}
-            />
-        </div>
-    {:else}
-        <div class="waiting"></div>
+    {#if !folded}
+        {#if endings}
+            <p class="note">{t('repositories.diff_eol_only')}</p>
+        {/if}
+        {#if file.binary}
+            <p class="note">{t('repositories.diff_binary')}</p>
+        {:else if equal}
+            <pre class="heads">{file.head.join('\n')}</pre>
+        {:else if drawn}
+            <div class="editor">
+                <DiffEditor
+                    bind:this={editor}
+                    original={file.original}
+                    modified={file.modified}
+                    language={languageOf(path)}
+                    {model}
+                    {path}
+                    originalPath={file.oldPath === '' ? path : file.oldPath}
+                    {mode}
+                    context={CONTEXT}
+                    hideUnchanged={unchanged && !endings}
+                    {look}
+                    {codeTheme}
+                    sized={several}
+                    {view}
+                    {bars}
+                    bar={hunkBar}
+                    onchanges={changed}
+                    onselect={(next: DiffSelections) => (selections = next)}
+                    {onview}
+                    {onactions}
+                />
+            </div>
+        {:else}
+            <div class="waiting"></div>
+        {/if}
     {/if}
 </section>
 
@@ -300,11 +375,6 @@
     /* A file not drawn yet holds the height its lines will take, so the list keeps its length. */
     .waiting {
         height: calc(var(--lines) * 1.45em);
-    }
-
-    .path {
-        margin: 8px 0 2px;
-        font-weight: 600;
     }
 
     .note,
@@ -339,6 +409,6 @@
     }
 
     :global(body.wall) .hunk {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        background: var(--chip-on-wall);
     }
 </style>

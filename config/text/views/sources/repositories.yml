@@ -34,7 +34,7 @@ text:
         commit_diff_label: '{0} ({1})'
         commit_menu: Commit actions
         commit_outside: Commit {0}
-        commit_title: '{0} by {1} on {2}. Show the files it changed.'
+        commit_title: '{0} by {1} on {2} at {3}. Show the files it changed.'
         conflict_added_by_them: added by them
         conflict_added_by_us: added by us
         conflict_both_added: both added
@@ -50,15 +50,25 @@ text:
         diff_binary: Binary file, no lines to show.
         diff_conflicted: Resolve this file in the merge editor from Merge Changes
         diff_eol_only: Only the line endings differ
-        diff_inline: Inline
+        diff_inline: Inline View
         diff_open: Open Changes
-        diff_side: Side by Side
+        diff_refresh: Refresh
+        diff_unchanged: Collapse Unchanged Regions
         diff_whole: Stage or revert this file from Changes
         fetch: Fetch
+        file_fold: Fold this file
+        file_unfold: Unfold this file
+        folder_discard_confirm: Throw away the changes to {0} paths in {1}?
+        folder_discard_title: Throw away every change under this folder
+        folder_stage_title: Stage every change under this folder
+        folder_unstage_title: Unstage every change under this folder
+        goto_current: Go to Current
         graph: Graph
         graph_failed: The graph could not be read.
         graph_more: Load More
         graph_pending: Reading the graph
+        group_diff_changed: Changes
+        group_diff_staged: Staged Changes
         hunk_head: '@@ -{0},{1} +{2},{3} @@'
         hunk_revert: Revert Block
         hunk_revert_confirm: Revert this block of {0}?
@@ -71,7 +81,6 @@ text:
         lines_unstage: Unstage {0} Selected Lines
         list: Repositories
         list_changes: '{0} changes'
-        list_sync: '{0} to pull, {1} to push'
         mark_added: Lines added from line {0}. Open the change.
         mark_deleted: Lines deleted before line {0}. Open the change.
         mark_modified: Lines changed from line {0}. Open the change.
@@ -137,6 +146,7 @@ text:
         stashes: Stashes
         stashes_empty: No stash is kept here.
         sync: Sync
+        sync_changes: Sync Changes
         sync_confirm: Sync {0} with {1}?
         sync_detail: git pulls {0} commits and then pushes {1}. Nothing is forced.
         tag_create: Create Tag
@@ -153,6 +163,8 @@ text:
         tags_push: Push Tags
         tags_push_confirm: Push every tag to the upstream's remote?
         tags_push_detail: Tags the remote already has are left as they are. Nothing is forced.
+        view_list: View as List
+        view_tree: View as Tree
         branches: Branches
         branches_empty: git named no branch here.
         branches_unborn: '{0} has no commit yet, and git lists a branch only from its first commit.'
@@ -175,7 +187,7 @@ text:
         empty: Nothing is on the channel yet.
         empty_glyph: repositories
         log_empty: No commit has been made here yet.
-        merge: merge back
+        merge: Merge back
         merge_confirm: Merge {0} into {1}?
         merge_detail: A conflict is taken back and reported, so nothing is left half merged.
         merge_detached: This repository has no branch checked out, so there is nothing to merge into.
@@ -183,17 +195,17 @@ text:
         pick_failed: unreadable
         pick_missing: gone
         pick_norepo: no repository
-        remove: remove
+        remove: Remove
         remove_confirm: Remove the worktree {0}?
         remove_detail: The worktree folder goes, and its branch with it when no work is left only there.
         remove_title: Take this worktree away and delete its branch
-        switch: switch to
+        switch: Switch to
         switch_title: Check out {0} in this repository
-        terminal: terminal here
+        terminal: Terminal here
         terminal_title: Open a shell in this worktree
         worktree_detached: detached
         worktree_new: New worktree
-        worktree_new_create: create
+        worktree_new_create: Create
         worktree_new_confirm: Make the worktree {0}?
         worktree_new_detail: The worktree is made at {0}, on a branch of that name from the repository's HEAD, and a shell opens in it.
         worktree_path: It will be made at {0}.

@@ -55,6 +55,25 @@ describe('the change lists of a status', () => {
         expect(statusLists(records, counts, 1).staged).toEqual([entry('both.txt', 'M')]);
     });
 
+    // Revert: leave `from` out of the entry statusLists builds.
+    it('gives the entry of a rename or a copy its old path, and no other entry one', () => {
+        const lists = statusLists(
+            statusRecords(
+                'R  new.txt\0old.txt\0RM both.txt\0was.txt\0C  copy.txt\0src.txt\0 M plain.txt\0'
+            ),
+            parseNumstat('2\t1\tboth.txt\0'),
+            10
+        );
+
+        expect(lists.staged.map((one) => [one.path, one.from])).toEqual([
+            ['new.txt', 'old.txt'],
+            ['both.txt', 'was.txt'],
+            ['copy.txt', 'src.txt']
+        ]);
+        // the worktree column of `RM` holds a modification, which is no rename
+        expect(lists.unstaged.map((one) => Object.hasOwn(one, 'from'))).toEqual([false, false]);
+    });
+
     it('reads a binary file of numstat as no counts and a rename by its new path', () => {
         expect(parseNumstat('-\t-\tpic.png\0' + '2\t0\t\0old.txt\0new.txt\0')).toEqual(
             new Map([

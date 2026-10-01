@@ -40,6 +40,7 @@
         id="stashes"
         {nav}
         count={git.stashes.length}
+        badge
         {open}
         {ontoggle}
     >

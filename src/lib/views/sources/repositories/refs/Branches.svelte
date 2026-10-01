@@ -9,6 +9,10 @@
     // line says so. A new branch can still be made there: `git switch -c` moves the unborn HEAD to
     // the new name, so the create control is offered as it is on any repository.
     //
+    // The section's head takes the focus when the view asks for it (`reveal`), which is what the
+    // Branch control of a repository's row does after it has opened the section; the request is
+    // answered once with `onrevealed`.
+    //
     // It draws and reports presses; the write and its confirm are the view's.
 
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -28,12 +32,23 @@
         ontoggle: () => void;
         onswitch: (name: string) => void;
         onbranch: (name: string) => void;
+        /** The view asked for the focus to go to the section's head. */
+        reveal: boolean;
+        /** The request was answered. */
+        onrevealed: () => void;
     };
 
-    let { git, nav, busy, open, ontoggle, onswitch, onbranch }: Props = $props();
+    let { git, nav, busy, open, ontoggle, onswitch, onbranch, reveal, onrevealed }: Props =
+        $props();
 
     let branchName = $state('');
     const unborn = $derived(noCommitYet(git));
+
+    $effect(() => {
+        if (!reveal) return;
+        nav.focus('branches');
+        onrevealed();
+    });
 
     function created(): void {
         const name = branchName.trim();
@@ -49,6 +64,7 @@
         id="branches"
         {nav}
         count={git.branches.length}
+        badge
         {open}
         {ontoggle}
     >

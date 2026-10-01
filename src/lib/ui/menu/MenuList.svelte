@@ -21,7 +21,7 @@
     // it, and the list's first choice draws none (menu-items.ts, `ruleAbove`).
 
     import { DropdownMenu } from 'bits-ui';
-    import { ruleAbove, type MenuGroup, type MenuItem } from '$lib/ui/menu/menu-items';
+    import { clickOf, ruleAbove, type MenuGroup, type MenuItem } from '$lib/ui/menu/menu-items';
     import Glyph from '../display/Glyph.svelte';
     import FloatingList from '../frame/FloatingList.svelte';
     import MenuList from './MenuList.svelte';
@@ -109,7 +109,10 @@
 
 {#snippet entry(item: MenuItem, at: string, group?: MenuGroup)}
     {#if item.items === undefined}
-        <DropdownMenu.Item onclick={(event: MouseEvent) => onpick(item.id, event, group?.id)}>
+        <DropdownMenu.Item
+            disabled={item.disabled === true}
+            onclick={clickOf(item, onpick, group?.id)}
+        >
             {#snippet child({ props })}
                 <div
                     {...props}
@@ -267,6 +270,10 @@
 
     .item.current {
         color: var(--accent-txt, var(--accent));
+    }
+
+    .item[data-disabled] {
+        opacity: 0.5;
     }
 
     .item:focus-visible {

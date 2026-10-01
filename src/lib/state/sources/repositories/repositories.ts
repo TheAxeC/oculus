@@ -1,9 +1,10 @@
 // Layer 2, client state. What the Repositories view computes rather than draws: the addresses of
 // the reads it asks for on demand (a diff, a page of the graph, a commit's files, a blame, the
 // gutter marks, the three versions of a conflict), the identity of a diff pane, the worktree rule
-// the view and the write share, which repository one view shows with which of its sections closed,
-// the rows its keyboard moves along, and the colour and word of a status letter both change lists
-// draw.
+// the view and the write share, which repository one view shows with which of its sections closed
+// and in which mode, the rows its keyboard moves along, the colour and word of a status letter both
+// change lists draw, what the commit box's one button is, and the words of the questions the sync,
+// pull, push and publish controls ask.
 //
 // The worktree rule comes from data/helpers/worktrees.ts, the one place it lives, so the path the
 // view shows before a worktree is made is the path the write makes. Nothing here fetches: the view
@@ -25,6 +26,8 @@ import type {
     GitWorktree
 } from '../../../data/model/index.ts';
 import { worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
+import { t } from '../../shared/words/text.ts';
+import { changeTree, folderId, visibleRows } from './change-tree.ts';
 
 export { validName, worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
 
@@ -97,7 +100,8 @@ export function worktreeDiffUrl(root: string, path: string): string {
 
 /**
  * What one diff pane is over: a file under a root, staged or not; a whole worktree; one commit's
- * change to a file (`commit`); or a whole stash (`stash`). `line` is the line of the new side the
+ * change to a file (`commit`); a whole stash (`stash`); or every path of a change group (`group`).
+ * `line` is the line of the new side the
  * pane opens at, 0 for its top.
  */
 export type DiffSubject = {
@@ -107,6 +111,8 @@ export type DiffSubject = {
     worktree: boolean;
     commit?: string;
     stash?: string;
+    /** Every path of a change group, for the diff pane a group head opens; the path is empty. */
+    group?: 'staged' | 'changed';
     line?: number;
 };
 
@@ -117,6 +123,7 @@ export type DiffState = DiffSubject & { id: string; label: string };
 
 /** Which diff a subject is, the part of its id that is not the root and the path. */
 function sideOf(subject: DiffSubject): string {
+    if ((subject.group ?? '') !== '') return `group@${subject.group ?? ''}`;
     if (subject.worktree) return 'worktree';
     if ((subject.commit ?? '') !== '') return `commit@${subject.commit ?? ''}`;
     if ((subject.stash ?? '') !== '') return `stash@${subject.stash ?? ''}`;
@@ -132,6 +139,24 @@ export function diffState(subject: DiffSubject, label: string): DiffState {
     return { ...subject, id: `${sideOf(subject)}:${subject.root}:${subject.path}`, label };
 }
 
+/** The diff pane's state out of what an instance carries, each field read defensively. */
+export function heldDiff(state: unknown): DiffState {
+    const map = (state ?? {}) as Partial<DiffState>;
+    const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+    return {
+        id: text(map.id),
+        label: text(map.label),
+        root: text(map.root),
+        path: text(map.path),
+        staged: map.staged === true,
+        worktree: map.worktree === true,
+        commit: text(map.commit),
+        stash: text(map.stash),
+        group: map.group === 'staged' || map.group === 'changed' ? map.group : undefined,
+        line: typeof map.line === 'number' ? map.line : 0
+    };
+}
+
 /** The address one diff pane reads, by what it is over. */
 export function diffUrl(state: DiffSubject): string {
     if (state.worktree) return worktreeDiffUrl(state.root, state.path);
@@ -142,21 +167,78 @@ export function diffUrl(state: DiffSubject): string {
 
 /**
  * Whether a diff pane's hunks can be staged, unstaged or reverted: a file's own diff, staged or
- * not, and nothing a commit, a stash or a worktree holds.
+ * not, and nothing a commit, a stash, a worktree or a whole group holds.
  */
 export function diffActs(state: DiffSubject): boolean {
-    return !state.worktree && (state.commit ?? '') === '' && (state.stash ?? '') === '';
+    return (
+        !state.worktree &&
+        (state.commit ?? '') === '' &&
+        (state.stash ?? '') === '' &&
+        (state.group ?? '') === ''
+    );
+}
+
+/** The paths a change group holds, as the git state lists them, for the group's diff pane. */
+export function groupPaths(git: GitState, group: 'staged' | 'changed'): string[] {
+    return (group === 'staged' ? git.staged : git.unstaged).map((entry) => entry.path);
+}
+
+/**
+ * The old path of a renamed or copied file of a change group, as the git state lists the entry, or
+ * the empty string: a group's diff reads each path alone, which shows a renamed file as created.
+ */
+export function groupFrom(git: GitState | null, group: 'staged' | 'changed', path: string): string {
+    if (git === null) return '';
+    const entries = group === 'staged' ? git.staged : git.unstaged;
+    return entries.find((entry) => entry.path === path)?.from ?? '';
+}
+
+/**
+ * Whether a group's diff has to wait for the `git` channel: a pane restored with the layout
+ * mounts before the channel's first payload, when no repository is known yet and its paths are
+ * not either.
+ */
+export function groupWaits(git: GitState | null, roots: readonly string[]): boolean {
+    return git === null && roots.length === 0;
+}
+
+/**
+ * The answers of `read` over `items`, in the order of the items, with at most `limit` reads
+ * running at once.
+ */
+export async function readAll<T, R>(
+    items: readonly T[],
+    limit: number,
+    read: (item: T) => Promise<R>
+): Promise<R[]> {
+    const answers = new Array<R>(items.length);
+    let next = 0;
+    const worker = async (): Promise<void> => {
+        while (next < items.length) {
+            const at = next;
+            next += 1;
+            answers[at] = await read(items[at]);
+        }
+    };
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+    return answers;
 }
 
 /** How a diff pane lays its two sides out, kept per pane. */
 export type DiffMode = 'side' | 'inline';
 
 /**
- * A diff pane's own remembered choices: its layout, and each file's diff editor view state (the
- * unchanged runs the reader revealed and the scroll), by the file's path, as Monaco's
- * `saveViewState` gives it and `restoreViewState` takes it back.
+ * A diff pane's own remembered choices: its layout; whether the unchanged runs of every file are
+ * folded; the files folded to their header, by the key `fileKeys` gives; and each file's diff
+ * editor view state (the unchanged runs the reader revealed and the scroll), by the file's path,
+ * as Monaco's `saveViewState` gives it and `restoreViewState` takes it back.
  */
-export type DiffView = { mode: DiffMode; views: Record<string, object> };
+export type DiffView = {
+    mode: DiffMode;
+    views: Record<string, object>;
+    unchanged: 'folded' | 'shown';
+    folded: string[];
+};
 
 /** A plain object, and nothing else, as the instance state stores one. */
 function objectOf(value: unknown): Record<string, unknown> | null {
@@ -166,9 +248,10 @@ function objectOf(value: unknown): Record<string, unknown> | null {
 }
 
 /**
- * A diff pane's remembered choices, every field defaulted: side by side, no view state. A view
- * state that is not an object is dropped, and so is one keyed to a path not among `paths`, the
- * files of the diff, when they are given.
+ * A diff pane's remembered choices, every field defaulted: side by side, the unchanged runs
+ * folded, no file folded, no view state. A view state that is not an object is dropped, and so is
+ * one keyed to a path not among `paths`, the files of the diff, when they are given; a folded file
+ * not among them is dropped the same way.
  */
 export function diffViewOf(state: unknown, paths?: readonly string[]): DiffView {
     const map = objectOf(state) ?? {};
@@ -177,7 +260,33 @@ export function diffViewOf(state: unknown, paths?: readonly string[]): DiffView 
         const kept = objectOf(view);
         if (kept !== null && (paths === undefined || paths.includes(path))) views[path] = kept;
     }
-    return { mode: map.mode === 'inline' ? 'inline' : 'side', views };
+    const folded = Array.isArray(map.folded)
+        ? map.folded.filter(
+              (one): one is string =>
+                  typeof one === 'string' && (paths === undefined || paths.includes(one))
+          )
+        : [];
+    return {
+        mode: map.mode === 'inline' ? 'inline' : 'side',
+        views,
+        unchanged: map.unchanged === 'shown' ? 'shown' : 'folded',
+        folded
+    };
+}
+
+/** The folded files with `key` folded if it was open and opened if it was folded. */
+export function toggleFolded(folded: readonly string[], key: string): string[] {
+    return folded.includes(key) ? folded.filter((one) => one !== key) : [...folded, key];
+}
+
+/** The folded files without `key`, which a step onto its change opens. */
+export function unfolded(folded: readonly string[], key: string): string[] {
+    return folded.filter((one) => one !== key);
+}
+
+/** Whether git's head lines for a file say the diff deletes it, so it is not on disk to open. */
+export function fileDeleted(file: Pick<DiffSides, 'head'>): boolean {
+    return file.head.some((line) => line.startsWith('deleted file mode '));
 }
 
 /**
@@ -285,10 +394,17 @@ export function plannedPath(root: string, name: string): string {
 
 /**
  * What one Repositories view keeps about itself across a tab switch and a saved page: the
- * repository it shows, the sections the reader closed, and the commit of the graph whose files are
- * open, the empty string for none.
+ * repository it shows, the sections and folders the reader closed, the commit of the graph whose
+ * files are open (the empty string for none), whether the change groups are lists or trees, and a
+ * request to open the Branches section, which the repository answers and clears.
  */
-export type RepositoriesView = { root: string; collapsed: string[]; commit: string };
+export type RepositoriesView = {
+    root: string;
+    collapsed: string[];
+    commit: string;
+    mode: 'list' | 'tree';
+    reveal: '' | 'branches';
+};
 
 /**
  * The Repositories view's instance state, every field defaulted, so a state from any source draws.
@@ -303,7 +419,9 @@ export function repositoriesViewOf(state: unknown): RepositoriesView {
         collapsed: Array.isArray(map.collapsed)
             ? map.collapsed.filter((one): one is string => typeof one === 'string')
             : [],
-        commit: typeof map.commit === 'string' ? map.commit : ''
+        commit: typeof map.commit === 'string' ? map.commit : '',
+        mode: map.mode === 'tree' ? 'tree' : 'list',
+        reveal: map.reveal === 'branches' ? 'branches' : ''
     };
 }
 
@@ -399,6 +517,29 @@ export function repoListRows(roots: readonly string[], collapsed: readonly strin
     return rows;
 }
 
+/** The key rows of one group in tree mode: its folder rows and file rows that stay drawn. */
+function treeKeyRows(
+    group: string,
+    entries: readonly GitEntry[],
+    collapsed: readonly string[],
+    root: string
+): KeyRow[] {
+    const closed = (path: string): boolean => collapsed.includes(folderId(root, group, path));
+    const rows: KeyRow[] = [];
+    const folders: string[] = [];
+    for (const row of visibleRows(changeTree(entries), closed)) {
+        const parent = row.depth === 0 ? `group:${group}` : folders[row.depth - 1];
+        if (row.kind === 'folder') {
+            const id = folderId(root, group, row.path);
+            folders[row.depth] = id;
+            rows.push({ id, parent, open: !closed(row.path) });
+        } else {
+            rows.push({ id: `change:${group}:${row.path}`, parent });
+        }
+    }
+    return rows;
+}
+
 /**
  * The rows of one repository as its keyboard reads them (ui/tree/tree-keys.ts's KeyRow), in the
  * order the view draws them: each section head, and under an open one its groups and rows. A line
@@ -408,7 +549,8 @@ export function repoListRows(roots: readonly string[], collapsed: readonly strin
 export function repositoryKeyRows(
     git: GitState,
     collapsed: string[],
-    graph: readonly KeyRow[] = []
+    graph: readonly KeyRow[] = [],
+    tree?: { root: string; mode: 'list' | 'tree' }
 ): KeyRow[] {
     const rows: KeyRow[] = [];
     const head = (id: string): boolean => {
@@ -423,7 +565,9 @@ export function repositoryKeyRows(
         for (const group of changeGroups(git)) {
             const open = !collapsed.includes(group.id);
             rows.push({ id: `group:${group.id}`, parent: 'changes', open });
-            if (open) {
+            if (open && tree?.mode === 'tree' && group.id !== 'merge') {
+                rows.push(...treeKeyRows(group.id, group.entries, collapsed, tree.root));
+            } else if (open) {
                 under(
                     `group:${group.id}`,
                     group.entries.map((entry) => `change:${group.id}:${entry.path}`)
@@ -507,6 +651,9 @@ export function statusWordKey(status: string): string {
     return `repositories.status_${STATUS_WORDS[status] ?? 'changed'}`;
 }
 
+/** Git's status code of a renamed file, which a diff's file header draws beside its old path. */
+export const RENAMED = 'R';
+
 /** The inline style that colours one git status: its token's text colour. */
 export function statusStyle(status: string): string {
     const tone = isConflict(status) ? 'scm-conflict' : (STATUS_TONES[status] ?? 'grey');
@@ -531,6 +678,14 @@ export function changeCount(git: GitState): number {
 /** The upstream the checked-out branch tracks, by name, or the empty string. */
 export function upstreamOf(git: GitState): string {
     return git.branches.find((branch) => branch.current)?.upstream ?? '';
+}
+
+/**
+ * Whether the checked-out branch tracks an upstream that the branch listing has named, which is
+ * when Sync has something to sync against. A detached HEAD tracks none.
+ */
+export function tracksUpstream(git: GitState): boolean {
+    return !git.detached && git.upstream === true && upstreamOf(git) !== '';
 }
 
 /**
@@ -574,4 +729,73 @@ export function repoShape(root: string, state: GitState | null): RepoShape {
 /** The branch a listing marks as checked out, or null where none is (a detached head). */
 export function currentBranch<T extends { current: boolean }>(branches: readonly T[]): T | null {
     return branches.find((one) => one.current) ?? null;
+}
+
+/**
+ * How many lines the commit message field is drawn with: one while it is empty, otherwise its
+ * lines, a trailing newline counting the empty line after it, and ten at most. A long line that
+ * wraps grows the field further through its own sizing, not through this number.
+ */
+export function messageRows(message: string): number {
+    if (message === '') return 1;
+    return Math.min(10, message.split('\n').length);
+}
+
+/** The branch a commit would land on, or the empty string for a detached or unnamed head. */
+export function checkedOutBranch(git: GitState): string {
+    return git.detached || git.branch === 'HEAD' ? '' : git.branch;
+}
+
+/**
+ * What the commit box's one button is: Commit, Sync Changes, Publish Branch, or Commit disabled.
+ */
+export type ActionButton = 'commit' | 'sync' | 'publish' | 'none';
+
+/**
+ * Which button the commit box draws under its message field. Commit while anything is staged,
+ * changed, untracked or unmerged or a merge or rebase is in progress; else Sync Changes when the
+ * branch has an upstream it is ahead of or behind; else Publish Branch where the branch can be
+ * published; else Commit, disabled.
+ */
+export function actionButton(git: GitState): ActionButton {
+    const anything =
+        git.staged.length + git.unstaged.length + git.untracked.length + git.conflicted.length > 0;
+    if (anything || git.sequence !== '') return 'commit';
+    if (tracksUpstream(git) && git.ahead + git.behind > 0) return 'sync';
+    return canPublish(git) ? 'publish' : 'none';
+}
+
+/** The question and the sentence under it that a control asks before it writes. */
+export type Words = { message: string; detail: string };
+
+/** The Sync question: pull then push the checked-out branch against its upstream. */
+export function syncWords(git: GitState): Words {
+    return {
+        message: t('repositories.sync_confirm', git.branch, upstreamOf(git)),
+        detail: t('repositories.sync_detail', git.behind, git.ahead)
+    };
+}
+
+/** The Pull question. */
+export function pullWords(git: GitState): Words {
+    return {
+        message: t('repositories.pull_confirm', git.branch, upstreamOf(git)),
+        detail: t('repositories.pull_detail')
+    };
+}
+
+/** The Push question. */
+export function pushWords(git: GitState): Words {
+    return {
+        message: t('git.push_confirm', git.branch, upstreamOf(git)),
+        detail: t('git.push_detail', git.ahead)
+    };
+}
+
+/** The Publish Branch question, for one remote. */
+export function publishWords(git: GitState, remote: string): Words {
+    return {
+        message: t('repositories.publish_confirm', git.branch, remote),
+        detail: t('repositories.publish_detail')
+    };
 }

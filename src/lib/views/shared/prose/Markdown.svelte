@@ -197,7 +197,7 @@
     /* A document drawn straight onto the wallpaper (a box that is not tinted) keeps the one surface
        its fenced blocks would otherwise lack, so a block of code is read off a surface. */
     :global(body.wall) .doc.surfaced :global(pre) {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
     }
 

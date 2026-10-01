@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import OpenMenu from './OpenMenu.svelte';
-import type { MenuItem } from '../../../src/lib/ui/menu/menu-items.ts';
+import { clickOf, type MenuItem } from '../../../src/lib/ui/menu/menu-items.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -53,6 +53,35 @@ describe('a menu choice with a list of its own', () => {
             ([key, words]) => key.startsWith('ui.menu') && words === 'Back'
         );
         expect(backWords).toEqual([]);
+    });
+});
+
+describe('a disabled menu item', () => {
+    // Red when MenuList.svelte stops handing `disabled` to the item it draws.
+    it('carries the disabled mark bits-ui gives it, and an enabled item carries none', () => {
+        const body = drawn([
+            { id: 'wait', label: 'Waiting', disabled: true },
+            { id: 'go', label: 'Going' }
+        ]);
+
+        expect(itemOf(body, 'Waiting')).toMatch(/^<[a-z]+ [^>]*aria-disabled="true"/);
+        expect(itemOf(body, 'Waiting')).toContain('data-disabled');
+        expect(itemOf(body, 'Going')).not.toContain('data-disabled');
+        expect(itemOf(body, 'Going')).not.toContain('aria-disabled="true"');
+    });
+
+    // Red when the click handler MenuList gives an item runs onpick for a disabled one: bits-ui
+    // runs the caller's click handler before its own disabled check, so a mouse press reaches it
+    // whatever the mark.
+    it('hands a press on it to nothing, and a press on an enabled item to onpick', () => {
+        const picked: string[][] = [];
+        const onpick = (id: string, _event: MouseEvent, group?: string): void => {
+            picked.push([id, group ?? '']);
+        };
+        clickOf({ id: 'wait', label: 'Waiting', disabled: true }, onpick, 'g')({} as MouseEvent);
+        clickOf({ id: 'go', label: 'Going' }, onpick, 'g')({} as MouseEvent);
+
+        expect(picked).toEqual([['go', 'g']]);
     });
 });
 

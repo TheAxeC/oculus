@@ -209,3 +209,193 @@ Cases of the brief's "Cases" (as ruled at round 0 where a ruling applies):
 - Item 2's coverage beyond its scope. A grep of every `throw new Error` in `src` found no other reader that throws on a merged-config value: `careerRules` and `portfolioConfigFrom`, which `target()` runs, do not throw. The reviewer judged the list to cover the brief's scope (`createServerContext` and `src/lib/data/sources/config/`). Readers that silently fall back, like `notifyConfig`, are outside what this check can find.
 
 Reviewer usage: tokens not visible to the reviewer; about 62 tool uses; time not measured.
+
+## Repair round 1, refuted
+
+# Step S3b refuter report over repair round 1 (on .agents/worktrees/S3b, base 41177dcf)
+
+A page this report cites is named with its section. A finding in code keeps its `file:line`.
+
+## Verification (rerun by the reviewer)
+
+```
+From the worktree root, as the prompt gave it:
+$ PATH=...:$PATH sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md
+$ npm test
+npm error enoent Could not read package.json: ... open '/Users/axelfaes/workspace/research-hub/.agents/worktrees/S3b/package.json'
+checks: failed with exit 254: npm test
+(The verify block says "from tools/oculus in the worktree". The list was rerun from there.)
+
+From .agents/worktrees/S3b/tools/oculus:
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
+diagrams exit=0. `git status --short | shasum` gave 2a9875e5... before and after the run. `git diff 41177dcf --stat -- docs/diagrams` gave 6 files, 562 insertions, 514 deletions, the same churn as before the run.
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+exit=0
+$ npm test
+ Test Files  357 passed | 20 skipped (377)
+      Tests  5538 passed | 577 skipped (6115)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  442 passed | 9 skipped (451)
+$ npm run check
+1790825970532 COMPLETED 2494 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+
+Brief verify 3, with tests/checks/diagrams added as round 1 says:
+$ npx vitest run tests/server/edit tests/routes/edit tests/server/machine/usage tests/checks/diagrams --testTimeout 0
+ Test Files  21 passed (21)
+      Tests  542 passed (542)
+
+Brief verify 4 (shasum of appearance, behavior, layout, present, sources and catalogs/options.yml), taken after all the runs above:
+97cdefba..., ca2a2cf0..., ec13dbee..., cb54e715..., 1674b4d9..., ad8e2934...
+These are the same sums the builder's report and the first refuter report give.
+
+The rules file's perl ASCII gate over src, tests and config, with local.yml excluded by name: prints nothing.
+sh utils/folder-check.sh -> folder=0. sh utils/size-check.sh -> size=0.
+LC_ALL=C grep -n '[^ -~]' utils/diagrams/writes.mjs HELP.md DESIGN.md -> nothing.
+
+Brief verify 5 and the closures. These were run on a scratch copy of tools/oculus under the session scratchpad. The copy was made with rsync excluding node_modules, .scratch and config/local.yml, and node_modules was symlinked. A baseline run of the four step test files on the copy gave Tests 151 passed (151).
+
+- First run on the unchanged source. The src and config diff was reversed with `git diff 41177dcf -- tools/oculus/src tools/oculus/config` and `patch -R`, and config-key.ts was deleted:
+  npx vitest run tests/server/edit/config-key.test.ts tests/routes/edit tests/server/machine/usage/refresh.test.ts tests/state/client/writes.test.ts --testTimeout 0
+   Test Files  6 failed | 3 passed (9)
+        Tests  20 failed | 191 passed (211)
+  This matches the report exactly. The 20 failures are the 12 config-key route tests, the 3 unwritable-undo tests, the page-write test, the 2 requireRefreshSettings tests and the 2 parser tests.
+- Ruling 1, the finder's throw after the edit swallowed (catch sets given = []): 2 failed, "refuses a write when a finder throws on the configuration holding it, in its own words" and "... throws before the edit and again after it".
+- Ruling 1, a finder that threw before the edit compared with an empty set (seen = new Set()): 1 failed, "compares nothing for a finder that threw before the edit and gives findings after it".
+- Ruling 3, copyOf replaced by the JSON copy: 1 failed, "writes beside a file value that JSON cannot hold: infinity, not a number and minus zero".
+- Ruling 3, copyOf replaced by the parsed value itself: 1 failed, "refuses an edit that would change a second key, which an alias of the map reads".
+- Ruling 10, the catch in undoChange removed: 1 failed, "answers unwritable for a setting whose file has turned read-only", Error: EACCES: permission denied, open '.../config/behavior.yml'.
+- Ruling 10, the rail branch mapped to null: 1 failed, the rail test, "expected 404 to be 500".
+- Ruling 10, the deck branch mapped to null: 1 failed, the deck test, "expected 404 to be 500".
+- Ruling 10, writes.ts mapping 'unwritable' to 404: all 3 unwritable-undo tests failed, "expected 404 to be 500".
+- Ruling 5, utils/diagrams/writes.mjs reversed to the base with `git diff 41177dcf -- tools/oculus/utils/diagrams/writes.mjs` and `patch -R`, then npm run diagrams and npx vitest run tests/checks/diagrams:
+   x parts two arrows that reach one module from two modules (expected 1 to be 2)
+   x parts a plain arrow that runs along an arrow drawn through its words (expected 1 to be 2)
+   x have no two arrows running along each other in the write diagram: the four pairs the first report quoted (feeds.ts to file on disk along feeds.ts->json.ts for 85, along feeds.ts->entries.ts for 41, config-key.ts->json.ts along deck.ts->json.ts for 56, entries.ts->changes.ts along manifest.ts->changes.ts for 54)
+   x draws no arrow for a local that has the name of an import (expected 'digraph writes {...' not to contain 'lib/server/edit/old.ts')
+   Test Files  2 failed | 1 passed (3), Tests  4 failed | 68 passed (72)
+  This matches the report.
+- The report's claim under ruling 1 that a docs: path under an unreadable folder does not make docFindings throw. A node probe with a folder at chmod 000 printed "exists false". That fits content/docs.ts:479, where existsSync runs before statSync, so the finder gives "no file at" and does not throw.
+
+grep checks: `grep -n "type Written" yaml-edit.ts` gives `107:type Written = ...`, which is not exported. `grep -n plain config-key.ts` finds only prose in comments; there is no import and no call.
+The scratch copy was removed. Two logs (checks.log and diagrams.log) were written to the shared scratchpad and may have replaced files of the same name there. At the end, `git status --short | shasum` from tools/oculus gave 2a9875e5..., the same as at the start (31 lines), and `git diff 41177dcf --stat` gave 27 files, 1036 insertions, 570 deletions.
+```
+
+## Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. `bodies.ts` `configKeyWrite` uses the `body.kind !== 'config-key'` form. Its refusal tests are in `write.test.ts` ("the config-key body"), and both parser tests failed on the unchanged source.
+- 2: holds. Each round-1 closure checked out on rerun:
+  - Ruling 1: the finders have no catch after the edit; a finder whose before-run throws is not compared; both shapes are in one comment at `config-key.ts:71-76`. The three mutation runs above fail.
+  - Ruling 2: `READERS` (`:83-98`) holds only readers that throw on a config value. `textCatalog` throws `TextNotAMap` through `merge.ts:210-214`. `iconSet` is out, since `iconFile` (`catalogs.ts:76-83`) returns null for a name with no file.
+  - Ruling 3: `copyOf` is at `:182-187`, and both mutations fail.
+  - Ruling 5: `plain` is gone.
+  The refusal order, the catalog lookup, the splice, the atomic write and the record all stand from round 0, and the step's 32 writer tests pass.
+- 3: holds. `writes.ts:498-509`. The head comment at `:20-26` is true to the file.
+- 4: holds. `valueNow` reads through `configKeyNow` (`undo.ts:134`). `apply` writes through `writeConfigKey` (`undo.ts:264-267`). Cases 15, 16 and 24 pass. Behaviour 1 below covers the reader-facing wording of the new `unwritable` answer.
+- 5: holds. `history.yml:50` has `kind_config_key: setting`. The `changes.ts:69` doc now says "`deck`, `rail` for the rail list, or a config file's name for a setting" (ruling 6).
+- 6: holds. `writes.svelte.ts` `writeConfigKey` and `shapes.ts:169`. The page-write test failed on the unchanged source.
+- 7: violated. See Standards 1. `HELP.md:256` holds after ruling 7. `DESIGN.md:313` names `config-key` among the closed kinds, but two line citations on that line, and one on `DESIGN.md:266`, are made false by the step.
+
+Cases (as ruled at round 0 where a ruling applies):
+
+- 1: met. The writer test compares bytes and checks the record. The route test checks the log row. "has a word of its own in the History view, a setting" checks "setting".
+- 2: met. The writer and route tests check `{ changed: [], refused: [] }`, no record and the same bytes.
+- 3: met. The reader's sentence is checked, and the file is unchanged.
+- 4: met, under ruling 1. `2.5` gives the reader's sentence. `"300"`, `true`, `[]`, `null`, `1e309` and `{}` give not_number. `-0` on `calendar.days_back` is written as `0`.
+- 5: met. The reason, the bytes and the mtime of the scratch `local.yml` are checked.
+- 6: met. All 13 names are refused as no_entry.
+- 7: met.
+- 8: met.
+- 9: met.
+- 10: met.
+- 11: met.
+- 12: met.
+- 13: met.
+- 14: met. The alias-of-map case is still refused as not_kept, and the round-1 mutation confirms it.
+- 15: met.
+- 16: met.
+- 17: met.
+- 18: met. The body tests now use `configTarget()` (`write.test.ts:732`). Spec 1 covers one more config-key body that still runs on `engineDir()`.
+- 19: met.
+- 20: met.
+- 21: met.
+- 22: met.
+- 23: met.
+- 24: met.
+- 25: met.
+- 26: met.
+- 27: met.
+- 28: met.
+
+## 1. Spec
+
+- `tests/routes/edit/write.test.ts:341` and `:370-373`: `'config-key': { kind: 'config-key', file: 'behavior.yml', key: 'changes.keep' }` in `MALFORMED`, run through `const into = target();`.
+  - What is wrong: `target()` sets `engine: engineDir()` (`write-fixture.ts:119`). The brief says "a route test builds its target with engine set to that temporary engine, never engineDir()". Ruling 4 moved only the tests at `:727-736` to `configTarget()`. This second config-key body test still runs against the checkout.
+  - Failure scenario: none today. The parser rejects the body, and with no `value` the writer would refuse it as not_number anyway. If a later change makes the parser accept this body, the test runs a config-key write against the checkout's `config/`.
+  - Verdict: none (case 18 met). The fix is one line at landing: `configTarget()` for this kind.
+- `src/lib/server/edit/writes/undo.ts:255-256` (the deck branch of `apply`): `if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;`. This is the builder's Finding 1.
+  - Ruling 10 names "a config-key or a rail change" and the round says "change nothing else", so the deck mapping is outside the ruling's letter. It is inside the ruling's intent ("an undo whose writer [cannot write] its file answers 500 unwritable, as the write path does") and inside the round's paths (`undo.ts`, `undo.test.ts`).
+  - The deck had the same cause on the next lines of `apply`. Before the round, `writeDeck`'s `{ error: 'unwritable' }` became `null`, so the undo answered `404 { error: 'nothing' }`, which says the change cannot be taken back.
+  - The behaviour is right. The deck's own write path answers `500 { error: 'unwritable' }` for the same word (`writes.ts:449-454`), and the undo now matches it. The deck test fails without the line (rerun above).
+  - Leaving the deck out would have left the same defect in the function the ruling sent the builder to change. The report names the change openly.
+  - Verdict: none. Keep it.
+
+## 2. Proof
+
+- `S3b-report.md`, "Host and user-visible changes", the row "`HELP.md:256` | listed the audit mute among the recorded writes | says muting an audit finding is not recorded".
+  - What is wrong: at the base, `HELP.md:256` did not list the audit mute; only the round-0 diff added it. The "Before" column describes the builder's own round-0 state, not the base. Against the base, the change is that HELP now says muting an audit finding goes through the write endpoint and is not recorded.
+  - Failure scenario: a reader of the landing record believes the base HELP was wrong about the audit mute and that this step corrected it.
+  - Verdict: none. Correct the row at landing.
+
+## 3. Standards
+
+- `DESIGN.md:313`: "(`server/edit/writes/entries.ts:68`, `server/edit/writes.ts:84-85`)" and "since `undoChange` answers `nothing` for such a record (`writes/undo.ts:184`)". Also `DESIGN.md:266`: "(`+page.server.ts:26-27`, `writes.svelte.ts:420-421`)".
+  - What is wrong: the rules file, "What every package obeys", says "A sentence in a document or a head comment that the change makes false is a defect of the change".
+    - The step adds lines above all three cited places. The lines were checked on a scratch copy of the base files (`patch -R`) and on the worktree.
+    - The bookmarks comment of `WriteTarget` was at `writes.ts:84-85` at the base and is now at `:89-90`.
+    - The `undo === 'none'` line was at `undo.ts:185` at the base (already one off) and is now at `:188`.
+    - `invalidateAll` was at `writes.svelte.ts:420-421` and is now at `:430-431`; `:420-421` now hold `setTimeout` and `try {`.
+  - Brief item 7 has DESIGN.md:313 corrected in place for a sentence the step makes false. `DESIGN.md:266` is outside the brief's path list, but its citation drifts because of this step's insert.
+  - Failure scenario: a reader follows `writes.ts:84-85` and lands in the overrides sentence of the `WriteTarget` doc, or follows `writes.svelte.ts:420-421` and finds a timer instead of the 403 reload.
+  - Verdict: item 7 violated. The fix at landing is three numbers: `writes.ts:89-90`, `undo.ts:188`, `writes.svelte.ts:430-431`. Whoever lands after X3d and Q109 should recompute them, since those steps also touch DESIGN.md.
+
+## 4. Behaviour
+
+- `src/lib/server/edit/writes/undo.ts:192-199` and `writes.ts:524-526` against `src/lib/views/system/history/rows.ts:85-93`, `sentenceFor`: `return t('history.refused', word);` for any word it does not know.
+  - What is wrong:
+    - Ruling 10 adds a new undo answer word, `unwritable`. The History view words each undo answer through `sentenceFor`, whose doc says "The sentence for what the endpoint answered, never its own word". It has branches for `moved`, `gone`, `unknown`, `nothing` and `refused` only.
+    - `send` (`writes.svelte.ts:439-442`) passes `body.error` through, so the row now reads "The undo was refused: unwritable", the wire word.
+    - `config/text/views/system/history.yml` has no `history.unwritable` key. The test `tests/views/system/history.test.ts:98-118` ("has a sentence of its own for every word the endpoint answers, and never the word") still lists four words.
+    - The rules file says that after changing a shape, every hit is carried. The report's table states the 500 answer but not what the History row says.
+    - This is a reading of the code; no screen was looked at.
+  - Failure scenario: a reader makes `behavior.yml`, `layout.yml` or `present.yml` read-only and presses undo on a setting, rail or deck row. The row says "The undo was refused: unwritable". Before the round, rail and deck said "This write cannot be taken back.", which was also wrong.
+  - Verdict: none against item 4's text. Ruling 10's closure stops short of its one consumer.
+  - The fix at landing: a `history.unwritable` sentence in `history.yml`, a branch in `sentenceFor`, and the word added to the test at `history.test.ts:99-104`. `rows.ts` and `history.test.ts` are outside the step's paths.
+- `src/lib/server/edit/writes/config-key.ts:259-267`, `configKeyNow`: `try { ... readFileSync(join(configDir(engine), file), 'utf8') ... } catch { return none; }`.
+  - What is wrong: a file the undo cannot read (mode 000, EACCES) answers not found, so the undo answers `404 { error: 'gone' }` ("What this write addressed is no longer in the hub"). The write path answers `500 { error: 'unwritable' }` for the same file.
+  - Ruling 10's tests make the file read-only, which `valueNow` can still read, so this case is not exercised. Item 4 lists not-found for a missing key and an unparsed file only.
+  - `railNow` and `deckNow` were not read for the same pattern.
+  - Failure scenario: `behavior.yml` at mode 000, undo pressed on a setting row. The reader is told the setting is gone when it is still in the file.
+  - Verdict: none (outside item 4's letter). Fix it at landing (let a read error other than ENOENT reach the undo's catch), or book it.
+- `utils/diagrams/writes.mjs:189`: `const LOCAL = /\b(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g;`.
+  - What is wrong: ruling 5 asks the tool to draw no arrow for "a local variable that shadows an import". The pattern catches only `const name` and the other keyword-name forms. A destructured local (`const { plain } = x`) and a parameter (`(plain) =>`, `function f(plain)`) that shadow an import still draw a call or dotted reference arrow. Judgment call 10 states the opposite limit (an inner-block local hides the import for the whole body) but not this one.
+  - Comments are blanked before the scan (`code.mjs` `codeOf`), so a comment cannot hide an arrow.
+  - Failure scenario: a writer takes a parameter named like one of its imports. The write diagram draws an arrow to that module for a call the code does not make, and the reader of `docs/diagrams/writes.svg` sees a dependency that is not there.
+  - Verdict: none. No module of the write chain does this today: `npm run diagrams` left the committed diagrams unchanged.
+
+## Declined to judge
+
+- The cost of each write (`loadConfig` twice, the five finders twice, `loadLocalOrDefaults` once). It was not measured, and the brief sets no bound.
+- Whether the History wording fix (Behaviour 1) lands in this step or with S3c, which draws the Settings editor. That is the orchestrator's choice. It is a reader-visible string reached by the rail and deck undo today, not only by S3c's caller.
+- Whether `textCatalog(before.config)` at `config-key.ts:282`, outside any catch, should answer something other than `500 unwritable` when the current `text:` tree is not a map. That has been so since round 0, and the brief's item 3 covers only an exception reading or writing the file.
+
+Reviewer usage: tokens not visible to the reviewer; about 45 tool uses; time not measured.

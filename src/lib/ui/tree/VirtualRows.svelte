@@ -90,7 +90,10 @@
         scrollToFn: elementScroll,
         onChange: () => {
             place();
-            windowed = rowWindow(virtualizer);
+            windowed = rowWindow(
+                virtualizer,
+                untrack(() => windowed)
+            );
         }
     });
 
@@ -120,7 +123,10 @@
             scrollMargin: offset,
             rangeExtractor: (range: Range) => keptRange(range, held)
         });
-        windowed = rowWindow(virtualizer);
+        windowed = rowWindow(
+            virtualizer,
+            untrack(() => windowed)
+        );
     }
 
     $effect.pre(() => {

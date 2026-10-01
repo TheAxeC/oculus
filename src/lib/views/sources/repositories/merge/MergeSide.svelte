@@ -154,6 +154,6 @@
     }
 
     :global(body.wall) .bar {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        background: var(--chip-on-wall);
     }
 </style>

@@ -237,7 +237,9 @@ describe('the changes view', () => {
         expect(said(body)).toEqual(['readable']);
         expect(body).toContain('>start<');
         expect(body).toContain('loose.txt');
-        expect(body).toContain(catalog['git.push_none']);
+        // The untracked file is something to commit, so the box draws Commit; the panel has no
+        // Push button of its own to say the branch has no upstream.
+        expect(count(body, catalog['git.push'])).toBe(0);
     });
 
     // Revert: push `sessions.ch_insync` whenever `bits` is empty in
@@ -273,32 +275,39 @@ describe('the changes view', () => {
         expect(marks.length).toBeGreaterThan(1);
     });
 
-    it('disables the push button with its reason while the branch has no upstream', () => {
-        select('live-one');
+    // Case 26. The panel's own Push button and its no-upstream line are gone: the commit box's one
+    // button says what the branch needs.
+    it('draws Sync Changes and no Push button for a branch ahead of its upstream with nothing to commit', () => {
+        otherGit(
+            git({
+                branch: 'main',
+                ahead: 2,
+                upstream: true,
+                branches: [{ name: 'main', upstream: 'origin/main', current: true }]
+            })
+        );
+        select('bare-one');
         const body = html(Changes);
-        expect(body).toContain(catalog['git.push']);
-        expect(body).toContain(catalog['git.push_none']);
-        // the branch has no upstream, which is said in its own words rather than as a lookup still
-        // running
-        expect(body).not.toContain(catalog['git.push_pending']);
-        expect(body).toContain('disabled');
+        expect(body).toContain(catalog['repositories.sync_changes']);
+        // Push is one of the ways in the commit box's dropdown, not a button of the panel.
+        expect(count(body, catalog['git.push'])).toBe(0);
     });
 
-    it('says the upstream is being looked up, not that there is none, before git has answered', () => {
-        const other = git({ branch: '', repository: false, error: 'not a git repository' });
-        receive({
-            channel: 'git',
-            version: 3,
-            payload: { [HUB]: { ...HUB_GIT, upstream: null }, '/other': other }
-        });
+    it('draws Publish Branch for a branch with no upstream and a remote when nothing is to commit', () => {
+        otherGit(git({ branch: 'main', upstream: false, remotes: ['origin'] }));
+        select('bare-one');
+        const body = html(Changes);
+        expect(body).toContain(catalog['repositories.publish']);
+        expect(count(body, catalog['git.push'])).toBe(0);
+    });
+
+    it('draws Commit for a branch with changes, whatever its upstream says', () => {
         select('live-one');
         const body = html(Changes);
-        expect(body).toContain(catalog['git.push_pending']);
-        // git has not answered yet, so the lookup is what is said rather than that there is no
-        // upstream
-        expect(body).not.toContain(catalog['git.push_none']);
-        expect(body).toContain('disabled');
-        receive({ channel: 'git', version: 4, payload: { [HUB]: HUB_GIT, '/other': other } });
+        expect(body).toContain(catalog['git.commit']);
+        // a branch with changes draws Commit, so the wording of an empty branch is absent
+        expect(body).not.toContain(catalog['repositories.sync_changes']);
+        expect(count(body, catalog['git.push'])).toBe(0);
     });
 
     it('draws the commit box with its suggest and commit controls', () => {

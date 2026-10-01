@@ -18,7 +18,7 @@ digraph layer_ui {
         "folder ui/tabs to folder ui/menu" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/tabs to folder ui/tree" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/tabs to layer state" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder ui/tree to folder ui/display" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder ui/tree to folder ui/display" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/tree to folder ui/menu" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/forms to folder ui/controls" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/forms to folder ui/display" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

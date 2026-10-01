@@ -28,7 +28,7 @@
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
-    import { currentBranch, repoShape } from '$lib/state/sources/repositories/repositories';
+    import { repoShape } from '$lib/state/sources/repositories/repositories';
     import ChangesRepo from './ChangesRepo.svelte';
     import ChangesTouched from './ChangesTouched.svelte';
     import { useState } from '$lib/state/client/use';
@@ -56,8 +56,6 @@
     // listing that answers after the workspace changed, or after a later listing was asked for, is
     // for a state the panel no longer draws.
     let asked = 0;
-    const current = $derived(currentBranch(branches));
-    const upstream = $derived(current?.upstream ?? '');
     const busy = $derived(workspace !== '' && repositories.busy(workspace));
     const outcome = $derived(workspace === '' ? '' : repositories.outcome(workspace));
 
@@ -127,17 +125,6 @@
                 t('git.discard_all_detail'),
                 () => void repositories.discardAll(root)
             );
-    }
-    function pushIt(): void {
-        if (upstream === '') return;
-        const root = workspace;
-        ask(
-            t('git.push_confirm', repo?.branch ?? '', upstream),
-            t('git.push_detail', repo?.ahead ?? 0),
-            () => {
-                void repositories.push(root);
-            }
-        );
     }
     function switchTo(name: string): void {
         if (name === '' || name === repo?.branch) return;
@@ -212,13 +199,11 @@
                     root={workspace}
                     state={readable}
                     {branchItems}
-                    {upstream}
                     {busy}
                     {branchName}
                     {outcome}
                     {shared}
                     onswitch={switchTo}
-                    onpush={pushIt}
                     onbranch={createBranch}
                     onbranchname={(next: string) => (branchName = next)}
                     onstage={stagePath}

@@ -8,8 +8,9 @@
 // takes the lane already waiting for that parent or a free one. Lanes are never moved sideways, so
 // a line is straight down its lane until a commit it waits for joins it.
 //
-// Coordinates are in lanes across and in rows down, 0 at the top of a row and 1 at its foot, so
-// the view scales them to whatever row height and lane width it draws.
+// Coordinates of a LaneRow are in lanes across and in rows down, 0 at the top of a row and 1 at
+// its foot. `lanePaths`, `laneX`, `laneWidth` and `commitCircles` turn them into the units of the
+// 22-high row VS Code draws, an SVG the view scales to the text size through its viewBox.
 
 /** What the lanes need of one commit. */
 export type LaneCommit = { hash: string; parents: string[] };
@@ -72,4 +73,122 @@ export function laneRows(commits: readonly LaneCommit[]): LaneRow[] {
         rows.push({ lane, width, lines });
     }
     return rows;
+}
+
+// The drawing of a row, in the units of the 22-high row VS Code draws: a lane is 11 wide, a row 22
+// high, its commit at y = 11. The view scales the whole SVG to the text size through its viewBox,
+// so these numbers stay whatever the text size is.
+
+/** The width of one lane, and half the height of a row. */
+const LANE = 11;
+
+/** The height of a row. */
+const ROW = 22;
+
+/** The x of lane `n`'s vertical. */
+export function laneX(lane: number): number {
+    return LANE * (lane + 1);
+}
+
+/** The width of a row that spans `lanes` lanes, one lane of room beyond the last. */
+export function laneWidth(lanes: number): number {
+    return LANE * (Math.max(lanes, 1) + 1);
+}
+
+/** One stroke of a row as an SVG path, and the lane whose colour it takes. */
+export type LanePath = { d: string; lane: number };
+
+/**
+ * The strokes of a row as SVG paths, the three forms a Source Control graph draws and nothing
+ * else: a lane that passes is one vertical; a lane that ends in the commit from a column to its
+ * right is an arc of radius 11 and a run to the commit's column; a merge parent that leaves the
+ * commit is a run and an arc of radius 11 into its own lane; and the commit's own lane is one
+ * vertical, cut at the dot where the lane begins or ends. A merge parent in a column to the left
+ * takes the mirror of the arc, so its stroke bends the way it goes.
+ */
+export function lanePaths(row: LaneRow): LanePath[] {
+    const cx = laneX(row.lane);
+    const paths: LanePath[] = [];
+    const add = (d: string, lane: number): number => paths.push({ d, lane });
+    const arc = String(LANE);
+    const isOwn = (line: LaneLine): boolean => line.x1 === row.lane && line.x2 === line.x1;
+    const top = row.lines.some((one) => one.y1 === 0 && one.y2 === 0.5 && one.x1 === row.lane);
+    const bottom = row.lines.some((one) => one.y1 === 0.5 && isOwn(one));
+    for (const line of row.lines) {
+        const x = laneX(line.x2);
+        if (line.y1 === 0 && line.y2 === 1) {
+            add(`M ${String(laneX(line.x1))} 0 V ${String(ROW)}`, line.lane);
+        } else if (line.y1 === 0 && line.y2 === 0.5 && line.x1 === row.lane) {
+            add(`M ${String(cx)} 0 V ${String(bottom ? ROW : LANE)}`, line.lane);
+        } else if (line.y1 === 0 && line.y2 === 0.5) {
+            const from = laneX(line.x1);
+            const run = from - LANE === cx ? '' : ` H ${String(cx)}`;
+            add(
+                `M ${String(from)} 0 A ${arc} ${arc} 0 0 1 ${String(from - LANE)} ${arc}${run}`,
+                line.lane
+            );
+        } else if (isOwn(line)) {
+            if (!top) add(`M ${String(cx)} ${arc} V ${String(ROW)}`, line.lane);
+        } else {
+            // a merge parent, into the lane at `line.x2`
+            const right = line.x2 > row.lane;
+            const start = right ? x - LANE : x + LANE;
+            if (start !== cx) add(`M ${String(cx)} ${arc} H ${String(start)}`, line.lane);
+            add(
+                `M ${String(start)} ${arc} A ${arc} ${arc} 0 0 ${right ? '1' : '0'} ${String(x)} ${String(ROW)}`,
+                line.lane
+            );
+        }
+    }
+    return paths;
+}
+
+/** The lanes that carry on below a row, in order: the ones its strokes end in at the row's foot. */
+export function lanesBelow(row: LaneRow): number[] {
+    const below = new Set<number>();
+    for (const line of row.lines) if (line.y2 === 1) below.add(line.x2);
+    return [...below].sort((a, b) => a - b);
+}
+
+/** What a commit's circle stands for: the checked-out commit is first, a merge second. */
+export type CommitKind = 'commit' | 'merge' | 'head' | 'incoming' | 'outgoing';
+
+/** Which circle a commit is drawn with, HEAD before a merge. */
+export function commitKind(commit: { parents: readonly string[] }, head: boolean): CommitKind {
+    if (head) return 'head';
+    return commit.parents.length > 1 ? 'merge' : 'commit';
+}
+
+/**
+ * One circle of a commit's mark: its radius, the width of its stroke, whether the lane's colour
+ * fills it, whether the stroke is the row's background (the ring that parts the mark from the
+ * lines behind it) or the lane's colour, and a dash pattern for a dashed ring.
+ */
+export type Circle = {
+    r: number;
+    ring: number;
+    fill: 'lane' | 'none';
+    stroke: 'row' | 'lane';
+    dash?: string;
+};
+
+/** The circles of a commit's mark, drawn in order at (laneX, 11), the last on top. */
+export function commitCircles(kind: CommitKind): Circle[] {
+    const disc = (r: number): Circle => ({ r, ring: 2, fill: 'lane', stroke: 'row' });
+    const hole = (r: number, ring: number): Circle => ({ r, ring, fill: 'none', stroke: 'row' });
+    switch (kind) {
+        case 'commit':
+            return [disc(5)];
+        case 'merge':
+            return [disc(6), disc(3)];
+        case 'head':
+            return [disc(7), hole(2, 4)];
+        case 'incoming':
+        case 'outgoing':
+            return [
+                disc(7),
+                hole(5, 3),
+                { r: 5, ring: 1, fill: 'none', stroke: 'lane', dash: '4,2' }
+            ];
+    }
 }

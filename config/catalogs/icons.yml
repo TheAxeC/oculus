@@ -50,8 +50,11 @@ icons:
     stash_apply: archive-restore
     tag: tag
     blame: user-round
-    side_by_side: columns-2
-    inline_diff: rows-2
+    stage: plus
+    unstage: minus
+    view_tree: list-tree
+    goto_current: locate-fixed
+    fold_unchanged: fold-vertical
     prev_change: chevron-up
     next_change: chevron-down
     open_file: file-symlink

@@ -116,7 +116,7 @@
 
     /* The titlebar strip keeps the same fraction of the chip colour as the box keeps of its own. */
     :global(body.rice.wall) header {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
     }
 

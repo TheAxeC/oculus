@@ -25,13 +25,16 @@
     // drops it from the list nor hands itself to another one, and repositories/Repo.svelte draws
     // the one sentence that state comes to in place of the sections.
     //
-    // Which repository is shown, which sections are closed and which commit of the graph is open
-    // are the instance's own state, so the view comes back as it was left after a tab switch, and a
-    // repository the list no longer offers hands the view to the first one it does.
+    // Which repository is shown, which sections and folders are closed, which commit of the graph
+    // is open, the mode and the request the Branch control of a row makes for the Branches section
+    // to open are the instance's own state, so the view comes back as it was left after a tab
+    // switch, and a repository the list no longer offers hands the view to the first one it does.
     //
-    // The bar's `...` menu holds what VS Code's does: Pull, Push, Fetch, Sync and Publish Branch;
-    // the three stashes; Create Tag and Push Tags. What asks first is asked here, in the one
-    // confirm dialog or, for what needs words typed, in the prompt, and a yes presses through
+    // The bar holds, whatever the state, a toggle between the list and the tree mode of the changes
+    // (View as Tree, View as List; the list is the start) before its `...` menu, which holds what
+    // VS Code's does: Pull, Push, Fetch, Sync and Publish Branch; the three stashes; Create Tag and
+    // Push Tags. What asks first is asked here, in the one confirm dialog or, for what needs words
+    // typed, in the prompt, and a yes presses through
     // state/sources/repositories/repositories.svelte.ts, which holds which roots have a write in
     // flight and what the last write on each answered.
     //
@@ -52,17 +55,23 @@
     import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Repo from './Repo.svelte';
     import RepoList from './RepoList.svelte';
     import { toggleExpanded } from '$lib/state/sources/fs';
+    import { prunedCollapsed } from '$lib/state/sources/repositories/change-tree';
     import {
         canPublish,
         pickerRoots,
         plannedPath,
+        publishWords,
+        pullWords,
+        pushWords,
         repoShape,
         repositoriesViewOf,
         repositoryLabels,
         shownRoot,
+        syncWords,
         upstreamOf,
         type RepositoriesView
     } from '$lib/state/sources/repositories/repositories';
@@ -102,6 +111,35 @@
 
     function ask(message: string, detail: string, act: () => void): void {
         asking = { message, detail, act };
+    }
+
+    /** Ask a question given as the words it is worded in. */
+    function question(words: { message: string; detail: string }, act: () => void): void {
+        ask(words.message, words.detail, act);
+    }
+
+    /** Open or close one section, group or folder, dropping the folders that no longer exist. */
+    function toggled(id: string): void {
+        const next = toggleExpanded(view.collapsed, id);
+        patch({
+            collapsed: held === null ? next : prunedCollapsed(next, shown, held, view.commit)
+        });
+    }
+
+    /**
+     * Show a repository and ask it to open its Branches section with the focus on its head. The
+     * open commit of the graph stays while the repository is the one already shown.
+     */
+    function showBranches(root: string): void {
+        const commit = root === shown ? view.commit : '';
+        const opened = view.collapsed.filter((id) => id !== 'branches');
+        const target = gitFor(root);
+        patch({
+            root,
+            commit,
+            reveal: 'branches',
+            collapsed: target === null ? opened : prunedCollapsed(opened, root, target, commit)
+        });
     }
 
     /** The `...` menu, in VS Code's groups, holding only what the repository can do now. */
@@ -162,36 +200,14 @@
         } else if (id === 'fetch') {
             void repositories.fetch(root);
         } else if (id === 'pull') {
-            ask(
-                t('repositories.pull_confirm', git.branch, upstreamOf(git)),
-                t('repositories.pull_detail'),
-                () => {
-                    void repositories.pull(root);
-                }
-            );
+            question(pullWords(git), () => void repositories.pull(root));
         } else if (id === 'push') {
-            ask(
-                t('git.push_confirm', git.branch, upstreamOf(git)),
-                t('git.push_detail', git.ahead),
-                () => {
-                    void repositories.push(root);
-                }
-            );
+            question(pushWords(git), () => void repositories.push(root));
         } else if (id === 'sync') {
-            ask(
-                t('repositories.sync_confirm', git.branch, upstreamOf(git)),
-                t('repositories.sync_detail', git.behind, git.ahead),
-                () => void repositories.sync(root)
-            );
+            question(syncWords(git), () => void repositories.sync(root));
         } else if (id.startsWith('publish:')) {
             const remote = id.slice('publish:'.length);
-            ask(
-                t('repositories.publish_confirm', git.branch, remote),
-                t('repositories.publish_detail'),
-                () => {
-                    void repositories.publish(root, remote);
-                }
-            );
+            question(publishWords(git, remote), () => void repositories.publish(root, remote));
         }
     }
 
@@ -275,6 +291,23 @@
 
 {#snippet tools()}
     <Toolbar label={t('views.repositories')}>
+        {#if view.mode === 'tree'}
+            <ToolButton
+                label={t('repositories.view_list')}
+                glyph="list"
+                compact
+                bare
+                onclick={() => patch({ mode: 'list' })}
+            />
+        {:else}
+            <ToolButton
+                label={t('repositories.view_tree')}
+                glyph="view_tree"
+                compact
+                bare
+                onclick={() => patch({ mode: 'tree' })}
+            />
+        {/if}
         {#if menu.length > 0}
             <span data-repo-menu>
                 <Menu
@@ -307,8 +340,10 @@
                 {shown}
                 stateOf={gitFor}
                 collapsed={view.collapsed}
-                ontoggle={(id: string) => patch({ collapsed: toggleExpanded(view.collapsed, id) })}
+                ontoggle={toggled}
                 onpick={(root: string) => patch({ root, commit: '' })}
+                onbranch={showBranches}
+                {ask}
                 onterminal={(root: string) =>
                     void repositories.shellIn(root, root, labels[root] ?? root)}
                 onreveal={(root: string) => void reveal(root)}
@@ -320,9 +355,11 @@
                         git={held}
                         collapsed={view.collapsed}
                         commit={view.commit}
-                        ontoggle={(id: string) =>
-                            patch({ collapsed: toggleExpanded(view.collapsed, id) })}
+                        ontoggle={toggled}
                         oncommit={(hash: string) => patch({ commit: hash })}
+                        mode={view.mode}
+                        reveal={view.reveal}
+                        onrevealed={() => patch({ reveal: '' })}
                         {ask}
                         onswitch={(name: string) => switchTo(shown, name)}
                         onbranch={(name: string) => createBranch(shown, name)}
@@ -356,7 +393,14 @@
         font-size: var(--fs-sm);
     }
 
+    /* The icon controls of the rows are a 16px icon with 2px round it (1px of padding and the
+       control's own 1px border), a 20px box, and the last part of a row (its count or status
+       letter) sits 12px from the row's edge. */
     .repos {
+        --tree-end-inset: 12px;
+        --action-pad: 1px;
+        --action-font: calc(var(--icon-box) * var(--text-scale, 1));
+        --action-glyph: 1em;
         display: flex;
         flex-direction: column;
         gap: 6px;

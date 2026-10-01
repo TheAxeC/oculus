@@ -16,6 +16,8 @@ export type MenuItem = {
     /** The item's hover words, when they say more than its label. */
     title?: string;
     active?: boolean;
+    /** Draw the choice dimmed and let a press do nothing, as a disabled button does (`clickOf`). */
+    disabled?: boolean;
     glyph?: string;
     /** A hue name from state/shared/words/tones.ts, drawn as a dot before the label. */
     tone?: string;
@@ -133,5 +135,21 @@ export function menuClosing(back: () => HTMLElement | null | undefined): MenuClo
                 answer();
             }
         }
+    };
+}
+
+/**
+ * The click handler of a drawn item: hands its id, the event and its group's id to `onpick`, and
+ * does nothing for a disabled item. bits-ui runs the caller's click handler before its own disabled
+ * check, so the mark alone leaves a mouse press running the pick.
+ */
+export function clickOf(
+    item: MenuItem,
+    onpick: (id: string, event: MouseEvent, group?: string) => void,
+    group?: string
+): (event: MouseEvent) => void {
+    return (event) => {
+        if (item.disabled === true) return;
+        onpick(item.id, event, group);
     };
 }

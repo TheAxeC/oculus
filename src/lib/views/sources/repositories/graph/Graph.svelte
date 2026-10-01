@@ -2,17 +2,23 @@
     // Layer 3, partial of views/sources/repositories/Repo.svelte. VS Code's Source Control Graph:
     // Incoming and Outgoing first when the branch has an upstream (what the upstream holds that
     // HEAD does not, and the other way round), then one row per commit of the checked-out branch's
-    // history with its lanes drawn from its parents, the branch and tag names on it and the head
-    // marked, fifty at a time with a Load More row after them.
+    // history with its lanes drawn from its parents, the branch and tag names on it as pills and
+    // the head's subject in bold, fifty at a time with a Load More row after them.
+    //
+    // While the section is open its head carries, on hover, Go to Current (HEAD's row scrolled into
+    // view with the focus on it; not drawn for a repository with no commit), Fetch, Pull and Push
+    // when the branch has an upstream, and Publish Branch when it has none and a remote to go to.
+    // Fetch acts at once; Pull, Push and Publish ask the question the view's `...` menu asks. All
+    // but Go to Current wait while a write is in flight on the repository.
+    //
+    // The commits under Incoming and under Outgoing are drawn as the others are, each list with
+    // its own lanes laid out over its commits alone, under the head row's dashed circle.
     //
     // Pressing a commit opens its changed files under it, each of which opens that commit's diff of
-    // the file. A commit's menu (menus/graph-menu.ts), opened by a right-click on the commit or by
-    // its "more" control, opens its files, copies its id or its message, checks out a local branch
-    // named on it and deletes a tag on it, each through the question the Branches or Tags section
-    // asks. A right-click on a local branch or a tag name opens that name's own menu. The commit
-    // whose files are open is the view's instance state, so the blame of the source tab can open a
-    // commit here: one the loaded pages do not reach is drawn above them, with its files, rather
-    // than paged for.
+    // the file, with the lanes that pass beside them. A commit's menu and its names' menus are
+    // graph/CommitRow.svelte's. The commit whose files are open is the view's instance state, so
+    // the blame of the source tab can open a commit here: one the loaded pages do not reach is
+    // drawn above them, with its files, rather than paged for.
     //
     // The history is not on the `git` channel, which carries twenty commits for a glance: it is
     // read from GET /api/git a page at a time, again from the first page whenever the branch's
@@ -32,24 +38,32 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import VirtualRows from '$lib/ui/tree/VirtualRows.svelte';
-    import Menu from '$lib/ui/menu/Menu.svelte';
-    import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
-    import type { MenuItem } from '$lib/ui/menu/menu-items';
-    import { commitMenu, graphPick, refKind, refMenu, type BranchFacts } from '../menus/graph-menu';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import type { BranchFacts } from '../menus/graph-menu';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import type { Attachment } from 'svelte/attachments';
-    import Lanes from './Lanes.svelte';
+    import CommitRow from './CommitRow.svelte';
     import CommitFiles from './CommitFiles.svelte';
-    import { stamp } from '$lib/state/shared/words/format';
-    import { laneRows } from '$lib/state/sources/repositories/graph-lanes';
+    import GraphHead from './GraphHead.svelte';
     import {
+        laneRows,
+        lanesBelow,
+        type LaneRow
+    } from '$lib/state/sources/repositories/graph-lanes';
+    import {
+        canPublish,
         graphUrl,
         noCommitYet,
+        publishWords,
+        pullWords,
+        pushWords,
+        upstreamOf,
         type GitGraphCommit,
         type GitGraphPage
     } from '$lib/state/sources/repositories/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { useState } from '$lib/state/client/use';
 
     type Props = {
         root: string;
@@ -68,6 +82,23 @@
         onswitch: (name: string) => void;
         /** Delete a tag, through the Tags section's question. */
         ondeletetag: (name: string) => void;
+        /** Ask a question, then run what it is about on a yes. */
+        ask: (message: string, detail: string, act: () => void) => void;
+        /** Whether the open commit's files are listed or drawn as a tree. */
+        mode?: 'list' | 'tree';
+        /** The ids of the folders and sections the reader closed. */
+        collapsed?: readonly string[];
+        /** Open or close a folder of the open commit's files. */
+        onfolder?: (id: string) => void;
+        /**
+         * The lists the component starts with, before its read replaces them. A render that runs
+         * no effect, as a server rendering does not, draws these.
+         */
+        seed?: {
+            commits?: GitGraphCommit[];
+            incoming?: GitGraphCommit[];
+            outgoing?: GitGraphCommit[];
+        };
     };
 
     let {
@@ -81,21 +112,32 @@
         onrows,
         busy,
         onswitch,
-        ondeletetag
+        ondeletetag,
+        ask,
+        mode = 'list',
+        collapsed = [],
+        onfolder = () => undefined,
+        seed = {}
     }: Props = $props();
 
-    let commits: GitGraphCommit[] = $state([]);
-    let incoming: GitGraphCommit[] = $state([]);
-    let outgoing: GitGraphCommit[] = $state([]);
+    const { repositories } = useState();
+
+    // The seed is the lists the component starts with; the read below replaces them.
+    let commits: GitGraphCommit[] = $state(untrack(() => seed.commits ?? []));
+    let incoming: GitGraphCommit[] = $state(untrack(() => seed.incoming ?? []));
+    let outgoing: GitGraphCommit[] = $state(untrack(() => seed.outgoing ?? []));
     let more = $state(false);
-    /** The ids of the open commit's file rows, which follow that commit's row. */
-    let fileRows: string[] = $state([]);
+    /** The open commit's file and folder rows, which follow that commit's row. */
+    let fileRows: Partial<Record<string, KeyRow[]>> = $state({});
     let failure = $state('');
     let reading = $state(false);
     /** Each read takes the next number, and only the newest may write what it read. */
     let asked = 0;
 
+    /** The lanes of each list, laid out over that list's commits alone. */
     const lanes = $derived(laneRows(commits));
+    const lanesIncoming = $derived(laneRows(incoming));
+    const lanesOutgoing = $derived(laneRows(outgoing));
     const missing = $derived(
         commit !== '' &&
             !commits.some((one) => one.hash === commit) &&
@@ -134,21 +176,23 @@
             rows.push({ id, parent: 'graph' });
         };
         /** A commit's row, and its files under it when it is the open one. */
-        const row = (id: string, hash: string): void => {
+        const row = (id: string, hash: string, place: string): void => {
             const open = hash === commit;
             rows.push({ id, parent: 'graph', open, fixed: true });
-            if (open) for (const file of fileRows) rows.push({ id: file, parent: id });
+            if (open)
+                for (const file of fileRows[place] ?? [])
+                    rows.push({ ...file, parent: file.parent ?? id });
         };
-        if (missing) row(`commit:${commit}`, commit);
+        if (missing) row(`commit:${commit}`, commit, 'outside');
         if (incoming.length > 0) {
             under('graph:incoming');
-            for (const one of incoming) row(`in:${one.hash}`, one.hash);
+            for (const one of incoming) row(`in:${one.hash}`, one.hash, 'in');
         }
         if (outgoing.length > 0) {
             under('graph:outgoing');
-            for (const one of outgoing) row(`out:${one.hash}`, one.hash);
+            for (const one of outgoing) row(`out:${one.hash}`, one.hash, 'out');
         }
-        for (const one of commits) row(`commit:${one.hash}`, one.hash);
+        for (const one of commits) row(`commit:${one.hash}`, one.hash, 'log');
         if (more) under('graph:more');
         onrows(rows);
     });
@@ -156,7 +200,7 @@
     /** The index of the loaded commit drawing the row `id`: its own, or a file of the open one. */
     function commitAt(id: string): number {
         const hash = id.startsWith('commit:') ? id.slice('commit:'.length) : '';
-        const held = fileRows.includes(id) ? commit : hash;
+        const held = (fileRows.log ?? []).some((file) => file.id === id) ? commit : hash;
         return held === '' ? -1 : commits.findIndex((one) => one.hash === held);
     }
 
@@ -206,100 +250,104 @@
         current: git.detached ? '' : git.branch
     });
 
-    /** A commit's menu, the same for its right-click and its "more" control. */
-    function menuOf(one: GitGraphCommit): MenuItem[] {
-        return commitMenu(one, branches, busy, t);
+    /** Whether the branch has an upstream to pull from and push to. */
+    const tracked = $derived(git.upstream === true && upstreamOf(git) !== '');
+
+    /** Ask a question, then run the write it names. */
+    function question(words: { message: string; detail: string }, act: () => void): void {
+        ask(words.message, words.detail, act);
     }
 
-    /** A pick from a commit's menu or from a name's on it. */
-    function picked(one: GitGraphCommit, id: string): void {
-        const pick = graphPick(id);
-        if (pick === null) return;
-        if (pick.kind === 'open') onpick(one.hash);
-        else if (pick.kind === 'copy-id') void navigator.clipboard.writeText(one.hash);
-        else if (pick.kind === 'copy-message') void navigator.clipboard.writeText(one.message);
-        else if (pick.kind === 'checkout') onswitch(pick.name);
-        else ondeletetag(pick.name);
+    /** Scroll HEAD's row into view and put the focus on it. */
+    function gotoCurrent(): void {
+        const head = commits.find((one) => one.head) ?? commits.at(0);
+        if (head !== undefined) nav.focus(`commit:${head.hash}`);
     }
 </script>
 
-<!-- A name's own menu, which keeps its right-click from the commit's while it offers an item; a
-     name offering none (a write in flight) is drawn with no menu of its own, so its right-click
-     reaches the commit's menu. -->
-{#snippet named(one: GitGraphCommit, name: string, kind: 'branch' | 'tag')}
-    {@const items = refMenu(name, kind, busy, t)}
-    {#if items.length > 0}
-        <ContextMenu label={name} {items} own onpick={(id: string) => picked(one, id)}>
-            <span class="ref" class:tag={kind === 'tag'}>{name}</span>
-        </ContextMenu>
-    {:else}
-        <span class="ref" class:tag={kind === 'tag'}>{name}</span>
+{#snippet entry(one: GitGraphCommit, id: string, place: string, lane: LaneRow | undefined)}
+    <CommitRow
+        commit={one}
+        {id}
+        {nav}
+        {lane}
+        open={commit === one.hash}
+        {branches}
+        {busy}
+        {onpick}
+        {onswitch}
+        {ondeletetag}
+    />
+    {#if commit === one.hash}
+        <CommitFiles
+            {root}
+            hash={one.hash}
+            {place}
+            {nav}
+            passing={lane === undefined ? [] : lanesBelow(lane)}
+            open={lane === undefined ? -1 : lane.lane}
+            {mode}
+            {collapsed}
+            {onfolder}
+            onrows={(rows: KeyRow[]) => (fileRows[place] = rows)}
+        />
     {/if}
 {/snippet}
 
-{#snippet row(one: GitGraphCommit, id: string, drawn: number)}
-    <li role="none" class="commit" data-commit={one.hash}>
-        {#if drawn >= 0}
-            <Lanes row={lanes[drawn]} head={one.head} />
+{#snippet headActions(reach: number)}
+    {#if open}
+        {#if !noCommitYet(git)}
+            <ToolButton
+                label={t('repositories.goto_current')}
+                glyph="goto_current"
+                compact
+                tabindex={reach}
+                onclick={gotoCurrent}
+            />
         {/if}
-        <div class="item">
-            <ContextMenu
-                label={one.subject}
-                items={menuOf(one)}
-                onpick={(id: string) => picked(one, id)}
-            >
-                <TreeItem
-                    label={one.subject}
-                    {id}
-                    {nav}
-                    level={2}
-                    current={one.head}
-                    expanded={commit === one.hash}
-                    title={t(
-                        'repositories.commit_title',
-                        one.short,
-                        one.author,
-                        one.when.slice(0, 10)
+        <ToolButton
+            label={t('repositories.fetch')}
+            title={busy ? t('git.busy') : undefined}
+            glyph="fetch"
+            compact
+            tabindex={reach}
+            disabled={busy}
+            onclick={() => void repositories.fetch(root)}
+        />
+        {#if tracked}
+            <ToolButton
+                label={t('repositories.pull')}
+                title={busy ? t('git.busy') : undefined}
+                glyph="pull"
+                compact
+                tabindex={reach}
+                disabled={busy}
+                onclick={() => question(pullWords(git), () => void repositories.pull(root))}
+            />
+            <ToolButton
+                label={t('git.push')}
+                title={busy ? t('git.busy') : undefined}
+                glyph="push"
+                compact
+                tabindex={reach}
+                disabled={busy}
+                onclick={() => question(pushWords(git), () => void repositories.push(root))}
+            />
+        {:else if canPublish(git)}
+            <ToolButton
+                label={t('repositories.publish')}
+                title={busy ? t('git.busy') : undefined}
+                glyph="publish"
+                compact
+                tabindex={reach}
+                disabled={busy}
+                onclick={() =>
+                    question(
+                        publishWords(git, git.remotes[0]),
+                        () => void repositories.publish(root, git.remotes[0])
                     )}
-                    onclick={() => onpick(commit === one.hash ? '' : one.hash)}
-                >
-                    {#snippet detail()}
-                        {#each one.refs as name (name)}
-                            {#if refKind(name, branches) === 'branch'}
-                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                {@render named(one, name, 'branch')}
-                            {:else}
-                                <span class="ref">{name}</span>
-                            {/if}
-                        {/each}
-                        {#each one.tags as name (name)}
-                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                            {@render named(one, name, 'tag')}
-                        {/each}
-                        <span class="hash">{one.short}</span>
-                    {/snippet}
-                    {#snippet actions(reach: number)}
-                        <Menu
-                            label={t('repositories.commit_menu')}
-                            glyph="more"
-                            compact
-                            bare
-                            tabindex={reach}
-                            placement="down"
-                            align="right"
-                            items={menuOf(one)}
-                            onpick={(id: string) => picked(one, id)}
-                        />
-                    {/snippet}
-                    {#snippet end()}
-                        {stamp(one.when)}
-                    {/snippet}
-                </TreeItem>
-            </ContextMenu>
-        </div>
-    </li>
-    {#if commit === one.hash}
-        <CommitFiles {root} hash={one.hash} {nav} onrows={(ids: string[]) => (fileRows = ids)} />
+            />
+        {/if}
     {/if}
 {/snippet}
 
@@ -309,8 +357,10 @@
         id="graph"
         {nav}
         count={commits.length}
+        badge
         {open}
         {ontoggle}
+        actions={headActions}
     >
         {#if failure !== ''}
             <li role="none">
@@ -329,38 +379,31 @@
                     onclick={() => onpick('')}
                 />
             </li>
-            <CommitFiles {root} hash={commit} {nav} onrows={(ids: string[]) => (fileRows = ids)} />
+            <CommitFiles
+                {root}
+                hash={commit}
+                place="outside"
+                {nav}
+                passing={[]}
+                open={-1}
+                {mode}
+                {collapsed}
+                {onfolder}
+                onrows={(rows: KeyRow[]) => (fileRows.outside = rows)}
+            />
         {/if}
         {#if incoming.length > 0}
-            <li role="none" data-graph="incoming">
-                <TreeItem
-                    label={t('repositories.incoming')}
-                    id="graph:incoming"
-                    {nav}
-                    level={2}
-                    glyph="behind"
-                    count={incoming.length}
-                />
-            </li>
-            {#each incoming as one (one.hash)}
+            <GraphHead kind="incoming" {nav} count={incoming.length} />
+            {#each incoming as one, at (one.hash)}
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render row(one, `in:${one.hash}`, -1)}
+                {@render entry(one, `in:${one.hash}`, 'in', lanesIncoming[at])}
             {/each}
         {/if}
         {#if outgoing.length > 0}
-            <li role="none" data-graph="outgoing">
-                <TreeItem
-                    label={t('repositories.outgoing')}
-                    id="graph:outgoing"
-                    {nav}
-                    level={2}
-                    glyph="ahead"
-                    count={outgoing.length}
-                />
-            </li>
-            {#each outgoing as one (one.hash)}
+            <GraphHead kind="outgoing" {nav} count={outgoing.length} />
+            {#each outgoing as one, at (one.hash)}
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render row(one, `out:${one.hash}`, -1)}
+                {@render entry(one, `out:${one.hash}`, 'out', lanesOutgoing[at])}
             {/each}
         {/if}
         {#if commits.length === 0 && failure === ''}
@@ -383,22 +426,13 @@
                 <li role="none" class="entry" {@attach measure}>
                     <ul class="entry-rows" role="none">
                         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render row(commits[at], `commit:${commits[at].hash}`, at)}
+                        {@render entry(commits[at], `commit:${commits[at].hash}`, 'log', lanes[at])}
                     </ul>
                 </li>
             {/snippet}
         </VirtualRows>
         {#if more}
-            <li role="none" data-graph="more">
-                <TreeItem
-                    label={t('repositories.graph_more')}
-                    id="graph:more"
-                    {nav}
-                    level={2}
-                    glyph="expand"
-                    onclick={() => void load(commits.length)}
-                />
-            </li>
+            <GraphHead kind="more" {nav} onmore={() => void load(commits.length)} />
         {/if}
     </TreeSection>
 </div>
@@ -416,32 +450,5 @@
         padding: 0;
         list-style: none;
         min-width: 0;
-    }
-
-    .commit {
-        display: flex;
-        align-items: center;
-        min-width: 0;
-    }
-
-    .item {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
-
-    .ref {
-        margin-right: 4px;
-        padding: 0 4px;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        color: var(--c-blue-txt);
-    }
-
-    .ref.tag {
-        color: var(--c-amber-txt);
-    }
-
-    .hash {
-        font-family: var(--font-mono);
     }
 </style>

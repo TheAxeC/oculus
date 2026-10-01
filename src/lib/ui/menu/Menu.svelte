@@ -62,6 +62,8 @@
         inherit?: boolean;
         /** The opener as one item of the activity rail, the box a rail ToolButton draws. */
         rail?: boolean;
+        /** The opener as the dropdown part of a joined primary ToolButton. */
+        primary?: boolean;
         /**
          * The opener as one item of the status bar, the box a status ToolButton draws, with its
          * own few words and its tooltip; its list rises from the item on the body.
@@ -96,6 +98,7 @@
         bare = false,
         inherit = false,
         rail = false,
+        primary = false,
         status = false,
         words,
         title,
@@ -144,6 +147,7 @@
                 {bare}
                 {inherit}
                 {rail}
+                {primary}
                 {status}
                 {words}
                 {title}

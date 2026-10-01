@@ -1,11 +1,14 @@
 // The window of a long explorer list, ui/tree/virtual.ts: which rows @tanstack/virtual-core's
 // virtualizer draws for a scroll box and a scroll offset, the rows the list keeps drawn wherever it
 // is scrolled, and the heights held before each drawn row and after the last that keep the list at
-// its full height around them. The virtualizer is driven here by a rectangle and an offset handed
-// in rather than read from a DOM. Each case names the change that turns it red.
+// its full height around them, and the window handed back as the same object when a read of the
+// virtualizer finds the rows unmoved, so the list writes nothing for it. The virtualizer is driven
+// here by a rectangle and an offset handed in rather than read from a DOM. Each case names the
+// change that turns it red.
 //
-// What this does NOT cover: a real scroll box, a row measured on the page, or a key scrolling a
-// row into view, which run only in a browser and are looked at on landing.
+// What this does NOT cover: a real scroll box, a row measured on the page, a key scrolling a row
+// into view, or the list's effects settling in a page, which run only in a browser and are looked
+// at on landing.
 
 import { describe, expect, it } from 'vitest';
 import { Virtualizer, type Range } from '@tanstack/virtual-core';
@@ -130,5 +133,31 @@ describe('the window before the list has its scroll box', () => {
     // Revert: set `shown` to `OVERSCAN * 2` in firstWindow, whatever the count.
     it('draws every row of a list shorter than that', () => {
         expect(indexesOf(firstWindow(3))).toEqual([0, 1, 2]);
+    });
+});
+
+describe('a window read again', () => {
+    // Revert: return the window computed in rowWindow, whatever it is handed as the one held.
+    it('hands back the window the list holds when the virtualizer draws the same rows', () => {
+        const virtualizer = windowed(1000, 22, 440, 2200);
+        const held = rowWindow(virtualizer);
+
+        expect(rowWindow(virtualizer, held)).toBe(held);
+    });
+
+    // Revert: compare only the indexes of the rows drawn in sameWindow.
+    it('hands back a new window when the rows drawn move, or the heights around them change', () => {
+        const held = rowWindow(windowed(1000, 22, 440, 2200));
+        const moved = rowWindow(windowed(1000, 22, 440, 2200 + 22), held);
+        const longer = rowWindow(windowed(1001, 22, 440, 2200), held);
+        const taller = rowWindow(windowed(1000, 30, 440, 2200), held);
+
+        expect(moved).not.toBe(held);
+        expect(moved.rows[0].index).toBe(96);
+        expect(longer).not.toBe(held);
+        expect(indexesOf(longer)).toEqual(indexesOf(held));
+        expect(longer.after).toBe(held.after + 22);
+        expect(taller).not.toBe(held);
+        expect(taller.total).toBe(30000);
     });
 });

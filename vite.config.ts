@@ -34,6 +34,9 @@ export default defineConfig({
         // npm run test:checks with no time limit, since a finding of theirs is a defect in the tree.
         tags: [{ name: 'slow', description: 'Left out of npm test; npm run test:slow runs it.' }],
         expect: { requireAssertions: true },
+        // seti-ui's .less files are read as text (`?raw`) by ui/display/file-icons.ts. Vitest empties
+        // every stylesheet it does not process, a file read as text included, so these are listed.
+        css: { include: [/seti-ui\/.*\.less/] },
         // Four workers, not one per core: two or three worktrees run this suite at once beside the
         // machine's own sessions, and a suite that takes every core makes the timed cases of the
         // others miss their limits under the load.

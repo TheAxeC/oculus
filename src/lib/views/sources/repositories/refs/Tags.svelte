@@ -34,6 +34,7 @@
         id="tags"
         {nav}
         count={git.tags.length}
+        badge
         {open}
         {ontoggle}
     >

@@ -1,12 +1,18 @@
 // The diff pane's keys and the keeping of its view states (state/sources/repositories/
 // repositories.ts): each file of a diff keyed by its path and its place among the entries of that
 // path, and the view states the editors say written to the pane's instance state after a pause,
-// never after the pane has closed.
+// never after the pane has closed; and the state a pane holds, the file or side it is over and the
+// address it reads.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+    diffState,
+    diffUrl,
+    fileDiffUrl,
     fileKeys,
+    heldDiff,
     viewKeeper,
+    worktreeDiffUrl,
     type DiffView
 } from '../../../../src/lib/state/sources/repositories/repositories.ts';
 import type { DiffSides } from '../../../../src/lib/data/model/index.ts';
@@ -23,6 +29,8 @@ function entry(oldPath: string, newPath: string): DiffSides {
         modified: ''
     };
 }
+
+const ROOT = '/hub';
 
 afterEach(() => {
     vi.useRealTimers();
@@ -54,7 +62,14 @@ describe('the view states kept', () => {
         keeper.viewed('a', { top: 1 });
         keeper.viewed('b', { top: 2 });
         vi.advanceTimersByTime(400);
-        expect(written).toEqual([{ mode: 'inline', views: { a: { top: 1 }, b: { top: 2 } } }]);
+        expect(written).toEqual([
+            {
+                mode: 'inline',
+                views: { a: { top: 1 }, b: { top: 2 } },
+                unchanged: 'folded',
+                folded: []
+            }
+        ]);
     });
 
     it('writes nothing once the tab has closed, whatever was pending or is said after', () => {
@@ -95,6 +110,61 @@ describe('the view states kept', () => {
         keeper.viewed('a', { top: 1, caret: 3 });
         vi.advanceTimersByTime(1000);
         expect(written).toHaveLength(2);
-        expect(held).toEqual({ mode: 'side', views: { a: { top: 1, caret: 3 } } });
+        expect(held).toEqual({
+            mode: 'side',
+            views: { a: { top: 1, caret: 3 } },
+            unchanged: 'folded',
+            folded: []
+        });
+    });
+});
+
+describe('what one diff pane is over', () => {
+    it('names the file and the side, so two sides of one path are two panes', () => {
+        const changed = diffState(
+            { root: ROOT, path: 'a.txt', staged: false, worktree: false },
+            'a'
+        );
+        const staged = diffState({ root: ROOT, path: 'a.txt', staged: true, worktree: false }, 'a');
+        expect(changed.id).not.toBe(staged.id);
+        expect(changed.label).toBe('a');
+        expect(
+            diffState({ root: ROOT, path: 'a.txt', staged: false, worktree: false }, 'a').id
+        ).toBe(changed.id);
+    });
+
+    it('reads a file from the diff address and a worktree from its own', () => {
+        expect(fileDiffUrl(ROOT, 'a b.txt', true)).toBe(
+            '/api/git?diff=%2Fhub&path=a+b.txt&staged=1'
+        );
+        expect(fileDiffUrl(ROOT, 'a.txt', false)).toBe('/api/git?diff=%2Fhub&path=a.txt&staged=0');
+        // The repository is named beside the worktree: a worktree of the hub is a root of its own
+        // on the channel, so the server never works the repository out from the path.
+        expect(worktreeDiffUrl(ROOT, '/hub/.agents/worktrees/one')).toBe(
+            '/api/git?worktree=%2Fhub%2F.agents%2Fworktrees%2Fone&root=%2Fhub'
+        );
+        expect(
+            diffUrl({
+                root: ROOT,
+                path: '/hub/.agents/worktrees/one',
+                staged: false,
+                worktree: true
+            })
+        ).toBe(worktreeDiffUrl(ROOT, '/hub/.agents/worktrees/one'));
+    });
+});
+
+describe('the state a diff pane holds', () => {
+    it('reads each field of an instance state, and an empty pane from one it cannot read', () => {
+        expect(
+            heldDiff({ id: 'g', root: ROOT, path: 'a', staged: true, group: 'staged', line: 3 })
+        ).toMatchObject({ id: 'g', root: ROOT, path: 'a', staged: true, group: 'staged', line: 3 });
+        const none = { id: '', label: '', root: '', path: '', staged: false, line: 0 };
+        expect(heldDiff(null)).toMatchObject(none);
+        expect(heldDiff({ root: 7, group: 'other', line: 'x' })).toMatchObject({
+            root: '',
+            group: undefined,
+            line: 0
+        });
     });
 });

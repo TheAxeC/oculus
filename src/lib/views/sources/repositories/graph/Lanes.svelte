@@ -1,69 +1,93 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/repositories/graph/Graph.svelte. The lane drawing of one
-    // commit's row: the strokes state/sources/repositories/graph-lanes.ts laid out, each in its
-    // lane's colour, and the commit's dot, filled for the checked-out head. It is drawn in lane
-    // and row units scaled to the row's own height, so it lines up with the row whatever the text
-    // size is.
+    // row of the Source Control Graph, in the units of a 22-high row: the strokes
+    // state/sources/repositories/graph-lanes.ts lays out, each in its lane's colour, and the
+    // commit's circle with the ring in the row's own background that parts it from the lines
+    // behind it. The SVG's viewBox is 22 units high and 11 units wide per lane, and its height and
+    // width are those units at the tree row's height, so the lanes of two rows meet at every text
+    // size.
+    //
+    // Given `passing` instead of a row it draws only the verticals of the lanes that pass beside
+    // one file of an open commit, 3 px wide on the open commit's lane and 1 px on the others.
 
     import { HUES } from '$lib/ui/display/hues';
-    import type { LaneRow } from '$lib/state/sources/repositories/graph-lanes';
+    import {
+        commitCircles,
+        laneWidth,
+        laneX,
+        lanePaths,
+        type CommitKind,
+        type LaneRow
+    } from '$lib/state/sources/repositories/graph-lanes';
 
-    type Props = { row: LaneRow; head: boolean };
+    type Props = {
+        /** The row a commit sits in, drawn with its strokes and its circle. */
+        row?: LaneRow;
+        /** Which circle the commit is drawn with. */
+        kind?: CommitKind;
+        /** The lanes that pass beside a file row of an open commit. */
+        passing?: number[];
+        /** The open commit's lane, drawn wider among the passing ones. */
+        open?: number;
+    };
 
-    let { row, head }: Props = $props();
-
-    /** How wide one lane is, in the drawing's units, against a row one unit tall. */
-    const LANE = 0.7;
+    let { row, kind = 'commit', passing = [], open = -1 }: Props = $props();
 
     function hue(lane: number): string {
         return `var(--c-${HUES[lane % HUES.length]}-txt)`;
     }
 
-    const width = $derived(Math.max(1, row.width) * LANE);
-
-    /** The middle of a lane across the drawing. */
-    function x(lane: number): number {
-        return lane * LANE + LANE / 2;
-    }
+    const strokes = $derived(
+        row !== undefined
+            ? lanePaths(row).map((one) => ({ ...one, wide: false }))
+            : passing.map((lane) => ({
+                  d: `M ${String(laneX(lane))} 0 V 22`,
+                  lane,
+                  wide: lane === open
+              }))
+    );
+    const lanes = $derived(
+        row !== undefined ? row.width : Math.max(0, ...passing.map((n) => n + 1))
+    );
+    const width = $derived(laneWidth(lanes));
+    const circles = $derived(row === undefined ? [] : commitCircles(kind));
 </script>
 
 <svg
     class="lanes"
-    viewBox={`0 0 ${width} 1`}
-    preserveAspectRatio="xMinYMid meet"
-    style={`width: calc(${width} * var(--row))`}
+    viewBox={`0 0 ${String(width)} 22`}
+    style={`width: calc(var(--graph-lane) * ${String(width / laneX(0))} * var(--text-scale, 1)); height: calc(var(--tree-row) * var(--text-scale, 1))`}
     aria-hidden="true"
 >
-    {#each row.lines as line, at (at)}
+    {#each strokes as stroke, at (at)}
         <path
-            d={line.x1 === line.x2
-                ? `M ${x(line.x1)} ${line.y1} L ${x(line.x2)} ${line.y2}`
-                : `M ${x(line.x1)} ${line.y1} C ${x(line.x1)} ${(line.y1 + line.y2) / 2} ${x(line.x2)} ${(line.y1 + line.y2) / 2} ${x(line.x2)} ${line.y2}`}
-            stroke={hue(line.lane)}
+            d={stroke.d}
+            stroke-width={stroke.wide ? 3 : 1}
+            style={`stroke: ${hue(stroke.lane)}`}
         />
     {/each}
-    <circle cx={x(row.lane)} cy="0.5" r="0.16" class:head stroke={hue(row.lane)} />
+    {#if row !== undefined}
+        {#each circles as circle, at (at)}
+            <circle
+                cx={laneX(row.lane)}
+                cy="11"
+                r={circle.r}
+                stroke-width={circle.ring}
+                stroke-dasharray={circle.dash}
+                style={`stroke: ${circle.stroke === 'row' ? 'var(--row-bg)' : hue(row.lane)}; fill: ${circle.fill === 'lane' ? hue(row.lane) : 'none'}`}
+            />
+        {/each}
+    {/if}
 </svg>
 
 <style>
     .lanes {
-        --row: 22px;
         flex: 0 0 auto;
-        height: var(--row);
         overflow: visible;
     }
 
     path {
         fill: none;
-        stroke-width: 0.08;
-    }
-
-    circle {
-        fill: var(--panel);
-        stroke-width: 0.08;
-    }
-
-    circle.head {
-        fill: currentColor;
+        stroke-linecap: round;
     }
 </style>

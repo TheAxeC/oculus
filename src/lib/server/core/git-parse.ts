@@ -281,22 +281,33 @@ export function parseNumstat(output: string): LineCounts {
  */
 export function statusLists(records: StatusRecord[], counts: LineCounts, cap: number): StatusLists {
     const lists: StatusLists = { staged: [], unstaged: [], untracked: [], conflicted: [] };
-    const entry = (path: string, status: string, lines?: [number | null, number | null]) =>
-        ({
-            path,
-            status,
-            added: lines === undefined ? 0 : lines[0],
-            deleted: lines === undefined ? 0 : lines[1]
-        }) satisfies GitEntry;
-    for (const { code, path } of records) {
+    const entry = (
+        path: string,
+        status: string,
+        lines?: [number | null, number | null],
+        from?: string | null
+    ): GitEntry => ({
+        path,
+        status,
+        added: lines === undefined ? 0 : lines[0],
+        deleted: lines === undefined ? 0 : lines[1],
+        ...(from === null || from === undefined ? {} : { from })
+    });
+    /** The old path for the column that holds the rename or copy, not for one holding a change. */
+    const movedIn = (letter: string, from: string | null): string | null =>
+        letter === 'R' || letter === 'C' ? from : null;
+    for (const { code, path, from } of records) {
         const [index, work] = [code[0], code[1]];
         if (UNMERGED.includes(index + work)) {
             lists.conflicted.push(entry(path, index + work));
         } else if (index === UNTRACKED || work === UNTRACKED) {
             lists.untracked.push(entry(path, UNTRACKED));
         } else {
-            if (!QUIET.includes(index)) lists.staged.push(entry(path, index));
-            if (!QUIET.includes(work)) lists.unstaged.push(entry(path, work, counts.get(path)));
+            if (!QUIET.includes(index))
+                lists.staged.push(entry(path, index, undefined, movedIn(index, from)));
+            if (!QUIET.includes(work)) {
+                lists.unstaged.push(entry(path, work, counts.get(path), movedIn(work, from)));
+            }
         }
     }
     for (const list of Object.values(lists)) list.length = Math.min(list.length, cap);

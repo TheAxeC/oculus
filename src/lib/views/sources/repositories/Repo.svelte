@@ -1,12 +1,15 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/repositories/Repositories.svelte. The one repository the
-    // view shows: its branch line, the commit box, a line saying a merge or a rebase is in progress
-    // with Abort and, for a rebase, Continue, then Changes, Graph, Stashes, Tags, Branches and
-    // Worktrees as collapsible sections of explorer rows, each with its count at the right edge of
-    // its head. The sections are one tree and one stop of the focus order through
+    // view shows: its commit box, a line saying a merge or a rebase is in progress with Abort and,
+    // for a rebase, Continue, then Changes, Graph, Stashes, Tags, Branches and Worktrees as
+    // collapsible sections of explorer rows, each with its count as a badge at the right edge of
+    // its head. The branch and how far it is from its upstream are on the repository's row in the
+    // list above, and the path is that row's hover words, so a repository that reads draws
+    // neither line of its own. The sections are one tree and one stop of the focus order through
     // ui/tree/TreeView.svelte, moved along with the arrow keys over the rows
     // state/sources/repositories/repositories.ts's repositoryKeyRows() lists, Right and Left
-    // opening and closing a head or a group.
+    // opening and closing a head or a group. In the view's tree mode the change groups and the
+    // files of the open commit draw folders, and the key rows list them.
     //
     // A state with no repository to draw says so as one row in the explorer's row style in place of
     // the sections, which such a state has nothing true to fill: git's reason in the error hue for
@@ -18,16 +21,17 @@
     //
     // The sections press through the Source Control store themselves; what asks first is asked in
     // the view's dialog, handed in as `ask`. The graph's menus check a branch out through the
-    // view's switch and delete a tag through the Tags section's question. Which sections are closed
-    // and which commit of the graph is open are the view's instance state, handed in, so both
-    // survive a tab switch.
+    // view's switch and delete a tag through the Tags section's question. Which sections and
+    // folders are closed and which commit of the graph is open are the view's instance state,
+    // handed in, so both survive a tab switch. The Branch control of a repository's row asks for
+    // the Branches section to open with the focus on its head, through `reveal`.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import Branches from './refs/Branches.svelte';
-    import Changes from './Changes.svelte';
+    import Changes from './changes/Changes.svelte';
     import Worktrees from './Worktrees.svelte';
     import Graph from './graph/Graph.svelte';
     import Stashes from './refs/Stashes.svelte';
@@ -54,6 +58,12 @@
         commit: string;
         ontoggle: (id: string) => void;
         oncommit: (hash: string) => void;
+        /** Whether the change groups and the open commit's files are lists or folders. */
+        mode: 'list' | 'tree';
+        /** `branches` while the Branch control of the row asked for that section to open. */
+        reveal: '' | 'branches';
+        /** The request in `reveal` was answered. */
+        onrevealed: () => void;
         ask: (message: string, detail: string, act: () => void) => void;
         onswitch: (name: string) => void;
         onbranch: (name: string) => void;
@@ -70,6 +80,9 @@
         commit,
         ontoggle,
         oncommit,
+        mode,
+        reveal,
+        onrevealed,
         ask,
         onswitch,
         onbranch,
@@ -83,7 +96,7 @@
 
     let graphRows: KeyRow[] = $state([]);
 
-    const keyRows = $derived(repositoryKeyRows(git, collapsed, graphRows));
+    const keyRows = $derived(repositoryKeyRows(git, collapsed, graphRows, { root, mode }));
     const shape = $derived(repoShape(root, git));
     const busy = $derived(repositories.busy(root));
     const outcome = $derived(repositories.outcome(root));
@@ -123,14 +136,16 @@
 </script>
 
 <section class="repo" data-root={root}>
-    {#if git.branch !== ''}
-        <div class="branch" title={root}>
-            <span class="lb">{t('sessions.ch_branch')}</span>
-            <span class="nm">{git.branch}</span>
-            <span class="mt">{branchState(git)}</span>
-        </div>
+    {#if shape !== 'readable'}
+        {#if git.branch !== ''}
+            <div class="branch" title={root}>
+                <span class="lb">{t('sessions.ch_branch')}</span>
+                <span class="nm">{git.branch}</span>
+                <span class="mt">{branchState(git)}</span>
+            </div>
+        {/if}
+        <p class="path" title={root}>{elide(root)}</p>
     {/if}
-    <p class="path" title={root}>{elide(root)}</p>
     {#if busy}
         <p class="none">{t('git.busy')}</p>
     {/if}
@@ -146,7 +161,9 @@
             <TreeItem label={rowLabel(shape, git)} tone={shape === 'failed' ? 'error' : 'muted'} />
         </div>
     {:else}
-        <CommitBox {root} {git} />
+        <div class="commit">
+            <CommitBox {root} {git} />
+        </div>
         {#if git.sequence !== ''}
             <div class="sequence" data-sequence={git.sequence}>
                 <span class="said">
@@ -172,7 +189,7 @@
         {/if}
         <TreeView label={t('views.repositories')} rows={keyRows} ontoggle={toggled}>
             {#snippet children(nav: TreeNav)}
-                <Changes {root} {git} {nav} {collapsed} {ontoggle} {ask} />
+                <Changes {root} {git} {nav} {collapsed} {ontoggle} {ask} {mode} />
 
                 <Graph
                     {root}
@@ -186,6 +203,10 @@
                     {busy}
                     {onswitch}
                     ondeletetag={deleteTag}
+                    {ask}
+                    {mode}
+                    {collapsed}
+                    onfolder={ontoggle}
                 />
 
                 <Stashes
@@ -214,6 +235,8 @@
                     ontoggle={() => ontoggle('branches')}
                     {onswitch}
                     {onbranch}
+                    reveal={reveal === 'branches'}
+                    {onrevealed}
                 />
 
                 <Worktrees
@@ -240,6 +263,11 @@
         flex-direction: column;
         gap: 6px;
         min-width: 0;
+    }
+
+    /* The message box and its button, 11px in from the left of the row and 12px from its right. */
+    .commit {
+        padding: 0 12px 0 11px;
     }
 
     .branch {

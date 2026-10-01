@@ -73,7 +73,7 @@
     }
 
     :global(body.wall) .preview {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
     }
 </style>

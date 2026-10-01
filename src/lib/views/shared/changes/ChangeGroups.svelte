@@ -10,10 +10,11 @@
     // state/sources/repositories/repositories.svelte.ts's openChange: the merge editor for a
     // conflict, the file itself for an untracked path, and the diff for the rest.
     //
-    // The Repositories view draws the same changes as explorer rows of its own, and takes the two
-    // things both must agree on from one place each: the colour of a status letter from
-    // state/sources/repositories/repositories.ts's statusStyle(), and the line counts from
-    // shared/changes/ChangeCounts.svelte.
+    // The Repositories view draws the same changes as explorer rows of its own, and takes what
+    // both must agree on from one place each: the colour of a status letter from
+    // state/sources/repositories/repositories.ts's statusStyle(), the line counts from
+    // shared/changes/ChangeCounts.svelte, and the icons of Stage, Unstage and Discard, which are
+    // the glyphs stage, unstage and note_back in both.
 
     import type { Snippet } from 'svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -73,7 +74,7 @@
     {#if kind === 'staged' && entries.length > 0}
         <ToolButton
             label={t('git.unstage_all')}
-            glyph="collapse"
+            glyph="unstage"
             compact
             disabled={busy}
             onclick={() => ongroup('unstage')}
@@ -88,7 +89,7 @@
         />
         <ToolButton
             label={t('git.stage_all')}
-            glyph="expand"
+            glyph="stage"
             compact
             disabled={busy}
             onclick={() => ongroup('stage-changed')}
@@ -96,7 +97,7 @@
     {:else if kind === 'untracked' && entries.length > 0}
         <ToolButton
             label={t('git.stage_all_untracked')}
-            glyph="expand"
+            glyph="stage"
             compact
             disabled={busy}
             onclick={() => ongroup('stage-untracked')}
@@ -140,6 +141,7 @@
                             <ToolButton
                                 label={t('git.unstage')}
                                 title={t('git.unstage_title')}
+                                glyph="unstage"
                                 disabled={busy}
                                 onclick={() => onunstage(entry.path)}
                             />
@@ -154,6 +156,7 @@
                             <ToolButton
                                 label={t('git.stage')}
                                 title={t('git.stage_title')}
+                                glyph="stage"
                                 disabled={busy}
                                 onclick={() => onstage(entry.path)}
                             />
@@ -162,6 +165,7 @@
                             <ToolButton
                                 label={t('git.discard')}
                                 title={t('git.discard_title')}
+                                glyph="note_back"
                                 disabled={busy}
                                 onclick={() => ondiscard(entry.path)}
                             />

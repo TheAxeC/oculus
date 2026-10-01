@@ -12,7 +12,7 @@
 //     git -C <root> rev-parse --abbrev-ref HEAD
 //     git -C <root> symbolic-ref --short HEAD
 //     git -C <root> rev-list --left-right --count @{upstream}...HEAD
-//     git -C <root> status --porcelain=v1 -z --untracked-files=normal
+//     git -C <root> status --porcelain=v1 -z --untracked-files=normal --renames
 //     git -C <root> diff --numstat -z
 //     git -C <root> diff --no-color --no-ext-diff -U0 -- <path>
 //     git -C <root> diff --no-color --no-ext-diff -U0 -M <stash>^1 <stash>
@@ -605,7 +605,7 @@ function state(root: string, timeout: number): GitState {
     sequenceOf(root, gitDir.text.trim(), found);
     const listing = run(
         root,
-        ['status', '--porcelain=v1', '-z', '--untracked-files=normal'],
+        ['status', '--porcelain=v1', '-z', '--untracked-files=normal', '--renames'],
         timeout
     );
     if (!listing.ok) {
