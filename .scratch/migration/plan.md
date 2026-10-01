@@ -172,6 +172,8 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Axel 2026-09-27 (Z1): Show in Files opens a Files tab rooted at the project's folder with a way up to the parent, and an Open Folder command; opened files land in the Explorer page's right pane (the rule in `agents/briefs/L7.md`).
   - Step 0, ruled 2026-09-25 by Axel: the Seti icon set (`seti-ui`) with its own table and colours; nesting patterns in a new catalog `config/catalogs/file-nesting.yml` seeded with VS Code's defaults, switched per Files tab; a copy before each save under `~/.oculus/history/` (50 per file, none over 256 KB) in the Timeline beside the file's commits.
   - Step 0, from Q88b's brief check 2026-10-01 (Z151 decision 8): the Explorer's file-operation keys and their menu hints are X3a's; VS Code's macOS rename key is Enter, which opens a file in oculus's tree, a clash X3a's /spec raises to Axel.
+  - Z182 (a), automode: the Explorer's problem decorations are D33's and the Outline's code symbols D23's; X3a builds the Outline from Markdown and LaTeX headings.
+  - Step 0, stopped at /spec 2026-10-01 22:15 (Z187): the brief check (`agents/reviews/X3a-brief-check.md`) found Z76 (a)'s folder picker against its kept "nothing outside a root served"; Axel rules (a) home folder, (b) any folder, (c) roots plus a typed path, or (d) no picker. The other findings are closed in automode (Z188).
   - Step 0, ruled 2026-10-01 (Z181 (a)): in the Files view Enter renames, Cmd+Down opens, F2 renames too, as VS Code's macOS Explorer; every other tree keeps Enter opens.
   - Widened 2026-10-01 by Axel (ruling Z167): folder bookmarks; the star on folder rows, a folder bookmark opened from the Files view or the rail's Bookmarks menu reveals the folder in the Files view expanded and selected, a folder icon in the rail menu, the bookmark still `{ root, path }` in `~/.oculus/bookmarks.yml`. (ruling Z167)
 - ✅ X3b the Repositories view and the diff brought to VS Code's Source Control, every row of P1's Source Control table (split from X3 on 2026-09-25; brief `agents/briefs/X3b.md`)
@@ -775,6 +777,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z184 (2026-10-01): (a), L4's floats reach saved layouts (the Focus page's HPC and Usage tabs move into the float), a view open in a float is activated there, a kept pane stays on every route, a float takes no attention and has no maximise; in L4 (the orchestrator, automode)
 - Open item Z185 (2026-10-01): three queued steps kept prepared ahead (brief written and checked, worktree made), beside the builders; `workers_at_once` caps builders, as Z109 (a) says (the user)
 - Open item Z186 (2026-10-01): "a configuration file or a rule file" in plan-orchestration's run-alone rule means Ordo's own files (`.agents/plan.yaml`, the rules file), never oculus's `config/` (the user)
+- Open item Z188 (2026-10-01): (a), X3a's brief-check findings other than Z187 closed in its brief (roots written to `sources.yml`, a `history` key, VS Code's git letters on `--c-scm-*`, `local.yml` never copied) (the orchestrator, automode)
 - D35 premise corrected (2026-10-01): the three `notify.*` keys and `notify.stop` are already read at every hook request, so D35 makes the other 13 live and removes the unread start copies.
 
 ## Blocked, and by what

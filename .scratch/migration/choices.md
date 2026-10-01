@@ -357,3 +357,10 @@ Where they are built: D35 (repair round 1). Booked in the state file's closed lo
 - Not chosen: (b) saved Focus pages left as they are, so existing browsers never see the float the plan line asks for "on every page", the lazy option; (c) a second instance opened beside the float's; (d) the kept rule on a close and a drag only, so an edge drop or a cross-page move removes a pane a close would keep.
 
 Where they are built: L4. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z188 (2026-10-01 22:15, step X3a)
+
+- Chosen (a): X3a's brief-check findings other than the picker (Z187) closed in its brief: the default workspace's roots written to `sources.yml` through a new list-edit write; a `history` key in `local.yml`; no catalog entry for `file-nesting.yml`; an `ignored` flag on listed entries; git decorations on the existing `--c-scm-*` tokens with VS Code's letters; the file log as a git read; `local.yml` never copied into the history; Paste into the same folder as Duplicate; folder drags under their own type; Seti colours derived on light themes only.
+- Not chosen: (b) each finding left for a later step, the lazy option.
+
+Where they are built: X3a. Booked in the state file's closed log and `plan.md` Rulings.

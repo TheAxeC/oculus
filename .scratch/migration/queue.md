@@ -11,7 +11,7 @@ In flight:
 Three queued steps are kept prepared ahead (Z185).
 
 Queued, in order (31 steps):
-- X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a); problem decorations to D33 and code symbols to D23 by Z182), being prepared: brief written, its brief check running.
+- X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a); problem decorations to D33 and code symbols to D23 by Z182), stopped: brief checked; waits for Axel's ruling Z187 (the folder picker), its other findings closed by Z188.
 - D32 (replace in Search), once D35 has landed (both change the write target and the undo table); its brief check is in.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), once D27 has landed (both change `config-key.ts`'s single-value refusal).
 - Q88c (the Source Control rows' and the pane strip's new menu items), being prepared ahead.
