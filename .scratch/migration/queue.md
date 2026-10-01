@@ -8,7 +8,7 @@ In flight:
 - U2 (every view's look against VS Code's), repair round 1 sent after its review.
 - Q85a2 (zod in the edit, sessions and transcripts folders), built with two red checks, review running since 09:28.
 - Q85a4 (zod in the other server folders), repair round 1 sent at 09:37 after its review.
-Open items: none. Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
+Open items: Z143 (keep a pane when its last tab closes, yours). Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - S3c (the Settings editor), S3a and S3b have landed.
 - Q85b and Q85c, then Q85d (zod after Q85a4).
