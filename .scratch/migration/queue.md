@@ -4,10 +4,10 @@ In flight:
 - D27 (the editor's languages), built; finishing three test files ruled after the build (R4), then its full verify list.
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), building on its round-0 case rulings.
 - Q85d (zod in the views, ui, shell and routes), building: its builder runs the first run of the cases.
+- U4 (Focus and Sessions brought to the other views' size, the commit dropdown aligned), being prepared: brief written from measurements on TEST, its brief check running.
 
 
-Queued, in order (33 steps):
-- U4 (the Focus and Sessions views brought to the other views' size, Files and Repositories checked the same way, the commit button's more-ways control aligned), next to prepare.
+Queued, in order (32 steps):
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), once D27 has landed (both change `config-key.ts`'s single-value refusal).
 - Q88c (the Source Control rows' and the pane strip's new menu items).
 - X3c (the tab strip as VS Code's), once Q88c has landed.
