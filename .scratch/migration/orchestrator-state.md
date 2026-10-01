@@ -67,12 +67,12 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   launched: 2026-10-01 07:34 local
   report: agents/reviews/Q85a4-report.md
   builder_usage: first run 316,920 tokens, 350 tool uses, 100.4 min
-  reviewer_report: agents/reviews/Q85a4-refuter.md (first review, reviewer aa1dc822a80854f94 on claude-opus-5-5, launched 09:15, running)
+  reviewer_report: agents/reviews/Q85a4-refuter.md (first review, reviewer aa1dc822a80854f94 on claude-opus-5-5, 118,315 tokens, 88 tool uses, 20.9 min)
   brief_check: agents/reviews/Q85a4-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 322,964 tokens, 100 tool uses, 15.8 min
   shared_paths: with Q85a2, `DESIGN.md` line 148 (one paragraph, rewritten by hand at the second landing to name both steps' folders), `src/lib/server/core/json.ts` (the comment at 91-92 and helpers left with no caller, settled on the merged tree at the second landing), `tests/checks/tree/allow-duplication.txt` (the union of the two steps' removed lines), `docs/diagrams/` (regenerated once on main); simple, since each is a union of line removals or one paragraph
   landing_fix: `tests/server/core/paths.test.ts` "are written nowhere under src" fails on main since X3d (a5a6eed6): `insideFolder` (`src/lib/state/sources/repositories/change-tree.ts:148`) matches `function inside`, and it tests a row id's prefix, not a path; the list gains it by name with its clause in the comment at :70-77, as the comment's own process says
   landing: not-started
-  round: 0
+  round: 1 (`agents/briefs/Q85a4-round1.md`, sent 2026-10-01 09:37)
 ```
 
 ## The standing demands (from Axel, in force)
