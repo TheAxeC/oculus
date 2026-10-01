@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D27 (the editor's languages), built; finishing three test files ruled after the build (R4), then its full verify list.
+- D27 (the editor's languages), built and its report in; its review (/refute) running.
 - D35 (the behaviour keys read only at start made live; its builder at medium effort, an experiment), building on its round-0 case rulings.
 - Q85d (zod in the views, ui, shell and routes), building: its builder runs the first run of the cases.
 - U4 (Focus and Sessions brought to the other views' size, the commit dropdown aligned), being prepared: brief written from measurements on TEST, its brief check running.
