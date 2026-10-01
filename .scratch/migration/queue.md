@@ -9,7 +9,7 @@ In flight:
 
 
 Queued, in order (31 steps):
-- X3a (the Files view as VS Code's Explorer, folder bookmarks included), waiting for Axel's ruling on Z181 (the rename key).
+- X3a (the Files view as VS Code's Explorer, folder bookmarks included, Enter renames by Z181 (a)), next into a free slot.
 - D32 (replace in Search), once D35 has landed (both change the write target and the undo table); its brief check is in.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), once D27 has landed (both change `config-key.ts`'s single-value refusal).
 - Q88c (the Source Control rows' and the pane strip's new menu items).
