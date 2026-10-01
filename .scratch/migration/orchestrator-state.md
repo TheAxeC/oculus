@@ -41,6 +41,18 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   landing: not-started
   round: 0
   launched: 2026-10-01 06:59 local
+- step: Q85a2
+  executor: agent
+  worker: claude:sonnet
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 07:05)
+  session_id: a89edd47244a60bc2 (launched 2026-10-01 07:05 local)
+  worktree: .agents/worktrees/Q85a2
+  base: 4f4dcfc4
+  launched: 2026-10-01 07:05 local
+  report: agents/reviews/Q85a2-report.md
+  brief_check: agents/reviews/Q85a2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 228,189 tokens, 56 tool uses, 9.5 min
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -609,6 +621,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 07:05. U2's builder launched at 06:59 on a worktree rebuilt at main's head (86e6d8bb, its brief's premises rechecked); Q85a2's brief check closed in its brief (29 findings) and its builder launched at 07:05. In flight: U2, Q85a2 (builders). Next: /spec Q85a4 into the third slot. Open: Z138.
 - 2026-10-01 06:55. Q109 landed (a moved tab's lines, the five watchers' capped debounce, a sole terminal's bar menu, four `terminal:` keys), report `agents/reviews/Q109-landing.md`; five fixes at landing; the look on TEST taken. Q85a2's brief check in (29 findings). In flight: none building. Next: close Q85a2's findings in its brief and launch its builder; U2's builder; /spec Q85a4. Open: Z138.
 - 2026-10-01 06:36. S3b landed (the `config-key` write), report `agents/reviews/S3b-landing.md`; six fixes at landing. Q109's round-1 review in (a656c8c3d8e744fab): no item violated, five findings, all for landing. Next: /land Q109; /spec Q85a2 and Q85a4 into the free slots; U2's builder after Q109's landing look. In flight: Q109 (landing next). Open: Z138.
 - 2026-10-01 06:19. X3d landed (Source Control as VS Code's, the Graph hang fix, the Seti icons, the lanes, renames in a group diff), report `agents/reviews/X3d-landing.md`; Z140 (2) and eight fixes at landing; the look's two differences already on main folded into U2 (Z142, automode). Next: /land S3b, then /spec Q85a2 into the free slot; Q109 to /land after its round-1 review; U2's builder after both landings, whose looks it would block. In flight: Q109 (round-1 review), S3b (landing next). Open: Z138.
