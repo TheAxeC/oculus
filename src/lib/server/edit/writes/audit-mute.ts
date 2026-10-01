@@ -15,7 +15,9 @@
 import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
+import { z } from 'zod';
 import { writeTextAtomic } from '../../core/json.ts';
+import { stringItemsShape } from '../../core/shapes.ts';
 import { othersThan, readBack, setList } from '../list-edit.ts';
 import { SIGNATURE } from '../../content/audit.ts';
 
@@ -26,21 +28,16 @@ export const IGNORE = 'audit_ignore';
 export type MuteOutcome = { changed: string[]; refused: [] } | { error: 'invalid' | 'unwritable' };
 
 /**
- * Every entry of the list as the file writes it, in its order. A line that is not a signature (a
- * note the reader left there by hand) is kept and written back where it was;
- * server/content/audit.ts's `mutedSignatures` is what decides which of them are muted findings, so
- * such a line mutes nothing and is not lost either.
+ * Every string entry of the list as the file writes it, in its order, and none for a file that
+ * holds no list under the key or is no map. A line that is not a signature (a note the reader left
+ * there by hand) is kept and written back where it was; server/content/audit.ts's
+ * `mutedSignatures` is what decides which of them are muted findings, so such a line mutes nothing
+ * and is not lost either.
  */
-function held(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter((one): one is string => typeof one === 'string');
-}
-
-/** A map of a parsed document, or an empty one for anything that is not a map. */
-function mapOf(value: unknown): Record<string, unknown> {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
-    return value as Record<string, unknown>;
-}
+const ignoredShape = z
+    .object({ [IGNORE]: stringItemsShape })
+    .transform((file) => file[IGNORE])
+    .catch([]);
 
 /**
  * Whether the edited source still says what the original said, with the one list replaced: it must
@@ -74,7 +71,7 @@ export function writeMute(file: string, signature: string, muted: boolean): Mute
     }
     let current: string[];
     try {
-        current = held(mapOf(parse(source))[IGNORE]);
+        current = ignoredShape.parse(parse(source));
     } catch {
         return { error: 'invalid' };
     }

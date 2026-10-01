@@ -1,7 +1,8 @@
-// Layer 2, server. The types of write-file-atomic 8, which ships none of its own: the default
-// export and its `sync`, the one call json.ts makes, with the data a string or any typed array.
-// @types/write-file-atomic declares the data as a string or a Buffer, which the Uint8Array of an
-// uploaded picture is not, so this declares the package as its version 8 reads its arguments.
+// Layer 2, types. The types of write-file-atomic 8, which ships none of its own: the default
+// export and its `sync`, the one call server/core/json.ts makes, with the data a string or any
+// typed array. @types/write-file-atomic declares the data as a string or a Buffer, which the
+// Uint8Array of an uploaded picture is not, so this declares the package as its version 8 reads
+// its arguments.
 
 declare module 'write-file-atomic' {
     /** The options of one write; each has the default named beside it when it is left out. */

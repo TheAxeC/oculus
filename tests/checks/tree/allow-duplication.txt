@@ -16,10 +16,8 @@ src/lib/data/sources/collections.ts src/lib/data/sources/feeds.ts 254546075de3 t
 src/lib/data/sources/collections.ts src/lib/data/sources/manifests.ts c04395eb71df the same 21 lines at 49 and 93, to fold into one place
 src/lib/data/sources/collections.ts src/lib/data/sources/registries.ts 2c675ba6c971 the same 27 lines at 43 and 75, to fold into one place
 src/lib/data/sources/collections.ts src/lib/data/sources/registries.ts 52307771f8f6 the same 17 lines at 27 and 59, to fold into one place
-src/lib/data/sources/config/agents.ts src/lib/server/sessions/stores/customizations.ts c7bd352c4b8c the same 11 lines at 258 and 132, to fold into one place
 src/lib/data/sources/config/agents.ts src/lib/state/workbench/navigation/catalogue.ts ca6bded45400 the same 9 lines at 257 and 175, to fold into one place
 src/lib/data/sources/config/merge.ts src/lib/server/transcripts/stores.ts 6ba7db2c1596 the same 10 lines at 81 and 51, to fold into one place
-src/lib/server/edit/deck-edit.ts src/lib/server/edit/writes/audit-mute.ts 1e0e0eb0f6b5 the same 15 lines at 30 and 35, to fold into one place
 src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts 22e246596d51 the same 9 lines at 107 and 317, to fold into one place
 src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts e81afc4ebda6 the same 30 lines at 100 and 14, to fold into one place
 src/lib/server/machine/hpc/parse.ts src/lib/state/system/hpc.ts 8ead1c0cdafe the same 7 lines at 25 and 20, to fold into one place

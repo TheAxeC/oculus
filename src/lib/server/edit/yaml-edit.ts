@@ -27,8 +27,10 @@
 import { isDeepStrictEqual } from 'node:util';
 import { isMap as isYamlMap, isScalar, isSeq, parseDocument, stringify } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
+import { z } from 'zod';
 import { byKey, isMap } from '../../data/helpers/guards.ts';
 import type { RemovedText } from '../core/changes.ts';
+import { unchanged } from '../core/shapes.ts';
 
 /** One row of a metalist: a flat map whose keys and values are strings. */
 export type FlatStringMap = Record<string, string>;
@@ -147,22 +149,30 @@ export function sameValue(next: unknown, current: unknown): boolean {
     return isDeepStrictEqual(next, current);
 }
 
+/** One row of a metalist, tested as given: a map whose values are all strings. */
+const metalistRowShape = z.custom<FlatStringMap>(
+    (row) => isMap(row) && Object.values(row).every((value) => typeof value === 'string')
+);
+
+/**
+ * The shapes a write may carry, tried in this order: null, text, a boolean, a finite number, a list
+ * of strings, a list of metalist rows, and a block map, which is any map whose values are block
+ * values, a `Date` and a `Map` included. A list and a map are answered as given.
+ */
+const fieldValueShape = z.union([
+    z.null(),
+    z.string(),
+    z.boolean(),
+    z.number(),
+    unchanged(z.array(z.string())),
+    unchanged(z.array(metalistRowShape)),
+    z.custom<BlockMap>(isBlockMap)
+]) satisfies z.ZodType<FieldValue>;
+
 /** The value as one of the shapes a write may carry, or undefined when it is none of them. */
 export function asFieldValue(raw: unknown): FieldValue | undefined {
-    if (raw === null) return null;
-    if (typeof raw === 'string' || typeof raw === 'boolean') return raw;
-    if (typeof raw === 'number') return Number.isFinite(raw) ? raw : undefined;
-    if (Array.isArray(raw) && raw.every((item) => typeof item === 'string')) return raw;
-    if (
-        Array.isArray(raw) &&
-        raw.every(
-            (item) => isMap(item) && Object.values(item).every((value) => typeof value === 'string')
-        )
-    ) {
-        return raw as FlatStringMap[];
-    }
-    if (isBlockMap(raw)) return raw;
-    return undefined;
+    const parsed = fieldValueShape.safeParse(raw);
+    return parsed.success ? parsed.data : undefined;
 }
 
 /** Whether a value is a scalar a block may hold. */

@@ -22,6 +22,7 @@
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
+import { z } from 'zod';
 import { isMap, byKey, scalar } from '../../../data/helpers/guards.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
@@ -35,6 +36,7 @@ import {
 } from '../entry-edit/index.ts';
 import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
+import { anyNumberShape } from '../../core/shapes.ts';
 import { BOOKMARKS, ensureBookmarksFile } from '../../files/fs/bookmarks.ts';
 import { NOT_A_FIELD_VALUE, asFieldValue } from '../yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
@@ -135,15 +137,21 @@ function fitting(fields: Record<string, unknown>, refused: Refusal[]): Record<st
     return Object.fromEntries(Object.entries(fields).filter(([field]) => !names.has(field)));
 }
 
+/** One item of a collection schema that declares a metalist field. */
+const metalistItemShape = z.looseObject({ type: z.literal('metalist'), field: z.string() });
+
+/**
+ * The names of the schema's metalist fields. An item that is not a map, has another type or has no
+ * text `field` declares none, and a schema that is no list declares none at all.
+ */
+const metalistFieldsShape = z
+    .array(metalistItemShape.nullable().catch(null))
+    .transform((all) => new Set(all.flatMap((item) => (item === null ? [] : [item.field]))))
+    .catch(() => new Set<string>());
+
 /** The fields the collection schema declares as metalists. */
 function metalistFields(schema: unknown): Set<string> {
-    const fields = new Set<string>();
-    if (!Array.isArray(schema)) return fields;
-    for (const item of schema) {
-        if (!isMap(item) || item.type !== 'metalist' || typeof item.field !== 'string') continue;
-        fields.add(item.field);
-    }
-    return fields;
+    return metalistFieldsShape.parse(schema);
 }
 
 /** Empty metalists mean removal, including when the current YAML value is already `[]`. */
@@ -160,28 +168,51 @@ function normaliseMetalists(
     );
 }
 
+/** The `id`, `key` and `title` an entry names itself by, each empty unless it is text. */
+const entryNamesShape = z.looseObject({
+    id: z.string().catch(''),
+    key: z.string().catch(''),
+    title: z.string().catch('')
+});
+
+/** An identity value as the file writes it: a string, or any number. */
+const idPartShape = z.union([z.string(), anyNumberShape]);
+
+/** The identity value an entry holds under its identity field as text, or null when it has none. */
+function identityText(entry: Record<string, unknown>, ident: string): string | null {
+    const held = idPartShape.safeParse(entry[ident]);
+    return held.success ? String(held.data) : null;
+}
+
 /**
  * The id the reader gives an entry, as normalise.ts's entry() builds it: its `id`, its `key`, its
  * `title`, and for a file whose records carry none of the three the value of its own identity
  * field.
  */
 function entryId(entry: Record<string, unknown>, ident: string): string {
-    const id = entry.id;
-    if (typeof id === 'string' && id !== '') return id;
-    const key = entry.key;
-    if (typeof key === 'string' && key !== '') return key;
-    const title = entry.title;
-    if (typeof title === 'string' && title !== '') return title;
-    const held = entry[ident];
-    return typeof held === 'string' || typeof held === 'number' ? String(held) : '';
+    const { id, key, title } = entryNamesShape.parse(entry);
+    return id || key || title || (identityText(entry, ident) ?? '');
 }
 
+/** The maps of a list, which is all an entry can be. */
+const entryMapsShape = z.array(z.unknown()).transform((all) => all.filter(isMap));
+
+/** A list under another key than `entries`: entries when it is empty or opens with a map. */
+const entryListShape = z
+    .array(z.unknown())
+    .refine((all) => all.length === 0 || isMap(all[0]))
+    .transform((all) => all.filter(isMap));
+
 /** The entry list of a parsed collection file: `entries:`, or the first list of maps beside it. */
-function listOf(data: Record<string, unknown>): { key: string; items: unknown[] } | null {
-    if (Array.isArray(data.entries)) return { key: 'entries', items: data.entries };
+function listOf(
+    data: Record<string, unknown>
+): { key: string; items: Record<string, unknown>[] } | null {
+    const entries = entryMapsShape.safeParse(data.entries);
+    if (entries.success) return { key: 'entries', items: entries.data };
     for (const [key, value] of Object.entries(data)) {
-        if (key === 'schema' || !Array.isArray(value)) continue;
-        if (value.length === 0 || isMap(value[0])) return { key, items: value };
+        if (key === 'schema') continue;
+        const found = entryListShape.safeParse(value);
+        if (found.success) return { key, items: found.data };
     }
     return null;
 }
@@ -230,7 +261,7 @@ export function readCollection(
         source,
         schema: data.schema,
         list: list?.key ?? '',
-        items: (list?.items ?? []).filter(isMap),
+        items: list?.items ?? [],
         ident: identityField(data.schema)
     };
 }
@@ -243,9 +274,7 @@ export function readCollection(
 export function identityOf(collection: Collection, id: string): string | null {
     for (const item of collection.items) {
         if (entryId(item, collection.ident) !== id) continue;
-        const held = item[collection.ident];
-        if (typeof held !== 'string' && typeof held !== 'number') return null;
-        return String(held);
+        return identityText(item, collection.ident);
     }
     return null;
 }
@@ -271,8 +300,8 @@ export function idOfIdentity(collection: Collection, value: string): string | nu
 /** Every entry's identity value, in the order the file lists them. */
 export function identityOrder(collection: Collection): string[] {
     return collection.items.flatMap((one) => {
-        const value = one[collection.ident];
-        return typeof value === 'string' || typeof value === 'number' ? [String(value)] : [];
+        const value = identityText(one, collection.ident);
+        return value === null ? [] : [value];
     });
 }
 
@@ -285,9 +314,8 @@ export function identityOrder(collection: Collection): string[] {
 export function sharedIdentity(collection: Collection): string {
     const seen = new Set<string>();
     for (const item of collection.items) {
-        const held = item[collection.ident];
-        if (typeof held !== 'string' && typeof held !== 'number') continue;
-        const value = String(held);
+        const value = identityText(item, collection.ident);
+        if (value === null) continue;
         if (seen.has(value)) return value;
         seen.add(value);
     }

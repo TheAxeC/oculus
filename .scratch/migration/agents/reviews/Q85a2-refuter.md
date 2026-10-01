@@ -415,3 +415,12 @@ None beyond Spec 1. The slower `loadCache`, the dropped wrong-typed entry and th
 Reviewer usage: tokens not measured, about 110 tool uses (estimate), about 45 minutes (estimate). My probes and trees are under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/rr1/`. I changed no file in the worktree; `npm run diagrams` rewrote the same six already-modified `docs/diagrams` files, and I ran no git command other than `git diff 4f4dcfc4` and `git status --short`.
 
 Recorded usage: reviewer a890ccc337bb5cdfb, served claude-sonnet-5-5; 321,329 tokens, 105 tool uses, 23.8 min (from its completion notice).
+
+## Closed
+
+The first review's findings were closed in round 1 (the round brief `agents/briefs/Q85a2-round1.md`), and the run over round 1 found them closed. The run over round 1's findings, each small and inside the brief, were fixed at landing on main:
+
+- Spec 1 and Proof 1: `stores/transcripts.ts` folds from `Math.trunc(cached.offset)` and `cache.ts`'s `usable` compares with `Math.trunc(cached.size)`, the answers of the unchanged tree. The new case "folds the lines appended after it on every later scan" in `tests/server/sessions/stores/codex.test.ts` failed without the fix (`expected [ 1, 1, 1 ] to strictly equal [ 2, 3, 4 ]`) and passes with it.
+- Standards 1: `filledTextShape` lives once, in `core/shapes.ts`; `sessions/fold.ts`, `sessions/stores/codex.ts` and `root/hooks.ts` import it.
+- Standards 2: the `isMap` comment in `core/json.ts` names the modules that import it from there (`group.ts`, `overrides.ts` and `stores/transcripts.ts` in server/sessions).
+- Declined to judge, the class of the 14 `scalar(...)` lines: ruled by the orchestrator as comparisons that stay, since reading them through `idPartShape` would change the unchanged tree's answer for a boolean identity, which item 1 forbids.

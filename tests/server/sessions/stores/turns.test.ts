@@ -229,4 +229,221 @@ describe('the turns of a Codex rollout', () => {
         expect(answer.turns[3].tool?.summary).toBe('/synthetic/space/hub/main.tex');
         expect(answer.turns[3].tool?.ok).toBeNull();
     });
+
+    it('takes a command that is a list as the summary even when it joins to nothing', () => {
+        const commands: unknown[] = [[''], ['', 3], [], ['', ''], [3], '', ['ls', 3]];
+        const path = write(
+            store(),
+            `rollout-2026-09-11T08-00-00-${UUID}.jsonl`,
+            commands.map((command, index) =>
+                item(`2026-09-11T08:00:0${index}.000Z`, {
+                    type: 'CommandExecution',
+                    command,
+                    path: 'src/a.ts',
+                    exit_code: 0
+                })
+            )
+        );
+        const summaries = readTurns(path, 'codex', 0).turns.map((turn) => turn.tool?.summary);
+        expect(summaries).toStrictEqual(['', '', 'src/a.ts', '', 'src/a.ts', 'src/a.ts', 'ls']);
+    });
+});
+
+describe('the turns of records that hold values of the wrong type', () => {
+    const at = (second: number): string =>
+        `2026-01-01T10:00:${String(second).padStart(2, '0')}.000Z`;
+    const use = (id: unknown, name: unknown, input?: unknown): Json => ({
+        type: 'tool_use',
+        id,
+        name,
+        input
+    });
+    const result = (id: unknown, error?: unknown): Json => ({
+        type: 'tool_result',
+        tool_use_id: id,
+        is_error: error
+    });
+    const said = (type: string, second: number, content: unknown, extra: Json = {}): Json => ({
+        type,
+        timestamp: at(second),
+        message: { content },
+        ...extra
+    });
+    const human = { origin: { kind: 'human' } };
+
+    const CLAUDE: unknown[] = [
+        [],
+        said(
+            'user',
+            0,
+            [
+                { type: 'text', text: 'a' },
+                { type: 'Text', text: 'b' },
+                { text: 'c' },
+                { type: 'text', text: 5 },
+                'z'
+            ],
+            human
+        ),
+        said('user', 1, '', human),
+        said('user', 2, 5, human),
+        said('user', 3, 'not human', { origin: 'human' }),
+        said('assistant', 4, [
+            { type: 'text', text: 'said' },
+            use('t1', 'Bash', { file_path: 3, command: 'ls\n  -l' }),
+            use(5, 7, []),
+            use('t3', 'Edit', { pattern: 'p', description: 'd' }),
+            use('t4', 'Read', 'x'),
+            use('t5', undefined),
+            4,
+            null
+        ]),
+        said(
+            'user',
+            5,
+            [result(7), result('t1', 'yes'), result('t3', true), result('', false)],
+            human
+        )
+    ];
+    const CODEX: Json[] = [
+        { type: 'turn_context', payload: {} },
+        { type: 'event_msg', payload: 'x' },
+        { type: 'event_msg', payload: { type: 'item_completed', item: 'x' } },
+        item(at(0), { type: 'UserMessage', content: [], text: 'fallback' }),
+        item(at(1), { type: 'AgentMessage', content: [{ text: 5 }], text: 7 }),
+        item(at(2), { type: 'CommandExecution', command: ['ls', '-l', 5], exit_code: 0 }),
+        item(at(3), { type: 'CommandExecution', command: '  ', exit_code: '0' }),
+        item(at(4), { type: 'FileChange', changes: { '': 'd', '/w/a.ts': 'd' }, exit_code: 1 }),
+        item(at(5), { type: 'McpToolCall', changes: [], name: 'tool', exit_code: null }),
+        item(at(6), { type: 'Extension', path: 3, description: 'd' }),
+        item(at(7), { type: 'Reasoning' }),
+        item(at(8), { type: '' }),
+        item(at(9), { type: 7 })
+    ];
+    const CLAUDE_TURNS = {
+        turns: [
+            {
+                at: '2026-01-01T10:00:00.000Z',
+                role: 'user',
+                text: 'ab',
+                html: '',
+                cut: false,
+                tool: null
+            },
+            {
+                at: '2026-01-01T10:00:04.000Z',
+                role: 'assistant',
+                text: 'said',
+                html: '<p>said</p>\n',
+                cut: false,
+                tool: null
+            },
+            {
+                at: '2026-01-01T10:00:04.000Z',
+                role: 'tool',
+                text: '',
+                html: '',
+                cut: false,
+                tool: { id: 't1', name: 'Bash', summary: 'ls -l', ok: true }
+            },
+            {
+                at: '2026-01-01T10:00:04.000Z',
+                role: 'tool',
+                text: '',
+                html: '',
+                cut: false,
+                tool: { id: '', name: '', summary: '', ok: null }
+            },
+            {
+                at: '2026-01-01T10:00:04.000Z',
+                role: 'tool',
+                text: '',
+                html: '',
+                cut: false,
+                tool: { id: 't3', name: 'Edit', summary: 'p', ok: false }
+            },
+            {
+                at: '2026-01-01T10:00:04.000Z',
+                role: 'tool',
+                text: '',
+                html: '',
+                cut: false,
+                tool: { id: 't4', name: 'Read', summary: '', ok: null }
+            },
+            {
+                at: '2026-01-01T10:00:04.000Z',
+                role: 'tool',
+                text: '',
+                html: '',
+                cut: false,
+                tool: { id: 't5', name: '', summary: '', ok: null }
+            }
+        ],
+        offset: 1268,
+        results: {}
+    };
+    const CODEX_TURNS = {
+        turns: [
+            {
+                at: '2026-01-01T10:00:00.000Z',
+                role: 'user',
+                text: 'fallback',
+                html: '',
+                cut: false,
+                tool: null
+            },
+            {
+                at: '2026-01-01T10:00:02.000Z',
+                role: 'tool',
+                text: '',
+                html: '',
+                cut: false,
+                tool: { id: '', name: 'CommandExecution', summary: 'ls -l', ok: true }
+            },
+            {
+                at: '2026-01-01T10:00:03.000Z',
+                role: 'tool',
+                text: '',
+                html: '',
+                cut: false,
+                tool: { id: '', name: 'CommandExecution', summary: '', ok: null }
+            },
+            {
+                at: '2026-01-01T10:00:04.000Z',
+                role: 'tool',
+                text: '',
+                html: '',
+                cut: false,
+                tool: { id: '', name: 'FileChange', summary: '/w/a.ts', ok: false }
+            },
+            {
+                at: '2026-01-01T10:00:05.000Z',
+                role: 'tool',
+                text: '',
+                html: '',
+                cut: false,
+                tool: { id: '', name: 'McpToolCall', summary: 'tool', ok: null }
+            },
+            {
+                at: '2026-01-01T10:00:06.000Z',
+                role: 'tool',
+                text: '',
+                html: '',
+                cut: false,
+                tool: { id: '', name: 'Extension', summary: 'd', ok: null }
+            }
+        ],
+        offset: 1633,
+        results: {}
+    };
+
+    it('reads a Claude turn from the fields of the right type', () => {
+        const path = write(store(), 'wrong.jsonl', CLAUDE as Json[]);
+        expect(readTurns(path, 'claude', 0)).toStrictEqual(CLAUDE_TURNS);
+    });
+
+    it('reads a Codex turn from the fields of the right type', () => {
+        const path = write(store(), 'rollout-wrong.jsonl', CODEX);
+        expect(readTurns(path, 'codex', 0)).toStrictEqual(CODEX_TURNS);
+    });
 });

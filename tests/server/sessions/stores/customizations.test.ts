@@ -309,3 +309,27 @@ describe('GET /api/customizations', () => {
         expect(get({ agent: 'claude', workspace: WORK, account: 'Work' }).status).toBe(400);
     });
 });
+
+describe('the hooks of a settings file whose shape is wrong', () => {
+    /** The hooks row of an account whose settings file is the given value. */
+    function hooksOf(settingsFile: unknown): CustomizationRow {
+        const account = plantScratch('oculus-custom-hooks-', {
+            'settings.json': JSON.stringify(settingsFile)
+        });
+        const rows = customizationRows({ agent: 'claude', account, workspace: account, roots: [] });
+        return row(rows, 'hooks');
+    }
+
+    it('gives one malformed finding for a group list that is no list', () => {
+        expect(hooksOf({ hooks: { Stop: 3 } }).findings).toHaveLength(1);
+    });
+
+    it('gives one malformed finding for a group whose hooks are no list', () => {
+        expect(hooksOf({ hooks: { Stop: [3] } }).findings).toHaveLength(1);
+    });
+
+    it('names a hook whose command is not text by its event alone', () => {
+        const wrong = { hooks: { Stop: [{ hooks: [{ command: 5 }] }] } };
+        expect(hooksOf(wrong).items.map((item) => item.name)).toEqual(['Stop']);
+    });
+});

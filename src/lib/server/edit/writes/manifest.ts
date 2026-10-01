@@ -19,11 +19,13 @@
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { parse } from 'yaml';
+import { z } from 'zod';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
+import { mapShape, readAs } from '../../core/shapes.ts';
 import { insertRemoved, renderScalar, setFields } from '../yaml-edit.ts';
 import type { ChangeRecord, RemovedText } from '../../core/changes.ts';
 import type { FieldValue, Refusal, SetFieldsResult } from '../yaml-edit.ts';
@@ -34,6 +36,26 @@ import { below } from '../../core/paths.ts';
 /** The name of the manifest file, which is the only name this module ever writes. */
 const MANIFEST = 'project.yml';
 
+/** One field of the schema's `fields` map, which declares a type when it holds a text `type`. */
+const fieldTypeShape = z.looseObject({ type: z.string() });
+
+/**
+ * The type of every field of a schema's `fields` map that declares one, keyed by the map's own
+ * keys in their order. An entry that is no map or has no text `type` is left out, and a schema with
+ * no `fields` map declares none.
+ */
+const fieldTypesShape = z
+    .object({ fields: mapShape })
+    .transform((schema) => {
+        const types: Record<string, string> = {};
+        for (const [name, entry] of Object.entries(schema.fields)) {
+            const declared = fieldTypeShape.safeParse(entry);
+            if (declared.success) types[name] = declared.data.type;
+        }
+        return types;
+    })
+    .catch(() => ({}));
+
 /**
  * The field types, read out of the same `manifest_schema` the client's state/forms/schema.ts reads.
  * The two readers are separate because the boundary table of DESIGN.md lets `state/` import
@@ -42,16 +64,7 @@ const MANIFEST = 'project.yml';
  * of config as data.
  */
 export function fieldTypes(schema: unknown): Record<string, string> {
-    const types: Record<string, string> = {};
-    if (!isMap(schema)) return types;
-    const fields = schema.fields;
-    if (!isMap(fields)) return types;
-    for (const [name, entry] of Object.entries(fields)) {
-        if (!isMap(entry)) continue;
-        const type = entry.type;
-        if (typeof type === 'string') types[name] = type;
-    }
-    return types;
+    return fieldTypesShape.parse(schema);
 }
 
 /** The words a checkbox is true in: what a form posts, and what YAML already holds. */
@@ -176,17 +189,20 @@ export function insideHub(hub: string, config: PortfolioConfig, file: string): b
 /** Why a group name is not written with a value. */
 const GROUP_REFUSED = 'the field is a group; set its children, or clear it whole';
 
+/** The removed lines of a record: where they stood, what they said and the text after them. */
+const removedShape = z.object({
+    offset: z.number().refine((at) => Number.isInteger(at) && at >= 0),
+    text: z.string().min(1),
+    next: z.string()
+}) satisfies z.ZodType<RemovedText>;
+
 /**
  * The removed lines of a change record, or null when the record holds none that can be used: the
  * key is a map with a non-negative whole `offset`, a non-empty `text` and a `next` that is a
  * string. The log is a file a hand may have edited, so anything else is read as no lines at all.
  */
 function removedOf(raw: unknown): RemovedText | null {
-    if (!isMap(raw)) return null;
-    const { offset, text, next } = raw;
-    if (typeof offset !== 'number' || !Number.isInteger(offset) || offset < 0) return null;
-    if (typeof text !== 'string' || text === '' || typeof next !== 'string') return null;
-    return { offset, text, next };
+    return readAs(removedShape, raw);
 }
 
 /**
@@ -331,16 +347,27 @@ const IDEA_STATUS = 'New idea - scope + novelty check open.';
 const IDEA_NEXT = 'Scope the idea; cited-novelty lit check; decide go/no-go.';
 
 /** One text field of a form, trimmed, or the empty string when it is not text. */
-function text(raw: unknown): string {
-    return typeof raw === 'string' ? raw.trim() : '';
-}
+const trimmedShape = z
+    .string()
+    .transform((raw) => raw.trim())
+    .catch('');
+
+/** The five text fields of the new-idea form. */
+const ideaFormShape = z.object({
+    id: trimmedShape,
+    title: trimmedShape,
+    eli5: trimmedShape,
+    short: trimmedShape,
+    domain: trimmedShape
+});
 
 /**
  * Scaffold one idea project: `projects/ideas/<id>/project.yml` and a README beside it. A bad id and
  * a folder that is already there are both refused, so nothing existing is ever written over.
  */
 export function createIdea(hub: string, fields: Record<string, unknown>): WriteOutcome {
-    const id = text(fields.id);
+    const form = ideaFormShape.parse(fields);
+    const { id } = form;
     if (!IDEA_ID.test(id)) {
         return {
             found: true,
@@ -364,11 +391,10 @@ export function createIdea(hub: string, fields: Record<string, unknown>): WriteO
         };
     }
 
-    const title = text(fields.title) || id;
-    const eli5 = text(fields.eli5) || title;
+    const title = form.title || id;
+    const eli5 = form.eli5 || title;
     const lines = [`id: ${id}`, 'type: idea'];
-    const short = text(fields.short);
-    const domain = text(fields.domain);
+    const { short, domain } = form;
     if (short !== '') lines.push(`short: ${renderScalar(short)}`);
     if (domain !== '') lines.push(`domain: ${renderScalar(domain)}`);
     lines.push(

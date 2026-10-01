@@ -9,12 +9,14 @@
 import { existsSync, readFileSync, readdirSync, renameSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { parse } from 'yaml';
+import { z } from 'zod';
 import { localDate } from '../../data/helpers/dates.ts';
 import { isMap, scalar } from '../../data/helpers/guards.ts';
 import { collectionSchema } from '../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../data/snapshot/validate.ts';
 import { plain } from '../core/changes.ts';
 import { writeTextAtomic } from '../core/json.ts';
+import { mapShape, unchanged } from '../core/shapes.ts';
 import {
     appendEntry,
     deleteEntry,
@@ -50,6 +52,17 @@ export function feedFile(hub: string, config: PortfolioConfig, kind: FeedKind): 
     return inside(path, hub) ? path : null;
 }
 
+/** The `meta` of a feed file: a map, and the empty map when the file has none. */
+const feedMetaShape = z.optional(mapShape).transform((held) => held ?? {});
+
+/** The `entries` of a feed file: a list of maps, and the empty list when the file has none. */
+const feedEntriesShape = unchanged(z.array(z.looseObject({})))
+    .nullish()
+    .transform((held) => held ?? []);
+
+/** A feed file whose `entries` is a list, which is where an append goes. */
+const feedListedShape = z.looseObject({ entries: z.array(z.unknown()) });
+
 /** Parse one feed, requiring its root, meta, and every entry to be maps. */
 export function readFeedFile(
     hub: string,
@@ -63,18 +76,16 @@ export function readFeedFile(
     if (kind === 'linkedin') return readLinkedinFolder(file, config);
     const parsed: unknown = parse(readFileSync(file, 'utf8'));
     if (!isMap(parsed)) throw new Error(`${file}: expected a map of keys`);
-    const meta = parsed.meta === undefined ? {} : parsed.meta;
-    if (!isMap(meta)) throw new Error(`${file}: meta is not a map`);
-    const entries = parsed.entries ?? [];
-    if (!Array.isArray(entries) || !entries.every(isMap)) {
-        throw new Error(`${file}: every entry must be a map`);
-    }
+    const meta = feedMetaShape.safeParse(parsed.meta);
+    if (!meta.success) throw new Error(`${file}: meta is not a map`);
+    const entries = feedEntriesShape.safeParse(parsed.entries);
+    if (!entries.success) throw new Error(`${file}: every entry must be a map`);
     const schema = collectionSchema(parsed.schema);
     return {
         kind,
         file: config.feeds[kind],
-        meta,
-        entries,
+        meta: meta.data,
+        entries: entries.data,
         ...(schema === undefined ? {} : { schema })
     };
 }
@@ -430,8 +441,7 @@ export function restoreFeedEntry(
     } catch {
         return outcome([], [...refused, { field: 'entries', reason: 'the file does not parse' }]);
     }
-    const list = isMap(held) ? held.entries : undefined;
-    const edit = Array.isArray(list)
+    const edit = feedListedShape.safeParse(held).success
         ? appendEntry(source, 'entries', block)
         : startEntries(source, 'entries', block);
     const out = saved(full, source, edit);

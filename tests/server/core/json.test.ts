@@ -2,6 +2,9 @@
 // with, the folder a write makes, and what a write that throws leaves behind: the old content and
 // the folder as it was, with no temporary file beside them.
 //
+// The last cases are of `quickly` in server/core/shapes.ts, the quick path over a schema, which
+// refuses the schema forms it cannot rebuild.
+//
 // Every file is under a scratch directory of the case's own, asserted inside it before the write.
 // What this does NOT cover: the fsync, which no file system call made afterwards can observe.
 
@@ -17,7 +20,12 @@ import {
 } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
+import { z } from 'zod';
 import { writeTextAtomic } from '../../../src/lib/server/core/json.ts';
+import { quickly } from '../../../src/lib/server/core/shapes.ts';
+import * as fold from '../../../src/lib/server/sessions/fold.ts';
+import * as codex from '../../../src/lib/server/sessions/stores/codex.ts';
+import * as turns from '../../../src/lib/server/sessions/stores/turns.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** A path under a scratch directory of this case's own, and that directory. */
@@ -113,5 +121,55 @@ describe('an atomic write through a link', () => {
         writeTextAtomic(link, 'new');
         expect(lstatSync(link).isSymbolicLink()).toBe(true);
         expect(readFileSync(path, 'utf8')).toBe('new');
+    });
+});
+
+describe('quickly', () => {
+    it('refuses a loose object', () => {
+        expect(() => quickly(z.looseObject({ a: z.string() }))).toThrow(/plain object/);
+    });
+
+    it('refuses a strict object', () => {
+        expect(() => quickly(z.strictObject({ a: z.string() }))).toThrow(/plain object/);
+    });
+
+    it('refuses an object carrying a check', () => {
+        const shape = z.object({ a: z.string() }).refine(() => true);
+        expect(() => quickly(shape)).toThrow(/object without a check/);
+    });
+
+    it('refuses a list carrying a check', () => {
+        expect(() => quickly(z.array(z.string()).min(1))).toThrow(/list without a check/);
+    });
+
+    it('finds a refused form inside a field, a wrapper, a list and a union', () => {
+        expect(() => quickly(z.object({ a: z.array(z.number()).max(2) }))).toThrow(/list/);
+        expect(() =>
+            quickly(z.object({ a: z.looseObject({}).optional().catch(undefined) }))
+        ).toThrow(/plain object/);
+        expect(() => quickly(z.array(z.looseObject({})))).toThrow(/plain object/);
+        expect(() => quickly(z.union([z.string(), z.looseObject({})]))).toThrow(/plain object/);
+    });
+
+    it('builds over a plain object, a list and the wrappers, and answers what the shape answers', () => {
+        const shape = z.object({
+            name: z.string().optional().catch(undefined),
+            items: z.array(z.number().catch(0)).nullable().catch(null)
+        });
+        const quick = quickly(shape);
+        for (const value of [{ name: 'a', items: [1, 2] }, { name: 3, items: [1, 'x'] }, {}, 5]) {
+            const [quickAnswer, answer] = [quick.safeParse(value), shape.safeParse(value)];
+            expect([quickAnswer.success, quickAnswer.data]).toStrictEqual([
+                answer.success,
+                answer.data
+            ]);
+        }
+    });
+
+    it('builds over every shape the readers of the sessions folder hold', () => {
+        // Each of these modules builds its schemas with `quickly` when it is imported.
+        for (const loaded of [fold, codex, turns]) {
+            expect(Object.keys(loaded).length).toBeGreaterThan(0);
+        }
     });
 });

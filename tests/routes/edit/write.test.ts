@@ -12,7 +12,20 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
-import { configKeyWrite, handleWrite } from '../../../src/lib/server/edit/writes.ts';
+import * as readers from '../../../src/lib/server/edit/writes.ts';
+import {
+    configKeyWrite,
+    deckWrite,
+    feedFieldWrite,
+    handleWrite,
+    linkedinIdeaWrite,
+    manifestWrite,
+    railWrite,
+    reorderWrite,
+    sessionWrite,
+    subtaskAdd,
+    subtaskWrite
+} from '../../../src/lib/server/edit/writes.ts';
 import { localDate } from '../../../src/lib/data/helpers/dates.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import {
@@ -734,6 +747,145 @@ describe('the config-key body', () => {
             expect(await response.json()).toEqual({
                 error: 'the body is not a write this route knows'
             });
+        }
+    });
+});
+
+describe('the body readers', () => {
+    const target = { id: 'a' };
+
+    it('answers the body fields map itself, an own __proto__ key included', () => {
+        const held = JSON.parse('{"__proto__":{"x":1},"title":"t"}') as Record<string, unknown>;
+        const write = manifestWrite({ kind: 'manifest', id: 'a', fields: held });
+        expect(write?.fields).toBe(held);
+        expect(Object.hasOwn(write?.fields ?? {}, '__proto__')).toBe(true);
+    });
+
+    it('reads a session body into the keys it names and refuses a wrong field', () => {
+        const hidden = sessionWrite({ kind: 'session', id: 'a', hidden: true });
+        expect(hidden).toStrictEqual({ kind: 'session', id: 'a', hidden: true });
+        expect(sessionWrite({ kind: 'session', id: 'a' })).toBeNull();
+        expect(sessionWrite({ kind: 'session', id: 'a', hidden: 'yes' })).toBeNull();
+        expect(sessionWrite({ kind: 'session', id: 'a', hidden: null })).toBeNull();
+        expect(sessionWrite({ kind: 'session', id: 'a', title: 3 })).toBeNull();
+        expect(sessionWrite({ kind: 'session', id: 'a', title: '' })).toStrictEqual({
+            kind: 'session',
+            id: 'a',
+            title: ''
+        });
+        const extra = sessionWrite({ kind: 'session', id: 'a', top: false, extra: 1 });
+        expect(extra).toStrictEqual({ kind: 'session', id: 'a', top: false });
+        expect(Object.keys(extra ?? {})).toEqual(['kind', 'id', 'top']);
+    });
+
+    it('reads a subtask body: a target without a collection key, and the refusals', () => {
+        const base = { kind: 'subtask', target, key: 'k', action: 'done' };
+        expect(subtaskWrite(base)).toStrictEqual({
+            kind: 'subtask',
+            target: { id: 'a' },
+            key: 'k',
+            action: 'done'
+        });
+        expect(Object.keys(subtaskWrite(base)?.target ?? {})).toEqual(['id']);
+        for (const wrong of [
+            { target: { id: 'a', collection: '' } },
+            { target: { id: 'a', collection: null } },
+            { action: 'toString' },
+            { value: 3 },
+            { value: null },
+            { target: [] }
+        ]) {
+            expect(subtaskWrite({ ...base, ...wrong })).toBeNull();
+        }
+        expect(subtaskWrite({ ...base, value: '' })).toStrictEqual({
+            kind: 'subtask',
+            target: { id: 'a' },
+            key: 'k',
+            action: 'done',
+            value: ''
+        });
+    });
+
+    it('answers a subtask add its fields map itself and refuses a blank or non-text do', () => {
+        const fields = { do: 'x', after: 'y' };
+        expect(subtaskAdd({ kind: 'subtask-add', target, fields })?.fields).toBe(fields);
+        for (const bad of ['  ', 3]) {
+            expect(subtaskAdd({ kind: 'subtask-add', target, fields: { do: bad } })).toBeNull();
+        }
+    });
+
+    it('answers a reorder its order itself and refuses an empty or non-text item', () => {
+        const order: string[] = [];
+        expect(reorderWrite({ kind: 'reorder', collection: 'c', order })?.order).toBe(order);
+        expect(reorderWrite({ kind: 'reorder', collection: 'c', order: ['a', ''] })).toBeNull();
+        expect(reorderWrite({ kind: 'reorder', collection: 'c', order: ['a', 1] })).toBeNull();
+    });
+
+    it('reads a feed field value as typeof does: null, text, a boolean and every number', () => {
+        const body = { kind: 'feed-field', feed: 'radar', id: 'i', field: 'f' };
+        for (const value of [null, 0, NaN, Infinity, -Infinity, false, 'x']) {
+            expect(feedFieldWrite({ ...body, value })).toStrictEqual({ ...body, value });
+        }
+        expect(feedFieldWrite({ ...body, value: {} })).toBeNull();
+        expect(feedFieldWrite({ ...body, value: [] })).toBeNull();
+        expect(feedFieldWrite(body)).toBeNull();
+    });
+
+    it('reads a LinkedIn idea: no category is the empty one, a null one is refused', () => {
+        const idea = linkedinIdeaWrite({ kind: 'linkedin-idea', title: 't' });
+        expect(idea).toStrictEqual({ kind: 'linkedin-idea', title: 't', category: '' });
+        expect(linkedinIdeaWrite({ kind: 'linkedin-idea', title: 't', category: null })).toBeNull();
+        expect(linkedinIdeaWrite({ kind: 'linkedin-idea', title: '' })?.title).toBe('');
+    });
+
+    it('reads a deck body whose selection is empty and refuses a non-text key', () => {
+        const order = ['a', 'b'];
+        const selection: string[] = [];
+        expect(deckWrite({ kind: 'deck', selection, order })).toStrictEqual({
+            kind: 'deck',
+            selection: [],
+            order: ['a', 'b']
+        });
+        expect(deckWrite({ kind: 'deck', selection: ['a', 1], order })).toBeNull();
+    });
+
+    it('reads a rail body into rows of exactly three keys', () => {
+        const row = { label: 'L', glyph: 'g', page: 'p', extra: 1 };
+        const write = railWrite({ kind: 'rail', rail: [row] });
+        expect(write).toStrictEqual({
+            kind: 'rail',
+            rail: [{ label: 'L', glyph: 'g', page: 'p' }]
+        });
+        expect(Object.keys(write?.rail[0] ?? {})).toEqual(['label', 'glyph', 'page']);
+        expect(railWrite({ kind: 'rail', rail: [[]] })).toBeNull();
+        expect(railWrite({ kind: 'rail', rail: [null] })).toBeNull();
+        expect(railWrite({ kind: 'rail', rail: {} })).toBeNull();
+        expect(railWrite({ kind: 'rail', rail: [] })).toStrictEqual({ kind: 'rail', rail: [] });
+    });
+
+    it('reads a config-key body by an own value key, even an undefined one', () => {
+        const body = { kind: 'config-key', file: 'f', key: 'k' };
+        expect(configKeyWrite({ ...body, value: undefined })).toStrictEqual({
+            ...body,
+            value: undefined
+        });
+        expect(configKeyWrite(body)).toBeNull();
+        const inherited = '{"__proto__":{"value":1},"kind":"config-key","file":"f","key":"k"}';
+        expect(configKeyWrite(JSON.parse(inherited))).toBeNull();
+    });
+
+    it('refuses a kind that sits only under an own __proto__ key, and a body of no map', () => {
+        const names = (
+            'auditMuteWrite configKeyWrite deckWrite deleteEntryWrite entryWrite feedDeleteWrite ' +
+            'feedFieldWrite hostWrite leadAddWrite linkedinIdeaWrite linkedinPostWrite ' +
+            'manifestWrite newEntry newIdea railWrite reorderWrite sessionWrite subtaskAdd ' +
+            'subtaskWrite undoWrite'
+        ).split(' ');
+        for (const name of names) {
+            const read = (readers as unknown as Record<string, (body: unknown) => unknown>)[name];
+            for (const body of [null, [], 'text', 7, JSON.parse('{"__proto__":{"kind":"x"}}')]) {
+                expect(read(body)).toBeNull();
+            }
         }
     });
 });

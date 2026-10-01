@@ -23,7 +23,7 @@ import {
     type Probe
 } from '../../../../src/lib/server/sessions/registry.ts';
 import { hiddenIds, setHidden } from '../../../../src/lib/server/sessions/overrides.ts';
-import { CACHE_VERSION } from '../../../../src/lib/server/sessions/cache.ts';
+import { CACHE_VERSION, loadCache } from '../../../../src/lib/server/sessions/cache.ts';
 import { spentTokens } from '../../../../src/lib/server/sessions/fold.ts';
 import type { LiveEntry } from '../../../../src/lib/data/model/index.ts';
 import { it } from '../../../fixtures/scratch.ts';
@@ -38,7 +38,8 @@ import {
     outcome,
     turn,
     usage,
-    type Fixture
+    type Fixture,
+    type Json
 } from './transcript-fixture.ts';
 
 /** The registry's live sessions alone: signal 0 per entry, then one `ps` for the ones that ran. */
@@ -710,5 +711,190 @@ describe('dismissals', () => {
         f.write([human('2026-01-01T10:00:00.000Z', 'go')]);
         expect(f.only().hidden).toBe(false);
         expect(hiddenIds(f.overrides).size).toBe(0);
+    });
+});
+
+/** A timestamp of the transcript below, `second` seconds past ten. */
+function at(second: number): string {
+    return `2026-01-01T10:00:${String(second).padStart(2, '0')}.000Z`;
+}
+
+/** A message record whose content is the given value, of whatever type. */
+function said(type: string, second: number, content: unknown, extra: Json = {}, inner: Json = {}) {
+    return { type, timestamp: at(second), message: { content, ...inner }, ...extra };
+}
+
+function use(id: unknown, name: unknown, input?: unknown): Json {
+    return { type: 'tool_use', id, name, input };
+}
+
+function result(id: unknown, content: unknown, error?: unknown): Json {
+    return { type: 'tool_result', tool_use_id: id, content, is_error: error };
+}
+
+/** Records of the kinds the fold reads whose fields hold values of the wrong type. */
+const WRONG_TYPES: unknown[] = [
+    [],
+    null,
+    's',
+    { type: 'ai-title', aiTitle: 3 },
+    { type: 'user', timestamp: at(0), origin: { kind: 'human' }, message: [], cwd: 5 },
+    said('user', 1, 'first ask', { origin: { kind: 'human' }, cwd: '/w', version: 9 }),
+    {
+        type: 'assistant',
+        timestamp: at(2),
+        message: {
+            model: 'claude-test',
+            content: [],
+            usage: {
+                input_tokens: 2.7,
+                output_tokens: '4',
+                cache_creation: { ephemeral_5m_input_tokens: 3 }
+            }
+        }
+    },
+    said('assistant', 3, [use('t1', ''), use('t2', 'Agent', []), 7, null, use(5, 'Bash')]),
+    said(
+        'user',
+        5,
+        [result(7, 'x'), result('t2', [{ type: 'text', text: 'abc' }, { text: 5 }, 'z'], 'yes')],
+        { toolUseResult: { totalTokens: 12 } }
+    ),
+    said('assistant', 7, [], { effort: 3 }, { effort: 'high' }),
+    said('assistant', 8, [], { effort: '' }, { effort: 'high' }),
+    said('assistant', 9, [
+        use('t3', 'Edit', { file_path: 3, notebook_path: 'x' }),
+        use('t4', 'NotebookEdit', { notebook_path: '/n.ipynb' })
+    ]),
+    { type: 'system', subtype: 'turn_duration', durationMs: '5', timestamp: at(10) },
+    { type: 'system', subtype: 'turn_duration', durationMs: 7.9, timestamp: 5 },
+    { type: 'attachment', timestamp: at(11), attachment: [] },
+    {
+        type: 'attachment',
+        timestamp: at(12),
+        attachment: { commandMode: 'task-notification', prompt: 5 }
+    },
+    { type: 'last-prompt', lastPrompt: '' }
+];
+
+/** What the fold makes of the transcript above. */
+const FOLDED = {
+    id: 'aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb',
+    slug: '-tmp-fixture-workspace',
+    tool: 'claude',
+    cwd: '/w',
+    branch: null,
+    title: 'first ask',
+    lastPrompt: '',
+    model: 'claude-test',
+    effort: null,
+    permissionMode: null,
+    version: null,
+    entrypoint: null,
+    started: '2026-01-01T10:00:00.000Z',
+    lastActivity: '2026-01-01T10:00:09.000Z',
+    state: 'idle',
+    live: false,
+    liveStatus: null,
+    pid: null,
+    registryName: null,
+    hidden: false,
+    prompts: 2,
+    messages: 8,
+    tokens: { input: 2, output: 0, cacheRead: 0, cacheCreation: 0, thinking: 0 },
+    contextTokens: 2,
+    lastCacheRead: 0,
+    contextWindow: null,
+    cache: { ttl: '5m', lastCreation: null, lastRead: null, busts: 0 },
+    tools: { Agent: 1, Bash: 1, Edit: 1, NotebookEdit: 1 },
+    files: [{ path: '/n.ipynb', tool: 'NotebookEdit', count: 1, last: '2026-01-01T10:00:09.000Z' }],
+    agents: [
+        {
+            id: 't2',
+            description: '',
+            subagentType: '',
+            model: null,
+            started: '2026-01-01T10:00:03.000Z',
+            ended: '2026-01-01T10:00:05.000Z',
+            status: 'done',
+            resultChars: 3,
+            tokens: 12
+        }
+    ],
+    timeline: [
+        { ts: '2026-01-01T10:00:01.000Z', kind: 'prompt', text: 'first ask' },
+        { ts: '2026-01-01T10:00:03.000Z', kind: 'tool', text: 'Agent' },
+        { ts: '2026-01-01T10:00:03.000Z', kind: 'tool', text: 'Bash' },
+        { ts: '2026-01-01T10:00:09.000Z', kind: 'edit', text: 'Edit' },
+        { ts: '2026-01-01T10:00:09.000Z', kind: 'edit', text: '/n.ipynb' },
+        { ts: '2026-01-01T10:00:10.000Z', kind: 'turn', text: '0' },
+        { ts: null, kind: 'turn', text: '7' }
+    ],
+    truncated: false,
+    hook: null
+};
+
+describe('a transcript whose records hold values of the wrong type', () => {
+    it('folds a field of the wrong type as absent and a record of no known kind as nothing', () => {
+        const f = make();
+        const lines = ['this line is not json', ...WRONG_TYPES.map((one) => JSON.stringify(one))];
+        writeFileSync(f.path, lines.join('\n') + '\n');
+        expect(readSession(f.path)).toStrictEqual({ ...FOLDED, path: f.path });
+    });
+});
+
+describe('the cache file of an older shape or a hand edit', () => {
+    type Stored = { version: number; entries: Record<string, Record<string, unknown>> };
+
+    /** A fixture that has been scanned once, so its cache holds the entry of its transcript. */
+    function scanned(): { f: Fixture; stored: Stored; entry: Record<string, unknown> } {
+        const f = make();
+        f.write([human('2026-01-01T10:00:00.000Z', 'go'), turn('2026-01-01T10:00:01.000Z')]);
+        f.only();
+        const stored = JSON.parse(readFileSync(f.cache, 'utf8')) as Stored;
+        return { f, stored, entry: stored.entries[f.path] };
+    }
+
+    /** What loadCache keeps of a cache file holding the given text. */
+    function loaded(f: Fixture, text: string) {
+        writeFileSync(f.cache, text);
+        return loadCache(f.cache);
+    }
+
+    it('keeps nothing of a cache of another version or with an entries list', () => {
+        const { f, stored } = scanned();
+        for (const patch of [{ version: CACHE_VERSION + 1 }, { entries: [] }]) {
+            expect(loaded(f, JSON.stringify({ ...stored, ...patch }))).toStrictEqual({});
+        }
+    });
+
+    it('drops an entry whose acc is no map and keeps the other entry as it was written', () => {
+        const { f, stored, entry } = scanned();
+        const kept = { ...entry, extra: [1] };
+        const entries = { [f.path]: kept, broken: { ...entry, acc: [] } };
+        expect(loaded(f, JSON.stringify({ ...stored, entries }))).toStrictEqual({ [f.path]: kept });
+    });
+
+    it('takes an entry under the key __proto__ as the assignment kept[key] = value does', () => {
+        const { f, entry } = scanned();
+        const text = `{"version":${CACHE_VERSION},"entries":{"__proto__":${JSON.stringify(entry)}}}`;
+        const found = loaded(f, text);
+        expect(Object.keys(found)).toStrictEqual([]);
+        expect(Object.getPrototypeOf(found)).toStrictEqual(entry);
+    });
+
+    it('drops an entry with a field of the wrong type, and the scan folds from zero', () => {
+        const wrong = (entry: Record<string, unknown>): Record<string, unknown>[] => [
+            { ...entry, offset: '5' },
+            { ...entry, acc: { ...(entry.acc as object), aiTitle: 3 } }
+        ];
+        for (const index of [0, 1]) {
+            const { f, stored, entry } = scanned();
+            const clean = f.only();
+            const text = JSON.stringify({ ...stored, entries: { [f.path]: wrong(entry)[index] } });
+            expect(loaded(f, text)).toStrictEqual({});
+            writeFileSync(f.cache, text);
+            expect(f.only()).toEqual(clean);
+        }
     });
 });

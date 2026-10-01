@@ -8,6 +8,7 @@
 // The caps below are what stops a long session growing without bound: they are applied when the
 // accumulator is pruned, so the cache entry stays small, and again when the record is finished.
 
+import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
 import type {
     SizedAgent,
@@ -121,10 +122,98 @@ export function newAcc(id: string, path: string, slug: string, tool: SessionTool
     };
 }
 
+const nullableTextShape = z.string().nullable();
+const countsShape = z.record(z.string(), z.number());
+
+/**
+ * A stored accumulator, as the cache file holds it. Every field is optional, since an entry
+ * written before a field existed lacks it and `rehydrate` fills it in; a field that is present
+ * has the type `Acc` declares.
+ */
+export const accShape = z.object({
+    id: z.string().optional(),
+    path: z.string().optional(),
+    slug: z.string().optional(),
+    tool: z.enum(['claude', 'codex']).optional(),
+    cwd: nullableTextShape.optional(),
+    branch: nullableTextShape.optional(),
+    version: nullableTextShape.optional(),
+    permissionMode: nullableTextShape.optional(),
+    entrypoint: nullableTextShape.optional(),
+    model: nullableTextShape.optional(),
+    effort: nullableTextShape.optional(),
+    aiTitle: nullableTextShape.optional(),
+    firstPrompt: nullableTextShape.optional(),
+    lastPrompt: z.string().optional(),
+    started: nullableTextShape.optional(),
+    lastActivity: nullableTextShape.optional(),
+    prompts: z.number().optional(),
+    messages: z.number().optional(),
+    seen: z.number().optional(),
+    tokens: z
+        .object({
+            input: z.number(),
+            output: z.number(),
+            cacheRead: z.number(),
+            cacheCreation: z.number(),
+            thinking: z.number()
+        })
+        .optional(),
+    cache: z
+        .object({
+            ttl: nullableTextShape,
+            lastCreation: nullableTextShape,
+            lastRead: nullableTextShape,
+            busts: z.number()
+        })
+        .optional(),
+    prevCacheRead: z.number().optional(),
+    context: z.number().optional(),
+    contextWindow: z.number().nullable().optional(),
+    tools: countsShape.optional(),
+    files: z
+        .record(
+            z.string(),
+            z.object({
+                path: z.string(),
+                tool: z.string(),
+                count: z.number(),
+                last: nullableTextShape
+            })
+        )
+        .optional(),
+    agents: z
+        .record(
+            z.string(),
+            z.object({
+                id: z.string(),
+                description: z.string(),
+                subagentType: z.string(),
+                model: nullableTextShape,
+                started: nullableTextShape,
+                ended: nullableTextShape,
+                status: z.string(),
+                resultChars: z.number(),
+                tokens: z.number().optional()
+            })
+        )
+        .optional(),
+    background: z.record(z.string(), z.string()).optional(),
+    timeline: z
+        .array(z.object({ ts: nullableTextShape, kind: z.string(), text: z.string() }))
+        .optional(),
+    pending: countsShape.optional(),
+    lastKind: nullableTextShape.optional(),
+    lastToolIds: z.array(z.string()).optional(),
+    turnOpen: z.boolean().optional(),
+    metaSeen: z.boolean().optional()
+}) satisfies z.ZodType<Partial<Acc>>;
+
+/** A text field of a record, read as absent unless it is a string. */
+export const textShape = z.string().optional().catch(undefined);
+
 /** The stamp a record carries, or null when it carries none. */
-export function stampOf(value: unknown): string | null {
-    return typeof value === 'string' && value !== '' ? value : null;
-}
+export const stampShape = z.string().min(1).nullable().catch(null);
 
 /**
  * Note the moment: the first stamp seen opens the session and every one moves its last activity.

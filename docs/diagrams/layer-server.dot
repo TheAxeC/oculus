@@ -16,7 +16,7 @@ digraph layer_server {
         "folder server/core" [label="server/core"];
         "folder server/root to folder server/accounts" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/root to folder server/content" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/root to folder server/core" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/root to folder server/core" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/root to folder server/edit" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/root to folder server/files" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/root to folder server/machine" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -26,13 +26,13 @@ digraph layer_server {
         "folder server/git to folder server/edit" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/git to layer data" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/content" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/edit to folder server/core" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/edit to folder server/core" [label="27", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/files" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/machine" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/sessions" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to layer data" [label="30", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/machine to folder server/content" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/machine to folder server/core" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/machine to folder server/core" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/machine to folder server/files" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/machine to folder server/sessions" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/machine to folder server/transcripts" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -40,15 +40,14 @@ digraph layer_server {
         "folder server/content to folder server/core" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/content to folder server/files" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/content to layer data" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/files to folder server/core" [label="14", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/files to layer data" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/sessions to folder server/core" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/files to folder server/core" [label="17", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/files to layer data" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/sessions to folder server/core" [label="15", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/sessions to folder server/transcripts" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/sessions to layer data" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/sessions to layer data" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/accounts to folder server/core" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/accounts to layer data" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/transcripts to layer data" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/core to layer data" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/core to layer data" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "layer data from folder server/root" [label="data", style=dashed];
     "layer data from folder server/git" [label="data", style=dashed];
@@ -58,7 +57,6 @@ digraph layer_server {
     "layer data from folder server/files" [label="data", style=dashed];
     "layer data from folder server/sessions" [label="data", style=dashed];
     "layer data from folder server/accounts" [label="data", style=dashed];
-    "layer data from folder server/transcripts" [label="data", style=dashed];
     "layer data from folder server/core" [label="data", style=dashed];
     "folder server/root" -> "folder server/git" [style=invis, weight=10, minlen=2];
     "folder server/git" -> "folder server/edit" [style=invis, weight=10, minlen=2];
@@ -143,9 +141,6 @@ digraph layer_server {
     "folder server/accounts" -> "folder server/accounts to layer data" [arrowhead=none, style=dashed];
     "folder server/accounts to layer data" -> "layer data from folder server/accounts" [style=dashed];
     { rank=same; "folder server/accounts"; "folder server/accounts to layer data"; "layer data from folder server/accounts"; }
-    "folder server/transcripts" -> "folder server/transcripts to layer data" [arrowhead=none, style=dashed];
-    "folder server/transcripts to layer data" -> "layer data from folder server/transcripts" [style=dashed];
-    { rank=same; "folder server/transcripts"; "folder server/transcripts to layer data"; "layer data from folder server/transcripts"; }
     "folder server/core" -> "folder server/core to layer data" [arrowhead=none, style=dashed];
     "folder server/core to layer data" -> "layer data from folder server/core" [style=dashed];
     { rank=same; "folder server/core"; "folder server/core to layer data"; "layer data from folder server/core"; }

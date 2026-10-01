@@ -4,11 +4,13 @@
 // Nothing here touches a file. A parser is pure over its one argument, which is what lets
 // tests/routes/edit/write.test.ts cover every refusal without a request, and a body of the wrong
 // shape is refused whole rather than having its bad field dropped quietly: the reader is told what
-// was wrong.
+// was wrong. Each body kind is a zod schema beside its reader, and a list or a map the body carries
+// for a writer to place is answered as the body holds it.
 //
 // server/edit/writes.ts is the route and re-exports everything here.
 
-import { isMap } from '../../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { anyNumberShape, mapShape, readAs, unchanged } from '../../core/shapes.ts';
 import type { SubtaskAction, SubtaskTarget } from './subtasks.ts';
 
 /** The body a write carries. `kind` is the discriminator later writes are added on. */
@@ -110,24 +112,161 @@ export type RailWrite = { kind: 'rail'; rail: { label: string; glyph: string; pa
  */
 export type ConfigKeyWrite = { kind: 'config-key'; file: string; key: string; value: unknown };
 
-const ACTIONS: SubtaskAction[] = ['done', 'reopen', 'snooze', 'delete'];
+/** A string that is not empty, which is what every id, name and key of a body is. */
+const wordShape = z.string().min(1);
+
+/** A list of words, which is what both halves of a deck write and a reorder are. */
+const keysShape = unchanged(z.array(wordShape));
 
 /** The `target` of a subtask body: `{ id }` for a manifest, `{ collection, id }` for an entry. */
-function targetOf(raw: unknown): SubtaskTarget | null {
-    if (!isMap(raw)) return null;
-    if (typeof raw.id !== 'string' || raw.id === '') return null;
-    if (raw.collection === undefined) return { id: raw.id };
-    if (typeof raw.collection !== 'string' || raw.collection === '') return null;
-    return { id: raw.id, collection: raw.collection };
-}
+const targetShape = z.object({
+    id: wordShape,
+    collection: wordShape.optional()
+}) satisfies z.ZodType<SubtaskTarget>;
+
+const manifestShape = z.object({
+    kind: z.literal('manifest'),
+    id: wordShape,
+    fields: mapShape
+}) satisfies z.ZodType<ManifestWrite>;
+
+/** At least one of the four fields must be named, and each one named must be of its own type. */
+const sessionShape = z
+    .object({
+        kind: z.literal('session'),
+        id: wordShape,
+        hidden: z.boolean().optional(),
+        top: z.boolean().optional(),
+        area: z.string().optional(),
+        title: z.string().optional()
+    })
+    .refine(
+        (write) =>
+            write.hidden !== undefined ||
+            write.top !== undefined ||
+            write.area !== undefined ||
+            write.title !== undefined
+    ) satisfies z.ZodType<SessionWrite>;
+
+const entryShape = z.object({
+    kind: z.literal('entry'),
+    collection: wordShape,
+    id: wordShape,
+    fields: mapShape
+}) satisfies z.ZodType<EntryWrite>;
+
+const subtaskShape = z.object({
+    kind: z.literal('subtask'),
+    target: targetShape,
+    key: wordShape,
+    action: z.enum(['done', 'reopen', 'snooze', 'delete']),
+    value: z.string().optional()
+}) satisfies z.ZodType<SubtaskWrite>;
+
+/** The fields of a subtask add must carry a `do` that is more than blanks. */
+const subtaskAddShape = z.object({
+    kind: z.literal('subtask-add'),
+    target: targetShape,
+    fields: unchanged(z.looseObject({ do: z.string().refine((one) => one.trim() !== '') }))
+}) satisfies z.ZodType<SubtaskAddWrite>;
+
+const hostShape = z.object({
+    kind: z.literal('host'),
+    name: wordShape,
+    status: wordShape
+}) satisfies z.ZodType<HostWrite>;
+
+const newEntryShape = z.object({
+    kind: z.literal('new-entry'),
+    collection: wordShape,
+    fields: mapShape
+}) satisfies z.ZodType<NewEntryWrite>;
+
+const reorderShape = z.object({
+    kind: z.literal('reorder'),
+    collection: wordShape,
+    order: keysShape
+}) satisfies z.ZodType<ReorderWrite>;
+
+const deleteEntryShape = z.object({
+    kind: z.literal('delete-entry'),
+    collection: wordShape,
+    id: wordShape
+}) satisfies z.ZodType<DeleteEntryWrite>;
+
+/** The value a feed field takes: null to clear it, text, a number or a boolean. */
+export const feedValueShape = z.union([z.null(), z.string(), anyNumberShape, z.boolean()]);
+
+const feedFieldShape = z.object({
+    kind: z.literal('feed-field'),
+    feed: wordShape,
+    id: wordShape,
+    field: wordShape,
+    value: feedValueShape
+}) satisfies z.ZodType<FeedFieldWrite>;
+
+const feedDeleteShape = z.object({
+    kind: z.literal('feed-delete'),
+    feed: wordShape,
+    id: wordShape
+}) satisfies z.ZodType<FeedDeleteWrite>;
+
+const leadAddShape = z.object({
+    kind: z.literal('lead-add'),
+    fields: mapShape
+}) satisfies z.ZodType<LeadAddWrite>;
+
+/** A missing `category` is the empty category; a `category` that is not text refuses the body. */
+const linkedinIdeaShape = z.object({
+    kind: z.literal('linkedin-idea'),
+    title: z.string(),
+    category: z.string().default('')
+}) satisfies z.ZodType<LinkedinIdeaWrite>;
+
+const linkedinPostShape = z.object({
+    kind: z.literal('linkedin-post'),
+    file: z.string()
+}) satisfies z.ZodType<LinkedinPostWrite>;
+
+const deckShape = z.object({
+    kind: z.literal('deck'),
+    selection: keysShape,
+    order: keysShape
+}) satisfies z.ZodType<DeckWrite>;
+
+const undoShape = z.object({
+    kind: z.literal('undo'),
+    at: wordShape
+}) satisfies z.ZodType<UndoWrite>;
+
+const newIdeaShape = z.object({
+    kind: z.literal('new-idea'),
+    fields: unchanged(z.looseObject({ id: wordShape }))
+}) satisfies z.ZodType<NewIdeaWrite>;
+
+const auditMuteShape = z.object({
+    kind: z.literal('audit-mute'),
+    signature: wordShape,
+    muted: z.boolean()
+}) satisfies z.ZodType<AuditMuteWrite>;
+
+/** A row of the rail keeps its three strings and no other key. */
+const railShape = z.object({
+    kind: z.literal('rail'),
+    rail: z.array(z.object({ label: z.string(), glyph: z.string(), page: z.string() }))
+}) satisfies z.ZodType<RailWrite>;
+
+/** The `value` key must be there, whatever it holds; an absent one is not a write. */
+const configKeyShape = z.object({
+    kind: z.literal('config-key'),
+    file: wordShape,
+    key: wordShape,
+    value: z.unknown()
+}) satisfies z.ZodType<ConfigKeyWrite>;
 
 /** The body as a manifest write, or null when it is not one. */
 export function manifestWrite(body: unknown): ManifestWrite | null {
-    if (!isMap(body)) return null;
-    if (body.kind !== 'manifest' || typeof body.id !== 'string' || body.id === '') return null;
-    const fields = body.fields;
-    if (!isMap(fields)) return null;
-    return { kind: 'manifest', id: body.id, fields };
+    return readAs(manifestShape, body);
 }
 
 /**
@@ -136,85 +275,32 @@ export function manifestWrite(body: unknown): ManifestWrite | null {
  * fields is not a write either: there would be nothing to do and nothing to answer with.
  */
 export function sessionWrite(body: unknown): SessionWrite | null {
-    if (!isMap(body)) return null;
-    if (body.kind !== 'session' || typeof body.id !== 'string' || body.id === '') return null;
-    const write: SessionWrite = { kind: 'session', id: body.id };
-    for (const flag of ['hidden', 'top'] as const) {
-        const value = body[flag];
-        if (value === undefined) continue;
-        if (typeof value !== 'boolean') return null;
-        write[flag] = value;
-    }
-    for (const key of ['area', 'title'] as const) {
-        const value = body[key];
-        if (value === undefined) continue;
-        if (typeof value !== 'string') return null;
-        write[key] = value;
-    }
-    if (
-        write.hidden === undefined &&
-        write.top === undefined &&
-        write.area === undefined &&
-        write.title === undefined
-    ) {
-        return null;
-    }
-    return write;
+    return readAs(sessionShape, body);
 }
 
 /** The body as an entry write, or null when it is not one. */
 export function entryWrite(body: unknown): EntryWrite | null {
-    if (!isMap(body) || body.kind !== 'entry') return null;
-    if (typeof body.collection !== 'string' || body.collection === '') return null;
-    if (typeof body.id !== 'string' || body.id === '') return null;
-    if (!isMap(body.fields)) return null;
-    return { kind: 'entry', collection: body.collection, id: body.id, fields: body.fields };
+    return readAs(entryShape, body);
 }
 
 /** The body as a subtask write, or null when it is not one. */
 export function subtaskWrite(body: unknown): SubtaskWrite | null {
-    if (!isMap(body) || body.kind !== 'subtask') return null;
-    const target = targetOf(body.target);
-    if (target === null) return null;
-    if (typeof body.key !== 'string' || body.key === '') return null;
-    const action = body.action;
-    if (typeof action !== 'string' || !ACTIONS.includes(action as SubtaskAction)) return null;
-    const write: SubtaskWrite = {
-        kind: 'subtask',
-        target,
-        key: body.key,
-        action: action as SubtaskAction
-    };
-    if (body.value !== undefined) {
-        if (typeof body.value !== 'string') return null;
-        write.value = body.value;
-    }
-    return write;
+    return readAs(subtaskShape, body);
 }
 
 /** The body as a subtask add, or null when it is not one. */
 export function subtaskAdd(body: unknown): SubtaskAddWrite | null {
-    if (!isMap(body) || body.kind !== 'subtask-add') return null;
-    const target = targetOf(body.target);
-    if (target === null || !isMap(body.fields)) return null;
-    if (typeof body.fields.do !== 'string' || body.fields.do.trim() === '') return null;
-    return { kind: 'subtask-add', target, fields: body.fields };
+    return readAs(subtaskAddShape, body);
 }
 
 /** The body as a host write, or null when it is not one. */
 export function hostWrite(body: unknown): HostWrite | null {
-    if (!isMap(body) || body.kind !== 'host') return null;
-    if (typeof body.name !== 'string' || body.name === '') return null;
-    if (typeof body.status !== 'string' || body.status === '') return null;
-    return { kind: 'host', name: body.name, status: body.status };
+    return readAs(hostShape, body);
 }
 
 /** The body as a new entry, or null when it is not one. */
 export function newEntry(body: unknown): NewEntryWrite | null {
-    if (!isMap(body) || body.kind !== 'new-entry') return null;
-    if (typeof body.collection !== 'string' || body.collection === '') return null;
-    if (!isMap(body.fields)) return null;
-    return { kind: 'new-entry', collection: body.collection, fields: body.fields };
+    return readAs(newEntryShape, body);
 }
 
 /**
@@ -223,76 +309,37 @@ export function newEntry(body: unknown): NewEntryWrite | null {
  * body that is not the shape, an order that is not a list of words above all.
  */
 export function reorderWrite(body: unknown): ReorderWrite | null {
-    if (!isMap(body) || body.kind !== 'reorder') return null;
-    if (typeof body.collection !== 'string' || body.collection === '') return null;
-    if (!Array.isArray(body.order)) return null;
-    if (!body.order.every((one) => typeof one === 'string' && one !== '')) return null;
-    return { kind: 'reorder', collection: body.collection, order: body.order as string[] };
+    return readAs(reorderShape, body);
 }
 
 /** The body as an entry deletion, or null when it is not one. */
 export function deleteEntryWrite(body: unknown): DeleteEntryWrite | null {
-    if (!isMap(body) || body.kind !== 'delete-entry') return null;
-    if (typeof body.collection !== 'string' || body.collection === '') return null;
-    if (typeof body.id !== 'string' || body.id === '') return null;
-    return { kind: 'delete-entry', collection: body.collection, id: body.id };
+    return readAs(deleteEntryShape, body);
 }
 
 /** The body as one feed field write, including null to clear the field. */
 export function feedFieldWrite(body: unknown): FeedFieldWrite | null {
-    if (!isMap(body) || body.kind !== 'feed-field') return null;
-    if (typeof body.feed !== 'string' || body.feed === '') return null;
-    if (typeof body.id !== 'string' || body.id === '') return null;
-    if (typeof body.field !== 'string' || body.field === '') return null;
-    if (
-        body.value !== null &&
-        typeof body.value !== 'string' &&
-        typeof body.value !== 'number' &&
-        typeof body.value !== 'boolean'
-    ) {
-        return null;
-    }
-    return {
-        kind: 'feed-field',
-        feed: body.feed,
-        id: body.id,
-        field: body.field,
-        value: body.value
-    };
+    return readAs(feedFieldShape, body);
 }
 
 /** The body as one feed deletion. */
 export function feedDeleteWrite(body: unknown): FeedDeleteWrite | null {
-    if (!isMap(body) || body.kind !== 'feed-delete') return null;
-    if (typeof body.feed !== 'string' || body.feed === '') return null;
-    if (typeof body.id !== 'string' || body.id === '') return null;
-    return { kind: 'feed-delete', feed: body.feed, id: body.id };
+    return readAs(feedDeleteShape, body);
 }
 
 /** The body as one new position lead. */
 export function leadAddWrite(body: unknown): LeadAddWrite | null {
-    if (!isMap(body) || body.kind !== 'lead-add' || !isMap(body.fields)) return null;
-    return { kind: 'lead-add', fields: body.fields };
+    return readAs(leadAddShape, body);
 }
 
 /** The body as one new LinkedIn idea. Empty titles reach the writer and become field refusals. */
 export function linkedinIdeaWrite(body: unknown): LinkedinIdeaWrite | null {
-    if (!isMap(body) || body.kind !== 'linkedin-idea') return null;
-    if (typeof body.title !== 'string') return null;
-    if (body.category !== undefined && typeof body.category !== 'string') return null;
-    return { kind: 'linkedin-idea', title: body.title, category: body.category ?? '' };
+    return readAs(linkedinIdeaShape, body);
 }
 
 /** The body as one LinkedIn idea filename to promote. */
 export function linkedinPostWrite(body: unknown): LinkedinPostWrite | null {
-    if (!isMap(body) || body.kind !== 'linkedin-post' || typeof body.file !== 'string') return null;
-    return { kind: 'linkedin-post', file: body.file };
-}
-
-/** A list of words, which is what both halves of a deck write are. */
-function keyList(value: unknown): string[] | null {
-    if (!Array.isArray(value)) return null;
-    return value.every((one) => typeof one === 'string' && one !== '') ? (value as string[]) : null;
+    return readAs(linkedinPostShape, body);
 }
 
 /**
@@ -301,11 +348,7 @@ function keyList(value: unknown): string[] | null {
  * it rather than the body being unknown to the route.
  */
 export function deckWrite(body: unknown): DeckWrite | null {
-    if (!isMap(body) || body.kind !== 'deck') return null;
-    const selection = keyList(body.selection);
-    const order = keyList(body.order);
-    if (selection === null || order === null) return null;
-    return { kind: 'deck', selection, order };
+    return readAs(deckShape, body);
 }
 
 /** One recorded change taken back, addressed by the moment the log stamped it. */
@@ -313,17 +356,12 @@ export type UndoWrite = { kind: 'undo'; at: string };
 
 /** The body as an undo, or null when it is not one. */
 export function undoWrite(body: unknown): UndoWrite | null {
-    if (!isMap(body) || body.kind !== 'undo') return null;
-    if (typeof body.at !== 'string' || body.at === '') return null;
-    return { kind: 'undo', at: body.at };
+    return readAs(undoShape, body);
 }
 
 /** The body as a new idea, or null when it is not one. */
 export function newIdea(body: unknown): NewIdeaWrite | null {
-    if (!isMap(body) || body.kind !== 'new-idea') return null;
-    if (!isMap(body.fields)) return null;
-    if (typeof body.fields.id !== 'string' || body.fields.id === '') return null;
-    return { kind: 'new-idea', fields: body.fields };
+    return readAs(newIdeaShape, body);
 }
 
 /**
@@ -331,10 +369,7 @@ export function newIdea(body: unknown): NewIdeaWrite | null {
  * writer.
  */
 export function auditMuteWrite(body: unknown): AuditMuteWrite | null {
-    if (!isMap(body) || body.kind !== 'audit-mute') return null;
-    if (typeof body.signature !== 'string' || body.signature === '') return null;
-    if (typeof body.muted !== 'boolean') return null;
-    return { kind: 'audit-mute', signature: body.signature, muted: body.muted };
+    return readAs(auditMuteShape, body);
 }
 
 /**
@@ -342,18 +377,7 @@ export function auditMuteWrite(body: unknown): AuditMuteWrite | null {
  * strings may be is the writer's to check, against the file it writes.
  */
 export function railWrite(body: unknown): RailWrite | null {
-    if (!isMap(body) || body.kind !== 'rail') return null;
-    if (!Array.isArray(body.rail)) return null;
-    const rail: RailWrite['rail'] = [];
-    for (const row of body.rail) {
-        if (!isMap(row)) return null;
-        const { label, glyph, page } = row;
-        if (typeof label !== 'string' || typeof glyph !== 'string' || typeof page !== 'string') {
-            return null;
-        }
-        rail.push({ label, glyph, page });
-    }
-    return { kind: 'rail', rail };
+    return readAs(railShape, body);
 }
 
 /**
@@ -362,9 +386,5 @@ export function railWrite(body: unknown): RailWrite | null {
  * and the value fits it is the writer's to say.
  */
 export function configKeyWrite(body: unknown): ConfigKeyWrite | null {
-    if (!isMap(body) || body.kind !== 'config-key') return null;
-    if (typeof body.file !== 'string' || body.file === '') return null;
-    if (typeof body.key !== 'string' || body.key === '') return null;
-    if (!Object.hasOwn(body, 'value')) return null;
-    return { kind: 'config-key', file: body.file, key: body.key, value: body.value };
+    return readAs(configKeyShape, body);
 }

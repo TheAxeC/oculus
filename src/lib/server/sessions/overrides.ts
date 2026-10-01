@@ -12,7 +12,9 @@
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { plain } from '../core/changes.ts';
+import { z } from 'zod';
 import { isMap, readJson, writeJsonAtomic } from '../core/json.ts';
+import { mapShape, readAs } from '../core/shapes.ts';
 import type { ChangeRecord } from '../core/changes.ts';
 
 /** What one session's entry may hold. Any other key the file carries is kept but not read. */
@@ -30,13 +32,17 @@ export function defaultOverridesPath(): string {
     return join(homedir(), '.oculus', 'sessions.json');
 }
 
+/** The file: a map with a `sessions` map. The map is answered itself, not a copy of it. */
+const overridesFileShape = z.object({ sessions: mapShape });
+
 /** Every session entry the file holds. Missing or corrupt yields nothing. */
 export function overrides(path?: string): Record<string, Override> {
-    const data = readJson(path ?? defaultOverridesPath());
-    if (!isMap(data) || !isMap(data.sessions)) return {};
+    const file = readAs(overridesFileShape, readJson(path ?? defaultOverridesPath()));
+    if (file === null) return {};
     const found: Record<string, Override> = {};
-    for (const [key, value] of Object.entries(data.sessions)) {
-        if (isMap(value)) found[key] = value;
+    for (const [key, value] of Object.entries(file.sessions)) {
+        const entry = readAs(mapShape, value);
+        if (entry !== null) found[key] = entry;
     }
     return found;
 }

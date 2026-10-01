@@ -22,6 +22,7 @@
 
 import { isMap as isYamlMap, isScalar, isSeq, parse, parseDocument } from 'yaml';
 import type { Node, Pair } from 'yaml';
+import { fields } from '../../data/helpers/guards.ts';
 
 /** The indentation a file with no nesting to read it from would be written at. */
 const STEP = 4;
@@ -169,12 +170,6 @@ export function setItems(
     return source.slice(0, from) + block + source.slice(stop);
 }
 
-/** A parsed value as a map, or an empty one for anything that is not a map. */
-function rootMap(value: unknown): Record<string, unknown> {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
-    return value as Record<string, unknown>;
-}
-
 /**
  * The text before an edit and the text after it, each read as the map of its top-level keys, or
  * null when either does not parse. It is the first half of every caller's guard: the result must
@@ -185,7 +180,7 @@ export function readBack(
     edited: string
 ): { before: Record<string, unknown>; after: Record<string, unknown> } | null {
     try {
-        return { before: rootMap(parse(source)), after: rootMap(parse(edited)) };
+        return { before: fields(parse(source)), after: fields(parse(edited)) };
     } catch {
         return null;
     }

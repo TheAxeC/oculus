@@ -399,3 +399,36 @@ describe('feed writes', () => {
         expect(deleteFeedEntry(into.hub, into.config, 'radar', 'Paper').refused).toHaveLength(1);
     });
 });
+
+describe('the shape of a feed file', () => {
+    /** The leads feed holding exactly this text, read back through readFeedFile. */
+    function readLeads(text: string): ReturnType<typeof readFeedFile> {
+        const into = fixture();
+        const file = join(into.hub, FILES.leads);
+        expect(resolve(file).startsWith(resolve(into.hub) + sep)).toBe(true);
+        writeFileSync(file, text);
+        return readFeedFile(into.hub, into.config, 'leads');
+    }
+
+    it('refuses a file that is no map, a meta that is no map and an entry that is no map', () => {
+        expect(() => readLeads('- a\n- b\n')).toThrow('expected a map of keys');
+        expect(() => readLeads('meta: 3\n')).toThrow('meta is not a map');
+        expect(() => readLeads('entries:\n  - 1\n')).toThrow('every entry must be a map');
+        expect(() => readLeads('entries: {}\n')).toThrow('every entry must be a map');
+    });
+
+    it('names the meta before the entries when both are wrong', () => {
+        expect(() => readLeads('meta: [a]\nentries:\n  - 1\n')).toThrow('meta is not a map');
+    });
+
+    it('reads an absent meta as an empty map and absent or null entries as an empty list', () => {
+        const bare = readLeads('schema: []\n');
+        expect(bare?.meta).toStrictEqual({});
+        expect(bare?.entries).toStrictEqual([]);
+        expect(readLeads('entries:\n')?.entries).toStrictEqual([]);
+    });
+
+    it('refuses a meta given no value, since null is not a map', () => {
+        expect(() => readLeads('meta:\nentries: []\n')).toThrow('meta is not a map');
+    });
+});

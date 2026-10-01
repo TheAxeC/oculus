@@ -23,6 +23,7 @@ import { loadLocalOrDefaults } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import type { PortfolioConfig } from '../../data/model/index.ts';
 import { inside } from '../core/paths.ts';
+import { anyNumberShape } from '../core/shapes.ts';
 
 /**
  * What a file listing needs: the hub, its scan rules, and the merged config `file_index` sits in.
@@ -105,7 +106,7 @@ const fileIndexShape = z.object({
         .array(z.unknown())
         .transform((all) => all.filter((one): one is string => typeof one === 'string'))
         .catch(() => []),
-    max_per_project: z.custom<number>((held) => typeof held === 'number').catch(DEFAULT_CAP)
+    max_per_project: anyNumberShape.catch(DEFAULT_CAP)
 });
 
 /**

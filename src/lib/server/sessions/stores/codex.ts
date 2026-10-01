@@ -13,9 +13,15 @@
 
 import { basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { z } from 'zod';
 import type { LiveEntry } from '../../../data/model/index.ts';
-import { codexUsage, type UsageEvent, type UsageTotals } from '../../transcripts/usage.ts';
-import { isMap, list, text, whole } from '../../core/json.ts';
+import {
+    codexInfoShape,
+    codexUsageOf,
+    type UsageEvent,
+    type UsageTotals
+} from '../../transcripts/usage.ts';
+import { mapShape, quickly, wholeShape } from '../../core/shapes.ts';
 import type { Acc } from '../record.ts';
 import {
     PROMPT_CHARS,
@@ -23,9 +29,11 @@ import {
     agentEntry,
     countFile,
     countTool,
-    stampOf,
+    stampShape,
+    textShape,
     touch
 } from '../record.ts';
+import { filledTextShape } from '../../core/shapes.ts';
 
 /** A rollout written more recently than this, with a codex process up, counts as live. */
 export const CODEX_FRESH_SECONDS = 120;
@@ -53,94 +61,191 @@ export function rolloutSlug(store: string, path: string): string {
 }
 
 /**
- * The text of a Codex content list, whose blocks carry `text` under a `type` of `text` or `Text`.
+ * The text of a content list: the `text` of each block that holds some, run together with nothing
+ * between them, and nothing for a content that is no list. The Claude counterpart is
+ * `contentTextShape` in background.ts, which joins by new lines and takes a string whole.
  */
-function contentText(content: unknown): string {
-    const pieces: string[] = [];
-    for (const block of list(content)) {
-        if (isMap(block) && typeof block.text === 'string') pieces.push(block.text);
-    }
-    return pieces.join('');
-}
+const codexContentTextShape = z
+    .array(z.object({ text: textShape }).catch(() => ({ text: undefined })))
+    .transform((blocks) => blocks.map((block) => block.text ?? '').join(''))
+    .optional()
+    .catch('');
 
-/** Fold one record of a Codex rollout. Anything it does not understand changes nothing. */
+/** The payload of a `session_meta` record: the session's id and where and how it was started. */
+const metaPayloadShape = z
+    .object({
+        id: filledTextShape,
+        session_id: filledTextShape,
+        cwd: textShape,
+        cli_version: textShape,
+        originator: textShape,
+        git: z.object({ branch: textShape }).optional().catch(undefined)
+    })
+    .catch(() => ({
+        id: undefined,
+        session_id: undefined,
+        cwd: undefined,
+        cli_version: undefined,
+        originator: undefined,
+        git: undefined
+    }));
+type MetaPayload = z.output<typeof metaPayloadShape>;
+
+/** The payload of a `turn_context` record: the model and mode the turn runs under. */
+const contextPayloadShape = quickly(
+    z
+        .object({
+            model: textShape,
+            cwd: textShape,
+            effort: textShape,
+            collaboration_mode: z
+                .object({
+                    mode: textShape,
+                    settings: z.object({ reasoning_effort: textShape }).optional().catch(undefined)
+                })
+                .optional()
+                .catch(undefined)
+        })
+        .catch(() => ({
+            model: undefined,
+            cwd: undefined,
+            effort: undefined,
+            collaboration_mode: undefined
+        }))
+);
+type ContextPayload = z.output<typeof contextPayloadShape>;
+
+/** An item of a completed event, by its type: only the fields that type is read by. */
+const itemShape = quickly(
+    z
+        .object({
+            type: textShape,
+            content: codexContentTextShape,
+            changes: z.unknown().optional(),
+            agent_path: textShape,
+            kind: textShape,
+            receiver_agents: z.array(filledTextShape).optional().catch(undefined),
+            agents_states: mapShape.optional().catch(undefined)
+        })
+        .optional()
+        .catch(undefined)
+);
+type Item = NonNullable<z.output<typeof itemShape>>;
+
+/**
+ * The payload of an `event_msg` record: the event's type, the window and the duration a
+ * `task_started` and a `task_complete` carry as whole numbers (absent stays absent), and the
+ * `info` and the `item` that the events holding them read. A payload that is no map gives every
+ * field absent.
+ */
+const eventPayloadShape = quickly(
+    z
+        .object({
+            type: textShape,
+            model_context_window: wholeShape.optional(),
+            duration_ms: wholeShape.optional(),
+            info: z.unknown().optional(),
+            item: z.unknown().optional()
+        })
+        .catch(() => ({
+            type: undefined,
+            model_context_window: undefined,
+            duration_ms: undefined,
+            info: undefined,
+            item: undefined
+        }))
+);
+type EventPayload = z.output<typeof eventPayloadShape>;
+
+/** The `info` of a `token_count` event, read the quick way first. */
+const tokenInfoShape = quickly(codexInfoShape);
+
+/** The payload of a `response_item` record: a tool call, or a message between agents. */
+const responsePayloadShape = quickly(
+    z
+        .object({ type: textShape, name: textShape, author: textShape, recipient: textShape })
+        .catch(() => ({
+            type: undefined,
+            name: undefined,
+            author: undefined,
+            recipient: undefined
+        }))
+);
+type ResponsePayload = z.output<typeof responsePayloadShape>;
+
+/** The stamp of a record, with its payload read through the schema of the record's kind. */
+const metaRecordShape = z.object({ timestamp: stampShape, payload: metaPayloadShape });
+const contextRecordShape = z.object({ timestamp: stampShape, payload: contextPayloadShape });
+const responseRecordShape = z.object({ timestamp: stampShape, payload: responsePayloadShape });
+const eventRecordShape = z.object({ timestamp: stampShape, payload: z.unknown().optional() });
+
+/**
+ * Fold one record of a Codex rollout. Anything it does not understand changes nothing. The
+ * records of any other type hold nothing the record has a place for: `world_state`,
+ * `token_usage_record` (the same figures `token_count` carries), `compacted` and
+ * `inter_agent_communication_metadata` among them.
+ */
 export function foldCodex(acc: Acc, record: Record<string, unknown>): void {
     const kind = record.type;
-    const stamp = stampOf(record.timestamp);
-    const payload = isMap(record.payload) ? record.payload : {};
-    if (kind === 'session_meta') {
-        acc.seen += 1;
-        touch(acc, stamp);
-        openSession(acc, payload);
-        return;
-    }
-    if (kind === 'turn_context') {
-        acc.seen += 1;
-        touch(acc, stamp);
-        turnContext(acc, payload);
-        return;
-    }
     if (kind === 'event_msg') {
+        const { timestamp: stamp, payload } = eventRecordShape.parse(record);
         acc.seen += 1;
         touch(acc, stamp);
-        foldEvent(acc, record, payload, stamp);
-        return;
-    }
-    if (kind === 'response_item') {
+        foldEvent(acc, eventPayloadShape.parse(payload), stamp);
+    } else if (kind === 'response_item') {
+        const { timestamp: stamp, payload } = responseRecordShape.parse(record);
         acc.seen += 1;
         touch(acc, stamp);
         foldResponseItem(acc, payload, stamp);
+    } else if (kind === 'turn_context') {
+        const { timestamp: stamp, payload } = contextRecordShape.parse(record);
+        acc.seen += 1;
+        touch(acc, stamp);
+        turnContext(acc, payload);
+    } else if (kind === 'session_meta') {
+        const { timestamp: stamp, payload } = metaRecordShape.parse(record);
+        acc.seen += 1;
+        touch(acc, stamp);
+        openSession(acc, payload);
     }
-    // world_state, token_usage_record (the same figures token_count carries), compacted and
-    // inter_agent_communication_metadata hold nothing the record has a place for.
 }
 
 /**
  * The rollout's own meta opens it. A forked rollout carries the meta of the session it forked from
  * after its own, so only the first one is read: the second would rename the session to its parent.
  */
-function openSession(acc: Acc, payload: Record<string, unknown>): void {
+function openSession(acc: Acc, payload: MetaPayload): void {
     if (acc.metaSeen) return;
     acc.metaSeen = true;
-    const ident = text(payload.id) || text(payload.session_id);
+    const ident = payload.id ?? payload.session_id;
     if (ident) acc.id = ident;
-    if (text(payload.cwd)) acc.cwd = text(payload.cwd);
-    if (text(payload.cli_version)) acc.version = text(payload.cli_version);
-    if (text(payload.originator)) acc.entrypoint = text(payload.originator);
-    const git = payload.git;
-    if (isMap(git) && text(git.branch)) acc.branch = text(git.branch);
+    if (payload.cwd) acc.cwd = payload.cwd;
+    if (payload.cli_version) acc.version = payload.cli_version;
+    if (payload.originator) acc.entrypoint = payload.originator;
+    if (payload.git?.branch) acc.branch = payload.git.branch;
 }
 
 /** Each turn declares the model it runs and the collaboration mode it runs under. */
-function turnContext(acc: Acc, payload: Record<string, unknown>): void {
-    if (text(payload.model)) acc.model = text(payload.model);
-    if (text(payload.cwd)) acc.cwd = text(payload.cwd);
-    if (text(payload.effort)) acc.effort = text(payload.effort);
+function turnContext(acc: Acc, payload: ContextPayload): void {
+    if (payload.model) acc.model = payload.model;
+    if (payload.cwd) acc.cwd = payload.cwd;
+    if (payload.effort) acc.effort = payload.effort;
     const mode = payload.collaboration_mode;
-    if (!isMap(mode)) return;
-    if (text(mode.mode)) acc.permissionMode = text(mode.mode);
-    const settings = mode.settings;
-    if (isMap(settings) && text(settings.reasoning_effort)) {
-        acc.effort = text(settings.reasoning_effort);
-    }
+    if (mode === undefined) return;
+    if (mode.mode) acc.permissionMode = mode.mode;
+    if (mode.settings?.reasoning_effort) acc.effort = mode.settings.reasoning_effort;
 }
 
-function foldEvent(
-    acc: Acc,
-    record: Record<string, unknown>,
-    payload: Record<string, unknown>,
-    stamp: string | null
-): void {
+function foldEvent(acc: Acc, payload: EventPayload, stamp: string | null): void {
     const type = payload.type;
     if (type === 'task_started') {
         acc.turnOpen = true;
-        const window = whole(payload.model_context_window);
-        if (window) acc.contextWindow = window;
+        if (payload.model_context_window) acc.contextWindow = payload.model_context_window;
         return;
     }
     if (type === 'task_complete') {
         acc.turnOpen = false;
-        addEvent(acc, stamp, 'turn', String(whole(payload.duration_ms)));
+        addEvent(acc, stamp, 'turn', String(payload.duration_ms ?? 0));
         return;
     }
     if (type === 'turn_aborted') {
@@ -149,11 +254,10 @@ function foldEvent(
     }
     if (type === 'token_count') {
         const totals: UsageTotals = { ...acc.tokens };
-        const usage = codexUsage(record, totals);
-        if (usage !== null) foldTokens(acc, usage, totals);
+        foldTokens(acc, codexUsageOf(stamp, tokenInfoShape.parse(payload.info), totals), totals);
         return;
     }
-    if (type === 'item_completed') foldItem(acc, payload.item, stamp);
+    if (type === 'item_completed') foldItem(acc, itemShape.parse(payload.item), stamp);
     // thread_settings_applied repeats the model and cwd turn_context already carries.
 }
 
@@ -168,13 +272,13 @@ function foldTokens(acc: Acc, usage: UsageEvent, totals: UsageTotals): void {
     if (usage.contextWindow !== undefined) acc.contextWindow = usage.contextWindow;
 }
 
-function foldItem(acc: Acc, item: unknown, stamp: string | null): void {
-    if (!isMap(item)) return;
-    const type = text(item.type);
+function foldItem(acc: Acc, item: Item | undefined, stamp: string | null): void {
+    if (item === undefined) return;
+    const type = item.type ?? '';
     if (type === 'UserMessage') {
         acc.prompts += 1;
         acc.messages += 1;
-        const said = contentText(item.content);
+        const said = item.content;
         if (said) {
             acc.firstPrompt ??= said;
             acc.lastPrompt = said;
@@ -187,7 +291,7 @@ function foldItem(acc: Acc, item: unknown, stamp: string | null): void {
         return;
     }
     if (type === 'FileChange') {
-        for (const path of changedPaths(item.changes)) {
+        for (const path of changedPathsShape.parse(item.changes)) {
             countFile(acc, path, type, stamp);
             addEvent(acc, stamp, 'edit', path);
         }
@@ -216,36 +320,32 @@ function foldItem(acc: Acc, item: unknown, stamp: string | null): void {
  * The paths a FileChange touched. The store writes `changes` as a map of path to the diff; the
  * list of entries carrying a `path` is accepted as well, since both readings have been described.
  */
-function changedPaths(changes: unknown): string[] {
-    const paths: string[] = [];
-    if (isMap(changes)) {
-        for (const path of Object.keys(changes)) if (path) paths.push(path);
-        return paths;
-    }
-    for (const change of list(changes)) {
-        if (isMap(change) && text(change.path)) paths.push(text(change.path));
-    }
-    return paths;
-}
+const changedPathsShape = z
+    .union([
+        mapShape.transform((changes) => Object.keys(changes).filter(Boolean)),
+        z
+            .array(z.object({ path: filledTextShape }).catch(() => ({ path: undefined })))
+            .transform((all) => all.flatMap((change) => (change.path ? [change.path] : [])))
+    ])
+    .catch(() => []);
 
 /** A subagent's own activity, keyed by its path. `/root` is the session itself, not a subagent. */
-function subAgent(acc: Acc, item: Record<string, unknown>, stamp: string | null): void {
-    const path = text(item.agent_path);
+function subAgent(acc: Acc, item: Item, stamp: string | null): void {
+    const path = item.agent_path;
     if (!path || path === ROOT_AGENT) return;
     const agent = agentEntry(acc, path, stamp);
     if (!agent.subagentType) agent.subagentType = basename(path);
-    if (text(item.kind) === 'completed') {
+    if (item.kind === 'completed') {
         agent.status = 'done';
         agent.ended = stamp;
     }
 }
 
 /** The agents a collaboration tool call is waiting on, each of them a subagent of the rollout. */
-function collabAgents(acc: Acc, item: Record<string, unknown>, stamp: string | null): void {
+function collabAgents(acc: Acc, item: Item, stamp: string | null): void {
     const paths = new Set<string>();
-    for (const name of list(item.receiver_agents)) if (text(name)) paths.add(text(name));
-    if (isMap(item.agents_states))
-        for (const path of Object.keys(item.agents_states)) paths.add(path);
+    for (const name of item.receiver_agents ?? []) if (name) paths.add(name);
+    for (const path of Object.keys(item.agents_states ?? {})) paths.add(path);
     for (const path of paths) {
         if (!path || path === ROOT_AGENT) continue;
         const agent = agentEntry(acc, path, stamp);
@@ -253,16 +353,16 @@ function collabAgents(acc: Acc, item: Record<string, unknown>, stamp: string | n
     }
 }
 
-function foldResponseItem(acc: Acc, payload: Record<string, unknown>, stamp: string | null): void {
+function foldResponseItem(acc: Acc, payload: ResponsePayload, stamp: string | null): void {
     const type = payload.type;
     if (type === 'custom_tool_call' || type === 'function_call') {
-        countTool(acc, text(payload.name));
+        countTool(acc, payload.name ?? '');
         return;
     }
     if (type !== 'agent_message') return;
     // A message from a subagent names it; one from the root names the subagent it is talking to.
-    const author = text(payload.author);
-    const recipient = text(payload.recipient);
+    const author = payload.author ?? '';
+    const recipient = payload.recipient ?? '';
     const path = author && author !== ROOT_AGENT ? author : recipient;
     if (!path || path === ROOT_AGENT) return;
     const agent = agentEntry(acc, path, stamp);

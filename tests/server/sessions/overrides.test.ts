@@ -211,3 +211,23 @@ describe('setOverride', () => {
         expect(held(path)).toBe(null);
     });
 });
+
+describe('overrides over a file of the wrong shape', () => {
+    it('answers the entries that are maps and leaves out a number and a list', () => {
+        const path = file({ sessions: { a: { hidden: true, extra: [1] }, b: 3, c: [] } });
+        expect(overrides(path)).toStrictEqual({ a: { hidden: true, extra: [1] } });
+    });
+
+    it('answers nothing for a file that is not JSON, a sessions list or a list', () => {
+        expect(overrides(file('{not json'))).toStrictEqual({});
+        expect(overrides(file({ sessions: [] }))).toStrictEqual({});
+        expect(overrides(file([]))).toStrictEqual({});
+    });
+
+    it('takes a session id of __proto__ as the assignment found[key] = value does', () => {
+        const path = file('{"sessions":{"__proto__":{"hidden":true},"a":{"x":1}}}');
+        const found = overrides(path);
+        expect(Object.keys(found)).toStrictEqual(['a']);
+        expect(Object.getPrototypeOf(found)).toStrictEqual({ hidden: true });
+    });
+});

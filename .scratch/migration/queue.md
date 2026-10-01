@@ -1,15 +1,8 @@
 /plan-orchestration oculus/migration
 
-Landed 11:03: U2 (every view's look against VS Code), `agents/reviews/U2-landing.md`.
-Landed 10:42: Q85a4 (zod in the other server folders), `agents/reviews/Q85a4-landing.md`.
-Landed 06:19: X3d (Source Control as VS Code's), `agents/reviews/X3d-landing.md`.
-Landed 06:36: S3b (the `config-key` write), `agents/reviews/S3b-landing.md`.
-Landed 06:55: Q109 (the terminal: lines after a pane move, the five watchers' capped debounce, a sole terminal's menu, four terminal options), `agents/reviews/Q109-landing.md`.
-
 In flight:
-- S3c (the Settings editor), prepared at a157d199 (Z149 in automode); its builder (Sonnet) running since 11:11.
-- Q85a2 (zod in the edit, sessions and transcripts folders), its review over round 1 in at 11:09: four findings, all for landing; landing next.
-Choice made in automode: Z149 (S3c's two embedded headings, Modified and Reset on "This browser" rows, the terminal text size row). Open items: Z146 (U2's grouping into build steps), Z147 (collections as rows or cards), Z148 (the icon set), all three Axel's, in `orchestrator-state.md`'s Open items. Z144 ruled (a) by Axel. Z145 ruled (b) by Axel: reviewers and brief checks on Sonnet 5.5. The choices U2's audit raises (its grouping, group 6's rows or cards, and the like) are Axel's once U2 has landed, never automode. Z143 ruled (5) with terminals by Axel, built in L4. Z138 ruled (3) by Axel, built in X3a. Choices made in automode, for review: `choices.md`.
+- S3c (the Settings editor), builder (Sonnet) running since 11:11.
+Open items: Z146 (U2's grouping into build steps), Z147 (collections as rows or cards), Z148 (the icon set), all three Axel's, in `orchestrator-state.md`'s Open items. Choices made in automode, for review: `choices.md`.
 Queued, in order:
 - Q85b and Q85c, then Q85d (zod after Q85a4).
 - Q88b (the right-click menus' new capabilities), X3d has landed.
@@ -41,6 +34,8 @@ Owed: the three-way Opus and Sonnet comparison once 15 steps have landed with So
 The loop fills three slots as they free up; a line above is only an order, never a barrier, apart from the "once ... has landed" notes. A step's line moves to Landed, at the top of that list, in its landing commit.
 
 Landed, newest first: every step ticked in `plan.md`, each with the date and the commit that ticked it (the 15 steps dated 2026-09-10 at f8af492b were landed before the ledger was opened):
+- U2 (every view's look against VS Code), 2026-10-01, e8b517c0.
+- Q85a4 (zod in the other server folders), 2026-10-01, 58b860a0.
 - Q109 (the terminal: lines after a pane move, the watchers' capped debounce, a sole terminal's menu, four terminal options), 2026-10-01, 4148664b.
 - S3b (the `config-key` write), 2026-10-01, ae1e8024.
 - X3d (Source Control as VS Code's), 2026-10-01, a5a6eed6.

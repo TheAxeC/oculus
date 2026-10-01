@@ -29,21 +29,6 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 
 ```yaml
 dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
-- step: Q85a2
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 07:05)
-  session_id: a89edd47244a60bc2 (launched 2026-10-01 07:05 local)
-  worktree: .agents/worktrees/Q85a2
-  base: 4f4dcfc4
-  launched: 2026-10-01 07:05 local
-  report: agents/reviews/Q85a2-report.md
-  builder_usage: first run (stopped at the cases' first run, `agents/reviews/Q85a2-first-run.md`) 99,564 tokens, 98 tool uses, 22.0 min; after round 0 (the whole build) 339,566 tokens, 351 tool uses, 119.2 min; round 1 283,978 tokens, 130 tool uses, 42.0 min
-  reviewer_report: agents/reviews/Q85a2-refuter.md (first review, reviewer a34f1484825697f1c on claude-opus-5-5, 85,236 tokens, 108 tool uses, 29.8 min); over round 1, reviewer a890ccc337bb5cdfb on claude-sonnet-5-5, 321,329 tokens, 105 tool uses, 23.8 min: items 1 and 8 violated by one finding (a fractional cache `offset` freezes a scan), Spec 1, Proof 1, Standards 2, Behaviour 0, all small and inside the brief, for landing
-  brief_check: agents/reviews/Q85a2-brief-check.md, every finding closed in the brief (its Closed heading); claude-opus-5-5, 228,189 tokens, 56 tool uses, 9.5 min
-  shared_paths: Q85a4 landed first (2026-10-01 10:42), so this landing hand-merges `DESIGN.md:148` (one paragraph naming both steps' folders and bodies), `src/lib/server/core/json.ts` (the comment at 91-92, helpers left with no caller) and `tests/checks/tree/allow-duplication.txt` (the union of removed lines), folds Q85a4's own `anyNumberShape` (`machine/pty/channel.ts`, `files/search.ts`) and `mapShape` (`machine/usage/accounts.ts`) into `core/shapes.ts`, and regenerates `docs/diagrams/`
-  landing: not-started
-  round: 1 (`agents/briefs/Q85a2-round1.md`; round 0 the cases ruling `agents/briefs/Q85a2-cases.md`, sent 2026-10-01 07:28)
 - step: S3c
   executor: agent
   worker: claude:sonnet
@@ -642,6 +627,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-01 11:25. Q85a2 landed (zod in `edit`, `sessions` and `transcripts`, the shared schemas in `core/shapes.ts`), report `agents/reviews/Q85a2-landing.md`; seven fixes at landing. In flight: S3c (builder since 11:11). Next: /spec Q85b and Q85c into the free slots. Open items Z146, Z147, Z148 are Axel's.
 - 2026-10-01 11:03. U2 landed (the audit of every view against VS Code), report `agents/reviews/U2-landing.md`; eight fixes at landing; its choices raised as Z146 (the grouping into build steps), Z147 (collections as rows or cards) and Z148 (the icon set), Axel's. S3c's brief check in (Sonnet). In flight: Q85a2 (its round-1 review). Next: S3c's brief closed and its builder launched; /spec Q85b. Open: Z146, Z147, Z148.
 - 2026-10-01 10:42. Q85a4 landed (zod in `machine`, `accounts`, `files`, `content` and `git`), report `agents/reviews/Q85a4-landing.md`; four fixes at landing. U2's review over round 2 is in (Sonnet). In flight: U2 (to land), Q85a2 (round 1). Next: U2's landing, /spec for the freed slot. Open: none.
 - 2026-10-01 07:34. Q85a4's brief check closed in its brief and its builder launched; Q85a2's builder handed back at its first run (case 23's field, the time bound) and was resumed with the round-0 cases ruling at 07:28. In flight: U2, Q85a2, Q85a4 (builders). Next: their reports. Open: Z138.

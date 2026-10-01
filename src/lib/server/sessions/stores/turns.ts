@@ -18,9 +18,10 @@
 // (data/prose/languages.ts, `codeColour`), as a document's is.
 
 import { Marked } from 'marked';
+import { z } from 'zod';
 import { codeColour } from '../../../data/prose/languages.ts';
-import { isMap, list, text } from '../../core/json.ts';
-import { stampOf } from '../record.ts';
+import { mapShape, quickly } from '../../core/shapes.ts';
+import { stampShape, textShape } from '../record.ts';
 import { foldFrom } from './transcripts.ts';
 import type { SessionTool, Turn, TurnTool } from '../../../data/model/index.ts';
 
@@ -29,9 +30,6 @@ export const TURN_CHARS = 20000;
 
 /** The longest one-line summary of a tool call. */
 const SUMMARY_CHARS = 120;
-
-/** The input fields a Claude tool call is summarised by, in the order they are looked for. */
-const SUMMARY_FIELDS = ['file_path', 'command', 'pattern', 'description'];
 
 /** Codex items that are the model thinking, which is dropped as a Claude thinking block is. */
 const CODEX_SILENT = ['Reasoning'];
@@ -46,6 +44,89 @@ export type TurnsAnswer = {
     /** `tool_use_id` to whether the call ended well, for a call not in `turns`. */
     results: Record<string, boolean>;
 };
+
+/** The text of a block list, the calls it makes and the results it brings, in the order read. */
+type Content = {
+    said: string;
+    calls: { id: string; name: string; summary: string }[];
+    results: { id: string; ok: boolean }[];
+};
+
+const noContent = (): Content => ({ said: '', calls: [], results: [] });
+
+/** One line of a tool call's input: the first of the four fields it carries that holds a text. */
+const summaryShape = z
+    .object({
+        file_path: textShape,
+        command: textShape,
+        pattern: textShape,
+        description: textShape
+    })
+    .transform((input) => {
+        for (const value of [input.file_path, input.command, input.pattern, input.description]) {
+            if (value) return oneLine(value);
+        }
+        return '';
+    })
+    .catch('');
+
+/** A content block, by its type: the words of a text block, a call, or the result of a call. */
+const blockShape = z.discriminatedUnion('type', [
+    z.object({ type: z.enum(['text', 'Text']), text: z.string().catch('') }),
+    z.object({
+        type: z.literal('tool_result'),
+        tool_use_id: z.string().catch(''),
+        is_error: z.boolean().optional().catch(undefined)
+    }),
+    z.object({
+        type: z.literal('tool_use'),
+        id: z.string().catch(''),
+        name: z.string().catch(''),
+        input: summaryShape
+    })
+]);
+
+/** A message's content: a string whole, and a block list as its text blocks joined. */
+const contentShape = z
+    .union([
+        z.string().transform((said): Content => ({ said, calls: [], results: [] })),
+        z.array(blockShape.optional().catch(undefined)).transform((blocks): Content => {
+            const content = noContent();
+            for (const block of blocks) {
+                if (block === undefined) continue;
+                if (block.type === 'tool_result') {
+                    if (block.tool_use_id !== '') {
+                        content.results.push({ id: block.tool_use_id, ok: !block.is_error });
+                    }
+                } else if (block.type === 'tool_use') {
+                    content.calls.push({ id: block.id, name: block.name, summary: block.input });
+                } else content.said += block.text;
+            }
+            return content;
+        })
+    ])
+    .optional()
+    .catch(noContent);
+
+/** What a Claude record that is a turn is read for: its stamp and the message and origin. */
+const claudeHeadShape = z.object({
+    timestamp: stampShape,
+    message: z.unknown().optional(),
+    origin: z.unknown().optional()
+});
+
+/** The `message` of a Claude turn record, read for its content; usage.ts reads its usage. */
+const claudeTurnMessageShape = quickly(
+    z.object({ content: contentShape }).catch(() => ({
+        content: noContent()
+    }))
+);
+
+/** A record is a human's when its `origin` names one. */
+const humanShape = z
+    .object({ kind: z.literal('human') })
+    .optional()
+    .catch(undefined);
 
 /**
  * The turns of one transcript from byte `from`, each said turn cut at `cap` characters. An
@@ -78,38 +159,75 @@ function claudeRecord(
     record: Record<string, unknown>,
     cap: number
 ): void {
-    const kind = record.type;
-    if (kind !== 'user' && kind !== 'assistant') return;
-    const at = stampOf(record.timestamp);
-    const message = isMap(record.message) ? record.message : {};
-    const content = message.content;
-    if (kind === 'user') {
-        const origin = record.origin;
-        if (isMap(origin) && origin.kind === 'human') {
-            const said = blockText(content);
-            if (said !== '') answer.turns.push(saidTurn(at, 'user', said, cap));
+    const type = record.type;
+    if (type !== 'user' && type !== 'assistant') return;
+    const head = claudeHeadShape.parse(record);
+    const at = head.timestamp;
+    const content = claudeTurnMessageShape.parse(head.message).content ?? noContent();
+    if (type === 'user') {
+        if (humanShape.parse(head.origin) !== undefined && content.said !== '') {
+            answer.turns.push(saidTurn(at, 'user', content.said, cap));
         }
-        for (const block of list(content)) {
-            if (!isMap(block) || block.type !== 'tool_result') continue;
-            const id = text(block.tool_use_id);
-            if (id === '') continue;
-            const ok = block.is_error !== true;
+        for (const { id, ok } of content.results) {
             const held = calls.get(id);
             if (held?.tool === null || held?.tool === undefined) answer.results[id] = ok;
             else held.tool.ok = ok;
         }
         return;
     }
-    const said = blockText(content);
-    if (said !== '') answer.turns.push(saidTurn(at, 'assistant', said, cap));
-    for (const block of list(content)) {
-        if (!isMap(block) || block.type !== 'tool_use') continue;
-        const id = text(block.id);
-        const turn = toolTurn(at, id, text(block.name), summaryOf(block.input));
+    if (content.said !== '') answer.turns.push(saidTurn(at, 'assistant', content.said, cap));
+    for (const call of content.calls) {
+        const turn = toolTurn(at, call.id, call.name, call.summary);
         answer.turns.push(turn);
-        if (id !== '') calls.set(id, turn);
+        if (call.id !== '') calls.set(call.id, turn);
     }
 }
+
+/**
+ * The one line a Codex item is about: the command it ran. A string is taken unless it is empty. A
+ * list is taken whenever it holds a string, joined by spaces, even when that joins to nothing, and
+ * a list with no string in it is no command.
+ */
+const commandShape = z
+    .union([
+        z.string().transform((command) => (command === '' ? undefined : command)),
+        z.array(z.string().nullable().catch(null)).transform((parts) => {
+            const named = parts.filter((part) => part !== null);
+            return named.length > 0 ? named.join(' ') : undefined;
+        })
+    ])
+    .optional()
+    .catch(undefined);
+
+/**
+ * A completed Codex item: its type, the words of a message item, and what a tool item is about.
+ */
+const codexItemShape = quickly(
+    z.object({
+        type: z.string().catch(''),
+        content: contentShape,
+        text: textShape,
+        command: commandShape,
+        changes: mapShape.transform(Object.keys).optional().catch(undefined),
+        path: textShape,
+        name: textShape,
+        description: textShape,
+        exit_code: z.number().nullish().catch(null)
+    })
+);
+
+/** What a Codex event is read for: its stamp and its payload. */
+const codexHeadShape = z.object({
+    timestamp: stampShape,
+    payload: z.unknown().optional()
+});
+
+/** The payload of a Codex event, read for its type and its item; usage.ts reads type and info. */
+const codexItemPayloadShape = quickly(
+    z
+        .object({ type: z.string().catch(''), item: z.unknown().optional() })
+        .catch(() => ({ type: '', item: undefined }))
+);
 
 /**
  * One line of a Codex rollout. Only a completed item says anything: the two message items are the
@@ -117,33 +235,22 @@ function claudeRecord(
  */
 function codexRecord(answer: TurnsAnswer, record: Record<string, unknown>, cap: number): void {
     if (record.type !== 'event_msg') return;
-    const payload = isMap(record.payload) ? record.payload : {};
+    const head = codexHeadShape.parse(record);
+    const payload = codexItemPayloadShape.parse(head.payload);
     if (payload.type !== 'item_completed') return;
-    const item = payload.item;
-    if (!isMap(item)) return;
-    const at = stampOf(record.timestamp);
-    const type = text(item.type);
+    const parsed = codexItemShape.safeParse(payload.item);
+    if (!parsed.success) return;
+    const item = parsed.data;
+    const at = head.timestamp;
+    const type = item.type;
     if (type === 'UserMessage' || type === 'AgentMessage') {
-        const said = blockText(item.content) || text(item.text);
+        const said = [item.content?.said, item.text].find((one) => one) ?? '';
         if (said === '') return;
         answer.turns.push(saidTurn(at, type === 'UserMessage' ? 'user' : 'assistant', said, cap));
         return;
     }
     if (type === '' || CODEX_SILENT.includes(type)) return;
-    answer.turns.push(toolTurn(at, '', type, codexSummary(item), codexOk(item)));
-}
-
-/** The words of a message: a string content whole, and a block list as its `text` blocks joined. */
-function blockText(content: unknown): string {
-    if (typeof content === 'string') return content;
-    const pieces: string[] = [];
-    for (const block of list(content)) {
-        if (!isMap(block)) continue;
-        const kind = block.type;
-        if (kind !== 'text' && kind !== 'Text') continue;
-        if (typeof block.text === 'string') pieces.push(block.text);
-    }
-    return pieces.join('');
+    answer.turns.push(toolTurn(at, '', type, codexSummary(item), codexOk(item.exit_code)));
 }
 
 /** A said turn, cut at the cap. The assistant's Markdown is rendered, its code painted. */
@@ -171,40 +278,22 @@ function toolTurn(
     return { at, role: 'tool', text: '', html: '', cut: false, tool };
 }
 
-/** What a Claude call is about, in one line: the first of the four fields its input carries. */
-function summaryOf(input: unknown): string {
-    if (!isMap(input)) return '';
-    for (const field of SUMMARY_FIELDS) {
-        const value = text(input[field]);
-        if (value !== '') return oneLine(value);
-    }
-    return '';
-}
-
 /**
  * What a Codex item is about: the command it ran, the paths it changed, or what it calls itself.
  */
-function codexSummary(item: Record<string, unknown>): string {
-    const command = text(item.command);
-    if (command !== '') return oneLine(command);
-    const parts = list(item.command).filter((one) => typeof one === 'string');
-    if (parts.length > 0) return oneLine(parts.join(' '));
-    const changes = item.changes;
-    if (isMap(changes)) {
-        const paths = Object.keys(changes).filter((path) => path !== '');
-        if (paths.length > 0) return oneLine(paths.join(' '));
-    }
-    for (const field of ['path', 'name', 'description']) {
-        const value = text(item[field]);
-        if (value !== '') return oneLine(value);
+function codexSummary(item: z.output<typeof codexItemShape>): string {
+    if (item.command !== undefined) return oneLine(item.command);
+    const paths = (item.changes ?? []).filter((path) => path !== '');
+    if (paths.length > 0) return oneLine(paths.join(' '));
+    for (const value of [item.path, item.name, item.description]) {
+        if (value) return oneLine(value);
     }
     return '';
 }
 
 /** Whether a Codex item ended well. Only an exit code says so; anything else stays unknown. */
-function codexOk(item: Record<string, unknown>): boolean | null {
-    const code = item.exit_code;
-    return typeof code === 'number' && Number.isFinite(code) ? code === 0 : null;
+function codexOk(code: number | null | undefined): boolean | null {
+    return code === null || code === undefined ? null : code === 0;
 }
 
 function oneLine(value: string): string {

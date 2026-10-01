@@ -28,6 +28,7 @@ import type {
     TerminalResize
 } from '../../../data/model/index.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
+import { anyNumberShape } from '../../core/shapes.ts';
 import {
     captureArgs,
     cursorArgs,
@@ -119,7 +120,6 @@ export function mergeChunks(held: Message, next: Message): Message {
  * A number of any value, as the page's resize reports it: `typeof` is the whole test, so `NaN` and
  * the infinite numbers pass as they do for the tmux arguments built from them.
  */
-const anyNumberShape = z.custom<number>((held) => typeof held === 'number');
 
 /** The channel of a message: the text of a `pty:<id>` channel that names a terminal. */
 const terminalChannelShape = z.string().refine((channel) => channelTerminal(channel) !== null);

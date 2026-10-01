@@ -30,6 +30,7 @@ import {
     type SearchRefusal
 } from '../../data/helpers/search.ts';
 import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model/index.ts';
+import { anyNumberShape } from '../core/shapes.ts';
 import type { Root } from './files.ts';
 
 /**
@@ -182,7 +183,6 @@ export function reasonOf(stderr: string): string {
  * A number of any value, as ripgrep's counts and offsets are read: `typeof` is the whole test, so
  * `NaN` and the infinite numbers are numbers here.
  */
-const anyNumberShape = z.custom<number>((held) => typeof held === 'number');
 
 /** A `{ text }` field of ripgrep's output; one that carried bytes instead reads as absent. */
 const textFieldShape = z.object({ text: z.string() }).optional().catch(undefined);

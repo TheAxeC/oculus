@@ -17,6 +17,7 @@ import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
 import {
     NOT_A_FIELD_VALUE,
+    asFieldValue,
     renameKey,
     sameValue,
     setFields
@@ -534,5 +535,35 @@ describe('sameValue', () => {
         expect(sameValue(['a'], ['a', 'b'])).toBe(false);
         expect(sameValue({ a: 1 }, { a: 1, b: 2 })).toBe(false);
         expect(sameValue({ a: 1, b: [2] }, { b: [2], a: 1 })).toBe(true);
+    });
+});
+
+// The shapes a write may carry, told apart from a value that is none of them.
+describe('asFieldValue', () => {
+    it('answers a scalar as itself and a non-finite number or nothing as undefined', () => {
+        for (const value of [null, 's', true, false, 2.5, 0]) {
+            expect(asFieldValue(value)).toBe(value);
+        }
+        for (const value of [NaN, Infinity, -Infinity, undefined]) {
+            expect(asFieldValue(value)).toBeUndefined();
+        }
+    });
+
+    it('answers a list of strings and a list of string maps as the input itself', () => {
+        const words = ['a', 'b'];
+        const rows = [{ k: 'v' }];
+        expect(asFieldValue(words)).toBe(words);
+        expect(asFieldValue(rows)).toBe(rows);
+        expect(asFieldValue(['a', 1])).toBeUndefined();
+        expect(asFieldValue([{ k: 1 }])).toBeUndefined();
+    });
+
+    it('answers a date, a list of dates and a block map as the input itself', () => {
+        const date = new Date(0);
+        const list = [date];
+        const block = { a: 1, b: ['x', { c: null }], d: { e: true } };
+        expect(asFieldValue(date)).toBe(date);
+        expect(asFieldValue(list)).toBe(list);
+        expect(asFieldValue(block)).toBe(block);
     });
 });

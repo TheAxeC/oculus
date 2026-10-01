@@ -33,10 +33,10 @@ import {
     systemCodexProbe,
     type CodexProbe
 } from './codex.ts';
+import { isMap } from '../../core/json.ts';
 import { claudeTranscripts, codexRollouts, isRollout } from '../../transcripts/stores.ts';
 import { claudeState, foldClaude } from '../fold.ts';
 import { settleBackground } from './background.ts';
-import { whole } from '../../core/json.ts';
 import { distinctFolders } from '../folders.ts';
 import { defaultOverridesPath, hiddenIds } from '../overrides.ts';
 import { liveFrom, mergeLive, registryCandidates, systemProbe, type Probe } from '../registry.ts';
@@ -109,8 +109,8 @@ export function foldFrom(
             } catch {
                 continue;
             }
-            if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-                apply(parsed as Record<string, unknown>);
+            if (isMap(parsed)) {
+                apply(parsed);
             }
         }
         return complete.length;
@@ -182,7 +182,7 @@ function session(
     let offset = 0;
     if (cached !== undefined && usable(cached, found)) {
         acc = rehydrate(cached, empty.id, found.path, empty.slug, tool);
-        offset = whole(cached.offset);
+        offset = Math.trunc(cached.offset);
     } else if (found.size > limit) {
         // Too big to fold inside a scan, and there is no partial state to build on.
         const record = finish(empty, stateOf(empty, found.mtimeMs, now));

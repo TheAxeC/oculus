@@ -22,6 +22,7 @@ import type {
     UsageWindow
 } from '../../../data/model/index.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
+import { mapShape } from '../../core/shapes.ts';
 import { codexRollouts } from '../../transcripts/stores.ts';
 import { USAGE_PREFIX } from '../pty/sessions.ts';
 
@@ -54,7 +55,7 @@ const textShape = z.string().catch('');
 const finiteShape = z.number().nullable().catch(null);
 
 /** A map of any content, answered as it came, and nothing for a value that is no map. */
-const mapShape = z.custom<Record<string, unknown>>(isMap).optional().catch(undefined);
+const heldMapShape = mapShape.optional().catch(undefined);
 
 /**
  * A nested map whose fields all take a default: a value that is no map reads as a map with every
@@ -388,11 +389,11 @@ function claudeUsage(
  * `payload.info`. Each is answered as the record holds it, and one that is no map reads as absent.
  */
 const rolloutRecordShape = z.object({
-    rate_limits: mapShape,
+    rate_limits: heldMapShape,
     payload: z
         .object({
-            rate_limits: mapShape,
-            info: z.object({ rate_limits: mapShape }).optional().catch(undefined)
+            rate_limits: heldMapShape,
+            info: z.object({ rate_limits: heldMapShape }).optional().catch(undefined)
         })
         .optional()
         .catch(undefined)

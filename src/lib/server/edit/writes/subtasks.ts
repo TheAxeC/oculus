@@ -13,6 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
+import { z } from 'zod';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
 import {
@@ -24,6 +25,7 @@ import {
     subtaskValues
 } from '../entry-edit/index.ts';
 import { plain } from '../../core/changes.ts';
+import { mapShape } from '../../core/shapes.ts';
 import { insideHub } from './manifest.ts';
 import { identityOf, readCollection, saved } from './entries.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
@@ -161,12 +163,40 @@ export function writeSubtaskAdd(
 /** Where the career hosts are, and the statuses one may hold. */
 export type CareerRules = { file: string; statuses: string[] };
 
+/**
+ * The career file and the host statuses of the merged config. A `career_file` that is not text is
+ * the default path, and the statuses are the own keys of a `career_host_status` map in the order
+ * written, none for anything else.
+ */
+const careerRulesShape = z
+    .object({
+        career_file: z.string().catch('registries/career.yml'),
+        career_host_status: z
+            .pipe(
+                mapShape,
+                z.transform((held) => Object.keys(held))
+            )
+            .catch([])
+    })
+    .transform((held) => ({
+        file: held.career_file,
+        statuses: held.career_host_status
+    })) satisfies z.ZodType<CareerRules>;
+
 /** The career file and the host statuses, out of the request's merged config. */
 export function careerRules(merged: Record<string, unknown>): CareerRules {
-    const file =
-        typeof merged.career_file === 'string' ? merged.career_file : 'registries/career.yml';
-    const held = merged.career_host_status;
-    return { file, statuses: isMap(held) ? Object.keys(held) : [] };
+    return careerRulesShape.parse(merged);
+}
+
+/** The hosts of registries/career.yml that are maps, and none for a file that holds no list. */
+const careerHostsShape = z
+    .looseObject({ hosts: z.array(z.unknown()).transform((all) => all.filter(isMap)) })
+    .transform((file) => file.hosts)
+    .catch([]);
+
+/** The host the file names, as the file holds it, or undefined. */
+function careerHost(data: unknown, name: string): Record<string, unknown> | undefined {
+    return careerHostsShape.parse(data).find((one) => one.name === name);
 }
 
 /** The value one subtask line holds now, or null when the host or the line is no longer there. */
@@ -196,9 +226,8 @@ export function hostStatus(
     } catch {
         return { found: false, value: null };
     }
-    const hosts: unknown[] = isMap(data) && Array.isArray(data.hosts) ? data.hosts : [];
-    const host = hosts.find((one) => isMap(one) && one.name === name);
-    if (!isMap(host)) return { found: false, value: null };
+    const host = careerHost(data, name);
+    if (host === undefined) return { found: false, value: null };
     return { found: true, value: plain(host.status) };
 }
 
@@ -230,10 +259,8 @@ export function writeHost(
             refused: [{ field: '', reason: 'the file does not parse' }]
         };
     }
-    const hosts = isMap(data) && Array.isArray(data.hosts) ? data.hosts : [];
-    if (!hosts.some((one) => isMap(one) && one.name === name)) {
-        return { found: false, changed: [], refused: [] };
-    }
+    const host = careerHost(data, name);
+    if (host === undefined) return { found: false, changed: [], refused: [] };
     if (!rules.statuses.includes(status)) {
         return {
             found: true,
@@ -241,7 +268,6 @@ export function writeHost(
             refused: [{ field: 'status', reason: `${status} is not a career host status` }]
         };
     }
-    const host: unknown = hosts.find((one) => isMap(one) && one.name === name);
     const out = saved(file, source, setHostStatus(source, name, status));
     if (out.changed.length === 0) return out;
     return {
@@ -251,7 +277,7 @@ export function writeHost(
                 file,
                 key: name,
                 field: 'status',
-                before: plain(isMap(host) ? host.status : null),
+                before: plain(host.status),
                 after: status,
                 undo: 'field'
             }

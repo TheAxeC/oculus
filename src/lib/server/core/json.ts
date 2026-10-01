@@ -1,8 +1,9 @@
-// Layer 2, server. Reading and writing small JSON and text files whole and atomically, plus the
-// type guards every fold uses, and the one write chain a process holds. The sessions layer's
-// transcript cache and per-session overrides, the file browser's workspaces and notes, the change
-// log, the chat launcher and the image uploads all write through it, which is why it sits in
-// server/core, the bottom of the server's folder order.
+// Layer 2, server. Reading and writing small JSON and text files whole and atomically, the map
+// guard `isMap` re-exported for the readers of those files, and the one write chain a process
+// holds. The zod helpers the readers share are in shapes.ts, which cannot reach the disk. The
+// sessions layer's transcript cache and per-session overrides, the file browser's workspaces and
+// notes, the change log, the chat launcher and the image uploads all write through this module,
+// which is why it sits in server/core, the bottom of the server's folder order.
 //
 // A file is written whole and atomically, by write-file-atomic: a half-written overrides file would
 // lose the user's pins, and a half-written cache would be discarded on the next read anyway. The
@@ -88,24 +89,9 @@ function writeAtomic(path: string, content: string | Uint8Array, newMode?: numbe
     writeFileAtomic.sync(path, content, fresh ? { mode: newMode } : {});
 }
 
-// The one map guard, from data/helpers/guards.ts, re-exported here beside the helpers `text`,
-// `whole` and `list` below it, which modules of `sessions` import.
+// The one map guard, from data/helpers/guards.ts, re-exported here for the modules of
+// server/sessions that import it from here: group.ts, overrides.ts and stores/transcripts.ts.
 export { isMap } from '../../data/helpers/guards.ts';
-
-/** A string value, or the empty string for anything else. */
-export function text(value: unknown): string {
-    return typeof value === 'string' ? value : '';
-}
-
-/** A whole number, or zero for anything else. Booleans are not numbers here. */
-export function whole(value: unknown): number {
-    return typeof value === 'number' && Number.isFinite(value) ? Math.trunc(value) : 0;
-}
-
-/** A list, or the empty list for anything else. */
-export function list(value: unknown): unknown[] {
-    return Array.isArray(value) ? value : [];
-}
 
 /**
  * The write chain of one process: each POST waits for the one before it, so a read, a change and a

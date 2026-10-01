@@ -15,8 +15,11 @@
 // a new line, or inside its line for text removed from a flow map.
 
 import { isAbsolute, join, resolve } from 'node:path';
-import { fields, scalar } from '../../../data/helpers/guards.ts';
+import { z } from 'zod';
+import { scalar } from '../../../data/helpers/guards.ts';
 import { same } from '../../core/changes.ts';
+import { mapShape, stringItemsShape } from '../../core/shapes.ts';
+import { feedValueShape } from './bodies.ts';
 import {
     FEED_RULES,
     deleteFeedEntry,
@@ -173,12 +176,31 @@ function readFeedEntry(
     }
 }
 
-/** A list of words out of a record, or an empty list for anything else. */
-function wordsOf(value: unknown): string[] {
-    return Array.isArray(value)
-        ? value.filter((one): one is string => typeof one === 'string')
-        : [];
-}
+// What a record's `before` value is read as, by the writer it goes back through. The log is a file
+// a hand may have edited, so a value of another type is read as the empty one of its kind.
+
+/** True only for a `true`, which is how a dismissal or a pin is put back. */
+const flagBeforeShape = z.boolean().catch(false);
+
+/** The text a field held, or the empty text, which clears the field. */
+const textBeforeShape = z.string().catch('');
+
+/** The map an entry or a line held, answered as the record holds it, or the empty map. */
+const mapBeforeShape = z.catch(mapShape, () => ({}));
+
+/** The string items of a list the record holds, none for anything that is not a list. */
+const wordsBeforeShape = z.catch(stringItemsShape, () => []);
+
+/** The deck's two lists a record holds, each empty when it is missing or no list. */
+const deckBeforeShape = z
+    .object({ selection: wordsBeforeShape, order: wordsBeforeShape })
+    .catch(() => ({ selection: [], order: [] }));
+
+/** The rail a record holds, as the rows the rail rule reads out of it; none for anything else. */
+const railBeforeShape = z.unknown().transform((before) => railRows(before) ?? []);
+
+/** The scalar a feed field held, or null, which clears the field. */
+const scalarBeforeShape = z.catch(feedValueShape, null);
 
 /**
  * The write that takes one change back, or the word saying why none was made. The value at the
@@ -230,34 +252,27 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     }
     if (change.kind === 'session') {
         if (change.field === 'hidden' || change.field === 'top') {
-            return outcomeOf(
-                setFlag(change.key, change.field, change.before === true, into.overrides)
-            );
+            const on = flagBeforeShape.parse(change.before);
+            return outcomeOf(setFlag(change.key, change.field, on, into.overrides));
         }
-        const value = typeof change.before === 'string' ? change.before : '';
+        const value = textBeforeShape.parse(change.before);
         return outcomeOf(setOverride(change.key, { [change.field]: value }, into.overrides));
     }
     if (change.kind === 'host') {
-        return writeHost(
-            hub,
-            change.key,
-            typeof change.before === 'string' ? change.before : '',
-            into.career
-        );
+        return writeHost(hub, change.key, textBeforeShape.parse(change.before), into.career);
     }
     if (change.kind === 'deck') {
-        const before = fields(change.before);
-        const outcome = writeDeck(
-            config,
-            into.projects(),
-            wordsOf(before.selection),
-            wordsOf(before.order)
-        );
+        const before = deckBeforeShape.parse(change.before);
+        const outcome = writeDeck(config, into.projects(), before.selection, before.order);
         if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
         return { found: true, ...outcome };
     }
     if (change.kind === 'rail') {
-        const outcome = writeRail(into.layoutFile, railRows(change.before) ?? [], into.glyphs);
+        const outcome = writeRail(
+            into.layoutFile,
+            railBeforeShape.parse(change.before),
+            into.glyphs
+        );
         if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
         return { found: true, ...outcome };
     }
@@ -267,9 +282,9 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     }
     if (change.kind === 'subtask') {
         const target = subtaskTarget(into, change);
-        if (change.undo === 'delete')
-            return writeSubtaskAdd(hub, config, target, fields(change.before));
-        return restoreSubtask(hub, config, target, change.field, fields(change.before));
+        const before = mapBeforeShape.parse(change.before);
+        if (change.undo === 'delete') return writeSubtaskAdd(hub, config, target, before);
+        return restoreSubtask(hub, config, target, change.field, before);
     }
     if (change.kind === 'subtask-add') {
         return writeSubtask(hub, config, subtaskTarget(into, change), change.field, 'delete');
@@ -289,18 +304,11 @@ function feedUndo(into: WriteTarget, change: Change): WriteOutcome | null {
     const feed = feedOf(into, change);
     if (feed === null) return null;
     if (change.kind === 'feed-field') {
-        const before = change.before;
-        const value =
-            before === null ||
-            typeof before === 'string' ||
-            typeof before === 'number' ||
-            typeof before === 'boolean'
-                ? before
-                : null;
+        const value = scalarBeforeShape.parse(change.before);
         return writeFeedField(into.hub, into.config, feed, change.key, change.field, value);
     }
     if (change.kind === 'feed-delete') {
-        return restoreFeedEntry(into.hub, into.config, feed, fields(change.before));
+        return restoreFeedEntry(into.hub, into.config, feed, mapBeforeShape.parse(change.before));
     }
     return deleteFeedEntry(into.hub, into.config, feed, change.key);
 }
@@ -312,14 +320,20 @@ function collectionUndo(into: WriteTarget, change: Change): WriteOutcome | null 
     const { key, held } = collection;
     const { hub, config, bookmarks } = into;
     if (change.kind === 'reorder') {
-        return reorderCollection(hub, config, key, wordsOf(change.before), bookmarks);
+        return reorderCollection(
+            hub,
+            config,
+            key,
+            wordsBeforeShape.parse(change.before),
+            bookmarks
+        );
     }
     if (change.kind === 'new-entry') {
         const id = idOfIdentity(held, change.key);
         return id === null ? null : removeEntry(hub, config, key, id, bookmarks);
     }
     if (change.kind === 'delete-entry') {
-        return createEntry(hub, config, key, fields(change.before), bookmarks);
+        return createEntry(hub, config, key, mapBeforeShape.parse(change.before), bookmarks);
     }
     const id = idOfIdentity(held, change.key);
     if (id === null) return null;

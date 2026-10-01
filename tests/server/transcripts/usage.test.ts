@@ -183,3 +183,67 @@ describe('codexUsage', () => {
         ).toBeNull();
     });
 });
+
+describe('the usage readers over values of the wrong type', () => {
+    it('keeps a stamp of any text or number and reads the empty text as none', () => {
+        const stamped = (timestamp: unknown): unknown =>
+            claudeUsage({ type: 'assistant', timestamp, message: { usage: {} } })?.stamp;
+        expect(stamped('')).toBeNull();
+        expect(stamped(5)).toBe(5);
+        expect(stamped(NaN)).toBeNull();
+        expect(stamped(null)).toBeNull();
+        expect(stamped({})).toBeNull();
+    });
+
+    it('leaves out the context when the record carries no usage map', () => {
+        const none = claudeUsage({ type: 'assistant', message: { model: 'm', usage: [] } });
+        expect(none).toStrictEqual({
+            model: 'm',
+            stamp: null,
+            input: 0,
+            output: 0,
+            cacheRead: 0,
+            cacheCreation: 0,
+            thinking: 0,
+            ttl: null
+        });
+        expect(Object.keys(claudeUsage({ type: 'assistant', message: 7 }) ?? {})).not.toContain(
+            'context'
+        );
+    });
+
+    it('truncates a finite count and reads anything else as zero', () => {
+        const usage = {
+            input_tokens: 2.7,
+            output_tokens: '4',
+            cache_read_input_tokens: NaN,
+            cache_creation_input_tokens: -1.5,
+            output_tokens_details: { thinking_tokens: Infinity },
+            cache_creation: { ephemeral_5m_input_tokens: 3 }
+        };
+        expect(claudeUsage({ type: 'assistant', message: { usage } })).toStrictEqual({
+            model: '',
+            stamp: null,
+            input: 2,
+            output: 0,
+            cacheRead: 0,
+            cacheCreation: -1,
+            thinking: 0,
+            ttl: '5m',
+            context: 1
+        });
+    });
+
+    it('reads a token count whose info or totals are of the wrong type', () => {
+        const count = (info: unknown): unknown =>
+            codexUsage({ type: 'event_msg', payload: { type: 'token_count', info } }, {});
+        const none = { model: '', stamp: null, input: 0, output: 0 };
+        expect(count(null)).toMatchObject({ ...none, cacheRead: 0 });
+        expect(count({ total_token_usage: [], last_token_usage: 'x' })).toMatchObject(none);
+        expect(
+            count({ last_token_usage: { input_tokens: 5 }, model_context_window: 'big' })
+        ).toMatchObject({
+            context: 5
+        });
+    });
+});

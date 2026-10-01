@@ -14,6 +14,7 @@
 import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
+import { z } from 'zod';
 import {
     arrangementKeys,
     railRows,
@@ -27,16 +28,15 @@ import type { ChangeRecord } from '../../core/changes.ts';
 /** The top-level key of config/layout.yml the rail's list lives under. */
 export const RAIL = 'rail';
 
+/** The two keys of config/layout.yml the rail write reads: its list, and the arrangements. */
+const layoutShape = z
+    .object({ [RAIL]: z.unknown().optional(), arrangements: z.unknown().optional() })
+    .catch(() => ({ [RAIL]: undefined, arrangements: undefined }));
+
 /** What a rail write answers with: what it changed, or the one word saying what was wrong. */
 export type RailOutcome =
     | { changed: string[]; refused: []; records?: ChangeRecord[] }
     | { error: 'invalid' | 'unwritable' };
-
-/** A map of a parsed document, or an empty one for anything that is not a map. */
-function mapOf(value: unknown): Record<string, unknown> {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
-    return value as Record<string, unknown>;
-}
 
 /**
  * The list one text of the file holds, every entry as three strings whether or not the rule keeps
@@ -49,7 +49,7 @@ export function railLists(source: string): RailEntry[] {
     } catch {
         return [];
     }
-    return railRows(mapOf(parsed)[RAIL]) ?? [];
+    return railRows(layoutShape.parse(parsed)[RAIL]) ?? [];
 }
 
 /** The list the file holds now, or null when it is gone or does not parse; a file it may not read
@@ -93,9 +93,9 @@ export function writeRail(file: string, rail: RailEntry[], glyphs: string[]): Ra
     } catch {
         return { error: 'unwritable' };
     }
-    let parsed: Record<string, unknown>;
+    let parsed: z.output<typeof layoutShape>;
     try {
-        parsed = mapOf(parse(source));
+        parsed = layoutShape.parse(parse(source));
     } catch {
         return { error: 'invalid' };
     }

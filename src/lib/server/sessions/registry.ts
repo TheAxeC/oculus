@@ -14,7 +14,9 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { LiveEntry, SessionRecord } from '../../data/model/index.ts';
 import { distinctFolders } from './folders.ts';
-import { isMap, readJson, text, whole } from '../core/json.ts';
+import { z } from 'zod';
+import { readJson } from '../core/json.ts';
+import { readAs, wholeShape } from '../core/shapes.ts';
 
 /** Seconds of disagreement allowed between the registry's stamp and what `ps` reports. */
 export const PROC_START_SLACK = 2;
@@ -118,25 +120,26 @@ export function formatStamp(seconds: number, utc = true): string {
     return `${weekday} ${month} ${String(day).padStart(2, ' ')} ${clock} ${year}`;
 }
 
+/**
+ * One registry file: a session id that is a non-empty string and a pid that is a whole number,
+ * with the rest read as text and the start as a whole number, each empty or zero when it is
+ * missing or of another type.
+ */
+const candidateShape = z.object({
+    sessionId: z.string().min(1),
+    pid: z.number().refine(Number.isInteger),
+    status: z.string().catch(''),
+    name: z.string().catch(''),
+    kind: z.string().catch(''),
+    entrypoint: z.string().catch(''),
+    cwd: z.string().catch(''),
+    startedAt: wholeShape,
+    procStart: z.string().catch('')
+}) satisfies z.ZodType<Candidate>;
+
 /** One registry file, reduced to the fields the record needs. Null when it is not usable. */
 function candidate(path: string): Candidate | null {
-    const data = readJson(path);
-    if (!isMap(data)) return null;
-    const ident = data.sessionId;
-    const pid = data.pid;
-    if (typeof ident !== 'string' || !ident) return null;
-    if (typeof pid !== 'number' || !Number.isInteger(pid)) return null;
-    return {
-        sessionId: ident,
-        pid,
-        status: text(data.status),
-        name: text(data.name),
-        kind: text(data.kind),
-        entrypoint: text(data.entrypoint),
-        cwd: text(data.cwd),
-        startedAt: whole(data.startedAt),
-        procStart: text(data.procStart)
-    };
+    return readAs(candidateShape, readJson(path));
 }
 
 /**

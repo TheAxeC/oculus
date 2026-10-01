@@ -352,3 +352,31 @@ describe('a record without usable removed lines', () => {
         }
     });
 });
+
+describe('the offset and the text of a removed record', () => {
+    const WITHOUT = MANIFEST.replace('title: "A title"\n', '');
+    const FITS = 'title: "A title"\n';
+
+    /** The manifest an undo of a removed title leaves, for one record of the removed lines. */
+    async function undoneWith(removed: unknown): Promise<string> {
+        const into = target();
+        hold(into, WITHOUT);
+        const change = await recorded(into, 'title', 'A title', null, removed);
+        expect((await undone(into, change)).status).toBe(200);
+        return manifestOf(into);
+    }
+
+    it('writes the value for an offset that is fractional or negative, or text that is empty', async () => {
+        const written = `${WITHOUT}title: A title\n`;
+        expect(await undoneWith({ offset: 1.5, text: FITS, next: '' })).toBe(written);
+        expect(await undoneWith({ offset: -1, text: FITS, next: '' })).toBe(written);
+        expect(await undoneWith({ offset: 0, text: '', next: '' })).toBe(written);
+        expect(await undoneWith({ offset: 0, text: FITS })).toBe(written);
+    });
+
+    it('puts the lines back for a whole non-negative offset, however large', async () => {
+        const back = `${WITHOUT}${FITS}`;
+        expect(await undoneWith({ offset: 0, text: FITS, next: '' })).toBe(back);
+        expect(await undoneWith({ offset: 2 ** 60, text: FITS, next: '' })).toBe(back);
+    });
+});

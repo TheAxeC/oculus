@@ -17,6 +17,6 @@ export function recordedKinds(): string[] {
         join(engineDir(), 'src', 'lib', 'server', 'edit', 'writes', 'bodies.ts'),
         'utf8'
     );
-    const found = [...source.matchAll(/body\.kind !== '([a-z-]+)'/g)].map((one) => one[1]);
+    const found = [...source.matchAll(/kind: z\.literal\('([a-z-]+)'\)/g)].map((one) => one[1]);
     return [...new Set(found)].filter((kind) => kind !== 'undo');
 }

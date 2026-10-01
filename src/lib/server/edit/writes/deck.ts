@@ -16,8 +16,8 @@
 
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
+import { z } from 'zod';
 import { catalogKeys, deckOrder, deckSources, savedKeys } from '../../../data/helpers/deck.ts';
-import { fields } from '../../../data/helpers/guards.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { setDeckLists } from '../deck-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
@@ -28,6 +28,20 @@ export type DeckOutcome =
     | { changed: string[]; refused: []; records?: ChangeRecord[] }
     | { error: 'invalid' | 'invalid_order' | 'unwritable' };
 
+/** The keys of a `deck:` map the deck reads, each absent for a `deck:` that is no map. */
+const deckMapShape = z
+    .object({
+        selection: z.unknown().optional(),
+        slide_order: z.unknown().optional(),
+        order: z.unknown().optional()
+    })
+    .catch(() => ({ selection: undefined, slide_order: undefined, order: undefined }));
+
+/** A deck file: its `deck:` map, and an empty one for a file that is no map or holds none. */
+const deckFileShape = z
+    .object({ deck: deckMapShape })
+    .catch(() => ({ deck: deckMapShape.parse(undefined) }));
+
 /** The deck's two saved lists, as one text of the deck file holds them. */
 export function deckLists(source: string): { selection: string[]; order: string[] } {
     let parsed: unknown;
@@ -36,7 +50,7 @@ export function deckLists(source: string): { selection: string[]; order: string[
     } catch {
         return { selection: [], order: [] };
     }
-    const deck = fields(fields(parsed).deck);
+    const { deck } = deckFileShape.parse(parsed);
     return {
         selection: savedKeys(deck.selection) ?? [],
         order: savedKeys(deck.slide_order) ?? []
@@ -73,7 +87,7 @@ export function writeDeck(
     selection: string[],
     order: string[]
 ): DeckOutcome {
-    const deck = fields(config.deck);
+    const deck = deckMapShape.parse(config.deck);
     const catalog = catalogKeys(
         deckOrder(deck.order),
         deckSources(projects),

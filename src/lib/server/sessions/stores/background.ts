@@ -20,9 +20,9 @@
 
 import { statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { z } from 'zod';
 import type { SessionRecord } from '../../../data/model/index.ts';
-import { IDLE_AFTER_SECONDS, type Acc } from '../record.ts';
-import { isMap, list } from '../../core/json.ts';
+import { IDLE_AFTER_SECONDS, textShape, type Acc } from '../record.ts';
 
 /** How a launch notice names the subagent, when the answer carries no structured field for it. */
 const AGENT_ID = /agentId:\s*([A-Za-z0-9_-]+)/;
@@ -37,34 +37,43 @@ const RESULT = /<result>([\s\S]*?)<\/result>/;
 /** The row status each notice status reads as; one not named here reads `error`. */
 const ENDED_AS: Record<string, string> = { completed: 'done', killed: 'stopped' };
 
-/** The text of a record's content, a string or its text blocks. */
-function textOf(content: unknown): string {
-    if (typeof content === 'string') return content;
-    return list(content)
-        .map((block) => (isMap(block) && typeof block.text === 'string' ? block.text : ''))
-        .join('\n');
-}
+/**
+ * The text of a record's content: a string whole, and for a list of blocks the `text` of each one,
+ * the empty text for a block that holds none, joined by new lines. Anything else has none.
+ */
+export const contentTextShape = z
+    .union([
+        z
+            .array(z.object({ text: textShape }).catch(() => ({ text: undefined })))
+            .transform((blocks) => blocks.map((block) => block.text ?? '').join('\n')),
+        z.string()
+    ])
+    .catch('');
+
+/** The answer an Agent call's result carries: a background launch, and the agent it names. */
+export const launchAnswerShape = z
+    .object({
+        isAsync: z.literal(true).optional().catch(undefined),
+        status: textShape,
+        agentId: textShape
+    })
+    .optional()
+    .catch(undefined);
+type LaunchAnswer = z.output<typeof launchAnswerShape>;
 
 /**
  * Whether an Agent call's answer is a background launch: the call asked for one, or the answer
  * says it is one (`isAsync`, or a status of `async_launched`).
  */
-export function isLaunch(acc: Acc, id: string, record: Record<string, unknown>): boolean {
+export function isLaunch(acc: Acc, id: string, answer: LaunchAnswer): boolean {
     if (id in acc.background) return true;
-    const answer = record.toolUseResult;
-    return isMap(answer) && (answer.isAsync === true || answer.status === 'async_launched');
+    return answer !== undefined && (answer.isAsync === true || answer.status === 'async_launched');
 }
 
 /** Take one launch answer: the agent stays running, and the agent id it names is kept. */
-export function takeLaunch(
-    acc: Acc,
-    id: string,
-    record: Record<string, unknown>,
-    content: unknown
-): void {
-    const answer = record.toolUseResult;
-    const named = isMap(answer) && typeof answer.agentId === 'string' ? answer.agentId : '';
-    acc.background[id] = named || (AGENT_ID.exec(textOf(content))?.[1] ?? '');
+export function takeLaunch(acc: Acc, id: string, answer: LaunchAnswer, content: unknown): void {
+    const named = answer?.agentId ?? '';
+    acc.background[id] = named || (AGENT_ID.exec(contentTextShape.parse(content))?.[1] ?? '');
 }
 
 /**
@@ -72,8 +81,7 @@ export function takeLaunch(
  * by the agent id its launch answer gave. A notice naming neither changes nothing. The launch stays
  * known, so a later notice for a resumed subagent ends its row again.
  */
-export function takeNotices(acc: Acc, content: unknown, stamp: string | null): void {
-    const text = textOf(content);
+export function takeNotices(acc: Acc, text: string, stamp: string | null): void {
     if (!text.includes('<task-notification>')) return;
     for (const [notice] of text.matchAll(NOTICE)) {
         const call = TOOL_USE_ID.exec(notice)?.[1] ?? '';

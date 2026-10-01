@@ -24,10 +24,10 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { z } from 'zod';
-import { isMap } from '../../../data/helpers/guards.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import type { Entry, SchemaField } from '../../../data/model/index.ts';
 import { writeTextAtomic } from '../../core/json.ts';
+import { anyNumberShape, mapShape } from '../../core/shapes.ts';
 
 /** The collection key the write path resolves to the reader's own file. */
 export const BOOKMARKS = 'bookmarks';
@@ -79,12 +79,10 @@ function scaffoldSchema(): SchemaField[] {
 export type BookmarksAnswer = { entries: Entry[]; schema: SchemaField[] };
 
 /** An item of the file's `entries:` list that is a map, answered as the file holds it. */
-const bookmarkItemShape = z.custom<Record<string, unknown>>(isMap);
+const bookmarkItemShape = mapShape;
 
 /** What a bookmark is found by: a label of text or a number, written out as text. */
-const bookmarkLabelShape = z
-    .union([z.string(), z.custom<number>((held) => typeof held === 'number')])
-    .transform(String);
+const bookmarkLabelShape = z.union([z.string(), anyNumberShape]).transform(String);
 
 /**
  * The parts of the file this module reads: the `entries:` list, which reads as empty when it is

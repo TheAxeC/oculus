@@ -11,10 +11,13 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
     createEntry,
+    fieldTypes,
     removeEntry,
     reorderCollection,
     writeEntry
 } from '../../../src/lib/server/edit/writes.ts';
+import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
+import { parse } from 'yaml';
 import { it } from '../../fixtures/scratch.ts';
 import {
     configFor,
@@ -346,5 +349,49 @@ describe('reordering and deleting entries of a collection', () => {
             refused: []
         });
         expect(tasksOf(root)).toBe(TASKS);
+    });
+});
+
+describe('the configuration a write reads at run time', () => {
+    it('reads the types of a schema and skips an entry of the wrong shape', () => {
+        const schema = { fields: { a: { type: 'text' }, b: 3, c: { type: 4 }, d: {} } };
+        expect(fieldTypes(schema)).toStrictEqual({ a: 'text' });
+        for (const wrong of [null, [], { fields: [] }]) expect(fieldTypes(wrong)).toStrictEqual({});
+    });
+
+    it('reads the metalist fields of a schema and no item that only looks like one', () => {
+        const root = wider();
+        writeFileSync(
+            join(root, 'tasks', 'tasks.yml'),
+            [
+                'title: Mixed',
+                'schema:',
+                '  - { field: title, type: text }',
+                '  - { field: meta, type: metalist }',
+                '  - { field: odd, type: 3 }',
+                '  - 3',
+                'entries:',
+                '  - title: "One"',
+                '    meta: []',
+                '    odd: []',
+                ''
+            ].join('\n')
+        );
+        const out = writeEntry(root, configFor(), 'tasks', 'One', { meta: [], odd: [] });
+        expect(out.changed).toStrictEqual(['meta']);
+        expect(tasksOf(root)).toContain('    odd: []');
+        expect(tasksOf(root)).not.toContain('meta:');
+    });
+
+    it('reads the career file and the statuses, in the order the file writes them', () => {
+        const none = { file: 'registries/career.yml', statuses: [] };
+        expect(careerRules({ career_file: 3, career_host_status: ['x'] })).toStrictEqual(none);
+        const two = careerRules({ career_file: 'c.yml', career_host_status: { a: 1, b: 2 } });
+        expect(two).toStrictEqual({ file: 'c.yml', statuses: ['a', 'b'] });
+        const parsed = parse('career_host_status:\n  __proto__: 1\n  b: 2\n') as Record<
+            string,
+            unknown
+        >;
+        expect(careerRules(parsed).statuses).toStrictEqual(['__proto__', 'b']);
     });
 });

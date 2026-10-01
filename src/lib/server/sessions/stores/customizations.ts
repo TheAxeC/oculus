@@ -24,6 +24,8 @@ import type {
     CustomizationRow,
     CustomizationsAnswer
 } from '../../../data/model/index.ts';
+import { z } from 'zod';
+import { isMap } from '../../../data/helpers/guards.ts';
 import { inside } from '../../core/paths.ts';
 
 /** The rows in the order the section lists them. */
@@ -132,13 +134,6 @@ function jsonFile(path: string, found: Collect): unknown {
     }
 }
 
-/** A plain map, or null. */
-function mapOf(value: unknown): Record<string, unknown> | null {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
-
 /** A map field that must be a map when present: a finding when it is something else. */
 function mapField(
     value: unknown,
@@ -146,9 +141,8 @@ function mapField(
     path: string,
     found: Collect
 ): Record<string, unknown> | null {
-    const map = mapOf(value);
-    if (map === null || !(field in map)) return null;
-    const inner = mapOf(map[field]);
+    if (!isMap(value) || !(field in value)) return null;
+    const inner = isMap(value[field]) ? value[field] : null;
     if (inner === null) found.findings.push({ path, reason: 'malformed' });
     return inner;
 }
@@ -216,6 +210,20 @@ function settingsFiles(scope: CustomizationScope): string[] {
     ];
 }
 
+/** A hook: its command, or the empty text for a hook that is no map or has none. */
+const hookShape = z.object({ command: z.string().catch('') }).catch(() => ({ command: '' }));
+
+/** The event's groups: null for a group that is no map or holds no `hooks` list. */
+const hookGroupsShape = z
+    .array(
+        z
+            .object({ hooks: z.array(hookShape) })
+            .nullable()
+            .catch(null)
+    )
+    .nullable()
+    .catch(null);
+
 /** The hooks each settings file names, one item per command, named by its event. */
 function hooks(scope: CustomizationScope): Collect {
     const found = collect();
@@ -224,19 +232,17 @@ function hooks(scope: CustomizationScope): Collect {
         const events = mapField(jsonFile(path, found), 'hooks', path, found);
         if (events === null) continue;
         for (const [event, groups] of Object.entries(events)) {
-            if (!Array.isArray(groups)) {
+            const held = hookGroupsShape.parse(groups);
+            if (held === null) {
                 found.findings.push({ path, reason: 'malformed' });
                 continue;
             }
-            for (const group of groups) {
-                const list = mapOf(group)?.hooks;
-                if (!Array.isArray(list)) {
+            for (const group of held) {
+                if (group === null) {
                     found.findings.push({ path, reason: 'malformed' });
                     continue;
                 }
-                for (const hook of list) {
-                    const command = mapOf(hook)?.command;
-                    const said = typeof command === 'string' ? command : '';
+                for (const { command: said } of group.hooks) {
                     found.items.push({ name: said === '' ? event : `${event}: ${said}`, path });
                 }
             }
@@ -267,7 +273,7 @@ function tomlDocument(text: string): Record<string, unknown> | null {
 
 /** A TOML value when it is a table, and null for a scalar, a date or an array. */
 function tomlTable(value: unknown): Record<string, unknown> | null {
-    return value instanceof Date ? null : mapOf(value);
+    return value instanceof Date || !isMap(value) ? null : value;
 }
 
 /**
@@ -311,7 +317,8 @@ function mcp(scope: CustomizationScope): Collect {
     serversOf(mapField(jsonFile(settings, found), 'mcpServers', settings, found), settings, found);
     const global = claudeJsonOf(scope.account);
     const projects = mapField(jsonFile(global, found), 'projects', global, found);
-    const entry = projects === null ? null : mapOf(projects[resolve(scope.workspace)]);
+    const held = projects?.[resolve(scope.workspace)];
+    const entry = isMap(held) ? held : null;
     serversOf(mapField(entry, 'mcpServers', global, found), global, found);
     return found;
 }
