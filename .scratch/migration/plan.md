@@ -184,6 +184,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Booked 2026-10-01: the audit of every view against VS Code 1.137.0 (`U2-audit.md`, `U2-vscode.css`, 81 shots); base 86e6d8bb, /spec, /refute, two repair rounds (the cap exception), each refuted; eight fixes at landing (cites, withheld shots, the diff editor measure); `checks: 7 commands passed`; choices Z146-Z148 to Axel; in full in `agents/reviews/U2-landing.md`.
 - ✅ U3 every view on VS Code's scale, from U2's audit (`agents/reviews/U2-audit.md`, its seven groups as one step): the header frame, control sizes, type and row scale, icons at 16 px, actions on hover or focus, cards kept but fit to the pane with one chip shape and titles on the scale, links without underline, empty, error and narrow states; after S3c (ruling Z146) (ruling Z147) (ruling Z148)
   - Booked 2026-10-01: every view on VS Code's scale (header frame, controls, type, icons, reveal, cards, empty states); base ab4d9084, one repair round refuted again; seven fixes at landing (Q88b's merge, F1, F2, F3a, F3b, F5, a menu pick closing the popover); `checks: 7 commands passed`; look on TEST; in full in `agents/reviews/U3-landing.md`.
+- U4 the Focus and Sessions views brought to the size of the other views, element by element against their counterparts, and the Files and Repositories views checked the same way; the Repositories view's more-ways-to-commit control aligned with the Commit button (ruling U4)
 - Removed by Z119 (the orchestrator, automode, 2026-09-30 23:41): S3, split into S3a, S3b and S3c; its line kept whole in `agents/briefs/S3.md`.
   - Z77 (a): the catalog check, both directions, in `npm run test:checks`.
   - Step 0, stopped at /spec 2026-09-30: what one option is, the catalog's file and entry, what Default and Modified mean and which options get a control are shapes nothing names; open item Z94 in `orchestrator-state.md`, with the tree's counts and the options. Ruled 2026-09-30, see the ruling line of Z94; /spec again.
@@ -343,7 +344,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Booked 2026-10-01: `zod` schemas at the state layer's inputs, the redundant hand checks deleted, `shapes.ts` in `data/shapes/`; base 402437e8, one repair round refuted again; three fixes at landing (`tones.test.ts`'s `__PROTO__` rows, the customization fields required, a stale sentence closed); `checks: 7 commands passed`; no look; in full in `agents/reviews/Q85b-landing.md`.
 - ✅ Q85c the same in `src/lib/data` (30 files, 196 check lines), after Q85a1, Q85a2 and Q85a4 (ruling The queue) (ruling Z73)
   - Booked 2026-10-01: `zod` schemas at `src/lib/data`'s inputs, an own `__proto__` key skipped in the text catalog, config merge and three hub maps (Z173); base 8db30ca2, one repair round refuted again; two fixes at landing (the `shapes.ts` head comment, a nested `__proto__` case); `checks: 7 commands passed`; no look; in full in `agents/reviews/Q85c-landing.md`.
-- Q85d the same in the views, `ui/`, `shell/` and the routes (33 files), after Q85b (ruling The queue) (ruling Z73)
+- Q85d the same in the views, `ui/`, `shell/` and the routes (64 files, 137 check lines), after Q85b (ruling The queue) (ruling Z73)
   - Counted 2026-09-30 on main: 206 files that mention `unknown` hold 1,269 lines of `typeof`, `Array.isArray`, `isMap` and `isRecord` checks, against LA7's "about 40 state files"; 29 files parse JSON or YAML.
 - ✅ Q86 the Map's layout tried on `@viz-js/viz` neato or fdp in the page; `d3-force` for the tick if the trial's layouts read worse (LA10; Axel 2026-09-26, library audit) (ruling The queue)
   - Booked 2026-09-29: the Map laid out by Graphviz's neato in the page, landed on main from base fd4a8f3d through /spec, /refute and /land; in full in `agents/briefs/Q86.md`
@@ -499,6 +500,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O22 to O28 with each other once O10 has landed.
 
 ## Rulings (2026-09-10)
+- U4 (2026-10-01 20:52, Axel): the Focus view is far too large and out of line with the other views, as is the Sessions view, the Files and Repositories views maybe a little too large; the text size setting is not the answer, since it changes every view; the Repositories view's more-ways-to-commit control does not align with the Commit button (the user).
 - 2026-09-25, Axel: X3a's file icons are the Seti set (`seti-ui`), its nesting patterns a new catalog `config/catalogs/file-nesting.yml`, its local history copies under `~/.oculus/history/`; X3c's pinned tabs are `pinned?: true` on `Instance` with a layout migration, its wrapped tabs a per-browser UI-store toggle.
 - 2026-09-25, Axel: S2's composer choices live in a new catalog `config/catalogs/agents.yml`, per agent (Claude, Codex) its models, efforts and permission modes, each with the words shown, the flag passed and a default (S2's Step 0, option (a)).
 - 2026-09-26, Axel: an arrangement's tab in `config/layout.yml` may carry a starting `state:` beside its `view:`, checked by that view's own reader (S2's Step 0, option (a)).
@@ -764,6 +766,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z174, amended (2026-10-01): cadences from 1 to 35791 minutes, day windows 0 to 3650, `mail.per_signal` 1 to 500, in D35 (the orchestrator, automode).
 - Open item Z177 (2026-10-01): (a), every `local.yml` key but the four account keys read once at start and used from that value everywhere, in D35; (b), a sentence describing the split, was the lazy option (the orchestrator, automode).
 - Open item Z178 (2026-10-01): (a), the `languages` map in a new Settings section Files and VS Code's display names for the new languages in the status bar, in D27; (c), raw ids as names, was the lazy option (the orchestrator, automode).
+- Open item Z179 (2026-10-01): (b), the bodies the views fetch read by the state layer's rule in `state/sources/repositories/answers.ts`, lists item by item and a non-text `error` as the failure sentence, as changed answers with cases, in Q85d; (a), today's answers kept as an exception, was the lazy option (the orchestrator, automode).
 - D35 premise corrected (2026-10-01): the three `notify.*` keys and `notify.stop` are already read at every hook request, so D35 makes the other 13 live and removes the unread start copies.
 
 ## Blocked, and by what

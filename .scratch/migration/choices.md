@@ -329,3 +329,10 @@ Where they are built: D35. Booked in the state file's closed log and `plan.md` R
 
 Where they are built: D27. Booked in the state file's closed log and `plan.md` Rulings.
 
+
+## Z179 (2026-10-01 20:58, step Q85d)
+
+- Chosen (b): the bodies the views fetch (Changes, CommitFiles, Diff, Graph, Merge and Source's gutter) are read by the rule the state layer reads the server's answers by, in a new `state/sources/repositories/answers.ts`: a list read item by item, the passing items kept, and an `error` that is not text answered by the view's own failure sentence. The answers that change are each a case that fails on the unchanged tree.
+- Not chosen: (a) today's answers kept, a cast list of unchecked items handed on whole and `DESIGN.md:148` naming the views as an exception, the lazy option, since it leaves the untyped input the step exists to end.
+
+Where they are built: Q85d. Booked in the state file's closed log and `plan.md` Rulings.
