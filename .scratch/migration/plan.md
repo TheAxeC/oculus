@@ -847,6 +847,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z236 (2026-10-02): (a), M4: `\bm` drawn bold in the deck through MathJax 3.2.2's vendored `boldsymbol` extension, loaded offline (the orchestrator, automode).
 - Open item Z237 (2026-10-02): (a), M4: `build.py` rewrites `\text{\small X}` to `{\small\text{X}}` for MathJax only, and the typeset check counts `merror` and red nodes (the orchestrator, automode).
 - Open item Z238 (2026-10-02): (a), M4: the path list gains the `type-scale.test.ts` row, one `deck.css` rule and the vendored extension; a blank equation draws no card (the orchestrator, automode).
+- Open item Z239 (2026-10-02): (b), D35: a page that follows the server to a new port carries the workbench layout and the "This browser" settings across in `window.name` (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

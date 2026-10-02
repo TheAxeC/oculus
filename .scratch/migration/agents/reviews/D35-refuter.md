@@ -1,8 +1,202 @@
-# Step D35 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D35, base c44def15)
+# D35 review, first run (reviewer report)
+
+Worktree untouched by hand. `npm run diagrams` and `npm run build` regenerated files; `git diff bca2c6b3 --stat | tail -1` still prints `46 files changed, 3990 insertions(+), 1411 deletions(-)`, the same as before. All mutation runs were on a scratch copy (`/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d35r/copy`). No server was started outside tests on ephemeral ports. I did not open `config/local.yml`.
+
+## Verification lines (verbatim)
+
+`PATH=... npm run diagrams` exited 0. Then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` (file `d35r/checks1.txt`, load 20 to 24) printed:
+
+```
+$ npm test
+ Test Files  3 failed | 428 passed | 22 skipped (453)
+      Tests  12 failed | 11295 passed | 621 skipped (11928)
+   Start at  04:12:03
+   Duration  471.59s (transform 131.39s, setup 0ms, import 931.78s, tests 820.96s, environment 1.01s)
+
+checks: failed with exit 1: npm test
+```
+
+All 12 failures are `Error: Test timed out in 5000ms.`, in three files:
+- `tests/server/edit/config-key.test.ts` (6 tests; a file the step changes).
+- `tests/routes/edit/config-key.test.ts` (3 tests; byte-identical to main).
+- `tests/server/git/autofetch.test.ts` (2 tests; not touched).
+
+Alone, `npx vitest run tests/server/edit/config-key.test.ts tests/routes/edit/config-key.test.ts tests/server/git/autofetch.test.ts --reporter=dot` printed `Test Files  3 passed (3)  Tests  112 passed (112)`.
+
+A second, verbose run of `tests/server/edit/config-key.test.ts` alone at load 19 timed out again: `refuses a key that is absent, empty, null, an alias, anchored, tagged or a block scalar 7072ms` and `refuses what is not a finite number for a number option 5539ms`; `Tests  2 failed | 52 passed (54)`. The same file on main (`/Users/axelfaes/workspace/research-hub/tools/oculus`, same load): `Tests  38 passed (38)`, `tests 37.93s`; the worktree's file has 54 tests and `tests 76.09s`.
+
+Because checks.sh stopped at `npm test`, this is not a pass of the list. I ran the other six commands one by one in the worktree (output in `d35r/rest-*.txt`):
+- `npm run test:checks`: exit 0, `Test Files  29 passed | 2 skipped (31)`, `Tests  442 passed | 9 skipped (451)`.
+- `npm run check`: exit 0, `COMPLETED 2967 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run build`: exit 0.
+- `npm run format:check`: exit 0, `All matched files use Prettier code style!`.
+- `npm run lint`: exit 0.
+- `! LC_ALL=C grep -rna '[^ -~]' src tests`: exit 0, no output.
+
+The ASCII gate over `src tests bin config` (with the config accent exemption and `! -name local.yml`) printed nothing.
+
+Brief verify item 2 (`npx vitest run tests/server/root tests/server/machine tests/server/accounts tests/server/edit/config-key.test.ts tests/data/sources/config tests/routes --reporter=dot`) printed `Test Files  1 failed | 92 passed (93)  Tests  1 failed | 1594 passed (1595)`. The one failure is `tests/routes/edit/config-key.test.ts > taking a setting back > answers gone once the key has left the file ...`, `Test timed out in 5000ms`. Alone: `Test Files  1 passed (1)  Tests  14 passed (14)`.
+
+Brief verify items 3 to 6:
+- Item 3: `grep -rn "takes effect when the server is started again" config HELP.md DESIGN.md src --exclude=local.yml | wc -l` printed `0`.
+- Item 4: `grep -rn "loadLocalOrDefaults(" src | wc -l` printed `11` in the worktree and `11` in main.
+- Item 5: `grep -c "A change is read again at once." config/catalogs/options.yml` printed `15`; `grep -c "moves the server to the new port" ...` printed `1`.
+- Item 6: `cmp` against `/Users/axelfaes/workspace/research-hub/tools/oculus/<path>` printed `same` for all 27 listed source and test files and for the 7 route folders under `src/routes/api/`. It printed DIFF for two files, both reported by the builder:
+  - `src/lib/data/sources/config.ts`: `63,64d62 < CADENCE_WORDS, < cadenceShape,` (ruling B).
+  - `tests/views/system/help.test.ts`: lines 343 to 346 assert the new HELP sentences (`read again whenever it changes`, `a changed \`port\` moves the server`). Main's copy asserts the removed ones, so the brief's "main's copy" cannot hold for it.
+
+  `git diff bca2c6b3 --name-only | grep routes` lists only `tests/routes/sessions/hook.test.ts`.
+
+Seen-failing runs on a scratch copy (a mutation made on a copy of the worktree file, the named tests run, the file restored). Each of these fails without its behaviour:
+1. Page follows (`socket.svelte.ts`, `location.assign(moved)` replaced by `void moved`): `config-seed.test.ts > the page follows a server that moves > goes to its own address on the new port when a later push reports another address, once` and `> takes the first address from the configuration the page was built from`. `Tests  2 failed | 26 passed (28)`.
+2. Port move not made (`context.ts`, `else void settlePort();` replaced by `else void 0;`): `Tests  7 failed | 13 passed (20)`. Among them: `publishes the new address before the server moves, and holds the same context and token`, `refuses 8787 and a port outside 1 to 65535 without asking the mover`, `takes the later port when a second edit arrives while the first move is in flight`.
+3. Port-move test, restore: removing `await listenOn(server, address.port);` fails `vite-plugin.test.ts > serverMover on a real server > listens on the old port again when the listen on the new one fails after the page was told`.
+4. Port-move test, busy port: removing `if (busy !== null) return busy;` fails `... > refuses a port in use without telling the page or stopping the server`.
+5. Close handler: removing `if (mover.moving()) return;` from `vite-plugin.ts` fails `> the Oculus Vite plugin on a server that moves > keeps the context and the socket through a move and closes them when the server closes`.
+6. No rebuild (`rebuild(rebuiltBy(changed));` removed): `Tests  8 failed | 12 passed (20)`, including `reads the new accounts for the sessions, and builds the usage refresh and the usage watcher again with them` and `keeps every value in force and says why once for a file that does not read ...`.
+7. Cadence cap (`loop.ts`, `Math.min(at, soonest)` replaced by `at`): `loop.test.ts > a period that changes while the loop runs > moves the next read of an account to the new period from now when that is sooner` and `> treats the retry time of an account that failed as its next read`.
+8. Prewarm fix (`hpc/poll.ts`, `for (const id of todo) asked.delete(id);` removed): `poll-live.test.ts > settings changed while the watcher runs > asks again about the jobs of a prewarm dropped by a change of the day count`.
+9. Host generation (`asking += 1;` removed): 3 failures in `poll-live.test.ts` (`drops the rows of a poll begun under the old host and answers with one follow-up poll`, `drops the log paths of a prewarm begun under the old host`, `drops the failure of a poll begun under the old host and publishes the new host`).
+10. Equal settings (`live-settings.ts`, the calendar equality check removed): `context.test.ts > ... hands nothing on for a push whose values equal the ones in force (an audit)`.
+11. Tiers (`watch.ts`, `sameTiers` removed): `watch.test.ts > the usage watcher on tiers that change > publishes again with the new label, and publishes nothing for equal tiers`.
+12. Refresh cap (`refresh.ts`, `Math.min` removed): `refresh.test.ts > ... leaves the next refresh where it is for a longer period, and waits the new period after it`.
+13. Window re-read (`loop.ts`, the `askedChanged` run removed): `calendar/live.test.ts > ... reads every account at once through the new window, and publishes it` and `mail/live.test.ts > ... reads every account at once asking each listing for the new count`.
+14. Bounds (`MAX_CADENCE_MIN` 35791 changed to 99999): 10 failures across `settings.test.ts` and `context.test.ts`.
+15. Sink removal (`hub.remove(sink);` removed): `context.test.ts > ... takes the sink off the hub on close, after which a push changes nothing and logs nothing`.
+16. Words (`icsNoLink` assignment removed): `context.test.ts > ... hands the three sentences, each kept when the push lacks it, and says the lack once`.
+
+Two mutations of `src/server.ts` passed (finding Proof 1).
+
+## Verdicts
+
+Items of "What to build":
+- 1 holds.
+- 2 holds.
+- 3 holds.
+- 4 holds.
+- 5 holds.
+- 6 holds.
+- 7 holds.
+- 8 holds.
+- 9 holds. The two exceptions (`config.ts`, `help.test.ts`) are required by other items and reported.
+- 10 holds.
+- 11 holds.
+- 12 violated in one clause: ruling A's "a forwarded page never navigates" does not hold for a forwarded page open during a move (Behaviour 2). The rest holds as ruled (A, B, C).
+- 13 holds.
+- 14 holds.
+- 15 holds. `DESIGN.md:403` is made stale outside this item (Standards 1).
+- 16 holds.
+- 17 holds. The tests exist and fail without their behaviour, except the `src/server.ts` wiring (Proof 1).
+
+Cases:
+- 1 to 25: met. The mutation list above fails tests for cases 1, 2, 3, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17, 22, 23 and 24.
+  - Cases 18 and 21 are audits, as named.
+  - Case 25 is met by the existing `hooks.test.ts > does not push at all when notify.enabled is false`. The route file itself runs under no test.
+- 26: not applicable (removed).
+- 27: met. The terminal start is shown by the identity of `context.local` (`expect(run.context.local).toBe(held)`) and `target(...).hub`, not by a terminal start.
+- 28 to 31: met.
+- 32: met. The test reads the `claudeBin` option of the rebuilt refresh; the terminal-start half is main's per-request read (`chat.ts`), unchanged.
+- 33, 34: met.
+- 35: partial. Everything but the forwarded-page clause is met: the portfolio publishes the new address, a real server answers on the new port and not the old, the token is unchanged, and the page follows with path and hash. A forwarded page open during a move is unmet (Behaviour 2).
+- 36 to 40: met.
+- 41: met (audit).
+- 42: met (greps above).
+
+## Spec
+
+None, except as listed under Behaviour 2 (ruling A's forwarded clause) and the brief-versus-ruling conflicts the builder reported. There are no ADRs (`ls tools/oculus/docs` prints `diagrams` only), so none is contradicted.
+
+## Proof
+
+1. The `src/server.ts` changes are covered by no test.
+   - Place: `src/server.ts:44-60`, the hunk `const server = createServer(); const mover = serverMover(server); ... server.on('request', carryingHandler(handler, context)); ... server.on('close', () => { if (mover.moving()) return; ...`.
+   - Mutation A: delete `if (mover.moving()) return;`, then run `tests/server/root/process tests/server/root/vite-plugin.test.ts tests/server/root/dev-server.test.ts`. Result: `Tests  26 passed (26)`.
+   - Mutation B: replace `carryingHandler(handler, context)` with `(q,r)=>handler(q,r)`, then run `tests/server/root/process`. Result: `Tests  16 passed (16)`.
+   - The only test that reads the file is a source-text check, `tests/server/root/process/server-args.test.ts:135`: `expect(source).toContain('createServerContext(parsed.engine, {}, mover.move)')`. It is an audit the report does not label. The new line was fitted into an existing text assertion.
+   - Ruling C says the built entry moves as `npm run dev` does. Nothing exercises that entry. I did not run it (Declined).
+   - Failure scenario: a later edit that stops the built server from carrying the context into requests, or makes the built server's `close` handler close the context on a move, passes the suite.
+   - Verdict: the report must say this wiring is an audit (the brief's rule that a test passing without its behaviour is an audit, and the spec's source-text rule), or add a test.
+
+2. The "forwarded port" page test does not exercise a move.
+   - Place: `tests/state/client/config-seed.test.ts`, `stays on a forwarded port, whose own origin is not the address the server reports`. It pushes `http://127.0.0.1:8790` twice at a page on `127.0.0.1:9000`, so `followServer` never reaches `location.assign`. The test passes while the move case (Behaviour 2) is wrong.
+
+3. The `before()` push is not asserted as delivered.
+   - Place: `vite-plugin.test.ts`, `keeps a socket that was open, which carries the push that follows the move`. `heard` resolves only on the `after: true` push published after the move.
+   - The push published inside `before()` (the one the report says tells the page "over the sockets that are still open") is not asserted as received. `before` being called is covered by `answers on the new port and no longer on the old, and tells the page before it stops` (`listeningWhenTold`).
+   - Low. The socket surviving is proven.
+
+4. The report quotes no seen-failing run for the carried tests of cases 1 to 25. It says they "were not run on the unchanged tree: the unchanged tree is main, which has none of those files". My 16 mutations above supply seen-failing runs for 17 of these 25 cases; the other cases were not mutated. Low.
+
+## Standards
+
+1. A sentence made false or stale.
+   - `DESIGN.md:403`: "Accounts are read live. `config/local.yml` is watched (`server/root/watch/local.ts`), and after a write of the page's own and on a change on disk the server reads `calendars`, `mail`, `calendar_dir` and `mail_dir` again and hands them to the routes and the pollers..." The watch now reads every key (DESIGN.md:238, the new paragraph in the same file). The older sentence names four keys.
+   - `src/lib/server/accounts/connect/actions.ts:76-77`: `/** Read the account lists again and hand them to the routes and the pollers. */ reload: () => void;`. `reload` is `reloadLocal`, which reads the whole file and rebuilds watchers.
+   - Neither file is in the brief's path list for text of this kind; grepping for the old behaviour across `DESIGN.md`, `HELP.md`, `config`, `src` was the brief's duty (spec line 59).
+
+2. The key list is stated twice and nothing ties the copies.
+   - `src/lib/server/root/watch/local.ts:103-120` (`FIELDS`) and `BUILT_FROM` repeat the key names of `LOCAL_KEYS` (`src/lib/data/sources/config/local.ts:97-112`) and `LocalConfig`.
+   - A key added to `LOCAL_KEYS` and `LocalConfig` but not to `FIELDS` is silently never reloaded. No test iterates `LOCAL_KEYS` against `FIELDS`/`changedKeys`.
+   - Ruling Z183 plans `apps_dir` in `local.yml`.
+   - Verdict: add a test tying them, which is the cost of keeping Z166 ("no key takes a restart") true for the next key.
+
+3. Report line citations off by one. Judgment call 3 cites `context.ts:599-604` for `listeningOn`; it is `:600-605` (`grep -n "function listeningOn"`). Trivial.
+
+## Behaviour
+
+1. A followed page loses the workbench layout and the "This browser" settings.
+   - The layout and UI settings are in `localStorage`, which is per origin (scheme, host and port): `src/lib/state/workbench/layout/saved/storage.ts:20` `LAYOUT_KEY = 'oculus.layout.v1'`, loaded by `src/routes/+page.svelte:185-186` `loadUi(localStorage, window); loadLayout(localStorage, window);`.
+   - Hunk: `src/lib/state/client/socket.svelte.ts:233-241`, `const moved = addressAfterMove(location.href, host.address); if (moved !== null) location.assign(moved);`.
+   - After a port move the page goes to a new origin whose storage is empty. The open tabs, pages and the per-browser settings are not there; they remain under the old origin.
+   - The report's before-and-after table, `HELP.md:236` ("a changed `port` moves the server and the open page follows it") and `DESIGN.md:238` do not say this.
+   - Not looked at in a browser (Declined). It follows from reading the two files above.
+   - This is a consequence of the brief and ruling A that the brief did not name, so it is a premise for Axel, not a builder default. Options: keep the follow and state it; carry the layout across (a layout copy is a new shape); or tell the page the new address and let the reader go.
+
+2. A forwarded page open during a move is sent to a dead address.
+   - `addressAfterMove` replaces only the port of the page's URL. A page at `http://127.0.0.1:9000/` (an `ssh -L 9000:127.0.0.1:8790`) open when the server moves to 8791 gets `location.assign('http://127.0.0.1:8791/')`, a port that is not forwarded. For an https forward (`https://x-8790.app.github.dev`), `moved.port = '8791'` gives `https://x-8790.app.github.dev:8791/`.
+   - Ruling A says a forwarded page never navigates. The head comment at `socket.svelte.ts:16-21` says the same ("one reached through a forwarded port, whose own origin is not the address, stay where they are"). That only holds when the server has not moved.
+   - Fix that matches the ruling's intent: navigate only when the page's port equals the port of the address previously reported.
+   - Verdict: violated clause of item 12 and case 35 (above). The test named in Proof 2 does not catch it.
+
+3. A request in flight at a move is cut.
+   - Scratch run, a handler answering after 300 ms, `serverMover(...).move(...)` called at 50 ms: `SCRATCH C in-flight request -> ERR fetch failed`.
+   - `accounts.reload()` runs inside the request that adds or removes a calendar or mail account (`actions.ts:236`, `:268`). If the file also carries an unreloaded `port` change at that moment, the move cuts that request's own connection although the write succeeded.
+   - The brief says `closeAllConnections` ends open connections, but the report's "Limits that remain" does not name in-flight requests. Low.
+
+4. Not guarded, no trigger found.
+   - `reloadLocal` and `settlePort` run from a lodash debounce timer and `void settlePort()` with no try or catch.
+   - A throw from any watcher constructor inside `rebuild` would leave the old watcher closed and reach the process as an uncaught exception or unhandled rejection.
+   - I read the constructors the rebuild calls: `watch/bookmarks.ts:92-102`, `watch/portfolio.ts:235-306`, `watch/git.ts`, `watch/sessions.ts` catch watch failures internally, and `sessionFolders` does not throw. I found no concrete trigger, so I report it as a risk without a failure scenario.
+
+5. Both listens failing leaves no listener.
+   - If the listen on the new port fails after `before()` and the listen on the old port fails too (another process took it), `serverMover` returns the first reason with the server not listening, `moving` back to false, and the context alive. Not reproduced. Very rare.
+
+Examined without finding (each with its check):
+- Shutdown during the probe: with `server.close(cb)` called while `move` awaits the probe, the move later listens again (scratch B: `refusal null`, `listening after true`, `closeCb true`). The stop callback fires, so `done()` and `process.exit` proceed. No hang found; the second signal exits at once (`shutdown.ts`).
+- WebSockets and the `close` event (scratch A): a real WebSocket open across two moves; after the socket closes, the server's `close` handler fired outside a move 0 times.
+- Two moves in a row: ok (scratch A, and `takes the later port ...`).
+- `context.local` replaced in place: `Object.assign(local, next, { port: kept })` after deleting its keys keeps the object. Every reader found in `grep -rnE "server\.local|context\.local|\.local\b" src` reads it at the request. The watchers take values from `local` when built and are rebuilt on a changed key. The hook route reads `config` and `stopMessage` at each request. No reader holding a pre-edit copy found.
+- `allowedOrigin`/`sameOrigin` (`core/auth.ts`) check hostname or the request's own Host, not a startup port, so a moved server accepts writes on the new port.
+- Pollers compared before and after (read both): the `setInterval` to chained `setTimeout` in `refresh.ts` and `hpc/poll.ts` keeps `unref` on the refresh clock and the same first-run timing; the loop's `schedule`, `due` map and retry handling are unchanged apart from `pollMin` and `setPollMin`.
+
+## Declined to judge
+
+- The look: the status bar chip after a port change, and the page's actual navigation, the layout loss (Behaviour 1) and the forward case (Behaviour 2) in a browser. I read the code and ran tests only; Chrome checks belong to the orchestrator's look on TEST.
+- The built entry `src/server.ts` and the Vite dev and preview servers under a real move. Starting either would bind the port in `local.yml` (8790 is forbidden) or a server outside a test. I judged the files by reading and by the mutation runs in Proof 1.
+- Whether `closeAllConnections` and Vite's own HMR socket behave as the mover assumes under a live `npm run dev`. The tests use plain `http.Server` and `ws`.
+- The second half of case 32 (a terminal start runs the new `claude_bin`): the route reads `loadLocalOrDefaults` per request, as main does, and no test in this step runs it.
+- Brief-check findings from the first build (`agents/reviews/D35-brief-check.md`), which Z215 says is not re-run. I read it but did not re-verify each premise.
+- I did not run a second full checks.sh pass: machine load stayed at 20 to 23, and the first pass failed only on 5000 ms timeouts. The list is not claimed as passed.
+
+## Usage
+
+As far as I can count: about 295,000 tokens of context consumed (the session counter fell from 15,000,000 to 14,700,000), about 85 tool calls, about 55 minutes wall-clock. Machine runs: one checks.sh (8 min), one verify-2 run, one `test:checks`/`check`/`build`/`format`/`lint` sequence (about 10 min), two config-key runs, 16 mutation runs and one scratch-test file.
+
+## The earlier build, taken back out of main: Step D35 refuter report (on /Users/axelfaes/workspace/research-hub/.agents/worktrees/D35, base c44def15)
 
 I changed nothing. The only git I ran was `git diff c44def15` and `git status --short`. `npm run diagrams` rewrote files in the worktree as the brief told me to; `git status --short | wc -l` printed 66 before and after, and the file set is unchanged.
 
-## Verification (rerun by the reviewer)
+### Verification (rerun by the reviewer)
 
 ```
 $ cd .../D35/tools/oculus && PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
@@ -33,7 +227,7 @@ ASCII gate (the perl form of spec.md over src tests config): prints nothing.
 
 Commands from the builder's report that I did not rerun: its first run on "the unchanged tree" (a scratch copy I cannot build under the git restriction); see Proof 1.
 
-## Verdicts
+### Verdicts
 
 Items of the brief's "What to build":
 
@@ -80,19 +274,19 @@ Cases of the brief's "Cases":
 - 25: met (existing behaviour, kept): hook.test.ts and hooks.test.ts over `HookRequestTarget`; context.test.ts asserts the context hook target's keys.
 - 26: met for `target()` (routes/edit/config-key.test.ts), wallpaper, memories, project-files, agents and the portfolio chat start. The terminal and agents cases pass on the unchanged tree by the report's own statement (audits). The route lines that pass `locals.server.local` are covered by reading only; project-files.test.ts says so.
 
-## 1. Spec
+### 1. Spec
 
 - Spec 1. `src/lib/server/root/hooks.ts` `HookTarget` and `src/lib/server/root/context.ts:236-241`: "store, hub, limiter, logged, recordFor"; what is wrong: item 2 says the hook target "keeps `store`, `hub`, `limiter` and `logged` only"; the code (rightly) keeps `recordFor` too, and the test asserts `['hub','limiter','logged','recordFor','store']`. The report's "Anything in the brief that was wrong: Nothing found wrong" does not name this; failure scenario: none at runtime; the orchestrator reads the report as "exactly the brief's four fields". Verdict: item 2 holds in substance.
 - Spec 2. `src/lib/server/machine/usage/refresh.ts:362`: "const checked = requireRefreshSettings(next); if (closed) return;"; what is wrong: item 7 says every setter does nothing after close; this one throws first for settings its reader refuses. Failure scenario: a caller handing `set({ refreshMin: 0, ... })` to a closed watcher gets a throw instead of nothing. `liveSettings` never does this (it validates before calling), so there is no live path today. Verdict: item 7 violated (narrowly).
 - Spec 3. `src/lib/server/git/deposit-routes.ts:139` `local?: LocalConfig` and `src/lib/server/git/deposit.ts:147` `local?: LocalConfig`: item 9 says the Z177 modules take the start `LocalConfig` "as a required argument". Here it is optional, and `knownIds` swallows the resulting fault (`catch {}` at deposit-routes.ts:144) so a caller that names `engine` and `config` but not `local` silently gets only the published ids. Failure scenario: a project not yet in the last portfolio payload is answered 404 by `GET /api/deposit` with nothing logged. The one route caller passes `server.local`, so no live path today. Verdict: item 9 holds for the other modules; this is the exception.
 
-## 2. Proof
+### 2. Proof
 
 - Proof 1. Report, "First run on the unchanged tree": "17 files failed ... (output in `scratchpad/firstrun3.txt`)", per-file counts only, one failure line quoted ("Expected: 'read once when the server starts and used from that value'"). What is wrong: the ruling (D35-cases.md 1) and brief verify 7 say each changed or new test's failure on the unchanged tree is quoted in the report; the report points to scratchpad files instead, and builds the "unchanged tree" from the main checkout (not at the base c44def15: main's head is later). I could not rebuild an unchanged tree under the git restriction, so I did not reproduce the 132 failures. Decision resting on it: whether each new test fails without the change. Failure scenario: a new test that passes on the unchanged tree sits among the 132 counted without anyone being told which. Verdict: cases 1-17, 21-24 met only on the strength of reading the tests; not reproduced.
 - Proof 2. `src/lib/server/machine/hpc/poll.ts:121` (`publishQuota`), `:229` (`prewarmStep`), `:326` (days branch of `set`): `const began = asking;` and the `began !== asking` guards. What is wrong: spec.md says every asynchronous path is exercised in flight, after close and superseded. By reading `tests/server/machine/hpc/poll.test.ts`, no test changes the host or the window while a quota read or a prewarm is in flight, and none changes `days` while a poll is in flight. The only in-flight test ("drops the rows of a poll begun under the old host ...") gates the queue read; quota answers `NOTHING` and prewarm is unused. Taking the guard out of `publishQuota` or `prewarmStep` leaves every test green. Failure scenario: the old host's quota meters or its log paths land under the new host's name. Verdict: item 4 holds (code reads correct); case 4 met for the queue read only.
 - Proof 3. `tests/server/accounts/calendar/live.test.ts`, `mail/live.test.ts`, `connect/loop.test.ts`: no test changes the period or the window while a round is in flight. The two paths that matter are `loop.ts` `setPollMin` (`if (running === null) schedule()`) and the queued follow-up of `takeLoopSettings` (`void loop.run(true)` over a running round). Same spec.md rule. Failure scenario: a window change that arrives mid-round could leave a stale window until the next period with nothing failing. The code reads correct. Verdict: items 5 and 13 hold.
 
-## 3. Standards
+### 3. Standards
 
 - Standards 1. Stale comments the change makes false, found by grepping `local.yml`, "engine directory" and "the hub is" over the files the step changed:
   - `src/lib/server/git/deposit.ts:141`: "Which hub the project is read and written in; the engine's local.yml says when absent." The `local` option says now.
@@ -104,13 +298,13 @@ Cases of the brief's "Cases":
 - Standards 2. `DESIGN.md:244` ("`apps_dir` in `config/local.yml` ... resolved at the call as `calendar_dir` and `mail_dir` are and read through `loadLocal` as `appsDir`") and `DESIGN.md:266` ("It reads `local.yml` again when that changes, as accounts are, and follows a new `apps_dir`") against the new paragraph at `DESIGN.md:236` ("`local.yml` is read when the server starts and used from that value, except the account lists and folders of the calendar and the mail"). Apps are not in `src` yet (grep `appsDir|apps_dir` over `src` and `options.yml`: no hit), so this is planned text, but the file now says two things about when `local.yml` is read. The diff did not touch :244 and :266 and the brief did not name them. It is a clash between Z177 and the apps design, which only Axel or the orchestrator rules; I do not close it. Failure scenario: the apps step builds `apps_dir` to follow the file because DESIGN.md says so, and breaks Z177.
 - Standards 3. `tests/routes/sessions/hook.test.ts:1-5`: the head comment is left with a short third line ("// and a target the test owns, so nothing") before "// posts to a real server ...". A ragged hand-wrap in the sentence the step edited; the rule is one line per paragraph (hub CLAUDE.md "Writing docs"). No behavioural consequence.
 
-## 4. Behaviour
+### 4. Behaviour
 
 - Behaviour 1. `src/lib/server/accounts/connect/loop.ts:160` (`run` returns at once when `accounts.length === 0`) with `loop.ts:239` (`if (askedChanged) void loop.run(true); else if (period changed) publish()`): with no account configured, a changed window (or a window and a period changed together) neither reads nor publishes. The payload keeps the old `daysBack`/`daysAhead`/`pollMin`; `Calendar.svelte:249` draws the window from the payload (`calendar.footer`). Failure scenario: no calendars yet, the reader sets `calendar.days_back: 7` in Settings, and the Calendar footer shows the old window until an account is added. Not stated in the report. Verdict: item 5 holds; case 10 met (accounts present).
 - Behaviour 2. `poll.ts:326` (a days change does `asking += 1`) with `poll.ts:121` (`publishQuota` drops its result when `began !== asking`): a changed day window also drops a quota read in flight, though the quota does not depend on the window. The meters keep their last value until the next quota read (default 60 minutes). Low.
 - Behaviour 3. `src/lib/server/root/live-settings.ts:171` (`send(text) { onMessage(text); ... }`): the hand-off runs synchronously inside `Hub.#drain`'s `try` (`channels.ts`, `await sink.send(...)`). An exception from any setter is caught there, logged as `socket: send on channel config failed`, and `this.remove(sink)` unsubscribes live-settings for good, so every later push is ignored. No setter throws today (I read all six); this is a hazard of the shape, not a reproduced defect. Failure scenario: a future setter that throws silently ends live settings after one cryptic socket line.
 
-## Declined to judge
+### Declined to judge
 
 - The look on TEST and the interleaved A/B: the orchestrator's, not a read or a rerun.
 - Proof 1's first run: I cannot build an unchanged tree under the read-only git rule, and whether the main checkout's drift since c44def15 touched the restored files is not verified.
@@ -121,15 +315,15 @@ Cases of the brief's "Cases":
 
 Reviewer usage: left to the orchestrator.
 
-## Repair round 1, refuted
+### Repair round 1, refuted
 
 Everything below was produced by my own runs in this session. I changed nothing in the worktree. The only git I ran was `git diff c44def15` (with `--stat`, `--numstat`, `--name-only` and path arguments) and `git status --short`. `npm run diagrams` and `checks.sh` rewrote generated files in the worktree as the brief told me to; `git status --short | wc -l` printed 68 before and after (66 files at the first review plus `poll-fixture.ts` and `poll-live.test.ts`). `config/local.yml` was never opened, grepped or copied; every `find` and `rsync` excluded it. My scratch copies of the step's tree are removed.
 
-### Open at the top
+#### Open at the top
 
 One test of this round is red and the verify list cannot see it. `tests/server/git/deposit.test.ts` carries `// @module-tag slow`, so `npm test` and `npm run test:checks` leave it out. The case the round wrote for ruling 3 fails on the final tree (Proof 1). Everything else of the 12 rulings reproduces. Minor findings are listed under the four headings.
 
-### Verification (rerun by the reviewer, from tools/oculus in the worktree)
+#### Verification (rerun by the reviewer, from tools/oculus in the worktree)
 
 ```
 $ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
@@ -204,7 +398,7 @@ Slow-tagged files that exercise changed modules (not in the verify list), run on
 ```
 The same file run in the worktree: `Tests 1 failed | 31 passed (32)`, `Received: "Cannot read properties of undefined (reading 'hub')"`, at `tests/server/git/deposit.test.ts:285`. Source and test were byte-identical between worktree and copy (`cmp`).
 
-### Verdicts, for the whole diff since c44def15
+#### Verdicts, for the whole diff since c44def15
 
 Items of the brief's "What to build":
 
@@ -230,7 +424,7 @@ Cases of the brief's "Cases":
 - 20: met for what a test proves here (the five groups log one line each and keep their settings); the clause "the parse error is a finding on the config channel (existing)" is not exercised by this step's tests, see Declined.
 - 26: met for `target()`, wallpaper, memories, project-files and the portfolio chat start; the terminal and agents cases pass on the unchanged tree and are named as audits by the report; the route lines that pass `locals.server.local` are covered by reading only.
 
-### Closure of the 12 rulings
+#### Closure of the 12 rulings
 
 1. Spec 1, hook target: closed (report line 108 names `recordFor` and `hooks.ts:273`; grep confirms line 273).
 2. Spec 2, set after close: closed; mutation fails the new test.
@@ -247,38 +441,38 @@ Cases of the brief's "Cases":
 
 No closure removed a check in place of a fix. No fix reached past its finding, with the three moves below judged separately.
 
-### Judged: the files moved beyond the round's path list
+#### Judged: the files moved beyond the round's path list
 
 - `tests/server/machine/hpc/poll-fixture.ts` and `poll-live.test.ts`: the three new tests would have put `poll.test.ts` past the 900-line cap of `tests/checks/tree/size.test.ts` (453 + 441 + 116 lines now). The helpers removed from `poll.test.ts` appear in `poll-fixture.ts` line for line (compared; the only difference is the `export` keyword), the 20 pre-existing cases still pass (20 passed), the `it` import from `fixtures/scratch.ts` is what `tests/checks/tree/scratch.test.ts` requires of a file reaching `recording`. The folder holds 7 items. This is the widened path list the lazy-option rule asks for, not a loosened check. Accepted.
 - `tests/server/root/context-fixture.ts` (`driver`, `inertConfig`, `inertDependencies` moved out of `context.test.ts`, now 813 lines): the removed lines are the ones added to the fixture, and `inertConfig` gained a `text` block for the three sentences. Accepted; its head comment is now incomplete (Standards 1).
 - `usage-readers.test.ts` (round 0): the removed lines of `refresh.test.ts` are the added lines of the new file apart from imports and closing braces. Accepted.
 
-### Judged: the two mutations the builder says its tests cannot catch
+#### Judged: the two mutations the builder says its tests cannot catch
 
 - Dropping `if (running === null)` from `setPollMin`: reproduced green (195 passed). With the guard out the timer armed during a round fires at once and queues a round that finds no account due, publishes nothing and reads nothing, so no result differs. It is an efficiency guard; accepted without a test.
 - `queued ??=` to `queued =`: not reproduced; see Proof 3.
 
-### 1. Spec
+#### 1. Spec
 
 none.
 
-### 2. Proof
+#### 2. Proof
 
 - Proof 1. `tests/server/git/deposit.test.ts:281-288` with `src/lib/server/git/deposit.ts:193-199`: `if (options.engine === undefined) { throw new Error('a deposit needs either a write target or the engine directory, its configuration and the machine values'); } return target(options.engine, options.config, options.local);`. What is wrong: the test the round added for ruling 3 calls `state('alpha', { engine, mirrors })` and `{ engine, config, mirrors }` and expects the fault message `the engine directory, its configuration and the machine values`; `hubTarget` now refuses only a missing `engine` (the round dropped `|| options.config === undefined`), so both calls reach `target(engine, undefined, undefined)` and throw `Cannot read properties of undefined (reading 'hub')`. The file is slow-tagged and is not in `npm test` or `test:checks`, so `checks: 7 commands passed` does not cover it, and the round's report quotes no run of it on the final tree. The test's single `// @ts-expect-error` is satisfied by the first union member alone (the missing `config`), so it does not show that `local` is required; making `local` optional in `knownIds`' second overload (`deposit-routes.ts`, the `local: LocalConfig` parameter) leaves `npm run check` at 0 errors, so the required `local` of `knownIds`, which ruling 3 names (`deposit-routes.ts:139`), has no guard. Failure scenario: a caller of `state`/`deposit` that names `engine` without `config` or `local` (a cast, or JS) gets a TypeError from `target`, where the plain fault was said before the round and the test says it should be; and the next edit that makes `knownIds`' `local` optional passes every check. Verdict: item 13 violated in this respect; item 9 holds in the types.
 - Proof 2. `src/lib/server/machine/hpc/poll.ts:202`: `if (stopped() || began !== asking) return;` in the `catch` of `poll`. What is wrong: removing the guard leaves all 70 tests of `tests/server/machine/hpc` green, so no test exercises a poll that fails after the host or window changed. Failure scenario: the old host is unreachable (a poll waits out its 40 s timeout), the reader corrects `slurm.host`, and when the old poll rejects it publishes `unreachable` with the old host's error hint under the new host's name before the queued follow-up poll answers. Verdict: item 4 holds; spec.md "Every asynchronous path is exercised in flight" is short for this branch.
 - Proof 3. Report "Repair round 1" item 7: "Two other changes to the loop leave every test green ... `queued ??=` to `queued =`". What is wrong: `queued ??= running` changed to `queued = running` in `loop.ts` fails `tests/server/accounts/calendar/poll.test.ts` "runs one round at a time and gives every refresh meanwhile the one follow-up round" (`expected Promise{…} to be Promise{…}`); the builder ran `loop.test.ts` only. The other half (the `running === null` guard) reproduces. Failure scenario: the orchestrator reads the report as two uncovered lines and books a gap that does not exist. Verdict: none (a claim, no decision rests on it beyond the Not verified line).
 - Proof 4. `tests/server/root/context.test.ts:769-793`: only the Live HPC setter throws. What is wrong: the hand-offs of the calendar, mail, refresh, tiers and the two sentence groups are inside their `attempt` by reading (`live-settings.ts:107-158`), but moving any of them out of its `attempt` leaves every test green (I ran the slurm one; the other five were not mutated). Failure scenario: a later edit moves one hand-off out of its `attempt` and a throwing calendar setter unsubscribes live settings again. Verdict: item 13 holds for the ruling's text ("a test with a setter that throws"); reported because ruling 9 says "each group".
 
-### 3. Standards
+#### 3. Standards
 
 - Standards 1. `tests/server/root/context-fixture.ts:1-2`: "Builds a complete inert ServerContext for route tests without opening a watcher, running tmux, reading the real hub, or writing outside a test's own fixture." What is wrong: the file now also exports `driver`, `inertConfig` and `inertDependencies`, which build the dependencies of `createServerContext` for `context.test.ts`; the head comment does not say so (spec.md: a sentence the change makes false is a defect of the change). Failure scenario: a maintainer looking for the inert dependencies of `createServerContext` reads the head and does not look in this file, and writes a second copy.
 - Standards 2. `tests/server/root/context.test.ts:707`: "hands nothing on for a push whose values equal the ones in force (an audit: nothing re-reads on the old code)". What is wrong: "the old code" is a reference to an earlier state of the tree, which spec.md's "No history in code or comments" bars. Failure scenario: in a year no reader knows which code was old; the word "audit" alone says what the brief asked for.
 
-### 4. Behaviour
+#### 4. Behaviour
 
 - Behaviour 1. `src/lib/server/machine/hpc/poll.ts:237-239` with `:329-331`: `for (const id of todo) asked.add(id); const found = await prewarmLogs(...); if (stopped() || began !== asking) return;` and the days branch of `set` (`asking += 1`). What is wrong: a days change drops a prewarm in flight but leaves its ids in `asked`, so the next prewarm filters them out (`!asked.has(job.id)`) and never asks about them again. A host change clears `asked`; a days change does not. I ran a probe on the scratch copy: prewarm gated, `watcher.set({ ...options, days: 14 })`, listing settled, one minute advanced: `PROBE before 2 after 2 paths []` (no further prewarm call, no path). Failure scenario: the reader changes `slurm.days` while the first prewarm after start is running; the finished jobs of that prewarm keep no pre-resolved log path, and the first press on each job's log pays the full resolution cost. Not stated in the report. Verdict: item 4 holds; case 8 and the days cases are met.
 
-### Declined to judge
+#### Declined to judge
 
 - The look on TEST and the interleaved A/B against the staged base binaries: the orchestrator's.
 - Case 20's clause "the parse error is a finding on the config channel (existing)": no test of this step exercises it and I did not run it.

@@ -773,3 +773,12 @@ The question: the paths the builder found it needs outside the brief's list, and
 - Not chosen: (b) leave `type-scale.test.ts` failing or the card unbounded, which leaves the step red or a slide overflowing.
 
 Where it is built: M4. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z239 (2026-10-02 05:20, step D35)
+
+The question: a page that follows the server to its new port lands on a new origin, whose `localStorage` holds none of the workbench layout and none of the "This browser" settings (D35's review, Behaviour 1).
+
+- Chosen (b): the page carries them across. Before it follows, the page writes the layout and the UI settings it holds into `window.name`; the page loaded at the new address reads them from `window.name` before `loadUi` and `loadLayout`, writes them into its own `localStorage`, and clears `window.name`. Nothing goes to the server, and no new shape is seen by the reader: the workbench comes back as it was.
+- Not chosen: (a) follow and state the loss, which is the lazy option and drops the reader's open tabs and pages on every port change; (c) tell the page the new address and leave the reader to go, which loses the same state when the reader goes.
+
+Where it is built: D35, repair round 1. Booked in the state file's closed log and `plan.md` Rulings.

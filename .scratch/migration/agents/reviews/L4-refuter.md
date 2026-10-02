@@ -134,3 +134,159 @@ Cases of the brief's "Cases":
 - The ruling between fractions of the window and of the area (finding 1.1) and the choice for `FloatLayer`'s dock/free remount (4.2): the orchestrator's and Axel's, not a read's.
 
 Reviewer usage: not reported by the runner to me; about 60 tool uses, about 55 minutes of wall time (two full `checks.sh` runs of about 11 minutes each).
+
+## Repair round 1, refuted
+
+Step L4, worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/L4`, base 3a246eca. Paths are relative to `tools/oculus` unless stated. My scratch files are in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/l4r1/`. The worktree is unchanged by me: `git diff 3a246eca | shasum` printed `aabd88bf...` and `git status --short | shasum` printed `78d6a7a2...` before and after every command.
+
+### Verification (rerun by me)
+
+The list is NOT a pass. `checks.sh` stopped at its first command with 5 timeouts of 5000 ms. The other six commands passed when run one by one.
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
+> node utils/diagrams/diagrams.mjs      (EXIT 0; the diff and status checksums above were identical before and after)
+
+$ sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md      (output in l4r1/checks1.out; the machine load average was 18 to 23 throughout)
+$ npm test
+ FAIL  |unit| tests/server/edit/config-key.test.ts > a value the option does not take > refuses what is not a finite number for a number option
+ FAIL  |unit| tests/server/edit/config-key.test.ts > a file that does not hold the key > refuses a key that is absent, empty, null, an alias, anchored, tagged or a block scalar
+ FAIL  |unit| tests/server/git/autofetch.test.ts > a real fetch through the module > moves origin/main and prunes a branch deleted on the remote
+ FAIL  |unit| tests/server/git/autofetch.test.ts > a real fetch through the module > fetches a clone whose path holds a space
+ FAIL  |unit| tests/server/git/autofetch.test.ts > the environment of an unattended fetch > appends BatchMode to the repository command and asks for no password
+ (each: Error: Test timed out in 5000ms.)
+ Test Files  2 failed | 422 passed | 22 skipped (446)
+      Tests  5 failed | 11158 passed | 618 skipped (11781)
+   Duration  443.24s
+checks: failed with exit 1: npm test
+```
+
+The two failing files rerun alone (neither is in the step's diff, and `git diff 3a246eca --stat -- tests/server` printed nothing):
+
+```
+$ npx vitest run tests/server/edit/config-key.test.ts --reporter=dot      Test Files  1 passed (1)   Tests  35 passed (35)
+$ npx vitest run tests/server/git/autofetch.test.ts --reporter=dot        Test Files  1 passed (1)   Tests  44 passed (44)
+```
+
+A combined rerun of both files timed out again on two autofetch cases (load). Each file alone passes, so I name this as a load timeout. It is not counted as a pass of the list.
+
+The remaining six commands, one by one:
+
+```
+$ npm run test:checks      Test Files  29 passed | 2 skipped (31)    Tests  442 passed | 9 skipped (451)
+$ npm run check            1790908644866 COMPLETED 2960 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build            exit 0; "built in 19.95s", "built in 45.63s", "done"
+$ npm run format:check     All matched files use Prettier code style!
+$ npm run lint             exit 0, no output
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests      exit 0, no output
+```
+
+Also run:
+- The spec's ASCII perl gate over `src tests config` (`bin` does not exist): no output.
+- `sh utils/folder-check.sh` and `sh utils/size-check.sh`: no output, exit 0 each.
+
+The builder's pass line, `checks: 7 commands passed`, was not seen in any of its seven round runs or in mine. The orchestrator's landing run on a quieter machine is the run that can print it.
+
+### Evidence reruns (taken out on a scratch copy `l4r1/copy`, with `node_modules` symlinked; the worktree was never edited)
+
+Every claim of the round's table reproduces:
+
+| Claim | My run | Result |
+|---|---|---|
+| Case 29 `File.svelte` clause (ruling 3): the keep rule replaced by `() => null` in `layout.svelte.ts` | `kept-panes.test.ts -t "file tab closes itself"` | `AssertionError: expected [ [ 'f' ] ] to deeply equal [ [ 'f' ], [] ]`, `Tests 1 failed \| 21 skipped (22)`. With the rule back, `floatlayer`/store files pass. This is a store-level test, since `File.svelte:148` only calls the store's `closeInstance`. |
+| `stackOf` returns `order` as it is, `raised` unfiltered, `dragDepth` returns 10 | `float-geometry.test.ts` | the 5 named cases fail, `Tests 5 failed \| 21 passed (26)` |
+| `dragDepth` alone returns 10 | `float-geometry.test.ts` | `puts the drag layer above the front of 7 free floats` and `... 20 free floats` fail, `Tests 2 failed \| 24 passed (26)`. The 1-float case passes with the old constant, as it should. |
+| `FloatLayer.svelte` template replaced by separate `{#each}` blocks for docked and free floats (`class="dock {edge}"`, free pane outside a `.fill`) | `floatlayer.test.ts` | 3 failed, `Tests 3 failed \| 10 passed (13)` |
+| `style="z-index: {depth}"` taken off the layer in `DropLayer.svelte` | `floatlayer.test.ts` | `expected null to be 6`, `Tests 2 failed \| 11 passed (13)`. With it back: 13 passed. |
+
+Other quoted greps:
+- `grep -rn fitFloats src tests DESIGN.md HELP.md | wc -l` prints 0.
+- `grep -n "0\.3\|0\.4" src/lib/shell/panes/floats/float-geometry.ts` prints nothing.
+- `START_W` and `START_H` are exported at `layout/open/floats.ts:28-29` and `layout/index.ts` and used at `float-geometry.ts:149-150`.
+- `serialiseFloatless` is at `saved.ts:444`, `needsFloats` at `saved.ts:456`, `pendingFloats` at `layout.svelte.ts:255`, `FLOATLESS_VERSION` at `model.ts:127`.
+
+Not reproduced: the builder's round 1 to 7 individual full-list runs, and the first-run counts of the first report. I did not rerun them.
+
+### Verdicts, whole diff since the base
+
+Items of "What to build":
+- 1: holds.
+- 2: holds.
+- 3: holds.
+- 4: holds. The version-4 envelope mechanism is now named at `DESIGN.md:370` and in the round (ruling 2), and I read the flag as per store instance: `let pendingFloats` is inside the store factory at `layout.svelte.ts:255`.
+- 5: holds. The first round's two violations are closed: the window reading as ruled, and the drag layer's depth (see "Evidence reruns"). Behaviour finding 4.1 below concerns the stacking of a new float.
+- 6: holds, read against Z184 (5), as in the first review.
+- 7: holds.
+- 8: holds. Kept rule, `landing.ts` order, and the `*.keeps` pane text are unchanged by the round, and the 22 kept-panes cases pass in the `npm test` run.
+- 9: holds. `DESIGN.md:212` and `HELP.md:40` carry the fractions-of-the-window reading and no longer mention a resize fit.
+
+Cases:
+- 1 to 10: met.
+- 11 (`fitFloats`): not applicable by ruling 6. The property it guarded, a float never leaves the window, holds by construction: `floatStyle` writes `vw`/`vh` fractions, and every writer of a place goes through `placeFits` (parse `saved.ts`, `placeFloat`, `parseFloats`) or clamps (`floatTab`, `centred`). I read this; no automated check names it beyond the `placeFloat` cases.
+- 12 to 20: met.
+- 21: met for the strip, the pane and the border markup (`floatlayer.test.ts:108`). Two clauses are met by my reading only. `<FloatLayer>` is at `Workbench.svelte:323`, after `{/key}` at line 319 and outside the keyed block. `--float-border: var(--c-orange)` is declared at `tokens.css:215`. No test covers either, as ruling 5 intends; both depend on the landing's look.
+- 22 to 31: met.
+- 32: not applicable by ruling 6 (no listener, no function), reason as for case 11.
+- 33 to 36: met.
+- 37: met, except the 5 load timeouts named above.
+
+### 1. Spec
+
+1.1 `agents/reviews/L4-report.md:133-137` ("Anything wrong in the brief") does not hold the item 5 versus item 1 contradiction that ruling 1 told the report to name there. It is named only in the round section (`:159`). The round section says it supersedes the first report, but these sentences remain and are false at the end state:
+- `:44` (DONE row 5): "kept inside the window on resize", with counts "floatlayer.test.ts 11 / 11; float-geometry.test.ts 18 / 18". The files now hold 13 and 26 cases, and there is no resize behaviour.
+- `:119`: "docked or freed, its views remount once".
+- `:142`: "A float docked or freed remounts its views once, because it moves between two places in the markup."
+- `:130` (Judgment call 6): "`File.svelte` and `Doc.svelte` needed no change". The round (`:174`) corrects it for `Doc.svelte`.
+
+Failure scenario: the orchestrator reads the top of the report, books the remount limitation or the resize fit as live, or lands believing `Doc.svelte` is untouched. Verdict: rulings 1 and 4 done in the round section, not in the places the rulings name.
+
+1.2 Ruling 4's list omits `tests/shell/keys/workbench-keys.test.ts` (changed, outside the brief's test path list; it serves case 33). Minor; the first report's changed-tests table may cover it. Not verified.
+
+### 2. Proof
+
+2.1 `tests/shell/panes/floatlayer.test.ts:166-194`: "draws a docked and a free float as one element with the pane in one fill" and its two siblings. They are claimed to fail without ruling 11's fix, and they do (my rerun above). What they assert is markup shape: the class string `float dock right`, `float free`, `class="fill"` before `data-pane-page`. A template with two separate `{#each}` blocks that emits the same class strings and the same `.fill` would pass all three while remounting `PaneView` on Dock and Float. They prove the template shape, not "no remount". The round states this plainly ("not verified by a test", `L4-report.md:189`), so the claim is not overstated. Failure scenario: a later edit splits the each-block again while keeping the class strings, and the suite stays green. Verdict: none against the round; the guard is the look on Dock and Float of a Terminal tab.
+
+2.2 No test of the removed source-text assertions remains (ruling 5). I judge the removal correct, not a check dropped to close a finding. The three asserted facts (FloatLayer outside the key, `--float-border` on `body`, a resize listener) were source scans; `spec.md` says such an assertion "proves nothing and is reported as an audit". The `still draws both floats after a switch` test renders fresh each call and could not detect a mount inside the key either. I read the first two facts true (see case 21); the third no longer exists.
+
+2.3 Removal of `fitFloats` and `fitted` (ruling 6) is not a guard removed in place of a fix. `grep` shows no caller left. `placeFits` stays and is covered through `placeFloat` (`floats.test.ts:259` `it.each`, `:273`) and the dropped-float cases of `layout-floats.test.ts`. The removed store test (`floats-store.test.ts:483-501`) gave a float that already fit and asserted nothing moved, so it could not fail on a missing fit.
+
+### 3. Standards
+
+None. Checked: ASCII gate, folder and size checks, `npm run format:check`, `lint`, and the `comment-width` check inside `test:checks` all pass. `float-geometry.ts`, `FloatLayer.svelte`, `float-gesture.ts` and `floats.ts` open with a layer comment, and none carries history (`grep` for package ids and "previously/used to" hit only "no longer exists" in two non-history sentences). `Hpc.svelte:2-3` and `Usage.svelte:2-3` are now true (`grep -rniE "live hpc|focus.*(hpc|usage)"` shows no other stale statement).
+
+The `Usage.svelte` change beside ruling 7 is the same defect as the one ruling 7 names: a head comment the diff makes false by moving the pane out of the Focus group (the old text said "closes the Focus page's group"). It is not beyond the ruling. The round discloses it.
+
+### 4. Behaviour
+
+4.1 `src/lib/shell/panes/floats/float-geometry.ts:167-172` (`stackOf`) and `FloatLayer.svelte:66,71`: "`return [...free.filter((id) => !known.has(id)), ...kept];`" and "`z-index: ${depthOf(stack, float.id)}`". A free float that `order` has not met is placed behind every float that has been pressed. I ran, on the scratch copy:
+
+```
+stackOf(raised([], ['A'], 'A'), ['A', 'N'])  ->  ["N","A"]   depthOf: A 6, N 5
+```
+
+Every float made by Float, Return-less floating, or Alt-drag starts at the same centred 0.3 by 0.4 (`centred()` / `floatTab` at the pointer). Failure scenario: free float A is pressed once. The reader then uses Float on a page pane. The new float N is drawn at z 5 under A at z 6 in the same place and size, so Float appears to do nothing until A is moved or N is pressed. Before ruling 10, a new float had `indexOf` -1 clamped to 0, the same z as a float pressed first, and sat above it by DOM order. Ruling 10(a) changed this for the one-pressed-float case. The round's "Before and after" does not state it. Verdict: item 5, a visible behaviour change of the round not reported. The fix is one rule in `stackOf`/`raised`: a float the order has not met goes on top, or `FloatLayer` calls `raise(id)` when a float first appears.
+
+4.2 Ruling 11, read (no run, no DOM here), answers the three questions:
+- Remount: `FloatLayer.svelte:122-147` is one `{#each floats() as float (float.id)}`. Dock/Float/edge changes go through `replacing` (`floats.ts:84-89`), which keeps the id and the array position, so the key block persists. The `{#if place.kind === 'dock'}` Sash sits before `.fill` and its toggle does not touch `.fill` or `PaneView`. `dockFloat` onto a taken edge removes the moved float and merges its tabs into the holder, which remounts the moved views by design (they change pane).
+- Gesture: `{@attach place.kind === 'free' ? gesture(...) : null}` (`:133`). Svelte 5.57.1's `attach` (`node_modules/svelte/src/internal/client/dom/elements/attachments.js`) destroys the previous branch when the getter returns a different value, so `target.unset()` runs when the float docks, and a new attachment is set up when it is freed. The getter reads `float` and `place`, so it also re-attaches whenever the float object is replaced (a tab opened in it, an active-tab change) and after each gesture's `placeFloat`. If the float object were replaced while a drag is running, `unset()` would end the gesture without `finish()` and `draft` would stay set until the next gesture. I found nothing that replaces a float object mid-gesture, but I did not run it. Not verified.
+- Stacking: `depthOf` = `BASE_DEPTH + rank`, `dragDepth(count)` = `BASE_DEPTH + count`, and `DropLayer.svelte:39-40,73` counts the free floats from the same store list as `FloatLayer`'s `free`. For 1, 7 and 20 floats the front float is 5, 11 and 24, and the drag layer is 6, 12 and 25. This is consistent, and tested at `float-geometry.test.ts:204`. With no free floats the layer is now 5 instead of 10. Every other `z-index` in `src` that sits between 5 and 10 is none (nearest are 1, 2, 40, 55 and up), so no layer changes order.
+
+### Declined to judge
+
+- The look and every pointer gesture, including whether Dock and Float keep a Terminal tab's scrollback: no DOM or browser here. Ruling 11 is read from the template and Svelte's `attach` source, not run.
+- Whether a free float over the rail and status bar (fixed, viewport units) looks acceptable: the look.
+- The builder's seven full-list runs and the first report's first-run counts: not rerun.
+- The Z95 (2) edge-drop question and `transferInstance` into a float: unchanged by the round and left as in the first review.
+
+### Usage
+
+About 65 tool uses by me, including one full `checks.sh` (443 s), `test:checks` (128 s) and a build. Token count is not reported to me; I would put it at 200,000 to 250,000 across the reads, the reruns and the scratch probes.
+
+## Closed
+
+Run over round 1 (never sent to the builder; each closed at landing):
+- Spec 1.1, sentences of the first report false at the end state (`L4-report.md:44`, `:119`, `:130`, `:142`): the report's "Repair round 1" section supersedes them, and the booking and the landing report state the end state from it: no resize fit, `floatlayer.test.ts` 13 and `float-geometry.test.ts` 26 cases, Dock and Float keep one element, `Doc.svelte` changed.
+- Spec 1.2, `tests/shell/keys/workbench-keys.test.ts` outside the brief's test list: the first report names it (`L4-report.md:27` and `:103`, the two float key cases of case 33); no change.
+- Proof 2.1, 2.2, 2.3: none against the round; the look on Dock and Float of a Terminal tab stands for 2.1.
+- Behaviour 4.1, a new free float drawn under a float already pressed: fixed at landing on main. `stackOf` puts the free floats `order` has not met in front of the pressed ones, so a float just made is on top; the `float-geometry.test.ts` cases that fix the old order are rewritten and a case for a float made after a press is added, each quoted red against the old `stackOf`.
+- Behaviour 4.2, the gesture attachment re-made when a float object is replaced: nothing replaces a float object while a drag runs (the reviewer's read); no change.
