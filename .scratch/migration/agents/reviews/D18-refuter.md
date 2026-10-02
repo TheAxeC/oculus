@@ -338,5 +338,6 @@ Every finding of the run over repair round 1 is fixed at landing on main, each s
 - R3: fixed. `state/system/machine/processes.ts` re-exports only `ProcessRow`.
 - R4: fixed. The `sessions.ts:3-6` comment rewrapped as one paragraph at 100 columns.
 - R5: fixed. `DESIGN.md`'s failure list adds "prints more than 32 MB, fails while its output is read".
+- The look at landing, on TEST in the dark theme (the light theme was looked at on 2026-10-02, `owed-looks.md`): the Processes view's header line, the group rows and their rows with PID, Parent, User and Start, the "Read at" time, sorting by a column, the failure line when `ps` cannot be read (not provoked on the real machine; read from the view's state if no failure occurs), and the view inside the System page. The Stop control is never clicked.
 
 The first run's findings were closed by the builder in repair round 1, as "The rulings of the round" above records.
