@@ -5,6 +5,7 @@ In flight:
 - D18 (the Processes view), building.
 - Q88c (the Source Control rows' and the pane strip's new right-click capabilities, Z240), builder at ordo-high; Z241 ruled (b): Delete Branch's force retry goes into its repair round or its landing.
 
+- M3 (the resources registry), building.
 
 Three queued steps are kept prepared ahead (Z185).
 
@@ -24,7 +25,6 @@ Queued, in order (25 steps):
 - D36 (linters on save, ChkTeX, ruff, eslint and shellcheck, into the editor's marks and D33's Problems view), once D33 has landed (Z196).
 - D20 (an agent from a task or in a new worktree), once D17 has landed (Z195: a seeded agent runs after the approval D17's store keeps).
 - A1 and A3 (review with feedback; scheduled runs, once D17 has landed).
-- M3 (the resources registry), next for /spec (D24 has landed): both write `data/model/model-entities.ts`, `data/snapshot/normalise.ts`, the validation and the snapshot fixtures of `grep -rlE "organisations: \{" tests`. Its /spec carries the cockpit: `tools/cockpit/src/cockpit/page.py:226` uses a manifest's `compute` as a dict key, which a list breaks, and 17 manifests hold `compute: hpc` or `local`.
 - Q72 (the architecture re-read).
 - E4 (the apps built), after Q72.
 - R2 (release readiness).

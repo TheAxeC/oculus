@@ -70,6 +70,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with X3a, `server/files/fs/ops.ts` (Q88c the word `export` on two functions; X3a other functions), `server/files/fs.ts` (one import line), `routes/+page.svelte` (one listener), `DESIGN.md:128` (both add sentences to one paragraph, combined at landing), `options.yml` (different blocks); with D24, `rail-badges.svelte.ts` (each its own badge function and input), `options.yml` (511 against the `appearance.yml:` block), `DESIGN.md` (after 404 against 128, 359, 395); with D35, `options.yml` (different blocks), `HELP.md` (216 and 236 against 44, 113, 171-213, 222). Each merge is additive in separate hunks or one paragraph combined by hand.
   landing: not-started
   round: 0
+- step: M3
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 09:03)
+  session_id: a4af0ef105f4b6e97 (launched 2026-10-02 09:02 local)
+  worktree: .agents/worktrees/M3
+  base: f3bf2b6d
+  launched: 2026-10-02 09:02 local
+  report: agents/reviews/M3-report.md
+  brief_check: agents/reviews/M3-brief-check.md; claude-sonnet-5-5, 309,063 tokens, 105 tool uses, 18.5 min
+  shared_paths: with D18, `data/model/index.ts` (D18 a channel type, M3 the entities' `resources`), `data/sources/config/settings.ts` (separate readers), `config/catalogs/options.yml` and `config/behavior.yml` (separate blocks), `server/root/live-settings.ts` (D18 `processes` in `LiveStart` and `LiveTargets`, M3 the HPC host and `resources`), `server/root/context.ts` (separate starts; M3 adds at most six lines, so the second landing keeps it under 900), `config/text/views/system/hpc.yml` (D18 moves it, M3 adds lines; carried into the moved file at the second landing), `DESIGN.md`, `HELP.md` and the config and context tests (separate lines); with X3a, `settings.ts`, `options.yml`, `behavior.yml`, `config-folder.test.ts`, `DESIGN.md`, `HELP.md` (separate blocks and lines); with Q88c, `options.yml`, `config-folder.test.ts`, `DESIGN.md`, `HELP.md` (separate blocks and lines); `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -761,6 +774,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-02 09:03. M3 (the resources registry) prepared at f3bf2b6d, its brief check's findings closed in the brief, builder a4af0ef105f4b6e97 launched on claude-sonnet-5-5; Z241 ruled (b) by Axel, for Q88c's repair round or landing; A1 being prepared (brief written, its brief check running).
 - 2026-10-02 08:23. D24 landed (the Personal board), a conflict in `server/root/context.ts` and the diagrams resolved, fixes at landing: the four findings of the run over round 1, one test call given L4's floats argument, the floats tests moved out of an over-size file; the six repositories' manifests committed in their repositories; the look on TEST taken (nine cards, no console error); `checks: 7 commands passed` on the third run. D24 is the 15th landing with a Sonnet reviewer, so the three-way comparison is ready to be asked for. X3a's review is in (14 findings). D18's brief check is in. In flight: X3a (repair round 1 next), Q88c (building). Next: send X3a's round 1; close D18's brief-check findings and launch its builder; /spec M3. Open items: Z241.
 - 2026-10-02 07:50. D35 landed (every configuration file live, the server's port move and the page following it), a diagram conflict resolved on D35's side, six fixes at landing (the six findings of the run over round 1), the look on TEST taken, `checks: 7 commands passed` on main. D24's run over round 1 is in (4 findings, closed at its landing). In flight: X3a and Q88c (building), D24 (ready to land). Next: /land D24; /spec D32 and D18; /spec M3 after D24. Open items: Z241.
 - 2026-10-02 06:40. M4 landed (the Present view's equations as LaTeX), a conflict resolved on M4's side, three fixes at landing (two head comments, the formula fitted to its card after the look found all 13 cut off), `checks: 7 commands passed` on the fourth run. D35's repair round 1 is in. In flight: D35 (round review next), D24 (repair round 1), X3a (building). Next: /refute D35 over round 1; /spec Q88c. Open items: none.
