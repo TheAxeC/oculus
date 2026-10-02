@@ -7,7 +7,6 @@ Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/
 ## To take
 
 - M3: the resource tags on cards (This Mac and the others), the Compute facet, the manifest editor's chips field, the Live HPC view with `slurm.resource`.
-- Q66: look items 16, 17, 19 and the Changes and Graph resets on a session switch.
 - Q67: whether the console links of `account-setup.yml` open the pages they name.
 - Q78: a project document's fenced block over a wallpaper; the doc view and the manual.
 - Q79c: the Memories add press, the stop control's focus, the grid's selection colour, the Live HPC jobs table and log.
@@ -88,6 +87,14 @@ Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/
   - M4-1: every typeset formula is unreadable: the card's background is #f7f8fa and the formula takes the deck's text colour #e7ecf3 (`.eqcard` in `tools/present/assets/css/deck.css` sets a background and no colour), so the formula is near-white on near-white. Seen on the HCCNet slide's positional-encoding formula.
   - M4-2: in a 230 px pane the equation card grows to its formula's width (605 px for the HCCNet formula) and is cut at the frame's edge with no scroll, so `.eqcard mjx-container{max-width:100%;overflow-x:auto}` never acts; the PNG it replaced shrank to the card.
   - M4-3: Restore panes after Maximise pane reloaded the document frame, so the deck went back from slide 3 to slide 1.
+- Q66, 2026-10-02, TEST, dark theme, requests counted with the browser's resource timings and the network log. Item 16 on Files with four folders open (hub, tools, tools/cockpit, tools/cockpit/app), hidden behind Archive while one bookmark was appended to `~/.oculus/bookmarks.yml` (restored after, `shasum` 96af1b35 before and after). Item 19 on a shell running `for i in 1 2 3; do echo looked-$i; sleep 1; done`, ended with `exit`. The Changes reset by the view's session menu (S2 status, then the old scratch session 96f3dbfc, then S2 status). The Graph reset on a throwaway repository `~/workspace/zz-look-graph` with no commit, added to `sources.yml` roots for the look and removed after (`git diff --exit-code -- tools/oculus/config` clean, the folder deleted), with commits made outside oculus. Seen working:
+  - Item 16: no request while Files was hidden; shown, one `bookmarks` request and the new row drawn; the restore removed the row the same way. The brief expected the page root's `bookmarks` and `workspaces` requests to go while hidden and four listing requests on show; neither happened, and the tree was right without them.
+  - Item 19: hidden at once and shown after 5 s, the shell held looked-1, looked-2 and looked-3.
+  - Item 20: six switches between Files and Archive made no request.
+  - The Changes reset: the scratch session showed "This workspace is not a git repository"; back on S2 status the view made one `/api/git` request and drew the hub's lists.
+  - The Graph reset: the empty repository showed "No commit has been made here"; a commit made while the tab was hidden made no graph request while hidden, one on show, and none on a second show; the graph drew the commit.
+  - Defect Q66-1 (item 17): the Transcript of the running session S2 status draws "This session has no turns yet". The session's log is 634,850,633 bytes, above Node's `buffer.constants.MAX_STRING_LENGTH` of 536,870,888, so `foldFrom` in `server/sessions/stores/transcripts.ts:104` throws on `toString` and its `catch` answers 0 bytes; `/api/transcript` then answers `{"turns":[],"offset":0,"results":{}}` (36 bytes), and the client asks again with `from=0` on every move of the session's last activity, 4 requests in 6 s while shown, each read allocating and reading the whole 634 MB file on the server. Hidden behind Help, the tab made no request in 10 s.
+  - Seen beside it: the hub's Graph section shows "Reading the graph" with a count of 0 for about 10 s before its 50 rows.
 
 ## Blocked, for Axel
 
