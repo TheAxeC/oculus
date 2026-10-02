@@ -14,7 +14,7 @@ Queued, in order (23). "Ready" means nothing in plan.md holds the step back; it 
 - Q91 (the project view and its manifest editor reworked): ready.
 - D14 (LaTeX on any folder holding a main file: several mains a folder, build on save, magic comments, outline, word count, hover preview): ready; its brief check is done.
 - D17 (project commands from `.oculus/commands.yml`, a form and what oculus finds, run after you approve their text): ready; its brief check is done.
-- X3e (the Files view's lists reordered by drag, and a second Collapse Folders press closing the roots): ready.
+- X3e (the Files view's lists reordered by drag, a second Collapse Folders press closing the roots, and the Repositories view finding repositories nested one level under each root, with a depth setting): ready.
 - D25 (the editor's options, with sticky scroll from headings and brackets, and colouring of large files): ready; placed after S4 because both write the Settings editor.
 - D15 (PDF reading: the page kept per file, the PDF opened beside its source): ready; placed after D14 because D14 rebuilds the LaTeX panel D15 opens the PDF from.
 - X3c (the tab strip as VS Code's, with the path tooltip, Open Editors drag reordering the tabs and the Files breadcrumb removed): waits for Q88c.
