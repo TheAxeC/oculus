@@ -879,6 +879,8 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z260 (2026-10-02): (a), D25: sticky scroll from Markdown and LaTeX heading symbols and C-family bracket folding (the user).
 - Open item Z261 (2026-10-02): (a), D25: `editor.paint_limit_kb` defaults to 20480, so a large file is coloured as in VS Code (the orchestrator, automode).
 - Open item Z262 (2026-10-02): (a), X3c: the tab tooltip with the full path, Open Editors drag reordering the tabs, the Files tree's breadcrumb removed once X3c's file-tab breadcrumbs are in (the orchestrator, automode).
+- Open item Z264 (2026-10-02): (a), D32: replace reads its text exactly as VS Code's `ReplacePattern` and `buildReplaceStringWithCasePreserved` do, emulated over the groups ripgrep reports; the differences kept are listed in D32's brief (the orchestrator, automode).
+- Open item Z265 (2026-10-02): (a), D32: a refusal's own text reaches the reader only as a catalog word; the search route answers refusal words, and an unknown body text gives the `answer_refused` sentence; this narrows Z259's "a body's own `error` text is kept" (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

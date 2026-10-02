@@ -184,6 +184,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z265 (2026-10-02 13:20, D32's brief check): a refusal's own text reaches the reader only as a catalog word; the search route answers words; narrows Z259 (the orchestrator, automode).
+- Z264 (2026-10-02 13:20, D32's brief check): replace exactly as VS Code's ReplacePattern and Preserve Case, emulated over ripgrep's groups; differences listed in the brief (the orchestrator, automode).
 - Z262 (2026-10-02 12:40, X3c): the tab tooltip names the full path; Open Editors drag reorders tabs; the Files tree's breadcrumb goes once X3c's file-tab breadcrumbs are in (the orchestrator, automode).
 - Z261 (2026-10-02 12:40, D25): `editor.paint_limit_kb` default 20480, large files coloured as in VS Code (the orchestrator, automode).
 - Z260 (2026-10-02 12:40, D25): sticky scroll from Markdown and LaTeX heading symbols and C-family bracket folding (the user).

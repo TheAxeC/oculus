@@ -1,211 +1,209 @@
-# D32 brief check
+# Step D32 brief check (on main at 247f7c52; tree identical to 3a308a8f outside the ledger)
 
-BRIEF CHECK OF D32 (replace in the Search view). Tree read at main e160921b; `git status --short` shows only the untracked briefs D32.md and U4.md. Nothing was changed. `config/local.yml` was never opened or grepped, no URL fetched, no port touched, `.vscode` not read, no browser. ripgrep 15.0.0 (the bundled binary, `node -e "console.log(require('@vscode/ripgrep').rgPath)"`) was run only on files I made under $TMPDIR/d32check. I also grepped VS Code's own bundle `/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/workbench.desktop.main.js` (not `~/.vscode`) to read `buildReplaceStringWithCasePreserved` (minified as `Cst`) and the replace-pattern constructor.
+This report covers the brief at `tools/oculus/.scratch/migration/agents/briefs/D32.md`. `git show --stat 247f7c52` shows that the only commit since the brief's base (3a308a8f) changed ledger files and nothing else: `D18-round1.md`, `M3-report.md`, `choices.md`, `orchestrator-state.md`, `plan.md`. Every premise was rerun on the tree, which is the same as at 3a308a8f.
 
-Overall: the brief is not ready to dispatch. Section "Cases and checks" (C1 to C3), "Premises" (P1 to P12) and "Names" (N1 to N8) hold defects that would send the builder to a wrong result or to paths outside its list.
-
-=====================================================================
 ## 1. Names
-=====================================================================
-Commands: `grep -rn --exclude=local.yml --exclude-dir=node_modules --exclude-dir=.svelte-kit --exclude-dir=.scratch --exclude-dir=build -E "<name>" src tests config HELP.md DESIGN.md README.md` for SearchHit, hitOf, SearchFile, SearchAnswer, SearchQuery, queryFrom, handleSearch, searchUrl, searchParams, searchArgs, perFileCount, trimAround, countHits, hitParts, firstLine, runSearch, searchState, parseSearchState, createFold, foldStream, `api/search`, `search.count`, `max_hits`, UndoKind, EditorAsk, asked(, valueNow; plus `git ls-tree --name-only HEAD <dir>/ | wc -l` for folder counts.
 
-Hits inside the brief's paths: `search.ts:242,246,320` (hitOf), `state/sources/search.ts`, `search.svelte.ts`, `Results.svelte`, `Search.svelte`, `Query.svelte`, `model-search.ts`, `helpers/search.ts`, `changes.ts:39,79` (UndoKind, the only two hits in src and tests), `editor-status.svelte.ts:44` (EditorAsk, the only src hit; one comment at `tests/state/workbench/navigation/editor-status.test.ts:58`).
+- `SavedCopy`, and the history kind `'save' | 'delete'` that item 8 widens to `replace`. Command: `grep -rlw SavedCopy src tests` and `grep -rn "'save' | 'delete'\|z.enum(\['save', 'delete'\])" src/lib`. Hits outside the paths:
+  - `src/lib/state/sources/explorer/sections/timeline.ts:12` (`kind: 'save' | 'delete'`) and `:16`.
+  - `src/lib/state/sources/explorer/sections/timeline-reads.ts:29` (`kind: z.enum(['save', 'delete'])`). `copiesOf` reads copies through `survivorsShape(copyShape)`, so a `replace` copy is dropped silently and the Timeline never lists it.
+  - The change makes all of these false, and item 8 ("The Timeline lists the `replace` copy with its own word") cannot be met without them.
+  - The test of these readers, `tests/state/sources/explorer/sections/sections.test.ts`, is also outside the paths.
+- `data/helpers/search`, which the brief moves into a folder, and the new `data/` replace and preserve-case functions that the page calls. Command: `grep -rn "helpers/search" src tests config utils HELP.md DESIGN.md`.
+  - `tests/checks/tree/boundaries.test.ts:149` lists `'data/helpers/search'` as an exact module id in the state row's allow list. The test's head comment (`:31-66`) explains each entry.
+  - `DESIGN.md:171` (the layer table) lists `data/helpers/search` among the modules `state/` may import.
+  - A new module under `data/` that the page imports, or a move to `data/helpers/search/<file>`, makes both false and turns the boundary test red. Neither file is in the paths, and the spec requires an edit to an allow list to be reported with its before and after.
+- `SearchHit` (gains `at` and `replacement`). Command: `grep -rlw SearchHit src tests`.
+  - `src/lib/data/model/index.ts` is a re-export, and the change leaves it true.
+  - `src/lib/views/sources/search/Results.svelte:90` keys rows by `` `${hit.line}:${hit.column}` ``. That key goes false under one hit per match (see 6).
+- New partials and style changes in `views/sources/search/`. `tests/views/whole/type-scale.test.ts:98-100` holds one row per Search component (`'sources/search/Results.svelte': '.count=fs-sm | .row=fs-md | .line=fs-sm'`). New partials and new type rules need rows there. The file is not in the paths, and A1 writes it too.
+- `readAnswer` (item 20 rewords it). Command: `grep -rlw readAnswer src tests`.
+  - `src/lib/state/sources/files.svelte.ts:115` calls it. That caller needs no code change, but its test does: `tests/state/sources/files.test.ts:303`, `:312` and `:320` assert `error: '404'`, `'503'` and `'200'`, which the change makes false.
+  - `files.test.ts` is not a test of any of the 14 files, so "the existing tests of the 14 files of item 20" does not cover it. (`tests/state/sources/fs/fs-answers.test.ts:232,239` tests `fs.svelte.ts` and is covered.)
+- `DESIGN.md:130`, the **Search.** paragraph. It says "One subprocess call site, list arguments only, ..." and "The answer is the hits grouped by file, each line cut to a window round its match". Item 3 (one hit per match) and item 7 (a ripgrep run in `fs/replace.ts`) change both claims, and the head comment of `server/files/search.ts:7` ("This module has one subprocess call site") goes false unless `replace.ts` reuses `runRipgrep`. `DESIGN.md:130` is not in the paths; only `:140` and the ops line (`:393`) are.
+- The undo tests. `grep -rln "undoFiles\|file-undo" tests` prints `tests/routes/files/file-undo.test.ts` and `tests/state/sources/explorer/acts/undo.test.ts`. The paths name `tests/server/edit/ (the undo)`, which holds no undo test. `tests/routes/files` is full at 10 items.
+- `HistoryKind`, `OPS_REFUSALS`, `OpsRefusal`, `DiffSubject`. The only hits outside the paths are `repositories.svelte.ts` and `Worktrees.svelte` (for `DiffSubject`), which a new optional field leaves true. The Files view's refusal words are in `views/sources/files/tree/menu/row-ops.ts`, inside the paths.
 
-Hits OUTSIDE "Paths this step writes", each with whether the change makes it false or breaks it:
+Findings:
+- `timeline.ts`, `timeline-reads.ts` and their test `sections.test.ts` are left out.
+- `tests/checks/tree/boundaries.test.ts` (the list at `:136-158` and the head comment) and `DESIGN.md:171` are left out.
+- `tests/views/whole/type-scale.test.ts` is left out.
+- `tests/state/sources/files.test.ts` is left out.
+- `DESIGN.md:130` and the head comment of `server/files/search.ts` are left out.
+- The undo tests live in `tests/routes/files/file-undo.test.ts`, not in `tests/server/edit/`, and their folder is full.
 
-N1. Catalog word for the History view. `History.svelte:88` draws `t(\`history.kind_${row.kind...}\`)`; `t()` throws on a missing key (`src/lib/state/shared/words/text.ts:53`, "text key not in the text catalog"). A record with `kind: 'replace'` therefore throws in the History view unless `config/text/views/system/history.yml` (kind_ keys at lines 33 to 51) gains `kind_replace`. That file is not in the paths. Adding it is also not enough: `tests/fixtures/kinds.ts` builds the list of recorded kinds only from `src/lib/server/edit/writes/bodies.ts` (`kind: z.literal(...)`), and the gate at `tests/checks/source/keys.test.ts:172-174` derives the required `history.kind_*` keys from that list. A `replace` kind produced by the search route is not in bodies.ts, so the gate would not require the word (a missing word is not caught) and the word, once added, has no reader in the gate (an orphan key fails the keys test). `tests/fixtures/kinds.ts`, `tests/checks/source/keys.test.ts` and `tests/views/system/history.test.ts:180-190` are in none of the brief's paths. The brief's item 8 lists only `search.yml` for words.
-
-N2. The create-search wiring is not in the paths. `createSearch(entities, writes, ui)` (`src/lib/state/client/context.ts:279`) holds no layout, no source store and no editor-status store, and `editorStatus` is created later at `context.ts:313`. Item 6 ("the page finds every source tab whose state names the file") needs the layout's tab list (the existing reader is passed to the explorer at `context.ts:280-285`: `tabs: () => layout.pages().flatMap((page) => tabsOf(page.workbench.root))`, used at `state/sources/explorer/ops.svelte.ts:180,212`). `context.ts` is not in the paths, and the brief's note "`source.svelte.ts` (only if a reader of tabs by file is needed there)" points at a store that holds drafts by instance id and no tab list (`source.svelte.ts` whole).
-
-N3. The editor ask type. `EditorCommand` is declared in `src/lib/ui/controls/editor/types.ts:27` and performed in `src/lib/ui/controls/editor/commands.ts:13 runCommand`, whose last branch treats any kind it does not know as an action (`made.getAction(command.id)`). A new `{ kind: 'text' }` ask needs both files; the brief names only `Editor.svelte`. `views/sources/repositories/diff/Diff.svelte:93,370` also reads asks (`askedOf`) and must ignore the new kind. `commands.ts:33` is also written by D27. See P2: the new ask is not needed at all.
-
-N4. `src/lib/server/files/source.ts:89 localRefusal` is not exported, and `source.ts` is not in the paths; see I9 (the replace must apply it).
-
-N5. Tests that pin the changed shapes and are in directories the brief does not name (the brief names tests/server/files, core, edit, tests/state/sources, tests/views/sources):
-- `tests/routes/files/search.test.ts:118` (`hits: [{ line: 12, column: 5, length: 6, text: 'the needle here' }]` expected in the answer) and `:34`.
-- `tests/data/helpers/search.test.ts:36` (the full `searchArgs` list), `:103` (`perFileCount`), `:171-188` (`queryFrom`/`searchParams` round trip), if a `replace` parameter is added to the GET.
-- `tests/routes/edit/undo.test.ts` (the undo tests live here, not in `tests/server/edit`, which holds no undo test) and `tests/routes/edit/write-fixture.ts`.
-- Inside the named directories: `tests/server/files/search.test.ts:415` (`toEqual({ line: 1, column: 3, length: 6, text })` fails with extra `match`/`index`), `:190`, `:545-552` (a match record whose first submatch is unreadable gives a hit at column 1 length 0; item 1 does not say what it becomes, see I12), `tests/state/sources/search.test.ts:72` (`searchState` `toEqual`), `:91` (the exact URL `/api/search?root=hub&q=needle&word=1&case=0&regex=0&max=500`), `:368 toStrictEqual(empty)`, `tests/views/sources/search.test.ts:33` (`ANSWER: SearchAnswer`, a type error once `SearchHit` gains required fields).
-- Brief case 14 limits "existing cases that change" to "hit count changes by item 1"; the shape change alone breaks the cases above.
-
-N6. Documents the change makes false or incomplete that are not in the brief (it names only `DESIGN.md:389` and HELP's Search row):
-- `DESIGN.md:130`: "answered by `GET /api/search`", "One subprocess call site" (replace.ts adds a second `spawn`, see P9).
-- `DESIGN.md:140` and `:376`: the change log's description, the list of kinds that offer undo, "every write through `api/write`"; the log now also receives records from `api/search`.
-- `HELP.md:256` lists what the change log records ("That is the manifest fields, ... "); a replace is missing there.
-- `HELP.md:160-168` ("Searching the files") is where Search behaviour is described: line 164 (what is skipped) and 168 ("The answer stops at the configured number of hits", "a result row opens it at its own line") change meaning with one row per match; the brief's pointer is only the one-line table row at `HELP.md:113`.
-- `DESIGN.md:389` itself says "It is a `GET` and not a channel".
-
-N7. Folder limit (rules file). `git ls-tree --name-only HEAD <dir>/ | wc -l` prints 10 for `tests/server/core`, `tests/server/edit`, `tests/state/sources`, `tests/views/sources`, `tests/fixtures`, `src/lib/data/helpers`, `src/lib/state/sources`, `src/lib/server/files`, `config/text/views/sources`. Any new file in them fails `utils/folder-check.sh`. The brief says "new and changed cases under tests/server/core/, tests/server/edit/, tests/state/sources/, tests/views/sources/ (each file named in the report)". `tests/server/files` has 8, `src/lib/server/files/fs` has 3 (replace.ts fits). Where the shared preserve-case function (needed by the server splice and by the page preview, P7) and any new state module go is unresolved: `data/helpers` and `state/sources` are full.
-
-N8. Shared paths with steps in flight (brief says "U4 writes none of this step's files; D35 none"):
-- D35 writes `src/lib/server/edit/writes/undo.ts` (D35.md line 87, the `writeConfigKey` call at `undo.ts:280`), `src/lib/server/edit/writes.ts` and the call lines of `routes/api/write/+server.ts`, and changes `target()`'s signature (D35.md lines 16 and 33). D32 writes `undo.ts` (`valueNow`, `apply`) and will need a `ChangeLog` for the search route; today a `ChangeLog` exists only as `target(engine, merged, server).changes` (`edit/writes.ts:206-232`), whose signature D35 changes.
-- D27 writes `Source.svelte`, `Editor.svelte`, `commands.ts:33`, `DESIGN.md` 85/171/379 and `HELP.md:230`, and `tests/views/sources/source.test.ts` lines 494-516 (D32 writes tests under `tests/views/sources/`).
-- Q85d: `Source.svelte` is as the brief says. The brief's description "`:223-231`" as instance-state readers is `readOne` (an HTTP body cast) at `Source.svelte:223`; the state readers are `read` (`:296`) and `number` (`:302`).
-- U4 writes `DESIGN.md:408` and `HELP.md:100`; no overlap with D32's lines. All four steps regenerate `docs/diagrams/`.
-
-Other existing readers of the changed names, checked and not made false: `Results.svelte` keyed each (see P5 for the breakage), `state/sources/search.ts:136 hitParts`, `firstLine`, `countHits` (no other reader), `config/behavior.yml:143` ("`max_hits` is how many hits one answer carries": stays true if hit means match). History's drawing of before and after: `views/system/history/rows.ts:shown()` already draws a list as indented JSON with its size under a disclosure (`rows.ts:25-31` read), so span lists draw with no History change apart from N1. No test asserts the `UndoKind` list (`grep -rn UndoKind tests` prints nothing).
-
-=====================================================================
 ## 2. The step line
-=====================================================================
-Command: `grep -n '^- D32 ' plan.md` (line 432) and the sub-line at 433; `sed -n 620,632p plan.md` (Z84 at 627); `git show 528b3d11:.../orchestrator-state.md | sed -n 177,180p` for Z84's wording.
 
-Step line parts and the items that serve them:
-- "a replace field": item 2.
-- "replace one hit": items 2 (hover Replace), 3 (`only`), 4 (single splice), 1 (match addressable).
-- "one file": items 2 (Replace All in File), 3 (`files` of one).
-- "or all": items 2 (Replace All, confirm), 3.
-- "each write through oculus's write chain and its change log (Z84 (a))": item 5.
-- "as VS Code's" (Z84 (a)): items 1, 2, 4 (preserve case), 6.
-- Sub-line "Widened 2026-10-01 by the Settings ruling" (plan.md:433): "Search keeps ripgrep's order with no smart-case key, and leaves out what git ignores, hidden folders and the fixed skip list (`data/helpers/search.ts`); a file is read-only by its own mode; said in HELP.md." This has no item. Item 8 asks only that HELP's Search row "names the replace". `grep -n -i "smart" HELP.md` prints nothing; HELP.md:164 says what is skipped; nothing in HELP.md says Search has no smart-case key or sort option, and nothing ties "read-only by its own mode" to Search. Part with no item: the HELP.md sentences for ripgrep's order, no smart-case key, and the read-only rule (the `readonly` refusal in item 3 builds the behaviour but nothing writes the sentence).
+- "a replace field": item 1.
+- "replace one hit, one file or all": items 4 and 5.
+- "each write through oculus's write chain and its change log (Z84 (a))": items 7 and 8, plus the History words in item 8.
+- "the seven state-layer answers Z154 accepted judged one by one": items 13 to 19.
+- "the search's "HTTP 200" error a sentence": items 17 and 20.
+- "two scripts under `utils/`": items 21 to 23.
+- The Settings ruling (ripgrep's order, no smart-case key, the ignore, hidden and skip rules, read-only by mode, said in HELP.md): item 12, with item 11's sentence on locked files. `HELP.md:158` and `:166` already carry the mode and skip rules.
 
-=====================================================================
+Findings: none.
+
 ## 3. Premises
-=====================================================================
-Reruns of "What is on the tree":
-- `wc -l` Search.svelte 135, Query.svelte 112, Results.svelte 193, state/search.ts 149, search.svelte.ts 134, search-routes.ts 66, server search.ts 417, changes.ts 294, undo.ts 355, model-search.ts 48: all match the brief.
-- `hitOf` at `search.ts:242`, `submatches?.[0]` at `:246`: match. Route file `src/routes/api/(files)/search/+server.ts` exports only GET: match. `ls src/lib/server/files | wc -l` 10, `fs/` 3 (bookmarks, notes, ops): match.
-- `ChangeRecord`, `UndoKind` at `changes.ts:39`, `valueNow` at `undo.ts:119`, `undoChange` at `:209`, `EditorAsk` at `editor-status.svelte.ts:44` with the seven kinds, `Source.svelte:46`, `Editor.svelte:259` (model effect, ends about 290), `MAX_QUERY` 1000, `HIT_WIDTH` 240, `MAX_FILESIZE` '2M', `SKIP_GLOBS`, behavior.yml `search: max_hits: 500`: match.
-- ripgrep (`rg --json -r 'X$0' 'fo(o)' a.txt` on `foo bar foo\nbaz fooo\n`): per matching line `absolute_offset` 0 and 12; submatches with `start`/`end` (0-3, 8-11; 4-7), `match.text`, `replacement.text` `Xfoo`. `rg --passthru -r 'Y$1'`: `Yo bar Yo` / `baz Yoo`. `$$` gives a literal dollar (`rg --passthru -r 'a$$b'` prints `a$b bar a$b`). Match.
-- WRONG: "`SearchQuery { pattern, word, case, regex, under }`" (brief, premise 14). `src/lib/data/helpers/search.ts:35-50` declares `{ q, root, word, case, regex, max, under }`. This matters because item 3's body `query: SearchQuery` and the page's `queryOf`/`parseSearchState` use those names.
-- WRONG: "The write chain the file browser's writes use" (`ChangeLog.writes`). `src/lib/server/root/context.ts:101-109` has two chains: `fsWrites` ("the write chain of the workspaces file"), which `ChangeLog.writes` is (`edit/writes.ts:229`), and `opsWrites` ("the write chain of the file operations under the served roots", used by `api/ops`; `DESIGN.md:384`). Rename, move, trash and delete of files under the roots run behind `opsWrites`. A replace writing files under served roots behind `fsWrites` does not wait for them (a concurrent trash or rename of the same file can be followed by `writeTextAtomic` re-creating the old path). Which chain the file writes use is a choice the brief states as fact.
-- Q85d's "`:223-231`": see N8.
 
-Build items that contradict the tree or VS Code (each reproduced):
+Rerun, and matching what the brief says:
+- `wc -l` of every file in the first bullet: 135, 112, 193, 134, 149, 230, 48, 417, 66, 23, 42. Also `changes.ts` 296, `ops.ts` 700, `file-undo.ts` 245, `repositories.ts` 857.
+- ripgrep 15.0.0. `rg --json -r 'X$0' --regexp 'f(o)o' -i .` printed the submatches with `"replacement":{"text":"Xfoo"}` and `XFoo`, and `--passthru -r '[$1]'` printed `[o] bar [o]` and `[o] baz`, both exactly as the brief quotes. Extra probes:
+  - `-F -r '$1'` gives an empty replacement and `-F -r '$$1'` gives `$1`, which confirms the `$$` rule.
+  - `-r ''` gives an empty replacement.
+  - On `é foo foo`, the submatch starts are bytes 3 and 7.
+  - A newline and U+E000 pass through the replacement unchanged.
+  - `-w -r '[$1]'` numbers groups as written.
+  - `$1a|${1}a` gives `|fa`.
+- `grep -rn 'String(response.status)\|HTTP \${' src/lib/state src/lib/views src/lib/ui` prints 29 lines in 14 files, the same list. A wider grep found one more form, `src/lib/views/shared/prose/prose-menu.ts:121` (`throw new Error(String(answer.status))`), but its catch discards the text, so no reader sees it.
+- knip: `npx -y knip@6.39.0 --production --include exports,types --reporter compact --no-progress` exits 1 and prints "Unused exports (241)" and "Unused exported types (110)". The five cases of Decision 4 are in its output, and `grep -rlw` gives exactly the importers the brief names. `npm view knip time` gives 6.39.0 released 2026-09-30, licence ISC.
+- `git ls-files utils` lists 8 items, and `tests/checks/utils` holds 4. Folder counts: the six folders the brief calls full hold 10 each; `server/files/fs` 6, `tests/data/helpers` 6, `tests/views/sources` 10.
+- `grep -rln "\.receive(" tests | wc -l` prints 36.
+- Matching lines: `history.ts:56` `HistoryKind`; `history.ts:123` `keepCopy`; `file-changes.ts:82` `keepCopy(history, real, 'delete')`; `file-undo.ts:80` `fieldShape`; `rows.ts:62` `history.file_upload`; `repositories.ts:215-216` `compareUrl` and `savedUrl`; `source.svelte.ts:197` and `:222` (`readIn === LIFETIME`); `explorer/ops.svelte.ts:237-244` `unsaved`; `search.ts:75`, `:106`, `:136`.
+- HELP.md: `:115` is the search row, `:158` the mode sentence, `:162-170` "Searching the files". `DESIGN.md:140` is the change-log paragraph.
+- `ls tools/oculus/docs/adr docs/adr` prints "No such file or directory" twice.
 
-P1. Deadlock hazard in item 5. `chained(writes, work)` (`core/json.ts:113`) is not re-entrant: `writes.chain` is replaced by a promise that waits for the running `work`. `logChanges` (`changes.ts:279`) itself calls `chained(log.writes, ...)`. If the replace does its read, ripgrep and write inside `chained(ChangeLog.writes, ...)` and calls `logChanges` inside that, the append waits for the closure that waits for the append. Existing writers write outside the chain and only the append is chained (`edit/writes.ts:541-558 answer`). The brief says "Every file written is written behind the workspace write chain" and does not say the record is appended after the closure returns.
+Differing:
+- `src/lib/data/file-ops.ts`, from `grep -n`:
+  - `OpsRefusal` is `:37`, with `OPS_REFUSALS` at `:54-69`.
+  - `OpsRequest` is `:75-96`; the brief says `:67-90`.
+  - `OpsAnswer` is `:101-103`; the brief says `:96-98`.
+  - `FILE_FIELDS` is `:201-209`; the brief says `:197-205`.
+  - `FileStamp` is `:220-226`; the brief says `:216-226`.
+- The orphan doc comment in `server/files/search.ts` is at `:183-186` ("A number of any value, as ripgrep's counts and offsets are read..."). Item 24 and the premise say `:205-209`, where the `ripgrepLineShape` code now sits.
+- `isReadonly` is `source.ts:42`; the brief says `:41`.
+- On N1, the brief says the socket checks the payload at `:338`. The schema check is `socket.svelte.ts:331`; `:338` is the `receive`. The brief also calls the `config` payload at `:315` "a payload it built". `seedConfig` receives it from `routes/+page.svelte:69` (`data.seed.payload`), the server's seed, so the socket does not build it.
+- On N3, the brief gives the reason "the panel calls `state.plan.files.map`". No such call exists: `grep -rn "plan.files" src/lib/views` prints nothing. The panel reads `plan?.changes.length` (`Deposit.svelte:158`) and `one.files.length` with `#each one.files` (`:250-252`). These throw on a partial state in the same way, so the judgment holds; only the quoted call is wrong.
+- `plan.md` after 247f7c52: Z258 and Z259 are at `:874-875`; the brief says `:873-874`.
+- Steps in flight. Comparing the "Paths this step writes" of `A1.md`, `Q88c.md`, `D18.md` and `M3.md` shows shared files the brief's last bullet does not name:
+  - D18 writes `state/client/entities.svelte.ts` (and `payloads.ts`), which N1 changes.
+  - Q88c writes `config/text/` including `ui.yml`, where item 20 adds two keys.
+  - Q88c writes `HELP.md` line 113, which this step's paths also claim (113-115). That is the same line, so the merge is not simple.
+  - Q88c writes tests under `tests/server/files/` and `tests/state/sources/`. Both folders are full, and both steps would split them.
+  - A1 adds a field to `DiffSubject` and `heldDiffShape` as well as `sideOf`, and writes `tests/views/whole/type-scale.test.ts`.
+  - The brief's sentence "Each is lines in other places of those files, except `sideOf` ... and the lockfile" is false for these.
 
-P2. Item 6's new ask duplicates an existing path and breaks on two tabs. (a) `Source.svelte:421` passes `text={draft.text}` to the editor, and `ui/controls/editor/Editor.svelte` (effect with the comment "A text the parent hands in that the model does not hold already replaces the model's as one edit", right after the model effect) applies a changed text with `pushEditOperations` over `getFullModelRange()` and does not call `onchange`. `editSourceDraft(id, text)` therefore already reaches a mounted tab's model as one undoable edit; the new `{kind: 'text'}` ask, its `perform` and its `Source.svelte` branch repeat that. (b) The ask mailbox holds one slot: `ask()` (`editor-status.svelte.ts:127-131`) sets `held.last`, and `asked(instance)` returns null when `last.instance !== instance` (`:133-135`). Two asks to two tabs of one file in the same tick lose the first. Brief case 13 "two tabs on one file both take the text" fails on this; (c) `Source.svelte:277` drops any ask while the tab is not `editing` (`error === '' && draft.loaded && locked === ''`, `:136`), while `ask()` returned true; a mounted read-only or not-yet-loaded tab reports success and gets nothing.
+Findings: the file-ops.ts line numbers, the search.ts comment location, the N1 and N3 wording, the plan.md line numbers, and the incomplete list of shared paths with D18, Q88c and A1, all as above.
 
-P3. Literal mode and `$`. Brief decision 1 says the replacement syntax is ripgrep's and "differs from VS Code's JavaScript form only where a pattern uses a feature one engine lacks". In literal mode (`--fixed-strings`, the default) ripgrep still expands the replacement: `rg --passthru -F -r 'a$b' foo a.txt` prints `a bar a` / `baz ao` (the text `$b` is deleted); `-F -r '[$0]'` prints `[foo] bar [foo]`. VS Code does not parse the replacement unless the search is a regex: in the bundle, `constructor(o,e,t){...n=!!i.isRegExp...,n&&this.parseReplaceString(o)`. So a literal replace of text containing `$name` or `$0` silently loses or alters text. In regex mode ripgrep also differs: `Y$1x` reads `$1x` as the group `1x` and gives `Y` (`rg -r 'Y$1x' 'fo(o)'`), `\n` stays a backslash and an n (`rg -r 'a\nb'` prints `a\nb`), and VS Code's case operators `\u \U \l \L` (`_caseOpsRegExp` in the bundle) do not exist in ripgrep. Z84 says "as VS Code's".
-
-P4. `MAX_FILESIZE`, hidden and ignore rules do not apply to a file named on ripgrep's command line. With `--json --max-filesize 2M --glob '!node_modules' --glob '!.git' --glob '!.svelte-kit' --ignore-case --fixed-strings -r X --regexp foo <file>`: `./node_modules/x/n.txt`, `./.hid/h.txt`, `./.dot`, a file named in `.gitignore` (`z.ign`) and a 3,000,000-byte `big.txt` are all matched. Item 4 says the replace runs "with the query's flags exactly as the search runs them" and case 13 says "a file over MAX_FILESIZE is not matched by ripgrep and is reported with replaced: 0". For an explicit path that is false; the replace would rewrite files the Search view never lists (any path under `.git/`, `node_modules/`, ignored or hidden) and files over 2M, and Z84's widened line says Search leaves those out. The brief needs its own rule in `replace.ts` (size, and which files may be replaced).
-
-P5. Item 1 breaks `Results.svelte`. The keyed each at `Results.svelte:94` is `(\`${hit.line}:${hit.column}\`)`. `column` is the column inside the cut window (`trimAround`, `helpers/search.ts:166`). I ran the function on a line `a*300 + foo + b*300 + foo + c*300`: matches at columns 301 and 604 both come out at window column 119. Two matches on one long line give a duplicate key. The brief gives hits an `index` and does not say the key changes.
-
-P6. `characters()` (`search.ts:256-265`) miscounts after an astral character. `characters('\u{1F600} foo\n', 5)` returns 2, the correct count of UTF-16 units is 3 (the lone surrogate halves are encoded as 3 bytes each, so 6 bytes are seen where the character has 4). `hitOf` builds each hit's column from it, and item 5's spans need an exact byte-to-UTF-16 conversion. The brief names no shared, correct converter and "a parser or a rule exists once" would send `replace.ts` to reuse or copy this one.
-
-P7. Preserve Case: the brief's rule is not the function it cites. VS Code's `Cst` (bundle) is: empty match gives the pattern; if both match and pattern contain `-` (and not `_`) with equal part counts, recurse per part (same for `_`); else all-upper match gives `pattern.toUpperCase()`; all-lower gives `pattern.toLowerCase()`; else a match whose first character is upper gives `pattern[0].toUpperCase() + pattern.substr(1)` (the rest AS TYPED); else a match whose first character is not upper gives `pattern[0].toLowerCase() + pattern.substr(1)`. Item 4's text: "first letter upper and the rest lower gives the replacement capitalised", and "otherwise the replacement as typed". Differences: a match `FoO` or `FOo` (item 4 has no rule; VS Code capitalises the first letter, rest as typed); a match `fOO` (VS Code lowercases the first letter, item 4 says as typed); "capitalised" is ambiguous on whether the rest of the pattern is lowercased (VS Code does not); `-` and `_` both present is not covered. The step must cite one behaviour.
-
-P8. Preview. Item 4 says the GET answer carries `replacement` "so the preview is ripgrep's own", and item 2 says the row shows the replacement "as VS Code previews". (a) ripgrep knows nothing of Preserve Case, so the preview with Preserve Case on needs the same case function on the page; the brief does not say where it lives (server `replace.ts` per item 4; the page cannot import `lib/server`). (b) "Typing runs nothing" (HELP.md:168, `Query.svelte` head comment): the answer is fetched at Enter, so after the replace text or Preserve Case changes, every row shows the previous replacement until the next run, while Replace writes the current text. The brief gives no rule for that.
-
-P9. Item 4 adds a second ripgrep call site and a second parser of ripgrep's JSON. `search.ts:7` ("This module has one subprocess call site") and `DESIGN.md:130` ("One subprocess call site") say one; `ripgrepLineShape` (`search.ts:202`) and `runRipgrep` already read the stream; `replace.ts` per the brief reads `absolute_offset`, `start`, `end`, `replacement.text` itself and runs ripgrep with a text on stdin (`-`). The brief does not say to reuse `runRipgrep`/the record shapes or to update those two statements. (Verified: `printf 'éé foo\n' | rg --json -r X foo -` reports path `<stdin>`, `absolute_offset` 0, `start` 5, `end` 8.)
-
-P10. Undo of a `text` record writes to a path read from the log. `undoChange(into, change)` receives `WriteTarget`, which carries no roots (`edit/writes.ts:206-232`); `fileOf` (`undo.ts:76`) resolves `change.file` absolute or hub-relative. A `text` undo that writes `fileOf(...)` writes wherever the log line says, with no check that it is inside a served root, not read-only, not the machine's `local.yml`, and not binary. The log is a file a hand may edit (undo.ts head comment says so). The rules file: "A value from the hub or a feed that reaches HTML or a shell is untrusted", and "A write that edits a file's text re-parses its own result and refuses when the reparse is not what was asked". The brief states neither the root check for the undo nor a read-back check of the written text.
-
-P11. The machine's `local.yml`. `source.ts:89 localRefusal` refuses a save of the machine's `config/local.yml` whose content does not read, "a malformed value in it throws: saved, it would take the source route down with it". `api/ops` refuses it as `protected`. The engine root is a served root (`roots.ts`), so a search over it lists hits in whatever files ripgrep reads there, and a Replace All can rewrite that file through `POST /api/search` without either guard, and record its matched text in `~/.oculus/changes.jsonl`. Brief item 3 refuses only `outside`, `missing`, `readonly`, `binary`. (I did not read the file; this is from the code.)
-
-P12. Roots overlap. `browserRoots` (`roots.ts:29-42`) serves the hub and the engine's config folder as two roots, and the engine folder `tools/oculus/config` lies inside the hub (DESIGN.md:362: `hub` defaults to two directories above `tools/oculus`; whether this machine's `hub` is that repository was not verified because it is in `local.yml`). A search over `all` then lists a tracked config file twice, once per root; item 3's Replace All sends "the answer's listed files", so one real file is processed twice (replacing `foo` by `foofoo` doubles twice) and recorded twice; the confirm's count includes both. The page's tab matching by `root` and `path` (item 6) also misses a tab that holds the same file under the other root key. Nothing in the brief resolves files to real paths or removes duplicates.
-
-P13. Item 2's confirm. `views/shared/AskConfirm.svelte` draws its buttons from `ui.confirm_ok` (text "Confirm") and `ui.confirm_cancel` (`config/text/ui.yml:11-12`); `Ask` is `{ message, detail, act }` (`ask.ts`). The brief's "with Replace and Cancel" cannot be had without changing the shared component (not in the paths, used by other views).
-
-P14. Item 2 shortcut. "Cmd+Shift+H focuses it": shortcuts are bound in `src/lib/shell/keys/keys.ts` / `key-dom.ts` (the `/` key is the shell's own, `Search.svelte` head comment), not in `Query.svelte`; neither file is in the paths. Whether the browser lets a page take Cmd+Shift+H was not tested (no browser).
-
-P15. Confirm count with a cut answer (decision 4). The replace writes every match of each listed file, while the answer's `total` counts only the hits it kept (`createFold` stops at `room`, and `--max-count` is lines per file). When `truncated`, "Replace <n> occurrences across <m> files" understates what is written, and the last file may be listed with only some of its matches. "The confirm says the count is of the files shown" does not state a number a reader can rely on.
-
-P16. Stale hit. Item 3's `only: { line, index }` names a match by position only; the hit's `match` is in the answer but not in the body. If the file changed since the search (or if a tab's draft is sent, whose lines are not the disk's), line and index point at a different text and the replace writes it. The brief does not say to compare the text at that position with the hit's `match`.
-
-P17. Item 7 against item 6. After a replace "the search runs again, so the results show what is left"; for a file held by a tab nothing is written, so the rerun lists the same hits, and "The results row of such a file says it was replaced in the open editor" has no state to survive the rerun's new answer.
-
-P18. The brief's Report section does not ask for the "before and after" section for the look that `spec.md` requires ("Your report's 'before and after' section ... names the view, the state to put it in and what should differ"); the spec still binds. A look at Replace on the orchestrator's running server writes files: the brief names no scratch root to look at.
-
-=====================================================================
 ## 4. Cases and checks
-=====================================================================
-Method: ripgrep on `a.txt` = `foo bar foo\nbaz fooo\n` (flags `--json --ignore-case --fixed-strings`), file reads of the rules file and the sources.
 
-Case 1: correct. Submatch starts 0, 8 on line 1 and 4 on line 2 give columns 1, 9 and 5; three hits; the unchanged tree keeps the first submatch only (two). Case 2: correct (`X bar X\nbaz Xo\n`; before offsets 0, 8, 16; after offsets 0, 6, 12). Case 3: correct (`foo bar X\nbaz fooo\n`). Case 4: correct (`Yo bar Yo\nbaz Yoo\n`; `$$` gives `$`).
+- Case 22 and Verify 3 ("the five exports of Decision 4 are in its output") contradict two rules.
+  - The rules file's principles say that every export the step adds or leaves without a caller, if nothing outside its own file and tests imports it, is removed or made local.
+  - The brief's own Report section asks for "every export with no importer outside its own file and its tests made local or removed".
+  - Two of the five, `FILE_FIELDS` (`data/file-ops.ts`, where item 7 adds `replace`) and `searchArgs` (`data/helpers/search.ts`, where item 6 adds `--replace` and which the step may move), are in files this step changes.
+  - A builder who follows the rule makes them local, or uses `FILE_FIELDS` in `file-undo.ts`'s `fieldShape` instead of the second copy at `:80`, which DRY asks for. Either removes them from knip's output and turns Verify 3 red.
+- Case 2 (`$&!` gives `foo!`, `$$` gives `$`) and item 6 ("VS Code's syntax") disagree with VS Code's own code; see the section "VS Code's replace" below. The rules file says a difference from VS Code must be listed in the brief before the build, and the brief does not list this one.
+- Case 5 and item 6's Preserve Case rules are not VS Code's `buildReplaceStringWithCasePreserved`, which the brief names; see "VS Code's replace". The case values given happen to agree with VS Code.
+- Case 17's last row (`403 { error: 'denied' }` shows `denied`). It follows Z259 (a body's own `error` text is kept), but the rules file's catalog rule says an error from the engine is mapped to a catalog line before it is shown. The search route's own refusal texts are English literals in `search-routes.ts:29-35`, `:51`. Raised under "Declined to judge" as a ruling question; it is not a defect of the brief.
+- Case 21 and item 21. Item 21 says "Builders do not run it, since it runs git". Case 21 is a test the builder must write and run first on the unchanged tree, and the test runs the script, which runs git in a scratch repository. That is allowed in the same way as the existing git tests under `npm test`, but the brief should say so: as worded, the builder is told both to run the case and not to run git.
+- Case 16 first half (a frame whose payload fails its schema is not held) already has tests at `tests/state/client/config-seed.test.ts:102-150` (`drops %s`). Only the seed check is new. The brief should say which half is new, so the first run and the "fails on the unchanged tree" demand of Verify 4 apply to the right half.
+- Every other case is consistent with the rules file.
 
-C1. Case 5 gives the right file but for the wrong reason, and does not test the rule. With query `foo` ignore-case, the file `foo Foo FOO foo-Bar` has four matches: `foo`, `Foo`, `FOO`, `foo` (the last match is the three letters `foo`; `-Bar` is not part of it). Expected file: `bar Bar BAR bar-Bar`. The brief says "the last per item 4's part rule with a one-part replacement (`bar`, as typed)"; the part rule is never reached because the match is `foo`, which is all lower case. The case therefore passes with any implementation of the upper/lower/capitalise rules and never exercises the hyphen/underscore rule, and says nothing about P7's differences. A case for that rule needs a regex such as `foo-bar` matching `Foo-Bar` with replacement `baz-qux`.
+Findings: Case 22 and Verify 3 against the export rule; Case 2 and Case 5 against "VS Code's" with no listed difference; Case 21 against item 21's sentence; Case 16 not saying which half is new.
 
-C2. Case 13, "a file over MAX_FILESIZE is not matched by ripgrep and is reported with replaced: 0": wrong expected result. Reproduced in P4: ripgrep matches a 3,000,000-byte explicit file with `--max-filesize 2M` set, so the replace would write it and report `replaced > 0`.
-
-C3. Case 13, "a file with CRLF endings keeps CRLF around the replaced text; a match spanning the whole line": the second clause contradicts the first on CRLF files. `rg --json -r X --regexp '^.*$' crlf.txt` reports the submatch `foo bar\r` (start 0, end 8); the match includes the `\r`, so the replacement drops it and the line ends in a bare LF. `rg --regexp 'bar$' crlf.txt` finds nothing on a CRLF file. The brief states only that CRLF is kept.
-
-C4. Case 6 writes `éé` (brief line 41 holds two precomposed characters, bytes c3 a9 c3 a9; `LC_ALL=C grep -n '[^ -~]' D32.md` prints that line). The expected result is right (UTF-16 offset 3; ripgrep `start` 5), but the rules file requires ASCII in every authored file, so the test needs `é` escapes; the brief should say so. The brief file itself carries the glyphs.
-
-C5. Case 7. "a second undo of the same record is refused": no word given; the word the existing table gives is `moved` (`undo.ts:215`), since the after spans no longer stand. "after the file is edited at a span, undo is refused `moved`": correct; not stated is the converse: an edit elsewhere in the file that shifts a span's offset (an insert before the first span) also gives `moved` under item 5's "every after span still stands at its offset", while an edit after the last span lets the undo go through. The case does not say which is intended. The undo is exercised by which entry: `undoChange` directly or `handleWrite` with `{ kind: 'undo', at }` (as `tests/routes/edit/undo.test.ts` does); the brief says neither, and the History answer `{ ok, changed, refused }` needs a non-empty `changed` for `undoSaid` to report success (`rows.ts:66`), unspecified for a text undo.
-
-C6. Case 8: "refused with their word": `source.ts` has words only for `readonly` and `binary` (`SourceRefusal`); `outside` and `missing` are `resolveRootFileResult`'s (`files.ts:81-93`) and `source.ts` turns them into sentences. The set of four words is fine but "source.ts's words" is inexact. A mode 0444 test passes only for a non-root user (`isReadonly` is `accessSync(W_OK)`, `source.ts:36`). A NUL file is binary by `isBinaryFile` (`text-kind.ts:34 window.includes(0)`), which looks only at the first 8193 bytes; ripgrep, given an explicit file, reports `binary_offset` and converts NULs to newlines, so a NUL after byte 8192 passes the refusal and is matched (checked with `printf 'foo\0bar foo\n'`: two matches at lines 1 and 2 with `absolute_offset` 0 and 4).
-
-C7. Case 10: "a query refused by `queryFrom` (empty pattern) is refused 400": `queryFrom` (`helpers/search.ts:205`) refuses nothing; the refusal is `refusalOf`/`searchQuery` through `runSearch` (`search.ts:376-380`), which the POST must call on the body's query. Expected result right (400, nothing written).
-
-C8. Case 13, other clauses with no stated result: "a query whose `under` scopes a folder replaces only there" (the files come from the page; what `under` does on the server is not stated: refuse files outside it, or ignore it); "a replace while another write holds the chain waits behind it (two concurrent requests on one file give both replacements, in order)" (no files, no replacements, no final text); "the word toggle (`\bfoo\b` semantics as the search's)" (no input and output; ripgrep's `-w` is described by ripgrep as roughly `\b` before and after, not exactly).
-
-C9. Case 11 second half ("Replace All opens the confirm with the counts and writes nothing on Cancel") is a press; the rules file says a press is seen at the look and the unit suite renders to a string; `*.client.test.ts` covers effect timing only. The case can only be checked at the look. Case 12 is "store-level tests" and cannot show that the Search view finds the tabs and calls them (P2, N2).
-
-C10. Case 14 limits the existing suites to five directories (N5).
-
-C11. Verify item 2 (`grep -n "submatches?.\[0\]" src/lib/server/files/search.ts` prints nothing): today it prints `246: const first = submatchShape.safeParse(data.submatches?.[0]);` so it fails without the fix, but it passes for `submatches?.at(0)` as well. Verify item 3 (`grep -rn "'text'" src/lib/server/core/changes.ts`): today it prints nothing (exit 1), so it fails without the fix, and shows only that the union lists the word, not that an undo works.
-
-=====================================================================
 ## 5. The question
-=====================================================================
-Goal: replace in the Search view as VS Code's, through the write chain and the change log (plan.md:432; Z84 (a)).
 
-- Case 1: passes with item 1 alone and no replace at all. It is a precondition, not the goal.
-- Case 2: passes with a write outside the chain (the case asserts file text, `replaced`, one record, `undo`, `kind`, not the chain). The chain is reached only by case 13's last clause, which has no stated content (C8).
-- Case 3: passes if `only` is honoured on disk text; says nothing about staleness (P16) or the page.
-- Case 4: passes with ripgrep's syntax; does not touch literal-mode `$` (P3).
-- Case 5: passes with a casing function that ignores VS Code's rules (C1).
-- Case 6: passes without a correct converter if the line has no astral character (P6).
-- Case 7: passes by calling `undoChange` alone; the History control (`POST /api/write` `undo`) and the missing `history.kind_replace` word (N1) are not reached by it.
-- Case 8: passes with per-file refusals that skip `local.yml` (P11), `.git`/ignored files (P4) and the undo's root check (P10).
-- Case 9: passes while page and tabs do nothing.
-- Case 10: passes for any token and query check.
-- Case 11: first half (strike and replacement drawn) passes with a replace field wired to nothing; second half is a press, only the look reaches it (C9).
-- Case 12: passes with a store function nothing calls; the Search view's use of it, `context.ts` wiring and the one-slot ask (P2) are not reached.
-- Case 13: passes without the goal for each clause as written; two clauses have wrong or missing expected results (C2, C3, C8).
-- Case 14: passes without the goal (existing behaviour kept).
-- Step-line check ("each write through the write chain and its change log"): no case holds the chain and watches the replace wait except the unspecified case 13 clause; passes with the write outside `fsWrites`, and with a record whose History row throws (N1).
-- Item 1: reached by case 1. Item 2: only the draw half is tested. Item 3: cases 2, 3, 8, 9, 10. Item 4: cases 2 to 6 (preserve-case rule only partly). Item 5: cases 2 and 7; chain not asserted. Item 6: case 12 at store level only. Item 7 (search runs again after a replace): no case at all. Item 8 (words and docs): no case; the keys check covers `search.yml` words but not `history.kind_replace` (N1); nothing checks DESIGN.md/HELP.md text, whose other false lines (N6) the spec's grep rule asks the builder to carry.
+- Case 22 and Verify 3: yes, these could pass without the goal. A wrapper that prints a saved knip output, or any knip run, prints the five names whether or not the script computes Z253's rule. It checks knip, not the wrapper.
+- Verify 2 (the grep prints nothing): yes. Renaming the variable (`const status = response.status; ... String(status)`) or writing `` `${code}` `` empties the grep while the error stays a bare number. Case 20 is the check that proves the sentences, and it only requires a test "where the file has a test for its failed read already".
+- Case 19 (the existing tests of N2, N3, N4 and N6 pass unchanged): yes, trivially, but that is what a "kept" judgment means. It is acceptable as an audit, and it should be labelled one.
+- Item 2 (the preview drawn struck through, then the replacement): yes, if it is proven only by a string render or by `hitParts`. It is a DOM behaviour for the look, and the brief should name the look as its proof.
+- Items 4 and 10 (keys on a focused row, a press opening the preview): yes for the unit suite, which renders to a string. They are seen at the look only. The brief should say so in Verify. Today the Search view has no key handling (`grep -rn keydown src/lib/views/sources/search` prints nothing), so "as the Files view's are" (`tree/control/keyed.ts`) is new work, not a change to existing handling.
+- Cases 1, 3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 17, 18 and 21: no. Each asserts a concrete written result or a concrete refusal.
+- Case 9: half and half. "Left out before the request and named" needs a state test of the request built. "A clean tab shows the new text" needs the re-read, which nothing does today (`source.svelte.ts` has no re-read path, and `loadSourceDraft` returns early at `:222`).
 
-=====================================================================
-## 6. Implied inputs (each with the result I propose)
-=====================================================================
-I1. Literal-mode replacement `a$b` and `$0`: file gets `a$b` and `$0` unchanged (VS Code literal). Today's engine gives `a` and `foo`. Needs a rule in `replace.ts` (escape `$` as `$$` when the query is not a regex).
-I2. Regex-mode `Y$1x`: ripgrep gives `Y`; stated decision 1 says ripgrep's syntax; `${1}x` gives `Yox`. Add as a case so the divergence is on record. `\n` in a regex-mode replacement stays backslash-n (`rg -r 'a\nb'`).
-I3. Zero-width regex (`x*`, `^`): ripgrep returns a submatch at every position (`rg --json -r X --regexp 'x*'` on `ab`: starts 0, 1, 2; `--passthru` prints `XaXbX`). Expected: one hit and one replacement per position, spans with `text: ''` in `before`, undo removes them; `replaced` counts them.
-I4. Replacement equal to the match (`foo` to `foo`): no byte changes, no record, `replaced` equal to the count or 0 (pick one); undo not offered.
-I5. A listed file with no match now (changed since): `replaced: 0`, file not rewritten (mtime unchanged), no record.
-I6. The same real file twice in `files` (duplicate entry, or hub plus engine root, P12): replaced once; expected one record.
-I7. Stale `only`: line or index past the file's matches, or text at that place differs from the hit's `match`: `replaced: 0` with a refusal, nothing written.
-I8. Machine `local.yml` as a target: refused as a source save is (`localRefusal`), or a replace that leaves it unreadable refused; nothing written.
-I9. A file ripgrep's search would not list (under `.git`, `node_modules`, hidden, ignored, over 2M): refused, or replaced; the brief must choose (P4); my proposal is refused with `outside`-class word.
-I10. Invalid UTF-8 beyond the first 8192 bytes: ripgrep emits `bytes` instead of `text` (the zod shapes read it as absent, `search.ts:189`); expected: refuse the file (`binary`) rather than write spans that cannot hold bytes.
-I11. Astral character before the match (`\u{1F600} foo` to `X`): spans offset 3 (UTF-16), file `\u{1F600} X`.
-I12. A match record with no readable submatch (existing case `search.test.ts:545-552`): one hit at column 1, length 0, or none; if none, the `end` record's `matched_lines` exceeds the hits and `truncated` goes true falsely (`search.ts:309`).
-I13. File mode kept after a replace (`writeTextAtomic` keeps an existing file's mode, `json.ts:73-83`): an executable script stays executable.
-I14. Symlinked file inside the root: the real target is written (resolver realpaths, `files.ts:102-125`); record names the real path.
-I15. Very many or very long matches: size of one record (`changes.jsonl`) with 10,000 spans or a `.*` match of a megabyte; a cap or a refusal is needed; also the `files` array length and `replacement` length in the POST body.
-I16. Malformed body (query missing, `files` not a list, `only.index` negative or fractional, `replacement` not a string): 400, nothing written. The brief gives only the token and query cases.
-I17. Tab states for item 6: draft not loaded (`loaded: false`, text empty), draft truncated (`truncated`, saves refused), readonly tab, mounted tab not `editing`, tab whose draft lines differ from disk (P16). Expected: not sent with `text` (use disk) or refused with a word, never an empty text sent as the file.
-I18. Two mounted tabs on one file: both take the text (needs P2's fix).
-I19. Page states: Replace while a run is in flight, Replace All pressed twice, the Search tab closed while the POST is out, a run superseded by a later one; the rules file asks for each asynchronous path in flight, after close and superseded.
-I20. Truncated answer then Replace All: the confirm's number against what is written (P15).
-I21. Replace text or Preserve Case changed after the run (P8): preview stale until Enter; Replace uses the current text.
-I22. Undo variants: edit before a span (shifts offsets), edit after the last span, file now read-only or deleted, root removed (words `moved`, `moved`, `unwritable`, `gone` respectively under the existing table).
-I23. Empty replacement with Preserve Case on: VS Code returns the pattern unchanged (`Cst` with `o=""` still hits `o.toUpperCase()`, giving ""); expected file with the matches deleted.
-I24. The orchestrator's look (spec: look on TEST in Axel's Chrome on his running server): needs a throwaway root for Replace, not the hub.
+Findings: Case 22 and Verify 3, Verify 2, and the proof of items 2, 4 and 10 left unstated.
 
-=====================================================================
+## 6. Implied inputs
+
+This is a code step. These implied inputs are missing from "Cases", each with the result it should have:
+
+1. **Two matches on one line longer than `HIT_WIDTH` (240).** Each hit is cut around its own match by `trimAround`, so both can get the same `column`. `Results.svelte:90` keys rows `${hit.line}:${hit.column}`, which then duplicates the key. Expected: two rows, keyed by `at`.
+2. **A forged request that names the same hit twice, names a file twice, or has empty `items` or empty `hits`.** Expected: refused (`not-an-action`), or duplicates removed before the splice. A file is never spliced twice at one offset.
+3. **A replace request whose query `refusalOf` refuses** (empty `q`, over `MAX_QUERY`, `under` outside), **or whose per-file ripgrep run fails** (a pattern ripgrep rejects, exit 2) **or times out.** No refusal word is named for these. The route's POST also needs the search timeout (`searchSettings(config).timeoutS`), which `ops/+server.ts` does not read today; its path annotation says only "(the preview branch)". Expected: a named refusal word, and nothing written.
+4. **A file over the copy limit of the new `replace` kind, and how many copies are kept.**
+   - `keepCopy` picks `SAVE_MAX_BYTES` only for `'save'` (`history.ts:133`), so a `replace` copy would get the 5 MB delete limit.
+   - Only `'save'` copies are pruned per file (`:147`), and only `'delete'` copies are pruned through the index (`:154`). `replace` copies would grow without bound.
+   - Expected: a stated limit and a stated pruning rule. A file whose copy is not kept is refused (or replaced without undo, stated), so an undo is never promised without a copy.
+5. **The undo of the undo.** `file-undo.ts` records an undo as the operation that reverses it (`:20-21`, `finish`). The brief does not say which field the undo of a `replace` records, or whether it keeps a copy of the replaced text so that Shift+Cmd+Z re-applies it. Expected: a stated field and kept copy, and a case for redo.
+6. **An undo of a replace while a source tab holds the file.** Expected: a clean tab reads the file again, and a tab with unsaved text keeps it, as after a replace (item 9 covers only the replace).
+7. **A CRLF file.** Expected: the replacement goes in at the byte offsets, and `\r\n` elsewhere is kept. Also state what `\n` in the replace text writes in a CRLF file.
+8. **A replace text that holds U+E000 or U+E001.** Also:
+   - Stacked modifiers (`\u\L$1`, which VS Code applies one character at a time).
+   - A modifier before `$&`, `$0`, `$<name>` or literal text. VS Code writes these literally as `\U`, because its case-ops pattern matches only `\$[0-9]+`.
+   - Expected: each stated, with the private markers never reaching a file.
+9. **`` $` `` and `$'` in regex mode.** VS Code passes them to JavaScript's replace, which reads them as the text before and after the match in the line; ripgrep has no equivalent. Also `$10` with fewer than ten groups, and `${name}` of an absent group. Expected: each stated.
+10. **Preserve Case on matches the brief's rules miss.** Expected per VS Code:
+    - `FooBar` with `baz` gives `Baz`: the first letter is upper whatever the rest.
+    - `fOO` with `Baz` gives `baz`: a first letter lower lowers the replacement's first letter.
+    - A match holding both `-` and `_` falls through to the whole-string rules.
+    - An empty match gives the replacement as typed.
+11. **A non-start terminal action answering 200 `{ ok: true, id: 't1' }` (stop, resize, rename) and one answering `{ ok: true }` with no id.** `postTerminal` (`pty-io.ts:72`) serves all 15 actions of `terminals.svelte.ts:487-759`. Item 19 speaks only of "a start answer". Expected: the first stays ok, and the second is stated (every server answer carries an id: `routes.ts:178-547`).
+12. **Replace Preview after a Dismiss.** The preview route carries the query, not the dismissed hits, so it would show replacements for hits the reader dismissed. VS Code's preview leaves removed matches out. Expected: the preview leaves dismissed hits unreplaced.
+13. **A second Replace Preview of the same file with a changed replace text or query.** `diffState` activates the existing pane (same id). Expected: the pane takes the new query and reads again.
+14. **Replace Preview on a binary file, a file over `TEXT_LIMIT`, or a file holding a marker.** Expected: the refusals `handleCompare`'s `side` gives (`binary`, `too_large`) or `marker`.
+15. **Replace (one hit) on a file whose tab holds unsaved text.** Expected: nothing written, and the outcome names the file.
+16. **The asynchronous triple for the replace post and the preview read** (in flight, tab closed, superseded by a later one), as the rules file requires. Also Replace All pressed twice while the first is in flight. Expected: one request at a time, and an answer for a closed tab not written into another tab.
+17. **`utils/outside-paths.mjs` on a renamed or deleted file.**
+    - `git diff --name-only <base>` applies rename detection by default and prints only the new name, so the old path drops out. Expected: `--no-renames`, so both paths are judged.
+    - A changed path with a space or a non-ASCII letter is printed quoted (`core.quotePath`). Expected: read with `-z`, and the path printed as is.
+18. **`outside-paths.mjs` suffix matching that covers too much.** Under the item 21 rule, a token `HELP.md` covers `tools/cockpit/HELP.md`, and a token `` `data/helpers/` `` inside prose (D32's own section has one) covers every file under any `.../data/helpers/`. Expected: a stated rule, with a case for a same-named file in another folder.
+19. **`utils/unused-exports.sh` with `node_modules` missing, or knip absent.** Expected: exit 2 with knip's or the shell's message. With findings (knip exit 1): exit 0.
+
+Findings: inputs 1 to 19 are missing from "Cases".
+
 ## 7. ADRs
-=====================================================================
-`ls tools/oculus/docs/adr` prints "ls: docs/adr: No such file or directory" (run from tools/oculus); `ls ../../docs/adr` from tools/oculus (the hub's docs) prints "No such file or directory"; `ls /Users/axelfaes/workspace/research-hub/docs` lists AGENT-APPROACH.md, HPC-UTwente-howto.md, RESEARCH-APPROACH.md (no adr folder); `grep -n -i adr /Users/axelfaes/workspace/research-hub/.agents/plan.yaml` prints nothing. The brief's statement holds: no ADR folder, no `adr:` key.
 
-=====================================================================
+- `ls tools/oculus/docs/adr docs/adr` prints "No such file or directory" for both, and the configuration block in `orchestrator-state.md` has no `adr:` key. No record exists.
+
+Findings: none.
+
+## VS Code's replace, against the brief's description
+
+These are from VS Code's source on main, fetched with `curl` from raw.githubusercontent.com: `src/vs/base/common/search.ts`, `src/vs/workbench/services/search/common/replace.ts`, `contrib/search/browser/searchActionsRemoveReplace.ts`, `replaceService.ts`.
+
+**Wrong in the brief:**
+- **Preserve Case** (`buildReplaceStringWithCasePreserved`). VS Code first tests `-` and `_`, and the per-part rule applies only when exactly one of the two separators is in both strings with equal part counts. Then:
+  - all upper gives upper;
+  - all lower gives lower;
+  - a first character that is upper gives the replacement's first letter upper (the rest is not tested);
+  - a first character that is lower gives the replacement's first letter lower;
+  - otherwise the replacement as typed.
+
+  The brief's "first letter upper and the rest lower" is wrong, and the brief misses the lower-first rule.
+- **When Preserve Case applies.** VS Code applies it to the replace pattern before group substitution (`buildReplaceString`, then `text.replace`). The brief's "applied after" differs for `$1` patterns: `Foo` with `$1bar` gives `obar` in VS Code. The brief's order is arguably better, but it is a difference to list.
+- **The syntax.** VS Code's `parseReplaceString` converts `\\`, `\n`, `\t` and `$0`, and sets `hasParameters` only for `$0`-`$99`, `` $` `` and `$'`. Without one of those, `getReplaceString` returns the text literally, so `$&`, `$$` and `$<name>` on their own are written as typed. The brief's reading (`$&` gives the match, `$$` gives `$`) is JavaScript's, and it is a difference to list.
+- **Case modifiers** apply only to `$` followed by digits, stacked one character at a time (`\u\L$1`).
+- **Dismiss key.** It is Delete off macOS and Cmd+Backspace on macOS, on a hit, a file or a folder row. The brief gives Delete only.
+- **Preview title.** It is "{0} <two-headed arrow> {1} (Replace Preview)" (`replaceService.ts:146`). The brief has "{name} (Replace Preview)"; an ASCII form of the arrow is needed.
+
+**Missing from the brief:**
+- Replace (a hit) and Replace All (a file) are offered only while the replace row is shown (`ReplaceActiveKey`). The brief does not say this.
+- Cmd+Shift+1 also runs Replace All on a focused file row (`ReplaceAllInFileActionId`). The brief gives it for hits only.
+- Replace All in a folder: a root heading in a multi-root search (`ReplaceAllInFolderActionId`).
+- After a Replace or a Dismiss, focus moves to the next element, and after a Replace the next match opens in its preview (`searchActionsRemoveReplace.ts:119-138`, `:289-318`).
+- VS Code replaces into a file open with unsaved text and saves it (`replaceService.ts:116-133`). The brief's item 9 leaves such files out, which is a difference to list.
+- The live preview: VS Code recomputes it on the page as the replace text is typed. The brief's preview waits for the next run, which is a difference to list.
+- Cmd+Shift+H (Replace in Files) and the replace box's history (Up and Down) are absent. Oculus has no Cmd+Shift+F and no query history either, so these may be out of the step's scope, but the brief does not say so.
+
+Findings: each item under "Wrong in the brief" and "Missing from the brief". The rules file asks the brief to list every difference before the build.
+
 ## Declined to judge
-=====================================================================
-- Whether the browser leaves Cmd+Shift+H to the page (no browser).
-- The look: the replace row, the struck-through preview and the hover controls against VS Code's stylesheet and layout (spec: judged on TEST at landing).
-- VS Code's behaviour for backslash escapes (`\n`, `\t`) in a regex-mode replacement: the bundle contains `parseReplaceString`, I did not read its escape handling; I state only what ripgrep does.
-- Whether this machine's `hub` is the repository holding `tools/oculus` (it is in `local.yml`, not read), so the hub/engine overlap in P12 is from code and DESIGN.md:362, not observed.
-- Which option to take on literal-mode `$` (P3), the file-skip rule for replace (P4/I9), the chain for the file writes (P1, `fsWrites` or `opsWrites`) and the shortcut's home (P14): decisions the brief should state; I propose none as final.
-- Whether a replace in a tab-held file being absent from the change log meets Z84's "each write through ... its change log": decision 3 surfaces it; I take it as consistent with source saves (HELP.md:256 says a source-tab save is not recorded) and leave the ruling to the orchestrator.
 
-=====================================================================
-## Usage
-=====================================================================
-(left for the orchestrator)
+- Whether the brief's JavaScript-like `$&` and `$$` reading should replace VS Code's literal reading. That is a user-visible choice, the user's to rule; the brief should raise it or list it.
+- Whether a refusal body's own English text (`denied`, the search route's literals) may be shown, against the catalog rule. That is a ruling question between Z259 (a) and the rules file.
+- The N1 claim of "the 600 kB portfolio" parsed on every render. No measurement was taken.
+- Whether knip's production mode reports exports used only by `utils/` or `bin/` scripts (`utils/` imports `src/lib/data/snapshot/validate.ts` and `server/edit/yaml-edit.ts`) as unused, against the approved rule. Not run.
+- Everything that needs a DOM (the preview's look, the focus moves, the keys). That belongs to the look on TEST.
 
-Usage: claude-sonnet-5-5, 302,238 tokens, 86 tool uses, 16.0 min.
+Agent usage: 287991 tokens, 100 tool uses, 881464 ms (completion notice); served model claude-opus-5-5, read from the agent record.
+
+## Closed (the session's change to the brief for every finding above, made before the preparation commit)
+
+- 1 Names: closed. The Timeline readers and `sections.test.ts`, `boundaries.test.ts` with `DESIGN.md:171`, `type-scale.test.ts`, `files.test.ts`, `DESIGN.md:130` with the head comment of `server/files/search.ts` are in the premises and the paths; `replace.ts` calls `runRipgrep`, so the one call site stays; the undo tests go to the new `tests/routes/replace/`; rows are keyed by `line` and `at` (item 3, case 16).
+- 3 Premises: closed. The line numbers of `file-ops.ts`, `search.ts`, `source.ts`, `plan.md` and the N1 and N3 wording are corrected; the shared paths with D18, Q88c and A1 are listed in full; this step writes `HELP.md` line 115 and not 113, and adds no file to and moves none out of `tests/server/files/` or `tests/state/sources/`.
+- 4 Cases and checks: closed. Case 34 and Verify 3 name the three exports outside the step's files, with `FILE_FIELDS` and `searchArgs` leaving the output by the export rule; cases 2 to 5 follow VS Code's source (Z264); item 21 says the builder runs the script only through its own test; case 22 names the new half of N1.
+- 5 The question: closed. Case 34 compares the wrapper's output with a direct knip run; Verify 2 requires case 26's test per file; case 25 is labelled an audit; cases 27 to 31 are the look's, with item 4's key handling stated as new work.
+- 6 Implied inputs 1 to 19: closed as cases 16 to 21, 24, 32 and 33 and the item text they test: item 3 (keys), item 7 (refusals `bad-query`, `not-an-action`, `search-failed`, `too_large`, the timeout, CRLF), item 8 (the copy limit and pruning, the redo), item 9 (the undo and a single Replace on a file with unsaved text), item 6 (markers in the text, stacked operations, `` $` ``, `$'`, `$10`, `$<name>`), item 10 (dismissed hits, a second preview, the refusals), item 19 (the other 14 actions), item 21 (`--no-renames`, `-z`, the token rule), item 22 (exit 2).
+- VS Code's replace: closed by Z264 (`plan.md:882`): item 6 ports `ReplacePattern` and `buildReplaceStringWithCasePreserved` read from VS Code's source; item 4 offers Replace only with the row shown, Cmd+Shift+1 on a file row, Cmd+Backspace on macOS, the focus moves and the next preview; item 10's title has `<->`; item 1 adds Cmd+Shift+F, Cmd+Shift+H and the two boxes' history; item 2's preview is live. The two differences kept are listed under item 11 with their reasons.
+- Declined to judge, the refusal's own text: closed by Z265 (`plan.md:883`), item 20 and case 23.
+

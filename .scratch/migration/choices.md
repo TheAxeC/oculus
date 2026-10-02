@@ -946,3 +946,18 @@ Where it is built: D25. Booked in the state file's closed log and `plan.md` Ruli
 
 Where it is built: X3c. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z264 (2026-10-02, D32's brief check): how the replace text is read
+
+- Chosen (a): the replace text means what it means in VS Code. VS Code's source (`src/vs/workbench/services/search/common/replace.ts` and `src/vs/base/common/search.ts` on main, read for this ruling) reads `\n`, `\t` and `\\` and `$0` in regex mode. It runs JavaScript's `replace` on the match alone only when the text holds `$0`-`$99`, `` $` `` or `$'`, and otherwise writes the text as typed, so `$&` alone stays `$&`. It applies `\u \U \l \L` only directly before `$N`, and Preserve Case to the pattern before the substitution. The search run asks ripgrep for every group's text of each match, and one function of `data/` evaluates VS Code's rules over them, on the page for the live preview and on the server for the write.
+- Not chosen: (b) the brief's first reading (JavaScript's `$&` and `$$` always, Preserve Case after the substitution), which differs from VS Code on `$&` alone, `$$` alone and `$1` patterns under Preserve Case; (c) ripgrep's own syntax shown to the reader, the lazy option, which makes the reader learn a second syntax.
+- Differences kept, each with its reason, in D32's brief: a file a tab holds with unsaved text is left out (oculus searches the disk, VS Code the open buffer); no Replace All on a folder row (the Search view has no folder rows; a file names its root).
+
+Where it is built: D32. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z265 (2026-10-02, D32's brief check): a refusal's own text
+
+- Chosen (a): the page shows a refusal's `error` only when it is a refusal word of the catalog, worded from the catalog; the search route's English refusal texts (`search-routes.ts:29-35`, `:51`) become words; any other body text gives the `answer_refused` sentence with the status. The rules file maps an engine's error to a catalog line before it is shown.
+- Not chosen: (b) Z259's "a body's own `error` text is kept", which shows English from the server unmapped.
+
+Where it is built: D32. Booked in the state file's closed log and `plan.md` Rulings.
+
