@@ -989,3 +989,17 @@ Where it applies: D14. Booked in the state file's closed log and `plan.md` Rulin
 - Not chosen: the hand readers kept beside the library, the lazy option, which leaves two LaTeX section readers.
 
 Where it applies: D14, and the Files Outline and D25's sticky scroll through the shared reader. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z194 (2026-10-02, D17's brief check): the command files and approvals
+
+- Chosen: the form's `~/.oculus/commands.json` through the write chain; `depends_on` in order; approvals in the one `approvals.json` `DESIGN.md` describes (`command:<sha256>` over the exact text and folders, 0600, rename and read back), shared with the apps; a chain in one task terminal; `remain-on-exit` in the same tmux call; Restart behind a confirmation naming the process.
+- Not chosen: a separate approvals file of D17's own shape, which contradicts `DESIGN.md`; Restart with no confirmation, which contradicts the Processes rule.
+
+Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z281 (2026-10-02, D17's brief check): default build and test, clickable errors
+
+- Chosen: `default: build` / `default: test` on a command; Cmd+Shift+B and Cmd+Alt+T run them for the repository of the active source tab's file; one error pattern `path:line[:column]` then `error` or `warning`, clickable in the task terminal and published for D33 in D14's diagnostics shape.
+- Not chosen: the three widened parts left out of D17, the lazy option.
+
+Where it applies: D17. Booked in the state file's closed log and `plan.md` Rulings.

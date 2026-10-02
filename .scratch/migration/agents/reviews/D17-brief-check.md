@@ -154,3 +154,12 @@ Findings: none against an ADR. The `DESIGN.md` contradictions are C3, C8, C9, C1
 Agent usage: claude-sonnet-5-5 (served model as named in my system prompt; the runner's own record not read by me), about 215,000 tokens (budget counter 15,000,000 at start, about 14,785,000 at the last read), about 85 tool uses, minutes not measured.
 
 Usage (from the completion notice): claude-sonnet-5-5, 232,904 tokens, 79 tool uses, 11.6 min.
+
+## Closed (2026-10-02, /spec D17 on main after 8ef3abbe)
+
+- N1, C3: approvals follow `DESIGN.md:326` (item 4, Z194 (3)), in a shared `server/machine/approvals/` module, the path from the `approvals` key of `local.yml`. N2: the two fields go before `#{pid}`, `terminal-edit.test.ts` in the paths (item 7, case 9). N3, N3b: `terminal-payloads.ts`, the nine fixtures and `terminals.svelte.ts` in the paths; Rerun and Restart calls in the store (item 11). N4: the DESIGN.md sentence and `channel.ts` comments in item 12. N5: one exported `shellWord` (item 2).
+- S1: Z281, items 8 and 9, cases 13 and 14. S2: the plan line quoted as `plan.md:435-437` holds it.
+- P1: Z194 booked in `plan.md` Rulings, the closed log and `choices.md`. P2: the context from `editor-status.svelte.ts`, the selection published by `Source.svelte` (item 3). P3: the `files` channel (item 11). P4: `remain-on-exit` in the same invocation, case 9 on a real tmux socket. P5: the faster poll while a task terminal runs (item 7, case 11, decision 4).
+- C1: `shellWord` always quotes, case 6 expects `'7'`. C2: the Makefile rule rewritten (item 1), case 5. C4: the hashed text is each line with its folder (item 4), case 7. C5: case 9 asserts the argv and runs real tmux; `@oculus_task` marks a task terminal; cases 10 and 12. C6: case 16. C7: presses moved to the look items, case 17 string-only. C8: Restart behind a confirmation (item 7). C9: zod at every input (item 1, item 5), wrong-type cases in case 1. C10: the routes carry the token and write through the chain (item 5), case 15. C11: names and folders quoted (item 6), case 8.
+- Q1 to Q7: closed by the cases above.
+- I1: `views/shared/commands/` (item 10). I2: `cols` and `rows` in the action (item 6). I3: case 15. I4: item 6. I5: case 3. I6: case 3. I7: item 1's order, case 4. I8: case 8. I9: case 2. I10: case 5. I11: case 5. I12: case 15. I13: case 7. I14: case 7. I15: case 11. I16: case 12. I17: case 10.
