@@ -3,8 +3,8 @@
 In flight:
 - D18 (the Processes view): landing, waits on the build being allowed.
 - D32 (replace in Search): round refuted; lands after D18.
-- D17 (project commands): refuted; waits on Z305, lands after D18 and D32.
-- D14 (LaTeX on any folder): refuted; lands after D18 and D32, with fixes at landing.
+- D17 (project commands): refuted; lands after D18, D32, D14 and S4, with Z305 (a) and the Z304 marker fixed at landing.
+- D14 (LaTeX on any folder): refuted; lands after D18 and D32, with fixes at landing and Z280 (c), the formatter setting.
 - S4 (the Settings editor finished): refuted; lands after D18, D32 and D14, with fixes at landing.
 
 Queued, in order (22 steps):
@@ -31,7 +31,7 @@ Queued, in order (22 steps):
 - O34 (remote access): once O33 has landed.
 - O35 (macOS, Linux and Windows): once O33 has landed.
 
-Owed: the looks of Q79c, Q88, Q99, S2 and D35.
+Owed: the looks of Q79c, Q88, Q99, and Q81 and Q82's focus points (`agents/reviews/owed-looks.md`); Q99-look-1 and Q99-look-2 are booked into D20 (Z307).
 
 Landed, newest first:
 - M3 (the resources registry), 2026-10-02, 8ef3abbe.

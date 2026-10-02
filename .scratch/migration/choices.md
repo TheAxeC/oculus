@@ -997,6 +997,16 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z307 (2026-10-03, the Q99 look): two terminal defects into D20
+
+Chosen: built in D20, which already carries the terminal look's other defects (Z297) and works in the terminal views; D20's /spec finds each cause read-only and writes it into the brief, and a cause not found goes to Axel as an open item.
+
+Not chosen:
+- /diagnose by the orchestrator now: the investigation would run in the orchestrating session, outside a step.
+- A new step: it needs Axel's ruling, and D20 already holds the terminal work.
+
+Where it applies: D20. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z305 and Z280 (2026-10-03, Axel's rulings)
 
 Z305: (a), placeholder values as environment variables, at D17's landing. Z280: (c), VS Code's formatter setting with none, latexindent, tex-fmt and badness, default none, a path per program, at D14's landing, tex-fmt installed. Ruled by Axel; booked in `plan.md` Rulings and the state file's closed log.
