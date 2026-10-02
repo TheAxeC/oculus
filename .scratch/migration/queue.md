@@ -6,15 +6,15 @@ In flight:
 - D18 (the Processes view), repair round 1, a continuation builder.
 - M3 (the resources registry), repair round 1, a continuation builder.
 
-Three queued steps are kept prepared ahead (Z185).
+Ready to start as soon as a slot frees (every slot is full now): S4, D14, D17 and Q91, whose waits (X3a and D35 landed) are met. D14 and D17 already have their brief checks.
 
 Queued, in order (24 steps):
-- S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), Z190 ruled (a); /spec once X3a and D35 have landed (X3a adds the `roots` list edit S4's list editor covers, D35 changes the config write and `options.yml`).
-- X3c (the tab strip as VS Code's), once Q88c has landed.
-- Q91 (the project view and its editor), once X3a has landed.
-- D14 (LaTeX on any folder, with build on save, magic comments, outline, word count and hover preview; ChkTeX moves to D36 by Z196), brief checked (`agents/reviews/D14-brief-check.md`); /spec once X3a has landed (both rewrite `views/sources/files/tree/row-menu.ts` and `Tree.svelte`, and X3a's LaTeX outline is what D14's parser replaces), its findings closed in the brief then.
-- D25 (the editor's options), once S4 has landed.
-- D17 (project commands: `.oculus/commands.yml`, the form, CMake presets, npm scripts and Makefile targets, approval of their text, task terminals with their result), brief checked (`agents/reviews/D17-brief-check.md`); /spec once X3a has landed (its Run item goes into the row menu X3a rebuilds), its findings closed in the brief then.
+- S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), Z190 ruled (a); ready (X3a and D35 have landed).
+- X3c (the tab strip as VS Code's, widened with the tab's path tooltip, Open Editors drag and the Files breadcrumb removed), once Q88c has landed.
+- Q91 (the project view and its editor), ready (X3a has landed).
+- D14 (LaTeX on any folder, with build on save, magic comments, outline, word count and hover preview; ChkTeX moves to D36 by Z196), brief checked (`agents/reviews/D14-brief-check.md`); ready (X3a has landed); its brief check's findings are closed in the brief at its /spec.
+- D25 (the editor's options, widened with sticky scroll from headings and brackets and colouring of large files), once S4 has landed.
+- D17 (project commands: `.oculus/commands.yml`, the form, CMake presets, npm scripts and Makefile targets, approval of their text, task terminals with their result), brief checked (`agents/reviews/D17-brief-check.md`); ready (X3a has landed); its brief check's findings are closed in the brief at its /spec.
 - D23 and D15 (language servers, once D25 and D27 have landed as its line says and X3a has, since its code symbols go into X3a's Outline; PDF reading, once D14 has landed).
 - D11 (the rite debug client), once D17 has landed (Z191: its launch configurations' `before` names a command of D17's `commands.yml`).
 - D23b (more language server features), once D23 has landed.
