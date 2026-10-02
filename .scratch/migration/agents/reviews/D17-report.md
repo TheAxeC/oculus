@@ -1,4 +1,4 @@
-NOT DONE: no ruling of the round is left undone. Rulings 4, 10, 12, 13, 14 and 16 change a text, a size, an export list or a wait, so no test fails without them; each entry under "Repair round 1" shows its end state with a command. Not covered by any test: the guard of `privateFolder` for a folder another user owns, the pointer-driven parts of the bar, the form and the menus, and the real widgets (the client tests stub them); the list is under "Not covered by a test".
+NOT DONE: nothing of the 13 rulings of round 2 is left undone, with two limits. (1) The marker a chain prints before each command is the command's bare name, so a command whose own output holds a line equal to the next command's name moves the diagnostics to the next command's folder early; a unique marker changes the text the terminal shows, a user-visible shape no ruling names, and is raised as D17-B below, not built. (2) `tests/server/machine/pty/task.test.ts` `captures all the text of an ended pane, a wrapped line joined, and its pid changes on a respawn` timed out (`Test timed out in 30000ms`) in runs made beside other vitest runs, here and on the unchanged pre-round-2 tree (four copies of the file started at once there: three passed, one timed out); no ruling touches it, its cause is not found, and it passed in both `checks.sh` runs and in four runs in a row of the file alone. Rulings 5, 6, 7, 9, 10, 11, 12 and 13 change a text, an export list, a title or a comment, so no test fails without them; each entry under "Repair round 2" shows its end state with a command. Not covered by any test: the pointer-driven parts of the bar, the form and the menus, and the real widgets (the client tests stub them); the list is under "Not covered by a test".
 
 # D17 report, project commands
 
@@ -11,7 +11,7 @@ The state file's open items, copied with `sed -n 177,180p tools/oculus/.scratch/
 - Z274 (2026-10-02, Axel's word that oculus is now a full IDE rather than a dashboard): a new name for oculus. Where the name lives, counted on main: 122 files under `tools/oculus/src` and 1054 occurrences across its `src`, `tests` and `config`; 40 references to the `~/.oculus` folder; the `.oculus/project.yml` manifests the other repositories carry; five browser-storage keys (`oculus.ui.v1`, `oculus.layout.v1`, `oculus.layout.previous`, `oculus.carry.v1`, `oculus.diff.addComment`); and 1241 files of the hub outside `tools/oculus` that name it (the skills, rules, memory and manifests among them). Options for when: (a) the rename done in O33, as part of the move into its own repository: the repository, the package, the folder, the source, the docs and the hub's references take the new name at once; the first-run check moves `~/.oculus` and each repository's `.oculus/` folder and carries the five browser-storage keys over once, so nothing Axel saved is lost. For: the repository is created then anyway, so its name is chosen once; no step in flight conflicts with it. Against: the old name stays on screen until the last step. (b) the rename as a step of its own now. For: the new name is in use sooner. Against: it touches nearly every file five steps in flight also touch, so each of them meets conflicts at landing, and it needs a ruling for a new step. (c) keep the name oculus. For: no work. Against: the name no longer says what the tool is, which is Axel's reason for asking. Names, in the style of the other repositories (cathedra, ordo, officium, scotoma): scriptorium (the room where manuscripts were written and copied, fitting a tool for writing papers and code); officina (a workshop; close to officium in sound); fabrica (a workshop where things are made). Recommended (a) with scriptorium. (c) is the lazy option.
 - Z251 (2026-10-02 09:40, all steps): fewer repair rounds. Axel asked whether the criteria for a round can be stricter so more steps land without one. Evidence: 12 of the last 13 landings had a round; each round's rulings (`agents/briefs/<step>-round1.md`) number 5 to 16, and every one of them holds rulings that change code or add a test. Options: (a) keep the round as ruled 2026-10-01 (`plan.md:773`); (b) land without a round when every first-review finding is small and inside the brief, as the refute dispositions already allow (none of the last 13 would have qualified, so it saves nothing); (c) `refute_after_repair: no` when the round stays inside its rulings, the orchestrator reading the delta in its place (saves about 185k to 270k tokens and 14 to 46 min per step; those runs found 4 to 9 findings that would then rest on the orchestrator's read; reverses part of the 2026-10-01 ruling); (d) fewer findings at the source: the overdue recurring-findings pass, its causes in three or more steps ending in a rule sentence in `agents/spec.md` or a sentence every brief carries. Recommendation: (d), with (a) kept until its effect shows; (b) and (c) are the lazy options, since they lower the bar and keep the cause. Axel, 2026-10-02: (d) taken through Z253; (a) stands meanwhile; Z251 is ruled after ten steps have landed under the new rules (count from the first landing after this line). Count at 2026-10-02 13:05: 1 of 10 (X3a, landed 11:49). Nothing is asked of Axel until the count reaches 10.
 
-Raised by this step: none open. D17-A (diagnostics of a task terminal no pane shows) was ruled as Z298 (a) and is built (Repair round 1, ruling 1); the choices of the repair round are ruled as Z301 and listed under "Z301 decisions and the other choices of the round".
+Raised by this step: D17-B (the chain's printed marker, "Raised by round 2" below). D17-A (diagnostics of a task terminal no pane shows) was ruled as Z298 (a) and is built (Repair round 1, ruling 1); the choices of the repair round are ruled as Z301 and listed under "Z301 decisions and the other choices of the round".
 
 ## Repair round 1
 
@@ -21,7 +21,7 @@ Rulings 4, 10, 12, 13, 14 and 16 change a text, a size or an export list, or rep
 
 ### 1. The `capture` action and the store's one read
 
-- Changed: the terminal route takes `{ action: 'capture', id }` (`server/machine/pty/routes.ts:495`, `captureTask` in `server/machine/commands/run.ts:153`), answers `{ ok: true, id, output }` from `capture-pane -p -J -S -` (the whole pane, a wrapped line joined), and refuses an id that is not a listed terminal with `server.commands.capture_unlisted` before any tmux call (`makes no tmux call at all for a name that is no terminal id`). The commands store (`state/sessions/terminal/commands.svelte.ts:603-628`, `readEnded` and `capture`) asks once for each run (the pane's pid) of a task terminal the list shows with an exit, and does nothing when `outputs.byId` already holds the terminal (a grid fed it). The answer is dropped when the terminal left the list, when its line was started again while the capture was out, and when a grid fed it meanwhile; a refusal or an unreachable server leaves no diagnostics. DESIGN.md's pty bridge bullet and HELP.md's diagnostics sentence say so.
+- Changed: the terminal route takes `{ action: 'capture', id }` (`server/machine/pty/routes.ts:495`, `captureTask` in `server/machine/commands/run.ts:153`), answers `{ ok: true, id, output }` from `capture-pane -p -J -S -` (the whole pane, a wrapped line joined), and refuses an id that is not a listed terminal with `server.commands.capture_unlisted` before any tmux call (`makes no tmux call at all for a name that is no terminal id`). The commands store (`state/sessions/terminal/commands.svelte.ts:612-636`, `readEnded` and `capture`) asks once for each run (the pane's pid) of a task terminal the list shows with an exit, unless a grid is subscribed to the terminal at that moment (round 2, ruling 2). The answer is dropped when the terminal left the list, when its line was started again while the capture was out, and when a grid subscribed meanwhile; a refusal or an unreachable server leaves no diagnostics. DESIGN.md's pty bridge bullet and HELP.md's diagnostics sentence say so.
 - Tests: `tests/state/sessions/terminal/commands-output.test.ts` (`a task that ends in a terminal no pane shows`, 7 cases), `tests/server/machine/commands/run.test.ts` (`Capture`, 3 cases), `tests/server/machine/pty/task.test.ts` (`captures all the text of an ended pane, a wrapped line joined, and its pid changes on a respawn`, real tmux on the private socket).
 - Fails on the base: `commands-output.test.ts` `asks the server once for the captured output and holds its diagnostics`: `AssertionError: expected [] to deeply equal [ { action: 'capture', ...(1) } ]`; `asks once however many lists name the ended run`: `expected [] to have a length of 1 but got +0`; `holds nothing of a capture whose line was started again while it was out`: `TypeError: gates[1] is not a function`; `run.test.ts` `answers all the text of a listed terminal pane`: `AssertionError: expected { Object (error) } to deeply equal { ok: true, id: 'eb43c2-shell', ...(1) }`; `refuses a name oculus does not list`: `expected false to be true`; `task.test.ts`: `TypeError: paneOutput is not a function`.
 
@@ -71,7 +71,7 @@ Rulings 4, 10, 12, 13, 14 and 16 change a text, a size or an export list, or rep
 
 ### 9. The approvals folder is made 0700
 
-- Changed: `approvals.ts:105-110` (`privateFolder`): each approvals write makes its folder mode 0700 when looser and owned by the current user, and leaves a folder another user owns as it is; the file stays 0600. `config/catalogs/options.yml` (`approvals`), DESIGN.md's Approval paragraph and HELP.md say it. Host-visible: the brief gives `~/.oculus` as 0755 on this host before the round; after the first approval it is 0700 (not measured here: the tests run with HOME in scratch and `~/.oculus` was not read).
+- Changed: `approvals.ts` `privateFolder`: each write to the default approvals file makes its folder mode 0700 when looser and owned by the current user, and leaves a folder another user owns as it is; a file the `approvals` key names elsewhere leaves its folder as it is (round 2, ruling 4); the file stays 0600. `config/catalogs/options.yml` (`approvals`), DESIGN.md's Approval paragraph and HELP.md say it. Host-visible: the brief gives `~/.oculus` as 0755 on this host before the round; after the first approval it is 0700 (not measured here: the tests run with HOME in scratch and `~/.oculus` was not read).
 - Test: `approvals.test.ts` `makes a folder that stood with looser permissions private when it writes in it` (a 0755 folder becomes 0700) and `makes a file that stood with looser permissions private when it writes it` (0600).
 - Fails on the base: `AssertionError: expected 493 to be 448`.
 
@@ -91,8 +91,8 @@ Rulings 4, 10, 12, 13, 14 and 16 change a text, a size or an export list, or rep
 
 ### 13. `terminals.svelte.ts` under its cap
 
-- Changed: `closeEnded` and `moveInto` moved to `state/sessions/terminal/terminal-lists.ts`; the file ends at 862 lines (`wc -l src/lib/state/sessions/terminals.svelte.ts` prints 862), 38 under its 900 cap. The brief names the result marks or the poll as the part to move; the step's own additions to this file are 11 lines, so the moved part is two self-contained functions the file already held.
-- Proof: `wc -l` of the three files: 862, 570 (`pty/routes.ts`) and 673 (`pty/sessions.ts`). No test fails without it.
+- Changed: `closeEnded` and `moveInto` moved to `state/sessions/terminal/terminal-lists.ts`; the file ends at 875 lines (`wc -l src/lib/state/sessions/terminals.svelte.ts` prints 875), 25 under its 900 cap. The brief names the result marks or the poll as the part to move; the step's own additions to this file are 11 lines, so the moved part is two self-contained functions the file already held.
+- Proof: `wc -l` of the three files: 875, 570 (`pty/routes.ts`) and 677 (`pty/sessions.ts`). No test fails without it.
 
 ### 14. Exports removed
 
@@ -111,7 +111,7 @@ Rulings 4, 10, 12, 13, 14 and 16 change a text, a size or an export list, or rep
 
 ### 17. Chain-aware cwd for diagnostics
 
-- Changed: the store follows the `printf '%s\n' <name>` marker each chain command prints (`commands.svelte.ts:566-600` `note`, `chainOf` at :510): the path an error line names is read from the folder of the command that printed it, output before the first marker from the pressed command's folder; `errorFile` (:550-562) tries the pressed command's folder, then the folders of the commands it ran first. The scrollback replacing the output starts again from the first command.
+- Changed: the store follows the `printf '%s\n' <name>` marker each chain command prints (`commands.svelte.ts:572-604` `note`, `chainOf` at :519): the path an error line names is read from the folder of the command that printed it, the chain being the one the task terminal's mark carries (round 2, ruling 3), output before the first marker from the pressed command's folder; `errorFile` (:552-566) tries the pressed command's folder, then the folders of the commands it ran first. The scrollback replacing the output starts again from the first command.
 - Tests: `commands-output.test.ts` `the diagnostics of a chain` (4 cases, among them `test` with cwd `sub` depending on `build` with the repository as cwd) and `the file an error line names, in a chain`.
 - Fails on the base: `expected [ 'sub/src/a.c', 'sub/src/b.c' ] to deeply equal [ 'src/a.c', 'sub/src/b.c' ]`; `expected null to deeply equal { repo: '/work/repo', path: 'src/a.c' }`.
 
@@ -129,9 +129,9 @@ Rulings 4, 10, 12, 13, 14 and 16 change a text, a size or an export list, or rep
 
 ### 20. A placeholder inside quotes is refused
 
-- Changed: `server/machine/commands/placeholders.ts:31` `quotedPlaceholder(run)` finds a placeholder inside single or double quotes (a backslash outside single quotes escapes the next character; a `${...}` that is no placeholder is not one). `run.ts:88` refuses at run and `routes.ts:76` at save, with `server.commands.quoted` naming the command and the placeholder; the form shows the sentence. HELP.md says placeholders are written bare.
-- Tests: `placeholders.test.ts` (`quotedPlaceholder`, 4 cases); `run.test.ts` `refuses a placeholder inside quotes, naming it and the command, and starts no process` (`echo "${selectedText}"` and `echo '${file}'`, no process); `runs a bare placeholder as one word, so a selection holding $(...) runs nothing` (selection `$(touch x)` creates nothing; a guard, it passes on the base); `routes.test.ts` `refuses a line with a placeholder inside quotes, naming it, writing nothing`.
-- Fails on the base: `TypeError: quotedPlaceholder is not a function`; `AssertionError: expected 200 to be 400`.
+- Changed: `server/machine/commands/placeholders.ts` `unsafePlaceholder(run)` finds a placeholder that is not bare (round 2, ruling 1 replaced the first scanner, `quotedPlaceholder`, by one tokenizer shared with the filler). `run.ts:88` refuses at run and `routes.ts:76` at save, with `server.commands.quoted`, `.escaped` or `.commented` naming the command and the placeholder; the form shows the sentence. HELP.md says placeholders are written bare.
+- Tests: `placeholders.test.ts` (`unsafePlaceholder`); `run.test.ts` `refuses a placeholder inside quotes, naming it and the command, and starts no process` (`echo "${selectedText}"` and `echo '${file}'`, no process); `runs a bare placeholder as one word, so a selection holding $(...) runs nothing` (selection `$(touch x)` creates nothing; a guard, it passes on the base); `routes.test.ts` `refuses a line with a placeholder inside quotes, naming it, writing nothing`.
+- Fails on the base of round 1: `TypeError: quotedPlaceholder is not a function`; `AssertionError: expected 200 to be 400`.
 
 ### 21. This table
 
@@ -145,12 +145,12 @@ The table of host- and user-visible changes of the round follows.
 | A name two sources hold | one button, the press could run the other source's command | two buttons, each drawn `name (file)` / `name (saved)` / `name (found)`, each press carries its source |
 | The form | saved a name the file or a found command held; accepted a placeholder in quotes | refuses both with a sentence in the form, and a save whose read-back differs |
 | Approval of a chain | one entry for each command, listed one by one | one entry for the whole chain, the dialog lists every line with its folder |
-| Approval key | the lines of the command | the repository's real path and the lines; the same text in another repository asks again |
-| `~/.oculus` | 0755 on this host (the brief) | 0700 after the next approval write, the approvals file 0600 |
-| A placeholder inside quotes | filled into the quotes | refused at save and at run, naming it; placeholders are written bare |
+| Approval key | the lines of the command | the repository's real path and the lines (`JSON.stringify({ repo, chain: [[folder, run], ...] }, null, 1)`); the same text in another repository asks again, and approvals given before this text ask again |
+| `~/.oculus` | 0755 on this host (the brief) | 0700 after the next write to the default approvals file, the file 0600; a file the `approvals` key names elsewhere leaves its folder as it is |
+| A placeholder inside quotes, after a backslash or in a comment | filled there | refused at save and at run, naming it; placeholders are written bare |
 | Files view | the tree watched every repository row it drew, so a view reading a repository's list was answered by a `GET /api/commands` for each | the tree watches none; a repository's commands are asked for when its row menu opens, one request |
-| A task terminal no pane shows | no diagnostics | one capture when it ends, diagnostics from it |
-| An error path in a chain | read from the folder of the command pressed | read from the folder of the command that printed it |
+| A task terminal no pane shows, or one a pane let go of before it ended | no diagnostics | one capture when it ends, diagnostics from it |
+| An error path in a chain | read from the folder of the command pressed | read from the folder of the command that printed it, the folders being those the task terminal's mark carries |
 | Wire | the `command` action took a name | it requires `source`; a new `capture` action; `approve` carries `{ folder, run }` lines |
 
 ### New wire shapes
@@ -161,8 +161,8 @@ POST /api/terminal  { action: 'command', repo, name, source: 'file' | 'saved' | 
 POST /api/terminal  { action: 'capture', id }
   -> 200 { ok: true, id, output } | 400 { error }                                           (unlisted id, no tmux call)
 POST /api/commands  { action: 'approve', repo, chain: [{ folder, run }, ...] }              -> 200 { ok: true } | 409 { error }
-tmux user option @oculus_task = { "repo": ..., "name": ..., "source"?: 'file' | 'saved' | 'found' }
-Terminal.job = { repo, name, source? }
+tmux user option @oculus_task = { "repo": ..., "name": ..., "source"?: 'file' | 'saved' | 'found', "chain"?: [{ "name": ..., "cwd": ... }, ...] }
+Terminal.job = { repo, name, source?, chain?: { name: string; cwd: string }[] }
 approval entry  command:<sha256 of JSON { repo, chain: [[folder, run], ...] }>
 ```
 
@@ -171,14 +171,93 @@ approval entry  command:<sha256 of JSON { repo, chain: [[folder, run], ...] }>
 - The form lives in `shell/commands/` (ruling 3), the drawing owner being the shell, for the reason in "Judgment calls" 1.
 - Found preset names `cmake: <n>`, `cmake build: <n>`, `ctest: <n>`: they keep a configure and a build preset of one name apart (ruling 4).
 - Run grouping `{ run; }` is kept: a run line may be a list of statements (`a; b`), and the group makes `&&` after it test the whole list, not its last statement; a line ending in `\` is followed by a line break before `}` (ruling 5).
-- Approvals folder mode 0700, only for a folder owned by the current user (ruling 9).
+- Approvals folder mode 0700, only for a folder owned by the current user and only for the default approvals path (rulings 9 and round 2, 4).
 - The approval text is JSON `{ repo, chain: [[folder, run], ...] }`, not the brief's `<cwd>\t<run>` lines: a tab or line break inside a folder or a line would read as a boundary, and the repository path has no place in that shape (rulings 6 and 19).
 - A placeholder in quotes is refused at save and at run (ruling 20).
-- `source` is recorded in the task mark and in `TerminalJob` so Rerun and Restart resolve the same command (ruling 7).
-- `resolveChain` is in `data/helpers/run/chain.ts` and `tasks.ts` moved beside it to `data/helpers/run/tasks.ts`: the page's store needs the chain, and `src/lib/data/helpers` held eleven items (`sh utils/folder-check.sh` refuses more than ten); the boundaries test's state row lists both.
+- `source` and the chain (each command's name and folder) are recorded in the task mark and in `TerminalJob`: Rerun and Restart resolve the same command (ruling 7) and the store reads the folders of a chain's errors from the mark (round 2, ruling 3).
+- `resolveChain` is in `data/helpers/run/chain.ts` and `tasks.ts` moved beside it to `data/helpers/run/tasks.ts`: `src/lib/data/helpers` held eleven items (`sh utils/folder-check.sh` refuses more than ten). Only the server imports the chain since round 2 (ruling 3), and the state row of the boundaries test lists `data/helpers/run/tasks` alone.
 - `closeEnded` and `moveInto` moved to `terminal-lists.ts` (ruling 13).
 - `watchEnds` replaces the poll in `task.test.ts` (ruling 10).
 - `tests/ui/frame/fake-dom.ts` is a test fixture of this round (ruling 8).
+
+## Repair round 2
+
+The 13 rulings of `agents/briefs/D17-round2.md`. "Base" below is a copy of the tree as it stood before this round (`d17r2-base` in the session scratchpad, node_modules linked) with this round's final test files copied over it, run with `npx vitest run <the test files of rulings 1 to 4>` (output kept in the session scratchpad as `d17r2-base-run.txt`: `Test Files  9 failed | 7 passed (16)`, `Tests  33 failed | 379 passed (412)`); each quoted line is what that run printed for the test. A test that passes on the base is a guard and is named as one. Rulings 5, 6, 7, 9, 10, 11, 12 and 13 change a text, an export list, a title or a comment, so no test of them fails without the change; each has the command that shows its end state.
+
+### Round 2, ruling 1: one tokenizer for the scanner and the filler
+
+- Changed: `server/machine/commands/placeholders.ts` reads a run line once (`placeholdersOf`, :55) tracking single quotes, double quotes, `$'...'`, a backslash outside single quotes and a `#` that starts a comment at the start of a word (to the end of the line), and gives every `${name}` with where it stands: `bare`, `quoted`, `escaped` or `comment`. `fillPlaceholders` (:149) replaces only the bare ones through those positions. `unsafePlaceholder` (:97) returns the first placeholder that is not bare and `unsafeSentence` (:107) words it with `server.commands.quoted`, `.escaped` or `.commented` (`config/text/server.yml`). `run.ts:88` refuses at run and `routes.ts:76` at save, with no process started; the form shows the sentence. `quotedPlaceholder` is gone (`grep -rl quotedPlaceholder src tests config HELP.md DESIGN.md README.md` prints nothing). HELP.md says placeholders are written bare, outside quotes, a backslash and a comment.
+- Tests: `placeholders.test.ts` (`unsafePlaceholder`, 9 cases; `the filler and the scanner read a line the same way`, 2 cases); `run.test.ts` `refuses a placeholder after a backslash, in a comment or in $'...', and starts no process` (selections `$(touch <scratch>/x)` and `; touch <scratch>/y #`, lines `echo "${selectedText}"`, `echo \${selectedText}`, `true # it's` then `echo '${selectedText}'`, and `$'${selectedText}'`; each refused with 400, no tmux call, and nothing created), `runs a bare placeholder after a comment that holds an apostrophe, the value as one word` (`true # don't` then `echo ${selectedText}`: the started line is run through real `/bin/sh -c`, the placeholder is filled with the selection as one word, and neither `x` nor `y` is created); `tests/routes/commands.test.ts` `refuses a line with a placeholder after a backslash or in a comment, naming it, writing nothing`.
+- Fails on the base: `TypeError: unsafePlaceholder is not a function` (9 cases); `AssertionError: expected 200 to be 400 // Object.is equality` (`run.test.ts` and `routes` refusal cases); `fills only the bare placeholders, through the positions the scanner found`: `AssertionError: expected { Object (line) } to deeply equal { Object (line) }` (the base filled the placeholder in the comment); `runs a bare placeholder after a comment that holds an apostrophe, the value as one word`: `AssertionError: expected undefined to be true`.
+
+### Round 2, ruling 2: the capture after a grid lets go
+
+- Changed: `terminals.svelte.ts` counts the calls of `subscribePty` that still read each terminal (`reading`, :800, a call's release counts once) and exposes `subscribed(id)` (:855). `commands.svelte.ts:612` `readEnded` captures an ended task terminal once for each run (the pane's pid) unless `terminals.subscribed(id)` holds at that moment; `capture` (:626) drops its answer when the line started again, the terminal went, or a grid subscribed while the capture was out, and otherwise feeds it to `note` as scrollback, which replaces what was held. A terminal a grid only fed earlier and let go of before the end is captured.
+- Tests: `commands-output.test.ts` `asks once for a terminal whose pane let go before it ended, and reads what came after` (`note` while running, `subscribePty` released, the task ends with an error printed after: one capture request, both diagnostics read), `asks for a terminal one of two panes still reads only when both let go`, `does not ask for a terminal a pane still reads when it ends, and keeps what it read` and `does not replace the output a pane fed while the capture was out` (guards, they pass on the base); `terminals.test.ts` `says a terminal is read while a call of subscribePty holds it, until the last lets go`; and the end-to-end case `tests/state/sessions/terminal/commands-pane.test.ts` `reads the diagnostics printed after the grid let go, each from the folder of its command`: a real pane on the private tmux socket prints `build`, `src/a.c:3: error: boom`, waits for a gate file, prints `test`, `src/b.c:4: error: bad` and fails; the store reads the pane while it runs (`subscribePty` and `note`), the grid lets go, the line ends, the store asks `/api/terminal` (answered by the server's own `captureTask` over `paneOutput`), and `commandDiagnostics()` yields `src/a.c:3 boom` and `sub/src/b.c:4 bad` with one capture request.
+- Fails on the base: `asks once for a terminal whose pane let go before it ended`: `AssertionError: expected [] to deeply equal [ { action: 'capture', ...(1) } ]`; `asks for a terminal one of two panes still reads only when both let go`: `expected [ { url: '/api/terminal', ...(2) } ] to deeply equal []`; `terminals.test.ts`: `TypeError: subscribed is not a function`; `commands-pane.test.ts`: `AssertionError: expected [ [ 'src/a.c', 3, 'boom' ] ] to deeply equal [ [ 'src/a.c', 3, 'boom' ], ...(1) ]`.
+
+### Round 2, ruling 3: the chain's folders come from the task terminal's mark
+
+- Changed: the mark `@oculus_task` carries the chain in run order, `chain: [{ name, cwd }, ...]` (`run.ts:109` writes it, `pty/sessions.ts:200` `jobShape` reads it and drops a chain of another shape, `TerminalJob.chain` in `model-sessions.ts`, the `job` shape of `terminal-payloads.ts`). The store's `chainOf(id)` (:519) is `record(id)?.job?.chain ?? null`; it no longer asks the repository's command list, so a list forgotten or changed after the run changes nothing. `note` advances to the next command only when a complete line equals that command's printed name exactly (`line === chain[started].name`); output before the first name is read from the folder of the command pressed (the last command of the chain); a mark with no chain reads from the repository. Nothing in `src/lib/state` or `src/lib/views` imports `data/helpers/run/chain.ts` now (`grep -rln "helpers/run/chain" src` prints `server/machine/commands/{run,list,chain}.ts`), so `data/helpers/run/chain` left the state row of `tests/checks/tree/boundaries.test.ts` and the state row of DESIGN.md, and the head comment of `chain.ts` and the boundaries comment no longer say the page resolves a chain.
+- Tests: `commands-output.test.ts` `the diagnostics of a chain` (`test`, folder `sub`, depends on `build`; the terminal's mark carries the chain): `reads the path an error names from the folder of the command that printed it`, `reads the folders from the mark when the repository list was never read`, `reads the folders from the mark when the list now holds the commands elsewhere` (a seeded list that puts both commands in other folders), `follows the commands across chunks and across a line split in two`, `moves to the next command only on a line that is exactly its name` (`building build`, `rebuild`, ` build`, `test failed` do not advance; `build` and `test` do), `starts again from the first command when the scrollback replaces the output`, `reads output printed before the first command name from the folder of the command pressed`, `reads a plain command from its own folder`, `reads a mark that names no chain from the repository` (a guard), and `the file an error line names, in a chain`; `commands.test.ts` `names the cwd the mark lists the command with as the folder a relative file is resolved from`; `run.test.ts` `records the source and the chain, each command with its folder, in the mark of the task terminal` and `records a chain in run order with the folder of each command`; `task.test.ts` `reads a running task, an ended one and a terminal that is none` (a mark with a chain gives it back, a chain of another shape is dropped) and the real-tmux `records the chain, each command with its folder, and lists it back`; the end-to-end case of ruling 2 reads both folders from a real pane's mark.
+- Fails on the base: `reads the folders from the mark when the repository list was never read`: `AssertionError: expected [ 'src/a.c', 'src/b.c' ] to deeply equal [ 'src/a.c', 'sub/src/b.c' ]`; `reads the folders from the mark when the list now holds the commands elsewhere`: `expected [ 'y/src/a.c', 'y/src/b.c' ] to deeply equal [ 'src/a.c', 'sub/src/b.c' ]`; `reads output printed before the first command name from the folder of the command pressed`: `expected [ 'src/c.c' ] to deeply equal [ 'sub/src/c.c' ]`; `commands.test.ts`: `expected '/work/repo' to be '/work/repo/sub'`; `run.test.ts`: `expected { ...(3) } to deeply equal { ...(4) }`; `task.test.ts`: `expected { repo: '/r', name: 'build' } to deeply equal { repo: '/r', name: 'build', ...(1) }`.
+- Limit, unfixed: the marker is the command's bare name on a line of its own. A command whose own output has a line equal to the next command's name moves the chain to that command early, so the diagnostics after that line are read from the next command's folder. A unique marker (a per-run token in the printed line) changes the text the terminal shows, a user-visible shape no ruling names; it is raised below as D17-B and not built. The exact-line guard tests pin the matching that is built; no test asserts the limit.
+
+### Round 2, ruling 4: the folder mode only for the default approvals path
+
+- Changed: `approvals.ts:134` runs `privateFolder` only when the file is `defaultApprovalsPath()`; a file the `approvals` key names elsewhere leaves its folder's mode as it is (the file itself is 0600 in both cases). The doc comment of `privateFolder` states the scope.
+- Tests: `approvals.test.ts` `makes a folder that stood with looser permissions private when it writes in it` (the default path, a 0755 folder becomes 0700; passes on the base), `leaves the folder of a file the approvals key names elsewhere as it stands` (a 0755 `shared/` and a 0755 home stay 0755, the file 0600), `leaves a default folder another user owns as it stands` (`process.getuid` mocked to another user, the 0755 default folder stays 0755; passes on the base, a guard of the owner check).
+- Fails on the base: `leaves the folder of a file the approvals key names elsewhere as it stands`: `AssertionError: expected 448 to be 493 // Object.is equality`.
+
+### Round 2, ruling 5: the approval text in DESIGN.md and HELP.md
+
+- Changed: the DESIGN.md Approval paragraph states the exact text hashed, `JSON.stringify({ repo, chain: [[folder, run], ...] }, null, 1)`, what each field is, the key `command:<sha256 of that text>`, and that the folder is made 0700 only for the default path. HELP.md's `Approval.` paragraph says approvals given before this text ask again, and that a file elsewhere leaves its folder as it is. `config/catalogs/options.yml` (`approvals`) says the same. Proof: `grep -n "JSON.stringify({ repo, chain" DESIGN.md`, `grep -n "ask again" HELP.md`. No test fails without it.
+
+### Round 2, ruling 6: the report says the card draws the commands bar
+
+- Changed: "Changes a reader or the host sees, before and after" below says the project card draws the commands bar (Add Command, five buttons, overflow beyond five), not a control per command; the older sentence that said a control per command is replaced. Proof: `grep -n "commands bar" tools/oculus/.scratch/migration/agents/reviews/D17-report.md`. `ProjectCard.svelte:12-14` says the same.
+
+### Round 2, ruling 7: the `order.ts:80` edit
+
+- Listed under "Every edit to an existing assertion": `tests/checks/imports/order.ts:80`, before `shell: ['shell', 'shell/rail', 'shell/status', 'shell/panes', 'shell/keys'],`, after `shell: ['shell', 'shell/rail', 'shell/status', 'shell/panes', 'shell/keys', 'shell/commands'],`. Proof: `sed -n 80p tests/checks/imports/order.ts`. The file is in "Files this step added or changed".
+
+### Round 2, ruling 8: the end-to-end test
+
+- Covered by the end-to-end case of ruling 2 (`commands-pane.test.ts`, a real pane on the private socket through `captureTask` and the store to the diagnostics). Fails on the base with the quoted `expected [ [ 'src/a.c', 3, 'boom' ] ] to deeply equal ...`.
+
+### Round 2, ruling 9: comments as whole paragraphs
+
+- Changed: the head comments of `server/machine/commands/routes.ts` (:1-12) and `ProjectCard.svelte` (:2-14) are whole paragraphs of at most 100 columns, and "Both" is "The GET and the POST both name a repository". Proof: `npm run test:checks` (`comment-width`) passes; `sed -n 1,12p src/lib/server/machine/commands/routes.ts`.
+
+### Round 2, ruling 10: exports removed
+
+- Changed: `outputArgs` (`pty/sessions.ts:575`), `readApprovals` and `commandKey` (`approvals.ts:92,45`) and `sourceWords` (`views/shared/commands/commands.ts`) are not exported. Proof: `grep -rlE "\boutputArgs\b" src tests` prints `src/lib/server/machine/pty/sessions.ts`; `readApprovals` prints `approvals.ts`; `sourceWords` prints `views/shared/commands/commands.ts`; the other `commandKey` (`views/shared/commands/commands.ts:32`) is a different, exported function. `approvals.test.ts` reaches the key and the entries through `approveTexts` and `isApproved` with two local helpers (`keyOf`, `entries`); `commands-menu.test.ts` reaches the source words through `commandTip`. No test fails without it.
+
+### Round 2, ruling 11: HELP.md's source sentence
+
+- Changed: HELP.md says each button and each menu item names its source beside the name, and that the default keys run the default build or test of the repository and name no source. Proof: `grep -n "names its source beside the name" HELP.md`.
+
+### Round 2, ruling 12: a title without "no longer"
+
+- Changed: `tests/shell/commands/command-ask.test.ts:55` reads `draws no form once it is closed`. Proof: `sed -n 55p tests/shell/commands/command-ask.test.ts`.
+
+### Round 2, ruling 13: the head comment of `terminal-lists.ts`
+
+- Changed: it says the file holds two functions that write to the workbench they are handed, `closeEnded` and `moveInto`, and that the others are pure. Proof: `sed -n 1,12p src/lib/state/sessions/terminal/terminal-lists.ts`.
+
+### New wire shape of round 2
+
+```
+tmux user option @oculus_task = { "repo": ..., "name": ..., "source"?: 'file' | 'saved' | 'found', "chain"?: [{ "name": ..., "cwd": ... }, ...] }
+Terminal.job = { repo, name, source?, chain?: { name: string; cwd: string }[] }
+approval text   JSON.stringify({ repo, chain: [[folder, run], ...] }, null, 1)   (key command:<sha256 of the text>)
+```
+
+`chain` lists the commands the press runs in run order, each with the folder it runs in; a mark that carries none (a terminal made before this shape) is read from the repository.
+
+### Raised by round 2
+
+- D17-B (for a ruling): the chain's printed marker is the command's bare name. A command whose own output holds a line equal to the next command's name moves the diagnostics to the next command's folder early. Options: (a) keep the bare name (built; the exact-line match is the guard); (b) print a per-run token with the name, for example `printf '%s\n' '<token> <name>'`, which no command output reproduces and which each name line of a chain's terminal then shows. Recommendation: (b). The lazy option is (a), which is built. It changes the text a chain's terminal shows, so it is the reader's to rule on.
 
 ## Verify after the round's last change
 
@@ -186,30 +265,30 @@ Run from `tools/oculus` in the worktree after `npm run diagrams`: `PATH=$HOME/.n
 
 ```
 $ npm test
- Test Files  523 passed | 24 skipped (547)
-      Tests  12882 passed | 639 skipped (13521)
+ Test Files  524 passed | 24 skipped (548)
+      Tests  12903 passed | 639 skipped (13542)
 $ npm run test:checks
  Test Files  29 passed | 2 skipped (31)
       Tests  446 passed | 9 skipped (455)
 $ npm run check
-1790973298885 COMPLETED 3185 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+1790977256266 COMPLETED 3186 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
 $ npm run build
 $ npm run format:check
-All matched files use Prettier code style!
 $ npm run lint
 $ ! LC_ALL=C grep -rna '[^ -~]' src tests
 checks: 7 commands passed
 ```
 
-Exit status of the run: 0. Number of full-list runs this round: 2, both ended `checks: 7 commands passed`.
+Number of full-list runs this round: 2, both ended `checks: 7 commands passed`. `npm run diagrams` ran before them (it regenerated the `.dot` and `.svg` files, which `tests/checks/diagrams` compares byte for byte).
 
-`npm test` carries `--tagsFilter '!slow'`, so the slow files `tests/server/machine/pty/task.test.ts` and `sessions.test.ts` did not run in it; `npx vitest run tests/server/machine/pty/task.test.ts tests/server/machine/pty/sessions.test.ts` ran both on a private tmux socket: `Test Files  2 passed (2)`, `Tests  29 passed (29)`.
+`npm test` carries `--tagsFilter '!slow'`, so the slow files `tests/server/machine/pty/task.test.ts` and `sessions.test.ts` did not run in it; `npx vitest run tests/server/machine/pty/task.test.ts tests/server/machine/pty/sessions.test.ts` ran both on a private tmux socket: `Test Files  2 passed (2)`, `Tests  30 passed (30)`. The new real-pane case `tests/state/sessions/terminal/commands-pane.test.ts` runs in `npm test` (it starts a private tmux server, as `task.test.ts` does) and passed in both full runs.
 
 Other checks, each run after the last change:
 
-- `wc -l src/lib/state/sessions/terminals.svelte.ts src/lib/server/machine/pty/routes.ts src/lib/server/machine/pty/sessions.ts` printed 862, 570 and 673.
-- `sh utils/folder-check.sh` exit 0. `ls | wc -l` prints 10 for `src/lib/data/helpers`, 10 for `src/lib/state/sessions/terminal`, 10 for `src/lib/views/shared`, 6 for `src/lib/shell/keys`, 9 for `tests/server/machine/pty`, 8 for `tests/views/sources/files/menu`, 8 for `tests/state/sessions/terminal`, 4 for `tests/views/shared/commands`.
-- `LC_ALL=C grep -rna '[^ -~]' src tests` prints nothing (it is the last command of the list).
+- `wc -l src/lib/state/sessions/terminals.svelte.ts src/lib/server/machine/pty/routes.ts src/lib/server/machine/pty/sessions.ts` printed 875, 570 and 677.
+- `sh utils/folder-check.sh` exit 0. `ls -1 <folder> | wc -l` prints 10 for `src/lib/data/helpers`, 10 for `src/lib/state/sessions/terminal`, 10 for `src/lib/views/shared`, 9 for `src/lib/server/machine/commands`, 6 for `src/lib/shell/keys`, 2 for `src/lib/shell/commands`, 9 for `tests/server/machine/pty`, 9 for `tests/state/sessions/terminal`, 8 for `tests/views/sources/files/menu`, 4 for `tests/views/shared/commands`.
+- `LC_ALL=C grep -rna '[^ -~]' src tests | wc -l` prints 0 (it is the last command of the list).
+- The base run of rulings 1 to 4: `Test Files  9 failed | 7 passed (16)`, `Tests  33 failed | 379 passed (412)`, from `npx vitest run` of the test files of those rulings over `d17r2-base` (the pre-round-2 sources, this round's test files); of the 33, one is the `task.test.ts` respawn timeout of the first line of this report and the others are the tests named in the entries of "Repair round 2".
 
 ## First run on the unchanged tree
 
@@ -221,17 +300,18 @@ Before any change, the cases of the brief were written as tests and run on the t
 |---|---|---|
 | 1 command sources (`.oculus/commands.yml`, `commands.json`, found) | DONE | `tests/server/machine/commands/sources.test.ts`, `found.test.ts`; mutations m01-m12 |
 | 2 one shell quoting | DONE | `pty/shell-word.ts`; `routes.ts`, `chat.ts`, `usage/refresh.ts` import it (grep below); the quoted lines asserted in `chain.test.ts` and `run.test.ts` |
-| 3 placeholders | DONE, quoted placeholders refused (ruling 20) | `placeholders.test.ts`, `run.test.ts`, `routes.test.ts`; mutations m13-m15 |
-| 4 approvals | DONE, one entry for a chain, repository in the key, folder 0700 (rulings 6, 9, 19) | `approvals.test.ts`, `run.test.ts`, `routes.test.ts`; mutations m16-m20 |
+| 3 placeholders | DONE, a placeholder inside quotes, after a backslash or in a comment refused (ruling 20, round 2 ruling 1) | `placeholders.test.ts`, `run.test.ts`, `routes.test.ts`; mutations m13-m15 |
+| 4 approvals | DONE, one entry for a chain, repository in the key, default approvals folder 0700 (rulings 6, 9, 19, round 2 ruling 4) | `approvals.test.ts`, `run.test.ts`, `routes.test.ts`; mutations m16-m20 |
 | 5 routes | DONE | `tests/routes/commands.test.ts`; mutations m27-m29, m77, m78 |
 | 6 the run | DONE, source required (ruling 7) | `chain.test.ts`, `run.test.ts`; mutations m21-m26 |
 | 7 task terminal, result, Rerun, Restart | DONE | `task.test.ts` (real tmux on a private socket), `channel.test.ts`, `terminal-close.test.ts`, `terminal-marks.test.ts`, `terminal-menu.test.ts`, `terminal-style.test.ts`; mutations m30-m45 |
-| 8 errors made clickable, diagnostics | DONE, for a terminal no pane shows too (ruling 1) and per command of a chain (ruling 17) | `commands.test.ts` "the diagnostics of a task terminal", "the file an error line names"; `commands-output.test.ts`; `run.test.ts` `Capture`; `task.test.ts` real tmux capture; mutations m46-m50, m84 |
+| 8 errors made clickable, diagnostics | DONE, for a terminal no pane shows or one a pane let go of (ruling 1, round 2 ruling 2) and per command of a chain from the task terminal's mark (ruling 17, round 2 ruling 3) | `commands.test.ts` "the diagnostics of a task terminal", "the file an error line names"; `commands-output.test.ts`; `run.test.ts` `Capture`; `task.test.ts` real tmux capture; mutations m46-m50, m84 |
 | 9 default build and test keys | DONE | `keys.test.ts`, `workbench-keys.test.ts`, `commands.test.ts` "the default build and test"; mutations m51-m55, m76 |
 | 10 where they are drawn | DONE: the bar on the card and in the Repositories view, the form in `shell/commands/` | `commands.test.ts` (view), `commands-menu.test.ts`, `commands-keys.client.test.ts`, `card-commands.client.test.ts`, `project.test.ts`, `repositories.test.ts`, `files-menu.test.ts`, `picks-commands.client.test.ts`, `command-ask.test.ts`; mutations m56-m63, m79-m83 |
 | 11 client store | DONE | `tests/state/sessions/terminal/commands.test.ts`, `commands-output.test.ts`; mutations m64-m75 |
 | 12 docs | DONE | `DESIGN.md` Processes paragraph, Approval paragraph and pty bridge bullet; `HELP.md` key rows, terminal row, `## Project commands`, `local.yml` paragraph; `config/catalogs/options.yml` `approvals` |
 | Repair round 1, rulings 1 to 21 | DONE | the section "Repair round 1" |
+| Repair round 2, rulings 1 to 13 | DONE; the marker's uniqueness is raised as D17-B | the section "Repair round 2"; `sh ~/.claude/skills/land/templates/checks.sh ...` printed `checks: 7 commands passed` |
 
 ## The new and changed tests on the unchanged tree, in their final form
 
@@ -407,7 +487,7 @@ Each path has a test in flight (the answer not yet back), after close (its view 
 - The list read of a repository (`commands.svelte.ts` `commands`/`watch`): `asks once however often it is read, and holds the answer`; `changes nothing when a read is answered after its last view released it`; `keeps the later of two reads when the earlier answers last`; `asks for no repository that no view watches`.
 - A save and a remove: `reads again only once a save has been answered` (in flight); `reads nothing after a save that is answered once its last view released the list` (after close); `keeps the list the later read gave when two saves are answered in the other order` (superseded).
 - A press and its question: `holds the question while the run is in flight and not before`; `keeps the question of the later press when the answer of the earlier one arrives last` and `shows the terminal of an earlier press whose answer arrives after a later one` (superseded); `does nothing for a yes when no question is held` (after close); Restart: `keeps the Restart question of the later press when the answer of the earlier one arrives last`, `posts the Restart confirmation of a terminal that left the list meanwhile and says its refusal` (after close).
-- The capture of an ended task terminal (`commands-output.test.ts`): `asks once however many lists name the ended run` (in flight); `holds nothing when the terminal left the list while the capture was out` (after close); `holds nothing of a capture whose line was started again while it was out` and `does not replace the output a pane fed while the capture was out` (superseded).
+- The capture of an ended task terminal (`commands-output.test.ts`): `asks once however many lists name the ended run` (in flight); `holds nothing when the terminal left the list while the capture was out` (after close); `holds nothing of a capture whose line was started again while it was out` and `does not replace the output a pane fed while the capture was out` (a pane subscribed meanwhile; superseded); `asks once for a terminal whose pane let go before it ended, and reads what came after` and `asks for a terminal one of two panes still reads only when both let go` (the reader count, in flight).
 - The commands asked for when a Files menu opens (`picks-commands.client.test.ts`): `audits that the menu of a row asks for its repository once, and gains its Run Command items` (in flight); `audits that a late answer lands in the items of the menu it was asked for, closed or not` (after close); `audits that each menu gets the answer asked for it when a second menu opened first` (superseded).
 - The file an error line names (`errorFile`): `is null for a terminal that is no task terminal or has left the list` (after close).
 - Diagnostics: `replaces them on a rerun, and holds one entry for output replayed twice` (a scrollback that replaces what was read); `holds none for a terminal that is not a task terminal or has ended and left the list`.
@@ -422,30 +502,30 @@ Each path has a test in flight (the answer not yet back), after close (its view 
   337 HELP.md
   655 config/catalogs/options.yml
    70 config/text/app.yml
-   47 config/text/server.yml
+   49 config/text/server.yml
    53 config/text/views/shared/commands.yml
    14 src/lib/data/accounts/chat.ts
-   47 src/lib/data/helpers/run/chain.ts
+   46 src/lib/data/helpers/run/chain.ts
    22 src/lib/data/helpers/run/tasks.ts
   510 src/lib/data/model/index.ts
    72 src/lib/data/model/model-commands.ts
-  727 src/lib/data/model/model-sessions.ts
+  730 src/lib/data/model/model-sessions.ts
   376 src/lib/data/sources/config/local.ts
-  142 src/lib/server/machine/approvals/approvals.ts
+  145 src/lib/server/machine/approvals/approvals.ts
    37 src/lib/server/machine/commands/chain.ts
   241 src/lib/server/machine/commands/files.ts
   188 src/lib/server/machine/commands/found.ts
    27 src/lib/server/machine/commands/list.ts
-   97 src/lib/server/machine/commands/placeholders.ts
+  170 src/lib/server/machine/commands/placeholders.ts
    28 src/lib/server/machine/commands/repo.ts
   149 src/lib/server/machine/commands/routes.ts
-  165 src/lib/server/machine/commands/run.ts
+  172 src/lib/server/machine/commands/run.ts
   158 src/lib/server/machine/commands/saved.ts
   672 src/lib/server/machine/pty/channel.ts
   123 src/lib/server/machine/pty/chat.ts
   158 src/lib/server/machine/pty/edit.ts
   570 src/lib/server/machine/pty/routes.ts
-  673 src/lib/server/machine/pty/sessions.ts
+  677 src/lib/server/machine/pty/sessions.ts
    12 src/lib/server/machine/pty/shell-word.ts
   384 src/lib/server/machine/usage/refresh.ts
   148 src/lib/server/root/watch/local.ts
@@ -456,13 +536,13 @@ Each path has a test in flight (the answer not yet back), after close (its view 
   435 src/lib/shell/keys/workbench-keys.svelte.ts
   455 src/lib/state/client/context.ts
   327 src/lib/state/sessions/folds.ts
-  695 src/lib/state/sessions/terminal/commands.svelte.ts
+  705 src/lib/state/sessions/terminal/commands.svelte.ts
   151 src/lib/state/sessions/terminal/pty-io.ts
   112 src/lib/state/sessions/terminal/terminal-lists.ts
    99 src/lib/state/sessions/terminal/terminal-marks.ts
-   60 src/lib/state/sessions/terminal/terminal-payloads.ts
+   67 src/lib/state/sessions/terminal/terminal-payloads.ts
    39 src/lib/state/sessions/terminal/workbench-shape.ts
-  862 src/lib/state/sessions/terminals.svelte.ts
+  875 src/lib/state/sessions/terminals.svelte.ts
   211 src/lib/state/sources/repositories/file-git.ts
   143 src/lib/state/workbench/navigation/editor-status.svelte.ts
   526 src/lib/ui/controls/editor/Editor.svelte
@@ -485,23 +565,23 @@ Each path has a test in flight (the answer not yet back), after close (its view 
    35 src/routes/api/commands/+server.ts
   711 tests/checks/config/config-folder.test.ts
   189 tests/checks/imports/order.ts
-  642 tests/checks/tree/boundaries.test.ts
+  639 tests/checks/tree/boundaries.test.ts
    70 tests/data/helpers/run/chain.test.ts
   240 tests/data/sources/config/local.test.ts
   182 tests/fixtures/sessions-fixture.ts
-  421 tests/routes/commands.test.ts
+  452 tests/routes/commands.test.ts
   595 tests/routes/sessions/terminal-actions.test.ts
   445 tests/routes/sessions/terminal-edit.test.ts
-  190 tests/server/machine/approvals/approvals.test.ts
+  223 tests/server/machine/approvals/approvals.test.ts
   124 tests/server/machine/commands/chain.test.ts
   163 tests/server/machine/commands/commands-fixture.ts
   134 tests/server/machine/commands/found.test.ts
-  114 tests/server/machine/commands/placeholders.test.ts
-  501 tests/server/machine/commands/run.test.ts
+  175 tests/server/machine/commands/placeholders.test.ts
+  568 tests/server/machine/commands/run.test.ts
   280 tests/server/machine/commands/sources.test.ts
   828 tests/server/machine/pty/channel.test.ts
   470 tests/server/machine/pty/sessions.test.ts
-  313 tests/server/machine/pty/task.test.ts
+  343 tests/server/machine/pty/task.test.ts
    62 tests/server/machine/pty/tmux-fixture.ts
   697 tests/server/root/watch/sessions.test.ts
    78 tests/shell/commands/command-ask.test.ts
@@ -516,12 +596,13 @@ Each path has a test in flight (the answer not yet back), after close (its view 
   567 tests/state/client/terminal/terminal-tabs.test.ts
   461 tests/state/sessions/folds.test.ts
    90 tests/state/sessions/terminal/commands-fixture.ts
-  301 tests/state/sessions/terminal/commands-output.test.ts
-  755 tests/state/sessions/terminal/commands.test.ts
+  365 tests/state/sessions/terminal/commands-output.test.ts
+  131 tests/state/sessions/terminal/commands-pane.test.ts
+  742 tests/state/sessions/terminal/commands.test.ts
   534 tests/state/sessions/terminal/composer.test.ts
   174 tests/state/sessions/terminal/pty-io.test.ts
   128 tests/state/sessions/terminal/terminal-marks.test.ts
-  851 tests/state/sessions/terminals.test.ts
+  867 tests/state/sessions/terminals.test.ts
    97 tests/state/workbench/navigation/editor-status.test.ts
   256 tests/ui/frame/fake-dom.ts
   593 tests/views/boards/project.test.ts
@@ -530,11 +611,11 @@ Each path has a test in flight (the answer not yet back), after close (its view 
    99 tests/views/shared/card/card-commands.client.test.ts
    36 tests/views/shared/commands/commands-fixture.ts
   136 tests/views/shared/commands/commands-keys.client.test.ts
-  179 tests/views/shared/commands/commands-menu.test.ts
+  178 tests/views/shared/commands/commands-menu.test.ts
   114 tests/views/shared/commands/commands.test.ts
   652 tests/views/sources/files/menu/files-menu.test.ts
-  153 tests/views/sources/files/menu/picks-commands.client.test.ts
-   10 tests/views/sources/files/menu/picks-root.svelte.ts
+  162 tests/views/sources/files/menu/picks-commands.client.test.ts
+   19 tests/views/sources/files/menu/picks-root.svelte.ts
    94 tests/views/sources/files/menu/run-command-keys.client.test.ts
   845 tests/views/sources/repositories/repositories.test.ts
   399 tests/views/whole/type-scale.test.ts
@@ -556,24 +637,25 @@ Moved in the round: `data/helpers/commands-chain.ts` to `src/lib/data/helpers/ru
 8. The pure-function cases of `commands-menu.test.ts` and every case of the client view tests are titled "audits that ...", as `tests/checks/tree/audits.test.ts` requires of a case under `tests/views` that never calls `render`.
 9. The reasons above each absence assertion in `commands.test.ts` (view), `project.test.ts`, `terminal-style.test.ts` and `repositories.test.ts` are required by `tests/checks/tree/negatives.test.ts`.
 10. The client view tests mount real components over `tests/ui/frame/fake-dom.ts`, a minimal DOM written for them: it has nodes, text, comments, fragments, attributes and element lookup, and no layout, focus, events or styles. The bits-ui and leaf components named in ruling 8 are stubs, so what the tests prove is the keys, the sent source, the effects and the fetches, not the widgets.
-11. `resolveChain` and the task argv rule are in `src/lib/data/helpers/run/` because the page's store resolves a chain and the server builds the line from the same function; `src/lib/data/helpers` held eleven items before the move and `sh utils/folder-check.sh` refuses more than ten.
+11. `resolveChain` and the task argv rule are in `src/lib/data/helpers/run/`: `src/lib/data/helpers` held eleven items before the move and `sh utils/folder-check.sh` refuses more than ten. Only the server imports `resolveChain` now (`grep -rln "helpers/run/chain" src`); the page reads the chain from the task terminal's mark.
 
 ## Changes a reader or the host sees, before and after
 
 - Keys: Cmd+Shift+B and Cmd+Alt+T (Ctrl off macOS) were unbound; they run the default build and test of the repository holding the source tab on screen, or say which of file, repository and default is missing.
 - A terminal that ended left the list; a task terminal stays, with a green check (exit 0) or a red cross on its strip, row and bar, until it is closed. Closing a tab or pane over an ended task terminal asks nothing; over a running one it asks. Its row and grid menus gain Rerun (ended) and Restart (confirmation naming the process while it runs).
-- The Repositories header draws a bar of the repository's commands above the commit box; a project card whose folder is a repository draws a control per command; the Files row menu of a root or a repository folder gains Run Command.
+- The Repositories header draws a bar of the repository's commands above the commit box; a project card whose folder is a repository draws the commands bar (Add Command, five buttons, an overflow menu beyond five), not a control per command; the Files row menu of a root or a repository folder gains Run Command.
 - The tmux list format gains `#{@oculus_task}`, `#{pane_dead}` and `#{pane_dead_status}` before `#{pid}`; `Terminal` gains `task`, `exit` and `job`.
 - A new route `/api/commands` (`GET` list; `POST` save, remove, approve) and the terminal route's actions `command`, `rerun`, `restart`; the refusal that lists the actions names `command`.
 - Files: `.oculus/commands.yml` (read), `~/.oculus/commands.json` (written by the form), the approvals file named by the new `approvals` key of `local.yml` (default `~/.oculus/approvals.json`, mode 0600 in a 0700 folder; catalogued in `config/catalogs/options.yml`), new words in `config/text/views/shared/commands.yml` and `config/text/app.yml`.
 - The pty channel polls the list at `POLL_MS` while a task terminal runs, with no page attached.
+- A task terminal's mark `@oculus_task` carries `chain: [{ name, cwd }, ...]`; the page reads the folders of a chain's errors from it, and a terminal a grid let go of before its line ended gets its diagnostics from one capture. A placeholder after a backslash or in a comment is refused like one in quotes. The approvals folder is made 0700 only when the approvals file is at its default place; the approval text is `JSON.stringify({ repo, chain: [[folder, run], ...] }, null, 1)` and approvals given before it ask again.
 
 ## Anything in the brief that was wrong or impossible
 
 - "Then, from the worktree's root, ... checks.sh tools/oculus/.scratch/migration/orchestrator-state.md": the first command of the list, `npm test`, fails there with `npm error path .../D17/package.json ... ENOENT`; the list runs from `tools/oculus`.
 - Item 10 names `CardActions.svelte` for the card's controls; the action list was built in `ProjectCard.svelte`, and the round's ruling 2 is met there (judgment call 5).
 - The path list omits files the step had to change, each widened rather than booked: tests `tests/checks/tree/boundaries.test.ts`, `tests/views/whole/type-scale.test.ts`, `tests/state/client/client-state.test.ts`, `tests/server/machine/pty/tmux-fixture.ts` (new), `tests/shell/commands/command-ask.test.ts` (new), and the four files of judgment call 7; source `src/lib/data/model/index.ts` (exports the new types), `state/sessions/folds.ts` (the list row carries `task` and `exit`), `state/sessions/terminal/terminal-marks.ts` (the result marks), `state/sources/repositories/file-git.ts` (`wholePath` exported), `shell/Workbench.svelte` (mounts `CommandAsk`, hands the default-key action), `shell/commands/CommandAsk.svelte` and `CommandForm.svelte` (new), `ui/controls/editor/Editor.svelte`, `views/sources/source/Editor.svelte` and `views/sources/repositories/diff/Diff.svelte` (the selected text and the file an editor publishes), `views/sources/files/tree/control/picks.svelte.ts` (the Run Command pick), `server/root/watch/local.ts` (`approvals` joins the list of the machine's own keys the context holds), `server/machine/pty/edit.ts` (`tmuxValue` moved out of it); and in the round `config/text/server.yml` (the `server.commands.*` sentences), `data/accounts/chat.ts`, `tests/checks/imports/order.ts` and `tests/routes/sessions/terminal-actions.test.ts` (import paths), `tests/ui/frame/fake-dom.ts`.
-- Round ruling 13 names the result marks or the poll as the part of `terminals.svelte.ts` to move. The step's own additions to that file are 11 lines, so no self-contained part of them is large enough; the part moved is `closeEnded` and `moveInto`, two functions the file already held, to `state/sessions/terminal/terminal-lists.ts`. The file ends 38 lines under its cap.
+- Round ruling 13 names the result marks or the poll as the part of `terminals.svelte.ts` to move. The step's own additions to that file are 11 lines, so no self-contained part of them is large enough; the part moved is `closeEnded` and `moveInto`, two functions the file already held, to `state/sessions/terminal/terminal-lists.ts`. The file ends 25 lines under its cap (875 lines, round 2 added the reader count `subscribed`).
 - The refuter's finding behind ruling 18 reads `picks.svelte.ts` as a `GET /api/commands` for each repository row drawn. The base's effect only counted a watcher on each; a GET follows when a view reads that repository's list. The three-row test therefore reads each list in an effect after drawing, which makes the base fail with three requests; the change removes the watcher, so a list is asked for only when a menu opens.
 
 ## Every edit to an existing assertion, before and after
@@ -583,7 +665,9 @@ Moved in the round: `data/helpers/commands-chain.ts` to `src/lib/data/helpers/ru
 - Fixture literals building a full `Terminal` gained `task: false, exit: null, job: null` in `tests/fixtures/sessions-fixture.ts`, `tests/server/root/watch/sessions.test.ts`, `tests/state/client/terminal/terminal-start.test.ts`, `terminal-tabs.test.ts`, `tests/state/sessions/terminal/composer.test.ts`, `terminal-marks.test.ts`, `tests/state/sessions/terminals.test.ts`, `folds.test.ts`.
 - `EditorStatus` literals gained `file: ''` and `selection: ''` in `tests/shell/status/status-bar.test.ts`, `tests/shell/keys/palette-open.test.ts`, `palette.test.ts`, `tests/state/workbench/navigation/editor-status.test.ts`.
 - `tests/checks/config/config-folder.test.ts`: `CATALOG_FILES` gained `'views/shared/commands.yml'`.
-- `tests/checks/tree/boundaries.test.ts`: `SHELL_STORES` gained `'commands'` and its comment names the three shell users; the state row lists `data/helpers/run/tasks` and `data/helpers/run/chain`.
+- `tests/checks/tree/boundaries.test.ts`: `SHELL_STORES` gained `'commands'` and its comment names the three shell users; the state row lists `data/helpers/run/tasks` (round 2 took `data/helpers/run/chain` out of the row and out of the comment above it, since no state module imports it).
+- `tests/checks/imports/order.ts:80`: before `shell: ['shell', 'shell/rail', 'shell/status', 'shell/panes', 'shell/keys'],`, after `shell: ['shell', 'shell/rail', 'shell/status', 'shell/panes', 'shell/keys', 'shell/commands'],` (the shell folder that holds `CommandAsk.svelte` and `CommandForm.svelte` has an import order slot; `tests/checks/imports/order.test.ts` passes on it).
+- Round 2, `tests/state/sessions/terminal/commands-output.test.ts`: `does not ask for a terminal a pane fed to note, and keeps what the pane read` became `does not ask for a terminal a pane still reads when it ends, and keeps what it read` (the pane is a `subscribePty` call held, not a `note` made), `does not replace the output a pane fed while the capture was out` subscribes a pane while the capture is out, the chain cases build the terminal's mark with its chain in place of seeding the repository's list, and `reads a plain command from its own folder` and `reads a mark that names no chain from the repository` replace the case for a list not read yet; `commands.test.ts` `names the cwd the command is listed with ...` reads the cwd from the mark. `tests/server/machine/commands/run.test.ts` `records the source in the mark of the task terminal` expects `chain` in the mark. `tests/server/machine/approvals/approvals.test.ts` no longer imports `commandKey` and `readApprovals`. `tests/views/shared/commands/commands-menu.test.ts` reads the source words through `commandTip`. `tests/shell/commands/command-ask.test.ts:55` is retitled.
 - `tests/state/client/client-state.test.ts`: `STORES` gained `'commands'`; the list of stores handed the query client gained `'commands'` and its test title reads "eleven" where it read "ten".
 - `tests/views/whole/type-scale.test.ts`: the audited views gained `'shared/commands/CommandBar.svelte': ''`.
 - `tests/data/sources/config/local.test.ts`: three cases added for the `approvals` key.
@@ -593,14 +677,15 @@ Moved in the round: `data/helpers/commands-chain.ts` to `src/lib/data/helpers/ru
 
 ## Grep of the changed names across src, tests, config, HELP.md, DESIGN.md, README.md
 
-`grep -rlE '<name>' src tests config HELP.md DESIGN.md README.md --exclude=local.yml | wc -l`; files per name: `commandDiagnostics` 3, `CommandForming` 1, `CommandAsking` 1, `openForm` 5, `closeForm` 4, `errorMatch` 3, `taskStateOf` 5, `TaskState` 2, `LIST_FORMAT` 3, `shellWord` 8, `@oculus_task` 7, `pane_dead_status` 3, `commands.json` 8, `commands.yml` 13, `approvals.json` 8, `CommandBar` 6, `CommandAsk` 5, `runDefault` 5, `pressRerun` 3, `pressRestart` 3, `chainLines` 4, `chainText` 7, `quotedPlaceholder` 4, `commandKey` 6, `commandLabel` 4, `captureTask` 3, `paneOutput` 3, `readEnded` 1, `watchEnds` 2, `closeEnded` 3, `moveInto` 2, `data/helpers/run` 14. `shellWord` is in `pty/shell-word.ts`, imported by `pty/chat.ts`, `pty/routes.ts`, `usage/refresh.ts`, `commands/found.ts`, `commands/placeholders.ts`, `commands/chain.ts`, and named in `tests/routes/sessions/terminal-fixture.ts`; no file holds a second copy. `LIST_FORMAT` is in `pty/sessions.ts`, `task.test.ts` and `terminal-edit.test.ts`. `CommandForm` is named only by `CommandAsk.svelte` and its own file. The old paths `helpers/commands-chain`, `helpers/tasks.ts`, `shell/keys/Command` and the helper `commandText` appear in no file of `src tests config HELP.md DESIGN.md README.md` (each grep prints nothing).
+`grep -rlE --exclude=local.yml '<name>' src tests config HELP.md DESIGN.md README.md | wc -l`; files per name: `commandDiagnostics` 4, `CommandForming` 1, `CommandAsking` 1, `openForm` 5, `closeForm` 4, `errorMatch` 3, `taskStateOf` 5, `TaskState` 2, `LIST_FORMAT` 3, `shellWord` 8, `@oculus_task` 7, `pane_dead_status` 3, `commands.json` 8, `commands.yml` 13, `approvals.json` 9, `CommandBar` 6, `CommandAsk` 5, `runDefault` 5, `pressRerun` 3, `pressRestart` 3, `chainLines` 4, `chainText` 7, `quotedPlaceholder` 0, `unsafePlaceholder` 4, `unsafeSentence` 3, `commandKey` 5, `commandLabel` 4, `captureTask` 4, `paneOutput` 4, `readEnded` 1, `subscribed` 18, `watchEnds` 3, `closeEnded` 3, `moveInto` 2, `data/helpers/run` 13. `shellWord` is in `pty/shell-word.ts`, imported by `pty/chat.ts`, `pty/routes.ts`, `usage/refresh.ts`, `commands/found.ts`, `commands/placeholders.ts`, `commands/chain.ts`, and named in `tests/routes/sessions/terminal-fixture.ts`; no file holds a second copy. `LIST_FORMAT` is in `pty/sessions.ts`, `task.test.ts` and `terminal-edit.test.ts`. `CommandForm` is named only by `CommandAsk.svelte` and its own file. The old paths `helpers/commands-chain`, `helpers/tasks.ts`, `shell/keys/Command` and the helper `commandText` appear in no file of `src tests config HELP.md DESIGN.md README.md` (each grep prints nothing).
 
 ## Comments and docs re-read
 
-- `DESIGN.md` Processes paragraph: the chain approved as one entry, its JSON text over the repository's path and the lines. `DESIGN.md` Approval paragraph: the approvals folder made 0700 by each write when looser and owned by the user, the command key over the repository's real path and the chain's lines. `DESIGN.md` pty bridge bullet: a task terminal stays, polled at `POLL_MS` while its line runs, `@oculus_task` holds the repository, the name and the source, and the `capture` action reads an ended terminal's pane. `DESIGN.md` state row: `data/helpers/run/tasks` and `data/helpers/run/chain`.
+- `DESIGN.md` Processes paragraph: the chain approved as one entry, its JSON text over the repository's path and the lines. `DESIGN.md` Approval paragraph: the text hashed, `JSON.stringify({ repo, chain: [[folder, run], ...] }, null, 1)`, the command key over it, and the approvals folder made 0700 by a write to the default file when looser and owned by the user. `DESIGN.md` pty bridge bullet: a task terminal stays, polled at `POLL_MS` while its line runs, `@oculus_task` holds the repository, the name, the source and the chain, and the `capture` action reads an ended terminal's pane. `DESIGN.md` state row: `data/helpers/run/tasks`.
 - `server/machine/pty/channel.ts` head comments: the poll while a task runs.
-- `HELP.md`: key rows, terminal row and `## Project commands`: the three preset names, the source drawn beside a shared name and the form's refusals, the card's bar, the Files Run Command submenu read when the menu opens, placeholders written bare and refused inside quotes, the chain approval listing every line with the repository's path in the key, the folder made 0700, and diagnostics read from a pane's captured text with chain paths read from the printing command's folder; `local.yml` paragraph (`approvals`).
-- `config/catalogs/options.yml`: the `approvals` description says each write makes the folder 0700 when looser.
+- `HELP.md`: key rows, terminal row and `## Project commands`: the three preset names, the source drawn beside a shared name and the form's refusals, the card's bar, the Files Run Command submenu read when the menu opens, placeholders written bare and refused inside quotes, the chain approval listing every line with the repository's path in the key, the folder made 0700 for the default approvals file only, approvals given before the current text asking again, the source named beside the name on each button and menu item with the default keys naming none, and diagnostics read from a pane's captured text with chain paths read from the printing command's folder; `local.yml` paragraph (`approvals`).
+- `config/catalogs/options.yml`: the `approvals` description says a write to the default file makes the folder 0700 when looser and a file elsewhere leaves its folder.
+- `src/lib/data/helpers/run/chain.ts`, `tests/checks/tree/boundaries.test.ts` (the comment above the state row), `ProjectCard.svelte`, `server/machine/commands/routes.ts`, `terminal-lists.ts`, `placeholders.ts`, `commands.svelte.ts` and `terminals.svelte.ts` head and doc comments: each says what the code does now.
 - `README.md`: still true.
 
 ## Not covered by a test
@@ -610,7 +695,9 @@ Moved in the round: `data/helpers/commands-chain.ts` to `src/lib/data/helpers/ru
 - The approval and Restart confirmations as buttons (the store holds the question, `CommandAsk.svelte` lists every line of a chain in a test, and `Confirm` is drawn; the buttons are not pressed in a test).
 - The xterm link provider drawing an error as a link and a click opening the file; the menus' opening by a pointer.
 - `Source.svelte` publishing the selection and `Editor.svelte`'s `onselect` (the placeholders read what the store is handed).
-- `privateFolder` leaving a folder owned by another user as it is: the branch is written and no test has a second user.
+- The ownership check of `privateFolder` with a real second user: the test mocks `process.getuid`.
+- The grid itself calling `subscribePty` and `note`: the cases call them as the grid does, a mounted grid needs a DOM.
+- A command whose own output holds a line equal to a later command's name in a chain (D17-B).
 - The real bits-ui widgets, layout and focus under the client view tests: they run over `tests/ui/frame/fake-dom.ts` with those components stubbed (judgment call 10).
 - `~/.oculus` as it stands on this host: the tests set HOME to a scratch folder, so the mode change from 0755 to 0700 is shown on a scratch folder only.
 
@@ -622,3 +709,5 @@ Moved in the round: `data/helpers/commands-chain.ts` to `src/lib/data/helpers/ru
 - Scratch folders under the session scratchpad (`unchanged/`, `d17-*`, `d17r1-base`, `d17r1-mut`) were written during the step and the round; nothing in the worktree or on the main checkout refers to them.
 - The first `npm test` of the round, run beside two other builders' vitest runs, timed out one case in a file the round did not touch: `tests/server/edit/config-key.test.ts` `refuses what is not a finite number for a number option` (`Error: Test timed out in 5000ms.`). `npx vitest run tests/server/edit/config-key.test.ts` alone prints `Tests  61 passed (61)`, and the case passed in both `checks.sh` runs. A landing's verify run under load can meet the same timeout.
 - The base-run quotes in "Repair round 1" were taken on a copy of the pre-round tree with the round's test files; the two setup lines adapted in its `run.test.ts` are named at the head of that section.
+- The base-run quotes in "Repair round 2" were taken on a copy of the pre-round-2 tree (`d17r2-base`) with the round's final test files copied over it; no setup line was adapted.
+- `npm test` run on its own once, and `npx vitest run tests/server/machine/pty` once of three runs, met `Test timed out in 30000ms` in `task.test.ts` `captures all the text of an ended pane, a wrapped line joined, and its pid changes on a respawn`, a case no ruling touches, while another builder's vitest runs were on the machine. Four copies of that file started at once on the unchanged pre-round-2 tree gave three passes and the same timeout once; the file alone passed four runs in a row on the final tree, and `checks.sh` passed twice. The cause is not found (not verified); the wait is the `pane-died` event of `watchEnds`.

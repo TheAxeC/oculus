@@ -3,7 +3,7 @@
 In flight:
 - D18 (the Processes view): landing, waits on the build being allowed.
 - D32 (replace in Search): round refuted; lands after D18.
-- D17 (project commands): repair round 2.
+- D17 (project commands): round 2 being refuted.
 - D14 (LaTeX on any folder): refuted; lands after D18 and D32, with fixes at landing.
 - S4 (the Settings editor finished): repair round 2.
 

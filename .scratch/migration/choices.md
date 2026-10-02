@@ -997,6 +997,15 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z304 (2026-10-02, D17's round 2 report, D17-B): the marker a chain prints before each command
+
+Chosen: (b), the printed line carries a per-run token with the command's name, and the store advances only on that exact line. A command's own output can hold a line equal to the next command's name (a make target echoing `test`, say); with the bare name, its errors would then resolve from the next command's folder. Fixed at landing on main, since D17's rounds are spent.
+
+Not chosen:
+- (a), the bare name as built: the lazy option, a known wrong folder kept.
+
+Where it applies: D17's landing. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z303 (2026-10-02, D14's round 1 report, D14-glyph): the LaTeX tab's glyph, again
 
 Chosen: (a), `journals` (`[n]`, `newspaper`), a typeset page that no view uses; the tree has it now. Z300 chose `paper` on a wrong premise: `paper` is the Document view's glyph, and `tests/state/workbench/navigation/registry.test.ts` refuses two views sharing one.
