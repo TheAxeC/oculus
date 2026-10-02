@@ -925,3 +925,24 @@ Where it is built: D32. Booked in the state file's closed log and `plan.md` Ruli
 
 Where it is built: D18's repair round 1. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z260 (2026-10-02, Axel's report): sticky scroll's structure
+
+- Chosen by Axel (a): D25 gives Monaco the Markdown and LaTeX headings as document symbols, from the parser the Files Outline uses, and bracket-based folding to the brace languages that have no Monaco language service; D23's clangd symbols then replace the folding for C and C++. TypeScript, JavaScript, JSON and CSS already have Monaco's own services (`kit/workers.ts:17-21`), and Python's indented blocks give the indentation model the right scopes.
+- Not chosen: waiting for D23 alone, which leaves Markdown and LaTeX with no sticky lines.
+
+Where it is built: D25. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z261 (2026-10-02, Axel's report): large files uncoloured
+
+- Chosen (a): `editor.paint_limit_kb` defaults to 20480; `config/behavior.yml:113` holds 64, so `orchestrator-state.md` (1,107,333 bytes) opens as plaintext (`views/sources/source/Editor.svelte:8-9,110-111`). Monaco tokenizes a line at a time in the background, viewport first, so the size of the file does not set the cost of a keystroke; the typing delay on that file is measured at D25's landing.
+- Not chosen: (b) keeping 64 KB and saying so, the lazy option; (c) removing the key, which drops the setting a slow machine would want.
+
+Where it is built: D25. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z262 (2026-10-02, Axel's report): the tab's path, Open Editors order, the Files breadcrumb
+
+- Chosen (a): X3c gives a tab the full path of its file as its tooltip, as VS Code's tab hover does (no tab has a `title` today, read on TEST with `[...document.querySelectorAll('[role=tab]')].map(t => t.title)`); a drag along Open Editors reorders the tabs; the breadcrumb above the Files tree (`Files.svelte:198`, `crumbsOf`) goes once X3c's breadcrumbs over a file tab (Z47 4 (a)) are in, since VS Code's Explorer has none.
+- Not chosen: a path shown at the bottom of the screen as Finder's path bar, which VS Code does not do and which the status bar's space would carry for one tab only.
+
+Where it is built: X3c. Booked in the state file's closed log and `plan.md` Rulings.
+
