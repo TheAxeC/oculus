@@ -997,6 +997,15 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z287 (2026-10-02, D32's review): the pattern refusal's reason
+
+Chosen: a pattern ripgrep cannot read is refused with the catalog sentence and ripgrep's own reason in it, as VS Code's Search view shows ripgrep's regex parse error (the orchestrator, automode).
+
+Not chosen:
+- The catalog sentence alone, as Z265 reads. It hides which part of the regular expression is wrong.
+
+Where it applies: `agents/briefs/D32-round1.md` ruling 4.
+
 ## Z286 (2026-10-02, Q91's brief check): the card's tree, revising Z283
 
 Chosen: the explorer tree moves under `views/shared/explorer/`, and the Files view and every card (the board's open card and the project tab's) draw it; each card's tree has its own state record `<tab id>#files:<project id>`, cleared when the tab closes and followed on a rename; the card's finder box stays above the tree and lists flat matches while text is typed; the tree's row menu gains Open in Program; a `followup:` list of one note is written as that note, and emptying the note's text removes the note (the orchestrator, automode).

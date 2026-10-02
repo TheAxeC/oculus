@@ -2,12 +2,12 @@
 
 27 steps are not landed: 5 in flight and 22 queued. Each line below is one step: its id, what it is, and what it waits for.
 
-In flight (5, every slot taken; Q91 waits ready with its brief checked, X3e and X3c have their brief checks running, and E4 is being prepared as the third step that can start beside Q91 and X3c):
-- D18 (the Processes view): its repair round reviewed (5 small findings, fixed at landing); its landing waits for your ruling on the rail order (open item Z275), since it changes `config/layout.yml`, which holds your uncommitted change.
-- D32 (replace in the Search view, as VS Code's): built; its review is running. Its repair round will also turn the Replace Preview's request into a POST, so a file with many hits can still be previewed.
+In flight (5, every slot taken; Q91 waits ready with its brief checked, X3e and X3c have their brief checks running, and X3e starts after Q91. No other queued step can be prepared now: each waits for a step in flight or is placed after the code steps):
+- D18 (the Processes view): its repair round reviewed (5 small findings, fixed at landing); it lands next. `config/layout.yml` is back to the committed rail.
+- D32 (replace in the Search view, as VS Code's): reviewed; its repair round 1 is sent (15 rulings: the Replace Preview as a POST, the regex toggle re-running the search, tests and docs).
 - D17 (project commands from `.oculus/commands.yml`, a form and what oculus finds, run after you approve their text; a default build on Cmd+Shift+B and test on Cmd+Alt+T; compiler errors clickable): being built.
 - D14 (LaTeX on any folder holding a main file: several mains a folder, build on save, magic comments, outline, word count, hover preview, Format Document; build errors published for the Problems view; ChkTeX moved to D36): being built. Format Document needs a formatter installed on your machine (open item Z280).
-- S4 (the Settings editor finished: editors for the lists, the key/value tables and the record forms, one new write for them, the table of contents below 700 px, the Config view removed and the System and Views and Settings pages merged into one rail item named System): being built. Its landing, like D18's, waits for your ruling on the rail order (open item Z275), since it rewrites the rail in `config/layout.yml`. Once D18 is on main, its Processes view sits last on the merged page with no number key, since the keys reach nine views.
+- S4 (the Settings editor finished: editors for the lists, the key/value tables and the record forms, one new write for them, the table of contents below 700 px, the Config view removed and the System and Views and Settings pages merged into one rail item named System): being built. Once D18 is on main, its Processes view sits last on the merged page with no number key, since the keys reach nine views.
 
 Queued, in order (22). "Ready" means nothing in plan.md holds the step back; it starts when a slot frees.
 - Q91 (the project view and its manifest editor reworked: the follow-up notes and the priority, waiting-on, snooze and subtasks shown in the editor, the follow-ups drawn on the card, the status line drawn as a labelled field with its code, and the project's file list drawn as the Files view's tree rooted at the project folder): its brief is written and checked; it waits ready for the next free slot. Its project file list is the Files view's tree moved to a shared folder, which every card draws.
@@ -23,7 +23,7 @@ Queued, in order (22). "Ready" means nothing in plan.md holds the step back; it 
 - D23b (the language features that edit other files, workspace symbols, the TypeScript and Svelte servers): waits for D23.
 - D33 (the Problems view): waits for D23 and D17.
 - D36 (linters on save: ChkTeX, ruff, eslint, shellcheck): waits for D33.
-- E4 (the apps built, as DESIGN.md's apps section rules them): ready; placed after the feature steps.
+- E4 (the apps built, as DESIGN.md's apps section rules them): waits for D17, which builds the approvals file (`server/machine/approvals/`) that an app's approval uses.
 - Q72 (the architecture re-read before the release): ready; placed after every step that changes code.
 - R2 (release readiness: a README quickstart, a demo hub, a first-run check): ready; placed after Q72.
 - O29 (retiring the cockpit, each deletion listed for your yes): ready; placed after R2.
