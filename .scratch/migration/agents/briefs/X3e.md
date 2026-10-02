@@ -12,6 +12,12 @@ A design ruling decides what is built. It never exempts the code: every line is 
 - Z269 (b) (the user): nested repositories found by a scan one level deep under each root, with a setting for the depth, folded into X3e. Premise corrected: the step's line did not carry this part or its tag; `plan.md:188` now does.
 - Z284 (the orchestrator, automode): the choices this brief takes below (decisions 1 to 6).
 
+## Carried into this brief before dispatch
+
+These widenings of the step's line in `plan.md` were booked after this brief was written. Before the builder is launched, each becomes an item under "What to build", its cases under "Cases" and its files under "Paths this step writes", with its premise checked on main's head; each defect's full look record is in `agents/reviews/owed-looks.md` under its id.
+
+- Widened 2026-10-02 (Z289, the orchestrator, automode): the Files tree follows the disk (X3a-1), the breadcrumb row pushes no row (X3a-2), a deleted file's tab is marked (X3a-3), the folder-panel line clears (X3a-4), a Changes row shows its folder in Files (X3a-5), removed roots leave the tree (X3a-6), long paths show the file name first (X3a-7); the Source Control defects Q88c-1 to Q88c-14 and Q88c-19 to Q88c-22, a single click opens a text file (D27-3), a changed row offers Open File (D13a-5) and a click on it opens the diff (A1-4); the hub's Graph draws its count and rows without a 10 s wait at 0.
+
 ## What is on the tree (read on main at a9c0d38d)
 
 All paths below `tools/oculus/` unless they start with `.agents/`.

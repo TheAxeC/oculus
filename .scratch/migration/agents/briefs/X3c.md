@@ -16,6 +16,17 @@ A design ruling decides what is built. It never exempts the code: every line is 
 - Z262 (automode): the tab tooltip names the full path; Open Editors drag reorders tabs; the Files tree's breadcrumb goes once X3c's file-tab breadcrumbs are in.
 - Z267 (the user): no separate path bar; the path shows in X3c's tooltip and breadcrumbs.
 
+## Carried into this brief before dispatch
+
+These widenings of the step's line in `plan.md` were booked after this brief was written. Before the builder is launched, each becomes an item under "What to build", its cases under "Cases" and its files under "Paths this step writes", with its premise checked on main's head; each defect's full look record is in `agents/reviews/owed-looks.md` under its id.
+
+- Widened 2026-10-02 (Z288, the orchestrator, automode): a path breadcrumb on a file tab in place of its name row, at VS Code's measured size; the tab's buttons (Save, Revert, star, Open in Program, Preview, Blame) at the strip's right end with the second row removed; a long palette result on one line with an ellipsis; a click on a rail button never writes a rail reorder.
+- Widened 2026-10-02 (Z289, the orchestrator, automode): a Markdown preview table keeps its first column readable in a narrow pane (M3-4); the Markdown preview is off by default and never takes over half a narrow pane (D13a-4); Editor Actions Position names VS Code's places with a check on the chosen one, and Hidden hides a float's More too (Q88c-15); New Text File opens an untitled text file (Q88c-16); closing a tab activates the tab active before it (Q88c-17); Float and Return to Page keep a terminal's scroll position (L4-1); a Terminal tab is titled by its process (L4-2).
+- Widened 2026-10-02 (Z292, the orchestrator, automode): a palette row whose title is longer than the row keeps to one line, cut with an ellipsis, as VS Code's quick pick does, so it never draws over the next row (R18-look-1, `src/lib/shell/keys/Palette.svelte`).
+- Widened 2026-10-02 (Z293, the orchestrator, automode): at a large text size in a narrow pane a tab keeps its title readable before the strip's arrows and actions take their width, as VS Code's tabs shrink to fit (U3-look-1).
+- Widened 2026-10-02 (Z294, the orchestrator, automode): the strip scrolls the active tab into view whenever a tab becomes active, as VS Code's does (Q78-look-1).
+- Widened 2026-10-02 (Z295, the orchestrator, automode): the status bar keeps its branch and sync items while a diff tab is on screen, the tab's file read in the repository its state names by folder as well as under a served root, as VS Code keeps them for a diff editor (A1-look-1, `src/lib/state/workbench/navigation/status.ts:176-178`).
+
 ## What is on the tree (read on main at a9c0d38d)
 
 All paths below `tools/oculus/` unless they start with `.agents/`.

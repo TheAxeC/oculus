@@ -997,6 +997,16 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z308 (2026-10-03, D32's run over round 1): its findings fixed at landing
+
+Chosen: every finding fixed at landing on main, as `agents/reviews/D32-refuter.md` "Closed" lists; the "Replaced ..." sentence only after a Replace All with any later change writing the count back, and a toggle during a run cancelling it and running again, both as VS Code does.
+
+Not chosen:
+- A second repair round: the cap allows one only for an unbuilt acceptance item whose fix is too large for landing.
+- Leaving findings 8 and 9 as partial: both are defects of item 5 and item 2.
+
+Where it applies: D32's landing. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z307 (2026-10-03, the Q99 look): two terminal defects into D20
 
 Chosen: built in D20, which already carries the terminal look's other defects (Z297) and works in the terminal views; D20's /spec finds each cause read-only and writes it into the brief, and a cause not found goes to Axel as an open item.

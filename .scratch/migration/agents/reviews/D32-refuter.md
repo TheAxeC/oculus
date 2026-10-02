@@ -206,3 +206,19 @@ For the record: the builder ran `git -C . status` and `git -C /nonexistent statu
 - The worktree's `D32-report.md` (1624 lines) lacks the "Repair round 1" section main's copy (1685 lines) has; which copy lands is the orchestrator's call.
 - The origin rule on the preview POST in `src/hooks.server.ts`: not read this round.
 - Whether the adapter's request body limit bounds the preview POST for tens of thousands of hits: not checked; `search.max_hits` caps the hits a tab holds.
+
+## Closed
+
+D32's one repair round is spent, so every finding of the run over round 1 is fixed at landing on main and never sent to the builder (Z308, the orchestrator, automode):
+- Finding 1, the preview test: `tests/routes/replace/preview.test.ts` drives the client's preview request as the store forms it, with enough hits that a GET address would pass the server's header limit, and asserts a POST with the hits in its body and a 200; the landing quotes it failing on the code before ruling 1 (an address over the limit, 431) and passing after.
+- Finding 2: `client` and `asked` in `tests/state/sources/fs/fs-fixture.ts` stop being file-scope `export let`; `storeHooks()` returns an object holding them, rebuilt in its `beforeEach`, and each test reads them from it.
+- Finding 3: `tests/checks/utils/outside-paths.test.ts` reads a synthetic brief section held in the test (the D32 bullets copied in), never the ledger's `briefs/D32.md`, and its title names no step.
+- Finding 4: `src/lib/server/files/fs/replace.ts:3` and `:359` say POST `/api/ops` `preview`.
+- Finding 5: `src/lib/state/sources/search/hits.ts:136-137` says `replacementFor` returns null only for a regex run whose hit carries no `groups`.
+- Finding 6: `src/lib/state/sources/search/search.ts:80` states the rule without "from the first".
+- Finding 7: `RowKind` in `src/lib/state/sources/search/keys.ts:57` loses its `export`.
+- Finding 8, item 5: the "Replaced ..." sentence is shown only after a Replace All, as VS Code's `SearchView.replaceAll` shows it; any later change of the results (a single Replace, a file's Replace All, a new run, Dismiss) writes the count line back. Tests for a single Replace, for Replace All followed by a Replace, and for Dismiss; `DESIGN.md:130` and `Search.svelte:35-36` say so.
+- Finding 9, item 2 and ruling 3: a toggle turned while a run is in flight cancels that run and starts one under the new toggles, so no answer lands under the old toggles; a test that a regex toggle during a literal run gives regex rows and a regex Replace; `HELP.md:170` then holds.
+- Finding 10: the build stands; ruling 15's text in `agents/briefs/D32-round1.md` is what was wrong, and the booking says so.
+- Finding 11: `utils/outside-paths.mjs` takes an entry only from a bullet of the "Paths this step writes" list, never a prose word, so `data/helpers/` on brief line 158 covers nothing; a test with a prose word in the section.
+- Declined points taken at landing: cases 27 to 31 and the DOM behaviour at the look on TEST; the report that lands is main's `D32-report.md` (1685 lines, with its "Repair round 1" section), the ledger being written only on main; the origin rule on the preview POST in `src/hooks.server.ts` is read at landing and a POST from another origin is refused, with a test if none covers it.
