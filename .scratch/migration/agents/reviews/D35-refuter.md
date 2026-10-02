@@ -482,3 +482,113 @@ none.
 - The `ordo-medium` experiment's evaluation (tokens, first-report bar): the orchestrator's.
 
 Reviewer usage: not measured inside the session (no counter is available to me); the completion notice carries tokens, tool uses and minutes.
+
+
+# Repair round 1, refuted
+
+I changed no file in the worktree or the main checkout. Git run: none except what the task allows (`git diff bca2c6b3 --stat`, `git status --short`; both print 59 status lines and `53 files changed, 4393 insertions(+), 1528 deletions(-)` before and after my runs). `npm run diagrams` rewrote tracked diagrams as the verify list requires. All mutation runs and the three scratch scripts ran on a copy in the scratchpad (`.../scratchpad/r1/copy`, without `config/local.yml`, node_modules symlinked) or from the scratchpad, on ephemeral ports. I never opened `config/local.yml`. No server was started outside a test or a scratch script, and none on 8787 or 8790.
+
+## Verification (rerun by the reviewer)
+
+```
+$ npm run diagrams            (exit 0, last lines: docs/diagrams/channels.svg, writes.dot, writes.svg)
+$ sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md     (exit 0, load 10 to 34; one full run, passed at the first run)
+$ npm test
+ Test Files  433 passed | 22 skipped (455)
+      Tests  11350 passed | 621 skipped (11971)
+   Start at  06:43:35
+   Duration  194.40s (transform 49.35s, setup 0ms, import 451.21s, tests 261.63s, environment 196ms)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  442 passed | 9 skipped (451)
+$ npm run check
+1790916515201 COMPLETED 2972 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+Commands the round section quotes, rerun:
+- `npx vitest run tests/routes/edit/config-key.test.ts tests/server/git/autofetch.test.ts tests/server/edit/config-key.test.ts --reporter=dot`: `Test Files  3 passed (3)  Tests  112 passed (112)`, matching the report.
+- `npx vitest run tests/server/edit/config-key.test.ts --reporter=dot`: `Tests  54 passed (54)`, tests 32.59 s; the same file on main (`/Users/axelfaes/workspace/research-hub/tools/oculus`): `Tests  38 passed (38)`, tests 26.52 s, at load 13 to 17. `-t "bounds of the cadences"`: `16 passed | 38 skipped`, tests 3.86 s. The file's added time is about 6 s, as the report says.
+- `grep -rn --exclude=local.yml 'takes effect when the server is started again' config HELP.md DESIGN.md src | wc -l` prints 0; `grep -rn 'loadLocalOrDefaults(' src | wc -l` prints 11; `grep -c 'A change is read again at once.' config/catalogs/options.yml` prints 15; `grep -c 'moves the server to the new port' ...` prints 1; `ls src/lib/server/root | wc -l` prints 9, `ls tests/server/root | wc -l` prints 10.
+- The ASCII gate of `agents/spec.md` over `src tests bin config` (with `! -name local.yml`) prints nothing.
+- `cmp` of the 27 files item 9 lists against main: 26 same; `src/lib/data/sources/config.ts` differs (ruling B) and `tests/views/system/help.test.ts` differs (asserts the new HELP sentences, as the first report said); the 7 route folders under `src/routes/api/` are identical; `git diff bca2c6b3 --name-only | grep routes` lists `src/routes/+page.svelte`, `tests/routes/page.test.ts`, `tests/routes/sessions/hook.test.ts`.
+- Failing-before table, rerun on the scratch copy (fix taken out by hand, file run, file restored, `cmp` printed no difference each time). All reproduced as red: forwarded-page condition removed (2 failed: `stays on a forwarded port...`, `stays on an https page...`); `carryWorkbench(localStorage, window)` removed (`carries the arrangement and the settings in the window name before it goes`); `takeCarried(localStorage, window);` removed from `+page.svelte` (`tests/routes/page.test.ts`, the order audit); `win.name = ''` removed (3 failed); `if (held === null) return;` replaced (3 failed); `await finishRequests();` removed (`lets a request in flight finish...` and `ends an idle connection at once while a request in flight finishes` failed with `fetch failed`); grace timer ignoring `graceMs` (`ends a request still in flight when the grace period is over...` timed out at 5000 ms); `before();` removed (3 failed, `keeps a socket that was open...` timed out); `exit(1);` removed (1 failed); `'workspaces'` removed from `FIELDS` (2 failed); `if (mover.moving()) return;` removed from `serve.ts` (`leaves the context and the socket open when a move stops the server` failed); `carryingHandler(handler, context)` replaced (`hands the handler every request with the context on it` failed); `throw error;` first in the `settlePort` catch (1 failed); the `reloadLocal` try/catch rethrowing (1 failed); `tryStart` rethrowing (1 failed). Also `rebuild(rebuiltBy(changed), previous)` removed (9 failed, cases 27 to 32, 38, 39 and the throwing-constructor case), `else void settlePort();` replaced (8 failed, cases 35, 36), `if (closed) return;` removed from `reloadLocal` (case 40 failed), `changedKeys` filter made always true (10+ failed).
+- Counts the report gives that I did not reproduce, no decision resting on them: `storage.setItem` removed gives 2 failures (report: 3 cases); `JSON.stringify` write removed gives 4 (report: 9); `if (held === null) return;` replaced gives 3 (report: 6 cases, 3 of them left-alone).
+- `closeIdleConnections()` taken out of `serverMover` (scratch copy): `Tests  12 passed (12)` in `tests/server/root/vite-plugin.test.ts`, i.e. the idle-connection case still passes (Standards 1).
+- Scratch script `.../scratchpad/r1/gap.mjs` (a real `http.Server`, `serverMover`, a 2000 ms request in flight, move called at 50 ms; connection attempts to both ports 100 ms after `before()` ran): `t+ 103 ms after before(): new port refused ECONNREFUSED | old port refused ECONNREFUSED`, then `move result null after 1958 ms; slow request: late`, then `new port open` (Behaviour 1).
+- Scratch script `self.mjs`, a handler that starts the move itself: fire-and-respond (the shape `reload()` has: `void settlePort()`, response sent in the same request) gave `response: ok after 18 ms move: [null,4]`; a handler that awaits `move()` before responding gave `ERR UND_ERR_SOCKET fetch failed after 5009 ms`.
+- Scratch script `vitemove.mjs`, a real Vite dev server (`vite.createServer`, `oculusViteServer` with a recording `createContext`) on ephemeral ports: `before move 58999 pong`, `before() called`, `move -> null | old ERR ECONNREFUSED | new pong | context closed 0 | listening true true`, `after vite close: context closed 1`. So the move works on Vite's own `httpServer` (its wrapped async `listen` included) and a Vite close still closes the context.
+
+## Verdicts (the whole diff since the base)
+
+Round closures, rulings 1 to 11 of `agents/briefs/D35-round1.md`: 1 closed as ruled (red run reproduced); 2 closed (carry tests red, page-order test is an audit as the report says); 3 closed for the unit behaviour, with Behaviour 1; 4 closed; 5 closed; 6 closed (mutations A and B red; `server-args.test.ts` source check is labelled an audit in its comment); 7 closed (red with `before()` removed); 8 closed (`DESIGN.md:403` and `actions.ts:75-78` now true; my grep of `DESIGN.md`, `HELP.md`, `config` and `src` for `started again|restart|read once|server starts|next start|at start|root/args|root/shutdown` found no further sentence the step makes false); 9 closed (red with one key out of `FIELDS`); 10 closed; 11 no change.
+
+Items of the brief's "What to build":
+- 1, 2, 3, 4, 5, 6, 7, 8: holds. Files unchanged by the round (find with `-newermt` after the first review lists none of `live-settings.ts`, `poll.ts`, `loop.ts`, `refresh.ts`, `watch.ts`, `settings.ts`, `vite-plugin.ts`); the full list is green; the first review's mutation runs stand. I did not repeat those 16 runs.
+- 9: holds. The two differences are `config.ts` (ruling B) and `help.test.ts` (reported; main's copy asserts the removed sentence).
+- 10: holds (`reloadLocal`, `context.ts:796-844`; mutation runs above).
+- 11: holds (cases 27 to 34 and 39 red under the rebuild and changed-key mutations).
+- 12: violated in one respect, Behaviour 1 (the page is told the new address while no port is bound for up to 5 s). Otherwise holds as ruled (A, C and rulings 1, 3, 4, 5, 6 of this round).
+- 13: holds (`watch/local.ts:1-5`).
+- 14: holds (`options.yml` counts 15 and 1).
+- 15: holds (`DESIGN.md:238`, `:403`).
+- 16: holds (`HELP.md:236`).
+- 17: holds. The tests exist and fail without their behaviour; the audits are named under Standards 1 and in the report.
+
+Cases of the brief's "Cases":
+- 1 to 25: met, as in the first review (files unchanged by the round, list green).
+- 26: not applicable (removed by the brief).
+- 27 to 34: met (context-reload.test.ts; red under the rebuild, changed-key and port mutations above).
+- 35: partial. Met: the portfolio publishes the new address, a real server answers on the new port and not the old, the token is unchanged, the page goes to its own address with path and hash, a forwarded page on another port stays. Missing: the page follows to a port that is bound only when no request is in flight at the move (Behaviour 1); and a page behind a forward on the same port number follows to an unforwarded port (Behaviour 2).
+- 36 to 40: met.
+- 41: met (an audit, as the brief says).
+- 42: met (greps above).
+
+## 1. Spec
+
+none. (The path-list additions of the round, `+page.svelte`, `carry.ts`, `process/`, `server.ts`, `actions.ts`, are the ones the round brief names. No ADR exists; `ls tools/oculus/docs` prints `diagrams` only.)
+
+## 2. Proof
+
+- `DESIGN.md:238`: "...so a request that itself changed the port is answered..."; what is wrong: no test makes a request start the move (the only in-flight case, `vite-plugin.test.ts:225`, calls `mover.move` from the test body); my scratch `self.mjs` shows the sentence true for the shape `reload()` has (`context.ts:843`, `void settlePort()`: response in 18 ms, move done in 4 ms) and false for a caller that awaits the move (response cut after 5009 ms with `UND_ERR_SOCKET`); failure scenario: a later route that awaits the port move, or a change of `reload` to return the move's promise, holds the request for 5 s and cuts it, and the suite stays green; low; no verdict.
+- Other closures: none. Every red run the report quotes reproduced except three counts no decision rests on (listed above).
+
+## 3. Standards
+
+- `tests/server/root/vite-plugin.test.ts:256-281`, "ends an idle connection at once while a request in flight finishes": the case passes with `server.closeIdleConnections();` (`context.ts:340`) removed (12 passed on the scratch copy), because Node's `server.close()` already ends idle connections; the report labels it an audit of Node; what is wrong: the rules file's rule that a test exists only for behaviour whose failure costs something; the case runs 400 ms, cannot fail on this Node, and its name states a behaviour the code line does not own; failure scenario: none is caught; the line at `context.ts:340` is redundant and the test gives the reader a false sense that it is covered; low; verdict: none.
+- `src/lib/server/root/vite-plugin.ts:63-80` and `src/lib/server/root/process/serve.ts:29-48`: both build the mover, hand the context its move, attach the socket on the context's hub, token and terminals, and close both in a `close` handler guarded by `if (mover.moving()) return;` (`vite-plugin.ts:77`, `serve.ts:44`); what is wrong: the same wiring and the same rule exist twice (`agents/spec.md`, "The principles every package is judged on": a rule exists once); failure scenario: a change to what a move leaves open (a second thing to close) is made in one entry and not the other, and the entry left behind closes the context on a move or leaks it; low; verdict: none.
+- `tests/routes/page.test.ts` (the new describe) and `tests/server/root/process/server-args.test.ts:135`: both read source text and both are labelled audits in the report and in a comment. The first fails if the call is removed (reproduced), and its failure would cost the viewer's arrangement on a follow, so it passes the cost test; nothing runs the arriving page's restore in a client runtime. No finding; named so the audit is not read as coverage.
+
+## 4. Behaviour
+
+1. `src/lib/server/root/context.ts:336-343`: "before();  moving = true;  try { server.close(); server.closeIdleConnections(); await finishRequests(); server.closeAllConnections(); const refused = await listenOn(server, port);"; what is wrong: `before()` publishes the new address to every open page, which navigates at once (`socket.svelte.ts:260`, `location.assign(moved)`), while the server stops listening at `server.close()` and listens on the new port only after `finishRequests()`, up to `MOVE_GRACE_MS` (5000 ms) when any request is in flight; during that time neither port is bound (gap.mjs: both `ECONNREFUSED` 100 ms after `before()`, listen after 1958 ms). The report's before/after row says only "finishes, up to 5 s". Failure scenario: a viewer saves a changed `port` in `local.yml` while any request takes longer than the browser's connection start (a git or file operation of another tab, a long copy); every open tab goes to the new port, gets a refused connection and an error page with no retry, the tab's `window.name` still holds the carried arrangement, and for the same seconds Claude Code hook posts to the old port and a second tab's reconnect are refused. Not seen in a browser. Without a request in flight the gap is the synchronous stretch between `server.close()` and `listen` and no connection can land in it, so the common case works. Verdict: item 12 violated, case 35 partial. (Announcing after the listen on the new port succeeds is possible: upgraded sockets survive `closeAllConnections`, as the report states, and it would also remove the "announce the old address again" branch at `context.ts:749-751`.)
+2. `src/lib/state/client/socket.svelte.ts:253`: "if (moved === null || portOf(location.href) !== portOf(reported)) return;"; what is wrong: ruling 1 and the report's row "A page reached through a forwarded port, open during a move: stays where it is" hold only when the forward uses another port number than the server's; a forward on the same number (`ssh -L 8790:127.0.0.1:8790`) has `portOf(location.href) === portOf(reported)`; failure scenario: that page, open when the server moves to 8791, calls `location.assign('http://127.0.0.1:8791/')` on the viewer's machine, where 8791 is not forwarded, and lands on an error page after the arrangement was moved into `window.name`. The ruling's own condition produces this; the report's Limits section does not name it. Not seen in a browser. Verdict: none (consistent with ruling 1); raised because the report states the forwarded case as solved.
+3. `src/lib/state/workbench/layout/saved/carry.ts:46-64`: "takeCarried ... storage.setItem(key, value); ... win.name = '';"; what is wrong: `window.name` survives navigation from any origin, so the arriving page writes whatever a previous page of that tab left under `oculus.carry.v1` into `localStorage` under `LAYOUT_KEY` and `UI_KEY`; the readers validate (`parseLayout`, `savedUiShape` via `readAs`, `ui.svelte.ts:405-440`), so the effect is a replaced arrangement and settings, not code; conversely, when the navigation of Behaviour 1 or 2 fails, the layout and UI text (open file paths, instance state) stays in `window.name` of the tab until the viewer navigates it elsewhere. Failure scenario: the first replaces a viewer's arrangement from another site; the second leaves the arrangement readable by a site opened next in that tab in a browser that does not clear `window.name` across sites. Not verified in a browser; low; verdict: none.
+
+Examined without a finding: the lead on a request whose own handling triggers the move. A `port` write cannot come through the Settings control (`writeConfigKey` refuses `local.yml`, `config-key.ts` `server.config_key.local`), so the triggers are a hand edit or editor save (response long finished, since the watch waits `DEBOUNCE` 200 ms) and an account add or remove, where `target.book.reload()` (`actions.ts:239`, `:271`) starts the move without awaiting it; the request is counted in flight, the move waits for that response's `close`, the response reaches the client (18 ms in `self.mjs`), and the grace period is not used. `carryWorkbench` and `takeCarried` lose nothing that exists in `localStorage` today: `grep -rnE "localStorage|sessionStorage|indexedDB" src` finds only `LAYOUT_KEY`, `UI_KEY` and the retired `PREVIOUS_KEY` (`storage.ts:28`, nothing writes it any more, read once by `loadLayout`; a browser still holding a value there loses it). The carried values overwrite the new origin's, which the report states. Idempotence of the double `close()` after a failed rebuild: the closers I read (portfolio, sessions, git, autofetch, bookmarks, usage) hold flags or clear collections.
+
+## Declined to judge
+
+- Any browser behaviour: the navigation, the carry through `window.name`, the status bar tooltip, a forward on the same port (Behaviour 1 to 3 are from code and scratch scripts, not a Chrome look; belongs to the look on TEST).
+- The built entry `src/server.ts` started for real: its context starts hidden usage sessions (tmux and the Claude command), the HPC ssh poll and the calendar and mail pollers, none of which a review should start; I judged it through `serve.test.ts` on a real `http.Server`, the two mutations, and the Vite scratch run above.
+- Vite's HMR socket across a move, and the repeated log of a rebuild that fails again at each touch of an unchanged `local.yml` (`rebuild`, `context.ts:696`, logs without the once-per-sentence guard the other refusals have): read, not run.
+- An OAuth consent in flight at a move (the redirect address it was minted with is the old port): not read.
+- The first review's items 1 to 8 and cases 1 to 25 were not re-mutated (files unchanged since that review).
+
+Reviewer usage: about 290,000 tokens (counter 15,000,000 to 14,731,000 at the end of the reads), about 85 tool uses, about 40 minutes; machine runs: one full checks.sh (npm test 194 s), two config-key runs, one three-file run, 27 mutation runs on the scratch copy, three scratch scripts.
+
+## Closed
+
+The first run's findings (4 Proof, 3 Standards, 5 Behaviour) were sent to the builder in repair round 1 (`agents/briefs/D35-round1.md`), and the run over the round judged rulings 1 to 11 closed, as its "Verdicts" section says. The run over round 1 found 1 Proof, 2 Standards and 3 Behaviour findings, each closed at landing on main:
+
+- Proof 1 (`DESIGN.md`'s "a request that itself changed the port is answered" with no test): `tests/server/root/vite-plugin.test.ts` "answers the request that started the move, and then serves the new port", a handler that starts the move itself and answers; it gets its answer and the server then answers on the new port.
+- Standards 1 (`closeIdleConnections()` redundant, its test unable to fail): the line removed from `serverMover` in `server/root/context.ts`, since `server.close()` ends idle connections, and the test "ends an idle connection at once while a request in flight finishes" removed.
+- Standards 2 (the same wiring in `vite-plugin.ts` and `process/serve.ts`): `wireServer` and `attachAtWs` in `process/serve.ts` hold the mover, the context, the socket and the `close` rule once; `serveContext` and Vite's `configure` call it and add only their own way of carrying the context on a request.
+- Behaviour 1 (the new address published while no port is bound): `PortMove`'s callback is now `announce`, called only once the server listens on the new port; a refused move never announces, so `moveTo` in `context.ts` lost its branch that put the old address back. Tests: "tells the page once it listens there" and "tells the page only once the new port is served" (a request in flight finished when the page is told), "tells the page nothing when the listen on the new one fails"; with the announce moved back before `server.close()` they fail (`expected 60367 to be 60368`, `expected 60372 to be 60373`, `expected 1 to be +0`). `context-reload.test.ts`'s case for an announce followed by a refusal was removed with that contract.
+- Behaviour 2 (a page forwarded under the same port number follows to a port its machine does not serve): the page follows only once the new address answers a `no-cors` probe (`goWhenAnswered` in `state/client/socket.svelte.ts`). Test: "stays where it is, and writes nothing into the window name, when the new address does not answer"; with the probe's failure ignored it fails (`expected "vi.fn()" to not be called at all`).
+- Behaviour 3 (`window.name` taken from any page of the tab; left behind on a failed navigation): the carry names the origin it is written for and the time, and `takeCarried` takes it only at that origin within `CARRY_MS` (60 s); it is written only after the probe answered. Tests in `layout-carry.test.ts` for another origin, no time, a time in the future, a carry older than 60 s and values that are no object; with the checks taken out they fail (`expected { 'oculus.ui.v1': 'x' } to deeply equal {}`). What remains: a page of another site in the same tab that writes a carry naming oculus's origin and a fresh time and then opens oculus is taken; the readers (`parseLayout`, `savedUiShape`) admit only a valid arrangement and valid settings, so the effect is a replaced arrangement.

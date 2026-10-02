@@ -35,9 +35,10 @@ import type {
     TriageFile,
     TriageNote
 } from '../../../data/model/index.ts';
+import type { MailSettings } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
 import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
-import { accountLoop, signIn, type AccountLoop } from '../connect/loop.ts';
+import { accountLoop, signIn, takeLoopSettings, type AccountLoop } from '../connect/loop.ts';
 import { hasOwnHalf } from '../connect/store.ts';
 import { ReadTimeout, timedFetcher, type Fetcher } from '../connect/oauth.ts';
 import { readGoogleMail } from './google.ts';
@@ -76,6 +77,13 @@ export type MailWords = { timedOut: string };
 
 export type MailWatcher = {
     refresh(): Promise<void>;
+    /**
+     * Take new settings: a new period moves each account's next read as the loop does, and a new
+     * count reads every account at once.
+     */
+    setSettings(settings: MailSettings): void;
+    /** Take new sentences, used from the next row that carries one. */
+    setWords(words: MailWords): void;
     /** Publish again over the notes as they now are, without calling any provider. */
     republish(): void;
     /** Poll a new account list from a new folder, as config/local.yml now names them. */
@@ -119,6 +127,9 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
     const fetcher = timedFetcher(options.fetcher ?? fetch, options.readTimeoutMs);
     const providerDir = options.providerDir;
     const now = options.now ?? ((): Date => new Date());
+    let settings: MailSettings = { pollMin: options.pollMin, perSignal: options.perSignal };
+    let words = options.words;
+    let closed = false;
     /** Every account's state word and hint, and the plate its last good poll left. */
     const state = new Map<string, MailAccount>();
     const kept = new Map<string, Kept>();
@@ -181,7 +192,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             accounts,
             threads,
             updated: now().toISOString(),
-            pollMin: options.pollMin,
+            pollMin: settings.pollMin,
             retryMin: RETRY_MIN,
             notesRun: notes.run,
             ...(notesError === undefined ? {} : { notesError })
@@ -219,7 +230,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             const args: MailReadArgs = {
                 token: signed.token,
                 key,
-                perSignal: options.perSignal,
+                perSignal: settings.perSignal,
                 fetcher
             };
             const candidates: Candidate[] =
@@ -240,7 +251,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             if (!live()) return false;
             const hint =
                 error instanceof ReadTimeout
-                    ? fillPlaceholders(options.words.timedOut, [String(error.ms / 1000)])
+                    ? fillPlaceholders(words.timedOut, [String(error.ms / 1000)])
                     : reason(error);
             state.set(key, { ...base, status: 'error', hint });
             return false;
@@ -270,22 +281,40 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
         notesPoll.reading();
     };
 
-    const loop: AccountLoop<MailAccountConfig> = accountLoop(options, {
-        retryMin: RETRY_MIN,
-        now,
-        read: pollAccount,
-        publish,
-        held: [state, kept],
-        moved: startNotesPoll
-    });
+    const loop: AccountLoop<MailAccountConfig> = accountLoop(
+        { accounts: options.accounts, dir: options.dir, pollMin: settings.pollMin },
+        {
+            retryMin: RETRY_MIN,
+            now,
+            read: pollAccount,
+            publish,
+            held: [state, kept],
+            moved: startNotesPoll
+        }
+    );
     startNotesPoll(options.dir);
     loop.start();
 
     return {
         refresh: () => loop.run(true),
         republish: publish,
+        setSettings(next): void {
+            if (closed) return;
+            const before = settings;
+            settings = { ...next };
+            takeLoopSettings(
+                loop,
+                { before: before.pollMin, after: next.pollMin },
+                next.perSignal !== before.perSignal,
+                publish
+            );
+        },
+        setWords(next): void {
+            if (!closed) words = { ...next };
+        },
         setAccounts: loop.set,
         close(): void {
+            closed = true;
             loop.close();
             notesPoll?.close();
             notesPoll = null;

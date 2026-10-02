@@ -28,12 +28,13 @@ import type {
     CalendarListEntry,
     CalendarPayload
 } from '../../../data/model/index.ts';
+import type { CalendarSettings } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { Reading, Window } from './api.ts';
 import { readGoogle } from './google.ts';
 import { readIcs } from './ics.ts';
 import { readMicrosoft } from './microsoft.ts';
-import { accountLoop, signIn, type AccountLoop } from '../connect/loop.ts';
+import { accountLoop, signIn, takeLoopSettings, type AccountLoop } from '../connect/loop.ts';
 import { hasOwnHalf, readPublishedLink } from '../connect/store.ts';
 import { ReadTimeout, timedFetcher, type Fetcher } from '../connect/oauth.ts';
 
@@ -66,6 +67,13 @@ export type CalendarOptions = {
 
 export type CalendarWatcher = {
     refresh(): Promise<void>;
+    /**
+     * Take new settings: a new period moves each account's next read as the loop does, and a new
+     * window reads every account at once.
+     */
+    setSettings(settings: CalendarSettings): void;
+    /** Take new sentences, used from the next row that carries one. */
+    setWords(words: CalendarWords): void;
     /** Poll a new account list from a new folder, as config/local.yml now names them. */
     setAccounts(accounts: CalendarAccountConfig[], dir: string): void;
     close(): void;
@@ -125,9 +133,16 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
     const fetcher = timedFetcher(options.fetcher ?? fetch, options.readTimeoutMs);
     const providerDir = options.providerDir;
     const now = options.now ?? ((): Date => new Date());
+    let settings: CalendarSettings = {
+        pollMin: options.pollMin,
+        daysBack: options.daysBack,
+        daysAhead: options.daysAhead
+    };
+    let words = options.words;
+    let closed = false;
     /** The sentence a request that had no answer in time leaves on its account's row. */
     const timedOut = (error: ReadTimeout): string =>
-        fillPlaceholders(options.words.timedOut, [String(error.ms / 1000)]);
+        fillPlaceholders(words.timedOut, [String(error.ms / 1000)]);
     /** Every account's state word and hint, and the rows its last good poll left. */
     const state = new Map<string, CalendarAccount>();
     const kept = new Map<string, Kept>();
@@ -160,10 +175,10 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
             accounts,
             events,
             updated: now().toISOString(),
-            pollMin: options.pollMin,
+            pollMin: settings.pollMin,
             retryMin: RETRY_MIN,
-            daysBack: options.daysBack,
-            daysAhead: options.daysAhead
+            daysBack: settings.daysBack,
+            daysAhead: settings.daysAhead
         } satisfies CalendarPayload);
         console.log(`calendar publish: ${status}`);
     };
@@ -201,13 +216,13 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
         try {
             const link = readPublishedLink(dir, account);
             if (link === undefined) {
-                state.set(key, { ...base, status: 'not-connected', hint: options.words.icsNoLink });
+                state.set(key, { ...base, status: 'not-connected', hint: words.icsNoLink });
                 return true;
             }
             const reading = await readIcs(link, {
                 key,
                 label: account.label,
-                window: windowOf(now(), options.daysBack, options.daysAhead),
+                window: windowOf(now(), settings.daysBack, settings.daysAhead),
                 fetcher
             });
             if (live()) keep(account, reading);
@@ -220,7 +235,7 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
                 hint:
                     error instanceof ReadTimeout
                         ? timedOut(error)
-                        : fillPlaceholders(options.words.icsFailed, [account.label])
+                        : fillPlaceholders(words.icsFailed, [account.label])
             });
             return false;
         }
@@ -259,7 +274,7 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
                 token: signed.token,
                 key,
                 label: account.label,
-                window: windowOf(now(), options.daysBack, options.daysAhead),
+                window: windowOf(now(), settings.daysBack, settings.daysAhead),
                 fetcher
             };
             const reading =
@@ -283,18 +298,38 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
         }
     };
 
-    const loop: AccountLoop<CalendarAccountConfig> = accountLoop(options, {
-        retryMin: RETRY_MIN,
-        now,
-        read: pollAccount,
-        publish,
-        held: [state, kept]
-    });
+    const loop: AccountLoop<CalendarAccountConfig> = accountLoop(
+        { accounts: options.accounts, dir: options.dir, pollMin: settings.pollMin },
+        {
+            retryMin: RETRY_MIN,
+            now,
+            read: pollAccount,
+            publish,
+            held: [state, kept]
+        }
+    );
     loop.start();
 
     return {
         refresh: () => loop.run(true),
+        setSettings(next): void {
+            if (closed) return;
+            const before = settings;
+            settings = { ...next };
+            takeLoopSettings(
+                loop,
+                { before: before.pollMin, after: next.pollMin },
+                next.daysBack !== before.daysBack || next.daysAhead !== before.daysAhead,
+                publish
+            );
+        },
+        setWords(next): void {
+            if (!closed) words = { ...next };
+        },
         setAccounts: loop.set,
-        close: loop.close
+        close(): void {
+            closed = true;
+            loop.close();
+        }
     };
 }

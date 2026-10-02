@@ -3,15 +3,15 @@
 In flight:
 - D35 (every configuration file live, `local.yml` included, by Z198 and Axel's D35 redo ruling), repair round 1 with the builder.
 - X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), builder at ordo-high.
-- D24 (the Personal board: side projects and the Files roots' `.oculus/project.yml` as cards, with the six repositories' manifests drafted), repair round 1 with the builder.
+- D24 (the Personal board: side projects and the Files roots' `.oculus/project.yml` as cards, with the six repositories' manifests drafted), refuted over repair round 1 (4 findings, closed at landing); lands after D35.
+- Q88c (the Source Control rows' and the pane strip's new right-click capabilities, Z240), builder at ordo-high; open item Z241 (Delete Branch's force retry) waits on Axel.
 
 
 Three queued steps are kept prepared ahead (Z185).
 
-Queued, in order (27 steps):
+Queued, in order (26 steps):
 - D32 (replace in Search, and the seven state-layer answers Z154 accepted judged one by one, by Z198), once D35 has landed (both change the write target and the undo table); its brief check is in.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), Z190 ruled (a); /spec once X3a and D35 have landed (X3a adds the `roots` list edit S4's list editor covers, D35 changes the config write and `options.yml`).
-- Q88c (the Source Control rows' and the pane strip's new menu items), brief checked (`agents/reviews/Q88c-brief-check.md`); waits for L4's landing, since both change the `Pane` type and the layout tree's pane literals.
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - Q91 (the project view and its editor), once X3a has landed.
 - D14 (LaTeX on any folder, with build on save, magic comments, outline, word count and hover preview; ChkTeX moves to D36 by Z196), brief checked (`agents/reviews/D14-brief-check.md`); /spec once X3a has landed (both rewrite `views/sources/files/tree/row-menu.ts` and `Tree.svelte`, and X3a's LaTeX outline is what D14's parser replaces), its findings closed in the brief then.
@@ -26,7 +26,7 @@ Queued, in order (27 steps):
 - D18 (the Processes view), once D35 has landed (its command patterns are a behaviour key read live through D35's mechanism).
 - D20 (an agent from a task or in a new worktree), once D17 has landed (Z195: a seeded agent runs after the approval D17's store keeps).
 - A1 and A3 (review with feedback; scheduled runs, once D17 has landed).
-- M3 (the resources registry).
+- M3 (the resources registry), once D24 has landed: both write `data/model/model-entities.ts`, `data/snapshot/normalise.ts`, the validation and the snapshot fixtures of `grep -rlE "organisations: \{" tests`. Its /spec carries the cockpit: `tools/cockpit/src/cockpit/page.py:226` uses a manifest's `compute` as a dict key, which a list breaks, and 17 manifests hold `compute: hpc` or `local`.
 - Q72 (the architecture re-read).
 - E4 (the apps built), after Q72.
 - R2 (release readiness).

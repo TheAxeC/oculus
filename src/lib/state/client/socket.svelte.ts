@@ -13,6 +13,15 @@
 // push version that read is at least as new as (server/root/config-seed.ts). A `config` push at or
 // below that version is dropped: it is the hub's replay of a read made before the page's, and
 // installing it would put the values from before a config change back for the watcher's debounce.
+//
+// The payload carries the address the server listens at. A server that moves to another port
+// (a changed `port` in local.yml) reports its new address on the open socket, and the page goes
+// there with its path, query and hash and the host name the reader used, carrying its arrangement
+// and settings across the change of origin (workbench/layout/saved/carry.ts). It follows only a
+// change of the address it holds, the first it heard or the last it followed, only when its own
+// port is that address's port (a page opened at `localhost` has the port, and one reached through a
+// forwarded port of another number does not), and only once the new address answers, so a page
+// forwarded under the same number, whose new port its own machine does not serve, stays put.
 
 import { z } from 'zod';
 import {
@@ -29,7 +38,8 @@ import { setCatalog, setGlyphs, setIcons } from '../shared/words/text.ts';
 import { setAppearance } from '../shared/words/appearance.ts';
 import { setVocab } from '../shared/words/tones.ts';
 import type { WritesStore } from './writes.svelte.ts';
-import type { ConfigPayload, Message, Subscription } from '../../data/model/index.ts';
+import { carryWorkbench } from '../workbench/layout/saved/carry.ts';
+import type { ConfigPayload, HostInfo, Message, Subscription } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 import type { SocketStore, Status } from '../shared/stores/shapes.ts';
 
@@ -49,6 +59,29 @@ const stringMapShape = mapOfShape(z.string());
 /** The first wait after a drop, and the ceiling it doubles to. */
 const FIRST = 250;
 const LONGEST = 5000;
+
+/**
+ * The page's own address with the port of the address the server reports now, or null when that
+ * address is no URL.
+ */
+export function addressAfterMove(href: string, address: string): string | null {
+    try {
+        const moved = new URL(href);
+        moved.port = new URL(address).port;
+        return moved.href;
+    } catch {
+        return null;
+    }
+}
+
+/** The port of an address, empty for the scheme's own, or null when it is no URL. */
+function portOf(address: string): string | null {
+    try {
+        return new URL(address).port;
+    } catch {
+        return null;
+    }
+}
 
 export function createSocket(entities: EntitiesStore, writes: WritesStore): SocketStore {
     const socket: { status: Status } = $state({ status: 'closed' });
@@ -75,6 +108,9 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     let opened = false;
 
     let retry: ReturnType<typeof setTimeout> | null = null;
+
+    /** The address the server reported when this page first heard one. */
+    let reported: string | null = null;
 
     /** The connection's state, for a view that shows it. */
     function status(): Status {
@@ -204,6 +240,43 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     }
 
     /**
+     * Keep the first address the server reports, and go to the page's own address on the new port
+     * when a later push reports another one and the page is served at the port of the address it
+     * holds, once that address answers.
+     */
+    function followServer(host: HostInfo): void {
+        if (reported === null) {
+            reported = host.address;
+            return;
+        }
+        if (host.address === reported) return;
+        const moved = addressAfterMove(location.href, host.address);
+        if (moved === null || portOf(location.href) !== portOf(reported)) return;
+        reported = host.address;
+        void goWhenAnswered(moved);
+    }
+
+    /**
+     * Go to `moved` when it answers: a page whose port is forwarded under the same number reaches
+     * a port of its own machine that nothing serves, and stays where it is rather than land on an
+     * error page. The arrangement and the settings are written into the window's name, for the
+     * origin the page goes to, just before it goes.
+     */
+    async function goWhenAnswered(moved: string): Promise<void> {
+        try {
+            await fetch(moved, { mode: 'no-cors', cache: 'no-store' });
+        } catch {
+            return;
+        }
+        try {
+            carryWorkbench(localStorage, window, new URL(moved).origin);
+        } catch {
+            // A page without storage follows without the arrangement.
+        }
+        location.assign(moved);
+    }
+
+    /**
      * Install a config push into the stores the page draws from. The colours and the chip
      * vocabulary ride the same push as the strings: they are keys of the merged config, so an edit
      * to config/catalogs/vocab.yml recolours the page without a reload, an edit to
@@ -219,6 +292,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
      */
     function installConfig(payload: ConfigPayload | null): void {
         if (payload === null) return;
+        followServer(payload.host);
         setCatalog(payload.text);
         setVocab(payload.config);
         setAppearance(payload.config);
@@ -236,8 +310,9 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
      */
     function seedConfig(payload: ConfigPayload | undefined, through: number): void {
         seededThrough = through;
-        if (payload !== undefined)
-            entities.receive({ channel: 'config', version: through, payload });
+        if (payload === undefined) return;
+        followServer(payload.host);
+        entities.receive({ channel: 'config', version: through, payload });
     }
 
     function handle(data: string): void {

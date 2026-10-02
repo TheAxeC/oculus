@@ -182,3 +182,108 @@ links: []
 ```
 
 Reader's run: card `root:youtube-downloader`, `running`, no finding. `README.md` line 1 `# yt-downloader`; line 3 "From a given data file, download and track YouTube playlists and channels with `yt-dlp`."; line 5 "...keeps a per-playlist archive so nothing is fetched twice, reports stats, and supports a "watch + triage" flow where new videos in flagged playlists are queued for review instead of being downloaded automatically." Status `running` rests on the install section (lines 7-19) and the PO-token section (line 21, "required"), which describe use of a working script; tree fact: `ls ~/workspace/youtube-downloader` lists `ytdlp.py`, `requirements.txt`, `data.yml`, `stats.yml`. `next` is empty: the README names no next action. Tree fact for landing: `sed -n 4p ~/workspace/youtube-downloader/.gitignore` prints `*.yml`.
+
+# Repair round 1
+
+**Not done:** nothing of the eight rulings is left undone. One limit: the whole-root-removal test was run on macOS only; whether `fs.watch` on a parent folder reports a child's removal the same way on Linux is not verified. The list run at the end printed `checks: 7 commands passed` (run 2 of at most three; command lines below).
+
+No git command was run this round. Ruling 8 changes nothing: the drafts stand as drafted, the files outside the path list are named at landing (the round-0 report lists them, and this round adds only the test files below), and the two read-only `git diff` lines of the first run stay noted in the report above.
+
+## Ruling 1: one place for the roots' filtering
+
+Changed:
+- `src/lib/server/root/watch/portfolio.ts:246` `personalRoots(listed, hub, engineConfig)` is the one place that drops the `hub` and `engine` keys, expands `~` with `expandHome` of `server/files/files.ts`, drops a root whose real path is the hub's, the engine config folder's (`configDir(paths.engine)`, the `engineConfig` the watcher holds) or an earlier root's, and drops a second root with a key already seen. The call is at `portfolio.ts:475`. The head comment of `WatchPaths.roots` (`portfolio.ts:72`) says where the filtering is.
+- `src/lib/data/sources/manifests.ts:348` `rootPersonal(roots, catalog, personal, findings)` reads the roots it is given, in order; its copies of `expandHome`, `realDir` and the real-path set, and the `homedir` and `realpathSync` imports, are gone. Doc comments updated in `manifests.ts:340`, `src/lib/data/index.ts` (`buildPortfolio`) and `src/lib/data/model/model-entities.ts` (`PersonalRoot`). `DESIGN.md:405` names `personalRoots` as the place.
+- Moved: the data tests "reads one directory once", "reads a root that links to another root once", "draws nothing for the hub itself under another key" and "expands a leading ~" are now in `tests/server/root/watch/portfolio/personal-roots.test.ts` (new, 7 tests, in `npm test`), over `personalRoots`. In `tests/data/sources/personal.test.ts:347` the new "reads every root it is given, in order, and filters none" asserts the reader's side.
+
+Failing before the change (the tree as it was at the start of the round):
+```
+personal-roots.test.ts:52  expected [ { key: 'again', ... }, ... ] to deeply equal [ { key: 'tool', ... } ]   (hub by key and by link)
+personal-roots.test.ts:69  expected [ { key: 'cfg', ... }, ... ] to deeply equal [ { key: 'tool', ... } ]     (engine config folder)
+personal-roots.test.ts:138 expected [ { key: 'tool', ... }, ... ] to deeply equal [ { key: 'tool', ... } ]     (a second root with a seen key)
+```
+Watcher-level case `roots.test.ts:171` "draws no card for a root under another key that is the engine config folder", with the engine identity taken out of `personalRoots`: `AssertionError: expected [ 'root:cfg' ] to deeply equal []`. The data case with the pre-round reader put back: `personal.test.ts:353:56 AssertionError: expected [ Array(1) ] to deeply equal [ { kind: 'root', ... }, { ... } ]`.
+
+Passing after: `npx vitest run tests/data/sources/personal.test.ts tests/server/root/watch/portfolio/personal-roots.test.ts` printed `Test Files 2 passed (2)  Tests 55 passed (55)`; the portfolio folder with `tests/server/edit/writes.test.ts` and `tests/routes/docs` printed `Test Files 10 passed (10)  Tests 174 passed (174)`.
+
+## Ruling 2: the words
+
+- `HELP.md:104` (the `personal` row) now names the four statuses (`running`, `building`, `idea`, `parked`), says a side project is on no other board, lane or audit, and says a repository is read once it is a Files root, added with **Add Folder to Workspace...** in the Files view or under `roots:` in `sources.yml`.
+- `config/text/views/boards/personal.yml:4` names the control **Add Folder to Workspace...**, as `config/text/views/sources/files.yml:50` words it.
+- Test: `tests/views/boards/personal.test.ts:259` asserts the empty sentence contains `catalog['files.menu_add_root']`. Failing with the old sentence: `personal.test.ts:256:26 AssertionError: expected 'No side project has a manifest yet. A...' to contain 'Add Folder to Workspace...'`. Passing after: `Tests 1 passed | 19 skipped (20)`.
+- The HELP row is read text; no script checks it.
+
+## Ruling 3: the Focus lanes
+
+- New `tests/state/boards/focus/focus-side-project.test.ts`: a hub with a research project and a side project that both carry `focus: run`, built by `buildPortfolio`, then `laneItems(portfolioProjects(snapshot), lanes(MERGED))`; the side project is on no lane and the research project is on `run`.
+- Failing with the side tier read as a research tier (the `isSideTier` skip of `readManifests` taken out):
+```
+focus-side-project.test.ts:34:48  AssertionError: expected [ 'x', 'y' ] to deeply equal [ 'y' ]
+```
+- Passing as built: `Test Files 1 passed (1)  Tests 1 passed (1)`.
+
+## Ruling 4: the cases the list runs
+
+- The three write cases (manifest write, subtask writes, undo lookup) moved from `tests/server/edit/writes.test.ts` (slow) to `tests/routes/edit/side-project-writes.test.ts` (new, 3 tests, no slow tag; `tests/routes/edit` holds 8 items). The docs case moved from `tests/routes/docs/docs.test.ts` (slow) to `tests/routes/docs/side-project-docs.test.ts` (new, 1 test; the folder holds 5). The watcher cases stay in `roots.test.ts` and `portfolio.test.ts`, which are slow.
+- Failing with the `isSideTier` skip taken out of `readManifests` (`manifests.ts`) and of `folderOf` (`docs.ts`):
+```
+side-project-docs.test.ts:56:33   AssertionError: expected 200 to be 404
+side-project-writes.test.ts:47:21 AssertionError: expected { found: true, ... } to deeply equal { found: false, changed: [], ... }
+side-project-writes.test.ts:54:73 AssertionError: expected { found: true, ... } to deeply equal { found: false, changed: [], ... }
+side-project-writes.test.ts:61:59 AssertionError: expected { Object (found, value) } to deeply equal { found: false, value: null }
+```
+- Passing as built: `Test Files 2 passed (2)  Tests 4 passed (4)`, and both files are inside `npm test` (434 passed files in the list run below).
+
+## Ruling 5: the first run, quoted
+
+The base copy is `.../scratchpad/base/tools/oculus` with the final `tests/` synced in (`rsync -a --delete`) and `src/` and `config/` as at the start of the step. One failing line per new test file of the step:
+
+| New file | Fails on the base | Failing line |
+|---|---|---|
+| `tests/data/sources/personal.test.ts` | at import | `Error: Cannot find module '../../../src/lib/data/snapshot/normalise-personal.ts'` at `personal.test.ts:26:1`, `Tests no tests` |
+| `tests/state/boards/board/personal.test.ts` | at import | `Error: Cannot find module '../../../../src/lib/state/boards/board/personal.ts'` at `:18:1`, `Tests no tests` |
+| `tests/views/boards/personal.test.ts` | at import | `Error: Cannot find module '../../../src/lib/views/boards/personal/Personal.svelte'` at `:14:1`, `Tests no tests` |
+| `tests/server/root/watch/portfolio/names.test.ts` | by assertion (2) | `names.test.ts:100:66 expected false to be true`; `names.test.ts:187:70 expected [] to deeply equal [ '/work/other/.oculus', ... ]` |
+| `tests/server/root/watch/portfolio/personal-roots.test.ts` | by call (7) | `TypeError: personalRoots is not a function` at `personal-roots.test.ts:26:13` |
+| `tests/server/root/watch/portfolio/roots.test.ts` | by assertion (10) | `roots.test.ts:54:42 expected [] to deeply equal [ 'root:tool' ]` |
+| `tests/server/root/watch/portfolio/portfolio.test.ts` | by assertion (1 of 33) | `portfolio.test.ts:759:48 expected 2 to be 1` |
+| `tests/routes/edit/side-project-writes.test.ts` | by assertion (3) | `side-project-writes.test.ts:47:21 expected { found: true, ... } to deeply equal { found: false, changed: [], ... }` |
+| `tests/routes/docs/side-project-docs.test.ts` | by assertion (1) | `side-project-docs.test.ts:56:33 expected 200 to be 404` |
+| `tests/state/boards/focus/focus-side-project.test.ts` | by throw (1) | `TypeError: Cannot convert undefined or null to object` at `focus-side-project.test.ts:31:23` (the base snapshot has no `personal`) |
+
+The three files that fail at import are the data, state and view `personal.test.ts`. `tests/server/root/watch/portfolio/start.ts` and `tests/state/boards/board/side-fixture.ts` are helpers with no cases.
+
+## Ruling 6: view tests that check what their titles say
+
+- `tests/views/boards/personal.test.ts:115` "draws a card for a side project of a research slug, and none for a research project": the snapshot is `badgeSnapshot()` with research projects in it, one of them with the id `alpha`, so the board drawing a research project shows as a card. Failing with `sideCards` in `selectors.svelte.ts` also reading `entities.projects`: `personal.test.ts:117:31 AssertionError: expected [ 'active', 'alpha', ... ] to deeply equal [ 'side:alpha' ]`. Passing as built: `Tests 20 passed (20)`.
+- The folder named like an object key (`tests/data/sources/personal.test.ts:193`) is renamed "audits that a folder named like an object key is an ordinary id": every id carries the `side:` prefix, so the case cannot fail on a code change that stays correct. The badge case carries the name "audits that the badge counts no cards before the first snapshot".
+
+## Ruling 7: a deleted repository
+
+- `src/lib/server/root/watch/portfolio.ts:295` `rootParents`, `portfolio.ts:413` `openRootParent`, `portfolio.ts:439` `watchRootParents`, called at `portfolio.ts:524` after `personalRoots` in every rebuild: while a root is listed, a flat watch on the root's parent folder, filtered on the root's own name, queues a rebuild; the handle is closed when the root leaves the list (`watchRootParents`) and at `close()` (`portfolio.ts:623`). A parent that is gone takes its handle with it, and a missing parent is tried again at the next rebuild.
+- Tests in `tests/server/root/watch/portfolio/roots.test.ts` (slow): `:174` "drops the card of a root whose whole directory is removed" (`rmSync(dir, { recursive: true })`, then a new portfolio message without `root:tool`); `:193` the same with a second root listed first; `:218` "stops hearing a root once it leaves the list of roots".
+- Failing without the parent watch (the tree before this change), the test alone, ten runs:
+```
+roots.test.ts:189:53  AssertionError: expected 1 to be greater than 1      (10 of 10 runs, each "Tests 1 failed | 10 skipped (11)")
+```
+- Failing with the handle left open when the root leaves the list: `roots.test.ts:249:36 AssertionError: expected 8 to be 6`.
+- Passing after, the whole-removal test alone, ten runs (`npx vitest run tests/server/root/watch/portfolio/roots.test.ts -t "whole directory is removed"`): `Tests 1 passed | 11 skipped (12)` ten times.
+
+## Checks
+
+`sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`, from `tools/oculus` of the worktree, full runs: 2. Lines printed by the last:
+```
+$ npm test            Test Files  434 passed | 23 skipped (457)   Tests  11311 passed | 625 skipped (11936)
+$ npm run test:checks Test Files  29 passed | 2 skipped (31)      Tests  443 passed | 9 skipped (452)
+$ npm run check       COMPLETED 2975 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+After the list: the slow files this round touches, run alone, `npx vitest run tests/server/root/watch/portfolio tests/server/edit/writes.test.ts tests/routes/docs`: `Test Files 10 passed (10)  Tests 174 passed (174)`. `sh utils/folder-check.sh` exit 0. `npm run diagrams` leaves `docs/diagrams/` byte-identical (the md5 of all `.dot` and `.svg` files is the same before and after). ASCII scan of `src tests HELP.md DESIGN.md config/text/views/boards/personal.yml`: no output.
+
+Files changed this round: `src/lib/server/root/watch/portfolio.ts` (627 lines), `src/lib/data/sources/manifests.ts` (386), `src/lib/data/index.ts`, `src/lib/data/model/model-entities.ts`, `HELP.md`, `DESIGN.md`, `config/text/views/boards/personal.yml`, `tests/data/sources/personal.test.ts`, `tests/views/boards/personal.test.ts`, `tests/server/root/watch/portfolio/roots.test.ts` (355), `tests/server/edit/writes.test.ts`, `tests/routes/docs/docs.test.ts`; new: `tests/server/root/watch/portfolio/personal-roots.test.ts` (140), `tests/routes/edit/side-project-writes.test.ts`, `tests/routes/docs/side-project-docs.test.ts`, `tests/state/boards/focus/focus-side-project.test.ts`.
+
+The "One limit" paragraph at the top of this report (a root deleted as a whole sends no event) is replaced by ruling 7: the root's parent folder is watched, and a root removed whole drops its card at the next rebuild.

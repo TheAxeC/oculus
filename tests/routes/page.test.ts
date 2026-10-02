@@ -97,6 +97,20 @@ describe('the page subscription', () => {
     });
 });
 
+describe('the page that arrives after a move of its server', () => {
+    const source = readFileSync(join(ROUTES, '+page.svelte'), 'utf8');
+
+    // An audit: the page's mount runs in a browser, so its wiring is read as source, as above.
+    it('takes what the previous address carried before it reads its saved workbench', () => {
+        const mount = source.split('onMount(')[1] ?? '';
+        const taken = mount.indexOf('takeCarried(localStorage, window, location.origin)');
+
+        expect(taken).toBeGreaterThan(-1);
+        expect(taken).toBeLessThan(mount.indexOf('loadUi(localStorage, window)'));
+        expect(taken).toBeLessThan(mount.indexOf('loadLayout(localStorage, window)'));
+    });
+});
+
 describe('the page effect that follows a config push', () => {
     const source = readFileSync(join(ROUTES, '+page.svelte'), 'utf8');
 

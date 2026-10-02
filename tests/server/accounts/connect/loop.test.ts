@@ -6,7 +6,11 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ConnectAccountConfig } from '../../../../src/lib/data/model/index.ts';
-import { accountLoop, type AccountLoop } from '../../../../src/lib/server/accounts/connect/loop.ts';
+import {
+    accountLoop,
+    takeLoopSettings,
+    type AccountLoop
+} from '../../../../src/lib/server/accounts/connect/loop.ts';
 
 const WORK: ConnectAccountConfig = { provider: 'google', label: 'work' };
 const UNI: ConnectAccountConfig = { provider: 'microsoft', label: 'uni' };
@@ -148,5 +152,131 @@ describe('an account list the machine file changes', () => {
         loop.set([], '/first');
 
         expect(vi.getTimerCount()).toBe(0);
+    });
+});
+
+describe('a period that changes while the loop runs', () => {
+    const MINUTE = 60000;
+
+    it('moves the next read of an account to the new period from now when that is sooner', async () => {
+        vi.useFakeTimers();
+        const { loop, reads } = recorded([WORK]);
+        await loop.run(true);
+        reads.length = 0;
+
+        loop.setPollMin(5);
+
+        await vi.advanceTimersByTimeAsync(5 * MINUTE - 1);
+        expect(reads).toEqual([]);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(reads).toEqual(['/first:google-work']);
+        await vi.advanceTimersByTimeAsync(5 * MINUTE);
+        expect(reads).toHaveLength(2);
+    });
+
+    it('leaves an account due sooner where it is, and reads again at the new period after it', async () => {
+        vi.useFakeTimers();
+        const { loop, reads } = recorded([WORK]);
+        await loop.run(true);
+        await vi.advanceTimersByTimeAsync(13 * MINUTE);
+        reads.length = 0;
+
+        loop.setPollMin(60);
+
+        await vi.advanceTimersByTimeAsync(2 * MINUTE);
+        expect(reads).toHaveLength(1);
+        await vi.advanceTimersByTimeAsync(59 * MINUTE);
+        expect(reads).toHaveLength(1);
+        await vi.advanceTimersByTimeAsync(1 * MINUTE);
+        expect(reads).toHaveLength(2);
+    });
+
+    it('treats the retry time of an account that failed as its next read', async () => {
+        vi.useFakeTimers();
+        const { loop, reads } = recorded([WORK, UNI], () => Promise.resolve(false));
+        await loop.run(true);
+        reads.length = 0;
+
+        loop.setPollMin(1);
+        await vi.advanceTimersByTimeAsync(1 * MINUTE);
+        expect(reads).toEqual(['/first:google-work', '/first:microsoft-uni']);
+        reads.length = 0;
+
+        loop.setPollMin(5);
+        await vi.advanceTimersByTimeAsync(2 * MINUTE - 1);
+        expect(reads).toEqual([]);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(reads).toHaveLength(2);
+    });
+
+    it('does nothing once the loop is closed', async () => {
+        vi.useFakeTimers();
+        const { loop, reads } = recorded([WORK]);
+        await loop.run(true);
+        reads.length = 0;
+        loop.close();
+
+        loop.setPollMin(1);
+
+        expect(vi.getTimerCount()).toBe(0);
+        await vi.advanceTimersByTimeAsync(5 * MINUTE);
+        expect(reads).toEqual([]);
+    });
+});
+
+describe('settings that change while a round runs', () => {
+    const MINUTE = 60000;
+
+    /** A reader whose first read waits until the case lets it end, and what it saw each time. */
+    function held() {
+        let release: (good: boolean) => void = () => undefined;
+        const window = { days: 1 };
+        const seen: number[] = [];
+        let calls = 0;
+        const read = (): Promise<boolean> => {
+            seen.push(window.days);
+            calls += 1;
+            if (calls > 1) return Promise.resolve(true);
+            return new Promise<boolean>((resolve) => (release = resolve));
+        };
+        return { read, window, seen, release: (good = true) => release(good) };
+    }
+
+    it('arms the next round at the new period after the round that was running ends', async () => {
+        vi.useFakeTimers();
+        const gate = held();
+        const { loop, reads } = recorded([WORK], gate.read);
+        const round = loop.run(true);
+        await settle();
+        expect(reads).toHaveLength(1);
+
+        loop.setPollMin(5);
+        gate.release();
+        await round;
+
+        await vi.advanceTimersByTimeAsync(5 * MINUTE - 1);
+        expect(reads).toHaveLength(1);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(reads).toHaveLength(2);
+    });
+
+    it('runs one follow-up round at the new window after the round ends, however many changes came', async () => {
+        vi.useFakeTimers();
+        const gate = held();
+        const { loop, reads, publish } = recorded([WORK], gate.read);
+        const round = loop.run(true);
+        await settle();
+
+        gate.window.days = 7;
+        takeLoopSettings(loop, { before: 15, after: 15 }, true, publish);
+        gate.window.days = 9;
+        takeLoopSettings(loop, { before: 15, after: 15 }, true, publish);
+        expect(reads).toHaveLength(1);
+        gate.release();
+        await round;
+        await settle();
+
+        expect(reads).toHaveLength(2);
+        expect(gate.seen).toEqual([1, 9]);
     });
 });

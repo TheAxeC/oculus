@@ -1,6 +1,8 @@
-// Layer 2, server. The watch on the machine's own config/local.yml, so an account row added or
-// removed by hand reaches the routes and the pollers without a restart, as a row the Calendar or
-// the Inbox adds does.
+// Layer 2, server. The watch on the machine's own config/local.yml. It carries every key: a write
+// of the file, by hand or from the page, reaches the context, which reads the file again, holds
+// every key at once and builds again the watchers made from a key that changed. This module is the
+// watch itself and the two pure answers the context needs after a read: which keys differ from the
+// ones in force, and which watchers those keys are the inputs of.
 //
 // It watches the config folder rather than the file: every write oculus makes replaces the file by
 // a rename, and an editor saves the same way, so a watch on the file itself would be left on the
@@ -10,8 +12,9 @@
 // also calls at the maximum wait when events never leave a quiet.
 
 import { existsSync, watch, type FSWatcher } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
 import { debounce as debounced } from 'lodash-es';
-import { LOCAL_NAME, configDir } from '../../../data/sources/config.ts';
+import { LOCAL_NAME, configDir, type LocalConfig } from '../../../data/sources/config.ts';
 
 export type LocalWatchOptions = {
     /**
@@ -69,4 +72,75 @@ export function watchLocal(
             handle = null;
         }
     };
+}
+
+/** Every key of the machine's own values, as the context holds it. */
+const FIELDS: (keyof LocalConfig)[] = [
+    'hub',
+    'port',
+    'hpcHost',
+    'sessionsCache',
+    'sessionsOverrides',
+    'workspaces',
+    'bookmarks',
+    'notes',
+    'changes',
+    'claudeBin',
+    'openBin',
+    'accounts',
+    'calendars',
+    'calendarDir',
+    'mail',
+    'mailDir'
+];
+
+/** The keys whose value in `next` differs from the one in `held`. */
+export function changedKeys(held: LocalConfig, next: LocalConfig): (keyof LocalConfig)[] {
+    return FIELDS.filter((key) => !isDeepStrictEqual(held[key], next[key]));
+}
+
+/** The watchers the context builds from local.yml, in the order they are built. */
+export const WATCHERS = [
+    'portfolio',
+    'sessions',
+    'usageRefresh',
+    'usage',
+    'git',
+    'autofetch',
+    'bookmarks'
+] as const;
+export type WatcherName = (typeof WATCHERS)[number];
+
+/** The watchers built directly from a key; the ones built from those follow in `rebuiltBy`. */
+const BUILT_FROM: Partial<Record<keyof LocalConfig, WatcherName[]>> = {
+    hub: ['portfolio', 'usageRefresh', 'git'],
+    accounts: ['sessions', 'usageRefresh'],
+    sessionsCache: ['sessions'],
+    sessionsOverrides: ['sessions'],
+    workspaces: ['git'],
+    bookmarks: ['bookmarks'],
+    claudeBin: ['usageRefresh']
+};
+
+/**
+ * The watchers to build again for these changed keys. The usage watcher holds the sessions
+ * watcher's change signal and the usage refresh's state, and the auto fetch reads the git watcher's
+ * channel when it starts, so each is built again with what it is built from.
+ */
+export function rebuiltBy(changed: readonly (keyof LocalConfig)[]): Record<WatcherName, boolean> {
+    const direct = new Set(changed.flatMap((key) => BUILT_FROM[key] ?? []));
+    return {
+        portfolio: direct.has('portfolio'),
+        sessions: direct.has('sessions'),
+        usageRefresh: direct.has('usageRefresh'),
+        usage: direct.has('usage') || direct.has('sessions') || direct.has('usageRefresh'),
+        git: direct.has('git'),
+        autofetch: direct.has('autofetch') || direct.has('git'),
+        bookmarks: direct.has('bookmarks')
+    };
+}
+
+/** The keys whose change builds this watcher again, directly or through its sources. */
+export function keysBuilding(name: WatcherName): (keyof LocalConfig)[] {
+    return FIELDS.filter((key) => rebuiltBy([key])[name]);
 }

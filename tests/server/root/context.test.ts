@@ -14,11 +14,12 @@ import {
     type ContextDependencies,
     type OculusRequest
 } from '../../../src/lib/server/root/context.ts';
-import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
+import { Terminals } from '../../../src/lib/server/machine/pty/channel.ts';
 import { macOpenAddress } from '../../../src/lib/server/files/open.ts';
 import { watchAutofetch as builtAutofetch } from '../../../src/lib/server/root/watch/autofetch.ts';
 import { noop, noopAsync } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { driver, inertConfig, inertDependencies } from './context-fixture.ts';
 
 // The module as it is, except that its calls are recorded, so a case can read which constructor a
 // context uses when it is handed none.
@@ -27,77 +28,6 @@ vi.mock('../../../src/lib/server/root/watch/autofetch.ts', async (original) => {
         await original<typeof import('../../../src/lib/server/root/watch/autofetch.ts')>();
     return { ...actual, watchAutofetch: vi.fn(actual.watchAutofetch) };
 });
-
-const driver = (close: () => void = noop): TerminalDriver => ({
-    run: () => Promise.resolve(''),
-    onOutput: noop,
-    onChange: noop,
-    attached: noop,
-    live: () => false,
-    serverRuns: () => Promise.resolve(false),
-    close
-});
-
-/** The configuration an inert context reads, with the `git` block as a case sets it. */
-function inertConfig(
-    git: unknown = { message_model: '', autofetch_minutes: 0 }
-): Record<string, unknown> {
-    return {
-        slurm: { host: 'cluster', days: 2, poll_min: 1, quota_min: 5, prewarm: false },
-        calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
-        editor: { paint_limit_kb: 64 },
-        open: { program_ext: { '.docx': 'com.microsoft.Word' } },
-        mail: { poll_min: 10, per_signal: 25 },
-        usage_tiers: {},
-        usage_refresh_min: 5,
-        usage_refresh_model: 'model',
-        git
-    };
-}
-
-/**
- * Every dependency of a context as an inert double, so a case builds a whole context without a
- * watcher, a terminal or a file of the machine; a case replaces the ones it watches.
- */
-function inertDependencies(): Partial<ContextDependencies> {
-    return {
-        loadLocal: () => ({
-            hub: '/hub',
-            port: 8791,
-            claudeBin: 'claude',
-            accounts: [],
-            calendars: [],
-            mail: []
-        }),
-        loadConfig: () => ({ config: inertConfig(), findings: [] }),
-        mintToken: () => 'context-token',
-        createHub: () => new Hub(),
-        createTerminals: (hub) => new Terminals(hub, { driver: driver(), poll: 0 }),
-        watchPortfolio: () => ({ close: noop }),
-        watchCalendar: () => ({ refresh: noopAsync, setAccounts: noop, close: noop }),
-        watchMail: () => ({ refresh: noopAsync, republish: noop, setAccounts: noop, close: noop }),
-        watchLocal: () => ({ close: noop }),
-        watchGit: () => ({ refresh: noopAsync, close: noop }),
-        watchAutofetch: () => ({ close: noop }),
-        watchBookmarks: () => ({ close: noop }),
-        watchHpc: () => ({ refresh: noopAsync, close: noop }),
-        watchUsageRefresh: () => ({
-            ready: Promise.resolve(),
-            refresh: () => Promise.resolve(true),
-            refreshAll: noopAsync,
-            state: () => ({
-                state: 'running',
-                since: '',
-                reason: '',
-                lastRefresh: '',
-                renewed: true
-            }),
-            close: noop
-        }),
-        watchSessions: () => ({ onChange: () => noop, close: noop }),
-        watchUsage: () => ({ refresh: noopAsync, close: noop })
-    };
-}
 
 describe('ServerContext', () => {
     it('builds and closes each process-owned object once and carries its token', () => {
@@ -126,12 +56,14 @@ describe('ServerContext', () => {
         }));
         const watchHpc = vi.fn<ContextDependencies['watchHpc']>(() => ({
             refresh: vi.fn(noopAsync),
+            set: noop,
             close: closes[3]
         }));
         const watchUsageRefresh = vi.fn(() => ({
             ready: Promise.resolve(),
             refresh: vi.fn(() => Promise.resolve(true)),
             refreshAll: vi.fn(noopAsync),
+            set: noop,
             state: vi.fn(() => ({
                 state: 'running' as const,
                 since: '',
@@ -141,39 +73,29 @@ describe('ServerContext', () => {
             })),
             close: closes[4]
         }));
-        const watchUsage = vi.fn(() => ({ refresh: vi.fn(noopAsync), close: closes[5] }));
+        const watchUsage = vi.fn(() => ({
+            refresh: vi.fn(noopAsync),
+            setTiers: noop,
+            close: closes[5]
+        }));
         const watchCalendar = vi.fn<ContextDependencies['watchCalendar']>(() => ({
             refresh: vi.fn(noopAsync),
             setAccounts: noop,
+            setSettings: noop,
+            setWords: noop,
             close: closes[7]
         }));
         const watchMail = vi.fn<ContextDependencies['watchMail']>(() => ({
             refresh: vi.fn(noopAsync),
             republish: noop,
             setAccounts: noop,
+            setSettings: noop,
+            setWords: noop,
             close: closes[8]
         }));
         const watchLocal = vi.fn<ContextDependencies['watchLocal']>(() => ({ close: closes[10] }));
         const loadConfig = vi.fn(() => ({
-            config: {
-                slurm: {
-                    host: 'cluster',
-                    days: 2,
-                    poll_min: 1,
-                    quota_min: 5,
-                    prewarm: false
-                },
-                calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
-                editor: { paint_limit_kb: 64 },
-                open: { program_ext: { '.docx': 'com.microsoft.Word' } },
-                mail: { poll_min: 10, per_signal: 25 },
-                usage_tiers: {},
-                usage_refresh_min: 5,
-                usage_refresh_model: 'model',
-                git: { message_model: '', autofetch_minutes: 0 },
-                glyphs: { pin: 'P' },
-                icons: { pin: 'pin' }
-            },
+            config: { ...inertConfig(), glyphs: { pin: 'P' }, icons: { pin: 'pin' } },
             findings: []
         }));
         const context = createServerContext('/engine', {
@@ -300,7 +222,7 @@ describe('ServerContext', () => {
             watchUsage: (_hub, options) => {
                 const refresh = refreshes[usageIndex++];
                 const off = options.onSessionsChange?.(() => void refresh()) ?? noop;
-                return { refresh, close: off };
+                return { refresh, setTiers: noop, close: off };
             }
         };
 
@@ -334,11 +256,19 @@ describe('ServerContext', () => {
                 mail: rows,
                 mailDir: '/machine/mail'
             }),
-            watchCalendar: () => ({ refresh: noopAsync, setAccounts: calendarSet, close: noop }),
+            watchCalendar: () => ({
+                refresh: noopAsync,
+                setAccounts: calendarSet,
+                setSettings: noop,
+                setWords: noop,
+                close: noop
+            }),
             watchMail: () => ({
                 refresh: noopAsync,
                 republish: noop,
                 setAccounts: mailSet,
+                setSettings: noop,
+                setWords: noop,
                 close: noop
             }),
             watchLocal: (_engine, onChange) => {
@@ -516,8 +446,8 @@ describe('ServerContext', () => {
     });
 });
 
-describe('ServerContext with a refresh cadence that is not a positive number', () => {
-    const sentence = 'usage_refresh_min must be a positive number';
+describe('ServerContext with a refresh cadence outside 1 to 35791', () => {
+    const sentence = 'config/behavior.yml: usage_refresh_min must be a number from 1 to 35791';
 
     /**
      * The inert dependencies with the refresh cadence 0 and counting watchers, and the stub that
@@ -526,7 +456,7 @@ describe('ServerContext with a refresh cadence that is not a positive number', (
     function replaced(realRefresher: boolean) {
         const portfolio = vi.fn(() => ({ close: noop }));
         const sessions = vi.fn(() => ({ onChange: () => noop, close: noop }));
-        const usage = vi.fn(() => ({ refresh: noopAsync, close: noop }));
+        const usage = vi.fn(() => ({ refresh: noopAsync, setTiers: noop, close: noop }));
         const { watchUsageRefresh, loadConfig, ...inert } = inertDependencies();
         const refresher = vi.fn(watchUsageRefresh);
         const dependencies: Partial<ContextDependencies> = {
@@ -556,5 +486,375 @@ describe('ServerContext with a refresh cadence that is not a positive number', (
         const held = replaced(false);
         expect(() => createServerContext('/engine', held.dependencies)).toThrow(sentence);
         expect(held.refresher).not.toHaveBeenCalled();
+    });
+});
+
+describe('ServerContext on a configuration push', () => {
+    const KEPT = 'the settings in force are kept';
+    const FILE = 'config/behavior.yml';
+
+    /** Run a case over a started context, closed and its stderr spy restored after it. */
+    async function inRun(
+        body: (run: ReturnType<typeof started>) => void | Promise<void>,
+        hpcHost?: string
+    ): Promise<void> {
+        const run = started(hpcHost);
+        try {
+            await body(run);
+        } finally {
+            run.context.close();
+            run.said.mockRestore();
+        }
+    }
+
+    /** The inert configuration with the top-level blocks `changes` names replaced whole. */
+    function configWith(changes: Record<string, unknown>): Record<string, unknown> {
+        return { ...inertConfig(), ...changes };
+    }
+
+    /** A block of the inert configuration with the keys `changes` names set. */
+    function blockWith(name: string, changes: Record<string, unknown>): Record<string, unknown> {
+        return { ...(inertConfig()[name] as Record<string, unknown>), ...changes };
+    }
+
+    /**
+     * A context over recording watchers on a hub of the case's own, and what it printed on stderr
+     * under the `config:` prefix since it was built.
+     */
+    function started(hpcHost?: string) {
+        const hub = new Hub();
+        const setters = {
+            hpc: vi.fn(),
+            calendar: vi.fn(),
+            calendarWords: vi.fn(),
+            mail: vi.fn(),
+            mailWords: vi.fn(),
+            refresh: vi.fn(),
+            tiers: vi.fn()
+        };
+        const context = createServerContext('/engine', {
+            ...inertDependencies(setters),
+            createHub: () => hub,
+            loadLocal: () => ({
+                ...{ hub: '/hub', port: 8791, claudeBin: 'claude', accounts: [], calendars: [] },
+                ...{ mail: [], ...(hpcHost === undefined ? {} : { hpcHost }) }
+            })
+        });
+        const said = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const lines = (): string[] =>
+            said.mock.calls
+                .map((call) => String(call[0]))
+                .filter((line) => line.startsWith('config:'));
+        /** Publish a configuration and let the hub deliver what it held back behind the send. */
+        const push = async (config: unknown): Promise<void> => {
+            hub.publish('config', { config, findings: [] });
+            for (let turn = 0; turn < 3; turn += 1) await Promise.resolve();
+        };
+        return { hub, context, setters, push, lines, said };
+    }
+
+    it('hands each group the settings its reader gives the pushed configuration', () =>
+        inRun(async (run) => {
+            await run.push(
+                configWith({
+                    slurm: blockWith('slurm', {
+                        days: 14,
+                        poll_min: 5,
+                        quota_min: 30,
+                        prewarm: true
+                    }),
+                    calendar: blockWith('calendar', { poll_min: 5, days_back: 7, days_ahead: 30 }),
+                    mail: blockWith('mail', { poll_min: 4, per_signal: 10 }),
+                    usage_refresh_min: 3,
+                    usage_refresh_model: 'sonnet',
+                    usage_tiers: { max: 'Max' }
+                })
+            );
+
+            expect(run.setters.hpc).toHaveBeenCalledExactlyOnceWith({
+                host: 'cluster',
+                days: 14,
+                pollMin: 5,
+                quotaMin: 30,
+                prewarm: true
+            });
+            expect(run.setters.calendar).toHaveBeenCalledExactlyOnceWith({
+                pollMin: 5,
+                daysBack: 7,
+                daysAhead: 30
+            });
+            expect(run.setters.mail).toHaveBeenCalledExactlyOnceWith({ pollMin: 4, perSignal: 10 });
+            expect(run.setters.refresh).toHaveBeenCalledExactlyOnceWith({
+                refreshMin: 3,
+                model: 'sonnet'
+            });
+            expect(run.setters.tiers).toHaveBeenCalledExactlyOnceWith({ max: 'Max' });
+            expect(run.lines()).toEqual([]);
+        }));
+
+    it('keeps the host the machine names, so a pushed slurm.host reaches the poller only without one', async () => {
+        await inRun(async (run) => {
+            await run.push(configWith({ slurm: blockWith('slurm', { host: 'other' }) }));
+            // A pushed host that the machine's own host overrides changes nothing: no poll starts.
+            expect(run.setters.hpc).not.toHaveBeenCalled();
+            await run.push(configWith({ slurm: blockWith('slurm', { host: 'other', days: 14 }) }));
+            expect(run.setters.hpc).toHaveBeenCalledExactlyOnceWith(
+                expect.objectContaining({ host: 'machine-host', days: 14 })
+            );
+        }, 'machine-host');
+        await inRun(async (run) => {
+            await run.push(configWith({ slurm: blockWith('slurm', { host: 'other' }) }));
+            expect(run.setters.hpc).toHaveBeenCalledExactlyOnceWith(
+                expect.objectContaining({ host: 'other' })
+            );
+        });
+    });
+
+    it('hands the three sentences, each kept when the push lacks it, and says the lack once', () =>
+        inRun(async (run) => {
+            await run.push(
+                configWith({
+                    text: {
+                        calendar: { ics_no_link: 'new link', ics_failed: 'new failed {0}' },
+                        accounts: { timed_out: 'new timed out {0}' }
+                    }
+                })
+            );
+            expect(run.setters.calendarWords).toHaveBeenCalledExactlyOnceWith({
+                icsNoLink: 'new link',
+                icsFailed: 'new failed {0}',
+                timedOut: 'new timed out {0}'
+            });
+            expect(run.setters.mailWords).toHaveBeenCalledExactlyOnceWith({
+                timedOut: 'new timed out {0}'
+            });
+
+            const text = {
+                calendar: { ics_no_link: 'newer link' },
+                accounts: { timed_out: 'new timed out {0}' }
+            };
+            await run.push(configWith({ text }));
+            await run.push(configWith({ text }));
+
+            expect(run.setters.calendarWords).toHaveBeenLastCalledWith({
+                icsNoLink: 'newer link',
+                icsFailed: 'new failed {0}',
+                timedOut: 'new timed out {0}'
+            });
+            expect(run.lines()).toEqual([
+                `config: text catalog: calendar.ics_failed must be a string; ${KEPT}`
+            ]);
+        }));
+
+    it('keeps a refused group and logs it once, again after a read that took, and clears on a push back', () =>
+        inRun(async (run) => {
+            const refused = `config: ${FILE}: slurm.poll_min must be a number from 1 to 35791; ${KEPT}`;
+            const zero = configWith({ slurm: blockWith('slurm', { poll_min: 0 }) });
+            await run.push(zero);
+            await run.push(zero);
+            expect(run.setters.hpc).not.toHaveBeenCalled();
+            expect(run.lines()).toEqual([refused]);
+
+            await run.push(configWith({ slurm: blockWith('slurm', { poll_min: 15 }) }));
+            expect(run.setters.hpc).toHaveBeenLastCalledWith(
+                expect.objectContaining({ pollMin: 15 })
+            );
+
+            await run.push(zero);
+            expect(run.lines()).toEqual([refused, refused]);
+
+            // A push back to the value in force reads without a throw, so the next refusal is new.
+            await run.push(configWith({ slurm: blockWith('slurm', { poll_min: 15 }) }));
+            await run.push(zero);
+            expect(run.lines()).toEqual([refused, refused, refused]);
+
+            // A different message on the same group logs its own line.
+            await run.push(configWith({ slurm: blockWith('slurm', { days: -1 }) }));
+            expect(run.lines()).toHaveLength(4);
+        }));
+
+    it('refuses each group on its own, with its reader message, and lets the others take theirs', () =>
+        inRun(async (run) => {
+            const first = { slurm: blockWith('slurm', { poll_min: 0 }) };
+            await run.push(
+                configWith({ ...first, calendar: blockWith('calendar', { poll_min: 5 }) })
+            );
+            expect(run.setters.hpc).not.toHaveBeenCalled();
+            expect(run.setters.calendar).toHaveBeenCalledExactlyOnceWith({
+                pollMin: 5,
+                daysBack: 1,
+                daysAhead: 14
+            });
+
+            await run.push(
+                configWith({
+                    calendar: blockWith('calendar', { poll_min: 0 }),
+                    mail: blockWith('mail', { per_signal: 0 }),
+                    usage_refresh_min: 0,
+                    usage_tiers: { a: 5 }
+                })
+            );
+            expect(run.lines().slice(1)).toEqual([
+                `config: ${FILE}: calendar.poll_min must be a number from 1 to 35791; ${KEPT}`,
+                `config: ${FILE}: mail.per_signal must be a whole number from 1 to 500; ${KEPT}`,
+                `config: ${FILE}: usage_refresh_min must be a number from 1 to 35791; ${KEPT}`,
+                `config: ${FILE}: usage_tiers.a must be a string; ${KEPT}`
+            ]);
+            expect(run.setters.refresh).not.toHaveBeenCalled();
+            expect(run.setters.tiers).not.toHaveBeenCalled();
+        }));
+
+    it('hands nothing on for a push whose values equal the ones in force (an audit)', () =>
+        inRun(async (run) => {
+            await run.push(inertConfig());
+            await run.push(inertConfig());
+            for (const setter of Object.values(run.setters)) expect(setter).not.toHaveBeenCalled();
+            expect(run.lines()).toEqual([]);
+        }));
+
+    it('keeps every group and says so once for a push whose configuration is not a map', () =>
+        inRun(async (run) => {
+            for (const config of ['text', 3, null, [], undefined]) await run.push(config);
+            for (const setter of Object.values(run.setters)) expect(setter).not.toHaveBeenCalled();
+            expect(run.lines()).toEqual([`config: the pushed configuration is not a map; ${KEPT}`]);
+        }));
+
+    it('keeps the five groups, each logged once, when behavior.yml was saved unparseable', () =>
+        inRun(async (run) => {
+            const unreadable = { text: inertConfig().text };
+            await run.push(unreadable);
+            await run.push(unreadable);
+
+            for (const setter of Object.values(run.setters)) expect(setter).not.toHaveBeenCalled();
+            expect(run.lines()).toEqual([
+                `config: ${FILE}: slurm must be a map; ${KEPT}`,
+                `config: ${FILE}: calendar must be a map; ${KEPT}`,
+                `config: ${FILE}: mail must be a map; ${KEPT}`,
+                `config: ${FILE}: usage_refresh_min must be a number from 1 to 35791; ${KEPT}`,
+                `config: ${FILE}: usage_tiers must be a map; ${KEPT}`
+            ]);
+        }));
+
+    it('holds the settings of the last of two pushes made in quick succession', () =>
+        inRun(async (run) => {
+            // The second publish lands while the hub is still sending the first, so it is held and
+            // delivered after it.
+            for (const pollMin of [5, 7, 7]) {
+                const config = configWith({ slurm: blockWith('slurm', { poll_min: pollMin }) });
+                run.hub.publish('config', { config, findings: [] });
+            }
+            await run.push(configWith({ slurm: blockWith('slurm', { poll_min: 7 }) }));
+
+            expect(
+                run.setters.hpc.mock.calls.map((call) => (call[0] as { pollMin: number }).pollMin)
+            ).toEqual([5, 7]);
+        }));
+
+    it('takes the sink off the hub on close, after which a push changes nothing and logs nothing', () =>
+        inRun(async (run) => {
+            const during = run.hub.size;
+            run.context.close();
+            expect(run.hub.size).toBe(during - 1);
+            await run.push(configWith({ slurm: blockWith('slurm', { poll_min: 0, days: 14 }) }));
+            for (const setter of Object.values(run.setters)) expect(setter).not.toHaveBeenCalled();
+            expect(run.lines()).toEqual([]);
+        }));
+
+    it('builds a hook target without the notification settings, which the hook route reads at each request', () =>
+        inRun((run) => {
+            const keys = Object.keys(run.context.hooks).sort();
+            expect(keys).toEqual(['hub', 'limiter', 'logged', 'recordFor', 'store']);
+        }));
+
+    it('logs a setter that throws once as its group failing, and the next push still reaches the others', () =>
+        inRun(async (run) => {
+            run.setters.hpc.mockImplementation(() => {
+                throw new Error('the poller broke');
+            });
+            const subscribed = run.hub.size;
+
+            await run.push(
+                configWith({
+                    slurm: blockWith('slurm', { poll_min: 5 }),
+                    calendar: blockWith('calendar', { poll_min: 5 })
+                })
+            );
+            await run.push(
+                configWith({
+                    slurm: blockWith('slurm', { poll_min: 5 }),
+                    calendar: blockWith('calendar', { poll_min: 7 })
+                })
+            );
+
+            expect(run.lines()).toEqual([`config: the poller broke; ${KEPT}`]);
+            expect(run.setters.hpc).toHaveBeenCalledTimes(2);
+            expect(run.setters.calendar).toHaveBeenCalledTimes(2);
+            expect(run.hub.size).toBe(subscribed);
+        }));
+
+    it('logs each other group whose setter throws, and the next push still reaches the poller', async () => {
+        const text = inertConfig().text as Record<string, Record<string, unknown>>;
+        const pushes: [keyof ReturnType<typeof started>['setters'], Record<string, unknown>][] = [
+            ['calendar', { calendar: blockWith('calendar', { poll_min: 5 }) }],
+            ['mail', { mail: blockWith('mail', { poll_min: 4 }) }],
+            ['refresh', { usage_refresh_min: 3 }],
+            ['tiers', { usage_tiers: { max: 'Max' } }],
+            [
+                'calendarWords',
+                { text: { ...text, calendar: { ...text.calendar, ics_no_link: 'new link' } } }
+            ],
+            [
+                'mailWords',
+                {
+                    text: {
+                        ...text,
+                        accounts: { ...text.accounts, timed_out: 'new timed out {0}' }
+                    }
+                }
+            ]
+        ];
+        for (const [group, changes] of pushes) {
+            await inRun(async (run) => {
+                run.setters[group].mockImplementation(() => {
+                    throw new Error(`the ${group} setter broke`);
+                });
+                const subscribed = run.hub.size;
+
+                await run.push(
+                    configWith({ ...changes, slurm: blockWith('slurm', { poll_min: 5 }) })
+                );
+                await run.push(
+                    configWith({ ...changes, slurm: blockWith('slurm', { poll_min: 7 }) })
+                );
+
+                expect(run.setters[group]).toHaveBeenCalled();
+                expect(
+                    run
+                        .lines()
+                        .filter((line) => line === `config: the ${group} setter broke; ${KEPT}`)
+                ).toHaveLength(1);
+                expect(run.setters.hpc).toHaveBeenCalledTimes(2);
+                expect(run.hub.size).toBe(subscribed);
+            });
+        }
+    });
+
+    it('stops at start-up naming the key for a cadence of 0, a day window of -1 and a count of 501', () => {
+        const cases: [string, string, number, string][] = [
+            ['slurm', 'poll_min', 0, 'a number from 1 to 35791'],
+            ['slurm', 'days', -1, 'a whole number from 0 to 3650'],
+            ['mail', 'per_signal', 501, 'a whole number from 1 to 500']
+        ];
+        for (const [block, key, value, words] of cases) {
+            expect(() =>
+                createServerContext('/engine', {
+                    ...inertDependencies(),
+                    loadConfig: () => ({
+                        config: configWith({ [block]: blockWith(block, { [key]: value }) }),
+                        findings: []
+                    })
+                })
+            ).toThrow(`${block}.${key} must be ${words}`);
+        }
     });
 });

@@ -1,6 +1,7 @@
 // Layer 2, server. The Live HPC watcher publishes one complete state message, with quota refreshed
 // on its slower independent cadence.
 import type { HpcPayload } from '../../../data/model/index.ts';
+import type { SlurmSettings } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { LogPaths } from './actions.ts';
 import {
@@ -28,7 +29,15 @@ export type HpcOptions = {
     runner?: Runner;
     timeoutMs?: number;
 };
-export type HpcWatcher = { refresh(): Promise<void>; close(): void };
+export type HpcWatcher = {
+    refresh(): Promise<void>;
+    /**
+     * Take new settings. A period moves the next run to the sooner of the one waiting and the new
+     * period from now; a changed host or window drops what the old one answered and polls now.
+     */
+    set(settings: SlurmSettings): void;
+    close(): void;
+};
 
 export function batchCommand(days: number): string {
     return [
@@ -58,6 +67,20 @@ type Rows = Pick<HpcPayload, 'jobs' | 'running' | 'pending' | 'total' | 'recent'
 const NO_ROWS: Rows = { jobs: [], running: 0, pending: 0, total: 0, recent: [], sinfo: [] };
 
 export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
+    let current: SlurmSettings = {
+        host: options.host,
+        days: options.days,
+        pollMin: options.pollMin,
+        quotaMin: options.quotaMin,
+        prewarm: options.prewarm
+    };
+    /**
+     * Counts the changes of host or window. A poll, quota read or prewarm that began under an older
+     * count answers for a cluster or a window nobody asks for any more, and drops its result.
+     */
+    let asking = 0;
+    /** Counts the changes of host alone: a quota read does not depend on the window. */
+    let hosts = 0;
     const runner = options.runner ?? run;
     const timeout = options.timeoutMs ?? 40000;
     let quota: HpcPayload['quota'] = [];
@@ -89,17 +112,18 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         quota,
         updated: new Date().toISOString(),
         ...(lastOk ? { lastOk } : {}),
-        pollMin: options.pollMin,
+        pollMin: current.pollMin,
         retryMin: RETRY_MIN,
-        host: options.host
+        host: current.host
     });
     hub.publish('hpc', degraded('starting'));
 
     const publishQuota = async (): Promise<void> => {
         if (stopped()) return;
+        const began = hosts;
         try {
-            const result = await runner(options.host, quotaCommand, 25000);
-            if (stopped()) return;
+            const result = await runner(current.host, quotaCommand, 25000);
+            if (stopped() || began !== hosts) return;
             const next = parseQuota(result.stdout);
             if (result.code === 0 && next.length) {
                 quota = next;
@@ -116,15 +140,29 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
      * after the poll that failed. One handle, which close() clears.
      */
     let queueTimer: ReturnType<typeof setTimeout> | null = null;
-    const schedule = (minutes: number): void => {
+    /** When the waiting poll runs, or null while a poll is running or none is waiting. */
+    let queueAt: number | null = null;
+    const arm = (at: number): void => {
         if (queueTimer !== null) clearTimeout(queueTimer);
-        queueTimer = stopped() ? null : setTimeout(() => void refresh(), minutes * 60000);
+        queueAt = at;
+        queueTimer = setTimeout(
+            () => {
+                queueAt = null;
+                void refresh();
+            },
+            Math.max(0, at - Date.now())
+        );
+    };
+    const schedule = (minutes: number): void => {
+        if (stopped()) return;
+        arm(Date.now() + minutes * 60000);
     };
     const poll = async (): Promise<void> => {
         let good = false;
+        const began = asking;
         try {
-            const result = await runner(options.host, batchCommand(options.days), timeout);
-            if (stopped()) return;
+            const result = await runner(current.host, batchCommand(current.days), timeout);
+            if (stopped() || began !== asking) return;
             const parts = splitSections(result.stdout);
             if (!result.stdout.includes(SEC_SACCT) || parts.squeueCode !== 0) {
                 prewarmDue = false;
@@ -147,21 +185,21 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
             };
             lastOk = new Date().toISOString();
             good = true;
-            prewarmDue = options.prewarm;
+            prewarmDue = current.prewarm;
             hub.publish('hpc', {
                 status: 'ok',
                 ...rows,
                 quota,
                 updated: lastOk,
                 lastOk,
-                pollMin: options.pollMin,
+                pollMin: current.pollMin,
                 retryMin: RETRY_MIN,
-                host: options.host
+                host: current.host
             });
             console.log('hpc publish: ok');
         } catch (error) {
             prewarmDue = false;
-            if (stopped()) return;
+            if (stopped() || began !== asking) return;
             const hint = error instanceof Error ? error.message : String(error);
             const payload = degraded(
                 hint.toLowerCase().includes('timeout') ? 'unreachable' : 'error',
@@ -170,7 +208,7 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
             hub.publish('hpc', payload);
             console.log(`hpc publish: ${payload.status}`);
         } finally {
-            schedule(good ? options.pollMin : RETRY_MIN);
+            schedule(good ? current.pollMin : RETRY_MIN);
             startPrewarm();
         }
     };
@@ -190,14 +228,19 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     const prewarmStep = async (): Promise<void> => {
         const paths = options.logPaths;
         if (paths === undefined) return;
+        const began = asking;
         try {
             const todo = rows.recent
                 .filter((job) => isFinished(job.state) && !paths.has(job.id) && !asked.has(job.id))
                 .map((job) => job.id);
             if (todo.length > 0) {
                 for (const id of todo) asked.add(id);
-                const found = await prewarmLogs(options.host, todo, options.days, runner);
-                if (stopped()) return;
+                const found = await prewarmLogs(current.host, todo, current.days, runner);
+                if (stopped() || began !== asking) {
+                    // Dropped under an older host or window: the next prewarm asks about them.
+                    for (const id of todo) asked.delete(id);
+                    return;
+                }
                 for (const [id, path] of found) if (!paths.has(id)) paths.set(id, path);
             }
             if (paths.size > PREWARM_MAX) {
@@ -243,16 +286,62 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         queued ??= running.then(() => refresh()).finally(() => (queued = null));
         return queued;
     };
+    /** The quota read waiting, one at a time, at the period in force. */
+    let quotaTimer: ReturnType<typeof setTimeout> | null = null;
+    let quotaAt = 0;
+    const armQuota = (at: number): void => {
+        if (quotaTimer !== null) clearTimeout(quotaTimer);
+        quotaAt = at;
+        quotaTimer = setTimeout(
+            () => {
+                armQuota(Date.now() + current.quotaMin * 60000);
+                void publishQuota();
+            },
+            Math.max(0, at - Date.now())
+        );
+    };
     void publishQuota();
     void refresh();
-    const quotaTimer = setInterval(() => void publishQuota(), options.quotaMin * 60000);
+    armQuota(Date.now() + current.quotaMin * 60000);
     return {
         refresh,
+        set(next): void {
+            if (stopped()) return;
+            const before = current;
+            current = { ...next };
+            if (next.pollMin !== before.pollMin) {
+                if (queueAt !== null) arm(Math.min(queueAt, Date.now() + next.pollMin * 60000));
+                const held = hub.latest('hpc')?.payload as HpcPayload | undefined;
+                if (held !== undefined) hub.publish('hpc', { ...held, pollMin: next.pollMin });
+            }
+            if (next.quotaMin !== before.quotaMin) {
+                armQuota(Math.min(quotaAt, Date.now() + next.quotaMin * 60000));
+            }
+            if (next.host !== before.host) {
+                asking += 1;
+                hosts += 1;
+                rows = NO_ROWS;
+                lastOk = '';
+                quota = [];
+                prewarmDue = false;
+                asked.clear();
+                options.logPaths?.clear();
+                hub.publish('hpc', degraded('starting'));
+                void publishQuota();
+                void refresh();
+            } else if (next.days !== before.days) {
+                asking += 1;
+                prewarmDue = false;
+                void refresh();
+            }
+        },
         close(): void {
             closed = true;
             if (queueTimer !== null) clearTimeout(queueTimer);
             queueTimer = null;
-            clearInterval(quotaTimer);
+            queueAt = null;
+            if (quotaTimer !== null) clearTimeout(quotaTimer);
+            quotaTimer = null;
         }
     };
 }

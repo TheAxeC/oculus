@@ -1,14 +1,16 @@
 // What POST /api/hook answers. The route itself is one line handing the request to
-// handleHookRequest with the request context's HookTarget, which is what this calls with a fixture:
-// every case here is one Request object and a HookTarget the test owns, so nothing
-// posts to a real server and no notification fires (the target's exec is a recording stub).
+// handleHookRequest with the request context's HookTarget and the notification settings it reads
+// at the request, which is what this calls with a fixture: every case here is one Request object
+// and a target the test owns, so nothing posts to a real server and no notification fires (the
+// target's exec is a recording stub).
 
 import { describe, expect, it } from 'vitest';
 import {
     RateLimiter,
     handleHookRequest,
+    notifyConfig,
     type ExecFile,
-    type HookTarget
+    type HookRequestTarget
 } from '../../../src/lib/server/root/hooks.ts';
 import { HookStore } from '../../../src/lib/server/sessions/stores/hooks.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
@@ -19,10 +21,11 @@ function noopExec(): ExecFile {
     return (_file, _args, _options, callback) => callback(null);
 }
 
-function target(over: Partial<HookTarget> = {}): HookTarget {
+function target(over: Partial<HookRequestTarget> = {}): HookRequestTarget {
     const server = contextFixture();
     return {
         ...server.hooks,
+        config: notifyConfig({}),
         store: new HookStore(),
         hub: null,
         limiter: new RateLimiter(),

@@ -118,12 +118,18 @@ describe('calendarSettings', () => {
     for (const [config, sentence] of [
         [{}, 'calendar must be a map'],
         [{ calendar: [] }, 'calendar must be a map'],
-        [{ calendar: { days_back: 1, days_ahead: 14 } }, 'calendar.poll_min must be a number'],
+        [
+            { calendar: { days_back: 1, days_ahead: 14 } },
+            'calendar.poll_min must be a number from 1 to 35791'
+        ],
         [
             { calendar: { poll_min: 15, days_back: 'one', days_ahead: 14 } },
-            'calendar.days_back must be a number'
+            'calendar.days_back must be a whole number from 0 to 3650'
         ],
-        [{ calendar: { poll_min: 15, days_back: 1 } }, 'calendar.days_ahead must be a number']
+        [
+            { calendar: { poll_min: 15, days_back: 1 } },
+            'calendar.days_ahead must be a whole number from 0 to 3650'
+        ]
     ] as const) {
         it(`throws "${sentence}"`, () => {
             expect(() => calendarSettings(config as Record<string, unknown>)).toThrow(

@@ -123,8 +123,11 @@ describe('mailSettings', () => {
     for (const [config, sentence] of [
         [{}, 'mail must be a map'],
         [{ mail: [] }, 'mail must be a map'],
-        [{ mail: { per_signal: 25 } }, 'mail.poll_min must be a number'],
-        [{ mail: { poll_min: 10, per_signal: 'all' } }, 'mail.per_signal must be a number']
+        [{ mail: { per_signal: 25 } }, 'mail.poll_min must be a number from 1 to 35791'],
+        [
+            { mail: { poll_min: 10, per_signal: 'all' } },
+            'mail.per_signal must be a whole number from 1 to 500'
+        ]
     ] as const) {
         it(`throws "${sentence}"`, () => {
             expect(() => mailSettings(config as Record<string, unknown>)).toThrow(

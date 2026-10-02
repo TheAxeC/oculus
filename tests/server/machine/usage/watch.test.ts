@@ -8,8 +8,11 @@
 // the case holds, so no file event reaches it; the fold is a double whose answer the case releases.
 // The usage folder is a scratch directory.
 
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, vi } from 'vitest';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
+import { claudeAccountFile } from '../../../../src/lib/server/machine/usage/accounts.ts';
 import {
     USAGE_DEBOUNCE,
     USAGE_MAX_WAIT,
@@ -284,5 +287,57 @@ describe('the usage watcher with its own quiet and maximum wait', () => {
             );
             return { event: changed, count, close };
         }
+    });
+});
+
+describe('the usage watcher on tiers that change', () => {
+    /** A watcher over one Claude account whose plan id is `t`, its first rebuild done. */
+    async function labelled(tiers: Record<string, string>) {
+        const root = scratchDir('oculus-usage-tiers-');
+        const dir = join(root, '.claude');
+        const file = claudeAccountFile(dir);
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, JSON.stringify({ oauthAccount: { organizationRateLimitTier: 't' } }));
+        const hub = new Hub();
+        const watcher = watchUsage(hub, {
+            accounts: [{ tool: 'claude', dir, label: 'a' }],
+            tiers,
+            usageRoot: join(root, 'status'),
+            fold: quickFold().fold,
+            watchFolder: () => ({ close: noop }),
+            interval: 3_600_000
+        });
+        await watcher.refresh();
+        const label = (): string =>
+            (hub.latest('usage')?.payload as UsagePayload).accounts[0].tierLabel;
+        const flush = (): Promise<void> => new Promise((done) => setTimeout(done, 0));
+        return { hub, watcher, label, flush };
+    }
+
+    it('publishes again with the new label, and publishes nothing for equal tiers', async () => {
+        const { hub, watcher, label, flush } = await labelled({ t: 'Old' });
+        expect(label()).toBe('Old');
+        const version = hub.version('usage');
+
+        watcher.setTiers({ t: 'Old' });
+        await flush();
+        expect(hub.version('usage')).toBe(version);
+
+        watcher.setTiers({ t: 'New' });
+        await flush();
+        expect(hub.version('usage')).toBe(version + 1);
+        expect(label()).toBe('New');
+        watcher.close();
+    });
+
+    it('publishes nothing once it is closed', async () => {
+        const { hub, watcher, flush } = await labelled({ t: 'Old' });
+        watcher.close();
+        const version = hub.version('usage');
+
+        watcher.setTiers({ t: 'New' });
+        await flush();
+
+        expect(hub.version('usage')).toBe(version);
     });
 });

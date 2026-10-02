@@ -27,6 +27,7 @@
     import { repositoriesViewOf } from '$lib/state/sources/repositories/repositories';
     import { configGeneration } from '$lib/state/shared/words/generation.svelte';
     import { bookmarkRows, HUB_ROOT } from '$lib/state/sources/fs';
+    import { takeCarried } from '$lib/state/workbench/layout/saved/carry';
     import { createClientState } from '$lib/state/client/context';
     import { provideState } from '$lib/state/client/use';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
@@ -185,6 +186,7 @@
             'feeds',
             'audit'
         ]);
+        takeCarried(localStorage, window, location.origin);
         loadUi(localStorage, window);
         loadLayout(localStorage, window);
         return () => {

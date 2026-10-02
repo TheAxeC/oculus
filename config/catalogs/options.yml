@@ -123,18 +123,18 @@ options:
             control: number
         usage_tiers:
             section: Usage and sessions
-            description: The words shown for the subscription tier ids that the supported command-line agents report. The server refuses to start when the map holds a value that is not text.
+            description: The words shown for the subscription tier ids that the supported command-line agents report. The server refuses to start when the map holds a value that is not text. A change the server refuses while it runs keeps the value in force and is logged.
             fields:
                 key: a tier id as the agent reports it
                 value: the words shown for that tier
         usage_refresh_min:
             section: Usage and sessions
-            description: Minutes between refreshes of each account's cached usage figures, which hidden usage sessions make. The server refuses to start unless it is above zero, and the Usage view reads the same number as its cadence.
+            description: Minutes between refreshes of each account's cached usage figures, which hidden usage sessions make. The server refuses to start unless it is a number from 1 to 35791, and the Usage view reads the same number as its cadence. A value outside 1 to 35791 is refused. A change the server refuses while it runs keeps the value in force and is logged.
             default: 10
             control: number
         usage_refresh_model:
             section: Usage and sessions
-            description: The model the hidden usage sessions are started with, passed to the Claude command line as --model. The server refuses to start when it is empty.
+            description: The model the hidden usage sessions are started with, passed to the Claude command line as --model. The server refuses to start when it is empty. A change the server refuses while it runs keeps the value in force and is logged.
             default: haiku
             control: text
         refresh_stale_days.litwatch:
@@ -216,19 +216,19 @@ options:
                 ]
             control: list
         slurm.host:
-            description: The ssh host the Live HPC poller queries, an alias of the ssh configuration. The machine's own hpc_host in local.yml takes precedence. The server refuses to start when it is empty.
+            description: The ssh host the Live HPC poller queries, an alias of the ssh configuration. The machine's own hpc_host in local.yml takes precedence. The server refuses to start when it is empty. A change the server refuses while it runs keeps the value in force and is logged.
             default: utwente
             control: text
         slurm.days:
-            description: How many days back the Live HPC poll asks the scheduler's accounting for finished jobs, and for the job working directories of the log prewarm.
+            description: How many days back the Live HPC poll asks the scheduler's accounting for finished jobs, and for the job working directories of the log prewarm. A value that is not a whole number from 0 to 3650 is refused.
             default: 3
             control: number
         slurm.poll_min:
-            description: Minutes between two Live HPC polls of the job queue.
+            description: Minutes between two Live HPC polls of the job queue. A value outside 1 to 35791 is refused.
             default: 20
             control: number
         slurm.quota_min:
-            description: Minutes between two reads of the cluster's disk quota.
+            description: Minutes between two reads of the cluster's disk quota. A value outside 1 to 35791 is refused.
             default: 60
             control: number
         slurm.prewarm:
@@ -244,23 +244,23 @@ options:
             default: false
             control: toggle
         calendar.poll_min:
-            description: Minutes between two reads of the calendar accounts.
+            description: Minutes between two reads of the calendar accounts. A value outside 1 to 35791 is refused.
             default: 15
             control: number
         calendar.days_back:
-            description: How many days before now the calendar window opens.
+            description: How many days before now the calendar window opens. A value that is not a whole number from 0 to 3650 is refused.
             default: 31
             control: number
         calendar.days_ahead:
-            description: How many days after now the calendar window closes.
+            description: How many days after now the calendar window closes. A value that is not a whole number from 0 to 3650 is refused.
             default: 62
             control: number
         mail.poll_min:
-            description: Minutes between two reads of the inbox plate.
+            description: Minutes between two reads of the inbox plate. A value outside 1 to 35791 is refused.
             default: 10
             control: number
         mail.per_signal:
-            description: How many threads each of the plate's three signals is read at most.
+            description: How many threads each of the plate's three signals is read at most. A value that is not a whole number from 1 to 500 is refused.
             default: 25
             control: number
         notify.enabled:
@@ -597,34 +597,34 @@ options:
                 dir: the directory, absolute or starting with ~/
     local.yml:
         hub:
-            description: Absolute path of the research hub whose YAML the portfolio is built from. A relative path is resolved against the engine directory. Without it the hub is two directories above tools/oculus.
+            description: Absolute path of the research hub whose YAML the portfolio is built from. A relative path is resolved against the engine directory. Without it the hub is two directories above tools/oculus. A change is read again at once.
         port:
-            description: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it the port is 8790.
+            description: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it the port is 8790. A change moves the server to the new port at once, and the page follows it with its layout and settings.
         hpc_host:
-            description: This machine's ssh alias for the Live HPC view. It takes precedence over slurm.host of behavior.yml.
+            description: This machine's ssh alias for the Live HPC view. It takes precedence over slurm.host of behavior.yml. A change is read again at once.
         sessions_cache:
-            description: Where the session layer keeps its byte-offset cache. Without it the file is ~/.oculus/transcript-cache.json.
+            description: Where the session layer keeps its byte-offset cache. Without it the file is ~/.oculus/transcript-cache.json. A change is read again at once.
         sessions_overrides:
-            description: Where the per-session overrides live. Without it the file is ~/.oculus/sessions.json.
+            description: Where the per-session overrides live. Without it the file is ~/.oculus/sessions.json. A change is read again at once.
         workspaces:
-            description: Where the file browser's saved workspaces live. Without it the file is ~/.oculus/workspaces.json.
+            description: Where the file browser's saved workspaces live. Without it the file is ~/.oculus/workspaces.json. A change is read again at once.
         bookmarks:
-            description: Where the reader's own bookmarks live. Without it the file is ~/.oculus/bookmarks.yml.
+            description: Where the reader's own bookmarks live. Without it the file is ~/.oculus/bookmarks.yml. A change is read again at once.
         notes:
-            description: Where the scratch notes live. Without it the folder is ~/.oculus/notes.
+            description: Where the scratch notes live. Without it the folder is ~/.oculus/notes. A change is read again at once.
         changes:
-            description: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl.
+            description: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl. A change is read again at once.
         claude_bin:
-            description: The Claude command line that the update tasks and the chat terminal are started with, an absolute path or a name resolved on PATH. Without it the name is claude.
+            description: The Claude command line that the update tasks and the chat terminal are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
         open_bin:
-            description: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to macOS's /usr/bin/open.
+            description: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to macOS's /usr/bin/open. A change is read again at once.
         accounts:
-            description: The Claude and Codex configuration folders that the Usage view reads, a list of tool (claude or codex), dir and label. Without it the two default folders, ~/.claude and ~/.codex, are read. A Claude label must stay unique once reduced to lowercase letters, digits and dashes.
+            description: The Claude and Codex configuration folders that the Usage view reads, a list of tool (claude or codex), dir and label. Without it the two default folders, ~/.claude and ~/.codex, are read. A Claude label must stay unique once reduced to lowercase letters, digits and dashes. A change is read again at once.
         calendars:
-            description: The calendar accounts that the Calendar view reads, a list of provider (google, microsoft or ics) and label. The label is lowercase letters, digits and dashes and is unique per provider. Without it no calendar is read.
+            description: The calendar accounts that the Calendar view reads, a list of provider (google, microsoft or ics) and label. The label is lowercase letters, digits and dashes and is unique per provider. Without it no calendar is read. A change is read again at once.
         calendar_dir:
-            description: Where the per-account calendar credential files live. Without it the folder is ~/.oculus/calendar.
+            description: Where the per-account calendar credential files live. Without it the folder is ~/.oculus/calendar. A change is read again at once.
         mail:
-            description: The mail accounts that the Inbox view reads, a list of provider (google or microsoft) and label. The label is lowercase letters, digits and dashes and is unique per provider. Without it no mail is read.
+            description: The mail accounts that the Inbox view reads, a list of provider (google or microsoft) and label. The label is lowercase letters, digits and dashes and is unique per provider. Without it no mail is read. A change is read again at once.
         mail_dir:
-            description: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail.
+            description: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail. A change is read again at once.

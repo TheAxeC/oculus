@@ -180,3 +180,170 @@ describe('the strings a config key installs', () => {
         expect(() => glyph('a')).toThrow();
     });
 });
+
+describe('the page follows a server that moves', () => {
+    const LAYOUT = 'oculus.layout.v1';
+    const UI = 'oculus.ui.v1';
+
+    /**
+     * A page at `href` holding `stored` in its storage, the address it was served at, and a push of
+     * the config channel. `named` is what the window's name held when the page made its fixtures,
+     * and `nameAtAssign` what it held when the page went to the new address. `serves` says whether
+     * the new address answers the page's probe.
+     */
+    function page(href: string, stored: Record<string, string> = {}, named = '', serves = true) {
+        const { deliver, open } = stubSocket();
+        const probe = vi.fn((_address: string) =>
+            serves ? Promise.resolve(new Response()) : Promise.reject(new TypeError('refused'))
+        );
+        vi.stubGlobal('fetch', probe);
+        const win = { name: named };
+        const nameAtAssign: string[] = [];
+        const assign = vi.fn(() => {
+            nameAtAssign.push(win.name);
+        });
+        vi.stubGlobal('location', { host: new URL(href).host, href, assign });
+        vi.stubGlobal('window', win);
+        vi.stubGlobal('localStorage', { getItem: (key: string) => stored[key] ?? null });
+        const client = createClientState();
+        client.socket.connect(['config']);
+        open();
+        const push = (version: number, address: string): void => {
+            deliver('config', version, {
+                ...payload(1),
+                host: { name: HOST.name, address }
+            });
+        };
+        return { client, assign, push, win, nameAtAssign, probe };
+    }
+
+    /** Let the probe of the new address answer and the page act on it. */
+    const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
+    it('goes to its own address on the new port when a later push reports another address, once', async () => {
+        const run = page('http://localhost:8790/docs?tab=2#top');
+        run.push(1, 'http://127.0.0.1:8790');
+        run.push(2, 'http://127.0.0.1:8791');
+        run.push(3, 'http://127.0.0.1:8791');
+        await settle();
+
+        expect(run.probe).toHaveBeenCalledExactlyOnceWith('http://localhost:8791/docs?tab=2#top', {
+            mode: 'no-cors',
+            cache: 'no-store'
+        });
+        expect(run.assign).toHaveBeenCalledExactlyOnceWith('http://localhost:8791/docs?tab=2#top');
+        run.client.socket.disconnect();
+    });
+
+    it('stays when the first address it hears is the new one, a page loaded after the move', () => {
+        const run = page('http://127.0.0.1:8791/');
+        run.push(1, 'http://127.0.0.1:8791');
+        run.push(2, 'http://127.0.0.1:8791');
+
+        expect(run.assign).not.toHaveBeenCalled();
+        run.client.socket.disconnect();
+    });
+
+    it('stays at localhost when the address is the loopback at the same port', () => {
+        const run = page('http://localhost:8790/');
+        run.push(1, 'http://127.0.0.1:8790');
+        run.push(2, 'http://127.0.0.1:8790');
+
+        expect(run.assign).not.toHaveBeenCalled();
+        run.client.socket.disconnect();
+    });
+
+    it('stays where it is, and writes nothing into the window name, when the new address does not answer', async () => {
+        const run = page(
+            'http://localhost:8790/',
+            { [LAYOUT]: 'saved-layout' },
+            'a tab name',
+            false
+        );
+        run.push(1, 'http://127.0.0.1:8790');
+        run.push(2, 'http://127.0.0.1:8791');
+        await settle();
+
+        expect(run.probe).toHaveBeenCalledOnce();
+        expect(run.assign).not.toHaveBeenCalled();
+        expect(run.win.name).toBe('a tab name');
+        run.client.socket.disconnect();
+    });
+
+    it('stays on a forwarded port through a move, since the port forwarded is not the new one', () => {
+        const run = page('http://127.0.0.1:9000/', { [LAYOUT]: 'saved-layout' });
+        run.push(1, 'http://127.0.0.1:8790');
+        run.push(2, 'http://127.0.0.1:8791');
+        run.push(3, 'http://127.0.0.1:8792');
+
+        expect(run.assign).not.toHaveBeenCalled();
+        expect(run.win.name).toBe('');
+        run.client.socket.disconnect();
+    });
+
+    it('stays on an https page whose forwarded host names the old port', () => {
+        const run = page('https://x-8790.app.github.dev/');
+        run.push(1, 'http://127.0.0.1:8790');
+        run.push(2, 'http://127.0.0.1:8791');
+
+        expect(run.assign).not.toHaveBeenCalled();
+        run.client.socket.disconnect();
+    });
+
+    it('takes the first address from the configuration the page was built from', async () => {
+        const { open } = stubSocket();
+        const assign = vi.fn();
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response()));
+        vi.stubGlobal('location', {
+            host: '127.0.0.1:8790',
+            href: 'http://127.0.0.1:8790/',
+            assign
+        });
+        vi.stubGlobal('window', { name: '' });
+        vi.stubGlobal('localStorage', { getItem: () => null });
+        const client = createClientState();
+        client.socket.seedConfig(
+            { ...payload(1), host: { name: HOST.name, address: 'http://127.0.0.1:8790' } },
+            2
+        );
+        client.socket.connect(['config']);
+        open();
+        client.socket.installConfig({
+            ...payload(1),
+            host: { name: HOST.name, address: 'http://127.0.0.1:8792' }
+        });
+        await settle();
+
+        expect(assign).toHaveBeenCalledExactlyOnceWith('http://127.0.0.1:8792/');
+        client.socket.disconnect();
+    });
+
+    it('carries the arrangement and the settings in the window name, for the new origin, before it goes', async () => {
+        const run = page('http://localhost:8790/', { [LAYOUT]: 'saved-layout', [UI]: 'saved-ui' });
+        run.push(1, 'http://127.0.0.1:8790');
+        run.push(2, 'http://127.0.0.1:8791');
+        await settle();
+
+        expect(run.nameAtAssign.map((name): unknown => JSON.parse(name))).toEqual([
+            {
+                'oculus.carry.v1': {
+                    to: 'http://localhost:8791',
+                    at: expect.any(Number) as unknown,
+                    values: { [LAYOUT]: 'saved-layout', [UI]: 'saved-ui' }
+                }
+            }
+        ]);
+        run.client.socket.disconnect();
+    });
+
+    it('goes without a window name when the storage holds nothing to carry', async () => {
+        const run = page('http://localhost:8790/', {}, 'a tab name');
+        run.push(1, 'http://127.0.0.1:8790');
+        run.push(2, 'http://127.0.0.1:8791');
+        await settle();
+
+        expect(run.assign).toHaveBeenCalledOnce();
+        expect(run.nameAtAssign).toEqual(['a tab name']);
+        run.client.socket.disconnect();
+    });
+});

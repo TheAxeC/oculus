@@ -71,7 +71,10 @@ export type AccountBook = {
     /** config/local.yml of the engine the server was started over. */
     file: string;
     writes: FsWrites;
-    /** Read the account lists again and hand them to the routes and the pollers. */
+    /**
+     * Read the machine's file again, every key of it, and hand the account lists to the routes
+     * and the pollers and the other keys to what is built from them.
+     */
     reload: () => void;
 };
 

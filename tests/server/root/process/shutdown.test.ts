@@ -3,8 +3,8 @@
 // target being passed in.
 
 import { describe, expect, it } from 'vitest';
-import { SIGNALS, onShutdown } from '../../../src/lib/server/root/shutdown.ts';
-import { noop } from '../../fixtures/doubles.ts';
+import { SIGNALS, onShutdown } from '../../../../src/lib/server/root/process/shutdown.ts';
+import { noop } from '../../../fixtures/doubles.ts';
 
 type Recorder = {
     handlers: Map<string, () => void>;

@@ -6,8 +6,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseEngineArgs } from '../../../src/lib/server/root/args.ts';
-import { engineDir } from '../../../src/lib/data/sources/config.ts';
+import { parseEngineArgs } from '../../../../src/lib/server/root/process/args.ts';
+import { engineDir } from '../../../../src/lib/data/sources/config.ts';
 
 /** The engine a command line naming no flag means, for the cases that do not name one. */
 const FALLBACK = '/opt/oculus';
@@ -131,7 +131,9 @@ describe('the start', () => {
         expect(loaded).toBeGreaterThan(parsed);
     });
 
+    // An audit: the entry is read as source. What a request, a move and a close do through the
+    // wiring is held by serve.test.ts over a real server.
     it('builds its context over the directory the arguments named', () => {
-        expect(source).toContain('createServerContext(parsed.engine)');
+        expect(source).toContain('createServerContext(parsed.engine, {}, portMove)');
     });
 });

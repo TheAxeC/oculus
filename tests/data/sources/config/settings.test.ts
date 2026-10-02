@@ -28,7 +28,14 @@ const threw = (sentence: string) => ({ threw: `${FILE}: ${sentence}` });
 
 /** The numbers a reader of a finite number takes and refuses, in the order the cases try them. */
 const NOT_FINITE = [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, '5', null];
-const FINITE = [-1, 0, 1.5];
+
+/** What a cadence, a day window and a mail count are refused with. */
+const CADENCE = 'a number from 1 to 35791';
+const DAY_WINDOW = 'a whole number from 0 to 3650';
+const PER_SIGNAL = 'a whole number from 1 to 500';
+const PAST_CADENCE = [0, 0.5, -1, 35792];
+const PAST_DAY_WINDOW = [-1, 1.5, 3651];
+const PAST_PER_SIGNAL = [0, 2.5, -1, 501];
 
 describe('slurmSettings', () => {
     const BLOCK = { host: 'h', days: 7, poll_min: 5, quota_min: 30, prewarm: true };
@@ -39,21 +46,26 @@ describe('slurmSettings', () => {
     });
 
     it.each([
-        ['days', 'days'],
-        ['poll_min', 'poll_min'],
-        ['quota_min', 'quota_min']
-    ])('refuses a %s that is not a finite number', (field, key) => {
-        for (const bad of NOT_FINITE) {
-            expect(read({ ...BLOCK, [field]: bad })).toStrictEqual(
-                threw(`slurm.${key} must be a number`)
+        ['days', DAY_WINDOW, PAST_DAY_WINDOW],
+        ['poll_min', CADENCE, PAST_CADENCE],
+        ['quota_min', CADENCE, PAST_CADENCE]
+    ])('refuses a %s that is not a number or is past its bound', (key, words, past) => {
+        for (const bad of [...NOT_FINITE, ...past]) {
+            expect(read({ ...BLOCK, [key]: bad })).toStrictEqual(
+                threw(`slurm.${key} must be ${words}`)
             );
         }
     });
 
-    it('reads a number of any finite value', () => {
-        for (const days of FINITE) {
+    it('reads the days at both ends of the window and the cadences at both ends of theirs', () => {
+        for (const days of [0, 1, 3650]) {
             expect(read({ ...BLOCK, days })).toStrictEqual({
                 value: { host: 'h', days, pollMin: 5, quotaMin: 30, prewarm: true }
+            });
+        }
+        for (const minutes of [1, 1.5, 35791]) {
+            expect(read({ ...BLOCK, poll_min: minutes, quota_min: minutes })).toStrictEqual({
+                value: { host: 'h', days: 7, pollMin: minutes, quotaMin: minutes, prewarm: true }
             });
         }
     });
@@ -80,7 +92,7 @@ describe('slurmSettings', () => {
             threw('slurm.prewarm must be true or false')
         );
         expect(read({ ...BLOCK, days: 'x', poll_min: 'x' })).toStrictEqual(
-            threw('slurm.days must be a number')
+            threw(`slurm.days must be ${DAY_WINDOW}`)
         );
     });
 });
@@ -93,20 +105,30 @@ describe('calendarSettings', () => {
         expect(read(calendar)).toStrictEqual(threw('calendar must be a map'));
     });
 
-    it('refuses each number that is not finite, naming the key', () => {
-        for (const key of Object.keys(BLOCK)) {
-            for (const bad of NOT_FINITE) {
+    it('refuses each number that is not a number or is past its bound, naming the key', () => {
+        const kinds: [string, string, number[]][] = [
+            ['poll_min', CADENCE, PAST_CADENCE],
+            ['days_back', DAY_WINDOW, PAST_DAY_WINDOW],
+            ['days_ahead', DAY_WINDOW, PAST_DAY_WINDOW]
+        ];
+        for (const [key, words, past] of kinds) {
+            for (const bad of [...NOT_FINITE, ...past]) {
                 expect(read({ ...BLOCK, [key]: bad })).toStrictEqual(
-                    threw(`calendar.${key} must be a number`)
+                    threw(`calendar.${key} must be ${words}`)
                 );
             }
         }
     });
 
-    it('reads any finite number', () => {
-        for (const days of FINITE) {
-            expect(read({ ...BLOCK, days_back: days })).toStrictEqual({
-                value: { pollMin: 5, daysBack: days, daysAhead: 30 }
+    it('reads the window at both ends of its bound and the cadence at both ends of its own', () => {
+        for (const days of [0, 1, 3650]) {
+            expect(read({ ...BLOCK, days_back: days, days_ahead: days })).toStrictEqual({
+                value: { pollMin: 5, daysBack: days, daysAhead: days }
+            });
+        }
+        for (const pollMin of [1, 35791]) {
+            expect(read({ ...BLOCK, poll_min: pollMin })).toStrictEqual({
+                value: { pollMin, daysBack: 7, daysAhead: 30 }
             });
         }
     });
@@ -145,20 +167,29 @@ describe('mailSettings', () => {
         expect(read(mail)).toStrictEqual(threw('mail must be a map'));
     });
 
-    it('refuses each number that is not finite, naming the key', () => {
-        for (const key of Object.keys(BLOCK)) {
-            for (const bad of NOT_FINITE) {
+    it('refuses each number that is not a number or is past its bound, naming the key', () => {
+        const kinds: [string, string, number[]][] = [
+            ['poll_min', CADENCE, PAST_CADENCE],
+            ['per_signal', PER_SIGNAL, PAST_PER_SIGNAL]
+        ];
+        for (const [key, words, past] of kinds) {
+            for (const bad of [...NOT_FINITE, ...past]) {
                 expect(read({ ...BLOCK, [key]: bad })).toStrictEqual(
-                    threw(`mail.${key} must be a number`)
+                    threw(`mail.${key} must be ${words}`)
                 );
             }
         }
     });
 
-    it('reads any finite number', () => {
-        for (const per of FINITE) {
+    it('reads the count at both ends of its bound and the cadence at both ends of its own', () => {
+        for (const per of [1, 25, 500]) {
             expect(read({ ...BLOCK, per_signal: per })).toStrictEqual({
                 value: { pollMin: 5, perSignal: per }
+            });
+        }
+        for (const pollMin of [1, 35791]) {
+            expect(read({ ...BLOCK, poll_min: pollMin })).toStrictEqual({
+                value: { pollMin, perSignal: 10 }
             });
         }
     });

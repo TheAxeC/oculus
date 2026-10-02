@@ -60,6 +60,8 @@ export {
     type OpenSettings,
     type SearchSettings,
     type SlurmSettings,
+    CADENCE_WORDS,
+    cadenceShape,
     calendarSettings,
     changesKeep,
     mailSettings,

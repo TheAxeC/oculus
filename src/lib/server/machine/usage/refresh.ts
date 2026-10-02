@@ -7,7 +7,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { stripVTControlCharacters } from 'node:util';
 import { z } from 'zod';
 import type { UsageAccountConfig, UsageRefresher } from '../../../data/model/index.ts';
-import { usageAccountLabel } from '../../../data/sources/config.ts';
+import { CADENCE_WORDS, cadenceShape, usageAccountLabel } from '../../../data/sources/config.ts';
 import { sendKeysArgs, startArgs, USAGE_PREFIX, type Runner } from '../pty/sessions.ts';
 import { run } from '../pty/tmux.ts';
 import { claudeUsageFetchedAt, isDefaultClaudeDir } from './accounts.ts';
@@ -48,6 +48,12 @@ export type UsageRefreshWatcher = {
     ready: Promise<void>;
     refresh(label: string): Promise<boolean>;
     refreshAll(): Promise<void>;
+    /**
+     * Take a new period and model, checked as the start checks them. A new period moves the next
+     * refresh to the sooner of the one waiting and the new period from now; a new model is used
+     * from the next session started, and a session already started keeps its own.
+     */
+    set(settings: { refreshMin: number; model: string }): void;
     state: (account: UsageAccountConfig) => UsageRefresher;
     close(): void;
 };
@@ -133,11 +139,11 @@ export function paneReason(screen: string): UsageRefreshReason {
 }
 
 /**
- * The two settings the refresher cannot run without: a cadence that is a finite number of minutes
- * above zero and a model with a name, taken as unknown values from the merged configuration.
+ * The two settings the refresher cannot run without: a cadence of 1 to 35791 minutes and a model
+ * with a name, taken as unknown values from the merged configuration.
  */
 const refreshSettingsShape = z.object({
-    refreshMin: z.number().refine((minutes) => minutes > 0),
+    refreshMin: cadenceShape,
     model: z.string().refine((name) => name.trim() !== '')
 }) satisfies z.ZodType<{ refreshMin: number; model: string }>;
 
@@ -151,7 +157,9 @@ export function requireRefreshSettings(settings: { refreshMin: unknown; model: u
     model: string;
 } {
     const refreshMin = refreshSettingsShape.shape.refreshMin.safeParse(settings.refreshMin);
-    if (!refreshMin.success) throw new Error('usage_refresh_min must be a positive number');
+    if (!refreshMin.success) {
+        throw new Error(`config/behavior.yml: usage_refresh_min must be ${CADENCE_WORDS}`);
+    }
     const model = refreshSettingsShape.shape.model.safeParse(settings.model);
     if (!model.success) throw new Error('usage_refresh_model must not be empty');
     return { refreshMin: refreshMin.data, model: model.data };
@@ -162,7 +170,7 @@ export function requireRefreshSettings(settings: { refreshMin: unknown; model: u
  * session.
  */
 export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWatcher {
-    requireRefreshSettings(options);
+    let settings = requireRefreshSettings(options);
     const accounts = options.accounts.filter((account) => account.tool === 'claude');
     const exec = options.run ?? run;
     const now = options.now ?? Date.now;
@@ -225,7 +233,7 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
     const start = async (account: UsageAccountConfig): Promise<boolean> => {
         publish(account, 'refreshing', '');
         try {
-            await exec(usageStartArgs(account, options.hub, options.claudeBin, options.model));
+            await exec(usageStartArgs(account, options.hub, options.claudeBin, settings.model));
             return true;
         } catch {
             publish(account, 'down', 'start_failed');
@@ -323,9 +331,22 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
         await Promise.all(accounts.map(enqueue));
     };
 
-    const milliseconds = options.refreshMin * 60_000;
-    const clock = setInterval(() => void refreshAll(), milliseconds);
-    clock.unref();
+    /** The refresh waiting, one at a time, and when it runs. */
+    let clock: ReturnType<typeof setTimeout> | null = null;
+    let clockAt = 0;
+    const arm = (at: number): void => {
+        if (clock !== null) clearTimeout(clock);
+        clockAt = at;
+        clock = setTimeout(
+            () => {
+                arm(Date.now() + settings.refreshMin * 60_000);
+                void refreshAll();
+            },
+            Math.max(0, at - Date.now())
+        );
+        clock.unref();
+    };
+    arm(Date.now() + settings.refreshMin * 60_000);
     const ready = refreshAll();
 
     return {
@@ -337,6 +358,13 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
             return true;
         },
         refreshAll,
+        set(next): void {
+            if (closed) return;
+            const checked = requireRefreshSettings(next);
+            const changed = checked.refreshMin !== settings.refreshMin;
+            settings = checked;
+            if (changed) arm(Math.min(clockAt, Date.now() + checked.refreshMin * 60_000));
+        },
         state(account: UsageAccountConfig): UsageRefresher {
             const state = held.get(account.dir);
             if (state === undefined) {
@@ -352,7 +380,8 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
         },
         close(): void {
             closed = true;
-            clearInterval(clock);
+            if (clock !== null) clearTimeout(clock);
+            clock = null;
         }
     };
 }

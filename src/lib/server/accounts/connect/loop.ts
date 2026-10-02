@@ -15,6 +15,10 @@
 // that was replaced, is dropped rather than published: `live` is how the reader of one account asks
 // whether it still counts.
 //
+// The period can change while the loop runs. A new period moves each account's next read to the
+// sooner of the time it waits for and the new period from now, a retry time counting as the time it
+// waits for, so a lowered period takes effect at once and a raised one delays nothing already due.
+//
 // What each round does first for an account is the same in both pollers, so it is here too: the
 // account's credentials read from its file and its provider's, and the access token asked for,
 // with a refresh token the provider hands back in its place kept in the account's file.
@@ -57,6 +61,8 @@ export type AccountLoop<A extends AccountRow> = {
     /** The first publish, or the first round when there is an account to read. */
     start: () => void;
     run: (all: boolean) => Promise<void>;
+    /** Take a new period in minutes, moving each account's next read as the file's header says. */
+    setPollMin: (minutes: number) => void;
     /** Take a new list and folder; the same list in the same order and folder changes nothing. */
     set: (accounts: A[], dir: string) => void;
     close: () => void;
@@ -92,6 +98,7 @@ export function accountLoop<A extends AccountRow>(
     let accounts = [...source.accounts];
     let dir = source.dir;
     let closed = false;
+    let pollMin = source.pollMin;
     /** When each account is next due, as an epoch time; an account with no entry is due now. */
     const due = new Map<string, number>();
     const dueAt = (account: A): number => due.get(connectKey(account)) ?? 0;
@@ -128,7 +135,7 @@ export function accountLoop<A extends AccountRow>(
                 if (!live()) continue;
                 const good = await options.read(account, from, live);
                 if (!live()) continue;
-                const minutes = good ? source.pollMin : options.retryMin;
+                const minutes = good ? pollMin : options.retryMin;
                 due.set(connectKey(account), clock() + minutes * 60000);
             }
             if (closed || wanted.length === 0) return;
@@ -189,6 +196,15 @@ export function accountLoop<A extends AccountRow>(
         else void run(false);
     };
 
+    const setPollMin = (minutes: number): void => {
+        if (closed || minutes === pollMin) return;
+        pollMin = minutes;
+        const soonest = clock() + minutes * 60000;
+        for (const [key, at] of due) due.set(key, Math.min(at, soonest));
+        // A round running sets the timer when it ends, from the times it leaves.
+        if (running === null) schedule();
+    };
+
     return {
         accounts: () => accounts,
         dir: () => dir,
@@ -197,6 +213,7 @@ export function accountLoop<A extends AccountRow>(
             else void run(true);
         },
         run,
+        setPollMin,
         set,
         close: () => {
             closed = true;
@@ -204,4 +221,22 @@ export function accountLoop<A extends AccountRow>(
             timer = null;
         }
     };
+}
+
+/**
+ * What the calendar and the mail watchers do alike when their settings change: a new period goes to
+ * the loop, and a changed thing the providers are asked for reads every account at once, the round
+ * publishing the new state; a period alone, or any change with no account to read, only publishes
+ * again, since the page reads the values from the state.
+ */
+export function takeLoopSettings<A extends AccountRow>(
+    loop: AccountLoop<A>,
+    period: { before: number; after: number },
+    askedChanged: boolean,
+    publish: () => void
+): void {
+    if (period.after !== period.before) loop.setPollMin(period.after);
+    // With no account there is no round to publish the new values, so the state is published here.
+    if (askedChanged && loop.accounts().length > 0) void loop.run(true);
+    else if (askedChanged || period.after !== period.before) publish();
 }

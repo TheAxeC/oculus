@@ -131,3 +131,154 @@ Cases of the brief's "Cases":
 - Reviewer side effects: one command of mine wrote an empty file `/tmp/old_names.txt` (outside every repository), and the watcher reproduction wrote scratch folders under this session's scratchpad (`e1`, `h1`, `r-*`, `w-*`); neither is read by anything. `npm run diagrams` and `npm run build` regenerated tracked and untracked outputs in the worktree as the list requires. No other file was edited, and no git command other than `git diff bca66b3c`, `git diff ... --stat`/`--name-only`, `git status --short`, and read-only `git check-ignore`/`git tag` in the six repositories was run.
 
 Reviewer usage: about 312,000 tokens (budget counter), about 75 tool uses (count by hand), about 50 minutes (clock); no completion notice is available to the reviewer.
+
+# Repair round 1, refuted
+
+Reviewer ad56b78a1dc9c9c51, claude-sonnet-5-5 (the transcript's message.model), launched 2026-10-02 07:10; 254,852 tokens, 65 tool uses, 27.4 min, from its completion notice.
+
+### D24 review over repair round 1 (worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D24`, base `bca66b3c`)
+
+No file in the worktree was edited by me and no git command ran other than `git diff bca66b3c` and `git status --short`. Mutations ran on scratch copies under the session scratchpad (`rev0`, `rev1`). One stray file I made by mistake, `/tmp/_none`, was removed. `config/local.yml` was never opened and every `config/` listing excluded it.
+
+### Verification lines (verbatim)
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams
+PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams 2>&1  9.01s user 0.50s system 113% cpu 8.366 total
+(md5 over all docs/diagrams/*.dot and *.svg before and after: 850baaae9ddfe4024c61cff00f754a62 both; the 10 diagram files stay modified against the base as the diff lists them)
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md      (run 1, exit=0)
+$ npm test
+ Test Files  434 passed | 23 skipped (457)
+      Tests  11311 passed | 625 skipped (11936)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  443 passed | 9 skipped (452)
+$ npm run check
+1790918295537 COMPLETED 2975 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+Checking formatting...
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+exit=0
+```
+No timeout occurred. `checks.sh` ran as a background command because it takes longer than the 10-minute foreground limit. Its output went to a file I read after it exited.
+
+Other commands I reran, each with the result:
+- `npx vitest run tests/server/root/watch/portfolio tests/server/edit/writes.test.ts tests/routes/docs` gave `Test Files 10 passed (10)  Tests 174 passed (174)`, the builder's numbers.
+- `npx vitest run tests/server/root/watch/portfolio/roots.test.ts -t "whole directory is removed"`, ten times, gave `Tests 1 passed | 11 skipped (12)` ten times.
+- `npx vitest run tests/data/sources/personal.test.ts tests/server/root/watch/portfolio/personal-roots.test.ts` gave `55 passed (55)`.
+- `npx vitest run tests/views/boards/personal.test.ts` gave `20 passed`. With `-t "Files root"` it gave `1 passed | 19 skipped (20)`.
+- `focus-side-project.test.ts` gave `1 passed`, and `roots.test.ts` gave `12 passed`, twice.
+- `sh utils/folder-check.sh` on the scratch copy (which is not a git checkout) gave exit 0.
+- `python3 -c "import yaml..."` over the five config files gave no output, exit 0.
+- The spec.md ASCII gate over `src tests config` printed nothing. `LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md` printed nothing.
+- `--tagsFilter '!slow'` over the new tests ran the 3 writes tests, the docs test, the focus test and the 7 `personalRoots` tests, plus the deposit, project-files and pty-context tests. 32 tests passed.
+
+Failing-before runs, reproduced on scratch copies:
+- **True base.** `rev0` is the final tree with `src` and `config` reverse-patched from `git diff bca66b3c` and the final `tests` kept. On it the new test files give `Test Files 10 failed (10)  Tests 25 failed | 43 passed (68)`. Every row of the builder's ruling 5 table matches:
+  - 3 import failures (`normalise-personal.ts`, `board/personal.ts`, `Personal.svelte`);
+  - `TypeError: personalRoots is not a function` (7);
+  - `names.test.ts` `expected false to be true` and `expected [] to deeply equal [ '/work/other/.oculus', ...`;
+  - `roots.test.ts` 10 failures with `expected [] to deeply equal [ 'root:...' ]`;
+  - `portfolio.test.ts` `expected 2 to be 1`;
+  - writes `expected { found: true, ... } to deeply equal { found: false, ... }` (2) and `expected { Object (found, value) } to deeply equal { found: false, value: null }`;
+  - docs `expected 200 to be 404`;
+  - focus `TypeError: Cannot convert undefined or null to object`.
+- **Round-start failing lines.** No commit marks the round's start, so I could not reproduce the exact round-start failing lines of rulings 1, 2 and 6. I reproduced the equivalent failure by changing the final tree instead (the mutations listed per ruling below).
+
+### Per-ruling closure
+
+1. **Roots filtering in one place (Spec 1, Standards 2): closed.** `personalRoots` (`portfolio.ts:246`) is the only filter. `rootPersonal` (`manifests.ts:348`) has no `expandHome`, `realDir` or real-path set. I removed `identityOf(engineConfig)` from the `seen` set on a scratch copy. That failed `personal-roots.test.ts` "...the engine's config folder" with `expected [ { key: 'cfg', ...} ...] to deeply equal [ { key: 'tool', ...} ]`. It also failed `roots.test.ts` "draws no card for a root under another key that is the engine config folder" with `expected [ 'root:cfg' ] to deeply equal []`. Removing `|| keys.has(root.key)` failed "drops a second root that carries the key of an earlier one". Adding a real-path dedupe to the reader failed "reads every root it is given, in order, and filters none" with `expected [ Array(1) ] to deeply equal [ { kind: 'root', ...`. Passing `paths.roots()` filtered by key only to `buildPortfolio` failed the engine-folder watcher case. Standards 2 is closed for `expandHome`: `portfolio.ts` imports it from `files.ts`. The "real path of an existing path" rule is still duplicated (Standards 1 below). The reach beyond the finding is small: `personalRoots` also drops a second root with a key already seen. It is tested and keeps `root:<key>` unique. Against a case-insensitive file system the real-path rule does not hold (Behaviour 1).
+2. **Words (Spec 2, Behaviour 2): closed.** `HELP.md:104` names `running`, `building`, `idea`, `parked`, says "A side project is on no other board, lane or audit", and says "added with **Add Folder to Workspace...** in the Files view or under `roots:` in `sources.yml`". That label equals `config/text/views/sources/files.yml:50`. `personal.yml:4` carries the same label. I put the old words "Add Folder" back in a scratch `personal.yml`. That failed the view test with `expected 'No side project has a manifest yet. A...' to contain 'Add Folder to Workspace...'`.
+3. **Focus lanes (Spec 3): closed.** `focus-side-project.test.ts` builds a hub with a research project and a side project that both carry `focus: run`. It runs `laneItems(portfolioProjects(snapshot), lanes(MERGED))` and expects only `y` on the lane. With the `isSideTier` skip removed from `readManifests` on a scratch copy it failed with `expected [ 'x', 'y' ] to deeply equal [ 'y' ]`. It passes as built.
+4. **Cases the list runs (Proof 1): closed.** The three writes cases and the docs case are in `tests/routes/edit/side-project-writes.test.ts` and `tests/routes/docs/side-project-docs.test.ts`, with no `slow` tag. `git diff bca66b3c` shows nothing for `writes.test.ts` and `docs.test.ts`, so nothing was removed from them. The cases run inside `npm test`. With the `isSideTier` skips removed they fail with `expected 200 to be 404` and with the three `found: true` assertions. The docs test fails on the `docs.ts` skip alone, and the writes tests fail on the `readManifests` skip alone.
+5. **First run quoted (Proof 2): closed.** The ruling 5 table reproduces on `rev0` (above).
+6. **View tests (Proof 3): closed.** The snapshot fixture of `tests/views/boards/personal.test.ts` now holds research projects, including one with the id `alpha`. I made `sideCards` also read `entities.projects`, mapped to side-project shape, on a scratch copy. The named test failed with `expected [ 'active', 'alpha', ...(9) ] to deeply equal [ 'side:alpha' ]`, and 5 others failed too. The folder-named-like-an-object-key case and the badge case are renamed with the `audits that` prefix, which the ruling allows. They were not made to fail without their behaviour. The folder case is in `tests/data/`, which the audits scan (`tests/views` only) does not read. That rename changes only the name.
+7. **Deleted repository (Proof 4, Behaviour 1): closed.** `rootParents`, `openRootParent` (`portfolio.ts:413`), `watchRootParents` (`:439`, called at `:524`) and the close at `:623` are as the report says.
+   - With `watchRootParents(roots)` removed on a scratch copy, the whole-removal test failed 10 of 10 runs with `AssertionError: expected 1 to be greater than 1`.
+   - The "removed whole after another root was listed first" test failed with `expected [ 'root:gone', 'root:kept' ] to deeply equal [ 'root:kept' ]`.
+   - With the close of departed roots' handles removed, "stops hearing a root once it leaves the list of roots" failed with `expected 8 to be 6`.
+   - The passing-after run is 10 of 10 (above).
+   - Linux is not verified, as the report says.
+8. **No change (Spec 4, Spec 5, Standards 1 of the first review): consistent.** The round touched none of those files.
+
+### Item verdicts (whole diff since base, brief "What to build")
+
+- 1 holds.
+- 2 holds.
+- 3 holds.
+- 4 holds.
+- 5 violated, narrowly: Behaviour 1. On a case-insensitive file system one directory in two spellings is read twice. The rest of item 5 holds. The brief puts the filtering in `readPersonal`; ruling 1 moved it to `personalRoots`, and the engine config folder is now skipped by real path.
+- 6 holds, including the deleted root.
+- 7 holds.
+- 8 holds.
+- 9 holds.
+- 10 holds as far as a string render and the pure functions show. No press is exercised.
+- 11 holds.
+- 12 holds. The reader parses all six drafts with zero findings, and I reran that test. I did not re-read the README lines behind the drafts this round.
+- 13 holds. `HELP.md:104` carries the three things the first review found missing. The `options.yml`, `DESIGN.md` and diagrams parts hold.
+
+### Case verdicts
+
+- 1 met.
+- 2 met. The Focus lanes now have a test, and the Personal-board side has a research project in its fixture.
+- 3 met, now inside `npm test`.
+- 4, 5 met.
+- 6 met for the cases as written. The hub under another key, the same directory twice and the symlink are asserted on `personalRoots` and not through the watcher. The engine-folder case is asserted through the watcher. Case-differing spellings are not met (Behaviour 1).
+- 7 met.
+- 8 to 14 met (tests pass; not individually re-derived).
+- 15 met, plus a whole-root removal.
+- 16, 17 met (`roots.test.ts`, `portfolio.test.ts`, slow files, run alone).
+- 18, 19 met.
+- 20 met. In `rev1` I replaced `icon: snooze` with `icon: nonesuch_glyph`. `config-folder.test.ts` failed with `expected [ 'parked: nonesuch_glyph' ] to deeply equal []`.
+- 21, 22, 23, 24 met.
+
+### 1. Spec
+
+None.
+
+### 2. Proof
+
+1. **The report's first part contradicts the end state.** `agents/reviews/D24-report.md` lines 3, 5, 69, 85 and 108 are unchanged from the first run:
+   - line 5: "**One limit:** a root directory deleted as a whole sends the watcher no event ... booking it is the orchestrator's call";
+   - line 69: "`checks.sh` as one passing run | NOT DONE";
+   - line 85: "`readPersonal` itself expands `~`, reads one card per real directory and per key, and skips the hub's own real path";
+   - line 108: "`personalRoots` ... only (called there, tested through the watcher)".
+
+   Line 289 says only that the "One limit" paragraph "is replaced". After the round the tree contradicts lines 5 and 85. `rootPersonal` takes its roots as given (`manifests.ts:348`). Whole-root removal is heard (ruling 7). `checks.sh` passed, both in the builder's run and in mine. `personalRoots` has its own unit test file. Failure scenario: the landing reader opens the report, reads line 5 and the NOT DONE row, and books a gap that is closed. Or the reader believes `readPersonal` filters roots and calls it with unfiltered roots.
+2. **Duplicate-directory roots are not composed end to end (low).** `roots.test.ts` and `personal-roots.test.ts` assert the hub/duplicate/link cases only at the `personalRoots` level. The watcher composition (`buildPortfolio(..., roots)` with the filtered list) is guarded only by the engine-folder case, which fails if the filter is bypassed. Failure scenario: a later edit passes a list filtered by key alone to `buildPortfolio`; the engine-folder test catches that, but a change that drops only the real-path dedupe in `personalRoots` is caught by the unit tests alone, and the unit tests do not exercise the call site.
+
+### 3. Standards
+
+1. **A rule that exists once is written twice, again** (spec.md "a parser, a fold or a rule exists once and is reused").
+   - `src/lib/server/root/watch/portfolio.ts:413-436` (`openRootParent`): `watch(parent, { recursive: false }, (_event, filename) => { if (filename === name) queue(false, false); })`. This is `watchFile(file, changed)` at `portfolio.ts:272-277`, exported and documented as a watch "kept through its folder and filtered on its name": `watch(dirname(file), { recursive: false }, (_event, filename) => { if (filename === name) changed(); })`. `watchFile(dir, () => queue(false, false))` is the same call.
+   - `portfolio.ts:230-236` (`identityOf`) is `realPath(path) ?? path` from `src/lib/server/core/paths.ts:29-35` (try `realpathSync`, else null).
+
+   Failure scenario: a change to how a name-filtered watch matches names, or to how a real path is resolved (Behaviour 1's `.native`), lands in `watchFile` or `realPath` and leaves the Personal board's copy behind.
+
+### 4. Behaviour
+
+1. **One directory spelled in two letter cases draws two cards on a case-insensitive file system.**
+   - Place: `src/lib/server/root/watch/portfolio.ts:230-236` (`identityOf` uses `realpathSync`, which keeps the case as typed) and its uses at `:247` and `:253`.
+   - Hunk: `const seen = new Set([identityOf(hub), identityOf(engineConfig)]); ... const identity = identityOf(dir); if (seen.has(identity)) continue;`
+   - Reproduced on this machine, in a scratch test calling `personalRoots([{key:'a', dir:'<tmp>/Repo'}, {key:'b', dir:'<tmp>/repo'}], hub, eng)`. Output: `[{"key":"a","dir":".../Repo"},{"key":"b","dir":".../repo"}]` and `AssertionError: expected 2 to be 1`. In Node, `realpathSync(<tmp>/Repo) === realpathSync(<tmp>/repo)` is `false` and `realpathSync.native(...) === realpathSync.native(...)` is `true`.
+   - Failure scenario: `roots:` holds `~/workspace/ordo` and a saved workspace root is added as `~/Workspace/ordo`. Both spellings reach `.oculus/project.yml`, so the board draws `root:ordo` and a second card for the same repository. The same applies to the hub's folder under a root typed with different case, and to the engine config folder, which then draws a card of its own. This contradicts item 5 ("each remaining root once by real path") and case 6.
+   - Fix: resolve identity with `realpathSync.native`, as `DESIGN.md:242` already specifies for the apps checks, and add the two-spelling case to `personal-roots.test.ts`. Whether the identity code came unchanged from the first run's `realDir` I did not check; the finding is on the code as it stands now.
+
+### Declined to judge
+
+- The look on screen (card layout, tones, clamp, title and Show in Files presses): needs a DOM and Axel's Chrome on TEST.
+- The exact failing lines the report quotes for "before the change" in rulings 1, 2 and 6 (for example `personal-roots.test.ts:52`, `:69`, `:138`): the round-start tree was never committed. I reproduced equivalent failures by removing each behaviour from the final tree on scratch copies (results above).
+- Behaviour on Linux (`fs.watch` on a parent folder reporting a child's removal): this machine is macOS. The builder states it is unverified.
+- The README facts behind the six manifest drafts, and whether `running` is right for cathedra, ordo and officium: unchanged by the round, read in the first review, and a call for Axel.
+- `tests/data/snapshot/build-timing.test.ts` (slow, 5000 ms): not run.
+- The handle count when many roots share one parent (one `FSWatcher` per root): not measured, and no failing scenario found.
+- Side effects of mine: scratch copies, `src-config.patch` and `checks-run1.txt` in the session scratchpad; `checks.sh` regenerated `build/` and `.svelte-kit/` in the worktree (ignored by git); `git status --short` shows only the already-listed modified and untracked files.
+
+### Usage
+
+About 250,000 tokens (budget counter), about 75 tool uses (counted by hand), about 40 minutes (clock 06:57 to 07:37, approximate start).

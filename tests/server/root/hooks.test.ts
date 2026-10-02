@@ -12,7 +12,7 @@ import {
     notify,
     notifyConfig,
     type ExecFile,
-    type HookTarget
+    type HookRequestTarget
 } from '../../../src/lib/server/root/hooks.ts';
 import {
     HookStore,
@@ -390,7 +390,7 @@ describe('notifyConfig, the values it takes and drops', () => {
     });
 });
 
-function target(over: Partial<HookTarget> = {}): HookTarget {
+function target(over: Partial<HookRequestTarget> = {}): HookRequestTarget {
     return {
         store: new HookStore(),
         hub: null,

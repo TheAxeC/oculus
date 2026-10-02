@@ -3,16 +3,13 @@
 
 import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
-import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import { engineDir } from './lib/data/sources/config.ts';
-import { parseEngineArgs } from './lib/server/root/args.ts';
-import { LISTEN_HOST, carryingHandler, createServerContext } from './lib/server/root/context.ts';
+import { parseEngineArgs } from './lib/server/root/process/args.ts';
+import { LISTEN_HOST, createServerContext } from './lib/server/root/context.ts';
 import { BODY_LIMIT_BYTES } from './lib/server/content/memories.ts';
-import { onShutdown } from './lib/server/root/shutdown.ts';
-import { attachSocket } from './lib/server/root/socket.ts';
-
-type Handler = (req: IncomingMessage, res: ServerResponse) => void;
+import { onShutdown } from './lib/server/root/process/shutdown.ts';
+import { serveContext, type Handler } from './lib/server/root/process/serve.ts';
 
 // The command line before anything else, so a mistyped flag or a directory holding no config/ is
 // said and the process ends without loading the build or opening the port. Without the flag the
@@ -38,18 +35,10 @@ process.env.BODY_SIZE_LIMIT = String(BODY_LIMIT_BYTES);
 
 const built = new URL('../build/handler.js', import.meta.url).href;
 const { handler } = (await import(built)) as { handler: Handler };
-const context = createServerContext(parsed.engine);
-const server = createServer(carryingHandler(handler, context));
-const socket = attachSocket(server, context.hub, {
-    path: '/ws',
-    token: context.token,
-    terminals: context.terminals
-});
-
-server.on('close', () => {
-    socket.close();
-    context.close();
-});
+const server = createServer();
+const { context, socket } = serveContext(server, handler, (portMove) =>
+    createServerContext(parsed.engine, {}, portMove)
+);
 
 // A stop signal closes the same things the `close` event closes, then the http server, and exits
 // when it has let go of its handles.

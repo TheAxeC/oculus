@@ -55,10 +55,21 @@ export type UsageWatchOptions = {
     /** Subscribe to rescans from the sessions watcher owned by this context. */
     onSessionsChange?: (listener: () => void) => () => void;
 };
-export type UsageWatcher = { refresh(): Promise<void>; close(): void };
+export type UsageWatcher = {
+    refresh(): Promise<void>;
+    /** Take new plan labels; a changed map publishes the usage again with them. */
+    setTiers(tiers: Record<string, string>): void;
+    close(): void;
+};
 
 function reason(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
+}
+
+/** Whether two maps of plan id to label hold the same labels. */
+function sameTiers(one: Record<string, string>, two: Record<string, string>): boolean {
+    const ids = Object.keys(one);
+    return ids.length === Object.keys(two).length && ids.every((id) => one[id] === two[id]);
 }
 
 /**
@@ -75,6 +86,7 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
         options.watchFolder ??
         ((folder: string, changed: (filename: string | Buffer | null) => void) =>
             watch(folder, { recursive: false }, (_event, filename) => changed(filename)));
+    let tiers = options.tiers;
     const handles: { close(): void }[] = [];
     let closed = false;
     let running: Promise<void> | null = null;
@@ -85,13 +97,7 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
         const at = now();
         const daily = await fold.fold(options.accounts, at);
         const payload: UsagePayload = {
-            accounts: usageAccounts(
-                options.accounts,
-                options.tiers,
-                usageRoot,
-                at,
-                options.refresherFor
-            ),
+            accounts: usageAccounts(options.accounts, tiers, usageRoot, at, options.refresherFor),
             days: daily.rows,
             builtAt: new Date(at).toISOString()
         };
@@ -185,6 +191,11 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
     void refresh();
     return {
         refresh,
+        setTiers(next): void {
+            if (closed || sameTiers(tiers, next)) return;
+            tiers = { ...next };
+            void refresh();
+        },
         close(): void {
             closed = true;
             offSessions();

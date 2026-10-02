@@ -467,7 +467,11 @@ describe('the readers of the merged configuration', () => {
                 0,
                 'config/behavior.yml: editor.paint_limit_kb must be a number above zero'
             ],
-            ['usage_refresh_min', 0, 'usage_refresh_min must be a positive number'],
+            [
+                'usage_refresh_min',
+                0,
+                'config/behavior.yml: usage_refresh_min must be a number from 1 to 35791'
+            ],
             ['usage_refresh_model', '', 'usage_refresh_model must not be empty'],
             [
                 'search.timeout_s',
@@ -653,5 +657,59 @@ describe('the readers that give findings', () => {
         const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
         expect(outcome.refused).toEqual([]);
         expect(docsFinder.calls).toBe(2);
+    });
+});
+
+describe('the bounds of the cadences, the day windows and the count', () => {
+    const CADENCE = 'a number from 1 to 35791';
+    const WINDOW = 'a whole number from 0 to 3650';
+    const COUNT = 'a whole number from 1 to 500';
+    const refused: [string, number, string][] = [
+        ['slurm.poll_min', 0, CADENCE],
+        ['slurm.poll_min', 35792, CADENCE],
+        ['slurm.quota_min', 0.5, CADENCE],
+        ['calendar.poll_min', 40000, CADENCE],
+        ['mail.poll_min', 0, CADENCE],
+        ['slurm.days', -1, WINDOW],
+        ['slurm.days', 2.5, WINDOW],
+        ['calendar.days_back', 3651, WINDOW],
+        ['calendar.days_ahead', -1, WINDOW],
+        ['mail.per_signal', 0, COUNT],
+        ['mail.per_signal', 501, COUNT],
+        ['mail.per_signal', 2.5, COUNT]
+    ];
+
+    // Every refusal leaves the file as it was, so the cases read one copy of the config folder.
+    let shared = '';
+    let sharedBefore = '';
+    it.beforeAll(() => {
+        shared = scratchEngine();
+        sharedBefore = held(shared);
+    });
+
+    it.each(refused)(
+        'refuses %s of %d with the reader sentence and writes nothing',
+        (key, value, words) => {
+            const outcome = writeConfigKey(shared, 'behavior.yml', key, value);
+
+            expect(refusedWith(outcome, `behavior.yml:${key}`)).toBe(
+                `config/behavior.yml: ${key} must be ${words}`
+            );
+            expect(held(shared)).toBe(sharedBefore);
+        }
+    );
+
+    it.each([
+        ['calendar.days_back', 0],
+        ['slurm.poll_min', 1],
+        ['slurm.poll_min', 35791],
+        ['mail.per_signal', 500]
+    ])('writes %s of %d', (key, value) => {
+        const engine = scratchEngine();
+
+        const outcome = writeConfigKey(engine, 'behavior.yml', key, value);
+
+        expect(outcome.refused).toEqual([]);
+        expect(outcome.changed).toEqual([`behavior.yml:${key}`]);
     });
 });

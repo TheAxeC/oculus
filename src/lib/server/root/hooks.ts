@@ -202,7 +202,8 @@ function logFirstPayload(logged: Set<string>, name: string, body: unknown): void
 }
 
 /**
- * What handleHookRequest needs: where events are kept, the real Hub when one is bound, and config.
+ * What the server context holds for the hook endpoint: where events are kept and the real Hub when
+ * one is bound. The notification settings are not here; the route reads them at each request.
  */
 export type HookTarget = {
     store: HookStore;
@@ -210,9 +211,6 @@ export type HookTarget = {
     limiter: RateLimiter;
     /** Hook names already logged by this server context. */
     logged: Set<string>;
-    config: NotifyConfig;
-    /** The catalog's notify.stop; notify()'s own fallback is used when this is absent. */
-    stopMessage?: string;
     exec?: ExecFile;
     now?: () => number;
     /**
@@ -221,12 +219,22 @@ export type HookTarget = {
     recordFor?: (session: string) => SessionRecord | null;
 };
 
+/** What handleHookRequest needs: the context's target and the notification settings it reads. */
+export type HookRequestTarget = HookTarget & {
+    config: NotifyConfig;
+    /** The catalog's notify.stop; notify()'s own fallback is used when this is absent. */
+    stopMessage?: string;
+};
+
 /**
  * The whole endpoint. Order: the rate limit first, so an attacker cannot spend the size check's
  * parsing on every request; then the size; then the body is read and parsed, and from there almost
  * everything answers 200, per the module comment.
  */
-export async function handleHookRequest(request: Request, into: HookTarget): Promise<Response> {
+export async function handleHookRequest(
+    request: Request,
+    into: HookRequestTarget
+): Promise<Response> {
     const now = (into.now ?? Date.now)();
     if (!into.limiter.allow(now)) {
         return json({ error: 'too many hook requests' }, { status: 429 });

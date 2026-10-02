@@ -113,7 +113,7 @@
 <g id="node19" class="node">
 <title>folder state/client to folder state/workbench</title>
 <polygon fill="none" stroke="none" points="200.88,-923.24 187.12,-923.24 187.12,-910.76 200.88,-910.76 200.88,-923.24"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="194" y="-914.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">15</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="194" y="-914.6" font-family="Helvetica,Arial,sans-serif" font-size="8.00">16</text>
 </g>
 <!-- folder state/client&#45;&gt;folder state/client to folder state/workbench -->
 <g id="edge26" class="edge">
@@ -197,7 +197,7 @@
 <g id="node26" class="node">
 <title>folder state/workbench to layer data</title>
 <polygon fill="none" stroke="none" points="262.88,-870.2 249.12,-870.2 249.12,-857.72 262.88,-857.72 262.88,-870.2"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="256" y="-861.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">22</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="256" y="-861.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">23</text>
 </g>
 <!-- folder state/workbench&#45;&gt;folder state/workbench to layer data -->
 <g id="edge40" class="edge">

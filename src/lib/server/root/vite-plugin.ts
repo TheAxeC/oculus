@@ -1,5 +1,8 @@
 // Layer 2, server. Compose the ServerContext, WebSocket and raw-request carrier used by Vite
-// development and preview.
+// development and preview. The server is wired through `wireServer` (process/serve.ts), as the
+// built entry is, so a port written to local.yml moves the server under development and preview as
+// it does under the built entry, and the `close` event the move itself queues does not close the
+// context.
 
 import adapter from '@sveltejs/adapter-node';
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -9,12 +12,14 @@ import {
     carryServerContext,
     createServerContext,
     type OculusRequest,
+    type PortMove,
     type ServerContext
 } from './context.ts';
-import { attachSocket, type Attached } from './socket.ts';
+import { attachAtWs, wireServer } from './process/serve.ts';
+import type { Attached } from './socket.ts';
 
 export type ViteServerDependencies = {
-    createContext: (engine: string) => ServerContext;
+    createContext: (engine: string, portMove: PortMove) => ServerContext;
     attachSocket: (server: Server, context: ServerContext) => Attached;
 };
 
@@ -29,13 +34,8 @@ export type OculusViteServer = {
 type ServerSurface = Pick<ViteDevServer, 'httpServer' | 'middlewares'>;
 
 const dependencies: ViteServerDependencies = {
-    createContext: createServerContext,
-    attachSocket: (server, context) =>
-        attachSocket(server, context.hub, {
-            path: '/ws',
-            token: context.token,
-            terminals: context.terminals
-        })
+    createContext: (engine, portMove) => createServerContext(engine, {}, portMove),
+    attachSocket: attachAtWs
 };
 
 /** Build the adapter emulator and the plugin that owns one context for either Vite serve mode. */
@@ -59,18 +59,16 @@ export function oculusViteServer(
     const configure = (server: ServerSurface): void => {
         const http = server.httpServer;
         if (!(http instanceof Server)) return;
-        const context = make.createContext(engine);
-        const socket = make.attachSocket(http, context);
+        const { context } = wireServer(
+            http,
+            (portMove) => make.createContext(engine, portMove),
+            make.attachSocket
+        );
 
         server.middlewares.use((request, _response, next) => {
             const carried = request as OculusRequest;
             carryServerContext(carried, context);
             requests.run(carried, next);
-        });
-
-        http.on('close', () => {
-            socket.close();
-            context.close();
         });
     };
 
