@@ -895,3 +895,11 @@ Where it is built: X3a's landing. Booked in the state file's closed log and `pla
 
 Where it is built: M3's repair round. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z256 (2026-10-02, A1's first review): the id of a session's diff pane
+
+- Chosen (a): `${side}@${session}:${root}:${path}`; a diff with no session keeps `${side}:${root}:${path}`; the side tokens hold no `@`, so a path cannot produce a session id.
+- Not chosen: (b) the brief's `${place}:${session}`, where a file named `a.ts:s-1` takes the id of `a.ts` opened for session `s-1`.
+- Not chosen: (c) leaving it, since session ids are long, which keeps a collision the review showed, the lazy option.
+
+Where it is built: A1's repair round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
