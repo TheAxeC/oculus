@@ -18,6 +18,11 @@
 // cache, whose events are synchronous and are all caused by calls made outside a derived: that
 // microtask's fetch, a hold, a mark from a socket listener, a cancel, a removal.
 //
+// `scoped` runs a call for a tab: while the tab is hidden, a read that would schedule a fetch
+// schedules none and answers what is held, and a refetch only marks the key, so the tab asks once,
+// from the read the derived makes again when it is shown. A fetch already scheduled or out is left
+// alone, and `peek`, `fetch`, `hold`, `mark`, `forget` and `entries` do not look at the scope.
+//
 // `fetch` builds the query on the caller's stack, so it is for handlers and effects, never for a
 // `$derived`; `read` is the one a derived calls.
 //
@@ -64,6 +69,9 @@ export function createQueries(): Queries {
     /** Whether the cache subscription is to leave the tick alone: a stale mark no reader hears. */
     let quiet = false;
 
+    /** Whether the tab the running call belongs to is shown, or null for a call made by no tab. */
+    let scope: (() => boolean) | null = null;
+
     function bump(hash: string): void {
         ticks[hash] = (ticks[hash] ?? 0) + 1;
     }
@@ -86,6 +94,25 @@ export function createQueries(): Queries {
     ) {
         if (state === undefined) return true;
         return state.fetchStatus === 'idle' && (state.data === undefined || state.isInvalidated);
+    }
+
+    /**
+     * Whether the running call belongs to a hidden tab. It reads the tab's flag, so a derived or an
+     * effect that asks runs again when the tab is shown.
+     */
+    function hidden(): boolean {
+        return scope !== null && !scope();
+    }
+
+    /** Run a call for a tab, so that its reads and refetches follow whether the tab is shown. */
+    function scoped<T>(shown: () => boolean, run: () => T): T {
+        const outer = scope;
+        scope = shown;
+        try {
+            return run();
+        } finally {
+            scope = outer;
+        }
     }
 
     /** Whether a fetch of a key is out. */
@@ -176,7 +203,7 @@ export function createQueries(): Queries {
         const hash = hashKey(key);
         track(hash);
         const state = client.getQueryState<T>(key);
-        if (options.enabled && wants(state)) schedule(key, hash, fetcher);
+        if (options.enabled && wants(state) && !hidden()) schedule(key, hash, fetcher);
         return {
             data: state?.data,
             refreshing: state !== undefined && (state.fetchStatus !== 'idle' || state.isInvalidated)
@@ -202,10 +229,28 @@ export function createQueries(): Queries {
         void client.cancelQueries({ queryKey: key, exact: true });
     }
 
+    /**
+     * A refetch made for a hidden tab: it asks nothing and cancels nothing. A request out is marked
+     * to be answered by a mark when it lands, which keeps the `again` a shown caller recorded; with
+     * none out the held answer is marked, and the readers are woken, so a shown tab of the key asks
+     * on its next read and the hidden tab asks once when it is shown.
+     */
+    function deferRefetch(key: QueryKey, hash: string, out: boolean): void {
+        if (out) {
+            if (waiting.get(hash) !== 'again') waiting.set(hash, 'wait');
+        } else if (client.getQueryState(key) !== undefined) {
+            invalidate(key, true);
+        }
+    }
+
     function refetch<T>(key: QueryKey, fetcher: Fetcher<T>, whileFetching: WhileFetching): void {
         const hash = hashKey(key);
         const out = scheduled.has(hash) || fetching(key);
         if (out && whileFetching === 'drop') return;
+        if (hidden()) {
+            deferRefetch(key, hash, out);
+            return;
+        }
         fetchers.set(hash, fetcher as Fetcher<unknown>);
         if (out && (whileFetching === 'wait' || whileFetching === 'again')) {
             waiting.set(hash, whileFetching);
@@ -259,5 +304,5 @@ export function createQueries(): Queries {
             .map((query) => ({ key: query.queryKey, data: query.state.data as T | undefined }));
     }
 
-    return { client, read, peek, fetch, refetch, hold, mark, forget, entries };
+    return { client, scoped, read, peek, fetch, refetch, hold, mark, forget, entries };
 }

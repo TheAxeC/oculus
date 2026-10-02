@@ -263,8 +263,15 @@ export type Queries = {
     /** The query client, for a test to look into the cache. */
     client: QueryClient;
     /**
+     * Run a call for a tab. While `shown` answers false, a read asks nothing and answers what is
+     * held, and a refetch marks the key and asks nothing, so the tab asks once when it is shown.
+     * Scopes nest, and the one before is restored when the call returns or throws.
+     */
+    scoped: <T>(shown: () => boolean, run: () => T) => T;
+    /**
      * The answer held for a key. It asks, on a microtask, when nothing is held or the held answer
-     * was marked, and only when `enabled` says there is something to ask with.
+     * was marked, and only when `enabled` says there is something to ask with and the tab it is
+     * read for is not hidden.
      */
     read: <T>(key: QueryKey, fetcher: Fetcher<T>, options: { enabled: boolean }) => Read<T>;
     /** The answer held for a key, and whether it is stale, asking for nothing. */
@@ -276,7 +283,8 @@ export type Queries = {
     fetch: <T>(key: QueryKey, fetcher: Fetcher<T>) => Promise<T>;
     /**
      * Ask for a key at once, on a microtask, and not when a reader next reads it. A request already
-     * out is dealt with as `whileFetching` says.
+     * out is dealt with as `whileFetching` says. For a hidden tab it asks nothing and marks the
+     * key, and the tab asks once when it is shown.
      */
     refetch: <T>(key: QueryKey, fetcher: Fetcher<T>, whileFetching: WhileFetching) => void;
     /** Put an answer in as though it had been fetched; a mark on the key stays. */

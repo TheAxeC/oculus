@@ -4,7 +4,9 @@
 // instances are made and wired to each other: a store that reads another is given it rather than
 // importing it. The root provides the object through Svelte's context (state/client/use.ts) and
 // every view, shell component and route reads it from there, which is what makes two clients, and
-// two test cases, share nothing.
+// two test cases, share nothing. Each tab provides a copy of it for its own subtree, made by the
+// `tabScope` member, in which the stores that read through the query client ask nothing while the
+// tab is hidden.
 //
 // The three catalogs are not here. state/shared/words/text.ts, state/shared/words/tones.ts and
 // state/shared/words/appearance.ts hold what the server last sent in module variables, are never
@@ -87,8 +89,19 @@ import { createTranscripts, type TranscriptsStore } from '../sessions/transcript
 import { createUi, type UiStore } from '../workbench/ui.svelte.ts';
 import { createUsageRefresh, type UsageRefreshStore } from '../system/usage-refresh.svelte.ts';
 import { createQueries } from './queries.svelte.ts';
+import type { Queries } from '../shared/stores/shapes.ts';
 import { createWrites, type WritesStore } from './writes.svelte.ts';
 import { createGraphviz, type GraphvizLoader } from '../boards/structure/layout.ts';
+
+/** What a tab needs of the client to hide its reads while it is hidden. */
+export type TabScopeStore = {
+    /**
+     * A copy of `state` in which each store that reads through the query client runs every
+     * function member in the scope of `shown`, so a tab asks nothing through it while `shown`
+     * answers false. Every other store of the copy is the original instance.
+     */
+    wrap: (state: ClientState, shown: () => boolean) => ClientState;
+};
 
 /** Every store one client holds, one instance of each. */
 export type ClientState = {
@@ -138,7 +151,32 @@ export type ClientState = {
     /** The notifications the status bar's bell counts and its centre lists. */
     notices: NoticesStore;
     registry: RegistryStore;
+    /** The copy of these stores a tab provides for its subtree. */
+    tabScope: TabScopeStore;
 };
+
+/**
+ * A store with each function member run in the scope of `shown` and every other member as it was.
+ * The store is read when the copy is made, so a member that is replaced later is not followed.
+ */
+function scopedStore(
+    queries: Queries,
+    store: Record<string, unknown>,
+    shown: () => boolean
+): Record<string, unknown> {
+    return Object.fromEntries(
+        Object.entries(store).map(([member, value]) => [
+            member,
+            typeof value === 'function'
+                ? (...args: unknown[]): unknown =>
+                      queries.scoped(shown, () => {
+                          const answer: unknown = Reflect.apply(value, store, args);
+                          return answer;
+                      })
+                : value
+        ])
+    );
+}
 
 /**
  * One client's stores, built in dependency order: a store is made after everything it reads, and is
@@ -147,6 +185,16 @@ export type ClientState = {
 export function createClientState(): ClientState {
     // Every store that fetches an answer holds it in this one query client.
     const queries = createQueries();
+    // The stores handed the query client, by their name in the client object, which is what a tab's
+    // copy replaces. A store handed `queries` is recorded where it is made.
+    const queried = new Map<string, Record<string, unknown>>();
+    function withQueries<N extends keyof ClientState>(
+        name: N,
+        store: ClientState[N] & Record<string, unknown>
+    ): ClientState[N] {
+        queried.set(name, store);
+        return store;
+    }
     const entities = createEntities();
     const writes = createWrites(() => entities.config()?.config ?? null);
     const socket = createSocket(entities, writes);
@@ -168,7 +216,7 @@ export function createClientState(): ClientState {
     });
     const drag = createDrag(layout);
     const clock = createClock();
-    const changes = createChanges(queries);
+    const changes = withQueries('changes', createChanges(queries));
     const selection = createSelection();
     // A terminal belongs to exactly one Terminal tab, on whichever page it is, and a hidden page
     // mounts no view, so the terminals store is handed every page's Terminal tabs and the layout's
@@ -219,42 +267,41 @@ export function createClientState(): ClientState {
         busy: terminals.busyOf,
         end: terminals.endTerminals
     });
-    const agents = createAgents(queries);
-    const files = createFiles(entities, queries);
+    const agents = withQueries('agents', createAgents(queries));
+    const files = withQueries('files', createFiles(entities, queries));
     // The file browser's bookmark forms are the fs store's to close: it is what learns that a
     // bookmark has left the file, and a form over one that is gone has nothing to draw and nothing
     // to save into. Which file browsers there are, what each one has open and how one is moved are
     // the layout's, the ui store's and the form drafts' and are handed to it here. The entities
     // store is handed to it for the `files` channel, which is what says the bookmarks file changed
     // on disk.
-    const fs = createFs(
-        writes,
-        {
-            browsers: () =>
-                layout
-                    .pages()
-                    .flatMap((page) => tabsOf(page.workbench.root))
-                    .filter((tab) => tab.view === FILES_VIEW)
-                    .map((tab) => ({ id: tab.id, forms: filesViewOf(ui.instanceState(tab.id)) })),
-            saving: (owner: string, editing: string) =>
-                formDrafts.formsSaving(owner).includes(formKey(BOOKMARK_COLLECTION, editing)),
-            shift: (owner: string, now: FilesForms, next: FilesForms) => {
-                const left = bookmarkLeft(now, next);
-                if (left !== null && left.editing === '') {
-                    formDrafts.toggleAdd(owner, BOOKMARK_COLLECTION, true);
-                } else if (left !== null) {
-                    formDrafts.toggleEdit(owner, BOOKMARK_COLLECTION, left.editing, next.editing);
-                }
-                ui.setInstanceState(owner, patchedFilesView(ui.instanceState(owner), next));
+    const fsForms = {
+        browsers: () =>
+            layout
+                .pages()
+                .flatMap((page) => tabsOf(page.workbench.root))
+                .filter((tab) => tab.view === FILES_VIEW)
+                .map((tab) => ({
+                    id: tab.id,
+                    forms: filesViewOf(ui.instanceState(tab.id))
+                })),
+        saving: (owner: string, editing: string) =>
+            formDrafts.formsSaving(owner).includes(formKey(BOOKMARK_COLLECTION, editing)),
+        shift: (owner: string, now: FilesForms, next: FilesForms) => {
+            const left = bookmarkLeft(now, next);
+            if (left !== null && left.editing === '') {
+                formDrafts.toggleAdd(owner, BOOKMARK_COLLECTION, true);
+            } else if (left !== null) {
+                formDrafts.toggleEdit(owner, BOOKMARK_COLLECTION, left.editing, next.editing);
             }
-        },
-        entities,
-        queries
-    );
-    const docs = createDocs(entities, queries);
-    const latex = createLatex(entities, terminals, fs, queries);
-    const deposit = createDeposit(queries);
-    const transcripts = createTranscripts(queries);
+            ui.setInstanceState(owner, patchedFilesView(ui.instanceState(owner), next));
+        }
+    };
+    const fs = withQueries('fs', createFs(writes, fsForms, entities, queries));
+    const docs = withQueries('docs', createDocs(entities, queries));
+    const latex = withQueries('latex', createLatex(entities, terminals, fs, queries));
+    const deposit = withQueries('deposit', createDeposit(queries));
+    const transcripts = withQueries('transcripts', createTranscripts(queries));
     const source = createSource(writes, ui);
     // The pane asks the instance id whether a tab holds unsaved text before it closes it, and asks
     // the ui store rather than the source store, which the shell may not read.
@@ -266,8 +313,8 @@ export function createClientState(): ClientState {
     const inbox = createInbox(entities, writes);
     const accounts = createAccounts(entities, writes, (view) => void layout.openView(view));
     const audit = createAudit(entities);
-    const memories = createMemories(queries);
-    const lines = createLines(queries);
+    const memories = withQueries('memories', createMemories(queries));
+    const lines = withQueries('lines', createLines(queries));
     const present = createPresent(entities);
     // The Source Control views open a repository's file in a source tab by the root the file routes
     // serve it under, and point the Repositories view at a commit through its remembered state.
@@ -330,6 +377,16 @@ export function createClientState(): ClientState {
     // document, a file), and the layout lands it apart from a page's tool views. The registry is
     // built over the layout, so the layout is told the rule once both exist.
     layout.registerOpened((view) => registry.viewFor(view)?.group === '');
+    const tabScope: TabScopeStore = {
+        wrap: (state, shown) =>
+            Object.assign(
+                {},
+                state,
+                Object.fromEntries(
+                    [...queried].map(([name, store]) => [name, scopedStore(queries, store, shown)])
+                )
+            )
+    };
     return {
         graphviz: createGraphviz(),
         entities,
@@ -370,6 +427,7 @@ export function createClientState(): ClientState {
         paletteSource,
         editorStatus,
         notices,
-        registry
+        registry,
+        tabScope
     };
 }

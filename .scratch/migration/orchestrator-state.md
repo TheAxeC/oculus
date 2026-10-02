@@ -59,21 +59,6 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   builder_usage: the build to the report 134,601 tokens, 314 tool uses, 82.2 min (1 full-list run, passed); repair round 1, as its completion notice gives it, 277,115 tokens, 104 tool uses, 162.2 min (7 full-list runs, none printing `checks: 7 commands passed`: run 1 red at `test:checks` on comment width, fixed; runs 2 to 7 red at `npm test` on 5000 ms timeouts in four files the step does not change, which pass alone)
   reviewer_report: agents/reviews/L4-refuter.md (first run, reviewer aef82904238b07ede, claude-sonnet-5-5, launched 2026-10-02 01:06, 335,496 tokens, 71 tool uses, 30.7 min; 4 Spec, 2 Proof, 3 Standards, 2 Behaviour findings; the earlier reviewer ac7c886ff3f54f762 stopped at 23:58 without a report); run over round 1, reviewer af927a2e2e0450a91 launched 04:23, claude-sonnet-5-5 read at 04:23, usage on its completion; 210,709 tokens, 54 tool uses, 35.0 min; 2 Spec, 3 Proof notes with no finding against the round, 0 Standards, 2 Behaviour, closed at landing (the report's Closed heading)
   round: 1 (agents/briefs/L4-round1.md, sent 01:38)
-- step: Q66
-  executor: agent
-  worker: claude:sonnet
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 23:03)
-  session_id: a7c7904a6d1025f78 (continuation builder launched 2026-10-02 01:03 local, claude-sonnet-5-5 read at 01:04, taking over the worktree of the stopped builder; earlier a4af80915516453ed (launched 2026-10-01 23:02 local))
-  worktree: .agents/worktrees/Q66
-  base: d6359dcd
-  launched: 2026-10-01 23:02 local
-  report: agents/reviews/Q66-report.md
-  brief_check: agents/reviews/Q66-brief-check.md, every finding closed in the brief (its Closed heading, in automode); claude-sonnet-5-5, 330,279 tokens, 118 tool uses, 18.7 min
-  shared_paths: with Q85d, `Changes.svelte` (Q85d the body read at 77-79; Q66 the effect at 59-70), `Diff.svelte` (Q85d a `typeof` at 333 and readers; Q66 the effects at 216-241), `Graph.svelte` and `Source.svelte` (Q85d the readers; Q66 the gutter and load effects), `File.svelte` (Q85d the instance-state readers at 90-92; Q66 the address at 95-97); with L4, `PaneBody.svelte` (L4 the float body; Q66 the head comment at 8-9) and `File.svelte` (L4 only if its close needs the rule); `tests/shell/panes/` (L4 changed cases in existing files; Q66 two new files, the folder at 6); `DESIGN.md` (Q66 194; others as their entries say), different hunks, a simple merge with Diff.svelte's size read after both; `docs/diagrams/`, regenerated at each landing
-  landing: cherry-picking
-  builder_usage: continuation builder a7c7904a6d1025f78 to the report 249,200 tokens, 87 tool uses, 43.3 min (2 full-list runs, the last passed); repair round 1 303,337 tokens, 31 tool uses, 53.0 min (2 full-list runs, the last passed)
-  reviewer_report: agents/reviews/Q66-refuter.md (first run, reviewer a93e9f989b66e2e0d, claude-sonnet-5-5 read at 01:50, launched 2026-10-02 01:50; 197,616 tokens, 55 tool uses, 43.5 min; 3 Spec, 2 Proof, 2 Standards, 2 Behaviour findings); run over round 1, reviewer a7413ffd5185cc0e1 launched 03:28, claude-sonnet-5-5 read at 03:28, 210,648 tokens, 50 tool uses, 46.0 min, its findings closed at landing (the report's Closed heading)
-  round: 1 (agents/briefs/Q66-round1.md, sent 02:36)
 - step: X3a
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -804,6 +789,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-02 05:30. Q66 landed (a hidden tab defers its work), a diagram conflict resolved by regenerating, the look on TEST taken, `checks: 7 commands passed` on the second run (the first red only on a 30000 ms timeout in a file Q66 does not touch). In flight: L4 (ready to land, one fix at landing), D35 and M4 (repair round 1), X3a and D24 (building). Next: /land L4. Open items: none.
 - 2026-10-02 04:40. Q35 landed (Changes, Customizations, Audit, Present), a diagram conflict resolved by regenerating, one merge fix and one test added at landing, the look on TEST taken, `checks: 7 commands passed` on the third run (the first two red only on 5000 ms timeouts in files Q35 does not touch, under load 19 to 21). In flight: L4 (round review), D35 (review), Q66 (ready to land), M4 (round 1 to send), X3a and D24 (building). Next: send M4's round 1, /land Q66. Open items: none.
 - 2026-10-02 01:30. Q85d landed (zod in the views, ui, shell and routes), a DESIGN.md and diagram conflict resolved, two fixes at landing, the look on TEST taken, `checks: 7 commands passed`. D35 taken back out of main by Axel's D35 redo ruling. In flight: Q66 and Q35 (continuation builders), L4 (review). Next: /spec D35 (ordo-high), /spec X3a. Open items: none.
 - 2026-10-01 20:27. U3 landed (every view on VS Code's scale), seven fixes at landing, the look on TEST taken, `checks: 7 commands passed`. D27's and D35's builders stopped at their first runs with cases to rule (D27 R1 to R3, D35 the bounds' tests under tests/data). In flight: D27, D35. Next: the two rulings and the builders resumed; /spec Q85d on the new main.

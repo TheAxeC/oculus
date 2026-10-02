@@ -9,10 +9,11 @@
 // What makes it stale is a build ending. A build is a terminal
 // (state/sessions/terminals.svelte.ts), and a terminal that has ended leaves the terminals list of
 // the `sessions` payload, so watch() is told the terminal one press started and the state is
-// marked, and asked for again, on every `sessions` push until that terminal is gone from the list.
-// The push that finds it gone is the one whose answer carries the new PDF, and the watch ends
-// there, so an idle tab asks for nothing. A push that comes while a request is out marks the state
-// again once that request lands, so an answer fetched before the list moved is never the last one.
+// marked, and asked for again, on every `sessions` push until that terminal is gone from the list
+// (a tab the pane hides asks once when it is shown). The push that finds it gone is the one whose
+// answer carries the new PDF, and the watch ends there, so an idle tab asks for nothing. A push
+// that comes while a request is out marks the state again once that request lands, so an answer
+// fetched before the list moved is never the last one.
 //
 // A PDF whose time moved is bumped in the fs store, which moves the address the file view draws it
 // at: an open PDF tab then fetches the new build instead of the bytes the browser cached.
@@ -138,7 +139,10 @@ export function createLatex(
         return data ?? PENDING;
     }
 
-    /** Wait on one terminal, and ask again at once so the row says a build is under way. */
+    /**
+     * Wait on one terminal, and ask again at once so the row says a build is under way; a hidden
+     * tab asks when it is shown.
+     */
     function watch(id: string, terminal: string): void {
         if (id === '' || terminal === '') return;
         waiting.set(id, terminal);

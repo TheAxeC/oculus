@@ -391,3 +391,351 @@ describe('a note saved before it was read', () => {
         expect(client.fs.note('n9')).toMatchObject({ body: 'disk body', modified: 77 });
     });
 });
+
+describe('a read and a refetch inside a hidden scope', () => {
+    const KEY = ['scope', 'one'];
+
+    /** A query function that counts its calls and answers the count. */
+    function counting(): { fetcher: () => Promise<number>; calls: () => number } {
+        let calls = 0;
+        return { fetcher: () => Promise.resolve(++calls), calls: () => calls };
+    }
+
+    /**
+     * A query function whose every call stays out until released in order, answering the number of
+     * calls made when it is released.
+     */
+    function gated(): { fetcher: () => Promise<number>; release: () => void; calls: () => number } {
+        let calls = 0;
+        const out: (() => void)[] = [];
+        return {
+            fetcher: () =>
+                new Promise<number>((resolve) => {
+                    const own = ++calls;
+                    out.push(() => resolve(own));
+                }),
+            release: () => out.shift()?.(),
+            calls: () => calls
+        };
+    }
+
+    // Revert: in read of state/client/queries.svelte.ts, take out the test of the current scope
+    // before schedule, so a hidden read asks.
+    it('schedules nothing for a key with nothing held, and asks once in a shown scope', async () => {
+        const queries = createQueries();
+        const { fetcher, calls } = counting();
+        queries.scoped(
+            () => false,
+            () => queries.read(KEY, fetcher, { enabled: true })
+        );
+        await settle();
+        expect(calls()).toBe(0);
+
+        queries.scoped(
+            () => true,
+            () => queries.read(KEY, fetcher, { enabled: true })
+        );
+        await settle();
+        expect(calls()).toBe(1);
+    });
+
+    // Revert: in read of state/client/queries.svelte.ts, take out the test of the current scope
+    // before schedule, or answer refreshing: false for a marked key.
+    it('answers a marked key as held and refreshing, and asks when read outside the scope', async () => {
+        const queries = createQueries();
+        const { fetcher, calls } = counting();
+        queries.read(KEY, fetcher, { enabled: true });
+        await settle();
+        queries.mark(KEY, 'wait');
+
+        const hidden = queries.scoped(
+            () => false,
+            () => queries.read(KEY, fetcher, { enabled: true })
+        );
+        await settle();
+        expect(hidden).toEqual({ data: 1, refreshing: true });
+        expect(calls()).toBe(1);
+
+        queries.read(KEY, fetcher, { enabled: true });
+        await settle();
+        expect(calls()).toBe(2);
+    });
+
+    // Revert: in read of state/client/queries.svelte.ts, call the scope's shown() before the test
+    // of whether the key wants an answer.
+    it('does not ask the scope whether it is shown for a key that wants nothing', async () => {
+        const queries = createQueries();
+        const { fetcher } = counting();
+        queries.read(KEY, fetcher, { enabled: true });
+        await settle();
+        const shown = vi.fn(() => false);
+        const held = queries.scoped(shown, () => queries.read(KEY, fetcher, { enabled: true }));
+        expect(held).toEqual({ data: 1, refreshing: false });
+        expect(shown).toHaveBeenCalledTimes(0);
+    });
+
+    // Revert: in scoped of state/client/queries.svelte.ts, take the restore out of the finally, so
+    // a run that throws leaves its scope current.
+    it('nests: the inner scope hides, the outer shows again after it, and a throw restores', async () => {
+        const queries = createQueries();
+        const { fetcher, calls } = counting();
+        const read = (key: string[]) => queries.read(key, fetcher, { enabled: true });
+        const inner = ['scope', 'inner'];
+        const outer = ['scope', 'outer'];
+        const thrown = ['scope', 'thrown'];
+        const none = ['scope', 'none'];
+
+        queries.scoped(
+            () => true,
+            () => {
+                queries.scoped(
+                    () => false,
+                    () => read(inner)
+                );
+                read(outer);
+                try {
+                    queries.scoped(
+                        () => false,
+                        () => {
+                            throw new Error('inner run');
+                        }
+                    );
+                } catch {
+                    // The run's own failure is the case; the scope after it is what is read.
+                }
+                read(thrown);
+            }
+        );
+        await settle();
+        expect(queries.peek(inner).data).toBeUndefined();
+        expect(queries.peek(outer).data).toBeDefined();
+        expect(queries.peek(thrown).data).toBeDefined();
+        expect(calls()).toBe(2);
+
+        expect(() =>
+            queries.scoped(
+                () => false,
+                () => {
+                    throw new Error('outermost run');
+                }
+            )
+        ).toThrow('outermost run');
+        read(none);
+        await settle();
+        expect(queries.peek(none).data).toBeDefined();
+        expect(calls()).toBe(3);
+    });
+
+    // Revert: in scoped of state/client/queries.svelte.ts, set the scope to null at the end of a
+    // call rather than restoring the one before, or restore it outside a finally.
+    it('keeps a hidden outer scope hidden after a shown inner scope returns or throws', async () => {
+        const queries = createQueries();
+        const { fetcher, calls } = counting();
+        const read = (key: string[]) => queries.read(key, fetcher, { enabled: true });
+
+        queries.scoped(
+            () => false,
+            () => {
+                queries.scoped(
+                    () => true,
+                    () => read(['scope', 'inner'])
+                );
+                read(['scope', 'after']);
+                try {
+                    queries.scoped(
+                        () => true,
+                        () => {
+                            throw new Error('inner run');
+                        }
+                    );
+                } catch {
+                    // The run's own failure is the case; the scope after it is what is read.
+                }
+                read(['scope', 'after-throw']);
+            }
+        );
+        await settle();
+        expect(queries.peek(['scope', 'inner']).data).toBeDefined();
+        expect(queries.peek(['scope', 'after']).data).toBeUndefined();
+        expect(queries.peek(['scope', 'after-throw']).data).toBeUndefined();
+        expect(calls()).toBe(1);
+    });
+
+    // Revert: in refetch of state/client/queries.svelte.ts, schedule the fetch in a hidden scope
+    // as in no scope.
+    it('marks a held key on refetch and asks nothing, and a read outside the scope then asks once', async () => {
+        const queries = createQueries();
+        const { fetcher, calls } = counting();
+        queries.read(KEY, fetcher, { enabled: true });
+        await settle();
+
+        queries.scoped(
+            () => false,
+            () => queries.refetch(KEY, fetcher, 'replace')
+        );
+        await settle();
+        expect(calls()).toBe(1);
+        expect(queries.peek<number>(KEY).stale).toBe(true);
+
+        queries.read(KEY, fetcher, { enabled: true });
+        await settle();
+        expect(calls()).toBe(2);
+        expect(queries.peek<number>(KEY)).toEqual({ data: 2, stale: false });
+    });
+
+    // Revert: in refetch of state/client/queries.svelte.ts, take out the hidden branch, so a hidden
+    // refetch schedules as in no scope.
+    it('builds no query and asks nothing on refetch of a key with nothing held', async () => {
+        const queries = createQueries();
+        const { fetcher, calls } = counting();
+        queries.scoped(
+            () => false,
+            () => queries.refetch(KEY, fetcher, 'again')
+        );
+        await settle();
+        expect(calls()).toBe(0);
+        expect(queries.client.getQueryCache().getAll()).toEqual([]);
+    });
+
+    // Revert: in refetch of state/client/queries.svelte.ts, record whileFetching as it is in a
+    // hidden scope instead of 'wait'.
+    it('records a wait, not the again it was given, for a request that is out', async () => {
+        const queries = createQueries();
+        const { fetcher, release, calls } = gated();
+        queries.read(KEY, fetcher, { enabled: true });
+        await settle();
+        expect(calls()).toBe(1);
+
+        queries.scoped(
+            () => false,
+            () => queries.refetch(KEY, fetcher, 'again')
+        );
+        release();
+        await settle();
+        expect(calls()).toBe(1);
+        expect(queries.peek<number>(KEY)).toEqual({ data: 1, stale: true });
+    });
+
+    // Revert: in refetch of state/client/queries.svelte.ts, set waiting to 'wait' without testing
+    // whether it already holds 'again'.
+    it('keeps the again a live caller recorded when a hidden refetch comes after it', async () => {
+        const queries = createQueries();
+        const { fetcher, release, calls } = gated();
+        queries.read(KEY, fetcher, { enabled: true });
+        await settle();
+        queries.refetch(KEY, fetcher, 'again');
+        queries.scoped(
+            () => false,
+            () => queries.refetch(KEY, fetcher, 'wait')
+        );
+        release();
+        await settle();
+        expect(calls()).toBe(2);
+        release();
+        await settle();
+        expect(queries.peek<number>(KEY)).toEqual({ data: 2, stale: false });
+    });
+
+    // Revert: in refetch of state/client/queries.svelte.ts, take out the hidden branch, so the
+    // hidden side schedules and asks.
+    it('asks once for two readers of one key, the live one, whatever the hidden one reads and refetches', async () => {
+        const queries = createQueries();
+        const { fetcher, calls } = counting();
+        queries.scoped(
+            () => false,
+            () => {
+                queries.read(KEY, fetcher, { enabled: true });
+                queries.refetch(KEY, fetcher, 'drop');
+            }
+        );
+        queries.read(KEY, fetcher, { enabled: true });
+        await settle();
+        expect(calls()).toBe(1);
+
+        queries.scoped(
+            () => false,
+            () => {
+                queries.refetch(KEY, fetcher, 'drop');
+                queries.read(KEY, fetcher, { enabled: true });
+            }
+        );
+        await settle();
+        expect(calls()).toBe(1);
+        expect(queries.peek<number>(KEY).stale).toBe(true);
+    });
+
+    // Revert: in refetch of state/client/queries.svelte.ts, set fetchers for the key before the
+    // hidden branch returns, so a later again asks with the hidden caller's query function.
+    it('asks again with the live reader query function, not the one a hidden refetch was given', async () => {
+        const queries = createQueries();
+        const live = gated();
+        const hiddenOne = counting();
+        queries.read(KEY, live.fetcher, { enabled: true });
+        await settle();
+        queries.refetch(KEY, live.fetcher, 'again');
+        queries.scoped(
+            () => false,
+            () => queries.refetch(KEY, hiddenOne.fetcher, 'wait')
+        );
+        live.release();
+        await settle();
+        expect(live.calls()).toBe(2);
+        expect(hiddenOne.calls()).toBe(0);
+    });
+
+    // Revert: none turns it red, since peek, fetch, hold and mark read no scope; it audits that a
+    // hidden scope leaves them as they are in no scope.
+    it('audit: leaves peek, fetch, hold and mark as they are in no scope', async () => {
+        const queries = createQueries();
+        const { fetcher, calls } = counting();
+        const hidden = <T>(run: () => T): T => queries.scoped(() => false, run);
+
+        hidden(() => queries.hold(KEY, 5));
+        expect(hidden(() => queries.peek<number>(KEY))).toEqual({ data: 5, stale: false });
+        hidden(() => queries.mark(KEY, 'wait'));
+        expect(hidden(() => queries.peek<number>(KEY))).toEqual({ data: 5, stale: true });
+        hidden(() => queries.hold(KEY, 6));
+        expect(queries.peek<number>(KEY)).toEqual({ data: 6, stale: true });
+
+        const answer = await hidden(() => queries.fetch(KEY, fetcher));
+        expect(answer).toBe(1);
+        expect(calls()).toBe(1);
+        expect(queries.peek<number>(KEY)).toEqual({ data: 1, stale: false });
+    });
+
+    // Revert: in schedule of state/client/queries.svelte.ts, keep the scope current at the call
+    // that scheduled and ask it again inside the microtask, so a read scheduled while shown is
+    // dropped once the tab is hidden.
+    it('sends a read scheduled while shown after the scope turns hidden, once', async () => {
+        const queries = createQueries();
+        const { fetcher, calls } = counting();
+        let shown = true;
+        queries.scoped(
+            () => shown,
+            () => queries.read(KEY, fetcher, { enabled: true })
+        );
+        shown = false;
+        await settle();
+        expect(calls()).toBe(1);
+    });
+
+    // Revert: none turns it red, since query-core joins a request already out and the microtask
+    // runs a schedule once; it audits that toggling the flag inside one tick sends one request.
+    it('audit: sends one request when the flag goes shown, hidden and shown inside one tick', async () => {
+        const queries = createQueries();
+        const { fetcher, calls } = counting();
+        let shown = true;
+        const read = () =>
+            queries.scoped(
+                () => shown,
+                () => queries.read(KEY, fetcher, { enabled: true })
+            );
+        read();
+        shown = false;
+        read();
+        shown = true;
+        read();
+        await settle();
+        expect(calls()).toBe(1);
+    });
+});

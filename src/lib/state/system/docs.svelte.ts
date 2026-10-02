@@ -17,12 +17,13 @@
 // whose answer named no file (a request the endpoint refused before opening anything) is marked by
 // every message that names a root, since nothing tells which root could change it.
 //
-// A marked document is asked for again on the next call for it, which is the tab still being drawn,
-// and what is held keeps being returned while that answer is in flight: the loading state is what
-// a document reads as before its first answer and never after. A mark that comes while the request
-// is in flight asks again as soon as it lands. The request carries the entity tag of the held
-// answer, a 304 keeps the held object as it is, and an answer equal to the held one keeps the held
-// object too, so an unchanged document rebuilds no markup and reloads no figure.
+// A marked document is asked for again on the next call for it, which is the tab still being drawn
+// and shown (a tab the pane hides asks once when it is shown), and what is held keeps being
+// returned while that answer is in flight: the loading state is what a document reads as before
+// its first answer and never after. A mark that comes while the request is in flight asks again as
+// soon as it lands. The request carries the entity tag of the held answer, a 304 keeps the held
+// object as it is, and an answer equal to the held one keeps the held object too, so an unchanged
+// document rebuilds no markup and reloads no figure.
 
 import { z } from 'zod';
 import type { ManualPart, Message } from '../../data/model/index.ts';
@@ -161,8 +162,8 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
 
     /**
      * One document of one project. The first call for a pair asks the server; a call made after a
-     * write under the root holding it asks again, and what is held keeps showing until the answer
-     * lands.
+     * write under the root holding it asks again, from a tab that is shown or when it is shown,
+     * and what is held keeps showing until the answer lands.
      */
     function document(id: string, name: string): DocState {
         if (id === '' || name === '') return NOTHING;
@@ -260,8 +261,8 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
 
     /**
      * What a request that went wrong on the way leaves: it says nothing about the file, so a drawn
-     * document stays drawn and stays marked and the next call for it asks again; a pair not drawn
-     * reads as the failure.
+     * document stays drawn and stays marked and the next call for it from a shown tab asks again;
+     * a pair not drawn reads as the failure.
      */
     function unreached(held: Held | undefined, fetching: Fetching, reason: string): Held {
         if (held?.doc.error === '' && !held.doc.loading) {

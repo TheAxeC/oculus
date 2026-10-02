@@ -34,8 +34,9 @@
     // away, so it asks first.
     //
     // The files are read when the pane opens, again when the instance is pointed at something else,
-    // and again whenever the repository's state on the `git` channel moves, so a hunk staged here
-    // or anywhere else redraws the pane; a read that changes nothing keeps what is drawn. Each
+    // and again whenever the repository's state on the `git` channel moves (once, when the tab is
+    // shown, for a state that came while it was hidden), so a hunk staged here or anywhere else
+    // redraws the pane; a read that changes nothing keeps what is drawn. Each
     // file's diff editor view state (the runs revealed, the scroll and the caret) is kept in the
     // instance state by the file's key (its path, or for a path git lists again the path and its
     // place, from `fileKeys`), so a pane drawn again while its tab stays open shows what it showed.
@@ -87,7 +88,7 @@
     import { DEFAULT_INDENT } from '$lib/state/workbench/navigation/editor-text';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
-    import { useState } from '$lib/state/client/use';
+    import { shownGate, useShown, useState } from '$lib/state/client/use';
 
     const {
         repositories,
@@ -98,6 +99,9 @@
     } = useState();
 
     let { instance }: ViewProps = $props();
+
+    /** Whether the repository's state is due a read now: shown, and moved since the last read. */
+    const gate = shownGate(useShown());
 
     /** How many files of a group's diff are read at once. */
     const GROUP_READS = 6;
@@ -220,21 +224,25 @@
         at = null;
         placed = -1;
         void load(wanted);
+        gate.note([untrack(() => repo)]);
     });
 
-    /** The state the pane last read against, so the first state is not a second read. */
-    let seen: unknown = null;
+    /** Whether the repository's state has been heard since the pane was drawn. */
+    let heard = false;
 
     // A file's own diff and a group's follow the repository: every new state the channel sends
-    // reads it again.
+    // reads it again. The first state is not a second read, since the read of a subject was made
+    // against it or just before it, and a hidden pane reads once when it is shown if a state came
+    // meanwhile. The read of a new subject notes the state it read against.
     $effect(() => {
         const now = repo;
         if (now === null || !(acts || grouped)) return;
-        if (seen === null || seen === now) {
-            seen = now;
+        if (!heard) {
+            heard = true;
+            gate.note([now]);
             return;
         }
-        seen = now;
+        if (!gate.due([now])) return;
         untrack(() => {
             if (taken === held.id) void load(held);
         });

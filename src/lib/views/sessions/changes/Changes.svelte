@@ -32,7 +32,7 @@
     import { repoShape } from '$lib/state/sources/repositories/repositories';
     import ChangesRepo from './ChangesRepo.svelte';
     import ChangesTouched from './ChangesTouched.svelte';
-    import { useState } from '$lib/state/client/use';
+    import { shownGate, useShown, useState } from '$lib/state/client/use';
 
     const {
         repositories,
@@ -40,6 +40,7 @@
     } = useState();
 
     let { instance }: ViewProps = $props();
+    const gate = shownGate(useShown());
     type Branch = { name: string; upstream: string; current: boolean };
 
     const record = $derived(sessionFor(instance.id));
@@ -61,14 +62,16 @@
     $effect(() => {
         const root = workspace;
         // The state itself is read, so every state the channel sends lists again: a commit or a
-        // switch made elsewhere changes the branches without changing the shape.
+        // switch made elsewhere changes the branches without changing the shape. A hidden tab lists
+        // again once when it is shown, if a state came meanwhile.
         const state = repo;
         if (repoShape(root, state) !== 'readable') {
             asked += 1;
             branches = [];
+            gate.clear();
             return;
         }
-        void load(root);
+        if (gate.due([state])) void load(root);
     });
 
     async function load(root: string): Promise<void> {

@@ -8,14 +8,14 @@
 // the request on a microtask rather than running it inside the call, so reading this from a
 // $derived never writes state while a derived is running.
 //
-// Nothing polls. A write marks everything held, which is what makes the next render ask again; a
-// bookmark is written through /api/write rather than here, since it is a collection entry, so that
-// write marks everything too. What is held stays drawn until the fresh answer lands, so a tree
-// does not blink out on every add or removal, and a request still out when its key is marked is
-// cancelled, so an answer from before the mark is never held and a listing fetched before a
-// removal cannot reappear after it. A folder whose contents changed on disk is re-read by closing
-// it and opening it, since a poller over an open tree would read the disk for a reader who is
-// looking at one line of it.
+// Nothing polls. A write marks everything held, which is what makes the next render of a shown tab
+// ask again, and a hidden tab ask once when it is shown; a bookmark is written through /api/write
+// rather than here, since it is a collection entry, so that write marks everything too. What is
+// held stays drawn until the fresh answer lands, so a tree does not blink out on every add or
+// removal, and a request still out when its key is marked is cancelled, so an answer from before
+// the mark is never held and a listing fetched before a removal cannot reappear after it. A folder
+// whose contents changed on disk is re-read by closing it and opening it, since a poller over an
+// open tree would read the disk for a reader who is looking at one line of it.
 //
 // A read of the workspaces, the bookmarks or the notes that ended in an error is held as the
 // answer, with the sentence saying why, and a held answer is asked for once until it is marked:

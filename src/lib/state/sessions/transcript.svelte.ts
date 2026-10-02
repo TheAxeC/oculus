@@ -161,7 +161,8 @@ export function createTranscripts(queries: Queries): TranscriptsStore {
      * Read what has been appended since the last read, when the record says there is something.
      * Called from the view's effect with the record's lastActivity: the first call for a session
      * only notes the stamp, since the read turnsFor() scheduled already carries everything written
-     * up to it. A stamp that moves while a request is out asks again when it lands.
+     * up to it. A stamp that moves while a request is out asks again when it lands. A hidden tab
+     * only marks the turns, and asks once when it is shown.
      */
     function follow(id: string, lastActivity: string | null): void {
         if (id === '') return;

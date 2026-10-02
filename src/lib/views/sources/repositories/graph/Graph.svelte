@@ -22,11 +22,11 @@
     //
     // The history is not on the `git` channel, which carries twenty commits for a glance: it is
     // read from GET /api/git a page at a time, again from the first page whenever the branch's
-    // head, its distance from the upstream or its names move, and the rows drawn are handed up for
-    // the keyboard's order, the open commit's files under the commit. A commit row opens and closes
-    // by a press or by the blame, never by a key, so it is handed up held as it is drawn. A
-    // repository with no commit yet has no history to read, so the section says so without asking
-    // git, whose log refuses such a branch.
+    // head, its distance from the upstream or its names move (a hidden tab reads once, when it is
+    // shown), and the rows drawn are handed up for the keyboard's order, the open commit's files
+    // under the commit. A commit row opens and closes by a press or by the blame, never by a key,
+    // so it is handed up held as it is drawn. A repository with no commit yet has no history to
+    // read, so the section says so without asking git, whose log refuses such a branch.
     //
     // The loaded commits grow a page at a time with no cap, so they are drawn through
     // ui/tree/VirtualRows.svelte, which draws only the commits in view of the pane and holds the
@@ -64,7 +64,7 @@
     } from '$lib/state/sources/repositories/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { useState } from '$lib/state/client/use';
+    import { shownGate, useShown, useState } from '$lib/state/client/use';
 
     type Props = {
         root: string;
@@ -122,6 +122,7 @@
     }: Props = $props();
 
     const { repositories } = useState();
+    const gate = shownGate(useShown());
 
     // The seed is the lists the component starts with; the read below replaces them.
     let commits: GitGraphCommit[] = $state(untrack(() => seed.commits ?? []));
@@ -166,9 +167,10 @@
             outgoing = [];
             more = false;
             failure = '';
+            gate.clear();
             return;
         }
-        void load(0);
+        if (gate.due([moved])) void load(0);
     });
 
     $effect(() => {

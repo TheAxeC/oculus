@@ -156,7 +156,7 @@
 <g id="node16" class="node">
 <title>folder shell/panes to layer state</title>
 <polygon fill="none" stroke="none" points="145.88,-295.88 132.12,-295.88 132.12,-283.4 145.88,-283.4 145.88,-295.88"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="139" y="-287.24" font-family="Helvetica,Arial,sans-serif" font-size="8.00">26</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="139" y="-287.24" font-family="Helvetica,Arial,sans-serif" font-size="8.00">27</text>
 </g>
 <!-- folder shell/panes&#45;&gt;folder shell/panes to layer state -->
 <g id="edge25" class="edge">

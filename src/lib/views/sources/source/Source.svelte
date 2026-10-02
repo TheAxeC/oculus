@@ -56,9 +56,10 @@
     // and the bar's Blame toggle, kept with the draft, adds each line's blame to it and the caret
     // line's blame to the status bar. Both are read from GET /api/git for the repository holding
     // the file, again whenever the repository's state on the `git` channel moves and after every
-    // save, and a press on a mark opens the file's diff at its change while a press on a line's
-    // blame opens its commit in the Repositories view's graph. The editor draws them as its own
-    // decorations; the code window draws them with Gutter.svelte.
+    // save (a hidden tab reads again once, when it is shown), and a press on a mark opens the
+    // file's diff at its change while a press on a line's blame opens its commit in the
+    // Repositories view's graph. The editor draws them as its own decorations; the code window
+    // draws them with Gutter.svelte.
 
     import { onDestroy, untrack } from 'svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -102,7 +103,7 @@
     import type { EditorHandle } from '$lib/ui/controls/editor/types';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
-    import { useState } from '$lib/state/client/use';
+    import { shownGate, useShown, useState } from '$lib/state/client/use';
 
     const {
         editorStatus: { asked, forget, publish },
@@ -215,18 +216,23 @@
         });
     });
 
+    const gate = shownGate(useShown());
+
     // The gutter follows the repository and the file on disk: a new state on the channel, a save,
-    // and the blame turned on each read it again.
+    // and the blame turned on each read it again. A hidden tab reads it again once when it is
+    // shown, if any of these moved meanwhile.
     $effect(() => {
+        const [file, moved, on] = [inRepo, repoState, draft.blame];
         // The saved text is read only so that a save reads the gutter again.
-        const [file, moved, on] = [inRepo, repoState, draft.blame, draft.saved];
+        const saved = draft.saved;
         if (file === null || moved === null || !draft.loaded) {
             reads += 1;
             marks = [];
             blame = null;
+            gate.clear();
             return;
         }
-        untrack(() => void readGutter(file, on));
+        if (gate.due([file, moved, on, saved])) untrack(() => void readGutter(file, on));
     });
 
     /** Read one of the gutter's answers: its status and body, and a refusal when the read threw. */

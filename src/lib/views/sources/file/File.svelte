@@ -35,7 +35,9 @@
     //
     // The address carries the file's version from the fs store, so a file written under the open
     // tab, which is what a LaTeX build does to the PDF it rebuilds, is a new address and the frame
-    // fetches the new bytes instead of drawing the ones the browser cached.
+    // fetches the new bytes instead of drawing the ones the browser cached. A tab that is hidden
+    // keeps the address it drew, and draws the new one, with the one request it makes, when it is
+    // shown.
     //
     // The header holds the icon actions: the star, opening the address in a browser tab and the
     // program control. The star is `shared/links/BookmarkStar.svelte`, which the source tab draws
@@ -70,7 +72,7 @@
     import { instanceNumber, instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
-    import { useState } from '$lib/state/client/use';
+    import { shownGate, useShown, useState } from '$lib/state/client/use';
 
     const client = useState();
     const {
@@ -93,12 +95,28 @@
     const label = $derived(instanceText(instance.state, 'label'));
 
     const title = $derived(label === '' ? t('views.file') : label);
-    const src = $derived(
+    const gate = shownGate(useShown());
+    /** What the address of the file is made of: the root, the path and the version written. */
+    const addressed = (): unknown[] => [root, path, fileVersion(root, path)];
+    /** The file's address as it stands, with the version the fs store holds for it. */
+    const address = $derived(
         root === '' || path === '' ? '' : fileBytesUrl(root, path, fileVersion(root, path))
     );
-    const type = $derived(typeOfFile(path));
+    /**
+     * The address the picture and the frame draw, with the root and the path it was taken for. All
+     * three move together to the file's address when the tab is shown and the root, the path or
+     * the version moved since it was last drawn, so a hidden tab asks for nothing, a change of file
+     * in a shown tab is drawn at once, and what is drawn (the kind, the name, the address) always
+     * belongs to one file. A tab drawn shown starts at the file's address; one drawn hidden starts
+     * with no address and draws the loading line until it is shown.
+     */
+    let drawn = $state(untrack(() => (gate.due(addressed()) ? taken() : undrawn())));
+    const src = $derived(drawn.src);
+    const type = $derived(typeOfFile(drawn.path));
     /** What the file opens as once that is known, and null while its first bytes are being read. */
-    const known = $derived(root === '' || path === '' ? null : heldFileKind(root, path));
+    const known = $derived(
+        drawn.root === '' || drawn.path === '' ? null : heldFileKind(drawn.root, drawn.path)
+    );
     /**
      * Whether this view holds the file rather than reading it or handing it to the source tab: a
      * picture or a PDF, which the name says at once, or a file whose first bytes say it is no text.
@@ -107,7 +125,7 @@
     /**
      * Whether the view offers to open the file in its program: it holds it and the map names one.
      */
-    const openable = $derived(holds && opensInProgram(path, programApps()));
+    const openable = $derived(holds && opensInProgram(drawn.path, programApps()));
     /** What the tree knew the file's size to be, which is what an undrawn type reports. */
     const size = $derived(humanSize(instanceNumber(instance.state, 'size')));
 
@@ -136,6 +154,20 @@
         });
         if (opened !== mine) closeInstance(mine);
     }
+
+    /** The file's address as it stands, with the root and the path it is the address of. */
+    function taken(): { src: string; root: string; path: string } {
+        return { src: address, root, path };
+    }
+
+    /** What a tab that has not drawn a file yet holds. */
+    function undrawn(): { src: string; root: string; path: string } {
+        return { src: '', root: '', path: '' };
+    }
+
+    $effect(() => {
+        if (gate.due(addressed())) drawn = taken();
+    });
 
     $effect(() => {
         const mine = instance.id;
@@ -185,16 +217,18 @@
 
 <Pane {title} toolbar={tools} {bar}>
     <div class="file" data-instance={instance.id} data-root={root} data-path={path}>
-        {#if src === ''}
+        {#if src === '' && (root === '' || path === '')}
             <Empty message={t('file.none')} glyph={t('file.none_glyph')} />
+        {:else if src === ''}
+            <Empty message={t('file.loading')} glyph={t('file.none_glyph')} />
         {:else if type.kind === 'image'}
             {#if unreadable === src}
-                <Empty error message={t('file.unreadable', nameOf(path))} action={again} />
+                <Empty error message={t('file.unreadable', nameOf(drawn.path))} action={again} />
             {:else}
                 {#key attempt}
                     <img
                         class="picture"
-                        alt={t('file.image', nameOf(path))}
+                        alt={t('file.image', nameOf(drawn.path))}
                         {src}
                         onerror={() => (unreadable = src)}
                     />
@@ -207,14 +241,16 @@
         {:else}
             <div class="other">
                 <Empty
-                    message={t('file.other', extensionOf(path), size)}
+                    message={t('file.other', extensionOf(drawn.path), size)}
                     glyph={t('file.other_glyph')}
                 />
                 <div class="actions">
                     <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is the api/file endpoint rather than a route id resolve() takes -->
-                    <a class="download" href={src} download={nameOf(path)}>{t('file.download')}</a>
+                    <a class="download" href={src} download={nameOf(drawn.path)}
+                        >{t('file.download')}</a
+                    >
                     {#if openable}
-                        <ProgramButton {root} {path} />
+                        <ProgramButton root={drawn.root} path={drawn.path} />
                     {/if}
                 </div>
             </div>

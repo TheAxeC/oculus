@@ -12,8 +12,8 @@
 // The `files` channel's version is what makes a listing stale. The git watcher publishes on it each
 // time it re-reads a root, which is every write under a folder it watches, so a file written inside
 // a project folder is a new version, every held listing is marked, and the next call for that id
-// fetches again. The portfolio's version cannot answer this: the snapshot is rebuilt only for a
-// file the config names.
+// fetches again, from a tab that is shown or when a hidden one is shown. The portfolio's version
+// cannot answer this: the snapshot is rebuilt only for a file the config names.
 
 import { z } from 'zod';
 import { anyNumberShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
@@ -90,8 +90,9 @@ export function createFiles(entities: EntitiesStore, queries: Queries): FilesSto
 
     /**
      * The files of one project. The first call for an id asks the server; a call made after the
-     * `files` version moved asks again, and what is held keeps showing until the answer lands. A
-     * project whose folder is under no watched root keeps what is held until the id is forgotten.
+     * `files` version moved asks again (when its tab is shown), and what is held keeps showing
+     * until the answer lands. A project whose folder is under no watched root keeps what is held
+     * until the id is forgotten.
      */
     function files(id: string): FilesState {
         if (id === '') return NOTHING;

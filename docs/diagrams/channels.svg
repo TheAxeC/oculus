@@ -967,11 +967,11 @@
 <path fill="none" stroke="currentColor" d="M490.71,-1307.55C511.55,-1311.61 531.6,-1319.4 547.79,-1333 573.22,-1354.36 543.22,-1382.66 567.79,-1405 580.84,-1416.87 598.9,-1422.25 616.16,-1424.39"/>
 <polygon fill="currentColor" stroke="currentColor" points="615.8,-1426.47 621.98,-1424.97 616.22,-1422.29 615.8,-1426.47"/>
 </g>
-<!-- ? src/lib/state/client/queries.svelte.ts:71 -->
+<!-- ? src/lib/state/client/queries.svelte.ts:79 -->
 <g id="node28" class="node">
-<title>? src/lib/state/client/queries.svelte.ts:71</title>
+<title>? src/lib/state/client/queries.svelte.ts:79</title>
 <polygon fill="none" stroke="currentColor" points="484.24,-1361.8 242.02,-1361.8 242.02,-1340.2 484.24,-1340.2 484.24,-1361.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="363.13" y="-1348" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/client/queries.svelte.ts:71 .subscribe((event)</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="363.13" y="-1348" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/client/queries.svelte.ts:79 .subscribe((event)</text>
 </g>
 <!-- state/client/queries -->
 <g id="node46" class="node">
@@ -979,9 +979,9 @@
 <polygon fill="none" stroke="currentColor" points="716.09,-1469.8 623.83,-1469.8 623.83,-1448.2 716.09,-1448.2 716.09,-1469.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="669.96" y="-1456" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/client/queries</text>
 </g>
-<!-- ? src/lib/state/client/queries.svelte.ts:71&#45;&gt;state/client/queries -->
+<!-- ? src/lib/state/client/queries.svelte.ts:79&#45;&gt;state/client/queries -->
 <g id="edge2" class="edge">
-<title>? src/lib/state/client/queries.svelte.ts:71&#45;&gt;state/client/queries</title>
+<title>? src/lib/state/client/queries.svelte.ts:79&#45;&gt;state/client/queries</title>
 <path fill="none" stroke="currentColor" d="M484.53,-1342.46C507.57,-1346.14 530.01,-1354.06 547.79,-1369 573.22,-1390.36 543.22,-1418.66 567.79,-1441 580.84,-1452.87 598.9,-1458.25 616.16,-1460.39"/>
 <polygon fill="currentColor" stroke="currentColor" points="615.8,-1462.47 621.98,-1460.97 616.22,-1458.29 615.8,-1462.47"/>
 </g>

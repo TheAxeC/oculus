@@ -6,7 +6,8 @@
     //
     // A tab's view is mounted the first time the tab is shown and stays mounted until the tab
     // closes or leaves the pane, so switching back to it neither builds the view again nor fetches
-    // what it read again, and a tab never shown costs nothing. There is no cap on the views one
+    // what it read again unless it was marked meanwhile (a hidden tab asks nothing, and asks once
+    // when it is shown), and a tab never shown costs nothing. There is no cap on the views one
     // pane keeps: it is the number of tabs the reader has opened and looked at.
     //
     // The body turns the pointer's place inside its own rect into an edge or a centre. It performs

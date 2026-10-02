@@ -5,8 +5,9 @@
 // store named in the type is actually built, and that a write through one object is invisible to
 // another. What a single store does is its own test file's; this is about the wiring.
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClientState, type ClientState } from '../../../src/lib/state/client/context.ts';
+import { stubFetch } from '../../fixtures/client.ts';
 
 /** Every key the type names, so a store added to the type and not to the factory fails here. */
 const STORES: (keyof ClientState)[] = [
@@ -49,7 +50,8 @@ const STORES: (keyof ClientState)[] = [
     'paletteSource',
     'editorStatus',
     'notices',
-    'registry'
+    'registry',
+    'tabScope'
 ];
 
 describe('the client object', () => {
@@ -100,5 +102,90 @@ describe('the client object', () => {
 
         expect(client.hpc.counts()).toEqual({ running: 2, pending: 1 });
         expect(createClientState().hpc.counts()).toEqual({ running: 0, pending: 0 });
+    });
+});
+
+describe('the copy of the stores a tab provides', () => {
+    /** The stores that read through the query client, in the order the client hands it to them. */
+    const RECORDED: (keyof ClientState)[] = [
+        'changes',
+        'agents',
+        'files',
+        'fs',
+        'docs',
+        'latex',
+        'deposit',
+        'transcripts',
+        'memories',
+        'lines'
+    ];
+
+    /** The addresses the stub was asked for, in order. */
+    let asked: string[] = [];
+
+    /** Let a scheduled request run and its answer land. */
+    async function settle(): Promise<void> {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    beforeEach(() => {
+        vi.stubGlobal('window', {});
+        asked = [];
+        stubFetch(
+            asked,
+            () =>
+                new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } })
+        );
+    });
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    // Revert: in wrap of the tabScope member of state/client/context.ts, answer the original store
+    // for one of the ten, or copy a store the list does not hold.
+    it('audit: replaces exactly the ten stores handed the query client and no other', () => {
+        const client = createClientState();
+        const copy = client.tabScope.wrap(client, () => false);
+        const replaced = STORES.filter((name) => copy[name] !== client[name]);
+        expect(replaced).toEqual(RECORDED);
+        for (const name of STORES.filter((one) => !RECORDED.includes(one))) {
+            expect(copy[name]).toBe(client[name]);
+        }
+    });
+
+    // Revert: in wrap of the tabScope member of state/client/context.ts, call each function member
+    // of a store outside queries.scoped.
+    it('asks nothing from a hidden copy for a listing or a transcript, and once each from the original', async () => {
+        const client = createClientState();
+        const copy = client.tabScope.wrap(client, () => false);
+        copy.fs.listing('hub', 'notes');
+        copy.transcripts.turnsFor('s1');
+        await settle();
+        expect(asked).toEqual([]);
+
+        client.fs.listing('hub', 'notes');
+        client.transcripts.turnsFor('s1');
+        await settle();
+        expect(asked.filter((url) => url.startsWith('/api/fs'))).toHaveLength(1);
+        expect(asked.filter((url) => url.startsWith('/api/transcript'))).toHaveLength(1);
+    });
+
+    // Revert: in wrap of the tabScope member of state/client/context.ts, answer the shown flag as
+    // it was when the copy was made rather than calling it at each call.
+    it('follows the flag it was given: asks when shown, and only marks once it answers false for good', async () => {
+        const client = createClientState();
+        let shown = true;
+        const copy = client.tabScope.wrap(client, () => shown);
+        copy.memories.wall();
+        await settle();
+        expect(asked).toEqual(['/api/memories']);
+
+        shown = false;
+        copy.memories.reload();
+        await settle();
+        expect(asked).toEqual(['/api/memories']);
+
+        client.memories.wall();
+        await settle();
+        expect(asked).toEqual(['/api/memories', '/api/memories']);
     });
 });
