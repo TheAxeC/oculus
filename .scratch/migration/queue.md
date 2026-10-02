@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), repair round 1 running.
+- X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), repair round 1 back (3 full-list runs, the 3rd passing); the review over the round running.
 - D18 (the Processes view), building.
 - Q88c (the Source Control rows' and the pane strip's new right-click capabilities, Z240), builder at ordo-high; Z241 ruled (b): Delete Branch's force retry goes into its repair round or its landing.
 - M3 (the resources registry), building.
@@ -32,7 +32,7 @@ Queued, in order (25 steps):
 - X2 (a new orchestrator resumes from the files).
 - O33, last (oculus in its own repository).
 
-Ready: the three-way Opus and Sonnet comparison can be asked for.
+Done: the three-way Opus and Sonnet comparison, written 2026-10-02 at Axel's request, is `agents/reviews/sonnet-vs-opus.md`.
 
 Landed, newest first:
 - D24 (the Personal board: side projects and the Files roots' manifests as cards), 2026-10-02, 4ce50c59.
