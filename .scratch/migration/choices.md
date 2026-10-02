@@ -997,6 +997,16 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z302 (2026-10-02, S4's refuter report, B5): an emptied `tab_rollup`
+
+Chosen: (a), a family entry of the options catalog may carry `holds: lists`, meaning each key of the map holds a list of records; `tab_rollup` carries it. The editor draws the rollup form for `tab_rollup: {}`, and the write refuses a key holding a single record under such a family, so a shape the boards' roll-up does not take is never saved.
+
+Not chosen:
+- (b), the records form for an empty map: the lazy option; the reviewer's probe saved `{ projects: { label: x, keys: [a], color: red } }`, a shape the roll-up does not take, and no reader refused it.
+- Guessing from the family's name or fields: no rule in the catalog says it.
+
+Where it applies: S4, repair round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z301 (2026-10-02, D17's refuter report): the form's place, preset names, the approvals folder, the approval key and quoted placeholders
 
 Chosen:
