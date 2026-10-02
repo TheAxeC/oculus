@@ -164,3 +164,265 @@ Nothing in the diff stops adding it, and these places would change:
 - The choice between keeping and widening the `FROZEN` list (finding 3.1), and whether Z241 should be built: both are Axel's.
 
 Reviewer usage: tokens not available to the reviewer, tool uses not counted, minutes not timed.
+
+## Repair round 1, refuted
+
+Worktree `.agents/worktrees/Q88c`, base `d1bd21f1`. I changed no file in the worktree or the ledger. The only git commands I ran were `git diff d1bd21f1` and `git status --short`, and `git status --short | wc -l` printed 189 before and after my reruns. I never opened, printed, grepped, hashed or copied `config/local.yml`.
+
+**The two points you asked me to judge:**
+
+- **(1) `floatTab` (`floats.ts:258`).** It leaves a float made from one tab unlocked, and that is what VS Code does. This item should not be raised to Axel. Details are under "Point (1)" below.
+- **(2) The verify list.** It is green on the repaired tree. My second run printed `checks: 7 commands passed` and exited 0. My first run was red, on two 5000 ms timeouts while the load average was 18.7. Both are files this step touches, and both pass when run alone.
+
+**Rulings.** 15 of the 17 rulings are closed. Two are not:
+
+- **Ruling 8.** `HELP.md:215` is still false.
+- **Ruling 16.** The two head comments still describe the start-point field that the code no longer has.
+
+There are seven smaller findings after those two.
+
+```
+$ sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+  (run 1, 13:46-13:52, from tools/oculus of the worktree, node v24.21.0; load average 5.44 at the start, 18.71 at the end)
+$ npm test
+ FAIL  |unit| tests/server/git/autofetch.test.ts > a real fetch through the module > moves origin/main and prunes a branch deleted on the remote
+Error: Test timed out in 5000ms.
+ FAIL  |unit| tests/server/core/git/compare-gate.test.ts > the commands the compare reads ran > are only the forms written in the module, each without optional locks
+Error: Test timed out in 5000ms.
+ Test Files  2 failed | 458 passed | 23 skipped (483)
+      Tests  2 failed | 11771 passed | 622 skipped (12395)
+checks: failed with exit 1: npm test
+
+$ npx vitest run tests/server/git/autofetch.test.ts tests/server/core/git/compare-gate.test.ts   (alone, load 16.81)
+ Test Files  2 passed (2)
+      Tests  48 passed (48)
+
+$ sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+  (run 2, 14:00-14:09, load average 8.57 at the start, 17.39 at the end; exit 0)
+$ npm test
+ Test Files  460 passed | 23 skipped (483)
+      Tests  11773 passed | 622 skipped (12395)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  444 passed | 9 skipped (453)
+$ npm run check
+1790942706248 COMPLETED 3019 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+
+Every command the report quotes as evidence, rerun in the same form, with the count each printed (it matches the report in every row):
+row 1  trash, untracked route, trash-and-cuts, change-rows        4 passed / 55 passed
+row 2  ignore, store-actions                                      2 / 32
+row 3  head, source, repositories-menu                            3 / 97
+row 4  compare, diff-pane                                         2 / 52
+row 5  view-state, repositories                                   2 / 55
+row 6  store-actions, open-worktree                               2 / 21
+row 7  detached, routes refs, graph-picks                         3 / 38
+row 8  detached, graph-picks                                      2 / 22
+row 9  cherry-pick, commit-action                                 2 / 17
+row 10 compare, graph-row                                         2 / 59
+row 11 delete-branch, writes, repositories, store-wire            4 / 87
+row 12 locked, layout-locked, strip-render, floats, floats-store  5 / 115
+row 13 pane-strip-menu                                            1 / 26
+row 14 appearance, tones, ui, config-folder                       4 / 307
+row 15 context-guard, page                                        2 / 22
+row 16 identity                                                   1 / 3
+row 17 held, view-state                                           2 / 15
+row 18 repositories-badge, rail-badges                            2 / 111
+row 19 scan, watch git                                            2 / 27
+git-write.test.ts 47; core git.test.ts 38; git-gate.test.ts 6; duplication.test.ts 18; boundaries.test.ts 11; compare-gate.test.ts 4; git-ssh.test.ts 5
+docs.test.ts, routes docs.test.ts, integrity.test.ts, pages.test.ts (the report's NOT-done item 4)   4 passed / 184 passed
+$ grep -c "useConfigOnly" src/lib/server/git/git-write.ts
+3
+$ grep -rn -- "--force" src/lib/server/git
+src/lib/server/git/deposit-git.ts:257:    return pushCmd(at, ['--force', 'origin', 'HEAD:main']);
+$ ls src/lib/server/core | wc -l
+       9
+$ wc -l (largest)   core/git/git.ts 837, git/deposit.ts 828, git/git-write.ts 797, PaneView.svelte 482, Diff.svelte 519, Graph.svelte 536
+$ rename grep (core/git\.ts|core/git-parse|repositories/Worktrees|repositories/pick)   (no output)
+$ grep -rn start_point src tests config --exclude=local.yml                            (no output)
+$ the spec's ASCII gate (perl over src tests bin config, ! -name local.yml)            no line printed (bin does not exist)
+Ruling 9, the four files in their final form run on a reviewer-owned copy of the base (Q88c-base copied without local.yml, the four test files dropped in):
+ui.test.ts 2 failed | 38 passed (ui.test.ts:689:12, :698:72, "ui.setPaneStrip is not a function")
+graph-row.test.ts 35 passed
+instance-state-sources.test.ts 64 failed | 290 passed (instance-fixture.ts:99:32)
+tones.test.ts 1 failed | 98 passed (tones.test.ts:214:43)
+```
+
+### Point (1): VS Code and an editor moved out of a locked group
+
+I read VS Code's source on main, fetched with `curl` from raw.githubusercontent.com/microsoft/vscode/main.
+
+- **Move Editor into New Window** (`editorActions.ts`, `BaseMoveCopyEditorToNewWindowAction.run`):
+  - It calls `editorGroupsService.createAuxiliaryEditorPart()`.
+  - It then calls `group.moveEditors(..., auxiliaryEditorPart.activeGroup)`.
+  - So the editor goes into the new window's fresh group.
+- **Move Editor Group into New Window:** it calls `mergeGroup(activeGroup, auxiliaryEditorPart.activeGroup, ...)`. This merges into the fresh group, and nothing passes the lock on.
+- **Split an editor** (`editorCommands.ts:757`): `editorGroupsService.addGroup(group, direction)` makes a fresh group.
+- **Drop an editor beside a group** (`editorDropTarget.ts:258`): `addGroup`.
+- **Copy a whole group** (`editorDropTarget.ts:280`, `copyGroup`): the new group's model comes from `EditorGroupModel.clone()` (`editorGroupModel.ts:1145-1161`). `clone()` copies `editors`, `mru`, `preview`, `selection` and `sticky`, but not the lock.
+- There is no lock handling in `editorPart.ts`, `editorParts.ts` or `editorDropTarget.ts`. The only call that locks a group outside the lock commands is the auto-lock for editors listed in `workbench.editor.autoLockGroups` (`editorGroupView.ts:1271`).
+
+So in VS Code, an editor moved out of a locked group into a new group or a new window lands in an unlocked group, and the group it left keeps its lock. Oculus's `floatTab` does the same: it builds the new float with `{ kind: 'pane', tabs: [kept(instance)], active }`, and the pane the tab left keeps its lock.
+
+The report's first NOT-done item therefore needs no ruling from Axel. Ruling 15 listing `:258` was an over-listing, and it is closed by VS Code's behaviour.
+
+For the orchestrator's information: `floatPane` and `dockFloat` keep the lock when a whole pane is floated, as ruling 15 ordered. That differs from VS Code's Move Editor Group into New Window, which lands in an unlocked group. It is a choice already ruled, not a finding of this run.
+
+### Point (2): the verify list
+
+My second full run is green over the tree as it stands, including the three files changed after the builder's last full run (`git-ssh.test.ts`, `DESIGN.md:371`, `HELP.md:44`).
+
+My first run was red, with two 5000 ms timeouts at a load average of about 18.7:
+
+- `compare-gate.test.ts` is a file this step added.
+- `autofetch.test.ts` is a file this step changed (one import path, `git diff --stat` 8 lines).
+
+Both pass alone. Run alone with the verbose reporter at load 14.8, the compare-gate case took 1456 ms. See Proof finding 3.
+
+### Rulings of round 1
+
+| Ruling | Closed? | Evidence |
+|---|---|---|
+| 1. Cherry Pick sends `ref` | Closed | `repositories.svelte.ts` sends `{ ref: hash }`. `store-wire.test.ts` drives every store method through `gitBodyShape` and `OPERATIONS` with a recording Proxy. Every operation reads its fields as call arguments, so a misspelt field is caught. |
+| 2. Untracked symlink leaving the repository | Closed | `git-index.ts` `trashUntracked` refuses a leaf whose `realPath` target is outside the repository. Tests at `trash.test.ts:126,147,159`. Goes further than the ruling (finding 1). |
+| 3. Main worktree checked | Closed | `git-compare.ts` `workspaceSides` checks `permitted(realOf(main), roots.map(realOf))` and `pathInside`. `git-reads.ts` passes the request's roots. |
+| 4. Open Worktree in New Window shows the folder | Closed | `repositories.ts:844-845` reveals the folder in Files, then opens the window. `open-worktree.test.ts` loads the stored records into a second client at `openWindow` time and finds the reveal. |
+| 5. Delete Branch in Branches, Delete Anyway (Z241 (b)) | Closed | `Branches.svelte:118-126` (control), `Repo.svelte` wired to `askBranchDelete`, `git-refs.ts` `deleteBranch` with code `not-merged` and `deleteBranchAnyway` (`-D` through `branchIn`), in `ACTIONS` and `CONFIRMED`. Findings 4 and 5 are on its words and an edge case. |
+| 6. Hidden editor actions | Closed | `pane-view.ts` `PANE_ONLY` and `paneOnly` in `stripMenu`; `PaneView.svelte` sends pane items to `pick`. The head comment is true. |
+| 7. `DESIGN.md:128` names `git-index.ts` | Closed | `grep -n "git-index.ts" DESIGN.md` prints 128. |
+| 8. "Nothing is ever forced" | **Not closed** | `HELP.md:215` (finding 2). `DESIGN.md:128-129`, `git-write.ts:299`, `git-remote.ts:9` and the `git-refs.ts` comments are true. |
+| 9. First runs of four files | Closed | Reproduced on my own copy of the base (block above), the same failing lines as the report. |
+| 10. Source-text tests titled as audits | Closed | `page.test.ts:80,84,104,111,117,122,135,140,145` and the six `diff-pane.test.ts` cases. Six existing cases were also retitled; titles only, harmless. |
+| 11. `tabBar` and `actionsAt` | Closed | `appearance.ts:81-89` keeps separate bindings, so the two `FROZEN` rows at `boundaries.test.ts:295-296` follow the existing pattern. |
+| 12. Binary rule once | Closed | `git-compare.ts` `isBinary` called from `headFile` and `onDisk`. |
+| 13. `Scope`, `Guard` exports | Closed | Report text only. |
+| 14. `git.test.ts` split | Closed | Base has 43 cases in 900 lines. Now `git.test.ts` 38 (618 lines) plus `git-gate.test.ts` 6 (165) plus `git-fixture.ts` (224). The sorted `expect(` lines of base and new are identical (`diff` printed nothing). The one added case calls the shared `ranOnlyThese()` so the 37 state cases stay held to the allowed list. |
+| 15. Lock Group on a float | Closed | `floats.ts:106,147,222,309` go through `repane`. The strip menu offers Lock or Unlock on a float. Tests in `floats.test.ts` and `floats-store.test.ts`. `:258` is correct as it stands (Point 1). |
+| 16. Start-point field removed | Closed in code; **comments not** | `graph-picks.ts` `namePrompt` asks name and message only. Two head comments are now false (finding 3). |
+| 17. Trash question names the base name | Closed | `change-menu.ts` `askTrash` with `baseName`. |
+
+### Verdicts (whole diff since the base)
+
+**Items of the brief's "What to build":**
+
+- **1:** holds. Untracked discard to the Trash, symlink refusal, VS Code's strings with the base name. See Behaviour finding 1.
+- **2:** holds. `addToGitignore`.
+- **3:** holds. `head=` read and the HEAD or Index tab.
+- **4:** holds. `workspaceSides` with `permitted`, `pathInside` and real paths.
+- **5:** holds. `closed`, Close and Close Others, the Reopen pick's choices.
+- **6:** holds. Root added, reveal stored before `window.open`.
+- **7:** holds. `switchDetached`.
+- **8:** holds. Start point from the commit picked, hash checked on the server. See Standards finding 1 on the comments.
+- **9:** holds. `{ ref }` sent and read.
+- **10:** holds.
+- **11:** holds. Graph menu, Branches section, Delete Anyway. See findings 4 and 5.
+- **12:** holds. `floatTab` matches VS Code.
+- **13:** holds.
+- **14:** holds. Under `hidden` the strip menu repeats every pane menu item.
+- **15:** holds.
+- **16:** holds.
+- **17:** holds.
+- **18:** holds.
+- **19:** holds.
+- **20:** holds. `server/core` holds 9 items, the largest read file is 837 lines.
+- **21:** violated in one point (Standards finding 2, `HELP.md:215`).
+
+**Cases of the brief's "Cases":**
+
+- **Case 1:** met. `trash.test.ts`, `untracked.test.ts`, `repositories-menu.test.ts`.
+- **Case 2:** met.
+- **Case 3:** met.
+- **Case 4:** met, including the main worktree refused outside the roots.
+- **Case 5:** met for the list, the separator, All Repositories and the per-tab state. Whether the quick pick draws correctly is not verifiable without a browser; the look settles it.
+- **Case 6:** met. Root added, stored reveal, `window.open` called after it. Whether the new window draws the folder is the look's to see.
+- **Case 7:** met.
+- **Case 8:** met.
+- **Case 9:** met through the page.
+- **Case 10:** met.
+- **Case 11:** met. Merged deleted with `-d`, the current branch not offered, unmerged asks the second question, a branch held by a worktree refused.
+- **Case 12:** met on page panes and floats.
+- **Case 13:** met.
+- **Case 14:** met, including `hidden`.
+- **Case 15:** met (the pure function).
+- **Case 16:** met.
+- **Case 17:** met.
+- **Case 18:** met.
+- **Case 19:** met.
+- **Case 20:** met. Dash names refused for every new action (`routes/git/refs.test.ts:124-140`).
+- **Case 21:** met. Both full-list runs reached past every existing case; the only reds were the two load timeouts, which pass alone.
+
+### Findings
+
+**Spec**
+
+1. **`trashUntracked` refuses a dangling untracked link, with a misleading message.** At `git-index.ts`: `const target = realPath(join(root, bare)); if (folder === null || ... || target === null || ...) return failed(\`the path ${path} is not inside the workspace\`)`.
+   - What is wrong: ruling 2 asked for a link whose target leaves the repository to be refused. The fix also refuses a link whose target does not exist, and tells the reader the path "is not inside the workspace", which is not true of it.
+   - Failure scenario: a reader has an untracked broken symlink inside the repository and picks Discard Changes. Nothing goes to the Trash, and the reason given is wrong. Moving the link itself would touch nothing outside the repository.
+   - The report lists this under "Beyond the path list". It is a fix that reaches beyond its finding.
+
+**Standards**
+
+1. **Two head comments still describe the removed start-point field.**
+   - `graph-picks.ts:2-3`: "the prompt of Create Branch and Create Tag, which asks for the name and for the start point (the commit, when left empty)".
+   - `Graph.svelte:24-25`: "Create Branch and Create Tag in a prompt that asks for the start point (the commit, when left empty)".
+   - What is wrong: ruling 16 removed the field. Under the spec's rule, a head comment the change makes false is a defect of the change.
+   - Failure scenario: a reader of either file looks for a start-point field that no longer exists.
+   - It is a two-line fix at landing.
+2. **`HELP.md:215` says "No write ever carries `--force`."**
+   - What is wrong: `deposit-git.ts:257` (`forcePushSnapshot`) pushes with `--force`. `DESIGN.md:129` says so correctly. Ruling 8 asked the force grep to be carried across `HELP.md`, and the report's list of hits leaves this line out.
+   - Failure scenario: a reader of the help page believes oculus never force-pushes and presses the deposit snapshot without expecting it to replace the remote's `main`.
+   - Item 21 is violated in this point.
+3. **`Graph.svelte` is 536 lines against the component cap of 540** (`size.test.ts:29`). It was 457 on the base.
+   - What is wrong: the spec says "A file within 20 lines of its cap is split".
+   - Failure scenario: the next step that touches the graph turns `size.test.ts` red, or is pushed to compact code to stay under the cap.
+   - This dates from the first build; the first review did not raise it.
+4. **Exports with no importer outside their own file.**
+   - `git-routes.ts:270` `export type GitOperation`.
+   - `git-write.ts:116` `export type Extra`, which is also the same type `git-run.ts:32` declares.
+   - The spec's rule: an export with no importer outside its own file and its tests is made local.
+   - `gitBodyShape` and `OPERATIONS` are exported only for `store-wire.test.ts`, but ruling 1 named them, so those two are not findings.
+   - Failure scenario: a reader treats these types as public surface. The two `Extra` types can drift apart.
+5. **Delete Branch's detail texts describe `branch -d` wrongly.** At `repositories.yml`: `branch_delete_detail: git deletes the branch without more questions when its commits are reachable from another branch` and `branch_unmerged_detail: No other branch holds its commits; after the delete they stay reachable only through the reflog.` The same wording is in the comments of `repositories.svelte.ts` (`deleteBranch`) and `git-refs.ts` (`deleteBranch`).
+   - What is wrong: `git branch -d` checks only that the branch is merged into its upstream, or into HEAD when it has none. A branch whose commits sit on a third branch is still "not fully merged".
+   - Failure scenario: a reader asked "Delete anyway?" reads that no other branch holds the commits and that they will survive only in the reflog, when another branch does hold them. The reader is told the risk is worse than it is.
+   - VS Code shows the question with no detail.
+
+**Proof**
+
+1. **The report's file table contradicts its own ruling 9 section.** The table for `ui.test.ts`, `graph-row.test.ts`, `instance-state-sources.test.ts` and `tones.test.ts` says "new file or added after the first run, so it has no first run". All four files exist on the base, and ruling 9 quotes their base runs, which I reproduced.
+   - Failure scenario: a reader of the table concludes these tests were never run on the base.
+   - No decision rests on it beyond the booking. It is a fix to the report text.
+2. **`git-fixture.ts:119,126,133` exports module-level mutables** (`ran`, `unanswered`, `between`).
+   - What is wrong: the spec's "No globals" principle extends to test fixtures. The base kept these as file-scope `vi.hoisted` values inside `git.test.ts`; the split moved them into an exported fixture module that two test files import.
+   - Vitest's default isolation (`vite.config.ts` sets no `isolate`) gives each file its own copy, so the two files share nothing today. A change to `isolate: false` would make the gate in `git-gate.test.ts` judge the calls `git.test.ts` made.
+   - The fix: a factory in the fixture that returns a fresh recorder for each file.
+3. **The step's own `compare-gate.test.ts` times out in the full list under load.** Its case "are only the forms written in the module" runs about 25 git processes in one `it`. It took 1456 ms alone at load 14.8, and over 5000 ms in my first full run at load 18.7. The builder hit the same timeout ("compare-gate.test.ts (4 passed) and held.test.ts (5 passed) were run alone, since a 5000 ms timeout hit them").
+   - What is wrong: under the spec, a timeout in a file the step adds is the step's, unlike one in a file the step does not touch.
+   - Failure scenario: the landing's verify run on main goes red on this case whenever five agents are running.
+   - The cure: split the case so each part spawns fewer processes. A longer timeout would be a threshold loosened, which the spec forbids.
+
+**Behaviour**
+
+1. **Delete Anyway recognises git's refusal by its English text, cut to the first 200 characters** (`git-refs.ts`: `if (done.ok || !done.error.includes('is not fully merged')) return done;`).
+   - What is wrong: `done.error` is `short(stderr)`, git's first line cut to `REASON_WIDTH = 200` (`git-write.ts:94`). With a branch name longer than about 160 characters, the cut drops "is not fully merged".
+   - Failure scenario: such a branch gets git's refusal and no second question.
+   - The report names the English matching as a limitation, but not the length cut. Matching on the full stderr would end it.
+
+### Declined to judge
+
+- **How the delta was taken.** No tree state was recorded when the round was sent at 10:49, so the delta is the 50 files modified after the round's rulings file, listed in `q88c-round1-files.txt`. I read each through `git diff d1bd21f1 -- <file>`, against the whole diff since the base. A file changed in the round that was also changed before 10:49 shows its whole change since the base, not the round's part alone.
+- **Whether each round test fails with its behaviour removed.** I did not run any test with the code taken out. Doing so needs an edited copy of the worktree, which my rules exclude. I judged each test by reading it:
+  - `store-wire`, `trash` (symlink), `compare` (main outside roots), `open-worktree` (order and stored reveal), `delete-branch` (code), `pane-strip-menu` (hidden) and `floats` (lock) each assert the behaviour itself, not source text.
+  - The builder's quoted failing lines are leads I did not reproduce, except ruling 9's, which I ran.
+- **Ruling 9's base runs.** I ran them on a copy of `Q88c-base` I made in my scratchpad (`r1-review-base`, copied without `local.yml`, with the four test files in their final form). The orchestrator's base copy was left unchanged.
+- **The look rows.** I started no server and opened no browser.
+- **Whether `window.open` after the awaited add-root write is let through by the browser's popup blocker.** Only the look can show it.
+- **`autofetch.test.ts`'s timeout.** The case is not the step's (the step changed one import path in that file), and it passed alone.
+
+Reviewer usage: tokens not available to me; about 60 tool uses; about 45 minutes (13:42 to 14:26).
+

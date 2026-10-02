@@ -170,3 +170,205 @@ Cases of the brief's "Cases":
 - I wrote two scratch logs (`a1-checks.log`, `a1-tests.diff`) in this session's scratchpad, outside the project and the worktree. `git status --short` in the worktree printed the same 40 entries after the run as before.
 
 Reviewer usage: about 282,000 tokens (from the remaining-token counter), 44 tool uses, minutes not measured.
+
+## Repair round 1, refuted
+
+The verify list is green on the final tree: `checks: 7 commands passed`. All eleven rulings are closed. Over the whole diff every item holds, and every case is met except case 23, the look, which is not verifiable here. Three new findings, all small, none with a verdict: two in Standards, one in Behaviour.
+
+```
+$ sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md
+  (from .agents/worktrees/A1/tools/oculus, node v24.21.0, run 13:46:50 to 13:57:14; output filtered to summary lines)
+$ npm test
+ Test Files  453 passed | 23 skipped (476)
+      Tests  11821 passed | 626 skipped (12447)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  445 passed | 9 skipped (454)
+$ npm run check
+1790942026406 COMPLETED 3013 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+(built; the last lines are the chunk-size note and the server output list)
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+exit 0
+```
+
+`git status --short` printed 41 entries before and after the run.
+
+**The report's evidence, rerun:**
+- The round's test files together (comment-draft.client, review-comment, diff-session, naming, gutter, zones, instance-state-sources, type-scale, tests/state/sources/repositories): "Test Files 19 passed (19)", "Tests 985 passed (985)". The report says 982. No decision rests on the count, and the pass reproduces.
+- `diff-pane.test.ts`: 38 passed. `changes.test.ts`: 30 passed. `gutter.test.ts`: 27 passed. `review-comment.test.ts`: 35 passed. `diff-session.test.ts`: 13 passed. All as the report says.
+- `npx vitest run tests/server/edit/config-key.test.ts tests/server/git/autofetch.test.ts`: "Test Files 2 passed (2)", "Tests 98 passed (98)", as the report says.
+- `ls src/lib/state/sessions/pty-io.ts`: "No such file or directory". `src/lib/state/sessions/terminal/pty-io.ts` exists.
+- `grep -rniE "as before|always had|saved before|before the session existed"` over `diff-session.test.ts` and `changes.test.ts`: prints nothing, exit 1.
+- A grep for the old id form in quotes (`'changed:`, `` `changed: ``, `"staged:` and the like) over src, tests, config, HELP, DESIGN and README, `local.yml` excluded:
+  - Hits are only no-session ids in tests (`naming.test.ts:255`, `diff-session.test.ts:28,50,122,170`, `repositories.test.ts:672`, `diff-pane.test.ts:76`).
+  - No source code parses a diff id.
+- Exports: each of `ReviewComment`, `SteerAnswer`, `SendResult`, `SendGuard`, `CommentBarShape`, `COMMENT_MARK`, `COMMENT_ACTION`, `TargetKinds`, `TargetAt`, `commentTarget` and `CommentSideEditor` is found only in its own file (`grep -rlw` over src and tests).
+  - `Refusal` also names unrelated local types in `server/edit` and the layout.
+  - Every remaining new export has a src importer outside its file, except `sendComment`. The brief's item 2 names `sendComment` as an export.
+- The ASCII gate in the rules file's form, over src, tests, config (`local.yml` excluded), HELP.md and DESIGN.md: prints nothing.
+- Line counts (`wc -l`): Diff.svelte 504, DiffSection.svelte 479, DiffEditor.svelte 492, CommentBox.svelte 126, gutter.ts 390, zones.ts 175, review-comment.ts 236, repositories.ts 862, diff-pane.test.ts 675, changes.test.ts 512. All as the report says.
+- Folder counts (`ls | wc -l`): state/sources/repositories 10, views/sources/repositories/diff 8, ui/controls/editor 10, tests/state/sources/repositories/diff 7, view 5, tests/views/sources/repositories 10, tests/ui/controls/editor 7.
+- `MergeSide.svelte:109` passes `{bars}`. `Source.svelte` passes none. The report's three regrow rows hold.
+
+### The three points you asked me to judge
+
+**1. The full verify list after the builder's last change.**
+- The builder's last change was two tests in `review-comment.test.ts:329,339`, made at or before 12:49 (the report's modification time).
+- My full run of the list, from 13:46 to 13:57 on that tree, ends `checks: 7 commands passed` and exits 0.
+- `npm test` counts 11821 tests, the report's 11819 plus those two.
+- The report's NOT DONE line is settled: the list is green. The counts its DONE rows quote ("inside Tests 11819 passed") are two tests short; 11821 is the current figure.
+
+**2. Ruling 2's id form.** `sideOf` (`repositories.ts:139-147`) returns one of these, and `diffState` (`:157-164`) prefixes it to `:<root>:<path>`:
+
+```ts
+`compare@${against.root}:${against.path}`   // :141
+`group@${group}`                            // :142
+'worktree'                                  // :143
+`commit@${commit}`                          // :144
+`stash@${stash}`                            // :145
+subject.staged ? 'staged' : 'changed'       // :146
+```
+
+`diffState` adds `@<session>` only when the side is `changed` or `staged` and the session is non-empty (`:160-162`).
+- **Against the other kinds:** no collision.
+  - Each id begins with a fixed word that contains no `@` or `:`. The word runs to the first `@` or `:`.
+  - The words are distinct strings: `changed@` and `commit@` differ at character 2, and `staged@` and `stash@` differ at character 4.
+  - So `changed@<session>:` and `staged@<session>:` cannot equal any compare, group, commit, stash or worktree id, whatever the session, root or path.
+- **Against a no-session own diff:** no collision. After `changed` or `staged` comes `:` in one and `@` in the other.
+- **On main:** X3a added `save@<save>` at `sideOf` line 142. It differs from `staged@` at character 2, so the argument holds after the hand merge at landing.
+- **The one theoretical overlap** is between two session ids, and only if a session id contains `:`.
+  - Example: session `a:hub`, root `x`, path `p`, against session `a`, root `hub`, path `x:p`.
+  - Session ids are transcript file basenames (`transcripts.ts:136`, `codex.ts:50-53`), which are UUIDs in practice.
+  - The no-session form had the same property before this step, between root and path.
+  - Not a finding of the step.
+- The comment at `repositories.ts:150-156` ("the session sits in a position no path can reach") is true.
+
+**3. `repositories.ts` at 862 lines.**
+- The rules file says "One source file under 1000 lines ... A file within 20 lines of its cap is split".
+- The tree checks a `.ts` file at 900 (`tests/checks/tree/size.test.ts` `LINES = 900`, `utils/size-check.sh` `$1 > 900`). Round 1 used that check's line as "its cap" when it judged Diff.svelte against 540.
+- On that reading 862 is 38 under the cap. On the rules file's 1000 it is 138 under. Neither is within 20 lines. Not a finding.
+- The step adds 13 lines (849 to 862, `git diff ce71ecf1 --numstat`: 21 added, 8 removed). Main's copy is 857 after X3a, so the hand-merged file should come to about 870, 30 under 900. Measure it again at landing.
+
+### Rulings
+
+1. **Glyph margin: closed.**
+   - `DiffEditor.svelte:331` sets `glyphMarginFor(offering)`, and `gutter.ts:343` returns `offering || MONACO_GLYPH_MARGIN`, which is always true. Nothing sets the margin false.
+   - Monaco forces only the original side's margin (`diffEditorEditors.js:121`).
+   - Tested at `gutter.test.ts:440-444`. The mutated run is not reproduced.
+2. **Id form (Z256): closed.** See point 2 above.
+   - The collision test is at `diff-session.test.ts:47-53`, and the readers and fixtures follow the new form.
+   - The round's instruction "check that `sideOf` never yields `@`" did not reproduce: `sideOf` does yield `@`. The builder said so in section 3.2 with the lines. See Standards finding 1.
+3. **`diff-pane.test.ts:531`: closed.** The test makes the payload hold `s-1` again (`version: 2`) and asserts `oncomment` is a function.
+4. **`changes.test.ts:411`: closed.**
+   - The test presses changed, staged, merge and untracked rows and asserts the opened ids and `MERGE_VIEW`.
+   - For the untracked row it asserts no tab and the `open_unserved` sentence, which shows `openFile` ran.
+5. **`diff-session.test.ts`: closed.** `:25-31` asserts that `own` is not `plain`, so it fails with the session part taken out of the id.
+6. **Case 17: closed.**
+   - `listedWithComment` (`gutter.ts:351`) is tested for both values.
+   - The actions effect (`DiffEditor.svelte:345-360`) reads `offering`, and the `build` call to `onactions` is gone.
+7. **Right-click menu: closed.**
+   - `gutter.ts:378-379` passes `contextMenuGroupId` and `contextMenuOrder`, tested at `gutter.test.ts:488-497`.
+   - Whether Monaco draws the entry is for the look.
+8. **Bars' regrow: closed.** It is a report-only ruling, and the three rows are present and match the tree.
+9. **Send while a send is in flight: closed.**
+   - `comment-draft.svelte.ts:100` returns while `this.sending` is true.
+   - The test is `comment-draft.client.test.ts` "sends once while a send is in flight".
+10. **Focus on a move along one side: closed.**
+    - `opened` (`comment-draft.svelte.ts:48,74`) is passed in `DiffSection.svelte:302`.
+    - The attachment at `CommentBox.svelte:59` reads `opened` inside its call, so it reruns when `opened` changes.
+    - The focus itself is for the look.
+11. **Newer rule sentences: closed.**
+    - Rewraps: `test:checks` is green.
+    - Diff.svelte is 504.
+    - History greps print nothing.
+    - Edited assertions: section 7 matches `git diff ce71ecf1` of `instance-state-sources.test.ts`, `zones.test.ts`, `diff-pane.test.ts`, `gutter.test.ts` and `type-scale.test.ts`.
+    - Mutation table, head-comment list and asynchronous-path table are present.
+    - The exports are local.
+    - `DiffSide` and `CommentBarShape` are explained.
+    - The pty-io premise is in section 1.
+    - The DONE rows quote last lines, two tests short of the final tree, as point 1 says.
+
+In the 35 changed files I found no check removed in place of a fix. One fix reaches beyond its finding: the `Diff.svelte` split moved the reads into `diff-read.ts` (`readDiff`, `GROUP_READS`, `answer`). That is the split ruling 11 asked for, and the moved code is unchanged except that `repo` is now passed as an argument.
+
+### Verdicts, whole diff since ce71ecf1
+
+**Items:**
+- 1: holds.
+  - `repositories.ts:130,157-164,183,197,215`; `repositories.svelte.ts:363-369`; `Changes.svelte:204`; `follow.ts:88`.
+  - Proved by diff-session, naming and changes tests.
+- 2: holds. `review-comment.ts` exports `commentPrompt`, `commentRefusal` and `sendComment`. The refusal reads `STEER_MAX` and `STEER_CONTROL` from `data/model`.
+- 3: holds.
+  - Glyph margin fixed (ruling 1); menu entry (ruling 7).
+  - Second `lineBars` and `order` at `DiffEditor.svelte:137,189-194`, `zones.ts:156`.
+  - Head comments rewritten.
+- 4: holds. `CommentBox.svelte`; `comment-draft.svelte.ts` (move keeps text, Escape keeps text, the in-flight guard, `opened`).
+- 5: holds. `DiffSection.svelte:173` `record !== null && actions !== 'read'`.
+- 6: holds. `comment-draft.svelte.ts:99-127`, `commentOutcome`, `NOTICE_MS`, `browserCopy`.
+- 7: holds. The 11 `sessions:` keys, `HELP.md:87,132`, `DESIGN.md:399`, `type-scale.test.ts:254`. HELP.md:132's "in the line's menu" is backed by `contextMenuGroupId`.
+
+**Cases:**
+- 1 to 9: met, by the review-comment.test.ts cases the first run named.
+- 10: met. diff-pane "offers none for a diff opened from the Repositories view"; `listedWithComment(chords, false, ...)`.
+- 11: met. diff-session id tests, including `:47` (a file named `a.ts:s-1`) and `:55` (sessions named `changed`, `staged`, `/hub` and empty).
+- 12: met. diff-session "reads a state with no session key as none"; instance-state-sources rows.
+- 13: met. `naming.test.ts:248`.
+- 14: met. diff-pane, `actions: 'read'`.
+- 15: met. diff-pane `:531`, which now covers the session coming back, on a fresh render.
+- 16: met. gutter.test.ts comment-mark cases.
+- 17: met as ruling 6 defines it. That the effect reruns on an `oncomment` change is shown only by reading the code; Monaco does not mount in the unit suite.
+- 18: met. comment-draft "sends once while a send is in flight"; review-comment `:266`, `:329`.
+- 19: met. comment-draft "hands nothing back when the box was closed / the section went"; review-comment `:280`, `:339`.
+- 20: met. changes.test.ts `:415-441` and diff-session `:173`.
+- 21: met. zones.test.ts order case; review-comment `:391`.
+- 22: met. diff-pane bar-snippet case.
+- 23: not verifiable here. It is settled by the look on TEST at landing, in a terminal the look starts itself.
+- 24: met. diff-pane title case; `commentTitle`.
+
+### Findings
+
+**Standards 1. Report section 1 and section 3.2: "`sideOf` (`repositories.ts:139-147`) does yield `@`".**
+- What is wrong: the round's ruling asked the builder to confirm that `sideOf` never yields `@`. That premise did not reproduce. The rules file's "Report" section requires a premise that does not reproduce to be quoted in the report's first section, with the command that disproves it. The builder put it in section 3.2 with line numbers and no command.
+- Failure scenario: someone reading section 1 for wrong premises sees only pty-io. They miss that one of the round's own instructions was false, though Z256's id form is still sound (point 2).
+- Verdict: none.
+
+**Standards 2. `src/lib/views/sources/repositories/diff/diff-read.ts:28`: `export async function readDiff(state: DiffState, repo: Git | null)`.**
+- What is wrong: `src/lib/server/core/git.ts:800` already has a module-local `function readDiff(root, args, timeout)` that does something different.
+- The rules file's "The principles every package is judged on" requires a grep of `src` and `tests` for a new helper's name, quoted in the report. The report quotes none for `readDiff`.
+- No reuse was possible. The defect is two unrelated functions under one name.
+- Failure scenario: a reader runs `grep -rn readDiff src` and lands in the server's git reader, which has nothing to do with the diff pane's fetch.
+- Verdict: none. Fixable at landing by renaming one of the two, for example `readPaneDiff`.
+
+**Behaviour 1. `src/lib/ui/controls/editor/DiffEditor.svelte:375-376`: `const side = mode === 'inline' ? made.getModifiedEditor() : (focused ?? made.getModifiedEditor());`.**
+- What is wrong: in the inline layout every palette action of a diff now runs on the modified editor. Before, it ran on the editor that last had the focus. This holds for every diff, not only session diffs. The report's before-and-after section does not state it.
+- It serves item 3: in inline only the modified side carries Add Comment on Line.
+- Failure scenario: in a Repositories diff, click into the original side in side-by-side, switch to Inline View, then run a palette action such as Find. Before, it ran on the hidden original editor and showed nothing. Now it opens on the visible modified side. The landing look is not told to expect a change.
+- Verdict: none.
+
+### Declined to judge
+
+- **How the delta was taken.** No tree state was recorded when the round was sent at 12:05. The delta is the 35 files modified after the round's rulings file, as listed in `scratchpad/a1-round1-files.txt`. I read each through `git diff ce71ecf1 -- <file>`, against the whole diff since the base. So a line of those files changed in the first build cannot be told apart from one changed in the round.
+- **The builder's mutated runs and its pre-round failing runs** (sections 3 and 5). Reproducing them means editing a copy of the source, and this review writes no file. No pre-round copy of the tree was available to me.
+- **Everything inside Monaco's DOM and the browser:**
+  - the `+` on hover, the press on the real glyph margin, and the right-click entry being drawn;
+  - the focus after a move along one side, given that Monaco may refocus its own text area after the mousedown;
+  - Escape and Ctrl/Cmd+Enter inside the overlay;
+  - the regrow, and the alignment of bars on the original side.
+
+  These need the look on TEST.
+- **Whether `glyphMarginFor`, which always returns true, is the right shape.** It is the orchestrator's ruling 1 as written. The builder followed it.
+- **The six diagram files in the delta list that `git status` does not show as modified** (`channels`, `layer-data`, `layer-shell`, `layer-ui`, `writes`). They were rewritten with the same content. `test:checks` is green.
+- **Whether the builder ran any git command.** It cannot be seen from the diff.
+
+Reviewer usage: about 250,000 tokens (from the remaining-token counter), 41 tool uses, about 22 minutes. Served model: claude-opus-5-5.
+
+
+## Closed
+
+- Repair round 1, Standards 1 (a premise of the round that did not reproduce, reported outside section 1): closed at landing; the booking states that `sideOf` does yield `@` and that the id form of Z256 holds regardless, as the review's point 2 shows.
+- Repair round 1, Standards 2 (`readDiff` in `views/sources/repositories/diff/diff-read.ts` shares its name with `server/core/git.ts`'s local `readDiff`): fixed at landing on main, the pane's function renamed `readPaneDiff` with its callers.
+- Repair round 1, Behaviour 1 (in the inline layout a diff's palette actions run on the modified editor): closed at landing; stated in the booking with its before and after, and looked at on TEST.

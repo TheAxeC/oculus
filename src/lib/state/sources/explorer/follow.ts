@@ -84,7 +84,8 @@ export function followedDiffTab(state: unknown, moves: Move[]): DiffState | null
         stash: held.stash,
         group: held.group,
         against: against ?? held.against,
-        line: held.line
+        line: held.line,
+        session: held.session
     };
     const title = (file: string, against: string): string =>
         t('files.compare_title', nameOf(against), nameOf(file));

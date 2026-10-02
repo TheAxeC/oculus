@@ -471,7 +471,7 @@ export type {
     TurnTool,
     Workspace
 } from './model-sessions.ts';
-export { TERMINAL_COLORS } from './model-sessions.ts';
+export { STEER_CONTROL, STEER_MAX, TERMINAL_COLORS } from './model-sessions.ts';
 
 export type {
     AgentAccount,

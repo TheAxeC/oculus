@@ -112,7 +112,8 @@ export function worktreeDiffUrl(root: string, path: string): string {
  * change to a file (`commit`); a whole stash (`stash`); or every path of a change group (`group`).
  * `against` is the file selected for compare, which makes the pane the comparison of two files:
  * the file at `root` and `path` on the right and `against` on the left. `line` is the line of the
- * new side the pane opens at, 0 for its top.
+ * new side the pane opens at, 0 for its top. `session` is the id of the session record the pane
+ * was opened for, empty or absent for a pane opened from the Repositories view.
  */
 export type DiffSubject = {
     root: string;
@@ -128,6 +129,7 @@ export type DiffSubject = {
     /** The id of a copy in the file's local history, for the pane over the file and that copy. */
     save?: string;
     line?: number;
+    session?: string;
 };
 
 /**
@@ -148,12 +150,20 @@ function sideOf(subject: DiffSubject): string {
 }
 
 /**
- * The instance state a diff pane is opened with. The id names root, path and which diff, and not
- * the line, so the same file opened twice activates the pane that is already there and points it
- * at the new line, and two files are two panes.
+ * The instance state a diff pane is opened with. The id names which diff, root and path and, for
+ * a file's own diff opened for a session, that session after the side (`changed@<session>:...`),
+ * and not the line, so the same file opened twice activates the pane that is already there and
+ * points it at the new line, and two files, or one file for two sessions, are two panes. The
+ * other diffs (a commit, a stash, a worktree, a compare, a group) take no session, and the
+ * session sits in a position no path can reach, so a path that ends in `:<session>` is another id.
  */
 export function diffState(subject: DiffSubject, label: string): DiffState {
-    return { ...subject, id: `${sideOf(subject)}:${subject.root}:${subject.path}`, label };
+    const side = sideOf(subject);
+    const session = subject.session ?? '';
+    const own = side === 'changed' || side === 'staged';
+    const place = `${subject.root}:${subject.path}`;
+    const id = session !== '' && own ? `${side}@${session}:${place}` : `${side}:${place}`;
+    return { ...subject, id, label };
 }
 
 /** The file selected for compare: a named root and a path, both filled. */
@@ -173,7 +183,8 @@ const heldDiffShape = z
         stash: z.string().catch(''),
         group: z.enum(['staged', 'changed']).optional().catch(undefined),
         against: againstShape.optional().catch(undefined),
-        line: anyNumberShape.catch(0)
+        line: anyNumberShape.catch(0),
+        session: z.string().catch('')
     })
     .transform((held): DiffState => ({
         id: held.id,
@@ -187,7 +198,8 @@ const heldDiffShape = z
         stash: held.stash,
         group: held.group,
         against: held.against,
-        line: held.line
+        line: held.line,
+        session: held.session
     }));
 
 /** The diff pane's state out of what an instance carries, each field read defensively. */
@@ -205,7 +217,8 @@ export function heldDiff(state: unknown): DiffState {
             stash: '',
             group: undefined,
             against: undefined,
-            line: 0
+            line: 0,
+            session: ''
         }
     );
 }

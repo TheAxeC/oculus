@@ -54,8 +54,15 @@ export type DiffSelection = {
 /** The selections of both sides of a diff. */
 export type DiffSelections = { original: DiffSelection[]; modified: DiffSelection[] };
 
-/** One bar a parent draws above a line of an editor: its key, and the line it sits after. */
-export type EditorBar = { id: string; after: number };
+/** The side of a diff a line or a bar is on: the version being changed to, or the one before. */
+export type DiffSide = 'modified' | 'original';
+
+/**
+ * One bar a parent draws above a line of an editor: its key, and the line it sits after. In a diff
+ * editor `side` says which of the two it sits in (the modified side when absent), and `order` puts
+ * it below the bars of a lower order after the same line (0 when absent).
+ */
+export type EditorBar = { id: string; after: number; side?: DiffSide; order?: number };
 
 /** What a parent asks a diff editor to do: run a palette action, or bring a line into view. */
 export type DiffCommand = { kind: 'action'; id: string } | { kind: 'reveal'; line: number };

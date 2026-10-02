@@ -2,7 +2,8 @@
     // Layer 3, primitive, partial of ui/controls/editor/Editor.svelte and DiffEditor.svelte. The
     // bars an editor draws between its lines: each drawn by the parent's snippet inside a slot
     // Svelte keeps in order, and moved into the editor by zones.ts's `above`, which gives it a
-    // place of its own above its line. The container itself is never shown.
+    // place of its own above its line, below the bars of a lower order after the same line. The
+    // container itself is never shown.
 
     import type { Snippet } from 'svelte';
     import type { EditorBar } from './types';
@@ -17,7 +18,7 @@
     {#each bars as one (one.id)}
         <!-- The slot stays for Svelte to order; the bar inside it moves into the editor. -->
         <div>
-            <div class="line-bar" {@attach placed.above(one.after)}>
+            <div class="line-bar" {@attach placed.above(one.after, one.order ?? 0)}>
                 {@render bar(one.id)}
             </div>
         </div>

@@ -201,7 +201,7 @@
                     onresolve={(path: string) => void repositories.markResolved(workspace, path)}
                     ongroup={groupAct}
                     onopen={(path: string, kind: string) =>
-                        repositories.openChange(workspace, kind, path)}
+                        repositories.openChange(workspace, kind, path, record?.id)}
                 />
             {/if}
         {/if}

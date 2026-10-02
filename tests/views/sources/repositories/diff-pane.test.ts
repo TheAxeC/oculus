@@ -5,11 +5,16 @@
 // other test. The controls and the menu are wrapped by a recorder that renders the real one and
 // keeps the props the view gave it.
 //
+// The comment a section offers on a line of a session's diff is read from the props the section
+// hands its editor (a recorder around DiffEditor), and the comment box from the props it hands its
+// text area and its buttons.
+//
 // What this does NOT cover: a step onto a folded file unfolding it and then scrolling to its
 // change, which runs when a file's editor answers with its changes; the rules are the pure
 // `unfolded`, `revealAsked` and `revealDue` of
 // tests/state/sources/repositories/view/view-state.test.ts, this file reads that the section asks
-// them, and the look on TEST sees the step.
+// them, and the look on TEST sees the step. Nor the `+` on a hovered line, the box taking the
+// focus and the keys inside Monaco's overlay, or the alignment of a bar on the original side.
 
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -17,6 +22,9 @@ import { render } from 'svelte/server';
 import Diff from '../../../../src/lib/views/sources/repositories/diff/Diff.svelte';
 import DiffBar from '../../../../src/lib/views/sources/repositories/diff/DiffBar.svelte';
 import DiffSection from '../../../../src/lib/views/sources/repositories/diff/DiffSection.svelte';
+import CommentBox from '../../../../src/lib/views/sources/repositories/diff/CommentBox.svelte';
+import DiffEditor from '../../../../src/lib/ui/controls/editor/DiffEditor.svelte';
+import TextArea from '../../../../src/lib/ui/forms/TextArea.svelte';
 import Menu from '../../../../src/lib/ui/menu/Menu.svelte';
 import ToolButton from '../../../../src/lib/ui/controls/ToolButton.svelte';
 import { fileIcon } from '../../../../src/lib/ui/display/file-icons.ts';
@@ -24,10 +32,23 @@ import {
     statusStyle,
     type DiffSides
 } from '../../../../src/lib/state/sources/repositories/repositories.ts';
-import { catalog, clear, drawn, labelsIn, words, fresh } from './harness.ts';
+import { catalog, clear, drawn, labelsIn, press, words, fresh } from './harness.ts';
 import { clientContext, type ClientState } from '../../../fixtures/client.ts';
+import { area, payload, record, workspace } from '../../../fixtures/sessions-fixture.ts';
 
 vi.mock('../../../../src/lib/ui/controls/ToolButton.svelte', async (original) =>
+    (await import('./press-on-render.ts')).recorded(original)
+);
+
+vi.mock('../../../../src/lib/ui/controls/editor/DiffEditor.svelte', async (original) =>
+    (await import('./press-on-render.ts')).recorded(original)
+);
+
+vi.mock('../../../../src/lib/ui/forms/TextArea.svelte', async (original) =>
+    (await import('./press-on-render.ts')).recorded(original)
+);
+
+vi.mock('../../../../src/lib/views/sources/repositories/diff/CommentBox.svelte', async (original) =>
     (await import('./press-on-render.ts')).recorded(original)
 );
 
@@ -38,7 +59,7 @@ vi.mock('../../../../src/lib/ui/menu/Menu.svelte', async (original) =>
 let client: ClientState;
 
 beforeEach(() => {
-    client = fresh(ToolButton, Menu);
+    client = fresh(ToolButton, Menu, DiffEditor, TextArea, CommentBox);
 });
 
 /** The pane rendered as an instance of the diff view with the state given. */
@@ -457,5 +478,198 @@ describe('the header row of a file in isolation', () => {
         expect(source).not.toMatch(/^\s*\.open\s*[,{]/m);
         // the wrapper of Open File has a class of its own, apart from the chevron's modifier
         expect(source).not.toContain('class="open"');
+    });
+});
+
+/** The sessions payload holding one session, which a diff opened for it names. */
+function holdSession(title = 'The live one'): void {
+    client.entities.receive({
+        channel: 'sessions',
+        version: 1,
+        payload: payload([workspace('/hub', [area('/hub', [record('s-1', { title })])])])
+    });
+}
+
+/** The props the section handed its editor on its latest render. */
+function editorProps(): Record<string, unknown> {
+    return drawn(DiffEditor).at(-1) ?? {};
+}
+
+/** Record the props a component is drawn with, and draw nothing: the case reads the props only. */
+function skipDrawing(component: unknown): void {
+    vi.mocked(component as (...args: unknown[]) => unknown).mockImplementation(() => undefined);
+}
+
+describe('the comment a section offers on a line of a session diff', () => {
+    // Revert: pass `oncomment` whatever the session, in DiffSection.svelte.
+    it('offers none for a diff opened from the Repositories view, which names no session', () => {
+        holdSession();
+        section(sides(), { actions: 'none' });
+        expect(editorProps().oncomment).toBeUndefined();
+        section(sides(), { actions: 'none', session: '' });
+        expect(editorProps().oncomment).toBeUndefined();
+    });
+
+    it('offers it, under the words of the catalog, on a file own diff opened for a session the payload holds', () => {
+        holdSession();
+        section(sides(), { actions: 'none', session: 's-1' });
+        expect(editorProps().oncomment).toBeTypeOf('function');
+        expect(editorProps().commentLabel).toBe('Add Comment on Line');
+        clear(DiffEditor);
+        section(sides(), { actions: 'lines', session: 's-1' });
+        expect(editorProps().oncomment).toBeTypeOf('function');
+    });
+
+    // Revert: leave `actions !== 'read'` out of the gate in DiffSection.svelte.
+    it('offers none on a commit, stash, worktree, compare or group diff, whose actions are read, even with a session', () => {
+        holdSession();
+        section(sides(), { actions: 'read', session: 's-1' });
+        expect(editorProps().oncomment).toBeUndefined();
+    });
+
+    // Revert: read the session from the pane state alone, without asking the payload.
+    it('offers none once the payload no longer holds the session, and offers it again when it does', () => {
+        holdSession();
+        section(sides(), { actions: 'none', session: 's-1' });
+        expect(editorProps().oncomment).toBeTypeOf('function');
+
+        client = fresh(ToolButton, Menu, DiffEditor, TextArea, CommentBox);
+        section(sides(), { actions: 'none', session: 's-1' });
+        expect(editorProps().oncomment).toBeUndefined();
+
+        client.entities.receive({
+            channel: 'sessions',
+            version: 1,
+            payload: payload([workspace('/hub', [area('/hub', [record('s-2')])])])
+        });
+        clear(DiffEditor);
+        section(sides(), { actions: 'none', session: 's-1' });
+        expect(editorProps().oncomment).toBeUndefined();
+
+        client.entities.receive({
+            channel: 'sessions',
+            version: 2,
+            payload: payload([workspace('/hub', [area('/hub', [record('s-1')])])])
+        });
+        clear(DiffEditor);
+        section(sides(), { actions: 'none', session: 's-1' });
+        expect(editorProps().oncomment).toBeTypeOf('function');
+    });
+
+    it('draws the comment box for the bar with the id comment and a hunk bar for a numeric id', () => {
+        clear(CommentBox);
+        skipDrawing(CommentBox);
+        holdSession('The live one');
+        section(sides(), { actions: 'none', session: 's-1' });
+        const call = vi.mocked(DiffEditor as unknown as (...args: unknown[]) => unknown).mock
+            .calls[0];
+        const bar = (call[1] as { bar: (renderer: unknown, id: string) => void }).bar;
+
+        bar(call[0], '0');
+        expect(drawn(CommentBox)).toHaveLength(0);
+        bar(call[0], 'comment');
+        expect(drawn(CommentBox)).toHaveLength(1);
+        expect(drawn(CommentBox)[0]).toMatchObject({ title: 'The live one', text: '' });
+    });
+
+    it('calls a session with no title by its id in the head of the box', () => {
+        clear(CommentBox, DiffEditor);
+        skipDrawing(CommentBox);
+        holdSession('');
+        section(sides(), { actions: 'none', session: 's-1' });
+        const call = vi.mocked(DiffEditor as unknown as (...args: unknown[]) => unknown).mock
+            .calls[0];
+        (call[1] as { bar: (renderer: unknown, id: string) => void }).bar(call[0], 'comment');
+        expect(drawn(CommentBox)[0]).toMatchObject({ title: 's-1' });
+    });
+});
+
+describe('the comment box', () => {
+    /** The box drawn over the props given, and the handlers it was handed. */
+    function box(over: Record<string, unknown> = {}) {
+        const said: string[] = [];
+        const props = {
+            title: 'The live one',
+            text: 'rename this',
+            sending: false,
+            failure: '',
+            opened: 1,
+            oninput: (text: string) => said.push(`input:${text}`),
+            onsend: () => said.push('send'),
+            onclose: () => said.push('close'),
+            oncancel: () => said.push('cancel'),
+            ...over
+        };
+        const body = render(CommentBox, { context: clientContext(client), props }).body;
+        return { body, said };
+    }
+
+    /** The key event a text area hands its parent. */
+    function key(name: string, mods: { ctrlKey?: boolean; metaKey?: boolean } = {}) {
+        const calls: string[] = [];
+        return {
+            event: {
+                key: name,
+                ctrlKey: false,
+                metaKey: false,
+                ...mods,
+                preventDefault: () => calls.push('prevent'),
+                stopPropagation: () => calls.push('stop')
+            } as unknown as KeyboardEvent,
+            calls
+        };
+    }
+
+    it('says whom the comment goes to, labels its text area and holds Send and Cancel', () => {
+        const { body } = box();
+        expect(body).toContain('Comment to The live one');
+        expect(drawn(TextArea)[0]).toMatchObject({ value: 'rename this', label: 'Comment' });
+        expect(drawn(ToolButton).map((one) => one.label)).toEqual(['Send', 'Cancel']);
+    });
+
+    it('presses Send and Cancel through to its parent, and does not send while a send is in flight', () => {
+        const { said } = box();
+        press(drawn(ToolButton)[0]);
+        press(drawn(ToolButton)[1]);
+        expect(said).toEqual(['send', 'cancel']);
+
+        clear(ToolButton);
+        box({ sending: true });
+        expect(drawn(ToolButton)[0]).toMatchObject({ label: 'Send', disabled: true });
+    });
+
+    it('hands the text typed to its parent, which keeps it', () => {
+        const { said } = box();
+        (drawn(TextArea)[0].oninput as (value: string) => void)('new text');
+        expect(said).toEqual(['input:new text']);
+    });
+
+    it('says what a refused or failed send said, and nothing when there is nothing to say', () => {
+        const failed = box({ failure: 'The terminal did not answer.' });
+        expect(failed.body).toContain('The terminal did not answer.');
+        // The box is drawn with no failure to report, so it shows the reader no error line.
+        expect(box().body).not.toContain('role="alert"');
+    });
+
+    // Revert: leave preventDefault and stopPropagation off the Escape in CommentBox.svelte, so an
+    // Escape in the box also restores a maximised pane.
+    it('sends on Ctrl+Enter and on Cmd+Enter, and closes on Escape without letting the pane see it', () => {
+        const { said } = box();
+        const onkeydown = drawn(TextArea)[0].onkeydown as (event: KeyboardEvent) => void;
+
+        const ctrl = key('Enter', { ctrlKey: true });
+        onkeydown(ctrl.event);
+        expect(ctrl.calls).toEqual(['prevent']);
+        const cmd = key('Enter', { metaKey: true });
+        onkeydown(cmd.event);
+        const plain = key('Enter');
+        onkeydown(plain.event);
+        expect(plain.calls).toEqual([]);
+        expect(said).toEqual(['send', 'send']);
+
+        const escape = key('Escape');
+        onkeydown(escape.event);
+        expect(escape.calls).toEqual(['prevent', 'stop']);
+        expect(said).toEqual(['send', 'send', 'close']);
     });
 });

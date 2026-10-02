@@ -256,6 +256,7 @@ const VIEWS: Record<string, string> = {
     'shared/writes/AskConfirm.svelte': '',
     'shared/changes/CommitBox.svelte': '',
     'sources/repositories/RepoList.svelte': '',
+    'sources/repositories/diff/CommentBox.svelte': '.comment=fs-sm',
     'sources/repositories/diff/DiffBar.svelte': '',
     'sources/repositories/diff/Diff.svelte': '',
     'sources/repositories/diff/DiffSection.svelte': '.file=fs-sm',

@@ -9,9 +9,17 @@
     // says (never switched to inline by the width), the line numbers of both, the changed words of
     // a changed line, whitespace changes shown, and the unchanged runs hidden with `context` lines
     // kept each side, which Monaco reveals on a press, unless the parent asks for every line.
-    // Monaco's own hunk menu and revert arrows are off, since the parent's bars (zones.ts, above
-    // lines of the modified side) carry the actions, and the diff always runs to its end, so a bar
-    // never acts on a diff Monaco cut short.
+    // Monaco's own hunk menu and revert arrows are off, since the parent's bars (zones.ts, after
+    // lines of either side) carry the actions, and the diff always runs to its end, so a bar never
+    // acts on a diff Monaco cut short.
+    //
+    // Given `oncomment`, each side it offers (both side by side, the modified side inline, where
+    // Monaco draws removed lines as zones that take no decoration) shows a `+` on the hovered
+    // line in its glyph margin, which stays drawn whether or not comments are offered, as
+    // Monaco's default has it; a press on the `+`, or the action Add Comment on Line, which the
+    // palette and the line's right-click menu list only while `oncomment` is there, asks the
+    // parent for a comment on that line. Without it no `+` is drawn and no action is registered
+    // or listed.
     //
     // It answers its line changes after each diff, the selections of both sides on every move, and
     // its view state (the runs revealed and the scroll) as it changes, and restores a view state
@@ -29,6 +37,7 @@
     import { shikiId } from './kit/grammars';
     import { font, paintCode, repaint } from './kit/look';
     import { chordActions } from './chords';
+    import { commentActionsOn, commentGutter, glyphMarginFor, listedWithComment } from './gutter';
     import { lineBars } from './zones';
     import LineBars from './LineBars.svelte';
     import type {
@@ -36,6 +45,7 @@
         DiffLineChange,
         DiffSelection,
         DiffSelections,
+        DiffSide,
         EditorAction,
         EditorBar
     } from './types';
@@ -67,6 +77,12 @@
         view?: object | null;
         bars?: EditorBar[];
         bar?: Snippet<[string]>;
+        /**
+         * Asks for a comment on a line of a side; the editor offers comments only while it is set.
+         */
+        oncomment?: (side: DiffSide, line: number) => void;
+        /** The label of the Add Comment on Line action, already translated by the view. */
+        commentLabel?: string;
         onchanges?: (changes: DiffLineChange[]) => void;
         onselect?: (selections: DiffSelections) => void;
         onview?: (view: object) => void;
@@ -89,6 +105,8 @@
         view = null,
         bars = [],
         bar,
+        oncomment,
+        commentLabel,
         onchanges,
         onselect,
         onview,
@@ -116,6 +134,12 @@
     let saving = 0;
     const listeners: Monaco.IDisposable[] = [];
     const placed = lineBars();
+    const placedOriginal = lineBars();
+    /** Whether comments are offered, which turns the comment gutter and its action on and off. */
+    const offering = $derived(oncomment !== undefined);
+    /** The bars of each side, each side's placed in its own editor. */
+    const modifiedBars = $derived(bars.filter((one) => one.side !== 'original'));
+    const originalBars = $derived(bars.filter((one) => one.side === 'original'));
 
     buildWhenHosted(
         () => host,
@@ -162,17 +186,18 @@
                 side.onDidScrollChange(() => save(made))
             ])
         );
-        placed.mount(
-            made.getModifiedEditor(),
-            made.getModifiedEditor().getOption(monaco.editor.EditorOption.lineHeight)
-        );
+        for (const [on, side] of [
+            [made.getModifiedEditor(), placed],
+            [made.getOriginalEditor(), placedOriginal]
+        ] as const) {
+            side.mount(on, on.getOption(monaco.editor.EditorOption.lineHeight));
+        }
         diff = made;
         models = pair;
         kit = loaded;
         mounted = true;
         painted = painting;
         void paintCode(loaded, codeTheme, () => (painted = null));
-        onactions?.(chordActions(made.getModifiedEditor(), loaded.mac));
         grown(made);
     }
 
@@ -287,6 +312,53 @@
         untrack(() => grown(made));
     });
 
+    /**
+     * The sides the parent's comments are offered on: both side by side, the modified one inline.
+     */
+    function commentSides(made: Monaco.editor.IStandaloneDiffEditor, layout: 'side' | 'inline') {
+        const modified = { side: 'modified' as const, editor: made.getModifiedEditor() };
+        const original = { side: 'original' as const, editor: made.getOriginalEditor() };
+        return layout === 'side' ? [original, modified] : [modified];
+    }
+
+    // The glyph margin and the `+` on the hovered line, while comments are offered and again for
+    // each layout, since the original side is hidden in the inline one.
+    $effect(() => {
+        const loaded = kit;
+        const made = diff;
+        const layout = mode;
+        if (loaded === null || made === null) return;
+        made.updateOptions({ glyphMargin: glyphMarginFor(offering) });
+        if (!offering) return;
+        const watch = commentGutter(
+            commentSides(made, layout),
+            loaded.monaco.editor.MouseTargetType,
+            (side) => side === 'modified' || mode === 'side',
+            (side, line) => oncomment?.(side, line)
+        );
+        return () => watch.dispose();
+    });
+
+    // The palette's actions: the chords the editor gave up, and Add Comment on Line, registered on
+    // each side offered (and so in the line's right-click menu) and listed only while comments are
+    // offered.
+    $effect(() => {
+        const loaded = kit;
+        const made = diff;
+        const layout = mode;
+        const label = offering ? commentLabel : undefined;
+        if (loaded === null || made === null) return;
+        const added =
+            label === undefined
+                ? null
+                : commentActionsOn(commentSides(made, layout), label, (side, line) =>
+                      oncomment?.(side, line)
+                  );
+        const chords = chordActions(made.getModifiedEditor(), loaded.mac);
+        untrack(() => onactions?.(listedWithComment(chords, offering, commentLabel)));
+        return () => added?.dispose();
+    });
+
     $effect(() => {
         const wanted = painting;
         const code = codeTheme;
@@ -300,7 +372,8 @@
     export function perform(command: DiffCommand): void {
         const made = diff;
         if (made === null) return;
-        const side = focused ?? made.getModifiedEditor();
+        const side =
+            mode === 'inline' ? made.getModifiedEditor() : (focused ?? made.getModifiedEditor());
         if (command.kind === 'action') {
             side.focus();
             void side.getAction(command.id)?.run();
@@ -320,6 +393,7 @@
         if (state !== null) onview?.(state);
         for (const listener of listeners.splice(0)) listener.dispose();
         placed.unmount();
+        placedOriginal.unmount();
         made?.dispose();
         models?.original.dispose();
         models?.modified.dispose();
@@ -339,7 +413,8 @@
         <pre class="plain">{modified}</pre>
     {/if}
     {#if bar !== undefined}
-        <LineBars {bars} {bar} {placed} />
+        <LineBars bars={modifiedBars} {bar} {placed} />
+        <LineBars bars={originalBars} {bar} placed={placedOriginal} />
     {/if}
 </div>
 
@@ -380,6 +455,25 @@
     .diff-editor:not(.sized) .plain {
         position: absolute;
         inset: 0;
+    }
+
+    /* The comment mark: a plus drawn in the hovered line's glyph margin, in the accent. */
+    .diff-editor :global(.oculus-comment-add) {
+        cursor: pointer;
+    }
+
+    .diff-editor :global(.oculus-comment-add)::before {
+        content: '';
+        display: block;
+        width: 12px;
+        height: 12px;
+        margin: 3px auto 0;
+        border-radius: 2px;
+        background:
+            linear-gradient(var(--accent), var(--accent)) center / 8px 2px no-repeat,
+            linear-gradient(var(--accent), var(--accent)) center / 2px 8px no-repeat;
+        border: 1px solid var(--accent);
+        box-sizing: border-box;
     }
 
     :global(body.wall) .diff-editor {

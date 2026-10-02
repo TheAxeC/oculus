@@ -14,6 +14,7 @@
 import { randomBytes } from 'node:crypto';
 import { statSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
+import { STEER_CONTROL, STEER_MAX } from '../../../data/model/index.ts';
 import type { Terminal, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
 import { inputChunks, run, type KeyChunk, type TmuxOptions } from './tmux.ts';
 
@@ -521,18 +522,13 @@ export function steerArgs(id: string, text: string): string[][] {
     return [...inputArgs(id, Buffer.from(text, 'utf8')), sendKeysArgs(id, { key: 'Enter' })];
 }
 
-/** The longest message one steer types. */
-export const STEER_MAX = 100_000;
-
 /** Type one message into a terminal oculus started, then Enter. */
 export async function steerTerminal(id: string, text: string, options: RunOptions = {}) {
     if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
     if (typeof text !== 'string' || text.trim() === '') throw new Error('text must not be empty');
     if (text.length > STEER_MAX) throw new Error(`text must be at most ${STEER_MAX} chars`);
-    // A control character typed literally is a key of its own (Escape, Ctrl-C), which a message
-    // must not carry; a line break and a tab are the two a message holds.
-    // eslint-disable-next-line no-control-regex
-    if (/[\u0000-\u0008\u000b-\u001f\u007f]/.test(text)) {
+    // A control character typed literally is a key of its own, which a message must not carry.
+    if (STEER_CONTROL.test(text)) {
         throw new Error('text must not hold control characters');
     }
     for (const args of steerArgs(id, text)) await (options.run ?? run)(args, options);

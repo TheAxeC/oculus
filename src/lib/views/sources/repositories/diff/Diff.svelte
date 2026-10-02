@@ -52,8 +52,7 @@
     import DiffBar from './DiffBar.svelte';
     import DiffSection from './DiffSection.svelte';
     import { compareSentence } from './compare-words';
-    import { readJson } from '$lib/data/shapes/shapes';
-    import { diffAnswerOf, type DiffAnswer } from '$lib/state/sources/repositories/answers';
+    import { readPaneDiff } from './diff-read';
     import {
         countsOf,
         diffActions,
@@ -68,15 +67,11 @@
     import { sidesPatch, type PatchMode } from '$lib/state/sources/repositories/diff-patch';
     import {
         diffActs,
-        diffUrl,
         diffViewOf,
-        fileDiffUrl,
         fileKeys,
         groupFrom,
-        groupPaths,
         groupWaits,
         heldDiff,
-        readAll,
         sameFiles,
         toggleFolded,
         unfolded,
@@ -102,9 +97,6 @@
 
     /** Whether the repository's state is due a read now: shown, and moved since the last read. */
     const gate = shownGate(useShown());
-
-    /** How many files of a group's diff are read at once. */
-    const GROUP_READS = 6;
 
     /** How long the view states wait before they are kept, so a scroll is one write. */
     const KEEP_AFTER_MS = 400;
@@ -160,38 +152,13 @@
     /** The number of the last read asked for, so an older answer that lands late is dropped. */
     let asked = 0;
 
-    /** What one address answered: whether the server took the request, and what its body held. */
-    async function answer(url: string): Promise<DiffAnswer> {
-        const response = await fetch(url);
-        return diffAnswerOf(response.ok, await readJson(response));
-    }
-
-    /** The reads a diff is made of: the one address, or one per path of a group. */
-    async function reads(state: DiffState): Promise<DiffAnswer> {
-        const group = state.group;
-        if (group === undefined) return answer(diffUrl(state));
-        const paths = repo === null ? [] : groupPaths(repo, group);
-        const answers = await readAll(paths, GROUP_READS, (path) =>
-            answer(fileDiffUrl(state.root, path, group === 'staged'))
-        );
-        const bad = answers.find((one) => !one.ok || one.files === null);
-        if (bad !== undefined) return bad;
-        return {
-            ok: true,
-            files: answers.flatMap((one) => one.files ?? []),
-            attributes: null,
-            conflicted: false,
-            error: undefined
-        };
-    }
-
     async function load(state: DiffState): Promise<void> {
         asked += 1;
         const mine = asked;
         reading = true;
         failure = '';
         try {
-            const read = await reads(state);
+            const read = await readPaneDiff(state, repo);
             if (mine !== asked) return;
             if (!read.ok || read.files === null) {
                 failure =
@@ -462,6 +429,7 @@
                         actions={actionsOf(file)}
                         {conflicted}
                         staged={held.staged}
+                        session={held.session}
                         {busy}
                         current={at?.file === index ? at.hunk : -1}
                         onchanges={(next: LineChange[]) => drawn(index, next)}

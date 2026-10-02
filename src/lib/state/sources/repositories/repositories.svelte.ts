@@ -100,9 +100,10 @@ export type RepositoriesStore = {
     openDiff: (subject: DiffSubject, label: string) => void;
     /**
      * Open what a change row stands for: the merge editor for a conflict, the file itself for an
-     * untracked path, which has no diff, and the diff for the rest.
+     * untracked path, which has no diff, and the diff for the rest, as the tab of the session
+     * given when the row is a session's.
      */
-    openChange: (root: string, group: string, path: string) => void;
+    openChange: (root: string, group: string, path: string, session?: string) => void;
     /** Open a repository's file in a source tab, at a line when one is given. */
     openFile: (root: string, path: string, line?: number) => boolean;
     /**
@@ -359,10 +360,13 @@ export function createRepositories(
         },
         shellIn,
         openDiff,
-        openChange(root, group, path) {
+        openChange(root, group, path, session) {
             if (group === 'merge') openMerge(root, path);
             else if (group === 'untracked') openFile(root, path);
-            else openDiff({ root, path, staged: group === 'staged', worktree: false }, path);
+            else {
+                const subject = { root, path, staged: group === 'staged', worktree: false };
+                openDiff(session === undefined ? subject : { ...subject, session }, path);
+            }
         },
         openFile,
         revealFile,

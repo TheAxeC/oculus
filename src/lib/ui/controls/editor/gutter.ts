@@ -8,10 +8,14 @@
 // Each is built here from plain values the editor is handed, so the view that reads git decides
 // what is marked and the editor draws it; a press is mapped back to the mark or the blamed line it
 // landed on, and the caret stepped from mark to mark, by the same rules.
+//
+// A diff editor's comment mark is the one decoration that follows the pointer: the hovered line of
+// a side offered for comments gets a `+` in its glyph margin, which Monaco's own diff signs leave
+// free (they hold the line-decorations lane), and a press on it asks for a comment on that line.
 
-import type { IMarkdownString, editor } from 'monaco-editor';
+import type { IDisposable, IMarkdownString, editor } from 'monaco-editor';
 import { chordHint, type KeyPress } from './chords';
-import type { EditorAction, EditorChangeWords } from './types';
+import type { DiffSide, EditorAction, EditorChangeWords } from './types';
 
 /** A quick diff mark: its kind, its first line, how many lines it spans and what it says. */
 export type EditorMark = {
@@ -235,4 +239,152 @@ export function blameNumbers(blame: readonly EditorBlame[], lines = 0): (line: n
 export function blameWidth(blame: readonly EditorBlame[], lines: number): number {
     if (blame.length === 0) return PLAIN_WIDTH;
     return blameText(blame, lines)(1).length;
+}
+
+/** The class of the comment mark, which the diff editor draws as a `+` in the glyph margin. */
+const COMMENT_MARK = 'oculus-comment-add';
+
+/** The id of the action that adds a comment on the caret's line. */
+const COMMENT_ACTION = 'oculus.diff.addComment';
+
+/** The mouse target types a line is read from, as Monaco's `MouseTargetType` names them. */
+type TargetKinds = {
+    GUTTER_GLYPH_MARGIN: number;
+    GUTTER_LINE_NUMBERS: number;
+    GUTTER_LINE_DECORATIONS: number;
+    CONTENT_TEXT: number;
+    CONTENT_EMPTY: number;
+};
+
+/** The part of a mouse target the comment gutter reads. */
+type TargetAt = { type: number; position: { lineNumber: number } | null };
+
+/**
+ * The line a mouse target is on, and whether it is the glyph margin, where a press asks for a
+ * comment. Null for a target on no line of text, such as a bar in a view zone.
+ */
+function commentTarget(
+    target: TargetAt | null,
+    kinds: TargetKinds
+): { line: number; glyph: boolean } | null {
+    const line = target?.position?.lineNumber;
+    if (target === null || line === undefined) return null;
+    if (target.type === kinds.GUTTER_GLYPH_MARGIN) return { line, glyph: true };
+    const over = [
+        kinds.GUTTER_LINE_NUMBERS,
+        kinds.GUTTER_LINE_DECORATIONS,
+        kinds.CONTENT_TEXT,
+        kinds.CONTENT_EMPTY
+    ];
+    return over.includes(target.type) ? { line, glyph: false } : null;
+}
+
+/** One side of a diff editor, with the events the comment gutter reads. */
+type CommentSideEditor = {
+    side: DiffSide;
+    editor: Pick<
+        editor.ICodeEditor,
+        'onMouseMove' | 'onMouseLeave' | 'onMouseDown' | 'createDecorationsCollection'
+    >;
+};
+
+/**
+ * The comment mark on each side given: one `+` on the hovered line of a side while `offered` says
+ * the side takes comments, cleared when the pointer leaves it, and a press on that `+` handed to
+ * `oncomment` with the side and the line. Disposing takes the marks and the listeners away.
+ */
+export function commentGutter(
+    sides: readonly CommentSideEditor[],
+    kinds: TargetKinds,
+    offered: (side: DiffSide) => boolean,
+    oncomment: (side: DiffSide, line: number) => void
+): IDisposable {
+    const held: IDisposable[] = [];
+    const marks = sides.map((one) => one.editor.createDecorationsCollection());
+    sides.forEach(({ side, editor: on }, at) => {
+        const mark = marks[at];
+        let shown = 0;
+        const clear = (): void => {
+            if (shown === 0) return;
+            shown = 0;
+            mark.clear();
+        };
+        held.push(
+            on.onMouseMove((event) => {
+                const hit = offered(side) ? commentTarget(event.target, kinds) : null;
+                if (hit === null) clear();
+                else if (hit.line !== shown) {
+                    shown = hit.line;
+                    mark.set([onLines(hit.line, hit.line, { glyphMarginClassName: COMMENT_MARK })]);
+                }
+            }),
+            on.onMouseLeave(clear),
+            on.onMouseDown((event) => {
+                const hit = offered(side) ? commentTarget(event.target, kinds) : null;
+                if (hit?.glyph === true) oncomment(side, hit.line);
+            })
+        );
+    });
+    return {
+        dispose() {
+            for (const one of held.splice(0)) one.dispose();
+            for (const mark of marks) mark.clear();
+        }
+    };
+}
+
+/** Monaco's own default for `glyphMargin` (editorOptions.js, `'glyphMargin', true`). */
+const MONACO_GLYPH_MARGIN = true;
+
+/**
+ * Whether the diff editor draws its glyph margin. Monaco draws it by default and a diff that
+ * offers no comment leaves it so; one that offers comments needs it for the `+`.
+ */
+export function glyphMarginFor(offering: boolean): boolean {
+    return offering || MONACO_GLYPH_MARGIN;
+}
+
+/**
+ * The editor's actions for the palette: the chords the editor gave up, and Add Comment on Line
+ * while comments are offered and a label is given for it.
+ */
+export function listedWithComment(
+    listed: readonly EditorAction[],
+    offering: boolean,
+    label: string | undefined
+): EditorAction[] {
+    if (!offering || label === undefined) return [...listed];
+    return [...listed, { id: COMMENT_ACTION, label, hint: '' }];
+}
+
+/** The group of the editor's right-click menu Add Comment on Line is listed in, and its place. */
+const MENU_GROUP = 'navigation';
+const MENU_ORDER = 1;
+
+/**
+ * The Add Comment on Line action on each side given, run on that side's caret line, and listed in
+ * the line's right-click menu.
+ */
+export function commentActionsOn(
+    sides: readonly {
+        side: DiffSide;
+        editor: Pick<editor.IStandaloneCodeEditor, 'addAction' | 'getPosition'>;
+    }[],
+    label: string,
+    oncomment: (side: DiffSide, line: number) => void
+): IDisposable {
+    const added = sides.map(({ side, editor: on }) =>
+        on.addAction({
+            id: COMMENT_ACTION,
+            label,
+            contextMenuGroupId: MENU_GROUP,
+            contextMenuOrder: MENU_ORDER,
+            run: () => oncomment(side, on.getPosition()?.lineNumber ?? 1)
+        })
+    );
+    return {
+        dispose() {
+            for (const one of added) one.dispose();
+        }
+    };
 }

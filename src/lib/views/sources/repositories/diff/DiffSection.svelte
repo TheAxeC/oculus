@@ -20,7 +20,16 @@
     // Revert Block, or Unstage Block in a staged diff, each over the rows the selections choose in
     // that hunk while they choose any. Where a partial patch cannot be built the bar says to act
     // on the file whole from Changes, or, for a path in conflict, to resolve it in the merge
-    // editor. What the actions do is the pane's: this reports presses.
+    // editor. What the actions do is the pane's: this reports presses. Bars sit after lines of
+    // either side: the hunk bars of the modified side, and the comment box.
+    //
+    // A file's own diff opened for a session that the sessions payload still holds takes a comment
+    // on a line of either side (the editor's `+` or Add Comment on Line): the box opens after that
+    // line, holds the comment as the section's draft (comment-draft.svelte.ts), and sends it to
+    // the session through state/sources/repositories/review-comment.ts. One box per section; a
+    // second line moves it and keeps the draft, Escape closes it keeping the draft, and Cancel
+    // drops the draft. A commit, stash, worktree, compare or group diff, and a session the payload
+    // no longer holds, offer none.
 
     import DiffEditor from '$lib/ui/controls/editor/DiffEditor.svelte';
     import type {
@@ -30,6 +39,8 @@
         EditorAction
     } from '$lib/ui/controls/editor/types';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import CommentBox from './CommentBox.svelte';
+    import { CommentDraft } from './comment-draft.svelte';
     import FileHeader from './FileHeader.svelte';
     import {
         CONTEXT,
@@ -52,6 +63,12 @@
         type DiffMode,
         type DiffSides
     } from '$lib/state/sources/repositories/repositories';
+    import {
+        COMMENT_BAR,
+        browserCopy,
+        commentBars,
+        commentTitle
+    } from '$lib/state/sources/repositories/review-comment';
     import { languageOf } from '$lib/state/sources/fs';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
@@ -89,6 +106,8 @@
         /** Whether the file's path is in conflict, which is settled in the merge editor. */
         conflicted?: boolean;
         staged: boolean;
+        /** The id of the session this diff was opened for, the empty string for none. */
+        session?: string;
         busy: boolean;
         /** The hunk the pane is at, by its place in this file, or -1. */
         current: number;
@@ -122,6 +141,7 @@
         actions,
         conflicted = false,
         staged,
+        session = '',
         busy,
         current,
         onchanges,
@@ -143,8 +163,26 @@
     let selections: DiffSelections = $state({ original: [], modified: [] });
 
     const {
-        selectors: { languages }
+        selectors: { languages, sessionById },
+        terminals: { steerTerminal, terminalOfSession }
     } = useState();
+
+    /** The session record the diff was opened for, while the sessions payload holds it. */
+    const record = $derived(sessionById(session));
+    /** Whether a comment is offered: a file's own diff, opened for a session still held. */
+    const commentable = $derived(record !== null && actions !== 'read');
+    const who = $derived(record === null ? '' : commentTitle(record));
+    const box = new CommentDraft({
+        file: () => file,
+        staged: () => staged,
+        who: () => who,
+        allowed: (side) => commentable && !(mode === 'inline' && side === 'original'),
+        deps: () => ({
+            terminal: () => terminalOfSession(sessionById(session)),
+            steer: steerTerminal,
+            copy: browserCopy()
+        })
+    });
 
     const path = $derived(file.newPath === '' ? file.oldPath : file.newPath);
     const equal = $derived(!file.binary && file.original === file.modified);
@@ -160,7 +198,10 @@
     const present = $derived(openable && !fileDeleted(file));
     const hunks = $derived(hunksOf(changes));
     const bars = $derived(
-        hunks.map((hunk, at) => ({ id: String(at), after: hunk.modified.from - 1 }))
+        commentBars(
+            hunks.map((hunk, at) => ({ id: String(at), after: hunk.modified.from - 1 })),
+            box.at
+        )
     );
     const lines = $derived(Math.max(gitLineCount(file.original), gitLineCount(file.modified)));
 
@@ -251,52 +292,66 @@
     }
 </script>
 
-{#snippet hunkBar(id: string)}
-    {@const at = Number(id)}
-    {@const hunk = hunks.at(at)}
-    {#if hunk !== undefined}
-        {@const count = pickedIn(hunk).count}
-        <div
-            class="hunk"
-            class:current={at === current}
-            data-hunk={at}
-            data-hunk-id={`${index}:${id}`}
-        >
-            <span class="head">{headOf(hunk)}</span>
-            {#if actions === 'none'}
-                <span class="whole"
-                    >{conflicted
-                        ? t('repositories.diff_conflicted')
-                        : t('repositories.diff_whole')}</span
-                >
-            {:else if actions !== 'read' && staged}
-                <ToolButton
-                    label={count > 0
-                        ? t('repositories.lines_unstage', count)
-                        : t('repositories.hunk_unstage')}
-                    glyph="unstage"
-                    disabled={busy}
-                    onclick={() => act(hunk, 'unstage')}
-                />
-            {:else if actions !== 'read'}
-                <ToolButton
-                    label={count > 0
-                        ? t('repositories.lines_stage', count)
-                        : t('repositories.hunk_stage')}
-                    glyph="stage"
-                    disabled={busy}
-                    onclick={() => act(hunk, 'stage')}
-                />
-                <ToolButton
-                    label={count > 0
-                        ? t('repositories.lines_revert', count)
-                        : t('repositories.hunk_revert')}
-                    glyph="note_back"
-                    disabled={busy}
-                    onclick={() => act(hunk, 'revert')}
-                />
-            {/if}
-        </div>
+{#snippet lineBar(id: string)}
+    {#if id === COMMENT_BAR}
+        <CommentBox
+            title={who}
+            text={box.text}
+            sending={box.sending}
+            failure={box.failure}
+            opened={box.opened}
+            oninput={box.write}
+            onsend={() => void box.send()}
+            onclose={box.close}
+            oncancel={box.drop}
+        />
+    {:else}
+        {@const at = Number(id)}
+        {@const hunk = hunks.at(at)}
+        {#if hunk !== undefined}
+            {@const count = pickedIn(hunk).count}
+            <div
+                class="hunk"
+                class:current={at === current}
+                data-hunk={at}
+                data-hunk-id={`${index}:${id}`}
+            >
+                <span class="head">{headOf(hunk)}</span>
+                {#if actions === 'none'}
+                    <span class="whole"
+                        >{conflicted
+                            ? t('repositories.diff_conflicted')
+                            : t('repositories.diff_whole')}</span
+                    >
+                {:else if actions !== 'read' && staged}
+                    <ToolButton
+                        label={count > 0
+                            ? t('repositories.lines_unstage', count)
+                            : t('repositories.hunk_unstage')}
+                        glyph="unstage"
+                        disabled={busy}
+                        onclick={() => act(hunk, 'unstage')}
+                    />
+                {:else if actions !== 'read'}
+                    <ToolButton
+                        label={count > 0
+                            ? t('repositories.lines_stage', count)
+                            : t('repositories.hunk_stage')}
+                        glyph="stage"
+                        disabled={busy}
+                        onclick={() => act(hunk, 'stage')}
+                    />
+                    <ToolButton
+                        label={count > 0
+                            ? t('repositories.lines_revert', count)
+                            : t('repositories.hunk_revert')}
+                        glyph="note_back"
+                        disabled={busy}
+                        onclick={() => act(hunk, 'revert')}
+                    />
+                {/if}
+            </div>
+        {/if}
     {/if}
 {/snippet}
 
@@ -324,6 +379,9 @@
         {#if endings}
             <p class="note">{t('repositories.diff_eol_only')}</p>
         {/if}
+        {#if box.notice !== ''}
+            <p class="note" role="status" data-comment-notice>{box.notice}</p>
+        {/if}
         {#if file.binary}
             <p class="note">{t('repositories.diff_binary')}</p>
         {:else if equal}
@@ -346,7 +404,9 @@
                     sized={several}
                     {view}
                     {bars}
-                    bar={hunkBar}
+                    bar={lineBar}
+                    oncomment={commentable ? box.open : undefined}
+                    commentLabel={t('sessions.comment_action')}
                     onchanges={changed}
                     onselect={(next: DiffSelections) => (selections = next)}
                     {onview}

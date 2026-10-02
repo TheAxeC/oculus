@@ -76,4 +76,15 @@ text:
         ch_untracked: Untracked
         changes_bar: Changes controls
         changes_glyph: changes
+        comment_action: Add Comment on Line
+        comment_cancel: Cancel
+        comment_clipboard: The clipboard refused the copy.
+        comment_control: The comment holds a control character, which cannot be typed into a terminal. Remove it and send again.
+        comment_copied: '{0} has no oculus terminal now. The comment is on the clipboard.'
+        comment_head: 'Comment to {0}'
+        comment_label: Comment
+        comment_long: 'The comment is longer than {0} characters.'
+        comment_send: Send
+        comment_sent: 'Sent to {0}.'
+        comment_silent: The terminal did not answer.
         view_changes: Changes

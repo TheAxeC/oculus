@@ -244,6 +244,18 @@ describe('what a move does to a tab', () => {
         ).toBeNull();
     });
 
+    // Revert: leave `session` out of the subject followedDiffTab rebuilds.
+    it("keeps a session's diff pane that session when its file moves, and the id carries both", () => {
+        const base = { root: 'hub', path: 'dir/a.md', staged: false, worktree: false };
+        const followedTab = followedDiffTab(diffState({ ...base, session: 's-1' }, 'a.md'), moves);
+        expect(followedTab).toMatchObject({ path: 'dir/b.md', session: 's-1' });
+        expect(followedTab?.id).toBe('changed@s-1:hub:dir/b.md');
+        // a pane opened from the Repositories view has no session
+        const plain = followedDiffTab(diffState(base, 'a.md'), moves);
+        expect(plain?.id).toBe('changed:hub:dir/b.md');
+        expect(plain?.session ?? '').toBe('');
+    });
+
     it('relabels a comparison titled by the names of its files, and keeps any other title', () => {
         const base = {
             root: 'hub',

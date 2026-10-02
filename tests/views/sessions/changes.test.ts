@@ -9,11 +9,16 @@
 // branch listing the panel fetches in an effect is never sent, and the states a real repository
 // puts on the channel are not checked here.
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import Changes from '../../../src/lib/views/sessions/changes/Changes.svelte';
+import ChangesRepo from '../../../src/lib/views/sessions/changes/ChangesRepo.svelte';
 import { branchState } from '../../../src/lib/views/shared/changes/branch-state.ts';
 import { repoShape } from '../../../src/lib/state/sources/repositories/repositories.ts';
+import {
+    DIFF_VIEW,
+    MERGE_VIEW
+} from '../../../src/lib/state/sources/repositories/repositories.svelte.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -21,7 +26,7 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, setGlyphs, t } from '../../../src/lib/state/shared/words/text.ts';
 import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import {
     HUB_GIT,
@@ -38,6 +43,10 @@ import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts'
 import type { ViewProps } from '../../../src/lib/state/workbench/navigation/registry.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
+vi.mock('../../../src/lib/views/sessions/changes/ChangesRepo.svelte', async (original) =>
+    (await import('../sources/repositories/press-on-render.ts')).recorded(original)
+);
+
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
 let apply: ClientState['layout']['apply'];
@@ -45,6 +54,7 @@ let select: ClientState['selection']['select'];
 let setInstanceState: ClientState['ui']['setInstanceState'];
 
 beforeEach(() => {
+    vi.mocked(ChangesRepo as unknown as (...args: unknown[]) => unknown).mockReset();
     client = createClientState();
     ({ receive } = client.entities);
     ({ apply } = client.layout);
@@ -399,6 +409,33 @@ describe('the changes view', () => {
         const body = html(Changes);
         expect(body.split(`aria-label="${catalog['repositories.diff_open']}"`)).toHaveLength(4);
         expect(body.split(`aria-label="${catalog['repositories.open_file']}"`)).toHaveLength(2);
+    });
+
+    // Revert: leave the session's id out of the call the row's press makes in Changes.svelte.
+    it("opens a row's diff as the tab of the session the view shows, a merge row in the merge editor, an untracked row by its file", () => {
+        select('live-one');
+        html(Changes);
+        const beside = vi.spyOn(client.layout, 'openBeside').mockReturnValue('one');
+        const view = vi.spyOn(client.layout, 'openView').mockReturnValue('one');
+        const shown = vi.mocked(ChangesRepo as unknown as (...args: unknown[]) => unknown).mock
+            .calls[0][1] as { onopen: (path: string, kind: string) => void };
+        shown.onopen('manuscript/main.tex', 'changed');
+        shown.onopen('manuscript/main.tex', 'staged');
+        shown.onopen('both.txt', 'merge');
+        shown.onopen('notes/new.txt', 'untracked');
+        const states = beside.mock.calls.map(
+            (call) => [call[0], (call[1] as { id: string }).id] as const
+        );
+        expect(states).toEqual([
+            [DIFF_VIEW, `changed@live-one:${HUB}:manuscript/main.tex`],
+            [DIFF_VIEW, `staged@live-one:${HUB}:manuscript/main.tex`],
+            [MERGE_VIEW, `merge:${HUB}:both.txt`]
+        ]);
+        // No root is served in this fixture, so the file of an untracked row is refused by name.
+        expect(view.mock.calls).toEqual([]);
+        expect(client.repositories.outcome(HUB)).toBe(
+            t('repositories.open_unserved', 'notes/new.txt')
+        );
     });
 
     it('draws Merge Changes first while a merge left a path in conflict, its row opening the merge editor', () => {

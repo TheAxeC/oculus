@@ -262,6 +262,17 @@ export const TERMINAL_COLORS = [
 /** One of the eight colour names. */
 export type TerminalColor = (typeof TERMINAL_COLORS)[number];
 
+/** The longest message one steer types into a terminal, which the server refuses to pass. */
+export const STEER_MAX = 100_000;
+
+/**
+ * The control characters a steer refuses: each would be typed as a key of its own (Escape,
+ * Ctrl-C). A line break and a tab are the two a message holds. The server refuses them and the
+ * page checks a comment against the same expression before it types or copies it.
+ */
+// eslint-disable-next-line no-control-regex
+export const STEER_CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f]/;
+
 /** One tmux session oculus started, as `tmux list-sessions` reports it. */
 export type Terminal = {
     /** The session name without the `oculus-` prefix; the `pty:<id>` channel is named from it. */

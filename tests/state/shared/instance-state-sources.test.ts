@@ -48,7 +48,8 @@ const heldDiffFallback = {
     stash: '',
     group: undefined,
     against: undefined,
-    line: 0
+    line: 0,
+    session: ''
 };
 const heldDiffValid = {
     id: 'i',
@@ -62,7 +63,8 @@ const heldDiffValid = {
     stash: 's',
     group: 'staged',
     against: { root: 'a', path: 'b' },
-    line: 4
+    line: 4,
+    session: 's-1'
 };
 const diffViewFallback = { mode: 'side', views: {}, unchanged: 'folded', folded: [] };
 const diffViewValid = {
@@ -258,7 +260,8 @@ const READERS: Reader[] = [
             stash: 's',
             group: 'staged',
             against: { root: 'a', path: 'b' },
-            line: 4
+            line: 4,
+            session: 's-1'
         },
         wrong: {
             id: 3,
@@ -272,7 +275,8 @@ const READERS: Reader[] = [
             stash: 3,
             group: 'both',
             against: 3,
-            line: '4'
+            line: '4',
+            session: 3
         },
         edge: {
             'group changed': { group: 'changed' },
@@ -290,7 +294,8 @@ const READERS: Reader[] = [
                 path: '',
                 commit: '',
                 save: '',
-                stash: ''
+                stash: '',
+                session: ''
             },
             'no booleans': { staged: ABSENT, worktree: ABSENT }
         },
@@ -314,6 +319,7 @@ const READERS: Reader[] = [
             'wrong group': { ...heldDiffValid, group: undefined },
             'wrong against': { ...heldDiffValid, against: undefined },
             'wrong line': { ...heldDiffValid, line: 0 },
+            'wrong session': { ...heldDiffValid, session: '' },
             'all wrong': heldDiffFallback,
             'group changed': { ...heldDiffValid, group: 'changed' },
             'group empty': { ...heldDiffValid, group: undefined },

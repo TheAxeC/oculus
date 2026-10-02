@@ -395,24 +395,21 @@ describe('a file that does not hold the key', () => {
         }
     });
 
-    it('refuses a key that is absent, empty, null, an alias, anchored, tagged or a block scalar', () => {
-        const variants = [
-            'changes:\n  other: 1\n',
-            'changes:\n  keep:\n',
-            'changes:\n  keep: ~\n',
-            'changes:\n  keep: null\n',
-            'changes:\n  base: &v 5\n  keep: *v\n',
-            'changes:\n  keep: &v 5\n  other: *v\n',
-            'changes:\n  keep: !!int 5\n',
-            'changes:\n  keep: |\n    5\n'
-        ];
-        for (const block of variants) {
-            const engine = engineWith('behavior.yml', (text) => text.replace(KEEP_BLOCK, block));
-            const before = held(engine);
-            const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-            expect(refusedWith(outcome, KEEP)).toBe(why('not_in_file'));
-            expect(held(engine)).toBe(before);
-        }
+    it.each([
+        ['absent', 'changes:\n  other: 1\n'],
+        ['empty', 'changes:\n  keep:\n'],
+        ['null as ~', 'changes:\n  keep: ~\n'],
+        ['null', 'changes:\n  keep: null\n'],
+        ['an alias', 'changes:\n  base: &v 5\n  keep: *v\n'],
+        ['anchored', 'changes:\n  keep: &v 5\n  other: *v\n'],
+        ['tagged', 'changes:\n  keep: !!int 5\n'],
+        ['a block scalar', 'changes:\n  keep: |\n    5\n']
+    ])('refuses a key that is %s', (_name, block) => {
+        const engine = engineWith('behavior.yml', (text) => text.replace(KEEP_BLOCK, block));
+        const before = held(engine);
+        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
+        expect(refusedWith(outcome, KEEP)).toBe(why('not_in_file'));
+        expect(held(engine)).toBe(before);
     });
 
     it('refuses an edit that would change a second key, which an alias of the map reads', () => {
