@@ -997,6 +997,25 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z301 (2026-10-02, D17's refuter report): the form's place, preset names, the approvals folder, the approval key and quoted placeholders
+
+Chosen:
+- The command form and the approval dialog stay drawn by the shell (a default key asks with no bar mounted; a wall surface under a tinted view is refused), moved from `shell/keys/` to `shell/commands/`.
+- Found presets keep three names, `cmake: <n>`, `cmake build: <n>` and `ctest: <n>`, so a configure and a build preset of one name stay apart; HELP.md says so.
+- Each approvals write makes the approvals folder 0700 when it is looser; `~/.oculus` is 0755 on this machine.
+- A command's approval key includes the repository's real absolute path, as an app's folder is in its hash in DESIGN.md's Approval paragraph, so approving a text in one repository does not approve it in another; within the processes rule's "that exact text on this machine".
+- A placeholder inside single or double quotes in a run line is refused at save and at run, since a value inside double quotes can run `$(...)` unapproved.
+- A chain is approved as one text, every line with its folder, as DESIGN.md already says.
+
+Not chosen:
+- The form in `shell/keys/`: that folder holds keys.
+- One `cmake:` name for all presets: a configure and a build preset named `default` collide and one is dropped.
+- A folder of its own for the approvals file: it moves a path `local.yml` names by default.
+- The key without the repository, as built: one approval covers every repository holding the same text.
+- Leaving quoted placeholders: the lazy option; a selection can run code no one approved.
+
+Where it applies: D17, repair round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z300 (2026-10-02, D14's refuter report, Spec 2 and Spec 3): where the LaTeX reader lives, and the LaTeX tab's glyph
 
 Chosen: the reader at `data/prose/latex.ts`, beside `markdown.ts`, whose head comment says it is one rule imported by both sides, the same concern; the LaTeX tab draws the existing `paper` glyph (`[d]`, `file-text`), a page of text.

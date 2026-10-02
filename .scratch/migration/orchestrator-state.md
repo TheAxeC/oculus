@@ -84,11 +84,11 @@ dispatch:      # four in flight (workers_at_once: 5), A1 landed 14:40: Q88c and 
   launched: 2026-10-02 16:37 local
   report: agents/reviews/D17-report.md
   builder_usage: 349,641 tokens, 725 tool uses, 243.5 min (its completion notice, 2026-10-02)
-  reviewer_report: agents/reviews/D17-refuter.md (pending); reviewer a5d2a98fbce79b67d at ordo-high, claude-opus-5-5 (the transcript's message.model, read 2026-10-02 at its launch)
+  reviewer_report: agents/reviews/D17-refuter.md; reviewer a5d2a98fbce79b67d at ordo-high, claude-opus-5-5 (the transcript's message.model, read 2026-10-02 at its launch); 315,842 tokens, 81 tool uses, 20.6 min (its completion notice, 2026-10-02)
   brief_check: agents/reviews/D17-brief-check.md; claude-sonnet-5-5, 232,904 tokens, 79 tool uses, 11.6 min (run 2026-10-01; findings closed 2026-10-02 under Closed)
   shared_paths: with D14, `pty/routes.ts` (D14 `startLatex` and `latexCommand`, D17 the `command` action, the action list and the `shellWord` import; separate functions, D14's calls of `shellWord` take D17's import at the second landing), `terminal/+server.ts` (separate options), `terminals.svelte.ts` (separate methods), `tree/menu/row-menu.ts` (separate groups), `Source.svelte` (D14 the save and editor props, D17 the published selection), `HELP.md` and `DESIGN.md` (separate passages); with D18, `state/client/context.ts` (separate constructions), the pty tests (D18 reads `listTerminals`, D17 adds two fields before `#{pid}`), `allow-duplication.txt` and `config-folder.test.ts` (separate rows), `HELP.md` and `DESIGN.md`; with D32, `HELP.md` and `DESIGN.md` (separate lines)
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-10-02, agents/briefs/D17-round1.md)
 - step: S4
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -101,7 +101,8 @@ dispatch:      # four in flight (workers_at_once: 5), A1 landed 14:40: Q88c and 
   brief_check: agents/reviews/S4-brief-check.md; claude-opus-5-5, 234,939 tokens, 68 tool uses, 11.8 min (findings closed 2026-10-02 under Closed)
   shared_paths: with D18, `config/layout.yml` (D18 adds `processes` to `arrangements.info`, which S4 removes; the second to land places `processes` last in the merged lower right pane with no chord, as Z282 rules, a known edit of one line), the registrations' `group:` lines (D18's `Processes.svelte` takes `group: 'views'` order 9 at the second landing), `config/text/app.yml` and HELP.md's key table (`y1-y7` becomes the merged group's row), the catalogue and registry tests (separate rows), `HELP.md` and `DESIGN.md` (separate passages); with D32, `HELP.md`, `DESIGN.md` and `tests/views/whole/type-scale.test.ts` (separate lines); with D14 and D17, `HELP.md`, `DESIGN.md`, `tests/checks/config/config-folder.test.ts` and `config/text/server.yml` (separate keys and rows)
   landing: not-started
-  builder_usage: first run 303,266 tokens, 143 tool uses, 31.2 min (stopped at the cases)
+  builder_usage: first run 303,266 tokens, 143 tool uses, 31.2 min (stopped at the cases); after the cases ruling 198,895 tokens, 542 tool uses, 254.1 min (its completion notice, 2026-10-02)
+  reviewer_report: agents/reviews/S4-refuter.md (pending); reviewer aad14f00793820d71 at ordo-high, claude-opus-5-5 (the transcript's message.model, read 2026-10-02 at its launch)
   round: 0 (cases ruled: agents/briefs/S4-cases.md)
 ```
 
@@ -201,6 +202,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z301 (2026-10-02 21:20, D17's refuter report): the form in `shell/commands/`; preset names `cmake:`, `cmake build:`, `ctest:`; the approvals folder made 0700; the repository in a command's approval key; quoted placeholders refused; the chain approved as one text; sent in D17's repair round 1 (the orchestrator, automode). Not chosen: the shapes as built; leaving quoted placeholders, the lazy option.
 - Z300 (2026-10-02 21:00, D14's refuter report): Spec 2 and Spec 3; the LaTeX reader at `data/prose/latex.ts`, the LaTeX tab on the existing `paper` glyph instead of `publish`; sent in D14's repair round 1 (the orchestrator, automode). Not chosen: the places as built; a new glyph key.
 - Z299 (2026-10-02 21:00, D14's refuter report): Behaviour 4; on a parser refusal the shared reader keeps the sections from a comment-aware line scan with `refused: true`, revising Z279's "listed as skipped", which emptied the Outline of real files; sent in D14's repair round 1 (the orchestrator, automode). Not chosen: Z279 as built; a tolerant parser library, which reverses LA18; keeping the last good outline.
 - Z298 (2026-10-02 20:40, D17's report): D17-A, a task terminal no pane shows gives no diagnostics; (a), one server capture of its output when it ends, through a new `capture` action of the terminal route, sent in D17's repair round (the orchestrator, automode). Not chosen: (b) a subscription per running task terminal; leaving it, the lazy option.
