@@ -43,7 +43,20 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   builder_usage: the build to the report, as its completion notice gives it, 318,310 tokens, 1,446 tool uses, 365.6 min (4 full-list runs, the 4th printing `checks: 7 commands passed`)
   reviewer_report: agents/reviews/X3a-refuter.md (first run, reviewer a6e768689ba25b71d, claude-sonnet-5-5 read at 07:55, launched 2026-10-02 07:55; 297,143 tokens, 170 tool uses, 26.1 min; 3 Spec, 6 Proof, 3 Standards, 2 Behaviour findings)
   landing: not-started
-  round: 1 (agents/briefs/X3a-round1.md, sent 2026-10-02 08:55)
+  round: 1 (agents/briefs/X3a-round1.md, sent 2026-10-02 08:25)
+- step: D18
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 08:29)
+  session_id: a85f423d94391e52c (launched 2026-10-02 08:29 local)
+  worktree: .agents/worktrees/D18
+  base: 47a41fa4
+  launched: 2026-10-02 08:29 local
+  report: agents/reviews/D18-report.md
+  brief_check: agents/reviews/D18-brief-check.md; claude-sonnet-5-5, 264,980 tokens, 82 tool uses, 12.3 min
+  shared_paths: with X3a, `options.yml` (other blocks), `data/sources/config/settings.ts` (one reader each), `behavior.yml` (separate sections), `config-folder.test.ts` and `allow-duplication.txt` (separate rows), `state/client/context.ts` and `routes/+page.svelte` (separate lines), `DESIGN.md` and `HELP.md` (separate rows and paragraphs), `type-scale.test.ts` (separate rows); with Q88c, `state/client/context.ts`, `rail-badges.svelte.ts` (D18 one import path), `options.yml`, `DESIGN.md`, `HELP.md`: added or re-keyed lines in separate places, a simple merge; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
 - step: Q88c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -178,12 +191,12 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Z238 (2026-10-02 02:47, M4): the path list widened; a blank equation draws no card (the orchestrator, automode).
 - Z239 (2026-10-02 05:20, D35): a page that follows a moved server carries its layout and its "This browser" settings across in `window.name` (the orchestrator, automode).
 - Z240 (2026-10-02 06:50, Q88c): the brief check's open points closed with VS Code's behaviour; `useConfigOnly` through git's environment; the read module moved into `server/core/git/`; Delete Branch `-d` only until Z241 (the orchestrator, automode).
-- Z242 (2026-10-02 08:50, X3a): the delete copies in the local history are pruned: the newest 50 are kept over all files, the oldest removed first, and an undo of a pruned delete says the copy is gone (the orchestrator, automode).
-- Z243 (2026-10-02 08:50, X3a): a drop of a file onto another root moves it, one `move` record, as the tree's `paste` in `mode: 'move'` does and as VS Code moves between workspace folders; the brief's "a copy and a trash of the source" is corrected (the orchestrator, automode).
-- Z244 (2026-10-02 08:50, D18): the Processes watcher reads every ten seconds while at least one page is connected, the `processes` channel subscribed with every other channel in `+page.svelte`, and reads nothing while no page is connected (the orchestrator, automode).
-- Z245 (2026-10-02 08:50, D18): oculus's own processes are the trees under every pane of its terminal sessions (`oculus-<id>` with a terminal id); the hidden usage sessions and a hand-made `oculus-` session with no terminal id are not oculus's own and are listed only when a pattern matches (the orchestrator, automode).
-- Z246 (2026-10-02 08:50, D18): the head line's agents are counted over the whole process table, a `claude` or `codex` process whose parent is the same program counted once (the orchestrator, automode).
-- Z247 (2026-10-02 08:50, D18): a command line is cut at 1,000 characters in the payload with an ellipsis; the row count is not cut (the orchestrator, automode).
+- Z242 (2026-10-02 08:24, X3a): the delete copies in the local history are pruned: the newest 50 are kept over all files, the oldest removed first, and an undo of a pruned delete says the copy is gone (the orchestrator, automode).
+- Z243 (2026-10-02 08:24, X3a): a drop of a file onto another root moves it, one `move` record, as the tree's `paste` in `mode: 'move'` does and as VS Code moves between workspace folders; the brief's "a copy and a trash of the source" is corrected (the orchestrator, automode).
+- Z244 (2026-10-02 08:24, D18): the Processes watcher reads every ten seconds while at least one page is connected, the `processes` channel subscribed with every other channel in `+page.svelte`, and reads nothing while no page is connected (the orchestrator, automode).
+- Z245 (2026-10-02 08:24, D18): oculus's own processes are the trees under every pane of its terminal sessions (`oculus-<id>` with a terminal id); the hidden usage sessions and a hand-made `oculus-` session with no terminal id are not oculus's own and are listed only when a pattern matches (the orchestrator, automode).
+- Z246 (2026-10-02 08:24, D18): the head line's agents are counted over the whole process table, a `claude` or `codex` process whose parent is the same program counted once (the orchestrator, automode).
+- Z247 (2026-10-02 08:24, D18): a command line is cut at 1,000 characters in the payload with an ellipsis; the row count is not cut (the orchestrator, automode).
 - Z224 (2026-10-02 02:08, M4): each equation a single-quoted YAML scalar (the orchestrator, automode).
 - Z225 (2026-10-02 02:08, M4): the image branch removed, one finding kept for an image name (the orchestrator, automode).
 - Z226 (2026-10-02 02:08, M4): the subtitle names the Present view (the orchestrator, automode).
@@ -758,7 +771,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-02 08:40. D24 landed (the Personal board), a conflict in `server/root/context.ts` and the diagrams resolved, fixes at landing: the four findings of the run over round 1, one test call given L4's floats argument, the floats tests moved out of an over-size file; the six repositories' manifests committed in their repositories; the look on TEST taken (nine cards, no console error); `checks: 7 commands passed` on the third run. D24 is the 15th landing with a Sonnet reviewer, so the three-way comparison is ready to be asked for. X3a's review is in (14 findings). D18's brief check is in. In flight: X3a (repair round 1 next), Q88c (building). Next: send X3a's round 1; close D18's brief-check findings and launch its builder; /spec M3. Open items: Z241.
+- 2026-10-02 08:23. D24 landed (the Personal board), a conflict in `server/root/context.ts` and the diagrams resolved, fixes at landing: the four findings of the run over round 1, one test call given L4's floats argument, the floats tests moved out of an over-size file; the six repositories' manifests committed in their repositories; the look on TEST taken (nine cards, no console error); `checks: 7 commands passed` on the third run. D24 is the 15th landing with a Sonnet reviewer, so the three-way comparison is ready to be asked for. X3a's review is in (14 findings). D18's brief check is in. In flight: X3a (repair round 1 next), Q88c (building). Next: send X3a's round 1; close D18's brief-check findings and launch its builder; /spec M3. Open items: Z241.
 - 2026-10-02 07:50. D35 landed (every configuration file live, the server's port move and the page following it), a diagram conflict resolved on D35's side, six fixes at landing (the six findings of the run over round 1), the look on TEST taken, `checks: 7 commands passed` on main. D24's run over round 1 is in (4 findings, closed at its landing). In flight: X3a and Q88c (building), D24 (ready to land). Next: /land D24; /spec D32 and D18; /spec M3 after D24. Open items: Z241.
 - 2026-10-02 06:40. M4 landed (the Present view's equations as LaTeX), a conflict resolved on M4's side, three fixes at landing (two head comments, the formula fitted to its card after the look found all 13 cut off), `checks: 7 commands passed` on the fourth run. D35's repair round 1 is in. In flight: D35 (round review next), D24 (repair round 1), X3a (building). Next: /refute D35 over round 1; /spec Q88c. Open items: none.
 - 2026-10-02 06:05. L4 landed (floating panes and kept empty panes), conflicts in DESIGN.md, context.ts, Usage.svelte and the diagrams resolved, three fixes at landing, the look on TEST taken, `checks: 7 commands passed` on the fifth run (the earlier ones red only on 5000 ms timeouts in files L4 does not touch, and one type error from a fix). In flight: D35 (repair round 1), M4 (round review running), D24 (review running), X3a (building). Next: M4's round review saved and /land M4; D24's findings. Open items: none.

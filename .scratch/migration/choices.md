@@ -792,7 +792,7 @@ The question: the user-visible choices and blocking findings Q88c's brief check 
 
 Where it is built: Q88c. Booked in the state file's closed log and `plan.md` Rulings.
 
-## Z242 (2026-10-02 08:50, step X3a)
+## Z242 (2026-10-02 08:24, step X3a)
 
 The question: how many copies of deleted files the local history keeps (X3a's review, Behaviour 2: a delete keeps a copy of up to 5 MB with no count or total cap, so `~/.oculus/history` grows without bound unless each delete is undone).
 
@@ -802,7 +802,7 @@ The question: how many copies of deleted files the local history keeps (X3a's re
 
 Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
 
-## Z243 (2026-10-02 08:50, step X3a)
+## Z243 (2026-10-02 08:24, step X3a)
 
 The question: what a drag of a file from one root onto another does (X3a's review, Spec 3: the brief's case 8 said a copy and a trash of the source; the tree's `moveItem` renames, with copy and remove only across devices, and nothing goes to the Trash).
 
@@ -811,7 +811,7 @@ The question: what a drag of a file from one root onto another does (X3a's revie
 
 Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
 
-## Z244 (2026-10-02 08:50, step D18)
+## Z244 (2026-10-02 08:24, step D18)
 
 The question: when the Processes view's server read runs (D18's brief check 5.1: the socket has no unsubscribe message, so a read gated on a mounted Processes tab cannot stop when the tab closes).
 
@@ -821,7 +821,7 @@ The question: when the Processes view's server read runs (D18's brief check 5.1:
 
 Where it is built: D18. Booked in the state file's closed log and `plan.md` Rulings.
 
-## Z245 (2026-10-02 08:50, step D18)
+## Z245 (2026-10-02 08:24, step D18)
 
 The question: which tmux sessions count as oculus's own (D18's brief check 3.4, 6.9, 6.17, 6.18: `listTerminals()` never returns the usage sessions, which live seconds and have no id to stop; a foreign `oculus-` session has no terminal; `#{pane_pid}` of `list-sessions` is the active pane only).
 
@@ -831,7 +831,7 @@ The question: which tmux sessions count as oculus's own (D18's brief check 3.4, 
 
 Where it is built: D18. Booked in the state file's closed log and `plan.md` Rulings.
 
-## Z246 (2026-10-02 08:50, step D18)
+## Z246 (2026-10-02 08:24, step D18)
 
 The question: what the head line counts as agents (D18's brief check 6.15, 6.16: a wrapper and its native child would count twice, and counting only listed rows makes the count depend on the patterns).
 
@@ -841,7 +841,7 @@ The question: what the head line counts as agents (D18's brief check 6.15, 6.16:
 
 Where it is built: D18. Booked in the state file's closed log and `plan.md` Rulings.
 
-## Z247 (2026-10-02 08:50, step D18)
+## Z247 (2026-10-02 08:24, step D18)
 
 The question: how much of each command line the `processes` payload carries every ten seconds (D18's brief check 6.7: the default `node` pattern matches every language server and test worker, and a command line can run to tens of kilobytes).
 

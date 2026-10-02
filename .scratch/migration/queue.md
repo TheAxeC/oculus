@@ -2,7 +2,7 @@
 
 In flight:
 - X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), repair round 1 running.
-- D18 (the Processes view), brief check in; its findings are being closed in the brief, then the builder.
+- D18 (the Processes view), building.
 - Q88c (the Source Control rows' and the pane strip's new right-click capabilities, Z240), builder at ordo-high; open item Z241 (Delete Branch's force retry) waits on Axel.
 
 
