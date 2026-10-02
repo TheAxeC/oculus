@@ -53,6 +53,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: 47a41fa4
   launched: 2026-10-02 08:29 local
   report: agents/reviews/D18-report.md
+  reviewer_report: agents/reviews/D18-refuter.md; reviewer a4303ec6fd987a4dd at ordo-high, served claude-opus-5-5 (read 2026-10-02), running
+  builder_usage: to the report 306 tool uses, 112.7 min (from its transcript; no completion notice reached this session); the full list red only at `integrity.test.ts` side projects, the worktree lacking `side-projects/` (now in `worktree_paths` and checked out), the other five commands green alone
   brief_check: agents/reviews/D18-brief-check.md; claude-sonnet-5-5, 264,980 tokens, 82 tool uses, 12.3 min
   shared_paths: with X3a, `options.yml` (other blocks), `data/sources/config/settings.ts` (one reader each), `behavior.yml` (separate sections), `config-folder.test.ts` and `allow-duplication.txt` (separate rows), `state/client/context.ts` and `routes/+page.svelte` (separate lines), `DESIGN.md` and `HELP.md` (separate rows and paragraphs), `type-scale.test.ts` (separate rows); with Q88c, `state/client/context.ts`, `rail-badges.svelte.ts` (D18 one import path), `options.yml`, `DESIGN.md`, `HELP.md`: added or re-keyed lines in separate places, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
@@ -71,7 +73,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   brief_check: agents/reviews/Q88c-brief-check.md (run 2026-10-01 on the earlier draft, not run again: the spec skill checks a step once; its findings closed under its Closed heading); claude-sonnet-5-5, 78,134 tokens, 94 tool uses, 15.0 min
   shared_paths: with X3a, `server/files/fs/ops.ts` (Q88c the word `export` on two functions; X3a other functions), `server/files/fs.ts` (one import line), `routes/+page.svelte` (one listener), `DESIGN.md:128` (both add sentences to one paragraph, combined at landing), `options.yml` (different blocks); with D24, `rail-badges.svelte.ts` (each its own badge function and input), `options.yml` (511 against the `appearance.yml:` block), `DESIGN.md` (after 404 against 128, 359, 395); with D35, `options.yml` (different blocks), `HELP.md` (216 and 236 against 44, 113, 171-213, 222). Each merge is additive in separate hunks or one paragraph combined by hand.
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/Q88c-round1.md, sent 2026-10-02 10:49)
 - step: M3
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -94,6 +96,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: ce71ecf1
   launched: 2026-10-02 09:12 local
   report: agents/reviews/A1-report.md
+  reviewer_report: agents/reviews/A1-refuter.md; reviewer a32324e09cd16a4a4 at ordo-high, served claude-opus-5-5 (read 2026-10-02), running
+  builder_usage: to the report 273,112 tokens, 192 tool uses, 80.8 min; the full list red only at `integrity.test.ts` side projects, as D18
   brief_check: agents/reviews/A1-brief-check.md; claude-sonnet-5-5, 269,064 tokens, 76 tool uses, 11.9 min
   shared_paths: with Q88c, `repositories.ts` (A1 `DiffSubject`, `diffState`, `heldDiffShape`; Q88c other functions), `repositories.svelte.ts` (A1 `openChange`; Q88c the menus' wiring), `config/text/views/sessions/changes.yml` (A1 the `sessions:` group, Q88c the `git:` group), `tests/views/sources/repositories/` (A1 `diff-pane.test.ts`, which follows Q88c's split if Q88c makes one); with X3a, `state/sources/explorer/follow.ts` (A1 one field in `followedDiffTab`, X3a new modules beside it) and `tests/views/whole/type-scale.test.ts` (separate rows), as with D18; `HELP.md` 87 and 132 and `DESIGN.md` 399 against the other steps' lines; `docs/diagrams/`, regenerated at each landing. Each is added lines in separate places.
   landing: not-started
