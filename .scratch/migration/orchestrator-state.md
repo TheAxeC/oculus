@@ -71,8 +71,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with Q85d, `Changes.svelte` (Q85d the body read at 77-79; Q66 the effect at 59-70), `Diff.svelte` (Q85d a `typeof` at 333 and readers; Q66 the effects at 216-241), `Graph.svelte` and `Source.svelte` (Q85d the readers; Q66 the gutter and load effects), `File.svelte` (Q85d the instance-state readers at 90-92; Q66 the address at 95-97); with L4, `PaneBody.svelte` (L4 the float body; Q66 the head comment at 8-9) and `File.svelte` (L4 only if its close needs the rule); `tests/shell/panes/` (L4 changed cases in existing files; Q66 two new files, the folder at 6); `DESIGN.md` (Q66 194; others as their entries say), different hunks, a simple merge with Diff.svelte's size read after both; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   builder_usage: continuation builder a7c7904a6d1025f78 to the report 249,200 tokens, 87 tool uses, 43.3 min (2 full-list runs, the last passed)
-  reviewer_report: agents/reviews/Q66-refuter.md (first run, reviewer a93e9f989b66e2e0d, claude-sonnet-5-5 read at 01:50, launched 2026-10-02 01:50; usage on its completion)
-  round: 0
+  reviewer_report: agents/reviews/Q66-refuter.md (first run, reviewer a93e9f989b66e2e0d, claude-sonnet-5-5 read at 01:50, launched 2026-10-02 01:50; 197,616 tokens, 55 tool uses, 43.5 min; 3 Spec, 2 Proof, 2 Standards, 2 Behaviour findings)
+  round: 1 (agents/briefs/Q66-round1.md, sent 02:36)
 - step: Q35
   executor: agent
   worker: claude:sonnet
