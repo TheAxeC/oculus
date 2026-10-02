@@ -997,6 +997,15 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z288 (2026-10-02, Axel's look): five defects folded into X3c
+
+Chosen: the five defects of Axel's look on 2026-10-02 are built in X3c: (1) a file tab draws a path breadcrumb (root, folders, file) in place of its file-name header row, at VS Code's measured size; (2) the tab's own buttons (Save, Revert, the star, Open in Program, Preview, Blame) move to the right end of the tab strip and the second row goes; (3) the breadcrumb's size is VS Code's, measured from its stylesheet; (4) a long palette result stays on one line with an ellipsis; (5) a click on a rail button never writes a rail reorder, its cause found read-only while X3c's brief is closed (the orchestrator, automode).
+
+Not chosen:
+- A new step, which needs Axel's ruling and would change the same strip, header and palette files as X3c.
+
+Where it applies: `agents/briefs/X3c.md`.
+
 ## Z287 (2026-10-02, D32's review): the pattern refusal's reason
 
 Chosen: a pattern ripgrep cannot read is refused with the catalog sentence and ripgrep's own reason in it, as VS Code's Search view shows ripgrep's regex parse error (the orchestrator, automode).
