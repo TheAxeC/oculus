@@ -125,9 +125,10 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   launched: 2026-10-02 02:28 local
   report: agents/reviews/M4-report.md
   brief_check: agents/reviews/M4-brief-check.md; claude-sonnet-5-5, 207,699 tokens, 64 tool uses, 13.5 min
-  shared_paths: with Q35, `tests/views/academic/present.test.ts` and `tests/state/life/present.test.ts` (Q35 adds cases after 312 and 830; M4 lines 72-228 and 553-783); with D24, as D24's entry says: separate hunks, a simple merge; `docs/diagrams/`, regenerated at each landing
+  builder_usage: to the first-run hand-back (agents/reviews/M4-first-run.md) 204,365 tokens, 72 tool uses, 17.5 min
+  shared_paths: with Q35, `tests/views/academic/present.test.ts` and `tests/state/life/present.test.ts` (Q35 adds cases after 312 and 830; M4 lines 72-228 and 553-783); with Q35, X3a and D24, `tests/views/whole/type-scale.test.ts` (M4 the `Equation.svelte` row at 153 only, Z238; the others their own rows); with D24, as D24's entry says: separate hunks, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
-  round: 0
+  round: 0 (agents/briefs/M4-cases.md, sent 02:49)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -239,6 +240,9 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Z233 (2026-10-02 02:26, M4): the cockpit deck draws LaTeX equations through MathJax (the orchestrator, automode).
 - Z234 (2026-10-02 02:26, M4): the 13 lines written by the named script (the orchestrator, automode).
 - Z235 (2026-10-02 02:26, M4): the real slides checked in `integrity.test.ts`, the comparison at landing (the orchestrator, automode).
+- Z236 (2026-10-02 02:47, M4): `\bm` drawn bold through the vendored `boldsymbol` extension (the orchestrator, automode).
+- Z237 (2026-10-02 02:47, M4): the `\text{\small X}` rewrite for MathJax, the check counting `merror` and red nodes (the orchestrator, automode).
+- Z238 (2026-10-02 02:47, M4): the path list widened; a blank equation draws no card (the orchestrator, automode).
 - Z224 (2026-10-02 02:08, M4): each equation a single-quoted YAML scalar (the orchestrator, automode).
 - Z225 (2026-10-02 02:08, M4): the image branch removed, one finding kept for an image name (the orchestrator, automode).
 - Z226 (2026-10-02 02:08, M4): the subtitle names the Present view (the orchestrator, automode).

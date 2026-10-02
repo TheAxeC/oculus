@@ -746,3 +746,30 @@ The question: how the 13 are tested.
 - Not chosen: (b) the 13 strings as constants in a test, which compares a file with a copy of itself.
 
 Where it is built: M4. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z236 (2026-10-02 02:47, step M4)
+
+The question: how the deck draws `\bm{\beta}`, which the vendored MathJax does not define.
+
+- Chosen (a): vendor MathJax 3.2.2's `boldsymbol` extension beside `tex-svg.js`, load it offline, and define `bm` as `\boldsymbol`, so the deck draws a bold beta as the image does.
+- Not chosen: (b) `bm` as `\mathbf`, which draws a plain beta; the lazy option. (c) Change the slide's LaTeX, which breaks Z234.
+
+Where it is built: M4 (`agents/briefs/M4-cases.md`). Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z237 (2026-10-02 02:47, step M4)
+
+The question: how the deck draws `\text{\small X}`, which MathJax shows as literal text.
+
+- Chosen (a): `build.py` rewrites it to `{\small\text{X}}` in the value it emits for MathJax; the slide values stay as written; the typeset check counts `merror` and red nodes.
+- Not chosen: (b) accept the literal `\small` in the deck; the lazy option. (c) Change the slides' LaTeX, which breaks Z234 and the PNG source.
+
+Where it is built: M4. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z238 (2026-10-02 02:47, step M4)
+
+The question: the paths the builder found it needs outside the brief's list, and a blank equation.
+
+- Chosen (a): add the `Equation.svelte` row of `type-scale.test.ts`, one `deck.css` rule for the MathJax card, and the vendored extension file; `slide()` drops a blank equation.
+- Not chosen: (b) leave `type-scale.test.ts` failing or the card unbounded, which leaves the step red or a slide overflowing.
+
+Where it is built: M4. Booked in the state file's closed log and `plan.md` Rulings.

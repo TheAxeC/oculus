@@ -7,7 +7,7 @@ In flight:
 - Q35 (Changes, Customizations, Audit, Present), repair round 1 with the builder.
 - X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), builder at ordo-high.
 - D24 (the Personal board: side projects and the Files roots' `.oculus/project.yml` as cards, with the six repositories' manifests drafted), builder at ordo-high.
-- M4 (the Present view's equations as LaTeX, the image branch removed, the cockpit deck kept drawing them), builder at ordo-high.
+- M4 (the Present view's equations as LaTeX, the image branch removed, the cockpit deck kept drawing them), its first-run hand-back ruled (Z236 to Z238), builder resumed.
 
 
 Three queued steps are kept prepared ahead (Z185).

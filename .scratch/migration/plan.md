@@ -843,6 +843,9 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z233 (2026-10-02): (a), M4: the cockpit deck draws LaTeX equations through MathJax (the orchestrator, automode).
 - Open item Z234 (2026-10-02): (a), M4: the 13 lines written by the named script (the orchestrator, automode).
 - Open item Z235 (2026-10-02): (a), M4: the real slides checked in `integrity.test.ts`, the comparison at landing (the orchestrator, automode).
+- Open item Z236 (2026-10-02): (a), M4: `\bm` drawn bold in the deck through MathJax 3.2.2's vendored `boldsymbol` extension, loaded offline (the orchestrator, automode).
+- Open item Z237 (2026-10-02): (a), M4: `build.py` rewrites `\text{\small X}` to `{\small\text{X}}` for MathJax only, and the typeset check counts `merror` and red nodes (the orchestrator, automode).
+- Open item Z238 (2026-10-02): (a), M4: the path list gains the `type-scale.test.ts` row, one `deck.css` rule and the vendored extension; a blank equation draws no card (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
