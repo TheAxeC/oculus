@@ -895,6 +895,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z268 (2026-10-02): a remote oculus, when it is built, is reached through public HTTPS behind a login proxy on the server itself (Caddy and oauth2-proxy, Google login with two-factor, TLS ending on the server); (a), a private network only, and Cloudflare Access were declined (the user).
 - Open item Z269 (2026-10-02): (b), nested repositories found by a scan one level deep under each root, with a setting for the depth, folded into X3e (the user).
 - Open item Z270 (2026-10-02): when `config/local.yml` goes into git, the calendar link first moves out of it into a secret file that stays per machine (the user).
+- Open item Z271 (2026-10-02): (a), when oculus runs on Windows, terminals have two backends behind one interface: tmux on macOS and Linux as now, and on Windows `node-pty` over ConPTY in a separate process that outlives the web server, as VS Code's pty host does; DESIGN.md:369's "no native pty module" then holds for macOS and Linux only (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

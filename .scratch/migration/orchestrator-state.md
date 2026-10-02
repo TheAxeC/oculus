@@ -188,6 +188,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Z268, how a remote oculus is reached (raised 2026-10-02 at Axel's question on a rented server): ruled by Axel, (b) self-hosted login proxy; (a), a private network, was the cheapest (the user).
 - Z269, nested repositories in the Repositories view: ruled by Axel, (b), folded into X3e, a one-level scan with a depth setting; (c), adding the website as a root by hand, was the lazy option (the user).
 - Z270, the calendar link when `local.yml` goes into git: ruled by Axel, it moves into a per-machine secret file first (the user).
+- Z271, terminals on Windows: ruled by Axel, (a), two backends (tmux on macOS and Linux, node-pty over ConPTY in a lasting process on Windows); (c), Windows only through WSL, was the lazy option (the user).
 - Z265 (2026-10-02 12:25, D32's brief check): a refusal's own text reaches the reader only as a catalog word; the search route answers words; narrows Z259 (the orchestrator, automode).
 - Z264 (2026-10-02 12:25, D32's brief check): replace exactly as VS Code's ReplacePattern and Preserve Case, emulated over ripgrep's groups; differences listed in the brief (the orchestrator, automode).
 - Z262 (2026-10-02 12:40, X3c): the tab tooltip names the full path; Open Editors drag reorders tabs; the Files tree's breadcrumb goes once X3c's file-tab breadcrumbs are in (the orchestrator, automode).
