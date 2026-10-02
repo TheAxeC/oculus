@@ -29,9 +29,10 @@ import {
     writeFeedField
 } from '../feeds.ts';
 import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
-import { deckNow, writeDeck } from './deck.ts';
-import { configKeyNow, writeConfigKey } from './config-key.ts';
-import { railNow, writeRail } from './rail.ts';
+import { deckNow, writeDeck } from './config/deck.ts';
+import { configKeyNow, writeConfigKey } from './config/config-key.ts';
+import { railNow, writeRail } from './config/rail.ts';
+import { rootsNow, writeRoots } from './config/roots.ts';
 import { railRows } from '../../../data/sources/config/rail.ts';
 import {
     createEntry,
@@ -54,7 +55,7 @@ import {
 } from './subtasks.ts';
 import type { Collection } from './entries.ts';
 import type { FeedKind } from '../../../data/model/index.ts';
-import type { Change } from '../../core/changes.ts';
+import type { Change, ChangeRecord } from '../../core/changes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
 import type { WriteOutcome, WriteTarget } from '../writes.ts';
 
@@ -65,7 +66,8 @@ import type { WriteOutcome, WriteTarget } from '../writes.ts';
  * would otherwise say the value is back when it is not.
  */
 export type UndoOutcome =
-    | { error: 'unknown' | 'gone' | 'moved' | 'nothing' | 'unwritable' }
+    | { error: 'unknown' | 'gone' | 'moved' | 'nothing' | 'copy-gone' }
+    | { error: 'unwritable'; records?: ChangeRecord[] }
     | { error: 'refused'; refused: WriteOutcome['refused'] }
     | WriteOutcome;
 
@@ -134,6 +136,10 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         const rail = railNow(into.layoutFile);
         return rail === null ? { found: false, value: null } : { found: true, value: rail };
     }
+    if (change.kind === 'roots') {
+        const roots = into.sources === undefined ? null : rootsNow(into.sources.file);
+        return roots === null ? { found: false, value: null } : { found: true, value: roots };
+    }
     if (change.kind === 'config-key') return configKeyNow(into.engine, change.key, change.field);
     if (change.kind === 'subtask' || change.kind === 'subtask-add') {
         return subtaskValue(into.hub, into.config, subtaskTarget(into, change), change.field);
@@ -198,6 +204,12 @@ const deckBeforeShape = z
 
 /** The rail a record holds, as the rows the rail rule reads out of it; none for anything else. */
 const railBeforeShape = z.unknown().transform((before) => railRows(before) ?? []);
+
+/** The roots list a record holds: the entries that are a pair of text, none for anything else. */
+const rootsBeforeShape = z.catch(
+    z.array(z.object({ key: z.string().min(1), dir: z.string().min(1) })),
+    () => []
+);
 
 /** The scalar a feed field held, or null, which clears the field. */
 const scalarBeforeShape = z.catch(feedValueShape, null);
@@ -273,6 +285,12 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
             railBeforeShape.parse(change.before),
             into.glyphs
         );
+        if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
+        return { found: true, ...outcome };
+    }
+    if (change.kind === 'roots') {
+        if (into.sources === undefined) return UNWRITABLE;
+        const outcome = writeRoots(into.sources.file, rootsBeforeShape.parse(change.before));
         if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
         return { found: true, ...outcome };
     }

@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
-import AskConfirm from '../../../../src/lib/views/shared/AskConfirm.svelte';
+import AskConfirm from '../../../../src/lib/views/shared/writes/AskConfirm.svelte';
 import CommitBox from '../../../../src/lib/views/shared/changes/CommitBox.svelte';
 import ToolButton from '../../../../src/lib/ui/controls/ToolButton.svelte';
 import { pressWhenDrawn } from './press-on-render.ts';
@@ -23,7 +23,7 @@ vi.mock('../../../../src/lib/ui/controls/ToolButton.svelte', async (original) =>
     (await import('./press-on-render.ts')).recorded(original)
 );
 
-vi.mock('../../../../src/lib/views/shared/AskConfirm.svelte', async (original) =>
+vi.mock('../../../../src/lib/views/shared/writes/AskConfirm.svelte', async (original) =>
     (await import('./press-on-render.ts')).recorded(original)
 );
 

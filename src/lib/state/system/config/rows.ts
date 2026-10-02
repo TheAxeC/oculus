@@ -31,7 +31,7 @@ import {
     type YAMLSeq
 } from 'yaml';
 import { z } from 'zod';
-import type { CatalogEntry, Control } from '../../../data/sources/config/options.ts';
+import type { CatalogEntry, Control } from '../../../data/sources/config/catalog/options.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
 import { LOCAL_NAME } from './config-files.ts';
 import { message, type Message } from './messages.ts';

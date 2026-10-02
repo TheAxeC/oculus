@@ -195,7 +195,7 @@
             if (mine !== asked) return;
             if (!read.ok || read.files === null) {
                 failure =
-                    state.against !== undefined
+                    state.against !== undefined || (state.save ?? '') !== ''
                         ? compareSentence(read.error, t)
                         : (read.error ?? t('repositories.diff_failed'));
             } else {

@@ -18,7 +18,7 @@ import { sourceTabState } from '../../../../src/lib/state/sessions/source.svelte
 import { DIFF_VIEW } from '../../../../src/lib/state/sources/repositories/repositories.svelte.ts';
 import { diffState } from '../../../../src/lib/state/sources/repositories/repositories.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { createClientState, type ClientState } from '../../../fixtures/client.ts';
+import { createClientState, json, settle, type ClientState } from '../../../fixtures/client.ts';
 import { fakeStorage } from '../../workbench/layout/layout-fixture.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
@@ -49,13 +49,6 @@ const refused = (error: string, failed = '', done: string[] = []): Body => ({
     done,
     failed
 });
-
-function json(body: unknown, status = 200): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json' }
-    });
-}
 
 /** The stub: ops posts answered from `answers`, listings from what each folder holds. */
 function serve(): void {
@@ -89,10 +82,6 @@ function serve(): void {
 }
 
 /** Let the scheduled requests run and their answers land. */
-async function settle(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
 /** The listing addresses asked since the last mark, for one folder. */
 function listingsOf(root: string, path: string): string[] {
     return asked.filter((url) =>

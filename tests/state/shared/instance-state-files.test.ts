@@ -43,7 +43,17 @@ const VIEW = {
     said: 's',
     naming: { mode: 'file', root: 'hub', path: 'a' },
     hidden: true,
-    ignored: true
+    ignored: true,
+    selection: [
+        { root: 'hub', path: 'a' },
+        { root: 'hub', path: 'b' }
+    ],
+    anchor: { root: 'hub', path: 'a' },
+    fuzzy: true,
+    nesting: true,
+    opened: ['outline'],
+    top: { root: 'hub', path: 'p' },
+    outside: '/o'
 };
 
 const VIEW_WRONG = {
@@ -62,7 +72,14 @@ const VIEW_WRONG = {
     said: 3,
     naming: 3,
     hidden: 'yes',
-    ignored: 1
+    ignored: 1,
+    selection: 'x',
+    anchor: 'x',
+    fuzzy: 'yes',
+    nesting: 1,
+    opened: {},
+    top: 'x',
+    outside: 3
 };
 
 /** A whole-number field laid out as the values a count can take. */
@@ -94,7 +111,14 @@ const viewFallback = {
     said: '',
     naming: null,
     hidden: false,
-    ignored: false
+    ignored: false,
+    selection: [],
+    anchor: null,
+    fuzzy: false,
+    nesting: false,
+    opened: [],
+    top: null,
+    outside: ''
 };
 const viewValid = {
     expanded: ['hub:a', 'hub:a/b'],
@@ -117,7 +141,17 @@ const viewValid = {
     said: 's',
     naming: { mode: 'file', root: 'hub', path: 'a' },
     hidden: true,
-    ignored: true
+    ignored: true,
+    selection: [
+        { root: 'hub', path: 'a' },
+        { root: 'hub', path: 'b' }
+    ],
+    anchor: { root: 'hub', path: 'a' },
+    fuzzy: true,
+    nesting: true,
+    opened: ['outline'],
+    top: { root: 'hub', path: 'p' },
+    outside: '/o'
 };
 const askedFallback = {
     filter: '',
@@ -247,7 +281,14 @@ const READERS: Reader[] = [
             'expanded with duplicates': { expanded: ['a', 'a'] },
             'collapsed with other items': { collapsed: ['', 2, 'c', 'c'] },
             'filter empty': { filter: '' },
-            'no booleans': { hidden: ABSENT, ignored: ABSENT }
+            'selection with other items': {
+                selection: [1, { root: 'hub', path: 'a' }, { root: '', path: 'b' }, null]
+            },
+            'anchor with an empty root': { anchor: { root: '', path: 'a' } },
+            'top with an empty root': { top: { root: '', path: 'a' } },
+            'top at the root': { top: { root: 'hub', path: '' } },
+            'opened with other items': { opened: [1, 'timeline', null, 'timeline'] },
+            'no booleans': { hidden: ABSENT, ignored: ABSENT, fuzzy: ABSENT, nesting: ABSENT }
         },
         notMap: viewFallback,
         answers: {
@@ -273,6 +314,13 @@ const READERS: Reader[] = [
             'wrong naming': { ...viewValid, naming: null },
             'wrong hidden': { ...viewValid, hidden: false },
             'wrong ignored': { ...viewValid, ignored: false },
+            'wrong selection': { ...viewValid, selection: [] },
+            'wrong anchor': { ...viewValid, anchor: null },
+            'wrong fuzzy': { ...viewValid, fuzzy: false },
+            'wrong nesting': { ...viewValid, nesting: false },
+            'wrong opened': { ...viewValid, opened: [] },
+            'wrong top': { ...viewValid, top: null },
+            'wrong outside': { ...viewValid, outside: '' },
             'all wrong': viewFallback,
             'form root keeps typed and drops editing': {
                 ...viewValid,
@@ -371,7 +419,21 @@ const READERS: Reader[] = [
             'expanded with duplicates': { ...viewValid, expanded: ['a', 'a'] },
             'collapsed with other items': { ...viewValid, collapsed: ['', 'c', 'c'] },
             'filter empty': { ...viewValid, filter: '' },
-            'no booleans': { ...viewValid, hidden: false, ignored: false }
+            'selection with other items': {
+                ...viewValid,
+                selection: [{ root: 'hub', path: 'a' }]
+            },
+            'anchor with an empty root': { ...viewValid, anchor: null },
+            'top with an empty root': { ...viewValid, top: null },
+            'top at the root': { ...viewValid, top: { root: 'hub', path: '' } },
+            'opened with other items': { ...viewValid, opened: ['timeline', 'timeline'] },
+            'no booleans': {
+                ...viewValid,
+                hidden: false,
+                ignored: false,
+                fuzzy: false,
+                nesting: false
+            }
         }
     },
     {

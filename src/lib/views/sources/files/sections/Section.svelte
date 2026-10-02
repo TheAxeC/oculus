@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/files/sections/. One section under the file browser's
-    // trees: a head that opens and closes it and carries the one control that adds to it (a note,
-    // a bookmark, a workspace), and the section's own rows under it. The three sections share the
-    // head and differ in their rows, so the head is drawn here once.
+    // trees: a head that opens and closes it and carries the controls that act on it (the one that
+    // adds a note or a bookmark, Save All and Close All of the open editors), and the section's own
+    // rows under it. The sections share the head and differ in their rows, so the head is drawn
+    // here once.
     //
     // `showActions` draws the head's control at full strength whether or not the pointer is over
     // the head, for a control a reader looks for before the pointer is there; without it the
@@ -21,11 +22,13 @@
         count: number;
         open: boolean;
         ontoggle: () => void;
-        /** The head's control: its words, its tooltip and its glyph, already translated. */
-        add: { label: string; title: string; glyph: string };
+        /** The head's adding control: its words, its tooltip and its glyph, already translated. */
+        add?: { label: string; title: string; glyph: string };
         /** Whether what the control opens is open, for a control that opens a form. */
         adding?: boolean;
-        onadd: () => void;
+        onadd?: () => void;
+        /** Further controls of the head, drawn after the adding control. */
+        more?: Snippet<[number]>;
         showActions?: boolean;
         /** The rows, each an `li` with role none around a row of level 2. */
         children: Snippet;
@@ -40,6 +43,7 @@
         add,
         adding,
         onadd,
+        more,
         showActions = false,
         children
     }: Props = $props();
@@ -47,15 +51,18 @@
 
 <TreeSection {label} id="head" {nav} {count} {open} {ontoggle} {showActions}>
     {#snippet actions(reach: number)}
-        <ToolButton
-            label={add.label}
-            title={add.title}
-            glyph={add.glyph}
-            compact
-            tabindex={reach}
-            expanded={adding}
-            onclick={onadd}
-        />
+        {#if add !== undefined}
+            <ToolButton
+                label={add.label}
+                title={add.title}
+                glyph={add.glyph}
+                compact
+                tabindex={reach}
+                expanded={adding}
+                onclick={() => onadd?.()}
+            />
+        {/if}
+        {@render more?.(reach)}
     {/snippet}
     {@render children()}
 </TreeSection>

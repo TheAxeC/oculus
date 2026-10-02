@@ -1,16 +1,16 @@
 // Layer 2, server. The reads of GET /api/git, one per parameter the request names: the branch
 // listing, one file's diff, a worktree's diff, a page of the graph, one commit's files or its diff
-// of one file, a file's blame, its gutter marks, the three versions of a conflicted path, and a
-// stash's diff. Each is same-origin only and refused for a root this server has not published,
-// and each is read when a pane asks rather than published, since the channel carries state and
-// these are text or a page of history a reader asked for.
+// of one file, a file's blame, its gutter marks, the three versions of a conflicted path, a stash's
+// diff and the commits that touched one file. Each is same-origin only and refused for a root this
+// server has not published, and each is read when a pane asks rather than published, since the
+// channel carries state and these are text or a page of history a reader asked for.
 //
 // The four diff reads answer `files`, the two versions of each file with git's head lines for it
 // (`DiffSides`); a file's own diff also answers what git's attributes say of converting it, which
 // decides whether the pane may cut a partial patch from it. A file's and a worktree's diff text
 // comes from server/git/git-write.ts, whose `diff` call site has always answered them, and the
-// versions from server/core/git.ts, the read-only module, which answers every other read. Every
-// read is an option with a real default, so tests/routes/git/git.test.ts drives the endpoint
+// versions from server/core/git/reads.ts, the read-only module, which answers every other read.
+// Every read is an option with a real default, so tests/routes/git/git.test.ts drives the endpoint
 // without git.
 
 import { json } from '@sveltejs/kit';
@@ -25,9 +25,10 @@ import {
     mergeBase,
     mergeSides,
     sidesOf,
-    stashDiff,
-    type Read
-} from '../core/git.ts';
+    stashDiff
+} from '../core/git/reads.ts';
+import { fileLog } from '../core/git/files.ts';
+import type { Read } from '../core/git/run.ts';
 import {
     allowedRoots,
     branches,
@@ -57,7 +58,7 @@ export type ReadOptions = {
     ) => Promise<Read<FileDiff>>;
     /** A worktree's diff against its repository's branch; the real one when absent. */
     worktree?: (root: string, path: string, roots: string[]) => Promise<Read<DiffSides[]>>;
-    /** The on-demand reads of server/core/git.ts, by name; the real ones when absent. */
+    /** The on-demand reads of server/core/git/reads.ts, by name; the real ones when absent. */
     reads?: Partial<CoreReads>;
 };
 
@@ -70,6 +71,7 @@ export type CoreReads = {
     marks: typeof lineMarks;
     sides: typeof mergeSides;
     stash: typeof stashDiff;
+    log: typeof fileLog;
 };
 
 const REAL: CoreReads = {
@@ -79,7 +81,8 @@ const REAL: CoreReads = {
     blame: blameOf,
     marks: lineMarks,
     sides: mergeSides,
-    stash: stashDiff
+    stash: stashDiff,
+    log: fileLog
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -135,7 +138,8 @@ export async function worktreeSides(
  * GET /api/git: one read, by the parameter it names. `diff=<root>&path=&staged=<0|1>` answers a
  * file's diff, `worktree=<path>&root=` a worktree's, `graph=<root>&skip=<n>` a page of the graph,
  * `commit=<hash>&root=[&path=]` a commit's files or its diff of one, `blame=<root>&path=`,
- * `marks=<root>&path=`, `sides=<root>&path=` and `stash=<ref>&root=`, and `root=` alone the
+ * `marks=<root>&path=`, `sides=<root>&path=`, `log=<root>&path=` (the commits that touched the
+ * file, newest first and across renames) and `stash=<ref>&root=`, and `root=` alone the
  * branch listing.
  */
 export async function handleGitGet(request: Request, options: ReadOptions): Promise<Response> {
@@ -180,11 +184,12 @@ export async function handleGitGet(request: Request, options: ReadOptions): Prom
         if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         return answer(reads.stash(root, parameters.get('stash') ?? ''), 'files');
     }
-    for (const key of ['blame', 'marks', 'sides'] as const) {
+    for (const key of ['blame', 'marks', 'sides', 'log'] as const) {
         if (!parameters.has(key)) continue;
         const root = named(key);
         if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         if (key === 'blame') return answer(reads.blame(root, path), 'lines');
+        if (key === 'log') return answer(reads.log(root, path), 'commits');
         if (key === 'marks') return answer(reads.marks(root, path), 'marks');
         return answer(reads.sides(root, path), 'sides');
     }

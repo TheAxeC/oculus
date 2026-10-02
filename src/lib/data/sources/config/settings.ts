@@ -150,6 +150,30 @@ export function openSettings(config: Record<string, unknown>): OpenSettings {
     return { programApps: apps };
 }
 
+/** The Files view's settings of config/behavior.yml. */
+export type FilesSettings = {
+    /** Whether moving a file or folder to the Trash asks first. */
+    confirmDelete: boolean;
+};
+
+/** Read `files:` with its one key, or throw naming the key that is missing or mistyped. */
+export function filesSettings(config: Record<string, unknown>): FilesSettings {
+    const files = blockOf(config, 'files');
+    return {
+        confirmDelete: settingOf(flagShape, files, 'files', 'confirm_delete', 'true or false')
+    };
+}
+
+/**
+ * Whether a move to the Trash asks first, for the page: `files.confirm_delete`, and true for a
+ * configuration that does not carry a usable value, which is what the page holds until the config
+ * channel's first message lands, so a delete asks until the setting says it need not.
+ */
+export function confirmDelete(config: Record<string, unknown>): boolean {
+    const files = readAs(mapShape, config.files);
+    return files?.confirm_delete !== false;
+}
+
 /** The mail connector's settings of config/behavior.yml, every key required. */
 export type MailSettings = {
     pollMin: number;

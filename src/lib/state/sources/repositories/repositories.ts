@@ -26,7 +26,7 @@ import type {
     GitWorktree
 } from '../../../data/model/index.ts';
 import { z } from 'zod';
-import { compareUrl } from '../../../data/file-ops.ts';
+import { compareUrl, savedUrl } from '../../../data/file-ops.ts';
 import {
     anyNumberShape,
     fieldItemsShape,
@@ -125,6 +125,8 @@ export type DiffSubject = {
     group?: 'staged' | 'changed';
     /** The file selected for compare, for the pane over two files. */
     against?: { root: string; path: string };
+    /** The id of a copy in the file's local history, for the pane over the file and that copy. */
+    save?: string;
     line?: number;
 };
 
@@ -137,6 +139,7 @@ export type DiffState = DiffSubject & { id: string; label: string };
 function sideOf(subject: DiffSubject): string {
     if (subject.against !== undefined)
         return `compare@${subject.against.root}:${subject.against.path}`;
+    if ((subject.save ?? '') !== '') return `save@${subject.save ?? ''}`;
     if ((subject.group ?? '') !== '') return `group@${subject.group ?? ''}`;
     if (subject.worktree) return 'worktree';
     if ((subject.commit ?? '') !== '') return `commit@${subject.commit ?? ''}`;
@@ -166,6 +169,7 @@ const heldDiffShape = z
         staged: z.boolean().catch(false),
         worktree: z.boolean().catch(false),
         commit: z.string().catch(''),
+        save: z.string().catch(''),
         stash: z.string().catch(''),
         group: z.enum(['staged', 'changed']).optional().catch(undefined),
         against: againstShape.optional().catch(undefined),
@@ -179,6 +183,7 @@ const heldDiffShape = z
         staged: held.staged,
         worktree: held.worktree,
         commit: held.commit,
+        save: held.save,
         stash: held.stash,
         group: held.group,
         against: held.against,
@@ -196,6 +201,7 @@ export function heldDiff(state: unknown): DiffState {
             staged: false,
             worktree: false,
             commit: '',
+            save: '',
             stash: '',
             group: undefined,
             against: undefined,
@@ -207,6 +213,7 @@ export function heldDiff(state: unknown): DiffState {
 /** The address one diff pane reads, by what it is over. */
 export function diffUrl(state: DiffSubject): string {
     if (state.against !== undefined) return compareUrl(state, state.against);
+    if ((state.save ?? '') !== '') return savedUrl(state, state.save ?? '');
     if (state.worktree) return worktreeDiffUrl(state.root, state.path);
     if ((state.commit ?? '') !== '') return commitUrl(state.root, state.commit ?? '', state.path);
     if ((state.stash ?? '') !== '') return stashUrl(state.root, state.stash ?? '');
@@ -223,6 +230,7 @@ export function diffActs(state: DiffSubject): boolean {
         (state.commit ?? '') === '' &&
         (state.stash ?? '') === '' &&
         (state.group ?? '') === '' &&
+        (state.save ?? '') === '' &&
         state.against === undefined
     );
 }

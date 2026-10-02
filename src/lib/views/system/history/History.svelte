@@ -21,6 +21,10 @@
     // page at a time and "load older" asks for the page behind the oldest row on screen. The filter
     // is the pane's own and is held in its instance state, so a tab comes back filtered as it was.
     //
+    // A file operation of the Files view is a row too: the operation, the path it was made on, the
+    // paths it took and the paths it left, and its undo control. Its undo goes through the file
+    // store, which restates the tabs and the bookmarks over a path that moves back.
+    //
     // The undo control is offered on a row whose record says how to take it back. The server checks
     // that the file still holds what the write left before it writes the earlier value, so a field
     // edited since is refused rather than written over; the sentence for each refusal is this
@@ -43,13 +47,16 @@
     import { stamp } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
     import { instanceText } from '$lib/state/workbench/layout';
-    import { shown, undoSaid } from './rows';
+    import { FILE_RECORD, fileOperation, shown, shownPaths, undoSaid } from './rows';
     import type { Shown } from './rows';
     import { matching, type Change } from '$lib/state/sessions/changes.svelte';
+    import { currentWorkspace } from '$lib/state/sources/fs-transport';
     import { useState } from '$lib/state/client/use';
 
     const {
         changes: { error, loading, more, older, reload, rows },
+        explorer,
+        fs: { workspaces },
         ui: { instanceState, setInstanceState },
         writes: { pending, undoWrite }
     } = useState();
@@ -76,11 +83,15 @@
         if (!opened.delete(key)) opened.add(key);
     }
 
-    /** The two sides of one row: what the file held, and what the write put there. */
+    /**
+     * The two sides of one row: what the file held, and what the write put there. A file operation
+     * names the paths it took and left, not the values of a field.
+     */
     function sides(row: Change): { side: string; label: string; held: Shown }[] {
+        const fold = row.kind === FILE_RECORD ? shownPaths : shown;
         return [
-            { side: 'before', label: t('history.before'), held: shown(row.before) },
-            { side: 'after', label: t('history.after'), held: shown(row.after) }
+            { side: 'before', label: t('history.before'), held: fold(row.before) },
+            { side: 'after', label: t('history.after'), held: fold(row.after) }
         ];
     }
 
@@ -91,7 +102,15 @@
 
     /** The words a row is named by in a control's tooltip and in the status region. */
     function named(row: Change): string {
+        if (row.kind === FILE_RECORD) {
+            return t('history.file_named', fileOperation(row.field), row.file);
+        }
         return row.field === '' ? row.key : t('history.named', row.key, row.field);
+    }
+
+    /** What a row says it addressed: the operation of a file record, else the key and field. */
+    function whatOf(row: Change): string {
+        return row.kind === FILE_RECORD ? fileOperation(row.field) : named(row);
     }
 
     /**
@@ -100,7 +119,13 @@
      */
     async function undo(row: Change): Promise<void> {
         said = t('history.undoing', named(row));
-        const outcome = undoSaid(await undoWrite(row.at), named(row));
+        // A file operation is taken back through the file store, which also moves the tabs and
+        // the bookmarks over the paths back.
+        const answer =
+            row.kind === FILE_RECORD
+                ? await explorer.undoFile(row, currentWorkspace(workspaces()).roots)
+                : await undoWrite(row.at);
+        const outcome = undoSaid(answer, named(row));
         said = outcome.said;
         if (!outcome.undone) {
             refused.add(row.at);
@@ -133,7 +158,7 @@
                             <span class="when">{stamp(row.at)}</span>
                             <span class="kind" data-kind={row.kind}>{kindOf(row)}</span>
                             <span class="file">{row.file}</span>
-                            <span class="what">{named(row)}</span>
+                            <span class="what">{whatOf(row)}</span>
                             {#if row.undo !== 'none'}
                                 <span class="reveal">
                                     <ToolButton

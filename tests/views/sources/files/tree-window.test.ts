@@ -15,7 +15,7 @@ import {
     textCatalog
 } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
-import { OVERSCAN } from '../../../../src/lib/ui/tree/virtual.ts';
+import { OVERSCAN } from '../../../../src/lib/ui/tree/list/virtual.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
 
@@ -55,9 +55,10 @@ function treeProps(rows: ReturnType<typeof treeRows>, fixed: string[]) {
 
 describe('a long tree before it has its scroll box', () => {
     // Revert: draw `{#each rows}` straight into the list in Tree.svelte rather than through
-    // ui/tree/VirtualRows.svelte, or set `shown` to `count` in ui/tree/virtual.ts's firstWindow.
-    // An audit of the markup: a server rendering has no scroll box, so it draws the first window
-    // and holds the rest after it; which rows a browser draws once scrolled it says nothing of.
+    // ui/tree/list/VirtualRows.svelte, or set `shown` to `count` in ui/tree/list/virtual.ts's
+    // firstWindow. An audit of the markup: a server rendering has no scroll box, so it draws the
+    // first window and holds the rest after it; which rows a browser draws once scrolled it says
+    // nothing of.
     it('audits that draws the first rows of a long tree and holds the rest in a spacer after them', () => {
         const files = Array.from({ length: 30 }, (_, at) => ({
             name: `f${String(at).padStart(2, '0')}.txt`,

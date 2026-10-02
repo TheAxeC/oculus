@@ -14,6 +14,7 @@ import { RateLimiter } from '../../../src/lib/server/root/hooks.ts';
 import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
 import { HookStore, sessionRecord } from '../../../src/lib/server/sessions/stores/hooks.ts';
 import { ignoredCache } from '../../../src/lib/server/files/fs.ts';
+import { pickerState } from '../../../src/lib/server/files/fs/picker.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { wallpaperMemory } from '../../../src/lib/server/content/wallpaper.ts';
 import { noop, noopAsync } from '../../fixtures/doubles.ts';
@@ -96,6 +97,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         fsWrites: overrides.fsWrites ?? fsWrites(),
         opsWrites: overrides.opsWrites ?? fsWrites(),
         ignoredCache: overrides.ignoredCache ?? ignoredCache(),
+        folderPicker: overrides.folderPicker ?? pickerState(),
         hpcLogPaths: new Map(),
         calendarConnects: new ConnectStates(),
         calendarDir: overrides.calendarDir ?? '/fixture/calendar',

@@ -310,7 +310,12 @@ export function createSource(writes: WritesStore, ui: InstanceStates): SourceSto
         // holds that file's draft, so either way the answer writes nothing.
         if (ui.instanceState(id) === undefined || sourceDraft(id).file !== draft.file) return;
         if (answer.ok) {
-            updateDraft(id, { saved: content, message: t('source.saved') });
+            const unkept = answer.refused.find((one) => one.field === 'history');
+            const message =
+                unkept === undefined
+                    ? t('source.saved')
+                    : t('source.saved_without_copy', unkept.reason);
+            updateDraft(id, { saved: content, message });
             return;
         }
         // A request that never reached the server (offline, a dropped socket) is the catalog's

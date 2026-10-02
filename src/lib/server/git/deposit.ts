@@ -20,7 +20,7 @@
 // is server/git/deposit-routes.ts, itself reached only from POST /api/deposit with the write token.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`); the records of
-// `status --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
+// `status --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
 
 import {
     cpSync,
@@ -69,7 +69,7 @@ import {
     type Outcome,
     type Where
 } from './deposit-git.ts';
-import { REFS_FORMAT, statusRecords } from '../core/git-parse.ts';
+import { REFS_FORMAT, statusRecords } from '../core/git/parse.ts';
 import { target, writeManifest, type WriteTarget } from '../edit/writes.ts';
 import { below } from '../core/paths.ts';
 

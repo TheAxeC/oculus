@@ -26,6 +26,7 @@ text:
         gone: What this write addressed is no longer in the hub.
         unknown: The change log no longer holds this write.
         nothing: This write cannot be taken back.
+        copy_gone: The copy of a deleted file is no longer kept, so the delete cannot be taken back.
         unwritable: The file cannot be written, so the earlier value was not put back.
         refused_write: The file would not take the earlier value back, so it was left alone.
         refused: 'The undo was refused: {0}'
@@ -49,3 +50,13 @@ text:
         kind_audit_mute: audit mute
         kind_rail: rail list
         kind_config_key: setting
+        kind_files: file operation
+        kind_roots: workspace folder
+        file_named: '{0} of {1}'
+        file_create: Create
+        file_rename: Rename
+        file_move: Move
+        file_copy: Copy
+        file_upload: Upload
+        file_trash: Delete
+        file_delete: Delete Permanently

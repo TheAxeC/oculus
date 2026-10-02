@@ -42,6 +42,19 @@ export function clientContext(client: ClientState): Map<unknown, unknown> {
     ]);
 }
 
+/** A JSON answer as a stubbed `fetch` returns it. */
+export function json(body: unknown, status = 200): Response {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { 'content-type': 'application/json' }
+    });
+}
+
+/** Let the requests a store scheduled run and their answers land. */
+export async function settle(): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 /** Replace `fetch` with a stub that records each address in `asked` and answers as `answer`. */
 export function stubFetch(
     asked: string[],

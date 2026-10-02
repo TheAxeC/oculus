@@ -38,7 +38,7 @@
 
     const {
         entities: { portfolio },
-        layout: { openBeside, openView, showInFiles },
+        layout: { openBeside, openView, showFolderInFiles },
         selection: { select },
         terminals: { showTerminal, startChat },
         ui: { setInstanceState },
@@ -152,7 +152,7 @@
             title: t('project.helper.show_in_files_tip'),
             glyph: 'show_in_files',
             onclick: () => {
-                showInFiles(item.project.folder);
+                showFolderInFiles(item.project.folder);
             }
         });
         if (ontoggle !== undefined) {

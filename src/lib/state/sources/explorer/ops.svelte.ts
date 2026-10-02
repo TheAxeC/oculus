@@ -27,11 +27,27 @@ import {
     type OpsRefusal,
     type OpsRequest
 } from '../../../data/file-ops.ts';
-import type { InstanceStates, Posted, WritesStore } from '../../shared/stores/shapes.ts';
+import type {
+    InstanceStates,
+    Posted,
+    WriteAnswer,
+    WritesStore
+} from '../../shared/stores/shapes.ts';
+import type { FsRoot } from './view/place.ts';
 import { FILES_VIEW } from '../fs.ts';
 import { BOOKMARK_COLLECTION, type FsStore } from '../fs.svelte.ts';
 import { DIFF_VIEW } from '../repositories/repositories.svelte.ts';
+import {
+    foldersToAdd,
+    folderChoice,
+    pickedOf,
+    type FolderChoice,
+    type FoldersAdded,
+    type PickRefusal
+} from './acts/folders.ts';
+import { undoneMoves, type FileRecord } from './acts/undo.ts';
 import { nameOf } from './file-type.ts';
+import { patchedFilesView } from './view/files-view.ts';
 import {
     followedAny,
     followedDiffTab,
@@ -39,6 +55,9 @@ import {
     followedFilesView,
     type Move
 } from './follow.ts';
+
+/** The route the folder panel is opened through. */
+const PICK_PATH = '/api/folders/pick';
 
 export { MAX_UPLOAD_BYTES, checkName, freeName, stemLength };
 export type { OpsPlace as Place };
@@ -64,6 +83,10 @@ export type ExplorerTab = { id: string; view: string; state: unknown };
 export type ExplorerLayout = {
     tabs: () => ExplorerTab[];
     restateInstance: (id: string, state: unknown) => void;
+    /** Open a view on the page the reader is in, or activate it; the instance id, '' for none. */
+    openView: (view: string) => string;
+    /** Show one folder as a Files tab rooted at it; the instance id, '' for none. */
+    showFolderInFiles: (path: string, root?: string) => string;
 };
 
 /** The source editors as the explorer uses them: whether one holds unsaved text, and its file. */
@@ -72,12 +95,17 @@ export type ExplorerSource = {
     sourceDraft: (id: string) => { file: string };
 };
 
+/** What Open Folder came to: the panel's refusal, or where the folder went. */
+export type FolderOpened = { ok: false; picker: PickRefusal } | { ok: true; choice: FolderChoice };
+
 /** One client's file operations, the clipboard and the compare selection. */
 export type ExplorerStore = {
     /** What Cut or Copy last held, or null. */
     clipboard: () => Clipboard | null;
     copy: (items: OpsPlace[]) => void;
     cut: (items: OpsPlace[]) => void;
+    /** Empty the clipboard, which is what Escape does to a Cut. */
+    clearClipboard: () => void;
     /** The file Select for Compare holds, or null. */
     compareFile: () => OpsPlace | null;
     selectForCompare: (file: OpsPlace | null) => void;
@@ -87,12 +115,39 @@ export type ExplorerStore = {
     unsaved: (item: OpsPlace, folder: boolean) => boolean;
     /** Paste the clipboard into a folder. Nothing on the clipboard pastes nothing, and is ok. */
     paste: (into: OpsPlace, confirm: Confirm) => Promise<Outcome>;
+    /**
+     * Move items into a folder, or copy them with `copy`, as a drop does: the same operation as
+     * Paste over the items given, with the clipboard left as it is.
+     */
+    drop: (items: OpsPlace[], into: OpsPlace, copy: boolean, confirm: Confirm) => Promise<Outcome>;
+    /**
+     * How many operations the server has answered since the page opened, which moves whenever the
+     * change log may hold a record the page has not read.
+     */
+    answers: () => number;
     /** Move items to the Trash; when the Trash fails, ask whether to delete for good. */
     trash: (items: OpsPlace[], confirm: Confirm) => Promise<Outcome>;
     create: (into: OpsPlace, name: string, folder: boolean) => Promise<Outcome>;
     rename: (item: OpsPlace, name: string) => Promise<Outcome>;
     /** Write one file's bytes (base64) into a folder; ask before replacing a file of that name. */
     upload: (into: OpsPlace, name: string, data: string, confirm: Confirm) => Promise<Outcome>;
+    /**
+     * Take one file operation of the change log back (or take back an undo of one, which puts the
+     * operation again): the endpoint's answer, with the tabs and bookmarks over a renamed or moved
+     * path restated and every listing read again when it was made.
+     */
+    undoFile: (record: FileRecord, roots: FsRoot[]) => Promise<WriteAnswer>;
+    /**
+     * Add Folder to Workspace: open the folder panel and add every folder it returns that is not
+     * a root already, each through the roots write of the workspace in force.
+     */
+    addFolders: () => Promise<FoldersAdded>;
+    /**
+     * Open Folder: open the folder panel and show its first folder as a Files tab rooted at it
+     * when a served root holds it; a folder outside every root is said on the page's Files tab,
+     * which offers Add Folder to Workspace.
+     */
+    openFolder: () => Promise<FolderOpened>;
 };
 
 /** The folder a path sits in, '' for a path at the top of its root. */
@@ -154,6 +209,7 @@ export function createExplorer(
     // Two signals, each replaced whole, so a view that reads one is drawn again when it changes.
     let clip: Clipboard | null = $state.raw(null);
     let compare: OpsPlace | null = $state.raw(null);
+    let answeredCount = $state(0);
 
     function clipboard(): Clipboard | null {
         return clip;
@@ -165,6 +221,10 @@ export function createExplorer(
 
     function cut(items: OpsPlace[]): void {
         clip = { mode: 'cut', items: once(items) };
+    }
+
+    function clearClipboard(): void {
+        clip = null;
     }
 
     function compareFile(): OpsPlace | null {
@@ -186,7 +246,9 @@ export function createExplorer(
 
     /** Post one request and read the answer. */
     async function send(request: OpsRequest): Promise<Outcome> {
-        return outcomeOf(await writes.postCommand(OPS_PATH, request));
+        const outcome = outcomeOf(await writes.postCommand(OPS_PATH, request));
+        if (answered(outcome)) answeredCount += 1;
+        return outcome;
     }
 
     /** Whether an outcome means the server answered, so the disk may have changed. */
@@ -326,16 +388,22 @@ export function createExplorer(
         };
     }
 
-    async function paste(into: OpsPlace, confirm: Confirm): Promise<Outcome> {
-        const used = clip;
-        if (used === null) return { ok: true, paths: [] };
-        const mode = used.mode === 'cut' ? 'move' : 'copy';
-        let waiting = once(used.items);
+    /**
+     * Place items in a folder, asking whether to replace when a name is taken. A move restates the
+     * tabs and bookmarks over what moved and reads the folders it touched again.
+     */
+    async function place(
+        items: OpsPlace[],
+        into: OpsPlace,
+        mode: 'move' | 'copy',
+        confirm: Confirm
+    ): Promise<{ outcome: Outcome; kept: boolean }> {
+        let waiting = once(items);
         let replace = false;
         const done: string[] = [];
         const paths: string[] = [];
         let outcome: Outcome;
-        let cancelled = false;
+        let kept = false;
         for (;;) {
             const sent = waiting;
             outcome = await send({
@@ -346,7 +414,7 @@ export function createExplorer(
                 path: into.path,
                 replace
             });
-            if (!answered(outcome)) return outcome;
+            if (!answered(outcome)) return { outcome, kept: true };
             const finished = doneOf(
                 outcome,
                 sent.map((one) => one.path)
@@ -366,16 +434,40 @@ export function createExplorer(
                 name: nameOf(outcome.failed ?? '')
             });
             if (!sure) {
-                cancelled = true;
+                kept = true;
                 break;
             }
             replace = true;
             waiting = sent.filter((one) => !finished.includes(one.path));
         }
-        if (used.mode === 'cut' && !cancelled && clip === used) clip = null;
-        return outcome.ok
-            ? { ok: true, paths }
-            : { ok: false, error: outcome.error, done, failed: outcome.failed };
+        return {
+            outcome: outcome.ok
+                ? { ok: true, paths }
+                : { ok: false, error: outcome.error, done, failed: outcome.failed },
+            kept
+        };
+    }
+
+    async function paste(into: OpsPlace, confirm: Confirm): Promise<Outcome> {
+        const used = clip;
+        if (used === null) return { ok: true, paths: [] };
+        const placed = await place(
+            used.items,
+            into,
+            used.mode === 'cut' ? 'move' : 'copy',
+            confirm
+        );
+        if (used.mode === 'cut' && !placed.kept && clip === used) clip = null;
+        return placed.outcome;
+    }
+
+    async function drop(
+        items: OpsPlace[],
+        into: OpsPlace,
+        copied: boolean,
+        confirm: Confirm
+    ): Promise<Outcome> {
+        return (await place(items, into, copied ? 'copy' : 'move', confirm)).outcome;
     }
 
     async function upload(
@@ -401,17 +493,75 @@ export function createExplorer(
         return outcome;
     }
 
+    async function undoFile(record: FileRecord, roots: FsRoot[]): Promise<WriteAnswer> {
+        const answer = await writes.undoWrite(record.at);
+        if (answer.ok && answer.changed.length > 0) {
+            answeredCount += 1;
+            await landed(undoneMoves(record, roots), [], []);
+            fs.invalidate();
+        }
+        return answer;
+    }
+
+    /** Open the folder panel and read what it came to. */
+    async function pick(): Promise<ReturnType<typeof pickedOf>> {
+        const posted = await writes.postCommand(PICK_PATH, {});
+        return pickedOf(posted.body, posted.failed);
+    }
+
+    async function addFolders(): Promise<FoldersAdded> {
+        const picked = await pick();
+        if (!picked.ok) return { ok: false, picker: picked.error };
+        const current = fs.workspaces();
+        const roots = current.workspaces.find((one) => one.name === current.current)?.roots ?? [];
+        const { add, skipped } = foldersToAdd(picked.paths, roots);
+        let added = 0;
+        let refused = '';
+        for (const dir of add) {
+            const answer = await fs.addRoot(dir);
+            if (answer.ok) added += 1;
+            else if (refused === '') refused = answer.error ?? 'refused';
+        }
+        return { ok: true, added, skipped, refused };
+    }
+
+    async function openFolder(): Promise<FolderOpened> {
+        const picked = await pick();
+        if (!picked.ok) return { ok: false, picker: picked.error };
+        const current = fs.workspaces();
+        const roots = current.workspaces.find((one) => one.name === current.current)?.roots ?? [];
+        const choice = folderChoice(picked.paths, roots);
+        if (choice.kind === 'inside') {
+            layout.showFolderInFiles(choice.path, choice.root);
+        } else if (choice.kind === 'outside') {
+            const id = layout.openView(FILES_VIEW);
+            if (id !== '') {
+                ui.setInstanceState(
+                    id,
+                    patchedFilesView(ui.instanceState(id), { outside: choice.dir })
+                );
+            }
+        }
+        return { ok: true, choice };
+    }
+
     return {
         clipboard,
         copy,
         cut,
+        clearClipboard,
         compareFile,
         selectForCompare,
         unsaved,
         paste,
+        drop,
+        answers: () => answeredCount,
         trash,
         create,
         rename,
-        upload
+        upload,
+        undoFile,
+        addFolders,
+        openFolder
     };
 }

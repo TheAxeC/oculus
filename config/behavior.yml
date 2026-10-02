@@ -131,6 +131,12 @@ changes:
   keep: 500
 
 
+# === The Files view =========================================================
+# Whether moving a file or folder to the Trash asks first, as VS Code's explorer.confirmDelete. A permanent delete always asks. The question's "Do not ask me again" box writes false here.
+files:
+  confirm_delete: true
+
+
 # === The git panel ==========================================================
 # The Changes view asks this model for a suggested commit message. Empty uses the command-line default.
 # The minutes between two automatic fetches of every repository with a remote, 0 for none.

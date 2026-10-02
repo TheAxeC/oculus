@@ -27,9 +27,9 @@
 import { execFile } from 'node:child_process';
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
-import { GIT } from '../core/git.ts';
+import { GIT } from '../core/git/run.ts';
 import { inside } from '../core/paths.ts';
-import { parseBranches, shortReason } from '../core/git-parse.ts';
+import { parseBranches, shortReason } from '../core/git/parse.ts';
 
 export { parseBranches };
 
@@ -196,7 +196,7 @@ export function lsFiles(at: Where): Promise<Outcome> {
 
 /**
  * What changed against the mirror's last commit, in git's own letters, NUL separated and never
- * quoted, for core/git-parse.ts's statusRecords to read.
+ * quoted, for core/git/parse.ts's statusRecords to read.
  */
 export function porcelain(at: Where): Promise<Outcome> {
     return run(at, ['status', '--porcelain=v1', '-z']);

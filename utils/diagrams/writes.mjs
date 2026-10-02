@@ -228,8 +228,8 @@ const METHOD = /(?<![\w$.])([\w$]+)\.([\w$]+)\s*\(/g;
  * refusal of one of them calls; a module the trace reaches that is none of these is left out, with
  * its edges. A call in a condition that answers 4xx is a refusal, drawn dashed; an edge to the disk
  * is labelled with its node:fs calls; every other edge's tooltip, which renderSvg() makes its
- * title, names the functions it calls. A plain arrow `ports` names (`from->to`) leaves its module
- * by the tail port given, which writesDrawn() chooses.
+ * title, names the functions it calls. A plain arrow `ports` names (`from->to`) carries the port
+ * attribute given, a `tailport=` or a `headport=`, which writesDrawn() chooses.
  *
  * @param {Sources} sources
  * @param {string} [route]
@@ -502,9 +502,11 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map(), read 
         } else if (shown) {
             lines.push(...labelledEdge(from, to, names, style, kind));
         } else {
-            const port = ports.get(`${from}->${to}`);
-            const tail = port === undefined ? '' : `tailport=${port}`;
-            const attrs = [tail, `tooltip=${quote(names)}`, style].filter((one) => one !== '');
+            const attrs = [
+                ports.get(`${from}->${to}`) ?? '',
+                `tooltip=${quote(names)}`,
+                style
+            ].filter((one) => one !== '');
             lines.push(`    ${quote(from)} -> ${quote(to)} [${attrs.join(', ')}];`);
         }
     }
@@ -519,19 +521,28 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map(), read 
 const RANKSEP = 0.8;
 
 /**
- * The tail ports writesDrawn() tries, in order, for a plain arrow that runs along another arrow:
- * the sides beside the east side a left-to-right arrow leaves by.
+ * The port attributes writesDrawn() tries, in order, for a plain arrow that runs along another
+ * arrow: first the tail ports beside the east side a left-to-right arrow leaves by, then the head
+ * ports beside the west side it arrives by, which part the arrows that reach one module together.
  */
-const PORTS = ['se', 's', 'ne', 'n'];
+export const PORTS = [
+    'tailport=se',
+    'tailport=s',
+    'tailport=ne',
+    'tailport=n',
+    'headport=nw',
+    'headport=sw'
+];
 
 /**
- * The write diagram drawn, with no two arrows running along each other where a tail port can part
+ * The write diagram drawn, with no two arrows running along each other where a port can part
  * them: while arrowsAlong() names a pair, the later plain arrow of the pair (by name) is given the
- * next tail port of PORTS and the diagram is drawn again. A plain arrow joins two modules directly;
+ * next port of PORTS and the diagram is drawn again. A plain arrow joins two modules directly;
  * an arrow drawn through its words or its calls is not one, so a pair of a plain arrow and another
  * kind is parted by the plain one. The pair may leave one module or reach one: two arrows from one
  * module leave it at one point and two arrows into one module reach it at one point, and when their
- * heads lie in one direction the router lays them together for as long as they head that way. It
+ * heads lie in one direction the router lays them together for as long as they head that way,
+ * which a tail port parts at the module they leave and a head port at the module they reach. It
  * stops when no pair is left whose plain arrow has a port it has not tried, so what it cannot part
  * stays for the check to name.
  *

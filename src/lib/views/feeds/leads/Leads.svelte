@@ -31,8 +31,8 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import LeadCard from './LeadCard.svelte';
-    import AskConfirm from '../../shared/AskConfirm.svelte';
-    import type { Ask } from '../../shared/ask';
+    import AskConfirm from '../../shared/writes/AskConfirm.svelte';
+    import type { Ask } from '../../shared/writes/ask';
     import EntryForm from '../../shared/forms/EntryForm.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';

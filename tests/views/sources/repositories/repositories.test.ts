@@ -24,7 +24,7 @@ import type { ViewProps } from '../../../../src/lib/state/workbench/navigation/r
 import { shapeBadgeTone } from '../../../../src/lib/views/shared/changes/repo-shape.ts';
 import type { DiffSides, GitState } from '../../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../../src/lib/state/workbench/layout/index.ts';
-import { OVERSCAN } from '../../../../src/lib/ui/tree/virtual.ts';
+import { OVERSCAN } from '../../../../src/lib/ui/tree/list/virtual.ts';
 import {
     HUB,
     HUB_LOG,
@@ -326,10 +326,11 @@ describe('the Repositories view', () => {
 
     // Revert: draw `{#each group.entries}` in Changes.svelte, or `{#each commits}` in
     // graph/Graph.svelte, straight into the section rather than through
-    // ui/tree/VirtualRows.svelte, or set `shown` to `count` in ui/tree/virtual.ts's firstWindow.
-    // An audit of the markup: a server rendering has no scroll box, so each list draws its first
-    // window and holds the rest after it; which rows a browser draws once scrolled it says nothing
-    // of, and the Graph, which reads its commits only in a browser, draws an empty list.
+    // ui/tree/list/VirtualRows.svelte, or set `shown` to `count` in ui/tree/list/virtual.ts's
+    // firstWindow. An audit of the markup: a server rendering has no scroll box, so each list draws
+    // its first window and holds the rest after it; which rows a browser draws once scrolled it
+    // says nothing of, and the Graph, which reads its commits only in a browser, draws an empty
+    // list.
     it('audits that draws the first changed files of a long group and holds the rest in a spacer after them', () => {
         const loose = Array.from({ length: 30 }, (_, at) => ({
             path: `loose/f${String(at).padStart(2, '0')}.txt`,

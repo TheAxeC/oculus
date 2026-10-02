@@ -3,8 +3,9 @@
 // captured values.
 //
 // The derived tokens are held as one SHA-256 per theme over the sorted `name:value` lines rather
-// than as the 3009 values themselves (17 themes of 177): a changed token changes its theme's
-// digest, and the case names the theme. The digests and counts below are the tokens each theme
+// than as the 3009 values themselves (13 themes of 177 and 4 of 189, the four with a panel lighter
+// than the ink also deriving the 12 Seti colours): a changed token changes its theme's digest, and
+// the case names the theme. The digests and counts below are the tokens each theme
 // derives with the WCAG 2 relative luminance and contrast ratio, the measure culori's
 // wcagLuminance and wcagContrast compute.
 
@@ -13,20 +14,21 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { contrastOn, ratio } from '../../src/lib/themes/derive.ts';
+import { converter } from 'culori';
+import { SETI_RATIO, contrastOn, ratio } from '../../src/lib/themes/derive.ts';
 import { NAMES, themeTokens } from '../checks/look/themes.ts';
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src');
 
 /** Every theme's derived token count and the digest of its sorted `name:value` lines. */
 const CAPTURED: [string, number, string][] = [
-    ['light', 177, '64363cd7faaad608235ef3e42645d0526bd2d71efb6876d75b4c792d1c632d25'],
+    ['light', 189, 'c57ab359d2c82dd5740580e486c403c8b4aef77db64200ee3dfc536a7f0afa64'],
     ['dark', 177, 'b10c89d6decfa21babeebf788078f58998c8544c1d9f535f7b8b7975f7f6e179'],
     ['vscode-dark-modern', 177, '19ea02761845da33e227669fd4eccc5093579c54f90c082ff4322a4563c5bdf4'],
     [
         'vscode-light-modern',
-        177,
-        'cf0392a6aeee8d1592e3b47f81033c109fecad956c3c492fb3a62e701e1be211'
+        189,
+        'f554f874bae5db2cec71507391b1702aaedf35eb9a29a04037cd9a1315ccea12'
     ],
     ['mocha', 177, 'ac0b54c818f1c5d8d34da1050ede8786abb47c73ef6dea5fbec3300793278b66'],
     ['gruvbox', 177, '436e0d6482ac40c9c3a1c835574de64d0dda19164146c807ad77914caa880c05'],
@@ -39,8 +41,8 @@ const CAPTURED: [string, number, string][] = [
     ['dracula', 177, '17802e65c25b1c4e06586bdeab738d4ca2cb09958e02c81b72027972d0f4c668'],
     ['kanagawa', 177, '1df48ef542db7f50b52b4165c433c2990980ffec7a0a5dbad08a92d961bdf82c'],
     ['solarized', 177, '39a41b9fdf214d35050c54f0e08988e4432a1a62f142fac6dfd62c648499257d'],
-    ['latte', 177, 'f59f21751199bbfaf3ed38c950401ffa07158807db1023b65b8985f8cd204426'],
-    ['gruvboxlight', 177, '9c36d52c0263fdb70b33cea8653c8f9d131eb17252f0a4f81569bf452ea56f7f']
+    ['latte', 189, 'bbf73c0f2c1aac7d30d92c8992e5907e0993490060f5a7438930794391fb7b14'],
+    ['gruvboxlight', 189, '287cd062af664549a52159c3b01f72cb59c0ec4affb584cacd5dca1dfe3150c0']
 ];
 
 /** One theme's derived tokens as the digest CAPTURED holds, with their count. */
@@ -67,6 +69,48 @@ describe('the WCAG measure', () => {
 describe('the derived tokens', () => {
     it('are the captured tokens of every theme, one digest a theme', () => {
         expect(NAMES.map(digest)).toEqual(CAPTURED);
+    });
+
+    // Revert: drop the `--seti-` loop of deriveTokens; no light theme derives a Seti colour then.
+    it('darken each Seti colour to 3:1 on the panel of a theme whose panel is lighter than its ink', () => {
+        const hsl = converter('hsl');
+        const light = NAMES.filter((name) => {
+            const { theme } = themeTokens(name);
+            return ratio(theme['--panel'], '#ffffff') < ratio(theme['--ink'], '#ffffff');
+        });
+        expect(light.length).toBeGreaterThan(0);
+        for (const name of light) {
+            const { theme, derived } = themeTokens(name);
+            const seti = Object.keys(theme).filter((key) => key.startsWith('--seti-'));
+            expect(seti).toHaveLength(12);
+            for (const key of seti) {
+                expect(
+                    ratio(derived[key], theme['--panel']),
+                    `${name} ${key}`
+                ).toBeGreaterThanOrEqual(SETI_RATIO);
+                const was = hsl(theme[key]);
+                const now = hsl(derived[key]);
+                // The same hue: a grey has none, and a hex byte moves a hue by a few degrees.
+                if (was?.h !== undefined && now?.h !== undefined && was.s > 0.15) {
+                    const gap = Math.abs(was.h - now.h);
+                    expect(Math.min(gap, 360 - gap), `${name} ${key}`).toBeLessThan(12);
+                }
+            }
+        }
+    });
+
+    it('keep seti-ui values on a theme whose panel is darker than its ink', () => {
+        const dark = NAMES.filter(
+            (name) =>
+                !Object.keys(themeTokens(name).derived).some((key) => key.startsWith('--seti-'))
+        );
+        expect(dark.length).toBe(NAMES.length - 4);
+        for (const name of dark) {
+            const { theme, derived } = themeTokens(name);
+            expect(derived['--seti-ignore'], name).toBeUndefined();
+            expect(theme['--seti-ignore'], name).toBe('#41535b');
+            expect(theme['--seti-grey'], name).toBe('#4d5a5e');
+        }
     });
 
     // An audit, a read of the source text: red while a hand WCAG or CIEDE2000 function is left in

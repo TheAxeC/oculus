@@ -15,6 +15,7 @@ import {
     iconSet,
     type IconMemory,
     languageFindings,
+    nestingFindings,
     loadConfig,
     loadLocal,
     localFile,
@@ -54,6 +55,7 @@ import type { LogPaths } from '../machine/hpc/actions.ts';
 import type { Plan } from '../git/deposit.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { defaultWorkspacesPath, ignoredCache, type IgnoredCache } from '../files/fs.ts';
+import { pickerState, type PickerState } from '../files/fs/picker.ts';
 import { fsWrites, type FsWrites } from '../core/json.ts';
 import { memoriesMemory, type MemoriesMemory } from '../content/memories.ts';
 import { browserRoots, repositoryRoots } from '../files/roots.ts';
@@ -124,6 +126,8 @@ export type ServerContext = {
     opsWrites: FsWrites;
     /** The ignored names the file browser's listings asked git for lately. */
     ignoredCache: IgnoredCache;
+    /** Whether the folder panel is open, so a second request while it is open is answered busy. */
+    folderPicker: PickerState;
     /** The log path found per HPC job id. */
     hpcLogPaths: LogPaths;
     /** The calendar consents in flight, minted by the connect action and taken by the callback. */
@@ -424,6 +428,7 @@ export function createServerContext(
         ...iconFindings(engine, config),
         ...behaviorFindings(engine, config),
         ...languageFindings(engine, config),
+        ...nestingFindings(engine, config),
         ...themeFindings(engine, config),
         ...docFindings(config, local.hub, layoutFile(engine))
     ]);
@@ -602,6 +607,7 @@ export function createServerContext(
         fsWrites: writes,
         opsWrites: fsWrites(),
         ignoredCache: ignoredCache(),
+        folderPicker: pickerState(),
         hpcLogPaths,
         calendarConnects: new ConnectStates(),
         calendarDir,

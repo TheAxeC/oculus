@@ -17,8 +17,8 @@
     // same in both. The touched files and the repository are drawn by partials of their own, since
     // the two change independently.
 
-    import AskConfirm from '$lib/views/shared/AskConfirm.svelte';
-    import type { Ask } from '$lib/views/shared/ask';
+    import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
+    import type { Ask } from '$lib/views/shared/writes/ask';
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';

@@ -1,5 +1,6 @@
 // Layer 2, client state. What the file browser fetched: one directory's entries, the workspaces,
-// one file's text, the reader's own bookmarks and their scratch notes.
+// one file's text, the reader's own bookmarks and their scratch notes, and the history of one file:
+// the copies the server kept before its saves and the commits that touched it.
 //
 // It is state/system/docs.svelte.ts's shape over the reads this endpoint offers, and for the same
 // reason: none of them is in the snapshot, so the first call asks the server and every later call
@@ -57,7 +58,7 @@
 // and a second click on the same row ask the server once.
 
 import { z } from 'zod';
-import type { Entry, SchemaField } from '../../data/model/index.ts';
+import type { SchemaField } from '../../data/model/index.ts';
 import { TEXT_SNIFF_READ } from '../../data/helpers/files/text-kind.ts';
 import {
     anyNumberShape,
@@ -87,6 +88,7 @@ import {
     readAnswer,
     readCapped,
     readCappedBytes,
+    type BookmarkEntry,
     type BookmarksState,
     type FileText,
     type Listing,
@@ -109,9 +111,19 @@ import {
     type ListingShown
 } from './fs.ts';
 import { t } from '../shared/words/text.ts';
+import type { GitCommit } from '../../data/model/index.ts';
+import {
+    commitsOf,
+    copiesOf,
+    copyTextOf,
+    historyUrl,
+    logUrl
+} from './explorer/sections/timeline-reads.ts';
+import type { SavedCopy } from './explorer/sections/timeline.ts';
 
 export { fileBytesUrl, FS_PATH, listingUrl, readCapped } from './fs-transport.ts';
 export type {
+    BookmarkEntry,
     BookmarksState,
     FileText,
     Listing,
@@ -136,6 +148,16 @@ export type BookmarkForms = {
      */
     shift: (owner: string, now: FilesForms, next: FilesForms) => void;
 };
+
+/** The local-history copies of one file, as far as they are read. */
+export type FileCopies = { copies: SavedCopy[]; error: string; loading: boolean };
+
+/** The commits that touched one file, as far as they are read. */
+export type FileCommits = { commits: GitCommit[]; error: string; loading: boolean };
+
+const NO_COPIES: FileCopies = { copies: [], error: '', loading: true };
+
+const NO_COMMITS: FileCommits = { commits: [], error: '', loading: true };
 
 /**
  * The collection key the write path resolves to the reader's own bookmarks file. A bookmark is
@@ -180,9 +202,10 @@ const bookmarkShape = unchanged(
         title: z.string(),
         fields: mapShape,
         file: z.string(),
-        index: anyNumberShape
+        index: anyNumberShape,
+        kind: z.enum(['file', 'folder', 'missing']).optional().catch(undefined)
     })
-) satisfies z.ZodType<Entry>;
+) satisfies z.ZodType<BookmarkEntry>;
 
 /** One field of the bookmarks file's own schema, answered as the endpoint sent it. */
 const schemaFieldShape = unchanged(
@@ -264,6 +287,16 @@ export type FsStore = {
     fileVersion: (root: string, path: string) => number;
     /** Say that one file was written, which moves its version and its address with it. */
     bump: (root: string, path: string) => void;
+    /**
+     * The copies the local history holds of one file, newest first. A file written since is read
+     * again, since the key carries the file's version; a read for another file never replaces this
+     * one's, so the Timeline draws the file it is on and an answer for the one before is not shown.
+     */
+    copies: (root: string, path: string) => FileCopies;
+    /** The commits that touched one file of a repository, newest first, read the same way. */
+    commits: (repository: string, path: string, root: string, shown: string) => FileCommits;
+    /** The text of one copy of a file, or null when the server does not hold it. */
+    copyText: (root: string, path: string, id: string) => Promise<string | null>;
     /** The reader's own bookmarks, asked for once a round like the workspaces. */
     bookmarks: () => BookmarksState;
     /**
@@ -543,6 +576,57 @@ export function createFs(
         }
     }
 
+    /** The copies of one file's local history, read again whenever the file is written. */
+    function copies(root: string, path: string): FileCopies {
+        if (root === '' || path === '') return { copies: [], error: '', loading: false };
+        const key = ['fs', 'history', root, treeKey(root, path), String(fileVersion(root, path))];
+        const { data } = queries.read(key, () => readCopies(root, path), { enabled: inBrowser() });
+        return data ?? NO_COPIES;
+    }
+
+    async function readCopies(root: string, path: string): Promise<FileCopies> {
+        try {
+            const answer = await readAnswer(await fetch(historyUrl(root, path)));
+            if (!answer.ok) return { copies: [], error: answer.error, loading: false };
+            return { copies: copiesOf(answer.body), error: '', loading: false };
+        } catch (error) {
+            return { copies: [], error: reasonOf(error), loading: false };
+        }
+    }
+
+    /**
+     * The commits that touched one file. `repository` and `path` are the file as the repository
+     * names it; `root` and `shown` are the file as the file browser names it, whose version is
+     * part of the key so a save of the file asks again.
+     */
+    function commits(repository: string, path: string, root: string, shown: string): FileCommits {
+        if (repository === '' || path === '') return { commits: [], error: '', loading: false };
+        const key = ['fs', 'log', repository, path, String(fileVersion(root, shown))];
+        const { data } = queries.read(key, () => readCommits(repository, path), {
+            enabled: inBrowser()
+        });
+        return data ?? NO_COMMITS;
+    }
+
+    async function readCommits(repository: string, path: string): Promise<FileCommits> {
+        try {
+            const answer = await readAnswer(await fetch(logUrl(repository, path)));
+            if (!answer.ok) return { commits: [], error: answer.error, loading: false };
+            return { commits: commitsOf(answer.body), error: '', loading: false };
+        } catch (error) {
+            return { commits: [], error: reasonOf(error), loading: false };
+        }
+    }
+
+    async function copyText(root: string, path: string, id: string): Promise<string | null> {
+        try {
+            const answer = await readAnswer(await fetch(historyUrl(root, path, id)));
+            return answer.ok ? copyTextOf(answer.body) : null;
+        } catch {
+            return null;
+        }
+    }
+
     /** The reader's own bookmarks, asked for once and held until they are marked. */
     function bookmarks(): BookmarksState {
         const { data } = queries.read(BOOKMARKS, readBookmarks, { enabled: inBrowser() });
@@ -721,6 +805,21 @@ export function createFs(
     }
 
     /**
+     * Whether the workspace in force is the default one, whose folders are the `roots:` list of
+     * config/sources.yml and are edited by the `roots` write rather than in the workspaces file.
+     */
+    function inDefault(): boolean {
+        return (queries.peek<WorkspacesState>(WORKSPACES).data?.current ?? '') === '';
+    }
+
+    /** One write on the default workspace's folders, which marks everything held as a save does. */
+    async function rootsWrite(fields: Record<string, unknown>): Promise<WriteAnswer> {
+        const answer = await writes.send(fields);
+        if (answer.ok) invalidate();
+        return answer;
+    }
+
+    /**
      * One collection write on the bookmarks file, which is /api/write rather than this endpoint.
      */
     async function bookmarkWrite(fields: Record<string, unknown>): Promise<WriteAnswer> {
@@ -743,12 +842,21 @@ export function createFs(
         refresh,
         fileVersion,
         bump,
+        copies,
+        commits,
+        copyText,
         bookmarks,
         bookmarksNow,
         notes: noteList,
         note,
-        addRoot: (dir: string) => act({ action: 'add-root', dir }),
-        removeRoot: (key: string) => act({ action: 'remove-root', key }),
+        addRoot: (dir: string) =>
+            inDefault()
+                ? rootsWrite({ kind: 'roots', action: 'add', dir })
+                : act({ action: 'add-root', dir }),
+        removeRoot: (key: string) =>
+            inDefault()
+                ? rootsWrite({ kind: 'roots', action: 'remove', key })
+                : act({ action: 'remove-root', key }),
         saveWorkspace: (name: string) => act({ action: 'save-workspace', name }),
         selectWorkspace: (name: string) => act({ action: 'select-workspace', name }),
         addBookmark: (fields: Record<string, unknown>) =>

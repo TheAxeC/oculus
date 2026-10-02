@@ -4,8 +4,8 @@
 // pane and a Files view's open folders go when a file or folder moves (explorer/follow.ts).
 //
 // What this does NOT cover: the input drawn, its keys and its message, which need a DOM
-// (tests/views/sources/files/files-naming.test.ts covers the message rules and the markup that a
-// server renders); the store that applies a move to the open tabs, which is ops.test.ts.
+// (tests/views/sources/files/menu/files-naming.test.ts covers the message rules and the markup that
+// a server renders); the store that applies a move to the open tabs, which is ops.test.ts.
 
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';

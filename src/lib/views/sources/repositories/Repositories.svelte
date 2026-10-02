@@ -46,8 +46,8 @@
     // worktree's terminal control does, and reveals its folder in Finder through the open endpoint;
     // a reveal Finder refused is said on one line over the list until the next one.
 
-    import AskConfirm from '$lib/views/shared/AskConfirm.svelte';
-    import type { Ask } from '$lib/views/shared/ask';
+    import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
+    import type { Ask } from '$lib/views/shared/writes/ask';
     import Prompt from '$lib/ui/forms/Prompt.svelte';
     import type { PromptRequest } from '$lib/ui/forms/prompt';
     import Empty from '$lib/ui/frame/Empty.svelte';

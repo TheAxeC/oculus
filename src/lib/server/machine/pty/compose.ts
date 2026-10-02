@@ -30,7 +30,7 @@ import {
     choiceArgs,
     parseAgents,
     withCacheModels
-} from '../../../data/sources/config/agents.ts';
+} from '../../../data/sources/config/catalog/agents.ts';
 import { configDir, loadLocalOrDefaults, type LocalConfig } from '../../../data/sources/config.ts';
 import type {
     AgentAccount,

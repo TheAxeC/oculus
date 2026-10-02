@@ -15,7 +15,10 @@
 // in the accent's hue under every theme without the solid accent block. And for every hue
 // `--c-<hue>-lane`, half the hue in the panel, the surface the header of a Focus lane fills with,
 // beside `--c-<hue>-lane-txt`, the hue's text colour made readable on that surface, which the
-// header's name and count are drawn in, so every other hue text is left as it is.
+// header's name and count are drawn in, so every other hue text is left as it is. And the Seti
+// icon colours of a file row, `--seti-*`, which are seti-ui's own values in every dark theme and,
+// in a theme whose panel is lighter than its ink, the same hue darkened until it clears 3:1 on the
+// panel, since seti-ui draws for a dark ground and a pale icon disappears on a light one.
 //
 // The rule is WCAG relative luminance, a 0.02 lightness step, a bound of 50 steps, and the grounds
 // tried in a fixed order. Nothing here touches the document; ui/theme.ts sets the theme class and
@@ -40,12 +43,17 @@ const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const HEX_VALUE = /^#[0-9a-fA-F]{3,6}$/;
 
 /** The tokens a derived token is computed from: the palette hues and the chrome colours. */
-const COLOUR_TOKEN = /^--(?:c-[a-z0-9-]+|accent|muted|ink|line|chip|card|panel|bg)$/;
+const COLOUR_TOKEN = /^--(?:c-[a-z0-9-]+|seti-[a-z-]+|accent|muted|ink|line|chip|card|panel|bg)$/;
 
 /**
  * The contrast a scrollbar's thumb keeps against its track: what a control's edge needs to be seen.
  */
 export const SCROLL_THUMB_RATIO = 3;
+
+/**
+ * The contrast a Seti icon keeps against the panel on a theme whose panel is lighter than its ink.
+ */
+export const SETI_RATIO = 3;
 
 /** How much of the accent the pressed-toggle surface carries, the rest being the page. */
 const ACCENT_SHARE = 0.2;
@@ -202,7 +210,10 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
     const keys = Object.keys(effective).sort();
 
     const derived: Record<string, string> = {};
-    for (const key of keys) derived[`--on-${key.slice(2)}`] = contrastOn(effective[key]);
+    for (const key of keys) {
+        if (!key.startsWith('--seti-'))
+            derived[`--on-${key.slice(2)}`] = contrastOn(effective[key]);
+    }
 
     const chip = effective['--chip'] || effective['--panel'] || effective['--bg'];
     const card = effective['--card'] || effective['--panel'] || effective['--bg'];
@@ -232,6 +243,16 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
         const thumb = mix(effective['--muted'], effective['--line'], 0.5);
         derived['--scroll-thumb'] = readable(thumb, panel, SCROLL_THUMB_RATIO);
         derived['--scroll-track'] = panel;
+    }
+
+    // The Seti icon colours: darkened on a theme whose panel is lighter than its ink, left as the
+    // stylesheet gives them on every other one.
+    const ground = effective['--panel'];
+    if (ground && effective['--ink'] && wcagLuminance(ground) > wcagLuminance(effective['--ink'])) {
+        for (const key of keys) {
+            if (key.startsWith('--seti-'))
+                derived[key] = readable(effective[key], ground, SETI_RATIO);
+        }
     }
 
     for (const key of keys) {

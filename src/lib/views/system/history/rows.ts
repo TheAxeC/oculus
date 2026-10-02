@@ -5,7 +5,10 @@
 // It is a fold and reads nothing: the store holds the rows and this says what they look like, so a
 // case states a row and asserts a line without a fetch.
 
+import { stampPaths } from '$lib/state/sources/explorer/acts/undo';
 import { t } from '$lib/state/shared/words/text';
+
+export { sentenceFor, undoSaid, type UndoAnswer } from '$lib/views/shared/writes/undo-said';
 
 /**
  * One recorded value as the view shows it. A scalar is shown whole and carries no size; a list or a
@@ -47,41 +50,28 @@ export function shown(value: unknown): Shown {
     return { text: '', size: 0, empty: true };
 }
 
-/** What one undo answered, as much of it as this fold reads. */
-export type UndoAnswer = {
-    ok: boolean;
-    changed: string[];
-    /** The fields the writer would not take, which a write that still changed something carries. */
-    refused?: { field: string; reason: string }[];
-    error?: string;
-};
+/** The `kind` the change log files a file operation under. */
+export const FILE_RECORD = 'files';
 
-/**
- * Whether an undo put the value back, and the sentence the status region says about it.
- *
- * An answer that named no field wrote none of them, whatever its status was: the writer may refuse
- * a value the file will not take, and an undo that normalises back to what is already there writes
- * no byte. Either way the value is not back, so the row never says it is. A write that changed
- * something and still refused a field is back in part, and the sentence says how many fields it
- * left out rather than that the value is back whole.
- */
-export function undoSaid(answer: UndoAnswer, name: string): { undone: boolean; said: string } {
-    if (answer.ok && answer.changed.length > 0) {
-        const left = answer.refused?.length ?? 0;
-        if (left > 0) return { undone: true, said: t('history.undone_partly', name, left) };
-        return { undone: true, said: t('history.undone', name) };
-    }
-    const word = answer.ok ? 'refused' : (answer.error ?? '');
-    return { undone: false, said: sentenceFor(word) };
+/** The word an operation of a file record is called: VS Code's own name for it. */
+export function fileOperation(field: string): string {
+    if (field === 'create') return t('history.file_create');
+    if (field === 'rename') return t('history.file_rename');
+    if (field === 'move') return t('history.file_move');
+    if (field === 'copy') return t('history.file_copy');
+    if (field === 'upload') return t('history.file_upload');
+    if (field === 'trash') return t('history.file_trash');
+    if (field === 'delete') return t('history.file_delete');
+    return field;
 }
 
-/** The sentence for what the endpoint answered, never its own word. */
-export function sentenceFor(word: string): string {
-    if (word === 'moved') return t('history.moved');
-    if (word === 'gone') return t('history.gone');
-    if (word === 'unknown') return t('history.unknown');
-    if (word === 'nothing') return t('history.nothing');
-    if (word === 'unwritable') return t('history.unwritable');
-    if (word === 'refused') return t('history.refused_write');
-    return t('history.refused', word);
+/**
+ * The paths a file record's side names, as the view shows them: none is empty, one is a scalar,
+ * and more are a list under a disclosure with a path to a line.
+ */
+export function shownPaths(stamps: unknown): Shown {
+    const paths = stampPaths(stamps);
+    if (paths.length === 0) return { text: '', size: 0, empty: true };
+    if (paths.length === 1) return { text: paths[0], size: 0, empty: false };
+    return { text: paths.join('\n'), size: paths.length, empty: false };
 }

@@ -1,0 +1,8 @@
+# The files the Files view draws under another file when File Nesting is on, as VS Code's explorer.fileNesting.patterns in its default list. A key is the name of the parent, with * for any text; its value is the list of the names of the files that nest under it. In the key, the text the first * matched is ${capture}; in a value, * is any text, and ${capture}, ${basename} (the parent's name without its last extension), ${extname} and ${dirname} stand for those parts of the parent. The reader is src/lib/data/helpers/files/nesting.ts; a pattern it cannot use (an empty key, a value that is not a list of non-empty texts) is left out with a finding and the rest are kept.
+patterns:
+    '*.ts': ['${capture}.js']
+    '*.js': ['${capture}.js.map', '${capture}.min.js', '${capture}.d.ts']
+    '*.jsx': ['${capture}.js']
+    '*.tsx': ['${capture}.ts']
+    'tsconfig.json': ['tsconfig.*.json']
+    'package.json': ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'bun.lockb', 'bun.lock']

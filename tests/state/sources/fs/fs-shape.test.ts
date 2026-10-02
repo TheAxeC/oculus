@@ -29,9 +29,11 @@ import {
     bookmarkAt,
     bookmarkById,
     bookmarkTitles,
+    configuredRootKeys,
     currentWorkspace,
     fileEntries,
     fixedRootKeys,
+    fixedRootsOf,
     matchedNothing,
     openFailures,
     rootKeysOf,
@@ -316,6 +318,48 @@ describe('the file browser lookups over what its store holds', () => {
     it('fix every root while the tab follows a session, so none offers its removal', () => {
         expect(fixedRootKeys(roots, true)).toEqual(roots.map((one) => one.key));
         expect(fixedRootKeys(roots, true).length).toBeGreaterThan(fixedRootKeys(roots).length);
+    });
+
+    // Revert: replace the `removable` branch of fixedRootKeys with `one.fixed`.
+    it('let the default workspace take off the folders of sources.yml and not the hub or config', () => {
+        const held = [
+            { key: 'hub', dir: '/hub', fixed: true },
+            { key: 'engine', dir: '/hub/tools/oculus/config', fixed: true },
+            { key: 'notes', dir: '/n', fixed: true },
+            { key: 'docs', dir: '/d', fixed: true }
+        ];
+
+        expect(fixedRootKeys(held, false, ['notes', 'docs'])).toEqual(['hub', 'engine']);
+        expect(fixedRootKeys(held, true, ['notes', 'docs'])).toEqual(held.map((one) => one.key));
+    });
+
+    it('read the keys of the roots a configuration lists and leave out an entry with none', () => {
+        expect(
+            configuredRootKeys({ roots: [{ key: 'notes', dir: '/n' }, { dir: '/x' }, { key: '' }] })
+        ).toEqual(['notes']);
+        expect(configuredRootKeys({})).toEqual([]);
+        expect(configuredRootKeys({ roots: 'notes' })).toEqual([]);
+    });
+
+    // Revert: pass the configured keys for a named workspace too in fixedRootsOf.
+    it('take the configured keys only for the default workspace, and every added root off a named one', () => {
+        const config = { roots: [{ key: 'notes', dir: '/n' }] };
+        const held = [
+            { key: 'hub', dir: '/hub', fixed: true },
+            { key: 'notes', dir: '/n', fixed: true },
+            { key: 'mine', dir: '/m', fixed: false }
+        ];
+
+        expect(fixedRootsOf({ name: '', roots: held.slice(0, 2) }, false, config)).toEqual(['hub']);
+        expect(fixedRootsOf({ name: 'work', roots: held }, false, config)).toEqual([
+            'hub',
+            'notes'
+        ]);
+        expect(fixedRootsOf({ name: 'work', roots: held }, true, config)).toEqual([
+            'hub',
+            'notes',
+            'mine'
+        ]);
     });
 
     it('find a bookmark by its id and by the file it is over', () => {

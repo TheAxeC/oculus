@@ -316,8 +316,8 @@ export type TerminalResize = {
 };
 
 // ------------------------------------------------------------------ git
-// The read-only git state of a workspace, as server/core/git.ts produces it and the `git` channel
-// carries it. JSON-safe like everything above.
+// The read-only git state of a workspace, as server/core/git/state.ts produces it and the `git`
+// channel carries it. JSON-safe like everything above.
 
 /** One path git reported, with the line counts when the worktree diff has them. */
 export type GitEntry = {

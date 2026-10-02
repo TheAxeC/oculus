@@ -1,8 +1,8 @@
 // Layer 2, server. The reader of `git.autofetch_minutes` of config/behavior.yml: the minutes
 // between two automatic fetches, 0 for none. It sits in server/core because two callers above it
 // need the same rule: the timer in server/root/watch/autofetch.ts reads the key at every look, and
-// the Settings write in server/edit/writes/config-key.ts refuses a value the start check would
-// stop the server on.
+// the Settings write in server/edit/writes/config/config-key.ts refuses a value the start check
+// would stop the server on.
 //
 // The configuration arrives as an unknown value, so the key is read through a schema and never
 // cast; every shape that is not a whole number of minutes, 0 or more, answers null.

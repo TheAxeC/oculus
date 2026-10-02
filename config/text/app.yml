@@ -22,6 +22,9 @@ text:
             kind_feed: Feed
             kind_project: Project
             kind_view: View
+            kind_workspace: Workspace
+            workspace_save: 'Save the folders in force as the workspace {0}'
+            workspace_save_name: Type a name for the workspace
         palette_empty: No match
         palette_unavailable: Unavailable
         pillars: 'Pillars: {0}'

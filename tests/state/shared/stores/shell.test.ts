@@ -2,7 +2,7 @@
 // a shell started in the folder asked for and shown under the label, or the refusal handed back
 // with nothing shown. That the Repositories store's `shellIn` and the Files row menu both take this
 // path is asserted in their own tests (tests/state/sources/repositories/view/repositories.test.ts
-// and tests/views/sources/files/files-menu.test.ts).
+// and tests/views/sources/files/menu/files-menu.test.ts).
 
 import { describe, expect, it } from 'vitest';
 import { openShell } from '../../../../src/lib/state/shared/stores/shell.ts';

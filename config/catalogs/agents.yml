@@ -1,4 +1,4 @@
-# The composer's choices for a new agent session: per agent, its pickers in the order the composer draws them. A picker has the words it is labelled with, the one flag every value of it passes, its default, and its values; a value has an id, the words it shows and what it passes after the flag, or no `pass:` for the CLI's own default, which passes nothing. A CLI release that adds a value is one line here. src/lib/data/sources/config/agents.ts reads this file and refuses a line it cannot use.
+# The composer's choices for a new agent session: per agent, its pickers in the order the composer draws them. A picker has the words it is labelled with, the one flag every value of it passes, its default, and its values; a value has an id, the words it shows and what it passes after the flag, or no `pass:` for the CLI's own default, which passes nothing. A CLI release that adds a value is one line here. src/lib/data/sources/config/catalog/agents.ts reads this file and refuses a line it cannot use.
 
 agents:
     claude:

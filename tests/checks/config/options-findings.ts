@@ -17,7 +17,7 @@ import {
     catalogOf,
     optionPaths,
     type CatalogEntry
-} from '../../../src/lib/data/sources/config/options.ts';
+} from '../../../src/lib/data/sources/config/catalog/options.ts';
 import { isMap } from '../../../src/lib/data/helpers/guards.ts';
 
 /** The config files whose keys the catalog describes, read from the engine's config folder. */

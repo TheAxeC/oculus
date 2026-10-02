@@ -79,8 +79,8 @@ const STANDALONE =
  * there is no colour of its own anywhere and nothing opaque behind it. What Graphviz writes before
  * the `svg` element (the XML declaration, the doctype and a comment carrying its build date) is
  * dropped, so the bytes change only with the drawing and the file is one element a page can hold.
- * The tail port Graphviz writes into an edge's title (`a:se->b`) is dropped from it, so the title
- * names the two modules alone.
+ * The ports Graphviz writes into an edge's title (`a:se->b` for a tail port, `a->b:nw` for a head
+ * port) are dropped from it, so the title names the two modules alone.
  *
  * Two things are added for a reader who meets the file outside oculus or points at an edge:
  *
@@ -119,6 +119,7 @@ async function drawer() {
                     `<title>${ends}: ${words.replace(/&#10;/g, ', ')}</title>\n${drawn}`
             )
             .replace(/(<title>[^<]*?):(?:n|ne|e|se|s|sw|w|nw)(?=&#45;&gt;)/g, '$1')
+            .replace(/(<title>[^<:]*&#45;&gt;[^<:]*):(?:n|ne|e|se|s|sw|w|nw)(?=: |<)/g, '$1')
             .replace(/(stroke|fill)="black"/g, '$1="currentColor"')
             .replace(/<text /g, '<text fill="currentColor" ');
 }

@@ -424,3 +424,16 @@ Verdict: ruling 13's behaviour is built and correct (the 51st delete removes the
 ### Usage
 
 claude-sonnet-5-5 (reviewer a54ccd7f0b17bf46c), 238,093 tokens, 64 tool uses, 25.1 min.
+
+## Closed
+
+The run over repair round 1, each finding closed at landing on main (2026-10-02):
+
+- S1: the files outside the path list overlap A1 (`state/sources/repositories/repositories.ts`, X3a's `save` on `DiffSubject` beside A1's `session`) and D18 and M3 (`server/root/context.ts`); X3a lands first, and each of those dispatch entries in the state file names the overlap for its landing.
+- S2: on main `reloadLocal` (`server/root/context.ts`) applies every key at once; `history` was missing from `FIELDS` of `server/root/watch/local.ts`, which main's `context-reload.test.ts` enumerates (red: `expected [] to deeply equal [ 'history' ]`), and is added. `DESIGN.md`'s history paragraph says "held at once when the file changes", and the `options.yml` entry says "A change is read again at once."
+- P1: `nestingFindings` tested in `tests/data/helpers/files/nesting.test.ts` (each drop kind in its catalog sentence and key) and through the config push in `tests/server/root/watch/portfolio/portfolio.test.ts`; the head comment says what the file tests. Red with the value sentence swapped and the portfolio call removed: `expected [ { ...(3) }, { ...(3) } ] to deeply equal ...` and `expected [] to deeply equal [ 'patterns.*.md' ]`.
+- P2: `history` in `tests/data/sources/config/local.test.ts`, empty, wrong-typed, relative, and read by `loadLocal`. Red with the `['history', 'history']` line removed: 3 failed.
+- P3 and B1: `server/files/fs/history.ts` keeps `deletes.json`, the index of the delete copies, so a delete reads the index and the folders of the copies it removes and no other folder; a missing index is built again from the folders once; a folder left with no copy is removed; `forgetCopy` takes its copy out of the index. Four new cases in `tests/routes/files/history.test.ts`; the two slow cases reach the limit through `listDeletes` of `tests/server/files/history-fixture.ts` with one real delete. Red without the change: 5 failed. The two cases ran 308 ms and 291 ms under load 15.
+- P4: the leftover `entries.json` assertion replaced by the folder removed (with B1). The palette's `said` line was looked at on TEST: `:workspace-save ` and Enter left the palette open with "Type a name for the workspace." in `data-palette-said`.
+- ST1: the round's read-only git commands are noted in the booking; nothing to change.
+- ST2: `fetch-period.ts` is a comment-only path edit, as the reviewer verified.

@@ -92,6 +92,9 @@
             {item.badge}
         </span>
     {/if}
+    {#if item.hint !== undefined && item.hint !== ''}
+        <span class="hint">{item.hint}</span>
+    {/if}
     {#if item.items !== undefined}
         <span class="more" aria-hidden="true">
             <Glyph name="chevron" />
@@ -250,6 +253,14 @@
         color: var(--badge-fg, var(--accent-txt, var(--accent)));
         font-family: var(--font-num);
         font-size: var(--fs-xs);
+    }
+
+    /* The keys of a choice sit at the end of its line, in the muted colour. */
+    .hint {
+        margin-left: auto;
+        padding-left: 16px;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
     }
 
     .more {

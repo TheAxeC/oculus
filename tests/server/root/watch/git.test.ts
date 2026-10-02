@@ -131,7 +131,7 @@ async function arming(root: string, clock: Manual): Promise<void> {
 
 describe('relevant', () => {
     it('drops the git object store and every ignored folder', () => {
-        expect(relevant('src/lib/server/core/git.ts')).toBe(true);
+        expect(relevant('src/lib/server/core/git/state.ts')).toBe(true);
         expect(relevant('.git/index')).toBe(true);
         expect(relevant('.git/refs/heads/main')).toBe(true);
         expect(relevant('.git/objects/ab/cdef')).toBe(false);

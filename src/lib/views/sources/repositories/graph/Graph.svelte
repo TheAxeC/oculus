@@ -11,8 +11,8 @@
     // Fetch acts at once; Pull, Push and Publish ask the question the view's `...` menu asks. All
     // but Go to Current wait while a write is in flight on the repository.
     //
-    // The commits under Incoming and under Outgoing are drawn as the others are, each list with
-    // its own lanes laid out over its commits alone, under the head row's dashed circle.
+    // The commits under Incoming and under Outgoing are drawn as the others are, each list with its
+    // own lanes laid out over its commits alone, under the head row's dashed circle.
     //
     // Pressing a commit opens its changed files under it, each of which opens that commit's diff of
     // the file, with the lanes that pass beside them. A commit's menu and its names' menus are
@@ -29,15 +29,15 @@
     // read, so the section says so without asking git, whose log refuses such a branch.
     //
     // The loaded commits grow a page at a time with no cap, so they are drawn through
-    // ui/tree/VirtualRows.svelte, which draws only the commits in view of the pane and holds the
-    // height of the rest, each commit one item with its files when it is the open one. The open
+    // ui/tree/list/VirtualRows.svelte, which draws only the commits in view of the pane and holds
+    // the height of the rest, each commit one item with its files when it is the open one. The open
     // commit stays drawn wherever the list is scrolled, so its files are read once; a key moving to
     // a commit not drawn has it scrolled in first, and the type-ahead reads every commit's subject.
 
     import { untrack } from 'svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
-    import VirtualRows from '$lib/ui/tree/VirtualRows.svelte';
+    import VirtualRows from '$lib/ui/tree/list/VirtualRows.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { BranchFacts } from '../menus/graph-menu';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';

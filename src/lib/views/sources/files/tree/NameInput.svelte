@@ -11,7 +11,7 @@
 
     import NameField from '$lib/ui/tree/NameField.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { nameMessage } from './row-ops';
+    import { nameMessage } from './menu/row-ops';
 
     type Props = {
         /** The name the row has, and the empty string for a new item. */

@@ -11,6 +11,11 @@ import { z } from 'zod';
 import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
 import { filledTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import { feedIdents, nestedStrings } from '../feeds/idents.ts';
+import { pickerLine, type PickRefusal } from '../sources/explorer/acts/folders.ts';
+import { refusal } from '../sources/explorer/acts/refusal.ts';
+import { workspaceMatches, type WorkspaceChoice } from '../sources/explorer/acts/workspaces.ts';
+import type { WorkspacesState } from '../sources/fs-transport.ts';
+import { t } from '../shared/words/text.ts';
 import type { SourceOnScreen } from './navigation/editor-status.svelte.ts';
 import {
     byScore,
@@ -47,7 +52,18 @@ export type PaletteItem = {
 };
 
 export type PaletteCommand = {
-    name: 'theme' | 'crt' | 'accent' | 'tab' | 'goto' | 'language' | 'help' | 'update';
+    name:
+        | 'theme'
+        | 'crt'
+        | 'accent'
+        | 'tab'
+        | 'goto'
+        | 'language'
+        | 'help'
+        | 'update'
+        | 'workspace'
+        | 'workspace-save'
+        | 'folder';
     hint: string;
     available: boolean;
 };
@@ -240,6 +256,49 @@ export function commands(config: Record<string, unknown>, source = false): Palet
         { name: 'goto', hint: '<project id>', available: true },
         { name: 'language', hint: '<language>', available: source },
         { name: 'help', hint: '', available: false },
-        { name: 'update', hint: '', available: true }
+        { name: 'update', hint: '', available: true },
+        { name: 'workspace', hint: '<workspace>', available: true },
+        { name: 'workspace-save', hint: '<name>', available: true },
+        { name: 'folder', hint: '', available: true }
     ];
 }
+
+/**
+ * The workspaces `:workspace` lists for the words after it: the default workspace, which has no
+ * name of its own, under the catalog's words for it, and every saved one, the one in force marked.
+ */
+export function workspaceChoicesOf(argument: string, saved: WorkspacesState): WorkspaceChoice[] {
+    return workspaceMatches(
+        argument,
+        saved.workspaces.map((one) => one.name),
+        saved.current,
+        t('files.workspace_default')
+    );
+}
+
+/** What a workspace or folder command came to: the palette closes, or stays open and says why. */
+export type CommandOutcome = { closed: true } | { closed: false; said: string };
+
+/**
+ * `:workspace` and `:workspace-save`: send the name through the file store's write. A write the
+ * server refused leaves the palette open, saying the refusal in the words of the workspace form.
+ */
+export async function workspaceCommand(
+    write: (name: string) => Promise<{ ok: boolean; error?: string }>,
+    name: string
+): Promise<CommandOutcome> {
+    const answer = await write(name);
+    return answer.ok ? { closed: true } : { closed: false, said: refusal(answer.error ?? '') };
+}
+
+/** `:folder`: a folder panel that did not open leaves the palette open, saying why. */
+export async function folderCommand(
+    open: () => Promise<{ ok: true } | { ok: false; picker: PickRefusal }>
+): Promise<CommandOutcome> {
+    const answer = await open();
+    return answer.ok ? { closed: true } : { closed: false, said: pickerLine(answer.picker) };
+}
+
+/** The sentence for what a workspace write or the folder panel refused with. */
+export { pickerLine, refusal as refusalLine };
+export type { WorkspaceChoice };

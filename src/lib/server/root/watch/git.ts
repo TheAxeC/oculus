@@ -63,7 +63,8 @@ import {
     type FilePoll,
     type Timer
 } from '../../core/file-poll.ts';
-import { statusFor, TIMEOUT_MS } from '../../core/git.ts';
+import { statusFor } from '../../core/git/state.ts';
+import { TIMEOUT_MS } from '../../core/git/run.ts';
 import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds one root is re-read at most once in. */
@@ -77,7 +78,7 @@ export type GitWatchOptions = {
     throttle?: number;
     /** The timer pair the throttle and the workspaces poll run on; the globals when absent. */
     clock?: Clock;
-    /** Milliseconds one git command is given; server/core/git.ts's default when absent. */
+    /** Milliseconds one git command is given; server/core/git/run.ts's default when absent. */
     timeout?: number;
     /**
      * A root watched whether or not a session names it. The hub itself is one: the deposit and the
@@ -150,7 +151,7 @@ function statOf(path: string): Stats | undefined {
 /**
  * Watch the workspaces the `sessions` channel names and publish on the `git` channel. A root that
  * stops being named is unwatched and drops out of the payload; a root that cannot be watched still
- * gets its state read once, since server/core/git.ts answers for a directory that is not a
+ * gets its state read once, since server/core/git/state.ts answers for a directory that is not a
  * repository.
  */
 /** A git watcher: a portfolio watcher that can also be told to re-read one root at once. */

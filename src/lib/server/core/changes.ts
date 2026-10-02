@@ -33,10 +33,12 @@ import type { FsWrites } from './json.ts';
 
 /**
  * How a change is taken back: `field` writes `before` back at the same address, `create` is undone
- * by a delete and `delete` by a create, `reorder` puts the earlier order back, and `none` is a
- * write with no inverse writer (a scaffolded idea folder, a renamed LinkedIn post).
+ * by a delete and `delete` by a create, `reorder` puts the earlier order back, `file` takes back a
+ * file operation by moving, trashing or writing back the files it names (server/edit/writes/
+ * file-undo.ts), and `none` is a write with no inverse writer (a scaffolded idea folder, a renamed
+ * LinkedIn post).
  */
-export type UndoKind = 'field' | 'create' | 'delete' | 'reorder' | 'none';
+export type UndoKind = 'field' | 'create' | 'delete' | 'reorder' | 'file' | 'none';
 
 /**
  * The text a manifest write took out of the file when it cleared a field, and where it stood, which

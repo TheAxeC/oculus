@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     ancestorsOf,
     filesViewOf,
+    patchedFilesView,
     resolveReveal,
     revealAsked,
     revealScrolled,
@@ -32,17 +33,10 @@ import {
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
 import { createClientState, type ClientState } from '../../../../fixtures/client.ts';
+import { dir, file } from '../../../../fixtures/doubles.ts';
 
 const catalog = textCatalog(loadConfig(engineDir()).config);
 setCatalog(catalog);
-
-function file(name: string): FsEntry {
-    return { name, kind: 'file', size: 1, mtime: 1 };
-}
-
-function dir(name: string): FsEntry {
-    return { name, kind: 'dir', size: 0, mtime: 1 };
-}
 
 /** The hub the reader stub answers from: a funding folder holding one scheme folder and a file. */
 const LISTINGS: Record<string, FsEntry[]> = {
@@ -195,6 +189,60 @@ describe('the ask showInFiles writes', () => {
     it('holds no ask for an empty root key, which names no root', () => {
         const id = client.layout.showInFiles('README.md', '');
         expect(filesViewOf(client.ui.instanceState(id)).reveal).toBeNull();
+    });
+});
+
+describe('the tab showFolderInFiles roots at a folder', () => {
+    let client: ClientState;
+
+    beforeEach(() => {
+        client = createClientState();
+    });
+
+    const filesTabs = (): number =>
+        tabsOf(client.layout.layout()).filter((tab) => tab.view === 'files').length;
+
+    // Revert: in showFolderInFiles, open the view with no state naming the folder, so a second
+    // call, or a call for another folder, finds the page's plain Files tab.
+    it('activates the tab already rooted at the folder when it is shown a second time', () => {
+        const first = client.layout.showFolderInFiles('funding/2026-veni');
+        client.layout.openView('tasks');
+        const second = client.layout.showFolderInFiles('funding/2026-veni');
+
+        expect(second).not.toBe('');
+        expect(second).toBe(first);
+        expect(client.layout.activeInstance()?.id).toBe(first);
+        expect(filesTabs()).toBe(1);
+        expect(filesViewOf(client.ui.instanceState(first)).top).toEqual({
+            root: 'hub',
+            path: 'funding/2026-veni'
+        });
+    });
+
+    // Revert: in showFolderInFiles, leave `...top` out of the state openView is handed.
+    it('opens a tab of its own for each other folder', () => {
+        const veni = client.layout.showFolderInFiles('funding/2026-veni');
+        const projects = client.layout.showFolderInFiles('projects');
+
+        expect(projects).not.toBe(veni);
+        expect(filesTabs()).toBe(2);
+        expect(filesViewOf(client.ui.instanceState(veni)).top?.path).toBe('funding/2026-veni');
+        expect(filesViewOf(client.ui.instanceState(projects)).top?.path).toBe('projects');
+    });
+
+    // Revert: in showFolderInFiles, drop the rootedState call that puts the top back.
+    it('puts the top back on the folder when the tab had been moved up', () => {
+        const id = client.layout.showFolderInFiles('funding/2026-veni');
+        client.ui.setInstanceState(
+            id,
+            patchedFilesView(client.ui.instanceState(id), { top: { root: 'hub', path: 'funding' } })
+        );
+
+        expect(client.layout.showFolderInFiles('funding/2026-veni')).toBe(id);
+        expect(filesViewOf(client.ui.instanceState(id)).top).toEqual({
+            root: 'hub',
+            path: 'funding/2026-veni'
+        });
     });
 });
 

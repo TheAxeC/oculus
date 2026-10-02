@@ -12,7 +12,7 @@ import { parse, parseDocument } from 'yaml';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
-import { writeConfigKey } from '../../../src/lib/server/edit/writes/config-key.ts';
+import { writeConfigKey } from '../../../src/lib/server/edit/writes/config/config-key.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { engineFile, scratchEngine } from '../../routes/edit/write-fixture.ts';
 

@@ -145,7 +145,7 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which compact icon the pointer is on',
     "src/lib/ui/frame/toolbar/Toolbar.svelte .more:hover, .more[data-state='open']":
         'a hover response, saying the overflow opener is under the pointer or open',
-    'src/lib/shell/keys/Palette.svelte .result:hover':
+    'src/lib/shell/keys/PaletteRow.svelte .result:hover':
         'a hover response, saying which result the pointer is on',
     'src/lib/views/academic/slides/Slides.svelte .row:hover':
         'a hover response, saying which row the pointer is on',

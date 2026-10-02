@@ -1,15 +1,15 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/Files.svelte. The three sections under the trees: the
-    // reader's own bookmarks, the scratch notes and the workspaces, each in the same row style and
-    // each drawn in every state its read can be in, so a head and its control are there whatever
-    // the read said.
+    // Layer 3, partial of views/sources/files/Files.svelte. The sections under the trees: the
+    // outline and the timeline of the file in front of the reader, then the reader's own bookmarks
+    // and the scratch notes, each in the same row style and each drawn in every state its read can
+    // be in, so a head and its control are there whatever the read said.
     //
-    // The three reads are read here rather than handed down, because this is what draws what each
-    // one answered: the list, the one muted row of a list that is empty, or the sentence saying why
-    // the read failed. A read that failed holds nothing in the store, so it is asked again from
-    // here: on the control of that sentence, and on this mount, which is the reader coming back to
-    // the file browser and the occasion a reader expects a view to be current. The asks are
-    // untracked, so a read that fails again is not itself the reason for another ask.
+    // The bookmarks and the notes are read here rather than handed down, because this is what draws
+    // what each one answered: the list, the one muted row of a list that is empty, or the sentence
+    // saying why the read failed. A read that failed holds nothing in the store, so it is asked
+    // again from here: on the control of that sentence, and on this mount, which is the reader
+    // coming back to the file browser and the occasion a reader expects a view to be current. The
+    // asks are untracked, so a read that fails again is not itself the reason for another ask.
     //
     // What the view keeps is what its own presses are about: which section is open, which form is
     // open, and what the last press answered. Those come in as the instance's own state and the
@@ -23,23 +23,17 @@
     import { untrack } from 'svelte';
     import Bookmarks from './Bookmarks.svelte';
     import Notes from './Notes.svelte';
-    import Workspaces from './Workspaces.svelte';
+    import Outline from './Outline.svelte';
+    import Timeline from './Timeline.svelte';
     import type { Entry } from '$lib/state/boards/collection';
-    import type { FilesView } from '$lib/state/sources/fs';
+    import type { FilesView, RowRef } from '$lib/state/sources/fs';
     import { noteId } from '$lib/state/life/notes';
-    import { refusal } from '../tree/refusal';
+    import { refusal } from '$lib/state/sources/explorer/acts/refusal';
+    import { sectionOpen } from '$lib/state/sources/explorer/sections/section-state';
     import { useState } from '$lib/state/client/use';
 
     const {
-        fs: {
-            bookmarks,
-            deleteNote,
-            notes,
-            retryBookmarks,
-            retryNotes,
-            retryWorkspaces,
-            workspaces
-        },
+        fs: { bookmarks, deleteNote, notes, retryBookmarks, retryNotes },
         layout: { closeRecord, openView }
     } = useState();
 
@@ -50,6 +44,8 @@
          * What the file browser on screen remembers: which sections are closed, which form is open.
          */
         view: FilesView;
+        /** The file selected in the tree, which the timeline is of; null for none. */
+        selected: RowRef | null;
         /** Open or close one section under the trees. */
         onsection: (id: string) => void;
         onaddmark: () => void;
@@ -57,29 +53,16 @@
         oneditmark: (id: string) => void;
         /** Say what a note press answered on the refusal line of the instance it was made in. */
         onnote: (owner: string, note: string) => void;
-        onsaveworkspace: () => void;
-        onselectworkspace: (name: string) => void;
     };
 
-    let {
-        owner,
-        view,
-        onsection,
-        onaddmark,
-        onopenmark,
-        oneditmark,
-        onnote,
-        onsaveworkspace,
-        onselectworkspace
-    }: Props = $props();
+    let { owner, view, selected, onsection, onaddmark, onopenmark, oneditmark, onnote }: Props =
+        $props();
 
     const marks = $derived(bookmarks());
     const held = $derived(notes());
-    const saved = $derived(workspaces());
 
     $effect(() => {
         untrack(() => {
-            retryWorkspaces();
             retryBookmarks();
             retryNotes();
         });
@@ -100,10 +83,12 @@
     }
 </script>
 
+<Outline open={sectionOpen(view, 'outline')} ontoggle={() => onsection('outline')} />
+<Timeline open={sectionOpen(view, 'timeline')} ontoggle={() => onsection('timeline')} {selected} />
 <Bookmarks
     rows={marks.entries}
     error={marks.error}
-    open={!view.collapsed.includes('bookmarks')}
+    open={sectionOpen(view, 'bookmarks')}
     editing={view.editing}
     adding={view.form === 'bookmark' && view.editing === ''}
     ontoggle={() => onsection('bookmarks')}
@@ -115,22 +100,11 @@
 <Notes
     rows={held.notes}
     error={held.error}
-    open={!view.collapsed.includes('notes')}
+    open={sectionOpen(view, 'notes')}
     ontoggle={() => onsection('notes')}
     onadd={addNote}
     onopen={(id: string) =>
         openView('note', { id, label: held.notes.find((one) => one.id === id)?.title ?? '' })}
     onremove={(id: string) => void dropNote(id)}
     onretry={retryNotes}
-/>
-<Workspaces
-    current={saved.current}
-    names={saved.workspaces.map((one) => one.name)}
-    error={saved.error}
-    open={!view.collapsed.includes('workspaces')}
-    saving={view.form === 'workspace'}
-    ontoggle={() => onsection('workspaces')}
-    onsave={onsaveworkspace}
-    onselect={onselectworkspace}
-    onretry={retryWorkspaces}
 />

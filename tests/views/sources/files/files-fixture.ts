@@ -23,8 +23,6 @@ export function treePropsOver(
         onopen: noop,
         onremove: noop,
         onbookmark: noop,
-        onrefresh: noop,
-        oncollapse: noop,
         ...over
     };
 }

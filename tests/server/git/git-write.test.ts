@@ -3,9 +3,10 @@
 // Every repository here is made under the system temporary directory with the real git, and the
 // allowed root comes from local.yml inside that directory, so nothing reaches the hub's own
 // checkout. The describe "the gate over what this module can run" is the module's gate, the
-// mirror image of the one over git.ts: git.ts may name no writing subcommand at all, and this may
-// name only the enumerated ones, each at one call site, and `--force` nowhere. The two describes
-// after it read a configuration and a git route body of the wrong shape over the real operations.
+// mirror image of the one over server/core/git/: that folder may name no writing subcommand at all,
+// and this may name only the enumerated ones, each at one call site, and `--force` nowhere. The two
+// describes after it read a configuration and a git route body of the wrong shape over the real
+// operations.
 //
 // What this does NOT cover: `claude` is never run. suggestMessage is exercised with the diff and
 // the subprocess both handed in, which is what its options exist for.

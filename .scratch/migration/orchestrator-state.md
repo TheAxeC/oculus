@@ -29,21 +29,6 @@ workers_at_once: 5           # Axel, 2026-10-01 18:49: five, to see the impact (
 
 ```yaml
 dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z94 (S3 free), Z95 (L4 free), Z96 (Q85a1 free, Q85a2 to Q85a5 after it). Two steps run side by side when the later landing merges simply onto the earlier, whatever paths they share (Axel); Q66 and Q88b wait for X3d because theirs would be hand merges of whole effects and components.
-- step: X3a
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 01:49)
-  session_id: acf8c525dec67af39 (launched 2026-10-02 01:49 local)
-  worktree: .agents/worktrees/X3a
-  base: fab398d6
-  launched: 2026-10-02 01:49 local
-  report: agents/reviews/X3a-report.md
-  brief_check: agents/reviews/X3a-brief-check.md (run 2026-10-01 on the earlier draft, not run again: the spec skill checks a step once); 306,645 tokens, 101 tool uses, 12.7 min; served model not recorded at the time
-  shared_paths: with D35, `options.yml` (D35 the behaviour descriptions and the `local.yml` block; X3a the `roots` description, a `files` behaviour entry and one `history` line in that block), `data/sources/config/settings.ts` (X3a one read of `files.confirm_delete`), `DESIGN.md` (D35 224-235; X3a 44, 128 and the Files lines) and `HELP.md` (D35 216 and 236; X3a one key added to 236's list): added lines beside D35's, a simple merge; with L4, `routes/+page.svelte` only if item 16 needs it (one derived line); with Q66, `fs.svelte.ts` (Q66 line 11, a comment); `docs/diagrams/` regenerated at landing
-  builder_usage: the build to the report, as its completion notice gives it, 318,310 tokens, 1,446 tool uses, 365.6 min (4 full-list runs, the 4th printing `checks: 7 commands passed`); repair round 1, 352,537 tokens, 183 tool uses, 67.9 min (3 full-list runs, the 3rd printing `checks: 7 commands passed`; two read-only git commands run against the round's rule, noted in its report)
-  reviewer_report: agents/reviews/X3a-refuter.md (first run, reviewer a6e768689ba25b71d, claude-sonnet-5-5 read at 07:55, launched 2026-10-02 07:55; 297,143 tokens, 170 tool uses, 26.1 min; 3 Spec, 6 Proof, 3 Standards, 2 Behaviour findings); the run over round 1, reviewer a54ccd7f0b17bf46c, claude-sonnet-5-5 read at 09:34, launched 2026-10-02 09:33; 238,093 tokens, 64 tool uses, 25.1 min; 2 Spec, 4 Proof, 3 Standards, 1 Behaviour findings
-  landing: not-started
-  round: 1 (agents/briefs/X3a-round1.md, sent 2026-10-02 08:25)
 - step: D18
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -53,10 +38,10 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: 47a41fa4
   launched: 2026-10-02 08:29 local
   report: agents/reviews/D18-report.md
-  reviewer_report: agents/reviews/D18-refuter.md; reviewer a4303ec6fd987a4dd at ordo-high, served claude-opus-5-5 (read 2026-10-02), running
+  reviewer_report: agents/reviews/D18-refuter.md (first run, 124 lines); reviewer a4303ec6fd987a4dd at ordo-high, served claude-opus-5-5 (read 2026-10-02); 311,920 tokens, 68 tool uses, 23.8 min; items 2 and 3 violated (Spec 1, Proof 2, Standards 5, Behaviour 3), plus findings with no verdict
   builder_usage: to the report 306 tool uses, 112.7 min (from its transcript; no completion notice reached this session); the full list red only at `integrity.test.ts` side projects, the worktree lacking `side-projects/` (now in `worktree_paths` and checked out), the other five commands green alone
   brief_check: agents/reviews/D18-brief-check.md; claude-sonnet-5-5, 264,980 tokens, 82 tool uses, 12.3 min
-  shared_paths: with X3a, `options.yml` (other blocks), `data/sources/config/settings.ts` (one reader each), `behavior.yml` (separate sections), `config-folder.test.ts` and `allow-duplication.txt` (separate rows), `state/client/context.ts` and `routes/+page.svelte` (separate lines), `DESIGN.md` and `HELP.md` (separate rows and paragraphs), `type-scale.test.ts` (separate rows); with Q88c, `state/client/context.ts`, `rail-badges.svelte.ts` (D18 one import path), `options.yml`, `DESIGN.md`, `HELP.md`: added or re-keyed lines in separate places, a simple merge; `docs/diagrams/`, regenerated at each landing
+  shared_paths: with X3a, `options.yml` (other blocks), `data/sources/config/settings.ts` (one reader each), `behavior.yml` (separate sections), `config-folder.test.ts` and `allow-duplication.txt` (separate rows), `state/client/context.ts` and `routes/+page.svelte` (separate lines), `DESIGN.md` and `HELP.md` (separate rows and paragraphs), `type-scale.test.ts` (separate rows); with Q88c, `state/client/context.ts`, `rail-badges.svelte.ts` (D18 one import path), `options.yml`, `DESIGN.md`, `HELP.md`: added or re-keyed lines in separate places, a simple merge; `docs/diagrams/`, regenerated at each landing; X3a landed before it: main's `server/root/context.ts` is 884 lines with X3a's lines, so D18's landing checks the 900-line cap there
   landing: not-started
   round: 0
 - step: Q88c
@@ -84,7 +69,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   launched: 2026-10-02 09:02 local
   report: agents/reviews/M3-report.md
   brief_check: agents/reviews/M3-brief-check.md; claude-sonnet-5-5, 309,063 tokens, 105 tool uses, 18.5 min
-  shared_paths: with D18, `data/model/index.ts` (D18 a channel type, M3 the entities' `resources`), `data/sources/config/settings.ts` (separate readers), `config/catalogs/options.yml` and `config/behavior.yml` (separate blocks), `server/root/live-settings.ts` (D18 `processes` in `LiveStart` and `LiveTargets`, M3 the HPC host and `resources`), `server/root/context.ts` (separate starts; M3 adds at most six lines, so the second landing keeps it under 900), `config/text/views/system/hpc.yml` (D18 moves it, M3 adds lines; carried into the moved file at the second landing), `DESIGN.md`, `HELP.md` and the config and context tests (separate lines); with X3a, `settings.ts`, `options.yml`, `behavior.yml`, `config-folder.test.ts`, `DESIGN.md`, `HELP.md` (separate blocks and lines); with Q88c, `options.yml`, `config-folder.test.ts`, `DESIGN.md`, `HELP.md` (separate blocks and lines); `docs/diagrams/`, regenerated at each landing
+  shared_paths: with D18, `data/model/index.ts` (D18 a channel type, M3 the entities' `resources`), `data/sources/config/settings.ts` (separate readers), `config/catalogs/options.yml` and `config/behavior.yml` (separate blocks), `server/root/live-settings.ts` (D18 `processes` in `LiveStart` and `LiveTargets`, M3 the HPC host and `resources`), `server/root/context.ts` (separate starts; M3 adds at most six lines, so the second landing keeps it under 900), `config/text/views/system/hpc.yml` (D18 moves it, M3 adds lines; carried into the moved file at the second landing), `DESIGN.md`, `HELP.md` and the config and context tests (separate lines); with X3a, `settings.ts`, `options.yml`, `behavior.yml`, `config-folder.test.ts`, `DESIGN.md`, `HELP.md` (separate blocks and lines); with Q88c, `options.yml`, `config-folder.test.ts`, `DESIGN.md`, `HELP.md` (separate blocks and lines); `docs/diagrams/`, regenerated at each landing; X3a landed before it: `server/root/context.ts` carries X3a's lines; M3's repair round also carries Z255 (`~/` read as the home folder for every `local.yml` path key)
   landing: not-started
   round: 0
 - step: A1
@@ -96,10 +81,10 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: ce71ecf1
   launched: 2026-10-02 09:12 local
   report: agents/reviews/A1-report.md
-  reviewer_report: agents/reviews/A1-refuter.md; reviewer a32324e09cd16a4a4 at ordo-high, served claude-opus-5-5 (read 2026-10-02), running
+  reviewer_report: agents/reviews/A1-refuter.md (first run, 172 lines); reviewer a32324e09cd16a4a4 at ordo-high, served claude-opus-5-5 (read 2026-10-02); 290,561 tokens, 56 tool uses, 21.4 min; 1 Spec, 1 Proof (case 17 partial), 1 Standards, 1 Behaviour finding against items 3 and 7, plus 8 findings with no verdict
   builder_usage: to the report 273,112 tokens, 192 tool uses, 80.8 min; the full list red only at `integrity.test.ts` side projects, as D18
   brief_check: agents/reviews/A1-brief-check.md; claude-sonnet-5-5, 269,064 tokens, 76 tool uses, 11.9 min
-  shared_paths: with Q88c, `repositories.ts` (A1 `DiffSubject`, `diffState`, `heldDiffShape`; Q88c other functions), `repositories.svelte.ts` (A1 `openChange`; Q88c the menus' wiring), `config/text/views/sessions/changes.yml` (A1 the `sessions:` group, Q88c the `git:` group), `tests/views/sources/repositories/` (A1 `diff-pane.test.ts`, which follows Q88c's split if Q88c makes one); with X3a, `state/sources/explorer/follow.ts` (A1 one field in `followedDiffTab`, X3a new modules beside it) and `tests/views/whole/type-scale.test.ts` (separate rows), as with D18; `HELP.md` 87 and 132 and `DESIGN.md` 399 against the other steps' lines; `docs/diagrams/`, regenerated at each landing. Each is added lines in separate places.
+  shared_paths: with Q88c, `repositories.ts` (A1 `DiffSubject`, `diffState`, `heldDiffShape`; Q88c other functions), `repositories.svelte.ts` (A1 `openChange`; Q88c the menus' wiring), `config/text/views/sessions/changes.yml` (A1 the `sessions:` group, Q88c the `git:` group), `tests/views/sources/repositories/` (A1 `diff-pane.test.ts`, which follows Q88c's split if Q88c makes one); with X3a, `state/sources/explorer/follow.ts` (A1 one field in `followedDiffTab`, X3a new modules beside it) and `tests/views/whole/type-scale.test.ts` (separate rows), as with D18; `HELP.md` 87 and 132 and `DESIGN.md` 399 against the other steps' lines; `docs/diagrams/`, regenerated at each landing. Each is added lines in separate places.; X3a landed before it: `repositories.ts` `DiffSubject` and `diffState` carry X3a's `save` beside A1's `session`, merged by hand at A1's landing
   landing: not-started
   round: 0
 ```
@@ -196,6 +181,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z254 (2026-10-02, X3a at landing): the delete copies listed in `deletes.json` beside the file folders, read on a delete in place of every folder (the orchestrator, automode).
+- Z255 (2026-10-02, found at X3a's landing): `~/` read as the home folder for every `local.yml` path key, folded into M3's repair round (the orchestrator, automode).
 - Z253 (2026-10-02, all steps): every rule sentence of `agents/reviews/recurring-2026-10-02.md` adopted (24 causes in `agents/spec.md`, the repair-brief and key-case sentences in the standing demands); the path-list script (changed files minus the brief's path list) and the unused-exports script (exports no file outside their own and its tests imports) approved, built in D32 (small work goes into an existing step, Axel's standing word); the other three scripts not approved (the user).
 - Z252 (2026-10-02, all steps): (b), Sonnet builders and Opus reviewers and brief checks from the next launch, reversing Z145 (b); evidence in the three-way comparison from the raw transcripts (`scratchpad/fresh/final.py`) (the user).
 - Z227 (2026-10-02 02:26, D24): `readManifests` never yields the side tier; `readPersonal` reads it (the orchestrator, automode).
@@ -796,6 +783,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-02 11:50. X3a landed (the Files view as VS Code's Explorer), conflicts in five files and the diagrams resolved by taking both sides, 9 fixes at landing (the run over round 1's findings, a red line on main's live-reload test, two folder-size and one comment-width and one lint line after the merge), the look on TEST taken, `checks: 7 commands passed` on main. A1's and D18's first reviews are in (Opus). In flight: Q88c (repair round 1), M3 (building), A1 and D18 (rounds next). Next: A1's and D18's round 1 briefs; /spec D32, D14 and D17. Z251 counts landings under the new rules from here: 0 of 10 (X3a was reviewed before them).
 - 2026-10-02 09:40. The recurring-findings pass is overdue (one pass on record, `agents/reviews/recurring-2026-09-17.md`; 85 landings since): a read-only reader (claude-opus) groups the findings of the refuter reports written since; its result goes to `agents/reviews/recurring-2026-10-02.md` and its causes in three or more steps to the open items. Axel asked whether repair rounds can be made rarer; the answer and the options are in the message of 09:40, his ruling awaited (the 2026-10-01 ruling at `plan.md:773` keeps the round as configured meanwhile).
 
 - 2026-10-02 09:13. A1 (review with feedback) prepared at ce71ecf1, its brief check's findings closed in the brief, builder a0a84b2fcd6bf4f22 launched on claude-sonnet-5-5; five builders in flight (X3a round 1, D18, Q88c, M3, A1).

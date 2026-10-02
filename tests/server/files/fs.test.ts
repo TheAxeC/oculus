@@ -439,6 +439,32 @@ describe("the reader's own bookmarks", () => {
         expect(readBookmarks(file).entries.map((one) => one.id)).toEqual(['kept']);
     });
 
+    it('answers each bookmark with what its root and path name now: a file, a folder or missing', () => {
+        const { hub, file } = bookmarksFile();
+        mkdirSync(join(hub, 'sub'));
+        writeFileSync(join(hub, 'a.md'), 'x\n');
+        ensureBookmarksFile(file);
+        writeFileSync(
+            file,
+            `${readFileSync(file, 'utf8')}\nentries:\n` +
+                '  - { label: f, root: hub, path: a.md }\n' +
+                '  - { label: d, root: hub, path: sub }\n' +
+                '  - { label: gone, root: hub, path: nowhere }\n' +
+                '  - { label: out, root: hub, path: ../a.md }\n' +
+                '  - { label: nokey, root: other, path: a.md }\n'
+        );
+        const kinds = readBookmarks(file, [{ key: 'hub', dir: hub }]).entries.map(
+            (one) => `${one.id}:${one.kind}`
+        );
+        expect(kinds).toEqual([
+            'f:file',
+            'd:folder',
+            'gone:missing',
+            'out:missing',
+            'nokey:missing'
+        ]);
+    });
+
     it('adds, edits and removes one bookmark through the collection write path', () => {
         const { hub, file } = bookmarksFile();
 

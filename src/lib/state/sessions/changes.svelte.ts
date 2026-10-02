@@ -51,6 +51,11 @@ export type ChangesStore = {
     more: () => boolean;
     /** Ask for the first page again, which is what a view does after a write of its own. */
     reload: () => void;
+    /**
+     * The first page read afresh, awaited: what a caller that acts on the newest row needs, since
+     * the rows held may not yet include a write made a moment ago.
+     */
+    latest: () => Promise<Change[]>;
     /** Ask for the page before the oldest row now held. */
     older: () => void;
     /**
@@ -168,6 +173,12 @@ export function createChanges(queries: Queries): ChangesStore {
         queries.hold(KEY, held);
     }
 
+    async function latest(): Promise<Change[]> {
+        if (!inBrowser()) return rows();
+        queries.mark(KEY, 'replace');
+        return (await queries.fetch(KEY, first)).rows;
+    }
+
     function reload(): void {
         if (inBrowser()) queries.refetch(KEY, first, 'drop');
     }
@@ -179,5 +190,5 @@ export function createChanges(queries: Queries): ChangesStore {
         queries.refetch<Held>(KEY, (held) => page(held, oldest.at), 'drop');
     }
 
-    return { rows, loading, error, more, reload, older, hold };
+    return { rows, loading, error, more, reload, latest, older, hold };
 }

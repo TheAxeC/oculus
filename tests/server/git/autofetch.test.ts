@@ -802,9 +802,9 @@ describe('the source rule', () => {
         expect(source).not.toMatch(/\brun\(/);
         expect(source).not.toContain('execFile');
         expect(source).not.toContain('spawn');
-        const gitImports = [...source.matchAll(/from '([^']*\/git\/[^']*)'/g)].map(
-            (found) => found[1]
-        );
+        const gitImports = [...source.matchAll(/from '([^']*\/git\/[^']*)'/g)]
+            .map((found) => found[1])
+            .filter((path) => !path.includes('/core/git/'));
         expect(gitImports.length).toBeGreaterThan(0);
         for (const path of gitImports) expect(path).toMatch(/\/git-write\.ts$/);
         const names = [...source.matchAll(/import\s*\{([^}]*)\}\s*from\s*'[^']*git-write\.ts'/g)]
@@ -812,10 +812,10 @@ describe('the source rule', () => {
             .map((name) => name.trim())
             .filter((name) => name !== '');
         expect(names.sort()).toEqual(['fetchIn', 'remoteNames']);
-        // Every import of core/git.ts, a type, namespace or default import among them, is the one
-        // named read.
+        // Every import of the core git folder, a type, namespace or default import among them, is
+        // the one named read.
         const coreImports = [
-            ...source.matchAll(/import\s+([^;]*?)\s*from\s*'[^']*core\/git\.ts'/g)
+            ...source.matchAll(/import\s+([^;]*?)\s*from\s*'[^']*core\/git\/[^']*'/g)
         ].map((found) => found[1].replace(/\s+/g, ' ').trim());
         expect(coreImports).toEqual(['{ sshCommand }']);
     });

@@ -9,8 +9,10 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/files/Files.svelte. The reader's own bookmarks as a section
     // under the trees: a head that opens and closes it and carries the control that adds one, and
-    // one explorer row per bookmark, opening the file it names, with the control that opens the
-    // shared entry form over it. The bookmark the form is open for is drawn as the one in force.
+    // one explorer row per bookmark, opening the file or showing the folder it names, with the
+    // control that opens the shared entry form over it. The bookmark the form is open for is drawn
+    // as the one in force; a folder has the folder glyph, and a path that is gone is drawn muted
+    // and struck through.
     //
     // The head is drawn in every state, since it is where a bookmark is added: with no bookmark the
     // section says so in one muted row, and with a bookmarks file that could not be read it says
@@ -27,12 +29,12 @@
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { Entry } from '$lib/state/boards/collection';
+    import type { BookmarkEntry } from '$lib/state/sources/fs.svelte';
     import { readOr } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
-        rows: Entry[];
+        rows: BookmarkEntry[];
         /** What reading the bookmarks failed with, or the empty string. */
         error: string;
         /** Whether the section is open. */
@@ -43,7 +45,7 @@
         adding: boolean;
         ontoggle: () => void;
         onadd: () => void;
-        onopen: (entry: Entry) => void;
+        onopen: (entry: BookmarkEntry) => void;
         onedit: (id: string) => void;
         /** Ask for the bookmarks again, which the failed line's own control offers. */
         onretry: () => void;
@@ -58,7 +60,7 @@
     ]);
 
     /** The root and the path one bookmark names, which is what a row says after its label. */
-    function whereOf(entry: Entry): string {
+    function whereOf(entry: BookmarkEntry): string {
         const { root, path } = readOr(whereShape, entry.fields, { root: '', path: '' });
         return `${root}/${path}`;
     }
@@ -102,8 +104,14 @@
                             id={`mark:${row.id}`}
                             {nav}
                             level={2}
-                            glyph={t('files.bookmark_glyph')}
-                            title={t('files.bookmark_open_title', whereOf(row))}
+                            glyph={row.kind === 'folder'
+                                ? t('files.folder_glyph')
+                                : t('files.bookmark_glyph')}
+                            tone={row.kind === 'missing' ? 'muted' : undefined}
+                            struck={row.kind === 'missing'}
+                            title={row.kind === 'missing'
+                                ? t('files.bookmark_missing_title', whereOf(row))
+                                : t('files.bookmark_open_title', whereOf(row))}
                             current={editing === row.id}
                             onclick={() => onopen(row)}
                         >

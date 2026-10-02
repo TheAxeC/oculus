@@ -10,23 +10,24 @@
     // group, Discard All Changes and Stage All Changes on the changed group, and Stage All on the
     // untracked one. A discard of the whole group asks first, naming how many paths it throws away.
     //
-    // In the view's list mode a group's rows are its files, each with its folder after its name.
-    // In tree mode the staged, changed and untracked groups fall into folder rows
+    // In the view's list mode a group's rows are its files, each with its folder after its name. In
+    // tree mode the staged, changed and untracked groups fall into folder rows
     // (state/sources/repositories/change-tree.ts) that open and close; the merge group stays a
     // list. A folder closes by its id in the instance's list of closed rows, and a folder that
     // closes with the focus inside it takes the focus. A file row is changes/ChangeRow.svelte and a
     // folder row changes/FolderRow.svelte.
     //
-    // A group's paths have no cap, so each group draws them through ui/tree/VirtualRows.svelte,
-    // which draws only the rows in view of the pane and holds the height of the rest; a key moving
-    // to a row not drawn has it scrolled in first, and the type-ahead reads every row's name.
+    // A group's paths have no cap, so each group draws them through
+    // ui/tree/list/VirtualRows.svelte, which draws only the rows in view of the pane and holds the
+    // height of the rest; a key moving to a row not drawn has it scrolled in first, and the
+    // type-ahead reads every row's name.
     //
     // A group's head opens a right-click menu of what its controls do (menus/change-menu.ts), with
     // Reveal in Explorer View on a file row; the merge group keeps its own controls and has none.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
-    import VirtualRows from '$lib/ui/tree/VirtualRows.svelte';
+    import VirtualRows from '$lib/ui/tree/list/VirtualRows.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';

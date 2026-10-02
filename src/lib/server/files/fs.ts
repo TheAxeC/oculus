@@ -12,12 +12,12 @@
 // one readdir of whatever folder is on screen. Dotfiles and the three build folders are left out
 // unless the request carries `hidden=1`, because a tree that is mostly node_modules is a tree
 // nobody reads; every entry git ignores is left out unless it carries `ignored=1`, read by
-// server/core/git.ts's ignoredIn, the module of the read-only git forms this server runs. The two
-// are the reader's own toggles on the tab, so the same folder is listed either way on request. The
-// file route still serves what a listing leaves out, since what is served and what is offered are
-// different questions. A symbolic link is resolved and then listed as the kind its target is, under
-// the same rule the file route serves one by: inside the root it is an ordinary entry, and pointing
-// out of the root it is left out.
+// server/core/git/files.ts's ignoredIn, the module of the read-only git forms this server runs. The
+// two are the reader's own toggles on the tab, so the same folder is listed either way on request.
+// The file route still serves what a listing leaves out, since what is served and what is offered
+// are different questions. A symbolic link is resolved and then listed as the kind its target is,
+// under the same rule the file route serves one by: inside the root it is an ordinary entry, and
+// pointing out of the root it is left out.
 //
 // A workspace is a name and a list of roots, saved at ~/.oculus/workspaces.json. The hub key and
 // the keys the configuration names are reserved: a saved root carrying one is dropped on the read
@@ -44,7 +44,7 @@ import { isMap } from '../../data/helpers/guards.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { expandHome, HUB_ROOT, resolveRootPath, rootShape, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
-import { ignoredIn } from '../core/git.ts';
+import { ignoredIn } from '../core/git/files.ts';
 import { deleteNote, listNotes, readNote, saveNote } from './fs/notes.ts';
 import { chained, readJson, writeJsonAtomic, type FsWrites } from '../core/json.ts';
 import { inside, realPath } from '../core/paths.ts';
@@ -59,6 +59,8 @@ export type Entry = {
     size: number;
     mtime: number;
     link?: true;
+    /** True for an entry git ignores, listed because the request asked for those too. */
+    ignored?: true;
 };
 
 /** One saved workspace: the name the reader gave it, and the roots they added to it. */
@@ -349,7 +351,7 @@ export function listDir(
 
 /**
  * One directory as a listing request asks for it: listDir's entries, without the ones git ignores
- * there unless the request asks for those too.
+ * there unless the request asks for those too, in which case each of them carries `ignored: true`.
  */
 export function listShown(
     list: Root[],
@@ -360,13 +362,17 @@ export function listShown(
 ): { entries: Entry[] } | { error: 'outside' | 'missing' } {
     const found = listDir(list, key, path, shown.hidden);
     if ('error' in found) return found;
-    if (shown.ignored) return { entries: found.entries };
     const ignored = cachedIgnored(
         cache,
         found.at,
         found.entries.map((one) => one.name)
     );
-    return { entries: found.entries.filter((one) => !ignored.has(one.name)) };
+    if (!shown.ignored) return { entries: found.entries.filter((one) => !ignored.has(one.name)) };
+    return {
+        entries: found.entries.map((one) =>
+            ignored.has(one.name) ? { ...one, ignored: true } : one
+        )
+    };
 }
 
 /** What a listing request asks to see, from its query: `hidden=1` and `ignored=1`, each alone. */
@@ -412,7 +418,13 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
 export function handleFs(request: Request, into: FsTarget): Response {
     const url = new URL(request.url);
     if (url.searchParams.get('bookmarks') !== null)
-        return json(readBookmarks(into.bookmarks), { headers: NO_STORE });
+        return json(
+            readBookmarks(into.bookmarks, [
+                ...into.fixed,
+                ...addedRoots(into.fixed, readSaved(into.file, reservedKeys(into.fixed)))
+            ]),
+            { headers: NO_STORE }
+        );
     if (url.searchParams.get('notes') !== null)
         return json({ notes: listNotes(into.notes) }, { headers: NO_STORE });
     const one = url.searchParams.get('note');
@@ -476,30 +488,45 @@ function written(saved: Saved, into: FsTarget): Response {
     return json({ ok: true, changed: ['workspaces'], refused: [] }, { headers: NO_STORE });
 }
 
+/**
+ * Why a folder cannot be added as a root: the words POST /api/fs and the roots write both answer.
+ */
+export type FolderRefusal =
+    'no-dir' | 'not-absolute' | 'no-such-dir' | 'not-a-directory' | 'root-held';
+
+/**
+ * The folder a typed path names, by its real path, or why it cannot be a root: nothing typed, a
+ * relative path, nothing there, a file, or a folder the roots in force already hold. The real
+ * paths are compared, so the same folder reached through a trailing slash or a link is the root it
+ * already is rather than a second root under a second key.
+ */
+export function folderToAdd(
+    typed: string,
+    held: Root[]
+): { dir: string } | { error: FolderRefusal } {
+    const text = typed.trim();
+    if (text === '') return { error: 'no-dir' };
+    const expanded = expandHome(text);
+    if (!isAbsolute(expanded)) return { error: 'not-absolute' };
+    const dir = realPath(expanded);
+    if (dir === null) return { error: 'no-such-dir' };
+    try {
+        if (!statSync(dir).isDirectory()) return { error: 'not-a-directory' };
+    } catch {
+        return { error: 'no-such-dir' };
+    }
+    if (held.some((one) => realPath(one.dir) === dir)) return { error: 'root-held' };
+    return { dir };
+}
+
 /** Add the folder the body names to the workspace in force, under a key taken from its own name. */
 function addRoot(saved: Saved, fields: FsFields, into: FsTarget): Response {
-    const typed = fields.dir.trim();
-    if (typed === '') return json({ error: 'no-dir' }, { status: 400, headers: NO_STORE });
-    const expanded = expandHome(typed);
-    if (!isAbsolute(expanded))
-        return json({ error: 'not-absolute' }, { status: 400, headers: NO_STORE });
-    const dir = realPath(expanded);
-    if (dir === null) return json({ error: 'no-such-dir' }, { status: 400, headers: NO_STORE });
-    let directory: boolean;
-    try {
-        directory = statSync(dir).isDirectory();
-    } catch {
-        return json({ error: 'no-such-dir' }, { status: 400, headers: NO_STORE });
-    }
-    if (!directory) return json({ error: 'not-a-directory' }, { status: 400, headers: NO_STORE });
     const held = [...into.fixed, ...addedRoots(into.fixed, saved)];
-    // The real paths are compared, so the same folder reached through a trailing slash or a link is
-    // the root it already is rather than a second root under a second key.
-    if (held.some((one) => realPath(one.dir) === dir))
-        return json({ error: 'root-held' }, { status: 400, headers: NO_STORE });
+    const found = folderToAdd(fields.dir, held);
+    if ('error' in found) return json({ error: found.error }, { status: 400, headers: NO_STORE });
     const workspace = currentOf(saved);
     const taken = [...held.map((one) => one.key), ...workspace.roots.map((one) => one.key)];
-    workspace.roots.push({ key: rootKey(dir, taken), dir });
+    workspace.roots.push({ key: rootKey(found.dir, taken), dir: found.dir });
     return written(saved, into);
 }
 

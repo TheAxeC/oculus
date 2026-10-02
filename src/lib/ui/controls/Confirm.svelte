@@ -8,6 +8,8 @@
     // a confirm, and a confirm that is a second press of the same button is one the hand learns to
     // press twice. So it is a real dialog: modal, focus on the confirm, Escape cancels, Tab stays
     // inside it. A press on the ground behind it cancels too, which is the way out for a pointer.
+    // A caller may give a box of its own (`option`, VS Code's "Do not ask me again"), whose state
+    // the confirm hands to `onconfirm`.
     // Drawn in a tab, it stays in that tab, and one left open in a tab the pane hides takes the
     // keyboard again when its tab shows; the keyboard comes back to the control it was raised from
     // when it goes, as the ground says.
@@ -21,17 +23,28 @@
         confirm: string;
         /** The cancelling control's words, already translated. */
         cancel: string;
-        onconfirm: () => void;
+        onconfirm: (checked: boolean) => void;
         oncancel: () => void;
+        /** The words of a box under the message; none draws no box. */
+        option?: string;
         /**
          * A line under the message: the branch, the count, whatever names what is being acted on.
          */
         detail?: string;
     };
 
-    let { message, confirm, cancel, onconfirm, oncancel, detail = '' }: Props = $props();
+    let {
+        message,
+        confirm,
+        cancel,
+        onconfirm,
+        oncancel,
+        detail = '',
+        option = ''
+    }: Props = $props();
 
     let yes: HTMLButtonElement | undefined = $state();
+    let checked = $state(false);
 </script>
 
 <Modal alert onclose={oncancel} onopen={() => yes?.focus()}>
@@ -41,9 +54,12 @@
             {#if detail !== ''}
                 <p class="detail">{detail}</p>
             {/if}
+            {#if option !== ''}
+                <label class="option"><input type="checkbox" bind:checked />{option}</label>
+            {/if}
             <div class="row">
                 <button type="button" class="cancel" onclick={oncancel}>{cancel}</button>
-                <button type="button" class="yes" bind:this={yes} onclick={onconfirm}
+                <button type="button" class="yes" bind:this={yes} onclick={() => onconfirm(checked)}
                     >{confirm}</button
                 >
             </div>
@@ -82,6 +98,14 @@
         margin: 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
+        white-space: pre-line;
+    }
+
+    .option {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--fs-sm);
     }
 
     .row {

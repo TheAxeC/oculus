@@ -1,4 +1,4 @@
-// The window of a long explorer list, ui/tree/virtual.ts: which rows @tanstack/virtual-core's
+// The window of a long explorer list, ui/tree/list/virtual.ts: which rows @tanstack/virtual-core's
 // virtualizer draws for a scroll box and a scroll offset, the rows the list keeps drawn wherever it
 // is scrolled, and the heights held before each drawn row and after the last that keep the list at
 // its full height around them, and the window handed back as the same object when a read of the
@@ -18,12 +18,12 @@ import {
     keptRange,
     rowWindow,
     type RowWindow
-} from '../../../src/lib/ui/tree/virtual.ts';
+} from '../../../src/lib/ui/tree/list/virtual.ts';
 import { noop } from '../../fixtures/doubles.ts';
 
 /**
  * A virtualizer over `count` rows of `size` px in a box `height` px tall scrolled to `offset`,
- * keeping the rows `kept` drawn as ui/tree/VirtualRows.svelte hands them.
+ * keeping the rows `kept` drawn as ui/tree/list/VirtualRows.svelte hands them.
  */
 function windowed(
     count: number,

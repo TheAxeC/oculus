@@ -13,8 +13,8 @@ export const DELIBERATE: Styling[] = [];
 
 export const HELD: Styling[] = [
     {
-        line: 'shell/keys/Palette.svelte styles .tool of ui/controls/ToolButton.svelte through .result :global(.tool)',
-        why: 'the rule at src/lib/shell/keys/Palette.svelte:263 reaches into the primitive rather than asking it for the difference'
+        line: 'shell/keys/PaletteRow.svelte styles .tool of ui/controls/ToolButton.svelte through .result :global(.tool)',
+        why: 'the rule at src/lib/shell/keys/PaletteRow.svelte:90 reaches into the primitive rather than asking it for the difference'
     },
     {
         line: 'views/boards/collection/Collection.svelte styles .card of ui/frame/Card.svelte through .cards > .slot > :global(.card)',

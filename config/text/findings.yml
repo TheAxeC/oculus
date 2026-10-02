@@ -71,6 +71,9 @@ text:
             language_ending: language {0} lists {1}, which is not a file name or an extension with one dot; the entry is not read
             language_empty: language {0} lists an empty file name
             language_claimed: ending {0} is listed under {1} and under {2}; {1} keeps it
+            nesting_not_a_map: patterns is not a map of parent name to the names nested under it; no file is nested
+            nesting_key: pattern {0} has no usable parent name (empty, or holding a slash); the pattern is not read
+            nesting_value: pattern {0} does not name its nested files as a list of non-empty texts; the pattern is not read
         shape:
             is_null: 'null'
             is_list: a list

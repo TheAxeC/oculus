@@ -166,6 +166,10 @@ export type UiStore = {
     endTerminals: (instances: readonly OwnedInstance[]) => void;
     requestUpdateTray: () => void;
     updateTrayRequested: () => number;
+    /** Ask the shell to open the palette with this text typed in it. */
+    requestPalette: (text: string) => void;
+    /** The palette request the workbench observes: its number moves with every request. */
+    paletteRequested: () => { seq: number; text: string };
     requestCardMove: (instance: string, card: string, step: -1 | 1) => void;
     cardMoveRequested: (instance: string) => CardMove | null;
     loadUi: (storage?: Storable, source?: EventTarget) => boolean;
@@ -215,6 +219,7 @@ export function createUi(): UiStore {
 
     /** A transient signal from a view to the shell that owns the Update tray. */
     const updateTray = $state({ requested: 0 });
+    const palette = $state({ seq: 0, text: '' });
 
     const cardMove = $state<{ held: CardMove | null }>({ held: null });
 
@@ -355,6 +360,16 @@ export function createUi(): UiStore {
     /** The request value the workbench observes without putting shell state in a view. */
     function updateTrayRequested(): number {
         return updateTray.requested;
+    }
+
+    /** Ask the shell to open the palette with a text typed in it, as a view's menu item does. */
+    function requestPalette(text: string): void {
+        palette.seq += 1;
+        palette.text = text;
+    }
+
+    function paletteRequested(): { seq: number; text: string } {
+        return { seq: palette.seq, text: palette.text };
     }
 
     /** Ask the view that holds one card to move it one place, in its own order. */
@@ -611,6 +626,8 @@ export function createUi(): UiStore {
         endTerminals,
         requestUpdateTray,
         updateTrayRequested,
+        requestPalette,
+        paletteRequested,
         requestCardMove,
         cardMoveRequested,
         loadUi,

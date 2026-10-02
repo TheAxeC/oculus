@@ -19,29 +19,36 @@
 //
 // The work is in the modules below it, one concern each: writes/manifest.ts for a project.yml and a
 // new idea, writes/entries.ts for a collection file, writes/subtasks.ts for a subtask line and a
-// career host, writes/bodies.ts for the body parsers (one per kind of write), and the writers of
-// the engine's own configuration files: writes/deck.ts for the deck, writes/audit-mute.ts for the
-// audit's mute list, writes/rail.ts for the rail list and writes/config-key.ts for one option of a
+// career host, writes/bodies.ts for the body parsers (one per kind of write), writes/file-undo.ts
+// for taking back a file operation, and the writers of the engine's own configuration files, in
+// writes/config/: deck.ts for the deck, audit-mute.ts for the audit's mute list, rail.ts for the
+// rail list, roots.ts for the default workspace's folders and config-key.ts for one option of a
 // tracked config file. What an importer of this module needs of them is re-exported here, so an
 // importer may name this module or the one that holds the function.
 
 import { json } from '@sveltejs/kit';
 import { join } from 'node:path';
 import { portfolioConfigFrom } from '../../data/index.ts';
-import { changesKeep, configDir, loadLocalOrDefaults } from '../../data/sources/config.ts';
+import {
+    changesKeep,
+    configDir,
+    loadLocalOrDefaults,
+    localFile
+} from '../../data/sources/config.ts';
+import { FILES_KIND } from '../../data/file-ops.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges, pathOf } from '../core/changes.ts';
 import { undoChange } from './writes/undo.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
-import { setFlag, setOverride } from '../sessions/overrides.ts';
+import { rootsFile } from '../files/files.ts';
 import { projects as projectsOf } from '../sessions/stores/hooks.ts';
 import type { HubLike } from '../sessions/stores/hooks.ts';
-import { createIdea, writeManifest } from './writes/manifest.ts';
-import { writeDeck } from './writes/deck.ts';
-import { writeMute } from './writes/audit-mute.ts';
-import { writeRail } from './writes/rail.ts';
-import { writeConfigKey } from './writes/config-key.ts';
+import { setFlag, setOverride } from '../sessions/overrides.ts';
 import { glyphNames } from '../../data/sources/config/rail.ts';
+import { createIdea, writeManifest } from './writes/manifest.ts';
+import { configWrite } from './writes/config/config-write.ts';
+import { rootsHeldIn, type RootsHeld } from './writes/config/roots.ts';
+import { filesTargetOf, undoFiles, type FilesDeps, type FilesTarget } from './writes/file-undo.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { careerRules, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 import {
@@ -53,9 +60,6 @@ import {
     writeFeedField
 } from './feeds.ts';
 import {
-    auditMuteWrite,
-    configKeyWrite,
-    deckWrite,
     deleteEntryWrite,
     entryWrite,
     feedDeleteWrite,
@@ -67,7 +71,6 @@ import {
     linkedinPostWrite,
     newEntry,
     newIdea,
-    railWrite,
     reorderWrite,
     sessionWrite,
     subtaskAdd,
@@ -126,6 +129,18 @@ export type WriteTarget = {
      * a rail entry's glyph must be one of.
      */
     glyphs: string[];
+    /**
+     * The `roots:` list of the engine's config/sources.yml, where the default workspace's folders
+     * live, and what the roots in force hold, which an added folder is checked against. A target
+     * built without it writes no roots: the write answers `unwritable`.
+     */
+    sources?: { file: string; held: RootsHeld };
+    /**
+     * What taking back a file operation runs over: the roots the file browser serves, the local
+     * history folder and the chain the file operations wait on. A target built without it answers
+     * `unwritable` to the undo of a file operation.
+     */
+    files?: FilesTarget;
 };
 
 export type WriteOutcome = {
@@ -150,7 +165,7 @@ export type WriteOutcome = {
 
 // The writers and the parsers, re-exported under their own names.
 export { coerce, createIdea, fieldTypes, insideHub, writeManifest } from './writes/manifest.ts';
-export { writeDeck } from './writes/deck.ts';
+export { writeDeck } from './writes/config/deck.ts';
 export {
     collectionFile,
     createEntry,
@@ -161,9 +176,10 @@ export {
 } from './writes/entries.ts';
 export { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
-export { writeMute } from './writes/audit-mute.ts';
-export { writeRail } from './writes/rail.ts';
-export { writeConfigKey } from './writes/config-key.ts';
+export { writeMute } from './writes/config/audit-mute.ts';
+export { writeRail } from './writes/config/rail.ts';
+export { writeConfigKey } from './writes/config/config-key.ts';
+export { addRootTo, removeRootFrom, writeRoots } from './writes/config/roots.ts';
 export {
     auditMuteWrite,
     configKeyWrite,
@@ -181,6 +197,7 @@ export {
     newIdea,
     railWrite,
     reorderWrite,
+    rootsWrite,
     sessionWrite,
     subtaskAdd,
     subtaskWrite,
@@ -206,7 +223,7 @@ const LAYOUT = 'layout.yml';
 export function target(
     engine: string,
     merged: Record<string, unknown>,
-    server?: { hub: HubLike; fsWrites: FsWrites }
+    server?: { hub: HubLike; fsWrites: FsWrites; opsWrites?: FsWrites }
 ): WriteTarget {
     const local = loadLocalOrDefaults(engine);
     return {
@@ -220,6 +237,16 @@ export function target(
         behaviorFile: join(configDir(engine), BEHAVIOR),
         layoutFile: join(configDir(engine), LAYOUT),
         glyphs: glyphNames(merged) ?? [],
+        sources: {
+            file: rootsFile(engine),
+            held: rootsHeldIn(engine, merged, local.hub, local.workspaces)
+        },
+        files: filesTargetOf(
+            rootsHeldIn(engine, merged, local.hub, local.workspaces).served,
+            localFile(engine),
+            local.history,
+            server?.opsWrites
+        ),
         changes:
             server === undefined
                 ? undefined
@@ -238,7 +265,8 @@ export function target(
 export async function handleWrite(
     request: Request,
     token: string,
-    into: WriteTarget
+    into: WriteTarget,
+    deps: FilesDeps = {}
 ): Promise<Response> {
     const read = await tokenedBody(request, token);
     if (read instanceof Response) return read;
@@ -438,74 +466,12 @@ export async function handleWrite(
         return answer(outcome, 'linkedin-post', into);
     }
 
-    const deck = deckWrite(body);
-    if (deck !== null) {
-        let outcome;
-        try {
-            outcome = writeDeck(into.config, into.projects(), deck.selection, deck.order);
-        } catch {
-            // The file is the reader's own configuration and anything about it can go wrong on this
-            // machine; the page is told which of the refusals it was and the file is left alone.
-            return json({ error: 'unwritable' }, { status: 500 });
+    const configured = configWrite(body, into);
+    if (configured !== null) {
+        if ('error' in configured) {
+            return json({ error: configured.error }, { status: configured.status });
         }
-        if ('error' in outcome) {
-            return json(
-                { error: outcome.error },
-                { status: outcome.error === 'unwritable' ? 500 : 400 }
-            );
-        }
-        return answer({ found: true, ...outcome }, 'deck', into);
-    }
-
-    const mute = auditMuteWrite(body);
-    if (mute !== null) {
-        let outcome;
-        try {
-            outcome = writeMute(into.behaviorFile, mute.signature, mute.muted);
-        } catch {
-            // The file is the reader's own configuration and anything about it can go wrong on this
-            // machine; the page is told which of the refusals it was and the file is left alone.
-            return json({ error: 'unwritable' }, { status: 500 });
-        }
-        if ('error' in outcome) {
-            return json(
-                { error: outcome.error },
-                { status: outcome.error === 'unwritable' ? 500 : 400 }
-            );
-        }
-        return answer({ found: true, ...outcome }, 'audit-mute', into);
-    }
-
-    const rail = railWrite(body);
-    if (rail !== null) {
-        let outcome;
-        try {
-            outcome = writeRail(into.layoutFile, rail.rail, into.glyphs);
-        } catch {
-            // The file is the reader's own configuration and anything about it can go wrong on this
-            // machine; the page is told which of the refusals it was and the file is left alone.
-            return json({ error: 'unwritable' }, { status: 500 });
-        }
-        if ('error' in outcome) {
-            return json(
-                { error: outcome.error },
-                { status: outcome.error === 'unwritable' ? 500 : 400 }
-            );
-        }
-        return answer({ found: true, ...outcome }, 'rail', into);
-    }
-
-    const setting = configKeyWrite(body);
-    if (setting !== null) {
-        let outcome;
-        try {
-            outcome = writeConfigKey(into.engine, setting.file, setting.key, setting.value);
-        } catch {
-            // The file is the reader's own configuration and anything about it can go wrong on this
-            // machine; the page is told which of the refusals it was and the file is left alone.
-            return json({ error: 'unwritable' }, { status: 500 });
-        }
-        return answer({ found: true, ...outcome }, 'config-key', into);
+        return answer(configured.outcome, configured.kind, into);
     }
 
     const idea = newIdea(body);
@@ -516,10 +482,17 @@ export async function handleWrite(
         if (into.changes === undefined) return json({ error: 'unknown' }, { status: 404 });
         const change = changeAt(into.changes, undo.at);
         if (change === undefined) return json({ error: 'unknown' }, { status: 404 });
-        const outcome = undoChange(into, change);
+        const outcome =
+            change.kind === FILES_KIND
+                ? await undoFiles(into, change, deps)
+                : undoChange(into, change);
         if ('error' in outcome) {
             if (outcome.error === 'refused') {
                 return json({ error: outcome.error, refused: outcome.refused }, { status: 400 });
+            }
+            // An undo that failed part way records the items it did before the one it stopped at.
+            if (outcome.error === 'unwritable' && outcome.records !== undefined) {
+                await logChanges(into.changes, change.kind, outcome.records, change.at);
             }
             const status =
                 outcome.error === 'moved' ? 409 : outcome.error === 'unwritable' ? 500 : 404;

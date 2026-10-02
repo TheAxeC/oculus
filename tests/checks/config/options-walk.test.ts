@@ -8,7 +8,7 @@ import {
     catalogOf,
     optionPaths,
     type CatalogEntry
-} from '../../../src/lib/data/sources/config/options.ts';
+} from '../../../src/lib/data/sources/config/catalog/options.ts';
 
 describe('optionPaths', () => {
     const none: Record<string, CatalogEntry> = {};

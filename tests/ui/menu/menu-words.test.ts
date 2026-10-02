@@ -12,7 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { MenuItem } from '../../../src/lib/ui/menu/menu-items.ts';
-import { rowMenu } from '../../../src/lib/views/sources/files/tree/row-menu.ts';
+import { rowMenu } from '../../../src/lib/views/sources/files/tree/menu/row-menu.ts';
 import {
     changeMenu,
     groupMenu

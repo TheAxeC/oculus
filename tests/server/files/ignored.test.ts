@@ -1,6 +1,6 @@
-// Layer 4, server test. What server/core/git.ts's ignoredIn answers about the entries git ignores
-// in one folder, and what a listing request of server/files/fs.ts comes to with and without
-// `ignored=1`. The vector the run is held to is tests/server/core/git.test.ts's gate.
+// Layer 4, server test. What server/core/git/files.ts's ignoredIn answers about the entries git
+// ignores in one folder, and what a listing request of server/files/fs.ts comes to with and without
+// `ignored=1`. The vector the run is held to is tests/server/core/git/git.test.ts's gate.
 //
 // Every folder here is synthetic, under the system temporary directory, and is asserted to be
 // inside it before anything is written. The repository cases make their own repository there with
@@ -20,9 +20,10 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect } from 'vitest';
-import { ignoredIn } from '../../../src/lib/server/core/git.ts';
+import { ignoredIn } from '../../../src/lib/server/core/git/files.ts';
 import {
     cachedIgnored,
+    DEFAULT_SHOWN,
     ignoredCache,
     listShown,
     shownOf,
@@ -130,6 +131,23 @@ describe('the entries git ignores in one folder', () => {
             'keep.txt',
             'kept.log'
         ]);
+    });
+
+    it('marks each ignored entry `ignored: true` when ignored files are asked for, and no other', () => {
+        const dir = repository();
+        const found = listShown([{ key: 'one', dir }], 'one', '', { hidden: false, ignored: true });
+        if (!('entries' in found)) throw new Error(found.error);
+        const marked = Object.fromEntries(found.entries.map((one) => [one.name, one.ignored]));
+        expect(marked).toEqual({
+            build: true,
+            src: undefined,
+            'a.log': true,
+            'keep.txt': undefined,
+            'kept.log': undefined
+        });
+        const plain = listShown([{ key: 'one', dir }], 'one', '', DEFAULT_SHOWN);
+        if (!('entries' in plain)) throw new Error(plain.error);
+        expect(plain.entries.some((one) => 'ignored' in one)).toBe(false);
     });
 
     it('audits that a folder in no repository leaves out nothing for being ignored', () => {

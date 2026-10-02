@@ -12,121 +12,117 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The roots of the current workspace as an explorer: the workspace picker and
-    // the add-root control on the view's header, the filter and the two listing toggles on its bar
-    // (tree/Filters.svelte), a breadcrumb over one tree per root,
-    // each under a head carrying that root's icon controls, and the bookmarks, the notes and the
-    // workspaces as sections under the trees in the same row style. Every control is drawn in every
-    // state the view is in: a section whose file could not be read keeps its head and its control
-    // and says why in its one row.
+    // Layer 3, view. The workspace in force as an explorer: a header row for the workspace with its
+    // four actions and its menu, every root as a top-level folder row under it, and under the tree
+    // the outline and the timeline of the file in front of the reader, the bookmarks and the notes,
+    // all in the same row style. The open editors of the page are a section above the tree. The
+    // view's toolbar holds the follow toggle and the pin, and its bar the filter with the fuzzy
+    // toggle. Every control is drawn in every state the view is in: a section whose file could not
+    // be read keeps its head and its control and says why in its one row.
     //
     // A folder is read one level at a time, when it is opened: a root is a whole checkout and
     // walking one to draw it would read a hundred thousand names to show twenty. Which folders are
-    // open, the selected row, the filter text, which sections are closed, which form is open, the
-    // line typed into a root or a workspace form, the name being typed (`naming`) and the two
-    // listing toggles live in the instance's own state, so a tree left half open is the same tree
-    // after a reload, and two file browsers on two pages are open at two different places and list
-    // the same folder each their own way. The refusal line (`note`) and the bookmark form's outcome
-    // line (`said`) are kept there too, since each answers a form that comes back. What stays in
-    // this component is the root the removal confirm is open for (`removing`).
+    // open, the selected row and the rows selected with it, the filter text, which sections are
+    // closed or open, which form is open, the name being typed (`naming`) and the three listing
+    // toggles (hidden files, ignored files, nested files) live in the instance's own state, so a
+    // tree left half open is the same tree after a reload, and two file browsers on two pages are
+    // open at two different places and list the same folder each their own way. The refusal line
+    // (`note`) and the bookmark form's outcome line (`said`) are kept there too, since each answers
+    // a form that comes back. What stays in this component is the root the removal confirm is open
+    // for (`removing`). The writes into that state are control/tab-actions.ts's, and the
+    // bookmark's are control/bookmark-actions.ts's.
     //
-    // A write closes its form on its answer, which may land after the reader has opened another
-    // form, opened the same one again or closed the tab. The instance id and the forms are taken
-    // before the request goes, and the answer closes only that opening in that instance
-    // (formSettled). A bookmark the file no longer holds closes its form in every file browser the
-    // layout holds, which the fs store does on each bookmarks answer, since a file browser on a
-    // page not drawn, or in a tab never shown, is mounted nowhere.
+    // The sections are files/sections/'s: the outline and the timeline read what the active tab and
+    // the selected file hold, the bookmarks and the notes read their own files and answer a read of
+    // either that failed. What this view reads of them is what its tree and its bookmark form are
+    // built on: the roots of the workspace in force, and the bookmarks the tree draws its stars
+    // from. A bookmark is a collection entry, so it is added and edited by the form every other
+    // collection is edited by, over the schema its own file carries; the one thing this view
+    // supplies is the list of roots a bookmark may name, since that is what the workspace in force
+    // says and not what the file said when it was written.
     //
-    // The three sections are files/sections/Sections.svelte's, which reads the workspaces, the
-    // bookmarks and the notes for itself and answers a read of any of them that failed. What this
-    // view reads of them is what its tree and its bookmark form are built on: the roots of the
-    // workspace in force, and the bookmarks the tree draws its stars from.
+    // The folders of the default workspace are the roots config/sources.yml lists, and those can be
+    // taken out; every root the configuration names in a saved workspace is in it and cannot be,
+    // and the server refuses that removal as well, since a refusal that lives only in a view
+    // disappears with the next caller. Add Folder to Workspace opens the folder panel (POST
+    // /api/folders/pick) and adds what it returns; the workspace menu items and Open Folder open
+    // the palette with their command typed, where state/workbench/palette.ts runs them.
     //
-    // Every root the configuration names is in every workspace and cannot be taken out of one, so a
-    // workspace can only ever add. The server refuses a removal of a configured root as well; a
-    // refusal that lives only in a view is a refusal that disappears with the next caller.
+    // A tab rooted at a folder (its `top`) or following a session draws the folder as the head of
+    // its tree, with a `..` row above a rooted one, and no workspace header. A folder outside every
+    // root that Open Folder found is said above the tree with the control that adds it. A tab with
+    // `follow: true` in its layout state is rooted at a session's workspace: the tree is that
+    // folder as its own head, read through the root that holds it (tree/Follow.svelte). The session
+    // is the one the tab pins in its layout state, and the selection when it pins none.
     //
     // A file opens in the view that can show it, which files/opening.ts decides from the file's own
     // first bytes. One click opens the pane's preview tab and a double click opens a tab that is
-    // kept.
-    //
-    // A bookmark is a collection entry, so it is added and edited by the form every other
-    // collection is edited by, over the schema its own file carries; the one thing this view
-    // supplies is the list of roots a bookmark may name, since that is what the workspace in force
-    // says and not what the file said when it was written. Its typed values are that form's drafts,
-    // and closing the form by a control of this view forgets them through toggleAdd and toggleEdit,
-    // as a collection view's own Add and Edit controls do.
-    //
-    // Another view shows a path here through the layout store's showInFiles, which writes the ask
-    // into this instance's state; files/tree/ShowPath.svelte reads the folders on the way, opens
-    // them, selects the path (or the nearest folder of it that is there, and says so) and scrolls
-    // it into view.
-    //
-    // A tab with `follow: true` in its layout state is rooted at a session's workspace: the tree is
-    // that folder as its own head, read through the root that holds it (tree/Follow.svelte). The
-    // session is the one the tab pins in its layout state, and the selection when it pins none, as
-    // the Changes view reads its session. A dragged file row carries its path.
+    // kept. Another view shows a path here through the layout store's showInFiles, which writes the
+    // ask into this instance's state; files/tree/ShowPath.svelte reads the folders on the way,
+    // opens them, selects the path (or the nearest folder of it that is there, and says so) and
+    // scrolls it into view.
 
+    import { untrack } from 'svelte';
     import Breadcrumb from '$lib/ui/tabs/Breadcrumb.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import BookmarkForm from './sections/BookmarkForm.svelte';
-    import Controls from './tree/Controls.svelte';
-    import Filters from './tree/Filters.svelte';
-    import RootForm from './sections/RootForm.svelte';
+    import Controls from './header/Controls.svelte';
+    import Filters from './header/Filters.svelte';
+    import Outside from './header/Outside.svelte';
+    import OpenEditors from './sections/OpenEditors.svelte';
     import Sections from './sections/Sections.svelte';
+    import WorkspaceHeader from './header/WorkspaceHeader.svelte';
     import ShowPath from './tree/ShowPath.svelte';
     import Follow from './tree/Follow.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
-    import { refusal } from './tree/refusal';
+    import { refusal } from '$lib/state/sources/explorer/acts/refusal';
+    import { addedLine } from '$lib/state/sources/explorer/acts/folders';
+    import { isLineForm } from '$lib/state/sources/fs';
+    import { selectPruned, selectionChanged } from '$lib/state/sources/explorer/acts/selection';
+    import { sectionOpen } from '$lib/state/sources/explorer/sections/section-state';
+    import { bookmarkActions } from './control/bookmark-actions';
+    import { tabActions } from './control/tab-actions';
     import { openBookmark, openRow } from './opening';
     import Tree from './tree/Tree.svelte';
     import type { Entry } from '$lib/state/boards/collection';
     import {
-        collapseRoot,
         crumbsOf,
-        editShown,
         filesViewOf,
         filterRows,
         followView,
         followedDirOf,
-        formSettled,
-        formShown,
         formsOf,
-        markLabel,
         markSchemaFor,
         markedKeys,
-        patchedFilesView,
+        nestingRulesOf,
+        rootedView,
         rowKey,
-        setExpanded,
         shownOf,
-        toggleExpanded,
+        statusFold,
         treeKey,
         treeRows,
-        type FilesForms,
         type FsEntry,
-        type FilesView,
         type RowRef,
         type TreeRow
     } from '$lib/state/sources/fs';
     import {
-        bookmarkAt,
         bookmarkById,
-        bookmarkTitles,
         currentWorkspace,
-        fixedRootKeys,
-        markRefusal,
+        fixedRootsOf,
         matchedNothing,
         openFailures,
-        rootKeysOf,
-        workspaceNames
+        rootKeysOf
     } from '$lib/state/sources/fs-transport';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
+        explorer,
         fs: {
             addBookmark,
             addRoot,
@@ -137,25 +133,20 @@
             invalidate,
             listing,
             readFileKind,
-            relist,
-            removeBookmark,
             removeRoot,
-            saveWorkspace,
-            selectWorkspace,
-            shiftForms,
             workspaces
         },
-        layout: { instanceLayoutState, keepPreview, openView },
+        layout: { instanceLayoutState, keepPreview, openView, showInFiles },
         selection: { selected },
-        selectors: { sessionById },
+        selectors: { configMap, gitFor, gitRoots, sessionById },
         terminals: { terminalById },
-        ui: { instanceState, setInstanceState }
-    } = useState();
+        ui: { instanceState, requestPalette }
+    } = client;
 
     let { instance }: ViewProps = $props();
 
     /** The store calls a file or a bookmark is opened through. */
-    const opener = { openView, keepPreview, readFileKind };
+    const opener = { openView, keepPreview, readFileKind, showInFiles };
 
     /** The root the removal confirm is open for, and the empty string while it is closed. */
     let removing = $state('');
@@ -175,29 +166,62 @@
         )
     );
     const view = $derived(filesViewOf(instanceState(instance.id)));
+    /** The folder a rooted tab is drawn from, and the roots and the `..` row that goes with it. */
+    const rooted = $derived(rootedView(follow.following ? null : view.top, current.roots));
+    const shownRoots = $derived(
+        follow.following ? follow.roots : rooted.rooted ? rooted.roots : current.roots
+    );
+    const top = $derived(follow.following ? follow.top : rooted.top);
+    /** Whether the tree starts with the workspace header: a rooted or a following tab has none. */
+    const headed = $derived(!follow.following && !rooted.rooted);
     /** What this tab's listings show beside the default: its two toggles. */
     const listed = $derived(shownOf(view));
+    /** The nesting rules the tab draws with: the catalog's, or none while File Nesting is off. */
+    const nesting = $derived(view.nesting ? nestingRulesOf(configMap()) : []);
     const rows = $derived(
         treeRows(
-            follow.roots,
+            shownRoots,
             (root, path) => entries(root, path, listed),
             view.expanded,
-            follow.top,
-            view.naming
+            top,
+            view.naming,
+            { held, nesting, up: rooted.up }
         )
     );
     const filtering = $derived(view.filter.trim() !== '');
     /** What the typed filter matches among the folders already read, or the tree when none is. */
     const shown = $derived(
-        filtering ? filterRows(follow.roots, held, view.filter, follow.top) : rows
+        filtering ? filterRows(shownRoots, held, view.filter, top, view.fuzzy) : rows
     );
     /** The selection's path, while the tree on screen draws the root it is under. */
     const crumbs = $derived(
-        follow.roots.some((root) => root.key === view.selected?.root) ? crumbsOf(view.selected) : []
+        shownRoots.some((root) => root.key === view.selected?.root) ? crumbsOf(view.selected) : []
     );
-    const fixed = $derived(fixedRootKeys(current.roots, follow.following));
+    /**
+     * The roots the reader cannot take off. In the default workspace the folders of sources.yml's
+     * `roots:` can be taken off.
+     */
+    const fixed = $derived(fixedRootsOf(current, follow.following, configMap()));
     /** The root keys an ask to show a path is answered against, and null until they are read. */
     const rootKeys = $derived(rootKeysOf(saved));
+    /** What git says of the paths under the repositories the page carries. */
+    const fold = $derived(
+        statusFold(
+            gitRoots().flatMap((dir) => {
+                const git = gitFor(dir);
+                return git !== null && git.repository && git.error === null ? [{ dir, git }] : [];
+            })
+        )
+    );
+    /** Whether the roots show under the workspace header. */
+    const headerOpen = $derived(sectionOpen(view, 'files'));
+    /** The file the timeline is of: the selected row when it is a file. */
+    const selectedFile = $derived.by<RowRef | null>(() => {
+        const at = view.selected;
+        if (at === null) return null;
+        const row = rows.find((one) => one.root === at.root && one.path === at.path);
+        return row?.kind === 'file' ? { root: at.root, path: at.path } : null;
+    });
 
     const marks = $derived(bookmarks());
     const editedMark = $derived(bookmarkById(marks.entries, view.editing));
@@ -232,68 +256,54 @@
         return heldEntries(root, path, listed);
     }
 
-    /** Write part of what one instance remembers, keeping the rest of it as it was. */
-    function patchAt(id: string, part: Partial<FilesView>): void {
-        setInstanceState(id, patchedFilesView(instanceState(id), part));
-    }
+    const tab = tabActions({
+        client,
+        id: () => instance.id,
+        view: () => view,
+        listed: () => listed,
+        rows: () => rows,
+        shownRoots: () => shownRoots,
+        top: () => top,
+        filtering: () => filtering
+    });
+    const { patch, patchAt, answerAt, toggle, selectRow, flip, toggleSection } = tab;
+    const marking = bookmarkActions({
+        client,
+        id: () => instance.id,
+        view: () => view,
+        entries: () => marks.entries,
+        tab
+    });
 
-    /** Write part of what the instance on screen remembers, for a press made on it now. */
-    function patch(part: Partial<FilesView>): void {
-        patchAt(instance.id, part);
-    }
+    // The root and workspace line forms are not opened by any control now; a record saved with one
+    // open is closed, since its typed text has no form to show it.
+    $effect(() => {
+        if (isLineForm(view.form)) untrack(() => patch({ form: '', typed: '' }));
+    });
 
-    /**
-     * Say what a request answered in the instance it was sent from, which the reader may have
-     * switched away from by the time it lands. A tab closed meanwhile has no record left, and is
-     * not given one back for a line nobody will see.
-     */
-    function answerAt(owner: string, part: Pick<Partial<FilesView>, 'note' | 'said'>): void {
-        if (owner !== instance.id && instanceState(owner) === undefined) return;
-        patchAt(owner, part);
-    }
-
-    /**
-     * Open or close one folder. While a filter draws the tree, a folder is drawn open because the
-     * filter holds it so, and a press on it writes nothing, so clearing the filter gives back the
-     * folders that were open before it.
-     */
-    function toggle(row: TreeRow): void {
-        if (filtering) return;
-        patch({ expanded: setExpanded(view.expanded, rowKey(row), !row.open) });
-    }
-
-    /** Select one row; the outcome line of an ask to show a path is about the row it selected. */
-    function selectRow(row: RowRef): void {
-        patch({ selected: { root: row.root, path: row.path }, revealed: null });
-    }
-
-    /** Flip one toggle, and read every folder held under the pair it now names again. */
-    function flip(which: 'hidden' | 'ignored'): void {
-        const next = { ...listed, [which]: !listed[which] };
-        relist(next);
-        patch(next);
-    }
-
-    /** Open or close one section under the trees. */
-    function toggleSection(id: string): void {
-        patch({ collapsed: toggleExpanded(view.collapsed, id) });
-    }
+    // A refresh that no longer lists a selected row takes it out of the selection.
+    $effect(() => {
+        const now = { selected: view.selected, selection: view.selection, anchor: view.anchor };
+        const next = selectPruned(now, held);
+        if (selectionChanged(now, next)) untrack(() => patch(next));
+    });
 
     /**
-     * Bookmark one file, or take the bookmark on it away again. The label is the file's name, or
-     * its path under the root when another bookmark already carries that name; a label that is
-     * taken even so is refused rather than written over, and the refusal is said.
+     * Add Folder to Workspace: the panel's folders become roots, and the line says what was left.
      */
-    async function bookmark(row: TreeRow): Promise<void> {
+    async function addFolders(): Promise<void> {
         const owner = instance.id;
-        const found = bookmarkAt(marks.entries, row.root, row.path);
-        const label = markLabel(row, bookmarkTitles(marks.entries));
-        const answer =
-            found === null
-                ? await addBookmark({ label, root: row.root, path: row.path })
-                : await removeBookmark(found.id);
-        const reason = markRefusal(answer);
-        answerAt(owner, { note: reason === '' ? '' : t('files.bookmark_failed', reason) });
+        const answer = await explorer.addFolders();
+        answerAt(owner, { note: addedLine(answer, refusal) });
+    }
+
+    /** Add the folder Open Folder found outside every root, and drop the line that offered it. */
+    async function addOutside(): Promise<void> {
+        const owner = instance.id;
+        const dir = view.outside;
+        const answer = await addRoot(dir);
+        answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
+        if (answer.ok) patchAt(owner, { outside: '' });
     }
 
     async function remove(key: string): Promise<void> {
@@ -301,115 +311,62 @@
         const answer = await removeRoot(key);
         answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
     }
-
-    /**
-     * Add the root or save the workspace the open line form names. The form closes on the answer
-     * only when it is still the opening the request went from, holding the same line: a form the
-     * reader opened, reopened or typed on meanwhile stays as the reader left it, and a closed tab
-     * is not given its record back.
-     */
-    async function confirm(): Promise<void> {
-        const owner = instance.id;
-        const asked = formsOf(view);
-        const answer =
-            asked.form === 'root' ? await addRoot(asked.typed) : await saveWorkspace(asked.typed);
-        if (!answer.ok) {
-            answerAt(owner, { note: refusal(answer.error ?? '') });
-            return;
-        }
-        answerAt(owner, { note: '' });
-        settle(owner, asked);
-    }
-
-    /**
-     * Close the form an answer was for in the instance it was sent from, if it is still open as it
-     * was. The bookmark form asks for it once Cancel, a save or a delete is done with it, when the
-     * form has forgotten its own draft; a form the reader has since left is not closed.
-     */
-    function settle(owner: string, asked: FilesForms): void {
-        const closed = formSettled(filesViewOf(instanceState(owner)), asked);
-        if (closed !== null) patchAt(owner, closed);
-    }
-
-    async function select(name: string): Promise<void> {
-        const owner = instance.id;
-        const answer = await selectWorkspace(name);
-        answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
-    }
-
-    /** Move the file browser on screen to other forms, for a press made on it now. */
-    function shift(next: FilesForms): void {
-        shiftForms(instance.id, view, next);
-    }
-
-    /** Move to the forms a press asks for, clearing the lines that answered the last press. */
-    function move(next: FilesForms): void {
-        shift(next);
-        patch({ note: '', said: '' });
-    }
-
-    function show(which: 'root' | 'workspace' | 'bookmark'): void {
-        move(formShown(view, which));
-    }
-
-    /** Open the entry form over one bookmark, or close it when it is already that one's. */
-    function edit(id: string): void {
-        move(editShown(view, id));
-    }
-
-    /**
-     * Open the bookmark form over the id its own save gave the bookmark. The form is drawn per
-     * instance and per opening, and a rename moves neither, so the form stays as it is with what
-     * was typed into it; the bookmark it edits is the one the file now holds, so the close of a
-     * form over a bookmark that is gone has nothing to close.
-     */
-    function renameMark(owner: string, id: string): void {
-        patchAt(owner, { editing: id });
-    }
 </script>
 
 {#snippet tools()}
     <Controls
-        current={saved.current}
-        names={workspaceNames(saved)}
-        adding={view.form === 'root'}
         owner={instance.id}
         followed={sessionById(followed) !== null || terminalById(followed) !== null
             ? followed
             : null}
-        onselect={(name: string) => void select(name)}
-        onadd={() => {
-            show('root');
-        }}
     />
 {/snippet}
 
 {#snippet bar()}
     <Filters
         value={view.filter}
-        shown={listed}
+        fuzzy={view.fuzzy}
         onfilter={(value: string) => patch({ filter: value })}
-        onshow={flip}
+        onfuzzy={() => patch({ fuzzy: !view.fuzzy })}
+    />
+{/snippet}
+
+{#snippet header(nav: TreeNav)}
+    <WorkspaceHeader
+        {nav}
+        label={current.name === '' ? t('files.workspace_default') : current.name}
+        open={headerOpen}
+        hidden={listed.hidden}
+        ignored={listed.ignored}
+        nesting={view.nesting}
+        ontoggle={() => toggleSection('files')}
+        onnewfile={() => tab.newItem('file')}
+        onnewfolder={() => tab.newItem('folder')}
+        onrefresh={invalidate}
+        oncollapse={tab.collapseAll}
+        onflip={flip}
+        onaddfolder={() => void addFolders()}
+        onswitch={() => requestPalette(':workspace ')}
+        onsave={() => requestPalette(':workspace-save ')}
+        onopenfolder={() => requestPalette(':folder')}
     />
 {/snippet}
 
 <Pane title={t('views.files')} toolbar={tools} {bar} tinted>
     <div class="files" data-instance={instance.id}>
-        {#if view.form === 'root' || view.form === 'workspace'}
-            <RootForm
-                label={view.form === 'root' ? t('files.root_dir') : t('files.workspace_name')}
-                help={view.form === 'root' ? t('files.root_dir_help') : ''}
-                confirm={view.form === 'root' ? t('files.add') : t('files.save')}
-                value={view.typed}
-                note={view.note}
-                oninput={(value: string) => patch({ typed: value })}
-                onconfirm={() => void confirm()}
-                oncancel={() => {
-                    show(view.form === 'root' ? 'root' : 'workspace');
-                }}
-            />
-        {:else if view.note !== ''}
+        <OpenEditors
+            open={sectionOpen(view, 'editors')}
+            ontoggle={() => toggleSection('editors')}
+        />
+        {#if view.note !== ''}
             <Empty error message={view.note} />
+        {/if}
+        {#if view.outside !== ''}
+            <Outside
+                dir={view.outside}
+                onadd={() => void addOutside()}
+                ondismiss={() => patch({ outside: '' })}
+            />
         {/if}
         {#if markForm}
             {#key `${instance.id} ${view.opening}`}
@@ -420,8 +377,8 @@
                     entry={editedMark}
                     initial={{ root: current.roots[0]?.key ?? '' }}
                     onadd={addBookmark}
-                    onclose={settle}
-                    onrenamed={renameMark}
+                    onclose={marking.settle}
+                    onrenamed={marking.renameMark}
                     onsaid={(owner: string, answer: string) => {
                         answerAt(owner, { said: answer });
                         bookmarksChanged();
@@ -478,15 +435,16 @@
                 owner={instance.id}
                 {fixed}
                 {marked}
+                {fold}
+                header={headed ? header : undefined}
+                {headerOpen}
                 onselect={selectRow}
                 ontoggle={toggle}
                 onopen={(row: TreeRow, preview: boolean) => void openRow(opener, row, preview)}
                 onremove={(key: string) => (removing = key)}
-                onbookmark={(row: TreeRow) => void bookmark(row)}
-                onrefresh={invalidate}
-                oncollapse={(root: string) =>
-                    patch({ expanded: collapseRoot(view.expanded, root, follow.top?.path) })}
-                onaddroot={view.form === 'root' ? undefined : () => show('root')}
+                onbookmark={(row: TreeRow) => void marking.bookmark(row)}
+                onup={(to: RowRef) => patch({ top: to })}
+                onaddroot={() => void addFolders()}
             />
             {#if filtering && matchedNothing(shown)}
                 <Empty message={t('files.filter_none')} glyph={t('files.none_glyph')} />
@@ -495,13 +453,12 @@
         <Sections
             owner={instance.id}
             {view}
+            selected={selectedFile}
             onsection={toggleSection}
-            onaddmark={() => show('bookmark')}
+            onaddmark={marking.showMarkForm}
             onopenmark={(entry: Entry) => openBookmark(opener, entry)}
-            oneditmark={edit}
+            oneditmark={marking.edit}
             onnote={(owner: string, note: string) => answerAt(owner, { note })}
-            onsaveworkspace={() => show('workspace')}
-            onselectworkspace={(name: string) => void select(name)}
         />
     </div>
 </Pane>

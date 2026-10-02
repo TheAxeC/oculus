@@ -38,9 +38,12 @@
         expandedOf,
         focusOf,
         indexPaths,
+        boundAction,
         keyRoute,
+        pressOf,
         toggledBy,
         treeNodes,
+        type Chord,
         type KeyRow,
         type RowList,
         type RowNode,
@@ -57,10 +60,17 @@
         onfocusrow?: (id: string) => void;
         /** A key asked for a row to open or close. */
         ontoggle?: (id: string) => void;
+        /**
+         * The caller's own keys: a press matching a chord is handed to `onkey` with the chord's
+         * action and the row it was pressed on, and neither the machine nor the row acts on it.
+         * `onkey` answers false for a press it leaves to the browser, which is then not prevented.
+         */
+        keymap?: readonly Chord[];
+        onkey?: (action: string, id: string, event: KeyboardEvent) => boolean | undefined;
         children: Snippet<[TreeNav]>;
     };
 
-    let { label, rows, current, onfocusrow, ontoggle, children }: Props = $props();
+    let { label, rows, current, onfocusrow, ontoggle, keymap, onkey, children }: Props = $props();
 
     const uid = $props.id();
 
@@ -181,7 +191,14 @@
             return () => lists.delete(list);
         },
         focus: (id: string) => api.focus(id),
-        kept: () => [...new Set([stop, inside])].filter((id) => id !== '')
+        kept: () => [...new Set([stop, inside])].filter((id) => id !== ''),
+        // Read when a row asks, so a keymap that changes after the first draw is the one asked.
+        get bound() {
+            const map = keymap;
+            return map === undefined
+                ? undefined
+                : (event: KeyboardEvent) => boundAction(map, pressOf(event)) !== null;
+        }
     };
 
     /** The keys of a row element, handed to the machine as the tree's own. */
@@ -192,9 +209,15 @@
         if (part !== 'item' && part !== 'branch-control') return;
         const row = byId.get(target.dataset.value ?? '');
         if (row === undefined) return;
-        const held = { meta: event.metaKey, ctrl: event.ctrlKey };
-        const route = keyRoute(event.key, held, service.computed('isTypingAhead'));
+        const held = pressOf(event);
+        const route = keyRoute(event.key, held, service.computed('isTypingAhead'), keymap);
         if (route === 'withhold') return;
+        if (route === 'bound') {
+            const action = boundAction(keymap ?? [], pressOf(event));
+            if (action === null) return;
+            if (onkey?.(action, row.id, event) !== false) event.preventDefault();
+            return;
+        }
         keyed = true;
         if (route === 'type-ahead') {
             event.preventDefault();

@@ -1,6 +1,6 @@
-// Layer 1, data test. config/catalogs/agents.yml read by data/sources/config/agents.ts: the shipped
-// file seeds the composer with no finding, every refusal names the line it is on and leaves the
-// rest of the file read, and the argv words a start takes come from the parsed file and nothing
+// Layer 1, data test. config/catalogs/agents.yml read by data/sources/config/catalog/agents.ts: the
+// shipped file seeds the composer with no finding, every refusal names the line it is on and leaves
+// the rest of the file read, and the argv words a start takes come from the parsed file and nothing
 // else.
 
 import { readFileSync } from 'node:fs';
@@ -12,7 +12,7 @@ import {
     parseAgents,
     passable,
     withCacheModels
-} from '../../../src/lib/data/sources/config/agents.ts';
+} from '../../../src/lib/data/sources/config/catalog/agents.ts';
 import { engineDir } from '../../../src/lib/data/sources/config.ts';
 
 /** The shipped catalog's text. */

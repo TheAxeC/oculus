@@ -15,6 +15,8 @@ export type MenuItem = {
     label: string;
     /** The item's hover words, when they say more than its label. */
     title?: string;
+    /** The keys that run the choice, drawn muted at its end, as VS Code's menus write them. */
+    hint?: string;
     active?: boolean;
     /** Draw the choice dimmed and let a press do nothing, as a disabled button does (`clickOf`). */
     disabled?: boolean;

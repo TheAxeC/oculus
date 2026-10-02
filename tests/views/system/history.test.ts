@@ -95,6 +95,7 @@ describe('what an undo is said to have done', () => {
             ['gone', 'history.gone'],
             ['unknown', 'history.unknown'],
             ['nothing', 'history.nothing'],
+            ['copy-gone', 'history.copy_gone'],
             ['unwritable', 'history.unwritable']
         ]) {
             const outcome = undoSaid({ ok: false, changed: [], error: word }, 'x');
@@ -182,6 +183,46 @@ describe('the History view', () => {
         expect(body).toContain('data-kind="new-entry"');
         // the kind is on the row as data for a test to select on, never as the reader's word
         expect(body).not.toContain('>new-entry</span>');
+    });
+
+    // Revert: draw a files record with the field/value layout of a manifest write.
+    it('draws a file operation as its VS Code name over the path it took, with the undo control', () => {
+        const stamp = (path: string) => ({ path, kind: 'file', size: 1, mtime: 1 });
+        const body = drawn([
+            change('f1', {
+                kind: 'files',
+                file: 'notes/a.md',
+                key: 'files',
+                field: 'create',
+                before: [],
+                after: [stamp('notes/a.md')],
+                undo: 'file'
+            }),
+            change('f2', {
+                kind: 'files',
+                file: 'notes/b.md',
+                key: 'files',
+                field: 'trash',
+                before: [stamp('notes/b.md'), stamp('notes/c.md')],
+                after: [],
+                undo: 'file'
+            })
+        ]);
+        const row = (at: string): string =>
+            body.slice(
+                body.indexOf(`data-change="${at}"`),
+                body.indexOf('</li>', body.indexOf(`data-change="${at}"`))
+            );
+
+        expect(row('f1')).toContain('>Create</span>');
+        expect(row('f1')).toContain('notes/a.md');
+        expect(row('f1')).toContain('Put back what Create of notes/a.md held before this write');
+        expect(row('f2')).toContain('>Delete</span>');
+        // two paths are a list under a disclosure the reader opens, counted until then
+        expect(row('f2')).toContain(catalog['history.items']);
+        // the second path stays hidden inside the closed disclosure
+        expect(row('f2')).not.toContain('notes/c.md');
+        expect(row('f2')).toContain(catalog['history.undo']);
     });
 
     it('draws only the rows the filter leaves', () => {

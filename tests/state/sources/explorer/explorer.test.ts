@@ -59,6 +59,21 @@ const NO_FORM = { form: '', editing: '', typed: '', opening: 0 } as const;
 const NO_TOGGLES = { hidden: false, ignored: false } as const;
 
 /**
+ * What a file browser nobody has selected in, filtered fuzzily, nested, opened a section in or
+ * rooted keeps: no selection and no anchor, the fuzzy and nesting toggles off, no section opened,
+ * no top, and no folder found outside the roots.
+ */
+const NO_VIEW = {
+    selection: [],
+    anchor: null,
+    fuzzy: false,
+    nesting: false,
+    opened: [],
+    top: null,
+    outside: ''
+} as const;
+
+/**
  * The asks to show a path of a file browser nothing has asked. Revert: in filesViewOf of
  * state/sources/fs.ts, leave `reveal`, `revealed` or `revealing` out of the record it returns.
  */
@@ -222,6 +237,7 @@ describe('the explorer over the rows', () => {
             ...NO_REVEAL,
             ...NO_NAMING,
             ...NO_TOGGLES,
+            ...NO_VIEW,
             expanded: ['hub:'],
             selected: { root: 'hub', path: 'code' },
             filter: 'run',
@@ -235,6 +251,7 @@ describe('the explorer over the rows', () => {
             ...NO_NAMING,
             ...NO_LINES,
             ...NO_TOGGLES,
+            ...NO_VIEW,
             expanded: [],
             selected: null,
             filter: '',

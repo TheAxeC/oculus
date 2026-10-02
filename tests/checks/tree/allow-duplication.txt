@@ -66,11 +66,11 @@ tests/server/content/audit.test.ts tests/state/boards/focus/focus-lanes.test.ts 
 tests/server/content/audit.test.ts tests/state/boards/person.test.ts a5689f0b5053 the same 11 lines at 81 and 57, to fold into one place
 tests/server/content/audit.test.ts tests/state/workbench/rail-badges-fixture.ts a5689f0b5053 the same 11 lines at 81 and 19, to fold into one place
 tests/server/content/audit.test.ts tests/views/shared/card/card-docs.test.ts a5689f0b5053 the same 11 lines at 81 and 53, to fold into one place
-tests/server/core/git.test.ts tests/server/git/deposit.test.ts 6a31a6f050b8 the same 9 lines at 164 and 55, to fold into one place
-tests/server/core/git.test.ts tests/server/git/deposit.test.ts a55c9b32ebdf the same 10 lines at 194 and 64, to fold into one place
-tests/server/core/git.test.ts tests/server/git/git-ops.test.ts c0aab56da478 the same 10 lines at 195 and 54, to fold into one place
-tests/server/core/git.test.ts tests/server/git/git-write.test.ts 9dc876dad71c the same 8 lines at 846 and 588, to fold into one place
-tests/server/core/git.test.ts tests/server/git/git-write.test.ts ceacb188c0cf the same 9 lines at 197 and 69, to fold into one place
+tests/server/core/git/git.test.ts tests/server/git/deposit.test.ts 6a31a6f050b8 the same 9 lines at 78 and 54, to fold into one place
+tests/server/core/git/git.test.ts tests/server/git/deposit.test.ts a55c9b32ebdf the same 10 lines at 108 and 63, to fold into one place
+tests/server/core/git/git.test.ts tests/server/git/git-ops.test.ts c0aab56da478 the same 10 lines at 109 and 53, to fold into one place
+tests/server/core/git/git.test.ts tests/server/git/git-write.test.ts 9dc876dad71c the same 8 lines at 780 and 592, to fold into one place
+tests/server/core/git/git.test.ts tests/server/git/git-write.test.ts ceacb188c0cf the same 9 lines at 111 and 74, to fold into one place
 tests/server/git/deposit.test.ts tests/server/git/git-write.test.ts b9a8c9c31c31 the same 10 lines at 86 and 83, to fold into one place
 tests/server/git/deposit.test.ts tests/server/git/git-write.test.ts b9e79a8b99aa the same 20 lines at 52 and 54, to fold into one place
 tests/server/git/deposit.test.ts tests/server/root/watch/git.test.ts 1aa4ec535a71 the same 12 lines at 52 and 44, to fold into one place

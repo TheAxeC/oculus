@@ -1,7 +1,8 @@
 // Layer 2, server. The file operations of the Files view under the served roots: create, rename,
 // move to the Trash, delete for good, paste (copy or move) and upload, as POST /api/ops, and the
-// comparison of two files as GET /api/ops. src/routes/api/(files)/ops/+server.ts is the few lines
-// that join the request to the roots and the write chain.
+// comparison of two files, or of a file with one of its local-history copies (`save=`), as GET
+// /api/ops. src/routes/api/(files)/ops/+server.ts is the few lines that join the request to the
+// roots and the write chain.
 //
 // Every path is a root's key and a path under it. A path that is a symbolic link is acted on as the
 // link: its parent folder is resolved by real path and its own name is kept, so a rename, a move,
@@ -13,6 +14,14 @@
 // machine's own config/local.yml and every folder that holds it, compared by device and inode, so
 // every spelling the volume accepts is refused. A list of items runs in order and stops at the
 // first that fails, naming the items done before it and the one it stopped at.
+//
+// An operation that changed something is recorded in the change log as one `files` record (see
+// fs/file-changes.ts): its field is `create`, `rename`, `move`, `copy`, `upload`, `trash` or
+// `delete`, and its `before` and `after` stamp the paths it took from and put in place. Before a
+// trash or a delete, the content of each file named (not of the files inside a folder) up to 5 MB
+// is kept in the local history, so server/edit/writes/file-undo.ts can write it back while the
+// newest 50 delete copies (server/files/fs/history.ts) still hold it. The record is
+// appended when the operation ends, for the items it did before an item it stopped at.
 //
 // Each operation runs behind the write chain `opsWrites`, apart from the workspace chain, so a long
 // copy holds up another file operation and nothing else. The Trash is a parameter of the entry
@@ -34,12 +43,16 @@ import {
     type OpsRequest
 } from '../../../data/file-ops.ts';
 import { LOCAL_NAME } from '../../../data/sources/config.ts';
+import { FILES_KIND, type FileField, type FileStamp } from '../../../data/file-ops.ts';
 import type { DiffSides } from '../../../data/model/index.ts';
 import { tokenedBody } from '../../core/auth.ts';
+import { logChanges, pathOf, type ChangeLog } from '../../core/changes.ts';
 import { chained, writeBytesAtomic, type FsWrites } from '../../core/json.ts';
 import { below, inside, realPath } from '../../core/paths.ts';
 import { ENGINE_ROOT, resolveRootPath, type Root } from '../files.ts';
 import { isBinaryFile } from '../source.ts';
+import { recordOf, stampKept, stampOf, unkeep } from './file-changes.ts';
+import { defaultHistoryDir, historyPath, readCopy } from './history.ts';
 
 /** What an operation runs over: the roots it may touch and the chain that orders its writes. */
 export type OpsTarget = {
@@ -47,6 +60,16 @@ export type OpsTarget = {
     writes: FsWrites;
     /** The machine's local.yml when it is not the engine root's own, for the route to name. */
     local?: string;
+    /**
+     * The change log each operation that changed something is recorded in; none records nothing.
+     */
+    changes?: ChangeLog;
+    /** The hub, which the record names a path inside it relative to. */
+    hub?: string;
+    /**
+     * The local history folder a trash or a delete keeps the content of a file in; none keeps none.
+     */
+    history?: string;
 };
 
 /** The two calls a test replaces: the Trash, and a step held inside the write chain. */
@@ -73,7 +96,25 @@ type Scope = {
     roots: Root[];
     locals: Guard;
     trash: NonNullable<OpsDeps['trash']>;
+    history?: string;
+    /** What the operation has changed so far, which becomes its record. */
+    note: Note;
 };
+
+/** The change one operation made: its field, and the stamps before and after. */
+type Note = { field: FileField | null; before: FileStamp[]; after: FileStamp[] };
+
+/** Say an operation changed something: the stamps of what was there and of what is there now. */
+function noted(
+    scope: Scope,
+    field: FileField,
+    before: (FileStamp | null)[],
+    after: (FileStamp | null)[]
+) {
+    scope.note.field = field;
+    scope.note.before.push(...before.filter((one) => one !== null));
+    scope.note.after.push(...after.filter((one) => one !== null));
+}
 
 const place = z.object({ root: z.string(), path: z.string() });
 
@@ -223,7 +264,7 @@ function pathExists(path: string): boolean {
  * every folder that holds one, and the folders the files are named in, for a file not made yet.
  */
 /** The device and inode of each protected file and of every folder above one. */
-type Guard = Set<string>;
+export type Guard = Set<string>;
 
 /** The device and inode of what is at a path, a link not followed, or null when nothing is. */
 function identityOf(path: string): string | null {
@@ -239,7 +280,7 @@ function identityOf(path: string): string | null {
  * The files of the machine this server never changes: the engine root's local.yml and the route's,
  * and the folders that hold them, up to the top of the volume.
  */
-function protectedFiles(target: OpsTarget): Guard {
+export function protectedFiles(target: Pick<OpsTarget, 'roots' | 'local'>): Guard {
     const guard: Guard = new Set();
     const engine = target.roots.find((one) => one.key === ENGINE_ROOT);
     const folders = [engine?.dir, target.local === undefined ? undefined : dirname(target.local)];
@@ -265,8 +306,13 @@ function protectedFiles(target: OpsTarget): Guard {
  * at it is never protected, since it changes no file.
  */
 function holdsProtected(scope: Scope, path: string): boolean {
+    return guarded(scope.locals, path);
+}
+
+/** Whether a path is a file the server never changes, or a folder that holds one. */
+export function guarded(guard: Guard, path: string): boolean {
     const id = identityOf(path);
-    return id !== null && scope.locals.has(id);
+    return id !== null && guard.has(id);
 }
 
 /** Move one item to the Trash, answering `trash_failed` when the call fails. */
@@ -309,7 +355,10 @@ async function createItem(
         if (request.folder) await mkdir(target);
         else await newFile(target);
     });
-    return outcome ?? { ok: true, path: under(folder.rootFolder, target) };
+    if (outcome !== null) return outcome;
+    const first = walked.rest.length > 0 ? join(walked.dir, walked.rest[0] ?? '') : target;
+    noted(scope, 'create', [], [stampOf(first)]);
+    return { ok: true, path: under(folder.rootFolder, target) };
 }
 
 /**
@@ -346,11 +395,14 @@ async function renameItem(
     if (target !== item.real && walked.rest.length === 0 && pathExists(target)) {
         if (!(await sameFile(item.real, target))) return fail('exists');
     }
+    const was = stampOf(item.real);
     const outcome = await attempt(async () => {
         if (walked.rest.length > 0) await mkdir(dirname(target), { recursive: true });
         if (target !== item.real) await rename(item.real, target);
     });
-    return outcome ?? { ok: true, path: under(item.rootFolder, target) };
+    if (outcome !== null) return outcome;
+    if (target !== item.real) noted(scope, 'rename', [was], [stampOf(target)]);
+    return { ok: true, path: under(item.rootFolder, target) };
 }
 
 /**
@@ -386,11 +438,16 @@ async function removeItems(
         if (refused(found)) return stopped(found.error, done, path);
         if (found.isRoot) return stopped('root', done, path);
         if (holdsProtected(scope, found.real)) return stopped('protected', done, path);
+        const was = stampKept(found.real, scope.history);
         const outcome =
             request.op === 'trash'
                 ? await sendToTrash(scope, found.real)
                 : await attempt(() => rm(found.real, { recursive: true }));
-        if (outcome !== null) return stopped(outcome.error, done, path);
+        if (outcome !== null) {
+            unkeep(was, scope.history);
+            return stopped(outcome.error, done, path);
+        }
+        noted(scope, request.op, [was], []);
         done.push(path);
     }
     return { ok: true };
@@ -447,7 +504,9 @@ async function pasteItems(
             );
             const outcome = await attempt(() => copyItem(found.real, landed));
             if (outcome !== null) return stopped(outcome.error, done, path);
+            noted(scope, 'copy', [], [stampOf(landed)]);
         } else if (dirname(found.real) !== dest.real) {
+            const from = stampOf(found.real);
             if (pathExists(taken)) {
                 if (!request.replace) return stopped('exists', done, path);
                 if (below(found.real, taken)) return stopped('into_itself', done, path);
@@ -456,6 +515,7 @@ async function pasteItems(
             }
             const outcome = await attempt(() => moveItem(found.real, taken));
             if (outcome !== null) return stopped(outcome.error, done, path);
+            noted(scope, 'move', [from], [stampOf(taken)]);
         }
         done.push(path);
         paths.push(under(dest.rootFolder, landed));
@@ -501,7 +561,9 @@ async function uploadItem(
         writeBytesAtomic(target, bytes);
         return Promise.resolve();
     });
-    return outcome ?? { ok: true, path: under(dest.rootFolder, target) };
+    if (outcome !== null) return outcome;
+    noted(scope, 'upload', [], [stampOf(target)]);
+    return { ok: true, path: under(dest.rootFolder, target) };
 }
 
 /** Run one operation. */
@@ -519,6 +581,17 @@ function run(scope: Scope, request: OpsRequest): Promise<OpsAnswer> {
         case 'upload':
             return uploadItem(scope, request);
     }
+}
+
+/**
+ * Append what an operation changed to the change log as one `files` record. An operation that
+ * changed nothing, and a target with no log, record nothing.
+ */
+async function recordNote(into: OpsTarget, note: Note): Promise<void> {
+    if (note.field === null || into.changes === undefined) return;
+    const record = recordOf(note.field, note.before, note.after);
+    const file = into.hub === undefined ? record.file : pathOf(into.hub, record.file);
+    await logChanges(into.changes, FILES_KIND, [{ ...record, file }]);
 }
 
 /**
@@ -542,8 +615,18 @@ export async function handleOps(
     const answer = await chained(into.writes, async () => {
         await deps.slow?.();
         // Read when the operation runs, so a local.yml saved while it waited is the one guarded.
-        const scope: Scope = { roots: into.roots, locals: protectedFiles(into), trash };
-        return run(scope, body.data);
+        const scope: Scope = {
+            roots: into.roots,
+            locals: protectedFiles(into),
+            trash,
+            history: into.history,
+            note: { field: null, before: [], after: [] }
+        };
+        try {
+            return await run(scope, body.data);
+        } finally {
+            await recordNote(into, scope.note);
+        }
     });
     return json(answer, { status: answer.ok ? 200 : 400, headers: NO_STORE });
 }
@@ -560,25 +643,51 @@ function side(roots: Root[], key: string, path: string): { text: string; binary:
 }
 
 /**
+ * One copy of the file in the local history as a side of a comparison, or why it is refused. The id
+ * is taken only from the file's own `entries.json`, so any other id is `missing`.
+ */
+function savedSide(
+    roots: Root[],
+    history: string,
+    key: string,
+    path: string,
+    id: string
+): { text: string; binary: boolean } | Fail {
+    const real = historyPath(roots, key, path);
+    if (real === null) return fail('outside');
+    const copy = readCopy(history, real, id);
+    if (copy === null) return fail('missing');
+    return { text: copy.toString('utf8'), binary: false };
+}
+
+/**
  * GET /api/ops: the comparison of two files as the diff pane reads one. `with*` is the file
  * selected for compare and is the left side; `root` and `path` are the file asked for, the right.
+ * `save=<id>` in place of `with*` makes the left side the copy of that file the local history
+ * holds under that id.
  */
-export function handleCompare(url: URL, roots: Root[]): Response {
+export function handleCompare(
+    url: URL,
+    roots: Root[],
+    history: string = defaultHistoryDir()
+): Response {
     const get = (key: string): string => url.searchParams.get(key) ?? '';
-    const [root, path, withRoot, withPath] = [
+    const [root, path, withRoot, withPath, save] = [
         get('root'),
         get('path'),
         get('withRoot'),
-        get('withPath')
+        get('withPath'),
+        get('save')
     ];
     const modified = side(roots, root, path);
     if (refused(modified)) return json(modified, { status: 400, headers: NO_STORE });
-    const original = side(roots, withRoot, withPath);
+    const original =
+        save === '' ? side(roots, withRoot, withPath) : savedSide(roots, history, root, path, save);
     if (refused(original)) return json(original, { status: 400, headers: NO_STORE });
     const binary = original.binary || modified.binary;
     const files: DiffSides[] = [
         {
-            oldPath: `${withRoot}:${withPath}`,
+            oldPath: save === '' ? `${withRoot}:${withPath}` : `${root}:${path}@${save}`,
             newPath: `${root}:${path}`,
             head: [],
             binary,

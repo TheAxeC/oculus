@@ -19,8 +19,8 @@ const SRC = resolve(LIB, '..');
 
 const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 'views', 'themes'];
 
-// One entry per row of the table. A pattern ending in /** matches the folder and everything
-// under it; any other pattern matches exactly. The view registry is a state module under
+// One entry per row of the table. A pattern ending in /** matches the folder and everything under
+// it; any other pattern matches exactly. The view registry is a state module under
 // `state/workbench/navigation/`, which the shell's row and the views' row both name, so a view
 // registers itself without importing another view and the shell draws a view it never imports.
 //
@@ -36,22 +36,25 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/model` in the state row as pure helpers with no reader and no I/O. `data/accounts/calendar`
 // and `data/accounts/mail` are there because how a connector account is named, and how old a thread
 // is, are read by the server that builds the credential file and reads the mailbox and by the page
-// that presses Connect and draws the age on a card;
-// `data/accounts/connect` because the rule a new account's label and a provider's client half are
-// held to is read by the Add form and the setup page before they send and by the server before it
-// writes, and a copy on each side would let them disagree; `data/helpers/deck` because the deck's
-// placement rule has two readers, the Present view and the write that saves a selection, and a copy
-// of it on each side would let them disagree about what a slide key is; `data/accounts/leads` for
-// the same reason, since the statuses that close a lead are read by the Position Leads view, its
-// badge and the ticker on the client, and by the summary the snapshot carries on the server;
-// `data/helpers/worktrees` likewise, the Repositories view naming the path a worktree will take and
-// the write making it; `data/helpers/files/text-kind`, the file browser deciding which tab a file
-// opens in and the source route refusing a save over bytes no editor could have read;
+// that presses Connect and draws the age on a card; `data/accounts/connect` because the rule a new
+// account's label and a provider's client half are held to is read by the Add form and the setup
+// page before they send and by the server before it writes, and a copy on each side would let them
+// disagree; `data/helpers/deck` because the deck's placement rule has two readers, the Present view
+// and the write that saves a selection, and a copy of it on each side would let them disagree about
+// what a slide key is; `data/accounts/leads` for the same reason, since the statuses that close a
+// lead are read by the Position Leads view, its badge and the ticker on the client, and by the
+// summary the snapshot carries on the server; `data/helpers/worktrees` likewise, the Repositories
+// view naming the path a worktree will take and the write making it;
+// `data/helpers/files/text-kind`, the file browser deciding which tab a file opens in and the
+// source route refusing a save over bytes no editor could have read;
 // `data/helpers/files/opens-in-program`, the open endpoint opening only a file whose extension
 // `open.program_ext` lists and the cards and the file view offering the control for that name
-// alone; `data/helpers/files/languages`, the reader of the `languages:` map: the server words
-// its findings from it, and the file browser, the source tab and the diff and merge views read a
-// file's language through it, so the two cannot disagree about which entries the map dropped;
+// alone; `data/helpers/files/languages`, the reader of the `languages:` map: the server words its
+// findings from it, and the file browser, the source tab and the diff and merge views read a file's
+// language through it, so the two cannot disagree about which entries the map dropped;
+// `data/helpers/files/nesting`, the reader of the `patterns:` map of file-nesting.yml and the rule
+// that nests a folder's names: the server words its findings from it and the Files view nests the
+// rows it draws through it, so the two cannot disagree about which patterns were dropped;
 // `data/helpers/tasks`, the server building an update task's argv from the `tasks:` block and the
 // update tray asking that block whether the task it is about to start runs unattended;
 // `data/helpers/editor`, the server requiring `editor.paint_limit_kb` at start and the source
@@ -59,28 +62,29 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // Search view refusing a query before it sends it and the search route refusing the same query when
 // it arrives, from one rule and one argument list; and `data/helpers/finding-text`, whose
 // placeholder rule is the one the client's t() fills a catalog string with and the one the server
-// words every finding with before the snapshot carries it; `data/helpers/code-themes`, the list
-// of Shiki's bundled themes (ids, display names, dark or light), which the server words the
-// finding for a bad `code_theme:` from, the appearance store checks a saved pick against and the
-// Settings view draws as the Code theme menu; and `data/sources/config/rail`, the rule
-// over the `rail:` list of config/layout.yml, which the page drawing the rail, the Settings view
-// editing it and the server writing it and wording its findings all read, so the three agree on
-// which entries are pages; and `data/sources/config/options`, the options catalog's types and the
-// reader of it from the merged config, which the Settings view's rows are made from, so the rows
-// and the server's write of one option (server/edit/writes/config-key.ts) read one description of
-// what an option is; and `data/hub-address`, the rule telling a path of the hub from a web
-// address, which the collection card reads to decide what a click opens and the Audit reads to
-// decide which links to look for on disk. `data/helpers/files/paths` holds the `/` path rules (a
-// path's last name, the path under a folder, the deepest folder holding a target) that the file
-// browser, the source tab and the status bar read a root or a repository by, so the three agree on
-// which one holds a file. `data/shapes/shapes` holds the zod helpers (a schema that answers its
-// input, the map and number schemas, the quick path) that the server's, the state layer's, the
-// views' and the shell's readers of untyped input share, so all four read by one rule.
-// `data/file-ops` holds what a file or folder name may be, the name a copy takes, the sizes of an
-// upload and of a comparison, and the shapes of a file operation and its answer, which the Files
-// view checks while a name is typed and the server checks when the name arrives. The model's own
-// concern modules (`data/model-*`) are reached through the facade only, which is why they are not
-// listed here.
+// words every finding with before the snapshot carries it; `data/helpers/code-themes`, the list of
+// Shiki's bundled themes (ids, display names, dark or light), which the server words the finding
+// for a bad `code_theme:` from, the appearance store checks a saved pick against and the Settings
+// view draws as the Code theme menu; and `data/sources/config/rail`, the rule over the `rail:` list
+// of config/layout.yml, which the page drawing the rail, the Settings view editing it and the
+// server writing it and wording its findings all read, so the three agree on which entries are
+// pages; and `data/sources/config/settings`, the typed readers of single settings, of which the
+// Files view reads `files.confirm_delete` so a delete asks only while the setting says so; and
+// `data/sources/config/catalog/options`, the options catalog's types and the reader of it from the
+// merged config, which the Settings view's rows are made from, so the rows and the server's write
+// of one option (server/edit/writes/config/config-key.ts) read one description of what an option
+// is; and `data/hub-address`, the rule telling a path of the hub from a web address, which the
+// collection card reads to decide what a click opens and the Audit reads to decide which links to
+// look for on disk. `data/helpers/files/paths` holds the `/` path rules (a path's last name, the
+// path under a folder, the deepest folder holding a target) that the file browser, the source tab
+// and the status bar read a root or a repository by, so the three agree on which one holds a file.
+// `data/shapes/shapes` holds the zod helpers (a schema that answers its input, the map and number
+// schemas, the quick path) that the server's, the state layer's, the views' and the shell's readers
+// of untyped input share, so all four read by one rule. `data/file-ops` holds what a file or folder
+// name may be, the name a copy takes, the sizes of an upload and of a comparison, and the shapes of
+// a file operation and its answer, which the Files view checks while a name is typed and the server
+// checks when the name arrives. The model's own concern modules (`data/model-*`) are reached
+// through the facade only, which is why they are not listed here.
 //
 // `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
@@ -139,6 +143,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/text-kind',
         'data/helpers/files/opens-in-program',
         'data/helpers/files/languages',
+        'data/helpers/files/nesting',
         'data/helpers/tasks',
         'data/helpers/editor',
         'data/helpers/search',
@@ -146,7 +151,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/code-themes',
         'data/helpers/finding-text',
         'data/sources/config/rail',
-        'data/sources/config/options',
+        'data/sources/config/settings',
+        'data/sources/config/catalog/options',
         'data/hub-address',
         'data/prose/languages'
     ],
@@ -296,8 +302,14 @@ const FROZEN = [
     'lib/state/shared/words/glyphmode.svelte.ts:held'
 ];
 
-/** The stores a shell file may take out of the client object: the shell's row, by store name. */
+/**
+ * The stores a shell file may take out of the client object: the shell's row, by store name. The
+ * palette runs the workspace commands through `fs` (switch and save a workspace) and `explorer`
+ * (the folder panel).
+ */
 const SHELL_STORES = [
+    'explorer',
+    'fs',
     'layout',
     'drag',
     'ui',

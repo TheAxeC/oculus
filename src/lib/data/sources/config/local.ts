@@ -58,6 +58,11 @@ export type LocalConfig = {
      */
     changes?: string;
     /**
+     * Where the copies made before each save live, `history` in the file. Absent unless the
+     * machine sets it, and the save path then uses ~/.oculus/history.
+     */
+    history?: string;
+    /**
      * Absolute or PATH-resolved Claude CLI the update tasks and the chat terminal are started with.
      */
     claudeBin: string;
@@ -104,6 +109,7 @@ export const LOCAL_KEYS = [
     'bookmarks',
     'notes',
     'changes',
+    'history',
     'claude_bin',
     'open_bin',
     'accounts',
@@ -290,6 +296,7 @@ function applyLocal(
         ['bookmarks', 'bookmarks'],
         ['notes', 'notes'],
         ['changes', 'changes'],
+        ['history', 'history'],
         ['calendar_dir', 'calendarDir'],
         ['mail_dir', 'mailDir']
     ] as const) {

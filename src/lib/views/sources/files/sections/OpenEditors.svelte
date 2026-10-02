@@ -1,0 +1,212 @@
+<script lang="ts">
+    // Layer 3, partial of views/sources/files/Files.svelte. The Open Editors section: the tabs of
+    // the page this view is on that show a file, grouped by the pane that holds them, each row the
+    // file's icon and name with the folder it sits in, the dot of a tab holding unsaved text, and a
+    // close control under the pointer. A press on a row brings its tab forward. The head carries
+    // Save All, which saves every dirty source tab, and Close All, which closes every tab listed
+    // and asks the close question first (state/workbench/navigation/pages.ts's closeAsk) whenever
+    // one of them holds unsaved text.
+    //
+    // The groups are read from the page's layout on every change of it, so the section never holds
+    // a copy of the tabs. It holds nothing of its own but the close that waits on the dialog.
+
+    import Section from './Section.svelte';
+    import TreeItem from '$lib/ui/tree/TreeItem.svelte';
+    import TreeView from '$lib/ui/tree/TreeView.svelte';
+    import type { TreeNav } from '$lib/ui/tree/tree-keys';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
+    import {
+        dirtyIds,
+        openGroups,
+        openIds,
+        type OpenEditor
+    } from '$lib/state/sources/explorer/sections/open-editors';
+    import { instanceLabel, panes } from '$lib/state/workbench/layout';
+    import { closingEditors, type Confirming } from '../control/editor-closing';
+    import { useState } from '$lib/state/client/use';
+    import { t } from '$lib/state/shared/words/text';
+
+    type Props = {
+        open: boolean;
+        ontoggle: () => void;
+    };
+
+    let { open, ontoggle }: Props = $props();
+
+    const {
+        layout: { activateInstance, closeInstance, currentPage, layout },
+        ui: { unsaved },
+        source: { saveSourceDraft }
+    } = useState();
+
+    const page = $derived(currentPage().id);
+    const groups = $derived(
+        openGroups(
+            panes(layout(page)),
+            (tab) => instanceLabel(tab.state) ?? '',
+            (id) => unsaved(id)
+        )
+    );
+    const several = $derived(groups.length > 1);
+    const total = $derived(openIds(groups).length);
+    const dirty = $derived(dirtyIds(groups));
+
+    /** The close that waits on the dialog: the words it asks and what a yes does. */
+    let confirming: Confirming | null = $state(null);
+
+    /** The id a group line has in the tree, and a row's. */
+    const groupKey = (index: number): string => `group:${String(index)}`;
+    const rowKey = (row: OpenEditor): string => `editor:${row.id}`;
+
+    const keyRows = $derived([
+        { id: 'head', parent: null, open },
+        ...(open
+            ? groups.flatMap((group) => [
+                  ...(several ? [{ id: groupKey(group.index), parent: 'head' }] : []),
+                  ...group.rows.map((row) => ({
+                      id: rowKey(row),
+                      parent: several ? groupKey(group.index) : 'head'
+                  }))
+              ])
+            : [])
+    ]);
+
+    function nameOf(id: string): string {
+        return groups.flatMap((group) => group.rows).find((row) => row.id === id)?.name ?? id;
+    }
+
+    /** Close these tabs, asking first when one holds unsaved text. */
+    function closing(ids: string[]): void {
+        confirming = closingEditors(ids, {
+            unsaved,
+            nameOf,
+            close: (id) => closeInstance(id, page)
+        });
+    }
+
+    /** Save every dirty source tab, one after the other. */
+    async function saveAll(): Promise<void> {
+        for (const group of groups) {
+            for (const row of group.rows) {
+                if (row.view === 'source' && row.dirty) {
+                    await saveSourceDraft(row.id, row.file.root, row.file.path);
+                }
+            }
+        }
+    }
+
+    /** Take the question away and perform the close it asked about. */
+    function confirmed(): void {
+        const act = confirming?.act;
+        confirming = null;
+        act?.();
+    }
+</script>
+
+<div class="editors" data-fs-editors>
+    <TreeView label={t('files.editors')} rows={keyRows} {ontoggle}>
+        {#snippet children(nav: TreeNav)}
+            <Section label={t('files.editors')} {nav} count={total} {open} {ontoggle}>
+                {#snippet more(reach: number)}
+                    <ToolButton
+                        label={t('files.editors_save_all')}
+                        title={t('files.editors_save_all_title')}
+                        glyph="save_all"
+                        compact
+                        disabled={dirty.length === 0}
+                        tabindex={reach}
+                        onclick={() => void saveAll()}
+                    />
+                    <ToolButton
+                        label={t('files.editors_close_all')}
+                        title={t('files.editors_close_all_title')}
+                        glyph="close_all"
+                        compact
+                        disabled={total === 0}
+                        tabindex={reach}
+                        onclick={() => closing(openIds(groups))}
+                    />
+                {/snippet}
+                {#if total === 0}
+                    <li role="none">
+                        <TreeItem label={t('files.editors_empty')} tone="muted" />
+                    </li>
+                {/if}
+                {#each groups as group (group.index)}
+                    {#if several}
+                        <li role="none" data-fs-editor-group={group.index}>
+                            <TreeItem
+                                label={t('files.editors_group', group.index + 1)}
+                                id={groupKey(group.index)}
+                                {nav}
+                                level={2}
+                                tone="muted"
+                                expanded
+                            />
+                        </li>
+                    {/if}
+                    {#each group.rows as row (row.id)}
+                        <li role="none" data-fs-editor={row.id}>
+                            <TreeItem
+                                label={row.name}
+                                id={rowKey(row)}
+                                {nav}
+                                level={several ? 3 : 2}
+                                file={row.name}
+                                selected={row.active}
+                                title={t('files.editors_open_title', row.name)}
+                                onclick={() => activateInstance(row.id, page)}
+                            >
+                                {#snippet detail()}
+                                    {row.where}
+                                {/snippet}
+                                {#snippet end()}
+                                    {#if row.dirty}
+                                        <span
+                                            class="dirty"
+                                            role="img"
+                                            aria-label={t('files.editors_dirty')}
+                                        ></span>
+                                    {/if}
+                                {/snippet}
+                                {#snippet actions(reach: number)}
+                                    <ToolButton
+                                        label={t('files.editors_close')}
+                                        title={t('files.editors_close_title', row.name)}
+                                        glyph="dismiss"
+                                        compact
+                                        tabindex={reach}
+                                        onclick={() => closing([row.id])}
+                                    />
+                                {/snippet}
+                            </TreeItem>
+                        </li>
+                    {/each}
+                {/each}
+            </Section>
+        {/snippet}
+    </TreeView>
+</div>
+
+<CloseQuestion
+    message={confirming?.message ?? null}
+    onconfirm={confirmed}
+    oncancel={() => (confirming = null)}
+/>
+
+<style>
+    .editors {
+        margin-top: 0;
+    }
+
+    /* The unsaved mark: a filled dot in the row's own text colour, 8px, where VS Code draws it. */
+    .dirty {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: 0.8;
+    }
+</style>

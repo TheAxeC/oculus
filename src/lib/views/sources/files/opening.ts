@@ -9,7 +9,13 @@
 // the rule reads the same whichever client it runs in.
 
 import type { Entry } from '$lib/state/boards/collection';
-import { bookmarkRef, nameOf, typeOfFile, type TreeRow } from '$lib/state/sources/fs';
+import {
+    bookmarkRef,
+    nameOf,
+    typeOfFile,
+    type BookmarkKind,
+    type TreeRow
+} from '$lib/state/sources/fs';
 import { documentState } from '$lib/state/workbench/layout';
 import { sourceTabState } from '$lib/state/sessions/source.svelte';
 import type { ClientState } from '$lib/state/client/context';
@@ -19,6 +25,8 @@ export type Opener = {
     openView: ClientState['layout']['openView'];
     keepPreview: ClientState['layout']['keepPreview'];
     readFileKind: ClientState['fs']['readFileKind'];
+    /** Show a folder in the Files view of the page, open and selected, for a folder bookmark. */
+    showInFiles?: ClientState['layout']['showInFiles'];
 };
 
 /** The store calls opening a file beside the pane being read needs. */
@@ -58,10 +66,17 @@ export async function openRowBeside(opener: BesideOpener, row: TreeRow): Promise
     opener.openBeside(tab.view, tab.state);
 }
 
-/** Open the file one bookmark names, under the label the reader gave it. */
-export function openBookmark(opener: Opener, entry: Entry): void {
+/**
+ * Open what one bookmark names, under the label the reader gave it: a folder is shown open and
+ * selected in the Files view of the page, a file opens in the view that can show it.
+ */
+export function openBookmark(opener: Opener, entry: Entry & { kind?: BookmarkKind }): void {
     const ref = bookmarkRef(entry.fields);
     if (ref === null) return;
+    if (entry.kind === 'folder' && opener.showInFiles !== undefined) {
+        opener.showInFiles(ref.path, ref.root, true);
+        return;
+    }
     if (typeOfFile(ref.path).kind === 'html') {
         opener.openView('document', documentState({ label: entry.title, ...ref }));
         return;

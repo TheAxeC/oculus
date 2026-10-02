@@ -270,7 +270,8 @@ describe("the reader's own bookmarks and notes", () => {
         expect(body).not.toContain('data-fs-bookmark=');
         // and the notes section holds none either
         expect(body).not.toContain('data-fs-note=');
-        expect(body.split('>0</span>').length - 1).toBe(2);
+        // Open Editors, Outline and Timeline draw a count of none above these two heads
+        expect(body.slice(body.indexOf('data-fs-bookmarks')).split('>0</span>').length - 1).toBe(2);
         expect(body).toContain('No bookmark yet.');
         expect(body).toContain('No note yet.');
     });
@@ -394,20 +395,6 @@ describe("the reader's own bookmarks and notes", () => {
         expect(drawn({ form: 'bookmark', editing: 'no such bookmark' })).not.toContain(
             'data-form='
         );
-    });
-
-    // Revert: in views/sources/files/Files.svelte, give RootForm a component `typed` instead of
-    // `view.typed`.
-    it('draws the root form open with the line the instance state holds', async () => {
-        const fresh = await loaded();
-        fresh.ui.setInstanceState('files-one', { form: 'root', typed: '/tmp/typed-root' });
-        const { body } = render(Files, {
-            context: clientContext(fresh),
-            props: { instance: instance() }
-        });
-
-        expect(body).toContain('data-fs-form="Folder path"');
-        expect(body).toContain('value="/tmp/typed-root"');
     });
 
     it("draws the add form over the bookmarks file's own schema, with the roots in force", async () => {

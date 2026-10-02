@@ -19,7 +19,7 @@
 // Nothing here holds state between calls; the path comes in from the caller, so two servers in one
 // process read two files.
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { parse } from 'yaml';
@@ -27,6 +27,7 @@ import { z } from 'zod';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import type { Entry, SchemaField } from '../../../data/model/index.ts';
 import { writeTextAtomic } from '../../core/json.ts';
+import { resolveRootPath, type Root } from '../files.ts';
 import { anyNumberShape, mapShape } from '../../../data/shapes/shapes.ts';
 
 /** The collection key the write path resolves to the reader's own file. */
@@ -48,7 +49,7 @@ export function defaultBookmarksPath(): string {
  */
 const SCAFFOLD = [
     '# The bookmarks of this machine, written by oculus from the Files view.',
-    '# Each entry is a file under one of the roots the file browser serves.',
+    '# Each entry is a file or a folder under one of the roots the file browser serves.',
     'title: Bookmarks',
     '',
     'schema:',
@@ -75,8 +76,16 @@ function scaffoldSchema(): SchemaField[] {
     return collectionSchema((parse(SCAFFOLD) as { schema?: unknown }).schema) ?? [];
 }
 
+/**
+ * What a bookmark names now: a file, a folder, or nothing, because the path or the root is gone.
+ */
+export type BookmarkKind = 'file' | 'folder' | 'missing';
+
+/** One bookmark as the page reads it: the entry, and what its root and path name now. */
+export type BookmarkEntry = Entry & { kind: BookmarkKind };
+
 /** What a GET for the bookmarks answers: the entries as the form edits them, and their schema. */
-export type BookmarksAnswer = { entries: Entry[]; schema: SchemaField[] };
+export type BookmarksAnswer = { entries: BookmarkEntry[]; schema: SchemaField[] };
 
 /** An item of the file's `entries:` list that is a map, answered as the file holds it. */
 const bookmarkItemShape = mapShape;
@@ -103,11 +112,28 @@ function bookmark(item: unknown, file: string, index: number): Entry | null {
 }
 
 /**
+ * What a bookmark's root and path name now, from a stat under the root. A root that is not served,
+ * a path outside it and a path that is not there are all `missing`.
+ */
+export function bookmarkKind(roots: Root[], entry: Entry): BookmarkKind {
+    const root = entry.fields.root;
+    const path = entry.fields.path;
+    if (typeof root !== 'string' || typeof path !== 'string' || path === '') return 'missing';
+    const found = resolveRootPath(roots, root, path);
+    if ('error' in found) return 'missing';
+    try {
+        return statSync(found.path).isDirectory() ? 'folder' : 'file';
+    } catch {
+        return 'missing';
+    }
+}
+
+/**
  * The bookmarks of one file. A missing, unreadable or unparseable file reads as no bookmarks, which
  * is what a machine that has never written one has; the schema is the file's own, so a reader who
  * added a field of their own sees a control for it, and the scaffold's for a file that names none.
  */
-export function readBookmarks(file: string): BookmarksAnswer {
+export function readBookmarks(file: string, roots: Root[] = []): BookmarksAnswer {
     let data: unknown;
     try {
         data = parse(readFileSync(file, 'utf8'));
@@ -116,10 +142,10 @@ export function readBookmarks(file: string): BookmarksAnswer {
     }
     const held = bookmarksFileShape.safeParse(data);
     if (!held.success) return { entries: [], schema: scaffoldSchema() };
-    const entries: Entry[] = [];
+    const entries: BookmarkEntry[] = [];
     for (const [index, item] of held.data.entries.entries()) {
         const one = bookmark(item, file, index);
-        if (one !== null) entries.push(one);
+        if (one !== null) entries.push({ ...one, kind: bookmarkKind(roots, one) });
     }
     return { entries, schema: collectionSchema(held.data.schema) ?? scaffoldSchema() };
 }

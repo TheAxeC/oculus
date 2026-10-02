@@ -7,6 +7,7 @@
 // hub comes off its ServerContext, so one request reads the workspaces file once.
 
 import { browserRoots } from '$lib/server/files/roots';
+import { defaultHistoryDir } from '$lib/server/files/fs/history';
 import { handleSource, handleSourceInfo } from '$lib/server/files/source';
 import type { RequestHandler } from './$types';
 
@@ -22,4 +23,9 @@ export const GET: RequestHandler = ({ request, url, locals }) =>
     handleSourceInfo(request, url, roots(locals));
 
 export const POST: RequestHandler = ({ request, locals }) =>
-    handleSource(request, locals.token, roots(locals));
+    handleSource(
+        request,
+        locals.token,
+        roots(locals),
+        locals.server.local.history ?? defaultHistoryDir()
+    );

@@ -114,6 +114,45 @@ describe("the Bookmarks menu's choices", () => {
         expect(bookmarkPicked([first, second], choices[0].id)).toEqual(first);
     });
 
+    // Revert: leave the folder glyph off the choice of a folder bookmark.
+    it('draw a folder with the folder icon and a file with none', () => {
+        const folder: Bookmark = {
+            label: 'papers',
+            root: 'hub',
+            path: 'papers',
+            view: 'files',
+            kind: 'folder'
+        };
+        const choices = bookmarkChoices([folder, script]);
+
+        expect(choices[0]).toEqual({
+            id: 'mark:0',
+            label: 'papers',
+            title: 'hub/papers',
+            glyph: catalog['files.folder_glyph']
+        });
+        expect(choices[1]).not.toHaveProperty('glyph');
+        expect(bookmarkPicked([folder, script], 'mark:0')).toEqual(folder);
+    });
+
+    // Revert: let a bookmark whose path is gone open.
+    it('dim a bookmark whose path is gone, say so, and open nothing', () => {
+        const gone: Bookmark = {
+            label: 'old',
+            root: 'hub',
+            path: 'old',
+            view: 'files',
+            kind: 'missing'
+        };
+        const [choice] = bookmarkChoices([gone]);
+
+        expect(choice).toMatchObject({
+            disabled: true,
+            title: catalog['files.bookmark_missing_title']
+        });
+        expect(bookmarkPicked([gone], choice.id)).toBeNull();
+    });
+
     it('say there is none when there is none, and that choice opens nothing', () => {
         const choices = bookmarkChoices([]);
         expect(choices.map((one) => one.label)).toEqual([catalog['ui.bookmarks_none']]);

@@ -53,7 +53,53 @@ export type TreeNav = {
     list: (list: RowList) => () => void;
     focus: (id: string) => void;
     kept: () => string[];
+    /**
+     * Whether the tree takes a key press for its caller's keymap, so a row does not also act on it.
+     * Absent on a tree with no keymap.
+     */
+    bound?: (event: KeyboardEvent) => boolean;
 };
+
+/**
+ * One chord of a caller's keymap: the physical key (`KeyboardEvent.code`), the modifiers that must
+ * be held and no others, and the action the caller is asked to run. The physical key is matched
+ * because Option changes the character a letter types on macOS.
+ */
+export type Chord = {
+    code: string;
+    meta: boolean;
+    ctrl: boolean;
+    alt: boolean;
+    shift: boolean;
+    action: string;
+};
+
+/** A key press as the keymap reads it. */
+export type Press = Omit<Chord, 'action'>;
+
+/** The action of the first chord a press matches exactly, or null when none does. */
+export function boundAction(keymap: readonly Chord[], press: Press): string | null {
+    const found = keymap.find(
+        (one) =>
+            one.code === press.code &&
+            one.meta === press.meta &&
+            one.ctrl === press.ctrl &&
+            one.alt === press.alt &&
+            one.shift === press.shift
+    );
+    return found?.action ?? null;
+}
+
+/** A press as the keymap reads it, from the event. */
+export function pressOf(event: KeyboardEvent): Press {
+    return {
+        code: event.code,
+        meta: event.metaKey,
+        ctrl: event.ctrlKey,
+        alt: event.altKey,
+        shift: event.shiftKey
+    };
+}
 
 /**
  * Where one key pressed on a row goes. A character with Meta or Ctrl held is withheld, so the page
@@ -61,13 +107,26 @@ export type TreeNav = {
  * machine's; `*` (open every sibling) is withheld, and so is Space unless a
  * type-ahead is running, since neither is a key of this tree. A lowercase `a` is sent as a
  * type-ahead letter, since the machine's own map reads `a` as select-all and drops it otherwise.
- * Every other key is the machine's.
+ * Every other key is the machine's. A press matching a chord of the caller's `keymap` is
+ * `bound`, whatever else the rules above would make of it.
  */
 export function keyRoute(
     key: string,
-    held: { meta: boolean; ctrl: boolean },
-    typingAhead: boolean
-): 'withhold' | 'type-ahead' | 'machine' {
+    held: { meta: boolean; ctrl: boolean; alt?: boolean; shift?: boolean; code?: string },
+    typingAhead: boolean,
+    keymap: readonly Chord[] = []
+): 'withhold' | 'type-ahead' | 'machine' | 'bound' {
+    const code = held.code ?? '';
+    const press = {
+        code,
+        meta: held.meta,
+        ctrl: held.ctrl,
+        alt: held.alt ?? false,
+        shift: held.shift ?? false
+    };
+    // A bound chord is the caller's; Space is bound only while no type-ahead is running, since a
+    // space then belongs to the word being typed.
+    if (boundAction(keymap, press) !== null && !(code === 'Space' && typingAhead)) return 'bound';
     if ((held.meta || held.ctrl) && key.length === 1) return 'withhold';
     if (key === '*') return 'withhold';
     if (key === ' ') return typingAhead ? 'machine' : 'withhold';
@@ -148,4 +207,37 @@ export function toggledBy(
  */
 export function focusOf(rows: readonly KeyRow[], wanted: string): string | null {
     return wanted !== '' && rows.some((row) => row.id === wanted) ? wanted : null;
+}
+
+// What a key does on one row (ui/tree/TreeItem.svelte): Enter on the row itself presses the row's
+// button, which opens what the row stands for, unless the tree binds the key to its caller's
+// keymap.
+
+/** The parts of a key press a row reads. */
+export type RowKey = Pick<KeyboardEvent, 'key' | 'target' | 'preventDefault'>;
+
+/** What a row knows of itself when a key reaches it. */
+export type RowParts<Press extends RowKey> = {
+    /** The row's focusable element. */
+    box: unknown;
+    /** Whether the row is a stop of a tree. */
+    inTree: boolean;
+    /** The tree's test for a key it takes for its caller's keymap; absent without a keymap. */
+    bound: ((event: Press) => boolean) | undefined;
+    /** The button over the row's name, absent for a row with nothing to do when pressed. */
+    button: { click: () => void } | undefined;
+};
+
+/**
+ * Press the row's button for Enter pressed on the row itself. A key pressed on a control inside the
+ * row, on a row outside a tree and a key the tree binds to its caller's keymap are left alone.
+ * True when the button was pressed.
+ */
+export function pressedByKey<Press extends RowKey>(event: Press, row: RowParts<Press>): boolean {
+    if (event.target !== row.box || !row.inTree) return false;
+    if (row.bound?.(event) === true) return false;
+    if (event.key !== 'Enter' || row.button === undefined) return false;
+    event.preventDefault();
+    row.button.click();
+    return true;
 }

@@ -85,6 +85,7 @@ const FIELDS: (keyof LocalConfig)[] = [
     'bookmarks',
     'notes',
     'changes',
+    'history',
     'claudeBin',
     'openBin',
     'accounts',

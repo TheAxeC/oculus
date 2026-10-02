@@ -16,8 +16,9 @@ const MARK = 'mark:';
 
 /**
  * The Bookmarks menu's choices: one per bookmark in the order the file holds them, by its label,
- * with the file it names as the hover words so two bookmarks under one label are told apart. With
- * no bookmark, one choice that says so and opens nothing.
+ * with the file it names as the hover words so two bookmarks under one label are told apart. A
+ * folder is drawn with the folder icon, and a bookmark whose path is gone is dimmed and says so
+ * instead of opening. With no bookmark, one choice that says so and opens nothing.
  */
 export function bookmarkChoices(saved: readonly Bookmark[]): MenuItem[] {
     if (saved.length === 0) {
@@ -26,14 +27,23 @@ export function bookmarkChoices(saved: readonly Bookmark[]): MenuItem[] {
     return saved.map((mark, at) => ({
         id: `${MARK}${at}`,
         label: mark.label,
-        title: `${mark.root}/${mark.path}`
+        title:
+            mark.kind === 'missing'
+                ? t('files.bookmark_missing_title')
+                : `${mark.root}/${mark.path}`,
+        ...(mark.kind === 'folder' ? { glyph: t('files.folder_glyph') } : {}),
+        ...(mark.kind === 'missing' ? { disabled: true } : {})
     }));
 }
 
-/** The bookmark a choice of the Bookmarks menu names, or null for the choice that says none. */
+/**
+ * The bookmark a choice of the Bookmarks menu names, or null for the choice that says none and for
+ * a bookmark whose path is gone.
+ */
 export function bookmarkPicked(saved: readonly Bookmark[], id: string): Bookmark | null {
     if (!id.startsWith(MARK)) return null;
-    return saved.at(Number(id.slice(MARK.length))) ?? null;
+    const mark = saved.at(Number(id.slice(MARK.length))) ?? null;
+    return mark?.kind === 'missing' ? null : mark;
 }
 
 /**

@@ -24,7 +24,8 @@ import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { TEXT_LIMIT } from '../../../src/lib/data/file-ops.ts';
 import { handleCompare } from '../../../src/lib/server/files/fs/ops.ts';
-import { it } from '../../fixtures/scratch.ts';
+import { keepCopy, savesOf } from '../../../src/lib/server/files/fs/history.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import {
     INSENSITIVE,
     create,
@@ -438,6 +439,40 @@ describe('the comparison of two files', () => {
         const w = world({ 'a.md': 'same\n' });
         const body = await read(compare(w, 'a.md', 'a.md'));
         expect(body.files?.[0]).toMatchObject({ original: 'same\n', modified: 'same\n' });
+    });
+
+    // Revert: read `save=` as a path of the working tree instead of a copy of the history.
+    it('reads a copy of the local history as the left side when `save=` names one', async () => {
+        const w = world({ 'a.md': 'old\n' });
+        const history = join(scratchDir('oculus-compare-'), 'history');
+        const kept = keepCopy(history, join(w.hub, 'a.md'), 'save');
+        writeFileSync(join(w.hub, 'a.md'), 'new\n');
+        const id = savesOf(history, join(w.hub, 'a.md')).saves[0].id;
+        expect(kept.ok).toBe(true);
+        const ask = (query: Record<string, string>) =>
+            handleCompare(
+                new URL(`http://localhost/api/ops?${new URLSearchParams(query).toString()}`),
+                w.roots,
+                history
+            );
+
+        const body = await read(ask({ root: 'hub', path: 'a.md', save: id }));
+        expect(body.files).toEqual([
+            {
+                oldPath: `hub:a.md@${id}`,
+                newPath: 'hub:a.md',
+                head: [],
+                binary: false,
+                encoded: false,
+                original: 'old\n',
+                modified: 'new\n'
+            }
+        ]);
+        // an id the file does not list, and a path out of the root, are refused
+        expect((await read(ask({ root: 'hub', path: 'a.md', save: 'nope' }))).error).toBe(
+            'missing'
+        );
+        expect((await read(ask({ root: 'hub', path: '../x', save: id }))).error).toBe('outside');
     });
 
     it("reads the machine's own file as the source tab does, and nothing outside a root", async () => {

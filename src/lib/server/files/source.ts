@@ -7,18 +7,24 @@
 // those with an editor's text would destroy them. The refusals are single words; the sentence a
 // reader is shown for each is the source tab's, from the catalog.
 //
+// A save first copies the file as it was into the local history (server/files/fs/history.ts), after
+// every refusal above and before the write. A copy that cannot be made does not stop the save: the
+// answer is `ok` and carries `refused: [{ field: 'history', reason }]`, which the tab says. The
+// machine's own config/local.yml is never copied, compared by device and inode.
+//
 // The GET answers the one fact the tab needs before it draws anything, whether the file is writable
 // on this machine, so the editor can say so rather than letting a reader type into something that
 // will refuse the save.
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
-import { accessSync, closeSync, constants, openSync, readSync } from 'node:fs';
+import { accessSync, closeSync, constants, openSync, readSync, statSync } from 'node:fs';
 import { LOCAL_NAME, checkLocal } from '../../data/sources/config.ts';
 import { TEXT_SNIFF_READ, isTextBytes } from '../../data/helpers/files/text-kind.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, type Root } from './files.ts';
 import { writeTextAtomic } from '../core/json.ts';
+import { keepCopy } from './fs/history.ts';
 
 export type SourceBody = { root: string; path: string; content: string };
 
@@ -92,6 +98,29 @@ function localRefusal(list: Root[], path: string, content: string): string | nul
     return checkLocal(content, LOCAL_NAME);
 }
 
+/** Whether two paths are one file: the same device and inode, under whatever spelling. */
+function sameFile(one: string, other: string): boolean {
+    try {
+        const left = statSync(one);
+        const right = statSync(other);
+        return left.ino === right.ino && left.dev === right.dev;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * The refusal reason of a copy that failed, or null when the copy was made, was not needed (the
+ * file is over the limit) or must not be made: the machine's own file is never copied.
+ */
+function historyRefusal(list: Root[], path: string, history: string | undefined): string | null {
+    if (history === undefined) return null;
+    const own = resolveRootPath(list, ENGINE_ROOT, LOCAL_NAME);
+    if ('path' in own && sameFile(own.path, path)) return null;
+    const kept = keepCopy(history, path, 'save');
+    return kept.ok ? null : kept.reason;
+}
+
 /**
  * What the source tab may do with one file: whether this machine's mode on it refuses a write. The
  * resolver is the write's, so the two answer about the same file.
@@ -115,7 +144,8 @@ export function handleSourceInfo(request: Request, url: URL, rootList: Root[]): 
 export async function handleSource(
     request: Request,
     token: string,
-    rootList: Root[]
+    rootList: Root[],
+    history?: string
 ): Promise<Response> {
     const read = await tokenedBody(request, token, { fields: { ok: false } });
     if (read instanceof Response) return read;
@@ -134,6 +164,7 @@ export async function handleSource(
     if (isBinaryFile(resolved.path)) return refuse('binary');
     const refusal = localRefusal(rootList, resolved.path, body.content);
     if (refusal !== null) return json({ ok: false, error: refusal }, { status: 400 });
+    const unkept = historyRefusal(rootList, resolved.path, history);
     try {
         writeTextAtomic(resolved.path, body.content);
     } catch (error) {
@@ -143,5 +174,7 @@ export async function handleSource(
             { status: 500 }
         );
     }
-    return json({ ok: true });
+    return unkept === null
+        ? json({ ok: true })
+        : json({ ok: true, refused: [{ field: 'history', reason: unkept }] });
 }

@@ -21,8 +21,8 @@
     // commit waits until nothing is unmerged. An amend needs no staged path and no message: with
     // an empty field it keeps the last commit's message.
 
-    import AskConfirm from '$lib/views/shared/AskConfirm.svelte';
-    import type { Ask } from '$lib/views/shared/ask';
+    import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
+    import type { Ask } from '$lib/views/shared/writes/ask';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import TextArea from '$lib/ui/forms/TextArea.svelte';

@@ -7,7 +7,7 @@
 // line between entries and a top-level key after the list. Every case checks the text itself, and
 // then checks that the text parses to the source with exactly the one change applied.
 //
-// The last describe reads the real hub, read only, the way tests/server/edit/yaml-edit.test.ts
+// The last describe reads the real hub, read only, the way tests/server/edit/yaml/yaml-edit.test.ts
 // does: a rule that holds on a fixture and not on the hub's own collection files is not a rule.
 // Nothing there is written; when the hub is not on this machine the whole block skips and says so.
 

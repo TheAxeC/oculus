@@ -2,14 +2,14 @@
 // and code lines per folder and language as cloc counts them, and the count of their lines that
 // carry a tag the TODO rule below reads.
 //
-// The files are what git tracks in the engine folder (server/core/git.ts, trackedFiles), less the
-// plan's ledger under `.scratch/`, the diagrams `npm run diagrams` writes under `docs/diagrams/`
-// and the lock file, since none of them is code anyone writes by hand. cloc is a Perl program from
-// the `cloc` package, run as a separate process with list arguments and a timeout and never
-// imported: it reads the paths one per line from its standard input and answers one JSON object
-// keyed by path. It runs asynchronously, so the server keeps answering while it counts, and with
-// `--skip-uniqueness`, since two tracked files with the same bytes are two files of the tree and
-// cloc would otherwise count one of them. What stays here is what cloc does not know: the file
+// The files are what git tracks in the engine folder (server/core/git/files.ts, trackedFiles), less
+// the plan's ledger under `.scratch/`, the diagrams `npm run diagrams` writes under
+// `docs/diagrams/` and the lock file, since none of them is code anyone writes by hand. cloc is a
+// Perl program from the `cloc` package, run as a separate process with list arguments and a timeout
+// and never imported: it reads the paths one per line from its standard input and answers one JSON
+// object keyed by path. It runs asynchronously, so the server keeps answering while it counts, and
+// with `--skip-uniqueness`, since two tracked files with the same bytes are two files of the tree
+// and cloc would otherwise count one of them. What stays here is what cloc does not know: the file
 // list, the folder a file is counted under, the TODO rule and the sums.
 //
 // Nothing is held between requests: no cache and no timer. Each GET counts afresh and the page
@@ -23,7 +23,7 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { isMap } from '../../data/helpers/guards.ts';
 import type { FolderLines, LanguageLines, LineCount, LineTally } from '../../data/model/index.ts';
-import { trackedFiles } from '../core/git.ts';
+import { trackedFiles } from '../core/git/files.ts';
 
 /** The folder name of the files no folder holds. */
 export const TOP_LEVEL = '';

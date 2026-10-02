@@ -9,6 +9,10 @@
 // segments, and an empty segment is dropped, so `a//b` is `a/b`. The copy name is VS Code's simple
 // `incrementFileName`: `report.md` becomes `report copy.md`, then `report copy 2.md`.
 //
+// The change log records each operation that changed something as one `files` record whose `before`
+// and `after` are lists of FileStamp, so the server that writes them, the server that takes them
+// back and the History view that draws them read one shape.
+//
 // Nothing here runs a process or touches a file: text in, a verdict out.
 
 /** The largest text a code window draws, and the largest file a comparison reads. */
@@ -179,3 +183,44 @@ export function compareUrl(file: OpsPlace, against: OpsPlace): string {
     });
     return `${OPS_PATH}?${parameters.toString()}`;
 }
+
+/** The address a comparison of a file with one of its copies in the local history is read from. */
+export function savedUrl(file: OpsPlace, save: string): string {
+    const parameters = new URLSearchParams({ root: file.root, path: file.path, save });
+    return `${OPS_PATH}?${parameters.toString()}`;
+}
+
+/**
+ * The `kind` the change log files a file operation under, which is the writer an undo goes through.
+ */
+export const FILES_KIND = 'files';
+
+/**
+ * The operations a `files` record names in its `field`: a paste is `copy` or `move` by its mode.
+ */
+export const FILE_FIELDS = [
+    'create',
+    'rename',
+    'move',
+    'copy',
+    'upload',
+    'trash',
+    'delete'
+] as const;
+
+/** One of the operations a `files` record names. */
+export type FileField = (typeof FILE_FIELDS)[number];
+
+/**
+ * What was at a path when a record was made. `size` and `mtime` (milliseconds) are the file's own,
+ * and for a folder the bytes and the newest modification below it, so a folder that something was
+ * added to is not the folder the operation left. `kept` is the id of the copy of a file's content
+ * the local history holds, made before a trash or a delete.
+ */
+export type FileStamp = {
+    path: string;
+    kind: 'file' | 'dir' | 'link';
+    size: number;
+    mtime: number;
+    kept?: string;
+};

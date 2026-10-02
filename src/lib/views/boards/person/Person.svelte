@@ -50,7 +50,7 @@
     const {
         entities: { portfolio },
         fs: { listing },
-        layout: { openView, showInFiles },
+        layout: { openView, showFolderInFiles },
         selectors: { configMap }
     } = client;
 
@@ -218,7 +218,7 @@
                                 glyph="show_in_files"
                                 compact
                                 onclick={() => {
-                                    showInFiles(folderPath);
+                                    showFolderInFiles(folderPath);
                                 }}
                             />
                         {/if}

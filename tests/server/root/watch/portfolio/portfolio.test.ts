@@ -448,6 +448,26 @@ describe('watchPortfolio', () => {
         expect(payload.findings[0].file).toBe(join(started.engine, 'config', 'layout.yml'));
     });
 
+    it('reports a nesting pattern whose value is text, in the catalog words', async () => {
+        const started = start((_hub, engine) => {
+            write(
+                engine,
+                'config/catalogs/file-nesting.yml',
+                "patterns:\n  '*.ts': ['${capture}.js']\n  '*.md': '${capture}.html'\n"
+            );
+        });
+        await until(() => on(started.got, 'config').length >= 1, 2000);
+
+        const payload = on(started.got, 'config')[0].payload as ConfigPayload;
+        expect(payload.findings.map((finding) => finding.key)).toEqual(['patterns.*.md']);
+        expect(payload.findings[0].message).toBe(
+            'pattern *.md does not name its nested files as a list of non-empty texts; the pattern is not read'
+        );
+        expect(payload.findings[0].file).toBe(
+            join(started.engine, 'config', 'catalogs', 'file-nesting.yml')
+        );
+    });
+
     it('reports a language map that gives one ending to two languages, and none for the tracked map', async () => {
         const bad = start((_hub, engine) => {
             write(

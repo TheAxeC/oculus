@@ -6,36 +6,36 @@
     //
     // A row with something to do when pressed carries a button over its name, which is what a
     // pointer presses, and the row itself answers a press on the space beyond its parts, so the
-    // whole line opens what the name opens; a row given nothing to do is the same line as text.
-    // The controls sit beside the line rather than inside it, since a button holds no button, and
-    // the tooltip opens while the pointer is anywhere over the row. They are shown while
-    // the pointer is over the row or the focus is inside it, and are otherwise transparent rather
-    // than removed, so a control is where the reader's pointer will land. A row given
-    // `showActions` draws them at full strength always, for a section head whose one control adds
-    // to the section and is looked for before the pointer is over it.
+    // whole line opens what the name opens; a row given nothing to do is the same line as text. The
+    // controls sit beside the line rather than inside it, since a button holds no button, and the
+    // tooltip opens while the pointer is anywhere over the row. They are shown while the pointer is
+    // over the row or the focus is inside it, and are otherwise transparent rather than removed, so
+    // a control is where the reader's pointer will land. A row given `showActions` draws them at
+    // full strength always, for a section head whose one control adds to the section.
     //
     // A row drawn in a ui/tree/TreeView.svelte is a treeitem, and the treeitem is what takes the
     // keyboard's focus: it spreads what the tree's `nav` hands it from zag's tree-view machine (its
     // id, role, level, open state, place in the focus order and focus handler), and hands the tree
     // its label for the type-ahead. The tree answers the arrow keys; Enter on the row presses its
-    // button. The button is no stop of its own, and a press on it puts the focus on the treeitem,
-    // so the arrow keys go on from there. The row's controls are no stop either until the focus is
-    // inside the row: the caller's `actions` snippet is handed the tabindex to give them, 0 while
-    // the row holds the focus and -1 otherwise, so Tab from a focused row reaches its controls and
-    // a Tab from outside the tree never does. A row given a `level` outside a tree is a treeitem
-    // at that level, with the open state its `expanded` says.
+    // button unless the tree binds Enter to its caller's keymap. The button is no stop of its own,
+    // and a press on it puts the focus on the treeitem, so the arrow keys go on from there. The
+    // row's controls are no stop either until the focus is inside the row: the caller's `actions`
+    // snippet is handed the tabindex to give them, 0 while the row holds the focus and -1
+    // otherwise. A row given a `level` outside a tree is a treeitem at that level, with the open
+    // state its `expanded` says.
     //
     // Selected is the reader's cursor and is drawn with the accent tint under the ink; current is
     // what is in force (a checked-out branch, the workspace in use) and is drawn as a bold name
     // with a check, never as a selection. A strong row is drawn at weight 600 with no check, for
-    // the commit the checkout is on; a struck row has its name struck through, and `nameStyle`
-    // sets custom properties on the name (a status tone).
+    // the commit the checkout is on; a struck row has its name struck through, and `nameStyle` sets
+    // custom properties on the name (a status tone). A caller that draws the name itself (a run of
+    // folders, matched letters) hands `words`, which takes the name's place inside it.
     //
-    // A count is plain text in the number font, or with `badge` a pill (the count of a section or
-    // a group); `countTitle` says what it counts. A `trailing` row draws its `end` before its
+    // A count is plain text in the number font, or with `badge` a pill (the count of a section or a
+    // group); `countTitle` says what it counts. A `trailing` row draws its `end` before its
     // controls, both at the right edge, for the pills of a graph row. A `yielding` row's controls
-    // are the part of the line that gives way first when the pane is narrow, and are cut before
-    // the name is.
+    // are the part of the line that gives way first when the pane is narrow, and are cut before the
+    // name is.
     //
     // The row sets `--row-bg` to its own background in each state (rest, hover, selected). A holder
     // that draws beside the row rather than inside it, as a graph row does its lanes (CommitRow,
@@ -45,78 +45,12 @@
     // row and never for the keyboard's focus: a tooltip opened by an arrow key would cover the row
     // the next arrow key goes to.
 
-    import type { Snippet } from 'svelte';
     import FileIcon from '../display/FileIcon.svelte';
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
     import TreeActions from './TreeActions.svelte';
-    import type { TreeNav } from './tree-keys.ts';
-
-    type Props = {
-        /** The row's name, already translated; also the row's and the button's accessible name. */
-        label: string;
-        /** A name in `glyphs:`, drawn before the name. */
-        glyph?: string;
-        /** A file's name or path, drawn before the name as its Seti icon (display/FileIcon). */
-        file?: string;
-        /** How many indent guides the row draws. */
-        depth?: number;
-        /**
-         * Given, the row is a treeitem: at this level outside a tree, and at the level the tree
-         * reads from its rows inside one.
-         */
-        level?: number;
-        /** Whether the row is open: omitted for a row that does not open, which draws no arrow. */
-        expanded?: boolean;
-        /** Draw the row as the reader's cursor. */
-        selected?: boolean;
-        /** Draw the row as the one in force. */
-        current?: boolean;
-        /** Draw the row as the head of a section. */
-        heading?: boolean;
-        /** The row's accessible name, when it says more than the label drawn. */
-        name?: string;
-        /**
-         * Draw the name muted, or in the warning or the error hue, for a row that says something;
-         * `link` is a row that does something, its words centred in the link colour.
-         */
-        tone?: 'muted' | 'warn' | 'error' | 'link';
-        /** A number drawn at the right edge, for a heading or a group that counts its rows. */
-        count?: number;
-        /** Draw the count as a pill. */
-        badge?: boolean;
-        /** The hover words of the count. */
-        countTitle?: string;
-        /** Draw the name at weight 600 with no check. */
-        strong?: boolean;
-        /** Draw the name struck through. */
-        struck?: boolean;
-        /** Custom properties and declarations set on the name. */
-        nameStyle?: string;
-        /** Draw `end` before the controls, both at the right edge. */
-        trailing?: boolean;
-        /** Let the controls give way before the name when the row is narrow. */
-        yielding?: boolean;
-        /** The tooltip, when it says more than the name does. */
-        title?: string;
-        /** The row's id in the tree it is drawn in. */
-        id?: string;
-        /** The tree the row is drawn in, which gives it its stop and its keys. */
-        nav?: TreeNav;
-        /** What pressing the row does; a row with none is drawn as text. */
-        onclick?: (event: MouseEvent) => void;
-        ondblclick?: (event: MouseEvent) => void;
-        /** What the row says after its name, muted: a path, a time. */
-        detail?: Snippet;
-        /** A field drawn after the name, for a row a reader types into. */
-        field?: Snippet;
-        /** The row's own controls, handed the tabindex they take. */
-        actions?: Snippet<[number]>;
-        /** Draw the controls at full strength whether or not the pointer is over the row. */
-        showActions?: boolean;
-        /** Drawn at the right edge after the controls: a status letter. */
-        end?: Snippet;
-    };
+    import { pressedByKey } from './tree-keys.ts';
+    import type { TreeItemProps } from './item-props.ts';
 
     let {
         label,
@@ -144,11 +78,12 @@
         onclick,
         ondblclick,
         detail,
+        words,
         field,
         actions,
         showActions = false,
         end
-    }: Props = $props();
+    }: TreeItemProps = $props();
 
     const guides = $derived(Array.from({ length: Math.max(0, depth) }, (_, at) => at));
 
@@ -164,13 +99,12 @@
     /** What the tree's `nav` hands the row, while it is a row of a tree. */
     const fromTree = $derived(inTree && id !== undefined ? (nav?.row(id, label) ?? {}) : {});
 
-    /** Enter on the row presses its button; the tree's own keys go on to the tree. */
+    /**
+     * Enter on the row presses its button; the tree's own keys go on to the tree. A key the tree
+     * binds to its caller's keymap (Enter among them, in the file browser) is the caller's.
+     */
     function keyed(event: KeyboardEvent): void {
-        if (event.target !== box || !inTree) return;
-        if (event.key === 'Enter' && button !== undefined) {
-            event.preventDefault();
-            button.click();
-        }
+        pressedByKey(event, { box, inTree, bound: nav?.bound, button });
     }
 
     function pressed(event: MouseEvent): void {
@@ -204,7 +138,11 @@
     {:else if glyph !== undefined}
         <Glyph name={glyph} />
     {/if}
-    <span class="name" style={nameStyle}>{label}</span>
+    {#if words !== undefined}
+        <span class="name" style={nameStyle}>{@render words()}</span>
+    {:else}
+        <span class="name" style={nameStyle}>{label}</span>
+    {/if}
     {#if current}
         <span class="mark" aria-hidden="true">
             <Glyph name="check" />
@@ -374,13 +312,16 @@
 
     /* One guide per level: a column the indent's width with the line on its left edge, so the
        guides of the rows under one folder join into one vertical rule. It is drawn while the tree
-       is hovered or holds the focus, and is transparent otherwise. */
+       is hovered or holds the focus, and is transparent otherwise. A tree sets the gap before a
+       guide and how far the line sits right of its column (`--tree-guide-gap`,
+       `--tree-guide-shift`). */
     .guide {
         flex: 0 0 calc(var(--tree-indent) * var(--text-scale, 1));
         align-self: stretch;
         box-sizing: border-box;
-        margin-left: 4px;
+        margin-left: var(--tree-guide-gap, 4px);
         border-left: 1px solid transparent;
+        translate: calc(var(--tree-guide-shift, 0px) * var(--text-scale, 1));
     }
 
     :global([role='tree']:hover) .guide,

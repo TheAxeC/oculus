@@ -3,7 +3,7 @@
 // file has been read.
 
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { catalogOf } from '../../../../src/lib/data/sources/config/options.ts';
+import { catalogOf } from '../../../../src/lib/data/sources/config/catalog/options.ts';
 import { setAppearance } from '../../../../src/lib/state/shared/words/appearance.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import type { FileText } from '../../../../src/lib/state/sources/fs-transport.ts';

@@ -1,6 +1,6 @@
 # ===========================================================================
 # catalogs/options.yml
-# Every option of every config file, described once: what it does and what changing it changes, the value the tracked file holds (`default`), and the control it is set with. Merged with the other catalogs by loadConfig(), so its one top-level key, `options:`, is read through catalogOf() in src/lib/data/sources/config/options.ts. tests/checks/config/options-catalog.test.ts holds it to the tracked files.
+# Every option of every config file, described once: what it does and what changing it changes, the value the tracked file holds (`default`), and the control it is set with. Merged with the other catalogs by loadConfig(), so its one top-level key, `options:`, is read through catalogOf() in src/lib/data/sources/config/catalog/options.ts. tests/checks/config/options-catalog.test.ts holds it to the tracked files.
 # ===========================================================================
 
 # Shape. `options:` maps a config file name (appearance.yml, behavior.yml, layout.yml, present.yml, sources.yml, and local.yml for the machine's own keys) to a map of dotted key path to an entry.
@@ -291,6 +291,10 @@ options:
             description: How many changes the change log holds. Every write that changed something is recorded in ~/.oculus/changes.jsonl, or where the changes key of local.yml puts it, and the file is rewritten down to this number once it has grown past twice it. A value that is not a whole number above zero is refused.
             default: 500
             control: number
+        files.confirm_delete:
+            description: Whether moving a file or folder to the Trash in the Files view asks first, as VS Code's explorer.confirmDelete. A permanent delete always asks. The question's "Do not ask me again" box writes false here.
+            default: true
+            control: toggle
         git.message_model:
             description: The model the Changes view asks for a suggested commit message. Empty uses the command line's own default model.
             default: ''
@@ -591,7 +595,7 @@ options:
             control: text
         roots:
             section: Roots
-            description: The roots the server may serve local files from, one directory per key. A relative dir is a finding, and a dir that is not on this machine is a finding and its root serves nothing. Nothing outside a root is served, since both ends are resolved through realpath.
+            description: The roots the server may serve local files from, one directory per key. A relative dir is a finding, and a dir that is not on this machine is a finding and its root serves nothing. Nothing outside a root is served, since both ends are resolved through realpath. These are the folders of the default workspace. The Files view's Add Folder to Workspace appends an entry here and Remove Folder from Workspace removes one, and a saved workspace keeps its own folders in its file.
             fields:
                 key: the root's key, which the file address api/file/key/path and a bookmark use
                 dir: the directory, absolute or starting with ~/
@@ -614,6 +618,8 @@ options:
             description: Where the scratch notes live. Without it the folder is ~/.oculus/notes. A change is read again at once.
         changes:
             description: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl. A change is read again at once.
+        history:
+            description: Where the local history lives, one folder per file with a copy of the file as it was before each save and before each delete. Up to 50 copies of a save are kept per file, none of a file over 256 KB, and a delete keeps the content of a file up to 5 MB, the newest 50 such copies over all files. Without it the folder is ~/.oculus/history. A change is read again at once.
         claude_bin:
             description: The Claude command line that the update tasks and the chat terminal are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
         open_bin:

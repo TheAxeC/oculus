@@ -135,11 +135,13 @@ describe("oculus's own config directory", () => {
             'notify',
             'notes',
             'changes',
+            'files',
             'git',
             'search',
             'open'
         ],
         'catalogs/agents.yml': ['agents'],
+        'catalogs/file-nesting.yml': ['patterns'],
         'catalogs/glyphs.yml': ['glyphs'],
         'catalogs/icons.yml': ['icons'],
         'layout.yml': [

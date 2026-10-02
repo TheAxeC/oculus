@@ -14,7 +14,10 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { catalogOf, type Catalog } from '../../../../src/lib/data/sources/config/options.ts';
+import {
+    catalogOf,
+    type Catalog
+} from '../../../../src/lib/data/sources/config/catalog/options.ts';
 import { engineDir } from '../../../../src/lib/data/sources/config.ts';
 import { shipped, text } from './fixture.ts';
 import { createUi, UI_KEY, UI_VERSION } from '../../../../src/lib/state/workbench/ui.svelte.ts';

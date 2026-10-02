@@ -2,7 +2,8 @@
     // Layer 3, shell. The rail's foot, where VS Code's activity bar keeps Accounts and Manage:
     // Bookmarks, Search and Update, each an icon with its name as the tooltip. Bookmarks opens a
     // menu of the reader's own bookmarks by name, beside the rail, and a choice opens the bookmark
-    // as the file browser opens it; with no bookmark the menu says there is none.
+    // as the file browser opens it (a folder is shown open in the Files view); with no bookmark the
+    // menu says there is none.
     //
     // The keyboard ring is the rail's, so each control is handed its place in the focus order and
     // its key handler.
@@ -20,7 +21,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { openView }
+        layout: { openView, showInFiles }
     } = useState();
 
     type Props = {
@@ -44,6 +45,10 @@
     function pick(id: string): void {
         const mark = bookmarkPicked(saved, id);
         if (mark === null) return;
+        if (mark.view === 'files') {
+            showInFiles(mark.path, mark.root, true);
+            return;
+        }
         if (mark.view === 'file') {
             openView('file', { root: mark.root, path: mark.path, label: mark.label });
             return;

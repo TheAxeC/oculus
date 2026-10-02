@@ -36,7 +36,10 @@ icons:
     collapse_all: chevrons-down-up
     add: plus
     folder_add: folder-plus
+    file_add: file-plus
     save: save
+    save_all: save-all
+    close_all: list-x
     branch: git-branch
     merge: git-merge
     commit: git-commit-horizontal

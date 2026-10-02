@@ -9,7 +9,7 @@
 // described file; the machine's own file is never asked for, since its rows are its catalog
 // entries alone and its values are the machine's.
 
-import type { Catalog } from '../../../data/sources/config/options.ts';
+import type { Catalog } from '../../../data/sources/config/catalog/options.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
 import { t } from '../../shared/words/text.ts';
 import type { BrowserRow } from './browser.ts';
@@ -17,7 +17,7 @@ import { LOCAL_NAME } from './config-files.ts';
 import type { Message } from './messages.ts';
 import { fileRows, localRows, type ConfigRow, type FileStatus, type LocalRow } from './rows.ts';
 
-export { catalogOf } from '../../../data/sources/config/options.ts';
+export { catalogOf } from '../../../data/sources/config/catalog/options.ts';
 
 /** The tracked config files the Settings view lists, in the order of its groups. */
 export const FILES: readonly string[] = [

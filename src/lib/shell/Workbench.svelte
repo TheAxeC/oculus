@@ -60,7 +60,7 @@
 
     const {
         layout: { change, activeInstance, currentPage, expandChild, floats, focused, layout },
-        ui: { crt, icons, textScale, theme, updateTrayRequested, wallpaper },
+        ui: { crt, icons, paletteRequested, textScale, theme, updateTrayRequested, wallpaper },
         registry: { views }
     } = client;
 
@@ -136,6 +136,7 @@
     let updateOpen = $state(false);
     let sheetOpen = $state(false);
     let handledUpdateRequest = $state(updateTrayRequested());
+    let handledPaletteRequest = $state(paletteRequested().seq);
 
     /**
      * The maximised pane, when one is: it is drawn alone and the rest of the workbench is not
@@ -220,6 +221,14 @@
         if (requested === handledUpdateRequest) return;
         handledUpdateRequest = requested;
         openUpdate();
+    });
+
+    /** A view requests the palette with a text typed in it, as the Files view's menu does. */
+    $effect(() => {
+        const asked = paletteRequested();
+        if (asked.seq === handledPaletteRequest) return;
+        handledPaletteRequest = asked.seq;
+        openPalette(asked.text);
     });
 
     /** The wallpaper is drawn when the viewer wants one and the theme is one it shows under. */

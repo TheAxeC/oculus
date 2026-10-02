@@ -92,6 +92,8 @@ describe('checkLocal', () => {
         ],
         ["notes: ''", 'local.yml: notes must be a path'],
         ['workspaces: 3', 'local.yml: workspaces must be a path'],
+        ["history: ''", 'local.yml: history must be a path'],
+        ['history: [x]', 'local.yml: history must be a path'],
         ['mail_dir: []', 'local.yml: mail_dir must be a path'],
         ['calendar_dir: [x]', 'local.yml: calendar_dir must be a path']
     ])('answers %j with the sentence it would throw', (text, expected) => {
@@ -108,7 +110,8 @@ describe('checkLocal', () => {
         [
             'calendars:\n  - { provider: ics, label: feed }\nmail:\n  - { provider: google, label: work }'
         ],
-        ['notes: /tmp/notes\nunknown_key: 1']
+        ['notes: /tmp/notes\nunknown_key: 1'],
+        ['history: relative/history']
     ])('answers null for the readable text %j', (text) => {
         expect(sentence(text)).toBeNull();
     });
@@ -141,6 +144,7 @@ describe('loadLocal', () => {
                 'mail:',
                 '  - { provider: microsoft, label: uni }',
                 'notes: notes-here',
+                'history: history-here',
                 'mail_dir: /abs/mail',
                 ''
             ].join('\n')
@@ -158,6 +162,7 @@ describe('loadLocal', () => {
             calendars: [{ provider: 'ics', label: 'feed' }],
             mail: [{ provider: 'microsoft', label: 'uni' }],
             notes: resolve(dir, 'notes-here'),
+            history: resolve(dir, 'history-here'),
             mailDir: '/abs/mail'
         });
     });

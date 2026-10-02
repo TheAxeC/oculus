@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import type { Entry, SchemaField } from '../../data/model/index.ts';
+import type { BookmarkKind } from './explorer/view/bookmark-rows.ts';
 import {
     anyNumberShape,
     readAs,
@@ -34,9 +35,15 @@ export type WorkspacesState = {
     loading: boolean;
 };
 
+/**
+ * One bookmark as the Files view reads it: the entry, and what its path is under its root, which
+ * the server answers from a stat of it.
+ */
+export type BookmarkEntry = Entry & { kind?: BookmarkKind };
+
 /** The reader's own bookmarks as the rail and the Files view read them. */
 export type BookmarksState = {
-    entries: Entry[];
+    entries: BookmarkEntry[];
     /** The file's own schema, which is what the entry form draws its controls from. */
     schema: SchemaField[];
     error: string;
@@ -68,9 +75,51 @@ export function currentWorkspace(saved: WorkspacesState): { name: string; roots:
     return saved.workspaces.find((one) => one.name === saved.current) ?? { name: '', roots: [] };
 }
 
-/** The roots the reader cannot take off: the configured ones, or all while the tab follows. */
-export function fixedRootKeys(roots: FsRoot[], following = false): string[] {
-    return roots.filter((one) => following || one.fixed).map((one) => one.key);
+/**
+ * The roots the reader cannot take off. A tab that follows a session can take none off. In the
+ * default workspace (`removable` is the keys of the roots config/sources.yml lists) the folders of
+ * that list can be taken off and the hub, the engine's config folder and the fallback folder
+ * cannot; in a named workspace the configured roots, which the server marks `fixed`, cannot.
+ */
+export function fixedRootKeys(
+    roots: FsRoot[],
+    following = false,
+    removable: readonly string[] | null = null
+): string[] {
+    return roots
+        .filter(
+            (one) => following || (removable === null ? one.fixed : !removable.includes(one.key))
+        )
+        .map((one) => one.key);
+}
+
+/**
+ * The keys of the roots a merged configuration lists under `roots:`, an entry with no key left out.
+ */
+export function configuredRootKeys(config: Record<string, unknown>): string[] {
+    const held = config.roots;
+    if (!Array.isArray(held)) return [];
+    return held.flatMap((one) => {
+        const key = readAs(z.object({ key: z.string().min(1) }), one)?.key;
+        return key === undefined ? [] : [key];
+    });
+}
+
+/**
+ * The keys of the roots the workspace on screen cannot take off. The default workspace (the empty
+ * name) takes the folders of `sources.yml`'s `roots:` off; a named workspace takes none of the
+ * configured ones off, which the server marks `fixed`.
+ */
+export function fixedRootsOf(
+    workspace: { name: string; roots: FsRoot[] },
+    following: boolean,
+    config: Record<string, unknown>
+): string[] {
+    return fixedRootKeys(
+        workspace.roots,
+        following,
+        workspace.name === '' ? configuredRootKeys(config) : null
+    );
 }
 
 /** The bookmark of the given id, or null when the reader has none of it. */
@@ -209,7 +258,8 @@ const fsEntryShape = unchanged(
         kind: z.enum(['file', 'dir']),
         size: anyNumberShape,
         mtime: anyNumberShape,
-        link: z.literal(true).optional().catch(undefined)
+        link: z.literal(true).optional().catch(undefined),
+        ignored: z.literal(true).optional().catch(undefined)
     })
 ) satisfies z.ZodType<FsEntry>;
 

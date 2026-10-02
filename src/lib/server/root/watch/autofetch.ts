@@ -22,7 +22,7 @@
 // older `GIT_SSH` program is the only ssh setting, nothing is added for ssh.
 //
 // This module runs no process of its own. It calls `remoteNames`, `fetchIn` and the one read
-// `sshCommand`, the call sites that server/git/git-write.ts and server/core/git.ts own, and it
+// `sshCommand`, the call sites that server/git/git-write.ts and server/core/git/run.ts own, and it
 // takes the repositories to fetch from the published `git` payload, which is the rule that
 // git-write.ts states for a write's root.
 
@@ -30,7 +30,7 @@ import { z } from 'zod';
 import type { Hub } from '../../core/channels.ts';
 import { systemClock, type Clock, type Timer } from '../../core/file-poll.ts';
 import { autofetchMinutes } from '../../core/fetch-period.ts';
-import { sshCommand } from '../../core/git.ts';
+import { sshCommand } from '../../core/git/reads.ts';
 import { fetchIn, remoteNames } from '../../git/git-write.ts';
 
 /** Milliseconds between two looks. Fixed: the period itself is the key's. */

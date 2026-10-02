@@ -7,10 +7,12 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { FILES_KIND } from '../../src/lib/data/file-ops.ts';
 import { engineDir } from '../../src/lib/data/sources/config.ts';
 
 /**
- * Every body kind the write endpoint knows, except `undo`, which records as the kind it took back.
+ * Every kind the change log files a record under: the write endpoint's body kinds, except `undo`,
+ * which records as the kind it took back, and the file operations' own.
  */
 export function recordedKinds(): string[] {
     const source = readFileSync(
@@ -18,5 +20,5 @@ export function recordedKinds(): string[] {
         'utf8'
     );
     const found = [...source.matchAll(/kind: z\.literal\('([a-z-]+)'\)/g)].map((one) => one[1]);
-    return [...new Set(found)].filter((kind) => kind !== 'undo');
+    return [...new Set([...found, FILES_KIND])].filter((kind) => kind !== 'undo');
 }

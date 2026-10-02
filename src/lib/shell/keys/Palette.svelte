@@ -23,24 +23,33 @@
     // the Cmd+K chords the editor gave up so that Cmd+K opens the palette from inside it, each with
     // its old chord beside it. Choosing one asks the tab to run it. A diff pane on screen lists its
     // diff editor's actions the same way, and takes no line or language query.
+    //
+    // It is also where the Files view's workspace commands run: `:workspace` lists the default
+    // workspace and the saved ones, the one in force marked, and a pick switches in place;
+    // `:workspace-save <name>` saves the folders in force under the name; `:folder` opens the
+    // folder panel and shows the folder chosen. A refusal of any of them is said in the palette,
+    // which stays open, and a success closes it.
 
     import { Command } from 'bits-ui';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import { focusQuietly } from '$lib/ui/frame/quiet-focus';
     import { configuredThemes, openPaletteItem } from '$lib/shell/keys/palette-open';
     import {
         buildIndex,
         commands,
         editorItems,
+        folderCommand,
         kindWord,
         lineQuery,
         parseCommand,
         ranked,
+        workspaceChoicesOf,
+        workspaceCommand,
+        type CommandOutcome,
         type PaletteCommand,
-        type PaletteItem,
-        type TextPart
+        type PaletteItem
     } from '$lib/state/workbench/palette';
     import {
         languageMatches,
@@ -60,6 +69,8 @@
 
     const {
         editorStatus: { ask, statusOf },
+        explorer,
+        fs: { saveWorkspace, selectWorkspace, workspaces },
         layout: { activeInstance, openView },
         paletteSource: { paletteSource },
         ui: { setCrt, setTheme, crt },
@@ -80,6 +91,9 @@
 
     /** The Command's selected row, by its value. */
     let chosen = $state('');
+
+    /** What the last workspace command refused with, until the query changes. */
+    let said = $state('');
 
     /** The list's id, which the input names as the list it controls. */
     const LIST = 'palette-list';
@@ -108,8 +122,15 @@
     const languages = $derived<LanguageMatch[]>(
         languageMode && source !== null ? languageMatches(parsed?.argument ?? '') : []
     );
+    /** Whether the query is the workspace list, and whether it is the save command. */
+    const workspaceMode = $derived(parsed !== null && parsed.name === 'workspace');
+    const saveMode = $derived(parsed !== null && parsed.name === 'workspace-save');
+    const saved = $derived(workspaces());
+    const choices = $derived(
+        workspaceMode ? workspaceChoicesOf(parsed?.argument ?? '', saved) : []
+    );
     const commandList = $derived(
-        parsed === null || line !== null || languageMode
+        parsed === null || line !== null || languageMode || workspaceMode || saveMode
             ? []
             : commands(current.config, source !== null).filter((command) =>
                   command.name.startsWith(parsed.name)
@@ -125,7 +146,11 @@
                   : 1
               : languageMode
                 ? languages.length
-                : commandList.length
+                : workspaceMode
+                  ? choices.length
+                  : saveMode
+                    ? 1
+                    : commandList.length
     );
 
     /** The value of each row the list draws, in its order, a row that cannot be run left out. */
@@ -138,9 +163,13 @@
                   : ['line']
               : languageMode
                 ? languages.map((found) => `language:${found.choice.name}`)
-                : commandList
-                      .filter((command) => command.available)
-                      .map((command) => `command:${command.name}`)
+                : workspaceMode
+                  ? choices.map((choice) => `workspace:${choice.name}`)
+                  : saveMode
+                    ? ['workspace-save']
+                    : commandList
+                          .filter((command) => command.available)
+                          .map((command) => `command:${command.name}`)
     );
 
     // Each opening starts from its prefill; what is typed after that is read untracked, so typing
@@ -154,6 +183,7 @@
     /** A new query, the selection on its first row. */
     function typed(next: string): void {
         query = next;
+        said = '';
         const first = values.at(0);
         if (first !== undefined) chosen = first;
     }
@@ -196,6 +226,28 @@
         onclose();
     }
 
+    /** Close the palette when a command went through; otherwise keep it open saying why. */
+    async function settled(outcome: Promise<CommandOutcome>): Promise<void> {
+        const result = await outcome;
+        if (result.closed) onclose();
+        else said = result.said;
+    }
+
+    /** Switch to a workspace in place; a refusal is said here and the palette stays open. */
+    function switchTo(name: string): Promise<void> {
+        return settled(workspaceCommand(selectWorkspace, name));
+    }
+
+    /** Save the folders in force under the name typed after the command. */
+    function saveAs(name: string): Promise<void> {
+        return settled(workspaceCommand(saveWorkspace, name));
+    }
+
+    /** Open Folder: the folder panel, then the folder shown; a panel that did not open is said. */
+    function openFolder(): Promise<void> {
+        return settled(folderCommand(explorer.openFolder));
+    }
+
     function run(command: PaletteCommand): void {
         if (!command.available || parsed === null) return;
         const argument = parsed.argument;
@@ -204,6 +256,15 @@
         // The language list is a mode of its own: choosing the command opens it.
         if (command.name === 'language') {
             typed(':language ');
+            return;
+        }
+        // The workspace commands are modes of their own as well.
+        if (command.name === 'workspace' || command.name === 'workspace-save') {
+            typed(`:${command.name} `);
+            return;
+        }
+        if (command.name === 'folder') {
+            void openFolder();
             return;
         }
         if (command.name === 'theme') {
@@ -226,15 +287,7 @@
         onclose();
         if (shown !== '') void landOn(shown);
     }
-
-    /** A row's control is pressed through its row, which the Command runs; it does nothing more. */
-    const pressed = (): undefined => undefined;
 </script>
-
-{#snippet marked(parts: TextPart[])}
-    {#each parts as part, at (at)}{#if part.hit}<mark class="hit">{part.text}</mark
-            >{:else}{part.text}{/if}{/each}
-{/snippet}
 
 {#if open}
     <Modal
@@ -264,61 +317,32 @@
                                             <div {...viewport} {...list} class="list">
                                                 {#if parsed === null}
                                                     {#each matches as found (found.item.id)}
-                                                        <Command.Item
-                                                            value={found.item.id}
-                                                            onSelect={() => choose(found.item)}
-                                                        >
-                                                            {#snippet child({ props: row })}
-                                                                <div {...row} class="result">
-                                                                    <span class="kind"
-                                                                        >{kindWord(
-                                                                            found.item.kind,
-                                                                            t
-                                                                        )}</span
-                                                                    >
-                                                                    <ToolButton
-                                                                        plain
-                                                                        label={found.item.label}
-                                                                        onclick={pressed}
-                                                                    >
-                                                                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                                                        {@render marked(
-                                                                            found.title
-                                                                        )}
-                                                                    </ToolButton>
-                                                                    {#if found.item.hint !== undefined}
-                                                                        <span class="hint"
-                                                                            >{found.item.hint}</span
-                                                                        >
-                                                                    {/if}
-                                                                </div>
-                                                            {/snippet}
-                                                        </Command.Item>
+                                                        <PaletteRow
+                                                            row={{
+                                                                value: found.item.id,
+                                                                kind: kindWord(found.item.kind, t),
+                                                                label: found.item.label,
+                                                                parts: found.title,
+                                                                hint: found.item.hint,
+                                                                pick: () => choose(found.item)
+                                                            }}
+                                                        />
                                                     {/each}
                                                 {:else if line !== null}
                                                     {#if caret !== null}
-                                                        <Command.Item
-                                                            value="line"
-                                                            onSelect={() => goLine(line)}
-                                                        >
-                                                            {#snippet child({ props: row })}
-                                                                <div {...row} class="result">
-                                                                    <span class="kind"
-                                                                        >{t(
-                                                                            'statusbar.palette_kind_line'
-                                                                        )}</span
-                                                                    >
-                                                                    <ToolButton
-                                                                        plain
-                                                                        label={t(
-                                                                            'statusbar.palette_line',
-                                                                            line
-                                                                        )}
-                                                                        onclick={pressed}
-                                                                    />
-                                                                </div>
-                                                            {/snippet}
-                                                        </Command.Item>
+                                                        <PaletteRow
+                                                            row={{
+                                                                value: 'line',
+                                                                kind: t(
+                                                                    'statusbar.palette_kind_line'
+                                                                ),
+                                                                label: t(
+                                                                    'statusbar.palette_line',
+                                                                    line
+                                                                ),
+                                                                pick: () => goLine(line)
+                                                            }}
+                                                        />
                                                     {:else}
                                                         <p class="empty">
                                                             {t('statusbar.palette_line_none')}
@@ -331,40 +355,55 @@
                                                         </p>
                                                     {/if}
                                                     {#each languages as found (found.choice.name)}
-                                                        <Command.Item
-                                                            value={`language:${found.choice.name}`}
-                                                            onSelect={() =>
-                                                                chooseLanguage(found.choice)}
-                                                        >
-                                                            {#snippet child({ props: row })}
-                                                                <div
-                                                                    {...row}
-                                                                    class="result"
-                                                                    data-language={found.choice
-                                                                        .name}
-                                                                >
-                                                                    <span class="kind"
-                                                                        >{t(
-                                                                            'statusbar.palette_kind_language'
-                                                                        )}</span
-                                                                    >
-                                                                    <ToolButton
-                                                                        plain
-                                                                        label={found.choice.label}
-                                                                        active={source?.status
-                                                                            .language ===
-                                                                            found.choice.name}
-                                                                        onclick={pressed}
-                                                                    >
-                                                                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                                                        {@render marked(
-                                                                            found.label
-                                                                        )}
-                                                                    </ToolButton>
-                                                                </div>
-                                                            {/snippet}
-                                                        </Command.Item>
+                                                        <PaletteRow
+                                                            row={{
+                                                                value: `language:${found.choice.name}`,
+                                                                kind: t(
+                                                                    'statusbar.palette_kind_language'
+                                                                ),
+                                                                label: found.choice.label,
+                                                                parts: found.label,
+                                                                active:
+                                                                    source?.status.language ===
+                                                                    found.choice.name,
+                                                                language: found.choice.name,
+                                                                pick: () =>
+                                                                    chooseLanguage(found.choice)
+                                                            }}
+                                                        />
                                                     {/each}
+                                                {:else if workspaceMode}
+                                                    {#each choices as choice (choice.name)}
+                                                        <PaletteRow
+                                                            row={{
+                                                                value: `workspace:${choice.name}`,
+                                                                kind: t(
+                                                                    'app.palette.kind_workspace'
+                                                                ),
+                                                                label: choice.label,
+                                                                active: choice.current,
+                                                                pick: () =>
+                                                                    void switchTo(choice.name)
+                                                            }}
+                                                        />
+                                                    {/each}
+                                                {:else if saveMode}
+                                                    <PaletteRow
+                                                        row={{
+                                                            value: 'workspace-save',
+                                                            kind: t('app.palette.kind_workspace'),
+                                                            label:
+                                                                parsed.argument === ''
+                                                                    ? t(
+                                                                          'app.palette.workspace_save_name'
+                                                                      )
+                                                                    : t(
+                                                                          'app.palette.workspace_save',
+                                                                          parsed.argument
+                                                                      ),
+                                                            pick: () => void saveAs(parsed.argument)
+                                                        }}
+                                                    />
                                                 {:else}
                                                     {#if parsed.name === '' && caret !== null && source !== null}
                                                         <p class="empty" data-line-hint>
@@ -377,38 +416,24 @@
                                                         </p>
                                                     {/if}
                                                     {#each commandList as command (command.name)}
-                                                        <Command.Item
-                                                            value={`command:${command.name}`}
-                                                            disabled={!command.available}
-                                                            onSelect={() => run(command)}
-                                                        >
-                                                            {#snippet child({ props: row })}
-                                                                <div {...row} class="result">
-                                                                    <span class="kind">:</span>
-                                                                    <ToolButton
-                                                                        plain
-                                                                        label={`${command.name}${command.hint === '' ? '' : ` ${command.hint}`}`}
-                                                                        disabled={!command.available}
-                                                                        title={!command.available
-                                                                            ? t(
-                                                                                  'app.palette_unavailable'
-                                                                              )
-                                                                            : undefined}
-                                                                        onclick={pressed}
-                                                                    />
-                                                                    {#if !command.available}
-                                                                        <span class="unavailable"
-                                                                            >{t(
-                                                                                'app.palette_unavailable'
-                                                                            )}</span
-                                                                        >
-                                                                    {/if}
-                                                                </div>
-                                                            {/snippet}
-                                                        </Command.Item>
+                                                        <PaletteRow
+                                                            row={{
+                                                                value: `command:${command.name}`,
+                                                                kind: ':',
+                                                                label: `${command.name}${command.hint === '' ? '' : ` ${command.hint}`}`,
+                                                                disabled: !command.available,
+                                                                note: command.available
+                                                                    ? undefined
+                                                                    : t('app.palette_unavailable'),
+                                                                pick: () => run(command)
+                                                            }}
+                                                        />
                                                     {/each}
                                                 {/if}
-                                                {#if count === 0 && line === null && !languageMode}
+                                                {#if said !== ''}
+                                                    <p class="empty" data-palette-said>{said}</p>
+                                                {/if}
+                                                {#if count === 0 && line === null && !languageMode && !workspaceMode}
                                                     <p class="empty">
                                                         {parsed === null
                                                             ? t('app.palette_empty')
@@ -469,66 +494,10 @@
         overflow: auto;
     }
 
-    /* One row of the list is one line of the tree's row height with its words at the main size,
-       which the plain button inside it takes; the row in force is ringed by the application's one
-       ring. */
-    .result {
-        display: grid;
-        grid-template-columns: minmax(5rem, auto) 1fr auto;
-        align-items: center;
-        gap: 6px;
-        min-height: calc(var(--tree-row) * var(--text-scale, 1));
-        border-radius: var(--radius-sm);
-        color: var(--ink-txt, var(--ink));
-        font-size: var(--fs-md);
-        line-height: calc(var(--tree-row) * var(--text-scale, 1));
-    }
-
-    .result:hover {
-        background: var(--chip);
-    }
-
-    .result[data-selected] {
-        outline: 1px solid var(--accent);
-        outline-offset: -1px;
-    }
-
-    .result :global(.tool) {
-        justify-content: flex-start;
-        width: 100%;
-        text-align: left;
-        white-space: normal;
-    }
-
-    /* The letters a query matched, marked as the Search view marks a match
-       (views/sources/search/Results.svelte), so oculus has one match look: the accent's text
-       colour, bold, on no fill of their own. */
-    .hit {
-        background: none;
-        color: var(--accent-txt, var(--accent));
-        font-weight: 700;
-    }
-
-    .kind,
-    .unavailable,
-    .hint,
-    .empty {
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .kind {
-        font-size: var(--fs-xs);
-        text-align: right;
-    }
-
-    .unavailable,
-    .hint {
-        font-size: var(--fs-sm);
-    }
-
     .empty {
         margin: 0;
         padding: 8px;
         font-size: var(--fs-md);
+        color: var(--muted-txt, var(--muted));
     }
 </style>

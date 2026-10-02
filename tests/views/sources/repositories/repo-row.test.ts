@@ -9,7 +9,7 @@
 
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import AskConfirm from '../../../../src/lib/views/shared/AskConfirm.svelte';
+import AskConfirm from '../../../../src/lib/views/shared/writes/AskConfirm.svelte';
 import ToolButton from '../../../../src/lib/ui/controls/ToolButton.svelte';
 import TreeItem from '../../../../src/lib/ui/tree/TreeItem.svelte';
 import { folderId } from '../../../../src/lib/state/sources/repositories/change-tree.ts';
@@ -39,7 +39,7 @@ vi.mock('../../../../src/lib/ui/tree/TreeItem.svelte', async (original) =>
     (await import('./press-on-render.ts')).recorded(original)
 );
 
-vi.mock('../../../../src/lib/views/shared/AskConfirm.svelte', async (original) =>
+vi.mock('../../../../src/lib/views/shared/writes/AskConfirm.svelte', async (original) =>
     (await import('./press-on-render.ts')).recorded(original)
 );
 

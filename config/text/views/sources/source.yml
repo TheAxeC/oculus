@@ -19,6 +19,7 @@ text:
         retry: Read again
         save_failed: save failed
         saved: saved
+        saved_without_copy: 'saved, but the local history could not keep a copy: {0}'
         saving: saving...
         toolbar: Source controls
         truncated: This file is longer than the editor reads; its first 2 MB are shown and it saves nothing.

@@ -1,25 +1,22 @@
-# Oculus text owned by the file browser: the explorer's header controls, its trees and their heads, its three sections, what a refused workspace write says, and the file operations of its row menu: the menu words, the questions, the name messages, the refusals and the upload and compare lines.
+# Oculus text owned by the file browser: the workspace header and its menu, its trees and their heads, its sections (open editors, outline, timeline, bookmarks and notes), the keys its row menu shows, what a refused workspace write says, and the file operations of its row menu: the menu words, the questions, the name messages, the refusals and the upload and compare lines.
 text:
     files:
-        add: add
         add_bookmark: + bookmark
         add_bookmark_title: Bookmark a file under one of these roots
         add_note: + note
         add_note_title: Open a scratch note of your own
-        add_root: + root
-        add_root_title: Add a folder on this machine to this workspace
+        add_skipped: 'Already folders of this workspace: {0}'
         bookmark_edit: edit
         bookmark_edit_title: Change the bookmark {0}
         bookmark_failed: 'The bookmark was not written: {0}'
         bookmark_glyph: star
+        bookmark_missing_title: The path is not on this machine any more
         bookmark_open_title: Open {0}
         bookmarks: Bookmarks
         bookmarks_empty: No bookmark yet.
         bookmarks_failed: 'The bookmarks could not be read: {0}'
         breadcrumb: Path of the selected row
         cancel: cancel
-        collapse_all: collapse all
-        collapse_all_title: Close every folder under {0}
         collapse_title: Close {0}
         compare_missing: One of the two files is not there.
         compare_not_a_file: A folder cannot be compared with a file.
@@ -28,23 +25,59 @@ text:
         compare_too_large: One of the two files is too large to compare.
         delete_button: Move to Trash
         delete_detail: You can restore this file from the Trash.
+        delete_detail_many: You can restore these files from the Trash.
         delete_detail_unsaved: "Your changes will be lost if you don't save them."
+        delete_many_both: Are you sure you want to delete the following {0} files and directories and their contents?
+        delete_many_files: Are you sure you want to delete the following {0} files?
+        delete_many_folders: Are you sure you want to delete the following {0} directories and their contents?
         delete_question: "Are you sure you want to delete '{0}'?"
         delete_question_folder: "Are you sure you want to delete '{0}' and its contents?"
+        drop_folder_refused: 'Folders cannot be dropped in from outside: {0}'
+        editors: Open Editors
+        editors_close: close
+        editors_close_all: close all
+        editors_close_all_confirm: Close the {0} open editors?
+        editors_close_all_title: Close every editor on this page
+        editors_close_title: Close {0}
+        editors_dirty: Unsaved changes
+        editors_empty: No editor is open.
+        editors_group: Group {0}
+        editors_open_title: Show {0}
+        editors_save_all: save all
+        editors_save_all_title: Save every editor with unsaved changes
         expand_title: Open {0}
-        file_glyph: paper
         filter: Filter the folders already read by name
         filter_none: No folder read so far holds a name with that text.
         filters: File filters
+        folder_glyph: folder
         follow: Follow the session
         follow_none: No session is picked, so there is no workspace to follow.
         follow_pin: Keep following this session when the selection moves
         follow_title: Root the tree at the workspace of the selected session, and move with the selection
         follow_unpin: Follow the selected session again
         follow_unserved: 'No root holds {0}, so its files cannot be listed here.'
-        folder_glyph: folder
-        html_glyph: page
-        image_glyph: memories
+        forget_question: Do not ask me again
+        fuzzy: Fuzzy Match
+        fuzzy_title: Use Fuzzy Match
+        header_close_title: Hide the folders of {0}
+        header_collapse: Collapse Folders in Explorer
+        header_menu: More Actions...
+        header_new_file: New File...
+        header_new_folder: New Folder...
+        header_open_title: Show the folders of {0}
+        header_refresh: Refresh Explorer
+        key_alt: Alt
+        key_backspace: Backspace
+        key_cmd: Cmd
+        key_ctrl: Ctrl
+        key_down: Down
+        key_enter: Enter
+        key_escape: Esc
+        key_f2: F2
+        key_option: Option
+        key_shift: Shift
+        key_space: Space
+        key_up: Up
         listing_failed: '{0} could not be read: {1}'
         loading: Reading...
         menu_add_root: Add Folder to Workspace...
@@ -57,23 +90,33 @@ text:
         menu_delete: Delete
         menu_download: Download...
         menu_find: Find in Folder...
+        menu_nesting: File Nesting
         menu_new_file: New File...
         menu_new_folder: New Folder...
+        menu_open_folder: Open Folder...
         menu_open_side: Open to the Side
         menu_paste: Paste
         menu_preview: Open Preview
         menu_remove_root: Remove Folder from Workspace
         menu_rename: Rename...
         menu_reveal: Reveal in Finder
+        menu_save_workspace: Save Workspace As...
         menu_select_compare: Select for Compare
+        menu_show_hidden: Show Hidden Files
+        menu_show_ignored: Show Ignored Files
+        menu_switch_workspace: Switch Workspace...
         menu_terminal: Open in Integrated Terminal
         menu_upload: Upload...
+        move_button: Move
+        move_question: "Are you sure you want to move '{0}' into '{1}'?"
+        move_question_many: "Are you sure you want to move the following {0} files into '{1}'?"
         name_empty: A file or folder name must be provided.
         name_invalid: "The name '{0}' is not valid as a file or folder name. Please choose a different name."
         name_label: Name of the file or folder
         name_leading_slash: A file or folder name cannot start with a slash.
         name_taken: "A file or folder '{0}' already exists at this location. Please choose a different name."
         name_whitespace: Leading or trailing whitespace detected in file or folder name.
+        names_more: ...and {0} more
         none: No roots yet. Add a folder to this workspace.
         none_glyph: info
         note_delete: delete
@@ -86,17 +129,28 @@ text:
         notes_empty: No note yet.
         notes_failed: 'The notes could not be read: {0}'
         open_title: Open {0} as a tab
+        outline: Outline
+        outline_empty: The file has no headings.
+        outline_go_title: Go to {0} (line {1})
+        outline_no_editor: The active editor cannot provide outline information.
+        outline_none: No symbols for this file yet.
+        outside: '{0} is not inside any folder of this workspace.'
+        outside_add: Add Folder to Workspace
+        outside_add_title: Add {0} to this workspace
+        outside_dismiss: dismiss
         permanent_button: Delete Permanently
         permanent_detail: 'This action is irreversible!'
         permanent_question: Failed to delete using the Trash. Do you want to permanently delete instead?
+        picker_busy: The folder panel is already open.
+        picker_failed: The folder panel could not be opened.
+        picker_network: The server could not be reached.
+        picker_token: The write token was refused; reload the page.
+        picker_unsupported: The folder panel is available on macOS only.
         read_again: read again
         read_again_bookmarks: Read the bookmarks again
         read_again_notes: Read the notes again
-        read_again_workspaces: Read the workspaces again
         read_failed: 'The roots could not be read: {0}'
         read_offline: there is no page to read from
-        refresh: refresh
-        refresh_title: Read the roots, the open folders and the lists again
         refused_denied: The folder does not allow that change.
         refused_exists: A file or folder of that name is already there.
         refused_into_itself: A folder cannot be put inside itself.
@@ -127,42 +181,42 @@ text:
         remove_root: remove
         remove_root_confirm: Take {0} out of this workspace?
         remove_root_detail: The folder stays on this machine; this workspace stops serving it.
-        remove_root_title: Take {0} out of this workspace
         replace_button: Replace
         replace_detail_upload: 'This action is irreversible!'
         replace_question: "A file or folder with the name '{0}' already exists in the destination folder. Do you want to replace it?"
         reserved: 'Left out of this workspace, since the configuration owns the name: {0}'
+        reveal_failed: 'Finder could not show it: {0}'
         reveal_missing: '{0} is not there; {1}, the nearest folder on its way, is selected.'
         reveal_no_root: '{0} cannot be shown: this workspace has no root {1}.'
         reveal_no_roots: '{0} cannot be shown: the file browser could not read its roots ({1}).'
         reveal_place: '{0}/{1}'
         reveal_unread: '{0} cannot be shown: {1} could not be read ({2}), and is selected.'
-        reveal_failed: 'Finder could not show it: {0}'
-        root_dir: Folder path
-        root_dir_help: An absolute path, or one starting with ~/
         row_bookmark: bookmark
         row_bookmark_title: Bookmark {0}
         row_open_tab: open in a new tab
         row_open_tab_title: Open {0} in a tab that stays
         row_unbookmark_title: Take the bookmark on {0} away
-        save: save
-        save_as: save as
-        save_as_title: Save these roots as a workspace of their own
-        show_hidden: hidden files
-        show_hidden_title: List dotfiles and the node_modules, __pycache__ and .git folders
-        show_ignored: ignored files
-        show_ignored_title: List the files git ignores in a repository
+        timeline: Timeline
+        timeline_commit_diff: '{0} ({1})'
+        timeline_deleted: File Deleted
+        timeline_empty: The file has no history yet.
+        timeline_failed: 'The history could not be read: {0}'
+        timeline_menu: History entry
+        timeline_no_file: The active editor cannot provide timeline information.
+        timeline_reading: Reading...
+        timeline_restore: Restore
+        timeline_restore_failed: The file could not be restored.
+        timeline_row_title: Compare {0} with the file now
+        timeline_save_diff: '{0} (Local History)'
+        timeline_saved: File Saved
         toolbar: File browser controls
         tree: Roots and folders
+        undo_button: Undo
+        undo_delete_label: Delete
+        undo_question: "Would you like to undo '{0}'?"
         upload_done: 'Files uploaded: {0}.'
         upload_refused: '{0} was not uploaded: {1}'
-        workspace: Workspace
         workspace_default: Configured roots
-        workspace_glyph: folder
-        workspace_name: Name for the workspace
-        workspace_open_title: Switch to the workspace {0}
-        workspaces: Workspaces
-        workspaces_failed: 'The workspaces could not be read: {0}'
     views:
         files: Files
         files_glyph: applications

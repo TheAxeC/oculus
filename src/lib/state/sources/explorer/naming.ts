@@ -9,7 +9,15 @@
 // its name replaced by the input. Starting either opens the folders the row sits under, so the row
 // is drawn, and clears the filter, since the rows a filter draws are not the tree's.
 
-import { ancestorsOf, setExpanded, treeKey, type RowRef } from '../fs.ts';
+import {
+    ancestorsOf,
+    parentOf,
+    setExpanded,
+    treeKey,
+    type FsRoot,
+    type RowRef,
+    type TreeRow
+} from './view/place.ts';
 
 /** What the reader is naming: a new file, a new folder, or a row that is being renamed. */
 export type Naming = { mode: 'file' | 'folder' | 'rename'; root: string; path: string };
@@ -38,4 +46,27 @@ export function namingStarted(
         filter: '',
         expanded: open
     };
+}
+
+/**
+ * The folder a New File or New Folder of the workspace header makes its item in: the selected row
+ * when it is a folder, the folder the selected file sits in, and the first root when nothing is
+ * selected. A selected row the list does not hold is a folder of a compact chain.
+ */
+export function newItemFolder(
+    rows: readonly TreeRow[],
+    selected: RowRef | null,
+    roots: readonly FsRoot[]
+): RowRef | null {
+    if (selected !== null) {
+        const row = rows.find(
+            (one) =>
+                one.root === selected.root && one.path === selected.path && one.up === undefined
+        );
+        if (row === undefined || row.kind === 'dir')
+            return { root: selected.root, path: selected.path };
+        return parentOf(selected) ?? { root: selected.root, path: '' };
+    }
+    const first = roots.at(0);
+    return first === undefined ? null : { root: first.key, path: '' };
 }

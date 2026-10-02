@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { engineDir } from '../../../../src/lib/data/sources/config.ts';
-import type { Catalog } from '../../../../src/lib/data/sources/config/options.ts';
+import type { Catalog } from '../../../../src/lib/data/sources/config/catalog/options.ts';
 import type { FileText } from '../../../../src/lib/state/sources/fs-transport.ts';
 import { shipped, text } from './fixture.ts';
 import { createUi } from '../../../../src/lib/state/workbench/ui.svelte.ts';

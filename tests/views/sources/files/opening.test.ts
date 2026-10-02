@@ -4,7 +4,7 @@
 //
 // The opener is a recording double and the row is rendered on the server, so nothing here reads a
 // file or a store. What this does NOT cover: opening a file row, which needs a file's kind read
-// from the server and is files-ops.test.ts's.
+// from the server and is menu/files-ops.test.ts's.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';

@@ -103,6 +103,14 @@ export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string };
 /** One audit finding parked, or brought back, by the signature the scan gave it. */
 export type AuditMuteWrite = { kind: 'audit-mute'; signature: string; muted: boolean };
 
+/**
+ * A folder added to the default workspace, by the path it was chosen as, or a root of
+ * config/sources.yml removed by its key.
+ */
+export type RootsWrite =
+    | { kind: 'roots'; action: 'add'; dir: string }
+    | { kind: 'roots'; action: 'remove'; key: string };
+
 /** The rail's whole list of pages, in order, each entry a label, a glyph name and a page key. */
 export type RailWrite = { kind: 'rail'; rail: { label: string; glyph: string; page: string }[] };
 
@@ -256,6 +264,11 @@ const railShape = z.object({
     rail: z.array(z.object({ label: z.string(), glyph: z.string(), page: z.string() }))
 }) satisfies z.ZodType<RailWrite>;
 
+const rootsShape = z.discriminatedUnion('action', [
+    z.object({ kind: z.literal('roots'), action: z.literal('add'), dir: z.string() }),
+    z.object({ kind: z.literal('roots'), action: z.literal('remove'), key: z.string() })
+]) satisfies z.ZodType<RootsWrite>;
+
 /** The `value` key must be there, whatever it holds; an absent one is not a write. */
 const configKeyShape = z.object({
     kind: z.literal('config-key'),
@@ -378,6 +391,13 @@ export function auditMuteWrite(body: unknown): AuditMuteWrite | null {
  */
 export function railWrite(body: unknown): RailWrite | null {
     return readAs(railShape, body);
+}
+
+/**
+ * The body as a roots write, or null when it is not one. What the folder may be is the writer's.
+ */
+export function rootsWrite(body: unknown): RootsWrite | null {
+    return readAs(rootsShape, body);
 }
 
 /**

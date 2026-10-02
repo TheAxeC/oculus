@@ -9,10 +9,10 @@
 // changes it conflicts with leaves the conflicts in the index, as git does, and the answer names
 // them: the view draws them under Merge Changes, and a popped stash that conflicted is kept.
 //
-// The records of `status --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
+// The records of `status --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
 
 import { byKey } from '../../data/helpers/guards.ts';
-import { STASH_REF, statusRecords } from '../core/git-parse.ts';
+import { STASH_REF, statusRecords } from '../core/git/parse.ts';
 import {
     allowedRoots,
     failed,

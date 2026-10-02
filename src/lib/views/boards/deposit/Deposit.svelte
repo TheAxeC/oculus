@@ -21,8 +21,8 @@
     //
     // Every write goes to POST /api/deposit with the write token, and the five that can lose work
     // (commit, push, snapshot, the two branch actions) carry a confirm this view sets only from
-    // the yes of views/shared/AskConfirm.svelte. Nothing here acts on a timer or on a payload
-    // arriving; a write happens when a button is pressed and never otherwise.
+    // the yes of views/shared/writes/AskConfirm.svelte. Nothing here acts on a timer or on a
+    // payload arriving; a write happens when a button is pressed and never otherwise.
     //
     // The commit message is suggested by POST /api/git with the mirror as its root, which is why
     // server/git/git-write.ts's allowedRoots names the mirrors folder beside the workspaces and the
@@ -33,8 +33,8 @@
     // server's as well: server/git/deposit.ts refuses those three while the plan has findings, so a
     // control wired past this would be refused rather than quietly obeyed.
 
-    import AskConfirm from '$lib/views/shared/AskConfirm.svelte';
-    import type { Ask } from '$lib/views/shared/ask';
+    import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
+    import type { Ask } from '$lib/views/shared/writes/ask';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';

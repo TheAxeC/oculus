@@ -10,15 +10,15 @@
 // it, and a patch git refuses is answered with git's own line. Every call reaches git through the
 // one call site server/git/git-write.ts exports for its subcommand.
 //
-// A path handed to git is checked by core/git.ts's `pathInside`; the records of `status
-// --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
+// A path handed to git is checked by core/git/run.ts's `pathInside`; the records of `status
+// --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
 
 import { isAbsolute, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { byKey } from '../../data/helpers/guards.ts';
 import { writeTextAtomic } from '../core/json.ts';
-import { pathInside } from '../core/git.ts';
-import { statusRecords } from '../core/git-parse.ts';
+import { pathInside } from '../core/git/run.ts';
+import { statusRecords } from '../core/git/parse.ts';
 import {
     addTo,
     allowedRoots,

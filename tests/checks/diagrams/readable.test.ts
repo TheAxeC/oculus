@@ -8,8 +8,8 @@
 // drawings made by hand, and the last cases run it over every drawing the source gives and every
 // committed one. The reader cases show that the channel and write readers read code alone: a
 // comment is blanked by the parse, a JSDoc at the end of a file and a style block included, and a
-// string, a regular expression and the markup of a component are kept. The last case shows that a
-// tail port the write diagram gives an arrow stays out of its title.
+// string, a regular expression and the markup of a component are kept. The last cases show that a
+// tail or head port the write diagram gives an arrow stays out of its title.
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -26,6 +26,7 @@ import {
     writesDot,
     writesDrawn
 } from '../../../utils/diagrams/diagrams.mjs';
+import { PORTS } from '../../../utils/diagrams/writes.mjs';
 
 const ENGINE = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
 
@@ -241,8 +242,8 @@ describe('the drawings the source gives', () => {
             draws += 1;
             return PAIR;
         });
-        // One drawing with no port, then one per port of the four, and the pair still named.
-        expect(draws).toBe(5);
+        // One drawing with no port, then one per port of PORTS, and the pair still named.
+        expect(draws).toBe(PORTS.length + 1);
         expect(arrowsAlong(drawn.svg)).toEqual(['m->a along m->b for 64']);
     });
 
@@ -389,9 +390,16 @@ describe('the channel and write readers', () => {
     });
 });
 
-describe('the title of an arrow that leaves by a port', () => {
+describe('the title of an arrow that leaves or arrives by a port', () => {
     it('names the two modules alone', async () => {
         const svg = await renderSvg('digraph g {\n    "a" -> "b" [tailport=se];\n}\n');
         expect(svg).toContain('<title>a&#45;&gt;b</title>');
+    }, 30_000);
+
+    it('names the two modules alone for a head port, with the words after it kept', async () => {
+        const svg = await renderSvg(
+            'digraph g {\n    "a" -> "b" [headport=nw, tooltip="x, y"];\n}\n'
+        );
+        expect(svg).toContain('<title>a&#45;&gt;b: x, y</title>');
     }, 30_000);
 });

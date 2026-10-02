@@ -232,7 +232,7 @@ describe('the kind a result row draws', () => {
 describe('commands', () => {
     const list = commands({ themes: [{ name: 'light' }, { name: 'nord' }] });
 
-    it('lists the eight commands, theme names and the three unavailable with no source tab', () => {
+    it('lists the eleven commands, theme names and the three unavailable with no source tab', () => {
         expect(list.map((command) => command.name)).toEqual([
             'theme',
             'crt',
@@ -241,7 +241,10 @@ describe('commands', () => {
             'goto',
             'language',
             'help',
-            'update'
+            'update',
+            'workspace',
+            'workspace-save',
+            'folder'
         ]);
         expect(list[0].hint).toContain('light | nord');
         expect(list.filter((command) => !command.available).map((command) => command.name)).toEqual(
@@ -375,7 +378,7 @@ describe('the palette readers over config and entries of the wrong type', () => 
         [
             'the commands of a config with themes of the wrong type',
             () => commands({ themes: [{ name: 3 }] }).map((command) => command.available),
-            [false, true, false, true, true, false, false, true]
+            [false, true, false, true, true, false, false, true, true, true, true]
         ],
         [
             'a lead with a title that is a number and a subject',

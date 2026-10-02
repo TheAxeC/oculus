@@ -879,3 +879,19 @@ The question: how the Live HPC poller finds its host once `slurm.resource` names
 - Not chosen: (c) resolving at start only, which leaves the poller on a stale host after the registry changes.
 
 Where it is built: M3. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z254 (2026-10-02, X3a at landing): how a delete finds the delete copies to prune
+
+- Chosen (a): an index `deletes.json` beside the file folders, `{ deletes: [{ folder, id, at }] }`, oldest first; a delete reads it and the folders of the copies it removes; a missing or unreadable index is built again from the folders once; a folder left with no copy is removed.
+- Not chosen: (b) every folder read on every delete, the review's B1, whose cost grows with the history.
+- Not chosen: (c) an index held in the server's memory, which the module's no-state rule forbids and a restart loses.
+
+Where it is built: X3a's landing. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z255 (2026-10-02, found at X3a's landing): `~/` in a `local.yml` path key
+
+- Chosen (a): `~/` is the home folder for every path key, as for an account's `dir`; folded into M3's repair round.
+- Not chosen: (b) the path keys left as they are, where `history: ~/h` writes under `config/~/h`, the lazy option.
+
+Where it is built: M3's repair round. Booked in the state file's closed log and `plan.md` Rulings.
+

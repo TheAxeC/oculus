@@ -330,7 +330,9 @@ export function createClientState(): ClientState {
         fs,
         {
             tabs: () => layout.hosts().flatMap((host) => tabsOf(host.workbench.root)),
-            restateInstance: layout.restateInstance
+            restateInstance: layout.restateInstance,
+            openView: (view: string) => layout.openView(view),
+            showFolderInFiles: layout.showFolderInFiles
         },
         ui,
         source

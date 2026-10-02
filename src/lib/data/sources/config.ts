@@ -56,6 +56,7 @@ export {
 } from './config/catalogs.ts';
 export {
     type CalendarSettings,
+    type FilesSettings,
     type MailSettings,
     type OpenSettings,
     type SearchSettings,
@@ -64,6 +65,8 @@ export {
     cadenceShape,
     calendarSettings,
     changesKeep,
+    confirmDelete,
+    filesSettings,
     mailSettings,
     openSettings,
     searchSettings,
@@ -71,4 +74,5 @@ export {
     usageTiers
 } from './config/settings.ts';
 export { languageFindings } from './config/languages.ts';
+export { nestingFindings } from './config/catalog/nesting.ts';
 export { themeFindings } from './config/themes.ts';

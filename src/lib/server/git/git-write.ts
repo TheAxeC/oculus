@@ -1,4 +1,4 @@
-// Layer 2, server. The writing half of git, kept apart from server/core/git.ts on purpose.
+// Layer 2, server. The writing half of git, kept apart from server/core/git/ on purpose.
 //
 // DESIGN.md, "Git": the read-only module runs only its enumerated read-only commands and a test
 // asserts that its source names no writing subcommand at all. Every write therefore lives here, and
@@ -46,8 +46,9 @@
 // is above 0, on the repositories the last published `git` payload names. Nothing else here is
 // reachable from a watcher, a timer or the socket.
 //
-// `git.ts`'s `run` is not imported: putting a writing subcommand through the read-only module's one
-// call site would run it past that module's recorder and break the gate that says what it ran.
+// `run` of server/core/git/run.ts is not imported: putting a writing subcommand through the
+// read-only module's one call site would run it past that module's recorder and break the gate that
+// says what it ran.
 //
 // A root is refused unless the last published `git` payload names it or it is the hub itself or
 // under it. That payload is every root the file browser serves as well as every workspace a session
@@ -57,8 +58,8 @@
 // `{ ok, output, error }` and never throws.
 //
 // Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
-// (`inside`, `realPath`); a path handed to git is checked by core/git.ts's `pathInside`; the
-// records of `status --porcelain=v1 -z` are split by core/git-parse.ts's `statusRecords`.
+// (`inside`, `realPath`); a path handed to git is checked by core/git/run.ts's `pathInside`; the
+// records of `status --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
 
 import { execFile } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -74,8 +75,8 @@ import {
     parseBranches,
     shortReason,
     statusRecords
-} from '../core/git-parse.ts';
-import { GIT, pathInside } from '../core/git.ts';
+} from '../core/git/parse.ts';
+import { GIT, pathInside } from '../core/git/run.ts';
 import { inside, realPath } from '../core/paths.ts';
 
 export { parseBranches };
@@ -673,7 +674,10 @@ function branch(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['branch', ...args], TIMEOUT_MS);
 }
 
-/** The one `worktree` call site: the add and the remove. The list is server/core/git.ts's read. */
+/**
+ * The one `worktree` call site: the add and the remove. The list is server/core/git/state.ts's
+ * read.
+ */
 function worktree(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['worktree', ...args], TIMEOUT_MS);
 }
