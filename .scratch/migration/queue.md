@@ -1,37 +1,35 @@
 /plan-orchestration oculus/migration
 
-27 steps are not landed: 5 in flight and 22 queued. Each line below is one step: its id, what it is, and what it waits for.
+In flight:
+- D18 (the Processes view): landing next.
+- D32 (replace in Search): repair round 1 running.
+- D17 (project commands): building.
+- D14 (LaTeX on any folder): building.
+- S4 (the Settings editor finished): building, cases ruled.
 
-In flight (5, every slot taken; Q91 waits ready with its brief checked, X3e and X3c have their brief checks running, and X3e starts after Q91. No other queued step can be prepared now: each waits for a step in flight or is placed after the code steps):
-- D18 (the Processes view): its repair round reviewed (5 small findings, fixed at landing); it lands next. `config/layout.yml` is back to the committed rail.
-- D32 (replace in the Search view, as VS Code's): reviewed; its repair round 1 is sent (15 rulings: the Replace Preview as a POST, the regex toggle re-running the search, tests and docs).
-- D17 (project commands from `.oculus/commands.yml`, a form and what oculus finds, run after you approve their text; a default build on Cmd+Shift+B and test on Cmd+Alt+T; compiler errors clickable): being built.
-- D14 (LaTeX on any folder holding a main file: several mains a folder, build on save, magic comments, outline, word count, hover preview, Format Document; build errors published for the Problems view; ChkTeX moved to D36): being built. Format Document needs a formatter installed on your machine (open item Z280).
-- S4 (the Settings editor finished: editors for the lists, the key/value tables and the record forms, one new write for them, the table of contents below 700 px, the Config view removed and the System and Views and Settings pages merged into one rail item named System): its first run is done; two cases were ruled and the builder resumed. Once D18 is on main, its Processes view sits last on the merged page with no number key, since the keys reach nine views.
-
-Queued, in order (22). "Ready" means nothing in plan.md holds the step back; it starts when a slot frees.
-- Q91 (the project view and its manifest editor reworked: the follow-up notes and the priority, waiting-on, snooze and subtasks shown in the editor, the follow-ups drawn on the card, the status line drawn as a labelled field with its code, and the project's file list drawn as the Files view's tree rooted at the project folder): its brief is written and checked; it waits ready for the next free slot. Its project file list is the Files view's tree moved to a shared folder, which every card draws.
-- X3e (the Files view's lists reordered by drag: the roots, the folder bookmarks, the notes and the view's sections; a second Collapse Folders press closing the roots; and the Repositories view finding repositories nested under every root, the website inside the hub among them, to a depth set in `sources.yml`): its brief is written and its brief check is running; it waits for Q91, which moves the Files tree it edits.
-- D25 (the editor's options, with sticky scroll from headings and brackets, and colouring of large files): waits for S4, since both write the Settings editor's rows and S4 rebuilds them.
-- D15 (PDF reading: the page kept per file, the PDF opened beside its source): ready; placed after D14 because D14 rebuilds the LaTeX panel D15 opens the PDF from.
-- X3c (the tab strip as VS Code's: pinned tabs, the tab's right-click menu, the session pin relabelled "Lock to this session", wrapped tabs as a setting, breadcrumbs over a file tab, the full path in a file tab's tooltip, Open Editors dragging the tabs into order, and the Files tree's breadcrumb removed): its brief check is back; the brief is being rewritten with its findings and the five defects of your look (the file-tab breadcrumb, the buttons' second row, the breadcrumb's size, the palette's overlapping results, the rail click that moved Views and Settings). It starts at the next free slot.
-- D23 (language servers in the editor: pyright for Python, clangd for C++, the Outline's code symbols): waits for D25.
-- D11 (the debug client for rite): waits for D17.
-- D20 (an agent started from a task or in a new worktree): waits for D17.
-- A3 (scheduled runs of an Update task): waits for D17.
-- D28 (saving a source file as VS Code does): waits for D25.
-- D23b (the language features that edit other files, workspace symbols, the TypeScript and Svelte servers): waits for D23.
-- D33 (the Problems view): waits for D23 and D17.
-- D36 (linters on save: ChkTeX, ruff, eslint, shellcheck): waits for D33.
-- E4 (the apps built, as DESIGN.md's apps section rules them): waits for D17, which builds the approvals file (`server/machine/approvals/`) that an app's approval uses.
-- Q72 (the architecture re-read before the release): ready; placed after every step that changes code.
-- R2 (release readiness: a README quickstart, a demo hub, a first-run check): ready; placed after Q72.
-- O29 (retiring the cockpit, each deletion listed for your yes): ready; placed after R2.
-- X2 (a new orchestrator resumes the plan from the files alone and lands one step): ready; runs at a pause.
-- O30 (the native window in Electron): ready; placed after X2.
-- O33 (oculus moved into its own repository, widened with setting up a server and the sync between machines; the rename to a new name, if Axel rules it, would come here): waits for X2.
-- O34 (remote access: oculus served from a rented server behind a Google login with two-factor): waits for O33.
-- O35 (oculus on macOS, Linux and Windows, terminals behind one backend interface with tmux and, on Windows, ConPTY): waits for O33.
+Queued, in order (22 steps):
+- X3c (the tab strip as VS Code's): brief being closed; next free slot.
+- Q91 (the project view and its editor): ready.
+- X3e (Files lists reordered by drag): brief being closed; once Q91 has landed.
+- D25 (the editor's options): once S4 has landed.
+- D15 (PDF reading): once D14 has landed.
+- D23 (language servers): once D25 has landed.
+- D11 (the debug client for rite): once D17 has landed.
+- D20 (an agent from a task or a worktree): once D17 has landed.
+- A3 (scheduled Update runs): once D17 has landed.
+- D28 (saving a file as VS Code does): once D25 has landed.
+- D23b (cross-file language features): once D23 has landed.
+- D33 (the Problems view): once D23 and D17 have landed.
+- D36 (linters on save): once D33 has landed.
+- E4 (the apps): once D17 has landed.
+- Q72 (the architecture re-read): after every code step.
+- R2 (release readiness): after Q72.
+- O29 (retiring the cockpit): after R2.
+- X2 (a new orchestrator resumes the plan): at a pause.
+- O30 (the native window in Electron): after X2.
+- O33 (oculus in its own repository): once X2 has landed.
+- O34 (remote access): once O33 has landed.
+- O35 (macOS, Linux and Windows): once O33 has landed.
 
 Landed, newest first:
 - M3 (the resources registry), 2026-10-02, 8ef3abbe.
@@ -56,7 +54,7 @@ Landed, newest first:
 - Q85a2 (zod in the edit, sessions and transcripts folders), 2026-10-01, 0b38c14c.
 - U2 (every view's look against VS Code), 2026-10-01, e8b517c0.
 - Q85a4 (zod in the other server folders), 2026-10-01, 58b860a0.
-- Q109 (the terminal: lines after a pane move, the watchers' capped debounce, a sole terminal's menu, four terminal options), 2026-10-01, 4148664b.
+- Q109 (terminal fixes and options), 2026-10-01, 4148664b.
 - S3b (the `config-key` write), 2026-10-01, ae1e8024.
 - X3d (Source Control as VS Code's), 2026-10-01, a5a6eed6.
 - S3a (the options catalog), 2026-10-01, 87d8ab6a.
