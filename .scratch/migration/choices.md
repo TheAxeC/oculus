@@ -903,3 +903,25 @@ Where it is built: M3's repair round. Booked in the state file's closed log and 
 
 Where it is built: A1's repair round 1. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z258 (2026-10-02, D32's /spec): how the unused-exports script finds its exports
+
+- Chosen (a): `knip` 6.39.0 (ISC, Lars Kappert, released 2026-09-30, supports SvelteKit and Svelte files) in production mode with `--include exports,types`, which leaves every test file out of the reading; an export imported only by test files is reported. A module's tests are read as the test files that import it, so this computes the approved rule. Run on main at 3a308a8f it reported 241 unused exports and 110 unused types; five checked by grep: `FILE_FIELDS` (`data/file-ops.ts`, imported nowhere else), `searchArgs` (own file and `tests/data/helpers/search.test.ts`), `codeThemeIds` (own file and `appearance.test.ts`), `languageNamed` (re-exported by `state/shared/words/languages.ts`, imported by one test), `hostZone` (own file and one test).
+- Not chosen: (b) a hand-written import resolver over `$lib`, relative paths, re-exports and Svelte module scripts, which repeats what knip does and is the larger job to keep right.
+- Not chosen: (c) reading a module's tests as only the test file that mirrors its path, which this repository does not name tests by.
+
+Where it is built: D32. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z259 (2026-10-02, D32's /spec): the bare-status errors beyond the search
+
+- Chosen (a): every error the page builds from a bare HTTP status becomes a sentence of the catalog: an answer whose body cannot be read says that the server's answer could not be read, and a refused request with no text of its own says the status in a sentence. `grep -rn 'String(response.status)\|HTTP \${' src/lib/state src/lib/views src/lib/ui` lists 29 places in 14 files, the search's two among them.
+- Not chosen: (b) the search's two places only, as Z197 worded it, which leaves the same words in the agents, terminal, deposit, writes and twelve other readers, the lazy option.
+
+Where it is built: D32. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z257 (2026-10-02, D18's first review): the process table and LA18
+
+- Chosen by Axel (b): `systeminformation` dropped; one `ps -axo pid=,ppid=,pcpu=,rss=,lstart=,command=` run oculus starts itself, with a timeout and a kill on `close()`, read by a hand-written parser. The three defects the review found in the library (a command line with a `:` losing its arguments, `started` an hour off after a clock change, an unbounded `ps` child not ended on close) end at their cause.
+- Not chosen: (a) the library for the rows and a second `ps` read for the command lines, two reads that can disagree and a child still not ended; (c) the library as it is, the lazy option.
+
+Where it is built: D18's repair round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
