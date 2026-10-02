@@ -83,6 +83,19 @@ dispatch:      # four in flight (workers_at_once: 5), A1 landed 14:40: Q88c and 
   shared_paths: with D14, `pty/routes.ts` (D14 `startLatex` and `latexCommand`, D17 the `command` action, the action list and the `shellWord` import; separate functions, D14's calls of `shellWord` take D17's import at the second landing), `terminal/+server.ts` (separate options), `terminals.svelte.ts` (separate methods), `tree/menu/row-menu.ts` (separate groups), `Source.svelte` (D14 the save and editor props, D17 the published selection), `HELP.md` and `DESIGN.md` (separate passages); with D18, `state/client/context.ts` (separate constructions), the pty tests (D18 reads `listTerminals`, D17 adds two fields before `#{pid}`), `allow-duplication.txt` and `config-folder.test.ts` (separate rows), `HELP.md` and `DESIGN.md`; with D32, `HELP.md` and `DESIGN.md` (separate lines)
   landing: not-started
   round: 0
+- step: S4
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 16:44)
+  session_id: aa51d64b83ba51019 (builder, launched 2026-10-02 16:44 local)
+  worktree: .agents/worktrees/S4
+  base: 3c772d4c
+  launched: 2026-10-02 16:44 local
+  report: agents/reviews/S4-report.md
+  brief_check: agents/reviews/S4-brief-check.md; claude-opus-5-5, 234,939 tokens, 68 tool uses, 11.8 min (findings closed 2026-10-02 under Closed)
+  shared_paths: with D18, `config/layout.yml` (D18 adds `processes` to `arrangements.info`, which S4 removes; the second to land places `processes` last in the merged lower right pane with no chord, as Z282 rules, a known edit of one line), the registrations' `group:` lines (D18's `Processes.svelte` takes `group: 'views'` order 9 at the second landing), `config/text/app.yml` and HELP.md's key table (`y1-y7` becomes the merged group's row), the catalogue and registry tests (separate rows), `HELP.md` and `DESIGN.md` (separate passages); with D32, `HELP.md`, `DESIGN.md` and `tests/views/whole/type-scale.test.ts` (separate lines); with D14 and D17, `HELP.md`, `DESIGN.md`, `tests/checks/config/config-folder.test.ts` and `config/text/server.yml` (separate keys and rows)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
