@@ -12,8 +12,9 @@ export type Finding = {
     message: string;
 };
 
-/** The six scan tiers, the basename of each `dir` in the scan rules. */
-export type Tier = 'ideas' | 'active' | 'manuscripts' | 'software' | 'coauthor' | 'archive';
+/** The seven scan tiers, the basename of each `dir` in the scan rules. */
+export type Tier =
+    'ideas' | 'active' | 'manuscripts' | 'software' | 'coauthor' | 'archive' | 'side-projects';
 
 /** The seven registries, one per file readRegistries is given. */
 export type RegistryName =
@@ -666,4 +667,44 @@ export type Funding = {
     tags: string[];
     projectIds: Id[];
     pillarIds: Id[];
+};
+
+/**
+ * Where a side project was read from: a folder of the hub's `side-projects/` tier, or the `.oculus`
+ * folder of a Files root. The two never share an id, which is built from this.
+ */
+export type PersonalSource =
+    { kind: 'hub'; folder: string } | { kind: 'root'; key: string; dir: string };
+
+/**
+ * A directory the side-project reader looks into: the key a Files root is served under and where it
+ * is, as an absolute path. The reader takes the roots it is handed as they come; the server decides
+ * which roots of the file browser are handed to it. It has the shape of the file browser's root,
+ * which the data layer cannot import.
+ */
+export type PersonalRoot = { key: string; dir: string };
+
+/** A side project's manifest as it parsed, with where it came from and nothing checked. */
+export type RawPersonal = {
+    source: PersonalSource;
+    /** Absolute path of the project.yml that was read. */
+    file: string;
+    data: Record<string, unknown>;
+};
+
+/**
+ * One side project of the Personal board: a hub folder under `side-projects/` or a repository with
+ * a `.oculus/project.yml`. The id is `side:<slug>` for the first and `root:<key>` for the second.
+ * `status` is a key of `side_project_status`, or `unknown` for any other value.
+ */
+export type SideProject = {
+    id: Id;
+    title: string;
+    status: string;
+    eli5: string;
+    next: string;
+    links: string[];
+    source: PersonalSource;
+    /** Absolute path of the manifest. */
+    file: string;
 };

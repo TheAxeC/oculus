@@ -159,6 +159,7 @@ function snapshot(datasets: Dataset[]): Snapshot {
     return {
         version: 25,
         entities: {
+            personal: {},
             projects: { linked: project('linked') },
             venues: {},
             datasets: Object.fromEntries(datasets.map((item) => [item.id, item])),

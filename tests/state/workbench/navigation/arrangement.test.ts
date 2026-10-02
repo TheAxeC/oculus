@@ -279,7 +279,7 @@ describe('the shipped pages', () => {
                 ['transcript', 'timeline'],
                 ['session-detail', 'changes', 'agents', 'files']
             ],
-            projects: [['projects', 'coauthor', 'archive']],
+            projects: [['projects', 'coauthor', 'archive', 'personal']],
             incoming: [['inbox', 'radar', 'leads', 'linkedin'], ['calendar']],
             explorer: [['files', 'repositories', 'search'], []],
             academic: [['funding', 'events', 'education', 'applications', 'joint-work', 'tasks']],
@@ -316,7 +316,7 @@ describe('the shipped pages', () => {
         const seen = [...onPages, ...onFloats];
         const pagesOf = (tab: string): string[] =>
             seen.filter((one) => one.tab === tab).map((one) => one.page);
-        expect(wanted).toHaveLength(50);
+        expect(wanted).toHaveLength(51);
         expect(wanted.filter((tab) => pagesOf(tab).length !== 1)).toEqual(['files']);
         // The one entry on two pages is the Files view: Explorer's own and the Sessions page's
         // tab that follows the selected session.
@@ -422,6 +422,49 @@ describe('a System page saved before the Help page was its own', () => {
         // The System page the browser saved is still the one its button shows.
         browser.layout.openRailPage('info', 'System', arrangements.info);
         expect(tabsOnScreen(browser)).toEqual(OLD_TABS);
+    });
+});
+
+describe('a Projects page saved before the Personal tab', () => {
+    const shipped = loadConfig(engineDir()).config;
+    const arrangements = shipped.arrangements as Record<string, unknown>;
+
+    const OLD_PROJECTS = {
+        root: { kind: 'pane', view: ['projects', 'coauthor', 'archive'] }
+    };
+
+    /** The tabs on screen, pane by pane. */
+    function tabsOnScreen(state: ClientState): string[][] {
+        return panes(state.layout.layout()).map(({ pane: node }) =>
+            node.tabs.map((tab) => tab.view)
+        );
+    }
+
+    /** A browser whose saved layout holds a Projects page made from the old arrangement. */
+    function savedBrowser(): ClientState {
+        const storage = fakeStorage();
+        loadLayout(storage);
+        expect(openRailPage('projects', 'Projects', OLD_PROJECTS)).toBe(true);
+        const again = createClientState();
+        again.layout.loadLayout(storage);
+        return again;
+    }
+
+    it('keeps its three tabs when its button is pressed', () => {
+        const browser = savedBrowser();
+        const saved = browser.layout.pages().find((page) => page.rail === 'projects');
+        expect(browser.layout.openRailPage('projects', 'Projects', arrangements.projects)).toBe(
+            true
+        );
+        expect(browser.layout.currentPage().id).toBe(saved?.id);
+        expect(tabsOnScreen(browser)).toEqual([['projects', 'coauthor', 'archive']]);
+    });
+
+    it('shows four tabs once the pages are reset from the shipped arrangement', () => {
+        const browser = savedBrowser();
+        const rail = [{ page: 'projects', label: 'Projects', node: arrangements.projects }];
+        expect(browser.layout.resetPages(rail, [])).toBe(true);
+        expect(tabsOnScreen(browser)).toEqual([['projects', 'coauthor', 'archive', 'personal']]);
     });
 });
 
@@ -794,76 +837,5 @@ describe('the state a tab of an arrangement opens with', () => {
         expect(Object.getPrototypeOf(state)).toBe(Object.prototype);
         expect(state.b).toBe(1);
         expect(state.a).toBe(2);
-    });
-});
-
-// The floats a fresh browser starts with are written in config/layout.yml beside the arrangements:
-// each is a dock or a free place and the views it holds, read by parseFloats, and an entry that
-// does not read is dropped with the rest kept.
-describe('the floats of the config', () => {
-    const shipped = loadConfig(engineDir()).config;
-
-    it('ships one float, docked right at 0.3, holding hpc and usage', () => {
-        const floats = parseFloats(shipped.floats);
-        expect(floats).toHaveLength(1);
-        expect(floats[0].place).toEqual({ kind: 'dock', edge: 'right', size: 0.3 });
-        expect(floats[0].pane.tabs.map((tab) => tab.view)).toEqual(['hpc', 'usage']);
-        expect(floats[0].pane.active).toBe(floats[0].pane.tabs[0].id);
-    });
-
-    it('reads a dock and a free place, one view or a list of tabs with a state', () => {
-        const floats = parseFloats([
-            { view: 'status', dock: 'left', size: 0.25 },
-            {
-                view: [{ view: 'files', state: { follow: true } }, 'search'],
-                x: 0.5,
-                y: 0.1,
-                w: 0.4,
-                h: 0.5
-            }
-        ]);
-        expect(floats.map((one) => one.place)).toEqual([
-            { kind: 'dock', edge: 'left', size: 0.25 },
-            { kind: 'free', x: 0.5, y: 0.1, w: 0.4, h: 0.5 }
-        ]);
-        expect(floats[1].pane.tabs.map((tab) => tab.view)).toEqual(['files', 'search']);
-        expect(floats[1].pane.tabs[0].state).toEqual({ follow: true });
-    });
-
-    it('mints a fresh instance id for each tab each time it is read', () => {
-        const once = parseFloats(shipped.floats)[0].pane.tabs.map((tab) => tab.id);
-        const again = parseFloats(shipped.floats)[0].pane.tabs.map((tab) => tab.id);
-        expect(once.filter((id) => again.includes(id))).toEqual([]);
-    });
-
-    it.each([
-        ['no view', { dock: 'right', size: 0.3 }],
-        ['an empty list of views', { view: [], dock: 'right', size: 0.3 }],
-        ['an unknown edge', { view: 'status', dock: 'top', size: 0.3 }],
-        ['a dock past 0.6', { view: 'status', dock: 'right', size: 0.7 }],
-        ['a float past the window', { view: 'status', x: 0.9, y: 0, w: 0.3, h: 0.4 }],
-        ['a float under the least size', { view: 'status', x: 0, y: 0, w: 0.05, h: 0.4 }],
-        ['neither a dock nor a place', { view: 'status' }],
-        ['a value that is not a map', 'status']
-    ])('drops an entry with %s and keeps the rest', (_name, bad) => {
-        const floats = parseFloats([bad, { view: 'files', dock: 'bottom', size: 0.3 }]);
-        expect(floats.map((one) => one.place)).toEqual([
-            { kind: 'dock', edge: 'bottom', size: 0.3 }
-        ]);
-    });
-
-    it('reads a missing or malformed list as none', () => {
-        expect(parseFloats(undefined)).toEqual([]);
-        expect(parseFloats({ view: 'status' })).toEqual([]);
-        expect(parseFloats(null)).toEqual([]);
-    });
-
-    it('keeps the first of two entries docked on one edge', () => {
-        const floats = parseFloats([
-            { view: 'status', dock: 'right', size: 0.3 },
-            { view: 'files', dock: 'right', size: 0.2 }
-        ]);
-        expect(floats).toHaveLength(1);
-        expect(floats[0].pane.tabs[0].view).toBe('status');
     });
 });

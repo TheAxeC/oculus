@@ -189,6 +189,7 @@ export function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            personal: {},
             feeds: {
                 leads: [{ title: 'A lead', deadline: daysOff(8), status: 'open', fit: 'strong' }],
                 radar: { lastRun: '2020-01-01' },
@@ -296,6 +297,7 @@ export function bare(): Snapshot {
     return {
         version: 2,
         entities: {
+            personal: {},
             feeds: NO_FEEDS,
             career: null,
             projects: {},

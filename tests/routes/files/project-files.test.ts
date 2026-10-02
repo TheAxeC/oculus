@@ -83,4 +83,28 @@ describe('the project-files route', () => {
         expect(response.status).toBe(200);
         expect(await body(response)).toMatchObject({ rows: [], truncated: false });
     });
+
+    it('answers 404 for the slug of a side project and still answers for a research project', async () => {
+        const into = target();
+        const folder = join(into.hub, 'side-projects', 'x');
+        expect(resolve(folder).startsWith(resolve(into.hub) + sep)).toBe(true);
+        mkdirSync(folder, { recursive: true });
+        writeFileSync(join(folder, 'project.yml'), 'title: X\nstatus: idea\n');
+        writeFileSync(join(folder, 'README.md'), 'a body\n');
+        const withSide: FilesTarget = {
+            ...into,
+            config: {
+                ...into.config,
+                scan: [
+                    ...into.config.scan,
+                    { dir: 'side-projects', type: 'side-project', optional: true }
+                ]
+            }
+        };
+
+        const response = handleProjectFiles(request('id=x'), withSide);
+        expect(response.status).toBe(404);
+        expect((await body(response)).error).toBe('no project with the id x');
+        expect(handleProjectFiles(request('id=alpha'), withSide).status).toBe(200);
+    });
 });

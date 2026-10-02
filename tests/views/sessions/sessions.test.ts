@@ -660,6 +660,7 @@ describe('the pin control over the portfolio', () => {
         return {
             version: 9,
             entities: {
+                personal: {},
                 projects: {
                     alpha: project('alpha', 'projects/manuscripts/alpha'),
                     quiet: project('quiet', 'projects/active/quiet')

@@ -515,7 +515,7 @@ options:
     sources.yml:
         scan:
             section: Project scan
-            description: Where to find projects, with paths relative to the hub. A project is any subfolder that holds a project.yml, and its tier is the last segment of the rule's dir (projects/active gives active). A rule with no dir is dropped, and a folder that is not there is a finding unless the rule is optional.
+            description: Where to find projects, with paths relative to the hub. A project is any subfolder that holds a project.yml, and its tier is the last segment of the rule's dir (projects/active gives active). The side-projects tier is the exception. Its folders feed the Personal board only, and no research reader (the boards, the Focus lanes, the audit, the chat context, the writes and the deposit) finds them. A rule with no dir is dropped, and a folder that is not there is a finding unless the rule is optional.
             fields:
                 dir: the folder scanned, relative to the hub
                 type: the type every project of the folder takes, absent when a nested rule reads it from each manifest

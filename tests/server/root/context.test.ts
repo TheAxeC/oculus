@@ -169,6 +169,17 @@ describe('ServerContext', () => {
         const roots = (watchGit.mock.calls[0][1] as { roots: () => string[] }).roots();
         expect(loadConfig.mock.calls.length).toBeGreaterThan(read);
         expect(roots).toContain('/hub');
+        // The portfolio watcher is handed the same fold, read at the call as well, and the same
+        // workspaces file the git watcher polls; it drops the two fixed keys itself.
+        const paths = watchPortfolio.mock.calls[0][1];
+        const readBeforePortfolio = loadConfig.mock.calls.length;
+        expect(paths.roots().map((one) => one.key)).toEqual(
+            expect.arrayContaining(['hub', 'engine'])
+        );
+        expect(loadConfig.mock.calls.length).toBeGreaterThan(readBeforePortfolio);
+        expect(paths.workspacesFile).toBe(
+            (watchGit.mock.calls[0][1] as { workspacesFile: string }).workspacesFile
+        );
         // One log-path map, two writers: the poller's prewarm fills in what a press has not asked
         // for yet, and the route's log action reads and writes the same object.
         expect(watchHpc.mock.calls[0][1].logPaths).toBe(context.hpcLogPaths);

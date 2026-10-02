@@ -64,7 +64,7 @@ arrangements:
                 - { kind: pane, view: [transcript, timeline] }
         - { kind: pane, view: [session-detail, changes, agents, { view: files, state: { follow: true } }] }
   projects:
-    root: { kind: pane, view: [projects, coauthor, archive] }
+    root: { kind: pane, view: [projects, coauthor, archive, personal] }
   incoming:
     root:
       kind: split

@@ -8,7 +8,7 @@
 import { join } from 'node:path';
 import { z } from 'zod';
 import { keysOfShape, optionalTextShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
-import { readManifests } from './sources/manifests.ts';
+import { readManifests, readPersonal } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
 import { CAREER_FILE, readCareer } from './sources/career.ts';
@@ -25,6 +25,7 @@ import type {
     FeedFiles,
     Finding,
     Id,
+    PersonalRoot,
     PortfolioConfig,
     PresentSlide,
     RawManifest,
@@ -147,6 +148,8 @@ export function portfolioConfigFrom(
     if (chips.length > 0) vocab.chips = chips;
     const hostStatuses = readAs(keysOfShape, merged.career_host_status);
     if (hostStatuses !== null) vocab.hostStatuses = hostStatuses;
+    const sideStatuses = readAs(keysOfShape, merged.side_project_status);
+    if (sideStatuses !== null) vocab.sideStatuses = sideStatuses;
     // The lanes a `focus:` may name, plus the ideas backlog: vocab.yml keeps `holding` out of
     // `focus_lanes` on purpose (it is not a lane) and names it through `holding_color`, so it is
     // added here when that colour is configured, which is the same file saying the backlog exists.
@@ -209,10 +212,18 @@ function slides(
 /**
  * Read the hub, check what was read, and hand back the snapshot. The three steps are the three
  * modules: the sources say what is on disk, validate says what is wrong with it, and normalise
- * turns it into the wire model with the findings carried inside it.
+ * turns it into the wire model with the findings carried inside it. `roots` are the directories
+ * whose `.oculus/project.yml` is a side project beside the hub's own side-projects tier, read as
+ * handed; the watcher's `personalRoots` decides which roots of the file browser they are.
  */
-export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0): Snapshot {
+export function buildPortfolio(
+    hub: string,
+    config: PortfolioConfig,
+    version = 0,
+    roots: PersonalRoot[] = []
+): Snapshot {
     const manifests = readManifests(hub, config.scan, config.text);
+    const personal = readPersonal(hub, config.scan, roots, config.text);
     const registries = readRegistries(hub, config.registries, config.text);
     const collections = readCollections(hub, config.collections, config.text);
     const feeds = readFeeds(hub, config.feeds, config.text);
@@ -227,6 +238,7 @@ export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0
 
     const raw: RawPortfolio = {
         manifests: manifests.manifests,
+        personal: personal.personal,
         registries,
         collections: collections.collections,
         feeds: feeds.feeds,
@@ -235,6 +247,7 @@ export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0
         present: present.present,
         findings: [
             ...manifests.findings,
+            ...personal.findings,
             ...registries.findings,
             ...collections.findings,
             ...feeds.findings,
@@ -251,5 +264,5 @@ export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0
         datasetsFile: join(hub, config.registries.datasets),
         text: config.text
     });
-    return normalise(raw, findings, version);
+    return normalise(raw, findings, version, config.vocab.sideStatuses);
 }

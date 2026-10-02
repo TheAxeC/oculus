@@ -99,6 +99,7 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            personal: {},
             projects: {
                 alpha: project('alpha', { collaborators: ['naesens'], short: 'Alpha' }),
                 beta: project('beta')

@@ -34,6 +34,8 @@ function typeRules(file: string): string {
 }
 
 const VIEWS: Record<string, string> = {
+    'boards/personal/Personal.svelte':
+        '.source=fs-sm | .eli5=fs-md | .next=fs-md | .label=fs-xs | .links=fs-sm',
     'boards/collection/Collection.svelte': '.label=fs-xs | .said=fs-md | .sub=fs-sm',
     'system/config/Config.svelte': '.intro, .desc=fs-md',
     'sources/data/Data.svelte': '',

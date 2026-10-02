@@ -8,9 +8,15 @@
 // What this does NOT cover: the token reaching the page and Kit putting it on the event, which is
 // exercised by the curl in the package's verification.
 
-import { describe, expect, it } from 'vitest';
-import { handleDeposit, handleDepositState } from '../../../src/lib/server/git/deposit-routes.ts';
+import { describe, expect } from 'vitest';
+import {
+    handleDeposit,
+    handleDepositState,
+    knownIds
+} from '../../../src/lib/server/git/deposit-routes.ts';
 import type { DepositOptions } from '../../../src/lib/server/git/deposit-routes.ts';
+import { loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { it, plantScratch } from '../../fixtures/scratch.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 
@@ -166,5 +172,42 @@ describe('a deposit body of the wrong shape', () => {
             error: 'the portfolio holds no project with that id'
         });
         expect(ran).toEqual([]);
+    });
+});
+
+describe('the ids a deposit may name, over a hub whose scan carries the side-projects tier', () => {
+    /** A hub with one manuscript and one side project, and an engine that scans both tiers. */
+    function hubAndEngine(): { engine: string; config: Record<string, unknown> } {
+        const hub = plantScratch('oculus-deposit-ids-hub-', {
+            'projects/manuscripts/alpha/project.yml': 'id: alpha\ntype: manuscript\ntitle: Alpha\n',
+            'side-projects/x/project.yml': 'title: X\nstatus: idea\neli5: ""\nnext: ""\nlinks: []\n'
+        });
+        const engine = plantScratch('oculus-deposit-ids-engine-', {
+            'config/local.yml': `hub: ${hub}\n`,
+            'config/sources.yml': [
+                'scan:',
+                '  - { dir: projects/manuscripts, type: manuscript, tier: projects }',
+                '  - { dir: side-projects, type: side-project, tier: personal, optional: true }',
+                ''
+            ].join('\n')
+        });
+        return { engine, config: loadConfig(engine).config };
+    }
+
+    it('holds the manuscript and not the side project', () => {
+        const { engine, config } = hubAndEngine();
+        expect(knownIds([], engine, config)).toEqual(['alpha']);
+    });
+
+    it("answers 404 to a POST and a GET that name the side project's slug", async () => {
+        const { engine, config } = hubAndEngine();
+        const into = options({ idsFor: () => knownIds([], engine, config) });
+        const posted = await handleDeposit(request({ action: 'plan', id: 'x' }), TOKEN, into);
+        expect(posted.status).toBe(404);
+        const asked = await handleDepositState(read(`${URL_}?id=x`), into);
+        expect(asked.status).toBe(404);
+        expect(ran).toEqual([]);
+        const known = await handleDeposit(request({ action: 'plan', id: 'alpha' }), TOKEN, into);
+        expect(known.status).toBe(200);
     });
 });

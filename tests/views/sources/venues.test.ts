@@ -183,6 +183,7 @@ function snapshot(items: Venue[] = VENUES): Snapshot {
     return {
         version: 24,
         entities: {
+            personal: {},
             feeds: NO_FEEDS,
             career: null,
             projects,

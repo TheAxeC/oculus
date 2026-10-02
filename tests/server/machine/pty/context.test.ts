@@ -26,6 +26,7 @@ test.beforeAll(() => {
     write('projects/archive/published/zulu/project.yml', 'id: zulu\ntitle: Zulu\n');
     write('projects/archive/project.yml', 'id: scan-root-decoy\n');
     write('projects/archive/published/zulu/code/project.yml', 'id: decoy\n');
+    write('side-projects/x/project.yml', 'title: Side X\nstatus: idea\n');
     write('registries/pillars.yml', 'pillar: fixture\n');
     write('funding/funding.yml', 'funding: fixture\n');
     write('network/events.yml', 'events: fixture\n');
@@ -87,6 +88,22 @@ describe('portfolioContext', () => {
     it('ignores a nested scan root manifest while retaining its child projects', () => {
         expect(index).not.toContain('scan-root-decoy');
         expect(index).toContain('## projects/archive/published/zulu\nid: zulu');
+    });
+});
+
+describe('portfolioContext over a scan that carries the side-projects tier', () => {
+    it('lists the research projects and no side project', () => {
+        const withSide = {
+            ...config,
+            scan: [
+                ...(config.scan as unknown[]),
+                { dir: 'side-projects', type: 'side-project', optional: true }
+            ]
+        };
+        const index = portfolioContext(ROOT, withSide, engineDir());
+        expect(index).toContain('## projects/active/alpha');
+        expect(index).not.toContain('side-projects/x');
+        expect(index).not.toContain('Side X');
     });
 });
 

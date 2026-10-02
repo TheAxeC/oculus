@@ -13,6 +13,7 @@
 # project.yml; its tier/outcome comes from the LOCATION below (mirrored in the manifest). Folder == id.
 scan:
   - { dir: projects/ideas,       type: idea,       tier: projects }
+  - { dir: side-projects,        type: side-project, tier: personal, optional: true }   # the Personal board only; no research reader reads it
   - { dir: projects/active,      type: active,     tier: projects }
   - { dir: projects/manuscripts, type: manuscript, tier: projects }
   - { dir: projects/software,    type: software,   tier: software, optional: true }   # optional; a hub without the folder reports nothing
@@ -92,6 +93,10 @@ career_file: registries/career.yml
 roots:
   - { key: cathedra,    dir: ~/workspace/cathedra }
   - { key: game-engine, dir: ~/workspace/game-engine }
+  - { key: ordo,        dir: ~/workspace/ordo }
+  - { key: scotoma,     dir: ~/workspace/scotoma }
+  - { key: officium,    dir: ~/workspace/officium }
+  - { key: youtube-downloader, dir: ~/workspace/youtube-downloader }
 
 
 # The language each file name opens in, which the editor, the code window and the status bar colour and name it by. One language per line, the editor's own lowercase name, then the endings it claims: an entry that starts with a dot is an extension (.py), any other entry is a whole file name compared lowercased (makefile, cmakelists.txt). A whole name is matched before an extension, and a file no entry matches, a dotfile included, opens as plain text. A language the editor does not colour is refused, and an ending two languages claim belongs to the first one listed.

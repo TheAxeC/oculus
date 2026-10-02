@@ -107,9 +107,15 @@ function countEntries(relative: string, listKey: string): number {
     return Array.isArray(list) ? list.length : -1;
 }
 
+/** The scan tier whose manifests are side projects, held apart from the research tiers. */
+const SIDE_TIER = 'side-projects';
+
 function derivedCounts(): Record<string, number> {
-    const counts: Record<string, number> = { projects: 0 };
-    for (const rule of config.scan) counts.projects += countManifests(join(hub, rule.dir));
+    const counts: Record<string, number> = { projects: 0, personal: 0 };
+    for (const rule of config.scan) {
+        const kind = rule.dir.split('/').pop() === SIDE_TIER ? 'personal' : 'projects';
+        counts[kind] += countManifests(join(hub, rule.dir));
+    }
     for (const [name, listKey] of Object.entries(REGISTRY_LISTS)) {
         counts[name] = countEntries(
             config.registries[name as keyof typeof config.registries],
@@ -157,6 +163,22 @@ describe.skipIf(!present)('the real hub', () => {
         }
         console.log(`integrity: derived counts ${JSON.stringify(counts)}`);
         expect(held).toEqual(counts);
+    });
+
+    it('reads every side project of the hub with no finding, each as a card of the personal map', () => {
+        const folders = globSync('*/project.yml', { cwd: join(hub, SIDE_TIER) })
+            .map((file) => file.split('/')[0])
+            .sort();
+        expect(folders.length).toBeGreaterThanOrEqual(3);
+        const personal = snapshot?.entities.personal ?? {};
+        expect(Object.keys(personal).sort()).toEqual(folders.map((folder) => `side:${folder}`));
+        for (const one of Object.values(personal)) {
+            expect(one.title).not.toBe('');
+            expect(config.vocab.sideStatuses ?? []).toContain(one.status);
+        }
+        expect(snapshot?.findings.filter((finding) => finding.file.includes(SIDE_TIER))).toEqual(
+            []
+        );
     });
 
     it('survives JSON.stringify and JSON.parse unchanged', () => {

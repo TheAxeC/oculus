@@ -202,7 +202,8 @@ describe("oculus's own config directory", () => {
             'venue_tiers',
             'venue_themes',
             'data_themes',
-            'radar_buckets'
+            'radar_buckets',
+            'side_project_status'
         ]
     };
 
@@ -219,6 +220,7 @@ describe("oculus's own config directory", () => {
         'views/boards/editor.yml',
         'views/boards/focus.yml',
         'views/boards/person.yml',
+        'views/boards/personal.yml',
         'views/boards/project.yml',
         'views/boards/projects.yml',
         'views/feeds/inbox.yml',
@@ -316,18 +318,27 @@ describe("oculus's own config directory", () => {
         expect(empty).not.toHaveProperty('dataThemes');
     });
 
-    it('names the six scan tiers, the software one flat, typed and optional', () => {
+    it('names the six research tiers and the side-projects folder, the software tier and the side one optional', () => {
         const { scan } = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
         expect(scan.map((rule) => rule.dir)).toEqual([
             'projects/ideas',
+            'side-projects',
             'projects/active',
             'projects/manuscripts',
             'projects/software',
             'projects/coauthor',
             'projects/archive'
         ]);
-        expect(scan[3]).toEqual({ dir: 'projects/software', type: 'software', optional: true });
-        expect(scan.filter((rule) => rule.optional === true)).toHaveLength(1);
+        expect(scan[4]).toEqual({ dir: 'projects/software', type: 'software', optional: true });
+        expect(scan[1]).toMatchObject({
+            dir: 'side-projects',
+            type: 'side-project',
+            optional: true
+        });
+        expect(scan.filter((rule) => rule.optional === true).map((rule) => rule.dir)).toEqual([
+            'side-projects',
+            'projects/software'
+        ]);
     });
 
     it('holds the cross-link exclusions and independent collection lane tones', () => {
@@ -404,7 +415,14 @@ describe("oculus's own config directory", () => {
     }
 
     it.skipIf(MISSING.length > 0)('names roots that are on this machine', () => {
-        expect(ROOTS.map((root) => root.key)).toEqual(['cathedra', 'game-engine']);
+        expect(ROOTS.map((root) => root.key)).toEqual([
+            'cathedra',
+            'game-engine',
+            'ordo',
+            'scotoma',
+            'officium',
+            'youtube-downloader'
+        ]);
         expect(readRoots(loadConfig(engineDir()).config, rootsFile(engineDir())).findings).toEqual(
             []
         );
@@ -474,14 +492,21 @@ describe("oculus's own config directory", () => {
         const glyphs = glyphCatalog(config);
         const hosts = config.career_host_status as Record<string, { icon: string }>;
         const statuses = config.status_legend as { key: string; icon: string }[];
+        const sides = config.side_project_status as Record<string, { icon: string }>;
         const icons = [
             ...Object.values(hosts).map((entry) => entry.icon),
-            ...statuses.map((entry) => entry.icon)
+            ...statuses.map((entry) => entry.icon),
+            ...Object.values(sides).map((entry) => entry.icon)
         ];
         expect(
             Object.entries(hosts)
                 .filter(([, entry]) => !(entry.icon in glyphs))
                 .map(([key]) => key)
+        ).toEqual([]);
+        expect(
+            Object.entries(sides)
+                .filter(([, entry]) => !(entry.icon in glyphs))
+                .map(([key, entry]) => `${key}: ${entry.icon}`)
         ).toEqual([]);
         expect(icons.filter((name) => !(name in glyphs))).toEqual([]);
     });

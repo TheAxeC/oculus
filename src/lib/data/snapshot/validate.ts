@@ -30,6 +30,7 @@ import {
     wordShape
 } from '../shapes/shapes.ts';
 import { JOINT_WORK, PERSON_FIELD, namedSchemaShape } from './normalise.ts';
+import { personalFindings } from './normalise-personal.ts';
 import { checkThemes } from './validate-themes.ts';
 
 /** Keys the reader itself adds to every manifest record; no schema names them. */
@@ -844,6 +845,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     checkCollectionSchema(raw, catalog, findings);
     checkHostStatus(raw, rules, findings);
     checkThemes(raw, rules, findings);
+    findings.push(...personalFindings(raw.personal, vocab.sideStatuses, catalog));
 
     return sortFindings(findings);
 }

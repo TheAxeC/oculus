@@ -63,6 +63,7 @@ function raw(over: Partial<RawPortfolio> = {}): RawPortfolio {
         NAMES.map((name): [string, RawRegistry] => [name, { entries: [], meta: {} }])
     ) as Record<RegistryName, RawRegistry>;
     return {
+        personal: [],
         manifests: [],
         registries,
         collections: {},

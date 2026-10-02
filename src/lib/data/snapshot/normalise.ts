@@ -13,6 +13,7 @@
 import { z } from 'zod';
 import { compact } from './compact.ts';
 import { career } from './normalise-career.ts';
+import { sideProjects } from './normalise-personal.ts';
 import { indexing } from './indexing.ts';
 import type {
     CodeAvailability,
@@ -99,7 +100,8 @@ export const ENTITY_KINDS = [
     'funding',
     'people',
     'organisations',
-    'collections'
+    'collections',
+    'personal'
 ];
 
 /**
@@ -682,8 +684,14 @@ function relations(
 /**
  * The snapshot the socket carries. `version` is the caller's, monotonic and incremented by the
  * watcher on every rebuild; `findings` is what validate returned, carried as it stands.
+ * `sideStatuses` are the keys of `side_project_status`, which a side project's status is held to.
  */
-export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): Snapshot {
+export function normalise(
+    raw: RawPortfolio,
+    findings: Finding[],
+    version = 0,
+    sideStatuses?: string[]
+): Snapshot {
     const withId = (entries: RawRegistryEntry[]): RawRegistryEntry[] =>
         entries.filter((item) => item.key.length > 0);
 
@@ -760,6 +768,7 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
             people: byId(people),
             organisations: byId(organisations),
             collections: byId(collections),
+            personal: byId(sideProjects(raw.personal, sideStatuses)),
             feeds: feeds(raw.feeds),
             career: career(raw.career)
         },

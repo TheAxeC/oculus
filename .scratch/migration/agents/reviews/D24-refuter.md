@@ -282,3 +282,11 @@ None.
 ### Usage
 
 About 250,000 tokens (budget counter), about 75 tool uses (counted by hand), about 40 minutes (clock 06:57 to 07:37, approximate start).
+# Closed
+
+The first run's findings were closed by repair round 1, as the run over that round records per ruling. The run over round 1 found four, each closed at landing on main:
+
+- Proof 1 (the report's first part contradicts the end state): `D24-report.md` opens with a note that the section "Repair round 1" holds the end state and names the four superseded statements (the "Not done as one run" paragraph with the NOT DONE row, the "One limit" paragraph, the judgment call on `readPersonal`, and the grep line on `personalRoots`).
+- Proof 2 (duplicate-directory roots not composed end to end): `tests/server/root/watch/portfolio/roots.test.ts` "draws one card for a directory listed twice, by a link or under the hub" runs the hub under another key, one directory under two spellings and a link through the watcher. Without the real-path check in `personalRoots` it fails: `expected [ 'root:again', 'root:link', ...(2) ] to deeply equal [ 'root:tool' ]`.
+- Standards 1 (a rule written twice): `openRootParent` calls `watchFile(dir, ...)`, and `identityOf` is `realPath(path, true) ?? path` from `server/core/paths.ts`; `portfolio.ts` no longer imports `realpathSync`.
+- Behaviour 1 (two letter cases, two cards): `realPath` takes `native`, which uses `realpathSync.native`, and `identityOf` passes it. `tests/server/root/watch/portfolio/personal-roots.test.ts` "keeps one root for two letter cases of one directory on a case-insensitive file system" fails with the non-native call: `expected [ { key: 'upper', ...(1) }, ...(1) ] to deeply equal [ { key: 'upper', ...(1) } ]`. It skips on a file system that tells cases apart.

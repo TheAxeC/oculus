@@ -17,10 +17,12 @@ import type {
     Project,
     RawCollection,
     RawManifest,
+    RawPersonal,
     RawRegistry,
     RegistryFiles,
     RegistryName,
     ScanRule,
+    SideProject,
     Venue
 } from './model-entities.ts';
 import type {
@@ -36,6 +38,8 @@ export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
 
 export type RawPortfolio = {
     manifests: RawManifest[];
+    /** The side projects of the hub's side-projects tier and of the Files roots, unchecked. */
+    personal: RawPersonal[];
     registries: Record<RegistryName, RawRegistry>;
     collections: Record<string, RawCollection>;
     /** What the four feed files hold, from sources/feeds.ts. */
@@ -86,6 +90,11 @@ export type Vocabulary = {
      * The keys of `data_themes`, the words a dataset's `themes:` may use; absent as `venueThemes`.
      */
     dataThemes?: string[];
+    /**
+     * The keys of `side_project_status`, the words a side project's `status:` may use; absent as
+     * `hostStatuses`.
+     */
+    sideStatuses?: string[];
 };
 
 /**
@@ -144,6 +153,8 @@ export type Entities = {
     people: Record<Id, Person>;
     organisations: Record<Id, Organisation>;
     collections: Record<Id, Collection>;
+    /** The side projects of the Personal board, by their `side:` or `root:` id. */
+    personal: Record<Id, SideProject>;
     /** What the generated feeds say, which is a summary rather than a set of entities. */
     feeds: Feeds;
     /** The career strategy, and null when the hub holds no career file. */
@@ -334,10 +345,13 @@ export type {
     PresentSpec,
     PresentTag,
     Pillar,
+    PersonalRoot,
+    PersonalSource,
     Project,
     RawCollection,
     RawEntry,
     RawManifest,
+    RawPersonal,
     RawRegistry,
     RawRegistryEntry,
     RegistryFiles,
@@ -345,6 +359,7 @@ export type {
     RegistryName,
     Reproduced,
     ScanRule,
+    SideProject,
     Subtask,
     Tier,
     Venue

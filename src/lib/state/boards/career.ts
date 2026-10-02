@@ -9,23 +9,18 @@
 import type { Career, Host } from '../../data/model/index.ts';
 import { z } from 'zod';
 import { scalar } from '../../data/helpers/guards.ts';
-import { mapShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
+import { readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the two model types
 // the career panel names reach it from here.
 export type { Career, Host } from '../../data/model/index.ts';
-import { UNKNOWN_TONE, toneOf } from '../shared/words/tones.ts';
+import { statusRows, type StatusRow } from '../shared/words/status-rows.ts';
 
 /** The statuses that count as outreach in progress: sent and waiting, or already in dialogue. */
 export const IN_FLIGHT = ['awaiting', 'warm'];
 
 /** One status of `career_host_status`: the value a host carries, its words and its hue. */
-export type HostStatus = {
-    key: string;
-    label: string;
-    glyph: string;
-    tone: string;
-};
+export type HostStatus = StatusRow;
 
 /** One scored axis of `career_score_dims`: the host key it reads, its chip letter and its words. */
 export type ScoreDim = {
@@ -34,28 +29,12 @@ export type ScoreDim = {
     label: string;
 };
 
-/** The label, icon and colour of one `career_host_status` row, each the empty text if absent. */
-const hostStatusShape = z.object({ label: wordShape, icon: wordShape, color: wordShape });
-
 /**
  * The host statuses of `career_host_status`, in the config's order, each icon kept as a glyph name
  * and each hue already resolved to a tone.
  */
 export function hostStatuses(config: Record<string, unknown>): HostStatus[] {
-    const rows = readAs(mapShape, config.career_host_status);
-    if (rows === null) return [];
-    return Object.entries(rows).flatMap(([key, row]) => {
-        const held = readAs(hostStatusShape, row);
-        if (held === null) return [];
-        return [
-            {
-                key,
-                label: held.label === '' ? key : held.label,
-                glyph: held.icon,
-                tone: held.color === '' ? UNKNOWN_TONE : toneOf(held.color)
-            }
-        ];
-    });
+    return statusRows(config, 'career_host_status');
 }
 
 /** One row of `career_score_dims`: a map with a field; the badge is the field's first letter. */

@@ -113,6 +113,7 @@ function collection(key: string, entries: Record<string, unknown>[]): RawCollect
 /** A portfolio whose registries hold one entry each, unless the caller replaces them. */
 function portfolio(over: Partial<RawPortfolio> = {}): RawPortfolio {
     return {
+        personal: [],
         manifests: [manifest()],
         registries: {
             venues: registry('venues', ['bspc']),

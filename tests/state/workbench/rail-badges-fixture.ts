@@ -52,6 +52,7 @@ export function badgeSnapshot(empty = false): Snapshot {
     return {
         version: 1,
         entities: {
+            personal: {},
             projects: Object.fromEntries(projects.map((item) => [item.id, item])),
             venues: {},
             datasets: {},

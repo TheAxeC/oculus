@@ -37,6 +37,12 @@ import { pinnedSession } from '../workbench/selection.svelte.ts';
 import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
 import type { SelectionStore } from '../workbench/selection.svelte.ts';
 import type { BoardItem, BoardPreset, BoardStats, Dissemination } from '../boards/board/index.ts';
+import {
+    sideCards as cardsOf,
+    sideStatuses as statusesOf,
+    type SideCard,
+    type SideStatus
+} from '../boards/board/personal.ts';
 import type { Choice, FormField } from '../forms/schema.ts';
 import type {
     Area,
@@ -103,6 +109,8 @@ export type SelectorsStore = {
     boardItemOf: (id: Id) => BoardItem | null;
     projectOf: (id: Id) => Project | null;
     projects: () => Project[];
+    sideStatuses: () => SideStatus[];
+    sideCards: () => SideCard[];
     venues: () => Venue[];
     datasets: () => Dataset[];
     archiveDead: () => string[];
@@ -279,6 +287,21 @@ export function createSelectors(
     function projects(): Project[] {
         const snapshot = entities.portfolio();
         return snapshot === null ? [] : Object.values(snapshot.entities.projects);
+    }
+
+    /** The statuses of `side_project_status` in the config's order, none before any config. */
+    function sideStatuses(): SideStatus[] {
+        return statusesOf(configMap());
+    }
+
+    /**
+     * The Personal board's cards: every side project of the snapshot under its status, in the
+     * status order and then by title. Before the first snapshot an empty list.
+     */
+    function sideCards(): SideCard[] {
+        const snapshot = entities.portfolio();
+        if (snapshot === null) return [];
+        return cardsOf(Object.values(snapshot.entities.personal), sideStatuses());
     }
 
     /** Every venue in catalogue order, before the first snapshot an empty list. */
@@ -489,6 +512,8 @@ export function createSelectors(
         boardItemOf,
         projectOf,
         projects,
+        sideStatuses,
+        sideCards,
         venues,
         datasets,
         archiveDead,

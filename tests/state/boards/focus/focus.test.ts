@@ -196,6 +196,7 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            personal: {},
             feeds: {
                 leads: [
                     { title: 'A lead', deadline: '2026-09-20', status: 'open', fit: 'strong' },

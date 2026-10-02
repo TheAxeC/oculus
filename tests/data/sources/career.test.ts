@@ -133,6 +133,7 @@ describe('normalising it', () => {
 describe('validating a host status', () => {
     function portfolio(over: Partial<RawPortfolio> = {}): RawPortfolio {
         return {
+            personal: [],
             manifests: [],
             registries: {
                 venues: { entries: [], meta: {} },

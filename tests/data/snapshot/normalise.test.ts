@@ -77,6 +77,7 @@ function collection(key: string, items: Record<string, unknown>[]): RawCollectio
  */
 function portfolio(): RawPortfolio {
     return {
+        personal: [],
         manifests: [
             manifest(
                 {
@@ -346,6 +347,7 @@ describe('normalise, the field mapping', () => {
     it('numbers the lines of a checklist written as a list, since a list has no keys of its own', () => {
         const one = normalise(
             {
+                personal: [],
                 manifests: [
                     manifest({ subtasks: ['first', { do: 'second', done: true }] }, 'solo')
                 ],

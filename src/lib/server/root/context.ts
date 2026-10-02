@@ -56,7 +56,7 @@ import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { defaultWorkspacesPath, ignoredCache, type IgnoredCache } from '../files/fs.ts';
 import { fsWrites, type FsWrites } from '../core/json.ts';
 import { memoriesMemory, type MemoriesMemory } from '../content/memories.ts';
-import { repositoryRoots } from '../files/roots.ts';
+import { browserRoots, repositoryRoots } from '../files/roots.ts';
 import { wallpaperMemory, type WallpaperMemory } from '../content/wallpaper.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.ts';
 import { Terminals } from '../machine/pty/channel.ts';
@@ -186,10 +186,7 @@ export type ContextDependencies = {
     mintToken: typeof mintToken;
     createHub: () => Hub;
     createTerminals: (hub: Hub) => Terminals;
-    watchPortfolio: (
-        hub: Hub,
-        paths: { hub: string; engine: string; icons: IconMemory; host: HostInfo }
-    ) => Watcher;
+    watchPortfolio: typeof watchPortfolio;
     watchSessions: typeof watchSessions;
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
     watchAutofetch: (hub: Hub, options: AutofetchOptions) => AutofetchWatcher;
@@ -438,8 +435,17 @@ export function createServerContext(
         if (built.parts === undefined) throw new Error('the watchers are not built yet');
         return built.parts;
     };
+    // The roots are read at the call, as the git watcher's are, so a root added to sources.yml or
+    // a workspace saved while the server runs is read when the next rebuild asks.
     const startPortfolio = (): Watcher =>
-        make.watchPortfolio(hub, { hub: local.hub, engine, icons, host });
+        make.watchPortfolio(hub, {
+            hub: local.hub,
+            engine,
+            icons,
+            host,
+            roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local }),
+            workspacesFile: local.workspaces ?? defaultWorkspacesPath()
+        });
     const folders = (): ProjectFolder[] => {
         const message = hub.latest('portfolio');
         return message === undefined ? [] : projectFolders(local.hub, message.payload as Snapshot);

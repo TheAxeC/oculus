@@ -36,19 +36,29 @@ import {
     themeFindings,
     type IconMemory
 } from '../../../data/sources/config.ts';
-import { MANIFEST } from '../../../data/sources/manifests.ts';
+import { MANIFEST, ROOT_FOLDER } from '../../../data/sources/manifests.ts';
 import { PRESENT_DOC } from '../../../data/sources/present.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
 import { railFindings } from '../../../data/sources/config/rail.ts';
-import { readRoots, rootsFile } from '../../files/files.ts';
+import {
+    ENGINE_ROOT,
+    HUB_ROOT,
+    expandHome,
+    readRoots,
+    rootsFile,
+    type Root
+} from '../../files/files.ts';
 import { buildFeeds, isLinkedinFile } from '../../edit/feeds.ts';
 import type {
     AuditPayload,
     ConfigPayload,
     HostInfo,
+    PersonalRoot,
     PortfolioConfig
 } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
+import { realPath } from '../../core/paths.ts';
+import { POLL, pollFile, systemClock, type Clock } from '../../core/file-poll.ts';
 
 export type WatchPaths = {
     /** Absolute path of the research hub whose YAML the snapshot is built from. */
@@ -59,6 +69,17 @@ export type WatchPaths = {
     icons: IconMemory;
     /** The machine the server runs on, carried by every config push. */
     host: HostInfo;
+    /**
+     * The directories the file browser serves, read at every rebuild. `personalRoots` below
+     * decides which of them are repositories whose `.oculus/project.yml` is a side project of the
+     * Personal board; the reader takes the roots it is handed as they come.
+     */
+    roots: () => Root[];
+    /**
+     * The saved workspaces file, which the roots depend on: it is polled, and a change of it is a
+     * rebuild that reads the roots again.
+     */
+    workspacesFile: string;
 };
 
 export type WatchOptions = {
@@ -67,6 +88,10 @@ export type WatchOptions = {
      * MAX_WAIT is the wait, since lodash raises a maximum wait to at least the quiet.
      */
     debounce?: number;
+    /** The clock the workspaces file is polled on; the globals when absent. */
+    clock?: Clock;
+    /** Milliseconds between two looks at the workspaces file. */
+    poll?: number;
 };
 
 export type Watcher = {
@@ -130,8 +155,13 @@ export function relevant(filename: string | null): boolean {
  * build was made from, which is why the predicate is built again at every rebuild rather than held
  * as a constant.
  */
-export function namedByConfig(hub: string, config: PortfolioConfig): (path: string) => boolean {
+export function namedByConfig(
+    hub: string,
+    config: PortfolioConfig,
+    roots: PersonalRoot[] = []
+): (path: string) => boolean {
     const files = new Set<string>();
+    for (const root of roots) files.add(join(root.dir, ROOT_FOLDER, MANIFEST));
     for (const file of Object.values(config.registries)) files.add(join(hub, file));
     for (const file of config.collections) files.add(join(hub, file.file));
     for (const file of [config.feeds.leads, config.feeds.radar]) {
@@ -168,8 +198,12 @@ export function namedByConfig(hub: string, config: PortfolioConfig): (path: stri
  * cover the whole hub a second time, so watchPortfolio watches that one file on its own, through a
  * flat watch of its folder filtered on its name (`watchFile`).
  */
-export function watchedDirectories(hub: string, config: PortfolioConfig): string[] {
-    const dirs = new Set(roleDirectories(hub, config));
+export function watchedDirectories(
+    hub: string,
+    config: PortfolioConfig,
+    roots: PersonalRoot[] = []
+): string[] {
+    const dirs = new Set(roleDirectories(hub, config, roots));
     dirs.add(join(hub, config.feeds.linkedin));
     return [...dirs];
 }
@@ -177,8 +211,13 @@ export function watchedDirectories(hub: string, config: PortfolioConfig): string
 /**
  * The watched directories apart from the LinkedIn folder: the ones a recursive YAML watch serves.
  */
-export function roleDirectories(hub: string, config: PortfolioConfig): string[] {
+export function roleDirectories(
+    hub: string,
+    config: PortfolioConfig,
+    roots: PersonalRoot[] = []
+): string[] {
     const dirs = new Set<string>();
+    for (const root of roots) dirs.add(join(root.dir, ROOT_FOLDER));
     for (const rule of config.scan) dirs.add(join(hub, rule.dir));
     for (const file of Object.values(config.registries)) dirs.add(dirname(join(hub, file)));
     for (const file of config.collections) dirs.add(dirname(join(hub, file.file)));
@@ -186,6 +225,38 @@ export function roleDirectories(hub: string, config: PortfolioConfig): string[] 
         dirs.add(dirname(join(hub, file)));
     }
     return [...dirs];
+}
+
+/**
+ * A path as its real path when it is there, else as it is, so a link and its target match, and so
+ * do two letter cases of one directory on a case-insensitive file system.
+ */
+function identityOf(path: string): string {
+    return realPath(path, true) ?? path;
+}
+
+/**
+ * The roots the side-project reader is handed, and the one place that decides which roots of the
+ * file browser are repositories of their own. A root keyed `hub` or `engine` is dropped, a leading
+ * `~` is expanded, and a root is dropped whose real path is the hub's, the engine's config
+ * folder's or an earlier root's, so a second key, a second spelling or a link to a directory read
+ * already draws no second card. A root whose directory is not on this machine is kept, for the
+ * reader to find nothing in.
+ */
+export function personalRoots(listed: Root[], hub: string, engineConfig: string): PersonalRoot[] {
+    const seen = new Set([identityOf(hub), identityOf(engineConfig)]);
+    const keys = new Set<string>();
+    const roots: PersonalRoot[] = [];
+    for (const root of listed) {
+        if (root.key === HUB_ROOT || root.key === ENGINE_ROOT || keys.has(root.key)) continue;
+        const dir = expandHome(root.dir);
+        const identity = identityOf(dir);
+        if (seen.has(identity)) continue;
+        seen.add(identity);
+        keys.add(root.key);
+        roots.push({ key: root.key, dir });
+    }
+    return roots;
 }
 
 function reason(error: unknown): string {
@@ -214,6 +285,14 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     const debounce = options.debounce ?? DEBOUNCE;
     const engineConfig = configDir(paths.engine);
     const handles = new Map<string, FSWatcher>();
+    /** The folder each `parent:` handle watches, so a nearer ancestor replaces a farther one. */
+    const parents = new Map<string, string>();
+    /**
+     * The flat watch on the parent of each root, by the root's directory. A root deleted as a whole
+     * is heard here, since its own `.oculus` handle does not reliably report it; a handle leaves
+     * with the root it watches.
+     */
+    const rootParents = new Map<string, FSWatcher>();
     /** Refusals are logged once until recovery; every rebuild still retries unopened paths. */
     const refused = new Set<string>();
     /**
@@ -223,6 +302,20 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     let configTouched = false;
     let feedsTouched = false;
     let closed = false;
+    /**
+     * Whether close ran, read through a function because a subscriber to a publish can call
+     * close, which the narrowing of `closed` cannot see.
+     */
+    const isClosed = (): boolean => closed;
+    /**
+     * The saved workspaces file, looked at on a clock: the roots of the file browser depend on it,
+     * and a change of it is a rebuild that reads them again.
+     */
+    const poll = pollFile(
+        paths.workspacesFile,
+        { clock: options.clock ?? systemClock, every: options.poll ?? POLL },
+        () => queue(false, false)
+    );
 
     const open = (
         dir: string,
@@ -259,11 +352,15 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
      */
     const openParent = (dir: string, isFeed: boolean): void => {
         const key = `parent:${dir}`;
-        if (handles.has(key)) return;
         // The nearest ancestor that exists, and the child under it the missing path starts with.
         let parent = dirname(dir);
         while (!existsSync(parent) && dirname(parent) !== parent) parent = dirname(parent);
         if (!existsSync(parent)) return;
+        if (handles.has(key)) {
+            if (parents.get(key) === parent) return;
+            handles.get(key)?.close();
+            handles.delete(key);
+        }
         const wanted = dir.slice(parent.length + 1).split(sep)[0];
         try {
             handles.set(
@@ -272,6 +369,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                     if (filename === wanted) queue(false, isFeed);
                 })
             );
+            parents.set(key, parent);
         } catch (error) {
             if (!refused.has(key)) {
                 console.error(`portfolio watch: cannot watch ${parent}: ${reason(error)}`);
@@ -308,6 +406,75 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     };
 
     /**
+     * The parent of one root, watched flat and filtered on the root's own name, so the root being
+     * removed or made again queues the rebuild that drops or reads its card. A parent that has
+     * gone takes its handle with it, and a missing parent is tried again at the next rebuild.
+     */
+    const openRootParent = (dir: string): void => {
+        const parent = dirname(dir);
+        const key = `root:${dir}`;
+        if (rootParents.has(dir) && !existsSync(parent)) {
+            rootParents.get(dir)?.close();
+            rootParents.delete(dir);
+        }
+        if (rootParents.has(dir) || parent === dir || !existsSync(parent)) return;
+        try {
+            rootParents.set(
+                dir,
+                watchFile(dir, () => {
+                    queue(false, false);
+                })
+            );
+            refused.delete(key);
+        } catch (error) {
+            if (!refused.has(key)) {
+                console.error(`portfolio watch: cannot watch ${parent}: ${reason(error)}`);
+            }
+            refused.add(key);
+        }
+    };
+
+    /** Watch the parents of the roots listed now, and shut the handles of roots that left. */
+    const watchRootParents = (roots: PersonalRoot[]): void => {
+        const listed = new Set(roots.map((root) => root.dir));
+        for (const [dir, handle] of rootParents) {
+            if (listed.has(dir)) continue;
+            handle.close();
+            rootParents.delete(dir);
+        }
+        for (const dir of listed) openRootParent(dir);
+    };
+
+    /**
+     * The `.oculus` folder of one root, watched flat for its manifest. A folder that is not there
+     * is watched through its parent, as a missing LinkedIn folder is, so creating it queues the
+     * rebuild that opens it. A handle on a folder that has since gone is closed first: it hears
+     * nothing of a folder made again at the same path.
+     */
+    const openRootFolder = (dir: string): void => {
+        if (handles.has(dir) && !existsSync(dir)) {
+            handles.get(dir)?.close();
+            handles.delete(dir);
+        }
+        if (!existsSync(dir)) {
+            openParent(dir, false);
+            return;
+        }
+        // The folder going away reports under its own name or under none, which is how its
+        // removal reaches the rebuild that drops the card.
+        const filter = (filename: string | null): boolean =>
+            filename === null ||
+            filename === ROOT_FOLDER ||
+            (relevant(filename) && named(join(dir, filename)));
+        if (open(dir, false, false, false, filter)) {
+            const key = `parent:${dir}`;
+            handles.get(key)?.close();
+            handles.delete(key);
+            parents.delete(key);
+        }
+    };
+
+    /**
      * One rebuild. `withConfig` also republishes the config channel. The directory set is derived
      * again from the config that was just read, so a scan path added to layout.yml is watched from
      * the next rebuild on; a path removed keeps its handle until the watcher is closed. Unopened
@@ -315,6 +482,9 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
      */
     const rebuild = (withConfig: boolean, withFeeds: boolean): void => {
         try {
+            // Taken before anything is read, so a write to the workspaces file that lands while
+            // this rebuild runs is a change the next tick sees and not one this rebuild covers.
+            poll.reading();
             // Read here and not taken from a request: a rebuild is the watcher's answer to a change
             // on disk, and no request is in flight when it runs.
             const { config, findings } = loadConfig(paths.engine);
@@ -345,30 +515,14 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                     ]
                 };
                 hub.publish('config', payload);
+                if (closed) return;
             }
             const portfolio = portfolioConfigFrom(config, paths.engine);
-            named = namedByConfig(paths.hub, portfolio);
-            const version = hub.nextVersion('portfolio');
-            const snapshot = buildPortfolio(paths.hub, portfolio, version);
-            hub.publish('portfolio', snapshot);
-            // The audit reads the disk, so it runs here, once per rebuild, and never per request.
-            // It is published inside its own guard: a scan that throws leaves the previous audit
-            // standing and must not take the portfolio down with it.
-            try {
-                const audit: AuditPayload = {
-                    findings: auditFindings({
-                        hub: paths.hub,
-                        projects: Object.values(snapshot.entities.projects),
-                        collections: Object.values(snapshot.entities.collections),
-                        rules: auditRules(config),
-                        catalog: textCatalog(config)
-                    }),
-                    muted: mutedSignatures(config)
-                };
-                hub.publish('audit', audit);
-            } catch (error) {
-                console.error(`portfolio watch: the audit scan failed: ${reason(error)}`);
-            }
+            const roots = personalRoots(paths.roots(), paths.hub, engineConfig);
+            named = namedByConfig(paths.hub, portfolio, roots);
+            watchRootParents(roots);
+            // The directories are opened before the snapshot is read, so a write that lands
+            // between the read and the open cannot be missed.
             const linkedinDir = join(paths.hub, portfolio.feeds.linkedin);
             const yamlFeedDirs = new Set([
                 dirname(join(paths.hub, portfolio.feeds.leads)),
@@ -377,8 +531,13 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             // A directory the LinkedIn folder shares with another role (a scan tier, a registry or
             // collection folder, a YAML feed folder) keeps the recursive watch and the YAML filter
             // beside the flat post filter, so neither role loses its events.
-            const otherDirs = new Set(roleDirectories(paths.hub, portfolio));
-            for (const dir of watchedDirectories(paths.hub, portfolio)) {
+            const otherDirs = new Set(roleDirectories(paths.hub, portfolio, roots));
+            const rootDirs = new Set(roots.map((root) => join(root.dir, ROOT_FOLDER)));
+            for (const dir of watchedDirectories(paths.hub, portfolio, roots)) {
+                if (rootDirs.has(dir)) {
+                    openRootFolder(dir);
+                    continue;
+                }
                 const linkedin = dir === linkedinDir;
                 const shared = linkedin && otherDirs.has(dir);
                 const yamlFeed = yamlFeedDirs.has(dir);
@@ -397,9 +556,32 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 if (opened && isFeed) withFeeds = true;
                 if (!opened && !handles.has(dir) && !existsSync(dir)) openParent(dir, isFeed);
             }
-            if (withFeeds) hub.publish('feeds', buildFeeds(paths.hub, portfolio));
             openFile(join(paths.hub, portfolio.career));
             open(engineConfig, true);
+            const version = hub.nextVersion('portfolio');
+            const snapshot = buildPortfolio(paths.hub, portfolio, version, roots);
+            hub.publish('portfolio', snapshot);
+            if (isClosed()) return;
+            // The audit reads the disk, so it runs here, once per rebuild, and never per request.
+            // It is published inside its own guard: a scan that throws leaves the previous audit
+            // standing and must not take the portfolio down with it.
+            try {
+                const audit: AuditPayload = {
+                    findings: auditFindings({
+                        hub: paths.hub,
+                        projects: Object.values(snapshot.entities.projects),
+                        collections: Object.values(snapshot.entities.collections),
+                        rules: auditRules(config),
+                        catalog: textCatalog(config)
+                    }),
+                    muted: mutedSignatures(config)
+                };
+                hub.publish('audit', audit);
+            } catch (error) {
+                console.error(`portfolio watch: the audit scan failed: ${reason(error)}`);
+            }
+            if (isClosed()) return;
+            if (withFeeds) hub.publish('feeds', buildFeeds(paths.hub, portfolio));
         } catch (error) {
             console.error(`portfolio watch: rebuild failed: ${reason(error)}`);
         }
@@ -433,9 +615,12 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     return {
         close(): void {
             closed = true;
+            poll.close();
             queued.cancel();
             for (const handle of handles.values()) handle.close();
             handles.clear();
+            for (const handle of rootParents.values()) handle.close();
+            rootParents.clear();
         }
     };
 }

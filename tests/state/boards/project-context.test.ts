@@ -36,6 +36,7 @@ const project: Project = {
 const snapshot: Snapshot = {
     version: 1,
     entities: {
+        personal: {},
         projects: { alpha: project },
         venues: {
             jbi: { id: 'jbi', name: 'Journal of Biomedical Informatics', short: 'JBI', themes: [] },

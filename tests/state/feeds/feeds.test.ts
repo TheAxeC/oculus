@@ -88,6 +88,7 @@ describe('attention lines', () => {
         const snapshot: Snapshot = {
             version: 1,
             entities: {
+                personal: {},
                 feeds: NO_FEEDS,
                 career: null,
                 projects: {

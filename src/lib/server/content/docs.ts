@@ -45,6 +45,7 @@ import type { MarkedExtension, Token, Tokens } from 'marked';
 import { renderDocument } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
+import { isSideTier } from '../../data/sources/manifests.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
 import { HUB_ROOT } from '../files/files.ts';
 import type { Finding, ManualPart, PortfolioConfig, Project } from '../../data/model/index.ts';
@@ -185,6 +186,8 @@ function folderOf(into: DocTarget, id: string): string | null {
     if (held !== null && held.folder !== '') return held.folder;
     if (!isFolderName(id)) return null;
     for (const rule of into.config.scan) {
+        // A side project is no research project, so no project document is read from its folder.
+        if (isSideTier(rule)) continue;
         const found =
             rule.nested === true
                 ? under(into.hub, rule.dir, id)

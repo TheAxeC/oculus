@@ -3,10 +3,17 @@
 // validates nothing and resolves nothing. Every failure is a Finding; nothing here throws, so one
 // unparseable manifest costs its own record and no more.
 
-import { readdirSync, statSync } from 'node:fs';
+import { lstatSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
-import type { Finding, RawManifest, ScanRule, Tier } from '../model/index.ts';
+import type {
+    Finding,
+    PersonalRoot,
+    RawManifest,
+    RawPersonal,
+    ScanRule,
+    Tier
+} from '../model/index.ts';
 import { optionalText } from '../shapes/shapes.ts';
 import { errorLine, readYamlMap } from './yaml-file.ts';
 
@@ -15,6 +22,24 @@ const NEVER_DESCEND = ['code', 'attic'];
 
 /** The one filename a scan tier's folder is read for. */
 export const MANIFEST = 'project.yml';
+
+/** The tier whose folders are side projects, which only the Personal board reads. */
+export const SIDE_TIER = 'side-projects';
+
+/** The folder of a repository that holds its side-project manifest. */
+export const ROOT_FOLDER = '.oculus';
+
+/**
+ * The most a side project's manifest may hold. The five fields are a few lines each, so a larger
+ * file is not one; the bound keeps a mistaken path (a log, a dump) from being read whole on every
+ * rebuild.
+ */
+export const PERSONAL_MAX_BYTES = 64 * 1024;
+
+/** Whether a scan rule names the side-projects tier, by the last segment of its `dir`. */
+export function isSideTier(rule: ScanRule): boolean {
+    return (rule.dir.split('/').pop() ?? rule.dir) === SIDE_TIER;
+}
 
 /** Remove the filing prefix from a folder's display title. */
 function stripPrefix(name: string): string {
@@ -182,6 +207,7 @@ export function readManifests(
     const findings: Finding[] = [];
 
     for (const rule of scan) {
+        if (isSideTier(rule)) continue;
         const base = join(hub, rule.dir);
         const tier = (rule.dir.split('/').pop() ?? rule.dir) as Tier;
         if (!isDir(base)) {
@@ -219,4 +245,142 @@ export function readManifests(
     manifests.sort((a, b) => (a.folder < b.folder ? -1 : a.folder > b.folder ? 1 : 0));
     findings.sort((a, b) => `${a.file}\0${a.key}`.localeCompare(`${b.file}\0${b.key}`));
     return { manifests, findings };
+}
+
+/** What reading one side project's manifest file found. */
+type PersonalFile =
+    { kind: 'absent' } | { kind: 'unusable' } | { kind: 'map'; data: Record<string, unknown> };
+
+/**
+ * One side project's manifest. Only a regular file within the size bound is opened: a directory, a
+ * symbolic link, a named pipe or a device is a finding and is never read, so a path that points
+ * somewhere else, or at something that blocks, costs the card and nothing more. A file that is not
+ * there is `absent`, and the caller decides whether that is a finding.
+ */
+function readPersonalFile(file: string, catalog: TextCatalog, findings: Finding[]): PersonalFile {
+    let stat;
+    try {
+        stat = lstatSync(file);
+    } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === 'ENOENT' || code === 'ENOTDIR') return { kind: 'absent' };
+        findings.push({
+            file,
+            key: '',
+            message: findingText(catalog, 'findings.file.does_not_parse', errorLine(error))
+        });
+        return { kind: 'unusable' };
+    }
+    if (!stat.isFile()) {
+        findings.push({
+            file,
+            key: '',
+            message: findingText(catalog, 'findings.manifests.personal_not_file')
+        });
+        return { kind: 'unusable' };
+    }
+    if (stat.size > PERSONAL_MAX_BYTES) {
+        findings.push({
+            file,
+            key: '',
+            message: findingText(
+                catalog,
+                'findings.manifests.personal_too_large',
+                PERSONAL_MAX_BYTES
+            )
+        });
+        return { kind: 'unusable' };
+    }
+    const data = readYamlMap(file, catalog, findings, (error) =>
+        findingText(catalog, 'findings.file.does_not_parse', errorLine(error))
+    );
+    return data === null ? { kind: 'unusable' } : { kind: 'map', data };
+}
+
+/** The side projects of the hub's side-projects tier, a folder each. */
+function hubPersonal(
+    hub: string,
+    scan: ScanRule[],
+    catalog: TextCatalog,
+    personal: RawPersonal[],
+    findings: Finding[]
+): void {
+    for (const rule of scan) {
+        if (!isSideTier(rule)) continue;
+        const base = join(hub, rule.dir);
+        if (!isDir(base)) {
+            if (rule.optional !== true) {
+                findings.push({
+                    file: base,
+                    key: 'scan',
+                    message: findingText(catalog, 'findings.manifests.scan_missing')
+                });
+            }
+            continue;
+        }
+        for (const name of subdirs(base)) {
+            const folderPath = join(base, name);
+            const file = join(folderPath, MANIFEST);
+            const read = readPersonalFile(file, catalog, findings);
+            if (read.kind === 'absent') {
+                findings.push({
+                    file,
+                    key: '',
+                    message: findingText(catalog, 'findings.manifests.personal_no_manifest')
+                });
+            } else if (read.kind === 'map') {
+                personal.push({
+                    source: { kind: 'hub', folder: hubPath(hub, folderPath) },
+                    file,
+                    data: read.data
+                });
+            }
+        }
+    }
+}
+
+/**
+ * The side projects of the roots it is handed, one per root whose `.oculus/project.yml` is there,
+ * in the order given. Which roots those are is decided before this runs (server/root/watch
+ * portfolio.ts, personalRoots): a root that is not on this machine, has no `.oculus` folder or
+ * holds no manifest is not a side project and not a finding.
+ */
+function rootPersonal(
+    roots: PersonalRoot[],
+    catalog: TextCatalog,
+    personal: RawPersonal[],
+    findings: Finding[]
+): void {
+    for (const root of roots) {
+        if (!isDir(join(root.dir, ROOT_FOLDER))) continue;
+        const file = join(root.dir, ROOT_FOLDER, MANIFEST);
+        const read = readPersonalFile(file, catalog, findings);
+        if (read.kind === 'map') {
+            personal.push({
+                source: { kind: 'root', key: root.key, dir: root.dir },
+                file,
+                data: read.data
+            });
+        }
+    }
+}
+
+/**
+ * Read every side project: the folders of the hub's side-projects tier and the `.oculus` manifests
+ * of the roots. Nothing here shares a code path with readManifests, so a side project is never a
+ * research record. Each result is a raw manifest with where it came from; what its fields hold is
+ * checked and shaped by snapshot/normalise-personal.ts.
+ */
+export function readPersonal(
+    hub: string,
+    scan: ScanRule[],
+    roots: PersonalRoot[],
+    catalog: TextCatalog
+): { personal: RawPersonal[]; findings: Finding[] } {
+    const personal: RawPersonal[] = [];
+    const findings: Finding[] = [];
+    hubPersonal(hub, scan, catalog, personal, findings);
+    rootPersonal(roots, catalog, personal, findings);
+    findings.sort((a, b) => `${a.file}\0${a.key}`.localeCompare(`${b.file}\0${b.key}`));
+    return { personal, findings };
 }

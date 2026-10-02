@@ -33,6 +33,7 @@ export type BadgeClient = {
     railBadges: Pick<
         RailBadgesStore,
         | 'boardBadge'
+        | 'personalBadge'
         | 'boardBadgeTitle'
         | 'boardCells'
         | 'collectionBadge'

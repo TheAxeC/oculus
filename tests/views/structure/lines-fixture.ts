@@ -175,6 +175,7 @@ export function fixture(): Snapshot {
             funding: {},
             people: {},
             organisations: {},
+            personal: {},
             collections: {
                 pillars: collection('pillars', PILLAR_FILE, pillarEntries),
                 domains: collection('domains', DOMAIN_FILE, domainEntries)

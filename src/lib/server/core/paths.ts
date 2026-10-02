@@ -25,10 +25,14 @@ export function below(path: string, dir: string): boolean {
     return full !== root && full.startsWith(root + sep);
 }
 
-/** The real path of a file or folder, links followed, or null when there is nothing to resolve. */
-export function realPath(path: string): string | null {
+/**
+ * The real path of a file or folder, links followed, or null when there is nothing to resolve. With
+ * `native` it is the operating system's own resolution, which on a case-insensitive file system
+ * gives every letter case of one path the same spelling, for a check of whether two paths are one.
+ */
+export function realPath(path: string, native = false): string | null {
     try {
-        return realpathSync(path);
+        return native ? realpathSync.native(path) : realpathSync(path);
     } catch {
         return null;
     }

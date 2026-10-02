@@ -6,29 +6,29 @@
 import { readFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, vi } from 'vitest';
-import { Hub } from '../../../../src/lib/server/core/channels.ts';
-import { handleWrite } from '../../../../src/lib/server/edit/writes.ts';
-import { handleSource } from '../../../../src/lib/server/files/source.ts';
-import { mintToken } from '../../../../src/lib/server/core/auth.ts';
-import { ENGINE_ROOT, engineRoot } from '../../../../src/lib/server/files/files.ts';
-import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
-import { engineDir, loadConfig, type IconMemory } from '../../../../src/lib/data/sources/config.ts';
+import { Hub } from '../../../../../src/lib/server/core/channels.ts';
+import { handleWrite } from '../../../../../src/lib/server/edit/writes.ts';
+import { handleSource } from '../../../../../src/lib/server/files/source.ts';
+import { mintToken } from '../../../../../src/lib/server/core/auth.ts';
+import { ENGINE_ROOT, engineRoot } from '../../../../../src/lib/server/files/files.ts';
+import { portfolioConfigFrom } from '../../../../../src/lib/data/index.ts';
+import {
+    engineDir,
+    loadConfig,
+    type IconMemory
+} from '../../../../../src/lib/data/sources/config.ts';
 import {
     DEBOUNCE as QUIET,
     MAX_WAIT,
-    namedByConfig,
-    relevant,
-    watchPortfolio,
-    watchedDirectories
-} from '../../../../src/lib/server/root/watch/portfolio.ts';
-import type { WatchOptions, Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts';
+    watchPortfolio
+} from '../../../../../src/lib/server/root/watch/portfolio.ts';
 import type {
     AuditPayload,
     ConfigPayload,
     FeedsPayload,
     Message,
     Snapshot
-} from '../../../../src/lib/data/model/index.ts';
+} from '../../../../../src/lib/data/model/index.ts';
 import {
     BEHAVIOR,
     HOST,
@@ -46,193 +46,21 @@ import {
     write,
     type HeldWatcher,
     type HeldWatches
-} from './probe.ts';
-import { it } from '../../../fixtures/scratch.ts';
+} from '../probe.ts';
+import { it } from '../../../../fixtures/scratch.ts';
+import { on, quiet, start, stopWatchers, watchers } from './start.ts';
 
 const watches = vi.hoisted((): HeldWatches => ({ held: false, listeners: new Map() }));
 
 vi.mock('node:fs', async (original) =>
-    (await import('./probe.ts')).heldWatches(await original(), watches)
+    (await import('../probe.ts')).heldWatches(await original(), watches)
 );
-import { careerRules } from '../../../../src/lib/server/edit/writes/subtasks.ts';
-
-const watchers: Watcher[] = [];
+import { careerRules } from '../../../../../src/lib/server/edit/writes/subtasks.ts';
 
 afterEach(() => {
-    while (watchers.length > 0) watchers.pop()?.close();
+    stopWatchers();
     watches.held = false;
     vi.useRealTimers();
-});
-
-/** The messages of one channel, newest last. */
-function on(got: Message[], channel: string): Message[] {
-    return got.filter((message) => message.channel === channel);
-}
-
-/**
- * Wait until the messages stop arriving. The first fs.watch of a process on darwin can deliver an
- * event for a write that happened shortly before the watch was opened, which is the fixture's own
- * writes here; the watcher then rebuilds once more with the same result. Measured with three
- * watchers in one process: the first saw the extra rebuild, the second and third did not. So a test
- * that counts rebuilds counts them from a quiet point, never from the start.
- */
-async function quiet(got: Message[], ms = 100): Promise<number> {
-    let held = -1;
-    while (held !== got.length) {
-        held = got.length;
-        await sleep(ms);
-    }
-    return held;
-}
-
-/** A started watcher over a fresh hub and engine, subscribed before the starting publications. */
-function start(
-    prepare?: (hub: string, engine: string) => void,
-    icons: IconMemory = { set: {} },
-    options: WatchOptions = { debounce: 20 }
-): { hub: string; engine: string; got: Message[]; icons: IconMemory } {
-    const hub = buildHub();
-    const engine = buildEngine();
-    prepare?.(hub, engine);
-    const channels = new Hub();
-    const client = recording();
-    channels.subscribe(client.sink, ['portfolio', 'config', 'feeds', 'audit']);
-    watchers.push(watchPortfolio(channels, { hub, engine, icons, host: HOST }, options));
-    return { hub, engine, got: client.got, icons };
-}
-
-describe('relevant', () => {
-    it('takes a yaml file outside every code and attic folder', () => {
-        expect(relevant('active/loewner/project.yml')).toBe(true);
-        expect(relevant('venues.yml')).toBe(true);
-        expect(relevant('active/loewner/code/results.yml')).toBe(false);
-        expect(relevant('archive/nogo/thing/attic/old.yml')).toBe(false);
-        expect(relevant('active/loewner/.project.yml.swp')).toBe(false);
-        expect(relevant(null)).toBe(false);
-    });
-
-    it('takes the documents and folders the audit scan reads off the disk', () => {
-        expect(relevant('active/loewner/README.md')).toBe(true);
-        expect(relevant('active/loewner/PRESENT.md')).toBe(true);
-        expect(relevant('active/loewner/DATA.md')).toBe(true);
-        expect(relevant('active/loewner/IDEA.md')).toBe(true);
-        expect(relevant('active/loewner/notes/METHOD_NOTES.md')).toBe(true);
-        expect(relevant('active/loewner/paper')).toBe(true);
-        expect(relevant('active/loewner/paper/main.tex')).toBe(true);
-    });
-
-    it('takes the deposit README and nothing else out of a code folder', () => {
-        expect(relevant('active/loewner/code/README.md')).toBe(true);
-        expect(relevant('active/loewner/code/train.py')).toBe(false);
-        expect(relevant('active/loewner/code/notes/README.md')).toBe(false);
-        expect(relevant('active/loewner/attic/README.md')).toBe(false);
-    });
-
-    it('leaves a document the audit does not read alone', () => {
-        expect(relevant('active/loewner/NOTES.md')).toBe(false);
-        expect(relevant('active/loewner/manuscript/main.tex')).toBe(false);
-    });
-
-    it('takes a PRESENT.md, whose front matter is in the snapshot, and no other markdown', () => {
-        expect(relevant('active/loewner/PRESENT.md')).toBe(true);
-        expect(relevant('active/loewner/code/PRESENT.md')).toBe(false);
-        expect(relevant('active/loewner/present.md')).toBe(false);
-        expect(relevant('active/loewner/NOTES.md')).toBe(false);
-    });
-});
-
-describe('namedByConfig', () => {
-    const config = {
-        scan: [{ dir: 'projects/active' }],
-        feeds: {
-            leads: 'feeds/position-leads.yml',
-            radar: 'feeds/literature-radar.yml',
-            linkedin: 'site/_linkedin'
-        },
-        linkedinCadenceDays: 30,
-        career: 'registries/career.yml',
-        registries: {
-            venues: 'registries/venues.yml',
-            datasets: 'registries/data.yml',
-            pillars: 'registries/pillars.yml',
-            domains: 'registries/domains.yml',
-            funding: 'funding/funding.yml',
-            people: 'registries/people.yml',
-            organisations: 'registries/organisations.yml'
-        },
-        collections: [{ key: 'events', file: 'network/events.yml' }],
-        schema: undefined,
-        vocab: { types: [], statuses: [] },
-        deck: undefined,
-        deckFile: '/hub/config/present.yml',
-        text: {}
-    };
-
-    it('names a manifest, a PRESENT.md and what the audit reads under a scan tier', () => {
-        const named = namedByConfig('/hub', config);
-        expect(named(join('/hub', 'projects/active/loewner/project.yml'))).toBe(true);
-        expect(named(join('/hub', 'projects/active/loewner/PRESENT.md'))).toBe(true);
-        expect(named(join('/hub', 'projects/ideas/other/PRESENT.md'))).toBe(false);
-        expect(named(join('/hub', 'projects/active/loewner/README.md'))).toBe(true);
-        expect(named(join('/hub', 'projects/active/loewner/code/README.md'))).toBe(true);
-        expect(named(join('/hub', 'projects/active/loewner/paper'))).toBe(true);
-        expect(named(join('/hub', 'registries/venues.yml'))).toBe(true);
-    });
-
-    it('names no document of the hub above a tier, and none the audit does not read', () => {
-        const named = namedByConfig('/hub', config);
-        expect(named(join('/hub', 'README.md'))).toBe(false);
-        expect(named(join('/hub', 'projects/ideas/other/README.md'))).toBe(false);
-        expect(named(join('/hub', 'projects/active/loewner/NOTES.md'))).toBe(false);
-    });
-
-    it('rebuilds on a PRESENT.md under a tier and on none under a project code folder', () => {
-        // The pair the watcher applies: the filename filter, then the file the build reads.
-        const named = namedByConfig('/hub', config);
-        const accepts = (rel: string): boolean =>
-            relevant(rel) && named(join('/hub', 'projects/active', rel));
-        expect(accepts('loewner/PRESENT.md')).toBe(true);
-        expect(accepts('loewner/code/PRESENT.md')).toBe(false);
-        expect(accepts('loewner/attic/PRESENT.md')).toBe(false);
-    });
-});
-
-describe('watchedDirectories', () => {
-    it('names every scan tier and the folder of every registry, collection and feed file', () => {
-        const dirs = watchedDirectories('/hub', {
-            scan: [{ dir: 'projects/active' }],
-            feeds: {
-                leads: 'feeds/position-leads.yml',
-                radar: 'feeds/literature-radar.yml',
-                linkedin: 'theaxec.github.io/_linkedin'
-            },
-            linkedinCadenceDays: 30,
-            career: 'registries/career.yml',
-            registries: {
-                venues: 'registries/venues.yml',
-                datasets: 'registries/data.yml',
-                pillars: 'registries/pillars.yml',
-                domains: 'registries/domains.yml',
-                funding: 'funding/funding.yml',
-                people: 'registries/people.yml',
-                organisations: 'registries/organisations.yml'
-            },
-            collections: [{ key: 'events', file: 'network/events.yml' }],
-            schema: undefined,
-            vocab: { types: [], statuses: [] },
-            deck: undefined,
-            deckFile: '/hub/config/present.yml',
-            text: {}
-        });
-        expect(dirs.sort()).toEqual([
-            join('/hub', 'feeds'),
-            join('/hub', 'funding'),
-            join('/hub', 'network'),
-            join('/hub', 'projects/active'),
-            join('/hub', 'registries'),
-            join('/hub', 'theaxec.github.io/_linkedin')
-        ]);
-    });
 });
 
 describe('watchPortfolio', () => {
@@ -873,5 +701,63 @@ describe('watchPortfolio', () => {
         const portfolio = on(started.got, 'portfolio');
         const last = portfolio[portfolio.length - 1].payload as Snapshot;
         expect(Object.keys(last.entities.projects)).toEqual([]);
+    });
+});
+
+describe('the roots of the personal board held across a close', () => {
+    it('publishes and opens nothing after a close that came during a rebuild', async () => {
+        watches.held = true;
+        fakeClock();
+        const hub = buildHub();
+        const engine = buildEngine();
+        const channels = new Hub();
+        const client = recording();
+        channels.subscribe(client.sink, ['portfolio', 'config', 'feeds', 'audit']);
+        const watcher = watchPortfolio(
+            channels,
+            {
+                hub,
+                engine,
+                icons: { set: {} },
+                host: HOST,
+                roots: () => [],
+                workspacesFile: join(engine, 'workspaces.json')
+            },
+            { debounce: 20 }
+        );
+        watchers.push(watcher);
+        await vi.advanceTimersByTimeAsync(0);
+        const listener = watches.listeners.get(join(engine, 'config'));
+        expect(listener).toBeDefined();
+
+        let armed = false;
+        channels.subscribe(
+            {
+                send: (text: string) => {
+                    if (armed && (JSON.parse(text) as Message).channel === 'portfolio') {
+                        armed = false;
+                        watcher.close();
+                        watches.listeners.clear();
+                    }
+                    return Promise.resolve();
+                },
+                close: () => undefined
+            },
+            ['portfolio']
+        );
+        // The subscription's own replay of the current portfolio has been sent by now, so the
+        // next publication reaches this sink inside the rebuild's own call.
+        await vi.advanceTimersByTimeAsync(0);
+        armed = true;
+        const before = {
+            audit: on(client.got, 'audit').length,
+            feeds: on(client.got, 'feeds').length
+        };
+        listener?.('change', 'layout.yml');
+        await vi.advanceTimersByTimeAsync(200);
+        expect(armed).toBe(false);
+        expect(on(client.got, 'audit').length).toBe(before.audit);
+        expect(on(client.got, 'feeds').length).toBe(before.feeds);
+        expect([...watches.listeners.keys()]).toEqual([]);
     });
 });

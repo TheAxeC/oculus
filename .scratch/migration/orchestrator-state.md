@@ -40,23 +40,10 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   report: agents/reviews/X3a-report.md
   brief_check: agents/reviews/X3a-brief-check.md (run 2026-10-01 on the earlier draft, not run again: the spec skill checks a step once); 306,645 tokens, 101 tool uses, 12.7 min; served model not recorded at the time
   shared_paths: with D35, `options.yml` (D35 the behaviour descriptions and the `local.yml` block; X3a the `roots` description, a `files` behaviour entry and one `history` line in that block), `data/sources/config/settings.ts` (X3a one read of `files.confirm_delete`), `DESIGN.md` (D35 224-235; X3a 44, 128 and the Files lines) and `HELP.md` (D35 216 and 236; X3a one key added to 236's list): added lines beside D35's, a simple merge; with L4, `routes/+page.svelte` only if item 16 needs it (one derived line); with Q66, `fs.svelte.ts` (Q66 line 11, a comment); `docs/diagrams/` regenerated at landing
+  builder_usage: the build to the report, as its completion notice gives it, 318,310 tokens, 1,446 tool uses, 365.6 min (4 full-list runs, the 4th printing `checks: 7 commands passed`)
+  reviewer_report: agents/reviews/X3a-refuter.md (first run, reviewer a6e768689ba25b71d, claude-sonnet-5-5 read at 07:55, launched 2026-10-02 07:55; 297,143 tokens, 170 tool uses, 26.1 min; 3 Spec, 6 Proof, 3 Standards, 2 Behaviour findings)
   landing: not-started
   round: 0
-- step: D24
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 02:29)
-  session_id: aad5c8302bdcacd63 (launched 2026-10-02 02:28 local)
-  worktree: .agents/worktrees/D24
-  base: bca66b3c
-  launched: 2026-10-02 02:28 local
-  report: agents/reviews/D24-report.md
-  brief_check: agents/reviews/D24-brief-check.md; claude-sonnet-5-5, 318,451 tokens, 121 tool uses, 16.6 min
-  builder_usage: the build to the report, as its completion notice gives it, 90,664 tokens, 416 tool uses, 207.5 min (3 full-list runs, none printing `checks: n commands passed`: runs 1 and 2 red at `npm test` on 5000 ms timeouts in files the step does not change, run 3 red at `test:checks` on a 30000 ms comment-width timeout; the remaining commands then run one by one, each exit 0); repair round 1 263,812 tokens, 89 tool uses, 36.5 min (2 full-list runs, the second printing `checks: 7 commands passed`)
-  reviewer_report: agents/reviews/D24-refuter.md (first run, reviewer a2488867fcf7ea624, claude-sonnet-5-5 read at 05:57, launched 2026-10-02 05:56; 322,372 tokens, 79 tool uses, 33.9 min; 5 Spec (3 with a verdict), 4 Proof, 2 Standards, 2 Behaviour findings); run over round 1, reviewer ad56b78a1dc9c9c51, claude-sonnet-5-5 read at 07:38, launched 2026-10-02 07:10; 254,852 tokens, 65 tool uses, 27.4 min; 0 Spec, 2 Proof, 1 Standards, 1 Behaviour findings, to be closed at landing
-  shared_paths: with D35, `server/root/context.ts` (D35 its `serverMover` and settings reads; D24 lines 256-261, the portfolio watcher's paths), `DESIGN.md` and `HELP.md` (different lines), `options.yml` (D35 591-622; D24 511); with X3a, `options.yml` (the `roots` description; D24 511), `DESIGN.md` and `HELP.md` rows, `type-scale.test.ts` and `config-folder.test.ts` (separate rows and cases); with L4, `config/layout.yml` (L4 45-53 and `floats:`; D24 73), `watch/portfolio.ts` (L4 only if its check refuses a key), `config-folder.test.ts`; with M4, `data/index.ts` (M4 114-116, 198-223, 235; D24 the signature and the raw portfolio at 229-249), `model-entities.ts` (M4 the slide and deck fields; D24 `Tier`) and `integrity.test.ts` (separate cases): separate hunks, a simple merge; `docs/diagrams/`, regenerated at each landing
-  landing: not-started
-  round: 1 (agents/briefs/D24-round1.md, sent 06:40)
 - step: Q88c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -765,6 +752,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-02 08:40. D24 landed (the Personal board), a conflict in `server/root/context.ts` and the diagrams resolved, fixes at landing: the four findings of the run over round 1, one test call given L4's floats argument, the floats tests moved out of an over-size file; the six repositories' manifests committed in their repositories; the look on TEST taken (nine cards, no console error); `checks: 7 commands passed` on the third run. D24 is the 15th landing with a Sonnet reviewer, so the three-way comparison is ready to be asked for. X3a's review is in (14 findings). D18's brief check is in. In flight: X3a (repair round 1 next), Q88c (building). Next: send X3a's round 1; close D18's brief-check findings and launch its builder; /spec M3. Open items: Z241.
 - 2026-10-02 07:50. D35 landed (every configuration file live, the server's port move and the page following it), a diagram conflict resolved on D35's side, six fixes at landing (the six findings of the run over round 1), the look on TEST taken, `checks: 7 commands passed` on main. D24's run over round 1 is in (4 findings, closed at its landing). In flight: X3a and Q88c (building), D24 (ready to land). Next: /land D24; /spec D32 and D18; /spec M3 after D24. Open items: Z241.
 - 2026-10-02 06:40. M4 landed (the Present view's equations as LaTeX), a conflict resolved on M4's side, three fixes at landing (two head comments, the formula fitted to its card after the look found all 13 cut off), `checks: 7 commands passed` on the fourth run. D35's repair round 1 is in. In flight: D35 (round review next), D24 (repair round 1), X3a (building). Next: /refute D35 over round 1; /spec Q88c. Open items: none.
 - 2026-10-02 06:05. L4 landed (floating panes and kept empty panes), conflicts in DESIGN.md, context.ts, Usage.svelte and the diagrams resolved, three fixes at landing, the look on TEST taken, `checks: 7 commands passed` on the fifth run (the earlier ones red only on 5000 ms timeouts in files L4 does not touch, and one type error from a fix). In flight: D35 (repair round 1), M4 (round review running), D24 (review running), X3a (building). Next: M4's round review saved and /land M4; D24's findings. Open items: none.

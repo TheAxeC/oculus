@@ -49,6 +49,7 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            personal: {},
             projects: {},
             venues: {},
             datasets: {},

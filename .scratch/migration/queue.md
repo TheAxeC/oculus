@@ -1,16 +1,15 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D35 (every configuration file live, `local.yml` included, by Z198 and Axel's D35 redo ruling), repair round 1 with the builder.
-- X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), builder at ordo-high.
-- D24 (the Personal board: side projects and the Files roots' `.oculus/project.yml` as cards, with the six repositories' manifests drafted), refuted over repair round 1 (4 findings, closed at landing); lands after D35.
+- X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), review in (14 findings); repair round 1 next.
+- D18 (the Processes view), brief check in; its findings are being closed in the brief, then the builder.
 - Q88c (the Source Control rows' and the pane strip's new right-click capabilities, Z240), builder at ordo-high; open item Z241 (Delete Branch's force retry) waits on Axel.
 
 
 Three queued steps are kept prepared ahead (Z185).
 
-Queued, in order (26 steps):
-- D32 (replace in Search, and the seven state-layer answers Z154 accepted judged one by one, by Z198), once D35 has landed (both change the write target and the undo table); its brief check is in.
+Queued, in order (25 steps):
+- D32 (replace in Search, and the seven state-layer answers Z154 accepted judged one by one, by Z198), once X3a has landed: both add a change-log record written outside `api/write`, each with its own `UndoKind`, `undo.ts` row, History words and recorded-kinds gate (`tests/fixtures/kinds.ts`), and both change `source.ts` and `edit/writes.ts`; its brief check is in, its brief is written at that /spec.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), Z190 ruled (a); /spec once X3a and D35 have landed (X3a adds the `roots` list edit S4's list editor covers, D35 changes the config write and `options.yml`).
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - Q91 (the project view and its editor), once X3a has landed.
@@ -23,10 +22,9 @@ Queued, in order (26 steps):
 - D28 (saving a source file), once D25 has landed.
 - D33 (the Problems view), once D23 and D17 have landed.
 - D36 (linters on save, ChkTeX, ruff, eslint and shellcheck, into the editor's marks and D33's Problems view), once D33 has landed (Z196).
-- D18 (the Processes view), once D35 has landed (its command patterns are a behaviour key read live through D35's mechanism).
 - D20 (an agent from a task or in a new worktree), once D17 has landed (Z195: a seeded agent runs after the approval D17's store keeps).
 - A1 and A3 (review with feedback; scheduled runs, once D17 has landed).
-- M3 (the resources registry), once D24 has landed: both write `data/model/model-entities.ts`, `data/snapshot/normalise.ts`, the validation and the snapshot fixtures of `grep -rlE "organisations: \{" tests`. Its /spec carries the cockpit: `tools/cockpit/src/cockpit/page.py:226` uses a manifest's `compute` as a dict key, which a list breaks, and 17 manifests hold `compute: hpc` or `local`.
+- M3 (the resources registry), next for /spec (D24 has landed): both write `data/model/model-entities.ts`, `data/snapshot/normalise.ts`, the validation and the snapshot fixtures of `grep -rlE "organisations: \{" tests`. Its /spec carries the cockpit: `tools/cockpit/src/cockpit/page.py:226` uses a manifest's `compute` as a dict key, which a list breaks, and 17 manifests hold `compute: hpc` or `local`.
 - Q72 (the architecture re-read).
 - E4 (the apps built), after Q72.
 - R2 (release readiness).
@@ -34,9 +32,10 @@ Queued, in order (26 steps):
 - X2 (a new orchestrator resumes from the files).
 - O33, last (oculus in its own repository).
 
-Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers. When the 15th lands, this line becomes "Ready: the three-way Opus and Sonnet comparison can be asked for", and the comparison is written when Axel asks for it.
+Ready: the three-way Opus and Sonnet comparison can be asked for.
 
 Landed, newest first:
+- D35 (every configuration file live, the server's port move and the page following it), 2026-10-02, 15824705.
 - M4 (the Present view's equations as LaTeX), 2026-10-02, d210de04.
 - L4 (floating panes and kept empty panes), 2026-10-02, ce7346bb.
 - Q66 (a hidden tab defers its work), 2026-10-02, 41e7583b.

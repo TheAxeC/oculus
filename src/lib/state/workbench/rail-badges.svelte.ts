@@ -58,6 +58,7 @@ function cellsTitle(cells: BadgeCell[]): string {
 /** The reactive view badges of one client. */
 export type RailBadgesStore = {
     boardBadge: (view: string) => string;
+    personalBadge: () => string;
     collectionBadge: (key: string) => string;
     collectionBadgeTone: (key: string) => string;
     collectionBadgeTitle: (key: string) => string;
@@ -97,6 +98,12 @@ export function createRailBadges(
     /** The number of cards on one of the three project boards. */
     function boardBadge(view: string): string {
         return String(selectors.board(selectors.boardPreset(view)).length);
+    }
+
+    /** The number of side projects on the Personal board, none before the first snapshot. */
+    function personalBadge(): string {
+        const snapshot = entities.portfolio();
+        return String(snapshot === null ? 0 : Object.keys(snapshot.entities.personal).length);
     }
 
     /** The number of entries in one collection's configured `nav_live` status set. */
@@ -246,6 +253,7 @@ export function createRailBadges(
 
     return {
         boardBadge,
+        personalBadge,
         collectionBadge,
         collectionBadgeTone,
         collectionBadgeTitle,

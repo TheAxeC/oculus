@@ -31,6 +31,7 @@ function rawDemo(): RawPortfolio {
     const feeds = readFeeds(demo, config.feeds, config.text);
     const career = readCareer(demo, config.career, config.text);
     return {
+        personal: [],
         manifests: manifests.manifests,
         registries,
         collections: collections.collections,

@@ -35,6 +35,14 @@ text:
             id_not_folder: id {0} is not the folder name {1}
             type_not_tier: "type {0} is not the tier's {1}"
             scan_missing: scan directory does not exist
+            personal_no_manifest: folder has no project.yml
+            personal_not_file: project.yml is not a regular file and is not read
+            personal_too_large: project.yml is larger than {0} bytes and is not read
+            personal_no_title: has no title, so the card is named {0}
+            personal_status: 'status "{0}" is not one of {1}; the card is drawn as unknown and sorted last'
+            personal_field_type: '{0} is not text and is read as empty'
+            personal_links: links is not a list of text; the entries that are not text are dropped
+            personal_key: key {0} is not one of title, status, eli5, next and links and is not read
         present:
             figure_missing: figure {0} is not in {1}/
             equation_image: "equation {0} names an image; a slide's equation is LaTeX"

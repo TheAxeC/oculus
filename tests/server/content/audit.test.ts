@@ -4,8 +4,8 @@
 //
 // The words are the engine's own catalog, read through loadConfig, so a case asserts the message
 // the reader sees rather than a copy of it typed here. What this does NOT cover: the watcher
-// publishing the scan, which is tests/server/root/watch/portfolio.test.ts, and the view drawing it,
-// which is tests/views/system/audit.test.ts.
+// publishing the scan, which is tests/server/root/watch/portfolio/portfolio.test.ts, and the view
+// drawing it, which is tests/views/system/audit.test.ts.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve, sep } from 'node:path';

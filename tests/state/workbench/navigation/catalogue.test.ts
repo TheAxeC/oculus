@@ -308,7 +308,7 @@ describe('the catalogue of the real config', () => {
                 'changes',
                 'agents'
             ],
-            p: ['projects', 'coauthor', 'archive'],
+            p: ['projects', 'coauthor', 'archive', 'personal'],
             e: ['inbox', 'radar', 'leads', 'linkedin', 'calendar'],
             s: ['files', 'repositories', 'search'],
             c: ['funding', 'events', 'education', 'applications', 'joint-work', 'tasks'],

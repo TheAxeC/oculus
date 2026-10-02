@@ -193,6 +193,7 @@ export function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            personal: {},
             feeds: NO_FEEDS,
             career: null,
             projects: byId,

@@ -117,6 +117,7 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            personal: {},
             projects: { alpha: project('alpha', { short: 'Alpha', collaborators: ['naesens'] }) },
             venues: {},
             datasets: {},
