@@ -182,6 +182,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z282 (2026-10-02, S4's /spec, the brief check's 3.3): `processes` last in the merged System page with no chord, merged by the second of D18 and S4 to land; glyphs kept (the orchestrator, automode). Not chosen: dropping another view's chord for it, which changes a chord a reader already uses; leaving the placement to the landing, the lazy option.
 - Z281 (2026-10-02, D17's /spec, the brief check's S1): `default: build` and `default: test` on an entry, Cmd+Shift+B and Cmd+Alt+T, one error pattern made clickable in the task terminal and published as diagnostics for D33 (the orchestrator, automode). Not chosen: the three widened parts left out, the lazy option.
 - Z194 (2026-10-02, D17's /spec, the brief check's P1, N1, C3, C4, C8): the form's `commands.json`, `depends_on`, approvals in `DESIGN.md`'s shared `approvals.json` shape keyed over the exact text with its folders, a chain in one task terminal, `remain-on-exit` in the start call, Restart behind a confirmation (the orchestrator, automode). Not chosen: a second approvals file of D17's own shape, which contradicts `DESIGN.md`.
 - Z279 (2026-10-02, D14's /spec, the brief check's S1 and C9): magic comments, the root and the sections read with `latex-utensils` as LA18 rules, and the Files Outline's hand LaTeX reader replaced by the same shared reader (the orchestrator, automode). Not chosen: the hand readers kept, the lazy option.

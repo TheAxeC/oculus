@@ -997,6 +997,13 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z282 (2026-10-02, S4's brief check): Processes in the merged System page
+
+- Chosen: `processes` registers last in the merged group (order 9, after Gallery, lower right pane) with no chord; the second of D18 and S4 to land makes the merge; the group keeps the `settings` glyph and the rail button `sliders`.
+- Not chosen: taking a chord from another view for Processes, which moves a chord a reader already uses; leaving the placement to whoever lands, the lazy option.
+
+Where it applies: S4, D18. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z281 (2026-10-02, D17's brief check): default build and test, clickable errors
 
 - Chosen: `default: build` / `default: test` on a command; Cmd+Shift+B and Cmd+Alt+T run them for the repository of the active source tab's file; one error pattern `path:line[:column]` then `error` or `warning`, clickable in the task terminal and published for D33 in D14's diagnostics shape.
