@@ -184,3 +184,221 @@ I also re-ran the commands the builder's report cites:
 ## Usage
 
 About 320,000 tokens (the context counter went from 15,000,000 to about 14,680,000) and about 65 tool uses. The minutes were not measured.
+
+## Repair round 1, refuted
+
+D14 (LaTeX on any folder). Worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/D14, base eaf8034f, reviewer read only. The round's delta is the 57 files under the worktree modified after 2026-10-02 20:53 (`find . -newer <ref>`, the reference made with `touch -t 202610022053` in my scratchpad), each read against `git diff eaf8034f -- <path>`.
+
+**Summary.** Every verify command is green. Rulings 1 to 6, 8 to 12 and 16 to 20 are closed. Rulings 7, 13, 14 and 15 are closed in part. A Build press while a save's build is out or running starts a second latexmk; I reproduced this with a probe. That makes the sentence ruling 15 asked to be true false in `latex.svelte.ts:33-34` and in `DESIGN.md:406`. Each open part is small and can be fixed at landing.
+
+## Verification lines (verbatim)
+
+Command: `cd .../worktrees/D14/tools/oculus && PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`, exit 0. The vite chunk listing is left out.
+
+```
+$ npm test
+> vitest run --tagsFilter '!slow' --exclude 'tests/checks/**'
+fatal: Needed a single revision
+ Test Files  516 passed | 24 skipped (540)
+      Tests  12863 passed | 639 skipped (13502)
+   Duration  172.92s (transform 32.88s, setup 0ms, import 352.64s, tests 278.89s, environment 197ms)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  446 passed | 9 skipped (455)
+$ npm run check
+1790972794519 COMPLETED 3182 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+✓ built in 5.75s
+✓ built in 13.59s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+No test timed out.
+
+Other commands, rerun from `tools/oculus` in the worktree:
+- **Size caps:** `wc -l` prints terminals.svelte.ts 888, routes.ts 622, content/latex.ts 326, latex.svelte.ts 710, Editor.svelte 530, Source.svelte 509.
+- **Folder check:** `sh utils/folder-check.sh` exits 0. `ls src/lib/ui/controls/editor/kit | wc -l` prints 10.
+- **Rename grep:** `grep -rn "helpers/files/latex\|kit/formatting" src tests config DESIGN.md HELP.md --exclude=local.yml` prints nothing (exit 1).
+- **Spec ASCII gate:** the perl gate over `src tests config` (local.yml excluded) prints nothing. `LC_ALL=C grep -n '[^ -~]'` over DESIGN.md, HELP.md and the report prints nothing.
+- **Bundle:** `.svelte-kit/output/client/_app/immutable/nodes/2.D0h4len3.js` is 2,479,108 B and `chunks/-VgnPOoT.js` is 212,040 B, matching the report. Of all `nodes/*.js` and `chunks/*.js`, only `chunks/-VgnPOoT.js` contains `matching_delimiters`. The node chunk fetches it through `import("../chunks/-VgnPOoT.js")`. The base's 2,459,624 B was not reproduced: it needs a build of the base.
+- **Parse time (case 20):** my own probe calling `readTex` over the 231 files of `find funding applications projects -name '*.tex'` printed `files 231 median 2.51 max 85.82 refused 4`. The report has 2.26 and 50.53. Both are under the brief's stops.
+- **Mutations the report names**, rerun on a scratch copy under my scratchpad, never in the worktree:
+  - ruling 20, `loading ??=` changed to `loading =`: `imports once for a second call and for a call made while the import is out | AssertionError: expected 3 to be 1`.
+  - ruling 9, `return onlyMain(file);` changed to `return null;`: 3 failed and 4 passed, among them `falls through to the folder rule for a root comment naming a file outside the root | AssertionError: expected null to be '/private/var/...'`.
+  - ruling 10, `!name.startsWith('-') && ` removed: 2 failed and 36 passed, `expected 200 to be 400` in the project form and in the folder form.
+  - ruling 8, `encodeURIComponent(String(target))`: 15 failed and 16 passed in folder.test.ts.
+  - ruling 16, a provider per add: `expected [ { …(1) }, { …(1) } ] to have a length of 1 but got 2` and `expected [] to deeply equal [ Array(1) ]`.
+  - ruling 17, `build()` skipping only a live terminal: 3 failed in building.test.ts.
+  - Z299, a refused text giving `sections: []`: 7 failed across `data/prose/latex.test.ts`, `latex-outline.test.ts` and the state `sections.test.ts`.
+  - ruling 1, the `building` span removed from Main.svelte: `expected '...' to contain '>building<'`.
+  - the never-named release, `!one.listed && one.missed < 1` changed to `!one.listed`: `starts a new build after a terminal the list never named ... expected [...] to have a length of 2 but got 1`.
+- **Line scan against the parser:** `scanSections` gives the same `{level, title, line}` list as the parser on all 227 real files the parser accepts. On the 4 files it refuses, the scan gives 20, 18, 21 and 16 headings.
+
+## Item verdicts (whole diff since eaf8034f)
+
+1. **Holds.** `mains` and `buildState` are now exported with no caller in `src` (Standards 6).
+2. **Holds.** The project form names its outline's files against the project folder and carries `folder` (endpoint.ts:117-120).
+3. **Holds.**
+4. **Holds.**
+5. **Holds.** The tab glyph is `journals` (`config/text/views/academic/latex.yml:37`). No other view's `_glyph` uses it (`grep -rn "journals" config src --exclude=local.yml`). The instance key `label` is listed as decision 1.
+6. **Holds.**
+7. **Holds.**
+8. **Holds.** The reader is at `data/prose/latex.ts`, and a refused text keeps its sections by Z299.
+9. **Holds.** A main file over 2 MB draws a contradictory pair of lines (Behaviour 2).
+10. **Holds.**
+11. **Holds.**
+12. **Holds.** There is one provider per language. It is tested against a fake Monaco; real Monaco is checked at the look.
+13. **Holds.** `building` is drawn, a second save is folded into one build, and saves are built on from the source store.
+14. **Holds.**
+15. **Holds in part.** `DESIGN.md:406` says "one build at a time per main file", which a Build press breaks (Standards 1).
+16. **Holds.**
+
+## Case verdicts
+
+1-3. Met.
+4. Met. The outside-root case now has a main in the folder, and the mutation reproduces.
+5-8. Met.
+9. Met. A real `-v.tex` and `/etc/passwd` are run through the terminal action in both forms, and the mutation reproduces.
+10-12. Met. 12 is pure; the press is checked at the look.
+13. Met. The request addresses are asserted, and the mutation reproduces.
+14. Met.
+15-19. Met.
+20. Met (median 2.51 ms, max 85.82 ms in my run).
+
+## Ruling verdicts (D14-round1.md)
+
+1. **Closed.** `LatexMain.building` is set from the POST until the terminal leaves the list or the request fails. Main.svelte draws `latex.building`. The building.test.ts cases and both view cases are present, and the mutation fails.
+2. **Closed.** The rename grep prints nothing, and the `ALLOWED` row names `data/prose/latex`.
+3. **Closed against Z303.** `journals` is used, no new key was added and no other view shares the glyph.
+4. **Closed.** `rootNameIn` is used by both entry points, and "audits that writes the same label..." failed before the round (`final-pre-summary.txt`).
+5. **Closed.** The before and after rows for Save All and Timeline restore are present.
+6. **Closed.**
+   - The project outline names its files against the project folder.
+   - The base of `errors[].file` did not change: against `manuscript/` on the base (`relFile(named, dir)` with `dir = join(folder, MANUSCRIPT)`) and now (`buildStateIn(..., { pdf: MANUSCRIPT, files: '' })`, `content/latex.ts:325`; endpoint.ts:118).
+   - The 2 MB rule is listed as decision 3 and tested.
+   - What the reader sees for an oversized main file is stated incompletely (Behaviour 2).
+7. **Closed in part** (Proof 1).
+8. **Closed** (the mutation reproduces).
+9. **Closed** (the mutation reproduces).
+10. **Closed** (the mutation reproduces).
+11. **Closed.** No file-scope `let BIN`. `let HUB` predates the step.
+12. **Closed.** Judgment call 9 states it once and correctly.
+13. **Closed in part** (Proof 3). The two missing cases were added.
+14. **Closed in part** (Standards 2 and 3). All 19 keys have a reader: grepped one by one, each is read in endpoint.ts or routes.ts.
+15. **Closed in part** (Standards 1).
+16. **Closed.** `createFormatting` in `kit/load.ts`; the two-model and close-one tests are present and the mutation reproduces.
+17. **Closed as worded:** `build()` skips while the request is out, while the terminal is unlisted and while it is live, with tests. A Build press bypasses the check (Behaviour 1).
+18. **Closed.** All five rows are in the report's table.
+19. **Closed.**
+   - The line scan skips `%` comments and verbatim blocks. It matches the parser on 227 accepted real files.
+   - The 20, 18 and 21 fixtures, the `price $5` case and the commented-section case are present.
+   - The LaTeX view draws the sections and keeps a skipped line, reworded to "not fully read: {0}" (Spec 1; Standards 5).
+20. **Closed.**
+    - A dynamic `import()` is used in `state/sources/explorer/sections/outline.ts:66`. Its only caller, `latexOutline`, awaits it, and `outlineFollower` uses `.then`.
+    - The single-flight works, a failed import retries, and the race test is present.
+    - The chunk sizes reproduce. The base size was not reproduced.
+    - The file-scope closure is Standards 4.
+
+## Spec
+
+1. **The skipped line's wording changed.** Place: `config/text/views/academic/latex.yml:25`, `outline_skipped: 'not fully read: {0}'` (it was `'not read: {0}'`).
+   - Ruling 19 says the view "keeps its line that the file was not parsed". The builder chose a new user-visible wording that covers parser refusals, files over 2 MB and unreadable files with one sentence. It is reported as judgment call 3.
+   - Failure scenario: see Behaviour 2.
+   - Verdict: a decision the orchestrator may reverse; no item violated.
+
+No other substitute mechanism and no decision that was the user's. The glyph went to Z303 as an open item rather than being decided.
+
+## Proof
+
+1. **First runs are not quoted per test** (ruling 7). The report quotes the first failing line per file and a per-ruling table, and points to `scratchpad/d14/final-base-summary.txt` and `final-pre-summary.txt` for the per-test lines. Both files exist, with 742 and 873 lines. The ruling asked for the line per new or changed test in the report.
+   - One new test passes on the tree before the round and the report does not flag it: `building.test.ts` "starts a new build after a terminal the list never named, once pushes found it absent" (`final-pre-summary.txt`: `passed | a main file is never built twice at once starts a new build after a terminal the list never named...`). I showed it is discriminating with the `missed` mutation above, which the report does not quote.
+   - Verdict: ruling 7 closed in part. A fix at landing is to paste the per-test lines.
+2. **Stale counts in the report.** The report gives latex.svelte.ts 709, building.test.ts 222, folder.test.ts 643, latex-fixture.ts 88 and views/academic/latex.test.ts 319. `wc -l` prints 710, 217, 634, 94 and 321. The files' modification times (21:53-21:54) are earlier than the report's (22:20), so the counts were taken before the last edits. No decision rests on them; every cap holds.
+3. **The async table has cells that do not exercise their case** (ruling 13).
+   - `onSaved`, "after close or forgotten": the cell cites "starts nothing for a file that is not a .tex file, and nothing for a file with no main", which is a filter, not an after-close case.
+   - `build`, "after close": the cell cites "is false again after a request that never reached the server", which is a failure case.
+   - For both, the honest answer is "cannot occur or intended: the store builds whether or not a view is open". The cells should say that instead of naming an unrelated test.
+4. **DONE row 4 (label) cites only `latex-menu.test.ts`.** Every case there is titled "audits that", as the tree check requires for a case under `tests/views/` that does not render. The cases are behaviour tests with failing lines before the round, but the row's proof column does not say "audit" as spec line 60 asks. Minor.
+
+## Standards
+
+1. **Sentences made false by a Build press.**
+   - Places: `src/lib/state/sessions/latex.svelte.ts:33-34`, "A main file is never built twice at once: from the moment its build is asked for until the terminal that runs it has left the terminals list, a save that arrives asks for one more build after it". And `DESIGN.md:406`, "one build at a time per main file".
+   - `run()` (`latex.svelte.ts:583-622`, called by Main.svelte's Build through `latex.run`) does `building.set(key, mine)` unconditionally and POSTs (judgment call 4).
+   - My probe on a scratch copy: a save starts a build, then `client.latex.run(DOCS, 'main.tex', 'build')` is called. With the first build's terminal listed, `expect(seen.posts.length).toBe(1)` failed with `expected 2 to be 1`. With the first build request still out, it failed the same way.
+   - Failure scenario: Axel saves `c6.tex`, sees "building", presses Build to watch, and two latexmk runs write the same `.aux` and `.log` at once.
+   - Verdict: ruling 15 closed in part.
+2. **Engine words filled into catalog sentences.**
+   - `endpoint.ts:135` fills `path_refused: '{0} is {1} for the root {2}'` with `found.error`, which is `'outside' | 'missing'` from `resolveRootPath` (`files.ts:106-126`). An unknown root key gives "proposal is outside for the root nowhere".
+   - `routes.ts` `startLatex` fills `main_not_of_scope: main is not a main file of this {0}` with `folder.scope`, the code literal `'project'` or `'folder'`.
+   - The spec says an engine word is mapped to a catalog line. Each pair should be two keys.
+   - Verdict: ruling 14 closed in part.
+3. **Wrong refusal sentence.** `routes.ts` `latexFolder` answers `id_root_exclusive` whenever `message.root !== undefined` and the zod union fails. That includes a root with no `path` and an empty `root`.
+   - Probe: `request({ action: 'latex', root: FOLDER_ROOT, main: 'main.tex', step: 'build' })` answered `'id and root are exclusive'`.
+   - The page never sends this today; the sentence still tells a caller the wrong thing.
+   - Verdict: ruling 14 closed in part.
+4. **File-scope mutable through a closure.** `state/sources/explorer/sections/outline.ts:66` `const readLater = lazyReader(...)` holds `let loading` (`data/prose/latex.ts:266`) at module scope, shared by every client state of a page.
+   - It follows the kit's own precedent (`kit/load.ts:139` `let loading`), and the parser is stateless, so no wrong answer follows.
+   - The spec's "no module-level mutable state" names no exception for it.
+   - Verdict: minor; the orchestrator decides whether to hold the reader per client.
+5. **A doc comment's claim and the skipped line.**
+   - `data/prose/latex.ts:140` says the scan "reads a text the parser accepts the same way". My edge probe differs from the parser on `\verb|\section{X}|` (the scan reads X), on `\section{a\\}` (the scan drops the section) and on a one-line `\begin{verbatim} ... \end{verbatim}` (the scan reads inside it). All 227 accepted real files agree.
+   - "not fully read" is false for a file over 2 MB, of which nothing is read. HELP.md says so itself: "a file over 2 MB is not read, and both are named under the list as not fully read".
+   - Verdict: minor wording.
+6. **Exports without a caller** (whole diff). `server/content/latex.ts:164` `export function mains` and `:324` `export function buildState` have no caller in `src` (`grep -rn "[^.a-zA-Z]mains(\|buildState(" src` prints only their definitions); only tests read them. Brief item 1 names `mains(folder)`, so the spec's remove-or-localise rule and the brief point different ways. Minor.
+7. **Files near their caps** (whole diff, not this round's delta). `terminals.svelte.ts` is 888 of 900 and `Editor.svelte` 530 of 540, both within the spec's 20-line split margin. `ui/controls/editor/kit/` is at 10 of 10 items.
+8. **Allow lists the round touched.** Only the `ALLOWED` state row in `boundaries.test.ts`: `data/helpers/files/latex` became `data/prose/latex`, with a comment paragraph saying why. It is a move, not a widening, and the comment is true (type-only import of latex-utensils, no I/O). No `allow-*.txt` changed (`git diff eaf8034f --stat -- tests/checks/` shows only `config-folder.test.ts` and `boundaries.test.ts`).
+9. **Clean otherwise.**
+   - No history wording in the round's comments or test titles (my scan found only the runtime sense of "before" and "still").
+   - Non-ASCII is clean, and each new file has a head comment.
+   - All 19 new `server.latex.*` keys have a reader, and the catalog orphan check is green.
+
+## Behaviour
+
+1. **A Build press while a save's build is out or running starts a second latexmk.** Place: `latex.svelte.ts:593-604`, `building.set(key, mine)` and the POST, with no check against an entry for the same main.
+   - Reproduced by the probe in Standards 1: `expected 2 to be 1` in both windows.
+   - Failure scenario: two latexmk runs in one folder writing the same aux and log files. The earlier build's `again` flag is also lost when the press replaces its entry.
+   - A fix: in `run()` for a build, when an entry is out or live, show its terminal (or set `again`) instead of starting another.
+   - Verdict: not covered by ruling 17's wording; it is the root of Standards 1.
+2. **A main file over 2 MB, or one that cannot be read, draws "The file holds no sections." and "not fully read: <main>" together.** Place: `views/shared/latex/Outline.svelte:37-38` and `:57-58`.
+   - Probe: rendering an outline `{ sections: [], skipped: ['proposal/main.tex'] }` through the view test's `outlined` helper produced a body containing `The file holds no sections.`.
+   - The first sentence is false for a file that was not read. Ruling 6 asked the report to say what the reader sees for such a file; the report names only the "not fully read" line.
+   - Verdict: minor, fixable at landing.
+3. **The never-named rule is unmeasured.** An unlisted terminal is taken as ended at the second `sessions` push after the answer that lacks it (`latex.svelte.ts:343-347`). If two pushes go out before the server's terminal list includes the new terminal, the row stops saying `building` while latexmk runs, and a later save starts a second build. Whether pushes can arrive in that order is not measured; nothing in the tree says they cannot.
+4. **Note for D25.** `outlineOf('latex', ...)` now answers null (`state/sources/explorer/sections/outline.ts:117-119`); the LaTeX outline is only `latexOutline` (async). D25's sticky scroll, ruled by Z260 to read the same headings, has to call `latexOutline`. This is not a defect of D14.
+
+## Declined to judge
+
+- **The browser look is the orchestrator's on TEST:**
+  - the `building` line live;
+  - the Files Outline waiting state and the chunk fetched on first use;
+  - Format Document on real Monaco with two LaTeX tabs;
+  - the hover;
+  - the markers;
+  - the menu labels;
+  - the `journals` tab glyph.
+- **Real `tex-fmt`:** not installed (Z280 open).
+- **The base build's chunk size (2,459,624 B):** not reproduced, since it needs a base build.
+- **Git commands outside my brief.** I ran `git show eaf8034f:<path>` (read only) three times, to read the base `server.yml` and the base `relFile` and `mains`, and one `git grep ... eaf8034f`, which printed nothing. They changed nothing, but they were outside the two git commands allowed.
+- **Scratch copy.** The probes and mutations ran on a scratch copy at `.../scratchpad/copy/oculus` (no `config/local.yml` in it: `test -e` printed "absent"). Nothing in the worktree was changed.
+
+## Usage
+
+About 276,000 tokens (the context counter went from 15,000,000 to about 14,724,000) and about 62 tool uses. Minutes not measured.
+
+## Closed
+
+Each finding of the run over round 1 is small and inside the brief, so each is fixed at landing on main and never sent to the builder:
+- Behaviour 1 and Standards 1: `run()` for a build of a main whose build request is out or whose terminal is live shows that terminal and sets `again` instead of starting a second latexmk; a test of the press in both windows; `latex.svelte.ts:33-34` and `DESIGN.md:406` then hold.
+- Behaviour 2 and Standards 5: a main file not read draws its own sentence and not "The file holds no sections."; the skipped line distinguishes a file read in part (parser refused) from one not read (over 2 MB or unreadable); the scan's doc comment states its known differences from the parser.
+- Behaviour 3: the never-named release is taken from the terminal the POST answered, so a terminal is ended only after a push that listed it no longer lists it, or after the server says it does not exist; a test of two pushes before the list names it.
+- Standards 2: each engine word filled into a sentence becomes its own catalog key (`outside`, `missing`; `project`, `folder`).
+- Standards 3: `latexFolder` answers the refusal that fits (a root without `path`, an empty root) instead of "id and root are exclusive".
+- Standards 4: the lazy reader is held per client state instead of at module scope, unless the landing finds the kit's precedent is ruled; the landing note says which.
+- Standards 6: `mains` and `buildState` stay exported as brief item 1 names them; noted in the booking.
+- Spec 1: "not fully read" is kept for a file read in part, with Behaviour 2's wording for a file not read.
+- Proof 1 to 4: the booking carries the per-test first-run lines from `final-base-summary.txt` and `final-pre-summary.txt`, the counts by `wc -l` after the last change, the honest async-table cells and "audit" in DONE row 4.
