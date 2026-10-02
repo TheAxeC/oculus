@@ -170,11 +170,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z217, D24's six repository manifests (raised at /spec 2026-10-02 01:57). The ruling of 2026-09-25 says cathedra, game-engine, ordo, scotoma, officium and youtube-downloader carry a `.oculus/project.yml`; on the tree none does (`ls ~/workspace/<repo>/.oculus/project.yml` for each: No such file or directory). A builder works only in its worktree of this repository and the orchestrator does no step work, so no one in the plan can write the six files.
-  - (a) D24's builder drafts the six manifests (title, status, eli5, next, links) from each repository's README and tree, read-only, in its report; the refuter checks each against its repository; at the landing the orchestrator writes each verbatim to `<repo>/.oculus/project.yml` and commits it in that repository by path, no push. Pro: six filled cards on the day D24 lands, the drafts reviewed like code. Con: commits in six other repositories outside the cherry-pick rule, allowed by this ruling for D24 only.
-  - (b) The board draws a Files root without a manifest as a card from its folder name and README's first paragraph, marked as having no manifest, with an action that writes `.oculus/project.yml` from the card. Pro: nothing outside this repository; covers every later repository. Con: a wider step (a new write kind), and the six cards carry no status until the action is used on each, which is work left to Axel.
-  - (c) Axel writes the six files himself. Con: work left to Axel; the lazy option.
-  - Recommendation: (a), since it delivers what the ruling of 2026-09-25 asked for and the drafts get the same review as code.
 
 
 
@@ -209,6 +204,25 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z227 (2026-10-02 02:26, D24): `readManifests` never yields the side tier; `readPersonal` reads it (the orchestrator, automode).
+- Z228 (2026-10-02 02:26, D24): the Files roots, watched, the workspaces file polled (the orchestrator, automode).
+- Z229 (2026-10-02 02:26, D24): `!.oculus/project.yml` added to youtube-downloader's `.gitignore` at the landing (the orchestrator, automode).
+- Z230 (2026-10-02 02:26, D24): links drawn through `posting()`, the rest as text (the orchestrator, automode).
+- Z231 (2026-10-02 02:26, D24): ids `side:<slug>` and `root:<key>`; a regular file of at most 64 KiB (the orchestrator, automode).
+- Z232 (2026-10-02 02:26, D24): a draft's title is its README's name (the orchestrator, automode).
+- Z233 (2026-10-02 02:26, M4): the cockpit deck draws LaTeX equations through MathJax (the orchestrator, automode).
+- Z234 (2026-10-02 02:26, M4): the 13 lines written by the named script (the orchestrator, automode).
+- Z235 (2026-10-02 02:26, M4): the real slides checked in `integrity.test.ts`, the comparison at landing (the orchestrator, automode).
+- Z224 (2026-10-02 02:08, M4): each equation a single-quoted YAML scalar (the orchestrator, automode).
+- Z225 (2026-10-02 02:08, M4): the image branch removed, one finding kept for an image name (the orchestrator, automode).
+- Z226 (2026-10-02 02:08, M4): the subtitle names the Present view (the orchestrator, automode).
+- Z218 (2026-10-02 02:03, D24): the hub tier read into its own entity kind `personal`, out of `projects` (the orchestrator, automode).
+- Z219 (2026-10-02 02:03, D24): the view `personal` as the Projects page's fourth tab (the orchestrator, automode).
+- Z220 (2026-10-02 02:03, D24): `side_project_status` in `vocab.yml` (the orchestrator, automode).
+- Z221 (2026-10-02 02:03, D24): search, status toggles, cards; the manifest edited in the editor (the orchestrator, automode).
+- Z222 (2026-10-02 02:03, D24): findings, the card kept where it can be drawn (the orchestrator, automode).
+- Z223 (2026-10-02 02:03, D24): read in the portfolio build and watched (the orchestrator, automode).
+- Z217, D24's six repository manifests (raised at /spec 2026-10-02 01:57: none of the six repositories had a `.oculus/project.yml`). Ruled by Axel 2026-10-02: (a), D24's builder drafts the six manifests from each repository's README and tree, read-only, in its report; the refuter checks each; at the landing the orchestrator writes each verbatim to `<repo>/.oculus/project.yml` and commits it in that repository by path, no push, allowed for D24 only.
 - Z216 (2026-10-02 01:57, D24): the six repositories found as Files roots, ordo, scotoma, officium and youtube-downloader added under `roots:` in `config/sources.yml` beside cathedra and game-engine, no new key (the orchestrator, automode).
 - Z215, the brief checks of D35 and X3a after their briefs were rewritten (raised 2026-10-02 01:50 on Axel's question). Ruled by Axel 2026-10-02: (b), no new check, since both builders are already building; the refuters read the new parts at review. Not chosen: (a) a fresh brief check of each rewritten brief.
 - Z214 (2026-10-02 01:45, X3a, Z188 redone one decision per entry): the listing and nesting toggles in the header's `...` menu; Open Editors, Outline and Timeline start collapsed (the orchestrator, automode).

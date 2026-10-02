@@ -129,7 +129,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ Q41 the awaiting strip over every live project and every project a lane draws; lane headers at half their hue, each touching pair on the open board apart under every theme (Axel 2026-09-17; brief `agents/briefs/Q41.md`; review `agents/reviews/Q41-refuter.md`); landed 2026-09-17 19:01
 - ✅ Q42 a closed pane's and a closed page's instance state cleared, a page shown inside the closed page keeping its own; a source save that lands after its tab closed or was retargeted writes nothing (Axel 2026-09-17; brief `agents/briefs/Q42.md`; review `agents/reviews/Q42-refuter.md`); landed 2026-09-17 15:04
 - ✅ Q38 tabs, pages and panes drawn like VS Code's editor: square tabs edge to edge, the accent line on the active pane's shown tab, a dot for unsaved text, the pane header's bare split and menu buttons, the page strip on the card surface, handles blank at rest (Axel 2026-09-16; brief `agents/briefs/Q38.md`; review `agents/reviews/Q38-refuter.md`); landed 2026-09-17 21:08
-- M4 the Present view's equations out of `tools/present`: each `equation`; in full in `agents/briefs/M4.md` (ruling The queue)
+- M4 the Present view's equations out of `tools/present`: each `equation:` of a `PRESENT.md` rewritten by script to its LaTeX, drawn live, the image branch removed; in full in `agents/briefs/M4.md` (ruling The queue)
 - ✅ D22 Show in Files: a control on cards, the project tab, collection and venue cards and a person's supervision folder, opening the Files tab at the path (Axel 2026-09-16; brief `agents/briefs/D22.md`; review `agents/reviews/D22-refuter.md`); landed 2026-09-17 19:37
 - ✅ Q43 the Files view's forms kept across a tab switch and a reload, a save's answer closing only the form it was sent from, the root and workspace line asked about on close (Axel 2026-09-17; brief `agents/briefs/Q43.md`; review `agents/reviews/Q43-refuter.md`); landed 2026-09-17 16:36
 - ✅ Q44 the Repositories picker lists every repository: `rev-parse --git-dir` tells a repository from a folder, a repository with no commit reads its branch, a failed or timed-out read stays in the picker with its error row (found by the run over Q32's round; brief `agents/briefs/Q44.md`; review `agents/reviews/Q44-refuter.md`); landed 2026-09-17 17:05
@@ -429,7 +429,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
   - Ruled 2026-09-30 by Axel, Z72, Z74 (4), Z79 (4), Z80 and Z92 (2); each in the Rulings section, the texts in full in `agents/briefs/D23.md`.
 - D23b the language features that edit files no tab holds (rename, code actions, `workspace/applyEdit`) through oculus's write chain, workspace symbols, call and type hierarchy, and the TypeScript and Svelte servers from npm as pyright's is (D34); after D23; in full in `agents/briefs/D23b.md` (ruling Z72) (ruling Z88)
 - D24 a Personal board: side projects drawn as cards, from `side-projects/<slug>/project.yml` in the hub and `<repo>/.oculus/project.yml` in each Files root, status one of idea, building, running, parked (Axel 2026-09-22, widened 2026-09-25; brief `agents/briefs/D24.md`, the ruling in full there) (ruling The queue)
-  - Step 0, stopped at /spec 2026-10-02 01:57: none of the six repositories has a `.oculus/project.yml`, and nothing in the plan may write into another repository; open item Z217 in the state file.
+  - Step 0, stopped at /spec 2026-10-02 01:57 on Z217 (none of the six repositories had a `.oculus/project.yml`), ruled (a) by Axel the same day: the builder drafts the six manifests and the landing writes and commits them in their repositories.
 - D25 the editor's options: per-language tab size and spaces-or-tabs, word wrap (Alt+Z) and rulers, plus the minimap, whitespace and sticky scroll, each a key of oculus's config with its Settings control, a repository's `.oculus/settings.yml` overriding the per-language keys; after S3c; in full in `agents/briefs/D25.md` (ruling Z74) (ruling Z89) (ruling Z81)
   - Widened 2026-10-01 by the Settings ruling (fixed choices written in DESIGN.md or HELP.md), from the Cut table of `agents/reviews/Z74-inventory.md`: every editor setting outside Z81's keys stays at Monaco's default, said in HELP.md.
 - Removed by Z126 (the orchestrator, automode, 2026-10-01 00:08): D26 (the rite language) folded into D27, its line kept whole in `agents/briefs/D27.md`.
@@ -824,6 +824,25 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z214 (2026-10-02): (a), the listing and nesting toggles in the header's `...` menu; Open Editors, Outline and Timeline start collapsed (the orchestrator, automode).
 - Open item Z215 (2026-10-02): (b), no new brief check of D35 and X3a, whose builders are already building; their refuters read the rewritten parts (the user).
 - Open item Z216 (2026-10-02): (a), D24 finds the six repositories as Files roots: ordo, scotoma, officium and youtube-downloader join cathedra and game-engine under `roots:` in `config/sources.yml`, no new key (the orchestrator, automode).
+- Open item Z217 (2026-10-02): (a), D24's builder drafts the six repositories' `.oculus/project.yml` in its report, the refuter checks them, and the landing writes each and commits it in its repository by path, no push, for D24 only (the user).
+- Open item Z218 (2026-10-02): (a), D24: the hub tier read into its own entity kind `personal`, out of `projects` (the orchestrator, automode).
+- Open item Z219 (2026-10-02): (a), D24: the view `personal` as the Projects page's fourth tab (the orchestrator, automode).
+- Open item Z220 (2026-10-02): (a), D24: `side_project_status` in `vocab.yml` (the orchestrator, automode).
+- Open item Z221 (2026-10-02): (a), D24: search, status toggles, cards; the manifest edited in the editor (the orchestrator, automode).
+- Open item Z222 (2026-10-02): (a), D24: findings, the card kept where it can be drawn (the orchestrator, automode).
+- Open item Z223 (2026-10-02): (a), D24: read in the portfolio build and watched (the orchestrator, automode).
+- Open item Z224 (2026-10-02): (a), M4: each equation a single-quoted YAML scalar (the orchestrator, automode).
+- Open item Z225 (2026-10-02): (a), M4: the image branch removed, one finding kept for an image name (the orchestrator, automode).
+- Open item Z226 (2026-10-02): (a), M4: the subtitle names the Present view (the orchestrator, automode).
+- Open item Z227 (2026-10-02): (a), D24: `readManifests` never yields the side tier; `readPersonal` reads it (the orchestrator, automode).
+- Open item Z228 (2026-10-02): (a), D24: the Files roots, watched, the workspaces file polled (the orchestrator, automode).
+- Open item Z229 (2026-10-02): (a), D24: `!.oculus/project.yml` added to youtube-downloader's `.gitignore` at the landing (the orchestrator, automode).
+- Open item Z230 (2026-10-02): (a), D24: links drawn through `posting()`, the rest as text (the orchestrator, automode).
+- Open item Z231 (2026-10-02): (a), D24: ids `side:<slug>` and `root:<key>`; a regular file of at most 64 KiB (the orchestrator, automode).
+- Open item Z232 (2026-10-02): (a), D24: a draft's title is its README's name (the orchestrator, automode).
+- Open item Z233 (2026-10-02): (a), M4: the cockpit deck draws LaTeX equations through MathJax (the orchestrator, automode).
+- Open item Z234 (2026-10-02): (a), M4: the 13 lines written by the named script (the orchestrator, automode).
+- Open item Z235 (2026-10-02): (a), M4: the real slides checked in `integrity.test.ts`, the comparison at landing (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

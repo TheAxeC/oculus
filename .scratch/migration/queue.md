@@ -19,14 +19,14 @@ Queued, in order (29 steps):
 - D14 (LaTeX on any folder, with build on save, magic comments, outline, word count and hover preview; ChkTeX moves to D36 by Z196), brief checked (`agents/reviews/D14-brief-check.md`); /spec once X3a has landed (both rewrite `views/sources/files/tree/row-menu.ts` and `Tree.svelte`, and X3a's LaTeX outline is what D14's parser replaces), its findings closed in the brief then.
 - D25 (the editor's options), once S4 has landed.
 - D17 (project commands: `.oculus/commands.yml`, the form, CMake presets, npm scripts and Makefile targets, approval of their text, task terminals with their result), brief checked (`agents/reviews/D17-brief-check.md`); /spec once X3a has landed (its Run item goes into the row menu X3a rebuilds), its findings closed in the brief then.
-- D23 and D15 (language servers; PDF reading, once D14 has landed).
+- D23 and D15 (language servers, once D25 and D27 have landed as its line says and X3a has, since its code symbols go into X3a's Outline; PDF reading, once D14 has landed).
 - D11 (the rite debug client), once D17 has landed (Z191: its launch configurations' `before` names a command of D17's `commands.yml`).
 - D23b (more language server features), once D23 has landed.
 - D28 (saving a source file), once D25 has landed.
 - D33 (the Problems view), once D23 and D17 have landed.
 - D36 (linters on save, ChkTeX, ruff, eslint and shellcheck, into the editor's marks and D33's Problems view), once D33 has landed (Z196).
 - D18 (the Processes view), once D35 has landed (its command patterns are a behaviour key read live through D35's mechanism).
-- D24 (the Personal board), stopped at /spec on open item Z217 (the six repositories have no `.oculus/project.yml`).
+- D24 (the Personal board), Z217 ruled (a): its builder drafts the six repositories' manifests; /spec runs again.
 - D20 (an agent from a task or in a new worktree), once D17 has landed (Z195: a seeded agent runs after the approval D17's store keeps).
 - A1 and A3 (review with feedback; scheduled runs, once D17 has landed).
 - M3 and M4 (the resources registry; live equations in Present).

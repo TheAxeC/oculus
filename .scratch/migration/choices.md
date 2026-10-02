@@ -584,3 +584,165 @@ The question: how the Personal board finds the six repositories that carry a `.o
 - Not chosen: (b) a new list key the board reads, which the ruling makes a stop and which repeats what `roots:` holds; (c) the saved workspace of `~/.oculus/workspaces.json`, which holds only `~/.claude` and is this machine's file.
 
 Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z218 (2026-10-02 02:03, step D24)
+
+The question: the hub tier of side projects.
+
+- Chosen (a): a flat scan rule `{ dir: side-projects, type: side-project, tier: personal, optional: true }` after `projects/ideas` in `config/sources.yml`, tier id `side-projects`, its manifests kept in a new snapshot entity kind `personal` and never in `projects`.
+- Not chosen: (b) side projects as `projects` with their tier filtered out by each research reader, which needs a filter in every reader of the snapshot's projects and lets any reader added later show them.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z219 (2026-10-02 02:03, step D24)
+
+The question: where the Personal board sits.
+
+- Chosen (a): a view `personal`, "Personal", glyph `spark`, the fourth tab of the Projects page after Archive (`config/layout.yml` arrangement `projects`).
+- Not chosen: (b) a rail page of its own, a twelfth button for a handful of cards.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z220 (2026-10-02 02:03, step D24)
+
+The question: the status vocabulary.
+
+- Chosen (a): `side_project_status:` in `config/catalogs/vocab.yml` in the shape of `career_host_status:`: running (`live`, #16a34a), building (`active`, #d4a017), idea (`idea`, #0891b2), parked (`snooze`, #9ca3af), the order the board sorts in.
+- Not chosen: (b) the words and colours in code, against the catalog rule; (c) the research status chips, which carry none of the four words.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z221 (2026-10-02 02:03, step D24)
+
+The question: what the board and a card do.
+
+- Chosen (a): a search and a toggle per status kept per tab, cards sorted by status then title; a card draws title, status chip, eli5, next, links and where it lives; the title opens the manifest in the editor, Show in Files opens its folder; no facets, list mode or form.
+- Not chosen: (b) the research board's facets and list mode, which read research fields a side project has none of; (c) an edit form, which is Q91's manifest editor.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z222 (2026-10-02 02:03, step D24)
+
+The question: what a wrong manifest gives.
+
+- Chosen (a): an unknown status, a missing title and a key outside the five are findings and the card is still drawn (status `unknown`, the folder name as title); a file that does not parse is a finding and no card; a root without the file gives nothing.
+- Not chosen: (b) no card for any wrong field, which hides a side project over a typo.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z223 (2026-10-02 02:03, step D24)
+
+The question: how the repositories' manifests reach the page.
+
+- Chosen (a): the portfolio build reads `<root>/.oculus/project.yml` for each Files root the watcher passes, id `root:<key>`, one card per real directory, each root's `.oculus/` watched so a change reaches an open page.
+- Not chosen: (b) a route of its own read on demand, which leaves an open page stale until reloaded.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z224 (2026-10-02 02:08, step M4)
+
+The question: how each equation is written in its PRESENT.md.
+
+- Chosen (a): the LaTeX of `make_equations.py` byte for byte as a single-quoted YAML scalar on the `equation:` line, a `'` doubled; all 13 round-trip through `yaml.safe_load` unchanged.
+- Not chosen: (b) a double-quoted scalar, every backslash doubled; (c) a block scalar, which changes the front matter's one-line shape.
+
+Where it is built: M4. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z225 (2026-10-02 02:08, step M4)
+
+The question: what is left of the image branch.
+
+- Chosen (a): `deck.equations_dir`, the image lookup, `equationImage`, `equationMissing`, the `<img>` and gap branches and their catalog keys removed; an `equation:` naming an image file becomes the finding `findings.present.equation_image` and draws nothing.
+- Not chosen: (b) a file name typeset as LaTeX without a word; (c) the branch kept, which the plan line removes once unused.
+
+Where it is built: M4. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z226 (2026-10-02 02:08, step M4)
+
+The question: the dashboard subtitle that names `tools/present`.
+
+- Chosen (a): `config/catalogs/meta.yml`'s subtitle names the Present view as the showcase.
+- Not chosen: (b) the subtitle kept, which points at a deck oculus no longer reads.
+
+Where it is built: M4. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z227 (2026-10-02 02:26, step D24)
+
+The question: whether research readers see a side project.
+
+- Chosen (a): `readManifests` skips the `side-projects` tier and a new `readPersonal` reads it, so the deposit route, subtask and manifest writes, the chat context and project files never find a side project by id.
+- Not chosen: (b) refusals added to each write route, which leaves the next caller of `readManifests` open; (c) the exposure documented, the lazy option.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z228 (2026-10-02 02:26, step D24)
+
+The question: which roots the board reads and how it hears a change.
+
+- Chosen (a): `browserRoots` without the hub and engine roots, deduplicated by real path; each root's `.oculus/` watched, through its parent while it does not exist; the saved workspaces file polled as the git watcher polls it.
+- Not chosen: (b) the configured roots only, which leaves a folder added in a named workspace off the board.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z229 (2026-10-02 02:26, step D24)
+
+The question: the `*.yml` ignore rule of youtube-downloader.
+
+- Chosen (a): at the landing `~/workspace/youtube-downloader/.gitignore` gains `!.oculus/project.yml` after line 4, committed with the manifest.
+- Not chosen: (b) `git add -f`, which leaves the next change of the file ignored; (c) the file left untracked, the lazy option.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z230 (2026-10-02 02:26, step D24)
+
+The question: what a `links` entry is.
+
+- Chosen (a): text; an entry `posting()` accepts (`http` or `https`) is a link opened in a new tab, every other entry plain text; a non-list or non-text entry a finding.
+- Not chosen: (b) any entry a link, which makes a `javascript:` entry from a repository clickable.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z231 (2026-10-02 02:26, step D24)
+
+The question: card ids and what file is read.
+
+- Chosen (a): ids `side:<slug>` and `root:<key>`; only a regular file of at most 64 KiB is read, anything else a finding.
+- Not chosen: (b) bare slugs and keys, which collide and can be reserved object keys.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z232 (2026-10-02 02:26, step D24)
+
+The question: a drafted manifest's title.
+
+- Chosen (a): the project's name from its README's first heading (Missal for game-engine).
+- Not chosen: (b) the folder name, which is not what the project is called.
+
+Where it is built: D24. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z233 (2026-10-02 02:26, step M4)
+
+The question: the cockpit deck, which reads the same `equation:` field.
+
+- Chosen (a): `tools/present/build.py` draws a LaTeX value through the deck's MathJax, with an `argmin` macro in `mathconfig.js`, and the sentences of `tools/present` that name the image form are rewritten; the research-cockpit skill's step 6 waits for O29, since skills are edited only by Axel.
+- Not chosen: (b) the deck left without its 13 equations until O29, a regression of the public deck.
+
+Where it is built: M4. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z234 (2026-10-02 02:26, step M4)
+
+The question: how the 13 lines are written.
+
+- Chosen (a): by the script the brief names, the plan line's "by script": each `equation: eq_<id>.png` replaced by its `make_equations.py` entry, one line per file, checked by a dry run (13 files, one line each).
+- Not chosen: (b) 13 hand edits, against spec.md's rule that a builder writes under `projects/` only through a named script.
+
+Where it is built: M4. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z235 (2026-10-02 02:26, step M4)
+
+The question: how the 13 are tested.
+
+- Chosen (a): no test reads `tools/present`; `integrity.test.ts` asserts the real hub's 13 slides carry an equation, give no finding and render with no `katex-error`; the comparison with `make_equations.py` is the landing's command.
+- Not chosen: (b) the 13 strings as constants in a test, which compares a file with a copy of itself.
+
+Where it is built: M4. Booked in the state file's closed log and `plan.md` Rulings.

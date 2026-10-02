@@ -1,0 +1,117 @@
+BRIEF CHECK OF M4 (brief read in full at the working-tree version, plan.md, spec.md, the tree on main at c73570a5). Nothing was changed in the repository; scratch files are under /private/tmp/claude-502/m4probe/. `config/local.yml` was never opened.
+
+Summary: the brief's premises hold (all 13 lines, the KaTeX probe, the line numbers). It has 3 blocking findings: (1) the step silently removes the equations from the cockpit deck `tools/present/present.html`, which the brief says "stays for the cockpit"; (2) the new test (item 4) contradicts case 9 and spec.md:35; (3) case 7 contradicts case 10. Further findings are listed per check below.
+
+## Names
+
+Command: `grep -rIl -e <name> .` over the whole repository (excluding node_modules, .git, worktrees, local.yml, vendor, generated html). Hits for `equationImage`, `equationMissing`, `equationsDir`, `equations_dir`, `equationPath`, `equationsDirOf`, `PresentPaths`, `IMAGE_SUFFIXES`, `equationIsImage`, `equation_missing`, `equation_alt` lie only in tools/oculus src, tests, config and `.scratch` history files (briefs, reviews, choices.md, orchestrator-state.md; history, neither false nor broken). `equation_image` has no hit outside `.scratch`. `Showcase =` also appears in `tools/cockpit/data/cockpit.yml` (the cockpit's own subtitle, unaffected). `grep -n -i equation DESIGN.md HELP.md` prints nothing (rc=1); DESIGN.md:367 ("LaTeX is typeset in the page by KaTeX ... a figure is served through the file route") stays true. No hit in tools/oculus/docs/diagrams.
+
+1. BLOCKING. `tools/present/build.py:159-160` breaks. It reads `pr["equation"]` as a file name: `eqsrc = (equation_img(pr["equation"]) or present_img(folder, pr["equation"]))`. After M4 that value is LaTeX. Command: a python snippet joining a LaTeX value (eq_dongho) to `assets/equations/` and to `<project>/present/` printed `equation_img path exists: False` and `present_img path exists: False`. So the rebuilt cockpit deck draws no equation card for any of the 13 slides, with no error. `.agents/skills/research-cockpit/SKILL.md:90-99` has the skill rebuild `tools/present/build.py` after any PRESENT.md change and calls the deck "the sole public showcase"; `tools/cockpit/README.md:225` has the Slides tab's "Save and rebuild" run it. Item 5 ("`make_equations.py` and the images stay for the cockpit until O29") is true of the files and false of the effect: no PRESENT.md names an image any more. Fix: the brief states this effect and takes one of two ways. (a) Widen the paths to `tools/present/build.py` so a value that is not an existing image becomes `<div class="eqcard">\[ ...latex... \]</div>`; the deck already ships MathJax (`assets/js/mathconfig.js` has displayMath `['\\[','\\]']`), but MathJax defines neither `\argmin` nor (not verified) `\bm`, so `mathconfig.js` would need an `argmin` macro as well. (b) Accept the loss and raise it to Axel as an open item, since it changes a public artifact. Recommendation: (a). (b) is the lazy option, and a regression the step introduces is the step's to end. Whether MathJax typesets all 13 is not verified.
+2. Sentences made false in files outside the paths (spec.md:59): `tools/present/README.md:20,30,50` ("`equation: eq_foo.png` # in <project>/present/", "A slide references one with `equation: eq_<id>.png`"), `tools/present/content/present.yml:9`, `tools/present/make_equations.py:3-6` (docstring), `.agents/skills/research-cockpit/SKILL.md:68-69,76` (step 6 tells an author to add an `eq_<id>` entry and re-run it for a new project's equation; after M4 the equation belongs in the PRESENT.md `equation:` line). O29 (plan.md:500) updates the skill, but only at its end; until then the instruction produces a PNG nothing reads. Fix: widen the paths to those sentences, or the brief says why they wait for O29 (the booking legitimate only if (b) in finding 1 is chosen).
+3. Names inside oculus that the removal leaves behind but the brief does not list. `src/lib/data/model/model-entities.ts:402-403` (`Deck.equationsDir`; the brief gives that file only "the slide's two fields") and the doc comment at :271-274 ("`equation` is either LaTeX ... or the name of a rendered image ... the view draws `equationImage`"); `src/lib/data/index.ts:114-116` (`equationsDirShape`, outside the brief's "lines 198-223 and 235"); `src/lib/data/sources/present.ts:185-187` `hubPath` (its only callers are lines 196 and 198, both inside `equationPath`, so it becomes unused) and the `PresentPaths` doc comment at :174; `Equation.svelte` imports `fileUrl`, `HUB_ROOT`, `t` (:8-10) and the styles `.eqcard img`, `.gap`. Fix: name them in item 2 and in the paths.
+4. Test lines the brief's list omits (all in files the brief writes): `tests/state/life/present.test.ts:553` (`equationsDir: ''`) and `:780-783` ("reads the equations folder only as text"); `tests/data/portfolio-config.test.ts:50,131,151-168`; `tests/data/sources/present.test.ts:54` (the RICH fixture has `equation: eq_one.png`, so under the new rule `findings` is no longer `[]` at its line ~95), `:85`, `:97`. Fix: item 4 lists them.
+
+## The step line
+
+Plan line = `plan.md:132`, which reads in full: `- M4 the Present view's equations out of tools/present: each equation; in full in agents/briefs/M4.md (ruling The queue)`.
+
+1. The plan line is cut mid-phrase ("each `equation`;"). The brief's quoted "plan line" (brief line 9) is not the plan's text and not the first-booked text either. `orchestrator-state.md:1184` reads "each `equation: eq_<id>.png` of a `PRESENT.md` rewritten by script to its LaTeX ... all 13 checked on the TEST page ... `config/meta.yml` reworded"; the brief drops "by script", writes "the 13" for "all 13", and "meta.yml" for "config/meta.yml". Fix: restore plan.md:132 (orchestrator's file) and quote verbatim in the brief, or say "shortened".
+2. "by script" is dropped from the brief. `spec.md:94` says a write to a hub data path (`projects/` here) goes "through the script the brief names and by nothing else". The brief lists the 13 paths and names no script; item 1 has the builder write them. Fix: the brief names how (either "edited with Edit, one line each, no script", with the exception to spec.md:94 recorded as a ruling, or a script whose computation Axel approves under scripts-compute-facts) and asks for a post-edit check of "one line changed per file" (`git diff --stat` shows 13 files, 1 line each, read by the orchestrator).
+3. Mapping of the (original) line to items: "each equation rewritten to its LaTeX from make_equations.py" = item 1; "drawn live" = no item (Equation.svelte's existing tex branch) and case 2; "the 13 checked on TEST against the images" = case 11 and the report's last list (landing's job, no item in "What to build"); "`equations_dir` and the image branch removed if unused" = item 2; "the tests' `tools/present` fixture paths" = item 4; "`meta.yml` reworded" = item 3. Parts with no item in "What to build": "drawn live" and "checked on TEST" (both served by cases 2 and 11 only; see The question).
+
+## Premises
+
+All rerun; the brief's values match unless noted.
+- `grep -rn "equation: eq_" --include=PRESENT.md projects`: 13 lines, files, line numbers (12,12,9,12,12,9,9,12,28,12,9,12,12) and values identical to the table. `grep -rn "equation:" ... | grep -v "equation: eq_"` prints nothing. Each file has one `^present:` line, no `slides:`, no CRLF (`grep -c $'\r'` 0); bt-operator-theory's line 28 is under `present:` at two spaces. `git ls-files projects | grep -c PRESENT.md` = 17, so the worktree has them.
+- `wc -l tools/present/make_equations.py` = 53; entries at lines 26-38, 13 of them; `eq_ward` is the unreferenced one. ASCII-clean (`LC_ALL=C grep -c '[^ -~]'` over lines 26-38 prints 0).
+- KaTeX 0.18.7 with `displayMode:true, trust:false, strict:'ignore', maxSize:50, maxExpand:1000` and `throwOnError:true`: `ok` for all 13 keys. With `throwOnError:false` the output holds no `katex-error` and no red colour for any of the 13, and a `strict` callback collected zero warnings for all 13 (nothing is being silently ignored).
+- The 13 round trip: `"  equation: '" + v.replace("'","''") + "'"` parsed by `yaml.safe_load` equals the entry, `mismatches 0`; only eq_rawpls holds a `'`; none holds `#`, `: ` or a tab or edge whitespace. Line lengths including the two-space indent are 142 to 271 (the brief's 140 to 269 omits the indent).
+- The PNGs are what `make_equations.py` produces now: I compiled all 13 entries with pdflatex 2025 and the file's own preamble in scratch; the PNG pixel sizes equal the committed PNGs' for all 13 (e.g. eq_dongho 1073x192 both).
+- Line numbers confirmed: present.ts 432 lines, Equation.svelte 61, markup.ts `tex` at 42, `package.json:68` katex, findings.yml:40, present.yml (text):14-15, config/present.yml:7, options.yml:416-419, meta.yml:5; tests: deck-edit 30,66; state present 72,179; data present 36,223; views 201,219,228. `.agents/plan.yaml` line 8 `standards: []`.
+- Deviations: finding 3 and 4 under Names (unlisted names and test lines), and item 5 as in Names finding 1.
+
+## Cases and checks
+
+1. BLOCKING. Case 7 contradicts case 10. Case 7 needs a test whose fixture holds `deck.equations_dir`; case 10 requires `grep -rn "...equations_dir..." src tests config` to print nothing. Both cannot hold. Fix: case 10 greps `equationImage\|equationMissing\|equationsDir\|equation_missing\|equation_alt` over `src tests config` and `equations_dir` over `src config` only, naming case 7's test as the one allowed hit in `tests`; or case 7 is dropped as "a key the zod object does not name is dropped" (`state/life/present.ts:274-301`). Existing tests `portfolio-config.test.ts:50,131` use `equations_dir` as a generic wrong-typed key and must also be rewritten under case 10.
+2. BLOCKING. Case 9 contradicts item 4 and spec.md:35. Item 4's test reads `make_equations.py`, which lives at `tools/present/`; a literal path hits case 9's grep, and a path assembled from segments (`join(root,'tools','present',...)`) only evades the grep and leaves oculus reading `tools/present`, the thing the goal removes. spec.md:35 also says only four named tests read the real hub and nothing else; item 4 adds a fifth reader of `projects/` and of `tools/present/`. The brief cannot override spec.md ("Nothing in a brief overrides anything here"). It also dies at O29 when `tools/present` is deleted. Options: (a) the byte comparison is a one-off migration fact, run by the orchestrator at landing as a command (13 values against `make_equations.py`, as I did above) and quoted in the landing report, while the standing test only checks that the 13 real slides parse, carry an equation, raise no finding and render with no `katex-error`; that test is added by the orchestrator to spec.md:35's list and skips through `tests/fixtures/real-hub.ts`. (b) the test carries the 13 LaTeX strings as constants (no reading of tools/present, no clash with case 9; but a comparison of PRESENT.md against a copy of itself, spec.md:57 "an assertion over a constant proves nothing" audit). Recommendation: (a); (b) is the lazy option, (c) keeping item 4 as written is a rule clash and goes to Axel.
+3. Item 4's real-hub test needs three details the brief omits. The key (`eq_rawpls`) is no longer in the PRESENT.md after the change, so the test needs a 13-row table (project folder to key; btfno and bt-operator-theory both `eq_btfno`) copied from the brief's table. It must read through `readPresent` (not a raw YAML parse), so `str()`, the new image rule and the finding list are inside the proof, and assert `findings` is empty for each. It must take the hub root from `engineDir()` (two directories above the engine, as `local.ts:122` defaults) and not from `loadLocal().hub` (`real-hub.ts:36`), otherwise in a worktree it can read main's unedited PRESENT.md (what `config/local.yml` holds is not verified: not opened). Fix: add to item 4.
+4. Case 10 grep omits `equation_missing`, `equation_alt` (the catalog keys), `equationPath`, `equationsDirOf`, `equationsDirShape`, `hubPath`. A removed catalog key with a surviving reader would show only at runtime. Fix: add them to the pattern.
+5. Case 2 is not tied to a test location and its assertion cannot be `not.toContain('<img')` over the slide (the same slide draws figure `<img>`s: tests/views/academic/present.test.ts:193 asserts `/api/file/hub/projects/active/alpha/present/a%20figure.png`). It must be scoped to the `eqcard` markup. See The question for the existing `katex` assertion.
+6. Verified: case 6 (`katex.renderToString('\\frac{', {throwOnError:false, ...})` printed `true` for katex-error, with a ParseError title; no throw); case 8 (`src/lib/data/helpers/guards.ts:27`: `str` returns undefined for a non-string); case 4 (`equationIsImage` lowercases, present.ts:60-62); case 1 and 3 as written.
+7. Verify item 3, reasoned on current files: `grep -rn "equation: eq_" --include=PRESENT.md ../../projects` prints 13 lines now and nothing after the 13 edits (no other file has the string); `grep -rc "^  equation: '" --include=PRESENT.md ../../projects | grep -c ':1$'` printed `0` now and 13 after (17 PRESENT.md files exist, 4 have no `equation:`; no other file matches `equation:` in a PRESENT.md, so no file reaches `:1` except the 13). Both print what the brief says.
+8. The `tests/data/sources/` folder holds 9 items (`git ls-files tests/data/sources | sed ... | sort -u | wc -l`), so one new file makes 10, at the limit of `utils/folder-check.sh`.
+9. Item 2 leaves `config/present.yml` with `deck:` followed by a blank line (lines 6-8 are comment, key, blank; the brief removes 6-7). Remove 6-8.
+10. `deck-edit.test.ts:30,66` uses `equations_dir` as the neighbour key whose survival the append case proves; "the deck fixtures lose `equations_dir`" would drop that proof unless another key (for example `tag_tones`) replaces it. Fix: say so.
+
+## The question
+
+Goal: the 13 slides' equations drawn live from LaTeX identical to make_equations.py's, with oculus no longer reading tools/present.
+
+- Step line (as quoted in the brief): could pass without the goal. Edits plus green tests do not show the formulas look like the images (see the KaTeX paragraph below) and do not show the cockpit stays usable.
+- Item 1 (13 edits): does not pass without the goal on content (byte equality is checkable, and the commands above show 13 of 13 round-trip); it can pass with a swapped pair (covert-theory and covert-applied) unless the test's 13-row table is right, which comes from the brief's table.
+- Item 2 (image branch removed): cases 9 and 10 pass by absence of text. They can pass without the goal if the new test builds the tools/present path from segments (Cases 2) and while `Deck.equationsDir`/`equationsDirShape` linger (Names 3).
+- Item 3 (meta.yml): cannot pass without the wording being changed; it is fully checked by the grep of case 9 (`config/catalogs/meta.yml:5` is one of the 11 hits).
+- Item 4 (tests): the existing `expect(body).toContain('katex')` at `tests/views/academic/present.test.ts:200` passes with the equation removed: SLIDES[0].results holds `$\\rho$ 0.49` (line ~52) which KaTeX also typesets. Kept in that form, case 2 can pass with no equation drawn. The test that compares PRESENT.md to make_equations.py proves string identity only.
+- Item 5: nothing built; correct only if finding 1 under Names is resolved.
+- Item 6 (diagrams): regenerates; passes whatever the goal.
+- Case 11 (look on TEST): the only item that compares the drawing with the image; it is the landing's, and the builder cannot do it. The builder's report lists test results per slide, not a look.
+
+Does the string-equality test prove the formula is drawn as the PNG shows? No. It proves the same LaTeX; the render check (`tex()` with no `katex-error`) proves KaTeX parses it. Measured differences between KaTeX and pdflatex for these 13: all 13 render with no error and no warning (probe above), `\bm{\beta}` renders as KaTeX bold-symbol beta, `\argmin` gets limits below (`op-limits`), `\small` inside `\text` is supported, `\sum` limits are below in display mode. The one visible difference I found is the size of `\small` text in the 3 entries using it (eq_dongho, eq_hccnetfl, both `\small` occurrences twice in the latter): KaTeX output class is `reset-size6 size5` (KaTeX's size 5, 0.9 of the base), while in the PNG (read with the image viewer) "(chance-corrected agreement)" and "(federate theta)", "kept local" are visibly much smaller than the equation (pdflatex's `\small` is 9pt inside a `\Large` equation; not measured pixel by pixel). The ink colour (`#14202E`) and the base size (`\Large`) are also the PNG's, not the view's. The look on TEST (case 11) must compare these; the unit test cannot. Fidelity of the rendered shapes beyond that I did not judge (no browser).
+
+## Implied inputs missing from "Cases"
+
+1. `equation: 'eq_x.png '` or a block scalar `equation: |` giving `eq_x.png\n`: `equationIsImage` does not trim, so it is typeset as LaTeX (I confirmed `katex.renderToString('eq_x.png')` has no error and draws the text), the case Z225 rejected. Expected: trim before the suffix test, finding as case 3.
+2. `equation: ''` (empty string): `str('')` keeps it, so Project.svelte:99 draws an empty card (KaTeX renders an empty display span). Expected: no card, no finding (and `hasSlideContent`, `state/life/present.ts:75`, as for no equation).
+3. A slide whose only field is an image-named `equation:`: the equation is dropped, so `hasSlideContent` (state/life/present.ts:75) is false and the slide draws nothing but the finding. Expected result to state (finding present; slide empty).
+4. An image-named `equation:` in an entry of the `slides:` list (id `<project>/<slug>`): expected the finding keyed on that id, as case 3.
+5. A PRESENT.md outside the scan tiers (`tools/cockpit/templates/docs/PRESENT.md`, `tools/oculus/demo/projects/active/graph-bandits/PRESENT.md`): not read for the real hub; the demo's double-quoted LaTeX equation (line 10) is unaffected. All 13 real files are in tiers: `config/sources.yml` scan has `projects/manuscripts` and `projects/archive` nested (any depth, `manifests.ts:76`); all 13 project ids are in `config/present.yml` `order:` (grep `slide: project`). Expected: unchanged.
+6. `writeDeck` on a `present.yml` without `equations_dir`: `deck-edit.ts` is a text edit that names no equations key (deck-edit.test.ts uses it only as a fixture), so no behaviour change; expected: appended list after remaining keys (point 10 under Cases).
+7. A saved deck selection or `slide_order` naming one of the 13: slide ids are unchanged by M4, so no effect. Expected: unchanged.
+8. A CRLF PRESENT.md: the front-matter regex accepts `\r?\n` (docs.ts); a single-quoted scalar is unaffected. None of the 13 has CRLF. Expected: parses.
+9. A `present.yml` that still holds `deck.equations_dir` (case 7), and a `local.yml` that does (not verified: not opened): read without error, key ignored, but the Settings catalog check (`tests/checks/config/options-findings.ts`: every file key has an entry) would report the tracked file if the key stayed, so the tracked file must lose it (it does, lines 6-7).
+10. The test runs inside a worktree: `projects/` and `tools/present/` are tracked, so a root taken from `engineDir()` finds both; a root from `local.yml`'s `hub` may point to main (not verified).
+
+## ADRs
+
+None. Commands: `ls tools/oculus/docs` prints `diagrams`; `ls docs/adr` prints `ls: docs/adr: No such file or directory`; `grep -n -i adr .agents/plan.yaml` prints nothing (the file exists, `standards: []` at line 8); `find . -ipath "*adr*"` finds only `projects/active/linfoot-estimator/results/headroom.md` (and its worktree copies), unrelated. The step touches none.
+
+## Declined to judge
+
+- How the 13 formulas look on the TEST page (needs Axel's Chrome and server; forbidden for me, and case 11 is the landing's).
+- Whether MathJax (`tools/present/assets/vendor/tex-svg.js`) can typeset the 13 values (`\argmin`, `\bm`); not run.
+- The contents of `config/local.yml` (never opened).
+- Whether a PRESENT.md edit counts as "manuscript content" under the hub's academic-paper rule: the rule's text names `.tex`, `.bib` and `.docx`; I applied none and left the question to the orchestrator.
+- The full verify list (`checks.sh`), `npm test`, `npm run diagrams`: not run; they are the builder's and would change state.
+- Pixel-level comparison of KaTeX against the PNGs; only class names (`size5`) and the visible PNG were used.
+
+Usage: claude-sonnet-5-5 (read from the agent's transcript at 02:08), 207,699 tokens, 64 tool uses, 13.5 min.
+
+## Closed
+
+Each finding, with the change to `agents/briefs/M4.md` that closes it.
+
+- Names 1 (blocking, the cockpit deck): item 3 (Z233) widens the paths to `tools/present/build.py` and `mathconfig.js`: a LaTeX value is drawn through the deck's MathJax with an `argmin` macro, and the builder typesets the 13 with the vendored MathJax under node; case 12 and 13.
+- Names 2: item 3 rewrites `tools/present/README.md:20,30,50`, `content/present.yml:9` and `make_equations.py:3-6`. The research-cockpit skill's step 6 is not edited, since skills are edited only by Axel and O29 rewrites that skill; the report names its lines.
+- Names 3: item 2 names `Deck.equationsDir`, the slide comment at 271-274, `equationsDirShape`, `hubPath`, the `PresentPaths` comment and `Equation.svelte`'s imports and styles; the paths carry their lines.
+- Names 4: "What is on the tree" lists the omitted test lines and item 5 says what each becomes.
+- The step line 1: the brief quotes both of Axel's wordings of the line; `plan.md:132` is restored to a whole clause.
+- The step line 2: item 1 names the script (Z234), the plan line's "by script", and checks one changed line per file; a dry run on a scratch copy is quoted in decision 5.
+- The step line 3: "drawn live" is case 2 and item 5's `eqcard` assertion; "checked on TEST" is case 14, the landing's look.
+- Cases and checks 1: case 11 greps `equations_dir` over `src config` only, and case 9's test is the one hit allowed in `tests`.
+- Cases and checks 2: item 5 (Z235): no test reads `tools/present`; the real hub's 13 slides are asserted in `integrity.test.ts`, a listed real-hub reader; the comparison with `make_equations.py` is the landing's command.
+- Cases and checks 3: closed with 2; the test reads through `readPresent` and asserts no finding.
+- Cases and checks 4: case 11's pattern carries every removed name.
+- Cases and checks 5: case 2 and item 5 scope the assertion to the `eqcard` markup.
+- Cases and checks 6, 7: no change needed.
+- Cases and checks 8: `tests/data/sources` takes no new file (Conventions).
+- Cases and checks 9: `config/present.yml` lines 6-8 removed.
+- Cases and checks 10: `deck-edit.test.ts` keeps its proof with `tag_tones` as the neighbour key.
+- The question (`toContain('katex')` passing from a result line): item 5's `eqcard`-scoped assertion.
+- The question (KaTeX against pdflatex, `\small` size): the look at landing compares the 13 with their images (case 14).
+- Implied inputs 1: item 2 trims before the suffix test; case 3.
+- Implied inputs 2: item 2 and case 6.
+- Implied inputs 3: case 4.
+- Implied inputs 4: case 5.
+- Implied inputs 5 to 8, 10: no change needed (out of the scan tiers; no deck behaviour change; ids unchanged; CRLF none; the real-hub test reads the worktree's tree).
+- Implied inputs 9: case 9; the tracked `present.yml` loses the key.
+- ADRs: no change needed.
