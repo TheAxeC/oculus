@@ -33,7 +33,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   executor: agent
   worker: claude:sonnet at ordo-high
   model: claude-sonnet-5-5 (the transcript's message.model, read at 08:29)
-  session_id: a85f423d94391e52c (launched 2026-10-02 08:29 local)
+  session_id: a85f423d94391e52c (launched 2026-10-02 08:29 local); stopped 12:58 by an interruption, continued by a174a17aac935be9d (launched 13:00, Sonnet at ordo-high) on the same worktree
   worktree: .agents/worktrees/D18
   base: 47a41fa4
   launched: 2026-10-02 08:29 local
@@ -53,7 +53,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: d1bd21f1
   launched: 2026-10-02 06:52 local
   report: agents/reviews/Q88c-report.md
-  reviewer_report: agents/reviews/Q88c-refuter.md; reviewer a15dd727556dac3f2 at ordo-high, served claude-sonnet-5-5 (read 09:50); 148,141 tokens, 112 tool uses, 48.7 min; round 1 run: reviewer aa27b5d0ed365e24a at ordo-high, served claude-opus-5-5 (read 12:45), launched 12:44; the round's delta taken by modification time (50 files newer than `Q88c-round1.md`), since no tree state was recorded at the send
+  reviewer_report: agents/reviews/Q88c-refuter.md; reviewer a15dd727556dac3f2 at ordo-high, served claude-sonnet-5-5 (read 09:50); 148,141 tokens, 112 tool uses, 48.7 min; round 1 run: reviewer aa27b5d0ed365e24a at ordo-high, served claude-opus-5-5 (read 12:45), launched 12:44; the round's delta taken by modification time (50 files newer than `Q88c-round1.md`), since no tree state was recorded at the send; that run stopped by an interruption, relaunched as ad86b7adb684c9cd7 (13:00, Opus)
   builder_usage: to the report 319,245 tokens, 792 tool uses, 177.0 min (3 full-list runs, none printing `checks: 7 commands passed`; the third red at `test:checks` on `git.test.ts` at 901 lines, cut to 899 after); round 1 136,186 tokens, 346 tool uses, 114.5 min
   brief_check: agents/reviews/Q88c-brief-check.md (run 2026-10-01 on the earlier draft, not run again: the spec skill checks a step once; its findings closed under its Closed heading); claude-sonnet-5-5, 78,134 tokens, 94 tool uses, 15.0 min
   shared_paths: with X3a, `server/files/fs/ops.ts` (Q88c the word `export` on two functions; X3a other functions), `server/files/fs.ts` (one import line), `routes/+page.svelte` (one listener), `DESIGN.md:128` (both add sentences to one paragraph, combined at landing), `options.yml` (different blocks); with D24, `rail-badges.svelte.ts` (each its own badge function and input), `options.yml` (511 against the `appearance.yml:` block), `DESIGN.md` (after 404 against 128, 359, 395); with D35, `options.yml` (different blocks), `HELP.md` (216 and 236 against 44, 113, 171-213, 222). Each merge is additive in separate hunks or one paragraph combined by hand.
@@ -63,7 +63,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   executor: agent
   worker: claude:sonnet at ordo-high
   model: claude-sonnet-5-5 (the transcript's message.model, read at 09:03)
-  session_id: a4af0ef105f4b6e97 (launched 2026-10-02 09:02 local)
+  session_id: a4af0ef105f4b6e97 (launched 2026-10-02 09:02 local); stopped 12:58 by an interruption, continued by a166c6a4ae3101741 (launched 13:00, Sonnet at ordo-high) on the same worktree
   worktree: .agents/worktrees/M3
   base: f3bf2b6d
   launched: 2026-10-02 09:02 local
@@ -83,7 +83,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   base: ce71ecf1
   launched: 2026-10-02 09:12 local
   report: agents/reviews/A1-report.md
-  reviewer_report: agents/reviews/A1-refuter.md (first run, 172 lines); reviewer a32324e09cd16a4a4 at ordo-high, served claude-opus-5-5 (read 2026-10-02); 290,561 tokens, 56 tool uses, 21.4 min; 1 Spec, 1 Proof (case 17 partial), 1 Standards, 1 Behaviour finding against items 3 and 7, plus 8 findings with no verdict; round 1 run: reviewer a203f1a220b1c0fc5 at ordo-high, served claude-opus-5-5 (read 12:50), launched 12:48; the round's delta taken by modification time (35 files newer than `A1-round1.md`)
+  reviewer_report: agents/reviews/A1-refuter.md (first run, 172 lines); reviewer a32324e09cd16a4a4 at ordo-high, served claude-opus-5-5 (read 2026-10-02); 290,561 tokens, 56 tool uses, 21.4 min; 1 Spec, 1 Proof (case 17 partial), 1 Standards, 1 Behaviour finding against items 3 and 7, plus 8 findings with no verdict; round 1 run: reviewer a203f1a220b1c0fc5 at ordo-high, served claude-opus-5-5 (read 12:50), launched 12:48; the round's delta taken by modification time (35 files newer than `A1-round1.md`); that run stopped by an interruption, relaunched as a8ce30551878e53f0 (13:00, Opus)
   builder_usage: to the report 273,112 tokens, 192 tool uses, 80.8 min; the full list red only at `integrity.test.ts` side projects, as D18; round 1 231,617 tokens, 132 tool uses, 57.7 min (checks.sh not rerun after the last test-only change; the commands that cover it run alone)
   brief_check: agents/reviews/A1-brief-check.md; claude-sonnet-5-5, 269,064 tokens, 76 tool uses, 11.9 min
   shared_paths: with Q88c, `repositories.ts` (A1 `DiffSubject`, `diffState`, `heldDiffShape`; Q88c other functions), `repositories.svelte.ts` (A1 `openChange`; Q88c the menus' wiring), `config/text/views/sessions/changes.yml` (A1 the `sessions:` group, Q88c the `git:` group), `tests/views/sources/repositories/` (A1 `diff-pane.test.ts`, which follows Q88c's split if Q88c makes one); with X3a, `state/sources/explorer/follow.ts` (A1 one field in `followedDiffTab`, X3a new modules beside it) and `tests/views/whole/type-scale.test.ts` (separate rows), as with D18; `HELP.md` 87 and 132 and `DESIGN.md` 399 against the other steps' lines; `docs/diagrams/`, regenerated at each landing. Each is added lines in separate places.; X3a landed before it: `repositories.ts` `DiffSubject` and `diffState` carry X3a's `save` beside A1's `session`, merged by hand at A1's landing
@@ -93,7 +93,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   executor: agent
   worker: claude:sonnet at ordo-high
   model: claude-sonnet-5-5 (the transcript's message.model, read at 12:31)
-  session_id: a5cf8bf3bb8e620a6 (launched 2026-10-02 12:30 local)
+  session_id: a5cf8bf3bb8e620a6 (launched 2026-10-02 12:30 local); stopped 12:58 by an interruption, continued by a63512de536942373 (launched 13:00, Sonnet at ordo-high) on the same worktree
   worktree: .agents/worktrees/D32
   base: bdc0ac53
   launched: 2026-10-02 12:30 local
