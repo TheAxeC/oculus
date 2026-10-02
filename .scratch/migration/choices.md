@@ -997,6 +997,23 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z289 (2026-10-02, the owed looks): the looks' defects folded into the queued steps
+
+Chosen: every defect of `agents/reviews/owed-looks.md` is built in a queued step whose files it touches, each named in that step's brief or, for a step not yet prepared, on its plan line for its /spec:
+- X3c (the tab strip): M3-4 (a Markdown preview table's first column squeezed to letters), D13a-4 (the Markdown preview on by default and over half a narrow pane), Q88c-15 (Editor Actions Position's "Title Bar", no check mark, a float's More under Hidden), Q88c-16 (New Text File opens a note form), Q88c-17 (closing a tab activates its left neighbour), L4-1 (Float and Return to Page lose the terminal's scroll position), L4-2 (a Terminal tab titled by an internal id).
+- Q91 (the project view and its manifest editor): M3-1 (no glyph on machine and storage resource tags), M3-2 (the chips field's keyboard-active choice drawn as chosen), M3-3 (the card's More menu in mixed casing), Q88c-18 (the manifest editor says "saving" during a git write).
+- X3e (the Files view's lists, with Z269's repository scan): X3a-1 to X3a-7, Q88c-1 to Q88c-14 and Q88c-19 to Q88c-22, D27-3, D13a-5, A1-4, and the hub's Graph reading for about 10 s at a count of 0.
+- D25 (the editor's options): D13a-1, D13a-2, D27-1, D27-2, D27-4, D27-5, A1-1, A1-2, A1-3.
+- D28 (saving a source file): D13a-3 (a small file waits 4 to 6 s for its first snapshot).
+- D15 (PDF reading and the document frame): M4-1 (formulas near-white on the equation card), M4-2 (an equation card cut in a narrow pane), M4-3 (Restore panes reloads the document frame).
+- D20 (an agent from a task or a worktree, the sessions step): Q66-1 (a transcript above Node's string limit reads as no turns and is read whole again on every activity).
+
+Not chosen:
+- New steps for them, which need Axel's ruling and would change the same files as the steps named.
+- Leaving them in the owed-looks record only, the lazy option.
+
+Where it applies: the briefs of X3c, Q91 and X3e, and the plan lines of D25, D28, D15 and D20.
+
 ## Z288 (2026-10-02, Axel's look): five defects folded into X3c
 
 Chosen: the five defects of Axel's look on 2026-10-02 are built in X3c: (1) a file tab draws a path breadcrumb (root, folders, file) in place of its file-name header row, at VS Code's measured size; (2) the tab's own buttons (Save, Revert, the star, Open in Program, Preview, Blame) move to the right end of the tab strip and the second row goes; (3) the breadcrumb's size is VS Code's, measured from its stylesheet; (4) a long palette result stays on one line with an ellipsis; (5) a click on a rail button never writes a rail reorder, its cause found read-only while X3c's brief is closed (the orchestrator, automode).

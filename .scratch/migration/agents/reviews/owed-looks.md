@@ -7,7 +7,6 @@ Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/
 ## To take
 
 - M3: the resource tags on cards (This Mac and the others), the Compute facet, the manifest editor's chips field, the Live HPC view with `slurm.resource`.
-- Q67: whether the console links of `account-setup.yml` open the pages they name.
 - Q78: a project document's fenced block over a wallpaper; the doc view and the manual.
 - Q79c: the Memories add press, the stop control's focus, the grid's selection colour, the Live HPC jobs table and log.
 - Q88: the terminal's grid and row menus and Kill arming, the graph's bare name, rendered Markdown and the Document frame's menus.
@@ -98,4 +97,5 @@ Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/
 
 ## Blocked, for Axel
 
+- Q67: the Account setup view on TEST draws six console links, each `target="_blank"` with `rel="noopener noreferrer"`, whose addresses are the six of `config/text/views/personal/account-setup.yml:31-35,52` (Google console, Calendar API, Gmail API, consent screen, credentials; Microsoft Entra app registrations). Opening them, to see that each reaches the page its step names, was refused by the session's permission classifier as navigation to an outside site; it needs Axel's permission or Axel's own click. The Account setup tab opened for the look is still on TEST, since closing it was refused by the same classifier.
 - Every look under a light or other theme (L3, L5, U1, M3, Q88c, A1, X3a's Seti icons): the standing rule says the browser theme on TEST is not changed. A light-theme look needs Axel's word that the theme may be switched on TEST and switched back.
