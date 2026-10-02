@@ -8,23 +8,35 @@
     // A drop on a strip is not drawn here. The strip draws its own insertion mark, which is at the
     // place between two tabs that this layer would have to cover them to show.
     //
+    // The layer is drawn above the front free float, so a float never covers a drag's ghost or the
+    // rectangle of a drop.
+    //
+    // A tab dragged with Alt held lands nowhere in particular: it becomes a float at the pointer,
+    // so the layer draws the outline of that float there in place of the rectangle of a drop.
+    //
     // What the pointer is over may be a place the thing being dragged cannot land: a page already
     // drawn on the screen, or one that would draw the page it is over. Then no rectangle is drawn
     // and the ghost says so, which is the one place a refusal is put into words.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import type { Rect } from '$lib/state/workbench/drag.svelte';
+    import { dragDepth, outlineAt } from './floats/float-geometry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
-        drag: { dragging }
+        drag: { dragging },
+        layout: { floats }
     } = useState();
 
     const held = $derived(dragging());
     const drop = $derived(held?.drop ?? null);
     const rect = $derived(held?.rect ?? null);
     const refused = $derived(held?.refused === true);
+    const floating = $derived(held?.kind === 'tab' && held.alt);
+
+    /** Above the front free float, whatever the number of them. */
+    const depth = $derived(dragDepth(floats().filter((one) => one.place.kind === 'free').length));
 
     /** How far from the pointer the ghost sits, so the pointer itself is never under it. */
     const OFFSET = 12;
@@ -35,6 +47,11 @@
 
     /** The half of the body a new pane on this edge would take, or the whole of it for a centre. */
     function indicator(): string | null {
+        if (held !== null && floating) {
+            return box(
+                outlineAt(held.point, { width: window.innerWidth, height: window.innerHeight })
+            );
+        }
         if (rect === null || drop === null) return null;
         if (drop.kind === 'centre') return box(rect);
         if (drop.kind !== 'edge') return null;
@@ -53,7 +70,7 @@
 </script>
 
 {#if held !== null}
-    <div class="layer" aria-hidden="true">
+    <div class="layer" aria-hidden="true" style="z-index: {depth}">
         {#if area !== null}
             <div class="target" style={area}></div>
         {/if}
@@ -62,7 +79,9 @@
             class:refused
             style="left: {held.point.x + OFFSET}px; top: {held.point.y + OFFSET}px"
         >
-            {#if refused}
+            {#if floating}
+                {t('ui.drag_float', held.label)}
+            {:else if refused}
                 <Glyph name={t('ui.embed_refused_glyph')} />
                 {t('ui.embed_refused', held.label)}
             {:else if held.kind === 'view'}
@@ -78,7 +97,6 @@
     .layer {
         position: fixed;
         inset: 0;
-        z-index: 10;
         pointer-events: none;
     }
 

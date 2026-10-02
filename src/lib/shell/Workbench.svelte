@@ -7,7 +7,11 @@
     // bar.
     //
     // A page is one tree, so every split is the same kind of split and every child of one can be
-    // collapsed to its edge and shown again through the same control.
+    // collapsed to its edge and shown again through the same control. The floats are not part of
+    // any tree: panes/floats/FloatLayer.svelte draws them once, outside the block keyed by the
+    // page, so they stay on screen across a page switch and while a pane of the page is maximised.
+    // The body is a grid so that a float docked to an edge takes a track of its own beside the
+    // area.
     //
     // It is also where the appearance is put on the document, in one effect: the theme's class and
     // its derived tokens, the wallpaper's layer and the properties its translucent surfaces read,
@@ -22,11 +26,13 @@
     import FoldedPane from './panes/FoldedPane.svelte';
     import PageLeaf from './panes/PageLeaf.svelte';
     import PaneView from './panes/PaneView.svelte';
+    import FloatLayer from './panes/floats/FloatLayer.svelte';
+    import { bodyTracks } from './panes/floats/float-geometry';
     import SplitView from './panes/SplitView.svelte';
     import UpdateTray from './rail/UpdateTray.svelte';
     import KeySheet from '$lib/ui/menu/keys/KeySheet.svelte';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
-    import { paneAt, resize, type Layout } from '$lib/state/workbench/layout';
+    import { paneAt, resize, type FloatSpec, type Layout } from '$lib/state/workbench/layout';
     import {
         docState,
         railOrder,
@@ -53,7 +59,7 @@
     const client = useState();
 
     const {
-        layout: { change, activeInstance, currentPage, expandChild, focused, layout },
+        layout: { change, activeInstance, currentPage, expandChild, floats, focused, layout },
         ui: { crt, icons, textScale, theme, updateTrayRequested, wallpaper },
         registry: { views }
     } = client;
@@ -65,6 +71,11 @@
         docs?: DocEntry[];
         /** The rail's pages: the `rail:` list of the merged config with their arrangements. */
         pages?: RailPage[];
+        /**
+         * The `floats` of the merged config: the floats a first load and Reset all pages start
+         * with.
+         */
+        floats?: FloatSpec[];
         /**
          * Whether the merged config has come. It carries the rail list a browser with no saved
          * layout starts on, so until then such a browser draws no page.
@@ -107,6 +118,7 @@
         groups = [],
         docs = [],
         pages = [],
+        floats: shipped = [],
         configured = true,
         saved = [],
         editRail,
@@ -115,6 +127,9 @@
         git = NO_GIT,
         waiting = 0
     }: Props = $props();
+
+    /** The area the page's tree fills, which a float let go beside it docks on. */
+    let area: HTMLElement | undefined = $state();
 
     let paletteOpen = $state(false);
     let palettePrefill = $state('');
@@ -172,8 +187,10 @@
     $effect(() => {
         if (!configured) return;
         const first = pages.at(0);
-        if (first !== undefined) client.layout.startOnRailPage(first.page, first.label, first.node);
-        else client.layout.keepDefaultPage();
+        if (first !== undefined) {
+            client.layout.startOnRailPage(first.page, first.label, first.node, shipped);
+        } else client.layout.keepDefaultPage(shipped);
+        client.layout.adoptFloats(shipped);
     });
 
     $effect(() => {
@@ -259,7 +276,7 @@
              negative depth paints over the page's own background and under every panel. -->
         <div class="wallpaper" style={image}></div>
     {/if}
-    <div class="body">
+    <div class="body" style={bodyTracks(floats())}>
         <ActivityRail
             {pages}
             {saved}
@@ -268,7 +285,7 @@
             onupdate={openUpdate}
         />
         <div class="column">
-            <div class="area">
+            <div class="area" bind:this={area}>
                 <!-- Keyed by the page, so a switch unmounts the hidden page's views and mounts
                      the shown page's: nothing is drawn twice, and every view rebuilds from the
                      stores. -->
@@ -303,6 +320,7 @@
                 {/key}
             </div>
         </div>
+        <FloatLayer {area} onpalette={openPalette} />
     </div>
     <StatusBar {status} {git} onpalette={openPalette} />
 </div>
@@ -334,12 +352,18 @@
         overflow: hidden;
     }
 
+    /* The rail, the left dock, the area, the right dock across, and the area over the bottom dock
+       down; the tracks come from the floats docked (float-geometry's bodyTracks). */
     .body {
-        display: flex;
-        flex-direction: row;
+        display: grid;
         flex: 1 1 auto;
         min-width: 0;
         min-height: 0;
+    }
+
+    .body > :global([data-rail]) {
+        grid-column: 1;
+        grid-row: 1 / -1;
     }
 
     .wallpaper {
@@ -358,11 +382,14 @@
     .column {
         display: flex;
         flex-direction: column;
-        flex: 1 1 auto;
+        grid-column: 3;
+        grid-row: 1;
         min-width: 0;
         min-height: 0;
     }
 
+    /* One stacking context for the page, so a depth a view sets inside it (Monaco's overview ruler
+       and scrollbars) stays below the floats drawn over the page. */
     .area {
         display: flex;
         flex: 1 1 auto;
@@ -371,6 +398,7 @@
         padding: 4px;
         gap: 0;
         box-sizing: border-box;
+        isolation: isolate;
     }
 
     .tree {

@@ -1,5 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. Usage closes the Focus page's group, a tab beside Live HPC.
+    // Layer 3, view registration. Usage is a tab beside Live HPC in the float docked at the right
+    // edge that config/layout.yml ships.
     import { z } from 'zod';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';

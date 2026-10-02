@@ -34,7 +34,7 @@
 
     const {
         editorStatus: { statusOf },
-        layout: { activeInstance, activateInstance, openView, pages, switchPage },
+        layout: { activeInstance, activateInstance, hosts, openView, switchPage },
         ui: { setStatusHidden, statusHidden, unsaved }
     } = useState();
 
@@ -48,7 +48,7 @@
 
     let { status, git = NO_GIT, onpalette = () => undefined }: Props = $props();
 
-    const held = $derived(pages());
+    const held = $derived(hosts());
     const dirty = $derived(unsavedCount(held, unsaved));
     const hidden = $derived(statusHidden());
 
@@ -72,7 +72,7 @@
         if (isStatusItem(id)) setStatusHidden(id, shown(id));
     }
 
-    /** Show the first tab holding unsaved text, on its own page. */
+    /** Show the first tab holding unsaved text, on its own page; a float needs no page switch. */
     function openUnsaved(): void {
         const found = firstUnsaved(held, unsaved);
         if (found === null) return;

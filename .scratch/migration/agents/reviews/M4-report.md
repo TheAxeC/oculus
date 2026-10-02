@@ -200,3 +200,56 @@ eqcards 13 with mjx-container 13 bad 0 network attempts []
 - line 76: "`tools/` touch-list is just #5 (present.yml) and, for a new equation, #6 (make_equations.py)."
 
 A new equation is now written as the slide's `equation:` LaTeX in its `PRESENT.md`; `make_equations.py` is no longer a step of a new project.
+
+## Repair round 1
+
+Every ruling of `agents/briefs/M4-round1.md` is done. Not verified: the look on screen. No git command was run in this round.
+
+### Per ruling
+
+1. B1, the space after `\small`: `tools/present/build.py:167-168` (`mathjax_small` writes `tex[after:i].lstrip()` after `{\small\text{`), so `\text{\small kept local}` becomes `{\small\text{kept local}}`. Check: the jsdom probe was extended to print the `mtext` of the rewritten groups and to fail on one that starts with a space followed by text. With `.lstrip()` taken out by hand and the deck rebuilt: `mtext of the rewritten \small groups: ["(federate&#xA0;",")","&#xA0;","&#xA0;kept local","(chance-corrected agreement)"]`, `mtext starting with a space: ["&#xA0;kept local"]`, `bad 1`, node exit 1. With the fix back and the deck rebuilt: `["(federate&#xA0;",")","&#xA0;","kept local","(chance-corrected agreement)"]`, `mtext starting with a space: []`, `bad 0`, node exit 0. The lone `&#xA0;` is the `\ ` space of the source, not part of the group's text.
+2. S1: `README.md:33` (hub root) now reads "The only per-project file under `tools/` is `present/content/present.yml` (deck `order:` + the hand-maintained summary tables); a project's equation is the `equation:` LaTeX of its `PRESENT.md`." `README.md` joins the path list.
+3. S4: `tools/present/README.md:50` says the deck still draws a value naming an existing image as an image, that no slide does, and that `make_equations.py` keeps the LaTeX each slide's value was taken from and renders it to PNGs. `tools/present/make_equations.py:3-7` says the same: a PNG is drawn only when a slide's `equation:` names its file, and no slide does. No sentence names a cockpit reader of the PNGs.
+4. P2: `tests/checks/config/integrity.test.ts:61` (`writtenEquations`) counts the equations of one `PRESENT.md` from its parsed front matter (the `present:` map's and each `slides:` entry's that has a non-empty `id`, a value that is not text or is blank after trimming left out), and `:197` uses it over the hub's files in place of the regular expression. Because the hub holds no `slides:` entry with an equation (`grep -rln "^slides:" --include=PRESENT.md projects` prints nothing), the new case `:275` ("the count of written equations", `integrity.test.ts`) plants a `PRESENT.md` in a temporary directory with a `present:` equation, a `slides:` entry with LaTeX, one blank after trimming, one empty, one numeric and one with no id, and requires `readPresent` and `writtenEquations` to give the same count (2). Red against a reader that drops a `slides:` entry's equation (`slides.push(slide(..., { ...row, equation: undefined }))` in `src/lib/data/sources/present.ts:278`, put back afterwards): `AssertionError: expected 1 to be 2`, `Tests 1 failed | 10 passed (11)`. After: `Tests 11 passed (11)`. The file's `it` now comes from `tests/fixtures/scratch.ts`, which the scratch check requires of a file that takes a scratch directory.
+5. ST1: `src/lib/data/sources/present.ts:12-14`, the head comment lists "an `equation:` that names an image (a slide's equation is LaTeX)" among the findings.
+6. B3: `tools/present/build.py:337`, `if mathjs:` guards the loop that appends the extensions. Check by hand: with `assets/vendor/tex-svg.js` moved aside and the deck rebuilt, after the fix `extension script present = False` (4493 KB page); with the guard replaced by `if True:` it is `True`; the file was moved back and the guard restored, and the deck rebuilt (6557 KB).
+7. B2 and B4, no code change. Before and after: an `equation:` in a `PRESENT.md` that names an image file that does not exist is drawn in the cockpit deck as LaTeX of its name (`build.py` `equation_card`), as the brief's rule says; B1's fix is above. Inputs `mathjax_small` leaves as written (run by hand on `build.mathjax_small`): `\text{ \small X}` (a space before `\small`), `\textbf{\small X}`, `\mbox{\small X}`, `\text{\footnotesize X}` and the other size commands are unchanged; in a nested `\text{\small a \text{\small b}}` only the outer group is rewritten, giving `{\small\text{a \text{\small b}}}`, so the inner `\small` is drawn as literal text by MathJax. None of the 13 slides contains one.
+8. S2, S3, ST2, P1: no change, as ruled.
+
+### Probe over the rebuilt deck
+
+`node deckprobe.cjs <worktree>/tools/present/present.html` after `python3 tools/present/build.py` (`Wrote present.html (6557 KB) | 16 project slides (from PRESENT.md)`), exit 0:
+
+```
+card 1 to card 13: merror 0 red 0 (13 cards)
+mtext of the rewritten \small groups: ["(federate&#xA0;",")","&#xA0;","kept local","(chance-corrected agreement)"]
+mtext starting with a space: []
+negative control n1: merror 1 red 0
+negative control n2: merror 0 red 1
+bm beta mml has bold-italic: true <mi mathvariant="bold-italic">&#x3B2;</mi>
+eqcards 13 with mjx-container 13 bad 0 network attempts []
+```
+
+### The checks
+
+`npm run diagrams`, then `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`, the last run:
+
+```
+$ npm test
+ Test Files  426 passed | 22 skipped (448)
+      Tests  11199 passed | 621 skipped (11820)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  444 passed | 9 skipped (453)
+$ npm run check
+COMPLETED 2960 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+(both builds: "built in 14.19s", "built in 35.18s")
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+Full-list runs in this round: 2. The first stopped at `npm test`: `tests/server/git/autofetch.test.ts` ("fetches a clone whose path holds a space") timed out at 5000 ms; the file is not changed by this step, and run alone it gave `Test Files 1 passed (1)`, `Tests 44 passed (44)`. I ran the other six commands one by one: `npm run lint` reported `integrity.test.ts 74:9 Unsafe spread of an any value in an array` and `npm run test:checks` reported `tests/checks/tree/scratch.test.ts` (the file takes a scratch directory and declares cases with vitest's `it`). Both were in the file I changed this round; I fixed them, reran `eslint` on the file (clean) and `integrity.test.ts` with `scratch.test.ts` (`Tests 28 passed (28)`), and ran the list a second time, which is the one quoted.

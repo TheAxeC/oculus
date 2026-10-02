@@ -78,6 +78,22 @@ describe('landingFor', () => {
         expect(landingFor(tree, opened, [], [0])).toEqual({ kind: 'pane', path: [0] });
     });
 
+    it('lands a document in the empty documents pane before an empty terminals pane', () => {
+        const terminals: Layout = { kind: 'pane', tabs: [], active: '', keeps: 'terminals' };
+        const both = row(tools, terminals, pane());
+        expect(landingFor(both, opened, [], [0])).toEqual({ kind: 'pane', path: [2] });
+        // The documents pane is taken first whichever of the two comes first in the tree.
+        expect(landingFor(row(tools, pane(), terminals), opened, [], [0])).toEqual({
+            kind: 'pane',
+            path: [1]
+        });
+        // With only the terminals pane empty, a document lands there.
+        expect(landingFor(row(tools, terminals), opened, [], [0])).toEqual({
+            kind: 'pane',
+            path: [1]
+        });
+    });
+
     it('takes a pane of documents alone when nothing was received, as after a reload', () => {
         const tree = row(tools, pane(tab('p1', 'project')));
         expect(landingFor(tree, opened, [], [0])).toEqual({ kind: 'pane', path: [1] });
@@ -166,14 +182,14 @@ describe('the store', () => {
         expect(shape()).toEqual([['calendar'], ['project']]);
     });
 
-    it('lands a new pane once its received tabs are all closed, rather than a tool pane', () => {
+    it('lands in the pane kept empty once its received tabs are all closed, rather than in a tool pane', () => {
         apply({ root: row(pane(tab('c', 'calendar')), pane(tab('s', 'status'))) });
         activateInstance('c');
         const first = openView('project', { id: 'one' });
         closeInstance(first);
         activateInstance('s');
         openView('project', { id: 'two' });
-        expect(shape()).toEqual([['calendar'], ['status'], ['project']]);
+        expect(shape()).toEqual([['calendar'], ['project'], ['status']]);
     });
 
     it('replaces the preview tab of the pane a document lands in, rather than adding one', () => {

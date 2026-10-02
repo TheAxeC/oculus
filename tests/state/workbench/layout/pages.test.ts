@@ -101,25 +101,25 @@ describe('newPage and defaultPages', () => {
 
 describe('checkPages', () => {
     it('refuses no page at all', () => {
-        expect(checkPages({ pages: [], current: 'x' })).toContain('no page');
+        expect(checkPages({ pages: [], current: 'x', floats: [] })).toContain('no page');
     });
 
     it('refuses a page id used twice', () => {
         const page = newPage('One');
-        const problems = checkPages({ pages: [page, { ...page }], current: page.id });
+        const problems = checkPages({ pages: [page, { ...page }], current: page.id, floats: [] });
         expect(problems.some((problem) => problem.includes('used twice'))).toBe(true);
     });
 
     it('refuses a current that names no page', () => {
         const page = newPage('One');
-        expect(checkPages({ pages: [page], current: 'gone' })).toEqual([
+        expect(checkPages({ pages: [page], current: 'gone', floats: [] })).toEqual([
             'current is "gone", which is not a page'
         ]);
     });
 
     it('carries every problem of every page workbench, named by the page', () => {
         const broken = newPage('Bad', { root: { kind: 'pane', tabs: [], active: 'x' } });
-        expect(checkPages({ pages: [broken], current: broken.id })).toEqual([
+        expect(checkPages({ pages: [broken], current: broken.id, floats: [] })).toEqual([
             'page "Bad" root node at []: an empty pane calls x active'
         ]);
     });
@@ -127,7 +127,7 @@ describe('checkPages', () => {
     it('refuses an instance id repeated across two pages, since a view is found by that id', () => {
         const first = newPage('One', bench(pane(['a'])));
         const second = newPage('Two', bench(pane(['a'])));
-        expect(checkPages({ pages: [first, second], current: first.id })).toEqual([
+        expect(checkPages({ pages: [first, second], current: first.id, floats: [] })).toEqual([
             'instance "a" is on two pages'
         ]);
     });
@@ -135,7 +135,11 @@ describe('checkPages', () => {
 
 describe('the version 4 envelope', () => {
     it('reads back every page and which one is current', () => {
-        const made: Pages = { pages: [newPage('One', own()), newPage('Two')], current: '' };
+        const made: Pages = {
+            pages: [newPage('One', own()), newPage('Two')],
+            current: '',
+            floats: []
+        };
         const held: Pages = { ...made, current: made.pages[1].id };
         expect(parseLayout(serialiseLayout(held), '')).toEqual(held);
         expect(fields(JSON.parse(serialiseLayout(held))).version).toBe(LAYOUT_VERSION);
@@ -181,7 +185,11 @@ describe('the store: loading', () => {
     });
 
     it('reads every page of a version 4 envelope back', () => {
-        const held: Pages = { pages: [newPage('One', own()), newPage('Two')], current: '' };
+        const held: Pages = {
+            pages: [newPage('One', own()), newPage('Two')],
+            current: '',
+            floats: []
+        };
         const storage = fakeStorage(serialiseLayout({ ...held, current: held.pages[1].id }));
         expect(loadLayout(storage)).toBe(true);
         expect(pages().map((page) => page.label)).toEqual(['One', 'Two']);
@@ -296,7 +304,7 @@ describe("a page's rail key in the saved layout", () => {
     /** Two pages, the first made by the rail button of `key`, as the store saves them. */
     function withKey(first: unknown, second?: unknown): string {
         const pages = [newPage('One'), newPage('Two')];
-        const raw = JSON.parse(serialiseLayout({ pages, current: pages[0].id })) as {
+        const raw = JSON.parse(serialiseLayout({ pages, current: pages[0].id, floats: [] })) as {
             pages: Record<string, unknown>[];
         };
         raw.pages[0].rail = first;
@@ -325,11 +333,11 @@ describe("a page's rail key in the saved layout", () => {
 
     it('names a key on two pages, and an empty one, as a problem of the page list', () => {
         const pages = [newPage('One', undefined, 'focus'), newPage('Two', undefined, 'focus')];
-        expect(checkPages({ pages, current: pages[0].id })).toEqual([
+        expect(checkPages({ pages, current: pages[0].id, floats: [] })).toEqual([
             'rail key "focus" is on two pages'
         ]);
         const empty = [newPage('One', undefined, '')];
-        expect(checkPages({ pages: empty, current: empty[0].id })).toEqual([
+        expect(checkPages({ pages: empty, current: empty[0].id, floats: [] })).toEqual([
             'page "One" has an empty rail key'
         ]);
     });
@@ -403,7 +411,7 @@ describe('the first rail page on a browser with no saved layout', () => {
 
     it('replaces the default page with the first rail page while nothing has changed', () => {
         loadLayout(fakeStorage());
-        client.layout.startOnRailPage('focus', 'Focus', FOCUS);
+        client.layout.startOnRailPage('focus', 'Focus', FOCUS, []);
         expect(pages().map((page) => [page.label, page.rail])).toEqual([['Focus', 'focus']]);
         expect(viewsOf(layout())).toEqual(['focus']);
 
@@ -412,25 +420,25 @@ describe('the first rail page on a browser with no saved layout', () => {
         loadLayout(storage);
         renamePage(currentPage().id, 'Mine');
         loadLayout(storage);
-        client.layout.startOnRailPage('focus', 'Focus', FOCUS);
+        client.layout.startOnRailPage('focus', 'Focus', FOCUS, []);
         expect(pages().map((page) => page.label)).toEqual(['Mine']);
 
         // Nor does a fresh one once the reader has changed anything.
         loadLayout(fakeStorage());
         openPage('Other');
-        client.layout.startOnRailPage('focus', 'Focus', FOCUS);
+        client.layout.startOnRailPage('focus', 'Focus', FOCUS, []);
         expect(pages().map((page) => page.label)).toEqual(['Page 1', 'Other']);
     });
 
     it('waits for the rail list on a fresh browser, and stops waiting when it names no page', () => {
         loadLayout(fakeStorage());
         expect(client.layout.startingFresh()).toBe(true);
-        client.layout.startOnRailPage('broken', 'Broken', { root: 'not a node' });
+        client.layout.startOnRailPage('broken', 'Broken', { root: 'not a node' }, []);
         expect(client.layout.startingFresh()).toBe(false);
         expect(pages().map((page) => page.label)).toEqual(['Page 1']);
 
         loadLayout(fakeStorage());
-        client.layout.keepDefaultPage();
+        client.layout.keepDefaultPage([]);
         expect(client.layout.startingFresh()).toBe(false);
 
         // A browser with a saved layout never waits.
@@ -460,7 +468,7 @@ describe('the page shown before the one on screen', () => {
         const { resetPagesFixture, FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
         const { own, focus, added } = resetPagesFixture(client);
         const rail = [{ page: 'focus', label: 'Focus', node: FOCUS }];
-        expect(client.layout.resetPages(rail)).toBe(true);
+        expect(client.layout.resetPages(rail, [])).toBe(true);
         expect(pages().map((page) => [page.id, page.label, page.rail])).toEqual([
             [own, 'Page 1', undefined],
             [focus, 'Focus', 'focus']
@@ -473,7 +481,7 @@ describe('the page shown before the one on screen', () => {
         const { resetPagesFixture, FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
         const { storage, own, focus, old } = resetPagesFixture(client);
         expect(currentPage().id).toBe(old);
-        client.layout.resetPages([{ page: 'focus', label: 'Focus', node: FOCUS }]);
+        client.layout.resetPages([{ page: 'focus', label: 'Focus', node: FOCUS }], []);
         expect(pages().map((page) => page.id)).toEqual([own, focus]);
         expect(saved(storage)?.current).toBe(own);
         expect(currentPage().id).toBe(own);
@@ -493,7 +501,7 @@ describe('the page shown before the one on screen', () => {
             },
             own
         );
-        client.layout.resetPages([{ page: 'focus', label: 'Focus', node: FOCUS }]);
+        client.layout.resetPages([{ page: 'focus', label: 'Focus', node: FOCUS }], []);
         expect(JSON.stringify(workbench(own).root)).not.toContain(old);
     });
 
@@ -502,14 +510,14 @@ describe('the page shown before the one on screen', () => {
         const { own, focus } = resetPagesFixture(client);
         closePage(own);
         closePage(focus);
-        client.layout.resetPages([]);
+        client.layout.resetPages([], []);
         expect(pages().map((page) => [page.label, page.rail])).toEqual([['Page 1', undefined]]);
     });
 
     it('does nothing when no page is tied to a button', async () => {
         const { FOCUS_NODE: FOCUS } = await import('./layout-fixture.ts');
         loadLayout(fakeStorage());
-        expect(client.layout.resetPages([{ page: 'focus', label: 'Focus', node: FOCUS }])).toBe(
+        expect(client.layout.resetPages([{ page: 'focus', label: 'Focus', node: FOCUS }], [])).toBe(
             false
         );
         expect(pages().map((page) => page.label)).toEqual(['Page 1']);
@@ -566,7 +574,7 @@ describe('the page shown before the one on screen', () => {
                 asked.push([message, detail]);
                 return Promise.resolve(true);
             },
-            () => client.layout.resetPages(rail),
+            () => client.layout.resetPages(rail, []),
             () => Promise.resolve([])
         );
         expect(ran).toBe(true);
@@ -603,7 +611,7 @@ describe('the page shown before the one on screen', () => {
             (id) => held.has(id),
             (instance) => instance.id,
             () => Promise.resolve(answers[asked++]),
-            () => client.layout.resetPages(rail),
+            () => client.layout.resetPages(rail, []),
             () => Promise.resolve([])
         );
         expect([ran, asked]).toEqual([false, 3]);
@@ -616,7 +624,9 @@ describe('a saved page carrying a field the pages no longer hold', () => {
     it('reads a page saved with a views field without it, and saves it again without the field', () => {
         const held = { id: 'tab-1', view: 'terminal', state: {} };
         const page = newPage('one', { root: { kind: 'pane', tabs: [held], active: held.id } });
-        const saved = JSON.parse(serialiseLayout({ pages: [page], current: page.id })) as {
+        const saved = JSON.parse(
+            serialiseLayout({ pages: [page], current: page.id, floats: [] })
+        ) as {
             pages: Record<string, unknown>[];
         };
         saved.pages[0].views = { terminal: { order: ['d4e5f6-shell', 'a1b2c3-claude'] } };

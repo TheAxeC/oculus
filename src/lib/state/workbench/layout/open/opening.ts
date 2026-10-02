@@ -12,7 +12,7 @@
 import { activePath, findView, isInstanceOf, newInstance, stateId } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
-import type { Instance, Pane, ViewId } from '../model.ts';
+import { isPage, type Instance, type Pane, type ViewId } from '../model.ts';
 import { landingFor } from './landing.ts';
 import { asPreview, isPreview, previewIn, retarget } from './preview.ts';
 import { activate, expandTo, openInstance, paneAt, restate, splitPane } from '../tree.ts';
@@ -108,7 +108,17 @@ export function createOpening(
         const held = page === undefined ? attention.touched() : access.at(page);
         if (held === null) return '';
         const host = held.id;
-        if (opened(view)) return openOpened(view, state, host, preview);
+        // A view open in a float is activated there when the host holds none of its own.
+        const floated = findInFloats(view, stateId(state));
+        if (
+            floated !== null &&
+            (floated.host === host || findView(access.layout(host), view, stateId(state)) === null)
+        ) {
+            return activateFloated(floated, state, preview);
+        }
+        // A float is one pane: a view opened for something lands in it as a tool view does, and a
+        // view asked for beside another is a tab of it, since a float takes no split.
+        if (opened(view) && isPage(held)) return openOpened(view, state, host, preview);
         const focus = focusedPane(access.workbench(host));
         const tree = access.layout(host);
         const into = focus === null ? null : focus.path;
@@ -155,7 +165,7 @@ export function createOpening(
         }
         const fresh = newInstance(view, state ?? {});
         const instance = preview ? asPreview(fresh) : fresh;
-        const aside = beside && inside === null;
+        const aside = beside && inside === null && isPage(held);
         const stack = aside ? attention.besidePath(tree, host) : null;
         if (aside) {
             // The pane split off keeps the tab that was being read as the one it sits beside; a tab
@@ -240,6 +250,39 @@ export function createOpening(
         access.apply({ ...base, root }, host);
         attention.rememberReceived(host, instance.id, access.layout(host));
         return instance.id;
+    }
+
+    /** A float's instance of a view, with the float holding it, or null when no float has one. */
+    function findInFloats(
+        view: ViewId,
+        id: string | null
+    ): { host: string; instance: Instance } | null {
+        for (const float of access.held().floats) {
+            const found = float.pane.tabs.find((tab) => isInstanceOf(tab, view, id));
+            if (found !== undefined) return { host: float.id, instance: found };
+        }
+        return null;
+    }
+
+    /**
+     * Activate an instance where a float holds it, pointing it at `state` when the opener has one.
+     */
+    function activateFloated(
+        found: { host: string; instance: Instance },
+        state: unknown,
+        preview: boolean
+    ): string {
+        attention.remembered(found.instance.id, found.host);
+        access.change(
+            (current) =>
+                activate(
+                    state === undefined ? current : restate(current, found.instance.id, state),
+                    found.instance.id
+                ),
+            found.host
+        );
+        if (preview && isPreview(found.instance)) keepPreview(found.instance.id);
+        return found.instance.id;
     }
 
     /**

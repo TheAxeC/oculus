@@ -1,6 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. Live HPC follows Focus in the Focus page's group, in the pane
-    // beside it.
+    // Layer 3, view registration. Live HPC is shown in the float docked at the right edge that
+    // config/layout.yml ships, beside Usage.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'hpc',

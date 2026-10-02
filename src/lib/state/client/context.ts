@@ -218,19 +218,20 @@ export function createClientState(): ClientState {
     const clock = createClock();
     const changes = withQueries('changes', createChanges(queries));
     const selection = createSelection();
-    // A terminal belongs to exactly one Terminal tab, on whichever page it is, and a hidden page
-    // mounts no view, so the terminals store is handed every page's Terminal tabs and the layout's
-    // ways to change them, and keeps the ownership itself: a terminal shown, moved or ended changes
-    // the tabs of any page. A tab it opens is opened on the page it names; its state carries an
-    // identity of its own, so the layout opens it rather than activating another Terminal tab.
+    // A terminal belongs to exactly one Terminal tab, on whichever page or float it is, and a
+    // hidden page mounts no view, so the terminals store is handed the Terminal tabs of every page
+    // and float and the layout's ways to change them, and keeps the ownership itself: a terminal
+    // shown, moved or ended changes the tabs of any page. A tab it opens is opened on the page it
+    // names; its state carries an identity of its own, so the layout opens it rather than
+    // activating another Terminal tab.
     const terminals = createTerminals(entities, socket, writes, {
         tabs: () =>
-            layout.pages().flatMap((page) =>
-                tabsOf(page.workbench.root)
+            layout.hosts().flatMap((host) =>
+                tabsOf(host.workbench.root)
                     .filter((tab) => tab.view === TERMINAL_VIEW)
                     .map((tab) => ({
                         id: tab.id,
-                        page: page.id,
+                        page: host.id,
                         view: tab.view,
                         state: tab.state
                     }))
@@ -278,8 +279,8 @@ export function createClientState(): ClientState {
     const fsForms = {
         browsers: () =>
             layout
-                .pages()
-                .flatMap((page) => tabsOf(page.workbench.root))
+                .hosts()
+                .flatMap((host) => tabsOf(host.workbench.root))
                 .filter((tab) => tab.view === FILES_VIEW)
                 .map((tab) => ({
                     id: tab.id,
@@ -328,7 +329,7 @@ export function createClientState(): ClientState {
         writes,
         fs,
         {
-            tabs: () => layout.pages().flatMap((page) => tabsOf(page.workbench.root)),
+            tabs: () => layout.hosts().flatMap((host) => tabsOf(host.workbench.root)),
             restateInstance: layout.restateInstance
         },
         ui,

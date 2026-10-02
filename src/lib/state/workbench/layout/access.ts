@@ -6,30 +6,37 @@
 // is handed this object, which is why none of them reaches a page list of its own.
 
 import type { UiStore } from '../ui.svelte.ts';
-import type { Layout, Page, Pages, Workbench } from './model.ts';
+import type { Host, Layout, Page, Pages, Workbench } from './model.ts';
 
-/** The store's own core, handed to every part built beside the factory. */
+/**
+ * The store's own core, handed to every part built beside the factory. An id names a page or a
+ * float wherever one is taken: a float is a workbench of one pane, so a part reads and writes it
+ * as it reads and writes a page, and narrows with `isPage` where it needs a page's label.
+ */
 export type LayoutAccess = {
-    /** Every page, and which of them is on screen. */
+    /** Every page, the floats beside them, and which page is on screen. */
     held: () => Pages;
     /** Make a set of pages current and save it. */
     save: (next: Pages) => void;
     /** The page on screen, or the first one when the current id names none. */
     currentPage: () => Page;
-    /** The page with this id, or null when the list holds none. */
-    pageOf: (id: string) => Page | null;
+    /** The page or float with this id, or null when neither is held. */
+    pageOf: (id: string) => Host | null;
     /**
-     * The page an operation addresses: the one its page argument names, the page on screen when it
-     * names none, and nothing at all when it names a page the list does not hold.
+     * The host an operation addresses: the page or float its argument names, the page on screen
+     * when it names none, and nothing at all when it names one that is not held.
      */
-    at: (page?: string) => Page | null;
-    /** The page whose tree holds an instance, or null when no page does. */
-    holding: (id: string) => Page | null;
-    /** The whole arrangement of a page, and an empty one for an id naming no page. */
+    at: (page?: string) => Host | null;
+    /** The page or float whose tree holds an instance, or null when none does. */
+    holding: (id: string) => Host | null;
+    /** The whole arrangement of a page or float, and an empty one for an id naming neither. */
     workbench: (page?: string) => Workbench;
     /** The tree of a page. */
     layout: (page?: string) => Layout;
-    /** Make an arrangement a page's and save every page. */
+    /**
+     * Make an arrangement a page's or float's and save every page. A float takes only one pane of
+     * at least one tab: a split is refused, and a pane left with no tab removes the float.
+     */
     apply: (next: Workbench, page?: string) => void;
     /** Apply an operation to a page's tree, which is how every tree edit reaches the store. */
     change: (edit: (tree: Layout) => Layout, page?: string) => void;

@@ -17,12 +17,15 @@ import {
 } from './instance.ts';
 import type { LayoutAccess } from './access.ts';
 import type { Attention } from './open/attention.ts';
+import { dropInstance, writeHost } from './open/floats.ts';
 import {
+    hostsOf,
+    isPage,
     samePath,
     type Edge,
+    type Host,
     type Instance,
     type Layout,
-    type Page,
     type ViewId,
     type Workbench
 } from './model.ts';
@@ -37,7 +40,8 @@ import {
     openInstance,
     paneAt,
     restate,
-    splitPane
+    splitPane,
+    type KeepRule
 } from './tree.ts';
 import { focusedPane, restore, settleFocus, splitWith } from './workbench.ts';
 
@@ -62,7 +66,20 @@ export type Instances = {
     forgetTabs: (tabs: readonly Instance[]) => void;
 };
 
-export function createInstances(access: LayoutAccess, attention: Attention): Instances {
+/**
+ * `keep` is the rule that leaves a pane empty when its last tab goes. It applies to a page's panes
+ * only: a float whose last tab goes is removed.
+ */
+export function createInstances(
+    access: LayoutAccess,
+    attention: Attention,
+    keep?: KeepRule
+): Instances {
+    /** The rule that applies to the panes of a host: a page's, and none for a float's. */
+    function keepFor(host: Host): KeepRule | undefined {
+        return isPage(host) ? keep : undefined;
+    }
+
     /** The active tab of the pane most recently activated, or of the first pane by default. */
     function activeInstance(page?: string): Instance | null {
         const tree = access.layout(page);
@@ -142,8 +159,8 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
      * the shell cannot draw.
      */
     function closeInstancesOfView(view: ViewId): void {
-        for (const page of access.held().pages) {
-            for (const tab of tabsOf(page.workbench.root)) {
+        for (const host of hostsOf(access.held())) {
+            for (const tab of tabsOf(host.workbench.root)) {
                 if (tab.view === view) closeInstanceAnywhere(tab.id);
             }
         }
@@ -155,54 +172,44 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
      * drawing a file that is not there.
      */
     function closeRecord(view: ViewId, id: string): void {
-        for (const page of access.held().pages) {
-            for (const tab of tabsOf(page.workbench.root)) {
+        for (const host of hostsOf(access.held())) {
+            for (const tab of tabsOf(host.workbench.root)) {
                 if (isInstanceOf(tab, view, id)) closeInstanceAnywhere(tab.id);
             }
         }
     }
 
-    /** Close one instance wherever it is, on the current page or on another. */
+    /** Close one instance wherever it is: on the current page, on another or in a float. */
     function closeInstanceAnywhere(id: string): void {
         const holder = access.holding(id);
         if (holder !== null && attention.active(holder.id) === id) {
             attention.remembered(null, holder.id);
         }
-        const held = access.held();
-        access.save({
-            ...held,
-            pages: held.pages.map((page) => ({
-                ...page,
-                workbench: settleFocus({
-                    ...page.workbench,
-                    root: removeInstance(page.workbench.root, id)
-                })
-            }))
-        });
+        access.save(dropInstance(access.held(), id, keep));
         access.ui.clearInstanceState(id);
     }
 
     /**
-     * Move one instance to another page, taking it out of the page it is on and putting it at the
-     * end of the first pane of that page's tree.
+     * Move one instance to another page, taking it out of the page or float it is in and putting it
+     * at the end of the first pane of that page's tree.
      */
     function moveInstanceToPage(id: string, page: string): void {
         const from = access.holding(id);
         const to = access.pageOf(page);
-        if (from === null || to === null || from.id === to.id) return;
+        if (from === null || to === null || !isPage(to) || from.id === to.id) return;
         const landing = panesIn(to.workbench.root)[0]?.path ?? [];
         carryToPage(id, from, to, landing, (tree, moved) => openInstance(tree, landing, moved));
     }
 
     /**
-     * Take an instance out of the page holding it and put it in another page, by the landing `put`
-     * makes for it. It keeps its id, so the view it mounts keeps whatever state it holds, and the
-     * pane it left is cleaned as closing its tab would clean it.
+     * Take an instance out of the page or float holding it and put it in another page or float, by
+     * the landing `put` makes for it. It keeps its id, so the view it mounts keeps whatever state
+     * it holds, and the pane it left is cleaned as closing its tab would clean it.
      */
     function carryToPage(
         id: string,
-        from: Page,
-        to: Page,
+        from: Host,
+        to: Host,
         path: number[],
         put: (tree: Layout, moved: Instance) => Layout
     ): void {
@@ -213,23 +220,17 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
         if (root === shown.root) return;
         if (attention.active(from.id) === id) attention.remembered(null, from.id);
         attention.remembered(id, to.id);
-        const held = access.held();
-        access.save({
-            ...held,
-            pages: held.pages.map((one) => {
-                if (one.id === from.id) {
-                    return {
-                        ...one,
-                        workbench: settleFocus({
-                            ...one.workbench,
-                            root: removeInstance(one.workbench.root, id)
-                        })
-                    };
-                }
-                if (one.id !== to.id) return one;
-                return { ...one, workbench: settleFocus({ ...shown, root }) };
-            })
-        });
+        const landed = writeHost(access.held(), to.id, settleFocus({ ...shown, root }));
+        access.save(
+            writeHost(
+                landed,
+                from.id,
+                settleFocus({
+                    ...from.workbench,
+                    root: removeInstance(from.workbench.root, id, keepFor(from))
+                })
+            )
+        );
     }
 
     /** Close an instance, and forget it if it was its page's active one. */
@@ -240,7 +241,7 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
         const current = access.workbench(holder.id);
         const found = findInstance(current.root, id);
         access.apply(
-            settleFocus({ ...current, root: removeInstance(current.root, id) }),
+            settleFocus({ ...current, root: removeInstance(current.root, id, keepFor(holder)) }),
             holder.id
         );
         access.ui.clearInstanceState(id);
@@ -304,7 +305,7 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
             return;
         }
         const shown = reveal(path, to.id);
-        const next = { ...shown, root: moveInstance(shown.root, id, path, index) };
+        const next = { ...shown, root: moveInstance(shown.root, id, path, index, keepFor(to)) };
         if (next.root === shown.root) return;
         attention.remembered(id, to.id);
         access.apply(settleFocus(next), to.id);
@@ -314,7 +315,8 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
     function splitInstance(id: string, path: number[], edge: Edge, page?: string): void {
         const to = access.at(page);
         const from = access.holding(id);
-        if (from === null || to === null) return;
+        // A float is one pane: a split beside it is refused.
+        if (from === null || to === null || !isPage(to)) return;
         // A pane of its own is not somewhere a tab the next click replaces would sit.
         keepPreview(id);
         if (from.id !== to.id) {
@@ -326,7 +328,7 @@ export function createInstances(access: LayoutAccess, attention: Attention): Ins
             return;
         }
         const shown = reveal(path, to.id);
-        const next = splitWith(shown, id, path, edge);
+        const next = splitWith(shown, id, path, edge, keepFor(to));
         if (next === shown) return;
         attention.remembered(id, to.id);
         access.apply(next, to.id);

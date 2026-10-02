@@ -1,7 +1,8 @@
 // Layer 2, client state. The one drag in progress, of a pane's tab, of a page carried out of the
 // Pages view, or of a view carried out of the Views catalogue. A strip, a page row or a catalogue
-// entry starts it, whatever the pointer is over reports where a drop
-// would land, and the pointer coming up performs it. There is one drag at a time on the page, so
+// entry starts it, whatever the pointer is over reports where a drop would land, and the pointer
+// coming up performs it. A tab dragged with Alt held lands nowhere in particular: it becomes a
+// float at the pointer, wherever the pointer comes up. There is one drag at a time on the page, so
 // this is a module and not a component's state: the control that started the drag and the pane the
 // pointer ended over never meet.
 //
@@ -49,6 +50,8 @@ export type DragSink = {
     transfer: (id: string, path: number[], index: number, page?: string) => void;
     split: (id: string, path: number[], edge: Edge, page?: string) => void;
     embed: (nested: string, path: number[], edge: Edge, page?: string) => void;
+    /** Put a tab over every page as a float whose corner is this point of the viewport. */
+    float: (id: string, at: Point) => void;
 };
 
 /**
@@ -74,6 +77,10 @@ export type Dragging = {
     rect: Rect | null;
     /** Whether what is under the pointer is a place this cannot land, which is said while it is. */
     refused: boolean;
+    /**
+     * Whether Alt is held on a dragged tab, which floats it at the pointer wherever it is let go.
+     */
+    alt: boolean;
 };
 
 /** An index past every tab, which the pane's own clamp turns into the end of the strip. */
@@ -136,7 +143,7 @@ export type DragStore = {
     start: (id: string, label: string, point: Point) => void;
     startPage: (id: string, label: string, point: Point) => void;
     startView: (view: string, state: unknown, label: string, point: Point, from?: string) => void;
-    move: (point: Point) => void;
+    move: (point: Point, alt?: boolean) => void;
     hover: (drop: Drop | null, rect?: Rect | null, refused?: boolean) => void;
     end: () => void;
     cancel: () => void;
@@ -153,7 +160,9 @@ export function createDrag(layout: LayoutStore): DragStore {
         },
         transfer: (id, path, index, page) => layout.transferInstance(id, path, index, page),
         split: (id, path, edge, page) => layout.splitInstance(id, path, edge, page),
-        embed: (nested, path, edge, page) => layout.embedPage(nested, path, edge, page)
+        embed: (nested, path, edge, page) => layout.embedPage(nested, path, edge, page),
+        float: (id, at) =>
+            layout.floatTab(id, { x: at.x / window.innerWidth, y: at.y / window.innerHeight })
     };
 
     let sink: DragSink = storeSink;
@@ -171,8 +180,8 @@ export function createDrag(layout: LayoutStore): DragStore {
     function dragging(): Dragging | null {
         const held = store.current;
         if (!held?.armed) return null;
-        const { kind, id, state, from, label, point, drop, rect, refused } = held;
-        return { kind, id, state, from, label, point, drop, rect, refused };
+        const { kind, id, state, from, label, point, drop, rect, refused, alt } = held;
+        return { kind, id, state, from, label, point, drop, rect, refused, alt };
     }
 
     /**
@@ -188,6 +197,7 @@ export function createDrag(layout: LayoutStore): DragStore {
             drop: null,
             rect: null,
             refused: false,
+            alt: false,
             kind: 'tab',
             origin: point,
             armed: false
@@ -208,6 +218,7 @@ export function createDrag(layout: LayoutStore): DragStore {
             drop: null,
             rect: null,
             refused: false,
+            alt: false,
             kind: 'page',
             origin: point,
             armed: true
@@ -235,6 +246,7 @@ export function createDrag(layout: LayoutStore): DragStore {
             drop: null,
             rect: null,
             refused: false,
+            alt: false,
             kind: 'view',
             origin: point,
             armed: false
@@ -242,12 +254,15 @@ export function createDrag(layout: LayoutStore): DragStore {
         listen(true);
     }
 
-    /** The pointer moved. Past the threshold the drag is armed and stays armed. */
-    function move(point: Point): void {
+    /**
+     * The pointer moved. Past the threshold the drag is armed and stays armed. Alt means something
+     * to a tab only: a page and a view are never floated.
+     */
+    function move(point: Point, alt = false): void {
         const held = store.current;
         if (held === null) return;
         const armed = held.armed || far(held.origin, point);
-        store.current = { ...held, point, armed };
+        store.current = { ...held, point, armed, alt: held.kind === 'tab' && alt };
     }
 
     /**
@@ -272,6 +287,10 @@ export function createDrag(layout: LayoutStore): DragStore {
         store.current = null;
         listen(false);
         if (!held?.armed) return;
+        if (held.alt) {
+            sink.float(held.id, held.point);
+            return;
+        }
         const drop = held.drop;
         if (drop === null) return;
         if (held.kind === 'page') {
@@ -301,7 +320,7 @@ export function createDrag(layout: LayoutStore): DragStore {
     }
 
     function onPointerMove(event: PointerEvent): void {
-        move({ x: event.clientX, y: event.clientY });
+        move({ x: event.clientX, y: event.clientY }, event.altKey);
     }
 
     function onPointerUp(): void {
@@ -309,9 +328,24 @@ export function createDrag(layout: LayoutStore): DragStore {
     }
 
     function onKeyDown(event: KeyboardEvent): void {
+        if (event.key === 'Alt') {
+            holdAlt(true);
+            return;
+        }
         if (event.key !== 'Escape') return;
         event.preventDefault();
         cancel();
+    }
+
+    function onKeyUp(event: KeyboardEvent): void {
+        if (event.key === 'Alt') holdAlt(false);
+    }
+
+    /** Alt pressed or let go with the pointer at rest still changes what the drop would do. */
+    function holdAlt(alt: boolean): void {
+        const held = store.current;
+        if (held === null) return;
+        store.current = { ...held, alt: held.kind === 'tab' && alt };
     }
 
     /**
@@ -326,6 +360,7 @@ export function createDrag(layout: LayoutStore): DragStore {
             document.addEventListener('pointerup', onPointerUp);
             document.addEventListener('pointercancel', onPointerUp);
             document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
             document.body.style.userSelect = 'none';
             return;
         }
@@ -333,6 +368,7 @@ export function createDrag(layout: LayoutStore): DragStore {
         document.removeEventListener('pointerup', onPointerUp);
         document.removeEventListener('pointercancel', onPointerUp);
         document.removeEventListener('keydown', onKeyDown);
+        document.removeEventListener('keyup', onKeyUp);
         document.body.style.userSelect = '';
     }
 

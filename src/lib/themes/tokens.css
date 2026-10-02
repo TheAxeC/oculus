@@ -209,6 +209,12 @@ body {
     --chip-on-wall: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
 }
 
+/* The border of a floating pane: the theme's own orange, declared on body for the same reason, so a
+   theme that sets `--c-orange` on its class is taken and not the default one. */
+body {
+    --float-border: var(--c-orange);
+}
+
 /* A link is underlined under the pointer and with the focus, and not at rest, as VS Code draws a
    link, and ringed on focus with the application's one ring, drawn outside since it has no box.
    The colour is the view's. */

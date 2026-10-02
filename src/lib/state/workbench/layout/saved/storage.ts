@@ -13,7 +13,7 @@
 
 import { followKey } from '../../../shared/stores/storage-events.ts';
 import type { Pages } from '../model.ts';
-import { serialiseLayout } from './saved.ts';
+import { serialiseFloatless, serialiseLayout } from './saved.ts';
 
 /** The key the arrangement is saved under. The envelope inside it carries the version. */
 export const LAYOUT_KEY = 'oculus.layout.v1';
@@ -38,8 +38,12 @@ export type LayoutStorage = {
     read: (key: string) => string | null;
     /** Write one string under a key, or do nothing when there is nowhere to write yet. */
     remember: (key: string, value: string) => void;
-    /** Write a set of pages under LAYOUT_KEY, which is what every change to them ends in. */
-    write: (next: Pages) => void;
+    /**
+     * Write a set of pages under LAYOUT_KEY, which is what every change to them ends in. A layout
+     * read from an envelope written before floats is written in that envelope's form while it holds
+     * no float, so the shipped floats are still to be taken in at the next load.
+     */
+    write: (next: Pages, floatless?: boolean) => void;
     /**
      * Call `changed` whenever another browser tab saved the arrangement, as `source` (the window)
      * reports it; answers how to stop. The browser fires the event in every tab but the writer's,
@@ -75,10 +79,11 @@ export function createStorage(): LayoutStorage {
         }
     }
 
-    function write(next: Pages): void {
+    function write(next: Pages, floatless = false): void {
         if (backing === null) return;
         try {
-            backing.setItem(LAYOUT_KEY, serialiseLayout(next));
+            const held = floatless && next.floats.length === 0;
+            backing.setItem(LAYOUT_KEY, held ? serialiseFloatless(next) : serialiseLayout(next));
         } catch {
             // A full or refused storage loses the arrangement at the next load and nothing else:
             // the arrangement in memory is what the shell renders and it is already current.

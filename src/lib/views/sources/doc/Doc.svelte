@@ -46,7 +46,7 @@
     const {
         docs: { hubDocument },
         entities: { config },
-        layout: { activateInstance, closeInstance, pages, restateInstance }
+        layout: { activateInstance, closeInstance, hosts, restateInstance }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -76,10 +76,12 @@
         closeInstance(instance.id);
     });
 
-    /** The id of another document tab on any page already open at a path, or null for none. */
+    /**
+     * The id of another document tab on any page or float already open at a path, or null for none.
+     */
     function openElsewhere(at: string): string | null {
-        for (const page of pages()) {
-            for (const tab of tabsOf(page.workbench.root)) {
+        for (const host of hosts()) {
+            for (const tab of tabsOf(host.workbench.root)) {
                 if (tab.id !== instance.id && isInstanceOf(tab, 'doc', at)) return tab.id;
             }
         }

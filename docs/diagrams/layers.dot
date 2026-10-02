@@ -24,7 +24,7 @@ digraph layers {
     "routes to shell" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to shell" [arrowhead=none];
     "routes to shell" -> "shell" [];
-    "routes to state" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "routes to state" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to state" [arrowhead=none];
     "routes to state" -> "state" [];
     "routes to themes" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -42,10 +42,10 @@ digraph layers {
     "shell to data" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "shell" -> "shell to data" [arrowhead=none];
     "shell to data" -> "data" [];
-    "shell to state" [label="74", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "shell to state" [label="78", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "shell" -> "shell to state" [arrowhead=none];
     "shell to state" -> "state" [];
-    "shell to ui" [label="46", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "shell to ui" [label="47", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "shell" -> "shell to ui" [arrowhead=none];
     "shell to ui" -> "ui" [];
     "src to data" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -72,7 +72,7 @@ digraph layers {
     "views to data" [label="15", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to data" [arrowhead=none];
     "views to data" -> "data" [];
-    "views to state" [label="684", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "views to state" [label="685", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to state" [arrowhead=none];
     "views to state" -> "state" [];
     "views to ui" [label="660", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

@@ -12,7 +12,9 @@
     //
     // The body turns the pointer's place inside its own rect into an edge or a centre. It performs
     // nothing: the drag store holds what is hovered and the pointer coming up is what performs it.
-    // Every drop it reports has an item in the pane menu, which is the keyboard path.
+    // Every drop it reports has an item in the pane menu, which is the keyboard path. The pane of a
+    // float takes a drop on its strip and on its centre and no drop on an edge, since a float holds
+    // one pane and is never split.
 
     import { untrack } from 'svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
@@ -25,7 +27,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { currentPage, pages },
+        layout: { currentPage, floats, pages },
         drag: { dragging, hover },
         registry: { viewFor }
     } = useState();
@@ -39,13 +41,22 @@
         page: string;
         /** The pane's path in that page's tree, which a reported drop names it by. */
         path: number[];
+        /** What an empty pane is kept for: terminals, or absent for documents. */
+        keeps?: 'terminals';
         /** The items of the right-click menu of an empty pane. */
         items: MenuItem[];
         /** An item of that menu was picked. */
         onpick: (id: string) => void;
     };
 
-    let { instances, active, page, path, items, onpick }: Props = $props();
+    let { instances, active, page, path, keeps, items, onpick }: Props = $props();
+
+    /**
+     * The line an empty pane says: terminals for a pane kept for them, files and documents else.
+     */
+    const emptyWords = $derived(
+        keeps === 'terminals' ? t('ui.pane_empty_terminals') : t('ui.pane_empty')
+    );
 
     let body: HTMLDivElement | undefined = $state();
 
@@ -76,7 +87,7 @@
         }
         const rect = body.getBoundingClientRect();
         const point = { x: event.clientX, y: event.clientY };
-        const edge = edgeAt(rect, point);
+        const edge = floats().some((one) => one.id === page) ? null : edgeAt(rect, point);
         hover(
             edge === null ? { kind: 'centre', path, page } : { kind: 'edge', path, edge, page },
             rect
@@ -111,7 +122,7 @@
     {#if instances.length === 0}
         <ContextMenu label={t('ui.pane_menu')} {items} {onpick}>
             <div class="empty" data-pane-empty>
-                <Empty message={t('ui.pane_empty')} />
+                <Empty message={emptyWords} />
             </div>
         </ContextMenu>
     {/if}

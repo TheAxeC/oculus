@@ -14,7 +14,10 @@ import {
     type Workbench
 } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { LAYOUT_KEY } from '../../../../src/lib/state/workbench/layout.svelte.ts';
-import { parseArrangement } from '../../../../src/lib/state/workbench/navigation/arrangement.ts';
+import {
+    parseArrangement,
+    parseFloats
+} from '../../../../src/lib/state/workbench/navigation/arrangement.ts';
 import { railPages } from '../../../../src/lib/state/workbench/navigation/rail.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
@@ -269,7 +272,7 @@ describe('the shipped pages', () => {
                 railPages(shipped).map((entry) => [entry.page, tabsOfPage(entry.page)])
             )
         ).toEqual({
-            focus: [['focus'], ['hpc', 'usage']],
+            focus: [['focus']],
             sessions: [
                 ['session-list'],
                 ['terminal'],
@@ -292,7 +295,7 @@ describe('the shipped pages', () => {
         });
     });
 
-    it('puts every view with a place, every collection and every hub document on exactly one page', () => {
+    it('puts every view with a place, every collection and every hub document on exactly one page or float', () => {
         const client = createClientState();
         registerAll(client.registry);
         registerCollections(client.registry, collectionKeys(shipped));
@@ -303,9 +306,14 @@ describe('the shipped pages', () => {
         const collections = (shipped.collections as { key: string }[]).map((entry) => entry.key);
         const documents = (shipped.docs as { path: string }[]).map((entry) => `doc:${entry.path}`);
         const wanted = [...new Set([...placed, ...collections, ...documents])].sort();
-        const seen = railPages(shipped).flatMap((entry) =>
+        const onPages = railPages(shipped).flatMap((entry) =>
             [...new Set(tabsOfPage(entry.page).flat())].map((tab) => ({ tab, page: entry.page }))
         );
+        // The floats stand over every page: their tabs are placed there and on no page.
+        const onFloats = parseFloats(shipped.floats).flatMap((float) =>
+            float.pane.tabs.map((tab) => ({ tab: tab.view, page: 'floats' }))
+        );
+        const seen = [...onPages, ...onFloats];
         const pagesOf = (tab: string): string[] =>
             seen.filter((one) => one.tab === tab).map((one) => one.page);
         expect(wanted).toHaveLength(50);
@@ -786,5 +794,76 @@ describe('the state a tab of an arrangement opens with', () => {
         expect(Object.getPrototypeOf(state)).toBe(Object.prototype);
         expect(state.b).toBe(1);
         expect(state.a).toBe(2);
+    });
+});
+
+// The floats a fresh browser starts with are written in config/layout.yml beside the arrangements:
+// each is a dock or a free place and the views it holds, read by parseFloats, and an entry that
+// does not read is dropped with the rest kept.
+describe('the floats of the config', () => {
+    const shipped = loadConfig(engineDir()).config;
+
+    it('ships one float, docked right at 0.3, holding hpc and usage', () => {
+        const floats = parseFloats(shipped.floats);
+        expect(floats).toHaveLength(1);
+        expect(floats[0].place).toEqual({ kind: 'dock', edge: 'right', size: 0.3 });
+        expect(floats[0].pane.tabs.map((tab) => tab.view)).toEqual(['hpc', 'usage']);
+        expect(floats[0].pane.active).toBe(floats[0].pane.tabs[0].id);
+    });
+
+    it('reads a dock and a free place, one view or a list of tabs with a state', () => {
+        const floats = parseFloats([
+            { view: 'status', dock: 'left', size: 0.25 },
+            {
+                view: [{ view: 'files', state: { follow: true } }, 'search'],
+                x: 0.5,
+                y: 0.1,
+                w: 0.4,
+                h: 0.5
+            }
+        ]);
+        expect(floats.map((one) => one.place)).toEqual([
+            { kind: 'dock', edge: 'left', size: 0.25 },
+            { kind: 'free', x: 0.5, y: 0.1, w: 0.4, h: 0.5 }
+        ]);
+        expect(floats[1].pane.tabs.map((tab) => tab.view)).toEqual(['files', 'search']);
+        expect(floats[1].pane.tabs[0].state).toEqual({ follow: true });
+    });
+
+    it('mints a fresh instance id for each tab each time it is read', () => {
+        const once = parseFloats(shipped.floats)[0].pane.tabs.map((tab) => tab.id);
+        const again = parseFloats(shipped.floats)[0].pane.tabs.map((tab) => tab.id);
+        expect(once.filter((id) => again.includes(id))).toEqual([]);
+    });
+
+    it.each([
+        ['no view', { dock: 'right', size: 0.3 }],
+        ['an empty list of views', { view: [], dock: 'right', size: 0.3 }],
+        ['an unknown edge', { view: 'status', dock: 'top', size: 0.3 }],
+        ['a dock past 0.6', { view: 'status', dock: 'right', size: 0.7 }],
+        ['a float past the window', { view: 'status', x: 0.9, y: 0, w: 0.3, h: 0.4 }],
+        ['a float under the least size', { view: 'status', x: 0, y: 0, w: 0.05, h: 0.4 }],
+        ['neither a dock nor a place', { view: 'status' }],
+        ['a value that is not a map', 'status']
+    ])('drops an entry with %s and keeps the rest', (_name, bad) => {
+        const floats = parseFloats([bad, { view: 'files', dock: 'bottom', size: 0.3 }]);
+        expect(floats.map((one) => one.place)).toEqual([
+            { kind: 'dock', edge: 'bottom', size: 0.3 }
+        ]);
+    });
+
+    it('reads a missing or malformed list as none', () => {
+        expect(parseFloats(undefined)).toEqual([]);
+        expect(parseFloats({ view: 'status' })).toEqual([]);
+        expect(parseFloats(null)).toEqual([]);
+    });
+
+    it('keeps the first of two entries docked on one edge', () => {
+        const floats = parseFloats([
+            { view: 'status', dock: 'right', size: 0.3 },
+            { view: 'files', dock: 'right', size: 0.2 }
+        ]);
+        expect(floats).toHaveLength(1);
+        expect(floats[0].pane.tabs[0].view).toBe('status');
     });
 });

@@ -51,7 +51,7 @@ function refusing(): Storable {
 
 /** One page list, and the readers over it the attention is given. */
 function access(pages: Page[], current: string): LayoutAccess {
-    const held = (): Pages => ({ pages, current });
+    const held = (): Pages => ({ pages, current, floats: [] });
     const pageOf = (id: string): Page | null => pages.find((page) => page.id === id) ?? null;
     const currentPage = (): Page => pageOf(current) ?? pages[0];
     const unused = (): never => {
@@ -83,7 +83,7 @@ describe('the layout storage', () => {
     it('writes nothing before a load has attached a storage', () => {
         const storage = createStorage();
         const held = fake();
-        storage.write({ pages: [newPage('one')], current: 'one' });
+        storage.write({ pages: [newPage('one')], current: 'one', floats: [] });
         storage.remember(PREVIOUS_KEY, 'held');
         storage.attach(held);
         // Revert: in write of state/workbench/layout/saved/storage.ts, drop both the `backing ===
@@ -98,7 +98,7 @@ describe('the layout storage', () => {
         const held = fake();
         storage.attach(held);
         const { pages, page } = onePage();
-        storage.write({ pages, current: page.id });
+        storage.write({ pages, current: page.id, floats: [] });
         // Revert: in write of state/workbench/layout/saved/storage.ts, write under PREVIOUS_KEY.
         expect(Object.keys(held.held)).toEqual([LAYOUT_KEY]);
         const read = parseLayout(held.held[LAYOUT_KEY], '');
@@ -120,7 +120,7 @@ describe('the layout storage', () => {
         // Revert: drop either try/catch in remember or write of
         // state/workbench/layout/saved/storage.ts.
         expect(() => storage.remember(PREVIOUS_KEY, '')).not.toThrow();
-        expect(() => storage.write({ pages, current: page.id })).not.toThrow();
+        expect(() => storage.write({ pages, current: page.id, floats: [] })).not.toThrow();
     });
 });
 

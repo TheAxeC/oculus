@@ -332,7 +332,7 @@ describe('parseWorkbench and the sentences of checkWorkbench and checkPages over
         ],
         [
             'the sentences of no pages',
-            () => checkPages({ pages: [], current: 'p0' }),
+            () => checkPages({ pages: [], current: 'p0', floats: [] }),
             ['no page', 'current is "p0", which is not a page']
         ],
         ['the sentences of one page', () => checkPages(pagesOf({})), []],
@@ -432,12 +432,12 @@ describe('parseWorkbench and the sentences of checkWorkbench and checkPages over
         [
             'the text a list of pages is saved as',
             () => serialiseLayout(pagesOf({ rail: 'k' }, {})),
-            '{"version":4,"pages":[{"id":"p0","label":"Page 0","workbench":{"root":{"kind":"pane","tabs":[{"id":"t0","view":"projects","state":null}],"active":"t0"}},"rail":"k"},{"id":"p1","label":"Page 1","workbench":{"root":{"kind":"pane","tabs":[{"id":"t1","view":"projects","state":null}],"active":"t1"}}}],"current":"p0"}'
+            '{"version":5,"pages":[{"id":"p0","label":"Page 0","workbench":{"root":{"kind":"pane","tabs":[{"id":"t0","view":"projects","state":null}],"active":"t0"}},"rail":"k"},{"id":"p1","label":"Page 1","workbench":{"root":{"kind":"pane","tabs":[{"id":"t1","view":"projects","state":null}],"active":"t1"}}}],"current":"p0","floats":[]}'
         ],
         [
             'the text a list of pages with extra fields is saved as',
             () => serialiseLayout({ ...pagesOf({}), extra: 1 } as Pages),
-            '{"version":4,"pages":[{"id":"p0","label":"Page 0","workbench":{"root":{"kind":"pane","tabs":[{"id":"t0","view":"projects","state":null}],"active":"t0"}}}],"current":"p0"}'
+            '{"version":5,"pages":[{"id":"p0","label":"Page 0","workbench":{"root":{"kind":"pane","tabs":[{"id":"t0","view":"projects","state":null}],"active":"t0"}}}],"current":"p0","floats":[]}'
         ]
     ];
 

@@ -204,7 +204,7 @@ describe('closing a pane and a page', () => {
         const page = client.layout.currentPage().id;
         owning([D], page);
         listed([D]);
-        expect(client.layout.resetPages([])).toBe(true);
+        expect(client.layout.resetPages([], [])).toBe(true);
         await settle();
         expect(stops).toEqual([D]);
     });

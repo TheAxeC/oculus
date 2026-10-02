@@ -1,12 +1,10 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D35 (every configuration file live, `local.yml` included, by Z198 and Axel's D35 redo ruling), builder at ordo-high building after its first-run rulings.
-- L4 (floating panes and kept empty panes), repair round 1 with the builder.
-- Q66 (a hidden tab defers its work), repair round 1 refuted again, its findings closed; landing.
+- D35 (every configuration file live, `local.yml` included, by Z198 and Axel's D35 redo ruling), repair round 1 with the builder.
 - X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), builder at ordo-high.
-- D24 (the Personal board: side projects and the Files roots' `.oculus/project.yml` as cards, with the six repositories' manifests drafted), builder at ordo-high.
-- M4 (the Present view's equations as LaTeX, the image branch removed, the cockpit deck kept drawing them), repair round 1 with the builder.
+- D24 (the Personal board: side projects and the Files roots' `.oculus/project.yml` as cards, with the six repositories' manifests drafted), report in; its review running.
+- M4 (the Present view's equations as LaTeX, the image branch removed, the cockpit deck kept drawing them), repair round 1 built; its review running.
 
 
 Three queued steps are kept prepared ahead (Z185).
@@ -40,6 +38,8 @@ Queued, in order (27 steps):
 Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers. When the 15th lands, this line becomes "Ready: the three-way Opus and Sonnet comparison can be asked for", and the comparison is written when Axel asks for it.
 
 Landed, newest first:
+- L4 (floating panes and kept empty panes), 2026-10-02, HASH.
+- Q66 (a hidden tab defers its work), 2026-10-02, 41e7583b.
 - Q35 (Changes, Customizations, Audit, Present), 2026-10-02, 36e0a3b5.
 - Q85d (zod in the views, ui, shell and routes), 2026-10-02, e77103dc.
 - D27 (the editor's languages), 2026-10-01, c431d27f.

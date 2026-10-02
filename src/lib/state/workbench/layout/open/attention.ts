@@ -10,7 +10,7 @@
 
 import { findInstance } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
-import { samePath, type Layout, type Page } from '../model.ts';
+import { isPage, samePath, type Layout, type Page } from '../model.ts';
 import { showsPage } from '../nested.ts';
 
 /**
@@ -36,7 +36,7 @@ export type Attention = {
      * The page the reader is in, which is what a view opened by anything naming no page lands in.
      */
     touched: () => Page;
-    /** The reader acted in a pane of this page. */
+    /** The reader acted in a pane of this page; a float's pane changes nothing. */
     touchPane: (page: string) => void;
     /** Forget the pane last acted in, whichever page it was on. */
     forgetTouched: () => void;
@@ -88,21 +88,26 @@ export function createAttention(access: LayoutAccess, where: Touched = { page: n
      * The page the reader is in: the one shown at the pane last pressed or focused, and the page on
      * screen before any pane has been, when that pane's page is gone, or when the strip has been
      * switched since. It is what a view opened by anything that names no page lands in, so a card
-     * pressed inside a shown page opens its tab on that page.
+     * pressed inside a shown page opens its tab on that page. A float is never where the reader is:
+     * a press in one leaves this on the page it was on.
      */
     function touched(): Page {
         const current = access.currentPage();
         const held = where.page === null ? null : access.pageOf(where.page);
-        if (held === null) return current;
+        if (held === null || !isPage(held)) return current;
         // A page the screen no longer draws is not where the reader is, whatever was pressed last.
         return showsPage(access.held().pages, current.id, held.id) || held.id === current.id
             ? held
             : current;
     }
 
-    /** The reader acted in a pane of this page. It is not saved: a load starts from the strip. */
+    /**
+     * The reader acted in a pane of this page. It is not saved: a load starts from the strip. A
+     * press in a float's pane is not a move to another page, so it changes nothing.
+     */
     function touchPane(page: string): void {
-        if (access.pageOf(page) !== null) where.page = page;
+        const held = access.pageOf(page);
+        if (held !== null && isPage(held)) where.page = page;
     }
 
     function forgetTouched(): void {

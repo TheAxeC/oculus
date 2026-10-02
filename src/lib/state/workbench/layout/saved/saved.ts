@@ -9,6 +9,7 @@
 import { z } from 'zod';
 import { tabsOf } from '../instance.ts';
 import {
+    FLOATLESS_VERSION,
     LAYOUT_VERSION,
     MIN_SIZE,
     PAGES_VERSION,
@@ -16,12 +17,15 @@ import {
     newPage,
     pageLeaf,
     show,
+    type Float,
     type Instance,
     type Layout,
     type Page,
     type Pages,
+    type Pane,
     type Workbench
 } from '../model.ts';
+import { placeFits } from '../open/floats.ts';
 import { refusedLeaves, settlePageLeaves, type Refusal } from '../nested.ts';
 import { normaliseSizes } from '../tree.ts';
 import { focusedPane, settleFocus } from '../workbench.ts';
@@ -95,8 +99,35 @@ const savedPageShape = z.object({
     rail: filledTextShape
 });
 
-/** The pages envelope's own fields: the saved pages and the id of the current one. */
-const pagesEnvelopeShape = z.object({ pages: listShape, current: z.string() });
+/** The pages envelope's own fields: the saved pages, the id of the current one and the floats. */
+const pagesEnvelopeShape = z.object({
+    pages: listShape,
+    current: z.string(),
+    floats: z.unknown().optional()
+});
+
+/** A saved float: its id, with its pane and its place read apart. */
+const savedFloatShape = z.object({
+    id: z.string().min(1),
+    pane: z.unknown().optional(),
+    place: z.unknown().optional()
+});
+
+/** A saved place: a free rectangle or a dock; whether it fits the window is placeFits'. */
+const placeShape = z.union([
+    z.object({
+        kind: z.literal('free'),
+        x: z.number(),
+        y: z.number(),
+        w: z.number(),
+        h: z.number()
+    }),
+    z.object({
+        kind: z.literal('dock'),
+        edge: z.enum(['left', 'right', 'bottom']),
+        size: z.number()
+    })
+]);
 
 /** A saved envelope: a map, or the text of one. */
 const envelopeShape = z.union([mapShape, z.string().transform(jsonOf).pipe(mapShape)]);
@@ -298,7 +329,10 @@ function readPane(
             `${where}: active is ${JSON.stringify(active)}, which is not one of its tabs`
         );
     }
-    return { kind: 'pane', tabs, active };
+    const read: Pane = { kind: 'pane', tabs, active };
+    // Only an empty pane keeps a kind: the pane a Terminal tab left stays a terminals pane.
+    if (tabs.length === 0 && value.keeps === 'terminals') read.keeps = 'terminals';
+    return read;
 }
 
 /** Every violation in a whole workbench: its tree, and a focus that names no pane of it. */
@@ -346,12 +380,82 @@ export function checkPages(pages: Pages): string[] {
     if (!ids.has(pages.current)) {
         problems.push(`current is ${JSON.stringify(pages.current)}, which is not a page`);
     }
+    problems.push(...checkFloats(pages.floats, ids, instances));
+    return problems;
+}
+
+/**
+ * Every violation in the floats beside the pages: an id that is a page's or another float's, a pane
+ * that is not one pane of at least one tab, a tab a page or another float holds too, a place that
+ * does not fit the window, and a second float on one edge.
+ */
+function checkFloats(floats: Float[], pageIds: Set<string>, tabIds: Set<string>): string[] {
+    const problems: string[] = [];
+    const floatIds = new Set<string>();
+    const edges = new Set<string>();
+    for (const float of floats) {
+        const name = JSON.stringify(float.id);
+        if (float.id === '') problems.push('a float has an empty id');
+        if (pageIds.has(float.id)) problems.push(`float id ${name} is also a page id`);
+        if (floatIds.has(float.id)) problems.push(`float id ${name} is used twice`);
+        floatIds.add(float.id);
+        problems.push(...checkFloatPane(float, tabIds));
+        if (!placeFits(float.place)) problems.push(`float ${name} has a place that does not fit`);
+        if (float.place.kind === 'dock') {
+            if (edges.has(float.place.edge)) {
+                problems.push(`two floats are docked on the ${float.place.edge} edge`);
+            }
+            edges.add(float.place.edge);
+        }
+    }
+    return problems;
+}
+
+/** The violations in one float's pane, and its tab ids added to the ones the layout holds. */
+function checkFloatPane(float: Float, tabIds: Set<string>): string[] {
+    const problems: string[] = [];
+    readTree(float.pane, `float ${JSON.stringify(float.id)}`, problems, new Set<string>());
+    if (float.pane.tabs.length === 0) {
+        problems.push(`float ${JSON.stringify(float.id)} holds no tab`);
+    }
+    for (const tab of float.pane.tabs) {
+        if (tabIds.has(tab.id)) {
+            problems.push(`instance ${JSON.stringify(tab.id)} is held by a float and another host`);
+        }
+        tabIds.add(tab.id);
+    }
     return problems;
 }
 
 /** Wrap the pages in the versioned JSON envelope stored by the browser. */
 export function serialiseLayout(pages: Pages): string {
-    return JSON.stringify({ version: LAYOUT_VERSION, pages: pages.pages, current: pages.current });
+    return JSON.stringify({
+        version: LAYOUT_VERSION,
+        pages: pages.pages,
+        current: pages.current,
+        floats: pages.floats
+    });
+}
+
+/**
+ * The pages in the envelope of the version before floats, for a layout read from one that has not
+ * yet taken the shipped floats in: it holds the pages and nothing else, as it was read.
+ */
+export function serialiseFloatless(pages: Pages): string {
+    return JSON.stringify({
+        version: FLOATLESS_VERSION,
+        pages: pages.pages,
+        current: pages.current
+    });
+}
+
+/**
+ * Whether a saved envelope was written before floats: the layout holds none, so the shipped floats
+ * are still to be taken in by the store that loaded it.
+ */
+export function needsFloats(value: unknown): boolean {
+    const version = asEnvelope(value)?.version;
+    return typeof version === 'number' && version < LAYOUT_VERSION;
 }
 
 /**
@@ -368,7 +472,9 @@ export function parseLayout(value: unknown, label: string): Pages | null {
         return only === null ? null : defaultPagesOf(newPage(label, only));
     }
     const version = envelope.version;
-    if (version !== LAYOUT_VERSION && version !== PAGES_VERSION) return null;
+    if (version !== LAYOUT_VERSION && version !== FLOATLESS_VERSION && version !== PAGES_VERSION) {
+        return null;
+    }
     const held = readAs(pagesEnvelopeShape, envelope);
     if (held === null) return null;
     const { current } = held;
@@ -377,9 +483,9 @@ export function parseLayout(value: unknown, label: string): Pages | null {
         const entry = readAs(savedPageShape, raw);
         if (entry === null) return null;
         const workbench =
-            version === LAYOUT_VERSION
-                ? readWorkbench(entry.workbench)
-                : readDockedWorkbench(entry.workbench);
+            version === PAGES_VERSION
+                ? readDockedWorkbench(entry.workbench)
+                : readWorkbench(entry.workbench);
         if (workbench === null) return null;
         const page: Page = { id: entry.id, label: entry.label, workbench };
         const rail = railKey(entry.rail, pages);
@@ -388,8 +494,55 @@ export function parseLayout(value: unknown, label: string): Pages | null {
     }
     // A leaf naming a page this envelope does not hold, or one that would make a page show itself,
     // becomes an empty pane: the rest of the arrangement is still the one the viewer left.
-    const read: Pages = settlePageLeaves({ pages, current });
+    const floats = version === LAYOUT_VERSION ? readFloats(held.floats, pages) : [];
+    const read: Pages = settlePageLeaves({ pages, current, floats });
     return checkPages(read).length === 0 ? read : null;
+}
+
+/**
+ * The floats of a saved envelope: a value that is not a list holds none, and a float that does not
+ * add up is dropped with the rest kept. A float is dropped for an id that is a page's or an earlier
+ * float's, a pane that is not one pane of at least one tab, a tab id the pages or an earlier float
+ * hold, a place that does not fit the window, and an edge an earlier float is docked on.
+ */
+function readFloats(value: unknown, pages: Page[]): Float[] {
+    const listed = readAs(listShape, value) ?? [];
+    const floats: Float[] = [];
+    const ids = new Set(pages.map((page) => page.id));
+    const tabs = new Set(pages.flatMap((page) => tabsOf(page.workbench.root).map((tab) => tab.id)));
+    for (const raw of listed) {
+        const float = readFloat(raw, ids, tabs, floats);
+        if (float === null) continue;
+        floats.push(float);
+        ids.add(float.id);
+        for (const tab of float.pane.tabs) tabs.add(tab.id);
+    }
+    return floats;
+}
+
+/** One saved float, or null for one that does not add up against what is already held. */
+function readFloat(
+    raw: unknown,
+    ids: Set<string>,
+    tabs: Set<string>,
+    earlier: Float[]
+): Float | null {
+    const held = readAs(savedFloatShape, raw);
+    const place = readAs(placeShape, held?.place);
+    if (held === null || place === null || ids.has(held.id) || !placeFits(place)) return null;
+    if (place.kind === 'dock' && earlier.some((one) => dockedOn(one, place.edge))) return null;
+    const problems: string[] = [];
+    const own = new Set(tabs);
+    const pane = readNode(held.pane, [], problems, own);
+    if (pane?.kind !== 'pane' || pane.tabs.length === 0 || problems.length > 0) {
+        return null;
+    }
+    return { id: held.id, pane, place };
+}
+
+/** Whether a float is docked on this edge. */
+function dockedOn(float: Float, edge: string): boolean {
+    return float.place.kind === 'dock' && float.place.edge === edge;
 }
 
 /**
@@ -404,7 +557,7 @@ function railKey(value: string | undefined, earlier: Page[]): string | null {
 
 /** Make a one-page collection from a supported one-workbench envelope. */
 function defaultPagesOf(page: Page): Pages {
-    return { pages: [page], current: page.id };
+    return { pages: [page], current: page.id, floats: [] };
 }
 
 /** Read an envelope object, parsing JSON when needed. */

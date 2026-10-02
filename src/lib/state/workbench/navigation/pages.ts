@@ -10,7 +10,14 @@
 // the closes is edited for it.
 
 import { z } from 'zod';
-import { tabsOf, type Instance, type Page } from '../layout/index.ts';
+import {
+    floatHost,
+    tabsOf,
+    type Float,
+    type Host,
+    type Instance,
+    type Page
+} from '../layout/index.ts';
 import { filledTextShape, readAs } from '../../../data/shapes/shapes.ts';
 import { registrationLabel, type Registration } from './registry.ts';
 import { t } from '../../shared/words/text.ts';
@@ -54,12 +61,19 @@ export function tabNameOf(
  * Every instance a page holds, pane by pane in the tree's own order. Closing the page closes all of
  * them at once, so it is the list the close question is asked over.
  */
-export function pageInstanceIds(page: Page): string[] {
+export function pageInstanceIds(page: Host): string[] {
     return tabsOf(page.workbench.root).map((instance) => instance.id);
 }
 
-/** Every instance the pages hold, in page order and then tree order. */
-export function instancesOfPages(pages: readonly Page[]): Instance[] {
+/**
+ * The floats as hosts, which a reset and a close ask about the tabs of as they ask about a page's.
+ */
+export function floatHosts(floats: readonly Float[]): Host[] {
+    return floats.map(floatHost);
+}
+
+/** Every instance the pages or floats hold, in the order given and then tree order. */
+export function instancesOfPages(pages: readonly Host[]): Instance[] {
     return pages.flatMap((page) => tabsOf(page.workbench.root));
 }
 
@@ -157,11 +171,12 @@ export function closeOnce(): <T>(
 }
 
 /**
- * The first tab holding text no save has taken, in page order and then tree order, with the page
- * it is on; null when no tab holds any. The status bar's unsaved count opens this one.
+ * The first tab holding text no save has taken, in host order (the pages, then the floats) and then
+ * tree order, with the page or float it is on; null when no tab holds any. The status bar's unsaved
+ * count opens this one.
  */
 export function firstUnsaved(
-    pages: readonly Page[],
+    pages: readonly Host[],
     unsaved: (id: string) => boolean
 ): { page: string; instance: string } | null {
     for (const page of pages) {
@@ -171,8 +186,8 @@ export function firstUnsaved(
     return null;
 }
 
-/** How many tabs across every page hold text no save has taken. */
-export function unsavedCount(pages: readonly Page[], unsaved: (id: string) => boolean): number {
+/** How many tabs across every page and float hold text no save has taken. */
+export function unsavedCount(pages: readonly Host[], unsaved: (id: string) => boolean): number {
     return pages.reduce((sum, page) => sum + pageInstanceIds(page).filter(unsaved).length, 0);
 }
 
@@ -227,20 +242,22 @@ export function resetPlan(
 /**
  * What a reset asks before it runs, already translated: the question, and the line under it naming
  * each page it rebuilds and each it removes. `one` is the page a reset of a single page names; a
- * reset of every page names none. The tabs holding unsaved text are asked about after it, one by
- * one (resetAfterAsking).
+ * reset of every page names none. `floats` is whether the reset replaces the floats held. The tabs
+ * holding unsaved text are asked about after it, one by one (resetAfterAsking).
  */
 export function resetAsk(
     all: readonly Page[],
     rebuilt: readonly Page[],
     removed: readonly Page[],
-    one?: Page
+    one?: Page,
+    floats = false
 ): { message: string; detail: string } {
     const names = (chosen: readonly Page[]): string =>
         chosen.map((page) => pageNameOf(all, page.id)).join(', ');
     const lines = [
         rebuilt.length > 0 ? t('workbench.reset_rebuilt', names(rebuilt)) : '',
-        removed.length > 0 ? t('workbench.reset_removed', names(removed)) : ''
+        removed.length > 0 ? t('workbench.reset_removed', names(removed)) : '',
+        floats ? t('workbench.reset_floats') : ''
     ].filter((line) => line !== '');
     const message =
         one === undefined
@@ -281,16 +298,16 @@ export function questionFor(show: (held: Question | null) => void): Asker {
 
 /**
  * Run a reset once the reader agreed to it: the reset's own question first, then, for each tab of
- * the pages it rebuilds or removes that holds unsaved text, the question closing that tab asks
- * (closeQuestion over the one tab), one tab at a time, with the tab and its page named under it,
- * since the tab may not be on screen; then, once, the busy question naming each terminal of those
- * pages running a program (`busy` is the fresh read). A no to any of them ends it with nothing
- * done. Answers whether the reset ran.
+ * the pages it rebuilds or removes and of the floats it replaces that holds unsaved text, the
+ * question closing that tab asks (closeQuestion over the one tab), one tab at a time, with the tab
+ * and its page (or its float) named under it, since the tab may not be on screen; then, once, the
+ * busy question naming each terminal of those pages running a program (`busy` is the fresh read). A
+ * no to any of them ends it with nothing done. Answers whether the reset ran.
  */
 export async function resetAfterAsking(
     all: readonly Page[],
     words: { message: string; detail: string },
-    touched: readonly Page[],
+    touched: readonly Host[],
     unsaved: (id: string) => boolean,
     name: (instance: Instance) => string,
     ask: Asker,
@@ -301,7 +318,11 @@ export async function resetAfterAsking(
     for (const page of touched) {
         for (const instance of tabsOf(page.workbench.root)) {
             if (closeQuestion([instance.id], unsaved) !== 'dirty') continue;
-            const detail = t('workbench.reset_tab', name(instance), pageNameOf(all, page.id));
+            const held = pageNameOf(all, page.id);
+            const detail =
+                held === ''
+                    ? t('workbench.reset_float_tab', name(instance))
+                    : t('workbench.reset_tab', name(instance), held);
             if (!(await ask(t('ui.tab_close_dirty'), detail))) return false;
         }
     }

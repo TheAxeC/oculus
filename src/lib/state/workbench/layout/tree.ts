@@ -2,7 +2,7 @@
 // change independently of workbench focus and persistence.
 
 import { item } from '../../../data/helpers/guards.ts';
-import { findInstance } from './instance.ts';
+import { findInstance, panes } from './instance.ts';
 import {
     MAX_CHILDREN,
     MIN_SIZE,
@@ -10,10 +10,12 @@ import {
     emptyPane,
     samePath,
     type Instance,
+    type Keeps,
     type Layout,
     type Pane,
     type PageLeaf,
-    type Split
+    type Split,
+    type ViewId
 } from './model.ts';
 
 const SUM_EPS = 1e-6;
@@ -155,15 +157,45 @@ export function removeNode(layout: Layout, path: number[]): Layout {
 }
 
 /**
- * The tree with one tab gone from the pane at `path`, the pane cleaned away if it held only that.
+ * What a rule says of a view whose tab was a pane's last: `documents` for a view opened for
+ * something, `terminals` for a Terminal tab, null for any other view. The store hands it to every
+ * operation that can take a pane's last tab out.
  */
-export function removeTab(layout: Layout, path: number[], index: number): Layout {
+export type KeepRule = (view: ViewId) => 'documents' | Keeps | null;
+
+/**
+ * The empty pane to leave where a pane's last tab was, or null when the pane goes. The pane stays
+ * when the rule names its tab's view and the tree holds no other empty pane of that kind, so a page
+ * keeps at most one empty documents pane and one empty terminals pane.
+ */
+function keptPane(layout: Layout, path: number[], view: ViewId, keep?: KeepRule): Pane | null {
+    const kind = keep?.(view) ?? null;
+    if (kind === null) return null;
+    const taken = panes(layout).some(
+        ({ path: where, pane }) =>
+            !samePath(where, path) && pane.tabs.length === 0 && (pane.keeps ?? 'documents') === kind
+    );
+    if (taken) return null;
+    return kind === 'terminals'
+        ? { kind: 'pane', tabs: [], active: '', keeps: 'terminals' }
+        : emptyPane();
+}
+
+/**
+ * The tree with one tab gone from the pane at `path`, the pane cleaned away if it held only that,
+ * or left empty when the rule keeps it.
+ */
+export function removeTab(layout: Layout, path: number[], index: number, keep?: KeepRule): Layout {
     const pane = paneAt(layout, path);
     if (pane === null) return layout;
     const removed = item(pane.tabs, index);
     if (removed === undefined) return layout;
     const tabs = pane.tabs.filter((_, at) => at !== index);
-    if (tabs.length === 0) return removeNode(layout, path);
+    if (tabs.length === 0) {
+        const kept = keptPane(layout, path, removed.view, keep);
+        if (kept === null) return removeNode(layout, path);
+        return rewrite(layout, path, () => kept) ?? layout;
+    }
     // The neighbour is the tab that took the closed one's place, or the last one when it was last.
     const neighbour = tabs[Math.min(index, tabs.length - 1)];
     const active = pane.active === removed.id ? neighbour.id : pane.active;
@@ -183,10 +215,10 @@ export function openInstance(layout: Layout, path: number[], instance: Instance)
 /**
  * Remove an instance wherever it sits, cleaning away a pane and a split left with nothing to hold.
  */
-export function closeInstance(layout: Layout, id: string): Layout {
+export function closeInstance(layout: Layout, id: string, keep?: KeepRule): Layout {
     const found = findInstance(layout, id);
     if (found === null) return layout;
-    return removeTab(layout, found.path, found.index);
+    return removeTab(layout, found.path, found.index, keep);
 }
 
 /**
@@ -241,7 +273,13 @@ export function activate(layout: Layout, id: string): Layout {
  * that pane's active tab, and the pane it left is cleaned as closeInstance cleans it. Inserting
  * first and removing second is what keeps the source path valid: adding a tab changes no path.
  */
-export function moveInstance(layout: Layout, id: string, path: number[], index: number): Layout {
+export function moveInstance(
+    layout: Layout,
+    id: string,
+    path: number[],
+    index: number,
+    keep?: KeepRule
+): Layout {
     const found = findInstance(layout, id);
     const target = paneAt(layout, path);
     if (found === null || target === null) return layout;
@@ -256,7 +294,7 @@ export function moveInstance(layout: Layout, id: string, path: number[], index: 
 
     const inserted = insertInstance(layout, path, index, instance);
     if (inserted === layout) return layout;
-    return removeTab(inserted, found.path, found.index);
+    return removeTab(inserted, found.path, found.index, keep);
 }
 
 /**

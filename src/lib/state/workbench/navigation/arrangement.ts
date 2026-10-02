@@ -3,13 +3,17 @@
 // its own module because it is its own concern and a hand-written shape read once.
 //
 // The shape of a node is read by the zod schemas below; what the workbench checks of a tree, the
-// sizes adding up among them, is checkWorkbench's.
+// sizes adding up among them, is checkWorkbench's. The `floats:` list beside the arrangements is
+// read here too: the panes drawn over every page that a browser with no saved layout starts with.
 
 import { z } from 'zod';
 import {
     checkWorkbench,
     emptyPane,
     newInstance,
+    placeFits,
+    type FloatPlace,
+    type FloatSpec,
     type Instance,
     type Layout,
     type Workbench
@@ -32,11 +36,14 @@ const stateTabShape = z
 /** One tab of a pane: a view id, or a view id with the state its instance opens in. */
 const arrangementTabShape = z.union([viewIdShape, stateTabShape]) satisfies z.ZodType<Instance>;
 
+/** The tabs a pane or a float holds: one view id or a list of tabs. */
+const tabsShape = z.union([viewIdShape.transform((tab) => [tab]), z.array(arrangementTabShape)]);
+
 /** A pane's `view`: one view id or a list of tabs. An empty list is an empty pane. */
 const arrangementPaneShape = z
     .object({
         kind: z.literal('pane'),
-        view: z.union([viewIdShape.transform((tab) => [tab]), z.array(arrangementTabShape)])
+        view: tabsShape
     })
     .transform(({ view: tabs }): Layout =>
         tabs.length === 0 ? emptyPane() : { kind: 'pane', tabs, active: tabs[0].id }
@@ -74,4 +81,46 @@ export function parseArrangement(value: unknown): Workbench | null {
     if (read === null) return null;
     const workbench: Workbench = { root: read.root };
     return checkWorkbench(workbench).length === 0 ? workbench : null;
+}
+
+/** One entry of `floats:` docked on an edge. */
+const dockedEntryShape = z
+    .object({ view: tabsShape, dock: z.enum(['left', 'right', 'bottom']), size: z.number() })
+    .transform(({ view, dock, size }) => ({
+        tabs: view,
+        place: { kind: 'dock', edge: dock, size } satisfies FloatPlace
+    }));
+
+/** One entry of `floats:` floating free, in fractions of the window. */
+const freeEntryShape = z
+    .object({ view: tabsShape, x: z.number(), y: z.number(), w: z.number(), h: z.number() })
+    .transform(({ view, x, y, w, h }) => ({
+        tabs: view,
+        place: { kind: 'free', x, y, w, h } satisfies FloatPlace
+    }));
+
+const floatEntryShape = z.union([dockedEntryShape, freeEntryShape]);
+
+/**
+ * The `floats:` list of config/layout.yml as floats before they have ids: each is `{ view, dock,
+ * size }` or `{ view, x, y, w, h }`, `view` being one view id or a list of tabs as in an
+ * arrangement's pane. An entry that does not read, holds no tab or does not fit the window is
+ * dropped and the rest kept, and of two entries docked on one edge the first stays. Every tab
+ * gets a fresh instance id each time the list is read.
+ */
+export function parseFloats(value: unknown): FloatSpec[] {
+    const listed = readAs(z.array(z.unknown()), value) ?? [];
+    const specs: FloatSpec[] = [];
+    for (const raw of listed) {
+        const read = readAs(floatEntryShape, raw);
+        if (read === null || read.tabs.length === 0 || !placeFits(read.place)) continue;
+        const { place, tabs } = read;
+        const taken = specs.some(
+            (one) =>
+                one.place.kind === 'dock' && place.kind === 'dock' && one.place.edge === place.edge
+        );
+        if (taken) continue;
+        specs.push({ pane: { kind: 'pane', tabs, active: tabs[0].id }, place });
+    }
+    return specs;
 }

@@ -11,9 +11,14 @@ import {
 import { LAYOUT_KEY } from '../../../../src/lib/state/workbench/layout.svelte.ts';
 import type { ClientState } from '../../../fixtures/client.ts';
 import type {
+    Float,
+    FloatPlace,
     Focus,
     Instance,
     Layout,
+    Page,
+    Pages,
+    Pane,
     Workbench
 } from '../../../../src/lib/state/workbench/layout/index.ts';
 
@@ -24,6 +29,30 @@ export function instance(id: string, view = 'projects'): Instance {
 export function pane(ids: string[], active?: string): Layout {
     const tabs = ids.map((id) => instance(id));
     return { kind: 'pane', tabs, active: active ?? tabs.at(0)?.id ?? '' };
+}
+
+/** One pane of tabs, typed as the pane it is. */
+export function paneOf(ids: string[], active?: string): Pane {
+    const tabs = ids.map((id) => instance(id));
+    return { kind: 'pane', tabs, active: active ?? tabs.at(0)?.id ?? '' };
+}
+
+/** The place the float cases start a free float at. */
+export const FREE_PLACE: FloatPlace = { kind: 'free', x: 0.1, y: 0.1, w: 0.3, h: 0.4 };
+
+/** A float holding these tabs at a place. */
+export function floating(id: string, ids: string[], place: FloatPlace = FREE_PLACE): Float {
+    return { id, pane: paneOf(ids), place };
+}
+
+/** A page with the id as its name around one tree. */
+export function pageAround(id: string, root: Layout): Page {
+    return { id, label: id, workbench: { root } };
+}
+
+/** The pages, the floats beside them and the page on screen, which is the unit that is saved. */
+export function heldPages(pages: Page[], floats: Float[] = [], current?: string): Pages {
+    return { pages, current: current ?? pages[0].id, floats };
 }
 
 export function split(dir: 'row' | 'col', sizes: number[], children: Layout[]): Layout {

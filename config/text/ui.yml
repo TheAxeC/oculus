@@ -16,11 +16,18 @@ text:
         dirty_glyph: bullet
         docs: Bookmarks
         drag_hint: Moving {0}
+        drag_float: Floating {0}
         drag_open: Opening {0}
         embed_page: 'Show {0} here'
         embed_page_list: Show a page here...
         embed_refused: '{0} cannot be shown here'
         embed_refused_glyph: dismiss
+        float: Float
+        float_dock_bottom: Dock Bottom
+        float_dock_left: Dock Left
+        float_dock_right: Dock Right
+        float_label: Floating pane
+        float_return: Return to Page
         icons: Icons
         icons_title: Keep the icons on a terminal theme instead of their ASCII stand-ins.
         move_to_page: 'Move tab to {0}'
@@ -36,6 +43,7 @@ text:
         pane_close: Close pane
         pane_close_confirm: Close this pane and the {0} tabs in it?
         pane_empty: Files and documents you open on this page appear here.
+        pane_empty_terminals: Terminals you start from this pane's menu appear here.
         pane_expand: Expand pane
         pane_expand_glyph: expand
         pane_fold: Fold pane

@@ -40,8 +40,11 @@
 
     import {
         EMBED,
+        FLOAT_PANE,
         PAGE,
+        floatMenu,
         foldable,
+        isFloatItem,
         pageListItems,
         stripMark,
         stripMenu,
@@ -74,9 +77,13 @@
             closeInstance,
             closePane,
             currentPage,
+            dockFloat,
             embedPage,
+            floatPane,
+            floats,
             focused,
             foldPane,
+            freeFloat,
             keepPreview,
             layout,
             maximisePane,
@@ -84,6 +91,7 @@
             openingInstance,
             pages,
             restorePanes,
+            returnFloat,
             splitInstance,
             touchPane
         },
@@ -118,6 +126,8 @@
     const active = $derived(node.kind === 'pane' ? node.active : '');
     const shown = $derived(instances.find((instance) => instance.id === active));
     const maximised = $derived(focused(page) !== null);
+    /** The float this pane is, when its page is the id of one: a float's pane has its own menus. */
+    const float = $derived(floats().find((one) => one.id === page));
     /**
      * Whether this is the pane the next view opened lands in: the one holding the instance it
      * joins.
@@ -199,22 +209,36 @@
      */
     const pageLists = $derived<MenuItem[]>(pageListItems(pages(), currentPage().id, page, t));
 
-    const items = $derived<MenuItem[]>([
-        { id: 'close', label: t('ui.pane_close') },
-        maximised
-            ? { id: 'restore', label: t('ui.pane_restore') }
-            : { id: 'maximise', label: t('ui.pane_maximise') },
-        // The root pane is in no split, and the last open child of a split stays open, so the item
-        // is offered only where a fold would change the tree.
-        ...(foldable(layout(page), path) ? [{ id: 'fold', label: t('ui.pane_fold') }] : []),
-        ...pageLists,
-        { id: 'split_right', label: t('ui.split_right') },
-        { id: 'split_down', label: t('ui.split_down') }
-    ]);
+    const items = $derived<MenuItem[]>(
+        float !== undefined
+            ? floatMenu(float.place, pages(), t)
+            : [
+                  { id: 'close', label: t('ui.pane_close') },
+                  maximised
+                      ? { id: 'restore', label: t('ui.pane_restore') }
+                      : { id: 'maximise', label: t('ui.pane_maximise') },
+                  // The root pane is in no split, and the last open child of a split stays open,
+                  // so the item is offered only where a fold would change the tree.
+                  ...(foldable(layout(page), path)
+                      ? [{ id: 'fold', label: t('ui.pane_fold') }]
+                      : []),
+                  ...pageLists,
+                  { id: 'split_right', label: t('ui.split_right') },
+                  { id: 'split_down', label: t('ui.split_down') },
+                  ...(active === '' ? [] : [{ id: FLOAT_PANE, label: t('ui.float') }])
+              ]
+    );
 
     /** The strip's and the empty body's right-click menu. */
     const stripItems = $derived<MenuItem[]>(
-        stripMenu({ holdsTab: active !== '', panes: panes(layout(page)).length }, t)
+        stripMenu(
+            {
+                holdsTab: active !== '',
+                panes: panes(layout(page)).length,
+                float: float?.place
+            },
+            t
+        )
     );
 
     function stripPick(id: string): void {
@@ -225,7 +249,11 @@
                 splitInstance,
                 openPalette: onpalette,
                 close: () => pick('close'),
-                newTerminalIn
+                newTerminalIn,
+                floatPane,
+                dockFloat,
+                freeFloat,
+                returnFloat
             }
         );
     }
@@ -310,6 +338,10 @@
     }
 
     function pick(id: string): void {
+        if (isFloatItem(id)) {
+            stripPick(id);
+            return;
+        }
         if (id === 'close') {
             // Closing a pane closes every tab in it at once, and a tab holds a view's own state,
             // so the pane takes the same question a tab's own close control takes over the tabs it
@@ -356,6 +388,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
     class="pane"
+    class:floated={float !== undefined}
     data-pane
     data-pane-path={path.join('.')}
     data-pane-page={page}
@@ -381,7 +414,15 @@
             />
         </div>
     </ContextMenu>
-    <PaneBody {instances} {active} {page} {path} items={stripItems} onpick={stripPick} />
+    <PaneBody
+        {instances}
+        {active}
+        {page}
+        {path}
+        keeps={node.kind === 'pane' ? node.keeps : undefined}
+        items={stripItems}
+        onpick={stripPick}
+    />
 </div>
 
 <CloseQuestion
@@ -391,7 +432,7 @@
 />
 
 {#snippet paneMenu()}
-    {#if active !== ''}
+    {#if active !== '' && float === undefined}
         <ToolButton
             label={t('ui.split_right')}
             glyph={t('ui.split_right_glyph')}
@@ -426,6 +467,12 @@
         border-radius: var(--radius);
         box-sizing: border-box;
         overflow: hidden;
+    }
+
+    /* The float draws the border around its pane, so the pane inside it draws none. */
+    .pane.floated {
+        border: 0;
+        border-radius: 0;
     }
 
     /* Over a wallpaper the pane box paints nothing and keeps its border: the tab strip and the view

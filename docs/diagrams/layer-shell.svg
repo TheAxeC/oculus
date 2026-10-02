@@ -36,7 +36,7 @@
 <g id="node7" class="node">
 <title>folder shell to folder shell/panes</title>
 <polygon fill="none" stroke="none" points="49.88,-501.12 40.12,-501.12 40.12,-488.64 49.88,-488.64 49.88,-501.12"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="45" y="-492.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="45" y="-492.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
 </g>
 <!-- folder shell&#45;&gt;folder shell to folder shell/panes -->
 <g id="edge7" class="edge">
@@ -156,7 +156,7 @@
 <g id="node16" class="node">
 <title>folder shell/panes to layer state</title>
 <polygon fill="none" stroke="none" points="145.88,-295.88 132.12,-295.88 132.12,-283.4 145.88,-283.4 145.88,-295.88"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="139" y="-287.24" font-family="Helvetica,Arial,sans-serif" font-size="8.00">27</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="139" y="-287.24" font-family="Helvetica,Arial,sans-serif" font-size="8.00">31</text>
 </g>
 <!-- folder shell/panes&#45;&gt;folder shell/panes to layer state -->
 <g id="edge25" class="edge">
@@ -167,7 +167,7 @@
 <g id="node17" class="node">
 <title>folder shell/panes to layer ui</title>
 <polygon fill="none" stroke="none" points="115.88,-238.28 102.12,-238.28 102.12,-225.8 115.88,-225.8 115.88,-238.28"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="109" y="-229.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">13</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="109" y="-229.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">14</text>
 </g>
 <!-- folder shell/panes&#45;&gt;folder shell/panes to layer ui -->
 <g id="edge27" class="edge">

@@ -2,6 +2,7 @@
 // modules keep their implementation helpers private to the folder.
 
 export {
+    FLOATLESS_VERSION,
     LAYOUT_VERSION,
     MAIN_VIEW,
     MAX_CHILDREN,
@@ -12,14 +13,22 @@ export {
     defaultPages,
     defaultWorkbench,
     emptyPane,
+    floatHost,
+    hostsOf,
+    isPage,
     newPage,
     pageLeaf,
     samePath
 } from './model.ts';
 export type {
+    DockEdge,
     Edge,
+    Float,
+    FloatPlace,
     Focus,
+    Host,
     Instance,
+    Keeps,
     Layout,
     Page,
     PageLeaf,
@@ -45,11 +54,31 @@ export {
     openInstance,
     pageLeaves,
     paneAt,
+    removeTab,
     resize,
     restate,
     splitLeaf,
     splitPane
 } from './tree.ts';
+export type { KeepRule } from './tree.ts';
+export {
+    DOCK_MAX,
+    FLOAT_MIN,
+    START_DOCK,
+    START_H,
+    START_W,
+    adoptFloats,
+    dockFloat,
+    floatPane,
+    floatTab,
+    floatsFrom,
+    freeFloat,
+    placeFits,
+    placeFloat,
+    returnFloat,
+    writeHost
+} from './open/floats.ts';
+export type { FloatSpec } from './open/floats.ts';
 export { asPreview, isPreview, keepInstance, previewIn, retarget } from './open/preview.ts';
 export {
     clearPage,
@@ -68,8 +97,10 @@ export {
     checkLayout,
     checkPages,
     checkWorkbench,
+    needsFloats,
     parseLayout,
     parseWorkbench,
+    serialiseFloatless,
     serialiseLayout
 } from './saved/saved.ts';
 export type { LayoutAccess } from './access.ts';

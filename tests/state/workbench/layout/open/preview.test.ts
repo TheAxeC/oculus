@@ -198,7 +198,8 @@ describe('the preview tab', () => {
         openView('source', file('a.py'), undefined, { preview: true });
         const written = serialiseLayout({
             pages: client.layout.pages(),
-            current: client.layout.currentPage().id
+            current: client.layout.currentPage().id,
+            floats: []
         });
         const read = parseLayout(written, 'One');
 
@@ -223,7 +224,8 @@ describe('the preview tab', () => {
                     }
                 }
             ],
-            current: 'page-one'
+            current: 'page-one',
+            floats: []
         };
         const read = parseLayout(envelope, 'One');
 

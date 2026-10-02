@@ -29,7 +29,15 @@ export type Split = {
     children: Layout[];
     folded?: number[];
 };
-export type Pane = { kind: 'pane'; tabs: Instance[]; active: string };
+
+/**
+ * The kind of view a kept empty pane stays for. An empty pane without `keeps` is the documents
+ * pane, where a view opened for something lands; `terminals` marks the pane a Terminal tab left.
+ */
+export type Keeps = 'terminals';
+
+/** One pane of tabs. `keeps` is only ever set on a pane with no tab. */
+export type Pane = { kind: 'pane'; tabs: Instance[]; active: string; keeps?: Keeps };
 
 /**
  * Another page shown at this spot in a page's tree. It names the page by id and holds nothing of
@@ -66,8 +74,33 @@ export type Page = {
     rail?: string;
 };
 
-/** Every page, and which of them is on screen. This is the unit that is saved. */
-export type Pages = { pages: Page[]; current: string };
+/**
+ * What a page and a float have in common, and what the access functions answer for an id: an id
+ * and a workbench. A float is a workbench of one pane, with no maximised pane.
+ */
+export type Host = { id: string; workbench: Workbench };
+
+/** The side of the window a docked float is drawn along. */
+export type DockEdge = 'left' | 'right' | 'bottom';
+
+/**
+ * Where a float is drawn. A free float is a rectangle in fractions of the window; a docked one
+ * runs along an edge and takes `size` of the window's width, or of its height along the bottom.
+ */
+export type FloatPlace =
+    | { kind: 'free'; x: number; y: number; w: number; h: number }
+    | { kind: 'dock'; edge: DockEdge; size: number };
+
+/**
+ * A pane drawn over every page, its tabs open wherever the page on screen is. It is a host of its
+ * own, addressed by its id wherever a page id is taken, and it is never a page.
+ */
+export type Float = { id: string; pane: Pane; place: FloatPlace };
+
+/**
+ * Every page, the floats beside them, and which page is on screen. This is the unit that is saved.
+ */
+export type Pages = { pages: Page[]; current: string; floats: Float[] };
 
 /** The side of a pane a dropped tab takes, which is what says where the new pane goes. */
 export type Edge = 'left' | 'right' | 'top' | 'bottom';
@@ -83,9 +116,15 @@ export const MAIN_VIEW = 'status';
 
 /**
  * The envelope version serialiseLayout writes and parseLayout demands: the list of pages, one tree
- * each.
+ * each, and the floats beside them.
  */
-export const LAYOUT_VERSION = 4;
+export const LAYOUT_VERSION = 5;
+
+/**
+ * The envelope version that held the pages without floats. It is still read, with no floats, and
+ * the shipped floats are taken in when the layout is loaded.
+ */
+export const FLOATLESS_VERSION = 4;
 
 /**
  * The envelope version whose page held two trees and a docked panel. It is still read, and its
@@ -98,6 +137,21 @@ export const PAGES_VERSION = 3;
  * read and migrated the same way, so a browser that holds one opens it as a page.
  */
 export const WORKBENCH_VERSION = 2;
+
+/** A float as a host: a workbench of its one pane, with no maximised pane. */
+export function floatHost(float: Float): Host {
+    return { id: float.id, workbench: { root: float.pane } };
+}
+
+/** Every page and every float as a host, pages first. */
+export function hostsOf(held: Pages): Host[] {
+    return [...held.pages, ...held.floats.map(floatHost)];
+}
+
+/** Whether a host is a page, which a float is not: only a page carries a label. */
+export function isPage(host: Host): host is Page {
+    return 'label' in host;
+}
 
 export function show(path: number[]): string {
     return `[${path.join(', ')}]`;
@@ -153,5 +207,5 @@ export function newPage(
 /** The pages a browser that has never held any starts from: one, on the default workbench. */
 export function defaultPages(label: string): Pages {
     const page = newPage(label);
-    return { pages: [page], current: page.id };
+    return { pages: [page], current: page.id, floats: [] };
 }

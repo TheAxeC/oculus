@@ -8,7 +8,7 @@
 // What this does NOT cover: the listeners themselves, the pointer that installs them, and anything
 // drawn. A drag needs a DOM and is not run here.
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     AT_END,
     THRESHOLD,
@@ -18,6 +18,12 @@ import {
     type DragSink
 } from '../../../src/lib/state/workbench/drag.svelte.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { serialiseLayout } from '../../../src/lib/state/workbench/layout/index.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+import { fakeStorage, heldPages, pageAround, pane, split } from './layout/layout-fixture.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 let client: ClientState;
 let cancel: ClientState['drag']['cancel'];
@@ -54,7 +60,8 @@ function recorder(): DragSink & { calls: string[] } {
             calls.push(`transfer ${id} to [${path.join(',')}] at ${index}`),
         split: (id, path, edge) => calls.push(`split ${id} to [${path.join(',')}] on ${edge}`),
         embed: (nested, path, edge, page) =>
-            calls.push(`embed ${nested} in ${page} at [${path.join(',')}] on ${edge}`)
+            calls.push(`embed ${nested} in ${page} at [${path.join(',')}] on ${edge}`),
+        float: (id, at) => calls.push(`float ${id} at ${at.x},${at.y}`)
     };
 }
 
@@ -105,7 +112,8 @@ describe('the threshold', () => {
             point: { x: 106, y: 100 },
             drop: null,
             rect: null,
-            refused: false
+            refused: false,
+            alt: false
         });
     });
 });
@@ -317,5 +325,86 @@ describe('the drop zones of a body', () => {
 
     it('says nothing about a body with no size', () => {
         expect(edgeAt({ x: 0, y: 0, width: 0, height: 0 }, { x: 0, y: 0 })).toBe(null);
+    });
+});
+
+describe('a tab dragged with Alt held', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('floats on drop at the pointer, wherever the pointer was released', () => {
+        begin();
+        move({ x: 500, y: 300 }, true);
+        hover({ kind: 'centre', path: [0] }, { x: 0, y: 0, width: 10, height: 10 });
+        end();
+        expect(sink.calls).toEqual(['float a at 500,300']);
+    });
+
+    it('floats over no drop at all, and over a strip or an edge', () => {
+        begin();
+        move({ x: 40, y: 50 }, true);
+        end();
+        begin('b');
+        move({ x: 60, y: 70 }, true);
+        hover({ kind: 'strip', path: [1], index: 0 });
+        end();
+        begin('c');
+        move({ x: 80, y: 90 }, true);
+        hover({ kind: 'edge', path: [], edge: 'left' });
+        end();
+        expect(sink.calls).toEqual(['float a at 40,50', 'float b at 60,70', 'float c at 80,90']);
+    });
+
+    it('is a plain drop when Alt is let go before the pointer comes up', () => {
+        begin();
+        move({ x: 500, y: 300 }, true);
+        move({ x: 510, y: 300 }, false);
+        hover({ kind: 'strip', path: [1], index: 0 });
+        end();
+        expect(sink.calls).toEqual(['transfer a to [1] at 0']);
+    });
+
+    it('tells whatever draws the outline that the drag floats', () => {
+        begin();
+        expect(dragging()?.alt).toBe(false);
+        move({ x: 500, y: 300 }, true);
+        expect(dragging()?.alt).toBe(true);
+    });
+
+    it('performs nothing when the press never moved, Alt or not', () => {
+        start('a', 'Projects', { x: 100, y: 100 });
+        move({ x: 101, y: 100 }, true);
+        end();
+        expect(sink.calls).toEqual([]);
+    });
+
+    it('floats no page and no view: Alt means nothing to them', () => {
+        startPage('page-2', 'Reading', { x: 100, y: 100 });
+        move({ x: 300, y: 300 }, true);
+        hover({ kind: 'edge', path: [], edge: 'left', page: 'page-1' });
+        end();
+        expect(sink.calls).toEqual(['embed page-2 in page-1 at [] on left']);
+    });
+
+    it('puts the tab in a new free float at the pointer through the store, and cleans the pane it left', () => {
+        vi.stubGlobal('window', { innerWidth: 1000, innerHeight: 800 });
+        setDragSink(null);
+        const held = heldPages([
+            pageAround('main', split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]))
+        ]);
+        client.layout.loadLayout(fakeStorage(serialiseLayout(held)));
+        start('b', 'b', { x: 600, y: 200 });
+        move({ x: 700, y: 400 }, true);
+        hover({ kind: 'centre', path: [0], page: 'main' }, { x: 0, y: 0, width: 10, height: 10 });
+        end();
+        expect(client.layout.floats()).toHaveLength(1);
+        expect(client.layout.floats()[0].pane.tabs.map((tab) => tab.id)).toEqual(['b']);
+        expect(client.layout.floats()[0].place).toEqual({
+            kind: 'free',
+            x: 0.7,
+            y: 0.5,
+            w: 0.3,
+            h: 0.4
+        });
+        expect(client.layout.layout()).toEqual(pane(['a']));
     });
 });

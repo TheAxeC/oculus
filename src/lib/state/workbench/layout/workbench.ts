@@ -3,7 +3,7 @@
 
 import { findInstance } from './instance.ts';
 import { samePath, type Edge, type Focus, type Instance, type Workbench } from './model.ts';
-import { closeInstance, leafAt, paneAt, renameInstance, splitPane } from './tree.ts';
+import { closeInstance, leafAt, paneAt, renameInstance, splitPane, type KeepRule } from './tree.ts';
 
 // ---------------------------------------------------------------------------------------------
 // Operations on the whole workbench
@@ -38,9 +38,16 @@ export function settleFocus(workbench: Workbench): Workbench {
  *
  * The split has to happen first: removing the instance can empty its pane and collapse a split,
  * which would leave `path` naming another node. The new pane therefore holds the instance under a
- * temporary id until the original is gone, so the tree never holds the id twice.
+ * temporary id until the original is gone, so the tree never holds the id twice. The pane the
+ * instance leaves stays, empty, when the rule keeps it, beside the new pane.
  */
-export function splitWith(workbench: Workbench, id: string, path: number[], edge: Edge): Workbench {
+export function splitWith(
+    workbench: Workbench,
+    id: string,
+    path: number[],
+    edge: Edge,
+    keep?: KeepRule
+): Workbench {
     const found = findInstance(workbench.root, id);
     if (found === null) return workbench;
     // A page leaf takes a neighbour as a pane does, so a drop on its edge lands beside it.
@@ -55,7 +62,7 @@ export function splitWith(workbench: Workbench, id: string, path: number[], edge
 
     const temporary: Instance = { ...found.instance, id: `${id}#moving` };
     let tree = splitPane(workbench.root, path, dir, temporary, before);
-    tree = closeInstance(tree, id);
+    tree = closeInstance(tree, id, keep);
     tree = renameInstance(tree, temporary.id, id);
     return settleFocus({ ...workbench, root: tree });
 }

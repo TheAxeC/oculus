@@ -65,7 +65,8 @@ function flat(): Pages {
             page('two', pane(['b'])),
             page('three', pane(['c']))
         ],
-        current: 'one'
+        current: 'one',
+        floats: []
     };
 }
 
@@ -79,7 +80,8 @@ function chain(): Pages {
             page('two', split('row', [0.5, 0.5], [pane(['b']), pageLeaf('three')])),
             page('three', pane(['c']))
         ],
-        current: 'one'
+        current: 'one',
+        floats: []
     };
 }
 
@@ -112,7 +114,8 @@ describe('the page leaf in a tree', () => {
     it('reads as an empty pane when it names a page the envelope does not hold', () => {
         const held: Pages = {
             pages: [page('one', split('row', [0.5, 0.5], [pane(['a']), pageLeaf('gone')]))],
-            current: 'one'
+            current: 'one',
+            floats: []
         };
         const read = parseLayout(serialiseLayout(held), 'Page 1');
         expect(read?.pages[0].workbench.root).toEqual(
@@ -145,7 +148,8 @@ describe('the page leaf in a tree', () => {
                 ),
                 page('two', pane(['b']))
             ],
-            current: 'one'
+            current: 'one',
+            floats: []
         };
         const read = parseLayout(serialiseLayout(twice), 'Page 1');
         expect(pageLeaves(read?.pages[0].workbench.root ?? pane([]))).toEqual([
@@ -160,7 +164,8 @@ describe('the page leaf in a tree', () => {
                 page('one', split('row', [0.5, 0.5], [pane(['a']), pageLeaf('two')])),
                 page('two', split('row', [0.5, 0.5], [pane(['b']), pageLeaf('one')]))
             ],
-            current: 'one'
+            current: 'one',
+            floats: []
         };
         const read = parseLayout(serialiseLayout(loop), 'Page 1');
         expect(read).not.toBe(null);
@@ -172,7 +177,8 @@ describe('the page leaf in a tree', () => {
     it('reads a version 4 envelope holding no leaf back as it was written', () => {
         const held: Pages = {
             pages: [page('one', three()), page('two', pane(['z']))],
-            current: 'two'
+            current: 'two',
+            floats: []
         };
         expect(parseLayout(serialiseLayout(held), 'Page 1')).toEqual(held);
     });
@@ -218,7 +224,8 @@ describe('embedPage', () => {
     it('splits the pane at the path and puts the page on the edge', () => {
         const held: Pages = {
             pages: [page('one', pane(['a'])), page('two', pane(['b']))],
-            current: 'one'
+            current: 'one',
+            floats: []
         };
         const next = embedPage(held, 'one', [], 'right', 'two');
         expect(next.pages[0].workbench.root).toEqual(
@@ -230,7 +237,8 @@ describe('embedPage', () => {
     it('puts the page before the pane for the left and the top edge', () => {
         const held: Pages = {
             pages: [page('one', pane(['a'])), page('two', pane(['b']))],
-            current: 'one'
+            current: 'one',
+            floats: []
         };
         expect(embedPage(held, 'one', [], 'top', 'two').pages[0].workbench.root).toEqual(
             split('col', [0.5, 0.5], [pageLeaf('two'), pane(['a'])])
@@ -283,7 +291,8 @@ describe('the store over nested pages', () => {
     it('shows a page at a pane and takes it out again', () => {
         const store = load({
             pages: [page('one', pane(['a'])), page('two', pane(['b']))],
-            current: 'one'
+            current: 'one',
+            floats: []
         });
         store.embedPage('two', [], 'right');
         expect(store.layout('one')).toEqual(
@@ -353,7 +362,9 @@ describe('the store over nested pages', () => {
         const store = load(chain());
         store.closePage('two');
         expect(store.layout('one')).toEqual(pane(['a']));
-        expect(checkPages({ pages: store.pages(), current: store.currentPage().id })).toEqual([]);
+        expect(
+            checkPages({ pages: store.pages(), current: store.currentPage().id, floats: [] })
+        ).toEqual([]);
     });
 
     it('keeps the page a leaf names when another page is closed', () => {
@@ -366,7 +377,11 @@ describe('the store over nested pages', () => {
     });
 
     it('addresses the page on screen when an operation names none', () => {
-        const store = load({ pages: [page('one', three()), newPage('Two')], current: 'one' });
+        const store = load({
+            pages: [page('one', three()), newPage('Two')],
+            current: 'one',
+            floats: []
+        });
         store.closePane([0]);
         expect(store.layout()).toEqual(store.layout('one'));
         expect(panesOf(store.layout('one')).map(({ path }) => path)).toEqual([[0], [1]]);
@@ -375,7 +390,8 @@ describe('the store over nested pages', () => {
     it('folds and expands a child of the page an operation names', () => {
         const store = load({
             pages: [page('one', pane(['z'])), page('two', three())],
-            current: 'one'
+            current: 'one',
+            floats: []
         });
         store.foldPane([1], 'two');
         expect(store.layout('two')).toEqual(folded(three(), [1]));
@@ -386,7 +402,8 @@ describe('the store over nested pages', () => {
     it('maximises and restores a pane of the page an operation names', () => {
         const store = load({
             pages: [page('one', pane(['z'])), page('two', three())],
-            current: 'one'
+            current: 'one',
+            floats: []
         });
         store.maximisePane([1, 0], 'two');
         expect(store.focused('two')).toEqual({ path: [1, 0] });
@@ -461,7 +478,8 @@ describe('one drawing of a page on a screen', () => {
                 page('two', split('row', [0.5, 0.5], [pane(['b']), pageLeaf('three')])),
                 page('three', pane(['c']))
             ],
-            current: 'one'
+            current: 'one',
+            floats: []
         };
     }
 

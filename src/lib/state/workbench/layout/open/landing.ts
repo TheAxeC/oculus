@@ -28,11 +28,12 @@ export function holdsOpened(pane: Pane, opened: (view: ViewId) => boolean): bool
 /**
  * The pane an opened view lands in on a page, or the pane a new one is split off to the right of.
  * In order: the pane holding the newest tab of that kind the page received, while one of them is
- * still on it; the pane the reader is in when it already holds such tabs; an empty pane; a pane
- * holding such tabs and nothing else, which after a reload is the pane the received ones were in;
- * and else a new pane to the right of the pane the reader is in, which the next one then lands in.
- * A pane holding a tool view is taken only when the reader is in it and it already holds opened
- * tabs, so the tool panes of an arrangement never receive a document unasked.
+ * still on it; the pane the reader is in when it already holds such tabs; an empty documents pane,
+ * then an empty terminals pane; a pane holding such tabs and nothing else, which after a reload is
+ * the pane the received ones were in; and else a new pane to the right of the pane the reader is
+ * in, which the next one then lands in. A pane holding a tool view is taken only when the reader is
+ * in it and it already holds opened tabs, so the tool panes of an arrangement never receive a
+ * document unasked.
  */
 export function landingFor(
     tree: Layout,
@@ -51,7 +52,10 @@ export function landingFor(
     const here = paneAt(tree, reader);
     if (here !== null && holdsOpened(here, opened)) return { kind: 'pane', path: reader };
     const all = panes(tree);
-    const empty = all.find(({ pane }) => pane.tabs.length === 0);
+    // An empty documents pane is where a document lands before an empty terminals pane, which a
+    // document takes only when no other pane is empty.
+    const empties = all.filter(({ pane }) => pane.tabs.length === 0);
+    const empty = empties.find(({ pane }) => pane.keeps === undefined) ?? empties.at(0);
     if (empty !== undefined) return { kind: 'pane', path: empty.path };
     const documents = all.find(({ pane }) => !holdsTool(pane, opened));
     if (documents !== undefined) return { kind: 'pane', path: documents.path };

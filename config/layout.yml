@@ -44,13 +44,7 @@ direct_chord: v
 # What each rail page is first made from, by the key its `rail:` entry names, and what Reset gives it back. After that first press the page is the one the reader arranged, kept in the saved layout. An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane), and a tab of the list may be `{ view, state }` to open it in a state of its own, as the sessions page's Files tab follows the selected session with `state: { follow: true }`. `view: []` is an empty pane, the one a view opened for something (a project, a document, a file) lands in. It is the layout tree of DESIGN.md with the instance ids left out, since those are minted fresh when the page is made. An arrangement that does not add up makes no page.
 arrangements:
   focus:
-    root:
-      kind: split
-      dir: row
-      sizes: [0.7, 0.3]
-      children:
-        - { kind: pane, view: focus }
-        - { kind: pane, view: [hpc, usage] }
+    root: { kind: pane, view: focus }
   sessions:
     root:
       kind: split
@@ -118,6 +112,11 @@ arrangements:
           children:
             - { kind: pane, view: [settings, account-setup] }
             - { kind: pane, view: pages }
+
+
+# The floats a browser with no saved layout starts with, and Reset all pages gives back: panes over every page, each one a pane of tabs (`view` is one view id or a list of them, as in an arrangement's pane) placed either docked on an edge of the window, `{ view, dock: left | right | bottom, size }` where `size` is the fraction of the window's width (its height for `bottom`) from 0.1 to 0.6, or free, `{ view, x, y, w, h }` in fractions of the window with `x + w` and `y + h` at most 1 and `w` and `h` at least 0.1. One float may be docked on an edge; of two on one edge the first stays. After that first load the floats are the reader's own, kept in the saved layout beside the pages. An entry that does not add up is left out and the rest kept.
+floats:
+  - { view: [hpc, usage], dock: right, size: 0.3 }
 
 
 # Board (Projects / Archive / Coauthor) chrome: list-view column headers and the per-board search placeholder.

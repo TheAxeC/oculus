@@ -78,7 +78,8 @@ export const pagesOf = (...held: Record<string, unknown>[]): Pages => ({
         workbench: { root: pane([`t${at}`]) },
         ...page
     })),
-    current: 'p0'
+    current: 'p0',
+    floats: []
 });
 
 /** A version 4 envelope of one page, with the fields handed in laid over it. */

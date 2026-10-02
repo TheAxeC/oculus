@@ -9,6 +9,7 @@
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
     import type { Bookmark } from '$lib/shell/rail/rail';
+    import { parseFloats } from '$lib/state/workbench/navigation/arrangement';
     import { readChord, readDocs, readGroups } from '$lib/state/workbench/navigation/catalogue';
     import {
         configRail,
@@ -91,7 +92,8 @@
 
     /**
      * What the shell is handed out of the merged config: the groups, the direct chord and the
-     * documents the chords count into, and the rail's pages with their arrangements. Each reader is
+     * documents the chords count into, the rail's pages with their arrangements, and the floats a
+     * first load starts with. Each reader is
      * state/workbench/navigation's, which the Views catalogue reads the same keys through.
      */
     const merged = $derived(config()?.config);
@@ -99,6 +101,7 @@
     const directChord = $derived(readChord(merged?.direct_chord));
     const docs = $derived(readDocs(merged?.docs));
     const pages = $derived(railPages(merged));
+    const floats = $derived(parseFloats(merged?.floats));
 
     /**
      * The roots the file routes serve, the current workspace's first and then every other's, which
@@ -196,6 +199,7 @@
     {groups}
     {docs}
     {pages}
+    {floats}
     configured={merged !== undefined}
     {saved}
     {editRail}

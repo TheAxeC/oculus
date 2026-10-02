@@ -11,13 +11,21 @@ import {
     createWorkbenchKeys,
     typingIn
 } from '../../../src/lib/shell/keys/workbench-keys.svelte.ts';
-import { paneAt } from '../../../src/lib/state/workbench/layout/index.ts';
+import { paneAt, serialiseLayout } from '../../../src/lib/state/workbench/layout/index.ts';
 import { readTab } from '../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { pageLeaf } from '../../../src/lib/state/workbench/layout/index.ts';
-import { fakeStorage, instance, pane, split } from '../../state/workbench/layout/layout-fixture.ts';
+import {
+    fakeStorage,
+    floating,
+    heldPages,
+    instance,
+    pageAround,
+    pane,
+    split
+} from '../../state/workbench/layout/layout-fixture.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 /**
@@ -312,6 +320,35 @@ describe('a pane of a page shown inside another', () => {
         keys.keys(event);
         expect(client.layout.focused(second)).toBe(null);
         expect(prevented).toHaveBeenCalledOnce();
+    });
+});
+
+// A float is a host a pane can name by id, as a nested page is: the pane's `data-pane-page` is the
+// float's id, and the digit and the bracket act on the float's own pane.
+describe('a pane of a float', () => {
+    function withFloat(): void {
+        const held = heldPages(
+            [pageAround('main', pane(['a']))],
+            [floating('fl', ['x', 'y', 'z'])]
+        );
+        client = createClientState();
+        client.layout.loadLayout(fakeStorage(serialiseLayout(held)));
+    }
+
+    it('activates the numbered tab of the float, in the float pane', () => {
+        withFloat();
+        const keys = handler('', 'fl');
+        keys.keys(keyEvent('2').event);
+        expect(paneAt(client.layout.layout('fl'), [])?.active).toBe('y');
+        expect(client.layout.floats()[0].pane.active).toBe('y');
+        expect(paneAt(client.layout.layout('main'), [])?.active).toBe('a');
+    });
+
+    it('cycles the tabs of the float, in the float pane', () => {
+        withFloat();
+        const keys = handler('', 'fl');
+        keys.keys(keyEvent(']').event);
+        expect(client.layout.floats()[0].pane.active).toBe('y');
     });
 });
 

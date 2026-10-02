@@ -339,6 +339,17 @@ options:
             fields:
                 key: a page key that a rail entry names
                 root: the page's one layout tree, a split of dir, sizes and children or a pane of view, where view is one view id or a list of tabs and a tab may be a view id or a view with its own state
+        floats:
+            section: Rail and pages
+            description: The floats a browser with no saved layout starts with, and what Reset all pages gives back. A float is a pane over every page, docked on an edge of the window or free. After the first load the floats are the reader's own, kept in the saved layout. An entry that does not add up is left out and the rest kept, and of two entries docked on one edge the first stays.
+            fields:
+                view: one view id or a list of tabs, as an arrangement's pane takes it
+                dock: left, right or bottom, for a float docked on that edge of the window
+                size: for a docked float, its share of the window's width, or of its height for bottom, from 0.1 to 0.6
+                x: for a free float, its left edge as a fraction of the window's width
+                y: for a free float, its top edge as a fraction of the window's height
+                w: for a free float, its width as a fraction of the window's width, at least 0.1
+                h: for a free float, its height as a fraction of the window's height, at least 0.1
         docs:
             section: Rail and pages
             description: Hub documents listed in the view catalogue. Each is one entry inside its group, listed after the group's views, and opens the doc view. An entry that is not three non-empty strings is dropped, and a path with no file there draws the view's own missing line.

@@ -4,11 +4,13 @@
 // reactive and the one place it is saved.
 //
 // The saved unit is every page: each one a whole workbench (one tree and the maximised pane, if
-// there is one) with a name and the rail button it came from, and which page is on screen. Every
-// operation that names a path names the page it addresses, and the page on screen is what it means
-// when it names none, so a caller that knows nothing of pages reads and writes the one on screen.
-// Every change reaches the store through apply() or savePages(), which are also what save, so
-// neither an arrangement nor a page is changed without being written down.
+// there is one) with a name and the rail button it came from, which page is on screen, and the
+// floats beside the pages: each a pane drawn over every page, addressed by its id wherever a page
+// id is taken and never listed as a page. Every operation that names a path names the page it
+// addresses, and the page on screen is what it means when it names none, so a caller that knows
+// nothing of pages reads and writes the one on screen. Every change reaches the store through
+// apply() or savePages(), which are also what save, so neither an arrangement nor a page is changed
+// without being written down.
 //
 // What the factory keeps is the reactive page list and the write path over it. Everything a caller
 // does to the instances in that list is built beside the factory, one module per concern under
@@ -20,6 +22,7 @@
 import { item } from '../../data/helpers/guards.ts';
 import type { UiStore } from './ui.svelte.ts';
 import {
+    adoptFloats as adoptFloatsIn,
     clearPage,
     createAttention,
     createAway,
@@ -28,25 +31,43 @@ import {
     createShowInFiles,
     createStorage,
     defaultPages,
+    dockFloat as dockFloatIn,
     embedPage as embedIn,
     expand,
     findInstance,
+    floatPane as floatPaneIn,
+    floatsFrom,
+    floatTab as floatTabIn,
     focusedPane,
     fold,
+    freeFloat as freeFloatIn,
+    hostsOf,
+    isPage,
     LAYOUT_KEY,
     maximise,
+    needsFloats,
     newPage,
     parseLayout,
     parseWorkbench,
+    placeFloat as placeFloatIn,
     PREVIOUS_KEY,
     restore,
+    returnFloat as returnFloatIn,
     settleFocus,
     showable,
     tabsOf,
     unembedPage as unembedIn,
+    writeHost,
+    floatHost,
+    type DockEdge,
     type Edge,
+    type Float,
+    type FloatPlace,
+    type FloatSpec,
     type Focus,
+    type Host,
     type Instance,
+    type KeepRule,
     type LayoutAccess,
     type Layout,
     type OpenOptions,
@@ -58,6 +79,7 @@ import {
     type ViewId,
     type Workbench
 } from './layout/index.ts';
+import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
 import { parseArrangement } from './navigation/arrangement.ts';
 import { resetPlan, type RailSource } from './navigation/pages.ts';
 import { t } from '../shared/words/text.ts';
@@ -71,8 +93,18 @@ const GONE: Workbench = { root: { kind: 'pane', tabs: [], active: '' } };
 /** The pages one client is rendering, and their persistence. */
 export type LayoutStore = {
     currentPage: () => Page;
+    /** Every page, never a float. */
     pages: () => Page[];
+    /** The page with this id; a float's id names no page. */
     pageOf: (id: string) => Page | null;
+    /** The floats, in the order they were made. */
+    floats: () => Float[];
+    /** Every page and every float as a host, pages first: what a walk over every tab needs. */
+    hosts: () => Host[];
+    /** The page or float with this id. */
+    hostOf: (id: string) => Host | null;
+    /** The page or float whose tree holds this instance, or null when none does. */
+    holding: (id: string) => Host | null;
     touchPane: (page: string) => void;
     workbench: (page?: string) => Workbench;
     layout: (page?: string) => Layout;
@@ -101,14 +133,34 @@ export type LayoutStore = {
      * Put the first rail page on screen in place of the default page, on a browser that had no
      * saved layout and has changed nothing since. Anywhere else it changes nothing.
      */
-    startOnRailPage: (key: string, label: string, raw: unknown) => void;
+    startOnRailPage: (key: string, label: string, raw: unknown, floats: FloatSpec[]) => void;
     /**
      * Whether a browser with no saved layout still waits for the rail list to choose its first
      * page, so the shell draws no page until it has; false once a page was chosen or saved.
      */
     startingFresh: () => boolean;
     /** The rail list came and names no page: the default page stays, and is drawn. */
-    keepDefaultPage: () => void;
+    keepDefaultPage: (floats: FloatSpec[]) => void;
+    /**
+     * Take the shipped floats into a layout that was saved before there were floats, once: each
+     * tab of a view a shipped float holds moves into it. A layout saved with floats is the
+     * reader's own and changes nothing.
+     */
+    adoptFloats: (floats: FloatSpec[]) => void;
+    /** Put a page's pane over every page as a free float. */
+    floatPane: (path: number[], page?: string) => void;
+    /**
+     * Put one tab over every page as a free float whose corner is the point, in window fractions.
+     */
+    floatTab: (id: string, at: { x: number; y: number }) => void;
+    /** Dock a float on an edge, merging its tabs into the float already docked there. */
+    dockFloat: (id: string, edge: DockEdge) => void;
+    /** Float a docked float again, in the middle of the window. */
+    freeFloat: (id: string) => void;
+    /** Put a float's tabs back into a page, which is the page on screen unless one is named. */
+    returnFloat: (id: string, page?: string) => void;
+    /** Move or resize a float; a place that does not fit the window changes nothing. */
+    placeFloat: (id: string, place: FloatPlace) => void;
     /**
      * The id of the page that was on screen before the one on screen now, while that page is still
      * in the list; null on a fresh load and after it was closed. It is not saved.
@@ -162,9 +214,10 @@ export type LayoutStore = {
     /**
      * Rebuild every saved page a rail button carries the key of from that button's arrangement and
      * remove every saved page carrying a key no button carries (navigation/pages.ts's resetPlan). A
-     * page with no rail key is left alone. Answers whether anything changed.
+     * page with no rail key is left alone. The floats held are replaced by the shipped ones.
+     * Answers whether anything changed.
      */
-    resetPages: (rail: readonly RailSource[]) => boolean;
+    resetPages: (rail: readonly RailSource[], floats: FloatSpec[]) => boolean;
     /**
      * Show one path in the file browser: the Files tab of the page the reader is in is activated
      * (the panes are restored first when it sits behind a maximised pane), or one is opened there
@@ -194,6 +247,13 @@ export function createLayout(ui: UiStore): LayoutStore {
     /** The page on screen before the current one, which previousPage answers while it is there. */
     let previous: string | null = $state(null);
 
+    /**
+     * Whether the pages were read from an envelope written before floats and the shipped floats
+     * are not taken in yet. Until they are, a save keeps that envelope's form while no float is
+     * held, so a reload before they arrive still finds a layout that needs them.
+     */
+    let pendingFloats = false;
+
     /** Where apply() saves, once loadLayout has named it. Nothing is saved before that. */
     const storage = createStorage();
 
@@ -220,25 +280,35 @@ export function createLayout(ui: UiStore): LayoutStore {
         return store.current.pages.find((page) => page.id === id) ?? null;
     }
 
-    /**
-     * The page an operation addresses: the one its page argument names, the page on screen when it
-     * names none, and nothing at all when it names a page the list does not hold. An operation
-     * given an id of a page that is gone therefore changes nothing rather than acting on another
-     * page.
-     */
-    function at(page?: string): Page | null {
-        return page === undefined ? currentPage() : pageOf(page);
+    /** The floats, in the order they were made. */
+    function floats(): Float[] {
+        return store.current.floats;
     }
 
-    /** The page whose tree holds an instance, or null when no page does. */
-    function holding(id: string): Page | null {
+    /** The page or float with this id: a float is a workbench of its one pane. */
+    function hostOf(id: string): Host | null {
+        const float = store.current.floats.find((one) => one.id === id);
+        return pageOf(id) ?? (float === undefined ? null : floatHost(float));
+    }
+
+    /**
+     * The page or float an operation addresses: the one its page argument names, the page on screen
+     * when it names none, and nothing at all when it names one that is not held. An operation given
+     * an id that is gone therefore changes nothing rather than acting on another page.
+     */
+    function at(page?: string): Host | null {
+        return page === undefined ? currentPage() : hostOf(page);
+    }
+
+    /** The page or float whose tree holds an instance, or null when none does. */
+    function holding(id: string): Host | null {
         return (
-            store.current.pages.find((page) => findInstance(page.workbench.root, id) !== null) ??
+            hostsOf(store.current).find((host) => findInstance(host.workbench.root, id) !== null) ??
             null
         );
     }
 
-    /** The whole arrangement of a page, and an empty one for an id naming no page. */
+    /** The whole arrangement of a page or float, and an empty one for an id naming neither. */
     function workbench(page?: string): Workbench {
         return at(page)?.workbench ?? GONE;
     }
@@ -253,7 +323,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         held: () => store.current,
         save: savePages,
         currentPage,
-        pageOf,
+        pageOf: hostOf,
         at,
         holding,
         workbench,
@@ -274,8 +344,18 @@ export function createLayout(ui: UiStore): LayoutStore {
     /** Which views are opened for something, as the registry says once it is registered. */
     let openedRule: (view: ViewId) => boolean = () => false;
 
+    /**
+     * What a pane is left holding when its last tab goes: an empty terminals pane for a Terminal
+     * tab and an empty documents pane for a view opened for something (layout/tree.ts keeps at most
+     * one of each kind on a page).
+     */
+    const keepRule: KeepRule = (view) => {
+        if (view === TERMINAL_VIEW) return 'terminals';
+        return openedRule(view) ? 'documents' : null;
+    };
+
     const attention = createAttention(access, where);
-    const instances = createInstances(access, attention);
+    const instances = createInstances(access, attention, keepRule);
     const opening = createOpening(access, attention, instances.keepPreview, (view) =>
         openedRule(view)
     );
@@ -304,9 +384,11 @@ export function createLayout(ui: UiStore): LayoutStore {
         if (saved === null) return;
         const shown = store.current.current;
         fresh = false;
+        pendingFloats = needsFloats(raw);
         store.current = {
             pages: saved.pages,
-            current: saved.pages.some((page) => page.id === shown) ? shown : saved.current
+            current: saved.pages.some((page) => page.id === shown) ? shown : saved.current,
+            floats: saved.floats
         };
     }
 
@@ -335,10 +417,12 @@ export function createLayout(ui: UiStore): LayoutStore {
             const shown = newPage(t('ui.page_sessions'), parsed.pages[0].workbench);
             // Written at once: the version 2 envelope under LAYOUT_KEY still holds only what was on
             // screen, so a reload before the next change would lose the page the held one became.
-            savePages({ pages: [newPage(first, previous), shown], current: shown.id });
+            pendingFloats = true;
+            savePages({ pages: [newPage(first, previous), shown], current: shown.id, floats: [] });
         } else {
             store.current = parsed ?? defaultPages(first);
             fresh = parsed === null;
+            pendingFloats = parsed !== null && needsFloats(raw);
         }
         if (previous !== null) storage.remember(PREVIOUS_KEY, '');
         return parsed !== null;
@@ -364,6 +448,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         if (named !== undefined) {
             attention.forgetTouched();
             savePages({
+                ...store.current,
                 pages: held.map((page) => (page.id === named.id ? { ...page, rail: key } : page)),
                 current: named.id
             });
@@ -381,17 +466,35 @@ export function createLayout(ui: UiStore): LayoutStore {
      * arrangement in place of the default page, so the reader starts on a page a button owns and
      * digit 1 shows it again. Once any change was saved the pages are the reader's and stay.
      */
-    function startOnRailPage(key: string, label: string, raw: unknown): void {
+    function startOnRailPage(key: string, label: string, raw: unknown, shipped: FloatSpec[]): void {
         if (!fresh) return;
         const next = key === '' ? null : parseArrangement(raw);
         if (next === null) {
             // The first entry names nothing drawable: the default page stays the reader's first.
-            fresh = false;
+            keepDefaultPage(shipped);
             return;
         }
         const page = newPage(label, next, key);
         attention.forgetTouched();
-        savePages({ pages: [page], current: page.id });
+        savePages({ pages: [page], current: page.id, floats: floatsFrom(shipped) });
+    }
+
+    /** The default page stays the reader's first, beside the shipped floats. */
+    function keepDefaultPage(shipped: FloatSpec[]): void {
+        if (!fresh) return;
+        fresh = false;
+        if (shipped.length > 0) savePages({ ...store.current, floats: floatsFrom(shipped) });
+    }
+
+    /**
+     * Take the shipped floats into pages read from an envelope written before floats. It happens
+     * once: the save that follows writes the current envelope, which a later load takes as the
+     * reader's own.
+     */
+    function adoptFloats(shipped: FloatSpec[]): void {
+        if (!pendingFloats) return;
+        pendingFloats = false;
+        savePages(adoptFloatsIn(store.current, shipped));
     }
 
     /** The page on screen before the current one, while it is still one of the pages. */
@@ -408,7 +511,7 @@ export function createLayout(ui: UiStore): LayoutStore {
 
     /** Put a page at the end of the page list and show it. */
     function addPage(page: Page): void {
-        savePages({ pages: [...store.current.pages, page], current: page.id });
+        savePages({ ...store.current, pages: [...store.current.pages, page], current: page.id });
     }
 
     /** Show a page. A page id naming none changes nothing. */
@@ -443,7 +546,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         attention.forgetPage(id);
         const left = held.filter((page) => page.id !== id);
         if (left.length === 0) {
-            savePages(defaultPages(t('ui.page_default', 1)));
+            savePages({ ...defaultPages(t('ui.page_default', 1)), floats: store.current.floats });
         } else {
             const next =
                 store.current.current === id
@@ -451,20 +554,21 @@ export function createLayout(ui: UiStore): LayoutStore {
                     : store.current.current;
             // A page that is gone is shown nowhere: every leaf naming it is taken out, so no tree
             // is left pointing at a page the list no longer holds.
-            savePages(clearPage({ pages: left, current: next }, id));
+            savePages(clearPage({ pages: left, current: next, floats: store.current.floats }, id));
         }
         instances.forgetTabs(tabsOf(closing.workbench.root));
     }
 
-    /** Make an arrangement a page's and save every page. An id naming no page changes nothing. */
+    /**
+     * Make an arrangement a page's or float's and save every page. An id naming neither changes
+     * nothing. A float takes one pane: a split is refused, and a pane left with no tab removes it.
+     */
     function apply(next: Workbench, page?: string): void {
-        const held = store.current;
         const id = at(page)?.id;
         if (id === undefined) return;
-        savePages({
-            ...held,
-            pages: held.pages.map((one) => (one.id === id ? { ...one, workbench: next } : one))
-        });
+        const held = store.current;
+        const written = writeHost(held, id, next);
+        if (written !== held) savePages(written);
     }
 
     /** Make a set of pages current and save it. */
@@ -472,7 +576,10 @@ export function createLayout(ui: UiStore): LayoutStore {
         fresh = false;
         if (next.current !== store.current.current) previous = store.current.current;
         store.current = next;
-        storage.write(next);
+        // A reader who made a float on a layout still waiting for the shipped floats keeps their
+        // own.
+        if (next.floats.length > 0) pendingFloats = false;
+        storage.write(next, pendingFloats);
     }
 
     /** Apply an operation to a page's tree, which is how every tree edit reaches the store. */
@@ -568,10 +675,17 @@ export function createLayout(ui: UiStore): LayoutStore {
      * gone removed, in one save. A removed page is shown nowhere afterwards, as closing it leaves
      * it, and the page on screen moves to the first page left when it was one of them.
      */
-    function resetPages(rail: readonly RailSource[]): boolean {
+    function resetPages(rail: readonly RailSource[], shipped: FloatSpec[]): boolean {
         const held = store.current;
         const plan = resetPlan(held.pages, rail);
-        if (plan.rebuilt.length === 0 && plan.removed.length === 0) return false;
+        if (
+            plan.rebuilt.length === 0 &&
+            plan.removed.length === 0 &&
+            held.floats.length === 0 &&
+            shipped.length === 0
+        ) {
+            return false;
+        }
         const gone = new Set(plan.removed.map((page) => page.id));
         const pages = held.pages.flatMap((page): Page[] => {
             if (gone.has(page.id)) return [];
@@ -582,21 +696,53 @@ export function createLayout(ui: UiStore): LayoutStore {
             }
             return [{ ...page, label: source.label, workbench: made }];
         });
+        const floats = floatsFrom(shipped);
         let next: Pages =
             pages.length === 0
-                ? defaultPages(t('ui.page_default', 1))
+                ? { ...defaultPages(t('ui.page_default', 1)), floats }
                 : {
                       pages,
-                      current: gone.has(held.current) ? pages[0].id : held.current
+                      current: gone.has(held.current) ? pages[0].id : held.current,
+                      floats
                   };
         for (const id of gone) next = clearPage(next, id);
         for (const page of [...plan.rebuilt, ...plan.removed]) attention.forgetPage(page.id);
+        for (const float of held.floats) attention.forgetPage(float.id);
         attention.forgetTouched();
         savePages(next);
-        instances.forgetTabs(
-            [...plan.rebuilt, ...plan.removed].flatMap((page) => tabsOf(page.workbench.root))
-        );
+        instances.forgetTabs([
+            ...[...plan.rebuilt, ...plan.removed].flatMap((page) => tabsOf(page.workbench.root)),
+            ...held.floats.flatMap((float) => float.pane.tabs)
+        ]);
         return true;
+    }
+
+    /** Save the pages a float operation answered, when it changed any. */
+    function floated(next: Pages): void {
+        if (next !== store.current) savePages(next);
+    }
+
+    /** The id of the page an argument names, the page on screen for none; undefined for a float. */
+    function pageIdOf(page?: string): string | undefined {
+        const host = at(page);
+        return host !== null && isPage(host) ? host.id : undefined;
+    }
+
+    /** Put a page's pane over every page as a free float. */
+    function floatPane(path: number[], page?: string): void {
+        const id = pageIdOf(page);
+        if (id !== undefined) floated(floatPaneIn(store.current, id, path));
+    }
+
+    /** Put a float's tabs back into a page, the page on screen unless one is named. */
+    function returnFloat(id: string, page?: string): void {
+        const to = pageIdOf(page);
+        if (to !== undefined) floated(returnFloatIn(store.current, id, to));
+    }
+
+    /** Move or resize a float. */
+    function placeFloat(id: string, place: FloatPlace): void {
+        floated(placeFloatIn(store.current, id, place));
     }
 
     /**
@@ -612,6 +758,10 @@ export function createLayout(ui: UiStore): LayoutStore {
         currentPage,
         pages,
         pageOf,
+        floats,
+        hosts: () => hostsOf(store.current),
+        hostOf,
+        holding,
         touchPane: attention.touchPane,
         workbench,
         layout,
@@ -631,9 +781,14 @@ export function createLayout(ui: UiStore): LayoutStore {
         openRailPage,
         startOnRailPage,
         startingFresh: () => fresh,
-        keepDefaultPage: () => {
-            fresh = false;
-        },
+        keepDefaultPage,
+        adoptFloats,
+        floatPane,
+        floatTab: (id, point) => floated(floatTabIn(store.current, id, point, keepRule)),
+        dockFloat: (id, edge) => floated(dockFloatIn(store.current, id, edge)),
+        freeFloat: (id) => floated(freeFloatIn(store.current, id)),
+        returnFloat,
+        placeFloat,
         previousPage,
         openPage,
         switchPage,

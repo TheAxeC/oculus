@@ -141,11 +141,13 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
      * The page the reader is in: the one shown at the pane that last took the pointer or the
      * keyboard, and the page on screen when no such pane is drawn any more. A chord read outside
      * the trees reads it so a view it opens lands in the page being read rather than in the one
-     * around it.
+     * around it. A float is no page: a view a chord opens while the reader is in a float lands in
+     * the page on screen, as a view opened with no page named does.
      */
     function pageOf(): string {
         const page = lastPagePane?.isConnected === true ? lastPagePane.dataset.panePage : undefined;
-        return page ?? options.layout.currentPage().id;
+        const floated = options.layout.floats().some((one) => one.id === page);
+        return page === undefined || floated ? options.layout.currentPage().id : page;
     }
 
     /** Apply one resolved key action to shell state or the focused pane's DOM. */

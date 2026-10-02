@@ -100,7 +100,7 @@
 
     const {
         entities: { config },
-        layout: { instanceLayoutState, pages, restateInstance },
+        layout: { holding, instanceLayoutState, restateInstance, hosts },
         selectors: { sessionsByWorkspace },
         terminals: {
             attachable,
@@ -139,10 +139,13 @@
     /** The rows marked current: the terminals the row draws, or the shown one alone. */
     const current = $derived(split ? tab.row : tab.shown === null ? [] : [tab.shown]);
 
-    /** The terminals the other Terminal tabs own, on every page: what Join Terminals offers. */
+    /**
+     * The terminals the other Terminal tabs own, on every page and float: what Join Terminals
+     * offers.
+     */
     const others = $derived(
         ownedElsewhere(
-            pages().flatMap((one) => tabsOf(one.workbench.root)),
+            hosts().flatMap((one) => tabsOf(one.workbench.root)),
             instance.id,
             terminalById
         )
@@ -298,12 +301,9 @@
         restate(withShares(tab, resizedShares(tab.shares, at, delta, rowSpace, handles)));
     }
 
-    /** The page holding this tab, which a row dropped on it moves to. */
+    /** The page or float holding this tab, which a row dropped on it moves to. */
     function pageId(): string {
-        const holding = pages().find((page) =>
-            tabsOf(page.workbench.root).some((one) => one.id === instance.id)
-        );
-        return holding?.id ?? '';
+        return holding(instance.id)?.id ?? '';
     }
 
     /** A row of another tab dragged over this tab's body while it draws no list. */
