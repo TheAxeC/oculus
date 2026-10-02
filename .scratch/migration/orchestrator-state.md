@@ -73,7 +73,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   reviewer_report: agents/reviews/M3-refuter.md (first run); reviewer aca1b5de569d19f5b at ordo-high, served claude-opus-5-5 (read 11:53); 336,650 tokens, 84 tool uses, 25.0 min; every item holds and every case met; 4 Spec, 2 Proof, 6 Standards, 1 Behaviour findings, none with a verdict
   shared_paths: with D18, `data/model/index.ts` (D18 a channel type, M3 the entities' `resources`), `data/sources/config/settings.ts` (separate readers), `config/catalogs/options.yml` and `config/behavior.yml` (separate blocks), `server/root/live-settings.ts` (D18 `processes` in `LiveStart` and `LiveTargets`, M3 the HPC host and `resources`), `server/root/context.ts` (separate starts; M3 adds at most six lines, so the second landing keeps it under 900), `config/text/views/system/hpc.yml` (D18 moves it, M3 adds lines; carried into the moved file at the second landing), `DESIGN.md`, `HELP.md` and the config and context tests (separate lines); with X3a, `settings.ts`, `options.yml`, `behavior.yml`, `config-folder.test.ts`, `DESIGN.md`, `HELP.md` (separate blocks and lines); with Q88c, `options.yml`, `config-folder.test.ts`, `DESIGN.md`, `HELP.md` (separate blocks and lines); `docs/diagrams/`, regenerated at each landing; X3a landed before it: `server/root/context.ts` carries X3a's lines; M3's repair round also carries Z255 (`~/` read as the home folder for every `local.yml` path key)
   landing: not-started
-  round: 1 (agents/briefs/M3-round1.md, sent 2026-10-02 12:45; carries Z255)
+  round: 1 (agents/briefs/M3-round1.md, sent 2026-10-02 12:20; carries Z255)
 - step: A1
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -89,6 +89,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with Q88c, `repositories.ts` (A1 `DiffSubject`, `diffState`, `heldDiffShape`; Q88c other functions), `repositories.svelte.ts` (A1 `openChange`; Q88c the menus' wiring), `config/text/views/sessions/changes.yml` (A1 the `sessions:` group, Q88c the `git:` group), `tests/views/sources/repositories/` (A1 `diff-pane.test.ts`, which follows Q88c's split if Q88c makes one); with X3a, `state/sources/explorer/follow.ts` (A1 one field in `followedDiffTab`, X3a new modules beside it) and `tests/views/whole/type-scale.test.ts` (separate rows), as with D18; `HELP.md` 87 and 132 and `DESIGN.md` 399 against the other steps' lines; `docs/diagrams/`, regenerated at each landing. Each is added lines in separate places.; X3a landed before it: `repositories.ts` `DiffSubject` and `diffState` carry X3a's `save` beside A1's `session`, merged by hand at A1's landing
   landing: not-started
   round: 1 (agents/briefs/A1-round1.md, sent 2026-10-02 12:05)
+- step: D32
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 12:31)
+  session_id: a5cf8bf3bb8e620a6 (launched 2026-10-02 12:30 local)
+  worktree: .agents/worktrees/D32
+  base: bdc0ac53
+  launched: 2026-10-02 12:30 local
+  report: agents/reviews/D32-report.md
+  brief_check: agents/reviews/D32-brief-check.md; a56701fda4fc5b483 at ordo-high, served claude-opus-5-5; 287,991 tokens, 100 tool uses, 14.7 min (881,464 ms); every finding closed in the brief, Z264 and Z265 booked
+  shared_paths: with A1, `state/sources/repositories/repositories.ts` (separate fields of `DiffSubject` and `heldDiffShape`, one line each in `sideOf`, adjacent and merged by hand at the second landing), `tests/views/whole/type-scale.test.ts` (separate rows), `HELP.md`, `DESIGN.md` (separate lines); with Q88c, `server/files/fs/ops.ts` (Q88c two `export` words, D32 the replace and preview branches), `repositories.ts` (Q88c `:450-830`, D32 `:110-230`), `state/sessions/source.svelte.ts` (Q88c the HEAD tab, D32 `reloadSource` and line 145), `config/text/ui.yml` (separate keys), `HELP.md` (Q88c line 113, D32 115 and 162-170), `DESIGN.md`; D32 adds no file to and moves none out of `tests/server/files/` or `tests/state/sources/`, which Q88c splits; with D18, `state/client/entities.svelte.ts` (separate functions), `package.json` and the lockfile (regenerated with `npm install` at the second landing), `HELP.md`, `DESIGN.md`; with M3, `HELP.md`, `DESIGN.md` (separate lines)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -184,8 +197,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
-- Z265 (2026-10-02 13:20, D32's brief check): a refusal's own text reaches the reader only as a catalog word; the search route answers words; narrows Z259 (the orchestrator, automode).
-- Z264 (2026-10-02 13:20, D32's brief check): replace exactly as VS Code's ReplacePattern and Preserve Case, emulated over ripgrep's groups; differences listed in the brief (the orchestrator, automode).
+- Z265 (2026-10-02 12:25, D32's brief check): a refusal's own text reaches the reader only as a catalog word; the search route answers words; narrows Z259 (the orchestrator, automode).
+- Z264 (2026-10-02 12:25, D32's brief check): replace exactly as VS Code's ReplacePattern and Preserve Case, emulated over ripgrep's groups; differences listed in the brief (the orchestrator, automode).
 - Z262 (2026-10-02 12:40, X3c): the tab tooltip names the full path; Open Editors drag reorders tabs; the Files tree's breadcrumb goes once X3c's file-tab breadcrumbs are in (the orchestrator, automode).
 - Z261 (2026-10-02 12:40, D25): `editor.paint_limit_kb` default 20480, large files coloured as in VS Code (the orchestrator, automode).
 - Z260 (2026-10-02 12:40, D25): sticky scroll from Markdown and LaTeX heading symbols and C-family bracket folding (the user).
