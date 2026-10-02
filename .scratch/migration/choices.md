@@ -997,6 +997,10 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z305 and Z280 (2026-10-03, Axel's rulings)
+
+Z305: (a), placeholder values as environment variables, at D17's landing. Z280: (c), VS Code's formatter setting with none, latexindent, tex-fmt and badness, default none, a path per program, at D14's landing, tex-fmt installed. Ruled by Axel; booked in `plan.md` Rulings and the state file's closed log.
+
 ## Z306 (2026-10-03, S4's round 2 review, R2-b): list values in key/value families
 
 Chosen: the options catalog decides. `holds: lists`, which Z302 put on a family whose keys hold lists of records, also marks a key/value family whose keys hold lists of values; `sources.yml` `languages` carries it. The write reads the catalog entry, so an emptied `read_limits`, `deck.tag_tones` or `tab_split` refuses a list, and Undo of the write that emptied `languages` still takes lists, since the catalog says so. Fixed at landing on main, since S4's rounds are spent.
@@ -1088,6 +1092,16 @@ Not chosen:
 - Leaving it: the lazy option; D33's Problems view would show nothing for a task not on screen.
 
 Where it applies: D17. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z297 (2026-10-02, the terminal look): two terminal defects
+
+Chosen: built in D20, which starts agents in Terminal tabs from a task or a worktree and so works in the terminal views and their start: an armed Kill draws armed, and a Terminal tab whose shell is starting draws the terminal starting, never the composer. `TerminalList.svelte` and `terminals.svelte.ts` join D20's paths at its /spec.
+
+Not chosen:
+- A new step: it needs Axel's ruling.
+- Leaving them: both are defects of delivered work.
+
+Where it applies: D20. Booked in the state file's closed log and `plan.md` Rulings.
 
 ## Z296 (2026-10-02, the U4 look): a long word crossing its box in a narrow Focus pane
 
