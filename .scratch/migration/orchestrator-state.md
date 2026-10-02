@@ -72,6 +72,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with D35, `server/root/context.ts` (D35 its `serverMover` and settings reads; D24 lines 256-261, the portfolio watcher's paths), `DESIGN.md` and `HELP.md` (different lines), `options.yml` (D35 591-622; D24 511); with X3a, `options.yml` (the `roots` description; D24 511), `DESIGN.md` and `HELP.md` rows, `type-scale.test.ts` and `config-folder.test.ts` (separate rows and cases); with L4, `config/layout.yml` (L4 45-53 and `floats:`; D24 73), `watch/portfolio.ts` (L4 only if its check refuses a key), `config-folder.test.ts`; with M4, `data/index.ts` (M4 114-116, 198-223, 235; D24 the signature and the raw portfolio at 229-249), `model-entities.ts` (M4 the slide and deck fields; D24 `Tier`) and `integrity.test.ts` (separate cases): separate hunks, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   round: 1 (agents/briefs/D24-round1.md, sent 06:40)
+- step: Q88c
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 06:53)
+  session_id: aaefbd170dbbfe70a (launched 2026-10-02 06:52 local)
+  worktree: .agents/worktrees/Q88c
+  base: d1bd21f1
+  launched: 2026-10-02 06:52 local
+  report: agents/reviews/Q88c-report.md
+  brief_check: agents/reviews/Q88c-brief-check.md (run 2026-10-01 on the earlier draft, not run again: the spec skill checks a step once; its findings closed under its Closed heading); claude-sonnet-5-5, 78,134 tokens, 94 tool uses, 15.0 min
+  shared_paths: with X3a, `server/files/fs/ops.ts` (Q88c the word `export` on two functions; X3a other functions), `server/files/fs.ts` (one import line), `routes/+page.svelte` (one listener), `DESIGN.md:128` (both add sentences to one paragraph, combined at landing), `options.yml` (different blocks); with D24, `rail-badges.svelte.ts` (each its own badge function and input), `options.yml` (511 against the `appearance.yml:` block), `DESIGN.md` (after 404 against 128, 359, 395); with D35, `options.yml` (different blocks), `HELP.md` (216 and 236 against 44, 113, 171-213, 222). Each merge is additive in separate hunks or one paragraph combined by hand.
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -140,7 +153,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- **Z241 (2026-10-02 07:10, Q88c): Delete Branch on a branch git calls not fully merged.** VS Code runs `git branch -d`, and when git refuses because the branch is not fully merged it asks "The branch '{0}' is not fully merged. Delete anyway?" and runs `git branch -D`. Oculus's `DESIGN.md:128` says "no form carries `--force`", the `git-write.ts` comment on push says "Nothing is ever forced", and `tests/server/git/git-write.test.ts:571-575` asserts no file of `server/git` contains `--force`. `-D` is `--delete --force`, so VS Code's retry meets that rule. Q88c is built with `-d` only: an unmerged branch is refused with git's reason and kept.
+- **Z241 (2026-10-02 06:50, Q88c): Delete Branch on a branch git calls not fully merged.** VS Code runs `git branch -d`, and when git refuses because the branch is not fully merged it asks "The branch '{0}' is not fully merged. Delete anyway?" and runs `git branch -D`. Oculus's `DESIGN.md:128` says "no form carries `--force`", the `git-write.ts` comment on push says "Nothing is ever forced", and `tests/server/git/git-write.test.ts:571-575` asserts no file of `server/git` contains `--force`. `-D` is `--delete --force`, so VS Code's retry meets that rule. Q88c is built with `-d` only: an unmerged branch is refused with git's reason and kept.
   - (a) Keep `-d` only. Pro: the no-force rule stands as written; nothing that holds commits no other branch holds is deleted from a button. Con: VS Code's "Delete anyway?" path is absent; an unmerged branch is deleted at a terminal.
   - (b) Add VS Code's retry: after git's "not fully merged" refusal, VS Code's question, then `git branch -D <name>`, listed in `CONFIRMED`; `DESIGN.md:128` amended to "no form carries `--force` except `branch -D` after its question", and the gate's test keeps refusing the `--force` spelling. Pro: VS Code parity; the commits stay reachable through the reflog for git's expiry period. Con: a rule written for every write gets one exception.
   - Recommendation: (b), since the parity ruling asks for every capability VS Code has, the question stands between the reader and the loss, and the exception is one named form under its own confirmation. It would be added to Q88c in a repair round or at landing, with no new step.
@@ -192,7 +205,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Z237 (2026-10-02 02:47, M4): the `\text{\small X}` rewrite for MathJax, the check counting `merror` and red nodes (the orchestrator, automode).
 - Z238 (2026-10-02 02:47, M4): the path list widened; a blank equation draws no card (the orchestrator, automode).
 - Z239 (2026-10-02 05:20, D35): a page that follows a moved server carries its layout and its "This browser" settings across in `window.name` (the orchestrator, automode).
-- Z240 (2026-10-02 07:10, Q88c): the brief check's open points closed with VS Code's behaviour; `useConfigOnly` through git's environment; the read module moved into `server/core/git/`; Delete Branch `-d` only until Z241 (the orchestrator, automode).
+- Z240 (2026-10-02 06:50, Q88c): the brief check's open points closed with VS Code's behaviour; `useConfigOnly` through git's environment; the read module moved into `server/core/git/`; Delete Branch `-d` only until Z241 (the orchestrator, automode).
 - Z224 (2026-10-02 02:08, M4): each equation a single-quoted YAML scalar (the orchestrator, automode).
 - Z225 (2026-10-02 02:08, M4): the image branch removed, one finding kept for an image name (the orchestrator, automode).
 - Z226 (2026-10-02 02:08, M4): the subtitle names the Present view (the orchestrator, automode).

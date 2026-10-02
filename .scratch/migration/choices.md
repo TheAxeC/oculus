@@ -783,7 +783,7 @@ The question: a page that follows the server to its new port lands on a new orig
 
 Where it is built: D35, repair round 1. Booked in the state file's closed log and `plan.md` Rulings.
 
-## Z240 (2026-10-02 07:10, step Q88c)
+## Z240 (2026-10-02 06:50, step Q88c)
 
 The question: the user-visible choices and blocking findings Q88c's brief check left open (`agents/reviews/Q88c-brief-check.md`, sections 5 and 6).
 
