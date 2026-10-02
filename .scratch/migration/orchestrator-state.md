@@ -197,7 +197,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
-- Z267 (2026-10-02 13:40, X3c; ruled 13:50 by Axel, "X3c (b)"): a tab's path is shown by its tooltip and the breadcrumbs above a file tab only, as VS Code's; no path in the status bar (the user).
+- Z267 (2026-10-02 13:40, X3c; ruled 13:50 by Axel, "X3c (b)"): a hovered tab's path is shown by the tooltip and the breadcrumbs only, as VS Code's; no status-bar path (the user).
 - Z263 (2026-10-02 12:40, raised; ruled 13:40 by Axel, "X3e => Accepted with (a)"): a new step X3e, drag reorders the Files view's roots, folder bookmarks, notes and sections, and a second Collapse Folders press closes the roots; booked in `plan.md` after X3c and in `queue.md` (the user).
 - Z266 (2026-10-02 13:05, Axel; rewritten 13:20 at his word that the first text read as talking to a child): talk to Axel as an expert colleague; steps named by id and what they are; decisions in the open-item format with pros, cons, a recommendation and the lazy option named; booked as the first standing demand; replaces opening reports with the open items verbatim (the user).
 - Z265 (2026-10-02 12:25, D32's brief check): a refusal's own text reaches the reader only as a catalog word; the search route answers words; narrows Z259 (the orchestrator, automode).
@@ -810,7 +810,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - Axel runs oculus with `npm run dev` from `tools/oculus` (shell history, 2026-09-10), which serves on 127.0.0.1:8790 since 472080d. The orchestrator's own checks use the built server (`npm run build && node src/server.ts`) on 8790 and an agent's on 8791; no orchestrator server is left running after a check, so Axel's `npm run dev` never finds the port taken.
 
 ## Current position (rewrite at every package)
-- 2026-10-02 13:50. Axel ruled the tab path question (b): tooltip and breadcrumbs only, in X3c. Open for Axel: none besides Z251 (waiting for ten landings). In flight, five, as at 13:25.
+- 2026-10-02 13:50. Axel ruled Z267 (b): X3c keeps the tooltip and the breadcrumbs, no status-bar path. Open for Axel: none besides Z251. In flight, five, as at 13:25.
 - 2026-10-02 13:45. Axel ruled X3e (a): booked as a step, ready, in the queue. D25's sticky-scroll widening states the access-specifier scopes. Open for Axel: Z267 (a hovered tab's path in the status bar). In flight, five, as at 13:25. Next: the round reviews of Q88c and A1, then their landings.
 
 - 2026-10-02 13:25. In flight, five, relaunched at 13:20 after the user stopped the 13:00 agents: Q88c and A1 (round 1 reviews on Opus), D18 and M3 (repair round 1, continuation builders on Sonnet), D32 (building, continuation builder on Sonnet). queue.md corrected against plan.md: D32 back in flight; the waits it gave S4, D14, D17, D25 and D15 had no line or ruling behind them and are gone; 22 queued steps. Standing demand Z266 rewritten. Open for Axel: Z263 (a new Files view step, X3e). Next: the round reviews, then /land Q88c and /land A1 with the look on TEST.
