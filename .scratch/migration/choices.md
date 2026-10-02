@@ -997,6 +997,16 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z309 (2026-10-03, Z280 (c)): the LaTeX formatter's keys
+
+Chosen: four keys in `behavior.yml`'s `latex:` section beside `auto_build`: `formatter`, one of `none`, `latexindent`, `tex-fmt` and `badness`, default `none`; and `latexindent_path`, `tex_fmt_path` and `badness_path`, each empty by default, meaning the program is found on PATH. They mirror LaTeX Workshop's `latex-workshop.formatting.latex` and its three `.path` settings. Built at D14's landing.
+
+Not chosen:
+- One key holding a map of paths: no Settings editor of a scalar draws it, and VS Code keeps a key per path.
+- A section of its own: it splits the LaTeX settings across two sections.
+
+Where it applies: D14's landing. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z308 (2026-10-03, D32's run over round 1): its findings fixed at landing
 
 Chosen: every finding fixed at landing on main, as `agents/reviews/D32-refuter.md` "Closed" lists; the "Replaced ..." sentence only after a Replace All with any later change writing the count back, and a toggle during a run cancelling it and running again, both as VS Code does.
