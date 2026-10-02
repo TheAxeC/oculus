@@ -4,12 +4,17 @@
 
 import { handleHpc } from '$lib/server/machine/hpc/routes';
 import { log } from '$lib/server/machine/hpc/actions';
-import { slurmSettings } from '$lib/data/sources/config';
+import { hpcRouteHost } from '$lib/server/machine/hpc/host';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = ({ request, locals }) =>
     handleHpc(request, {
-        host: locals.server.local.hpcHost ?? slurmSettings(locals.config().config).host,
+        where: () =>
+            hpcRouteHost({
+                hpcHost: locals.server.local.hpcHost,
+                hub: locals.server.hub,
+                config: () => locals.config().config
+            }),
         token: locals.server.token,
         refresh: () => locals.server.hpc.refresh(),
         log: (host, id) => log(host, id, locals.server.hpcLogPaths)

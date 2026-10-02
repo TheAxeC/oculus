@@ -9,6 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../../../fixtures/entities-fixture.ts';
+import { project } from './board-fixture.ts';
 import {
     BOARDS,
     boardItemFor,
@@ -33,31 +34,6 @@ const NO_RELATIONS: Relations = {
 };
 
 const PRESET: BoardPreset = presetFor('projects');
-
-function project(id: Id, tier: Project['tier'], over: Partial<Project> = {}): Project {
-    return {
-        id,
-        tier,
-        ghost: false,
-        title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
-        folder: `projects/${tier}/${id}`,
-        file: `/hub/projects/${tier}/${id}/project.yml`,
-        ...over
-    };
-}
 
 /** A library, the paper it names, and a project neither end of the link reaches. */
 function snapshot(): Snapshot {
@@ -87,6 +63,7 @@ function snapshot(): Snapshot {
             funding: {},
             people: {},
             organisations: {},
+            resources: {},
             collections: {}
         },
         relations: { ...NO_RELATIONS, projectRelated: [['kit', 'paper']] },

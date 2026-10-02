@@ -1,0 +1,23 @@
+# Resources: the clusters, machines and storage a project runs on. A project's `compute:` in its project.yml and `slurm.resource` in tools/oculus/config/behavior.yml are keys into this file, so a resource is spelled once and drawn the same way everywhere.
+#
+# `kind:` is one of cluster | machine | storage. `host:` is the ssh alias of a cluster or a remote machine; the Live HPC poller connects to the host of the cluster `slurm.resource` names.
+
+schema:
+  - { field: key,    type: text,     required: true, label: "Resource key" }
+  - { field: name,   type: text,     required: true }
+  - { field: kind,   type: select,   options: [cluster, machine, storage], required: true }
+  - { field: host,   type: text,     help: "the ssh alias, for a cluster or a remote machine" }
+  - { field: access, type: textarea, help: "how it is reached: the network, the VPN, the login rules" }
+  - { field: links,  type: tags }
+
+entries:
+  - key: "utwente"
+    name: "Demo cluster"
+    kind: "cluster"
+    host: "utwente"
+    access: "ssh from the demo network"
+
+  - key: "laptop"
+    name: "Laptop"
+    kind: "machine"
+    access: "the laptop the demo runs on"

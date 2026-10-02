@@ -3,6 +3,7 @@
 // and the inert configuration and dependencies that `createServerContext`'s own tests build from.
 
 import type { LocalConfig } from '../../../src/lib/data/sources/config.ts';
+import type { Resource } from '../../../src/lib/data/model/index.ts';
 import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import {
@@ -134,12 +135,24 @@ export const driver = (close: () => void = noop): TerminalDriver => ({
     close
 });
 
+/** A resources registry of one cluster, `cluster`, whose host is the ssh alias `host`. */
+export function clusters(host = 'cluster'): Record<string, Resource> {
+    return {
+        cluster: { id: 'cluster', name: 'Cluster', kind: 'cluster', host, links: [], order: 0 }
+    };
+}
+
+/** The portfolio message a hub holds once a snapshot with these resources was published. */
+export function portfolioOf(resources: Record<string, Resource>): unknown {
+    return { version: 1, entities: { resources }, relations: {}, findings: [] };
+}
+
 /** The configuration an inert context reads, with the `git` block as a case sets it. */
 export function inertConfig(
     git: unknown = { message_model: '', autofetch_minutes: 0 }
 ): Record<string, unknown> {
     return {
-        slurm: { host: 'cluster', days: 2, poll_min: 1, quota_min: 5, prewarm: false },
+        slurm: { resource: 'cluster', days: 2, poll_min: 1, quota_min: 5, prewarm: false },
         calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
         editor: { paint_limit_kb: 64 },
         open: { program_ext: { '.docx': 'com.microsoft.Word' } },
@@ -149,10 +162,32 @@ export function inertConfig(
         usage_refresh_model: 'model',
         text: {
             calendar: { ics_no_link: 'no link', ics_failed: 'failed {0}' },
-            accounts: { timed_out: 'timed out {0}' }
+            accounts: { timed_out: 'timed out {0}' },
+            hpc: {
+                host_not_read: 'not read yet',
+                host_unknown: '{0} names no resource',
+                host_not_cluster: '{0} is not a cluster',
+                host_none: 'the cluster {0} has no host',
+                host_unusable: 'the host of the cluster {0} is not usable'
+            }
         },
         git
     };
+}
+
+/** The inert configuration with the top-level blocks `changes` names replaced whole. */
+export function configWith(changes: Record<string, unknown>): Record<string, unknown> {
+    return { ...inertConfig(), ...changes };
+}
+
+/** A block of the inert configuration with the keys `changes` names set. */
+export function blockWith(name: string, changes: Record<string, unknown>): Record<string, unknown> {
+    return { ...(inertConfig()[name] as Record<string, unknown>), ...changes };
+}
+
+/** What the poller is handed for the inert configuration's `slurm` block and this host. */
+export function inertHpc(host: string): Record<string, unknown> {
+    return { host, days: 2, pollMin: 1, quotaMin: 5, prewarm: false };
 }
 
 /**
@@ -180,7 +215,10 @@ export function inertDependencies(
         mintToken: () => 'context-token',
         createHub: () => new Hub(),
         createTerminals: (hub) => new Terminals(hub, { driver: driver(), poll: 0 }),
-        watchPortfolio: () => ({ close: noop }),
+        watchPortfolio: (hub) => {
+            hub.publish('portfolio', portfolioOf(clusters()));
+            return { close: noop };
+        },
         watchCalendar: () => ({
             refresh: noopAsync,
             setAccounts: noop,

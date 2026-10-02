@@ -5,7 +5,11 @@ import { gatedBody } from '../../core/auth.ts';
 import { cancel, validId } from './actions.ts';
 
 export type HpcTarget = {
-    host: string;
+    /**
+     * The ssh alias to act on, or the empty string with the sentence for why there is none (see
+     * host.ts). Read only for a cancel or a log, so a refresh runs whatever the host's sources say.
+     */
+    where: () => { host: string; missing?: string };
     token: string;
     refresh: () => Promise<void>;
     cancel?: typeof cancel;
@@ -24,8 +28,17 @@ export async function handleHpc(request: Request, target: HpcTarget): Promise<Re
     const id = body.id;
     if ((action !== 'cancel' && action !== 'log') || typeof id !== 'string' || !validId(id))
         return json({ error: 'bad action or id' }, { status: 400 });
-    if (action === 'log') return json(await target.log(target.host, id));
-    const answer = await (target.cancel ?? cancel)(target.host, id);
+    const { host, missing } = target.where();
+    if (host === '') {
+        const hint = missing ?? '';
+        return json(
+            action === 'log'
+                ? { status: 'error', hint, log: '', path: '' }
+                : { status: 'error', hint }
+        );
+    }
+    if (action === 'log') return json(await target.log(host, id));
+    const answer = await (target.cancel ?? cancel)(host, id);
     if (answer.status === 'ok') await target.refresh();
     return json(answer);
 }

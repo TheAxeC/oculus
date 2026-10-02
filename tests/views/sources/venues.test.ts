@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import Venues from '../../../src/lib/views/sources/venues/Venues.svelte';
 import {
     engineDir,
@@ -66,30 +66,16 @@ const RELATIONS: Relations = {
 };
 
 function project(id: string, venueId: string, type: string): Project {
-    return {
+    return fixtureProject({
         id,
         tier: type === 'manuscript' ? 'manuscripts' : 'active',
-        ghost: false,
         type,
         title: id,
         short: id.toUpperCase(),
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
         venueId,
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/active/${id}`,
         file: `/hub/projects/active/${id}/project.yml`
-    };
+    });
 }
 
 const VENUES: Venue[] = [
@@ -194,6 +180,7 @@ function snapshot(items: Venue[] = VENUES): Snapshot {
             funding: {},
             people: {},
             organisations: {},
+            resources: {},
             collections: { venues: collection(items.length === 0 ? [] : entries()) }
         },
         relations: RELATIONS,

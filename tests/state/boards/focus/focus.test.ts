@@ -11,7 +11,7 @@
 // tests/views/boards/focus.test.ts.
 
 import { describe, expect, it } from 'vitest';
-import { NO_FEEDS } from '../../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../../fixtures/entities-fixture.ts';
 import { attention, refresh, staleAfter } from '../../../../src/lib/state/feeds/feeds.ts';
 import { engineDir, loadConfig, vocabCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { scalar } from '../../../../src/lib/data/helpers/guards.ts';
@@ -71,28 +71,14 @@ const EMPTY_RELATIONS: Relations = {
 };
 
 function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier,
-        ghost: false,
         title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/${tier}/${id}`,
         file: `/hub/projects/${tier}/${id}/project.yml`,
         ...over
-    };
+    });
 }
 
 function venue(id: Id, over: Partial<Venue> = {}): Venue {
@@ -254,6 +240,7 @@ function snapshot(): Snapshot {
             },
             people: {},
             organisations: {},
+            resources: {},
             collections: {
                 funding: collection('funding', [
                     {

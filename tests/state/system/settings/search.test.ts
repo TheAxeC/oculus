@@ -27,7 +27,7 @@ import {
 
 const CATALOG: Catalog = {
     'behavior.yml': {
-        'slurm.host': {
+        'slurm.resource': {
             description: 'The cluster jobs are polled on.',
             default: 'u',
             control: 'text'
@@ -59,7 +59,7 @@ const CATALOG: Catalog = {
 
 /** The texts of the fixture: poll_min and the cursor style differ from their defaults. */
 function texts(file: string): FileText {
-    if (file === 'behavior.yml') return text('slurm:\n    host: u\n    poll_min: 5\n');
+    if (file === 'behavior.yml') return text('slurm:\n    resource: u\n    poll_min: 5\n');
     if (file === 'appearance.yml') {
         return text('terminal:\n    cursor_style: line\n    cursor_blinking: false\n');
     }
@@ -86,7 +86,7 @@ describe('the words of a search', () => {
     it('keeps the rows holding the word in title, key path, section or description', () => {
         const result = searchGroups(groups(), 'poll');
         expect(idsOf(result)).toEqual([
-            'behavior.yml:slurm.host',
+            'behavior.yml:slurm.resource',
             'behavior.yml:slurm.poll_min',
             'behavior.yml:audit.sweep'
         ]);

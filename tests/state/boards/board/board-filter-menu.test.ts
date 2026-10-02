@@ -58,7 +58,7 @@ const FACETS: Facet[] = [
     {
         key: 'compute',
         values: [
-            { value: 'hpc', label: 'hpc', count: 1 },
+            { value: 'utwente', label: 'UTwente HPC', count: 1 },
             { value: NONE, label: NONE, count: 4 }
         ]
     },
@@ -82,16 +82,20 @@ describe('the one filter control', () => {
         ]);
     });
 
-    it('gives a value that is vocabulary its catalog words', () => {
+    it('gives a resource its recorded name and the value that stands for none its catalog words', () => {
         const compute = filterGroups(FACETS, {}, PRESET)[2].items;
         expect(compute.map((item) => item.label)).toEqual([
-            `${catalog['board.compute_hpc']} 1`,
+            'UTwente HPC 1',
             `${catalog['board.compute_none']} 4`
         ]);
     });
 
     it('ticks the values in force and no other', () => {
-        const found = filterGroups(FACETS, { status: ['lead'], compute: ['hpc', NONE] }, PRESET);
+        const found = filterGroups(
+            FACETS,
+            { status: ['lead'], compute: ['utwente', NONE] },
+            PRESET
+        );
         const status = found[1].items;
         expect(status.filter((item) => item.active).map((item) => item.id)).toEqual(['lead']);
         expect(status[0].glyph).toBe('check');
@@ -114,9 +118,9 @@ describe('the one filter control', () => {
 
     it('counts every value in force over every facet on the control', () => {
         expect(filtersInForce({})).toBe(0);
-        expect(filtersInForce({ status: ['lead'], compute: ['hpc', 'local'] })).toBe(3);
+        expect(filtersInForce({ status: ['lead'], compute: ['utwente', 'this-mac'] })).toBe(3);
         expect(filterLabel({})).toBe(catalog['board.filter']);
-        expect(filterLabel({ status: ['lead'], compute: ['hpc', 'local'] })).toBe(
+        expect(filterLabel({ status: ['lead'], compute: ['utwente', 'this-mac'] })).toBe(
             catalog['board.filter_count'].replace('{0}', '3')
         );
     });

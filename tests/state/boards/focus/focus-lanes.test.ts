@@ -12,33 +12,19 @@ import {
 import { focusLabel } from '../../../../src/lib/state/boards/focus.ts';
 import { ticker, type TickerItem } from '../../../../src/lib/state/boards/ticker.ts';
 import type { Entry, Project, Snapshot } from '../../../../src/lib/data/model/index.ts';
-import { NO_FEEDS } from '../../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../../fixtures/entities-fixture.ts';
 import { bandHasCards } from '../../../../src/lib/state/boards/focus-lanes.ts';
 
 function project(id: string, days: number, type = 'active'): Project {
-    return {
+    return fixtureProject({
         id,
         title: id,
         tier: type === 'idea' ? 'ideas' : type === 'manuscript' ? 'manuscripts' : 'active',
         type,
-        ghost: false,
         staleDays: days,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: '',
         file: ''
-    };
+    });
 }
 
 function entry(id: string, fields: Record<string, unknown>): Entry {
@@ -58,6 +44,7 @@ function snapshot(): Snapshot {
             funding: {},
             people: {},
             organisations: {},
+            resources: {},
             collections: {},
             feeds: NO_FEEDS,
             career: null

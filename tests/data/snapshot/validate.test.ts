@@ -122,7 +122,8 @@ function portfolio(over: Partial<RawPortfolio> = {}): RawPortfolio {
             domains: registry('domains', ['heart']),
             funding: registry('funding', ['FAIR']),
             people: people(['someone']),
-            organisations: organisations(['twente'])
+            organisations: organisations(['twente']),
+            resources: { entries: [], meta: {} }
         },
         collections: {
             'joint-work': collection('joint-work', [

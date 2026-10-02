@@ -21,6 +21,7 @@ import type {
     RawRegistry,
     RegistryFiles,
     RegistryName,
+    Resource,
     ScanRule,
     SideProject,
     Venue
@@ -152,6 +153,7 @@ export type Entities = {
     funding: Record<Id, Funding>;
     people: Record<Id, Person>;
     organisations: Record<Id, Organisation>;
+    resources: Record<Id, Resource>;
     collections: Record<Id, Collection>;
     /** The side projects of the Personal board, by their `side:` or `root:` id. */
     personal: Record<Id, SideProject>;
@@ -358,6 +360,7 @@ export type {
     RegistryMeta,
     RegistryName,
     Reproduced,
+    Resource,
     ScanRule,
     SideProject,
     Subtask,

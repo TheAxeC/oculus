@@ -46,6 +46,9 @@ people_file: registries/people.yml
 # and a funding scheme's `funder:` point at, so an organisation is named once.
 organisations_file: registries/organisations.yml
 
+# Resources registry: the clusters, machines and storage a project's `compute:` and `slurm.resource` of behavior.yml name by key.
+resources_file: registries/resources.yml
+
 
 # Collection tabs - a generic card list from one YAML (entries: title/sub/status/date/meta/tags/related/link/url/note).
 # Schema: README.md. Files are editable in served mode. `related:` ids cross-link to project cards.

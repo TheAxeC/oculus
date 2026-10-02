@@ -6,6 +6,7 @@ import { describe, expect, vi, type Mock } from 'vitest';
 import type { HpcPayload } from '../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import {
+    RETRY_MIN,
     batchCommand,
     watchHpc,
     type HpcOptions
@@ -495,6 +496,156 @@ describe('settings changed while the watcher runs', () => {
             expect(held(hub).jobs.map((job) => job.name)).toEqual(['x']);
         } finally {
             watcher.close();
+            vi.useRealTimers();
+        }
+    });
+});
+
+describe('a host the settings do not give', () => {
+    const NONE = { ...options, host: '', missing: 'nowhere names no resource' };
+
+    /** A runner that fails the case when it is called. */
+    function forbidden(): Mock<Runner> {
+        return vi.fn<Runner>(() => Promise.reject(new Error('ssh ran')));
+    }
+
+    it('runs no ssh, and publishes unreachable with the sentence and no host', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const runner = forbidden();
+        const watcher = watchHpc(hub, { ...NONE, runner });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(held(hub)).toMatchObject({
+                status: 'unreachable',
+                hint: 'nowhere names no resource',
+                host: ''
+            });
+            await vi.advanceTimersByTimeAsync(options.pollMin * MINUTE);
+            await watcher.refresh();
+            expect(runner).not.toHaveBeenCalled();
+            expect(held(hub)).toMatchObject({ status: 'unreachable', host: '' });
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+
+    it('arms the short retry as for an unreachable cluster', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const watcher = watchHpc(hub, { ...NONE, runner: forbidden() });
+        const publishes = vi.spyOn(hub, 'publish');
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            const before = publishes.mock.calls.length;
+            await vi.advanceTimersByTimeAsync(RETRY_MIN * MINUTE);
+            expect(publishes.mock.calls.length).toBeGreaterThan(before);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+
+    it('publishes a new sentence at once when only the sentence changed', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const runner = forbidden();
+        const watcher = watchHpc(hub, { ...NONE, runner });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            watcher.set({ ...NONE, missing: 'this-mac is not a cluster' });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(held(hub)).toMatchObject({
+                status: 'unreachable',
+                hint: 'this-mac is not a cluster',
+                host: ''
+            });
+            expect(runner).not.toHaveBeenCalled();
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+
+    it('polls the host a later setting gives, and goes back to the sentence when it is taken away', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const runner = swingingRunner({ up: true });
+        const watcher = watchHpc(hub, { ...NONE, runner });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(queueCalls(runner)).toBe(0);
+            watcher.set({ ...options, host: 'utwente2' });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(held(hub)).toMatchObject({ status: 'ok', host: 'utwente2' });
+            watcher.set({ ...NONE, missing: 'the cluster utwente has no host' });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(held(hub)).toMatchObject({
+                status: 'unreachable',
+                hint: 'the cluster utwente has no host',
+                host: '',
+                jobs: []
+            });
+            expect(queueCalls(runner)).toBe(1);
+            watcher.set({ ...options, host: 'utwente' });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(held(hub)).toMatchObject({ status: 'ok', host: 'utwente' });
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+
+    it('drops the answer of a poll in flight when the host is taken away', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const first = gate();
+        const runner = vi.fn<Runner>((_host, remote) =>
+            remote.startsWith('quota') ? Promise.resolve(NOTHING) : first.answer
+        );
+        const watcher = watchHpc(hub, { ...options, runner });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            watcher.set(NONE);
+            first.settle({ stdout: ANSWER, stderr: '', code: 0 });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(held(hub)).toMatchObject({ status: 'unreachable', host: '', jobs: [] });
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+
+    it('answers with the last of two sentences set in a row', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const watcher = watchHpc(hub, { ...NONE, runner: forbidden() });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            watcher.set({ ...NONE, missing: 'first sentence' });
+            watcher.set({ ...NONE, missing: 'second sentence' });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(held(hub)).toMatchObject({ status: 'unreachable', hint: 'second sentence' });
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+
+    it('publishes nothing for a sentence set after the watcher is closed', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const watcher = watchHpc(hub, { ...NONE, runner: forbidden() });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            watcher.close();
+            const version = hub.version('hpc');
+            watcher.set({ ...NONE, missing: 'this-mac is not a cluster' });
+            await vi.advanceTimersByTimeAsync(5 * MINUTE);
+            expect(hub.version('hpc')).toBe(version);
+            expect(vi.getTimerCount()).toBe(0);
+        } finally {
             vi.useRealTimers();
         }
     });

@@ -6,7 +6,7 @@
 // The snapshot is synthetic, since what is checked is the resolution and not the hub.
 
 import { describe, expect, it } from 'vitest';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, RESOURCES, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import {
     NOT_IN_MODEL,
     asList,
@@ -49,6 +49,7 @@ const SOURCES = [
     'funding',
     'people',
     'organisations',
+    'resources',
     'projects',
     'type_order',
     'status_legend',
@@ -57,29 +58,22 @@ const SOURCES = [
 ];
 
 function project(over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id: 'alpha',
         tier: 'manuscripts',
-        ghost: false,
         title: 'A title',
         chips: ['submitted'],
         statusLine: 'the line',
         results: ['one'],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
+        resourceIds: ['utwente'],
         relatedIds: ['bravo'],
         fundingIds: ['ZonMw'],
-        datasetIds: [],
         pillarIds: ['tensor'],
         domainIds: ['method'],
-        collaborators: [],
-        docs: [],
         folder: 'projects/manuscripts/alpha',
         file: '/hub/projects/manuscripts/alpha/project.yml',
         ...over
-    };
+    });
 }
 
 function snapshot(): Snapshot {
@@ -135,6 +129,7 @@ function snapshot(): Snapshot {
                     fundingIds: []
                 }
             },
+            resources: RESOURCES,
             collections: {}
         },
         relations: {
@@ -219,10 +214,18 @@ describe('where the choices come from', () => {
         expect(choicesOf('status.chips').map((one) => one.id)).toContain('submitted');
     });
 
-    it('resolves a literal list to itself', () => {
+    it('resolves the resources registry to every resource by its name', () => {
         expect(choicesOf('compute')).toEqual([
-            { id: 'hpc', label: 'hpc' },
-            { id: 'local', label: 'local' }
+            { id: 'data', label: 'Local data' },
+            { id: 'this-mac', label: 'This Mac' },
+            { id: 'utwente', label: 'UTwente HPC' }
+        ]);
+    });
+
+    it('resolves a literal list to itself', () => {
+        expect(choicesOf('code_availability.visibility')).toEqual([
+            { id: 'public', label: 'public' },
+            { id: 'private', label: 'private' }
         ]);
     });
 
@@ -242,6 +245,14 @@ describe('the values a form opens with', () => {
         expect(values.domain).toBe('method');
         expect(values.pillar).toEqual(['tensor']);
         expect(values.related).toEqual(['bravo']);
+    });
+
+    it('opens the compute field with the keys of the resources the project names', () => {
+        expect(values.compute).toEqual(['utwente']);
+        expect(fields.find((one) => one.field === 'compute')).toMatchObject({
+            type: 'chips',
+            from: 'resources'
+        });
     });
 
     it('has nothing for the fields the model does not carry', () => {

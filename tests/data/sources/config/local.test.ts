@@ -5,8 +5,13 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect } from 'vitest';
-import { LOCAL_NAME, checkLocal, loadLocal } from '../../../../src/lib/data/sources/config.ts';
+import { describe, expect, vi } from 'vitest';
+import {
+    LOCAL_NAME,
+    checkLocal,
+    loadLocal,
+    type LocalConfig
+} from '../../../../src/lib/data/sources/config.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 /** The sentence checkLocal gives for a text, which names the file as `local.yml`. */
@@ -187,5 +192,48 @@ describe('loadLocal', () => {
         expect(() => loadLocal(dir)).toThrow(
             `${join(dir, 'config', LOCAL_NAME)}: port must be an integer`
         );
+    });
+});
+
+describe('a path key of local.yml', () => {
+    const KEYS = [
+        ['sessions_cache', 'sessionsCache'],
+        ['sessions_overrides', 'sessionsOverrides'],
+        ['workspaces', 'workspaces'],
+        ['bookmarks', 'bookmarks'],
+        ['notes', 'notes'],
+        ['changes', 'changes'],
+        ['calendar_dir', 'calendarDir'],
+        ['mail_dir', 'mailDir']
+    ] as const;
+
+    /** Read `body` with the home folder a scratch folder of the case, the machine's never read. */
+    function readUnderHome(body: string): { home: string; dir: string; read: LocalConfig } {
+        const home = scratchDir('oculus-home-');
+        const dir = engineWith(body);
+        vi.stubEnv('HOME', home);
+        try {
+            expect(homedir()).toBe(home);
+            return { home, dir, read: loadLocal(dir) };
+        } finally {
+            vi.unstubAllEnvs();
+        }
+    }
+
+    it.each(KEYS)('reads %s starting with ~/ as under the home folder', (key, field) => {
+        const { home, read } = readUnderHome(`${key}: ~/state/${key}\n`);
+        expect(read[field]).toBe(join(home, 'state', key));
+    });
+
+    it.each(KEYS)('reads %s as ~ alone as the home folder', (key, field) => {
+        const { home, read } = readUnderHome(`${key}: "~"\n`);
+        expect(read[field]).toBe(home);
+    });
+
+    it.each(KEYS)('keeps %s without ~/ as absolute or under the engine folder', (key, field) => {
+        const relative = readUnderHome(`${key}: state/${key}\n`);
+        expect(relative.read[field]).toBe(resolve(relative.dir, 'state', key));
+        const absolute = readUnderHome(`${key}: /srv/state/${key}\n`);
+        expect(absolute.read[field]).toBe(`/srv/state/${key}`);
     });
 });

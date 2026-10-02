@@ -1,7 +1,6 @@
 // Layer 2, server. The Live HPC watcher publishes one complete state message, with quota refreshed
 // on its slower independent cadence.
 import type { HpcPayload } from '../../../data/model/index.ts';
-import type { SlurmSettings } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { LogPaths } from './actions.ts';
 import {
@@ -18,12 +17,20 @@ import {
 import { isFinished, PREWARM_MAX, prewarmLogs } from './prewarm.ts';
 import { run, type Runner } from './ssh.ts';
 
-export type HpcOptions = {
+/**
+ * What the poller is told: the ssh alias to query, or the empty host and the sentence for why there
+ * is none (the resolver in host.ts), and the cadences and the window.
+ */
+export type HpcSettings = {
     host: string;
+    missing?: string;
     days: number;
     pollMin: number;
     quotaMin: number;
     prewarm: boolean;
+};
+
+export type HpcOptions = HpcSettings & {
     /** The log path per job id the log action reads, which the prewarm fills in behind the page. */
     logPaths?: LogPaths;
     runner?: Runner;
@@ -33,9 +40,10 @@ export type HpcWatcher = {
     refresh(): Promise<void>;
     /**
      * Take new settings. A period moves the next run to the sooner of the one waiting and the new
-     * period from now; a changed host or window drops what the old one answered and polls now.
+     * period from now; a changed host, a changed sentence for having none, or a changed window
+     * drops what the old one answered and polls now.
      */
-    set(settings: SlurmSettings): void;
+    set(settings: HpcSettings): void;
     close(): void;
 };
 
@@ -67,16 +75,18 @@ type Rows = Pick<HpcPayload, 'jobs' | 'running' | 'pending' | 'total' | 'recent'
 const NO_ROWS: Rows = { jobs: [], running: 0, pending: 0, total: 0, recent: [], sinfo: [] };
 
 export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
-    let current: SlurmSettings = {
+    let current: HpcSettings = {
         host: options.host,
+        ...(options.missing === undefined ? {} : { missing: options.missing }),
         days: options.days,
         pollMin: options.pollMin,
         quotaMin: options.quotaMin,
         prewarm: options.prewarm
     };
     /**
-     * Counts the changes of host or window. A poll, quota read or prewarm that began under an older
-     * count answers for a cluster or a window nobody asks for any more, and drops its result.
+     * Counts the changes of host, sentence or window. A poll, quota read or prewarm that began
+     * under an older count answers for a cluster or a window nobody asks for any more, and drops
+     * its result.
      */
     let asking = 0;
     /** Counts the changes of host alone: a quota read does not depend on the window. */
@@ -119,7 +129,7 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     hub.publish('hpc', degraded('starting'));
 
     const publishQuota = async (): Promise<void> => {
-        if (stopped()) return;
+        if (stopped() || current.host === '') return;
         const began = hosts;
         try {
             const result = await runner(current.host, quotaCommand, 25000);
@@ -161,6 +171,12 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         let good = false;
         const began = asking;
         try {
+            if (current.host === '') {
+                // No host to ask: the sentence for why is the answer; the retry cadence applies.
+                hub.publish('hpc', degraded('unreachable', current.missing));
+                console.log('hpc publish: unreachable');
+                return;
+            }
             const result = await runner(current.host, batchCommand(current.days), timeout);
             if (stopped() || began !== asking) return;
             const parts = splitSections(result.stdout);
@@ -317,7 +333,7 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
             if (next.quotaMin !== before.quotaMin) {
                 armQuota(Math.min(quotaAt, Date.now() + next.quotaMin * 60000));
             }
-            if (next.host !== before.host) {
+            if (next.host !== before.host || next.missing !== before.missing) {
                 asking += 1;
                 hosts += 1;
                 rows = NO_ROWS;

@@ -56,12 +56,6 @@ function sessionsLabel(value: string): string {
     return t('board.sessions_none');
 }
 
-function computeLabel(value: string): string {
-    if (value === 'hpc') return t('board.compute_hpc');
-    if (value === 'local') return t('board.compute_local');
-    return t('board.compute_none');
-}
-
 function codeLabel(value: string): string {
     if (value === 'deposited') return t('board.code_deposited');
     if (value === 'review-anon') return t('board.code_anon');
@@ -73,7 +67,7 @@ function codeLabel(value: string): string {
 export function valueLabel(facet: string, value: FacetValue): string {
     if (facet === 'year' && value.value === NONE) return t('board.no_year');
     if (facet === 'funding' && value.value === NONE) return t('board.no_funding');
-    if (facet === 'compute') return computeLabel(value.value);
+    if (facet === 'compute' && value.value === NONE) return t('board.compute_none');
     if (facet === 'code') return codeLabel(value.value);
     if (facet === 'reproduced') {
         return value.value === '1' ? t('board.repro_yes') : t('board.repro_no');

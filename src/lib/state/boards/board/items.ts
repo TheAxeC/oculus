@@ -114,7 +114,12 @@ function itemOf(
         authors: authorLine(project),
         bucket: bucketOf(project, preset.rollup),
         code: project.codeAvailability?.status ?? '',
-        compute: project.compute ?? '',
+        compute: project.resourceIds.flatMap((id) => {
+            const one = byKey(entities.resources, id);
+            return one === undefined
+                ? []
+                : [{ id, label: one.name, cluster: one.kind === 'cluster', order: one.order }];
+        }),
         reproduced: project.reproduced !== undefined,
         year: project.year === undefined ? '' : String(project.year),
         sessions: sessionsOf(project),

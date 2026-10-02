@@ -9,7 +9,7 @@
 // here through setInstanceState instead, and the interactions need a DOM and are not run here.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, RESOURCES, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { render } from 'svelte/server';
 import Projects from '../../../src/lib/views/boards/projects/Projects.svelte';
 import {
@@ -75,28 +75,14 @@ const EMPTY_RELATIONS: Relations = {
 };
 
 function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier,
-        ghost: false,
         title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/${tier}/${id}`,
         file: `/hub/projects/${tier}/${id}/project.yml`,
         ...over
-    };
+    });
 }
 
 /** Two projects on the projects board and one on the archive board. */
@@ -118,7 +104,7 @@ function snapshot(): Snapshot {
             ideas: ['an avenue'],
             outcome: 'in review',
             deadline: '2099-01-01',
-            compute: 'hpc',
+            resourceIds: ['utwente', 'data'],
             codeAvailability: { status: 'deposited' },
             reproduced: { date: '2026-08-02', note: 'needs a cluster' },
             venueId: 'bspc',
@@ -137,7 +123,7 @@ function snapshot(): Snapshot {
             title: 'Bravo',
             chips: ['revision'],
             deadline: '2000-01-01',
-            compute: 'local',
+            resourceIds: ['this-mac'],
             lead: 'Faes'
         }),
         project('zulu', 'archive', { type: 'nogo', title: 'Zulu' }),
@@ -192,6 +178,7 @@ function snapshot(): Snapshot {
                 }
             },
             organisations: {},
+            resources: RESOURCES,
             collections: {}
         },
         relations: EMPTY_RELATIONS,
@@ -348,8 +335,13 @@ describe('a card', () => {
     it('draws the code, reproduced and compute badges', () => {
         expect(body).toContain(catalog['board.code_deposited']);
         expect(body).toContain(catalog['board.repro_yes']);
-        expect(body).toContain(catalog['project.card.hpc_label']);
-        expect(body).toContain(catalog['project.card.local_label']);
+    });
+
+    it('draws one tag per resource in the manifest order, the cluster with the HPC glyph', () => {
+        const tag =
+            /<span class="tag[^"]*">((?:(?!<span class="tag)[\s\S])*?)<span class="label[^"]*">(UTwente HPC|Local data|This Mac)</g;
+        const got = [...body.matchAll(tag)].map((m) => m[2] + (m[1].includes('"hpc"') ? '+' : ''));
+        expect(got).toEqual(['UTwente HPC+', 'Local data', 'This Mac']);
     });
 
     it('draws the funding, pillar, dataset and collaborator tags', () => {
@@ -534,7 +526,8 @@ describe('the facets', () => {
     });
 
     it('counts the values in force on the control', () => {
-        const held = html('projects', { filters: { compute: ['hpc', 'local'], status: ['lead'] } });
+        const both = ['utwente', 'this-mac'];
+        const held = html('projects', { filters: { compute: both, status: ['lead'] } });
         expect(held).toContain(`aria-label="${words('board.filter_count', '3')}"`);
         // values are in force, so the control carries the counted label rather than the plain one
         expect(held).not.toContain(`aria-label="${catalog['board.filter']}"`);
@@ -548,11 +541,17 @@ describe('the facets', () => {
     });
 
     it('shows only what a filter leaves', () => {
-        expect(cards(html('projects', { filters: { compute: ['hpc'] } }))).toBe(1);
-        expect(cards(html('projects', { filters: { compute: ['hpc', 'local'] } }))).toBe(2);
+        expect(cards(html('projects', { filters: { compute: ['utwente'] } }))).toBe(1);
+        expect(cards(html('projects', { filters: { compute: ['utwente', 'this-mac'] } }))).toBe(2);
         expect(
-            cards(html('projects', { filters: { compute: ['hpc'], status: ['submitted'] } }))
+            cards(html('projects', { filters: { compute: ['utwente'], status: ['submitted'] } }))
         ).toBe(0);
+    });
+
+    it('opens a board saved with a compute value it does not offer with no compute filter', () => {
+        const count = (compute: string[]): number =>
+            cards(html('projects', { filters: { compute } }));
+        expect([count(['hpc']), count(['hpc', 'utwente'])]).toEqual([2, 1]);
     });
 });
 

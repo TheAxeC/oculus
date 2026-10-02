@@ -17,6 +17,7 @@ import {
     venueTiers
 } from '../../../../src/lib/state/boards/structure/lines.ts';
 import type { Domain, Pillar, Project, Venue } from '../../../../src/lib/data/model/index.ts';
+import { fixtureProject } from '../../../fixtures/entities-fixture.ts';
 
 function project(
     id: string,
@@ -25,29 +26,17 @@ function project(
     pillars: string[],
     domains: string[] = []
 ): Project {
-    return {
+    return fixtureProject({
         id,
         tier,
-        ghost: false,
         type,
         title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
         venueId: id === 'active' ? 'journal' : undefined,
-        fundingIds: [],
-        datasetIds: [],
         pillarIds: pillars,
         domainIds: domains,
-        collaborators: [],
-        docs: [],
         folder: `projects/${tier}/${id}`,
         file: `/hub/projects/${tier}/${id}/project.yml`
-    };
+    });
 }
 
 const line: Pillar = {

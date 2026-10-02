@@ -304,6 +304,32 @@ describe('Live HPC view', () => {
         // the payload carries no finished job, so the section is not drawn
         expect(body).not.toContain('Recent (finished)');
     });
+    it('draws the sentence alone, with no host in a footer, while the payload has no host', () => {
+        const none = {
+            ...payload,
+            status: 'unreachable' as const,
+            hint: 'this-mac is not a cluster',
+            host: '',
+            jobs: [],
+            running: 0,
+            pending: 0,
+            total: 0,
+            recent: [],
+            sinfo: [],
+            quota: []
+        };
+        const body = draw(none, 18);
+        expect(body).toContain('this-mac is not a cluster');
+        // with no host the hint stands alone, so the line about the network is gone
+        expect(body).not.toContain('Cluster unreachable');
+        // the same line carried the connection tip, which a missing host does not call for
+        expect(body).not.toContain('EduVPN');
+        // no host is polled, so the footer that names the polled host is left out
+        expect(body).not.toContain('Polls squeue');
+        const named = draw({ ...none, host: 'utwente', hint: 'ssh exited 255' }, 19);
+        expect(named).toContain('Cluster unreachable');
+        expect(named).toContain('Polls squeue, sacct, sinfo, and disk quota on utwente.');
+    });
     it('says nothing about retrying when the payload carries no retry cadence', () => {
         const held = { ...payload, status: 'unreachable' as const, hint: 'fixture' };
         delete held.retryMin;

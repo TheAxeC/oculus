@@ -10,10 +10,12 @@ import {
     emptyBoardState,
     facetValues,
     facets,
+    filterGroups,
     parseBoardState,
     presetFor
 } from '../../../../src/lib/state/boards/board/index.ts';
 import { CONFIG, project, PROJECTS, ITEMS, ids, item, facet, over } from './board-fixture.ts';
+import { RESOURCES } from '../../../fixtures/entities-fixture.ts';
 
 describe('facets', () => {
     it('counts the lifecycle buckets in the rollup order', () => {
@@ -35,7 +37,7 @@ describe('facets', () => {
     });
 
     it('counts compute, reproduced and the code deposit in their fixed order', () => {
-        expect(facet(PROJECTS, ITEMS, 'compute')).toEqual(['hpc:1', 'local:1', `${NONE}:4`]);
+        expect(facet(PROJECTS, ITEMS, 'compute')).toEqual(['this-mac:1', 'utwente:1', `${NONE}:4`]);
         expect(facet(PROJECTS, ITEMS, 'reproduced')).toEqual(['1:1', '0:5']);
         expect(facet(PROJECTS, ITEMS, 'code')).toEqual([
             'deposited:1',
@@ -75,6 +77,75 @@ describe('facets', () => {
     });
 });
 
+describe('the compute facet', () => {
+    const labels = (items: typeof ITEMS): string[] =>
+        (
+            filterGroups(facets(items, PROJECTS), {}, PROJECTS).find((one) => one.id === 'compute')
+                ?.items ?? []
+        ).map((choice) => choice.label);
+
+    it('carries each resource a project names, in the manifest order, with its name and kind', () => {
+        const { items } = over({ alpha: { resourceIds: ['this-mac', 'utwente'] } });
+        const alpha = items.find((one) => one.id === 'alpha');
+        expect(alpha?.compute.map((one) => [one.id, one.label, one.cluster])).toEqual([
+            ['this-mac', 'This Mac', false],
+            ['utwente', 'UTwente HPC', true]
+        ]);
+        expect(item('charlie').compute).toEqual([]);
+    });
+
+    it('leaves out a key the resources do not hold', () => {
+        const { items } = over({ alpha: { resourceIds: ['utwente', 'gone'] } });
+        const alpha = items.find((one) => one.id === 'alpha');
+        expect(alpha?.compute.map((one) => one.id)).toEqual(['utwente']);
+    });
+
+    it('names a resource by the first item that carries it', () => {
+        const { items } = over({
+            alpha: { resourceIds: ['utwente'] },
+            bravo: { resourceIds: ['utwente'] }
+        });
+        const carriers = items.filter((one) => one.compute.length > 0);
+        expect(carriers).toHaveLength(2);
+        const later = carriers[1];
+        const renamed = items.map((one) =>
+            one === later ? { ...one, compute: [{ ...one.compute[0], label: 'Later name' }] } : one
+        );
+        expect(labels(renamed)).toEqual(labels(items));
+        expect(labels(renamed)[0]).toBe('UTwente HPC 2');
+    });
+
+    it('counts a project under every resource it names', () => {
+        const { items } = over({ alpha: { resourceIds: ['utwente', 'this-mac'] } });
+        expect(facet(PROJECTS, items, 'compute')).toEqual(['this-mac:2', 'utwente:1', `${NONE}:4`]);
+        expect(ids(applyFilters(items, { compute: ['utwente'] }, ''))).toEqual(['alpha']);
+        expect(ids(applyFilters(items, { compute: ['utwente', 'this-mac'] }, ''))).toEqual([
+            'alpha',
+            'bravo'
+        ]);
+    });
+
+    it('lists the resources by their names and not their keys, then unset', () => {
+        const { items } = over(
+            { alpha: { resourceIds: ['a-cluster'] }, bravo: { resourceIds: ['this-mac'] } },
+            {
+                'a-cluster': { ...RESOURCES.utwente, id: 'a-cluster', name: 'Zeta cluster' },
+                'this-mac': RESOURCES['this-mac']
+            }
+        );
+        expect(labels(items)).toEqual(['This Mac 1', 'Zeta cluster 1', 'unset 4']);
+    });
+
+    it('breaks a tie of names by the registry order', () => {
+        const same = { ...RESOURCES.utwente, name: 'Same' };
+        const { items } = over(
+            { alpha: { resourceIds: ['a'] }, bravo: { resourceIds: ['b'] } },
+            { a: { ...same, id: 'a', order: 1 }, b: { ...same, id: 'b', order: 0 } }
+        );
+        expect(facet(PROJECTS, items, 'compute')).toEqual(['b:1', 'a:1', `${NONE}:4`]);
+    });
+});
+
 describe('applyFilters', () => {
     it('leaves everything alone with no filter and no search', () => {
         expect(applyFilters(ITEMS, {}, '')).toHaveLength(ITEMS.length);
@@ -89,10 +160,12 @@ describe('applyFilters', () => {
     });
 
     it('requires every facet that has a selection at once', () => {
-        expect(ids(applyFilters(ITEMS, { status: ['lead'], compute: ['hpc'] }, ''))).toEqual([
+        expect(ids(applyFilters(ITEMS, { status: ['lead'], compute: ['utwente'] }, ''))).toEqual([
             'alpha'
         ]);
-        expect(applyFilters(ITEMS, { status: ['submitted'], compute: ['hpc'] }, '')).toEqual([]);
+        expect(applyFilters(ITEMS, { status: ['submitted'], compute: ['utwente'] }, '')).toEqual(
+            []
+        );
     });
 
     it('ignores a facet whose selection is empty', () => {
@@ -219,6 +292,25 @@ describe('parseBoardState', () => {
         expect(
             parseBoardState({ filters: { nonesuch: ['x'], status: ['lead', 3], year: [] } }).filters
         ).toEqual({ status: ['lead'] });
+    });
+
+    it('drops a compute value the board does not offer when it is told what it offers', () => {
+        const offered = facets(ITEMS, PROJECTS);
+        const state = { filters: { compute: ['hpc', 'utwente'], status: ['lead'] } };
+        expect(parseBoardState(state, 'short', offered).filters).toEqual({
+            compute: ['utwente'],
+            status: ['lead']
+        });
+        expect(
+            parseBoardState({ filters: { compute: ['hpc'] } }, 'short', offered).filters
+        ).toEqual({});
+        expect(parseBoardState({ filters: { compute: ['hpc'] } }, 'short', []).filters).toEqual({});
+    });
+
+    it('keeps every value when it is not told what the board offers', () => {
+        expect(parseBoardState({ filters: { compute: ['hpc'] } }).filters).toEqual({
+            compute: ['hpc']
+        });
     });
 
     it('drops an expanded list that is not a list of ids', () => {

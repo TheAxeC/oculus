@@ -4,31 +4,10 @@
 import type { Project, Snapshot, Tier } from '../../../src/lib/data/model/index.ts';
 import type { ClientState } from '../../fixtures/client.ts';
 import { textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 
 function project(id: string, tier: Tier, type: string, chips: string[] = []): Project {
-    return {
-        id,
-        tier,
-        ghost: false,
-        type,
-        chips,
-        title: id,
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
-        folder: '',
-        file: ''
-    };
+    return fixtureProject({ id, tier, type, chips, title: id, folder: '', file: '' });
 }
 
 /**
@@ -61,6 +40,7 @@ export function badgeSnapshot(empty = false): Snapshot {
             funding: {},
             people: {},
             organisations: {},
+            resources: {},
             collections: {
                 funding: {
                     id: 'funding',

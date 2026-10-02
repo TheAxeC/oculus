@@ -16,12 +16,19 @@ export type Finding = {
 export type Tier =
     'ideas' | 'active' | 'manuscripts' | 'software' | 'coauthor' | 'archive' | 'side-projects';
 
-/** The seven registries, one per file readRegistries is given. */
+/** The eight registries, one per file readRegistries is given. */
 export type RegistryName =
-    'venues' | 'datasets' | 'pillars' | 'domains' | 'funding' | 'people' | 'organisations';
+    | 'venues'
+    | 'datasets'
+    | 'pillars'
+    | 'domains'
+    | 'funding'
+    | 'people'
+    | 'organisations'
+    | 'resources';
 
 /**
- * The seven hub-relative registry paths, one per registry. Declared here, used by
+ * The eight hub-relative registry paths, one per registry. Declared here, used by
  * sources/registries.
  */
 export type RegistryFiles = {
@@ -32,6 +39,7 @@ export type RegistryFiles = {
     funding: string;
     people: string;
     organisations: string;
+    resources: string;
 };
 
 /** One entry of the `collections:` list in the layout config: a key and a hub-relative path. */
@@ -469,8 +477,11 @@ export type Project = {
     subtasks: Subtask[];
     doi?: string;
     outcome?: string;
-    /** Where the headline results are produced: `hpc` or `local`. */
-    compute?: string;
+    /**
+     * The keys of `compute:` that the resources registry holds, in the manifest's order, each key
+     * once. A key the registry lacks is a finding and is left out.
+     */
+    resourceIds: Id[];
     codeAvailability?: CodeAvailability;
     reproduced?: Reproduced;
     /** Ids of other projects this one is related to. */
@@ -638,6 +649,23 @@ export type Organisation = {
     personIds: Id[];
     /** Funding schemes whose `funder:` is this key. */
     fundingIds: Id[];
+};
+
+/**
+ * One resource, from registries/resources.yml: a cluster, a machine or a storage a project runs on.
+ * A manifest's `compute:` and `slurm.resource` of behavior.yml are keys into it. `host` is the ssh
+ * alias of a cluster or a remote machine.
+ */
+export type Resource = {
+    id: Id;
+    name: string;
+    kind: 'cluster' | 'machine' | 'storage';
+    host?: string;
+    /** How it is reached: the network, the VPN, the login rules. */
+    access?: string;
+    links: string[];
+    /** The entry's position among the kept entries of the file, which orders two equal names. */
+    order: number;
 };
 
 /**

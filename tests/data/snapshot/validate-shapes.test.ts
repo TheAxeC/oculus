@@ -24,7 +24,8 @@ const NAMES: RegistryName[] = [
     'domains',
     'funding',
     'people',
-    'organisations'
+    'organisations',
+    'resources'
 ];
 
 const RULES: ValidationRules = {

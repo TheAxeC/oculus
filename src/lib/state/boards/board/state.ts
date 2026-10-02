@@ -15,6 +15,7 @@ import {
     FACETS,
     type BoardItem,
     type BoardState,
+    type Facet,
     type LabelMode,
     type QuickFilters
 } from './presets.ts';
@@ -81,8 +82,16 @@ const boardStateShape = z.object({
     filters: mapShape.optional().catch(undefined)
 });
 
-/** Read a saved board state, falling back one field at a time when a value is invalid. */
-export function parseBoardState(value: unknown, labels: LabelMode = 'short'): BoardState {
+/**
+ * Read a saved board state, falling back one field at a time when a value is invalid. Given the
+ * facets the board offers, a compute value that none of them offers is dropped: it names a resource
+ * the registry does not hold, such as `hpc`.
+ */
+export function parseBoardState(
+    value: unknown,
+    labels: LabelMode = 'short',
+    offered?: Facet[]
+): BoardState {
     const state = emptyBoardState(labels);
     const held = readAs(boardStateShape, value);
     if (held === null) return state;
@@ -96,7 +105,12 @@ export function parseBoardState(value: unknown, labels: LabelMode = 'short'): Bo
     state.more = held.more;
     for (const [facet, selected] of Object.entries(held.filters ?? {})) {
         if (!FACETS.includes(facet)) continue;
-        const values = readAs(stringItemsShape, selected) ?? [];
+        const read = readAs(stringItemsShape, selected) ?? [];
+        const known = offered?.find((one) => one.key === facet)?.values.map((one) => one.value);
+        const values =
+            facet === 'compute' && offered !== undefined
+                ? read.filter((one) => known?.includes(one) === true)
+                : read;
         if (values.length > 0) state.filters[facet] = values;
     }
     return state;

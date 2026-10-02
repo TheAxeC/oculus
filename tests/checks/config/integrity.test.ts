@@ -89,7 +89,8 @@ const REGISTRY_LISTS: Record<string, string> = {
     domains: 'entries',
     funding: 'entries',
     people: 'entries',
-    organisations: 'entries'
+    organisations: 'entries',
+    resources: 'entries'
 };
 
 /** Every project.yml under `dir`, at any depth, counted by walking the tree and nothing else. */

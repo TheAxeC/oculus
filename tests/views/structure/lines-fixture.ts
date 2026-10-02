@@ -1,6 +1,6 @@
 // Shared server-render fixture for the Pillars, Domains and Map acceptance tests.
 
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { scalar } from '../../../src/lib/data/helpers/guards.ts';
 import {
     engineDir,
@@ -41,31 +41,17 @@ const PILLAR_FILE = '/hub/registries/pillars.yml';
 const DOMAIN_FILE = '/hub/registries/domains.yml';
 
 function project(id: string, fields: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier: 'active',
-        ghost: false,
         type: 'active',
         title: id,
         short: id.toUpperCase(),
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
         venueId: undefined,
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/active/${id}`,
         file: `/hub/projects/active/${id}/project.yml`,
         ...fields
-    };
+    });
 }
 
 function entry(id: string, fields: Record<string, unknown>, file: string, index: number): Entry {
@@ -175,6 +161,7 @@ export function fixture(): Snapshot {
             funding: {},
             people: {},
             organisations: {},
+            resources: {},
             personal: {},
             collections: {
                 pillars: collection('pillars', PILLAR_FILE, pillarEntries),

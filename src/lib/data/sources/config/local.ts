@@ -137,7 +137,11 @@ export function localDefaults(engine: string): LocalConfig {
     };
 }
 
-function accountDir(value: string, base: string): string {
+/**
+ * A path local.yml names: `~` and a value starting with `~/` are under the home folder, an absolute
+ * one stands, and any other is resolved against `base`, the engine directory.
+ */
+function localPath(value: string, base: string): string {
     if (value === '~') return homedir();
     if (value.startsWith('~/')) return join(homedir(), value.slice(2));
     return isAbsolute(value) ? value : resolve(base, value);
@@ -186,7 +190,7 @@ function usageAccounts(value: unknown, file: string, base: string): UsageAccount
             }
             claudeLabels.add(reduced);
         }
-        return { tool, dir: accountDir(dir, base), label };
+        return { tool, dir: localPath(dir, base), label };
     });
 }
 
@@ -302,7 +306,7 @@ function applyLocal(
     ] as const) {
         if (record[key] === undefined) continue;
         const value = filledAt(record, key, file, 'a path');
-        config[field] = isAbsolute(value) ? value : resolve(base, value);
+        config[field] = localPath(value, base);
     }
     return config;
 }

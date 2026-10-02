@@ -13,6 +13,7 @@ import {
 } from '../../../../src/lib/views/shared/card/card.ts';
 import type { Project } from '../../../../src/lib/data/model/index.ts';
 import type { Layout } from '../../../../src/lib/state/workbench/layout/index.ts';
+import { fixtureProject } from '../../../fixtures/entities-fixture.ts';
 
 /** One pane holding tabs of these views, the first shown. */
 function paneOf(...views: string[]): Layout {
@@ -34,28 +35,14 @@ describe('a session pressed on a project card', () => {
 const translate = (key: string, ...args: (string | number)[]): string => `${key}:${args.join(',')}`;
 
 function project(deadlineValue?: string): Project {
-    return {
+    return fixtureProject({
         id: 'one',
         title: 'One',
         tier: 'active',
-        ghost: false,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: '',
         file: '',
         deadline: deadlineValue
-    };
+    });
 }
 
 describe('card file helpers', () => {

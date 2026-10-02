@@ -328,11 +328,12 @@
             {#if item.reproduced}
                 <Tag label={t('board.repro_yes')} glyph={t('project.card.repro_glyph')} />
             {/if}
-            {#if item.compute === 'hpc'}
-                <Tag label={t('project.card.hpc_label')} glyph={t('project.card.hpc_glyph')} />
-            {:else if item.compute === 'local'}
-                <Tag label={t('project.card.local_label')} />
-            {/if}
+            {#each item.compute as resource (resource.id)}
+                <Tag
+                    label={resource.label}
+                    glyph={resource.cluster ? t('project.card.hpc_glyph') : undefined}
+                />
+            {/each}
             {#if item.venue}
                 <span class="venue">{item.venue.text}</span>
             {/if}

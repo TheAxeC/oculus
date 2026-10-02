@@ -6,8 +6,6 @@ text:
         code_none: no code
         code_pending: pending
         collapse: collapse
-        compute_hpc: HPC
-        compute_local: Local
         compute_none: unset
         empty: No entries match.
         empty_glyph: circle_empty

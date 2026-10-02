@@ -71,8 +71,9 @@ file_index:
 
 # === Served mode: live SLURM poller and in-page chat =========================
 # Live HPC polling cadences are minutes. `prewarm: false` defers finished-job log resolution.
+# `resource` is the key of a cluster entry of registries/resources.yml, whose `host` is the ssh alias the poller uses.
 slurm:
-  host: utwente
+  resource: utwente
   days: 3
   poll_min: 20
   quota_min: 60

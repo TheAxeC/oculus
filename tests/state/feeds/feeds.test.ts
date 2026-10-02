@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { attention, refresh, staleAfter } from '../../../src/lib/state/feeds/feeds.ts';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import type { Feeds, FeedsPayload, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
@@ -60,28 +60,14 @@ describe('feed state', () => {
 
 describe('attention lines', () => {
     function paper(id: string, venueId: string): Project {
-        return {
+        return fixtureProject({
             id,
             tier: 'active',
-            ghost: false,
             title: id,
-            chips: [],
-            results: [],
-            ideas: [],
-            waitingOn: [],
-            followups: [],
-            subtasks: [],
-            relatedIds: [],
-            fundingIds: [],
-            datasetIds: [],
-            pillarIds: [],
-            domainIds: [],
-            collaborators: [],
-            docs: [],
             folder: `projects/active/${id}`,
             file: `/hub/projects/active/${id}/project.yml`,
             venueId
-        };
+        });
     }
 
     it('carries registry ids and keeps two venues with one label separate', () => {
@@ -110,6 +96,7 @@ describe('attention lines', () => {
                 funding: {},
                 people: {},
                 organisations: {},
+                resources: {},
                 collections: {}
             },
             relations: {

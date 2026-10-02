@@ -4,7 +4,7 @@
 // it is given; that the real one holds the keys these lookups need is
 // tests/state/shared/words/tones.test.ts's half of the gate.
 
-import { NO_FEEDS } from '../../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, RESOURCES, fixtureProject } from '../../../fixtures/entities-fixture.ts';
 import {
     boardItems,
     facets,
@@ -25,6 +25,7 @@ import type {
     Id,
     Project,
     Relations,
+    Resource,
     Snapshot,
     Tier,
     Venue
@@ -87,28 +88,14 @@ export const EMPTY_RELATIONS: Relations = {
 };
 
 export function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier,
-        ghost: false,
         title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/${tier}/${id}`,
         file: `/hub/projects/${tier}/${id}/project.yml`,
         ...over
-    };
+    });
 }
 
 export function venue(id: Id, over: Partial<Venue> = {}): Venue {
@@ -155,7 +142,7 @@ export function snapshot(): Snapshot {
             ideas: ['ideatoken'],
             outcome: 'outcometoken',
             deadline: '2099-01-01',
-            compute: 'hpc',
+            resourceIds: ['utwente'],
             codeAvailability: { status: 'deposited' },
             reproduced: { date: '2026-08-02', note: 'a note' },
             venueId: 'bspc',
@@ -174,7 +161,7 @@ export function snapshot(): Snapshot {
             title: 'Bravo',
             year: 2025,
             chips: ['submitted'],
-            compute: 'local',
+            resourceIds: ['this-mac'],
             codeAvailability: { status: 'review-anon' },
             venueId: 'nowhere',
             pillarIds: ['tensor'],
@@ -229,6 +216,7 @@ export function snapshot(): Snapshot {
                 }
             },
             organisations: {},
+            resources: RESOURCES,
             collections: { 'joint-work': jointWork() }
         },
         relations: EMPTY_RELATIONS,
@@ -261,11 +249,15 @@ export function facet(preset: BoardPreset, items: BoardItem[], key: string): str
 }
 
 /** The board's items with some projects overwritten, for the counting cases. */
-export function over(fields: Record<Id, Partial<Project>>): {
+export function over(
+    fields: Record<Id, Partial<Project>>,
+    resources?: Record<Id, Resource>
+): {
     items: BoardItem[];
     snapshot: Snapshot;
 } {
     const snap = snapshot();
+    if (resources !== undefined) snap.entities.resources = resources;
     for (const [id, held] of Object.entries(fields)) {
         snap.entities.projects[id] = { ...snap.entities.projects[id], ...held };
     }

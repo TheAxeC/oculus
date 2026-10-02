@@ -44,7 +44,7 @@ import {
 
 /** The entries of the fixture catalog's behavior.yml. */
 const BEHAVIOR = {
-    'slurm.host': { description: 'The cluster.', default: 'utwente', control: 'text' },
+    'slurm.resource': { description: 'The cluster.', default: 'utwente', control: 'text' },
     'slurm.poll_min': {
         description: 'Minutes between polls of the queue.',
         default: 20,
@@ -151,7 +151,7 @@ describe('the rows of one file', () => {
     });
 
     it('calls a key that is absent, or written with no value, missing and not Modified', () => {
-        const absent = rowOf(behaviorRows('slurm:\n    host: utwente\n'), 'slurm.poll_min');
+        const absent = rowOf(behaviorRows('slurm:\n    resource: utwente\n'), 'slurm.poll_min');
         expect(absent.state).toBe('missing');
         expect(absent.line).toBeUndefined();
         expect(absent.modified).toBe(false);
@@ -172,7 +172,10 @@ describe('the rows of one file', () => {
         expect(anchored.state).toBe('missing');
         const tagged = rowOf(behaviorRows('slurm:\n    poll_min: !!int 20\n'), 'slurm.poll_min');
         expect(tagged.state).toBe('missing');
-        const block = rowOf(behaviorRows('slurm:\n    host: |\n        utwente\n'), 'slurm.host');
+        const block = rowOf(
+            behaviorRows('slurm:\n    resource: |\n        utwente\n'),
+            'slurm.resource'
+        );
         expect(block.state).toBe('missing');
     });
 
@@ -292,8 +295,10 @@ describe('the rows of one file', () => {
     });
 
     it('reads the line of the key itself and never line one by default', () => {
-        const rows = behaviorRows('# a comment\n\nslurm:\n    host: utwente\n    poll_min: 7\n');
-        expect(rowOf(rows, 'slurm.host').line).toBe(4);
+        const rows = behaviorRows(
+            '# a comment\n\nslurm:\n    resource: utwente\n    poll_min: 7\n'
+        );
+        expect(rowOf(rows, 'slurm.resource').line).toBe(4);
         expect(rowOf(rows, 'slurm.poll_min').line).toBe(5);
         expect(rowOf(rows, 'notes').line).toBeUndefined();
     });
@@ -367,7 +372,7 @@ describe('the groups and the table of contents', () => {
     it('draws the rows of a section in catalog order, gathered under their section', () => {
         const behavior = groupsOf().find((group) => group.id === 'behavior.yml');
         const slurm = behavior?.sections.find((section) => section.heading === 'Slurm');
-        expect(slurm?.rows.map((row) => row.path)).toEqual(['slurm.host', 'slurm.poll_min']);
+        expect(slurm?.rows.map((row) => row.path)).toEqual(['slurm.resource', 'slurm.poll_min']);
     });
 
     it('lists every group it is given and its headed sections in the table of contents', () => {

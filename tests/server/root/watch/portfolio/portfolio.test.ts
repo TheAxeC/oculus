@@ -692,10 +692,11 @@ describe('watchPortfolio', () => {
             return last?.findings.map((finding) => finding.message) ?? [];
         };
         await until(() => messages().length > 0, 3000);
-        // The fixture hub keeps no people or organisations registry, which is two findings of its
-        // own.
+        // The fixture hub keeps no people, organisations or resources registry, which is three
+        // findings of its own.
         expect(messages()).toEqual([
             'findings.manifests.id_not_folder "other" loewner',
+            'findings.registries.file_missing',
             'findings.registries.file_missing',
             'findings.registries.file_missing'
         ]);
@@ -705,6 +706,7 @@ describe('watchPortfolio', () => {
         await until(() => messages()[0] === 'id "other" is not the folder name loewner', 3000);
         expect(messages()).toEqual([
             'id "other" is not the folder name loewner',
+            'registry file does not exist',
             'registry file does not exist',
             'registry file does not exist'
         ]);

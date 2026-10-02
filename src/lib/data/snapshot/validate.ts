@@ -29,8 +29,9 @@ import {
     textOrNumberOnlyShape,
     wordShape
 } from '../shapes/shapes.ts';
-import { JOINT_WORK, PERSON_FIELD, namedSchemaShape } from './normalise.ts';
+import { JOINT_WORK, PERSON_FIELD, keptResources, namedSchemaShape } from './normalise.ts';
 import { personalFindings } from './normalise-personal.ts';
+import { checkOrganisations, checkResources } from './validate-kinds.ts';
 import { checkThemes } from './validate-themes.ts';
 
 /** Keys the reader itself adds to every manifest record; no schema names them. */
@@ -62,15 +63,9 @@ type IdSets = {
     funding: Set<string>;
     people: Set<string>;
     organisations: Set<string>;
+    resources: Set<string>;
     projects: Set<string>;
 };
-
-/**
- * What an organisation's `kind:` may say. It is a fixed list rather than a configured vocabulary
- * because it is what the entity means rather than how it is drawn, and nothing in
- * config/catalogs/vocab.yml names it.
- */
-const ORGANISATION_KINDS = ['university', 'hospital', 'funder', 'company', 'other'];
 
 /**
  * A manifest key that has been renamed, and the name it is written under now. One word for a thing
@@ -125,6 +120,12 @@ const REFERENCES: {
         kind: 'projects',
         single: false,
         unresolved: (catalog, id) => findingText(catalog, 'findings.validate.no_related', id)
+    },
+    {
+        field: 'compute',
+        kind: 'resources',
+        single: false,
+        unresolved: (catalog, id) => findingText(catalog, 'findings.validate.no_resource', id)
     }
 ];
 
@@ -137,7 +138,8 @@ const SHAPES: { field: string; kind: 'string' | 'list'; nullable: boolean }[] = 
     { field: 'related', kind: 'list', nullable: false },
     { field: 'collaborators', kind: 'list', nullable: false },
     { field: 'waiting-on', kind: 'list', nullable: false },
-    { field: 'funding', kind: 'list', nullable: true }
+    { field: 'funding', kind: 'list', nullable: true },
+    { field: 'compute', kind: 'list', nullable: true }
 ];
 
 /** What each kind of `SHAPES` accepts: a text, or a list of anything. */
@@ -627,24 +629,6 @@ function checkPeople(
     });
 }
 
-/** An organisation's `kind:` is one of the five words the entity is defined over. */
-function checkOrganisations(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
-    raw.registries.organisations.entries.forEach((entry, index) => {
-        const kind = entry.kind;
-        if (kind === undefined) return;
-        if (typeof kind === 'string' && ORGANISATION_KINDS.includes(kind)) return;
-        findings.push({
-            file: entry.file,
-            key: `entries[${index}].kind`,
-            message: findingText(
-                catalog,
-                'findings.validate.kind_not_organisation',
-                JSON.stringify(kind)
-            )
-        });
-    });
-}
-
 /**
  * Every entry of the joint-work collection names a person of the registry. The entry is a piece of
  * work with one human, so an entry with no `person:` is a card no reader can follow to whoever the
@@ -772,6 +756,7 @@ function idSets(raw: RawPortfolio): IdSets {
         funding: of('funding'),
         people: of('people'),
         organisations: of('organisations'),
+        resources: new Set(keptResources(raw.registries.resources.entries).map((one) => one.key)),
         projects: new Set(raw.manifests.map((manifest) => manifest.id))
     };
 }
@@ -836,6 +821,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     checkFolderNames(raw, catalog, findings);
     checkPeople(raw, ids.organisations, catalog, findings);
     checkOrganisations(raw, catalog, findings);
+    checkResources(raw, catalog, findings);
     checkJointWork(raw, ids.people, catalog, findings);
     checkFunders(raw, ids.organisations, catalog, findings);
     checkFundingIdentity(raw, catalog, findings);

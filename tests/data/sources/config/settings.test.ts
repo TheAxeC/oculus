@@ -38,7 +38,7 @@ const PAST_DAY_WINDOW = [-1, 1.5, 3651];
 const PAST_PER_SIGNAL = [0, 2.5, -1, 501];
 
 describe('slurmSettings', () => {
-    const BLOCK = { host: 'h', days: 7, poll_min: 5, quota_min: 30, prewarm: true };
+    const BLOCK = { resource: 'h', days: 7, poll_min: 5, quota_min: 30, prewarm: true };
     const read = (slurm: unknown) => outcome(() => slurmSettings({ slurm }));
 
     it.each([[[]], ['x'], [null], [3]])('refuses a slurm key of %j', (slurm) => {
@@ -60,19 +60,25 @@ describe('slurmSettings', () => {
     it('reads the days at both ends of the window and the cadences at both ends of theirs', () => {
         for (const days of [0, 1, 3650]) {
             expect(read({ ...BLOCK, days })).toStrictEqual({
-                value: { host: 'h', days, pollMin: 5, quotaMin: 30, prewarm: true }
+                value: { resource: 'h', days, pollMin: 5, quotaMin: 30, prewarm: true }
             });
         }
         for (const minutes of [1, 1.5, 35791]) {
             expect(read({ ...BLOCK, poll_min: minutes, quota_min: minutes })).toStrictEqual({
-                value: { host: 'h', days: 7, pollMin: minutes, quotaMin: minutes, prewarm: true }
+                value: {
+                    resource: 'h',
+                    days: 7,
+                    pollMin: minutes,
+                    quotaMin: minutes,
+                    prewarm: true
+                }
             });
         }
     });
 
-    it.each([[''], [3], [null], [[]]])('refuses a host of %j', (host) => {
-        expect(read({ ...BLOCK, host })).toStrictEqual(
-            threw('slurm.host must be a non-empty string')
+    it.each([[''], [3], [null], [[]]])('refuses a resource of %j', (resource) => {
+        expect(read({ ...BLOCK, resource })).toStrictEqual(
+            threw('slurm.resource must be a non-empty string')
         );
     });
 
@@ -84,9 +90,14 @@ describe('slurmSettings', () => {
         }
     });
 
-    it('refuses the host before the prewarm and the prewarm before the numbers', () => {
-        expect(read({ ...BLOCK, host: 3, prewarm: 'x', days: 'x' })).toStrictEqual(
-            threw('slurm.host must be a non-empty string')
+    it('refuses a block with host: and no resource:, naming slurm.resource', () => {
+        const withHost = { host: 'h', days: 7, poll_min: 5, quota_min: 30, prewarm: true };
+        expect(read(withHost)).toStrictEqual(threw('slurm.resource must be a non-empty string'));
+    });
+
+    it('refuses the resource before the prewarm and the prewarm before the numbers', () => {
+        expect(read({ ...BLOCK, resource: 3, prewarm: 'x', days: 'x' })).toStrictEqual(
+            threw('slurm.resource must be a non-empty string')
         );
         expect(read({ ...BLOCK, prewarm: 'x', days: 'x' })).toStrictEqual(
             threw('slurm.prewarm must be true or false')

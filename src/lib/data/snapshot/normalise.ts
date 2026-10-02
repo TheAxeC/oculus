@@ -40,6 +40,7 @@ import type {
     RawPortfolio,
     RawRegistryEntry,
     Relations,
+    Resource,
     SchemaField,
     Snapshot,
     Subtask,
@@ -100,6 +101,7 @@ export const ENTITY_KINDS = [
     'funding',
     'people',
     'organisations',
+    'resources',
     'collections',
     'personal'
 ];
@@ -321,7 +323,7 @@ function project(
         subtasks: subtasks(manifest.subtasks),
         doi: str(manifest.doi),
         outcome: str(manifest.outcome),
-        compute: str(manifest.compute),
+        resourceIds: strings(manifest.compute),
         codeAvailability: codeAvailability(manifest.code_availability),
         reproduced: reproduced(manifest.reproduced),
         relatedIds: strings(manifest.related),
@@ -444,6 +446,58 @@ function organisation(entry: RawRegistryEntry): Organisation {
         links: strings(entry.links),
         personIds: [],
         fundingIds: []
+    });
+}
+
+/** The kinds a resource may be. */
+const RESOURCE_KINDS: readonly Resource['kind'][] = ['cluster', 'machine', 'storage'];
+
+/** The keys no resource may have: the board's NONE value and two names every object holds. */
+const RESERVED_RESOURCE_KEYS = ['__none__', '__proto__', 'constructor'];
+
+/** Why an entry of the resources registry is left out. */
+type ResourceFault = 'kind' | 'reserved' | 'duplicate';
+
+/** The kind a registry entry names, or undefined when it names none of the three. */
+function resourceKind(value: unknown): Resource['kind'] | undefined {
+    return RESOURCE_KINDS.find((one) => one === value);
+}
+
+/**
+ * The faults of each entry of the resources registry, by position: a kind outside the three, a
+ * reserved key, and a key that an earlier entry has. An entry with no key has none, since the
+ * reader reports it. Normalise keeps the entries with no fault, and validate reports the rest, so
+ * the two agree on which keys exist.
+ */
+export function resourceFaults(entries: RawRegistryEntry[]): ResourceFault[][] {
+    const earlier = new Set<string>();
+    return entries.map((entry) => {
+        const faults: ResourceFault[] = [];
+        if (entry.key.length === 0) return faults;
+        if (resourceKind(entry.kind) === undefined) faults.push('kind');
+        if (RESERVED_RESOURCE_KEYS.includes(entry.key)) faults.push('reserved');
+        if (earlier.has(entry.key)) faults.push('duplicate');
+        earlier.add(entry.key);
+        return faults;
+    });
+}
+
+/** The entries of the resources registry that have a key and no fault, in file order. */
+export function keptResources(entries: RawRegistryEntry[]): RawRegistryEntry[] {
+    const faults = resourceFaults(entries);
+    return entries.filter((entry, at) => entry.key.length > 0 && faults[at]?.length === 0);
+}
+
+/** One resource, the thing a manifest's `compute:` and `slurm.resource` point at. */
+function resource(entry: RawRegistryEntry, order: number): Resource {
+    return compact({
+        id: entry.key,
+        name: str(entry.name) ?? '',
+        kind: resourceKind(entry.kind) ?? 'machine',
+        host: str(entry.host),
+        access: str(entry.access),
+        links: strings(entry.links),
+        order
     });
 }
 
@@ -707,6 +761,7 @@ export function normalise(
         .filter((scheme) => scheme.id.length > 0);
     const people = withId(raw.registries.people.entries).map(person);
     const organisations = withId(raw.registries.organisations.entries).map(organisation);
+    const resources = keptResources(raw.registries.resources.entries).map(resource);
     const collections = Object.keys(raw.collections).map((key) => collection(raw.collections[key]));
 
     const known: Record<string, Set<Id>> = {
@@ -717,7 +772,8 @@ export function normalise(
         domains: new Set(domains.map((item) => item.id)),
         funding: new Set(schemes.map((item) => item.id)),
         people: new Set(people.map((item) => item.id)),
-        organisations: new Set(organisations.map((item) => item.id))
+        organisations: new Set(organisations.map((item) => item.id)),
+        resources: new Set(resources.map((item) => item.id))
     };
 
     const tables = relations(projects, known, {
@@ -733,6 +789,7 @@ export function normalise(
         item.pillarIds = targets(tables.projectPillar, item.id);
         item.domainIds = targets(tables.projectDomain, item.id);
         item.collaborators = targets(tables.projectPerson, item.id);
+        item.resourceIds = [...new Set(item.resourceIds)].filter((id) => known.resources.has(id));
         if (item.venueId !== undefined && !known.venues.has(item.venueId)) delete item.venueId;
     }
     for (const item of datasets) item.projectIds = sources(tables.projectDataset, item.id);
@@ -767,6 +824,7 @@ export function normalise(
             funding: byId(schemes),
             people: byId(people),
             organisations: byId(organisations),
+            resources: byId(resources),
             collections: byId(collections),
             personal: byId(sideProjects(raw.personal, sideStatuses)),
             feeds: feeds(raw.feeds),

@@ -180,6 +180,7 @@ describe("oculus's own config directory", () => {
             'domains_file',
             'people_file',
             'organisations_file',
+            'resources_file',
             'collections',
             'leads_file',
             'radar_file',

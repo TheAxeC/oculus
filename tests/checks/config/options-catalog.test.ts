@@ -41,7 +41,7 @@ function sound(): Fixture {
         files: {
             'appearance.yml': { crt: { default: false } },
             'behavior.yml': {
-                slurm: { host: 'utwente', poll_min: 20 },
+                slurm: { resource: 'utwente', poll_min: 20 },
                 waiting_status: ['submitted', 'pending'],
                 audit_ignore: [],
                 usage_tiers: { prolite: 'Plus' }
@@ -56,7 +56,7 @@ function sound(): Fixture {
         catalog: {
             'appearance.yml': { 'crt.default': option('toggle', false) },
             'behavior.yml': {
-                'slurm.host': option('text', 'utwente'),
+                'slurm.resource': option('text', 'utwente'),
                 'slurm.poll_min': option('number', 20),
                 waiting_status: option('list', ['submitted', 'pending']),
                 audit_ignore: option('list', []),
@@ -166,7 +166,7 @@ describe('an option and an entry that do not match', () => {
 
     it('names a map whose entries are all missing once, at its own path', () => {
         const fixture = sound();
-        delete entriesOf(fixture, 'behavior.yml')['slurm.host'];
+        delete entriesOf(fixture, 'behavior.yml')['slurm.resource'];
         delete entriesOf(fixture, 'behavior.yml')['slurm.poll_min'];
         const found = run(fixture).filter((line) => line.includes('slurm'));
         expect(found).toEqual(['behavior.yml: slurm: has no catalog entry']);
@@ -174,8 +174,8 @@ describe('an option and an entry that do not match', () => {
 
     it('names each key of a map that keeps an entry of its own', () => {
         const fixture = sound();
-        delete entriesOf(fixture, 'behavior.yml')['slurm.host'];
-        expect(run(fixture)).toContain('behavior.yml: slurm.host: has no catalog entry');
+        delete entriesOf(fixture, 'behavior.yml')['slurm.resource'];
+        expect(run(fixture)).toContain('behavior.yml: slurm.resource: has no catalog entry');
     });
 
     it('names a key and an entry that are reserved names of objects', () => {
@@ -193,23 +193,24 @@ describe('a description', () => {
         [
             'that is missing',
             (fixture) => {
-                delete (entriesOf(fixture, 'behavior.yml')['slurm.host'] as Entries).description;
+                delete (entriesOf(fixture, 'behavior.yml')['slurm.resource'] as Entries)
+                    .description;
             },
-            'behavior.yml: slurm.host: description is missing, empty or not a string'
+            'behavior.yml: slurm.resource: description is missing, empty or not a string'
         ],
         [
             'that is empty',
             (fixture) => {
-                (entriesOf(fixture, 'behavior.yml')['slurm.host'] as Entries).description = '';
+                (entriesOf(fixture, 'behavior.yml')['slurm.resource'] as Entries).description = '';
             },
-            'behavior.yml: slurm.host: description is missing, empty or not a string'
+            'behavior.yml: slurm.resource: description is missing, empty or not a string'
         ],
         [
             'that is a number',
             (fixture) => {
-                (entriesOf(fixture, 'behavior.yml')['slurm.host'] as Entries).description = 3;
+                (entriesOf(fixture, 'behavior.yml')['slurm.resource'] as Entries).description = 3;
             },
-            'behavior.yml: slurm.host: description is missing, empty or not a string'
+            'behavior.yml: slurm.resource: description is missing, empty or not a string'
         ]
     ]);
 });
@@ -301,9 +302,9 @@ describe('a leaf option', () => {
         [
             'that is a text defaulting to a number',
             (fixture) => {
-                (entriesOf(fixture, 'behavior.yml')['slurm.host'] as Entries).default = 3;
+                (entriesOf(fixture, 'behavior.yml')['slurm.resource'] as Entries).default = 3;
             },
-            'behavior.yml: slurm.host: default does not fit control text'
+            'behavior.yml: slurm.resource: default does not fit control text'
         ],
         [
             'that is a list defaulting to a list of records',
@@ -330,11 +331,11 @@ describe('a leaf option', () => {
         [
             'that is set as a list where the file holds text',
             (fixture) => {
-                const host = entriesOf(fixture, 'behavior.yml')['slurm.host'] as Entries;
+                const host = entriesOf(fixture, 'behavior.yml')['slurm.resource'] as Entries;
                 host.control = 'list';
                 host.default = ['utwente'];
             },
-            'behavior.yml: slurm.host: the value the file holds does not fit control list'
+            'behavior.yml: slurm.resource: the value the file holds does not fit control list'
         ],
         [
             'that is a choice where the file holds a word outside the values',

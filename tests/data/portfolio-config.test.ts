@@ -19,7 +19,8 @@ const DEFAULT_REGISTRIES = {
     domains: 'registries/domains.yml',
     funding: 'funding/funding.yml',
     people: 'registries/people.yml',
-    organisations: 'registries/organisations.yml'
+    organisations: 'registries/organisations.yml',
+    resources: 'registries/resources.yml'
 };
 
 const DEFAULT_FEEDS = {

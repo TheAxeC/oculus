@@ -55,10 +55,8 @@ text:
             ghost_badge_tip: no project.yml - run /project-new
             ghostmsg: No manifest yet - folder discovered by prefix. Add <code>project.yml</code>.
             hpc_glyph: hpc
-            hpc_label: HPC
             ideas: Ideas / avenues
             latest: Latest
-            local_label: local
             more_actions: More
             more_glyph: disclosure
             more_tags: '+{0}'

@@ -4,7 +4,7 @@
 
 import { createServer, type RequestListener, type Server } from 'node:http';
 import { createServer as createNetServer, type AddressInfo } from 'node:net';
-import { LISTEN_HOST } from '../../../../src/lib/server/root/context.ts';
+import { LISTEN_HOST } from '../../../../src/lib/server/root/mover.ts';
 
 /** A port nothing listens on at the time of the call. */
 export async function freePort(): Promise<number> {

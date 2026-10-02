@@ -94,6 +94,7 @@ text:
             no_dataset: 'datasets names no dataset: {0}'
             no_pillar: 'pillar names no pillar: {0}'
             no_related: 'related names no project: {0}'
+            no_resource: 'compute names no resource: {0}'
             related_itself: 'related names the project itself: {0}'
             folder_shared: '{0} projects share the folder name {1}, so their ids collide'
             no_collaborator: 'collaborators names no person: {0}'
@@ -109,6 +110,9 @@ text:
             no_affiliation: 'affiliations names no organisation: {0}'
             self_not_one: '{0} people entries carry self: true, and exactly one may'
             kind_not_organisation: kind {0} is not one of the organisation kinds
+            kind_not_resource: kind {0} is not one of cluster, machine and storage
+            resource_duplicate: 'key {0} is held by an earlier entry, so this one is left out'
+            resource_reserved: 'key {0} is reserved, so the entry is left out'
             joint_work_no_person: entry has no {0}
             joint_work_unknown_person: '{0} names no person: {1}'
             no_funder: 'funder names no organisation: {0}'

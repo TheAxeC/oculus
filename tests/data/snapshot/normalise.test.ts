@@ -103,7 +103,7 @@ function portfolio(): RawPortfolio {
                     funding: ['FAIR'],
                     related: ['beta'],
                     collaborators: ['someone'],
-                    compute: 'hpc',
+                    compute: ['utwente'],
                     pin: true,
                     priority: 'high',
                     'waiting-on': ['someone', 'A Free Name'],
@@ -197,6 +197,9 @@ function portfolio(): RawPortfolio {
             organisations: entries('organisations', [
                 { key: 'twente', name: 'University of Twente', kind: 'university', country: 'NL' },
                 { key: 'fwo', name: 'Research Foundation Flanders', kind: 'funder' }
+            ]),
+            resources: entries('resources', [
+                { key: 'utwente', name: 'UTwente HPC', kind: 'cluster', host: 'utwente' }
             ])
         },
         collections: {
@@ -284,7 +287,7 @@ describe('normalise, the field mapping', () => {
             ],
             doi: '10.0/alpha',
             outcome: 'in review',
-            compute: 'hpc',
+            resourceIds: ['utwente'],
             pin: true,
             codeAvailability: {
                 status: 'deposited',
@@ -358,7 +361,8 @@ describe('normalise, the field mapping', () => {
                     domains: entries('domains', []),
                     funding: entries('funding', []),
                     people: entries('people', []),
-                    organisations: entries('organisations', [])
+                    organisations: entries('organisations', []),
+                    resources: entries('resources', [])
                 },
                 collections: {},
                 feeds: NO_FEEDS,

@@ -19,6 +19,7 @@ import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import type { PresentSlide, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -64,29 +65,16 @@ const SLIDES: PresentSlide[] = [
     }
 ];
 
-const PROJECT: Project = {
+const PROJECT: Project = fixtureProject({
     id: 'alpha',
     tier: 'active',
-    ghost: false,
     type: 'active',
     title: 'The alpha project',
-    chips: [],
-    results: [],
-    ideas: [],
-    waitingOn: [],
-    followups: [],
-    subtasks: [],
-    relatedIds: [],
-    fundingIds: [],
-    datasetIds: [],
-    pillarIds: [],
     domainIds: ['heart'],
-    collaborators: [],
-    docs: [],
     present: SLIDES,
     folder: 'projects/active/alpha',
     file: 'projects/active/alpha/project.yml'
-};
+});
 
 let client: ClientState;
 

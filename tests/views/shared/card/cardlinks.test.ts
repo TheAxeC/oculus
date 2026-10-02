@@ -17,6 +17,7 @@ import {
 } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
 import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
+import { fixtureProject } from '../../../fixtures/entities-fixture.ts';
 
 let client: ClientState;
 
@@ -57,27 +58,7 @@ const SOFTWARE = word('project.card.software');
 const PAPERS = word('project.card.software_papers');
 
 function project(tier: Project['tier'] = 'active'): Project {
-    return {
-        id: 'one',
-        title: 'One',
-        tier,
-        ghost: false,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
-        folder: '',
-        file: ''
-    };
+    return fixtureProject({ id: 'one', title: 'One', tier, folder: '', file: '' });
 }
 
 /** Tags named by their kind and their position, so a line's own entries are recognisable. */
@@ -114,7 +95,7 @@ function item(counts: Counts): BoardItem {
         authors: '',
         bucket: '',
         code: '',
-        compute: '',
+        compute: [],
         reproduced: false,
         year: '',
         sessions: 'none',

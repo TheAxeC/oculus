@@ -2,7 +2,7 @@
 // says a field is, and what a field of choices may be set to. Pure, so the editor is tested without
 // a browser and the form is changed in the config rather than in a component.
 //
-// The `from` of a field names where its choices come from: one of the seven registries, the
+// The `from` of a field names where its choices come from: one of the eight registries, the
 // projects themselves, or a vocabulary key of config/catalogs/vocab.yml. That is the only place a
 // widget learns what to offer, so adding a venue to the registry adds it to the form with no code
 // change.
@@ -178,6 +178,7 @@ export function choicesFor(
     if (from === 'projects') return entityChoices(entities?.projects, ['short', 'title']);
     if (from === 'people') return entityChoices(entities?.people, ['name']);
     if (from === 'organisations') return entityChoices(entities?.organisations, ['name']);
+    if (from === 'resources') return entityChoices(entities?.resources, ['name']);
     return vocabChoices(byKey(config, from));
 }
 
@@ -219,7 +220,7 @@ export function fieldValues(project: Project): Record<string, unknown> {
         'code_availability.url': code.url,
         'code_availability.doi': code.doi,
         'code_availability.repo': code.repo,
-        compute: project.compute,
+        compute: project.resourceIds,
         'reproduced.date': project.reproduced?.date,
         'reproduced.note': project.reproduced?.note,
         outcome: project.outcome,

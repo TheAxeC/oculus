@@ -38,6 +38,7 @@ import {
     openSubtaskCount
 } from '../../../../src/lib/state/boards/collection.ts';
 import { parseRawField, rawFieldText } from '../../../../src/lib/state/forms/form-values.ts';
+import { fixtureProject } from '../../../fixtures/entities-fixture.ts';
 
 const FILE = '/hub/network/events.yml';
 
@@ -505,28 +506,14 @@ describe('entrySubtasks', () => {
 
 /** Projects as the snapshot holds them, with only the fields the joins below read. */
 function project(id: string, over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier: 'active',
-        ghost: false,
         title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/active/${id}`,
         file: `/hub/projects/active/${id}/project.yml`,
         ...over
-    };
+    });
 }
 
 describe('groupProjects', () => {

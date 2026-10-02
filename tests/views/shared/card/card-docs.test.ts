@@ -21,6 +21,7 @@ import {
 import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
+import { fixtureProject } from '../../../fixtures/entities-fixture.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -42,27 +43,13 @@ const ROWS = [
 ];
 
 function project(): Project {
-    return {
+    return fixtureProject({
         id: 'one',
         title: 'One',
         tier: 'active',
-        ghost: false,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: FOLDER,
         file: `${FOLDER}/project.yml`
-    };
+    });
 }
 
 function item(): BoardItem {
@@ -80,7 +67,7 @@ function item(): BoardItem {
         authors: '',
         bucket: '',
         code: 'public',
-        compute: 'hpc',
+        compute: [{ id: 'utwente', label: 'UTwente HPC', cluster: true, order: 0 }],
         reproduced: true,
         year: '',
         sessions: 'none',

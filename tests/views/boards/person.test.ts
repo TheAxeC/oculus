@@ -9,7 +9,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import Person from '../../../src/lib/views/boards/person/Person.svelte';
-import { NO_CAREER, NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_CAREER, NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -71,28 +71,14 @@ function organisation(id: string, over: Partial<Organisation> = {}): Organisatio
 }
 
 function project(id: string, over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier: 'manuscripts',
-        ghost: false,
         title: `Project ${id}`,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/manuscripts/${id}`,
         file: `/hub/projects/manuscripts/${id}/project.yml`,
         ...over
-    };
+    });
 }
 
 function jointWork(): Collection {
@@ -150,6 +136,7 @@ function snapshot(): Snapshot {
                     folder: 'theaxec.github.io/_data'
                 })
             },
+            resources: {},
             organisations: {
                 'ku-leuven': organisation('ku-leuven', {
                     name: 'KU Leuven',

@@ -26,35 +26,22 @@ import { engineDir, loadConfig, vocabCatalog } from '../../../src/lib/data/sourc
 import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import type { Deck, PresentSlide, Project } from '../../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 
 setVocab(vocabCatalog(loadConfig(engineDir()).config));
 
 /** A project carrying the slides given, with the fields the deck reads and nothing else. */
 function project(id: string, slides: PresentSlide[], over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier: 'active',
-        ghost: false,
         type: 'active',
         title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         present: slides,
         folder: `projects/active/${id}`,
         file: `projects/active/${id}/project.yml`,
         ...over
-    };
+    });
 }
 
 /** One slide of a project, with only the id and whatever the case names. */

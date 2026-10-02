@@ -19,7 +19,13 @@ import { macOpenAddress } from '../../../src/lib/server/files/open.ts';
 import { watchAutofetch as builtAutofetch } from '../../../src/lib/server/root/watch/autofetch.ts';
 import { noop, noopAsync } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { driver, inertConfig, inertDependencies } from './context-fixture.ts';
+import {
+    blockWith,
+    configWith,
+    driver,
+    inertConfig,
+    inertDependencies
+} from './context-fixture.ts';
 
 // The module as it is, except that its calls are recorded, so a case can read which constructor a
 // context uses when it is handed none.
@@ -349,7 +355,7 @@ describe('ServerContext', () => {
                 loadConfig: vi.fn(() => ({
                     config: {
                         slurm: {
-                            host: 'cluster',
+                            resource: 'cluster',
                             days: 2,
                             poll_min: 1,
                             quota_min: 5,
@@ -506,10 +512,9 @@ describe('ServerContext on a configuration push', () => {
 
     /** Run a case over a started context, closed and its stderr spy restored after it. */
     async function inRun(
-        body: (run: ReturnType<typeof started>) => void | Promise<void>,
-        hpcHost?: string
+        body: (run: ReturnType<typeof started>) => void | Promise<void>
     ): Promise<void> {
-        const run = started(hpcHost);
+        const run = started();
         try {
             await body(run);
         } finally {
@@ -518,21 +523,11 @@ describe('ServerContext on a configuration push', () => {
         }
     }
 
-    /** The inert configuration with the top-level blocks `changes` names replaced whole. */
-    function configWith(changes: Record<string, unknown>): Record<string, unknown> {
-        return { ...inertConfig(), ...changes };
-    }
-
-    /** A block of the inert configuration with the keys `changes` names set. */
-    function blockWith(name: string, changes: Record<string, unknown>): Record<string, unknown> {
-        return { ...(inertConfig()[name] as Record<string, unknown>), ...changes };
-    }
-
     /**
      * A context over recording watchers on a hub of the case's own, and what it printed on stderr
      * under the `config:` prefix since it was built.
      */
-    function started(hpcHost?: string) {
+    function started() {
         const hub = new Hub();
         const setters = {
             hpc: vi.fn(),
@@ -548,7 +543,7 @@ describe('ServerContext on a configuration push', () => {
             createHub: () => hub,
             loadLocal: () => ({
                 ...{ hub: '/hub', port: 8791, claudeBin: 'claude', accounts: [], calendars: [] },
-                ...{ mail: [], ...(hpcHost === undefined ? {} : { hpcHost }) }
+                mail: []
             })
         });
         const said = vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -603,31 +598,15 @@ describe('ServerContext on a configuration push', () => {
             expect(run.lines()).toEqual([]);
         }));
 
-    it('keeps the host the machine names, so a pushed slurm.host reaches the poller only without one', async () => {
-        await inRun(async (run) => {
-            await run.push(configWith({ slurm: blockWith('slurm', { host: 'other' }) }));
-            // A pushed host that the machine's own host overrides changes nothing: no poll starts.
-            expect(run.setters.hpc).not.toHaveBeenCalled();
-            await run.push(configWith({ slurm: blockWith('slurm', { host: 'other', days: 14 }) }));
-            expect(run.setters.hpc).toHaveBeenCalledExactlyOnceWith(
-                expect.objectContaining({ host: 'machine-host', days: 14 })
-            );
-        }, 'machine-host');
-        await inRun(async (run) => {
-            await run.push(configWith({ slurm: blockWith('slurm', { host: 'other' }) }));
-            expect(run.setters.hpc).toHaveBeenCalledExactlyOnceWith(
-                expect.objectContaining({ host: 'other' })
-            );
-        });
-    });
-
     it('hands the three sentences, each kept when the push lacks it, and says the lack once', () =>
         inRun(async (run) => {
+            const hostSentences = (inertConfig().text as Record<string, unknown>).hpc;
             await run.push(
                 configWith({
                     text: {
                         calendar: { ics_no_link: 'new link', ics_failed: 'new failed {0}' },
-                        accounts: { timed_out: 'new timed out {0}' }
+                        accounts: { timed_out: 'new timed out {0}' },
+                        hpc: hostSentences
                     }
                 })
             );
@@ -642,7 +621,8 @@ describe('ServerContext on a configuration push', () => {
 
             const text = {
                 calendar: { ics_no_link: 'newer link' },
-                accounts: { timed_out: 'new timed out {0}' }
+                accounts: { timed_out: 'new timed out {0}' },
+                hpc: hostSentences
             };
             await run.push(configWith({ text }));
             await run.push(configWith({ text }));
@@ -851,9 +831,10 @@ describe('ServerContext on a configuration push', () => {
     });
 
     it('stops at start-up naming the key for a cadence of 0, a day window of -1 and a count of 501', () => {
-        const cases: [string, string, number, string][] = [
+        const cases: [string, string, number | string, string][] = [
             ['slurm', 'poll_min', 0, 'a number from 1 to 35791'],
             ['slurm', 'days', -1, 'a whole number from 0 to 3650'],
+            ['slurm', 'resource', '', 'a non-empty string'],
             ['mail', 'per_signal', 501, 'a whole number from 1 to 500']
         ];
         for (const [block, key, value, words] of cases) {

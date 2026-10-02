@@ -12,9 +12,9 @@ import {
     carryServerContext,
     createServerContext,
     type OculusRequest,
-    type PortMove,
     type ServerContext
 } from './context.ts';
+import { type PortMove } from './mover.ts';
 import { attachAtWs, wireServer } from './process/serve.ts';
 import type { Attached } from './socket.ts';
 

@@ -23,7 +23,7 @@ import { commit, createRowWriter } from '../../../../src/lib/state/system/config
 
 const ENTRIES = {
     'slurm.poll_min': { description: 'Minutes.', default: 20, control: 'number' },
-    'slurm.host': { description: 'The host.', default: 'utwente', control: 'text' },
+    'slurm.resource': { description: 'The host.', default: 'utwente', control: 'text' },
     'crt.default': { description: 'The overlay.', default: false, control: 'toggle' },
     'cursor.style': {
         description: 'The cursor.',
@@ -39,7 +39,7 @@ function rows(poll: number | string = 20): Record<string, ConfigRow> {
         'behavior.yml',
         ENTRIES as never,
         text(
-            `slurm:\n    poll_min: ${poll}\n    host: utwente\ncrt:\n    default: false\ncursor:\n    style: block\n`
+            `slurm:\n    poll_min: ${poll}\n    resource: utwente\ncrt:\n    default: false\ncursor:\n    style: block\n`
         )
     );
     return Object.fromEntries(result.rows.map((row) => [row.key, row]));
@@ -93,8 +93,8 @@ describe('the value a control text makes', () => {
 
     it('takes the text of a text option, the boolean of a toggle and a value of a choice', () => {
         const all = rows();
-        expect(commit(all['slurm.host'], 'cluster')).toEqual({ write: true, value: 'cluster' });
-        expect(commit(all['slurm.host'], '')).toEqual({ write: true, value: '' });
+        expect(commit(all['slurm.resource'], 'cluster')).toEqual({ write: true, value: 'cluster' });
+        expect(commit(all['slurm.resource'], '')).toEqual({ write: true, value: '' });
         expect(commit(all['crt.default'], true)).toEqual({ write: true, value: true });
         expect(commit(all['cursor.style'], 'line')).toEqual({ write: true, value: 'line' });
     });

@@ -401,7 +401,7 @@ describe('the search and its count', () => {
         const body = draw();
         expect(body).toMatch(/<input[^>]*value="@id:slurm.poll_min"/);
         expect(itemOf(body, 'behavior.yml:slurm.poll_min')).not.toBe('');
-        expect(itemOf(body, 'behavior.yml:slurm.host')).toBe('');
+        expect(itemOf(body, 'behavior.yml:slurm.resource')).toBe('');
         expect(itemOf(body, 'appearance.yml:terminal.cursor_style')).toBe('');
         const kept = [...body.matchAll(/data-setting="/g)].length;
         expect(body).toContain(
@@ -528,7 +528,7 @@ describe('Modified, the default and the file and line of an option', () => {
         const changed = itemOf(body, 'behavior.yml:slurm.poll_min');
         expect(changed).toContain('data-modified');
         expect(changed).toContain('class="bar');
-        const plain = itemOf(body, 'behavior.yml:slurm.host');
+        const plain = itemOf(body, 'behavior.yml:slurm.resource');
         // an option at its default is not Modified
         expect(plain).not.toContain('data-modified');
         // an option at its default shows no bar on its left edge
@@ -733,7 +733,7 @@ describe('the reveal of the rail list', () => {
         const body = draw(shippedTexts(), { id, view: 'settings', state: {} });
         expect(itemOf(body, 'layout.yml:rail')).not.toBe('');
         expect(itemOf(body, 'behavior.yml:slurm.poll_min')).not.toBe('');
-        expect(itemOf(body, 'behavior.yml:slurm.host')).toBe('');
+        expect(itemOf(body, 'behavior.yml:slurm.resource')).toBe('');
     });
 
     it('draws only what the query keeps when the tab was not opened to show it', () => {

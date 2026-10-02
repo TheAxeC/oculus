@@ -3,14 +3,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import { handleHpc, type HpcTarget } from '../../../src/lib/server/machine/hpc/routes.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
-const target = (): HpcTarget => {
+const target = (over: Partial<HpcTarget> = {}): HpcTarget => {
     const server = contextFixture({ token: 'token' });
     return {
-        host: 'fixture',
+        where: () => ({ host: 'fixture' }),
         token: server.token,
         refresh: vi.fn(() => server.hpc.refresh()),
         cancel: vi.fn(() => Promise.resolve({ status: 'ok' })),
-        log: vi.fn(() => Promise.resolve({ status: 'ok', log: 'x', path: '/x' }))
+        log: vi.fn(() => Promise.resolve({ status: 'ok', log: 'x', path: '/x' })),
+        ...over
     };
 };
 const request = (body: unknown) =>
@@ -37,5 +38,41 @@ describe('HPC route', () => {
             { action: 'log', id: '42' }
         ])
             expect((await handleHpc(request(body), target())).status).toBe(200);
+    });
+    it('refuses a cancel and a log while there is no host, with the sentence, and runs neither', async () => {
+        const none = target({ where: () => ({ host: '', missing: 'nowhere names no resource' }) });
+        const hint = 'nowhere names no resource';
+        for (const [body, answer] of [
+            [
+                { action: 'cancel', id: '42' },
+                { status: 'error', hint }
+            ],
+            [
+                { action: 'log', id: '42' },
+                { status: 'error', hint, log: '', path: '' }
+            ]
+        ] as const) {
+            const response = await handleHpc(request(body), none);
+            expect(response.status).toBe(200);
+            expect(await response.json()).toEqual(answer);
+        }
+        expect(none.cancel).not.toHaveBeenCalled();
+        expect(none.log).not.toHaveBeenCalled();
+    });
+
+    it('refreshes while there is no host', async () => {
+        const none = target({ where: () => ({ host: '', missing: 'nowhere names no resource' }) });
+        expect((await handleHpc(request({ action: 'refresh' }), none)).status).toBe(200);
+        expect(none.refresh).toHaveBeenCalledOnce();
+    });
+
+    it('refreshes without reading the host, so a host that cannot be read stops no refresh', async () => {
+        const where = vi.fn((): { host: string } => {
+            throw new Error('text catalog: hpc.host_unknown must be a string');
+        });
+        const broken = target({ where });
+        expect((await handleHpc(request({ action: 'refresh' }), broken)).status).toBe(200);
+        expect(broken.refresh).toHaveBeenCalledOnce();
+        expect(where).not.toHaveBeenCalled();
     });
 });

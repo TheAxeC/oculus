@@ -26,6 +26,7 @@ import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { targetOver } from '../../routes/edit/write-fixture.ts';
+import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
@@ -91,29 +92,15 @@ const DECK = `deck:
 
 /** One project with one slide, at the tier whose slides join the deck on their own. */
 function slideProject(id: string, tier: Tier): Project {
-    return {
+    return fixtureProject({
         id,
         tier,
-        ghost: false,
         type: tier === 'active' ? 'active' : 'archive',
         title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         present: [{ id, projectId: id, specs: [], panels: [], method: [], results: [] }],
         folder: `projects/${tier}/${id}`,
         file: `projects/${tier}/${id}/project.yml`
-    };
+    });
 }
 
 /** A target whose deck file and log are both under the system temporary directory. */

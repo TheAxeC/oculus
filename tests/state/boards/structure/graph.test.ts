@@ -21,33 +21,20 @@ import {
     type Graph as MapGraph
 } from '../../../../src/lib/state/boards/structure/graph.ts';
 import type { Project, Snapshot } from '../../../../src/lib/data/model/index.ts';
-import { NO_FEEDS } from '../../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../../fixtures/entities-fixture.ts';
 
 function project(id: string, relatedIds: string[], extra: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier: 'active',
-        ghost: false,
         type: 'active',
         title: id,
         short: id.toUpperCase(),
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
         relatedIds,
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/active/${id}`,
         file: `/hub/projects/active/${id}/project.yml`,
         ...extra
-    };
+    });
 }
 
 function snapshot(): Snapshot {
@@ -84,6 +71,7 @@ function snapshot(): Snapshot {
                 }
             },
             organisations: {},
+            resources: {},
             collections: {},
             feeds: NO_FEEDS,
             career: null

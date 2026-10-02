@@ -227,8 +227,8 @@ options:
                     .pptx
                 ]
             control: list
-        slurm.host:
-            description: The ssh host the Live HPC poller queries, an alias of the ssh configuration. The machine's own hpc_host in local.yml takes precedence. The server refuses to start when it is empty. A change the server refuses while it runs keeps the value in force and is logged.
+        slurm.resource:
+            description: "The cluster the Live HPC poller queries: the key of a cluster entry of registries/resources.yml, whose host is the ssh alias. The machine's own hpc_host in local.yml takes precedence. A key that names no cluster with a host shows why in the HPC view. A change the server refuses while it runs keeps the value in force and is logged."
             default: utwente
             control: text
         slurm.days:
@@ -574,6 +574,11 @@ options:
             description: The organisations registry, the universities, hospitals, funders and companies that a person's affiliations and a funding scheme's funder point at.
             default: registries/organisations.yml
             control: text
+        resources_file:
+            section: Registry and feed files
+            description: "The resources registry, the clusters, machines and storage a project's compute: and slurm.resource name."
+            default: registries/resources.yml
+            control: text
         collections:
             section: Collections
             description: The collection tabs, each a generic card list from one YAML file. An entry needs a key and a file, and two entries with one key are a finding, the later file winning. Each key except venues, datasets, pillars, domains and data also becomes a collection view.
@@ -617,21 +622,21 @@ options:
         port:
             description: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it the port is 8790. A change moves the server to the new port at once, and the page follows it with its layout and settings.
         hpc_host:
-            description: This machine's ssh alias for the Live HPC view. It takes precedence over slurm.host of behavior.yml. A change is read again at once.
+            description: This machine's ssh alias for the Live HPC view. It takes precedence over the host of the cluster that slurm.resource of behavior.yml names. A change is read again at once.
         sessions_cache:
-            description: Where the session layer keeps its byte-offset cache. Without it the file is ~/.oculus/transcript-cache.json. A change is read again at once.
+            description: Where the session layer keeps its byte-offset cache. Without it the file is ~/.oculus/transcript-cache.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         sessions_overrides:
-            description: Where the per-session overrides live. Without it the file is ~/.oculus/sessions.json. A change is read again at once.
+            description: Where the per-session overrides live. Without it the file is ~/.oculus/sessions.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         workspaces:
-            description: Where the file browser's saved workspaces live. Without it the file is ~/.oculus/workspaces.json. A change is read again at once.
+            description: Where the file browser's saved workspaces live. Without it the file is ~/.oculus/workspaces.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         bookmarks:
-            description: Where the reader's own bookmarks live. Without it the file is ~/.oculus/bookmarks.yml. A change is read again at once.
+            description: Where the reader's own bookmarks live. Without it the file is ~/.oculus/bookmarks.yml. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         notes:
-            description: Where the scratch notes live. Without it the folder is ~/.oculus/notes. A change is read again at once.
+            description: Where the scratch notes live. Without it the folder is ~/.oculus/notes. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         changes:
-            description: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl. A change is read again at once.
+            description: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         history:
-            description: Where the local history lives, one folder per file with a copy of the file as it was before each save and before each delete. Up to 50 copies of a save are kept per file, none of a file over 256 KB, and a delete keeps the content of a file up to 5 MB, the newest 50 such copies over all files. Without it the folder is ~/.oculus/history. A change is read again at once.
+            description: Where the local history lives, one folder per file with a copy of the file as it was before each save and before each delete. Up to 50 copies of a save are kept per file, none of a file over 256 KB, and a delete keeps the content of a file up to 5 MB, the newest 50 such copies over all files. Without it the folder is ~/.oculus/history. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         claude_bin:
             description: The Claude command line that the update tasks and the chat terminal are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
         open_bin:
@@ -641,8 +646,8 @@ options:
         calendars:
             description: The calendar accounts that the Calendar view reads, a list of provider (google, microsoft or ics) and label. The label is lowercase letters, digits and dashes and is unique per provider. Without it no calendar is read. A change is read again at once.
         calendar_dir:
-            description: Where the per-account calendar credential files live. Without it the folder is ~/.oculus/calendar. A change is read again at once.
+            description: Where the per-account calendar credential files live. Without it the folder is ~/.oculus/calendar. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         mail:
             description: The mail accounts that the Inbox view reads, a list of provider (google or microsoft) and label. The label is lowercase letters, digits and dashes and is unique per provider. Without it no mail is read. A change is read again at once.
         mail_dir:
-            description: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail. A change is read again at once.
+            description: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.

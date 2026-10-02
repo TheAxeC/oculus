@@ -28,6 +28,7 @@ import { catalogSignature } from '../../../src/lib/state/life/slides.ts';
 import type { Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -35,25 +36,12 @@ setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 setVocab(vocabCatalog(config));
 
-const PROJECT: Project = {
+const PROJECT: Project = fixtureProject({
     id: 'alpha',
     tier: 'active',
-    ghost: false,
     type: 'active',
     title: 'The alpha project',
-    chips: [],
-    results: [],
-    ideas: [],
-    waitingOn: [],
-    followups: [],
-    subtasks: [],
-    relatedIds: [],
-    fundingIds: [],
-    datasetIds: [],
-    pillarIds: [],
     domainIds: ['heart'],
-    collaborators: [],
-    docs: [],
     present: [
         {
             id: 'alpha',
@@ -67,7 +55,7 @@ const PROJECT: Project = {
     ],
     folder: 'projects/active/alpha',
     file: 'projects/active/alpha/project.yml'
-};
+});
 
 const instance: Instance = { id: 'slides-one', view: 'slides', state: {} };
 

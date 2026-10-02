@@ -5,12 +5,8 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-    LISTEN_HOST,
-    type OculusRequest,
-    type PortMove,
-    type ServerContext
-} from '../../../../src/lib/server/root/context.ts';
+import { type OculusRequest, type ServerContext } from '../../../../src/lib/server/root/context.ts';
+import { LISTEN_HOST, type PortMove } from '../../../../src/lib/server/root/mover.ts';
 import { serveContext } from '../../../../src/lib/server/root/process/serve.ts';
 import { contextFixture } from '../context-fixture.ts';
 import { closeAll, freePort } from './server-fixture.ts';

@@ -4,7 +4,7 @@
 // client from here, each case afresh.
 
 import { scalar } from '../../../src/lib/data/helpers/guards.ts';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { render } from 'svelte/server';
 import Focus from '../../../src/lib/views/boards/focus/Focus.svelte';
 import {
@@ -55,28 +55,14 @@ export const EMPTY_RELATIONS: Relations = {
 };
 
 export function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier,
-        ghost: false,
         title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/${tier}/${id}`,
         file: `/hub/projects/${tier}/${id}/project.yml`,
         ...over
-    };
+    });
 }
 
 export function scheme(id: Id, over: Partial<Funding> = {}): Funding {
@@ -224,6 +210,7 @@ export function snapshot(): Snapshot {
                 }
             },
             organisations: {},
+            resources: {},
             collections: {
                 funding: collection('funding', [
                     {
@@ -317,6 +304,7 @@ export function bare(): Snapshot {
                 }
             },
             organisations: {},
+            resources: {},
             collections: {}
         },
         relations: EMPTY_RELATIONS,

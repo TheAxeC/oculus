@@ -14,15 +14,15 @@ import { Hub } from '../../../src/lib/server/core/channels.ts';
 import {
     createServerContext,
     hostInfo,
-    type ContextDependencies,
-    type PortMove
+    type ContextDependencies
 } from '../../../src/lib/server/root/context.ts';
+import { type PortMove } from '../../../src/lib/server/root/mover.ts';
 import { LOCAL_KEYS, localDefaults } from '../../../src/lib/data/sources/config/local.ts';
 import { target } from '../../../src/lib/server/edit/writes.ts';
 import { changedKeys } from '../../../src/lib/server/root/watch/local.ts';
 import { noop, noopAsync } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { inertConfig, inertDependencies } from './context-fixture.ts';
+import { inertConfig, inertDependencies, inertHpc } from './context-fixture.ts';
 
 type Name = 'portfolio' | 'sessions' | 'usageRefresh' | 'usage' | 'git' | 'autofetch' | 'bookmarks';
 const NAMES: Name[] = [
@@ -409,25 +409,19 @@ describe('local.yml read again whenever it changes', () => {
         });
     });
 
-    it('hands the poller the host an hpc_host written names, and slurm.host of the configuration in force when it is removed', () => {
+    it('hands the poller the host an hpc_host written names, and the sentence for no host when it is removed', () => {
         const scratch = scratchDir('oculus-reload-hpc-');
         return inRun(base(scratch), (run) => {
             run.write(base(scratch, { hpc_host: 'login-two' }));
             run.reload();
-            expect(run.setters.hpc).toHaveBeenCalledExactlyOnceWith({
-                host: 'login-two',
-                days: 2,
-                pollMin: 1,
-                quotaMin: 5,
-                prewarm: false
-            });
+            expect(run.setters.hpc).toHaveBeenCalledExactlyOnceWith(inertHpc('login-two'));
             expect(run.built()).toEqual(ONCE);
 
             run.write(base(scratch));
             run.reload();
             expect(run.setters.hpc).toHaveBeenCalledTimes(2);
             expect(run.setters.hpc).toHaveBeenLastCalledWith(
-                expect.objectContaining({ host: 'cluster' })
+                expect.objectContaining({ host: '', missing: 'not read yet' })
             );
         });
     });

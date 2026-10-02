@@ -4,7 +4,6 @@
 import { chipKeys, chipLabel, domainLabel } from '../../shared/words/tones.ts';
 import {
     CODE_VALUES,
-    COMPUTE_VALUES,
     FACETS,
     NONE,
     REPRODUCED_VALUES,
@@ -31,7 +30,7 @@ export function facetValues(item: BoardItem, facet: string): string[] {
         case 'status':
             return item.chips;
         case 'compute':
-            return [item.compute === '' ? NONE : item.compute];
+            return item.compute.length === 0 ? [NONE] : item.compute.map((one) => one.id);
         case 'reproduced':
             return [item.reproduced ? '1' : '0'];
         case 'code':
@@ -43,9 +42,23 @@ export function facetValues(item: BoardItem, facet: string): string[] {
     }
 }
 
+/** The name and registry position of each resource, from the first item that carries it. */
+type Recorded = Map<string, { label: string; order: number }>;
+
+function recordResources(items: BoardItem[]): Recorded {
+    const recorded: Recorded = new Map();
+    for (const item of items) {
+        for (const one of item.compute) {
+            if (!recorded.has(one.id)) recorded.set(one.id, { label: one.label, order: one.order });
+        }
+    }
+    return recorded;
+}
+
 /** The words a facet value carries, for the values that are data rather than vocabulary. */
-function facetLabel(facet: string, value: string, preset: BoardPreset): string {
+function facetLabel(facet: string, value: string, preset: BoardPreset, recorded: Recorded): string {
     if (value === NONE) return value;
+    if (facet === 'compute') return recorded.get(value)?.label ?? value;
     if (facet === 'category') {
         return preset.rollup.find((bucket) => bucket.id === value)?.label ?? value;
     }
@@ -66,11 +79,23 @@ function countValues(items: BoardItem[], facet: string): Map<string, number> {
 }
 
 /** The values of one facet, in the order its menu lists them. */
-function orderValues(facet: string, counts: Map<string, number>, preset: BoardPreset): string[] {
+function orderValues(
+    facet: string,
+    counts: Map<string, number>,
+    preset: BoardPreset,
+    recorded: Recorded
+): string[] {
     const has = (value: string): boolean => (counts.get(value) ?? 0) > 0;
     if (facet === 'category') return preset.rollup.map((bucket) => bucket.id).filter(has);
     if (facet === 'status') return chipKeys().filter(has);
-    if (facet === 'compute') return COMPUTE_VALUES.filter(has);
+    if (facet === 'compute') {
+        // The resources by name, then by registry position, and the value for none last.
+        const named = [...recorded.keys()].filter(has);
+        const at = (id: string): { label: string; order: number } =>
+            recorded.get(id) ?? { label: id, order: 0 };
+        named.sort((a, b) => at(a).label.localeCompare(at(b).label) || at(a).order - at(b).order);
+        return has(NONE) ? [...named, NONE] : named;
+    }
     if (facet === 'code') return CODE_VALUES.filter(has);
     if (facet === 'reproduced') return REPRODUCED_VALUES.filter(has);
     if (facet === 'sessions') return SESSIONS_VALUES.filter(has);
@@ -94,11 +119,12 @@ function orderValues(facet: string, counts: Map<string, number>, preset: BoardPr
  */
 export function facets(items: BoardItem[], preset: BoardPreset): Facet[] {
     const found: Facet[] = [];
+    const recorded = recordResources(items);
     for (const facet of FACETS) {
         const counts = countValues(items, facet);
-        const values = orderValues(facet, counts, preset).map((value) => ({
+        const values = orderValues(facet, counts, preset, recorded).map((value) => ({
             value,
-            label: facetLabel(facet, value, preset),
+            label: facetLabel(facet, value, preset, recorded),
             count: counts.get(value) ?? 0
         }));
         if (values.length > 0) found.push({ key: facet, values });

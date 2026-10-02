@@ -6,13 +6,8 @@
 // the process's own.
 
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
-import {
-    carryingHandler,
-    serverMover,
-    type MoverOptions,
-    type PortMove,
-    type ServerContext
-} from '../context.ts';
+import { carryingHandler, type ServerContext } from '../context.ts';
+import { serverMover, type MoverOptions, type PortMove } from '../mover.ts';
 import { attachSocket, type Attached } from '../socket.ts';
 
 /** The request handler the SvelteKit adapter builds. */

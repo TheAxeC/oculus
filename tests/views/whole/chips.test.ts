@@ -31,6 +31,7 @@ import {
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 import { treeFiles } from '../../checks/walk.ts';
+import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 
 let client: ClientState;
 
@@ -51,28 +52,16 @@ const DATASET = 'DATA-ONE';
 const DOMAIN = 'Cardiology';
 
 function project(): Project {
-    return {
+    return fixtureProject({
         id: 'one',
         title: 'One',
         tier: 'manuscripts',
         type: TYPE,
-        ghost: false,
         chips: [STATUS],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
         datasetIds: ['data-one'],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: 'projects/manuscripts/one',
         file: 'projects/manuscripts/one/project.yml'
-    };
+    });
 }
 
 function item(): BoardItem {
@@ -90,7 +79,7 @@ function item(): BoardItem {
         authors: '',
         bucket: '',
         code: 'public',
-        compute: 'hpc',
+        compute: [{ id: 'this-mac', label: 'This Mac', cluster: false, order: 1 }],
         reproduced: true,
         year: '',
         sessions: 'none',
@@ -363,12 +352,7 @@ describe('the capsule on a project card', () => {
 
     it('is worn by nothing else the card lists', () => {
         const body = card();
-        for (const words of [
-            DOMAIN,
-            DATASET,
-            catalog['board.repro_yes'],
-            catalog['project.card.hpc_label']
-        ]) {
+        for (const words of [DOMAIN, DATASET, catalog['board.repro_yes'], 'This Mac']) {
             expect(primitiveOf(body, words), words).toBe('tag');
         }
     });

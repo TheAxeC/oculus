@@ -67,7 +67,8 @@ describe('namedByConfig', () => {
             domains: 'registries/domains.yml',
             funding: 'funding/funding.yml',
             people: 'registries/people.yml',
-            organisations: 'registries/organisations.yml'
+            organisations: 'registries/organisations.yml',
+            resources: 'registries/resources.yml'
         },
         collections: [{ key: 'events', file: 'network/events.yml' }],
         schema: undefined,
@@ -137,7 +138,8 @@ describe('watchedDirectories', () => {
                 domains: 'registries/domains.yml',
                 funding: 'funding/funding.yml',
                 people: 'registries/people.yml',
-                organisations: 'registries/organisations.yml'
+                organisations: 'registries/organisations.yml',
+                resources: 'registries/resources.yml'
             },
             collections: [{ key: 'events', file: 'network/events.yml' }],
             schema: undefined,
@@ -169,7 +171,8 @@ describe('watchedDirectories', () => {
                 domains: 'registries/domains.yml',
                 funding: 'funding/funding.yml',
                 people: 'registries/people.yml',
-                organisations: 'registries/organisations.yml'
+                organisations: 'registries/organisations.yml',
+                resources: 'registries/resources.yml'
             },
             collections: [],
             schema: undefined,

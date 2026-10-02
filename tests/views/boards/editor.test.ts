@@ -10,7 +10,7 @@
 // tests/server/edit/writes.test.ts and tests/routes/edit/write.test.ts.
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { render } from 'svelte/server';
 import Editor from '../../../src/lib/views/boards/editor/Editor.svelte';
 import {
@@ -47,10 +47,9 @@ const fields = formFields(config);
 const sections = formSections(config);
 
 function project(): Project {
-    return {
+    return fixtureProject({
         id: 'alpha',
         tier: 'manuscripts',
-        ghost: false,
         type: 'manuscript',
         title: 'Alpha, the whole title',
         short: 'Alpha',
@@ -65,25 +64,16 @@ function project(): Project {
         next: 'Run the sweep.',
         latest: 'the latest thing',
         results: ['the first result', 'the second'],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
         deadline: '2099-01-01',
-        compute: 'hpc',
+        resourceIds: ['utwente'],
         codeAvailability: { status: 'deposited', url: 'https://example.invalid' },
         reproduced: { date: '2026-08-02' },
-        relatedIds: [],
         venueId: 'bspc',
-        fundingIds: [],
-        datasetIds: [],
         pillarIds: ['tensor'],
         domainIds: ['method'],
-        collaborators: [],
-        docs: [],
         folder: 'projects/manuscripts/alpha',
         file: '/hub/projects/manuscripts/alpha/project.yml'
-    };
+    });
 }
 
 function snapshot(): Snapshot {
@@ -104,6 +94,7 @@ function snapshot(): Snapshot {
             funding: {},
             people: {},
             organisations: {},
+            resources: {},
             collections: {}
         },
         relations: {

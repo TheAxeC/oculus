@@ -137,7 +137,8 @@ export function portfolioConfigFrom(
         domains: path('domains_file', REGISTRY_FILES.domains),
         funding: fundingFile ?? REGISTRY_FILES.funding,
         people: path('people_file', REGISTRY_FILES.people),
-        organisations: path('organisations_file', REGISTRY_FILES.organisations)
+        organisations: path('organisations_file', REGISTRY_FILES.organisations),
+        resources: path('resources_file', REGISTRY_FILES.resources)
     };
 
     const vocab: Vocabulary = {

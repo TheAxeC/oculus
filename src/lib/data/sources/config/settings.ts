@@ -43,7 +43,7 @@ const positiveShape = z.number().positive();
 const wholePositiveShape = z.number().refine(Number.isInteger).positive();
 
 /** A text with something in it. */
-const hostShape = z.string().min(1);
+const nonEmptyShape = z.string().min(1);
 
 /** True or false. */
 const flagShape = z.boolean();
@@ -76,7 +76,8 @@ function settingOf<T>(
 
 /** The Live HPC settings of config/behavior.yml, every key required. */
 export type SlurmSettings = {
-    host: string;
+    /** The key of the cluster entry of registries/resources.yml the poller queries. */
+    resource: string;
     days: number;
     pollMin: number;
     quotaMin: number;
@@ -86,10 +87,10 @@ export type SlurmSettings = {
 /** Read `slurm:` with its five keys, or throw naming the key that is missing or mistyped. */
 export function slurmSettings(config: Record<string, unknown>): SlurmSettings {
     const slurm = blockOf(config, 'slurm');
-    const host = settingOf(hostShape, slurm, 'slurm', 'host', 'a non-empty string');
+    const resource = settingOf(nonEmptyShape, slurm, 'slurm', 'resource', 'a non-empty string');
     const prewarm = settingOf(flagShape, slurm, 'slurm', 'prewarm', 'true or false');
     return {
-        host,
+        resource,
         days: settingOf(dayWindowShape, slurm, 'slurm', 'days', DAY_WORDS),
         pollMin: settingOf(cadenceShape, slurm, 'slurm', 'poll_min', CADENCE_WORDS),
         quotaMin: settingOf(cadenceShape, slurm, 'slurm', 'quota_min', CADENCE_WORDS),

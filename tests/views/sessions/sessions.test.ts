@@ -22,7 +22,7 @@ import { scheduleReflow } from '../../../src/lib/views/sessions/terminal/grid/re
 import { clock } from '../../../src/lib/state/shared/words/format.ts';
 import type { Turn } from '../../../src/lib/state/sessions/transcript.svelte.ts';
 import { area, payload, record, terminal, workspace } from '../../fixtures/sessions-fixture.ts';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import type { Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { Component } from 'svelte';
 import type { ViewProps } from '../../../src/lib/state/workbench/navigation/registry.ts';
@@ -636,27 +636,14 @@ describe('resuming a session into a terminal', () => {
 describe('the pin control over the portfolio', () => {
     /** A hub whose two projects are the folders a session may be pinned to. */
     function portfolio(): Snapshot {
-        const project = (id: string, folder: string): Project => ({
-            id,
-            tier: 'manuscripts',
-            ghost: false,
-            title: id,
-            chips: [],
-            results: [],
-            ideas: [],
-            waitingOn: [],
-            followups: [],
-            subtasks: [],
-            relatedIds: [],
-            fundingIds: [],
-            datasetIds: [],
-            pillarIds: [],
-            domainIds: [],
-            collaborators: [],
-            docs: [],
-            folder,
-            file: `${HUB}/${folder}/project.yml`
-        });
+        const project = (id: string, folder: string): Project =>
+            fixtureProject({
+                id,
+                tier: 'manuscripts',
+                title: id,
+                folder,
+                file: `${HUB}/${folder}/project.yml`
+            });
         return {
             version: 9,
             entities: {
@@ -672,6 +659,7 @@ describe('the pin control over the portfolio', () => {
                 funding: {},
                 people: {},
                 organisations: {},
+                resources: {},
                 collections: {},
                 feeds: NO_FEEDS,
                 career: null

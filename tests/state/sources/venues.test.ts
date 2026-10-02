@@ -23,30 +23,17 @@ import {
     themeFacets,
     themeWordLabels
 } from '../../../src/lib/state/shared/words/themes.ts';
+import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 
 function project(id: string, over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier: 'active',
-        ghost: false,
         title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/active/${id}`,
         file: `/hub/projects/active/${id}/project.yml`,
         ...over
-    };
+    });
 }
 
 function venue(id: string, over: Partial<Venue> = {}): Venue {

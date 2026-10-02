@@ -3,7 +3,7 @@
 
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import Data from '../../../src/lib/views/sources/data/Data.svelte';
 import DatasetCard from '../../../src/lib/views/sources/data/DatasetCard.svelte';
 import { noop } from '../../fixtures/doubles.ts';
@@ -98,29 +98,16 @@ function entry(dataset: Dataset, index: number): Entry {
 }
 
 function project(id: string): Project {
-    return {
+    return fixtureProject({
         id,
         tier: 'active',
-        ghost: false,
         type: 'active',
         title: 'Linked project',
         short: 'LP',
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
         datasetIds: ['open'],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/active/${id}`,
         file: `/hub/projects/active/${id}/project.yml`
-    };
+    });
 }
 
 const DATASETS = [
@@ -168,6 +155,7 @@ function snapshot(datasets: Dataset[]): Snapshot {
             funding: {},
             people: {},
             organisations: {},
+            resources: {},
             collections: { data: collection(datasets) },
             feeds: NO_FEEDS,
             career: null

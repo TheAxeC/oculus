@@ -14,7 +14,7 @@
 #   select    one of a list | chips several of a list, with a filter | tags several free strings
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
 # `from:` names where the choices come from: a registry (venues, pillars, funding, datasets,
-# domains), `people`, `organisations`, `projects`, or a vocabulary key of vocab.yml
+# domains), `people`, `organisations`, `resources`, `projects`, or a vocabulary key of vocab.yml
 # (type_order, status_legend, focus_lanes, priority_levels). `options:` is a literal list instead.
 manifest_schema:
   sections:
@@ -65,7 +65,7 @@ manifest_schema:
     "code_availability.homepage": { label: "Repo homepage", type: text, section: "Deposit & compute" }
     "code_availability.topics": { label: "Repo topics", type: tags, section: "Deposit & compute", help: "The GitHub topics of the repository, one per entry." }
     "code_availability.visibility": { label: "Repo visibility", type: select, options: [public, private], section: "Deposit & compute" }
-    compute:       { label: "Compute", type: select, options: [hpc, local], section: "Deposit & compute" }
+    compute:       { label: "Compute", type: chips, from: resources, section: "Deposit & compute", help: "The clusters, machines and storage the project runs on, picked from the resources list." }
     "reproduced.date": { label: "Reproduced (date)", type: date, section: "Deposit & compute", help: "The date the whole pipeline was last run again from the raw data to regenerate the reported numbers." }
     "reproduced.note": { label: "Reproduced (note)", type: textarea, section: "Deposit & compute", help: "What was run again, and anything a rerun needs, such as a GPU cluster or credentialed data." }
     outcome:       { label: "Outcome (citation / why-not)", type: textarea, section: "Archive (archive tier)" }

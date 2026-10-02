@@ -82,10 +82,11 @@
     const STATS_BOARD = 'projects';
 
     const preset = $derived(boardPreset(instance.view));
-    const held = $derived(parseBoardState(instanceState(instance.id), preset.labels));
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
-    const groups = $derived(filterGroups(facets(items, preset), held.filters, preset));
+    const offered = $derived(facets(items, preset));
+    const held = $derived(parseBoardState(instanceState(instance.id), preset.labels, offered));
+    const groups = $derived(filterGroups(offered, held.filters, preset));
     const types = $derived(typeCounts(items, preset.typeOrder));
     const lag = $derived(staleLag());
     const shown = $derived(

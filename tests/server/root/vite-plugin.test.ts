@@ -14,13 +14,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import WebSocket from 'ws';
 import type { PreviewServer, ViteDevServer } from 'vite';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
+import { serverContext } from '../../../src/lib/server/root/context.ts';
 import {
     LISTEN_HOST,
-    serverContext,
     serverMover,
     type PortMove,
     type ServerMover
-} from '../../../src/lib/server/root/context.ts';
+} from '../../../src/lib/server/root/mover.ts';
 import { attachSocket } from '../../../src/lib/server/root/socket.ts';
 import { oculusViteServer } from '../../../src/lib/server/root/vite-plugin.ts';
 import { contextFixture } from './context-fixture.ts';

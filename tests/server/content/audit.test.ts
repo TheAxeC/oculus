@@ -25,6 +25,7 @@ import { scalar } from '../../../src/lib/data/helpers/guards.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { AuditFinding, Collection, Project } from '../../../src/lib/data/model/index.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 
 const catalog = textCatalog(loadConfig(engineDir()).config);
 
@@ -66,30 +67,17 @@ function folder(root: string, rel: string): void {
 
 /** One project of the snapshot, with only the fields a rule reads set. */
 function project(over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id: 'alpha',
         tier: 'active',
-        ghost: false,
         type: 'active',
         title: 'A title',
-        chips: [],
         eli5: 'what it is',
         results: ['a result'],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: 'projects/active/alpha',
         file: 'projects/active/alpha/project.yml',
         ...over
-    };
+    });
 }
 
 /** One collection of the snapshot. */

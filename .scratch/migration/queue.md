@@ -1,10 +1,9 @@
 /plan-orchestration oculus/migration
 
-28 steps are not landed: 3 in flight and 25 queued. Each line below is one step: its id, what it is, and what it waits for.
+27 steps are not landed: 2 in flight and 25 queued. Each line below is one step: its id, what it is, and what it waits for.
 
-In flight (3; S4 and Q91 take the two free slots next, and D14, D17 and X3e are prepared to wait ready):
-- D18 (the Processes view): its repair round reviewed (5 small findings, fixed at landing); landing next.
-- M3 (the resources registry): its repair round reviewed (5 small findings, fixed at landing); landing after D18.
+In flight (2; S4, Q91, D14 and D17 take the free slots next, and X3e, D25 and X3c are prepared to wait ready):
+- D18 (the Processes view): its repair round reviewed (5 small findings, fixed at landing); its landing waits for your ruling on the rail order (open item Z275), since it changes `config/layout.yml`, which holds your uncommitted change.
 - D32 (replace in the Search view, as VS Code's): being built.
 
 Queued, in order (25). "Ready" means nothing in plan.md holds the step back; it starts when a slot frees.
@@ -35,7 +34,8 @@ Queued, in order (25). "Ready" means nothing in plan.md holds the step back; it 
 - O35 (oculus on macOS, Linux and Windows, terminals behind one backend interface with tmux and, on Windows, ConPTY): waits for O33.
 
 Landed, newest first:
-- Q88c (the Source Control rows' and the pane strip's new right-click capabilities), 2026-10-02, this commit.
+- M3 (the resources registry), 2026-10-02, 18b8d036.
+- Q88c (the Source Control rows' and the pane strip's new right-click capabilities), 2026-10-02, 81f5e4fe.
 - A1 (a comment on a line of a session's diff, sent to that session), 2026-10-02, 33be30af.
 - X3a (the Files view as VS Code's Explorer), 2026-10-02, 705e588d.
 - D24 (the Personal board: side projects and the Files roots' manifests as cards), 2026-10-02, 4ce50c59.

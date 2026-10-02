@@ -48,8 +48,12 @@
     let logId = $state('');
     let logStatus = $state('');
     let logOutput = $state('');
-    /** The error box's words: the sentence, and the ssh line under it as code when there is one. */
-    function unreachable(hint: string | undefined): string {
+    /**
+     * The error box's words: the sentence, and the ssh line under it as code when there is one.
+     * While there is no host to ask, the hint is the sentence for why and stands alone.
+     */
+    function unreachable(hint: string | undefined, host: string): string {
+        if (host === '' && hint !== undefined && hint !== '') return hint;
         return hint === undefined || hint === ''
             ? t('hpc.unreachable_msg')
             : t('hpc.unreachable_detail', t('hpc.unreachable_msg'), hint);
@@ -80,7 +84,7 @@
         {#if data?.status === 'starting'}
             <Empty message={t('hpc.fetching')} />
         {:else if data && data.status !== 'ok'}
-            <Empty error message={unreachable(data.hint)}>
+            <Empty error message={unreachable(data.hint, data.host)}>
                 {#snippet action()}
                     <ToolButton small label={t('hpc.refresh_now')} onclick={refresh} />
                 {/snippet}
@@ -104,7 +108,7 @@
                 onclose={() => (logId = '')}
             />
         {/if}
-        {#if data}
+        {#if data && data.host !== ''}
             <footer>{t('hpc.footer', data.host)}</footer>
         {/if}
     </div>

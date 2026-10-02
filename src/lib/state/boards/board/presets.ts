@@ -81,8 +81,12 @@ export type BoardItem = {
     bucket: string;
     /** The code deposit's status, or the empty string when the manifest names none. */
     code: string;
-    /** `hpc`, `local`, or the empty string. */
-    compute: string;
+    /**
+     * The resources the project's `compute:` names, in the manifest's order: the key, the entry's
+     * name, whether it is a cluster, and the entry's position in the registry, which orders two
+     * resources of one name in the facet menu.
+     */
+    compute: { id: string; label: string; cluster: boolean; order: number }[];
     reproduced: boolean;
     /** The year as text, or the empty string when the manifest has none. */
     year: string;
@@ -226,7 +230,6 @@ export const SESSIONS_NONE = 'none';
 export const SESSIONS_VALUES = [SESSIONS_LIVE, SESSIONS_RECENT, SESSIONS_NONE];
 
 /** The fixed values of the facets that have them, in the order their menu lists them. */
-export const COMPUTE_VALUES = ['hpc', 'local', NONE];
 export const CODE_VALUES = ['deposited', 'review-anon', 'none', NONE];
 export const REPRODUCED_VALUES = ['1', '0'];
 

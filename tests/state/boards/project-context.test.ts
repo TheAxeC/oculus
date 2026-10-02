@@ -3,35 +3,23 @@
 import { describe, expect, it } from 'vitest';
 import { contextText } from '../../../src/lib/state/boards/project-context.ts';
 import type { Project, Snapshot } from '../../../src/lib/data/model/index.ts';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 
-const project: Project = {
+const project: Project = fixtureProject({
     id: 'alpha',
     tier: 'active',
-    ghost: false,
     type: 'active',
     title: 'Alpha project',
     chips: ['lead', 'blocked'],
     eli5: 'A plain explanation.',
     results: ['One result', 'Another result'],
-    ideas: [],
     next: 'Run the next experiment.',
     latest: 'The latest note.',
     deadline: '2026-10-01',
-    waitingOn: [],
-    followups: [],
-    subtasks: [],
-    relatedIds: [],
     venueId: 'jbi',
-    fundingIds: [],
-    datasetIds: [],
-    pillarIds: [],
-    domainIds: [],
-    collaborators: [],
-    docs: [],
     folder: 'projects/active/alpha',
     file: '/hub/projects/active/alpha/project.yml'
-};
+});
 
 const snapshot: Snapshot = {
     version: 1,
@@ -48,6 +36,7 @@ const snapshot: Snapshot = {
         funding: {},
         people: {},
         organisations: {},
+        resources: {},
         collections: {},
         feeds: NO_FEEDS,
         career: null

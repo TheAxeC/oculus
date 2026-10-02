@@ -1,7 +1,7 @@
 // Layer 4, test fixture. The synthetic collection, projects and snapshot the collection view suites
 // render, and the helpers that render one collection tab to HTML and read its cards out of it.
 
-import { NO_FEEDS } from '../../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../../fixtures/entities-fixture.ts';
 import { render } from 'svelte/server';
 import Collection from '../../../../src/lib/views/boards/collection/Collection.svelte';
 import {
@@ -106,28 +106,14 @@ export const ENTRIES: Entry[] = [
 
 /** A project as the snapshot holds it, with the fields the joins on a card read. */
 export function project(id: string, over: Partial<Project> = {}): Project {
-    return {
+    return fixtureProject({
         id,
         tier: 'active',
-        ghost: false,
         title: id,
-        chips: [],
-        results: [],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
-        docs: [],
         folder: `projects/active/${id}`,
         file: `/hub/projects/active/${id}/project.yml`,
         ...over
-    };
+    });
 }
 
 export const PROJECTS: Record<string, Project> = {
@@ -232,6 +218,7 @@ export function snapshot(projects: Record<string, Project> = PROJECTS): Snapshot
                 }
             },
             organisations: {},
+            resources: {},
             collections: {
                 'joint-work': {
                     id: 'joint-work',

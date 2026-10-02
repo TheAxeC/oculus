@@ -93,6 +93,12 @@ export type WatchOptions = {
     clock?: Clock;
     /** Milliseconds between two looks at the workspaces file. */
     poll?: number;
+    /**
+     * Called once per rebuild, after the portfolio, the audit and the feeds are published, so what
+     * it reads from the hub is that rebuild's own result. A throw is logged and costs nothing else,
+     * and it is never called once the watcher is closed.
+     */
+    built?: () => void;
 };
 
 export type Watcher = {
@@ -584,6 +590,12 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             }
             if (isClosed()) return;
             if (withFeeds) hub.publish('feeds', buildFeeds(paths.hub, portfolio));
+            if (isClosed()) return;
+            try {
+                options.built?.();
+            } catch (error) {
+                console.error(`portfolio watch: the built callback failed: ${reason(error)}`);
+            }
         } catch (error) {
             console.error(`portfolio watch: rebuild failed: ${reason(error)}`);
         }

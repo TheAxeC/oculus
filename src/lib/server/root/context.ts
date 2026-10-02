@@ -4,8 +4,7 @@
 // It is the server's composition root: it imports every other server folder and none imports it,
 // which is why server/root is the top of the server's folder order.
 
-import type { IncomingMessage, Server } from 'node:http';
-import { createServer as createNetServer, type Server as NetServer } from 'node:net';
+import type { IncomingMessage } from 'node:http';
 import { hostname } from 'node:os';
 import { isDeepStrictEqual } from 'node:util';
 import {
@@ -60,6 +59,7 @@ import { fsWrites, type FsWrites } from '../core/json.ts';
 import { memoriesMemory, type MemoriesMemory } from '../content/memories.ts';
 import { browserRoots, repositoryRoots } from '../files/roots.ts';
 import { wallpaperMemory, type WallpaperMemory } from '../content/wallpaper.ts';
+import { hostWordsOf, hpcSettingsOf, latestResources } from '../machine/hpc/host.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.ts';
 import { Terminals } from '../machine/pty/channel.ts';
 import { projectFolders } from '../sessions/index.ts';
@@ -73,6 +73,7 @@ import {
 } from '../machine/usage/refresh.ts';
 import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
+import { LISTEN_HOST, type PortMove } from './mover.ts';
 import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
 import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
 import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
@@ -87,9 +88,6 @@ import {
 } from './watch/local.ts';
 import { watchPortfolio, type Watcher } from './watch/portfolio.ts';
 import { watchSessions, type SessionsWatcher } from './watch/sessions.ts';
-
-/** The interface the server listens on: the loopback alone, so no other machine reaches it. */
-export const LISTEN_HOST = '127.0.0.1';
 
 /** The machine the server runs on, and the address a page on it reaches the server at. */
 export function hostInfo(port: number): HostInfo {
@@ -228,141 +226,6 @@ const COCKPIT_PORT = 8787;
 /** The highest port number. */
 const LAST_PORT = 65535;
 
-/**
- * How the process that owns the HTTP server moves it to another port. `announce` is called once
- * the server listens on `port`, so a page told the new address over a socket that stayed open finds
- * the server there. It resolves null when the server listens on `port`, or the reason the server
- * stays where it is, in which case `announce` was not called.
- */
-export type PortMove = (port: number, announce: () => void) => Promise<string | null>;
-
-/** What `serverMover` gives the entry that owns the server. */
-export type ServerMover = {
-    move: PortMove;
-    /** Whether a move is stopping and starting the server, whose `close` event is then no stop. */
-    moving: () => boolean;
-};
-
-/** The reason a probe or a listen gave for failing, in words a log line can carry. */
-function listenReason(error: unknown): string {
-    const code = (error as NodeJS.ErrnoException).code;
-    if (code === 'EADDRINUSE') return 'the port is in use';
-    return error instanceof Error ? error.message : String(error);
-}
-
-/** Listen on one port of the loopback and resolve null, or the reason the listen failed. */
-function listenOn(server: NetServer, port: number): Promise<string | null> {
-    return new Promise((resolve) => {
-        const failed = (error: unknown): void => {
-            resolve(listenReason(error));
-        };
-        server.once('error', failed);
-        try {
-            server.listen(port, LISTEN_HOST, () => {
-                server.off('error', failed);
-                resolve(null);
-            });
-        } catch (error) {
-            server.off('error', failed);
-            failed(error);
-        }
-    });
-}
-
-/** How long a request in flight may take to finish when the server moves, in milliseconds. */
-const MOVE_GRACE_MS = 5000;
-
-/** What a mover is given besides the server: the end of the process and the grace period. */
-export type MoverOptions = {
-    /** Ends the process with a status, which is the one way a server with no listener stops. */
-    exit?: (code: number) => void;
-    /** How long a request in flight may take before the move ends what remains. */
-    graceMs?: number;
-};
-
-/**
- * The move of one HTTP server to another port, for the entry that created it. The new port is
- * probed with a server of its own that is closed at once; only a free port goes on. The server then
- * stops listening and ends its idle connections at once, lets a request in flight finish for up to
- * `graceMs`, ends what remains (an upgraded socket stays open, so a page keeps the socket it was
- * told the new address on) and listens on the new port, so the same context, token and sockets
- * serve on; only then are the pages told the new address. Its `close` event queued by the stop is
- * no stop of the process, which `moving` says until the server is listening again. A listen
- * that fails after the stop listens on the old port again, and when that fails too the reasons are
- * logged in one line and the process exits with status 1, since a server with no listener serves
- * nothing.
- */
-export function serverMover(server: Server, options: MoverOptions = {}): ServerMover {
-    const exit = options.exit ?? ((code: number): void => process.exit(code));
-    const graceMs = options.graceMs ?? MOVE_GRACE_MS;
-    let running = false;
-    let moving = false;
-    let inFlight = 0;
-    let drained: (() => void) | null = null;
-    server.on('request', (_request, response) => {
-        inFlight += 1;
-        response.once('close', () => {
-            inFlight -= 1;
-            if (inFlight === 0) drained?.();
-        });
-    });
-
-    /** Resolve when no request is in flight, or after the grace period. */
-    function finishRequests(): Promise<void> {
-        if (inFlight === 0) return Promise.resolve();
-        return new Promise((resolve) => {
-            const done = (): void => {
-                clearTimeout(timer);
-                drained = null;
-                resolve();
-            };
-            const timer = setTimeout(done, graceMs);
-            drained = done;
-        });
-    }
-
-    const move: PortMove = async (port, announce) => {
-        if (running) return 'a move is in progress';
-        const address = server.address();
-        if (address === null || typeof address === 'string') return 'the server is not listening';
-        running = true;
-        try {
-            const probe = createNetServer();
-            const busy = await listenOn(probe, port);
-            if (busy !== null) return busy;
-            await new Promise<void>((resolve) => {
-                probe.close(() => {
-                    resolve();
-                });
-            });
-            moving = true;
-            try {
-                server.close();
-                await finishRequests();
-                server.closeAllConnections();
-                const refused = await listenOn(server, port);
-                if (refused === null) {
-                    announce();
-                    return null;
-                }
-                const back = await listenOn(server, address.port);
-                if (back !== null) {
-                    console.error(
-                        `the server could not listen on port ${port} (${refused}) and could not listen on port ${address.port} again (${back}); it stops`
-                    );
-                    exit(1);
-                }
-                return refused;
-            } finally {
-                moving = false;
-            }
-        } finally {
-            running = false;
-        }
-    };
-    return { move, moving: () => moving };
-}
-
 /** What the context holds of the watchers that a changed key of local.yml builds again. */
 type Parts = {
     portfolio: Watcher;
@@ -443,14 +306,19 @@ export function createServerContext(
     // The roots are read at the call, as the git watcher's are, so a root added to sources.yml or
     // a workspace saved while the server runs is read when the next rebuild asks.
     const startPortfolio = (): Watcher =>
-        make.watchPortfolio(hub, {
-            hub: local.hub,
-            engine,
-            icons,
-            host,
-            roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local }),
-            workspacesFile: local.workspaces ?? defaultWorkspacesPath()
-        });
+        make.watchPortfolio(
+            hub,
+            {
+                hub: local.hub,
+                engine,
+                icons,
+                host,
+                roots: () =>
+                    browserRoots({ config: make.loadConfig(engine).config, engine, local }),
+                workspacesFile: local.workspaces ?? defaultWorkspacesPath()
+            },
+            { built: () => built.live?.hostChanged() }
+        );
     const folders = (): ProjectFolder[] => {
         const message = hub.latest('portfolio');
         return message === undefined ? [] : projectFolders(local.hub, message.payload as Snapshot);
@@ -514,12 +382,9 @@ export function createServerContext(
     // One map, two writers: the log action writes what a press resolved, the watcher's prewarm what
     // it resolved behind the page, and neither replaces the other's answer.
     const hpcLogPaths: LogPaths = new Map();
+    const hostWords = hostWordsOf(config);
     const hpc = make.watchHpc(hub, {
-        host: local.hpcHost ?? slurm.host,
-        days: slurm.days,
-        pollMin: slurm.pollMin,
-        quotaMin: slurm.quotaMin,
-        prewarm: slurm.prewarm,
+        ...hpcSettingsOf(slurm, local.hpcHost, latestResources(hub), hostWords),
         logPaths: hpcLogPaths
     });
 
@@ -565,6 +430,8 @@ export function createServerContext(
         hub,
         {
             hpcHost: () => local.hpcHost,
+            resources: () => latestResources(hub),
+            hostWords,
             slurm,
             calendar: calendarConfig,
             mail: mailConfig,

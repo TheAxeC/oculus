@@ -1,8 +1,10 @@
 // Layer 2, server. Hands the pollers the settings of every config push. The pollers are built from
 // the configuration read at start; this module subscribes to the `config` channel the portfolio
 // watcher publishes on, reads each group of settings again through its reader, and gives the
-// poller the settings that changed. The Live HPC host is the one setting with a second source: the
-// `hpc_host` of local.yml, read from the context at each push and again when local.yml changes.
+// poller the settings that changed. The Live HPC host is the one setting with other sources: the
+// `hpc_host` of local.yml, read from the context at each push and again when local.yml changes, and
+// the cluster entry of registries/resources.yml that `slurm.resource` names, read again after each
+// portfolio rebuild.
 //
 // Each group is read on its own, so one a hand edit made unreadable keeps the settings in force
 // while the others take theirs. A refusal is said once on stderr: the same message on a later push
@@ -21,17 +23,24 @@ import {
     type MailSettings,
     type SlurmSettings
 } from '../../data/sources/config.ts';
+import type { Id, Resource } from '../../data/model/index.ts';
 import { mapShape, readAs } from '../../data/shapes/shapes.ts';
 import type { CalendarWords } from '../accounts/calendar/poll.ts';
 import type { MailWords } from '../accounts/mail/poll.ts';
 import type { Hub, Sink } from '../core/channels.ts';
+import { hostWordsOf, hpcSettingsOf, type HostWords } from '../machine/hpc/host.ts';
+import type { HpcSettings } from '../machine/hpc/poll.ts';
 import { requireRefreshSettings } from '../machine/usage/refresh.ts';
 
 /** The settings the pollers were built with, which a push is compared with. */
 export type LiveStart = {
-    /** The host `local.yml` names now, which a pushed `slurm.host` does not replace. */
+    /** The host `local.yml` names now, which a pushed `slurm.resource` does not replace. */
     hpcHost: () => string | undefined;
-    /** The Live HPC settings as the configuration reads them, `slurm.host` included. */
+    /** The resources of the latest portfolio snapshot, or null while there is none. */
+    resources: () => Record<Id, Resource> | null;
+    /** The sentences for having no host, which each push renews. */
+    hostWords: HostWords;
+    /** The Live HPC settings as the configuration reads them, `slurm.resource` included. */
     slurm: SlurmSettings;
     calendar: CalendarSettings;
     mail: MailSettings;
@@ -43,7 +52,7 @@ export type LiveStart = {
 
 /** What a poller is told when a group of settings changes. */
 export type LiveTargets = {
-    hpc: { set(settings: SlurmSettings): void };
+    hpc: { set(settings: HpcSettings): void };
     calendar: {
         setSettings(settings: CalendarSettings): void;
         setWords(words: CalendarWords): void;
@@ -63,7 +72,10 @@ const KEPT = 'the settings in force are kept';
 
 /** What a started `liveSettings` offers beside the subscription. */
 export type LiveSettings = {
-    /** Hand the Live HPC poller the host `local.yml` names now, or the pushed `slurm.host`. */
+    /**
+     * Hand the Live HPC poller the host `local.yml` names, or the host of the cluster
+     * `slurm.resource` names in the resources of the latest portfolio snapshot.
+     */
     hostChanged(): void;
     /** The usage settings in force, which a watcher built again is started with. */
     held(): { refresh: { refreshMin: number; model: string }; tiers: Record<string, string> };
@@ -74,10 +86,14 @@ export type LiveSettings = {
 /** Subscribe the pollers to the config channel; close() takes the subscription off the hub. */
 export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): LiveSettings {
     const { hpcHost, ...held } = start;
-    const current = structuredClone(held);
-    /** The `slurm.host` of the last configuration read, which `hpc_host` replaces when set. */
-    let pushedHost = start.slurm.host;
-    current.slurm = { ...start.slurm, host: hpcHost() ?? pushedHost };
+    const { resources, hostWords: startWords, slurm: started, ...plain } = held;
+    let hostWords = startWords;
+    /** The `slurm:` of the last configuration read, whose resource `hpc_host` replaces when set. */
+    let pushed = started;
+    /** The Live HPC settings for a `slurm:` block, resolved over what the sources hold now. */
+    const hpcFor = (slurm: SlurmSettings): HpcSettings =>
+        hpcSettingsOf(slurm, hpcHost(), resources(), hostWords);
+    const current = { ...structuredClone(plain), hpc: hpcFor(started) };
     /** The message each group last refused with, by group; a group that reads has no entry. */
     const said = new Map<string, string>();
     let closed = false;
@@ -106,6 +122,14 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
         return value;
     };
 
+    /** Resolve the host again; the poller gets the settings when they differ from those held. */
+    const handHpc = (): void => {
+        const next = hpcFor(pushed);
+        if (isDeepStrictEqual(next, current.hpc)) return;
+        targets.hpc.set(next);
+        current.hpc = next;
+    };
+
     /**
      * Each group is read, compared with the settings in force and handed to its setter inside its
      * own attempt, so a refusal and a setter that throws are logged the same way and the sink stays
@@ -114,13 +138,8 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
      */
     const take = (config: Record<string, unknown>): void => {
         attempt('slurm', () => {
-            const slurm = slurmSettings(config);
-            const next = { ...slurm, host: hpcHost() ?? slurm.host };
-            if (!isDeepStrictEqual(next, current.slurm)) {
-                targets.hpc.set(next);
-                current.slurm = next;
-            }
-            pushedHost = slurm.host;
+            pushed = slurmSettings(config);
+            handHpc();
         });
         attempt('calendar', () => {
             const calendar = calendarSettings(config);
@@ -150,6 +169,12 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
             current.tiers = tiers;
         });
         if (attempt('text', () => textCatalog(config)) === undefined) return;
+        attempt('hpc.words', () => {
+            const next = hostWordsOf(config);
+            if (isDeepStrictEqual(next, hostWords)) return;
+            hostWords = next;
+            handHpc();
+        });
         const words = { ...current.calendarWords };
         const noLink = attempt('calendar.ics_no_link', () =>
             textOf(textCatalog(config)['calendar.ics_no_link'], 'calendar.ics_no_link')
@@ -208,12 +233,7 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
     return {
         hostChanged(): void {
             if (closed) return;
-            attempt('hpc_host', () => {
-                const next = { ...current.slurm, host: hpcHost() ?? pushedHost };
-                if (isDeepStrictEqual(next, current.slurm)) return;
-                targets.hpc.set(next);
-                current.slurm = next;
-            });
+            attempt('hpc_host', handHpc);
         },
         held: () => structuredClone({ refresh: current.refresh, tiers: current.tiers }),
         close(): void {

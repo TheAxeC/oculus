@@ -142,7 +142,8 @@ describe('validating a host status', () => {
                 domains: { entries: [], meta: {} },
                 funding: { entries: [], meta: {} },
                 people: { entries: [], meta: {} },
-                organisations: { entries: [], meta: {} }
+                organisations: { entries: [], meta: {} },
+                resources: { entries: [], meta: {} }
             },
             collections: {},
             feeds: NO_FEEDS,

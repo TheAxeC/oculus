@@ -7,7 +7,7 @@
 // api/docs answers is covered by tests/routes/docs/docs.test.ts.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { render } from 'svelte/server';
 import Project from '../../../src/lib/views/boards/project/Project.svelte';
 import RowButton from '../../../src/lib/ui/controls/RowButton.svelte';
@@ -83,10 +83,9 @@ const EMPTY_RELATIONS: Relations = {
 
 /** One project, with two of its Markdown documents present and two of them not. */
 function project(): Record_ {
-    return {
+    return fixtureProject({
         id: 'alpha',
         tier: 'manuscripts',
-        ghost: false,
         type: 'manuscript',
         title: 'Alpha, the whole title',
         chips: ['lead'],
@@ -94,16 +93,6 @@ function project(): Record_ {
         focus: 'run',
         next: 'Run the sweep.',
         results: ['the first result'],
-        ideas: [],
-        waitingOn: [],
-        followups: [],
-        subtasks: [],
-        relatedIds: [],
-        fundingIds: [],
-        datasetIds: [],
-        pillarIds: [],
-        domainIds: [],
-        collaborators: [],
         docs: [
             { name: 'README.md', label: 'README', present: true, human: false },
             { name: 'code/README.md', label: 'CODE', present: true, human: false },
@@ -111,11 +100,10 @@ function project(): Record_ {
             { name: 'manuscript/main.tex', label: 'TEX', present: false, human: false }
         ],
         folder: 'projects/manuscripts/alpha',
-        file: `${FOLDER}/project.yml`,
-        // Nine days behind its documents, against the `stale_lag_days: 1` of config/behavior.yml,
+        file: `${FOLDER}/project.yml`, // Nine days behind its documents, against the `stale_lag_days: 1` of config/behavior.yml,
         // so the card the tab draws carries the stale badge.
         staleDays: 9
-    };
+    });
 }
 
 /** The one slide a project with a PRESENT.md carries, whatever else that file declares. */
@@ -145,6 +133,7 @@ function snapshot(over: Partial<Record_> = {}): Snapshot {
             funding: {},
             people: {},
             organisations: {},
+            resources: {},
             collections: {}
         },
         relations: EMPTY_RELATIONS,

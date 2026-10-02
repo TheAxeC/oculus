@@ -323,6 +323,19 @@ describe('adding a key the file does not have', () => {
     });
 });
 
+describe('a compute list', () => {
+    it('adds a key to a flow list and keeps the comment after it', () => {
+        const source = 'id: a\ncompute: [utwente]  # BraTS caches\nlast: end\n';
+        const out = setFields(source, { compute: ['utwente', 'this-mac'] });
+        expect(out.text).toBe('id: a\ncompute: [utwente, this-mac]  # BraTS caches\nlast: end\n');
+    });
+
+    it('appends the list as a flow list when the file has no compute', () => {
+        const out = setFields('id: a\n', { compute: ['this-mac'] });
+        expect(out.text).toBe('id: a\ncompute: [this-mac]\n');
+    });
+});
+
 describe('clearing a key', () => {
     it('removes the line, its comment with it', () => {
         const out = setFields(DOC, { compute: null });
