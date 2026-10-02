@@ -458,3 +458,302 @@ What I ran: `git diff 201a8fcb` and `git status --short` only, both read-only. S
 ## Usage
 
 Opus 5.5 reviewer, about 287,000 tokens (budget counter 15,000,000 at the start, about 14,713,000 at the end), about 50 tool uses. Minutes were not measured.
+
+## Repair round 2, refuted
+
+**Summary.** The verify list is green and the slow tmux tests pass. Of the 13 rulings in D17-round2.md, 11 are closed. Ruling 1 (the placeholder tokenizer) is closed only in part: I got `;` and `$(...)` from a selection to run through real `/bin/sh -c` by six routes that pass the guard. Ruling 3 is closed for the folders; its marker is still the bare name, which Z304 fixes at landing. The rest are doc and comment staleness from the round, plus two claims in the report that do not reproduce.
+
+## Verification lines, verbatim
+
+Command 1, from the worktree's `tools/oculus`. It ran 23:48:53 to 23:55:20, load average 9.40 at the start, exit 0. These are the headers and result lines of the log (my copy of the log: `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d17-r2-review/checks.log`):
+
+```
+$ npm test
+fatal: Needed a single revision
+ Test Files  524 passed | 24 skipped (548)
+      Tests  12903 passed | 639 skipped (13542)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  446 passed | 9 skipped (455)
+$ npm run check
+1790977988024 COMPLETED 3186 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+✓ built in 4.20s
+✓ built in 10.43s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+No test timed out, so nothing was rerun alone.
+
+Command 2, `npx vitest run tests/server/machine/pty/task.test.ts tests/server/machine/pty/sessions.test.ts` (load 5.78): `Test Files  2 passed (2)`, `Tests  30 passed (30)`. This matches the report.
+
+**The `task.test.ts` capture case** ("captures all the text of an ended pane, a wrapped line joined, and its pid changes on a respawn"):
+- The file alone, verbose, passed in 122 ms.
+- Four more runs of the file, issued together on my scratch copy, each passed the case (52, 73, 57 and 53 ms) with `Tests  10 passed (10)`.
+- I did not reproduce the timeout. Reading the test: it waits on `until`, which loops on `ended()`, the `pane-died` hook's `wait-for died`. It does not sleep on a clock.
+
+**The report's other evidence, rerun:**
+- `wc -l` gives 875 (`terminals.svelte.ts`), 570 (`pty/routes.ts`) and 677 (`pty/sessions.ts`). This matches.
+- `sh utils/folder-check.sh` exits 0. The ten folder counts all match the report.
+- `grep -rl quotedPlaceholder src tests config HELP.md DESIGN.md README.md` prints nothing.
+- `grep -rln "helpers/run/chain" src` prints `commands/{chain,run,list}.ts`.
+- The export greps for `outputArgs`, `readApprovals` and `sourceWords` print only their own files.
+- `sed -n 80p tests/checks/imports/order.ts` and `sed -n 55p tests/shell/commands/command-ask.test.ts` show what the report says.
+- `grep -n "commands bar"` finds report lines 218 and 646.
+- The spec.md perl ASCII gate over `src tests config` (`! -name local.yml`) prints nothing.
+- Two report claims do **not** reproduce; see Proof 1 and 2.
+
+**Each round-2 behaviour taken out on a scratch copy** (`d17-r2-review/copy/oculus`, an rsync without `config/local.yml`, node_modules linked):
+
+| Change taken out | Result |
+|---|---|
+| r1: the escaped context not recorded | 3 failed (placeholders, run, routes) |
+| r1: the comment state removed | 6 failed |
+| r1: the filler fills every placeholder | 2 failed |
+| r2: back to the round-1 rule (`one.id in outputs.byId`) | 3 failed, the real-pane case among them |
+| r3: `chainOf` returns null | 9 failed |
+| r3: the server writes no chain to the mark | 2 failed |
+| r4: `privateFolder` not limited to the default path | 1 failed (`leaves the folder of a file the approvals key names elsewhere`) |
+| r4: owner check removed | 1 failed (`leaves a default folder another user owns`) |
+
+## Item verdicts (whole diff since 201a8fcb)
+
+1. **Command sources: holds.** Unchanged in the round; suite green.
+2. **One shell quoting: holds.**
+3. **Placeholders: holds in part.** Filling as one word holds. The guard against unsafe placeholders can be bypassed, and a selection's `;` or `$(...)` then runs (Behaviour 1).
+4. **Approvals: holds.**
+   - The JSON text is now stated exactly in DESIGN.md.
+   - The folder mode applies only at the default path.
+   - The owner check is tested.
+5. **Routes: holds.** A save refuses quoted, escaped and commented placeholders.
+6. **The run: holds.** Its line refuses the same three.
+7. **Task terminal and its result: holds.**
+   - The mark carries the chain.
+   - My probe through the fixture's private socket read the mark back unchanged, in both UTF-8 and C locales, for names `café build`, `a "q" \ b`, `#{session_name} #{pane_pid}`, `ends;`, `x\;`, `漢字`, and a cwd holding a tab.
+   - Stale comment and doc: Standards 1.
+8. **Errors made clickable and diagnostics: holds.**
+   - A capture is made whenever no grid is subscribed at the end.
+   - The folders come from the mark.
+   - The marker is still the bare name (Z304, Behaviour 2).
+9. **Default keys: holds.**
+10. **Where they are drawn: holds.**
+11. **Client store: holds.** `terminals.svelte.ts` is 875 lines.
+12. **Docs: holds in part.** HELP.md's placeholder sentence and DESIGN.md's pty bridge bullet were not carried to the round's changes (Standards 1).
+
+## Case verdicts
+
+These rest on the green suite plus my re-read of the round's delta.
+
+1. Met.
+2. Met.
+3. Met.
+4. Met.
+5. Met.
+6. Met as written: the selection `'; rm -rf /'` is one quoted word where the placeholder is bare. The guard is partial (Behaviour 1).
+7. Met. Folder 0700 only at the default path; owner check tested.
+8. Met. The line will change at landing (Z304).
+9. Met: the real-tmux cases passed.
+10. Met.
+11. Met.
+12. Met.
+13. Met: the capture after a grid lets go now works, and the real-pane case passes.
+14. Met.
+15. Met.
+16. Met.
+17. Met.
+
+## Ruling verdicts (D17-round2.md)
+
+**1. Closed in part.**
+
+What is built and verified:
+- One tokenizer, `placeholdersOf` (`placeholders.ts:55-94`), serves both `unsafePlaceholder` and `fillPlaceholders`.
+- The five named lines behave as ruled, and their tests fail without the change (table above).
+- Refusal at save (`routes.ts:76`) and at run (`run.ts:88`) uses the catalog sentences `server.commands.quoted`, `.escaped` and `.commented`.
+
+Not as ruled:
+- The ruling defines a comment as a `#` "at the start of a word". `placeholders.ts:83` tests only the raw previous character (`WORD_START.test(run[at - 1])`). So a `#` after an escaped blank or a backslash-newline is taken as a comment, although the shell reads it inside a word. A quote that follows it then flips the two readings apart.
+
+Outside the contexts the ruling lists, the defect it was meant to close (a selection's `$(...)` or `;` running) is still reachable.
+
+My attempts. Each was run through `chainLine` and then real `/bin/sh -c` (bash 3.2) on my scratch copy. "Created" means the marker file the selection touches appeared.
+
+| # | Run line | Selection | Result |
+|---|---|---|---|
+| a | `echo "\${selectedText}"` | `$(touch m)` | refused, escaped |
+| b | `echo \${selectedText}` | `; touch m #` | refused, escaped |
+| c | `true # it's` + newline + `echo '${selectedText}'` | `$(touch m)` | refused, quoted |
+| d | `echo $'${selectedText}'` | `$(touch m)` | refused, quoted |
+| e | `echo $"${selectedText}"` | `$(touch m)` | refused, quoted |
+| f | `true # don't` + newline + `echo ${selectedText}` | `$(touch m)` | runs, filled as one word, created=false |
+| g | `true;# it's` + newline + `echo '${selectedText}'` (a comment after a `;`) | `$(touch m)` | refused, quoted |
+| h | `echo "$(echo '${selectedText}')"` | `$(touch m)` | refused, quoted |
+| i | `echo "$(echo \"${selectedText}\")"` | `$(touch m)` | refused |
+| j | `` echo `true # it's` '${selectedText}' `` | `$(touch m)` | refused, comment |
+| k | `cat <<'EOF'` + newline + `${selectedText}` + newline + `EOF` | `$(touch m)` | passes the guard, created=false (body is literal) |
+| l | `` echo `echo ${selectedText}` `` | `$(touch m)` | passes the guard, created=false |
+| m | `` echo `echo ${selectedText}` `` | `` `touch m` `` | passes the guard, created=false |
+| n | `echo $` + backslash-newline + `{selectedText}` | `$(touch m)` | not filled, created=false |
+| o | `echo a#b ${selectedText}` | `$(touch m)` | bare, one word, created=false |
+| p | **`cat <<EOF` + newline + `${selectedText}` + newline + `EOF`** | `$(touch m)` | **passes the guard, created=true** |
+| q | **`cat <<-EOF`, same body** | `$(touch m)` | **passes the guard, created=true** |
+| r | **`cat <<EOF` + newline + `it's` + newline + `EOF` + newline + `echo '${selectedText}'`** | `$(touch m)` | **passes the guard, created=true**. The apostrophe in the here-doc body flips the scanner's quote state, as `# it's` did in round 1. |
+| s | **`echo "$(echo "${selectedText}")"`** | `$(touch m)` | **passes the guard, created=true**. Double quotes nested inside `$(...)` are read as closing the outer pair. |
+| t | **`echo a\ #'` + newline + `${selectedText}'`** | `$(touch m)` | **passes the guard, created=true**. The `#` after an escaped blank is the defect described above. |
+| u | **`echo a\` + newline + `#'` + newline + `${selectedText}'`** | `$(touch m)` | **passes the guard, created=true**. Same defect, after a backslash-newline. |
+| v | **`echo $${selectedText}`** | `\'"; touch m #` | **passes the guard, created=true**. The filler's opening `'` placed after a `$` makes `$'...'` ANSI-C quoting; the backslash then escapes the first quote shellWord closes with, so the `;` lands outside every quote. |
+| w | `echo $${selectedText}` | `$(touch m)` | passes the guard, created=false |
+| x | **`echo $((${selectedText}))`** | `a[$(touch m)]` | **passes the guard, created=true**. Bash evaluates the subscript of the quoted operand before the syntax error. |
+| y | `eval echo ${selectedText}` | `$(touch m)` | passes the guard, created=true. This re-evaluates the line by design; no text tokenizer can close it, and approving the line approves it. |
+
+What would end the defect:
+- Fix the `#` rule: a `#` starts a comment only after an unescaped blank or operator.
+- Track the substitution and here-doc states with a mode stack: `$(`, `` ` ``, `$((`, `<<` bodies.
+- Refuse a placeholder inside any substitution or here-doc, and one written right after `$`.
+- The alternative that ends the cause: pass each value in an environment variable that the line names as `"$OCULUS_..."`, which the shell never re-parses. Arithmetic (`x`) and `eval` (`y`) remain open even then.
+
+These fixes are larger than a landing fix, and this was the last round under the cap. The orchestrator decides.
+
+**2. Closed.**
+- `terminals.svelte.ts:800-823` counts the calls of `subscribePty`, and each release counts once (the `released` flag).
+- `readEnded` (`commands.svelte.ts:612-618`) captures unless `subscribed(id)` at that moment.
+- The capture is fed as scrollback, which replaces what is held.
+- Counter cases:
+  - A grid that mounts twice holds count 2.
+  - A closure released twice is guarded and tested (`terminals.test.ts:451-465`).
+  - `unsubscribePty` does not touch the count.
+  - A reload builds a fresh store, so every ended task terminal not subscribed at the first list is captured once, and a grid that mounts later replaces it with its own scrollback.
+- The real-pane test exists and fails without the change.
+- Minor: a grid subscribed at the end feeds only the 2000-line attach scrollback, against the capture's whole history, so in a very long output the first chain markers can fall off. Then later errors are read from the folder of the command pressed.
+
+**3. Closed for the folders; the marker as Z304 rules.**
+- `run.ts:109` writes `chain: [{ name, cwd }]`. `jobShape` and `terminalShape` read it, and `chainOf` uses only the mark.
+- A chain of one reads from its own folder, and an old mark without a chain reads from the repository (both tested).
+- Odd names read back unchanged through tmux (item 7).
+- The ruling's test form ("the list is forgotten, the bar unmounted") is built as "never read" plus "seeded elsewhere". Both prove the list is not consulted. Minor deviation.
+- The marker match is `line === chain[started].name` (`commands.svelte.ts:583`). That is exact and at a line start, so a command's own output line equal to the next name still advances early.
+
+What the Z304 landing fix must change:
+1. **`chainLine`** (`server/machine/commands/chain.ts`) prints one shellWord of `<token> <name>` in place of the bare name. The token is minted per start in `run.ts` `startCommand`.
+2. **The mark and its types.** `TerminalJob` (`model-sessions.ts`), `jobShape` (`sessions.ts`) and `terminalShape` (`terminal-payloads.ts`) carry the token.
+3. **The match.** `note` compares against `${token} ${chain[started].name}`. Matching the line's end would also cover a previous command whose last output had no line break (today `xtest` does not advance). A mark with no token keeps the bare match.
+4. **Tests to update:**
+   - `chain.test.ts` and `run.test.ts` line assertions (brief case 8's literal);
+   - the `OUTPUT` strings of `commands-output.test.ts`, plus a case where a command's own output line equals the next command's name and does not advance;
+   - the real-pane line in `commands-pane.test.ts`;
+   - the chain case in `task.test.ts`.
+5. **Docs:** the `TASK_OPTION` comment, the DESIGN.md pty bridge bullet, HELP.md (the marker line a chain's terminal shows) and the report's wire shapes.
+
+**4. Closed.**
+- `approvals.ts:134` runs `privateFolder` only for `defaultApprovalsPath()`.
+- All three tests exist, and two fail under mutation (the first is the round-1 test).
+- `options.yml:641`, HELP.md `Approval.` and the DESIGN.md Approval paragraph say exactly this.
+
+**5. Closed.**
+- DESIGN.md:326 states `JSON.stringify({ repo, chain: [[folder, run], ...] }, null, 1)`, which equals `approvals.ts` `chainText`.
+- HELP.md says that approvals given before this text ask again.
+
+**6. Closed.** Report line 646 says the card draws the commands bar.
+
+**7. Closed.** The before and after are listed.
+
+**8. Closed.** `commands-pane.test.ts` runs a real pane through `captureTask` to the diagnostics.
+
+**9. Closed.** `routes.ts:1-12` and `ProjectCard.svelte:2-14` are whole paragraphs, and "The GET and the POST both" fixes "Both".
+
+**10. Closed.** No importer is left outside the file for any of the four.
+
+**11. Closed.** HELP.md says the source is named on each button and menu item, and that the default keys name none.
+
+**12. Closed.** The title is `draws no form once it is closed`.
+
+**13. Closed.** `terminal-lists.ts:1-6` names `closeEnded` and `moveInto` as the writers.
+
+## Spec
+
+1. **The tokenizer's comment rule differs from ruling 1's text.**
+   - Place: `placeholders.ts:42`, `const WORD_START = /[\s;&|()<>]/;`, used at `:83` with `WORD_START.test(run[at - 1])`.
+   - What is wrong: the previous character may itself be escaped (`\ ` or backslash-newline), so the `#` is inside a word.
+   - Failure: attempts t and u above run the selection.
+   - Verdict: ruling 1, item 3.
+
+## Proof
+
+1. **The report claims a HELP.md change that is not there.**
+   - Report: "HELP.md says placeholders are written bare, outside quotes, a backslash and a comment."
+   - HELP.md:180 reads: "A placeholder is written bare, never inside single or double quotes ...: a line with a placeholder inside quotes is refused". `grep -n backslash HELP.md` finds nothing about placeholders.
+   - Failure: a reader whose line was refused "after a backslash" or "in a comment" finds no rule for it in HELP.
+   - Verdict: item 12, ruling 1.
+2. **The report claims a DESIGN.md change that is not there.**
+   - "Comments and docs re-read" says the pty bridge bullet has `@oculus_task` holding "the repository, the name, the source and the chain".
+   - DESIGN.md:370 reads "the option `@oculus_task` (the repository, the command's name and its source)".
+   - Verdict: ruling 3, item 12.
+3. **The real-pane test waits on a wall-clock margin** (spec.md:63).
+   - Place: `tests/state/sessions/terminal/commands-pane.test.ts:98-100`: `await vi.waitFor(async () => expect(await paneOutput(id, options)).toContain('error: boom'))`, and again at `:117`.
+   - `vi.waitFor` polls with a 1000 ms default timeout. This case runs inside `npm test`, on a machine measured at load 9.
+   - Failure: under load the pane prints after 1 s and the case fails without a defect. A signal from the pane line (`tmux -S <sock> wait-for -S printed`) would be an event.
+   - Minor. Verdict: ruling 2.
+
+## Standards
+
+Every doc or comment the round's change made false (spec.md:65):
+
+1. **The mark's doc comment omits the chain.** `pty/sessions.ts:62-63` reads "holds the command it ran as JSON, `{"repo":..., "name":..., "source":...}`". Verdict: ruling 3.
+2. **DESIGN.md:370**, as in Proof 2.
+3. **HELP.md:180**, as in Proof 1.
+4. **Two code comments still say "inside quotes" only.**
+   - `run.ts:4`: "refuses a line with a placeholder inside quotes".
+   - `routes.ts:63-65` (`saveRefusal`'s doc): "and a line with a placeholder inside quotes".
+   - Both now also refuse escaped and commented placeholders. Verdict: ruling 1.
+5. **`resolveChain` sits in the wrong layer** (minor).
+   - `data/helpers/run/chain.ts` is a Layer 1 shared helper, but after ruling 3 only the server imports it (`grep -rln "helpers/run/chain" src` finds three `server/machine/commands` files).
+   - Its concern now belongs in `server/machine/commands/`, which holds 9 items.
+   - Verdict: ruling 3.
+6. **An English string is shown to the reader** (minor).
+   - `fillPlaceholders`' refusal, ``no value for ${one.text}: select text in a source tab first`` (`placeholders.ts:160-164`), was rewritten in this round and is still not from a catalog.
+   - The terminal route's other refusals (`pty/edit.ts:30,33`) are literals too, so the tree's convention there is mixed.
+   - Verdict: item 3; the orchestrator decides.
+
+## Behaviour
+
+1. **A selection's `$(...)` or `;` still runs past the guard.**
+   - Place: `placeholders.ts:55-94`.
+   - Reproduced: attempts p, q, r, s, t, u, v and x of ruling 1 created the marker file through real `/bin/sh -c`.
+   - Failure: a repository's `.oculus/commands.yml` holds `run: 'echo "$(echo "${selectedText}")"'`, or `cat <<EOF` with the placeholder in its body, or `echo $${selectedText}`. The reader approves that text, selects text holding `$(...)` (or `\'"; cmd #` for the last), and presses. The selection runs as a command.
+   - Verdict: ruling 1, item 3.
+2. **The marker matches a command's own output.**
+   - Place: `commands.svelte.ts:583`: `if (chain !== null && started < chain.length && line === chain[started].name)`.
+   - A command's output line equal to the next command's name moves the folder early. A previous command whose output did not end in a line break hides the marker.
+   - Failure: `build` prints a line `test`, and its later errors then resolve under `sub`.
+   - Verdict: Z304, fix at landing as listed under ruling 3.
+
+## Declined to judge
+
+- The browser look at TEST is the orchestrator's:
+  - the new refusal sentences in the form;
+  - the bar after a grid lets go;
+  - the check and the cross;
+  - and `~/.oculus` on this host, which I did not stat.
+- The report's base-run quotes. I did not rerun them from the builder's `d17r2-base` copy; my own mutations (table above) stand in for them.
+- Whether the tokenizer design stands, or values move to environment variables, is the orchestrator's ruling, since the cap is spent.
+
+**What I ran.** Git: `git diff 201a8fcb` and `git status --short` only. Scratch copies and probes live only under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d17-r2-review/`. I made no edit in the worktree or on main. I did not read `local.yml`, touched neither port, ran tmux only through the fixture's private `-S` socket, and started or killed no process outside the vitest runs.
+
+## Usage
+
+Opus 5.5 reviewer, about 240,000 tokens (budget counter at 14,940,067 when I began and 14,713,378 at the last reading), about 50 tool uses. Minutes were not measured.
+
+## Closed
+
+The findings of the run over round 2 are never sent to the builder (the rounds are spent):
+- Ruling 1, Spec 1 and Behaviour 1, the selection running past the placeholder check: raised to Axel as open item Z305 (orchestrator-state.md); fixed at landing by the option he rules.
+- Behaviour 2 and ruling 3's marker: Z304, fixed at landing on main as this run's ruling 3 lists (chainLine, the mark and its types, the match, the tests, the docs).
+- Proof 1, Proof 2, Standards 1 to 4: the doc and comment lines the round left stale (HELP.md:180, DESIGN.md:370, `pty/sessions.ts:62-63`, `run.ts:4`, `routes.ts:63-65`), fixed at landing; the wording follows Z305's ruling.
+- Proof 3: the real-pane test waits on a tmux `wait-for` signal from the pane line instead of `vi.waitFor`'s 1000 ms default, fixed at landing.
+- Standards 5: `resolveChain` moves from `data/helpers/run/chain.ts` to `server/machine/commands/`, its only reader, with the boundaries row, fixed at landing.
+- Standards 6: the `fillPlaceholders` refusal comes from the server catalog, fixed at landing.
+- The `task.test.ts` capture case: the review ran it six times, alone and four at once, and it passed each time in 52 to 122 ms; it waits on the `pane-died` hook, not a clock. The landing's verify run is its next check; a timeout there goes to /diagnose before the commit.
