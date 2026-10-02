@@ -11,8 +11,10 @@ import {
     deckDefaultKeys,
     deckFrom,
     deckSlides,
+    equationScale,
     fit,
     hasSlideContent,
+    LEAST_EQUATION_SCALE,
     parsePresentState,
     plainTitle,
     slideKey,
@@ -70,7 +72,6 @@ function slide(id: string, over: Partial<PresentSlide> = {}): PresentSlide {
 
 const CONFIG = {
     deck: {
-        equations_dir: 'tools/present/assets/equations',
         tag_tones: { measured: 'green', proof: 'purple' },
         meta: {
             kicker: 'A briefing',
@@ -177,7 +178,6 @@ describe('deckFrom', () => {
             tone: 'orange',
             maturity: 'scoping'
         });
-        expect(DECK.equationsDir).toBe('tools/present/assets/equations');
         expect(DECK.tagTones).toEqual({ measured: 'green', proof: 'purple' });
         expect(DECK.selection).toBeNull();
         expect(DECK.slideOrder).toBeNull();
@@ -551,7 +551,6 @@ describe('deckFrom over a config whose values are of the wrong type', () => {
         ideas: null,
         selection: null,
         slideOrder: null,
-        equationsDir: '',
         tagTones: {}
     };
 
@@ -778,12 +777,6 @@ describe('deckFrom over a config whose values are of the wrong type', () => {
         expect(deckOf({ selection: [], slide_order: [] }).selection).toStrictEqual([]);
     });
 
-    it('reads the equations folder only as text', () => {
-        for (const other of [3, null, []])
-            expect(deckOf({ equations_dir: other }).equationsDir).toBe('');
-        expect(deckOf({ equations_dir: 'tools/x' }).equationsDir).toBe('tools/x');
-    });
-
     it('keeps the tag tones that are non-empty text, and none when it is not a map', () => {
         for (const other of [[], 'x', null])
             expect(deckOf({ tag_tones: other }).tagTones).toStrictEqual({});
@@ -845,5 +838,23 @@ describe('fit', () => {
         expect(fit(Number.NaN, 360)).toBe(0);
         expect(fit(640, Number.NaN)).toBe(0);
         expect(fit(Number.POSITIVE_INFINITY, 360)).toBe(0);
+    });
+});
+
+describe('equationScale', () => {
+    it('keeps an equation that fits at its own size, and one in a card not yet measured', () => {
+        expect(equationScale(400, 497)).toBe(1);
+        expect(equationScale(497, 497)).toBe(1);
+        expect(equationScale(774, 0)).toBe(1);
+    });
+
+    it('shrinks a wider equation to the room, never a pixel over it', () => {
+        const scale = equationScale(774, 497);
+        expect(scale).toBe(0.64);
+        expect(774 * scale).toBeLessThanOrEqual(497);
+    });
+
+    it('stops at the least scale for an equation far wider than its card', () => {
+        expect(equationScale(2000, 497)).toBe(LEAST_EQUATION_SCALE);
     });
 });

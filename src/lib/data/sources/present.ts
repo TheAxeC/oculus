@@ -9,9 +9,9 @@
 // that declared a slide leaves its body on disk: that slide is what the deck draws, and the
 // narrative would be the one long document in a snapshot that carries none.
 //
-// Nothing here throws and nothing is repaired: a file that cannot be read, a slide id used twice
-// and a figure that names no file are each a Finding, and the rest of the file still reaches the
-// deck.
+// Nothing here throws and nothing is repaired: a file that cannot be read, a slide id used twice,
+// a figure that names no file and an `equation:` that names an image (a slide's equation is LaTeX)
+// are each a Finding, and the rest of the file still reaches the deck.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -50,15 +50,15 @@ export const PRESENT_DIR = 'present';
 /** The heading the deck strips off the body, so the narrative starts at its first paragraph. */
 const BODY_HEADING = /^\s*#\s*PRESENT\b.*?(\n|$)/;
 
-/** The suffixes that make an `equation:` the name of a rendered image rather than LaTeX text. */
-export const IMAGE_SUFFIXES = ['.png', '.jpg', '.jpeg', '.svg', '.webp'];
+/** The suffixes that make an `equation:` the name of an image file, which a slide does not take. */
+const IMAGE_SUFFIXES = ['.png', '.jpg', '.jpeg', '.svg', '.webp'];
 
 /**
- * Whether an `equation:` names an image file. A value ending in an image suffix is a file rendered
- * elsewhere, which this reader resolves against the disk; anything else is LaTeX the page typesets.
+ * Whether an `equation:` names an image file: its trimmed text ends in an image suffix, in any
+ * case. A slide's equation is LaTeX, so such a value is reported and not drawn.
  */
 export function equationIsImage(equation: string): boolean {
-    const lowered = equation.toLowerCase();
+    const lowered = equation.trim().toLowerCase();
     return IMAGE_SUFFIXES.some((suffix) => lowered.endsWith(suffix));
 }
 
@@ -167,42 +167,23 @@ function slide(id: Id, projectId: Id, value: Record<string, unknown>): PresentSl
     if (sub !== undefined) built.sub = sub;
     if (hook !== undefined) built.hook = hook;
     if (plain !== undefined) built.eli5 = plain;
-    if (equation !== undefined) built.equation = equation;
+    if (equation !== undefined && equation.trim() !== '') built.equation = equation;
     return built;
 }
 
-/** Where a project's PRESENT.md sits, and where the deck keeps its rendered equation images. */
+/** Where a project's PRESENT.md sits. */
 export type PresentPaths = {
     /** Absolute path of the research hub. */
     hub: string;
     /** The project's folder relative to the hub, which is what a resolved path is built from. */
     folder: string;
-    /** The deck's `equations_dir`, hub-relative; empty when the deck names none. */
-    equationsDir: string;
 };
 
-/** A hub-relative path with forward slashes, whatever the platform's separator is. */
-function hubPath(parts: string[]): string {
-    return parts.filter((part) => part !== '').join('/');
-}
-
 /**
- * The file an `equation:` naming an image resolves to, hub-relative, and nothing when neither place
- * holds it. The shared folder is tried first and the project's own `present/` second, which is the
- * order a slide's author may rely on: an equation rendered for the whole deck wins over a name a
- * project happens to reuse.
- */
-function equationPath(paths: PresentPaths, name: string): string | undefined {
-    const shared = hubPath([paths.equationsDir, name]);
-    if (paths.equationsDir !== '' && existsSync(join(paths.hub, shared))) return shared;
-    const own = hubPath([paths.folder, PRESENT_DIR, name]);
-    return existsSync(join(paths.hub, own)) ? own : undefined;
-}
-
-/**
- * Resolve one slide's files against the disk: the figure of every panel, and the equation when it
- * names an image rather than LaTeX. A panel whose figure is not there is marked so the view draws
- * the gap rather than a dead image, and every miss is a finding.
+ * Resolve one slide's files against the disk: the figure of every panel. A panel whose figure is
+ * not there is marked so the view draws the gap rather than a dead image, and every miss is a
+ * finding. An `equation:` that names an image is a finding too and is not kept, since a slide's
+ * equation is LaTeX.
  */
 function resolveFiles(
     slide: PresentSlide,
@@ -227,22 +208,12 @@ function resolveFiles(
         });
     }
     if (slide.equation === undefined || !equationIsImage(slide.equation)) return;
-    const found = equationPath(paths, slide.equation);
-    if (found !== undefined) {
-        slide.equationImage = found;
-        return;
-    }
-    slide.equationMissing = true;
     findings.push({
         file,
         key: slide.id,
-        message: findingText(
-            catalog,
-            'findings.present.equation_missing',
-            slide.equation,
-            PRESENT_DIR
-        )
+        message: findingText(catalog, 'findings.present.equation_image', slide.equation.trim())
     });
+    delete slide.equation;
 }
 
 /** The deck-level keys a project slide id may not be, since the two share one key space. */

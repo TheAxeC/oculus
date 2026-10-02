@@ -151,7 +151,7 @@ const VIEWS: Record<string, string> = {
     'academic/present/parts/Closing.svelte':
         '.kicker=slide-fs-small | .headline=slide-fs-title | .lede=slide-fs-sub | .hint=slide-fs-small',
     'academic/present/parts/Dot.svelte': '',
-    'academic/present/parts/Equation.svelte': '.gap=slide-fs-small',
+    'academic/present/parts/Equation.svelte': '',
     'academic/present/parts/Framing.svelte':
         '.headline=slide-fs-h | .lede=slide-fs-sub | .card=slide-fs-small | .n=slide-fs-h | .hint=slide-fs-small',
     'academic/present/parts/Ideas.svelte':

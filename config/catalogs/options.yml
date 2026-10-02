@@ -424,10 +424,6 @@ options:
             control: choice
             values: [short, full]
     present.yml:
-        deck.equations_dir:
-            description: Folder of rendered equation images, relative to the hub, that a slide may name instead of LaTeX. Empty when the deck names none.
-            default: tools/present/assets/equations
-            control: text
         deck.tag_tones:
             description: The hue a slide's status chip wears, by the chip's class.
             fields:

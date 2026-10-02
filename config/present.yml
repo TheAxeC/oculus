@@ -3,9 +3,6 @@
 # Rules for what goes on a slide (a public artifact): public-safe only, every number real and matching the manuscript, never a null or negative result, no hedging (the slide's `tag` chip carries the status).
 
 deck:
-    # Hub-relative folder holding the rendered equation images a slide may name instead of LaTeX.
-    equations_dir: tools/present/assets/equations
-
     # The hue a slide's `tag.class` wears, one palette hue name per class.
     tag_tones:
         measured: green

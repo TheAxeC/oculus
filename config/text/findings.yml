@@ -37,7 +37,7 @@ text:
             scan_missing: scan directory does not exist
         present:
             figure_missing: figure {0} is not in {1}/
-            equation_missing: "equation {0} is in neither the deck's equations folder nor {1}/"
+            equation_image: "equation {0} names an image; a slide's equation is LaTeX"
             unreadable: document cannot be read
             slide_no_id: has no id
             slide_twice: slide id {0} is declared twice

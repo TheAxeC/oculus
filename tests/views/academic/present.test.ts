@@ -120,6 +120,13 @@ function draw(id: string, state: Record<string, unknown>): string {
     }).body;
 }
 
+/** The markup of the equation card of a drawn slide, from its opening tag to its closing one. */
+function eqcard(body: string): string {
+    const start = body.indexOf('<div class="eqcard');
+    expect(start).toBeGreaterThan(-1);
+    return body.slice(start, body.indexOf('</div>', start));
+}
+
 /** The view at one slide, as the markup a reader would be shown. */
 function at(key: string): string {
     return draw(instance.id, { slide: key, overview: false });
@@ -195,10 +202,13 @@ describe('the Present view', () => {
         expect(body).toContain(catalog['present.figure_missing'].replace('{0}', 'gone.png'));
         // the folder does not hold that figure, so it is named rather than drawn as a dead image
         expect(body).not.toContain('present/gone.png');
-        // The equation is LaTeX rather than an image name, so the page typesets it.
-        expect(body).toContain('katex');
-        // the equation is LaTeX the page typesets, so no image of it is drawn
-        expect(body).not.toContain('<img src="/api/file/hub/tools/present');
+        // The equation is typeset inside its card and the card holds no image; the figure beside
+        // it keeps its own.
+        const card = eqcard(body);
+        expect(card).toContain('katex');
+        // the card holds the typeset formula alone, since a slide's equation is never an image
+        expect(card).not.toContain('<img');
+        expect(body).toContain('<img');
     });
 
     it('draws a slide that carries only a narrative as that narrative', () => {
@@ -209,35 +219,26 @@ describe('the Present view', () => {
         expect(body).not.toContain(catalog['present.method']);
     });
 
-    it('draws an equation image at the path the reader resolved for it', () => {
-        const imaged: Project = {
+    it('draws a formula that does not parse as KaTeX error markup in the card', () => {
+        const broken: Project = {
             ...PROJECT,
-            present: [
-                {
-                    ...SLIDES[0],
-                    equation: 'eq_one.png',
-                    equationImage: 'tools/present/assets/equations/eq_one.png'
-                }
-            ]
+            present: [{ ...SLIDES[0], equation: '\\frac{' }]
         };
-        client.entities.receive({
-            channel: 'portfolio',
-            version: 2,
-            payload: snapshot([imaged])
-        });
-        expect(at('alpha')).toContain('/api/file/hub/tools/present/assets/equations/eq_one.png');
+        client.entities.receive({ channel: 'portfolio', version: 2, payload: snapshot([broken]) });
+        const card = eqcard(at('alpha'));
+        expect(card).toContain('katex-error');
+        // the broken formula is shown as its own source and no picture stands in
+        expect(card).not.toContain('<img');
     });
 
-    it('names an equation image the reader found in neither place', () => {
-        const gone: Project = {
+    it('draws no equation card for a slide that carries none', () => {
+        const bare: Project = {
             ...PROJECT,
-            present: [{ ...SLIDES[0], equation: 'eq_gone.png', equationMissing: true }]
+            present: [{ ...SLIDES[0], equation: undefined }]
         };
-        client.entities.receive({ channel: 'portfolio', version: 3, payload: snapshot([gone]) });
-        const body = at('alpha');
-        expect(body).toContain(catalog['present.equation_missing'].replace('{0}', 'eq_gone.png'));
-        // the image was found in neither place, so it is named rather than drawn as a dead image
-        expect(body).not.toContain('eq_gone.png"');
+        client.entities.receive({ channel: 'portfolio', version: 3, payload: snapshot([bare]) });
+        // the slide carries no equation, so its card is left out of the markup altogether
+        expect(at('alpha')).not.toContain('class="eqcard');
     });
 
     it('draws the slide the instance was opened on', () => {

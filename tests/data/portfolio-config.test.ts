@@ -47,7 +47,7 @@ describe('portfolioConfigFrom', () => {
 
     it('reads each key of the wrong type as absent and keeps the rest of its list', () => {
         const schema = { fields: { a: 1 } };
-        const deck = { equations_dir: 3, order: [] };
+        const deck = { tag_tones: 3, order: [] };
         const merged = {
             scan: [
                 3,
@@ -128,7 +128,7 @@ describe('portfolioConfigFrom', () => {
                 holding_color: 'x',
                 venue_themes: ['v'],
                 data_themes: [{ key: 'd' }],
-                deck: { equations_dir: 'eq' }
+                deck: { tag_tones: { a: 'x' } }
             },
             ENGINE
         );
@@ -143,29 +143,25 @@ describe('portfolioConfigFrom', () => {
         });
     });
 
-    it.each([
-        ['names a directory', 'shared', 'projects/active/alpha/present/eq.png', 'shared/eq.png'],
-        ['is a number', 3, 'projects/active/alpha/present/eq.png', null],
-        ['is absent', undefined, 'projects/active/alpha/present/eq.png', null]
-    ])(
-        'resolves an equation image from the deck equations_dir when it %s',
-        (_label, equationsDir, own, shared) => {
-            const hub = plantScratch('oculus-portfolio-config-', {
-                'projects/active/alpha/project.yml': 'title: Alpha\n',
-                'projects/active/alpha/PRESENT.md': '---\npresent:\n  equation: eq.png\n---\n',
-                [own]: 'x',
-                '3/eq.png': 'x',
-                'shared/eq.png': 'x'
-            });
-            const config = portfolioConfigFrom(
-                {
-                    scan: [{ dir: 'projects/active', type: 'active' }],
-                    deck: equationsDir === undefined ? {} : { equations_dir: equationsDir }
-                },
-                ENGINE
-            );
-            const slide = buildPortfolio(hub, config).entities.projects.alpha.present?.[0];
-            expect(slide?.equationImage).toBe(shared ?? own);
-        }
-    );
+    it('reads a deck that still holds equations_dir without error and gives the key no effect', () => {
+        const hub = plantScratch('oculus-portfolio-config-', {
+            'projects/active/alpha/project.yml': 'title: Alpha\n',
+            'projects/active/alpha/PRESENT.md': '---\npresent:\n  equation: eq.png\n---\n',
+            'shared/eq.png': 'x'
+        });
+        const config = portfolioConfigFrom(
+            {
+                scan: [{ dir: 'projects/active', type: 'active' }],
+                deck: { equations_dir: 'shared' }
+            },
+            ENGINE
+        );
+        const snapshot = buildPortfolio(hub, config);
+        const slide = snapshot.entities.projects.alpha.present?.[0];
+        expect(slide?.equation).toBeUndefined();
+        const present = snapshot.findings.filter((one) => one.file.endsWith('PRESENT.md'));
+        expect(present.map((one) => one.message)).toEqual([
+            'findings.present.equation_image eq.png'
+        ]);
+    });
 });

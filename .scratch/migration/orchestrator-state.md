@@ -72,21 +72,6 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with D35, `server/root/context.ts` (D35 its `serverMover` and settings reads; D24 lines 256-261, the portfolio watcher's paths), `DESIGN.md` and `HELP.md` (different lines), `options.yml` (D35 591-622; D24 511); with X3a, `options.yml` (the `roots` description; D24 511), `DESIGN.md` and `HELP.md` rows, `type-scale.test.ts` and `config-folder.test.ts` (separate rows and cases); with L4, `config/layout.yml` (L4 45-53 and `floats:`; D24 73), `watch/portfolio.ts` (L4 only if its check refuses a key), `config-folder.test.ts`; with M4, `data/index.ts` (M4 114-116, 198-223, 235; D24 the signature and the raw portfolio at 229-249), `model-entities.ts` (M4 the slide and deck fields; D24 `Tier`) and `integrity.test.ts` (separate cases): separate hunks, a simple merge; `docs/diagrams/`, regenerated at each landing
   landing: not-started
   round: 1 (agents/briefs/D24-round1.md, sent 06:40)
-- step: M4
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 02:29)
-  session_id: a27bea3380d71a12d (launched 2026-10-02 02:28 local)
-  worktree: .agents/worktrees/M4
-  base: bca66b3c
-  launched: 2026-10-02 02:28 local
-  report: agents/reviews/M4-report.md
-  brief_check: agents/reviews/M4-brief-check.md; claude-sonnet-5-5, 207,699 tokens, 64 tool uses, 13.5 min
-  builder_usage: to the first-run hand-back (agents/reviews/M4-first-run.md) 204,365 tokens, 72 tool uses, 17.5 min; from the round-0 ruling to the report 292,781 tokens, 57 tool uses, 58.8 min (3 full-list runs started, the second stopped by the builder, the third passed); repair round 1 325,872 tokens, 27 tool uses, 39.4 min (2 full-list runs, the last passed)
-  shared_paths: with Q35, `tests/views/academic/present.test.ts` and `tests/state/life/present.test.ts` (Q35 adds cases after 312 and 830; M4 lines 72-228 and 553-783); with Q35, X3a and D24, `tests/views/whole/type-scale.test.ts` (M4 the `Equation.svelte` row at 153 only, Z238; the others their own rows; Q35 changes that row and `Equation.svelte`'s `.gap` too, M4's removal winning at the second landing); with D24, as D24's entry says: separate hunks, a simple merge; `docs/diagrams/`, regenerated at each landing
-  reviewer_report: agents/reviews/M4-refuter.md (first run, reviewer a75e5398f951f4f92, claude-sonnet-5-5 read at 03:48, launched 2026-10-02 03:48; 227,976 tokens, 69 tool uses, 37.9 min; 4 Spec, 2 Proof, 2 Standards, 4 Behaviour findings); run over round 1, reviewer a3c2d2206f5e1482f launched 05:28, claude-sonnet-5-5 read at 05:28; 218,424 tokens, 60 tool uses, 37.7 min; 0 Spec, 0 Proof, 2 Standards, 1 Behaviour, closed at landing (the report's Closed heading)
-  landing: cherry-picking
-  round: 1 (agents/briefs/M4-round1.md, sent 04:46; round 0 agents/briefs/M4-cases.md, sent 02:49)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -776,6 +761,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-02 06:55. M4 landed (the Present view's equations as LaTeX), a conflict resolved on M4's side, three fixes at landing (two head comments, the formula fitted to its card after the look found all 13 cut off), `checks: 7 commands passed` on the fourth run. D35's repair round 1 is in. In flight: D35 (round review next), D24 (repair round 1), X3a (building). Next: /refute D35 over round 1; /spec Q88c. Open items: none.
 - 2026-10-02 06:05. L4 landed (floating panes and kept empty panes), conflicts in DESIGN.md, context.ts, Usage.svelte and the diagrams resolved, three fixes at landing, the look on TEST taken, `checks: 7 commands passed` on the fifth run (the earlier ones red only on 5000 ms timeouts in files L4 does not touch, and one type error from a fix). In flight: D35 (repair round 1), M4 (round review running), D24 (review running), X3a (building). Next: M4's round review saved and /land M4; D24's findings. Open items: none.
 - 2026-10-02 05:30. Q66 landed (a hidden tab defers its work), a diagram conflict resolved by regenerating, the look on TEST taken, `checks: 7 commands passed` on the second run (the first red only on a 30000 ms timeout in a file Q66 does not touch). In flight: L4 (ready to land, one fix at landing), D35 and M4 (repair round 1), X3a and D24 (building). Next: /land L4. Open items: none.
 - 2026-10-02 04:40. Q35 landed (Changes, Customizations, Audit, Present), a diagram conflict resolved by regenerating, one merge fix and one test added at landing, the look on TEST taken, `checks: 7 commands passed` on the third run (the first two red only on 5000 ms timeouts in files Q35 does not touch, under load 19 to 21). In flight: L4 (round review), D35 (review), Q66 (ready to land), M4 (round 1 to send), X3a and D24 (building). Next: send M4's round 1, /land Q66. Open items: none.

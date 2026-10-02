@@ -268,10 +268,9 @@ export type PresentPanel = {
  * matter's own `present:` slide and `<project>/<slug>` for an entry of its `slides:` list, which is
  * what the deck's `order`, `selection` and `slide_order` name a slide by.
  *
- * `equation` is either LaTeX the page typesets or the name of a rendered image; which one it is is
- * the value's own suffix, and data/sources/present.ts holds that rule. That reader resolves an
- * image against the disk, so the view draws `equationImage` and never chooses a folder. `body` is
- * the markdown under the front matter, which is the slide a project with no front matter draws.
+ * `equation` is LaTeX the page typesets; a value that names an image is a finding and is not kept
+ * (data/sources/present.ts). `body` is the markdown under the front matter, which is the slide a
+ * project with no front matter draws.
  */
 export type PresentSlide = {
     id: Id;
@@ -283,12 +282,6 @@ export type PresentSlide = {
     hook?: string;
     eli5?: PresentEli5;
     equation?: string;
-    /**
-     * Hub-relative path of the rendered equation image, when `equation` names one that is there.
-     */
-    equationImage?: string;
-    /** The named equation image is in neither place it could be, so the view draws the gap. */
-    equationMissing?: boolean;
     specs: PresentSpec[];
     panels: PresentPanel[];
     method: string[];
@@ -399,8 +392,6 @@ export type Deck = {
     ideas: DeckIdeas | null;
     selection: string[] | null;
     slideOrder: string[] | null;
-    /** Hub-relative folder the rendered equation images live in, for a slide naming one. */
-    equationsDir: string;
     /** A hue name per `tag.class` a slide may wear, from the deck's `tag_tones`. */
     tagTones: Record<string, string>;
 };

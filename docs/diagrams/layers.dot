@@ -72,7 +72,7 @@ digraph layers {
     "views to data" [label="15", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to data" [arrowhead=none];
     "views to data" -> "data" [];
-    "views to state" [label="685", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "views to state" [label="684", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "views" -> "views to state" [arrowhead=none];
     "views to state" -> "state" [];
     "views to ui" [label="660", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

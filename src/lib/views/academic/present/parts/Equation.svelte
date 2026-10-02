@@ -1,31 +1,48 @@
 <script lang="ts">
     // Layer 3, Present partial. The governing equation at the top of a project slide, in the card
-    // the deck gives it. A slide writes it as LaTeX, which is typeset in the page, or as the name
-    // of an image rendered elsewhere, which the reader of the snapshot has already resolved to the
-    // one path that holds it; an image named in neither place is said to be missing rather than
-    // drawn dead.
+    // the deck gives it. A slide writes it as LaTeX, which is typeset in the page; a formula that
+    // does not parse is drawn as its own source in the error colour, so one mistyped line costs its
+    // own slide. A formula wider than the card is drawn smaller until it fits (equationScale).
 
-    import { fileUrl } from '$lib/views/shared/links/file-url';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
-    import { t } from '$lib/state/shared/words/text';
+    import type { Attachment } from 'svelte/attachments';
     import { tex } from '../markup';
-    import type { PresentSlide } from '$lib/state/life/present';
+    import { equationScale, type PresentSlide } from '$lib/state/life/present';
 
     type Props = { slide: PresentSlide };
 
     let { slide }: Props = $props();
 
-    const src = $derived(
-        slide.equationImage === undefined ? '' : fileUrl(HUB_ROOT, slide.equationImage)
-    );
+    /**
+     * Draw the typeset formula at the scale that fits the card's content width, measured at its own
+     * size first. It runs again when the slide's formula changes and when the card's width does,
+     * after the browser has laid the new formula out.
+     */
+    function fitted(equation: string | undefined): Attachment<HTMLElement> {
+        return (card) => {
+            const apply = (): void => {
+                const math = card.querySelector<HTMLElement>('.katex-display');
+                if (math === null) return;
+                math.style.fontSize = '';
+                const style = getComputedStyle(card);
+                const room =
+                    card.clientWidth -
+                    parseFloat(style.paddingLeft) -
+                    parseFloat(style.paddingRight);
+                math.style.fontSize = `${equationScale(math.scrollWidth, room)}em`;
+            };
+            const frame = equation === undefined ? 0 : requestAnimationFrame(apply);
+            const watcher = new ResizeObserver(apply);
+            watcher.observe(card);
+            return () => {
+                cancelAnimationFrame(frame);
+                watcher.disconnect();
+            };
+        };
+    }
 </script>
 
-<div class="eqcard">
-    {#if src !== ''}
-        <img {src} alt={t('present.equation_alt')} />
-    {:else if slide.equationMissing === true}
-        <p class="gap">{t('present.equation_missing', slide.equation ?? '')}</p>
-    {:else if slide.equation !== undefined}
+<div class="eqcard" {@attach fitted(slide.equation)}>
+    {#if slide.equation !== undefined}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- tex() is KaTeX's own markup over escaped source, and the sanitiser would drop the boxes it positions -->
         {@html tex(slide.equation, true)}
     {/if}
@@ -40,17 +57,6 @@
         background: var(--card);
         text-align: center;
         overflow-x: auto;
-    }
-
-    .eqcard img {
-        max-width: 100%;
-        height: auto;
-    }
-
-    .gap {
-        margin: 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--slide-fs-small);
     }
 
     /* Over a wallpaper the surface goes translucent, as every other card surface does. */

@@ -11,8 +11,6 @@ text:
         eli5_purpose: Purpose
         empty: The deck holds no slides yet.
         empty_glyph: circle_empty
-        equation_alt: The slide's governing equation
-        equation_missing: 'missing equation: {0}'
         figure_alt: A figure of the project
         figure_missing: 'missing figure: {0}'
         method: Method

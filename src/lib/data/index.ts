@@ -110,11 +110,6 @@ function vocabKeys(value: unknown): string[] {
     return readOr(vocabKeysShape, value, []);
 }
 
-/** The deck's `equations_dir`: the text of that key of the deck map. */
-const equationsDirShape = z
-    .object({ equations_dir: z.string() })
-    .transform((deck) => deck.equations_dir);
-
 /** A config path: the text the key holds. */
 const pathShape = z.string();
 
@@ -199,26 +194,16 @@ function documents(hub: string, manifests: RawManifest[]): Record<Id, DocPresenc
 function slides(
     hub: string,
     manifests: RawManifest[],
-    equationsDir: string,
     catalog: TextCatalog
 ): { present: Record<Id, PresentSlide[]>; findings: Finding[] } {
     const present: Record<Id, PresentSlide[]> = {};
     const findings: Finding[] = [];
     for (const manifest of manifests) {
-        const read = readPresent(
-            { hub, folder: manifest.folder, equationsDir },
-            manifest.id,
-            catalog
-        );
+        const read = readPresent({ hub, folder: manifest.folder }, manifest.id, catalog);
         present[manifest.id] = read.slides;
         findings.push(...read.findings);
     }
     return { present, findings };
-}
-
-/** The deck's `equations_dir`, hub-relative, and the empty string when the deck names none. */
-function equationsDirOf(deck: unknown): string {
-    return readOr(equationsDirShape, deck, '');
 }
 
 /**
@@ -232,7 +217,7 @@ export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0
     const collections = readCollections(hub, config.collections, config.text);
     const feeds = readFeeds(hub, config.feeds, config.text);
     const career = readCareer(hub, config.career, config.text);
-    const present = slides(hub, manifests.manifests, equationsDirOf(config.deck), config.text);
+    const present = slides(hub, manifests.manifests, config.text);
     const deck = deckFindings(
         config.deck,
         Object.values(present.present).flatMap((list) => list.map((one) => one.id)),

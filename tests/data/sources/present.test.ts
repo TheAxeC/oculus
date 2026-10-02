@@ -11,6 +11,7 @@ import {
 } from '../../../src/lib/data/sources/present.ts';
 import { deckOrder, savedKeys } from '../../../src/lib/data/helpers/deck.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { hasSlideContent } from '../../../src/lib/state/life/present.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
@@ -30,10 +31,10 @@ function write(root: string, rel: string, body: string): string {
 }
 
 /** A hub holding one project folder whose PRESENT.md is the body given. */
-function project(body: string[]): { hub: string; folder: string; equationsDir: string } {
+function project(body: string[]): { hub: string; folder: string } {
     const hub = scratch();
     write(hub, join('projects', 'active', 'alpha', 'PRESENT.md'), body.join('\n'));
-    return { hub, folder: 'projects/active/alpha', equationsDir: 'tools/present/equations' };
+    return { hub, folder: 'projects/active/alpha' };
 }
 
 /** The absolute PRESENT.md of such a hub, which is the file every finding names. */
@@ -51,7 +52,7 @@ const RICH = [
     '  eli5:',
     '    purpose: Why it is done.',
     '    plain: What it does.',
-    '  equation: eq_one.png',
+    "  equation: '\\min_{x} f(x)'",
     '  specs:',
     '    - { label: Model, value: "rank-(L,L,1)" }',
     '  panels:',
@@ -71,18 +72,14 @@ const RICH = [
 describe('readPresent', () => {
     it('has no slides and no findings for a folder with no PRESENT.md', () => {
         const hub = scratch();
-        expect(
-            readPresent(
-                { hub, folder: 'projects/active/alpha', equationsDir: '' },
-                'alpha',
-                CATALOG
-            )
-        ).toEqual({ slides: [], findings: [] });
+        expect(readPresent({ hub, folder: 'projects/active/alpha' }, 'alpha', CATALOG)).toEqual({
+            slides: [],
+            findings: []
+        });
     });
 
     it('reads the front matter into one slide under the project id', () => {
         const paths = project(RICH);
-        write(paths.hub, join('tools', 'present', 'equations', 'eq_one.png'), 'not really a png');
         const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toEqual([]);
         expect(slides).toHaveLength(1);
@@ -94,7 +91,7 @@ describe('readPresent', () => {
             sub: 'A subtitle',
             hook: 'One sentence of framing.',
             eli5: { purpose: 'Why it is done.', plain: 'What it does.' },
-            equation: 'eq_one.png',
+            equation: '\\min_{x} f(x)',
             specs: [{ label: 'Model', value: 'rank-(L,L,1)' }],
             panels: [
                 { diagramHtml: '<div>a</div>', caption: 'A caption', explain: 'An explanation' }
@@ -204,55 +201,97 @@ describe('readPresent', () => {
 });
 
 describe('equationIsImage', () => {
-    it('reads an image name by its suffix and anything else as LaTeX', () => {
-        expect(equationIsImage('eq_one.png')).toBe(true);
-        expect(equationIsImage('EQ_ONE.PNG')).toBe(true);
-        expect(equationIsImage('\\min_{x} f(x)')).toBe(false);
+    it('reads a value ending in an image suffix, trimmed and in any case, as an image name', () => {
+        for (const name of [
+            'eq_one.png',
+            'EQ_ONE.PNG',
+            ' eq_one.png ',
+            'a.jpg',
+            'a.jpeg',
+            'a.svg',
+            'a.webp'
+        ])
+            expect(equationIsImage(name)).toBe(true);
+    });
+
+    it('reads anything else as LaTeX', () => {
+        for (const latex of ['\\min_{x} f(x)', 'x \\text{png}', 'a.png + b', '', '  '])
+            expect(equationIsImage(latex)).toBe(false);
     });
 });
 
-describe('the equation image', () => {
-    const SLIDE = ['---', 'present: { equation: eq_one.png }', '---', ''];
+describe('the equation', () => {
+    const IMAGE = "equation eq_x.png names an image; a slide's equation is LaTeX";
 
-    it('resolves against the deck equations folder first', () => {
-        const paths = project(SLIDE);
-        write(paths.hub, join('tools', 'present', 'equations', 'eq_one.png'), 'shared');
-        write(paths.hub, join(paths.folder, 'present', 'eq_one.png'), 'own');
-        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
-        expect(findings).toEqual([]);
-        expect(slides[0].equationImage).toBe('tools/present/equations/eq_one.png');
-    });
-
-    it("falls back to the project's own present folder", () => {
-        const paths = project(SLIDE);
-        write(paths.hub, join(paths.folder, 'present', 'eq_one.png'), 'own');
-        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
-        expect(findings).toEqual([]);
-        expect(slides[0].equationImage).toBe('projects/active/alpha/present/eq_one.png');
-    });
-
-    it('marks and reports an image neither place holds', () => {
-        const paths = project(SLIDE);
-        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
-        expect(slides[0].equationImage).toBe(undefined);
-        expect(slides[0].equationMissing).toBe(true);
-        expect(findings).toEqual([
-            {
-                file: doc(paths),
-                key: 'alpha',
-                message:
-                    "equation eq_one.png is in neither the deck's equations folder nor present/"
-            }
-        ]);
-    });
-
-    it('leaves LaTeX alone', () => {
+    it('keeps LaTeX and reports nothing', () => {
         const paths = project(['---', 'present: { equation: "\\\\min_{x} f(x)" }', '---', '']);
         const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toEqual([]);
         expect(slides[0].equation).toBe('\\min_{x} f(x)');
-        expect(slides[0].equationImage).toBe(undefined);
-        expect(slides[0].equationMissing).toBe(undefined);
+    });
+
+    it.each(['eq_x.png', 'EQ.PNG', "'eq_x.png '"])(
+        'reports the image name %s, keeps no equation and still reads the rest of the slide',
+        (value) => {
+            const paths = project([
+                '---',
+                `present: { title: A headline, equation: ${value} }`,
+                '---',
+                ''
+            ]);
+            const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
+            expect(slides[0].equation).toBeUndefined();
+            expect(slides[0].title).toBe('A headline');
+            expect(findings).toEqual([
+                {
+                    file: doc(paths),
+                    key: 'alpha',
+                    message: `equation ${value.replace(/'/g, '').trim()} names an image; a slide's equation is LaTeX`
+                }
+            ]);
+        }
+    );
+
+    it('leaves a slide whose only field is an image name with nothing to draw', () => {
+        const paths = project(['---', 'present: { equation: eq_x.png }', '---', '']);
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
+        expect(findings.map((one) => one.message)).toEqual([IMAGE]);
+        expect(hasSlideContent(slides[0])).toBe(false);
+    });
+
+    it('keys the finding of an entry of the slides list on project/slug', () => {
+        const paths = project([
+            '---',
+            'slides:',
+            '  - { id: data, title: The second, equation: eq_x.png }',
+            '---',
+            ''
+        ]);
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
+        expect(slides[0].id).toBe('alpha/data');
+        expect(findings).toEqual([{ file: doc(paths), key: 'alpha/data', message: IMAGE }]);
+    });
+
+    it.each(['', "equation: ''", 'equation: "   "'])(
+        'draws no equation and reports nothing for %j',
+        (value) => {
+            const paths = project([
+                '---',
+                `present: { title: A headline${value === '' ? '' : `, ${value}`} }`,
+                '---',
+                ''
+            ]);
+            const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
+            expect(findings).toEqual([]);
+            expect(slides[0].equation).toBeUndefined();
+        }
+    );
+
+    it.each(['3', '[a, b]', '{ a: 1 }'])('reads equation: %s as no equation', (value) => {
+        const paths = project(['---', `present: { title: T, equation: ${value} }`, '---', '']);
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
+        expect(findings).toEqual([]);
+        expect(slides[0].equation).toBeUndefined();
     });
 });
 

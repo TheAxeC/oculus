@@ -27,7 +27,7 @@ deck:
 
 /** A deck file holding neither list, with a comment after the map. */
 const NEITHER = `deck:
-    equations_dir: tools/present/assets/equations
+    tag_tones: { measured: green }
     order:
         - { slide: title }
 # a comment after the deck
@@ -63,7 +63,7 @@ describe('setDeckList', () => {
         const out = setDeckList(NEITHER, 'selection', ['title']);
         expect(listsOf(out).selection).toEqual(['title']);
         expect(out).toContain('# a comment after the deck\n');
-        expect(out).toContain('    equations_dir: tools/present/assets/equations\n');
+        expect(out).toContain('    tag_tones: { measured: green }\n');
         expect(out.endsWith('# a comment after the deck\n')).toBe(true);
     });
 

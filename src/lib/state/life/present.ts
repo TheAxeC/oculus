@@ -117,6 +117,23 @@ export function fit(width: number, height: number): number {
 }
 
 /**
+ * The least scale a slide's equation is drawn at to fit its card. A formula that needs more is
+ * drawn at it and scrolls in its card, since text any smaller is no longer read from a slide.
+ */
+export const LEAST_EQUATION_SCALE = 0.5;
+
+/**
+ * The scale, in em of the formula's own size, that draws an equation `needed` px wide in `room` px
+ * of its card: 1 when it fits or the card has no width yet, else the ratio rounded down to a
+ * hundredth, so the rounding never leaves it a pixel too wide, and never below
+ * LEAST_EQUATION_SCALE.
+ */
+export function equationScale(needed: number, room: number): number {
+    if (room <= 0 || needed <= room) return 1;
+    return Math.max(LEAST_EQUATION_SCALE, Math.floor((room / needed) * 100) / 100);
+}
+
+/**
  * A title written as HTML, as the plain words an overview tile and a pane title draw. The escapes
  * are decoded by `entities`, the parser the mail snippet and the manual use; a no-break space it
  * gives is folded into a plain one with the rest of the white space.
@@ -297,7 +314,6 @@ const deckShape = z
         ideas: ideasShape,
         selection: z.unknown().optional().transform(savedKeys),
         slide_order: z.unknown().optional().transform(savedKeys),
-        equations_dir: z.string().catch(''),
         tag_tones: mapOfShape(z.string().min(1)).catch(() => ({}))
     })
     .transform((map): Deck => ({
@@ -309,7 +325,6 @@ const deckShape = z
         ideas: map.ideas,
         selection: map.selection,
         slideOrder: map.slide_order,
-        equationsDir: map.equations_dir,
         tagTones: map.tag_tones
     }));
 
@@ -325,7 +340,6 @@ export function deckFrom(config: Record<string, unknown>): Deck {
             ideas: null,
             selection: null,
             slideOrder: null,
-            equationsDir: '',
             tagTones: {}
         }
     );
