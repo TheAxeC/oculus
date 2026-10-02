@@ -192,3 +192,228 @@ The commands the report quotes as evidence, rerun:
 - The Z282 placement of `processes`, which is the landing's merge.
 
 Usage: not measured (about 75 tool calls, claude-opus-5-5).
+
+## Repair round 1, refuted
+
+S4, the Settings editor finished. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/S4`, base 3c772d4c.
+
+**What I touched outside the worktree.** I changed nothing in the worktree or the repository. The worktree's status still has the same 116 entries (`git status --short | wc -l`), and the same 51 files are newer than the round's start.
+
+My scratchpad, `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad`, turned out to be shared with earlier agents of this session. It holds the builder's `s4-pre-r1/` and other agents' folders. Before I saw that, I wrote into a folder `base/` that already existed there (dated Oct 1) with `rsync` and `patch -R`, and I used plain file names at its top: `checks.txt`, `cv.bak`, `Item.bak`, `fold.bak`, `s4.patch`, `untracked.txt`, `patch.log`, `patch2.log`, `probe1.mjs`, `zz-pre.mjs`, `ref`, `rbase-path`. I don't know whether any of those names belonged to another agent; the orchestrator should not rely on them.
+
+Everything I made myself is in `wt/` (a copy of the worktree's `tools/oculus`, my probes under `wt/oculus/probes/`), `eng/` (a scratch engine) and `rbase-<pid>/` (a clean base built from `git diff 3c772d4c`). No copy holds `local.yml`. I ran `npm run diagrams` twice in the worktree, as the brief asks; no byte changed.
+
+## Verification lines (verbatim)
+
+`checks.sh`, run from the worktree's `tools/oculus`, exit 0. The load average was 12.75 at the start and 5.46 at the end.
+
+```
+$ npm test
+ Test Files  512 passed | 24 skipped (536)
+      Tests  12876 passed | 639 skipped (13515)
+   Duration  200.88s (transform 48.85s, setup 0ms, import 424.83s, tests 324.42s, environment 194ms)
+$ npm run test:checks
+ Test Files  30 passed | 2 skipped (32)
+      Tests  450 passed | 9 skipped (459)
+$ npm run check
+1790974116075 COMPLETED 3165 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+✓ built in 4.95s
+✓ built in 12.13s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+No test timed out, so nothing was rerun alone.
+
+The other checks:
+- **Verify 2.** `grep -rn "views/system/config\|group: 'info'" tools/oculus/src tools/oculus/tests` printed nothing (exit 1).
+- **Verify 3.** `grep -c "page: info" tools/oculus/config/layout.yml` printed `0`. `grep -n "^  info:" ...` printed nothing (exit 1).
+- **Diagrams.** `cat docs/diagrams/* | md5 -q` gave `af74857c972e9648d1815286719e7163` before, after the first `npm run diagrams` and after the second. This matches the report.
+- **ASCII gate** of `spec.md` (the perl form): no hit (exit 0). It printed `bfs: error: bin: No such file or directory.` because `tools/oculus` has no `bin/`.
+- **Report commands I reran:**
+  - The rename grep gives the report's five hits: `retired.test.ts:1,3,12,28` and `settings-editors.test.ts:306`.
+  - `sh utils/folder-check.sh` exits 0, and `saved/` holds 5 files.
+  - `grep -rn "badge:" src/lib/views` gives the report's nine views.
+  - Every line count in the report matches `wc -l` (28 files checked).
+  - The B4 sentences match the code: `TabFace.svelte:89`, `PaneView.svelte:316`, `ui.yml:87-88`, `typed.ts:81-83`.
+- **Failing lines on the unchanged tree.** I built a clean base (`patch -R` of `git diff 3c772d4c`, the new files removed, the 4 deleted files restored from the diff). I ran four test files there in their final form: `layout-saved`, `retired`, `guards` and `options-catalog` (with the base's own helper). 26 tests failed, and each failing line matches the report's quote.
+- **The fixes taken out one at a time** (on my scratch copy):
+  - Item's guard removed: "is drawn once, under the editor..." fails with `expected 2 to be 1`.
+  - `wants_record` removed: both B2 tests fail on the sentence.
+  - `alone` forced false: "puts the five system views..." and "keeps the id, the state and the active tab..." fail.
+
+## Item verdicts (the whole diff since the base)
+
+1. **The `config-value` write: holds**, with Behaviour findings R1 and R2 and Spec finding SP-1.
+   - What holds: the body and its dispatch, the refusals, the base check, `misfit` per Z302, reserved names, the read-back, `refusedBy`, History and undo.
+2. **The block rewrite: holds on the brief's mechanism.**
+   - It now uses `new Parser()`, `new Composer({ keepSourceTokens: true })` and `CST.setScalarValue` (`block-edit.ts:62-67`, `:50-60`; `block-render.ts:39-60`).
+   - Joining flow collections by hand is needed: `stringify` pads `{ }` and `[ ]` both or neither. My probe printed `"{ a: [ 1, 2 ], m: { x: 1 } }"` and `"{a: [1, 2], m: {x: 1}}"`.
+   - Behaviour regression R1.
+3. **The editors: holds**, with Behaviour finding R3.
+4. **The table of contents below 700 px: holds** (`contents.test.ts`). The press, the scroll and Escape are for the look.
+5. **Open-the-file action and the Catalogs and Texts groups: holds.**
+6. **The Config view removed: holds.** DESIGN.md:389, :391, :399 and :405 no longer name it, and the rename grep finds no document hit.
+7. **The merged rail item: holds.** The `processes` merge (Z282) falls to the second of D18 and S4 to land.
+8. **The saved `info` page carried over: violated (partial), finding R4.** A saved views page whose maximised pane is the Pages pane makes the whole saved layout unreadable.
+
+## Case verdicts
+
+- **C1 to C13: met.** C4 and C8 are met under rulings R1 and R2 of `S4-cases.md`.
+- **C14: met** for a row whose editor is drawn. R3 is a case outside its scenario.
+- **C15 to C28: met.** C17 is met at the state level; the rest is for the look.
+- **C29: met.** `yes` is written plain and reads back as the string (SP-1).
+- **C30 to C34: met.**
+- **C35: met** by `editors-writer.test.ts:341`, "keeps the drafts of two keys apart, and never meets the typed text...".
+- **C36: met.**
+
+## Ruling verdicts (`S4-round1.md`)
+
+1. **SP1, the block rewrite: closed in part.**
+   - What holds:
+     - the mechanism is the brief's, and the hand quoter (`plainOk`, `scalarText`, `AMBIGUOUS`) is gone;
+     - C1, C3, C5, C6, C26 and C27 are green;
+     - the quoting test passes.
+   - Two hand pieces are left:
+     - `readsAs` with a `QUOTE_DOUBLE` fallback (needed: `setScalarValue` runs no schema, and my probe shows `null`, `012` and `true` written plain without it);
+     - the flow join in `flowSource`.
+   - Both are about the least hand code the library leaves. But `readsAs` checks a scalar parsed on its own, outside its place in the file, and `keyText` quotes keys as block keys inside flow maps. This loses two cases the code before the round wrote correctly (R1).
+2. **SP2, paths outside the write list: closed in part.** The file table does not mark `src/lib/data/sources/config/catalog/options.ts` or `config/catalogs/options.yml`. Both are outside the brief's write list. Z302 brings them in, but they are not listed with that reason.
+3. **SP3: closed.** It is under "Judgment calls".
+4. **B5 / Z302, `holds: lists`: closed.**
+   - The key is described in `options.yml:9` and in the `CatalogEntry` doc comment.
+   - The check refuses `holds` on a leaf option, any word but `lists`, and `holds: lists` over a value that is not a map of lists. Its three cases fail with the base's helper (my run).
+   - The editor draws the rollup form for `{}`.
+   - My probe of the write: `tab_rollup` with `projects: { ... }` is refused with "Entry projects must be a list of records...", and the file is unchanged.
+5. **P1, `draftSlot` removed: closed.** Neither `draftSlot` nor `data-draft` is in `src`. The new test "carries no draft attribute" is a finding (P-2).
+6. **P2, edits to assertions and allow lists listed: closed.** The `allow-audits.txt`, `allow-duplication.txt` and chips-floor entries match `git diff`.
+7. **P3, P4, P6, report corrections: closed.** All three reproduce.
+8. **P5, first runs redone: closed.** I spot-checked 26 failing lines on my own clean base; all match.
+9. **B2, wrong shapes accepted: closed in part.**
+   - What holds: `nav_groups` with `help: [ ... ]` and `read_limits` with `next: { a: 1 }` are refused and nothing is written (my probe and the tests).
+   - What does not: the reading "a scalar or a list of scalars in every key/value family" lets `read_limits` with `next: [1, 2]` and `deck.tag_tones` with `x: [a]` be written (R2).
+10. **B1, a refusal drawn twice: closed in part.**
+    - What holds: one element and one `role="status"` for a row with an editor (test, and my rerun without the fix).
+    - What does not: the `drawsEditor` guard does not match when `Control.svelte` actually draws the editor (R3).
+11. **ST1, DESIGN.md lines: closed.**
+12. **B3, saved layouts after the merge: closed in part.**
+    - What holds: the label, the new pane below Pages, and the tab state are as ruled.
+    - What does not:
+      - R4, the whole saved layout lost when the Pages pane is maximised;
+      - P-1, the report's and a test title's claim that the active tab is kept;
+      - P-3, the fixture is not the old shipped shape.
+13. **ST5, the narrow overlay: closed.** `.contents.over` uses `color-mix(... var(--wall-popover) ...)`, and `wall.test.ts` has no diff against the base.
+14. **B4, the before-and-after sentences: closed.**
+15. **ST3, one definition each: closed.**
+    - `grep -rnwE "isPlain|sameInOrder|flowText" src` shows one definition each: `sameInOrder` at `guards.ts:89` and `flowText` at `flow.ts:29`.
+    - `isPlain` no longer occurs in `src`; `isMap` of `data/helpers/guards.ts` replaces both copies.
+    - The server's version is now `flowSource`.
+16. **ST4: closed** (same as 5).
+17. **ST6, the `context.ts` comment: closed** (`context.ts:356-358`).
+18. **ST7, the blank lines: closed.** `config/layout.yml` lines 111 and 112 are blank (`cat -e`).
+
+## Spec
+
+- **SP-1. `yes` and `no` are written plain, against item 1's text.**
+  - Where: `block-render.ts:52-57`. My probe prints `"yes"  "yes"` and `"no"  "no"` for a value and `yes: 2` for an added key.
+  - The brief's item 1 lists `yes` and `no` among the strings "written quoted". The CST route leaves that decision to the library. They read back as strings, because every reader of these files is the `yaml` library (`data/sources/config/merge.ts:8`, `local.ts:9`), and no Python reader of the oculus config was found.
+  - The report does not name this departure.
+  - Failure scenario: only a YAML 1.1 reader, which none of these files has today, would read `yes` as true.
+  - Verdict: item 1, minor, no defect in behaviour.
+- **SP-2. The file table misses two paths.** The "Paths outside" list does not name `src/lib/data/sources/config/catalog/options.ts` or `config/catalogs/options.yml`. Verdict: ruling 2, closed in part.
+
+## Proof
+
+- **P-1. "Keeps the active tab" is overstated.**
+  - Where: the report, ruling 12: "its tabs are carried over by id, state and active tab". Also `layout-saved.test.ts`, "keeps the id, the state and the active tab of every info tab but config". `fold.ts:25-27` (`paneOf`) makes the first tab active.
+  - Probe: an info page of one pane with `audit` active, folded. The new pane reads `["i-sta",[...]]`, so `status` is active and `audit` is not.
+  - The test passes only because its fixture's active tab is the first one.
+  - Failure scenario: a reader whose System page showed Audit finds Status shown after the upgrade.
+  - Verdict: ruling 12.
+- **P-2. A test of an absence, titled as a behaviour.**
+  - Where: `settings-editors.test.ts:423-429`, "carries no draft attribute on the editor".
+  - It asserts that a removed attribute nothing read is absent. Under `spec.md` line 60 it is an audit, and it is not titled "audits that".
+  - The same holds for `tests/checks/source/retired.test.ts`. It greps document text, and the report presents it as the failing test for ruling 11.
+  - Verdict: rulings 5 and 11, minor.
+- **P-3. The "old shape" fixture is not the old shipped arrangement.**
+  - Where: `layout-saved.test.ts:483-492`, `oldViewsRoot`: a row of `[settings, account-setup]` and `[catalogue, pages]`.
+  - The shipped arrangement before the step was a row of `catalogue` and a column split 0.6/0.4 of `[settings, account-setup]` over `[pages]` (`config/layout.yml` in the base diff).
+  - My probe on the real old shape, with no maximised pane, folds correctly, so this is a gap in coverage. It is also how R4 went unseen.
+  - Verdict: ruling 12.
+
+## Standards
+
+- **ST-1. A 30000 ms limit covers a cost the test creates itself.**
+  - Where: `tests/server/edit/yaml/block-edit.test.ts:126-131`, `{ timeout: 30000 }`. The case body calls `isListOption` (`:165-167`), which runs `catalogOf(loadConfig(engineDir()).config)` once per list block. `blocks()` has already loaded the same catalog.
+  - The case took 779 ms alone in my run, not the "about two seconds" its comment says.
+  - The fix that ends the cause is to load the catalog once (or pass it in). Raising the limit is a loosened tolerance under `spec.md` line 16.
+  - The 30000 ms precedents the builder cites (`comment-width`, `history`, `readable`) are walks over the whole tree, which this case is not.
+  - Failure scenario: none at runtime. A slow helper is hidden behind a raised limit.
+  - Verdict: a widened tolerance.
+- **ST-2. Wording that compares with an earlier state, in new comments and titles.**
+  - Where:
+    - `tests/checks/source/retired.test.ts:1` "The Config view is gone" and `:4` "describes a screen that no longer exists";
+    - `layout-saved.test.ts:481` "a saved views page of the shape before the merge";
+    - `settings-editors.test.ts:101` "...and no longer summarises the list as a count" (from the step's first round).
+  - `spec.md` line 42 names these words in comments and test titles. A migration test can name the old shape without "before", for example "a saved views page holding no system view".
+  - Verdict: minor.
+- **Chips floor (56 to 55): holds.** The only plain `<Tag` removed is the Config view's.
+- **Allow lists:** none was touched in the round. The SOLID entry of `wall.test.ts` is removed, so that file equals the base.
+- **`options-findings.ts`:** it is a check of facts, run over the shipped tree as well, so it does not pass by leaving a path unread.
+
+## Behaviour
+
+- **R1. Two kinds of string the code before the round wrote are now refused.**
+  - Where:
+    - `block-render.ts:57`: `readsAs(token.source, value)` parses the scalar on its own;
+    - `block-render.ts:64` `keyText` passes `scalarSource(key, false, undefined, true)`, which quotes keys as block keys, and `flowSource` uses it inside `{ }` (`:75`), as `rebuildFlow` does (`block-edit.ts:243`).
+  - Probes (`setBlock`):
+    - `w: [a, b]` with item 0 set to `"a\nb"` gives `w: [a\n\nb, b]`, which does not parse;
+    - `m: { a: 1 }` given a key `x,y` gives `m: { a: 1, x,y: 2 }`, which reads back as `{a:1, x:null, y:2}`.
+  - Through `writeConfigValue` on a scratch engine, the write is refused with "The edit would change more than this value...". It happens for `waiting_status` (a flow list) with a newline item, whether added or changed, for `audit_ignore: []` given one, and for `read_limits` (a flow map) given a key `a,b`.
+  - The code before the round (`scratchpad/s4-pre-r1`, which holds `plainOk`) wrote all three correctly: `w: ["a\nb", b]` and `m: { a: 1, "x,y": 2 }`.
+  - The editor can produce a newline string: a value or record field typed as `"a\nb"` reads to a newline through `readFlow`.
+  - The file is never corrupted; the read-back refuses.
+  - Failure scenario: such a Save is refused with a sentence that does not say why.
+  - Verdict: ruling 1, closed in part. One way to close it: check the scalar inside its flow or key context, or write `QUOTE_DOUBLE` when the value holds a line break or the key is in a flow map and holds `,[]{}`.
+- **R2. A list is accepted in key/value tables that hold single values.**
+  - Where: `config-value.ts:57-60`, `isTableValue`, applied to every key/value family (`:169-170`).
+  - Probe: `read_limits` with `next: [1, 2]` and `deck.tag_tones` with `x: [a]` both returned `changed` and were written. No reader refused either.
+  - The catalog describes a list value only for `languages` (`options.yml:547`). The other five families' files hold scalars only.
+  - A narrower rule is available and matches the brief's own rule for families ("the collection kind the file holds"): accept a list only where the file's own entries are lists, or mark `languages` in the catalog. The builder reported its reading, but the wrong-configuration class that B2 named stays open for the five scalar tables.
+  - Verdict: ruling 9, closed in part.
+- **R3. A refusal can be drawn nowhere, and a hidden draft keeps the tab marked unsaved.**
+  - Where:
+    - `editors/slots.ts:104-108`: `drawsEditor` is true when `savedDraft(...) !== undefined || draftOf(row) !== null`;
+    - `settings/Control.svelte` (`const drawn = $derived(draftOf(row) !== null)`) draws `Editor` only when `draftOf(row) !== null` and the row is not missing.
+  - So when a draft is held but the file's value no longer reads into one, the item does not draw the sentence and no editor is drawn.
+  - Probe on my copy of `settings-editors.test.ts`:
+    1. Save a `waiting_status` draft and have it refused.
+    2. Keep the draft held.
+    3. Push the file as `waiting_status: [one, 2]`.
+    4. Render the item. It printed `editor drawn: false | refusal occurrences: 0 | draft still held: true`.
+  - The held draft also keeps the tab counted as unsaved (`settingsTyped`, `typed.ts:82`), and no Discard is drawn to clear it.
+  - Failure scenario: Axel hand-edits a list into a shape the editor does not draw while a refused draft is held. The refusal disappears, and closing the tab asks to lose unsaved changes he cannot see.
+  - Verdict: ruling 10, closed in part. `drawsEditor` should be `draftOf(row) !== null`. A held draft over a row that draws no editor needs a way to end it.
+- **R4. A maximised Pages pane makes the whole saved layout unreadable.**
+  - Where: `fold.ts:61-64` wraps the pane holding `pages` in a new column split (`rewrite(next, under.path, below)`), and `workbench.focus` is left as it was. `parseLayout` then fails `checkPages` (`saved.ts`, `checkWorkbench`: "focus names ..., which is not a pane") and returns null.
+  - Probe over the real old shape, a row of `[catalogue]` and a column of `[settings, account-setup]` over `[pages]`:
+    - no maximised pane: folds correctly;
+    - settings pane `[1, 0]` maximised: folds correctly;
+    - pages pane `[1, 1]` maximised: `parseLayout returned null (whole saved layout refused)`.
+  - `loadLayout` (`layout.svelte.ts:411-424`) then takes `defaultPages(first)`, and the next save overwrites the stored layout. Every page, tab and float the browser held is lost.
+  - The same holds when the views page is a single pane holding `pages` and that pane is maximised (path `[]`).
+  - Failure scenario: Axel's or TEST's browser opened with the Pages pane maximised on Views and Settings resets to the shipped pages on the first load after S4 lands.
+  - Verdict: item 8, violated (partial), and ruling 12, closed in part. One way to close it: when the maximised pane is `under`, add `0` to the end of the focus path.
+
+## Declined to judge
+
+- **Everything a DOM shows** is the orchestrator's look on TEST: the editors drawn, the presses, focus, the narrow overlay and its toggle, Escape, the overlay's translucency over a wallpaper, and the System label and new pane on Axel's or TEST's saved layout. Check R4 there only on a copy of the layout, never on the real one.
+- **The `processes` placement (Z282)**, which is the landing's merge.
+- **Whether VS Code draws a `list-tree` toggle in its narrow Settings editor**: I did not fetch VS Code's source.
+
+Usage: about 75 tool calls; tokens not measured (claude-opus-5-5).
