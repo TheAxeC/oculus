@@ -57,6 +57,19 @@ dispatch:      # four in flight (workers_at_once: 5), A1 landed 14:40: Q88c and 
   shared_paths: with A1, `state/sources/repositories/repositories.ts` (separate fields of `DiffSubject` and `heldDiffShape`, one line each in `sideOf`, adjacent and merged by hand at the second landing), `tests/views/whole/type-scale.test.ts` (separate rows), `HELP.md`, `DESIGN.md` (separate lines); with Q88c, `server/files/fs/ops.ts` (Q88c two `export` words, D32 the replace and preview branches), `repositories.ts` (Q88c `:450-830`, D32 `:110-230`), `state/sessions/source.svelte.ts` (Q88c the HEAD tab, D32 `reloadSource` and line 145), `config/text/ui.yml` (separate keys), `HELP.md` (Q88c line 113, D32 115 and 162-170), `DESIGN.md`; D32 adds no file to and moves none out of `tests/server/files/` or `tests/state/sources/`, which Q88c splits; with D18, `state/client/entities.svelte.ts` (separate functions), `package.json` and the lockfile (regenerated with `npm install` at the second landing), `HELP.md`, `DESIGN.md`; with M3, `HELP.md`, `DESIGN.md` (separate lines)
   landing: not-started
   round: 0
+- step: D14
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 16:33)
+  session_id: aaadccaabfd482ca7 (builder, launched 2026-10-02 16:33 local)
+  worktree: .agents/worktrees/D14
+  base: eaf8034f
+  launched: 2026-10-02 16:33 local
+  report: agents/reviews/D14-report.md
+  brief_check: agents/reviews/D14-brief-check.md; claude-sonnet-5-5, 272,742 tokens, 109 tool uses, 15.3 min (run 2026-10-01; findings closed 2026-10-02 under Closed)
+  shared_paths: with D32, `state/sessions/latex.svelte.ts` (D32 replaces the error lines 161 and 166 with a shared reader; D14's new fetch keeps its error reading as one call there, so the second landing takes D32's reader), `package.json` and the lockfile (regenerated with `npm install` at the second landing), `HELP.md` and `DESIGN.md` (separate lines); with D18, `package.json` and the lockfile, `config/behavior.yml` (separate sections), `config/catalogs/options.yml` (separate entries of the `behavior.yml:` block), `config-folder.test.ts` and `allow-duplication.txt` (separate rows), `HELP.md` and `DESIGN.md` (separate lines)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
