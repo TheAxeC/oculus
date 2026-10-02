@@ -43,7 +43,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   builder_usage: the build to the report, as its completion notice gives it, 318,310 tokens, 1,446 tool uses, 365.6 min (4 full-list runs, the 4th printing `checks: 7 commands passed`)
   reviewer_report: agents/reviews/X3a-refuter.md (first run, reviewer a6e768689ba25b71d, claude-sonnet-5-5 read at 07:55, launched 2026-10-02 07:55; 297,143 tokens, 170 tool uses, 26.1 min; 3 Spec, 6 Proof, 3 Standards, 2 Behaviour findings)
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/X3a-round1.md, sent 2026-10-02 08:55)
 - step: Q88c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -178,6 +178,12 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Z238 (2026-10-02 02:47, M4): the path list widened; a blank equation draws no card (the orchestrator, automode).
 - Z239 (2026-10-02 05:20, D35): a page that follows a moved server carries its layout and its "This browser" settings across in `window.name` (the orchestrator, automode).
 - Z240 (2026-10-02 06:50, Q88c): the brief check's open points closed with VS Code's behaviour; `useConfigOnly` through git's environment; the read module moved into `server/core/git/`; Delete Branch `-d` only until Z241 (the orchestrator, automode).
+- Z242 (2026-10-02 08:50, X3a): the delete copies in the local history are pruned: the newest 50 are kept over all files, the oldest removed first, and an undo of a pruned delete says the copy is gone (the orchestrator, automode).
+- Z243 (2026-10-02 08:50, X3a): a drop of a file onto another root moves it, one `move` record, as the tree's `paste` in `mode: 'move'` does and as VS Code moves between workspace folders; the brief's "a copy and a trash of the source" is corrected (the orchestrator, automode).
+- Z244 (2026-10-02 08:50, D18): the Processes watcher reads every ten seconds while at least one page is connected, the `processes` channel subscribed with every other channel in `+page.svelte`, and reads nothing while no page is connected (the orchestrator, automode).
+- Z245 (2026-10-02 08:50, D18): oculus's own processes are the trees under every pane of its terminal sessions (`oculus-<id>` with a terminal id); the hidden usage sessions and a hand-made `oculus-` session with no terminal id are not oculus's own and are listed only when a pattern matches (the orchestrator, automode).
+- Z246 (2026-10-02 08:50, D18): the head line's agents are counted over the whole process table, a `claude` or `codex` process whose parent is the same program counted once (the orchestrator, automode).
+- Z247 (2026-10-02 08:50, D18): a command line is cut at 1,000 characters in the payload with an ellipsis; the row count is not cut (the orchestrator, automode).
 - Z224 (2026-10-02 02:08, M4): each equation a single-quoted YAML scalar (the orchestrator, automode).
 - Z225 (2026-10-02 02:08, M4): the image branch removed, one finding kept for an image name (the orchestrator, automode).
 - Z226 (2026-10-02 02:08, M4): the subtitle names the Present view (the orchestrator, automode).

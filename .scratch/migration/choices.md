@@ -791,3 +791,62 @@ The question: the user-visible choices and blocking findings Q88c's brief check 
 - Not chosen: (b) a smaller brief leaving these to the builder, which is the lazy option and leaves the builder to take user-visible choices.
 
 Where it is built: Q88c. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z242 (2026-10-02 08:50, step X3a)
+
+The question: how many copies of deleted files the local history keeps (X3a's review, Behaviour 2: a delete keeps a copy of up to 5 MB with no count or total cap, so `~/.oculus/history` grows without bound unless each delete is undone).
+
+- Chosen (a): the newest 50 delete copies are kept over all files, the oldest removed first when a delete adds the 51st, the bound VS Code's local history keeps per file (`workbench.localHistory.maxFileEntries`, 50); an undo of a delete whose copy was pruned refuses with a sentence saying the copy is gone; said in HELP.md beside the 5 MB limit.
+- Not chosen: (b) a total size cap in bytes, which needs a size walk of the folder at every delete;
+- Not chosen: (c) no cap, the lazy option, which leaves the folder growing without bound.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z243 (2026-10-02 08:50, step X3a)
+
+The question: what a drag of a file from one root onto another does (X3a's review, Spec 3: the brief's case 8 said a copy and a trash of the source; the tree's `moveItem` renames, with copy and remove only across devices, and nothing goes to the Trash).
+
+- Chosen (a): one move, as built and as VS Code does between workspace folders; one `move` record in History, undone by one move back; case 8 is met by `tests/state/sources/explorer/acts/store.test.ts` "moves between two roots in one paste".
+- Not chosen: (b) a copy and a trash of the source as the brief said, which puts a file the reader moved into the Trash and makes two History records of one drop.
+
+Where it is built: X3a. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z244 (2026-10-02 08:50, step D18)
+
+The question: when the Processes view's server read runs (D18's brief check 5.1: the socket has no unsubscribe message, so a read gated on a mounted Processes tab cannot stop when the tab closes).
+
+- Chosen (b): the HPC poller's pattern, as the plan line books it: the page subscribes to `processes` with every channel, the watcher reads every ten seconds while the hub has any subscriber and stops when the last page closes; no new wire message.
+- Not chosen: (a) an unsubscribe message on the wire and a hub `unsubscribe`, so reads stop when the last Processes tab closes: a protocol change for every channel, outside the step's subject;
+- Not chosen: (c) gate on the first subscribe and say in the docs that reads go on until the page reloads, the lazy option, which leaves the docs' sentence half true.
+
+Where it is built: D18. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z245 (2026-10-02 08:50, step D18)
+
+The question: which tmux sessions count as oculus's own (D18's brief check 3.4, 6.9, 6.17, 6.18: `listTerminals()` never returns the usage sessions, which live seconds and have no id to stop; a foreign `oculus-` session has no terminal; `#{pane_pid}` of `list-sessions` is the active pane only).
+
+- Chosen (a): every pane of every terminal session (`tmux list-panes -a`), its pane process and every descendant; the usage sessions and foreign sessions are left out of own and of the agent count, and appear only when a pattern matches their command, with no Stop.
+- Not chosen: (b) the usage sessions as own with no Stop, which adds an agent to the head line for a few seconds every refresh;
+- Not chosen: (c) the active pane only, the lazy option, which leaves a split terminal's other panes out.
+
+Where it is built: D18. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z246 (2026-10-02 08:50, step D18)
+
+The question: what the head line counts as agents (D18's brief check 6.15, 6.16: a wrapper and its native child would count twice, and counting only listed rows makes the count depend on the patterns).
+
+- Chosen (a): over the whole table by Decision 2's rule, whatever `processes.patterns` holds, a matched agent whose parent is an agent of the same program not counted again; a project is in flight when an oculus terminal or such an agent works in its folder.
+- Not chosen: (b) every matched process counted, which doubles a wrapped agent;
+- Not chosen: (c) only listed rows, which drops an agent from the head line when the patterns leave its program out.
+
+Where it is built: D18. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z247 (2026-10-02 08:50, step D18)
+
+The question: how much of each command line the `processes` payload carries every ten seconds (D18's brief check 6.7: the default `node` pattern matches every language server and test worker, and a command line can run to tens of kilobytes).
+
+- Chosen (a): the payload's `command` is cut at 1,000 characters with `...`, which keeps every program and its first arguments; every matching row is listed.
+- Not chosen: (b) the whole line, which sends tens of kilobytes per row to every page every ten seconds;
+- Not chosen: (c) a row cap, which hides processes the reader is looking for.
+
+Where it is built: D18. Booked in the state file's closed log and `plan.md` Rulings.

@@ -1,7 +1,7 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), review in (14 findings); repair round 1 next.
+- X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), repair round 1 running.
 - D18 (the Processes view), brief check in; its findings are being closed in the brief, then the builder.
 - Q88c (the Source Control rows' and the pane strip's new right-click capabilities, Z240), builder at ordo-high; open item Z241 (Delete Branch's force retry) waits on Axel.
 
@@ -35,6 +35,7 @@ Queued, in order (25 steps):
 Ready: the three-way Opus and Sonnet comparison can be asked for.
 
 Landed, newest first:
+- D24 (the Personal board: side projects and the Files roots' manifests as cards), 2026-10-02, 4ce50c59.
 - D35 (every configuration file live, the server's port move and the page following it), 2026-10-02, 15824705.
 - M4 (the Present view's equations as LaTeX), 2026-10-02, d210de04.
 - L4 (floating panes and kept empty panes), 2026-10-02, ce7346bb.
