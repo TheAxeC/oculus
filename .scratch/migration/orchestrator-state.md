@@ -83,8 +83,8 @@ dispatch:      # four in flight (workers_at_once: 5), A1 landed 14:40: Q88c and 
   base: 201a8fcb
   launched: 2026-10-02 16:37 local
   report: agents/reviews/D17-report.md
-  builder_usage: 349,641 tokens, 725 tool uses, 243.5 min (its completion notice, 2026-10-02)
-  reviewer_report: agents/reviews/D17-refuter.md; reviewer a5d2a98fbce79b67d at ordo-high, claude-opus-5-5 (the transcript's message.model, read 2026-10-02 at its launch); 315,842 tokens, 81 tool uses, 20.6 min (its completion notice, 2026-10-02)
+  builder_usage: 349,641 tokens, 725 tool uses, 243.5 min (its completion notice, 2026-10-02); round 1 261,646 tokens, 427 tool uses, 96.0 min (its completion notice, 2026-10-02)
+  reviewer_report: agents/reviews/D17-refuter.md; reviewer a5d2a98fbce79b67d at ordo-high, claude-opus-5-5 (the transcript's message.model, read 2026-10-02 at its launch); 315,842 tokens, 81 tool uses, 20.6 min (its completion notice, 2026-10-02); round 1 run: reviewer aab445504abc4c493 at ordo-high, claude-opus-5-5 (read at its launch), pending
   brief_check: agents/reviews/D17-brief-check.md; claude-sonnet-5-5, 232,904 tokens, 79 tool uses, 11.6 min (run 2026-10-01; findings closed 2026-10-02 under Closed)
   shared_paths: with D14, `pty/routes.ts` (D14 `startLatex` and `latexCommand`, D17 the `command` action, the action list and the `shellWord` import; separate functions, D14's calls of `shellWord` take D17's import at the second landing), `terminal/+server.ts` (separate options), `terminals.svelte.ts` (separate methods), `tree/menu/row-menu.ts` (separate groups), `Source.svelte` (D14 the save and editor props, D17 the published selection), `HELP.md` and `DESIGN.md` (separate passages); with D18, `state/client/context.ts` (separate constructions), the pty tests (D18 reads `listTerminals`, D17 adds two fields before `#{pid}`), `allow-duplication.txt` and `config-folder.test.ts` (separate rows), `HELP.md` and `DESIGN.md`; with D32, `HELP.md` and `DESIGN.md` (separate lines)
   landing: not-started
