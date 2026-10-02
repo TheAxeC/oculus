@@ -5,7 +5,7 @@ In flight:
 - D32 (replace in Search): round refuted; lands after D18.
 - D17 (project commands): refuted; waits on Z305, lands after D18 and D32.
 - D14 (LaTeX on any folder): refuted; lands after D18 and D32, with fixes at landing.
-- S4 (the Settings editor finished): round 2 being refuted.
+- S4 (the Settings editor finished): refuted; lands after D18, D32 and D14, with fixes at landing.
 
 Queued, in order (22 steps):
 - X3c (the tab strip as VS Code's): brief being closed; once fewer than three steps are in flight (Z291).

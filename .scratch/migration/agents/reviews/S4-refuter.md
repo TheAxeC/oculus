@@ -417,3 +417,212 @@ The other checks:
 - **Whether VS Code draws a `list-tree` toggle in its narrow Settings editor**: I did not fetch VS Code's source.
 
 Usage: about 75 tool calls; tokens not measured (claude-opus-5-5).
+
+## Repair round 2, refuted
+
+S4, the Settings editor finished. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/S4`, base 3c772d4c. I changed nothing in the worktree or the repository. `git status --short` lists the same entries as at the start: 123 lines, and the same 22 untracked paths. Everything I made is in `scratchpad/s4-r2-review/`:
+- `wt/`: a copy of the worktree's `tools/oculus`, with no `local.yml`; its `node_modules` is a symlink to the worktree's. My probes are under `wt/tests/probes/`.
+- `tmp/`: the scratch engines. Every vitest run had `TMPDIR` set to this folder.
+- The saved outputs.
+
+I read the builder's folder `s4-r2/` without writing to it.
+
+The delta is the 45 files newer than 2026-10-02 23:05 (`find -newer`). I read each one against `git diff 3c772d4c`.
+
+### Verification lines (verbatim)
+
+`checks.sh` from the worktree's `tools/oculus` exited 0. The load average was 5.40 at the start and 6.37 at the end.
+
+```
+$ npm test
+ Test Files  513 passed | 24 skipped (537)
+      Tests  12900 passed | 639 skipped (13539)
+   Duration  163.07s (transform 33.83s, setup 0ms, import 358.75s, tests 244.63s, environment 177ms)
+$ npm run test:checks
+ Test Files  30 passed | 2 skipped (32)
+      Tests  450 passed | 9 skipped (459)
+   Duration  37.74s (transform 28.14s, setup 0ms, import 67.17s, tests 80.36s, environment 7ms)
+$ npm run check
+1790978434827 COMPLETED 3166 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+✓ built in 5.42s
+✓ built in 14.42s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+No test timed out.
+
+The other checks:
+- **Verify 2:** `grep -rn "views/system/config\|group: 'info'" tools/oculus/src tools/oculus/tests` printed nothing (exit 1).
+- **Verify 3:** `grep -c "page: info" tools/oculus/config/layout.yml` printed `0`. `grep -n "^  info:" ...` printed nothing (exit 1).
+- **Diagrams:** `cat docs/diagrams/* | md5 -q` gave `aa1ca75e9bffc90bc99c37ac4bc62b0e` before, after the first `npm run diagrams` and after the second. Both runs exited 0, and this matches the report.
+- **ASCII gate (the perl form of `spec.md`):** over `src tests config` it printed nothing (exit 0).
+
+Commands the report quotes, rerun:
+- `sh utils/folder-check.sh` exits 0.
+- The rename grep gives the report's five hits: `retired.test.ts:3,11,12,28` and `settings-editors.test.ts:309`.
+- `wc -l` of the 22 round-2 files matches the report's file table.
+- The ruling 10 grep gives the report's two remaining hits: `layout-saved.test.ts:79` and `settings-editors.test.ts:352`.
+- The ST-1 case alone (`-t "finds the 7 lists" --reporter verbose`) ran in 1ms.
+- The builder's `s4-r2/r2-pre-full.txt` reads `Test Files  6 failed | 2 passed (8)` and `Tests  16 failed | 243 passed (259)`, as the report says.
+- The report's verify block leaves out the two `built in` lines that its own `checks-3.txt` holds. Nothing rests on it.
+
+Each fix taken out on my copy, with the tests in their final form:
+- **Ruling 1, the focus line removed:** 3 failures in `layout-system.test.ts`, the "pages pane is maximised" case for both shapes and "reads a views page that is one maximised pane holding pages".
+- **Ruling 2, `paneOf(system)` without `active`:** "shows the system view the info page showed" and "...of the first info pane that showed one" fail with `expected 'i-sta' to be 'i-aud'`.
+- **Ruling 3, line-break forcing off (`broken = false`):** 3 failures, the two line-break cases and the flow-map-value case.
+- **Ruling 3, `keyText` given `flow = false`:** 2 failures, "writes a key of a flow map double-quoted..." and "writes a key of a flow map holding a comma...".
+- **Ruling 3, the in-place parse of `readsAs` removed:** 124 of 124 pass (see P-a).
+- **Ruling 5, the drop branch of `pushed` off:** "ends a held draft with the dropped sentence..." fails with `expected [] to deeply equal [ 'behavior.yml:waiting_status' ]`, and "drops the draft at the push..." fails with `expected { form: 'items', ... } to be undefined`.
+- **Ruling 5, Item's guard widened back to "or a draft is held":** "shows the refusal once while the draft is held..." fails with `expected +0 to be 1`.
+
+### Item verdicts (the whole diff since the base)
+
+1. **The `config-value` write: holds.** Two findings remain: Behaviour R2-b (an emptied key/value table takes a list) and Spec SP-a (a false catalog sentence). Round 2 changed `misfit` and the scalar writer, and both read back correctly in my probes (ruling 3 below).
+2. **The block rewrite: holds.** A probe of `setBlock` over 59 strings in 18 places found nothing that reads back wrong or answers null.
+3. **The editors: holds.** The R3 hole is closed (ruling 5).
+4. **The table of contents below 700 px: holds** at the state level (`contents.test.ts`, inside the green `npm test`). The toggle as drawn is for the look.
+5. **Open-the-file action and the Catalogs and Texts groups: holds.** Not touched this round.
+6. **The Config view removed: holds.** The rename grep finds no document hit.
+7. **The merged rail item: holds.** The `processes` merge (Z282) is the landing's.
+8. **The saved `info` page carried over: holds.** R4 is closed. My probe ran `parseLayout` over 19 envelopes, and none was refused and none lost a tab, apart from those the item's rules drop. The envelopes covered:
+   - a three-level nested split, with focus on the pages pane at `[1,1,1]` (now `[1,1,1,0]`), on a sibling at `[1,1,0]`, at `[1,0]`, at `[0]`, and with no focus;
+   - the shipped shape with floats, for focus `[1,1]`, `[1,0]` and `[0]`;
+   - the envelope version before floats;
+   - a single pages pane maximised at `[]` (now `[0]`);
+   - a pages pane beside a leaf naming the info page, and beside a leaf naming home;
+   - a views page whose pages pane already holds `status`;
+   - a third page with a leaf naming the info page;
+   - an info page split in two panes;
+   - an info page holding a non-system tab (`hpc`).
+
+   The tabs dropped are an `info` tab whose view the views page holds, and a free float whose place I gave in pixels, which `readFloats` drops outside the fold.
+
+### Case verdicts
+
+- **C1 to C36: met**, as in the round-1 run. The suite that carries them is green above. I rechecked by hand only the cases the round-2 delta touches:
+  - **C14:** a refusal is drawn under the row, and with no editor it is drawn by the item once.
+  - **C29:** `yes` is written plain and reads back as the string, and the report now names this (SP-1).
+  - **C34:** a push carrying the value sent ends the draft; the drop branch only fires when no editor is drawn.
+  - **C36:** a list holding a number draws no editor and keeps the link.
+- C4 and C8 are met under rulings R1 and R2 of `S4-cases.md`.
+- C35 is met by "keeps the drafts of two keys apart, and never meets the typed text...".
+
+### Ruling verdicts (`S4-round2.md`)
+
+1. **R4, a maximised Pages pane: closed.**
+   - `fold.ts:76-78` appends `0` to the focus path only when it names the pane being wrapped. A pane has no children, so no other path moves. My 19-envelope probe found nothing refused.
+   - Tests: the shipped shape and the row shape (`describe.each`) are each run with nothing maximised, another pane maximised and the pages pane maximised, plus the single maximised pane. Taking out the fix fails three of them.
+   - `oldViewsRoot` is replaced by `shippedRoot`, and the earlier fixture is kept as `rowRoot`.
+2. **P-1, the active tab: closed.**
+   - `shown` collects each info pane's active tab in tree order, and the new pane takes the first that it holds (`fold.ts:73-74`).
+   - Tests over `audit` active, a split info page and a non-system active tab. Two of them fail without the change, and the third is a guard.
+   - The report's sentence is corrected (report line 104).
+3. **R1, two strings refused: closed.**
+   - Through `setBlock` and `writeConfigValue`: `waiting_status` given `"a\nb"`, added and changed, writes `["a\nb", ...]`; `read_limits` given a key `a,b` writes `"a,b": 7`. Both read back.
+   - My wide probe ran 59 strings through 9 places on a scratch engine. The strings held `\n`, `\t`, `#`, `: `, `,[]{}`, leading and trailing spaces, `'`, `"`, `-`, `?`, `&`, `*`, `!`, `%`, `@`, a backtick, `<<`, `---`, `yes`, `012` and a control character. The places were a flow list item changed and added, an emptied flow list, a block map value changed and added, a block map key added, and a flow map key and value (`read_limits`, `tab_split`). All 531 writes landed and read back. I also ran `setBlock` over 18 synthetic places, nested flow inside block included, and a 160,000-case fuzz of `scalarSource` over four places; neither found a wrong read-back.
+   - The fix that matters is `keyText(key, flow)` and `implicitKey` for a line break. The in-place parse added to `readsAs` never decides anything (P-a).
+4. **R2, lists in key/value tables: closed in part.**
+   - Closed: a populated `read_limits` refuses `next: [1, 2]` and `deck.tag_tones` refuses `x: [a]` with `wants_value`, writing nothing; `languages` takes a list of endings.
+   - Not closed: the empty-table clause (`config-value.ts:66-69`, "or there is no entry to say otherwise") accepts a wrong configuration. See R2-b. A rule exists that keeps Undo working and refuses it, so this is not forced.
+5. **R3, a refusal drawn nowhere: closed.**
+   - `drawsEditor` is exactly `draftOf(row) !== null` (`slots.ts:107-109`). `Control.svelte` draws `Editor` under the same function, and its `missing` branch comes first, where `draftOf` is null too.
+   - `pushed` drops a held draft over an undrawn row with `draftDropped` (`writer.ts:102-108`).
+   - The hook wiring, judged by reading `Settings.svelte`:
+     - The effect reads `groups`, which holds every row, not only the search's, and calls `editors.pushed` for each `config` row inside `untrack`.
+     - `held` reads `savedDraft(ui.instanceState(instance.id), ...)`.
+     - `ended` writes the state without the draft.
+     - While a file is loading or does not parse, `fileRows` answers no rows (`rows.ts:220-229`), so a draft restored on reload is not dropped before its file has loaded.
+   - The tests fail without the change.
+6. **SP-1, `yes` and `no`: closed.** Report line 108 states the before and after with `merge.ts:8` and `local.ts:9`.
+7. **SP-2: closed.** Report line 247 marks both paths with Z302.
+8. **P-2: closed.** "audits that the editor carries no draft attribute" (`settings-editors.test.ts:426`) and "audits that they name no Config view..." (`retired.test.ts:28`), whose head comment calls it an audit.
+9. **ST-1: closed.** `blocks()` loads the catalog once and records `list`, and `isListOption` and the `{ timeout: 30000 }` are gone (`grep -n timeout` prints nothing). The comment's 1ms reproduces.
+10. **ST-2: closed.**
+    - `retired.test.ts:1-4` and the old `layout-saved.test.ts:481` title (now `layout-system.test.ts:177`) carry none of the words.
+    - The title at `settings-editors.test.ts:105` carries none either.
+    - `grep -rn "before the merge\|oldViewsRoot" tests src` prints nothing.
+
+The moved refusal tests under `saved/refusals/`: each of the five files equals its base contents, line for line, except the import prefixes. That is 376, 448, 555, 447 and 121 lines, compared through the `-` lines of `git diff 3c772d4c` and `diff`. No assertion is lost.
+
+### Spec
+
+- **SP-a. The options catalog's head comment is false for `languages`.**
+  - Where: `config/catalogs/options.yml:9`: "and `holds: lists` when it is a map whose every key holds a list of records, not one record (`tab_rollup`); a family without it is refused a key that holds a list."
+  - What is wrong: `languages` carries no `holds` and takes a key holding a list. The test "takes a list of endings in languages, and again after the family was emptied" passes, and so does my probe. Every emptied key/value table takes a list as well.
+  - The sentence dates from round 1. Round 2's `misfit` change kept it false. Under `spec.md:65` a sentence the change makes false is a defect of the change.
+  - Failure scenario: a reader of the catalog, or a later step that trusts the sentence, concludes that `languages` would be refused lists.
+  - Verdict: item 1, and ruling 4 closed in part.
+
+### Proof
+
+- **P-a. The in-place parse added to `readsAs` has no test that fails without it, and never decides anything.**
+  - Where: `src/lib/server/edit/block-render.ts:23-28` (`inPlace`) and `:34-36`:
+    ```ts
+    const read: unknown = parse(inPlace(source, place));
+    if (place.key) return Object.keys(read as object)[0] === value;
+    return place.flow ? (read as unknown[])[0] === value : read === value;
+    ```
+  - Evidence: with that parse replaced by the context-free one, `block-edit.test.ts` and `config-value.test.ts` pass 124 of 124. My 59-string by 18-place `setBlock` probe found no difference, and neither did a 160,000-case fuzz of `scalarSource` (lengths 1 to 6, from `a b , [ ] { } : # - ? & * ! % @ \` ' " | > \t \n \ . 0 1 e x ~ < =`), with and without it, in the four places.
+  - The library already quotes once it is given `inFlow` and `implicitKey`, and the report says as much at line 105 ("quoted by the library once it is told the scalar stands in a flow map").
+  - Ruling 3 asked for the context check, so the code is per ruling. But under `spec.md:61` it is code with no proof, and the report presents it as part of the fix.
+  - Failure scenario: none in behaviour. The code is unproven and costs a second parse per scalar.
+  - Verdict: ruling 3, minor. Either name it in the report as a guard with no proving case, or remove it with the ruling's agreement.
+
+### Standards
+
+- **ST-a, minor.** `fold.ts:25` "the old info page", `:28` "the retired Views and Settings button", `:123`, and `layout-system.test.ts:95` "the page the old System button made".
+  - These compare with an earlier state of the tool. `spec.md:42` does not list "old" or "retired", and in migration code they name the saved data the migration reads.
+  - Failure scenario: none.
+  - Verdict: no ruling; noted only.
+- Otherwise none:
+  - the delta files are under their caps;
+  - the folder check passes;
+  - every new sentence (`server.config_value.wants_value`, `workbench.settings_draft_dropped`) is a catalog key with a reader;
+  - the head comments of `fold.ts`, `writer.ts`, `slots.ts` and `block-render.ts` describe what the code now does;
+  - HELP.md's Settings row states the drop.
+
+### Behaviour
+
+- **R2-b. An emptied key/value table of single values takes a list.**
+  - Where: `src/lib/server/edit/writes/config/config-value.ts:66-69`:
+    ```ts
+    function holdsListValues(held: unknown): boolean {
+        const entries = isMap(held) ? Object.values(held) : [];
+        return entries.length === 0 || entries.some(Array.isArray);
+    }
+    ```
+  - Probe on a scratch engine: write `{}`, then one list entry. All three writes return `refused=[]`:
+    - `read_limits` with `next: [1, 2]` gives `read_limits:\n  next: [1, 2]`;
+    - `deck.tag_tones` with `x: [a]`;
+    - `tab_split` with `active: [green]`.
+  - `usage_tiers` and `open.program_ext` are refused only by their readers.
+  - The builder names this in "Not done" (report line 8).
+  - A rule exists that keeps Undo working and refuses these: decide list values from the catalog, not from the file's current entries. For example, mark `languages` in `options.yml`, either with `holds: lists` read for a key/value family or with a value of its own. Undo of the write that emptied `languages` then still takes lists, because the catalog says so, and an emptied `read_limits`, `deck.tag_tones`, `tab_split`, `usage_tiers` or `open.program_ext` refuses a list with `wants_value`.
+  - `options.yml:9` already claims the catalog works this way (SP-a). The builder's reason, that Undo goes through the same function, does not need the file's entries.
+  - The change reaches a config vocabulary (the meaning of `holds`, or a new value), so it is the orchestrator's to rule on. It is small: one catalog line, `misfit` reading the entry, and a test for the emptied `read_limits`.
+  - Failure scenario: Axel empties `read_limits` in Settings, then adds `next` with `[1, 2]`. The write lands, no reader or finding objects, and the audit's readability check on `next` silently compares a length against a list.
+  - Verdict: ruling 4 closed in part; a wrong configuration accepted (the class B2 named).
+
+### Declined to judge
+
+- **Everything a DOM shows** is the orchestrator's look on TEST:
+  - the drop of a draft on a live push, from the `Settings.svelte` effect: hold a draft in `waiting_status`, edit `behavior.yml` to `[one, 2]`, and the row should say the draft was dropped and the tab lose its unsaved marker;
+  - the narrow overlay and its toggle;
+  - the System label and the new pane on a saved layout, checked on a copy only, with the Pages pane maximised as well.
+- **The `processes` placement (Z282)** is the landing's merge.
+- **Whether the empty-table rule should be the catalog marker or the ruling's literal reading** (refuse every list in an empty table, which breaks Undo of emptying `languages`) is the orchestrator's ruling. I give the catalog route as the one that satisfies both.
+
+Usage: about 50 tool calls; tokens not measured (claude-opus-5-5).
+
+## Closed
+
+The findings of the run over round 2 are never sent to the builder (the rounds are spent); each is fixed at landing on main:
+- R2-b and SP-a, an emptied key/value table taking a list: Z306, a key/value family's list values are decided by the catalog: `holds: lists` on a key/value family means each key holds a list of values, `sources.yml` `languages` carries it, `misfit` reads the catalog entry instead of the file's entries, and `options.yml:9` says so; tests for an emptied `read_limits`, `deck.tag_tones` and `tab_split` refusing a list, and Undo of emptying `languages` taking lists.
+- P-a, the in-place parse of `readsAs` that decides nothing: removed at landing, the library's `inFlow` and `implicitKey` doing the quoting; the reviewer's 124 of 124 and the fuzz show no behaviour rests on it.
+- ST-a: "old" and "retired" in `fold.ts:25`, `:28`, `:123` and `layout-system.test.ts:95` name the saved data the migration reads; reworded at landing to name the shape.
+- The verify block of the report omits two `built in` lines; nothing rests on it.

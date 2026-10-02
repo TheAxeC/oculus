@@ -997,6 +997,17 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z306 (2026-10-03, S4's round 2 review, R2-b): list values in key/value families
+
+Chosen: the options catalog decides. `holds: lists`, which Z302 put on a family whose keys hold lists of records, also marks a key/value family whose keys hold lists of values; `sources.yml` `languages` carries it. The write reads the catalog entry, so an emptied `read_limits`, `deck.tag_tones` or `tab_split` refuses a list, and Undo of the write that emptied `languages` still takes lists, since the catalog says so. Fixed at landing on main, since S4's rounds are spent.
+
+Not chosen:
+- The empty-table clause as built: a table with no entries takes a list, a wrong configuration accepted.
+- Refusing every list in an empty table: Undo of emptying `languages` would be refused.
+- A second catalog word for lists of values: `holds: lists` already says each key holds a list.
+
+Where it applies: S4's landing. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z304 (2026-10-02, D17's round 2 report, D17-B): the marker a chain prints before each command
 
 Chosen: (b), the printed line carries a per-run token with the command's name, and the store advances only on that exact line. A command's own output can hold a line equal to the next command's name (a make target echoing `test`, say); with the bare name, its errors would then resolve from the next command's folder. Fixed at landing on main, since D17's rounds are spent.
