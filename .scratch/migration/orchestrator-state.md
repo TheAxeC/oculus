@@ -102,6 +102,32 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with D35, `options.yml` (D35 the behaviour descriptions and the `local.yml` block; X3a the `roots` description, a `files` behaviour entry and one `history` line in that block), `data/sources/config/settings.ts` (X3a one read of `files.confirm_delete`), `DESIGN.md` (D35 224-235; X3a 44, 128 and the Files lines) and `HELP.md` (D35 216 and 236; X3a one key added to 236's list): added lines beside D35's, a simple merge; with L4, `routes/+page.svelte` only if item 16 needs it (one derived line); with Q66, `fs.svelte.ts` (Q66 line 11, a comment); `docs/diagrams/` regenerated at landing
   landing: not-started
   round: 0
+- step: D24
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 02:29)
+  session_id: aad5c8302bdcacd63 (launched 2026-10-02 02:28 local)
+  worktree: .agents/worktrees/D24
+  base: bca66b3c
+  launched: 2026-10-02 02:28 local
+  report: agents/reviews/D24-report.md
+  brief_check: agents/reviews/D24-brief-check.md; claude-sonnet-5-5, 318,451 tokens, 121 tool uses, 16.6 min
+  shared_paths: with D35, `server/root/context.ts` (D35 its `serverMover` and settings reads; D24 lines 256-261, the portfolio watcher's paths), `DESIGN.md` and `HELP.md` (different lines), `options.yml` (D35 591-622; D24 511); with X3a, `options.yml` (the `roots` description; D24 511), `DESIGN.md` and `HELP.md` rows, `type-scale.test.ts` and `config-folder.test.ts` (separate rows and cases); with L4, `config/layout.yml` (L4 45-53 and `floats:`; D24 73), `watch/portfolio.ts` (L4 only if its check refuses a key), `config-folder.test.ts`; with M4, `data/index.ts` (M4 114-116, 198-223, 235; D24 the signature and the raw portfolio at 229-249), `model-entities.ts` (M4 the slide and deck fields; D24 `Tier`) and `integrity.test.ts` (separate cases): separate hunks, a simple merge; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
+- step: M4
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 02:29)
+  session_id: a27bea3380d71a12d (launched 2026-10-02 02:28 local)
+  worktree: .agents/worktrees/M4
+  base: bca66b3c
+  launched: 2026-10-02 02:28 local
+  report: agents/reviews/M4-report.md
+  brief_check: agents/reviews/M4-brief-check.md; claude-sonnet-5-5, 207,699 tokens, 64 tool uses, 13.5 min
+  shared_paths: with Q35, `tests/views/academic/present.test.ts` and `tests/state/life/present.test.ts` (Q35 adds cases after 312 and 830; M4 lines 72-228 and 553-783); with D24, as D24's entry says: separate hunks, a simple merge; `docs/diagrams/`, regenerated at each landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

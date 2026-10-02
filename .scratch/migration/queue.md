@@ -3,14 +3,16 @@
 In flight:
 - D35 (every configuration file live, `local.yml` included, by Z198 and Axel's D35 redo ruling), builder at ordo-high building after its first-run rulings.
 - L4 (floating panes and kept empty panes), repair round 1 with the builder.
-- Q66 (a hidden tab defers its work), built; review next.
-- Q35 (Changes, Customizations, Audit, Present), built; review next.
+- Q66 (a hidden tab defers its work), built; its review running.
+- Q35 (Changes, Customizations, Audit, Present), built; its review in, the findings being ruled.
 - X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), builder at ordo-high.
+- D24 (the Personal board: side projects and the Files roots' `.oculus/project.yml` as cards, with the six repositories' manifests drafted), builder at ordo-high.
+- M4 (the Present view's equations as LaTeX, the image branch removed, the cockpit deck kept drawing them), builder at ordo-high.
 
 
 Three queued steps are kept prepared ahead (Z185).
 
-Queued, in order (29 steps):
+Queued, in order (27 steps):
 - D32 (replace in Search, and the seven state-layer answers Z154 accepted judged one by one, by Z198), once D35 has landed (both change the write target and the undo table); its brief check is in.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), Z190 ruled (a); /spec once X3a and D35 have landed (X3a adds the `roots` list edit S4's list editor covers, D35 changes the config write and `options.yml`).
 - Q88c (the Source Control rows' and the pane strip's new menu items), brief checked (`agents/reviews/Q88c-brief-check.md`); waits for L4's landing, since both change the `Pane` type and the layout tree's pane literals.
@@ -26,10 +28,9 @@ Queued, in order (29 steps):
 - D33 (the Problems view), once D23 and D17 have landed.
 - D36 (linters on save, ChkTeX, ruff, eslint and shellcheck, into the editor's marks and D33's Problems view), once D33 has landed (Z196).
 - D18 (the Processes view), once D35 has landed (its command patterns are a behaviour key read live through D35's mechanism).
-- D24 (the Personal board), Z217 ruled (a): its builder drafts the six repositories' manifests; /spec runs again.
 - D20 (an agent from a task or in a new worktree), once D17 has landed (Z195: a seeded agent runs after the approval D17's store keeps).
 - A1 and A3 (review with feedback; scheduled runs, once D17 has landed).
-- M3 and M4 (the resources registry; live equations in Present).
+- M3 (the resources registry).
 - Q72 (the architecture re-read).
 - E4 (the apps built), after Q72.
 - R2 (release readiness).
