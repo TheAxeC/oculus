@@ -205,3 +205,256 @@ The builder's disclosures:
 ## Usage
 
 Opus 5.5 reviewer, about 305,000 tokens (budget counter 15,000,000 at the start, about 14,695,000 at the end), about 75 tool uses. Minutes were not measured.
+
+## Repair round 1, refuted
+
+Summary: the verify list is green and the slow tmux tests pass. 17 of the 21 rulings are closed. Rulings 1 and 20 are closed in part, each with a behaviour defect I reproduced on a scratch copy. Rulings 14 and 21 are closed for what they name, but the round left new or remaining instances of the same defect.
+
+## Verification lines, verbatim
+
+`cd /Users/axelfaes/workspace/research-hub/.agents/worktrees/D17/tools/oculus && PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`. It ran from 22:40:56 to 22:47:56 and exited 0. The load average was 3.94 at the start. These are the command headers and the result lines of the log:
+
+```
+$ npm test
+fatal: Needed a single revision
+ Test Files  523 passed | 24 skipped (547)
+      Tests  12882 passed | 639 skipped (13521)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  446 passed | 9 skipped (455)
+$ npm run check
+1790973894766 COMPLETED 3185 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+✓ built in 8.11s
+✓ built in 19.83s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+No test timed out, so nothing had to be rerun alone.
+
+The slow tmux tests: `npx vitest run tests/server/machine/pty/task.test.ts tests/server/machine/pty/sessions.test.ts` printed `Test Files  2 passed (2)` and `Tests  29 passed (29)`. This matches the report.
+
+The report's other evidence, rerun in the same form:
+- `wc -l` printed 862 (`terminals.svelte.ts`), 570 (`pty/routes.ts`), 673 (`pty/sessions.ts`) and 695 (`commands.svelte.ts`). This matches the report.
+- `sh utils/folder-check.sh` exited 0.
+- `ls | wc -l` printed 10 for `data/helpers`, 10 for `state/sessions/terminal`, 10 for `views/shared`, 6 for `shell/keys`, 2 for `shell/commands` and 9 for `tests/server/machine/pty`.
+- The spec.md ASCII gate (perl) printed nothing. The only stderr line was `bfs: error: bin: No such file or directory.`, because the tree has no `bin`.
+- The export greps of ruling 14 reproduce. `grep -nE "^export (const|function) (jobOption|parseJob|respawnArgs|TASK_OPTION|COMMANDS_FILE|folderOf)"` over the two files prints nothing.
+- No stale names remain. `grep -rn --exclude=local.yml "helpers/tasks\|helpers/commands-chain\|shell/keys/Command\|commandText" src tests config HELP.md DESIGN.md README.md docs` prints nothing.
+- The round's tests fail without their change. I turned off each change on a scratch copy (`$SCRATCH/copy/oculus`, an rsync of the worktree without `config/local.yml`, node_modules linked) and ran its test files:
+
+| Change turned off | Result | Failing test |
+|---|---|---|
+| r5, the blank line before `}` | 2 failed | `closes the group of a line that ends in a backslash, ...`, `runs the command after one with a ;, a # or a trailing backslash ...` |
+| r9, `privateFolder` call | 1 failed | `makes a folder that stood with looser permissions private ...` |
+| r19, repository in `chainText` | 2 failed | `asks in a repository for a chain approved only in another one`, and the approvals case |
+| r15, saved read-back | 1 failed | `refuses a save whose read-back is not what was written ...` |
+| r7b, `source` made optional | 1 failed | `is required: a press without one is refused ...` |
+| r20, refusal at run | 1 failed | its case |
+| r20, refusal at save | 1 failed | its case |
+| r17, folder of the printing command | 3 failed | its cases |
+| r7d, held-name refusal | 2 failed | its cases |
+| r1, capture of unlisted terminal refused | 1 failed | `refuses a name oculus does not list ...` |
+
+- The `untrack` in `watch` is needed. Removing it on the scratch copy made `commands-keys.client.test.ts` and `card-commands.client.test.ts` fail: `Tests  6 failed | 1 passed (7)`, with every mounting case failing. This reproduces the report's `effect_update_depth_exceeded` claim.
+- Not rerun: the report's quotes of each test failing on the pre-round base copy (that copy is in the builder's scratchpad), and the 84 mutation runs of round 0. No verdict below rests on them.
+
+## Item verdicts (whole diff since 201a8fcb)
+
+1. **Command sources: holds.** The found preset names `cmake: <n>`, `cmake build: <n>` and `ctest: <n>` are now a stated decision (Z301 (2)), and HELP.md says the three names.
+2. **One shell quoting: holds.** There is one `shellWord`, in `pty/shell-word.ts`.
+3. **Placeholders: holds as the brief names them.** The quoted-placeholder guard the round added is partial; see Behaviour 2.
+4. **Approvals: holds.** The chain is one entry, keyed with the repository's real path. The text is JSON, a departure from the brief's `<cwd>\t<run>` lines that the report states with its reason (judged under Spec 1). Each write makes the folder 0700. One hazard remains (Behaviour 3).
+5. **Routes: holds.** `approve` now carries `chain: [{ folder, run }]` instead of item 5's `texts`. The report names it among the new wire shapes.
+6. **The run: holds.** `source` is required and a press without it gets 400. The grouping is a stated decision.
+7. **Task terminal and its result: holds.** The task mark carries the source.
+8. **Errors made clickable and diagnostics: holds in part.** A task terminal that a grid fed and then stopped showing keeps only the early diagnostics (Behaviour 1). A chain's folders are known only while the repository's list is held (Behaviour 4).
+9. **Default build and test keys: holds.**
+10. **Where they are drawn: holds.** The card mounts `CommandBar`. Every each-block and id is keyed `<source>:<name>`. The form is in `shell/commands/` (Z301 (1)).
+11. **Client store: holds.** `terminals.svelte.ts` is 862 lines.
+12. **Docs: holds, with one unclear sentence in HELP.md** (Standards 3).
+
+## Case verdicts
+
+1. Met.
+2. Met.
+3. Met.
+4. Met at the server, and now on the views through mounted components (`commands-keys.client.test.ts`, `card-commands.client.test.ts`, `run-command-keys.client.test.ts`).
+5. Met.
+6. Met. The round adds the quoted-placeholder refusal, which is partial (Behaviour 2).
+7. Met. A 0755 folder becomes 0700 and the file is 0600. The other-owner branch is untested (Proof 2).
+8. Met. The real `sh -c` cases for `\`, `;` and `#` pass.
+9. Met: the real-tmux cases on the private `-S` socket, 29 passed.
+10. Met.
+11. Met.
+12. Met.
+13. Met for output a grid feeds and for a terminal no grid ever fed. Not met for a terminal a grid fed and then stopped showing (Behaviour 1).
+14. Met.
+15. Met.
+16. Met.
+17. Met: string renders, plus the mounted bar.
+
+## Ruling verdicts (D17-round1.md)
+
+1. **Closed in part.**
+   - Built: the `capture` action, refused before any `capture-pane` for a name oculus does not list, on the socket arguments through `options.run ?? run` (`sessions.ts` `paneOutput`), with the catalog sentence `server.commands.capture_unlisted`. One capture per run, keyed by pid.
+   - Not right: the "not read twice" rule is "a grid ever fed this terminal" (`commands.svelte.ts` `readEnded`: `if (!(one.id in outputs.byId)) void capture(...)`), where the ruling says "a mounted grid". Every press shows its terminal, so `byId` is always set for a pressed command. A grid that then stops showing the terminal leaves later errors unread (Behaviour 1).
+   - The ruling's test is split: the store half uses a fetch stub and the real-tmux half reads `paneOutput` only. No single test goes from a real pane to a diagnostic.
+2. **Closed.** `ProjectCard.svelte:362-364` mounts `CommandBar`. The card tests assert five buttons, the overflow and `data-command-add`. No card test asserts the per-command menu; it is the same component, tested through `commandMenu` (minor).
+3. **Closed.** Both files are moved, `order.ts` gained `shell/commands`, and the `SHELL_STORES` comment was updated. The `order.ts` edit is misdescribed in the report (Proof 3).
+4. **Closed.** HELP.md says the three names; listed as a decision.
+5. **Closed.** `chain.ts:20-23` adds the blank line after a line ending in `\`. Real `sh -c` tests exist, and the mutation fails them.
+6. **Closed.** One entry for the whole chain, and the dialog lists every line. The tests for gained and removed dependencies fail without the change. The JSON form is a decision of the builder's (Spec 1).
+7. **Closed.**
+   - (a) Keys are `<source>:<name>` on the bar, the overflow, the Manage items and the Files submenu.
+   - (b) 400 without `source`, and the mutation fails the test.
+   - (c) The source word is drawn beside a shared name.
+   - (d) The held-name refusal, and the mutation fails 2 tests.
+8. **Closed.** Real components are mounted over `tests/ui/frame/fake-dom.ts`, with the bits-ui leaves stubbed (disclosed).
+9. **Closed.** It fails without the change. The owner check works: my probe with a mocked `process.getuid` left a 0755 folder at 755. No suite test covers it, though one is possible (Proof 2). Separate hazard: Behaviour 3.
+10. **Closed.** A `pane-died` hook signals `wait-for -S died` on the private server. Every call in `watchEnds` carries `-S server.socket` (`tmux-fixture.ts:55`).
+11. **Closed.**
+12. **Closed.** The comment is rewrapped.
+13. **Closed, with a departure from the named part.** The ruling named the result marks or the poll. The builder moved the pre-existing `closeEnded` and `moveInto` instead, for the stated reason that the step added 11 lines. The file is 862 lines. `terminal-lists.ts`, until now a set of pure functions, now holds two functions that write to the workbench they are handed. Its head comment says so. The orchestrator decides whether this stands.
+14. **Closed for the six named exports.** The round adds a new export of the same kind, and three others remain (Standards 2).
+15. **Closed.** A byte-for-byte read-back compare. It fails without the change.
+16. **Closed.**
+17. **Closed while the repository's list is held.** It fails without the change. Behaviour 4 is a dependency from before the round that this ruling builds on.
+18. **Closed.** `menuOf` loads once when a row menu opens.
+19. **Closed.** It fails without the change.
+20. **Closed in part.** The named tests pass and fail without the change, but a quoted placeholder still passes the guard (Behaviour 2).
+21. **Closed for the round's table.** The report's older section "Changes a reader or the host sees" still says the card draws a control per command (Proof 1).
+
+## Spec
+
+1. **Approval text as JSON, a departure from the brief's and ruling 6's `<cwd>\t<run>` lines.**
+   - Place: `approvals.ts:65-67`: `return JSON.stringify({ repo, chain: lines.map((line) => [line.folder, line.run]) }, null, 1);`
+   - The report states it as a decision with a reason (a tab or line break inside a field). It is listed under the heading "Z301 decisions and the other choices of the round". Z301 rules the repository in the key and the one-text chain; it does not rule the JSON form, which is the builder's.
+   - DESIGN.md's Processes paragraph describes the content: the path and the `[cwd, run]` pairs, with `chainText` named. The Approval paragraph says the hash covers "the repository's real path and the lines of its whole chain". HELP.md says the same in plain words.
+   - Neither document gives the exact serialization (key order, one-space indent). A reader can recompute the hash only from `chainText`.
+   - Old approvals: entries written under round 0's per-line text never match the new key, so they ask again. The report does not say so. No approvals file existed before D17 and the step is not landed, so this matters only if a TEST look ran round-0 code.
+   - Verdict: item 4. The orchestrator decides whether the JSON form stands.
+
+2. **The builder ran a git command in the round.** Disclosed in the report: "one `git -C /dev/null status` was run by mistake; it failed and touched no repository". The round brief says "Run no git command, not even `git status`", and spec.md:32 says the same. No effect on the tree. This is a process breach on record, with no verdict on an item.
+
+## Proof
+
+1. **The report holds a stale before-and-after sentence.**
+   - Place: `D17-report.md:565`: "a project card whose folder is a repository draws a control per command".
+   - Since ruling 2 the card draws the `CommandBar`. The round's table (line 144) is right, but this older section is what the TEST look is read against.
+   - Failure: the orchestrator looks for one control per command on the card and finds a bar with Add Command and the overflow.
+   - Verdict: ruling 21.
+2. **`privateFolder`'s owner check has no test, though one is possible.**
+   - The report gives the reason as "no test has a second user".
+   - My probe wrapped `approveTexts` in `vi.spyOn(process, 'getuid').mockReturnValue(real + 4242)` over a 0755 folder. It printed `{"done":{"ok":true},"folder":"755","file":"600"}`. The branch is testable without a second user.
+   - Without such a test, dropping the `found.uid ===` condition leaves the suite green.
+   - Verdict: ruling 9.
+3. **An allow-list edit is missing from "Every edit to an existing assertion".**
+   - Place: `tests/checks/imports/order.ts:80`: `shell: ['shell', 'shell/rail', 'shell/status', 'shell/panes', 'shell/keys', 'shell/commands'],`
+   - The report names `order.ts` only as "(import paths)" in its list of paths outside the brief's write list. spec.md:58 requires each predicate and allow-list edit with its before and after.
+   - Verdict: ruling 3.
+4. **The capture test for ruling 1 is split into a stubbed half and a real-tmux half.** See ruling 1 above. Minor.
+
+## Standards
+
+1. **Head comments not rewrapped as a whole paragraph** (spec.md:43).
+   - `server/machine/commands/routes.ts:8` ends at column 46 in the middle of a sentence:
+     ```
+     // is refused for a name the repository's file or the commands found in it already hold, and for a
+     // line with a placeholder inside quotes. Both
+     // name a repository, and a `repo` that is relative, ...
+     ```
+   - "Both" now follows a sentence about save refusals, so it no longer reads as "the GET and the POST".
+   - `ProjectCard.svelte:10` ends at column 86 at the end of a sentence, and the next line's "The card's" would fit after it (minor).
+   - Verdict: rulings 7 and 20 (these comments came with those changes).
+2. **Exports with no importer outside their own file and its tests** (spec.md:82). Each was checked with `grep -rlw <name> src tests`:
+   - `outputArgs` (`pty/sessions.ts:571`), added in this round and used only inside `sessions.ts`.
+   - `readApprovals` and approvals' `commandKey` (`approvals.ts:44,91`), imported only by `approvals.test.ts`.
+   - `sourceWords` (`views/shared/commands/commands.ts:56`), imported only by `commands-menu.test.ts`.
+   - Verdict: ruling 14 (same class).
+3. **An unclear sentence in HELP.md.** `## Project commands` says: "each button, menu item and key names its source beside the name (`build (file)`, `build (saved)`)". The default keys name nothing. "key" is either wrong or the internal each-block key.
+   - Failure: a reader looks for the source next to Cmd+Shift+B.
+   - Verdict: item 12.
+4. **Minor test title.** `tests/shell/commands/command-ask.test.ts:55` reads "draws the form no longer once it is closed". "no longer" is on spec.md:42's list of history wording for test titles. Here it describes a state change within the test, not code history.
+
+## Behaviour
+
+1. **A task terminal that a grid fed and then stopped showing is never captured, so the errors printed afterwards are lost.**
+   - Place: `state/sessions/terminal/commands.svelte.ts` `readEnded`:
+     ```
+     looked.set(one.id, one.pid);
+     if (!(one.id in outputs.byId)) void capture(one.id, one.pid);
+     ```
+   - `outputs.byId[id]` is set by the first chunk any grid feeds, and nothing removes it when that grid unsubscribes. A press always shows and selects its terminal (`adopt`), so a pressed command always has an entry.
+   - A Terminal tab's grid unsubscribes when the tab is switched to another terminal (`TerminalGrid.svelte:385-390`, `close` calls `unsubscribePty(wanted)`). Background tabs stay mounted (`TabView.svelte:2-9`), so that is not the case at issue.
+   - Failure: the reader presses build, then picks another terminal in the same tab's list while it builds. The build then fails. `commandDiagnostics()` holds only what was printed before the switch, and no capture is made.
+   - Probe on the scratch copy (`probe-capture.test.ts`): `note(ID, 'build\r\n', true)` while running, then the list reports `exit: 1`, with a capture holding `src/a.c:3: error: ...`. It printed `{"captures":0,"diagnostics":[]}` and `AssertionError: expected [] to deeply equal [ 'printed after the grid let go' ]`.
+   - The capture is read as scrollback, which replaces what is held, so capturing whenever no grid is subscribed at the end would not count anything twice.
+   - Verdict: ruling 1, item 8, case 13.
+
+2. **The quoted-placeholder guard can be bypassed, and `$(...)` in a selection runs.**
+   - Place: `server/machine/commands/placeholders.ts:36-39` skips the character after a backslash outside single quotes:
+     ```
+     if (char === '\\' && quote !== "'") {
+         at += 1;
+         continue;
+     }
+     ```
+   - `fillPlaceholders` (`:84`) still replaces `${name}` there, because the scanner and the filler disagree about what a placeholder is.
+   - Probe on the scratch copy: `quotedPlaceholder`, then `fillPlaceholders` with the selection `$(touch <scratch>/...)`, then `/bin/sh -c` on the line:
+     - `echo "\${selectedText}"`: `quoted: null`, the line is `echo "\'$(touch <scratch>/probe/.../dq-escaped)'"`, `created: true`. The command substitution ran inside double quotes.
+     - `echo \${selectedText}` with the selection `; touch <scratch>/bare-injected #`: `quoted: null`, the line is `echo \'; touch <scratch>/bare-injected #'`, `created: true`. The escaped quote frees the value.
+     - `true # it's` + newline + `echo '${selectedText}'`: `quoted: null`, `created: true`. The apostrophe in the comment flips the scanner's quote state, so a single-quoted placeholder on the next line counts as bare. The value then sits outside quotes and `$(...)` runs.
+     - The opposite case: `true # don't` + newline + `echo ${selectedText}` is refused. That is a false refusal, harmless in direction.
+     - `$'${selectedText}'` is refused correctly.
+   - Failure: a repository's `.oculus/commands.yml` holds `run: echo "\${selectedText}"`. The reader approves that text, selects text holding `$(...)` and presses. The selection runs as a command.
+   - Verdict: ruling 20, item 3.
+
+3. **Each approvals write makes whatever folder holds the configured file mode 0700, the home folder included.**
+   - Place: `approvals.ts:105-110` (`privateFolder`), called from `:131`.
+   - The ruling's reason is that the folder "holds oculus's own state". That is true of the default `~/.oculus`, not of any folder the `approvals` key can name.
+   - Probe: `approveTexts(join(home, 'approvals.json'), ['x'])` over a 0755 scratch "home" printed `{"home":"700"}`.
+   - Failure: with `approvals: ~/approvals.json` in `local.yml`, the first approval makes the user's home folder 0700. Any other user or service reading the home loses access, as does a folder shared with a group.
+   - `options.yml` describes the chmod only for the default path. HELP.md and DESIGN.md state it in general.
+   - Verdict: ruling 9 (Z301 (3)); the orchestrator decides the scope.
+
+4. **Error folders are known only while the repository's command list is held.**
+   - Place: `commands.svelte.ts` `chainOf`:
+     ```
+     const listed = queries.peek<CommandsAnswer>(keyOf(job.repo)).data?.commands;
+     ... if (listed === undefined || source === undefined) return null;
+     ```
+   - With `folderOf` falling back to `?? job.repo`, every error resolves from the repository root once the list is forgotten. The list is forgotten when the last bar watching it unmounts (`watch`'s release calls `queries.forget`) or after a page reload before any bar mounts.
+   - The test `reads a plain command from its own folder, and a list not read yet from the root` covers only a command whose folder is the root.
+   - Failure: the reader presses `test` (folder `sub`) in the Repositories view and closes that view while it runs. `src/b.c:4: error` then resolves to `<repo>/src/b.c`, so there is no link and the path is wrong.
+   - This predates the round (round 0's `folderOf` had it too); ruling 17 builds on it. Carrying the chain's folders in the `@oculus_task` mark would make it self-contained.
+   - Also minor: the marker match `line === chain[started].name` advances on any output line that equals the next command's name.
+   - Verdict: item 8.
+
+5. **The `untrack` change in `watch`, which no ruling names: justified.**
+   - Without it, an effect that reads and writes `watching[repo]` re-runs itself. On the scratch copy, every mounting case of the two client test files fails (`Tests  6 failed | 1 passed (7)`).
+   - It fixes a defect that mounting the real components (ruling 8) exposed, it reaches no further than `watch`, and the report states it.
+   - No finding.
+
+6. **The moves to `data/helpers/run/` and `shell/commands/`: no finding.**
+   - `data/helpers/tasks.ts`, which predates the step, moved with `chain.ts` because the folder would have held eleven items.
+   - Every importer is updated (the grep above prints nothing stale).
+   - The boundaries state row allows `data/helpers/run/tasks` and `data/helpers/run/chain`. Its comment gives the reason for each: two readers, the server and the page.
+   - DESIGN.md's state row and update-task bullet are updated.
+   - `npm run test:checks` passes.
+
+## Declined to judge
+
+- The browser look at TEST is the orchestrator's: the card's bar placement and that it is always shown (the old controls were shown under the pointer), the source word beside a shared name, the form's refusal sentences, the approval dialog listing every line with its folder, the Files menu filling in when the commands arrive, and the 0700 change on the real `~/.oculus`. I did not stat `~/.oculus`.
+- I did not rerun the report's quotes of each test failing on the pre-round base copy, or round 0's mutation table.
+- Whether ruling 13's substitution (moving pre-existing functions) and the JSON approval text stand is the orchestrator's call.
+
+What I ran: `git diff 201a8fcb` and `git status --short` only, both read-only. Scratch probes ran in my scratchpad copy only; I made no edits in the worktree (no file under its `src` or `tests` is newer than my checks log). I did not read `local.yml`, did not touch ports 8787 or 8790, did not run tmux myself (the fixture's tests use their own `-S` socket), and started or killed no process outside the vitest runs.
+
+## Usage
+
+Opus 5.5 reviewer, about 287,000 tokens (budget counter 15,000,000 at the start, about 14,713,000 at the end), about 50 tool uses. Minutes were not measured.
