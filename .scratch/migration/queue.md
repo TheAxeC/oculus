@@ -1,14 +1,14 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- D18 (the Processes view): landing next.
-- D32 (replace in Search): repair round 1 running.
-- D17 (project commands): building.
-- D14 (LaTeX on any folder): building.
+- D18 (the Processes view): landing, waits on the build being allowed.
+- D32 (replace in Search): round refuted; lands after D18.
+- D17 (project commands): built; being refuted.
+- D14 (LaTeX on any folder): repair round 1.
 - S4 (the Settings editor finished): building, cases ruled.
 
 Queued, in order (22 steps):
-- X3c (the tab strip as VS Code's): brief being closed; next free slot.
+- X3c (the tab strip as VS Code's): brief being closed; once fewer than three steps are in flight (Z291).
 - Q91 (the project view and its editor): ready.
 - X3e (Files lists reordered by drag): brief being closed; once Q91 has landed.
 - D25 (the editor's options): once S4 has landed.
@@ -30,6 +30,8 @@ Queued, in order (22 steps):
 - O33 (oculus in its own repository): once X2 has landed.
 - O34 (remote access): once O33 has landed.
 - O35 (macOS, Linux and Windows): once O33 has landed.
+
+Owed: the looks of Q79c, Q88, Q99, S2 and D35.
 
 Landed, newest first:
 - M3 (the resources registry), 2026-10-02, 8ef3abbe.

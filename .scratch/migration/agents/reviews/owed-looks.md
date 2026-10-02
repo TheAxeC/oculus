@@ -6,18 +6,34 @@ Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/
 
 ## To take
 
-- M3: the resource tags on cards (This Mac and the others), the Compute facet, the manifest editor's chips field, the Live HPC view with `slurm.resource`.
-- Q78: a project document's fenced block over a wallpaper; the doc view and the manual.
 - Q79c: the Memories add press, the stop control's focus, the grid's selection colour, the Live HPC jobs table and log.
 - Q88: the terminal's grid and row menus and Kill arming, the graph's bare name, rendered Markdown and the Document frame's menus.
 - Q99: a Claude session's click, scroll and paste.
-- R18: a standalone `.svg` under a dark colour scheme.
-- U3: text scale 1.5 and the rice palettes.
-- U4: text scale 1.5, the 140 px narrow pane, the ticker buttons by keyboard.
 - S2: a session started from the composer.
 - D35: a real port move.
 
 ## Taken
+
+- U4, 2026-10-02, TEST, dark theme, text size 150% (Settings, This browser, Text size; `--text-scale` 1.5) and back to 100%; the 140 px pane made by an inline width on the pane element and removed after (nothing saved; `git diff --exit-code -- tools/oculus/config` clean). Seen: case 3, in Focus a ticker row's buttons 1w, 1mo and hide appear under the pointer, and Tab walks the row, 1w, 1mo, hide, then the next row with an action (FLTA 2026, whose name is cut where its buttons begin); a row with no action (FWO Senior, a plain `span`) is passed, as it holds nothing to press. Case 10, at 150% the lane heads (RUN 4, PUSH 8), sub-lines and cards scale together; in the 140 px pane the long lane names (Blocked, Backburner, Funding, Job applications) are one line with an ellipsis ("JO... 1"); an empty lane (Build, Ideas) draws `Empty.svelte`'s circle and "- none -" at its own height. Case 9, the Sessions list in the 140 px pane: rows 40 px, titles and detail lines cut with an ellipsis, no sideways scroll in the list; the selected row (Dongho) draws its details in the selection ink on the blue ground. Defect:
+  - U4-look-1: at 150% in the 140 px pane a long word in a Focus lane card's note ("PRE-APPLICATION", `Band.svelte` `.note`) and in the career panel's summary ("CAREER STRATEGY", `CareerPanel.svelte`) runs past the box's right border, and the Focus body (`.body`) scrolls sideways; both have `overflow-wrap: normal`. Booked into Q91 (Z296). The tab strip cutting each title to one letter at this width is U3-look-1, booked into X3c (Z293).
+
+- Q88c and A1, 2026-10-02, TEST, light theme ("vscode light modern", switched back to "vscode dark modern" after; `git diff --exit-code -- tools/oculus/config` clean). Seen: A1, in the Changes view on "S2 status" a staged file's diff (`agents/briefs/X3c.md`) shows the blue `+` in the modified side's glyph margin on hover; a press opens "Comment to S2 status" with a white field under a blue focus border and the Send and Cancel buttons; Cancel closed it, Send was not pressed. Q88c, the Repositories view's staged row menu (Open Changes, Open File (HEAD), Open File, Unstage Changes, Reveal in Explorer View) and the pane strip's menu (Open File..., New Text File, Dock Left, Dock Bottom, Float, Return to Page, Lock Group, Tab Bar, Editor Actions Position, Close, New Terminal) with the Tab Bar submenu (Multiple Tabs marked, Single Tab, Hidden) opening leftward at the page's edge, all dark text on white with grey rules; nothing was picked. A right-click on a tab opens nothing, which is X3c item 2 (the tab's right-click menu). Defect:
+  - A1-look-1: while a diff tab has focus the status bar drops its branch and sync items ("main", 0 behind, 47 ahead), which come back when the Changes view has focus. The diff tab's state names its file by the repository's absolute folder (`root: "/Users/axelfaes/workspace/research-hub"`), and `repoStatus` (`state/workbench/navigation/status.ts:176-178`) looks that root up among the served root keys only, finds none and answers null. VS Code keeps the branch item for a diff editor's repository. Booked into X3c (Z295).
+
+- L3, L5, U1, M3 and X3a, 2026-10-02, TEST, light theme ("vscode light modern"). Seen: the rail's glyphs dark grey on the light rail, its count badges blue with white digits, a hovered button's light grey ground and its tooltip "Incoming, key 4 (Inbox 9)" in a white box with a border (L3, L5, U1); the Projects cards' resource tags ("This Mac", "UTwente HPC" with its glyph), the Filter menu's Compute facet (This Mac 8, UTwente HPC 8, unset 37) and the manifest editor's Compute chips field (M3); the Files view's Seti icons in their colours on white, the Markdown arrow, the info mark and the JSON braces (X3a). No new defect; M3-1 and M3-2 show in light as in dark and are booked into Q91.
+
+- Q78, 2026-10-02, TEST, the rice palette "mocha" with its wallpaper, then back to "vscode dark modern" (`git diff --exit-code -- tools/oculus/config` clean; the Help and Loewner tabs the look opened closed again). Seen: the manual (Help) draws its prose on the pane's surface over the wallpaper, readable; it holds no fenced block (`grep -c '^```' tools/oculus/HELP.md` prints 0). The Loewner project view's README draws its fenced block on its own surface (`rgb(41 44 60 / 0.76)`) over the wallpaper, readable, and a line wider than the pane scrolls sideways inside the block (`overflow-x: auto`, scroll width 493 against 230). Defect:
+  - Q78-look-1: a tab activated while it is scrolled out of its strip stays out of sight: Processes shown in the left pane while the strip shows the inactive "Account setup" tab; VS Code scrolls the active tab into view. Booked into X3c (Z294).
+
+- U3, 2026-10-02, TEST, text size 150% (Settings, This browser, Text size; `--text-scale` 1.5) under "vscode dark modern" and the rice palette "mocha" with its wallpaper, then reset to 100% and "vscode dark modern" (`git diff --exit-code -- tools/oculus/config` clean). Seen: the Processes, source diff, Settings, Live HPC and Usage views scale their text and controls together; the Live HPC failure box wraps its address; the Usage cards keep bars and resets on one line; the rice palette draws its bracket glyphs on the rail, the tabs and the buttons, readable over the wallpaper. Defects:
+  - U3-look-1: at 150% in a pane about 250 px wide each tab's title shrinks to one letter ("(p) P", "<-> t") while the strip's arrows, split and More keep their full width. Booked into X3c (Z293).
+  - U3-look-2: the Text size row shows no current size, only its three buttons (`BrowserControl.svelte:120-142`), where the Theme and Code theme rows show their value. Booked into D25 (Z293).
+
+- R18, 2026-10-02, TEST, dark theme. Seen: `docs/diagrams/layer-data.svg` opened from the Files view as a tab draws on its own dark ground (the file carries a `prefers-color-scheme` rule) with light boxes, edges, counts and labels, every label readable at full size. No defect in the diagram. Seen beside it, defect R18-look-1: a palette row whose title wraps to two lines draws its second line over the next row's title (Cmd+K, then "Files" or "TEST": many feed titles). Booked into X3c (Z292).
+
+- D18, 2026-10-02, TEST, light theme ("vscode light modern", switched back to "vscode dark modern" after; `git diff --exit-code -- tools/oculus/config` clean). Seen: the Processes view's header "0 projects in flight, 2 agents running", the bold "test" group row and its rows in PID, Parent, User and Start, and "Read at 19:18" read clearly on the light background. No defect.
+
+- Q67, 2026-10-02, taken by Axel: the six console links of the Account setup view each open the page their step names. On TEST the orchestrator saw the six addresses equal `config/text/views/personal/account-setup.yml:31-35,52`, each `target="_blank"` with `rel="noopener noreferrer"`.
 
 - M3, 2026-10-02, TEST, dark theme. Seen:
   - The Compute filter lists This Mac 8, UTwente HPC 8, unset 37.
@@ -97,5 +113,5 @@ Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/
 
 ## Blocked, for Axel
 
-- Q67: the Account setup view on TEST draws six console links, each `target="_blank"` with `rel="noopener noreferrer"`, whose addresses are the six of `config/text/views/personal/account-setup.yml:31-35,52` (Google console, Calendar API, Gmail API, consent screen, credentials; Microsoft Entra app registrations). Opening them, to see that each reaches the page its step names, was refused by the session's permission classifier as navigation to an outside site; it needs Axel's permission or Axel's own click. The Account setup tab opened for the look is still on TEST, since closing it was refused by the same classifier.
-- Every look under a light or other theme (L3, L5, U1, M3, Q88c, A1, X3a's Seti icons): the standing rule says the browser theme on TEST is not changed. A light-theme look needs Axel's word that the theme may be switched on TEST and switched back.
+None.
+

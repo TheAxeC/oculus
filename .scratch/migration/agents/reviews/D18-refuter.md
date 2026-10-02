@@ -328,3 +328,15 @@ Over the delta, nothing else was found:
 - **Remaining finding of the first review.** Spec 2's "no verdict" path finding was closed by the report text alone. I did not judge it further.
 
 Reviewer usage: about 285,000 tokens (from the remaining-token counter), about 55 tool uses, about 17 minutes.
+
+### Closed
+
+Every finding of the run over repair round 1 is fixed at landing on main, each small and inside the brief:
+
+- R1: fixed. `ReadFailure` carries `ended`, a promise `ps.ts` resolves on the child's `close` or `error`; `watch.ts` awaits it in the read's `finally`, so no `ps` starts while a killed one has not closed. `tests/server/machine/processes/watch.test.ts` now asserts one child while child 0 is unclosed and a second after it ends; with `await ended;` taken out of `watch.ts` the case "starts no second child while a killed one has not closed, and one at the tick after it closed" fails (`Tests 1 failed | 31 passed (32)`), with it `32 passed`.
+- R2: fixed. `README.md:13` restored to the base line ("and `cloc`").
+- R3: fixed. `state/system/machine/processes.ts` re-exports only `ProcessRow`.
+- R4: fixed. The `sessions.ts:3-6` comment rewrapped as one paragraph at 100 columns.
+- R5: fixed. `DESIGN.md`'s failure list adds "prints more than 32 MB, fails while its output is read".
+
+The first run's findings were closed by the builder in repair round 1, as "The rulings of the round" above records.

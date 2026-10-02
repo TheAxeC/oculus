@@ -997,6 +997,94 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z300 (2026-10-02, D14's refuter report, Spec 2 and Spec 3): where the LaTeX reader lives, and the LaTeX tab's glyph
+
+Chosen: the reader at `data/prose/latex.ts`, beside `markdown.ts`, whose head comment says it is one rule imported by both sides, the same concern; the LaTeX tab draws the existing `paper` glyph (`[d]`, `file-text`), a page of text.
+
+Not chosen:
+- `data/helpers/files/latex.ts`, as built: that folder holds helpers about file names, paths and kinds.
+- `publish` (`cloud-upload`), as built: it is Source Control's Publish action and reads as "upload".
+- A new glyph key: it adds a vocabulary entry where `paper` already reads as a document.
+
+Where it applies: D14, repair round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z299 (2026-10-02, D14's refuter report, Behaviour 4): the Outline of a file the LaTeX parser refuses
+
+Chosen: on a refusal by `latex-utensils`, the shared reader reads the sectioning commands with a line scan that skips `%` comments and returns them with `refused: true`; the Files Outline and the LaTeX view draw them, and the LaTeX view keeps its line that the file was not parsed. One reader module stays, as Z279 wanted.
+
+Not chosen:
+- Z279 as built, a refused file listed as skipped: the Outline of three real hub files went from 20, 18 and 21 headings to 0, and any file mid-edit with an unclosed brace or a lone `$` shows an empty Outline.
+- A tolerant parser library in place of `latex-utensils`: it reverses the library Axel named in LA18.
+- Keeping the last good outline while a file is unreadable: it leaves a file never parsed (the three real files) empty.
+
+Where it applies: D14, repair round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z298 (2026-10-02, D17's report, D17-A): the errors of a task terminal no pane shows
+
+Chosen: (a), one capture when the task terminal ends: the commands store asks the server for the terminal's captured output (tmux `capture-pane`, a new `capture` action of the terminal route) and reads its diagnostics from it. VS Code's problem matchers read a task's output whether or not its terminal is on screen, so the errors reach the Problems view (D33) for every task. Sent to D17's builder in its repair round.
+
+Not chosen:
+- (b), a page subscription per running task terminal: one tmux control client per task and a grid size for a grid that does not exist.
+- Leaving it: the lazy option; D33's Problems view would show nothing for a task not on screen.
+
+Where it applies: D17. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z296 (2026-10-02, the U4 look): a long word crossing its box in a narrow Focus pane
+
+Chosen: built in Q91, which already works in the Focus view (its follow-up rows): a Focus lane card's note (`Band.svelte`) and the career panel's summary (`CareerPanel.svelte`) wrap a long word inside their box, so nothing crosses a border and the view never scrolls sideways. Both files join Q91's paths at its /spec.
+
+Not chosen:
+- A new step: it needs Axel's ruling, for two style rules.
+- Leaving it: text drawn across a card's border is a defect of delivered work.
+
+Where it applies: Q91. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z295 (2026-10-02, the A1 light look): the branch item gone over a diff tab
+
+Chosen: built in X3c, the tab strip step, which reads the file of the tab on screen for its breadcrumbs and tooltip: `repoStatus` also takes a tab whose state names its repository by folder, as a diff tab does, so the status bar keeps its branch and sync items, as VS Code's does for a diff editor. `src/lib/state/workbench/navigation/status.ts` joins X3c's paths at its /spec.
+
+Not chosen:
+- A new step: it needs Axel's ruling, and the fix is a few lines in the function X3c's tab reads sit beside.
+- Leaving it: the branch item vanishing under a diff is a defect of delivered work.
+
+Where it applies: X3c. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z294 (2026-10-02, the Q78 look): an active tab out of sight
+
+Chosen: built in X3c, the tab strip step: the strip scrolls the active tab into view whenever a tab becomes active, as VS Code's does.
+
+Not chosen:
+- A new step: it needs Axel's ruling and would change the strip X3c changes.
+
+Where it applies: X3c. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z293 (2026-10-02, the U3 look): its two defects
+
+Chosen: U3-look-1 (a tab's title shrinking to one letter at 150% text in a narrow pane) in X3c, the tab strip step; U3-look-2 (the Text size row showing no current size) in D25, which adds Settings controls, with `BrowserControl.svelte` added to its paths.
+
+Not chosen:
+- New steps: they need Axel's ruling and would change the files X3c and D25 change.
+
+Where it applies: X3c and D25. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z292 (2026-10-02, the R18 look): the palette's row overlap
+
+Chosen: built in X3c, which already changes the palette's commands; `src/lib/shell/keys/Palette.svelte` joins its paths at its brief closure, and a long row keeps to one line cut with an ellipsis, as VS Code's quick pick.
+
+Not chosen:
+- A new step: it needs Axel's ruling and would change the file X3c changes.
+
+Where it applies: X3c. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z291b (2026-10-02, after Axel lowered `workers_at_once` to three): the steps in flight beyond three
+
+Chosen: none is stopped. D14, D17 and S4 finish their builds; D18 and D32, whose builders are done, land; that leaves three in flight, and no builder is dispatched while three or more steps are in flight.
+
+Not chosen:
+- Stopping a running builder: it throws away about 2.5 h of work that a continuation builder would redo, and the load it saves lasts only until that continuation runs.
+
+Where it applies: the next /spec dispatches. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z289 (2026-10-02, the owed looks): the looks' defects folded into the queued steps
 
 Chosen: every defect of `agents/reviews/owed-looks.md` is built in a queued step whose files it touches, each named in that step's brief or, for a step not yet prepared, on its plan line for its /spec:

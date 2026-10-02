@@ -138,3 +138,71 @@ Cases:
 Reviewer usage: not measured precisely. About 470k tokens in this session after the context was compacted, plus the session before compaction, whose count I do not have. Tool uses and minutes were not counted.
 
 Usage (completion notice): claude-opus-5-5, 107,087 tokens, 103 tool uses, 15.9 min.
+
+## Repair round 1, refuted
+
+Reviewer a0129346811f03d66 at ordo-high, served claude-opus-5-5; 309,013 tokens, 86 tool uses, 28.7 min (its completion notice). Worktree `.agents/worktrees/D32`, base bdc0ac53. The reviewer changed nothing; its only git commands were `git diff bdc0ac53` (with `--name-only --no-renames`) and `git status --short`, from inside the worktree.
+
+The round's delta: 59 files, those modified after 2026-10-02 17:14 (`find . -newer <stamp>` from the worktree root, without node_modules, .svelte-kit, build/ and .git): the report; `DESIGN.md`, `HELP.md`; 18 diagram files (the layer-data, layer-shell and layer-ui pairs byte-identical to the base); 20 source files (`src/lib/data/file-ops.ts`, `src/lib/data/helpers/search/{query,replace}.ts`, `src/lib/server/files/fs/{ops,replace}.ts`, `src/lib/server/files/search.ts`, `src/lib/state/shared/answers/answers.ts`, `src/lib/state/sources/repositories/{answers,replace-preview,repositories}.ts`, `src/lib/state/sources/search/{hits,keys,search.svelte,search,words}.ts`, `src/lib/views/sources/repositories/diff/Diff.svelte`, `src/lib/views/sources/search/{box-keys.ts,Results.svelte,Search.svelte}`, `src/routes/api/(files)/ops/+server.ts`); 18 test files (`tests/checks/tree/allow-duplication.txt`, `tests/checks/utils/outside-paths.test.ts`, `tests/data/helpers/replace.test.ts`, `tests/routes/replace/{preview.test,replace-fixture}.ts`, `tests/state/sources/fs/{fs-files.test,fs-fixture,fs-notes.test,fs.test}.ts`, `tests/state/sources/repositories/diff/{diff-read,diff-view}.test.ts`, `tests/state/sources/search/{endpoint.test,replace.test,search-fixture,search.test}.ts`, `tests/views/sources/search.test.ts`, `tests/views/whole/type-scale.test.ts`); `utils/outside-paths.mjs`.
+
+```
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (from tools/oculus of the worktree, 18:59:54 to 19:24:48, load average 23.60 at start)
+$ npm test
+ Test Files  483 passed | 24 skipped (507)
+      Tests  12313 passed | 637 skipped (12950)
+$ npm run test:checks
+ Test Files  30 passed | 2 skipped (32)
+      Tests  466 passed | 9 skipped (475)
+$ npm run check
+1790961408475 COMPLETED 3113 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+
+$ sh utils/unused-exports.sh   -> exit 0; "Unused exports (238)", "Unused exported types (108)", 348 lines
+$ npx knip --production --include exports,types --reporter compact --no-progress   -> exit 1; cmp with the script's output: EQUAL
+  codeThemeIds 1, languageNamed 2, hostZone 1 hits; FILE_FIELDS, searchArgs, the 14 names of ruling 9, DiffRequest, previewRequest, groupAnswer, diffReader: 0 hits each
+$ grep -rn 'String(response.status)\|HTTP \${' src/lib/state src/lib/views src/lib/ui   -> no output, exit 1
+$ the spec's perl ASCII gate over src tests config utils (find ! -name local.yml)   -> no output
+$ node r1rev32/size.mts   (the starting tree's previewUrl, 2000 hits, from a node http server)
+address length 21821 status 431
+$ node r1rev32/outside.mjs   (over main's D32 brief)
+changed 144 wide entries 65 strict entries 53
+outside (wide) 61
+Test titles of tests/state/sources/{search,fs}/ at the round's start and now: 158 and 162; none present at start is missing now.
+```
+
+### Verdicts (whole diff since the base)
+
+Items: 1 holds. 2 holds as ruling 3 reshapes it (`toggleMode`, `search.svelte.ts:192-197`; `replace.test.ts:284-324`); the in-flight window is finding 9. 3 holds. 4 holds. 5 holds for Replace All; finding 8 covers the sentence after a single Replace. 6 holds. 7 holds. 8 holds. 9 holds. 10 holds (a POST with the token, `ops.ts:195`, `:682`, `:777`; the GET branch gone; `preview.test.ts:132`, `:147`); its head comments are finding 4. 11 holds (`HELP.md:176`, `DESIGN.md:130`, `:393`). 12 holds (`HELP.md:170`). 13 to 19 hold. 20 holds. 21 holds with the builder's justified deviation from ruling 15 (finding 10); a residual prose entry is finding 11. 22 holds. 23 holds; its D32 block is finding 3. 24 holds.
+
+Cases: 1 to 19 met. 20 met at the state layer (`diff-read.test.ts:97`, `:108`, `:117`; `replace.test.ts`); Diff.svelte's `reader.close()` at `:392` has no unit test, component-local state only, no finding. 21 met in behaviour (four keys 0, 1, 2 and n, not "three groups"). 22 to 26 met. 27 to 31 not verifiable here (the look on TEST). 32 met. 33 met as carried. 34 met.
+
+### Findings
+
+No closure was made by removing a check; the one allow-list edit removes the stale `allow-duplication.txt` entry `duplication.test.ts:597-606` requires gone. Rulings 1 to 14 are closed as claimed, except:
+
+1. Proof. `tests/routes/replace/preview.test.ts:132` posts a body to `handleOps` and never forms an address; on the starting tree it fails with `TypeError: previewRequest is not a function`, never with 431. The 431 was shown only by a throwaway test no longer on disk; the reviewer's own run reproduces it (`address length 21821 status 431`). Failure scenario: a later change that again carries the hits in an address keeps this test green. Ruling 1's test clause partly met.
+2. Proof. `tests/state/sources/fs/fs-fixture.ts:16`, `:19`: `export let client` and `export let asked`, file-scope mutables rebound by `storeHooks()`'s `beforeEach` and read through live bindings (the starting tree had them inside a `describe` body). Failure scenario: a file reading `client` at collection time gets `undefined`. No verdict.
+3. Standards. `tests/checks/utils/outside-paths.test.ts:207-210` names step D32 in a test title and reads the ledger's `briefs/D32.md` at collection time. Failure scenario: an edit of the D32 brief's path list turns `npm run test:checks` red for the next step, and archiving the ledger makes the file throw at collection. Item 23, minor; fix: the D32 bullets copied in as a synthetic section, the step id dropped from the title.
+4. Standards. `src/lib/server/files/fs/replace.ts:3` and `:359` still say GET /api/ops `preview`; ruling 1 made it a POST. Item 10, minor.
+5. Standards. `src/lib/state/sources/search/hits.ts:136-137`: "a run made before regex mode was on" is false; `replacementFor` returns null only for a regex run whose hit carries no `groups`. No verdict.
+6. Standards. `src/lib/state/sources/search/search.ts:80`: "from the first" compares with an earlier form, as ruling 13 removed elsewhere. No verdict.
+7. Standards. `src/lib/state/sources/search/keys.ts:57`: `export type RowKind` has no importer outside `keys.ts`. No verdict.
+8. Behaviour. `search.svelte.ts:360-369` and `Results.svelte:138-146`: the "Replaced ..." sentence takes the count line's place after every replace (a single Replace, a file's Replace All) and stays until the next run; Dismiss does not clear it. VS Code shows it only from `SearchView.replaceAll` (searchView.ts:812-845) and writes the count back on any later change (`:791-794`, `:2057-2068`). `DESIGN.md:130` says "what a Replace All said", `Search.svelte:35-36` "what a replace came to". Failure scenario: after one Replace of 40 hits the count line keeps "Replaced 1 occurrence across 1 file with 'bar'." and the number of hits left is not shown. Item 5, partial.
+9. Behaviour. `search.svelte.ts:196`, `:230`: a toggle turned while a run is in flight flips the chip, but `runSearch` returns at once, so nothing runs again and the answer lands under the old toggles; `HELP.md:170` is false in that window. Failure scenario: a literal `foo` in flight, regex turned on, `[$1]` typed: the rows preview and Replace writes `[$1]` literally. No test covers a toggle during a run. Item 2 and ruling 3, partial in that window.
+10. Spec, the builder's deviation on ruling 15, judged: `utils/outside-paths.mjs:56-95` takes every backticked token outside parentheses; the literal reading would misprint 12 listed paths of the D32 brief (brief lines 181, 184, 187) as outside. The build stands; the ruling's text is what should be corrected. Item 21 holds.
+11. Behaviour. `utils/outside-paths.mjs:82-95` over brief line 158 takes the prose word `data/helpers/` as an entry, which covers every `/data/helpers/` path; today it hides nothing (`outside (wide) 61`). Failure scenario: a change to `src/lib/data/helpers/worktrees.ts` under this brief would print nothing. Low, no verdict.
+
+For the record: the builder ran `git -C . status` and `git -C /nonexistent status` against the no-git rule; nothing in the tree depends on them. The round's file list leaves out 10 changed source files and the diagrams, each ruling 9's `export` removal, ruling 13's comment or the `RowKind` rename; no decision rests on the list.
+
+### Declined to judge
+
+- Cases 27 to 31 and every DOM behaviour: the look on TEST.
+- Appendix R1-B's per-case base runs: one cited line spot-checked (`search.test.ts:259`), the base-tree runs not rerun.
+- The worktree's `D32-report.md` (1624 lines) lacks the "Repair round 1" section main's copy (1685 lines) has; which copy lands is the orchestrator's call.
+- The origin rule on the preview POST in `src/hooks.server.ts`: not read this round.
+- Whether the adapter's request body limit bounds the preview POST for tens of thousands of hits: not checked; `search.max_hits` caps the hits a tab holds.
