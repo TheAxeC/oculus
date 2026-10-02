@@ -1,229 +1,222 @@
-# A1 report: review with feedback
+# A1 report: review with feedback (repair round 1)
 
-NOT DONE: `sh ~/.claude/skills/land/templates/checks.sh .../orchestrator-state.md` does not print `checks: 7 commands passed` from this worktree. Its second command, `npm run test:checks`, fails on one case that no file of this step can fix: `tests/checks/config/integrity.test.ts` "reads every side project of the hub with no finding" expects at least 3 folders under `side-projects/` and the worktree root has none (`ls /Users/axelfaes/workspace/research-hub/.agents/worktrees/A1/side-projects` prints "No such file or directory"; the main checkout holds `gpu-game-boy`, `residual`, `scripted-os`, each with a `project.yml`). The script stops at the first red command, so the five commands after it ran each alone and all exit 0 (section 3). Everything else in the brief is done. The three full runs of the brief are used. Case 23 (the look on TEST) is the landing's.
+NOT DONE: `checks.sh` was not run again after the last change, which is two added tests in `review-comment.test.ts` (the three allowed full runs were used; section 4 names what was run alone on the final tree). Nothing else inside the brief or the round file is left undone. Three things are not proved by a test, and the section "Not proved by a test" names them: the look of the comment box and its focus (Case 23 is the landing's, on the TEST page), a live change of the sessions payload under one mounted `DiffSection` (the unit suite renders a section once; `diff-pane.test.ts` proves a fresh render after the payload changes), and Monaco drawing the `+` and its right-click menu entry. The third and last `checks.sh` run ended `checks: 7 commands passed` (section 4).
 
-## 1. Open items of the state file
+## 1. The premise that did not reproduce
 
-The state file at `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`, read at the time of this report, holds:
+The brief's "What is on the tree" says `TerminalAnswer = { ok, id, error, terminal? }` is at "`state/sessions/pty-io.ts:72-90`". `ls /Users/axelfaes/workspace/research-hub/.agents/worktrees/A1/tools/oculus/src/lib/state/sessions/pty-io.ts` prints "No such file or directory". The file is `src/lib/state/sessions/terminal/pty-io.ts` (the type at `:18`, `postTerminal` at `:72`). `state/sessions` is above `state/sources` in the state folder order (`tests/checks/imports/order.ts`), so `review-comment.ts` in `state/sources` cannot import it; `SteerAnswer` (`review-comment.ts:82`) is the structural copy of the part of `TerminalAnswer` a send reads (`ok`, `error`).
 
-- Z251 (2026-10-02 09:40, all steps): fewer repair rounds. Axel asked whether the criteria for a round can be stricter so more steps land without one. Evidence: 12 of the last 13 landings had a round; each round's rulings (`agents/briefs/<step>-round1.md`) number 5 to 16, and every one of them holds rulings that change code or add a test. Options: (a) keep the round as ruled 2026-10-01 (`plan.md:773`); (b) land without a round when every first-review finding is small and inside the brief, as the refute dispositions already allow (none of the last 13 would have qualified, so it saves nothing); (c) `refute_after_repair: no` when the round stays inside its rulings, the orchestrator reading the delta in its place (saves about 185k to 270k tokens and 14 to 46 min per step; those runs found 4 to 9 findings that would then rest on the orchestrator's read; reverses part of the 2026-10-01 ruling); (d) fewer findings at the source: the overdue recurring-findings pass, its causes in three or more steps ending in a rule sentence in `agents/spec.md` or a sentence every brief carries. Recommendation: (d), with (a) kept until its effect shows; (b) and (c) are the lazy options, since they lower the bar and keep the cause.
+## 2. Open items of the state file
 
-## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
+Copied from `/Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`, section "Open items", at the moment of writing:
 
-## 2. The cases' first run
+- Z251 (2026-10-02 09:40, all steps): fewer repair rounds. Axel asked whether the criteria for a round can be stricter so more steps land without one. Evidence: 12 of the last 13 landings had a round; each round's rulings (`agents/briefs/<step>-round1.md`) number 5 to 16, and every one of them holds rulings that change code or add a test. Options: (a) keep the round as ruled 2026-10-01 (`plan.md:773`); (b) land without a round when every first-review finding is small and inside the brief, as the refute dispositions already allow (none of the last 13 would have qualified, so it saves nothing); (c) `refute_after_repair: no` when the round stays inside its rulings, the orchestrator reading the delta in its place (saves about 185k to 270k tokens and 14 to 46 min per step; those runs found 4 to 9 findings that would then rest on the orchestrator's read; reverses part of the 2026-10-01 ruling); (d) fewer findings at the source: the overdue recurring-findings pass, its causes in three or more steps ending in a rule sentence in `agents/spec.md` or a sentence every brief carries. Recommendation: (d), with (a) kept until its effect shows; (b) and (c) are the lazy options, since they lower the bar and keep the cause. Axel, 2026-10-02: (d) taken through Z253; (a) stands meanwhile; Z251 is ruled after ten steps have landed under the new rules (count from the first landing after this line).
 
-The first run on the unchanged tree, before any change: 7 test files, 32 failed, 102 passed of 134 (`vitest run` of the seven files). The tests changed after that run, so the failing assertions below come from every test in its final form, run on a copy of the tree (`/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/A1/base`) whose 17 changed source and document files were replaced by main's copies and whose three new source files were absent; for `diff-pane.test.ts`, which cannot load without `CommentBox.svelte`, the copy held an empty `CommentBox.svelte`. No case's rule was wrong; none was handed back.
+- Z263 (2026-10-02 12:40, a new step): the Files view's order and Collapse Folders. Axel asked for reorderable bookmarks and roots, and whether Collapse Folders leaving the roots open is intended. The tree: `collapseAll` (`views/sources/files/control/tab-actions.ts:94-101`) closes every folder and leaves each root's row open on purpose (its comment says so); VS Code's Collapse Folders in a multi-root workspace (`collapseAll`, `src/vs/workbench/contrib/files/browser/views/explorerView.ts:990-1007` on main, read with `curl`) closes every folder under the roots and leaves the roots open while any root has an open child, and a second press, with none open, closes the roots too. No drag reorders the roots, the folder bookmarks (Files section and rail menu), or the notes (`grep -rln drag src/lib/views/sources/files/sections` lists only Outline and Timeline, which drag a row out, not along). The rail, the terminals list, the collection entries, the focus lanes and the slides already reorder. No open step owns the Files view (X3a landed). Options: (a) a new step X3e: drag to reorder the roots (written to the workspace in force, `sources.yml` for the default one), the folder bookmarks (written to `~/.oculus/bookmarks.yml`, the rail menu following), the notes and the Files view's sections (VS Code drags its view sections), and a second Collapse Folders, with no folder under a root open, closing the roots, as VS Code's does. Pro: one step, every list of the Files view orderable as VS Code's. Con: a new step. (b) the roots and bookmarks only. Con: the notes and sections keep a fixed order. (c) nothing, the lazy option. Recommendation: (a).
 
-| Case | Result on the unchanged tree |
-|---|---|
-| 1 prompt shapes, 2 the five real cases, 8 two-line comment, 9 command-looking paths | `review-comment.test.ts` does not load: "Cannot find module '../../../../../src/lib/state/sources/repositories/review-comment.ts'" (missing module) |
-| 3, 4, 5, 6 the send, 7 the refusal, 18 second Send in flight, 19 answer after the box closed | same missing module; the box's own flow (18, 19) is also in `comment-draft.client.test.ts`, which fails with "Failed to resolve import ../../../../../src/lib/state/sources/repositories/review-comment.ts" |
-| 10 no `oncomment` from the Repositories view | `diff-pane.test.ts` "offers none for a diff opened from the Repositories view": passes (the tree has no comment affordance); the palette half is `gutter.test.ts` "is listed with the parent label while comments are offered, and not otherwise": "listedWithComment is not a function" |
-| 11 two tabs, two sessions, `session: ''` or a number | `diff-session.test.ts` "adds the session to the id...": "expected 'changed:/hub:src/a.ts' to be 'changed:/hub:src/a.ts:s-1'"; "gives two sessions two ids...": "expected 2 to be 3"; "reads an empty session or one that is not a string as none": "expected undefined to be ''" |
-| 12 a state saved before this step | `diff-session.test.ts` "reads a state saved before the session existed as none": "expected undefined to be ''"; `instance-state-sources.test.ts` heldDiff: 34 of its cases fail on the missing `session` key (for example "answers valid": "expected { Object (id, label, ...) } to strictly equal { id: 'i', label: 'l', ...(10) }") |
-| 13 followed to a renamed file | `naming.test.ts` "keeps a session's diff pane that session when its file moves, and the id carries both": "expected { root: 'hub', path: 'dir/b.md', ...(9) } to match object { path: 'dir/b.md', session: 's-1' }" |
-| 14 commit, stash, worktree, compare, group with a session | `diff-pane.test.ts` "offers none on a commit, stash, worktree, compare or group diff": passes (nothing is offered at all) |
-| 15 session leaves the payload | `diff-pane.test.ts` "offers none once the payload no longer holds the session, and offers it again when it does": "expected undefined to be type of 'function'" |
-| 16 gutter helpers over a fake editor | `gutter.test.ts`, seven cases: "commentGutter is not a function" (six) and "commentTarget is not a function" |
-| 17 `onactions` with and without `oncomment` | `gutter.test.ts` "listedWithComment is not a function" and "commentActionsOn is not a function" |
-| 20 merge row and untracked row | `diff-session.test.ts` "opens the merge editor for a conflict and the file for an untracked path, whatever the session": passes; `changes.test.ts` "opens a row's diff for the session the view shows, a merge row and an untracked row as before": "expected [ [ '/hub', 'changed', ...(1) ], ...(1) ] to deeply equal [ [ '/hub', 'changed', ...(2) ], ...(1) ]" |
-| 21 comment bar below a hunk bar | `zones.test.ts` "orders a bar after the line by its order": "expected [ +0, +0 ] to deeply equal [ 1, +0 ]"; "keeps the order when the model is replaced": "expected [ +0 ] to deeply equal [ 1 ]"; three cases of the regrow of a bar whose height changes: "Cannot read properties of undefined (reading 'notify')" |
-| 22 the bar snippet | `diff-pane.test.ts` "draws the comment box for the bar with the id comment and a hunk bar for a numeric id": "expected [] to have a length of 1 but got +0" |
-| 23 the look on TEST | the landing's; not run here |
-| 24 empty session title | `diff-pane.test.ts` "calls a session with no title by its id in the head of the box": "expected undefined to match object { title: 's-1' }"; `review-comment.test.ts` (`commentTitle`) as the missing module |
+## 3. What changed, per ruling
 
-Also failing on the unchanged tree, as the tests of the other items: `diff-pane.test.ts` "the comment box" (five cases: "expected '<!--[--><!--]-->' to contain 'Comment to The live one'", "Cannot read properties of undefined (reading 'oninput')", "reading 'onkeydown'", "expected undefined to be type of 'function'", "expected '<!--[--><!--]-->' to contain 'The terminal did not answer.'"), `diff-pane.test.ts` "offers it, under the words of the catalog, on a file own diff opened for a session the payload holds" ("expected undefined to be type of 'function'"), and `type-scale.test.ts` ("lists every view file in the audit": "expected [ ...(208) ] to deeply equal [ ...(209) ]" and "sets every local role in sources/repositories/diff/CommentBox.svelte": "ENOENT").
+Paths are under `tools/oculus/` of the worktree. "Pre-round tree" is the tree as the first report left it, with the final tests run against it; "mutated" is the final tree with one line of the named behaviour taken out.
 
-Tests that pass on the unchanged tree and after:
-- Preservation of behaviour: `diff-session.test.ts` "adds nothing for an empty session" and "opens the merge editor for a conflict and the file for an untracked path, whatever the session"; `diff-pane.test.ts` "offers none for a diff opened from the Repositories view" and "offers none on a commit, stash, worktree, compare or group diff". The last two are proved to fail without their gate: with `actions !== 'read'` taken out of `commentable` in `DiffSection.svelte`, only "offers none on a commit..." fails; with `record !== null` taken out, "offers none for a diff opened from the Repositories view" and "offers none once the payload no longer holds the session" fail.
-- Audit (it would pass with the behaviour taken out): `diff-session.test.ts` "keeps the diffs of one file in a commit, a stash and a session apart".
-- `comment-draft.client.test.ts` is proved by taking the code out of `comment-draft.svelte.ts`, one at a time, and running the file: without the `allowed` effect "closes, keeping the text, when its side stops being offered" fails ("expected { side: 'original', line: 2 } to be null"); without the teardown effect "hands nothing back when the section went before the terminal answered" fails ("expected 'Sent to The live one.' to be ''"); without the timer in the notice effect "stays for NOTICE_MS and then goes" fails; without `guard.cancel()` in `close` "hands nothing back when the box was closed before the terminal answered" fails.
+### 3.1 Ruling 1, the glyph margin (Spec 1, Behaviour 1)
 
-## 3. DONE / NOT DONE
+- `src/lib/ui/controls/editor/gutter.ts:337-345`: `MONACO_GLYPH_MARGIN = true` (Monaco's default) and `glyphMarginFor(offering)`, which returns `offering || MONACO_GLYPH_MARGIN`. It is a pure function of `offering`, beside the option helpers `listedWithComment` (`:351`) and `commentActionsOn`.
+- `DiffEditor.svelte:331` calls `updateOptions({ glyphMargin: glyphMarginFor(offering) })`; the effect no longer passes `offering` itself. The glyph margin is never set false.
+- Test: `gutter.test.ts` "the glyph margin of a diff editor > stays on whether or not comments are offered, since Monaco draws it by default" asserts `glyphMarginFor(true)` and `glyphMarginFor(false)` are both true.
+- Failing run, false case, mutated (`return offering;`): `tests/ui/controls/editor/gutter.test.ts:442:39`, the `glyphMarginFor(false)` expectation, 1 failed. Pre-round tree: "TypeError: glyphMarginFor is not a function" at `gutter.test.ts:442:16`. Passing run: 27 tests of `gutter.test.ts` pass (and 982 tests of the 19 files run together, section 4).
+- The diffs that offer no comment keep the glyph margin they had: the Repositories view's file, commit, stash, worktree, compare and group diffs draw Monaco's default glyph margin as before. The diff editor's head comment (`DiffEditor.svelte:16-22`) and the effect comments (`:324`, `:342`) say so.
 
-| Row | State | Command or place that proves it |
+### 3.2 Ruling 2, the id collision (Z256)
+
+- `src/lib/state/sources/repositories/repositories.ts:157-163`: `diffState` builds `${side}@${session}:${root}:${path}` for the file's own diff (`changed`, `staged`) opened for a non-empty session, and `${side}:${root}:${path}` otherwise. The doc comment above it (`:148-156`) is rewritten.
+- `sideOf` (`repositories.ts:139-147`) does yield `@`: `compare@...` (`:141`), `group@...` (`:142`), `commit@...` (`:144`), `stash@...` (`:145`). It yields `changed` and `staged` with no `@` (`:146`), and the session goes only after those two names, so `changed@<session>:` and `staged@<session>:` are prefixes no other branch produces, and a no-session id has `:` where a session id has `@` after the same word. The tests below hold this.
+- Tests, `tests/state/sources/repositories/view/diff-session.test.ts` (13 tests, all pass): the id differs from the no-session id (`:25`); two sessions and a staged diff (`:33`); determinism and an empty session (`:41`); a file `a.ts:s-1` with no session against `a.ts` for session `s-1` (`:47`); sessions named `changed`, `staged`, `/hub` and empty (`:55`); every kind of diff of one file has its own id (`:63`); no session in a commit, stash, worktree, compare or group id (`:79`); the saved-state and `openChange` tests use the new strings.
+- Failing run on the pre-round tree (old form `changed:/hub:a.ts:s-1`), the collision test at `diff-session.test.ts:51:24`: `expected 'changed:/hub:a.ts:s-1' to be 'changed@s-1:/hub:a.ts'`; the file named `a.ts:s-1` has that same old id. Also failing there: `:29` "expected 'changed:/hub:src/a.ts:s-1' to be 'changed@s-1:/hub:src/a.ts'", `:38` staged, `:60` "expected 'changed:/hub:src/a.ts:changed' to be 'changed@changed:/hub:src/a.ts'", `:89` "expected 'commit@abc:/hub:src/a.ts:s-1' to be 'commit@abc:/hub:src/a.ts'", `:141` and `:154` (the `openChange` ids), and `naming.test.ts:252:33` "expected 'changed:hub:dir/b.md:s-1' to be 'changed@s-1:hub:dir/b.md'".
+- Every reader and test of the old form is updated: `naming.test.ts:252` (`changed@s-1:hub:dir/b.md`), the saved-state fixture in `diff-session.test.ts` (`id: 'changed@s-1:/hub:src/a.ts'`), the `instance-state-sources.test.ts` rows (section 7). `grep -rnE "changed:|staged:" HELP.md DESIGN.md README.md src config --exclude=local.yml` finds no document or source text describing the old id.
+
+### 3.3 Ruling 3, `diff-pane.test.ts:531`
+
+- `tests/views/sources/repositories/diff-pane.test.ts:531-553`: after the payload holds `s-2` only and the section offers none, the payload is received again with `s-1` (`version: 2`) and the section is rendered again; the test asserts `editorProps().oncomment` is a function. Passing run: 38 tests of `diff-pane.test.ts` pass.
+- The test passes on the pre-round tree too: it adds proof of the title's second half and no behaviour changed. A mutation that latches the offer off after the payload lost the session passes as well, because each `section()` call is a new mount (see "Not proved by a test").
+
+### 3.4 Ruling 4, `changes.test.ts:411`
+
+- `tests/views/sessions/changes.test.ts:415-441` spies `client.layout.openBeside` and `openView`, calls the row handler `onopen` of the recorded `ChangesRepo` for a changed row, a staged row, a merge row and an untracked row, and asserts the three tabs opened beside (`DIFF_VIEW` with `changed@live-one:/hub:manuscript/main.tex`, `DIFF_VIEW` with `staged@live-one:/hub:manuscript/main.tex`, `MERGE_VIEW` with `merge:/hub:both.txt`), that the untracked row opened no tab, and that its outcome is the sentence `repositories.open_unserved` for `notes/new.txt` (no root is served in this fixture, so the row's file-open path ends there).
+- Failing runs: pre-round tree, `changes.test.ts:429:24` (`expected [ [ 'repositories-diff', ...(1) ], ...(2) ] to deeply equal ...`, the old ids). Mutated, the merge branch of `openChange` removed (`repositories.svelte.ts:364`): `:429:24` fails; the untracked branch removed (`:365`): `:429:24` fails; `Changes.svelte:204` without `record?.id`: `:429:24` fails. Passing run: 30 tests of `changes.test.ts` pass.
+
+### 3.5 Ruling 5, `diff-session.test.ts:42`
+
+- `diff-session.test.ts:25-31` asserts `own` is not `plain` (the session diff's id differs from the same file's no-session id), and `:63-77` asserts nine diffs of one file have nine ids. Mutated, with the session part taken out of the id (`const id = \`${side}:${place}\``): 7 of 13 fail, among them `:29:21` "Expected: "changed@s-1:/hub:src/a.ts" Received: "changed:/hub:src/a.ts"" and the nine-ids test at `:76:35`.
+
+### 3.6 Ruling 6, case 17
+
+- `gutter.ts:351-359`: `listedWithComment(listed, offering, label)` returns the palette's actions with Add Comment on Line when comments are offered and a label is given, and the chords alone otherwise. `DiffEditor.svelte:358` calls it inside the actions `$effect`; the second `onactions` call is gone.
+- Tests, `gutter.test.ts` "is listed with the parent label while comments are offered, and not otherwise" (both values of `oncomment`). Pre-round tree: `gutter.test.ts:454:69` "expected [ [ true, '' ] ] to deeply equal [ [ 'Add Comment on Line', '' ] ]". Mutated, listing it always: `:457:73`; ignoring the label: `:458:60`.
+
+### 3.7 Ruling 7, the right-click menu
+
+- `gutter.ts:361-362` (`MENU_GROUP = 'navigation'`, `MENU_ORDER = 1`) and `:380-381`: `commentActionsOn` passes `contextMenuGroupId` and `contextMenuOrder` to `addAction`. Test: `gutter.test.ts` "is listed in the right-click menu of the line, in a group and at a place" reads both fields from the fake editor's recorded `addAction` calls. Pre-round tree: `gutter.test.ts:494:52` "expected undefined to be type of 'string'". Mutated without the group: `:494:52`; without the order: `:496:50`.
+- `HELP.md:132` ("or Add Comment on Line in the line's menu") now describes a menu entry that exists, and stays as it is.
+
+### 3.8 Ruling 8, the bars' regrow
+
+No code change. `zones.ts` `regrow` (`:85-93`) serves every editor that takes bars. Its three tests (`zones.test.ts` "a bar whose height changes while it is shown") pass and fail with `regrow` removed (mutated, `return;` first in `regrow`: `zones.test.ts:341:30`). After-state rows:
+
+| Bars of | Before | After |
 |---|---|---|
-| 1 the session on the diff (`DiffSubject.session`, `heldDiffShape`, `diffState` id, `openChange(root, group, path, session?)`, `Changes.svelte` passes `record?.id`, `followedDiffTab` carries it) | DONE | `diff-session.test.ts`, `naming.test.ts`, `changes.test.ts`, `instance-state-sources.test.ts` pass in `npm test` (third full run) |
-| 2 `review-comment.ts` (`commentPrompt`, `commentRefusal`, `sendComment`, with `sendGuard`, `sendOnce`, `commentOutcome`, `commentBars`, `commentKey`, `pathOfSide`, `browserCopy`) | DONE | `review-comment.test.ts` in `npm test` |
-| 3 the editor's affordance (`oncomment`, `commentLabel`, glyph margin, hover `+`, press, Add Comment on Line through `onactions`, second `lineBars()` on the original editor, `EditorBar.side` and `order`, regrow of a taller bar) | DONE | `gutter.test.ts`, `zones.test.ts`; the look is not proved (section 7) |
-| 4 the comment box (`CommentBox.svelte`, one per section, draft kept on move, Escape and re-read, Cancel drops, focus, Ctrl or Cmd+Enter, inline layout closes an original-side box keeping the text) | DONE | `diff-pane.test.ts` "the comment box", `comment-draft.client.test.ts` |
-| 5 where it is offered (session held by `sessionById` and `actions !== 'read'`, which is `!diffActs(held) \|\| held.path === ''` of `Diff.svelte`; `Diff.svelte` passes `session={held.session}`, one line, 537 lines) | DONE | `diff-pane.test.ts` cases 10, 14, 15 read the props the section hands `DiffEditor` |
-| 6 sending (refusal, `sent`, `copied`, `failed`, `refused`, five-second notice) | DONE | `review-comment.test.ts`, `comment-draft.client.test.ts` |
-| 7 words and docs (`changes.yml` `sessions:` keys, `HELP.md` lines 87 and 132, `DESIGN.md` line 399, `type-scale.test.ts` row) | DONE | `npm test` (third run) and `npm run test:checks` pass on every file except the one named above |
-| `checks.sh` prints `checks: 7 commands passed` | NOT DONE | third run below: stops at `npm run test:checks`, one failure, environment |
-| `npm run check` | DONE | exit 0, "COMPLETED 3012 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS" |
-| `npm run build` | DONE | exit 0 |
-| `npm run format:check` | DONE | exit 0, "All matched files use Prettier code style!" |
-| `npm run lint` | DONE | exit 0, no output |
-| `! LC_ALL=C grep -rna '[^ -~]' src tests` | DONE | exit 0, no output |
+| The diff editor (`DiffEditor.svelte:136-137`, hunk bars and the comment box) | A bar that grew (an error line under the box's text) covered the lines below it | Its view zone takes the bar's new height and is laid out again |
+| The text editor `Editor.svelte:156`, as the merge editor's conflict bars use it (`MergeSide.svelte:109-110`) | A taller conflict bar overlapped lines | Its view zone grows with the bar |
+| The source editor (`Source.svelte:415`) | It hands `Editor.svelte` no bars | Unchanged; the same `lineBars` regrow serves it if it ever does |
 
-Full runs of `checks.sh`: 3 of 3, each started after `npm run diagrams`. `npm test` passed in the second and third (453 files passed, 11813 tests passed). The first run's `npm test` stopped on six 5000 ms timeouts in files this step does not change (`tests/server/edit/config-key.test.ts` five cases, `tests/routes/edit/undo.test.ts` "answers unwritable for a setting whose file has turned read-only"); run alone with `npx vitest run tests/server/edit/config-key.test.ts tests/routes/edit/undo.test.ts tests/state/shared/instance-state-sources.test.ts` they pass (3 files, 436 of 436).
+### 3.9 Ruling 9, Send while a send is in flight
 
-The third run, verbatim except that the reporter's box-drawing characters are written as `-` and `>`, its cross as `x` and its ellipsis as `...`:
+- `comment-draft.svelte.ts:100`: `send` returns at once when `this.at === null || this.sending`. `sending` is no longer set false by a second call.
+- Test: `comment-draft.client.test.ts` "sends once while a send is in flight" asserts a second send leaves `box.sending` true until the first settles, and the terminal was asked once. Pre-round tree: `:224:29` "expected false to be true". Mutated without the `this.sending` clause: `:224:29`.
+
+### 3.10 Ruling 10, the focus on a move along one side
+
+- `comment-draft.svelte.ts:48,74`: `opened = $state(0)`, raised by `open`. `DiffSection.svelte:302` passes `opened={box.opened}`; `CommentBox.svelte` takes `opened` (`:25`) and its root carries `{@attach (node: HTMLElement) => focusText(node, opened)}` (`:59`), where `focusText` (`:41`) focuses the text area in a microtask when `opened` is at least 1. The attachment reruns when `opened` changes.
+- Test: `comment-draft.client.test.ts` "how often the box was asked to open > rises on each open, on a move along one side as on a move to the other side" (counts 1, 2, 3; close leaves 3). Pre-round tree: `:119:28` "expected undefined to be +0". Mutated without `this.opened += 1`: `:121:28`. `diff-pane.test.ts` hands `CommentBox` `opened: 1` in its `box()` props. The focus itself is the look's.
+
+### 3.11 Ruling 11, the newer rule sentences
+
+- Rewrapped: `zones.ts:1-14`, the head of `comment-draft.client.test.ts` and `CommentBox.svelte:24` to 100 columns; `npm run test:checks` passes, which includes `comment-width.test.ts`.
+- `Diff.svelte` is 504 lines (cap 540, 36 under). The reads moved to `views/sources/repositories/diff/diff-read.ts` (new, 3-line import plus `readDiff(state, repo)` at `:28`, `GROUP_READS`, `answer`); `Diff.svelte:161` calls `readDiff(state, repo)`. The folder `diff/` holds 8 entries (cap 10).
+- No history wording in test titles or comments: `grep -rniE "as before|always had|saved before|before the session existed" tests/state/sources/repositories/view/diff-session.test.ts tests/views/sessions/changes.test.ts` prints nothing. The titles at `changes.test.ts:411` and `diff-session.test.ts:67` and the comments at `diff-session.test.ts:1-3` and the saved-state describe state the behaviour only.
+- `ReviewComment`, `Refusal`, `SteerAnswer`, `SendResult`, `SendGuard`, `CommentBarShape` (`review-comment.ts`) and `COMMENT_MARK`, `COMMENT_ACTION`, `TargetKinds`, `TargetAt`, `commentTarget`, `CommentSideEditor` (`gutter.ts`) are local. `grep -rn` over `src tests` finds none of them outside their own file. Exports kept: `SendDeps` (`review-comment.ts:85`, importer `comment-draft.svelte.ts:20`) and `DiffSide` (`review-comment.ts:17`, importer `comment-draft.svelte.ts:19`).
+- `DiffSide` (`review-comment.ts:17`) copies `ui/controls/editor/types.ts:58` and `CommentBarShape` (`review-comment.ts:208`) copies `EditorBar` (`types.ts:65`). `review-comment.ts` is in `state/sources`; state imports no ui, so it cannot import either type, and the structural shapes are identical to the editor's, which `DiffSection.svelte` hands to `DiffEditor` as it is.
+- `commentOutcome` keeps the raw `result.error` as the brief asked.
+
+## 4. Verification
+
+Full runs of the verify list: 3 of 3, each started after `npm run diagrams` (exit 0). The third is the one quoted below. After it, two tests were added to `review-comment.test.ts` ("one clipboard write at a time per box"); the file passes alone (35 tests) and `npm run format:check`, `npm run lint`, `npm run check` ("COMPLETED 3013 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS"), `npm run test:checks` ("Tests 445 passed | 9 skipped (454)") and the ASCII gate (no match) were each run alone on the final tree. `npm test` and `npm run build` were not run again after that test-only addition (a fourth full run is outside the limit of three). Three 5000 ms timeouts occurred in one full run in files this step does not change: `tests/server/edit/config-key.test.ts` ("refuses a key or a file the catalog has no entry for, the reserved names among them", "refuses a key that is absent, empty, null, an alias, anchored, tagged or a block scalar") and `tests/server/git/autofetch.test.ts` ("runs a pressed Fetch with the repository command as it is"). Run alone, `npx vitest run tests/server/edit/config-key.test.ts tests/server/git/autofetch.test.ts` printed "Test Files 2 passed (2)" and "Tests 98 passed (98)".
+
+The files this round changes, run together (`npx vitest run` over `comment-draft.client`, `review-comment`, `diff-session`, `naming`, `gutter`, `zones`, `instance-state-sources`, `type-scale` and `tests/state/sources/repositories`): "Test Files 19 passed (19)", "Tests 982 passed (982)". `diff-pane.test.ts`: 38 passed. `changes.test.ts`: 30 passed.
+
+`checks.sh` final run, ASCII written for the reporter's ellipsis:
 
 ```
 $ npm test
-
-> oculus@0.0.1 test
-> vitest run --tagsFilter '!slow' --exclude 'tests/checks/**'
-
-
- RUN  v4.1.11 /Users/axelfaes/workspace/research-hub/.agents/worktrees/A1/tools/oculus
-
-
  Test Files  453 passed | 23 skipped (476)
-      Tests  11813 passed | 626 skipped (12439)
-   Start at  10:22:33
-   Duration  174.42s (transform 40.64s, setup 0ms, import 414.98s, tests 222.13s, environment 181ms)
-
+      Tests  11819 passed | 626 skipped (12445)
+   Duration  172.65s (transform 40.10s, setup 0ms, import 413.69s, tests 216.95s, environment 367ms)
 $ npm run test:checks
-
-> oculus@0.0.1 test:checks
-> vitest run tests/checks --tagsFilter '!slow' --testTimeout 0 --hookTimeout 0
-
-
- RUN  v4.1.11 /Users/axelfaes/workspace/research-hub/.agents/worktrees/A1/tools/oculus
-
- > |unit| tests/checks/config/integrity.test.ts (12 tests | 1 failed) 322ms
-     x reads every side project of the hub with no finding, each as a card of the personal map 3ms
-
-------- Failed Tests 1 -------
-
- FAIL  |unit| tests/checks/config/integrity.test.ts > the real hub > reads every side project of the hub with no finding, each as a card of the personal map
-AssertionError: expected 0 to be greater than or equal to 3
- > tests/checks/config/integrity.test.ts:172:32
-    170|             .map((file) => file.split('/')[0])
-    171|             .sort();
-    172|         expect(folders.length).toBeGreaterThanOrEqual(3);
-       |                                ^
-    173|         const personal = snapshot?.entities.personal ?? {};
-    174|         expect(Object.keys(personal).sort()).toEqual(folders.map((fold...
-
-------------------------[1/1]-
-
-
- Test Files  1 failed | 28 passed | 2 skipped (31)
-      Tests  1 failed | 444 passed | 9 skipped (454)
-   Start at  10:25:30
-   Duration  49.19s (transform 21.70s, setup 0ms, import 73.42s, tests 89.29s, environment 7ms)
-
-checks: failed with exit 1: npm run test:checks
-exit 1
-```
-
-The other five commands of the verify list, each run alone with its own exit status (the script does not reach them):
-
-```
+ Test Files  29 passed | 2 skipped (31)
+      Tests  445 passed | 9 skipped (454)
+   Duration  55.69s (transform 22.23s, setup 0ms, import 78.64s, tests 106.14s, environment 8ms)
 $ npm run check
-exit 0
-> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
-1790929626257 START "/Users/axelfaes/workspace/research-hub/.agents/worktrees/A1/tools/oculus"
-1790929626267 COMPLETED 3012 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+1790937278202 COMPLETED 3013 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
 $ npm run build
-exit 0
+  ... and 1 more
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
 $ npm run format:check
-exit 0
-> prettier --check .
-Checking formatting...
 All matched files use Prettier code style!
 $ npm run lint
-exit 0
-> oculus@0.0.1 lint
 > eslint .
 $ ! LC_ALL=C grep -rna '[^ -~]' src tests
-exit 0
+checks: 7 commands passed
 ```
 
-The ASCII gate over `src tests config` (the brief's `perl` form, `config/local.yml` excluded), `HELP.md`, `DESIGN.md` and `README.md` printed nothing. Sizes: no file past 900 lines (largest of mine `repositories.ts` 857), `DiffSection.svelte` 478, `DiffEditor.svelte` 489, `Diff.svelte` 537 (limit 540), `CommentBox.svelte` 119; folders: `views/sources/repositories/diff` 7 entries, `ui/controls/editor` 10, `state/sources/repositories` 10, `tests/state/sources/repositories/diff` 7.
-
-## 4. Files with line counts
-
-| Lines | File |
-|---|---|
-| 236 | src/lib/state/sources/repositories/review-comment.ts (new) |
-| 857 | src/lib/state/sources/repositories/repositories.ts |
-| 389 | src/lib/state/sources/repositories/repositories.svelte.ts |
-| 134 | src/lib/state/sources/explorer/follow.ts |
-| 236 | src/lib/views/sessions/changes/Changes.svelte |
-| 537 | src/lib/views/sources/repositories/diff/Diff.svelte |
-| 478 | src/lib/views/sources/repositories/diff/DiffSection.svelte |
-| 119 | src/lib/views/sources/repositories/diff/CommentBox.svelte (new) |
-| 125 | src/lib/views/sources/repositories/diff/comment-draft.svelte.ts (new) |
-| 489 | src/lib/ui/controls/editor/DiffEditor.svelte |
-| 38 | src/lib/ui/controls/editor/LineBars.svelte |
-| 71 | src/lib/ui/controls/editor/types.ts |
-| 176 | src/lib/ui/controls/editor/zones.ts |
-| 368 | src/lib/ui/controls/editor/gutter.ts |
-| 686 | src/lib/data/model/model-sessions.ts |
-| 495 | src/lib/data/model/index.ts |
-| 544 | src/lib/server/machine/pty/sessions.ts |
-| 90 | config/text/views/sessions/changes.yml |
-| 304 | HELP.md |
-| 429 | DESIGN.md |
-| 417 | tests/state/sources/repositories/diff/review-comment.test.ts (new) |
-| 261 | tests/state/sources/repositories/diff/comment-draft.client.test.ts (new) |
-| 11 | tests/state/sources/repositories/diff/rooted.svelte.ts (new) |
-| 147 | tests/state/sources/repositories/view/diff-session.test.ts (new) |
-| 294 | tests/state/sources/explorer/naming.test.ts |
-| 567 | tests/state/shared/instance-state-sources.test.ts |
-| 461 | tests/ui/controls/editor/gutter.test.ts |
-| 367 | tests/ui/controls/editor/zones.test.ts |
-| 665 | tests/views/sources/repositories/diff-pane.test.ts |
-| 496 | tests/views/sessions/changes.test.ts |
-| 391 | tests/views/whole/type-scale.test.ts |
-| 8 files | docs/diagrams/layer-server, layer-state, layer-views, layers (`.dot` and `.svg`), as `npm run diagrams` writes them |
-
-## 5. Judgment calls the brief left open
-
-- The draft and the send flow live in `views/sources/repositories/diff/comment-draft.svelte.ts` (class `CommentDraft`, created by the section), because the section with them was 560 lines against the 540 limit. The section keeps `commentable`, `who` and the markup.
-- Cancel drops the text; Escape keeps it (the brief names only Escape). Send clears it only after `sent` or `copied`.
-- A blank comment makes the empty prompt (`commentPrompt` returns `''`), which `commentRefusal` answers `empty`; nothing happens and no line is shown.
-- `pathOfSide(file, side)` gives the old path for the original side and falls back to the other path when one is empty (a created or deleted file).
-- `commentBars(bars, at)` adds `{ id: 'comment', after, side, order: 1 }` to the hunk bars; the comment bar sits below a hunk bar after the same line.
-- The `+` is a CSS-drawn mark in the accent colour (`.oculus-comment-add::before` in `DiffEditor.svelte`), since no glyph of `glyphs.yml` is a plain plus drawn in a gutter and the brief allows it.
-- The shared steer rule: `STEER_MAX` and `STEER_CONTROL` moved to `data/model/model-sessions.ts` and are exported from `data/model/index.ts`; the server's `steerTerminal` and the client's `commentRefusal` read the same two values. The server's own `STEER_MAX` export is removed.
-- `SteerAnswer = { ok: boolean; error: string }` in `review-comment.ts` types the steer dependency structurally; `TerminalAnswer` satisfies it.
-- A bar taller or shorter after it is shown regrows its view zone through one `ResizeObserver` per bar in `zones.ts` (guarded by `typeof ResizeObserver`), since a three-row text area is taller than a hunk bar and Monaco does not re-measure a zone by itself.
-- In the inline layout the palette's `perform` goes to the modified editor, since the original editor has no visible side there.
-- The text area takes the focus in a microtask after the bar is attached (`queueMicrotask` then `focus({ preventScroll: true })`), because the bar is placed in the editor after the box is created.
-- The line saying where a comment went is a `<p role="status" data-comment-notice>` above the editor in the section, for `NOTICE_MS = 5000` (a constant in `review-comment.ts`).
-- The id of a session's diff is `<place>:<session>`. A file whose path is literally `a.ts:s-1` opened without a session has the same id as `a.ts` opened for session `s-1`. Not fixed: the brief fixes the id format, and a path with a colon followed by a session id does not occur; no test asserts the collision.
-- `Diff.svelte` adds one line, not four.
-
-## 6. User-visible changes, before and after
-
-| Where | Before | After |
+| Row | State | Last line of its final run |
 |---|---|---|
-| A row in a session's Changes view | opens the same diff tab as the Repositories view (id `changed:/hub:src/a.ts`) | opens the session's own tab beside it (id `changed:/hub:src/a.ts:<session id>`); a merge row and an untracked row open the merge editor and the file as before |
-| A file's diff opened for a session still in the sessions payload | no gutter mark | the glyph margin shows a `+` on the hovered line (both sides side by side, the modified side inline); a press opens a comment box under that line |
-| Palette and editor actions of that diff | no comment action | "Add Comment on Line" on the caret line of the side holding the focus (the modified side when neither does); listed only while the session is held |
-| The comment box | none | head "Comment to <session title>" (the id when the title is empty), a three-row text area focused on open, Send and Cancel; Ctrl+Enter or Cmd+Enter sends; Escape closes keeping the text; a second `+` moves the box keeping the text |
-| Send | none | the prompt `<path>:<line>: <text>` (`<path>:<line> (before the change): <text>` on the original side, `(staged)` on the modified side of a staged diff) is typed into the session's oculus terminal and Enter pressed, and the box says "Sent to <title>." for five seconds; with no oculus terminal it is copied to the clipboard and the line reads "<title> has no oculus terminal now. The comment is on the clipboard."; a terminal that fails keeps the box and shows its error, or "The terminal did not answer."; a refused clipboard shows "The clipboard refused the copy."; a control character or more than 100000 characters is refused with its sentence |
-| A diff from the Repositories view, a commit, stash, worktree, compare or group diff | unchanged | unchanged: no `oncomment`, no `+`, no action |
-| `HELP.md` line 87 and line 132, `DESIGN.md` line 399 | the Changes row opens "the same diff pane" | the rows open "its own diff tab for the session" and the `+`, Add Comment on Line and the send are described; the Ctrl+Enter row adds "send, in a diff's comment box" |
+| 1 the session on the diff and its id (`DiffSubject.session`, `diffState`, `openChange`, `followedDiffTab`) | DONE | `diff-session.test.ts`, `naming.test.ts`, `changes.test.ts`, `instance-state-sources.test.ts` inside "Tests 11819 passed" of `npm test` |
+| 2 `review-comment.ts` | DONE | `review-comment.test.ts` inside the same run |
+| 3 the editor's affordance (`glyphMarginFor`, `listedWithComment`, right-click menu, second `lineBars()`, order, regrow) | DONE | `gutter.test.ts` 27 passed, `zones.test.ts` inside "Tests 11819 passed" |
+| 4 the comment box (`CommentBox`, `opened`, one send at a time) | DONE | `comment-draft.client.test.ts` and `diff-pane.test.ts` inside "Tests 11819 passed" |
+| 5 where it is offered | DONE | `diff-pane.test.ts` "the comment a section offers on a line of a session diff" |
+| 6 sending and the notice | DONE | `review-comment.test.ts`, `comment-draft.client.test.ts` |
+| 7 words and docs (`changes.yml`, `HELP.md:87,132`, `DESIGN.md:399`, `type-scale.test.ts:254`) | DONE | "Tests 445 passed | 9 skipped (454)" of `npm run test:checks` |
+| `npm run check` | DONE | "COMPLETED 3013 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS" |
+| `npm run build` | DONE | "See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details." (exit 0) |
+| `npm run format:check` | DONE | "All matched files use Prettier code style!" |
+| `npm run lint` | DONE | "> eslint ." (exit 0) |
+| ASCII gate | DONE | `checks: 7 commands passed` |
 
-## 7. Not proved by a test (only the look can show)
+Sizes (`wc -l`): `Diff.svelte` 504, `DiffSection.svelte` 479, `DiffEditor.svelte` 492, `CommentBox.svelte` 126, `gutter.ts` 390, `zones.ts` 175, `review-comment.ts` 236, `repositories.ts` 862 (cap 900), `diff-pane.test.ts` 675, `changes.test.ts` 512. Folders: `ui/controls/editor` 10, `state/sources/repositories` 10, `views/sources/repositories/diff` 8, `tests/state/sources/repositories/diff` 7, `tests/views/sources/repositories` 10 entries.
 
-- The `+` showing on a hovered line and the press on the real gutter in Monaco.
-- The focus and the keys inside Monaco's overlay for a text area in a view zone; the Escape that must not restore a maximised pane.
-- The alignment of a bar on the original side, and the zone regrow in a browser (`zones.test.ts` drives a stubbed `ResizeObserver`).
-- `DiffSection.svelte`'s `allowed` closure (`commentable && !(mode === 'inline' && side === 'original')`) is read, not run: `comment-draft.client.test.ts` proves the box closes when its `allowed` says no, not what `DiffSection` answers.
-- `Diff.svelte` passing `session={held.session}` to the section: the server rendering of the pane draws no sections, so the line is proved by reading; cases 11 to 13 prove the state reaches `held.session`.
-- `DiffEditor.svelte`'s effects: re-registering the action and calling `onactions` again when `oncomment` comes or goes, and re-running `commentGutter` on a layout change.
-- The modified-side fallback of Add Comment on Line when neither side has the focus.
+## 5. Each added behaviour taken out
 
-## 8. Wrong or impossible in the brief
+One line of the final tree changed at a time, the file's test run; all fail on the named case.
 
-- "Read: `state/sessions/terminal/pty-io.ts`" and `sendComment`'s `steer: (id, text) => Promise<TerminalAnswer>`: `review-comment.ts` is in `state/sources`, and `tests/checks/imports/order.test.ts` "holds the state folders" refuses an import of `state/sessions/terminal/pty-io.ts` from it ("state/sources/repositories/review-comment.ts:14 imports state/sessions/terminal/pty-io.ts (state/sessions, above state/sources)"). The module types the dependency structurally (`SteerAnswer`) instead; `TerminalAnswer` satisfies it.
-- "`Diff.svelte` adds at most four lines": one line was needed.
-- The brief's paths omit four source files and one test file the step needs; table below.
+| File | Taken out | Fails at |
+|---|---|---|
+| `gutter.ts` | `glyphMarginFor` returns `offering` | `gutter.test.ts:442:39` |
+| `gutter.ts` | `contextMenuGroupId` / `contextMenuOrder` | `:494:52` / `:496:50` |
+| `gutter.ts` | `listedWithComment` lists always / ignores the label | `:457:73` / `:458:60` |
+| `gutter.ts` | press ignores `offered` / move ignores `offered` | `:402:25` / `:401:44` |
+| `gutter.ts` | a line-number press asks for a comment | `:387:25` |
+| `gutter.ts` | leave does not clear / dispose leaves the marks | `:350:44` / `:415:44` |
+| `gutter.ts` | the action runs on line 1 | `:479:23` |
+| `zones.ts` | one ordinal for every bar | `zones.test.ts:284:35` (2 tests) |
+| `zones.ts` | no regrow | `zones.test.ts:341:30` |
+| `review-comment.ts` | sides' paths swapped | `review-comment.test.ts:69:11` |
+| `review-comment.ts` | no staged mark / no `./` before a command-like path | `:57:58` / `:133:54` |
+| `review-comment.ts` | no long refusal / no control refusal | `:168:59` / `:159:44` |
+| `review-comment.ts` | guard allows two sends / superseded answer handed back | `:266:5` / `:288:29` |
+| `review-comment.ts` | comment bar order 0 / Ctrl+Enter only / clipboard throw not refused | `:356:68` / `:383:63` / `:244:22` |
+| `comment-draft.svelte.ts` | no `sending` clause / `opened` never rises | `comment-draft.client.test.ts:224:29` / `:121:28` |
+| `DiffSection.svelte` | gate ignores `actions` / gate ignores the payload | `diff-pane.test.ts:527:41` / `:538:41` |
+| `repositories.svelte.ts`, `Changes.svelte` | merge branch, untracked branch, session argument | `changes.test.ts:429:24` (each) |
+| `repositories.ts` | session left out of the id | `diff-session.test.ts`, 7 of 13 |
 
-## 9. Source files outside "Paths this step writes"
+## 6. Head comments and documents touched
 
-| File | Item that needed it |
+| Place | State |
 |---|---|
-| src/lib/ui/controls/editor/LineBars.svelte | 3: passes the bar's `order` to `placed.above(after, order)` |
-| src/lib/data/model/model-sessions.ts, src/lib/data/model/index.ts | 2: `STEER_MAX` and `STEER_CONTROL` in one place for client and server, so the clipboard path refuses what the terminal path refuses |
-| src/lib/server/machine/pty/sessions.ts | 2: `steerTerminal` reads the shared constants |
-| src/lib/views/sources/repositories/diff/comment-draft.svelte.ts (new) | 4 and 6: the draft and the send, out of `DiffSection.svelte` to keep it under 540 |
-| tests/state/shared/instance-state-sources.test.ts | 1: its table of `heldDiff` answers lists every key of the pane state, so it lists `session` |
+| `gutter.ts` head (`:1-14`) | still true: the comment mark follows the pointer and a press asks for a comment |
+| `gutter.ts` docs of `glyphMarginFor`, `MONACO_GLYPH_MARGIN`, `listedWithComment`, `commentActionsOn`, `MENU_GROUP` | rewritten (new or changed functions) |
+| `DiffEditor.svelte` head (`:16-22`) and the two effect comments (`:324`, `:342`) | rewritten: the glyph margin stays drawn, the menu entry |
+| `zones.ts` head (`:1-14`) | rewritten: reflowed to 100 columns, same content |
+| `repositories.ts` doc of `diffState` (`:148-156`) | rewritten: the new id form |
+| `review-comment.ts` head (`:1-12`) | still true |
+| `comment-draft.svelte.ts` head (`:1-8`) | still true |
+| `CommentBox.svelte` head (`:2-9`) and the `opened` prop comment (`:24`) | head still true (the text area takes the focus when the box opens); prop comment rewritten |
+| `DiffSection.svelte` head (`:26-32`) | still true |
+| `Diff.svelte` head | still true: the reads it names moved to `diff-read.ts`, whose head states them |
+| `diff-read.ts` head | new |
+| `comment-draft.client.test.ts` head (`:1-10`) | rewritten: reflowed |
+| `HELP.md:132`, `HELP.md:87` | still true |
+| `DESIGN.md:399` | still true (names the `+` in the glyph margin and Add Comment on Line) |
+
+## 7. Edits to existing assertions, allow lists and predicates
+
+| Place | Before | After |
+|---|---|---|
+| `instance-state-sources.test.ts:51,65,261,293` (`heldDiffFallback`, `heldDiffValid`, the stored-object rows) | no `session` key | `session: ''` (`:51`), `session: 's-1'` (`:65`, `:261`), `session: ''` (`:293`) |
+| `instance-state-sources.test.ts:275` | the wrong-type row had no `session` | `session: 3` (a number reads as none) |
+| `instance-state-sources.test.ts:316` | no case for the key | `'wrong session': { ...heldDiffValid, session: '' }` |
+| `zones.test.ts:62` fake editor | `layoutZone: () => undefined` | `layoutZone: (id: string) => laidOut.push(id)`, with `laidOut` returned by the fake (`:29-30`, `:80`) |
+| `changes.test.ts:46-49` | no mock of `ChangesRepo` | a file-wide `vi.mock` of `ChangesRepo.svelte` through `recorded(original)` from `press-on-render.ts`; `beforeEach` resets it (`:57`). The component still renders the real markup; the recorder keeps its props |
+| `diff-pane.test.ts:62,536` | `fresh(ToolButton, Menu)` | `fresh(ToolButton, Menu, DiffEditor, TextArea, CommentBox)` |
+| `diff-pane.test.ts:1-18` head | named no comment tests | names the comment tests and what they do not cover |
+| `gutter.test.ts:1-6` head | named the marks, breakpoints and blame | adds the comment `+` and the action |
+| `type-scale.test.ts:254` | no row for `CommentBox.svelte` | `'sources/repositories/diff/CommentBox.svelte': '.comment=fs-sm'` |
+
+No file under `tests/checks/` is edited, so no allow list or predicate of the tree checks changed.
+
+## 8. Asynchronous paths
+
+The send is one function for both ways of sending: `sendOnce` (`review-comment.ts:172`) wraps `sendComment`, which types into the terminal or writes to the clipboard, under the box's `sendGuard`. The box (`comment-draft.svelte.ts`) runs it and cancels the guard on `close`, on a move to another line or side, and when the section goes.
+
+| Path | In flight | After close | Superseded |
+|---|---|---|---|
+| The send into the terminal (the steer answer) | `comment-draft.client.test.ts` "sends once while a send is in flight"; `review-comment.test.ts` "does not steer a second time while the first is in flight" | `comment-draft.client.test.ts` "hands nothing back when the box was closed before the terminal answered" and "hands nothing back when the section went before the terminal answered"; `review-comment.test.ts` "hands back nothing for an answer that lands after the box was closed or moved" | `review-comment.test.ts` "keeps a send in flight counted until it lands even after the box was closed" and "lets a send that was superseded before it began run under the new box" |
+| A steer that throws or rejects | `review-comment.test.ts` "fails with the message of a steer that throws instead of rejecting the send" | the same guard as the row above | the same guard as the row above |
+| The write to the clipboard | `review-comment.test.ts` "writes once while the first write is in flight" | `review-comment.test.ts` "hands back nothing for a write that lands after the box was closed or moved" | the superseded tests of the first row run the same `sendOnce`; the clipboard has no test of its own for it |
+| The five-second notice | `comment-draft.client.test.ts` "stays for NOTICE_MS and then goes" | no test closes the box inside the five seconds | not applicable: one notice per box |
+
+## 9. Files outside the step's path list
+
+| File | Why |
+|---|---|
+| `src/lib/data/model/model-sessions.ts`, `src/lib/data/model/index.ts` | `STEER_MAX` and `STEER_CONTROL`, which the server checks a steer against, are read by `review-comment.ts` from `data/model` (state may not import `lib/server`) |
+| `src/lib/server/machine/pty/sessions.ts` | imports them from `data/model` so the server and the clipboard path refuse the same text |
+| `src/lib/state/sources/explorer/follow.ts` | `followedDiffTab` carries the session when a file moves |
+| `tests/views/whole/type-scale.test.ts` | the audit lists every view file; `CommentBox.svelte` has its row |
+| `src/lib/views/sources/repositories/diff/diff-read.ts` (new) | `Diff.svelte` split to stay 36 lines under its cap |
+
+## 10. Not proved by a test
+
+- The look: the `+` on a hovered line, the box's placement and focus, the right-click menu entry, the bars' regrow in Monaco. Case 23 is the landing's, on the TEST page.
+- A live change of the sessions payload under one mounted `DiffSection`: `diff-pane.test.ts` renders a section once per call, so "offers it again" is proved for a fresh render after the payload holds the session again. A latch inside one mounted section would not be caught by the unit suite.
+- `diff-session.test.ts` "gives every kind of diff of one file..." fails with the session part taken out of the id (section 5) and passes on the old id form, so it is not the test of the collision; `:47-53` is.
