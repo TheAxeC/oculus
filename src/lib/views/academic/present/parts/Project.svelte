@@ -124,25 +124,23 @@
     }
 
     .headline {
-        max-width: 34ch;
         margin: 0.1em 0 0.3em;
-        font-size: var(--fs-2xl);
+        font-size: var(--slide-fs-h);
         line-height: 1.15;
     }
 
     .sub {
         margin: 2px 0 9px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-lg);
+        font-size: var(--slide-fs-body);
         font-weight: 600;
     }
 
     .hook {
-        max-width: 96ch;
         margin: 0 0 12px;
         padding: 2px 0 2px 13px;
         border-left: 3px solid var(--tone, var(--line));
-        font-size: var(--fs-lg);
+        font-size: var(--slide-fs-body);
         line-height: 1.45;
     }
 
@@ -157,7 +155,7 @@
         padding: 5px 9px;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
         line-height: 1.3;
     }
 
@@ -165,14 +163,14 @@
         display: block;
         margin-bottom: 1px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--slide-fs-small);
         font-weight: 700;
         letter-spacing: 0.07em;
         text-transform: uppercase;
     }
 
-    /* Two columns while the pane holds two of a readable width, one column once it does not, which
-       a split pane very soon is. */
+    /* The method and the results side by side: the reading width holds two columns of at least
+       300 px. */
     .cols {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
@@ -188,7 +186,7 @@
     .lbl {
         margin: 0 0 5px;
         color: var(--accent-txt, var(--accent));
-        font-size: var(--fs-xs);
+        font-size: var(--slide-fs-small);
         font-weight: 800;
         letter-spacing: 0.13em;
         text-transform: uppercase;
@@ -201,7 +199,7 @@
 
     li {
         margin-bottom: 7px;
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
         line-height: 1.46;
     }
 
@@ -228,7 +226,7 @@
     .e5 span {
         flex: 0 0 92px;
         color: var(--accent-txt, var(--accent));
-        font-size: var(--fs-xs);
+        font-size: var(--slide-fs-small);
         font-weight: 800;
         letter-spacing: 0.1em;
         text-transform: uppercase;
@@ -236,13 +234,12 @@
 
     .e5 p {
         margin: 0;
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
         line-height: 1.45;
     }
 
     .body {
-        max-width: 90ch;
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-body);
     }
 
     /* Over a wallpaper the surface goes translucent, as every other card surface does. */

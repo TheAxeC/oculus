@@ -8,7 +8,6 @@
 #
 # The list is a text file rather than a module so that 150 entries with their reasons do not make a
 # source file of it.
-tests/views/system/audit.test.ts :: draws a card with the primitive and filters with the search primitive | the case draws nothing and asserts over source
 tests/views/system/audit.test.ts :: draws a sentence of its own for a refusal, never the endpoint word | the case draws nothing and asserts over source
 tests/views/system/audit.test.ts :: follows the configuration in the System group and carries the open count | the case draws nothing and asserts over registered
 tests/views/system/audit.test.ts :: posts the mute through the writes store rather than its own fetch | the case draws nothing and asserts over source

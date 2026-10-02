@@ -37,7 +37,6 @@
     import Stashes from './refs/Stashes.svelte';
     import Tags from './refs/Tags.svelte';
     import CommitBox from '$lib/views/shared/changes/CommitBox.svelte';
-    import { elide } from '$lib/state/shared/words/format';
     import {
         repoShape,
         repositoryKeyRows,
@@ -144,7 +143,7 @@
                 <span class="mt">{branchState(git)}</span>
             </div>
         {/if}
-        <p class="path" title={root}>{elide(root)}</p>
+        <p class="path" title={root}>{root}</p>
     {/if}
     {#if busy}
         <p class="none">{t('git.busy')}</p>

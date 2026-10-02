@@ -50,7 +50,7 @@
     .gap {
         margin: 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
     }
 
     /* Over a wallpaper the surface goes translucent, as every other card surface does. */

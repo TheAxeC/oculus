@@ -76,11 +76,12 @@
 <style>
     .headline {
         margin: 0 0 0.3em;
-        font-size: var(--fs-2xl);
+        font-size: var(--slide-fs-h);
         line-height: 1.15;
     }
 
-    /* The table is the one thing on a slide wider than the pane, so it scrolls in its own box. */
+    /* The table is the one thing on a slide wider than the reading width, so it scrolls in its own
+       box. */
     .scroll {
         margin-top: 12px;
         overflow-x: auto;
@@ -95,6 +96,6 @@
     .hint {
         margin-top: 1.5em;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--slide-fs-small);
     }
 </style>

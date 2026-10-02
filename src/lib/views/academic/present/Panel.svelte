@@ -72,7 +72,7 @@
         border: 1px dashed var(--line);
         border-radius: var(--radius-sm);
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
     }
 
     .diagram {
@@ -86,7 +86,7 @@
     .cap {
         margin-top: 7px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--slide-fs-small);
         font-style: italic;
         line-height: 1.4;
     }
@@ -98,7 +98,7 @@
         border-radius: var(--radius-sm);
         background: var(--card);
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
         line-height: 1.5;
     }
 
@@ -116,7 +116,7 @@
         border: 2px solid var(--line);
         border-radius: var(--radius-sm);
         background: var(--card);
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
         font-weight: 700;
         text-align: center;
     }
@@ -129,7 +129,7 @@
     .diagram :global(.darrow) {
         margin: 11px 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
         font-weight: 600;
         text-align: center;
     }
@@ -139,7 +139,7 @@
         border: 1px dashed var(--line);
         border-radius: var(--radius-sm);
         background: var(--card);
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
         font-weight: 600;
         text-align: center;
     }

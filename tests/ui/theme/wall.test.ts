@@ -151,6 +151,8 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which row the pointer is on',
     'src/lib/views/sources/search/Results.svelte .row:hover':
         'a hover response, saying which row the pointer is on',
+    'src/lib/views/system/audit/Audit.svelte li:hover':
+        'a hover response, saying which row the pointer is on',
     'src/lib/ui/tabs/Breadcrumb.svelte .crumb:hover':
         'a hover response, saying which segment the pointer is on',
     'src/lib/ui/tree/TreeItem.svelte .item:not(.muted, .warn, .error):hover':

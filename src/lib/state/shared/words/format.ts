@@ -1,18 +1,14 @@
 // Layer 2, client state. The small conversions the views share: a count in three digits, a count
 // with its thousands grouped, a stamp a rail row has room for, a span in seconds, a model's short
-// name, and the two path forms; a path's last name is data/helpers/files/paths.ts's nameOf.
-// No runes here, so every one of them is a pure function over its arguments and is tested directly.
+// name, and a path relative to a workspace. No runes here, so every one of them is a pure function
+// over its arguments and is tested directly.
 //
-// The words come from the catalog like every other word: a suffix, a separator and the leading
-// ellipsis of an elided path are strings a reader sees, so they are keys rather than literals. What
-// is left in a function is arithmetic and slicing.
+// The words come from the catalog like every other word: a suffix and a separator are strings a
+// reader sees, so they are keys rather than literals. What is left in a function is arithmetic and
+// slicing.
 
 import { scalar } from '../../../data/helpers/guards.ts';
-import { nameOf } from '../../../data/helpers/files/paths.ts';
 import { t } from './text.ts';
-
-/** Characters a path gets in a row before it loses its head. */
-export const PATH_MAX = 54;
 
 /** Seconds a span is written in whole seconds up to; longer reads as minutes and seconds. */
 const MINUTE = 60;
@@ -117,15 +113,4 @@ export function relativeTo(path: unknown, workspace: unknown) {
     const text = scalar(path);
     const root = scalar(workspace);
     return root !== '' && text.startsWith(`${root}/`) ? text.slice(root.length + 1) : text;
-}
-
-/**
- * A long path with its head taken off and never its last name: what is kept is at least the name of
- * the file, however deep it sits, so two rows are never both an ellipsis and a directory.
- */
-export function elide(path: unknown, max: number = PATH_MAX): string {
-    const text = scalar(path);
-    if (text.length <= max) return text;
-    const keep = Math.max(max - 3, nameOf(text).length);
-    return t('sessions.ch_elide', text.slice(text.length - keep));
 }

@@ -1,19 +1,8 @@
 NOT done as the brief words it: the cases' first run on the UNCHANGED tree was not taken, because the tree I received already carried the first builder's edits and I run no git command, so no unchanged tree exists in the worktree. The first run below is on the tree as found. What the brief wants it for (a new test fails without the change) is shown instead by 24 single-edit reverts of the source in a scratch copy outside the worktree, listed under check 4. Everything else in the brief is done.
 
-## Open items of the state file, verbatim (orchestrator-state.md lines 145 to 156)
+## Open items of the state file, verbatim
 
-- Z187, the Files view's folder picker against "nothing outside a root served" (raised 2026-10-01 22:15 by X3a's brief check, finding 6.1, `agents/reviews/X3a-brief-check.md`). Z76 (a) rules both a folder picker for Add Folder to Workspace and, among the kept items, that nothing outside a root is served. A picker has to list folders outside every root, since the folder being added is not a root yet. Today nothing lists a folder outside a root; the token that would guard the new listing already lets its holder start a shell (`routes/api/(sessions)/terminal/+server.ts:13`, `handleTerminal(request, server.token, ...)`), so the listing reveals nothing a token holder cannot already read.
-  - (a) The picker lists the names of folders under the home folder only, token-gated, folder names and no file and no content. For: VS Code's folder dialog starts at home; the folders a reader adds live there; nothing a token holder lacks. Against: the kept item becomes "no file content outside a root" instead of "nothing".
-  - (b) The same, for any absolute folder, `/` included. For: a folder on another volume can be picked. Against: lists system folders no one adds as a root.
-  - (c) No listing outside the roots: the picker browses only inside the served roots, and a folder outside them is added by typing its absolute path, checked to exist. For: the kept item stays word for word. Against: adding a new folder means typing its path, which the picker exists to spare; VS Code never asks for a typed path.
-  - (d) No picker: the typed path of today stays. The lazy option: it drops the picker Z76 (a) rules.
-  - Recommendation (a): the picker Z76 asks for, limited to the folders a root is ever added from, with nothing served that the token's shell cannot already reach. X3a waits on this ruling; its other brief-check findings are closed in automode (Z188).
-- Z190, the shape of S4's new confirmed write for lists, key/value families and records (raised 2026-10-01 23:00 at /spec S4; Z168 left the shape to Axel). Today a Settings row writes one scalar: `{ kind: 'config-key', file, key, value }` (`state/client/writes.svelte.ts:371`), edited in place over the bytes and refused unless the edited file parses back with only that key changed, gives no new finding, and passes every reader (`server/edit/writes/config-key.ts:1-20`). Lists are already rewritten in place for the rail, the deck and the audit mute list through `setItems` (`server/edit/list-edit.ts:112`), the whole list's lines replaced and every other line kept.
-  - (a) One new kind `{ kind: 'config-value', file, key, value, base }`: the editor sends the whole new list, map or record, and `base`, the value it started from; the server refuses when the file's value is no longer `base` (an edit made elsewhere meanwhile), rewrites only that key's lines over the bytes (`setItems` for a list, the same for a map's entries), and runs config-key's three checks before writing; undo through the change log as every write. For: one shape for the 7 lists, 5 key/value families and 15 records; VS Code's own list and object editors write the whole value to settings.json; reuses the in-place edit the rail already uses. Against: a whole value per save, so two tabs editing one list at once get a refusal instead of a merge.
-  - (b) A kind per operation `{ kind: 'config-op', file, key, op: 'add' | 'set' | 'remove' | 'move', at, to, value }`. For: two edits of different items of one list both land. Against: four operations times three families, reorder and rename rules of its own, much more server code, and no counterpart in VS Code.
-  - (c) `config-key` widened to take any value. For: no new kind. Against: its head comment and its scalar edit are for one value; the list and map edits are a different byte edit; Z168 asked for a new kind.
-  - (d) No editors, the description and the link as today. The lazy option, which Z168 already declined.
-  - Recommendation (a): the shape VS Code uses, one write for all three families, with `base` so a stale editor never overwrites an edit made meanwhile. S4 waits on this ruling.
+none
 
 ## The cases' first run, on the tree as found
 
@@ -87,9 +76,11 @@ Verify list, from `tools/oculus` in the worktree:
 ## Decisions the brief did not cover (each reversible)
 
 1. Two test helper files sit beside the two new tests in `tests/shell/panes`: `scope-watch.svelte.ts` (a `$state` flag and a `$derived` counter, since a rune compiles only in a `.svelte.ts` file) and `ShownProbe.svelte` (a view that draws `useShown()`). The brief names `watch.svelte.ts` of the explorer tests as the pattern; it observes a store read, and these cases need a flag as state and a run counter, so a helper of the folder's own is used.
-2. `File.svelte` keeps the address it draws in a `$state` `src`, set at construction through `gate.due(...)` (a tab drawn hidden starts with an empty `src`, which draws the same "reading" fallback a file with no kind yet draws) and moved by one effect through `gate.due(addressed())`. A File tab opened in the background therefore draws nothing until first shown; the file kind is still read at once (`handOn`, one-shot, as the brief keeps it).
+2. `File.svelte` holds the address it draws together with the root and the path it was taken for, in one `$state` (`drawn`, `File.svelte:112`). A tab drawn shown starts at the file's address; a tab drawn hidden starts with none, draws the `file.loading` line while its file is not drawn, and draws `file.none` only when the tab names no file (`root === '' || path === ''`, `File.svelte:231`). The file kind is still read at once (`handOn`, one-shot, as the brief keeps it).
 3. `scopedStore` in `context.ts` copies the function members of a recorded store when `wrap` is called, so a member a store replaces later is not followed. I did not verify that none of the ten replaces a member after construction; the doc comment of `scopedStore` (`context.ts:158-161`) states the behaviour.
 4. The test "sends one request when the flag goes shown, hidden and shown inside one tick" is named an audit, since no plausible edit turns it red (check 4).
+5. `tests/shell/panes/scope-watch.svelte.ts` and `tests/shell/panes/ShownProbe.svelte` are the two helpers decision 1 describes: a rune compiles only in a `.svelte.ts` file, and a view that draws `useShown()` and reads no store lets `TabView` be rendered with and without a client above it.
+6. The `fsForms` local of `state/client/context.ts:278` is the object `createFs` takes (`context.ts:300`); it is a local so that the `withQueries('fs', createFs(...))` hand-over stays one expression.
 
 ## Limitations and sharp edges
 
@@ -114,3 +105,46 @@ Counts are what the code now predicts, read from the source, not measured in a b
 - "Fails on the unchanged tree" (verify item 4) could not be run on an unchanged tree in this worktree without git; replaced by the reverts above.
 - The brief's case 15 phrase "a hidden `refetch` only marks, and no request goes" for a closed tab is covered by client-state.test.ts "follows the flag it was given ..." (shown flips to false, `reload` marks, one more request only from the original).
 - Svelte's server `render()` builds the markup when `.body` is read, so `expect(() => render(...)).not.toThrow()` cannot fail; the test of case 13's "throws nothing" reads `.body` inside the call.
+
+## Repair round 1
+
+Full-list runs this round: 2. Run 1 (`sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`) stopped at `$ npm test` with 4 failures in 3 files this round does not touch, all 5000 ms timeouts on a machine at load average 20 to 26: `tests/server/git/autofetch.test.ts` (2), `tests/server/edit/config-key.test.ts` (1), `tests/server/sessions/stores/transcripts.test.ts` (1). Run alone, `autofetch.test.ts` and `transcripts.test.ts` passed (`Test Files 1 failed | 2 passed (3)` for the three files together, the failure being `config-key.test.ts`); `config-key.test.ts` run alone timed out three times on one test and passed in run 2 of the full list. I ran the other six commands one by one after run 1: `npm run test:checks` failed in `tests/checks/tree/duplication.test.ts` (details under ruling 1), the rest passed. Run 2, after that fix, passed in full.
+
+**Ruling 1 (B1).** `src/lib/views/sources/file/File.svelte:105-112`: `drawn`, one `$state` holding `{ src, root, path }`, replaces `src`; it is written together at its first value (`gate.due(addressed()) ? taken() : undrawn()`) and in the effect (`File.svelte:180`, `drawn = taken()`). `src` is `$derived(drawn.src)` (`:113`); `type` is `typeOfFile(drawn.path)` (`:114`); `known` reads `heldFileKind(drawn.root, drawn.path)` (`:117`); `openable` uses `drawn.path` (`:127`); the picture's `alt`, the unreadable message, the other-file line, the download name and the second `ProgramButton` draw from `drawn.path` and `drawn.root` (`:237-264`). `unreadable`'s comparison is with `src`, which is `drawn.src`. The root is held with the path because the file kind is keyed by both. Before: `type` followed the live `path` while `src` moved in the effect, so a shown tab whose file changed from a picture to a PDF built the frame with the picture's address for one pass. After: the kind, the name and the address all come from `drawn`, so a pass draws the old file whole and the next pass the new file whole. No test: the unit suite renders to a string and a `*.client.test.ts` has no DOM, so a change of file in a mounted tab is seen at the look (picture to PDF in one File tab: no frame with the picture's address). `taken()` and `undrawn()` sit below `handOn` (`File.svelte:170-177`) and not above `read`: above `read` the 9-line window it shares with `Source.svelte` and `Note.svelte` is one line longer than the 8 `tests/checks/tree/duplication.test.ts` tolerates (`npx vitest run tests/checks/tree/duplication.test.ts tests/shell/panes/tab-view.test.ts`: `Tests 31 passed (31)`).
+
+**Ruling 2 (P2).** `File.svelte:231-234`: `{#if src === '' && (root === '' || path === '')}` draws `file.none`, `{:else if src === ''}` draws `file.loading`. Decision 2 above states this. Three tests in `tests/shell/panes/tab-view.test.ts` (new, "a tab view" describe), each run with its fix taken out by hand and put back (`npx vitest run tests/shell/panes/tab-view.test.ts`):
+- "draws the loading line, not \"No file chosen\", for a File tab that names a file and is hidden". Fix out (the condition back to `{#if src === ''}`): `x draws the loading line, not "No file chosen", for a File tab that names a file and is hidden`, `Tests 1 failed | 12 passed (13)`. Fix back: `Tests 13 passed (13)`.
+- "draws the picture of a File tab that is shown". Fix out (a shown tab starting with `undrawn()`): `x draws the picture of a File tab that is shown`, `Tests 1 failed | 12 passed (13)`. Fix back: passes.
+- "draws \"No file chosen\" for a File tab that names no file". Fix out (the first branch replaced by `{#if false}`): `x draws "No file chosen" for a File tab that names no file`, `Tests 1 failed | 12 passed (13)`. Fix back: passes.
+`File.svelte` is 330 lines.
+
+**Ruling 3 (T2).** The head-comment paragraphs are reflowed to the width the rest of each file uses (lines of at most 99 columns, filled): `src/lib/state/sources/fs.svelte.ts:11-18` ("Nothing polls." to "looking at one line of it.") and `src/lib/state/system/docs.svelte.ts:20-26` ("A marked document is asked for again" to "reloads no figure."). The same raggedness was in the paragraph at `src/lib/state/sessions/latex.svelte.ts:9-16` ("What makes it stale ...", a 53-column line before "The push that finds it gone"); the same cause, so I reflowed it too. `npx prettier --check` on the three files passes, and the full list's comment-width test (`tests/checks/source/comment-width.test.ts`) passes in run 2.
+
+**Ruling 4 (T1).** The section "Open items of the state file, verbatim" above now reads `none`, as the main checkout's `.scratch/migration/orchestrator-state.md` reads (its "Open items" section holds only the intro sentence).
+
+**Ruling 5 (S2).** Decisions 1, 5 and 6 above list `scope-watch.svelte.ts`, `ShownProbe.svelte` and the `fsForms` local with their reasons. No code change.
+
+**Rulings 6 and 7.** Nothing to change.
+
+**Checks, run 2 (verbatim lines from `checks.sh`, after `npm run diagrams` exited 0):**
+
+```
+$ npm test
+ Test Files  425 passed | 22 skipped (447)
+      Tests  11117 passed | 619 skipped (11736)
+$ npm run test:checks
+ Test Files  29 passed | 2 skipped (31)
+      Tests  442 passed | 9 skipped (451)
+$ npm run check
+1790904012330 COMPLETED 2960 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+✓ built in 21.20s
+✓ built in 1m 16s
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+`sh utils/folder-check.sh` exit 0. Not covered by anything run: the picture-to-PDF change of file in a mounted File tab (look).

@@ -189,6 +189,29 @@ describe('the changes view', () => {
         expect(body).toContain(catalog['sessions.ch_times'].replace('{0}', '3'));
     });
 
+    it('draws a path of 90 characters whole, with the whole path as its title', () => {
+        const path = `${'deep/'.repeat(16)}${'m'.repeat(10)}`;
+        expect(path.length).toBe(90);
+        const sess = record('long-one', {
+            title: 'The long one',
+            live: true,
+            liveStatus: 'busy',
+            workspace: HUB,
+            area: ALPHA,
+            cwd: ALPHA,
+            files: [{ path: `${HUB}/${path}`, tool: 'Edit', count: 2, last: null }]
+        });
+        receive({
+            channel: 'sessions',
+            version: 5,
+            payload: payload([workspace(HUB, [area(ALPHA, [sess])])])
+        });
+        select('long-one');
+        const body = html(Changes);
+        expect(body).toContain(`>${path}</span>`);
+        expect(body).toContain(`title="${HUB}/${path}"`);
+    });
+
     it('marks a file another live session is holding open, and names it', () => {
         select('live-one');
         const body = html(Changes);

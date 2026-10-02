@@ -107,3 +107,130 @@ B2. The report states request counts for look items 16 to 20 as predicted from t
 Not measured by me (no counter available to this agent). About 45 tool calls; the longest were two 6 to 8 minute `checks.sh` runs and the 2 minute test:checks run, under machine load average about 20.
 
 Usage from the completion notice: claude-sonnet-5-5, 197,616 tokens, 55 tool uses, 43.5 min.
+
+# Repair round 1, refuted
+
+Step Q66, worktree /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q66, base d6359dcd. I edited no file in the worktree. `git status --short` printed 30 lines before and after my runs. `npm run diagrams` and `npm run build` rewrote only the regenerated diagrams and the ignored `build/` and `.svelte-kit/`. My scratch copies (`mut`, `base`) and outputs are in /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/q66r1/. The scratch copies symlink the worktree's `node_modules`, so vitest may have written its cache there.
+
+## 1. Verification lines
+
+`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams` exited 0 and printed the nine `.dot` and `.svg` pairs.
+
+`checks.sh .scratch/migration/orchestrator-state.md` printed this (load average 21 to 24 on the machine):
+```
+$ npm test
+> oculus@0.0.1 test
+> vitest run --tagsFilter '!slow' --exclude 'tests/checks/**'
+ ❯ |unit| tests/server/edit/config-key.test.ts (38 tests | 2 failed) 59814ms
+     × refuses what is not a finite number for a number option 5530ms
+     × refuses a value the reader of its block refuses, with that reader's sentence 5144ms
+ Test Files  1 failed | 424 passed | 22 skipped (447)
+      Tests  2 failed | 11115 passed | 619 skipped (11736)
+checks: failed with exit 1: npm test
+```
+The line `checks: 7 commands passed` was not printed in my run. Both failures are 5000 ms timeouts in `tests/server/edit/config-key.test.ts`, which the step does not change (`git diff d6359dcd --stat -- tools/oculus/tests/server` prints nothing). I named them and did not count the run as a pass of the list.
+- `npx vitest run tests/server/edit/config-key.test.ts` alone: `Tests 4 failed | 34 passed (38)`, all `Test timed out in 5000ms`, at load 23.
+- `tests/server/git/autofetch.test.ts` alone: `Tests 44 passed (44)`. In a three-file run with `transcripts.test.ts` and `config-key.test.ts` it printed one 5328 ms timeout, "fetches a clone whose path holds a space".
+- I did not get `config-key.test.ts` to green. It is not a file the step changes.
+
+Because `checks.sh` stops at its first failing command, I ran the other six commands one by one from `tools/oculus`:
+- `npm run test:checks`: `Test Files  29 passed | 2 skipped (31)`, `Tests  442 passed | 9 skipped (451)`, exit 0.
+- `npm run check`: `COMPLETED 2960 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, exit 0.
+- `npm run build`: exit 0, `built in 14.69s` and `built in 48.20s`.
+- `npm run format:check`: `All matched files use Prettier code style!`.
+- `npm run lint`: exit 0, no output.
+- `! LC_ALL=C grep -rna '[^ -~]' src tests`: exit 0, no output.
+- The spec's perl ASCII gate over `src tests config`: no output.
+- `sh utils/folder-check.sh`: exit 0.
+- `wc -l`: File.svelte 330, Diff.svelte 537.
+- `grep -rn "provideTabState\|useShown\|shownGate" src` hits only TabView.svelte (2), use.ts (4), Changes, File, Diff, Graph and Source.svelte (2 each).
+
+## Rerun of the round's evidence
+
+- `npx vitest run tests/checks/tree/duplication.test.ts tests/shell/panes/tab-view.test.ts`: `Test Files 2 passed (2)`, `Tests 31 passed (31)`. This matches the report.
+- The three new File tests, each with the fix taken out on the scratch copy `mut`. The baseline there is `Tests 13 passed (13)`. Each mutation reproduces the report's failure:
+  - `{#if src === ''}`: `× draws the loading line, not "No file chosen", for a File tab that names a file and is hidden`, `Tests 1 failed | 12 passed (13)`.
+  - A shown tab starting with `undrawn()`: `× draws the picture of a File tab that is shown`, `1 failed | 12 passed`.
+  - The first branch replaced by `{#if false}`: `× draws "No file chosen" for a File tab that names no file`, `1 failed | 12 passed`.
+- The B1 fix taken out on the scratch copy: `type`, `known`, `openable`, `alt`, the download name and the second `ProgramButton` read from live `path` and `root`. The result is `Tests 13 passed (13)`, so no test covers B1. The report says so ("No test ... seen at the look").
+- Ruling 3: `git diff d6359dcd --word-diff` over `latex.svelte.ts`, `fs.svelte.ts` and `docs.svelte.ts` shows only the intended clause insertions and the re-wrapping, with no word lost. The rewrapped paragraphs have lines of at most 99 columns. `npx prettier --check` on the three files passes. `tests/checks/source/comment-width.test.ts` passes (`Tests 2 passed (2)`).
+- Ruling 4: the main checkout's `orchestrator-state.md` "Open items" section (`:197-203`) holds only its intro text, so the report's "none" is true.
+- Rulings 6 and 7. I reverse-applied `git diff d6359dcd -- tools/oculus/src` onto a scratch copy and kept the new tests. `queries.test.ts`, `client-state.test.ts` and `tests/shell/panes` gave `Tests 32 failed | 61 passed (93)`. That is the first report's 31 plus the new hidden-File test.
+- The `taken()`/`undrawn()` move. With both functions placed above `function read` in a scratch copy, `duplication.test.ts` fails: `File.svelte:142 and Source.svelte:305 hold the same 9 lines (2c052d077c43)` and `Note.svelte:105 and Source.svelte:302 hold the same 9 lines (edea524db3b6)`, `Tests 2 failed | 16 passed (18)`. The report's claim reproduces.
+
+## 2. Verdicts, whole diff since the base
+
+What to build:
+1. Scope in the query helper: holds.
+2. The tab's copy of the stores: holds.
+   - Brief decision 3 (the Decisions section) and the report's decision 3 name a risk: no store of the ten replaces a member after construction. I checked it. `grep` for `Object.assign` or `this.` over the ten store files and for assignments to their members in `state/client/*.ts` finds none. A probe test on the scratch copy printed `NONFN []`: every member of the ten is a plain function, with no accessor and no snapshotted primitive.
+3. The tab provides it: holds.
+4. TabView: holds.
+5. The five direct re-reads: holds as a diff. After round 1 the File part (address, root and path moving together through `due([root, path, version])`) holds by reading. Nothing tests the wiring of the five views (see Proof P1).
+6. Terminal: holds. No terminal file is in the diff.
+7. Docs: holds.
+8. Tests: holds. The helpers `scope-watch.svelte.ts` and `ShownProbe.svelte` and the `fsForms` local were kept by ruling 5.
+
+Cases:
+- 1 to 15: met. The tests exist and pass on the changed tree. 32 are red on the reverse-patched source, with the error forms the first report quoted.
+- 16 to 20: not verifiable here (look items).
+- 21: not verifiable (no test).
+- 22, 23, 25: not re-judged by me. The first report's verdicts stand and I did not reproduce them.
+- 24: the store-member part I re-checked (above). The seven `queries.refetch` call sites are unchanged. I did not re-read them for an await before the call.
+- 26: met. `grep -rn "PaneView\|SplitView\|PageLeaf" src/lib/views` prints nothing.
+
+## 3. Findings
+
+### Spec
+None in the round. Judged as asked:
+- **latex.svelte.ts reflow.** Lines 9-16 of the head comment are rewrapped around the clause the brief already names (`latex.svelte.ts:12`). The words are unchanged (word diff), the file is on the brief's path list, and no ruling named it. Verdict: accepted, comment only, same cause as ruling 3.
+- **`taken()` and `undrawn()` below `handOn` (`File.svelte:169-177`).** This is placement only. It adds no exemption: `allow-duplication.txt` and `duplication.test.ts` are unchanged. Placing the functions above `read` fails the held-clone fingerprint, as shown above. Verdict: accepted.
+
+### Proof
+- **P1, B1 has no test.** `File.svelte:112-127` and `:237-264` are checked only by reading (see the B1 variant above, 13/13 green). The report states this. Failure scenario: someone restores a live `path` read in the markup and no test fails. Verdict: the look must include a File tab changing file in a shown pane (picture to PDF, and picture to picture) with the network panel open.
+- **P2, wording of the new-test evidence.** The report says each of the three new tests was "run with its fix taken out". That holds only for "draws the loading line ...". The other two ("draws the picture of a File tab that is shown", "draws No file chosen for a File tab that names no file") pass without the change: both pass on the reverse-patched base, and both pass on the code before the round's change. They fail only under the wrong variants the report describes (`undrawn()` at start, `{#if false}`). Verdict: they are guards against over-correction, not tests of the added behaviour. The report's sentence should say so.
+
+### Standards
+- **S1, residual live reads in File.svelte.**
+  - Lines 96 (`title`), 129 (`size`), 206 and 214 (`BookmarkStar` and the header `ProgramButton`, which take `{root} {path}`) and 230 (`data-root`, `data-path`) still read live `root`/`path`/`instance.state`.
+  - I found no reader of File's `data-root` or `data-path`. The grep hits are other views' own attributes and their tests.
+  - `size` (live) is drawn beside `extensionOf(drawn.path)` at `:255`, and the header `ProgramButton` is gated by `openable` (drawn) but acts on the live `root`/`path`.
+  - Failure scenario: for one pass the "other" line pairs the new file's size with the old extension, and the header program control is offered for the old file's extension but acts on the new path.
+  - Effects flush in a microtask before paint, and a hidden tab cannot be pressed. No address is paired, and no request is made. Verdict: low, outside the ruling's named list; the orchestrator's call whether to draw `size` and the header controls from `drawn` too.
+- **S2, report duplication.** Decisions 1 and 5 in the report both describe the same two helper files. Cosmetic.
+- **S3, a claim I could not confirm.** The report's ruling 3 says the latex paragraph had "a 53-column line before 'The push that finds it gone'". I find no such line in the base diff or the current file, and no pre-round tree was recorded. The remaining 63-column line (`What makes it stale ...`) is base text, followed by a token that cannot fit in 100 columns. Not verified, no consequence.
+- No comment carries a package id or a date (grep over added lines for ids and years prints nothing). ASCII, formatting, folder limit and file sizes all pass.
+
+### Behaviour
+- **B1 closure.** By reading `File.svelte:112-264`, no render pass pairs one file's kind, name, `known` or address with another's, apart from the live reads listed in S1:
+  - `src`, `type`, `known`, `openable`, the `alt`, the `unreadable` comparison, the download `href` and name, the "other" extension and the body `ProgramButton` all come from `drawn`.
+  - `drawn` is one `$state` holding `{src, root, path}`, written together at `:112` and in the effect at `:180`.
+  - `heldFileKind(drawn.root, drawn.path)` still updates: `fs.svelte.ts:505-509` calls `queries.peek(kindKey(root, path))`, and `peek` tracks the key's tick (`queries.svelte.ts:215-219`). When the kind of the drawn file is learned, `known` re-derives. When only the live file's kind is learned (a hidden tab), `known` does not change, and the show then reads it from the cache with no request.
+  - Not run in a browser.
+- **B2, hidden-first path.** The loading line for a hidden File tab that names a file (ruling 2) is reached only through `TabView` first running with `shown` false. `PaneBody.svelte:56-65` mounts a view only for the active or an already-seen tab, so the path is unreachable in the product today. The report's decision 2 now describes the code correctly.
+- No other user-visible change is unstated.
+
+## 4. Declined to judge
+- Look items 16 to 20 and case 21: they need the browser and the orchestrator's Chrome.
+- B1 in a mounted File tab, and the timing of the five views' effects, the `clear()` on reset paths and the wiring of the five views: no DOM here, and nothing in the unit suite covers them.
+- Cases 22, 23 and 25: not re-read.
+- Whether the full list prints `checks: 7 commands passed` on an idle machine. In my run `npm test` ended on 5000 ms timeouts in untouched files; the other six commands passed one by one.
+- The report's "full-list runs this round: 2" and its first-run failure list (autofetch, config-key, transcripts, duplication.test.ts): no logs were recorded, so I cannot confirm them.
+- Whether a shared derived outside the ten stores can cache a read suppressed under a hidden scope. I did not enumerate view-level or selector derived values.
+
+## 5. Usage
+Not measured by me; I have no counter. About 45 tool calls. The long runs were `checks.sh` (463 s of tests), two further config-key runs of 107 s and 60 s, six vitest mutation runs of 50 to 80 s each on the scratch copy, and the build, all under load average 18 to 24.
+
+Usage from the completion notice: claude-sonnet-5-5, 210,648 tokens, 50 tool uses, 46.0 min.
+
+## Closed
+
+First run (closed by repair round 1, `agents/briefs/Q66-round1.md`): B1 by the `drawn` state in `File.svelte` (checked by reading by the round's reviewer; no unit test can mount it); P2 by the none and loading branches and their tests; T2 by the reflowed comments; T1 by the report's open items reading "none"; S2 kept as decisions; S1 and P1 closed by the reviewer's reconstruction of the first run (31 red on the unchanged source); S3 and B2 to the look.
+
+Run over round 1 (never sent to the builder; each closed at landing):
+- Proof P1, B1 has no test: the look on TEST changes a shown File tab's file from a picture to a PDF and from a picture to a picture with the network panel open.
+- Proof P2, two of the three new tests pass without the round's change: the booking says they guard the loading branch against over-correction and test no added behaviour.
+- Standards S1, the live reads left in `File.svelte` (`title`, `size`, the header `BookmarkStar` and `ProgramButton`, `data-root`, `data-path`): kept. The header controls act on the tab's own file, which is the live path; the one pass in which `size` or the header control's gate follows the other file ends when the effect flushes, before the browser paints, and asks for no address.
+- Standards S2, the report names the two helper files twice: no change; the booking lists them once.
+- Standards S3, a line count in the report not reproduced: no decision rests on it; no change.
+- Behaviour B1, B2: as the reviewer read them; the look covers B1.

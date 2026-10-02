@@ -30,14 +30,16 @@
 <style>
     .slide {
         display: flex;
+        flex: 1 0 auto;
         flex-direction: column;
+        align-items: center;
         justify-content: center;
-        min-height: 100%;
+        text-align: center;
     }
 
     .kicker {
         color: var(--accent-txt, var(--accent));
-        font-size: var(--fs-xs);
+        font-size: var(--slide-fs-small);
         font-weight: 700;
         letter-spacing: 0.12em;
         text-transform: uppercase;
@@ -45,20 +47,19 @@
 
     .headline {
         margin: 0.2em 0;
-        font-size: var(--fs-3xl);
+        font-size: var(--slide-fs-title);
         letter-spacing: -0.02em;
         line-height: 1.05;
     }
 
     .lede {
-        max-width: 70ch;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xl);
+        font-size: var(--slide-fs-sub);
     }
 
     .hint {
         margin-top: 1.5em;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--slide-fs-small);
     }
 </style>

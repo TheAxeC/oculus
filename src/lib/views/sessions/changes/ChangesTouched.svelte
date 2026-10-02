@@ -1,9 +1,14 @@
 <script lang="ts">
     // Layer 3, sessions view partial. Files touched by one session live here because session-file
     // activity changes independently of repository status and controls.
+    //
+    // The list is one grid of four columns (the mark of a file another session holds open, the
+    // path, the tool's verb and the count) and each row takes the list's columns by subgrid, so a
+    // verb and a count start at one x in every row whatever the length of the path before them. A
+    // path is drawn whole in one line and cut at its end by the stylesheet.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import { elide, relativeTo } from '$lib/state/shared/words/format';
+    import { relativeTo } from '$lib/state/shared/words/format';
     import type { SessionFile } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -37,16 +42,18 @@
     {#if files.length === 0}
         <Empty message={t('sessions.ch_touched_empty')} />
     {:else}
-        {#each files as file (file.path)}
-            {@const also = shared(file.path)}
-            <div class="file" class:shared={also.length > 0}>
-                <span class="pa" title={file.path}>{elide(relativeTo(file.path, workspace))}</span>
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render mark(also)}
-                <span class="to">{file.tool}</span>
-                <span class="ct">{t('sessions.ch_times', file.count)}</span>
-            </div>
-        {/each}
+        <div class="files">
+            {#each files as file (file.path)}
+                {@const also = shared(file.path)}
+                <div class="file" class:shared={also.length > 0}>
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render mark(also)}
+                    <span class="pa" title={file.path}>{relativeTo(file.path, workspace)}</span>
+                    <span class="to">{file.tool}</span>
+                    <span class="ct">{t('sessions.ch_times', file.count)}</span>
+                </div>
+            {/each}
+        </div>
     {/if}
 </section>
 
@@ -69,16 +76,24 @@
         margin-left: auto;
         font-family: var(--font-num);
     }
+    /* The list's columns: the mark, the path, the verb and the count. The gaps between them are
+       margins of the cells, so a column no row fills takes no room. */
+    .files {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr) max-content max-content;
+    }
     /* One line of the tree's row height; the path is the row's main words. */
     .file {
-        display: flex;
+        display: grid;
+        grid-column: 1 / -1;
+        grid-template-columns: subgrid;
         align-items: center;
-        gap: 6px;
         min-width: 0;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
         font-size: var(--fs-md);
     }
     .pa {
+        grid-column: 2;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -86,19 +101,23 @@
     }
     .ct,
     .to {
-        flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
     }
-    .to,
-    .ct {
-        margin-left: auto;
+    .to {
+        grid-column: 3;
+        margin-left: 6px;
     }
     .ct {
+        grid-column: 4;
+        margin-left: 6px;
+        justify-self: end;
         font-family: var(--font-num);
+        text-align: right;
     }
     .mark {
-        flex: 0 0 auto;
+        grid-column: 1;
+        margin-right: 6px;
         color: var(--c-amber-txt, var(--muted));
         font-size: var(--fs-xs);
     }

@@ -1,6 +1,6 @@
 // The conversions the session views share. The catalog is the real one of config/text/, so the
-// suffixes, the separator and the leading ellipsis checked here are the words the file holds; the
-// numbers and the paths are the test's own.
+// suffixes and the separator checked here are the words the file holds; the numbers and the paths
+// are the test's own.
 //
 // Every function that reads a clock is handed the moment to read it against, so nothing here
 // depends on when it runs. The dates are built with the local constructor rather than parsed out of
@@ -8,13 +8,10 @@
 // pass in one timezone.
 
 import { describe, expect, it } from 'vitest';
-import { nameOf } from '../../../../src/lib/data/helpers/files/paths.ts';
 import {
-    PATH_MAX,
     clock,
     compactCount,
     grouped,
-    elide,
     modelShort,
     relativeTo,
     seconds,
@@ -122,32 +119,5 @@ describe('the names', () => {
         // The workspace itself is not inside itself, and no workspace relativises nothing.
         expect(relativeTo('/ws', '/ws')).toBe('/ws');
         expect(relativeTo('/ws/a.ts', '')).toBe('/ws/a.ts');
-    });
-});
-
-describe('elide', () => {
-    it('leaves a path that fits alone', () => {
-        const path = 'src/lib/state/shared/words/format.ts';
-        expect(path.length).toBeLessThan(PATH_MAX);
-        expect(elide(path)).toBe(path);
-    });
-
-    it('takes the head off a long path and keeps its tail', () => {
-        const path = `${'deep/'.repeat(20)}file.ts`;
-        const cut = elide(path);
-        expect(cut.startsWith('...')).toBe(true);
-        expect(cut.endsWith('file.ts')).toBe(true);
-        expect(cut.length).toBe(PATH_MAX);
-    });
-
-    it('never loses the last name, however long the last name is', () => {
-        const name = 'a'.repeat(PATH_MAX + 10);
-        const cut = elide(`/very/long/head/${name}`);
-        expect(cut).toBe(`...${name}`);
-        expect(nameOf(cut)).toBe(`...${name}`);
-    });
-
-    it('takes the width it is given', () => {
-        expect(elide('/aaa/bbb/cc', 8)).toBe('...bb/cc');
     });
 });

@@ -149,3 +149,83 @@ Nothing is booked from this step.
 ## Git
 
 I ran `git diff --stat` twice, read-only, by mistake, against the rule that a builder runs no git command. No other git command was run. Nothing was staged, committed or changed by them.
+
+## Repair round 1
+
+Open items: the list is empty (no ruling of Axel's is waiting). Every file named below is under `tools/oculus`. No git command was run in this round. What this section says about the first report supersedes the first report where they differ.
+
+### Per ruling
+
+1. Spec 1.1, fractions of the window. `FloatLayer.svelte:1-20` (head comment) and `DESIGN.md:212` now say a free float's place is fractions of the window, so it scales with the window, never leaves it and may lie over the rail and the status bar; `HELP.md:40` says the same. The code is unchanged: `.free` is `position: fixed` and `float-geometry.ts` `floatStyle` writes the place in `vw` and `vh`. The contradiction in the brief is item 5 ("positioned from their fractions of the area") against item 1 and Z95 (3) ("fractions of the window"); the reading taken is the window, as ruled.
+2. Spec 1.2, the version 4 envelope. `serialiseFloatless` (`layout/saved/saved.ts:444`), `needsFloats` (`saved.ts:456`), `pendingFloats` (`layout.svelte.ts:255`) and `FLOATLESS_VERSION` (`layout/model.ts:127`) stay. The mechanism: the shipped floats reach the page with the configuration, after the saved layout is read, so a layout read from a version 4 or 3 envelope has not yet taken them in. Until it has (`adoptFloats`), `storage.ts:85` writes it back at version 4; a version 5 envelope with `floats: []` would read as a reader who holds no floats and the shipped ones would never arrive. From the moment the floats are taken in, or a float is made, the envelope is version 5. `DESIGN.md:370` says this.
+3. Spec 1.3, case 29's `File.svelte` clause. `File.svelte:148` closes through the store's `closeInstance`, which applies the keep rule (`keepRule`, `layout.svelte.ts:352`). First run on the code without the rule: with the body of `keepRule` replaced by `return null`, `npx vitest run tests/state/workbench/layout/open/kept-panes.test.ts -t "file tab closes itself"` printed
+   ```
+   FAIL keeps the pane when a file tab closes itself through the store, as File.svelte does
+   AssertionError: expected [ [ 'f' ] ] to deeply equal [ [ 'f' ], [] ]
+   Tests  1 failed | 21 skipped (22)
+   ```
+   and with the rule back, `Tests  1 passed | 21 skipped (22)`. The case is `kept-panes.test.ts:242`.
+4. Spec 1.4, files outside "Paths this step writes". The files I changed that the list does not name, each with the item it serves (the list of files was read with `find src config tests ... -newermt` on the worktree, since no git command runs here):
+   - `src/lib/shell/status/StatusBar.svelte`: its unsaved count reads `hosts()` so a tab held in a float counts (item 4, floats in the store).
+   - `src/lib/state/client/context.ts`: the terminal tabs, the file browsers and the explorer tabs read `layout.hosts()` for the same reason (item 4).
+   - `src/lib/state/workbench/layout/saved/storage.ts`: the write of a layout that has not yet taken the shipped floats in, at version 4 (item 2, ruling 2 above).
+   - `src/routes/+page.svelte`: reads `floats:` from the merged configuration with `parseFloats` and hands it to `Workbench` (item 3).
+   - `src/lib/views/sessions/terminal/Terminal.svelte`: reads `hosts()` and `holding(id)` so a terminal in a float finds its host (item 4).
+   - `src/lib/views/sources/doc/Doc.svelte`: `openElsewhere` loops over `hosts()` (item 4). The first report's sentence "`File.svelte` and `Doc.svelte` needed no change" is wrong for `Doc.svelte`; `File.svelte` needed none.
+   - `src/lib/state/workbench/navigation/pages.ts`: `pageInstanceIds`, `firstUnsaved`, `unsavedCount` widened to `Host`, and the reset question names the floats (items 3 and 4).
+   - `src/lib/state/workbench/navigation/registry.ts`: a view's instances close before its registration is deleted, so the keep rule still sees the view as opened (item 8).
+   - `src/lib/ui/tabs/Tabs.svelte`: the `data-tab-strip` attribute, the part of a free float a drag starts from (item 5).
+   - `config/text/views/system/workbench.yml`: the words of the reset question for floats (item 9).
+   - `src/lib/views/system/hpc/Hpc.svelte` and `src/lib/views/system/usage/Usage.svelte`: their head comments (ruling 7).
+   - `src/lib/shell/panes/floats/` (`FloatLayer.svelte`, `float-geometry.ts`, `float-gesture.ts`): the brief names `shell/panes/FloatLayer.svelte`; the folder holds nine items, so the three files are in a subfolder (item 5).
+5. Proof 2.1, assertions over source text. The three assertions are removed from `tests/shell/panes/floatlayer.test.ts` (the mount outside the keyed block, the resize listener, the `--float-border` declaration), and with them the `readFileSync` import and the head comment sentence. No source-text assertion counts as coverage. Read at the landing's look, per case: case 21's "outside the keyed block" (`Workbench.svelte` mounts `<FloatLayer>` after `{/key page.id}`; a page switch must leave a Terminal tab's scrollback in a float in place) and the `--float-border` declaration (`tokens.css`, the float's border is the theme's orange under a dark and a light theme).
+6. Proof 2.2, `fitFloats`. Removed: the window `resize` listener of `FloatLayer.svelte`, the store's `fitFloats` and its type member (`layout.svelte.ts`), its export from `layout/index.ts`, the pure `fitFloats` and `fitted` of `layout/open/floats.ts`, the `fitFloats` describe of `floats.test.ts` and the store test of `floats-store.test.ts`. `fitted` had no caller left once `fitFloats` went, so it is removed with it; the one rule that stays is `placeFits` (`floats.ts:46`), used by the saved parse (`saved.ts:532`), `checkPages` (`saved.ts:403`), `parseFloats` (`arrangement.ts:116`) and `placeFloat` (`floats.ts:375`), and its cases stay through those callers (`placeFloat` cases of `floats.test.ts`, the dropped-float cases of `layout-floats.test.ts`). `grep -rn fitFloats src tests DESIGN.md HELP.md | wc -l` prints 0. `DESIGN.md:212` no longer lists `fitFloats`. Cases 11 and 32 are not applicable: every writer of a place already yields one that fits (`placeFloat` refuses a place that does not), places are fractions of the window, and so a window resize never moves a float.
+7. Standards 3.1. `Hpc.svelte:2-3` says Live HPC is shown in the float docked at the right edge that `config/layout.yml` ships, beside Usage; `Usage.svelte:2-3` carried the same stale statement about the Focus page's group and says the matching thing.
+8. Standards 3.2. `START_W` and `START_H` are exported from `layout/open/floats.ts:28-29` and from `layout/index.ts:68-69`, and `float-geometry.ts:149-150` (`outlineAt`) uses them; `grep -n "0\.3\|0\.4" src/lib/shell/panes/floats/float-geometry.ts` prints nothing.
+9. Standards 3.3. No change. The read-only `git diff --stat` runs of the first report stand as noted there; no git command was run in this round.
+10. Behaviour 4.1, a float drawn over the drag layer. `float-geometry.ts:160-189` holds the pure functions: `BASE_DEPTH`, `stackOf(order, free)` (the ids of floats that exist, the ones the order has not met behind), `raised(order, free, id)` (the pressed one last, the stack alone for an id that is not free), `depthOf(stack, id)` (`BASE_DEPTH` plus the rank) and `dragDepth(count)` (`BASE_DEPTH + count`). `FloatLayer.svelte` keeps `order` through `stackOf` on every read and `raised` on every write; `DropLayer.svelte:39,73` reads the count of free floats from the store and sets `z-index` from `dragDepth`, in place of the fixed 10 of its stylesheet.
+11. Behaviour 4.2, a float's views mounted again on Dock or Float. `FloatLayer.svelte:122-150` draws every float in one `{#each floats() as float (float.id)}`: one `div.float` with the class `dock left|right|bottom` or `free` and its style, the `Sash` drawn only for a docked place, and the pane in one `div.fill` in every state, so Dock and Float change a class and a style and never mount `PaneView` again. The grid tracks stay with `.dock.left`, `.dock.right` and `.dock.bottom`. The move and resize gesture is attached while the float is free: `float-gesture.ts:78` `gesture(held)` is now a Svelte attachment, used as `{@attach place.kind === 'free' ? gesture(gestureOf(float, place)) : null}` (`FloatLayer.svelte:133`), so it is removed when the float docks and attached when it is freed.
+
+How ruling 11 was checked: a server render cannot show a remount, so no test shows one. The cases read the markup the one keyed block produces: a docked and a free float are the same element holding the pane in the same fill, and a float freed from a dock or docked from the free state keeps that shape and differs in the class and the sash. That this keeps the views mounted is Svelte's keyed-each behaviour and is read at the landing's look (a Terminal tab put through Dock and Float keeps its scrollback). It is not verified by a test.
+
+### New and changed tests, each failing without its fix and passing with it
+
+The fix of each was taken out by hand, the file run, and the fix put back. Passing figures are the run after the fix.
+
+| Test | Without the fix | With the fix |
+|---|---|---|
+| `float-geometry.test.ts`, "the depth the floats and the drag layer are drawn at": drops removed ids, puts an unmet float behind, puts the pressed float last, depth one above the float behind, a removed float not counted (5 cases), with `stackOf` returning the order as it is and `raised` unfiltered | `Tests  5 failed \| 21 passed (26)`, the five named `FAIL` | `Tests  26 passed (26)` |
+| `float-geometry.test.ts`, "puts the drag layer above the front of 1, 7 and 20 free floats", with `dragDepth` returning the old fixed 10 | `FAIL ... of 7 free floats`, `FAIL ... of 20 free floats`, `Tests  2 failed \| 24 passed (26)` | the same file, 26 passed |
+| `floatlayer.test.ts`, "a float drawn the same way whatever its place" (3 cases), with the template back to a separate `{#each}` for docked and free floats, `class="dock {edge}"` and the free pane outside a fill | `FAIL draws a docked and a free float as one element with the pane in one fill`, `FAIL draws a float freed from a dock in the same element...`, `FAIL draws a free float docked in the same element...`, `Tests  3 failed \| 8 passed (11)` | `Tests  13 passed (13)` |
+| `floatlayer.test.ts`, "the drag layer over the floats" (2 cases), with `style="z-index: {depth}"` taken off the layer | `FAIL is one above the front of the free floats there are...`, `FAIL is above the float drawn last...`, `AssertionError: expected null to be 6`, `Tests  2 failed \| 11 passed (13)` | `Tests  13 passed (13)` |
+| `kept-panes.test.ts:242`, the file-tab route (ruling 3) | `AssertionError: expected [ [ 'f' ] ] to deeply equal [ [ 'f' ], [] ]` | `Tests  1 passed \| 21 skipped (22)` |
+
+Removed tests: the three source-text assertions of `floatlayer.test.ts`, the `fitFloats` describe of `floats.test.ts` (4 cases) and the `fits every float back inside the window` case of `floats-store.test.ts`. They tested code that no longer exists.
+
+Not covered by any test, read at the landing's look: the three source-text readings of ruling 5, that Dock and Float keep a Terminal tab's scrollback, a free float over the rail and the status bar, and the pointer gestures.
+
+### Before and after, added to the first report's section
+
+- A free float may be put over the rail and the status bar, since it is placed by fractions of the window.
+- A Terminal tab in a float put through Dock Right, Float and Dock Bottom keeps its scrollback and its running process, because its `PaneView` is not mounted again; before the change the docked and the free float were separate blocks, so each change was a new mount (read from the old template, not run). Not verified: no browser.
+- With seven free floats, a drag of a tab draws its ghost and its outline above every float; the drag layer had a fixed `z-index: 10` and the seventh free float is drawn at 5 plus its rank, 11 (read from the old code, not run).
+
+### Checks of the round: the pass line was NOT reached
+
+`npm run diagrams` printed `> node utils/diagrams/diagrams.mjs`, exit 0, before the full-list runs. The full list `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md` did not print `checks: 7 commands passed` in any of its seven runs of this round. What each run printed:
+
+| Run | Result |
+|---|---|
+| 1 | `npm test`: `Test Files  424 passed \| 22 skipped (446)`, `Tests  11163 passed \| 618 skipped (11781)`; then `npm run test:checks`: `Tests  1 failed \| 441 passed`, `tests/checks/source/comment-width.test.ts` (`tests/shell/panes/float-geometry.test.ts:3` ran past column 100); the line was rewrapped; `checks: failed with exit 1: npm run test:checks` |
+| 2 to 7 | `npm test` fails each time on 2 to 6 cases of the same four files, every one `Error: Test timed out in 5000ms`: `tests/server/edit/config-key.test.ts` (runs 2 to 7), `tests/routes/edit/config-key.test.ts` (runs 4, 6, 7), `tests/routes/git/git.test.ts` (run 6), `tests/server/git/autofetch.test.ts` (run 7); `checks: failed with exit 1: npm test` |
+
+Why these are not defects of the step, from commands run in this turn:
+
+- `uptime` printed `load averages: 19.90 22.84 23.01` and `24.22 23.85 23.26` between the runs, on a machine where other builders' vitest workers and Microsoft Defender hold the cores (`ps -Ao pid,pcpu,command`); the suite duration of a full run went from 187 s in the first report's run to 340 to 523 s in this round's runs 2 to 7.
+- The four files pass when run alone after the final change: `npx vitest run tests/server/edit/config-key.test.ts tests/routes/edit/config-key.test.ts tests/routes/git/git.test.ts tests/server/git/autofetch.test.ts` printed `Test Files  4 passed (4)`, `Tests  125 passed (125)`.
+- The same config-key files timed out on a tree that holds none of this step's code, under the same load: `npx vitest run tests/server/edit/config-key.test.ts tests/routes/edit/config-key.test.ts` in the Q66 base copy in the scratchpad printed `FAIL ... refuses a key or a file the catalog has no entry for ... 5204ms`, `Tests  1 failed | 51 passed (52)`.
+- None of the four files was changed by this step (`find tests/server/edit tests/routes/edit tests/routes/git tests/server/git -newermt` the start of the step prints nothing); three of them do not mention a float or the layout (`grep -il "float\|layout"` names only `tests/server/edit/config-key.test.ts`), and that one writes the key `board.search.projects` of `layout.yml`, a key this step did not touch.
+
+The other commands of the list, each run alone after the last change: `npm run test:checks` printed `Test Files  29 passed | 2 skipped (31)`, `Tests  442 passed | 9 skipped (451)`; `npm run check` printed `COMPLETED 2960 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`; `npm run build` exited 0 (`built in 1m 14s`, `done`); `npm run format:check` printed `All matched files use Prettier code style!`; `npm run lint` exited 0; `! LC_ALL=C grep -rna '[^ -~]' src tests` exited 0. The folders that hold the step's tests, `npx vitest run tests/state/workbench tests/shell tests/checks/config`, printed `Test Files  58 passed (58)`, `Tests  2037 passed (2037)`.
+
+Count of full-list runs in this round: seven, none passing. The orchestrator's landing run is the run to repeat on a quieter machine; the code of the step needs no change for it, on the evidence above, but `checks: 7 commands passed` is not something I have seen printed, and the report does not claim it.

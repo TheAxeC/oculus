@@ -11,6 +11,7 @@ import {
     deckDefaultKeys,
     deckFrom,
     deckSlides,
+    fit,
     hasSlideContent,
     parsePresentState,
     plainTitle,
@@ -826,5 +827,23 @@ describe('parsePresentState over input of the wrong type', () => {
         });
         const parsed: unknown = JSON.parse('{"__proto__":{"overview":true},"slide":"s"}');
         expect(parsePresentState(parsed)).toStrictEqual({ slide: 's', overview: false });
+    });
+});
+
+describe('fit', () => {
+    it('scales the 1280 by 720 frame uniformly to the box it is given', () => {
+        expect(fit(1920, 720)).toBe(1);
+        expect(fit(1280, 1440)).toBe(1);
+        expect(fit(640, 360)).toBe(0.5);
+        expect(fit(100, 50)).toBeCloseTo(50 / 720, 12);
+    });
+
+    it('is 0 for a box with no size, a negative size or a size that is not a number', () => {
+        expect(fit(0, 0)).toBe(0);
+        expect(fit(-5, 10)).toBe(0);
+        expect(fit(10, -5)).toBe(0);
+        expect(fit(Number.NaN, 360)).toBe(0);
+        expect(fit(640, Number.NaN)).toBe(0);
+        expect(fit(Number.POSITIVE_INFINITY, 360)).toBe(0);
     });
 });

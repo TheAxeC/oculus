@@ -103,6 +103,19 @@ export function parsePresentState(value: unknown): PresentState {
 
 export { PRESENT_DOC, slideKey };
 
+/** The size in px a slide is laid out at; the pane scales this frame as a whole. */
+export const FRAME_WIDTH = 1280;
+export const FRAME_HEIGHT = 720;
+
+/**
+ * The uniform scale that fits the frame inside a box of the given size, or 0 for a box with no
+ * size, a negative one or one that is not a number (a hidden tab, the first paint).
+ */
+export function fit(width: number, height: number): number {
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return 0;
+    return Math.min(width / FRAME_WIDTH, height / FRAME_HEIGHT);
+}
+
 /**
  * A title written as HTML, as the plain words an overview tile and a pane title draw. The escapes
  * are decoded by `entities`, the parser the mail snippet and the manual use; a no-break space it

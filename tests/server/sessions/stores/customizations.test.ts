@@ -5,6 +5,7 @@
 //
 // Every folder here is a scratch folder; nothing under ~/.claude, ~/.codex or the hub is read.
 
+import { realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -42,8 +43,8 @@ let ROOT = '';
 let WORK = '';
 
 test.beforeAll(() => {
-    ACCOUNT = plantAccount();
-    ROOT = plantRoot();
+    ACCOUNT = realpathSync(plantAccount());
+    ROOT = realpathSync(plantRoot());
     WORK = join(ROOT, 'work');
 });
 
@@ -331,5 +332,73 @@ describe('the hooks of a settings file whose shape is wrong', () => {
     it('names a hook whose command is not text by its event alone', () => {
         const wrong = { hooks: { Stop: [{ hooks: [{ command: 5 }] }] } };
         expect(hooksOf(wrong).items.map((item) => item.name)).toEqual(['Stop']);
+    });
+});
+
+describe('the path a listed item gives', () => {
+    /** An account whose agents folder holds links to files in and out of the roots. */
+    function plantLinks(): { account: string; outside: string } {
+        const outside = realpathSync(
+            plantScratch('oculus-custom-outside-', { 'real.md': '# out' })
+        );
+        const account = realpathSync(
+            plantScratch('oculus-custom-links-', { 'agents/plain.md': '# plain' })
+        );
+        symlinkSync(join(outside, 'real.md'), join(account, 'agents', 'out.md'));
+        symlinkSync(join(ROOT, 'CLAUDE.md'), join(account, 'agents', 'in.md'));
+        symlinkSync(join(outside, 'gone.md'), join(account, 'agents', 'dangling.md'));
+        return { account, outside };
+    }
+
+    it('is the real path of a link into a folder no root holds, the name staying as found', () => {
+        const { account, outside } = plantLinks();
+        const items = row(customizationRows(scope({ account })), 'agents').items;
+        expect(items.find((item) => item.name === 'out')).toEqual({
+            name: 'out',
+            path: join(outside, 'real.md')
+        });
+    });
+
+    it('is the real path under the root for a link that resolves inside a root', () => {
+        const { account } = plantLinks();
+        const items = row(customizationRows(scope({ account })), 'agents').items;
+        expect(items.find((item) => item.name === 'in')?.path).toBe(join(ROOT, 'CLAUDE.md'));
+    });
+
+    it('lists no dangling link, and keeps the path of a plain file', () => {
+        const { account } = plantLinks();
+        const items = row(customizationRows(scope({ account })), 'agents').items;
+        expect(items.some((item) => item.name === 'dangling')).toBe(false);
+        expect(items.find((item) => item.name === 'plain')?.path).toBe(
+            join(account, 'agents', 'plain.md')
+        );
+    });
+
+    it('serves the file a link points at when the viewer is asked for the path it listed', () => {
+        const { account, outside } = plantLinks();
+        expect(customizationFile(scope({ account }), join(outside, 'real.md'))).toBe('# out');
+    });
+
+    it('serves the file a link points at when the viewer is asked for the link path', () => {
+        const { account } = plantLinks();
+        expect(customizationFile(scope({ account }), join(account, 'agents', 'out.md'))).toBe(
+            '# out'
+        );
+    });
+
+    it('serves nothing for a path the listing does not give, a file beside the target included', () => {
+        const { account, outside } = plantLinks();
+        writeFileSync(join(outside, 'other.md'), '# other');
+        expect(customizationFile(scope({ account }), join(outside, 'other.md'))).toBe(null);
+        expect(customizationFile(scope({ account }), join(account, 'agents', 'dangling.md'))).toBe(
+            null
+        );
+    });
+
+    it('serves nothing for a link the listing does not give whose target it does not hold', () => {
+        const { account, outside } = plantLinks();
+        writeFileSync(join(outside, 'other.md'), '# other');
+        symlinkSync(join(outside, 'other.md'), join(outside, 'sneak.md'));
+        expect(customizationFile(scope({ account }), join(outside, 'sneak.md'))).toBe(null);
     });
 });

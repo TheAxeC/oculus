@@ -44,14 +44,13 @@
 <style>
     .headline {
         margin: 0 0 0.3em;
-        font-size: var(--fs-2xl);
+        font-size: var(--slide-fs-h);
         line-height: 1.15;
     }
 
     .lede {
-        max-width: 74ch;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xl);
+        font-size: var(--slide-fs-sub);
     }
 
     .cards {
@@ -66,7 +65,7 @@
         border: 1px solid var(--line);
         border-radius: var(--radius);
         background: var(--card);
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
         line-height: 1.45;
     }
 
@@ -77,14 +76,14 @@
     .n {
         margin-bottom: 8px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-2xl);
+        font-size: var(--slide-fs-h);
         font-weight: 800;
     }
 
     .hint {
         margin-top: 1.5em;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--slide-fs-small);
     }
 
     /* Over a wallpaper the surface goes translucent, as every other card surface does. */

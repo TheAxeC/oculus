@@ -9,10 +9,15 @@
 // on its row rather than a count of zero. The file served for one item is served only when it is
 // one of the paths the same listing gives, so the viewer cannot be asked for any other file.
 //
+// A listed item's `path` is the file's real path (a link followed to its target), because the
+// roots boundary decides where a file opens by where the file is: a link into a folder no root
+// holds is opened by this viewer, and one into a root is opened by the source tab. A name is kept
+// as found.
+//
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { json } from '@sveltejs/kit';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { parse as parseToml } from 'smol-toml';
@@ -109,11 +114,20 @@ function collect(): Collect {
     return { items: [], looked: [], findings: [] };
 }
 
+/** A path with its links followed, and the path as found when that fails. */
+function realPath(path: string): string {
+    try {
+        return realpathSync(path);
+    } catch {
+        return path;
+    }
+}
+
 function rowOf(kind: CustomizationKind, found: Collect, counted = true): CustomizationRow {
     return {
         kind,
         count: counted ? found.items.length : null,
-        items: found.items,
+        items: found.items.map((item) => ({ ...item, path: realPath(item.path) })),
         looked: found.looked,
         findings: found.findings
     };
@@ -380,10 +394,12 @@ export function customizationRows(scope: CustomizationScope): CustomizationRow[]
 
 /**
  * One listed file's text for the viewer, or null when the path is not one the listing gives or
- * the file is too large to show.
+ * the file is too large to show. The asked path is followed to the file it names before it is
+ * compared with the listing, which gives each item's real path, so a path saved while it was a
+ * link still reads the file the link points to.
  */
 export function customizationFile(scope: CustomizationScope, path: string): string | null {
-    const wanted = resolve(path);
+    const wanted = realPath(resolve(path));
     const listed = customizationRows(scope).some((row) =>
         row.items.some((item) => resolve(item.path) === wanted)
     );

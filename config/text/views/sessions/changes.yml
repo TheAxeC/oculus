@@ -59,7 +59,6 @@ text:
         ch_changed: Changed
         ch_deleted: -{0}
         ch_detached: detached
-        ch_elide: ...{0}
         ch_failed: 'git could not read this repository: {0}'
         ch_group_empty: nothing
         ch_insync: in step with the upstream

@@ -13,6 +13,10 @@
 // preview's frame in the source tab, and the pane's body in the project view, whose own box does
 // not scroll. A heading with no such box around it is not scrolled to, and nothing of the shell
 // outside the pane ever scrolls.
+//
+// A box drawn under a scale transform (a slide in its frame) measures its rectangles in screen
+// pixels and scrolls in layout pixels, so the distance to the heading is divided by the box's
+// scale.
 
 import { HEADING_ID_PREFIX } from '$lib/ui/html';
 
@@ -32,8 +36,17 @@ export function jump(event: MouseEvent): void {
     if (heading === null) return;
     const scroller = scrollerOf(heading, box);
     if (scroller === null) return;
-    scroller.scrollTop +=
-        heading.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    const distance = heading.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    scroller.scrollTop += distance / scaleOf(scroller);
+}
+
+/**
+ * How much a box is scaled on screen: its drawn height over its layout height, and 1 when either
+ * is 0 (a box not laid out yet).
+ */
+function scaleOf(box: HTMLElement): number {
+    const drawn = box.getBoundingClientRect().height;
+    return drawn === 0 || box.offsetHeight === 0 ? 1 : drawn / box.offsetHeight;
 }
 
 /**

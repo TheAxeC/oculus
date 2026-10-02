@@ -44,7 +44,7 @@
 
     .block :global(table) {
         border-collapse: collapse;
-        font-size: var(--fs-md);
+        font-size: var(--slide-fs-small);
     }
 
     .block :global(th),

@@ -1,5 +1,7 @@
 // Layer 4, view test. Every view and partial declares its type-scale token for each local text
-// role, and shared primitives keep the same audited scale at the view boundary.
+// role, and shared primitives keep the same audited scale at the view boundary. A slide part of the
+// Present view reads the slide scale (`--slide-fs-*`, set on the slide's frame) in place of the
+// UI scale (`--fs-*`), and both are audited here.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -23,7 +25,7 @@ function typeRules(file: string): string {
         .join('\n');
     const rules: string[] = [];
     for (const match of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-        const size = /font-size\s*:\s*var\(--(fs-[^)]+)\)/.exec(match[2]);
+        const size = /font-size\s*:\s*var\(--((?:slide-)?fs-[^)]+)\)/.exec(match[2]);
         if (size === null) continue;
         const selector = match[1].trim().replace(/\s+/g, ' ');
         rules.push(`${selector}=${size[1]}`);
@@ -58,8 +60,7 @@ const VIEWS: Record<string, string> = {
     'sources/files/sections/Workspaces.svelte': '',
     'structure/domains/Domains.svelte': '',
     'boards/editor/Editor.svelte': '.heading=fs-xs | .result=fs-md',
-    'system/audit/Audit.svelte':
-        'h3=fs-xs | .count=fs-sm | .where=fs-sm | .message=fs-md | .note=fs-sm',
+    'system/audit/Audit.svelte': 'h3=fs-xs | .count=fs-sm | li=fs-md | .where=fs-sm | .note=fs-sm',
     'system/findings/Findings.svelte': '.view=fs-md | .file, .key=fs-sm',
     'boards/focus/Focus.svelte': '.said=fs-md | .wait-head, .seg-lbl=fs-xs',
     'system/gallery/Gallery.svelte': 'h3=fs-xs',
@@ -81,7 +82,7 @@ const VIEWS: Record<string, string> = {
     'personal/memories/Memories.svelte': '.failed=fs-sm | .alt=fs-sm',
     'boards/person/Person.svelte':
         '.facts=fs-md | .facts dt=fs-xs | .block h3=fs-xs | .rows li=fs-md',
-    'academic/present/Present.svelte': '.counter=fs-sm',
+    'academic/present/Present.svelte': '.frame=slide-fs-body | .counter=fs-sm',
     'structure/pillars/Pillars.svelte': 'h3=fs-xs | .note=fs-md',
     'boards/project/Project.svelte': '.heading=fs-xs | .said=fs-md | .nm=fs-md | .meta=fs-sm',
     'boards/projects/Projects.svelte': '.said=fs-md',
@@ -148,24 +149,24 @@ const VIEWS: Record<string, string> = {
     'structure/map/Controls.svelte': '.filters=fs-sm',
     'structure/map/Graph.svelte': 'text=fs-xs | text.line-label=fs-sm',
     'academic/present/parts/Closing.svelte':
-        '.kicker=fs-xs | .headline=fs-3xl | .lede=fs-xl | .hint=fs-sm',
+        '.kicker=slide-fs-small | .headline=slide-fs-title | .lede=slide-fs-sub | .hint=slide-fs-small',
     'academic/present/parts/Dot.svelte': '',
-    'academic/present/parts/Equation.svelte': '.gap=fs-md',
+    'academic/present/parts/Equation.svelte': '.gap=slide-fs-small',
     'academic/present/parts/Framing.svelte':
-        '.headline=fs-2xl | .lede=fs-xl | .card=fs-md | .n=fs-2xl | .hint=fs-sm',
+        '.headline=slide-fs-h | .lede=slide-fs-sub | .card=slide-fs-small | .n=slide-fs-h | .hint=slide-fs-small',
     'academic/present/parts/Ideas.svelte':
-        '.headline=fs-2xl | .lede=fs-xl | .idea p=fs-md | .head b=fs-md | .maturity=fs-xs | .hint=fs-sm',
+        '.headline=slide-fs-h | .lede=slide-fs-sub | .idea p=slide-fs-small | .head b=slide-fs-small | .maturity=slide-fs-small | .hint=slide-fs-small',
     'academic/present/parts/Legend.svelte': '',
     'academic/present/Overview.svelte': '.at=fs-sm',
     'academic/present/Panel.svelte':
-        '.gap=fs-md | .cap=fs-sm | .explain=fs-md | .diagram :global(.dnode)=fs-md | .diagram :global(.darrow)=fs-md | .diagram :global(.dbar)=fs-md',
+        '.gap=slide-fs-small | .cap=slide-fs-small | .explain=slide-fs-small | .diagram :global(.dnode)=slide-fs-small | .diagram :global(.darrow)=slide-fs-small | .diagram :global(.dbar)=slide-fs-small',
     'academic/present/parts/Project.svelte':
-        '.headline=fs-2xl | .sub=fs-lg | .hook=fs-lg | .spec=fs-md | .spec b=fs-xs | .lbl=fs-xs | li=fs-md | .e5 span=fs-xs | .e5 p=fs-md | .body=fs-md',
+        '.headline=slide-fs-h | .sub=slide-fs-body | .hook=slide-fs-body | .spec=slide-fs-small | .spec b=slide-fs-small | .lbl=slide-fs-small | li=slide-fs-small | .e5 span=slide-fs-small | .e5 p=slide-fs-small | .body=slide-fs-body',
     'academic/present/Slide.svelte': '',
-    'academic/present/parts/Summary.svelte': '.headline=fs-2xl | .hint=fs-sm',
+    'academic/present/parts/Summary.svelte': '.headline=slide-fs-h | .hint=slide-fs-small',
     'academic/present/parts/Title.svelte':
-        '.kicker=fs-xs | .headline=fs-3xl | .lede=fs-xl | .hint=fs-sm',
-    'academic/present/parts/Words.svelte': '.block :global(table)=fs-md',
+        '.kicker=slide-fs-small | .headline=slide-fs-title | .lede=slide-fs-sub | .hint=slide-fs-small',
+    'academic/present/parts/Words.svelte': '.block :global(table)=slide-fs-small',
     'structure/pillars/ArchivalCard.svelte': '',
     'structure/pillars/LineCard.svelte': '.total=fs-sm',
     'structure/pillars/OrphansCard.svelte': '',

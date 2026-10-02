@@ -15,6 +15,13 @@
     // Layer 3, view. The public slide deck, live: one slide filling the pane, the arrow keys and
     // the toolbar to move through it, and `O` for the grid of the whole deck.
     //
+    // A slide is drawn in a frame of 1280 by 720 px, the size its parts are laid out for, scaled
+    // uniformly by `fit` to the pane and centred in it, so a slide keeps its proportions and its
+    // words shrink or grow with the pane as a slide program's do. The frame draws its own surface
+    // (the card colour, translucent over a wallpaper) and carries the slide type scale, in px at
+    // the design size and multiplied by the text size. A slide taller than the frame scrolls
+    // inside it. The overview grid and the empty state are not scaled and keep the UI's tokens.
+    //
     // The deck is not a file this builds and it is not a copy of one: the deck-level slides are
     // config/present.yml and the project slides are the PRESENT.md front matter the snapshot
     // carries, so a slide edited on disk is the slide on screen at the next push.
@@ -37,7 +44,13 @@
     import Overview from './Overview.svelte';
     import Slide from './Slide.svelte';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { parsePresentState, type PresentState } from '$lib/state/life/present';
+    import {
+        FRAME_HEIGHT,
+        FRAME_WIDTH,
+        fit,
+        parsePresentState,
+        type PresentState
+    } from '$lib/state/life/present';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -51,6 +64,11 @@
     let { instance }: ViewProps = $props();
 
     let box = $state<HTMLElement | null>(null);
+
+    /** The deck box's measured size, 0 until it has been laid out and while its tab is hidden. */
+    let width = $state(0);
+    let height = $state(0);
+    const scale = $derived(fit(width, height));
 
     const held = $derived(parsePresentState(instanceState(instance.id)));
     const rows = $derived(slides());
@@ -174,12 +192,15 @@
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
         class="present"
+        class:framed={!grid && shown !== null}
         data-instance={instance.id}
         data-slide-key={shown?.key ?? ''}
         role="region"
         aria-label={t('present.title')}
         tabindex="-1"
         bind:this={box}
+        bind:clientWidth={width}
+        bind:clientHeight={height}
         onkeydown={keys}
         onpointerdown={() => box?.focus()}
     >
@@ -188,7 +209,23 @@
         {:else if grid}
             <Overview {rows} current={shown?.key ?? ''} {cursor} onpick={pick} />
         {:else if shown !== null}
-            <Slide row={shown} />
+            <div
+                class="stage"
+                style:width="{FRAME_WIDTH * scale}px"
+                style:height="{FRAME_HEIGHT * scale}px"
+            >
+                <div
+                    class="frame"
+                    data-frame
+                    data-scroll
+                    style:width="{FRAME_WIDTH}px"
+                    style:height="{FRAME_HEIGHT}px"
+                    style:transform="scale({scale})"
+                    style:visibility={scale === 0 ? 'hidden' : undefined}
+                >
+                    <Slide row={shown} />
+                </div>
+            </div>
         {/if}
     </div>
 </Pane>
@@ -197,6 +234,48 @@
     .present {
         min-height: 100%;
         outline: none;
+    }
+
+    /* A slide fills the pane's body and is centred in it; what is not the frame's is letterbox. */
+    .present.framed {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* The box the scaled frame occupies on screen: the frame's transform does not change its layout
+       size, so this box is the one that takes room. */
+    .stage {
+        flex: 0 0 auto;
+    }
+
+    /* The frame is laid out at the design size and scaled from its top left corner. The slide
+       type scale is in px at that size and follows the text size; the padding and the reading
+       width are px of the frame too. */
+    .frame {
+        --slide-fs-title: calc(56px * var(--text-scale, 1));
+        --slide-fs-h: calc(36px * var(--text-scale, 1));
+        --slide-fs-sub: calc(28px * var(--text-scale, 1));
+        --slide-fs-body: calc(24px * var(--text-scale, 1));
+        --slide-fs-small: calc(18px * var(--text-scale, 1));
+        --slide-reading: 1040px;
+        box-sizing: border-box;
+        padding: 64px;
+        overflow-y: auto;
+        transform-origin: 0 0;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--card);
+        color: var(--ink-txt, var(--ink));
+        font-size: var(--slide-fs-body);
+    }
+
+    /* Over a wallpaper the surface goes translucent, as every other card surface does. */
+    :global(body.wall) .frame {
+        background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
     }
 
     /* The place in the deck closes the bar. */

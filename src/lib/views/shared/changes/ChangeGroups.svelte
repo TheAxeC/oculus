@@ -6,6 +6,11 @@
     // Stage All Changes). What a row offers beyond these is the caller's: the "also open" mark is a
     // snippet the session views supply.
     //
+    // The rows of a group are one grid of five columns (the letter, the path, the caller's mark,
+    // the line counts and the controls) and each row takes the group's columns by subgrid, so the
+    // counts and the controls start at one x in every row of the group. A path is drawn whole in
+    // one line and cut at its end by the stylesheet.
+    //
     // A row's Open control opens what the Repositories view opens for the same row, through
     // state/sources/repositories/repositories.svelte.ts's openChange: the merge editor for a
     // conflict, the file itself for an untracked path, and the diff for the rest.
@@ -20,7 +25,6 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ChangeCounts from './ChangeCounts.svelte';
-    import { elide } from '$lib/state/shared/words/format';
     import { statusStyle } from '$lib/state/sources/repositories/repositories';
     import type { GitEntry } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -119,65 +123,75 @@
         {#if entries.length === 0}
             <Empty message={t('sessions.ch_group_empty')} />
         {:else}
-            {#each entries as entry (entry.path)}
-                <div class="file" class:shared={marked?.(entry) ?? false} data-entry={entry.path}>
-                    <span class="st" style={statusStyle(entry.status)}>{entry.status}</span>
-                    <span class="pa" title={entry.path}>{elide(entry.path)}</span>
-                    {#if beside}
-                        {@render beside(entry, kind)}
-                    {/if}
-                    <ChangeCounts {entry} />
-                    <span class="acts">
-                        <ToolButton
-                            label={openWords(kind)}
-                            glyph={kind === 'merge'
-                                ? 'merge'
-                                : kind === 'untracked'
-                                  ? 'open_file'
-                                  : 'diff'}
-                            compact
-                            onclick={() => onopen(entry.path, kind)}
-                        />
-                        {#if kind === 'staged'}
-                            <ToolButton
-                                label={t('git.unstage')}
-                                title={t('git.unstage_title')}
-                                glyph="unstage"
-                                compact
-                                disabled={busy}
-                                onclick={() => onunstage(entry.path)}
-                            />
-                        {:else if kind === 'merge'}
-                            <ToolButton
-                                label={t('repositories.merge_mark')}
-                                title={t('repositories.merge_mark_title')}
-                                small
-                                disabled={busy}
-                                onclick={() => onresolve(entry.path)}
-                            />
-                        {:else}
-                            <ToolButton
-                                label={t('git.stage')}
-                                title={t('git.stage_title')}
-                                glyph="stage"
-                                compact
-                                disabled={busy}
-                                onclick={() => onstage(entry.path)}
-                            />
+            <div class="rows">
+                {#each entries as entry (entry.path)}
+                    <div
+                        class="file"
+                        class:shared={marked?.(entry) ?? false}
+                        data-entry={entry.path}
+                    >
+                        <span class="st" style={statusStyle(entry.status)}>{entry.status}</span>
+                        <span class="pa" title={entry.path}>{entry.path}</span>
+                        {#if beside}
+                            <span class="beside">
+                                {@render beside(entry, kind)}
+                            </span>
                         {/if}
-                        {#if kind === 'changed'}
+                        <span class="counts">
+                            <ChangeCounts {entry} />
+                        </span>
+                        <span class="acts">
                             <ToolButton
-                                label={t('git.discard')}
-                                title={t('git.discard_title')}
-                                glyph="note_back"
+                                label={openWords(kind)}
+                                glyph={kind === 'merge'
+                                    ? 'merge'
+                                    : kind === 'untracked'
+                                      ? 'open_file'
+                                      : 'diff'}
                                 compact
-                                disabled={busy}
-                                onclick={() => ondiscard(entry.path)}
+                                onclick={() => onopen(entry.path, kind)}
                             />
-                        {/if}
-                    </span>
-                </div>
-            {/each}
+                            {#if kind === 'staged'}
+                                <ToolButton
+                                    label={t('git.unstage')}
+                                    title={t('git.unstage_title')}
+                                    glyph="unstage"
+                                    compact
+                                    disabled={busy}
+                                    onclick={() => onunstage(entry.path)}
+                                />
+                            {:else if kind === 'merge'}
+                                <ToolButton
+                                    label={t('repositories.merge_mark')}
+                                    title={t('repositories.merge_mark_title')}
+                                    small
+                                    disabled={busy}
+                                    onclick={() => onresolve(entry.path)}
+                                />
+                            {:else}
+                                <ToolButton
+                                    label={t('git.stage')}
+                                    title={t('git.stage_title')}
+                                    glyph="stage"
+                                    compact
+                                    disabled={busy}
+                                    onclick={() => onstage(entry.path)}
+                                />
+                            {/if}
+                            {#if kind === 'changed'}
+                                <ToolButton
+                                    label={t('git.discard')}
+                                    title={t('git.discard_title')}
+                                    glyph="note_back"
+                                    compact
+                                    disabled={busy}
+                                    onclick={() => ondiscard(entry.path)}
+                                />
+                            {/if}
+                        </span>
+                    </div>
+                {/each}
+            </div>
         {/if}
     </div>
 {/snippet}
@@ -200,11 +214,14 @@
     .group-h,
     .file {
         --row-reveal: 0;
-        display: flex;
         align-items: center;
-        gap: 6px;
         min-width: 0;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
+    }
+
+    .group-h {
+        display: flex;
+        gap: 6px;
     }
 
     .group-h:hover,
@@ -242,27 +259,54 @@
         opacity: var(--row-reveal);
         transition: opacity 120ms ease-out;
     }
+
+    /* The group's columns: the letter, the path, the caller's mark, the counts and the controls.
+       The gaps between them are margins of the cells, so a column no row fills takes no room. */
+    .rows {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr) max-content max-content max-content;
+    }
     .file {
+        display: grid;
+        grid-column: 1 / -1;
+        grid-template-columns: subgrid;
         font-size: var(--fs-md);
     }
+    .st {
+        grid-column: 1;
+        width: 1.2em;
+        margin-right: 6px;
+        text-align: center;
+        color: var(--tone-txt, var(--muted-txt));
+        font-family: var(--font-mono);
+    }
     .pa {
+        grid-column: 2;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    .st {
-        flex: 0 0 auto;
-        width: 1.2em;
-        text-align: center;
-        color: var(--tone-txt, var(--muted-txt));
-        font-family: var(--font-mono);
+    .beside {
+        grid-column: 3;
+        margin-left: 6px;
+    }
+    .counts {
+        grid-column: 4;
+        display: flex;
+        gap: 6px;
+        margin-left: 6px;
+        justify-self: end;
+    }
+    .beside:empty,
+    .counts:empty {
+        display: none;
     }
     .acts {
-        flex: 0 0 auto;
+        grid-column: 5;
         display: flex;
         gap: 2px;
-        margin-left: auto;
+        margin-left: 6px;
         opacity: var(--row-reveal);
         transition: opacity 120ms ease-out;
     }

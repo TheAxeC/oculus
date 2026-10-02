@@ -1,5 +1,5 @@
 // The Present view rendered over the real deck of config/present.yml and one synthetic project, one
-// case per slide kind, plus the overview grid and the empty deck.
+// case per slide kind, plus the overview grid, the empty deck and the frame a slide is drawn in.
 //
 // The deck is the shipped one on purpose: the six components are what draws it, so a key renamed in
 // config/present.yml or a section dropped from it fails here rather than on screen.
@@ -308,5 +308,46 @@ describe('the Present view', () => {
             props: { instance }
         }).body;
         expect(body).toContain(catalog['present.empty']);
+    });
+});
+
+describe('the frame a slide is drawn in', () => {
+    /** The markup from the frame's opening tag to the slide, or the empty text with no frame. */
+    function framed(body: string): { tag: string; inside: string } {
+        const at = body.indexOf('data-frame');
+        if (at < 0) return { tag: '', inside: '' };
+        const open = body.lastIndexOf('<div', at);
+        const close = body.indexOf('>', at);
+        return { tag: body.slice(open, close + 1), inside: body.slice(close + 1) };
+    }
+
+    it('draws the slide inside the frame, which carries the 1280 by 720 design size', () => {
+        const { tag, inside } = framed(at('framing:engine'));
+        expect(tag).toContain('width: 1280px');
+        expect(tag).toContain('height: 720px');
+        expect(tag).toContain('data-scroll');
+        expect(inside).toContain('data-slide-kind="framing"');
+    });
+
+    it('draws the frame hidden until the pane has been measured, so no unscaled slide shows', () => {
+        expect(framed(at('title')).tag).toContain('visibility: hidden');
+    });
+
+    it('draws the empty deck outside any frame', () => {
+        const bare = createClientState();
+        const body = render(Present, {
+            context: clientContext(bare),
+            props: { instance }
+        }).body;
+        expect(body).toContain(catalog['present.empty']);
+        // an empty deck has no slide, so there is nothing to scale and no frame is drawn
+        expect(body).not.toContain('data-frame');
+    });
+
+    it('draws the overview grid outside any frame', () => {
+        const body = draw(instance.id, { slide: 'alpha', overview: true });
+        expect(body).toContain('data-overview');
+        // the grid keeps the interface's own sizes, so no scaled frame is drawn around it
+        expect(body).not.toContain('data-frame');
     });
 });
