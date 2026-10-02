@@ -1,6 +1,6 @@
 /plan-orchestration oculus/migration
 
-In flight (five, every slot full; the five agents relaunched 2026-10-02 13:20):
+In flight (five, every slot full; the five agents relaunched 2026-10-02 13:45):
 - Q88c (the Source Control rows' and the pane strip's new right-click capabilities), repair round 1 back; the review over the round running.
 - A1 (review with feedback on diffs), repair round 1 back; the review over the round running.
 - D18 (the Processes view), repair round 1, a continuation builder.
@@ -10,9 +10,9 @@ In flight (five, every slot full; the five agents relaunched 2026-10-02 13:20):
 Queued, in order (23 steps). "Ready" means nothing in plan.md holds it back; it starts when a slot frees.
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), Z190 ruled (a); ready (its wait, U3, landed 2026-10-01).
 - Q91 (the project view and its editor); ready (its wait, X3a, landed 2026-10-02).
-- X3e (the Files view's roots, folder bookmarks, notes and sections reordered by drag, and a second Collapse Folders press closing the roots, as VS Code's), Axel 2026-10-02; ready (X3a, the Files view step, landed).
 - D14 (LaTeX on any folder, with build on save, magic comments, outline, word count and hover preview; ChkTeX moves to D36 by Z196), brief checked (`agents/reviews/D14-brief-check.md`), its findings closed in the brief at its /spec; ready (no wait in its line).
 - D17 (project commands: `.oculus/commands.yml`, the form, CMake presets, npm scripts and Makefile targets, approval of their text, task terminals with their result), brief checked (`agents/reviews/D17-brief-check.md`), its findings closed in the brief at its /spec; ready (no wait in its line).
+- X3e (the Files view's lists reordered by drag: the roots, the folder bookmarks, the notes and the sections; a second Collapse Folders press closes the roots, as VS Code's does), ruled by Axel 2026-10-02; ready (no wait).
 - D25 (the editor's options, widened with sticky scroll from headings and brackets and colouring of large files); ready (its wait, S3c, landed 2026-10-01); ordered after S4 because both write the Settings editor.
 - D15 (PDF reading); ready (no wait in its line); ordered after D14 because D14 rebuilds the LaTeX panel that D15 opens the PDF from.
 - X3c (the tab strip as VS Code's, widened with the tab's path tooltip, Open Editors drag and the Files breadcrumb removed), once Q88c has landed (Z152).

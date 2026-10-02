@@ -28,12 +28,12 @@ workers_at_once: 5           # Axel, 2026-10-01 18:49: five, to see the impact (
 ```
 
 ```yaml
-dispatch:      # five in flight (workers_at_once: 5): Q88c and A1 with their round reviews running, D18 and M3 in repair round 1, D32 building. All five agents were stopped by the user twice (12:58 and after 13:05); the five running now were launched at 13:20.
+dispatch:      # five in flight (workers_at_once: 5): Q88c and A1 with their round reviews running, D18 and M3 in repair round 1, D32 building. All five agents were stopped by the user twice (12:58 and after 13:05); the five running now were launched at 13:45.
 - step: D18
   executor: agent
   worker: claude:sonnet at ordo-high
   model: claude-sonnet-5-5 (the transcript's message.model, read at 08:29)
-  session_id: afa1f4ef77563c283 (continuation builder, launched 2026-10-02 13:20 local, served claude-sonnet-5-5 read 13:21; the 13:00 continuation a174a17aac935be9d was stopped by the user; the first builder a85f423d94391e52c, launched 08:29, was stopped at 12:58 by an interruption, its work kept in the worktree and its usage for the stopped run not reported)
+  session_id: ae13a804ea6129ba4 (continuation builder, launched 2026-10-02 13:45 local, served claude-sonnet-5-5 read 13:46; the 13:20 continuation afa1f4ef77563c283 was stopped by the user; the 13:00 continuation a174a17aac935be9d was stopped by the user; the first builder a85f423d94391e52c, launched 08:29, was stopped at 12:58 by an interruption, its work kept in the worktree and its usage for the stopped run not reported)
   worktree: .agents/worktrees/D18
   base: 47a41fa4
   launched: 2026-10-02 08:29 local
@@ -53,7 +53,7 @@ dispatch:      # five in flight (workers_at_once: 5): Q88c and A1 with their rou
   base: d1bd21f1
   launched: 2026-10-02 06:52 local
   report: agents/reviews/Q88c-report.md
-  reviewer_report: agents/reviews/Q88c-refuter.md; reviewer a15dd727556dac3f2 at ordo-high, served claude-sonnet-5-5 (read 09:50); 148,141 tokens, 112 tool uses, 48.7 min; round 1 run: reviewer a640eb371c7505be6 at ordo-high, served claude-opus-5-5 (read 13:21), launched 13:20, running (the 13:00 reviewer ad86b7adb684c9cd7 was stopped by the user); the round's delta taken by modification time, since no tree state was recorded when the round was sent; an earlier run, aa27b5d0ed365e24a, was stopped at 12:58 by an interruption before it reported
+  reviewer_report: agents/reviews/Q88c-refuter.md; reviewer a15dd727556dac3f2 at ordo-high, served claude-sonnet-5-5 (read 09:50); 148,141 tokens, 112 tool uses, 48.7 min; round 1 run: reviewer a261303f4dcff88c0 at ordo-high, served claude-opus-5-5 (read 13:46), launched 13:45, running (the 13:20 reviewer a640eb371c7505be6 was stopped by the user) (the 13:00 reviewer ad86b7adb684c9cd7 was stopped by the user); the round's delta taken by modification time, since no tree state was recorded when the round was sent; an earlier run, aa27b5d0ed365e24a, was stopped at 12:58 by an interruption before it reported
   builder_usage: to the report 319,245 tokens, 792 tool uses, 177.0 min (3 full-list runs, none printing `checks: 7 commands passed`; the third red at `test:checks` on `git.test.ts` at 901 lines, cut to 899 after); round 1 136,186 tokens, 346 tool uses, 114.5 min
   brief_check: agents/reviews/Q88c-brief-check.md (run 2026-10-01 on the earlier draft, not run again: the spec skill checks a step once; its findings closed under its Closed heading); claude-sonnet-5-5, 78,134 tokens, 94 tool uses, 15.0 min
   shared_paths: with X3a, `server/files/fs/ops.ts` (Q88c the word `export` on two functions; X3a other functions), `server/files/fs.ts` (one import line), `routes/+page.svelte` (one listener), `DESIGN.md:128` (both add sentences to one paragraph, combined at landing), `options.yml` (different blocks); with D24, `rail-badges.svelte.ts` (each its own badge function and input), `options.yml` (511 against the `appearance.yml:` block), `DESIGN.md` (after 404 against 128, 359, 395); with D35, `options.yml` (different blocks), `HELP.md` (216 and 236 against 44, 113, 171-213, 222). Each merge is additive in separate hunks or one paragraph combined by hand.
@@ -63,7 +63,7 @@ dispatch:      # five in flight (workers_at_once: 5): Q88c and A1 with their rou
   executor: agent
   worker: claude:sonnet at ordo-high
   model: claude-sonnet-5-5 (the transcript's message.model, read at 09:03)
-  session_id: aa5511cec8f1cb500 (continuation builder, launched 2026-10-02 13:20 local, served claude-sonnet-5-5 read 13:21; the 13:00 continuation a166c6a4ae3101741 was stopped by the user; the first builder a4af0ef105f4b6e97, launched 09:02, was stopped at 12:58 by an interruption, its work kept in the worktree and its usage for the stopped run not reported)
+  session_id: a90a1a7237e7927c2 (continuation builder, launched 2026-10-02 13:45 local, served claude-sonnet-5-5 read 13:46; the 13:20 continuation aa5511cec8f1cb500 was stopped by the user; the 13:00 continuation a166c6a4ae3101741 was stopped by the user; the first builder a4af0ef105f4b6e97, launched 09:02, was stopped at 12:58 by an interruption, its work kept in the worktree and its usage for the stopped run not reported)
   worktree: .agents/worktrees/M3
   base: f3bf2b6d
   launched: 2026-10-02 09:02 local
@@ -83,7 +83,7 @@ dispatch:      # five in flight (workers_at_once: 5): Q88c and A1 with their rou
   base: ce71ecf1
   launched: 2026-10-02 09:12 local
   report: agents/reviews/A1-report.md
-  reviewer_report: agents/reviews/A1-refuter.md (first run, 172 lines); reviewer a32324e09cd16a4a4 at ordo-high, served claude-opus-5-5 (read 2026-10-02); 290,561 tokens, 56 tool uses, 21.4 min; 1 Spec, 1 Proof (case 17 partial), 1 Standards, 1 Behaviour finding against items 3 and 7, plus 8 findings with no verdict; round 1 run: reviewer a9aa2515053203018 at ordo-high, served claude-opus-5-5 (read 13:21), launched 13:20, running (the 13:00 reviewer a8ce30551878e53f0 was stopped by the user); the round's delta taken by modification time, since no tree state was recorded when the round was sent; an earlier run, a203f1a220b1c0fc5, was stopped at 12:58 by an interruption before it reported
+  reviewer_report: agents/reviews/A1-refuter.md (first run, 172 lines); reviewer a32324e09cd16a4a4 at ordo-high, served claude-opus-5-5 (read 2026-10-02); 290,561 tokens, 56 tool uses, 21.4 min; 1 Spec, 1 Proof (case 17 partial), 1 Standards, 1 Behaviour finding against items 3 and 7, plus 8 findings with no verdict; round 1 run: reviewer a17f61bdeec6c3560 at ordo-high, served claude-opus-5-5 (read 13:46), launched 13:45, running (the 13:20 reviewer a9aa2515053203018 was stopped by the user) (the 13:00 reviewer a8ce30551878e53f0 was stopped by the user); the round's delta taken by modification time, since no tree state was recorded when the round was sent; an earlier run, a203f1a220b1c0fc5, was stopped at 12:58 by an interruption before it reported
   builder_usage: to the report 273,112 tokens, 192 tool uses, 80.8 min; the full list red only at `integrity.test.ts` side projects, as D18; round 1 231,617 tokens, 132 tool uses, 57.7 min (checks.sh not rerun after the last test-only change; the commands that cover it run alone)
   brief_check: agents/reviews/A1-brief-check.md; claude-sonnet-5-5, 269,064 tokens, 76 tool uses, 11.9 min
   shared_paths: with Q88c, `repositories.ts` (A1 `DiffSubject`, `diffState`, `heldDiffShape`; Q88c other functions), `repositories.svelte.ts` (A1 `openChange`; Q88c the menus' wiring), `config/text/views/sessions/changes.yml` (A1 the `sessions:` group, Q88c the `git:` group), `tests/views/sources/repositories/` (A1 `diff-pane.test.ts`, which follows Q88c's split if Q88c makes one); with X3a, `state/sources/explorer/follow.ts` (A1 one field in `followedDiffTab`, X3a new modules beside it) and `tests/views/whole/type-scale.test.ts` (separate rows), as with D18; `HELP.md` 87 and 132 and `DESIGN.md` 399 against the other steps' lines; `docs/diagrams/`, regenerated at each landing. Each is added lines in separate places.; X3a landed before it: `repositories.ts` `DiffSubject` and `diffState` carry X3a's `save` beside A1's `session`, merged by hand at A1's landing
@@ -93,7 +93,7 @@ dispatch:      # five in flight (workers_at_once: 5): Q88c and A1 with their rou
   executor: agent
   worker: claude:sonnet at ordo-high
   model: claude-sonnet-5-5 (the transcript's message.model, read at 12:31)
-  session_id: a6412ed0d51dbc641 (continuation builder, launched 2026-10-02 13:20 local, served claude-sonnet-5-5 read 13:21; the 13:00 continuation a63512de536942373 was stopped by the user; the first builder a5cf8bf3bb8e620a6, launched 12:30, was stopped at 12:58 by an interruption, its work kept in the worktree and its usage for the stopped run not reported)
+  session_id: add9186f54bd823d9 (continuation builder, launched 2026-10-02 13:45 local, served claude-sonnet-5-5 read 13:46; the 13:20 continuation a6412ed0d51dbc641 was stopped by the user; the 13:00 continuation a63512de536942373 was stopped by the user; the first builder a5cf8bf3bb8e620a6, launched 12:30, was stopped at 12:58 by an interruption, its work kept in the worktree and its usage for the stopped run not reported)
   worktree: .agents/worktrees/D32
   base: bdc0ac53
   launched: 2026-10-02 12:30 local
@@ -197,9 +197,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
-- Z267 (2026-10-02 13:40, X3c; ruled 13:50 by Axel, "X3c (b)"): a hovered tab's path is shown by the tooltip and the breadcrumbs only, as VS Code's; no status-bar path (the user).
-- Z263 (2026-10-02 12:40, raised; ruled 13:40 by Axel, "X3e => Accepted with (a)"): a new step X3e, drag reorders the Files view's roots, folder bookmarks, notes and sections, and a second Collapse Folders press closes the roots; booked in `plan.md` after X3c and in `queue.md` (the user).
 - Z266 (2026-10-02 13:05, Axel; rewritten 13:20 at his word that the first text read as talking to a child): talk to Axel as an expert colleague; steps named by id and what they are; decisions in the open-item format with pros, cons, a recommendation and the lazy option named; booked as the first standing demand; replaces opening reports with the open items verbatim (the user).
+- Z263, the Files view's order and Collapse Folders (raised 2026-10-02 12:40): ruled by Axel 13:45, (a): new step X3e, the roots, folder bookmarks, notes and sections reordered by drag, a second Collapse Folders press closing the roots; (c), nothing, was the lazy option (the user).
 - Z265 (2026-10-02 12:25, D32's brief check): a refusal's own text reaches the reader only as a catalog word; the search route answers words; narrows Z259 (the orchestrator, automode).
 - Z264 (2026-10-02 12:25, D32's brief check): replace exactly as VS Code's ReplacePattern and Preserve Case, emulated over ripgrep's groups; differences listed in the brief (the orchestrator, automode).
 - Z262 (2026-10-02 12:40, X3c): the tab tooltip names the full path; Open Editors drag reorders tabs; the Files tree's breadcrumb goes once X3c's file-tab breadcrumbs are in (the orchestrator, automode).
@@ -810,9 +809,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - Axel runs oculus with `npm run dev` from `tools/oculus` (shell history, 2026-09-10), which serves on 127.0.0.1:8790 since 472080d. The orchestrator's own checks use the built server (`npm run build && node src/server.ts`) on 8790 and an agent's on 8791; no orchestrator server is left running after a check, so Axel's `npm run dev` never finds the port taken.
 
 ## Current position (rewrite at every package)
-- 2026-10-02 13:50. Axel ruled Z267 (b): X3c keeps the tooltip and the breadcrumbs, no status-bar path. Open for Axel: none besides Z251. In flight, five, as at 13:25.
-- 2026-10-02 13:45. Axel ruled X3e (a): booked as a step, ready, in the queue. D25's sticky-scroll widening states the access-specifier scopes. Open for Axel: Z267 (a hovered tab's path in the status bar). In flight, five, as at 13:25. Next: the round reviews of Q88c and A1, then their landings.
 
+- 2026-10-02 13:50. Axel ruled X3e (a), a new Files view step, queued. The five agents relaunched at 13:45 after the user stopped the 13:20 ones. Next: the round reviews of Q88c and A1, then their landings.
 - 2026-10-02 13:25. In flight, five, relaunched at 13:20 after the user stopped the 13:00 agents: Q88c and A1 (round 1 reviews on Opus), D18 and M3 (repair round 1, continuation builders on Sonnet), D32 (building, continuation builder on Sonnet). queue.md corrected against plan.md: D32 back in flight; the waits it gave S4, D14, D17, D25 and D15 had no line or ruling behind them and are gone; 22 queued steps. Standing demand Z266 rewritten. Open for Axel: Z263 (a new Files view step, X3e). Next: the round reviews, then /land Q88c and /land A1 with the look on TEST.
 - 2026-10-02 13:05. In flight, five: Q88c and A1 (repair round 1 back, each round review running on Opus), D18 and M3 (repair round 1, continuation builders on Sonnet after the 12:58 interruption stopped the first ones), D32 (building, continuation builder on Sonnet). D32 prepared at bdc0ac53 with Z264 and Z265. Z266 booked: talk to Axel as a person. Open for Axel: Z263 (a new Files view step). Z251 waits for ten landings (1 so far). Next: the two round reviews, then /land Q88c and /land A1 with the look on TEST; /spec D14 and D17 as slots free.
 - 2026-10-02 11:50. X3a landed (the Files view as VS Code's Explorer), conflicts in five files and the diagrams resolved by taking both sides, 9 fixes at landing (the run over round 1's findings, a red line on main's live-reload test, two folder-size and one comment-width and one lint line after the merge), the look on TEST taken, `checks: 7 commands passed` on main. A1's and D18's first reviews are in (Opus). In flight: Q88c (repair round 1), M3 (building), A1 and D18 (rounds next). Next: A1's and D18's round 1 briefs; /spec D32, D14 and D17. Z251 counts landings under the new rules from here: 0 of 10 (X3a was reviewed before them).
