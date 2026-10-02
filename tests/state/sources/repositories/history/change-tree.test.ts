@@ -13,12 +13,10 @@ import {
     leafOf,
     prunedCollapsed,
     withoutClosedCommits,
-    visibleRows
-} from '../../../../../src/lib/state/sources/repositories/change-tree.ts';
-import {
     repositoryKeyRows,
+    visibleRows,
     type KeyRow
-} from '../../../../../src/lib/state/sources/repositories/repositories.ts';
+} from '../../../../../src/lib/state/sources/repositories/change-tree.ts';
 import { git } from '../../../../fixtures/sessions-fixture.ts';
 
 /** The paths as entries, which is all the tree reads of one. */

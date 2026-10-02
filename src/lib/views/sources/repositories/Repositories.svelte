@@ -1,6 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Repositories follows the file browser in the Explorer page's
-    // group: the same roots, read as repositories rather than as folders.
+    // group: the same roots, read as repositories rather than as folders. Its rail badge is the
+    // number of changes over every repository the `git` channel lists.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -8,7 +9,8 @@
         label: 'views.repositories',
         glyph: 'views.repositories_glyph',
         group: 'explorer',
-        order: 1
+        order: 1,
+        badge: (client) => client.railBadges.repositoriesBadge()
     };
 </script>
 
@@ -43,8 +45,16 @@
     // files are text rather than state and are read when a pane or a section asks for them.
     //
     // A repository row's right-click menu starts a shell in the repository through the store, as a
-    // worktree's terminal control does, and reveals its folder in Finder through the open endpoint;
-    // a reveal Finder refused is said on one line over the list until the next one.
+    // worktree's terminal control does, reveals its folder in Finder through the open endpoint, and
+    // closes it or every other one. A reveal Finder refused is said on one line over the list until
+    // the next one.
+    //
+    // A repository closed in this tab leaves its list and is never the one shown; it is a filter on
+    // what this tab draws, kept in the instance's state, and the channel still carries it. Reopen
+    // Closed Repositories, in the title bar and in the `...` menu while any is closed, asks which
+    // in a quick pick (ui/forms/choice/QuickPick.svelte), with All Repositories
+    // after the rule when more than one is closed. With every repository closed the view says so
+    // and offers the same control.
 
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
@@ -58,10 +68,14 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Repo from './Repo.svelte';
     import RepoList from './RepoList.svelte';
+    import QuickPick from '$lib/ui/forms/choice/QuickPick.svelte';
+    import { closedChoices } from './menus/repo-menu';
     import { toggleExpanded } from '$lib/state/sources/fs';
     import { prunedCollapsed } from '$lib/state/sources/repositories/change-tree';
     import {
         canPublish,
+        closeOthers,
+        closeRepository,
         pickerRoots,
         plannedPath,
         publishWords,
@@ -69,10 +83,12 @@
         pushWords,
         repoShape,
         repositoriesViewOf,
+        reopenRepositories,
         repositoryLabels,
         shownRoot,
         syncWords,
         upstreamOf,
+        visibleRoots,
         type RepositoriesView
     } from '$lib/state/sources/repositories/repositories';
     import type { StashMode } from '$lib/state/sources/repositories/repositories.svelte';
@@ -90,14 +106,17 @@
 
     let { instance }: ViewProps = $props();
 
-    const roots = $derived(pickerRoots(gitRoots(), gitFor));
-    const labels = $derived(repositoryLabels(roots));
+    const every = $derived(pickerRoots(gitRoots(), gitFor));
     const view = $derived(repositoriesViewOf(instanceState(instance.id)));
+    const roots = $derived(visibleRoots(every, view.closed));
+    const labels = $derived(repositoryLabels(every));
     const shown = $derived(shownRoot(roots, view.root));
     const held = $derived(gitFor(shown));
     const readable = $derived(held !== null && repoShape(shown, held) === 'readable');
     let asking: Ask | null = $state(null);
     let prompting: PromptRequest | null = $state(null);
+    /** Whether the Reopen Closed Repositories quick pick is open. */
+    let reopening = $state(false);
     /** What the last reveal of a repository's folder was refused with, or the empty string. */
     let refused = $state('');
     /** The reveals asked so far, so an answer a later one superseded is dropped. */
@@ -108,8 +127,25 @@
         setInstanceState(instance.id, { ...instanceMap(instanceState(instance.id)), ...part });
     }
 
-    function ask(message: string, detail: string, act: () => void): void {
-        asking = { message, detail, act };
+    function ask(message: string, detail: string, act: () => void, confirm?: string): void {
+        asking =
+            confirm === undefined ? { message, detail, act } : { message, detail, act, confirm };
+    }
+
+    /** Close a repository in this tab; the view moves to the first one left if it was shown. */
+    function closeRoot(root: string): void {
+        patch({ closed: closeRepository(view, root).closed });
+    }
+
+    /** Close every repository but one, which the view then shows. */
+    function closeAllBut(root: string): void {
+        patch({ closed: closeOthers(view, every, root).closed, root, commit: '' });
+    }
+
+    /** Reopen one closed repository, or every one for the quick pick's last row. */
+    function reopen(root: string): void {
+        reopening = false;
+        patch({ closed: reopenRepositories(view, root).closed });
     }
 
     /** Ask a question given as the words it is worded in. */
@@ -143,7 +179,23 @@
 
     /** The `...` menu, in VS Code's groups, holding only what the repository can do now. */
     const menu = $derived.by<MenuGroup[]>(() => {
-        if (held === null || !readable) return [];
+        const reopen: MenuGroup[] =
+            view.closed.length === 0
+                ? []
+                : [
+                      {
+                          id: 'closed',
+                          heading: t('repositories.menu_closed'),
+                          items: [
+                              {
+                                  id: 'reopen',
+                                  label: t('repositories.reopen_closed'),
+                                  glyph: 'repositories'
+                              }
+                          ]
+                      }
+                  ];
+        if (held === null || !readable) return reopen;
         const upstream = upstreamOf(held);
         const remote = [
             { id: 'pull', label: t('repositories.pull'), glyph: 'pull' },
@@ -180,11 +232,16 @@
                     { id: 'create', label: t('repositories.tag_create'), glyph: 'tag' },
                     { id: 'push', label: t('repositories.tags_push'), glyph: 'push' }
                 ]
-            }
+            },
+            ...reopen
         ];
     });
 
     function picked(id: string, _event: MouseEvent, group?: string): void {
+        if (group === 'closed') {
+            reopening = true;
+            return;
+        }
         if (held === null) return;
         const root = shown;
         const git = held;
@@ -307,6 +364,15 @@
                 onclick={() => patch({ mode: 'tree' })}
             />
         {/if}
+        {#if view.closed.length > 0}
+            <ToolButton
+                label={t('repositories.reopen_closed')}
+                glyph="repositories"
+                compact
+                bare
+                onclick={() => (reopening = true)}
+            />
+        {/if}
         {#if menu.length > 0}
             <span data-repo-menu>
                 <Menu
@@ -327,8 +393,10 @@
 
 <Pane title={t('views.repositories')} toolbar={tools} tinted>
     <div class="repos" data-instance={instance.id} data-view="repositories">
-        {#if roots.length === 0}
+        {#if every.length === 0}
             <Empty message={t('repositories.empty')} glyph={t('repositories.empty_glyph')} />
+        {:else if roots.length === 0}
+            <Empty message={t('repositories.all_closed')} glyph={t('repositories.empty_glyph')} />
         {:else}
             {#if refused !== ''}
                 <Empty error message={refused} />
@@ -346,6 +414,8 @@
                 onterminal={(root: string) =>
                     void repositories.shellIn(root, root, labels[root] ?? root)}
                 onreveal={(root: string) => void reveal(root)}
+                onclose={closeRoot}
+                oncloseothers={closeAllBut}
             />
             {#if held !== null}
                 {#key shown}
@@ -374,6 +444,16 @@
         {/if}
     </div>
 </Pane>
+
+{#if reopening}
+    <QuickPick
+        title={t('repositories.reopen_title')}
+        placeholder={t('repositories.reopen_placeholder')}
+        choices={closedChoices(view.closed, labels, t)}
+        onpick={reopen}
+        onclose={() => (reopening = false)}
+    />
+{/if}
 
 <AskConfirm {asking} onclose={() => (asking = null)} />
 

@@ -246,7 +246,10 @@ const UNMERGED = ['DD', 'AU', 'UD', 'UA', 'DU', 'AA', 'UU'];
 export type LineCounts = Map<string, [number | null, number | null]>;
 
 /** The four change lists of a repository's state. */
-export type StatusLists = Pick<GitState, 'staged' | 'unstaged' | 'untracked' | 'conflicted'>;
+export type StatusLists = Pick<
+    GitState,
+    'staged' | 'unstaged' | 'untracked' | 'conflicted' | 'held'
+>;
 
 /**
  * The rows of `diff --numstat -z` by path. A binary file reports `-` and becomes null. A rename
@@ -276,12 +279,18 @@ export function parseNumstat(output: string): LineCounts {
 }
 
 /**
- * The status records sorted into the four lists, each cut to `cap`. Line counts come from the
- * worktree diff, which says nothing about the index, so a staged file reports its letter and no
- * numbers rather than the wrong ones.
+ * The status records sorted into the four lists, each cut to `cap`, and `held`, the count each list
+ * had before the cut. Line counts come from the worktree diff, which says nothing about the index,
+ * so a staged file reports its letter and no numbers rather than the wrong ones.
  */
 export function statusLists(records: StatusRecord[], counts: LineCounts, cap: number): StatusLists {
-    const lists: StatusLists = { staged: [], unstaged: [], untracked: [], conflicted: [] };
+    const lists: StatusLists = {
+        staged: [],
+        unstaged: [],
+        untracked: [],
+        conflicted: [],
+        held: { staged: 0, changes: 0, untracked: 0, merge: 0 }
+    };
     const entry = (
         path: string,
         status: string,
@@ -311,7 +320,15 @@ export function statusLists(records: StatusRecord[], counts: LineCounts, cap: nu
             }
         }
     }
-    for (const list of Object.values(lists)) list.length = Math.min(list.length, cap);
+    lists.held = {
+        staged: lists.staged.length,
+        changes: lists.unstaged.length,
+        untracked: lists.untracked.length,
+        merge: lists.conflicted.length
+    };
+    for (const list of [lists.staged, lists.unstaged, lists.untracked, lists.conflicted]) {
+        list.length = Math.min(list.length, cap);
+    }
     return lists;
 }
 

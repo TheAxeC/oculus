@@ -149,6 +149,10 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which result the pointer is on',
     'src/lib/views/academic/slides/Slides.svelte .row:hover':
         'a hover response, saying which row the pointer is on',
+    'src/lib/ui/forms/choice/QuickPick.svelte .row.now':
+        'a hover response, saying which choice the keys are on',
+    'src/lib/ui/forms/choice/QuickPick.svelte .row:hover':
+        'a hover response, saying which choice the pointer is on',
     'src/lib/views/sources/search/Results.svelte .row:hover':
         'a hover response, saying which row the pointer is on',
     'src/lib/views/system/audit/Audit.svelte li:hover':

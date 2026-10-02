@@ -102,9 +102,12 @@ export function payload(workspaces: Workspace[]): SessionsPayload {
     return { records, workspaces, terminals: [] };
 }
 
-/** One workspace's git state, clean unless the case says otherwise. */
+/**
+ * One workspace's git state, clean unless the case says otherwise. The counts git held before the
+ * 200-entry cut are those of the lists given, unless the case names its own `held`.
+ */
 export function git(over: Partial<GitState> = {}): GitState {
-    return {
+    const state: GitState = {
         branch: 'main',
         ahead: 0,
         behind: 0,
@@ -113,6 +116,7 @@ export function git(over: Partial<GitState> = {}): GitState {
         unstaged: [],
         untracked: [],
         conflicted: [],
+        held: { staged: 0, changes: 0, untracked: 0, merge: 0 },
         sequence: '',
         mergeMessage: '',
         remotes: [],
@@ -127,6 +131,16 @@ export function git(over: Partial<GitState> = {}): GitState {
         repository: true,
         error: null,
         ...over
+    };
+    if (over.held !== undefined) return state;
+    return {
+        ...state,
+        held: {
+            staged: state.staged.length,
+            changes: state.unstaged.length,
+            untracked: state.untracked.length,
+            merge: state.conflicted.length
+        }
     };
 }
 

@@ -6,14 +6,14 @@
 // Pull runs with the repository's own configuration, so a repository set to rebase on pull is
 // rebased and one set to merge is merged; nothing here imposes a strategy. A pull that stops on
 // conflicts leaves the merge or the rebase in progress, and the answer names the paths, which the
-// view then draws under Merge Changes. Nothing is ever forced: publishing a branch sets its
+// view then draws under Merge Changes. No push here is forced: publishing a branch sets its
 // upstream on a remote the repository already has, and a branch that has one is refused.
 
+import { permitted } from '../core/paths.ts';
 import {
     allowedRoots,
     failed,
     fetchIn,
-    permitted,
     pullIn,
     pushTo,
     refFormat,

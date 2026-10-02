@@ -355,6 +355,12 @@ export type GitCommit = {
 /** One branch of a repository, its upstream and whether it is the checked-out one. */
 export type GitBranch = { name: string; upstream: string; current: boolean };
 
+/**
+ * The code a refused Delete Branch carries when git calls the branch not fully merged, which is
+ * how the page tells that refusal from every other without reading git's words.
+ */
+export const BRANCH_NOT_MERGED = 'not-merged';
+
 /** One worktree of a repository. `main` is the checkout the others hang off. */
 export type GitWorktree = {
     path: string;
@@ -380,9 +386,10 @@ export type GitTag = { name: string; commit: string; annotated: boolean; subject
 
 /**
  * What a repository is in the middle of: a merge that stopped on conflicts (MERGE_HEAD is there), a
- * rebase that did (a rebase folder is there), or nothing.
+ * rebase that did (a rebase folder is there), a cherry-pick that did (CHERRY_PICK_HEAD is there),
+ * or nothing.
  */
-export type GitSequence = 'merging' | 'rebasing' | '';
+export type GitSequence = 'merging' | 'rebasing' | 'cherry-picking' | '';
 
 /**
  * One commit of the graph: its parents, which the lanes are drawn from, the branch and tag names
@@ -408,6 +415,11 @@ export type GitGraphPage = {
     incoming: GitGraphCommit[];
     /** What HEAD holds that the upstream does not, newest first; empty with no upstream. */
     outgoing: GitGraphCommit[];
+    /**
+     * The ref the checked-out branch is compared against by Compare with Merge Base, read the way
+     * VS Code reads a branch's base; the empty string when there is none. Set on the first page.
+     */
+    base?: string;
 };
 
 /** One path a commit changed, git's letter first, and the old path of a rename or copy. */
@@ -511,9 +523,14 @@ export type GitState = {
      * `AU`, `UA`, `DU`, `UD`) as its status. A path here is in neither list above.
      */
     conflicted: GitEntry[];
+    /**
+     * How many rows each list held before it was cut to its first 200: `changes` is `unstaged`,
+     * `merge` is `conflicted`. A list shorter than its count has rows that are not shown.
+     */
+    held: { staged: number; changes: number; untracked: number; merge: number };
     /** What the repository is in the middle of, which Abort and Commit act on. */
     sequence: GitSequence;
-    /** The message git prepared for the merge in progress, comment lines left out. */
+    /** The message git prepared for the merge or cherry-pick in progress, comments left out. */
     mergeMessage: string;
     /** The repository's remotes by name, which Publish Branch offers. */
     remotes: string[];

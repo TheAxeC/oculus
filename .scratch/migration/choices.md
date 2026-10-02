@@ -961,3 +961,10 @@ Where it is built: D32. Booked in the state file's closed log and `plan.md` Ruli
 
 Where it is built: D32. Booked in the state file's closed log and `plan.md` Rulings.
 
+
+## Z277 (2026-10-02, M3's round review): the worktrees' folder list
+
+- Chosen: `tools/present` added to `worktree_paths` in `.agents/plan.yaml` and the state file. `tools/cockpit/tests/run.sh` runs `test_presentation.py`, which imports `deck_config` from `tools/present`, so in a worktree without that folder the script exits 1 on a file no step changed.
+- Not chosen: running the script without `test_presentation.py` in a worktree, the lazy option, which leaves one part of the cockpit's check unrun on every step.
+
+Where it applies: every worktree made from now on. Booked in the state file's closed log and `plan.md` Rulings.

@@ -1,8 +1,9 @@
-// Layer 2, server. The git writes over the index that VS Code's Source Control makes from its
-// diff and its section heads: a hunk or chosen lines staged, unstaged or reverted, a whole group
-// staged, unstaged or discarded, a conflicted path resolved from the merge editor or marked
-// resolved as it stands, a deletion one side made taken, and a merge or a rebase that stopped taken
-// back or carried on.
+// Layer 2, server. The git writes over the index that VS Code's Source Control makes from its diff
+// and its section heads: a hunk or chosen lines staged, unstaged or reverted, a whole group staged,
+// unstaged or discarded, a conflicted path resolved from the merge editor or marked resolved as it
+// stands, a deletion one side made taken, and a merge, a rebase or a cherry-pick that stopped taken
+// back or carried on. Two writes touch files rather than the index: untracked paths moved to the
+// Trash, and paths appended to the root's `.gitignore`.
 //
 // A hunk or a set of lines arrives as a patch the page cut from the diff it drew, and git applies
 // it: `apply --cached` to the index for a stage, the same reversed for an unstage, and reversed on
@@ -13,25 +14,30 @@
 // A path handed to git is checked by core/git/run.ts's `pathInside`; the records of `status
 // --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
 
-import { isAbsolute, join } from 'node:path';
-import { existsSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join } from 'node:path';
+import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { byKey } from '../../data/helpers/guards.ts';
-import { writeTextAtomic } from '../core/json.ts';
-import { pathInside } from '../core/git/run.ts';
+import { writeBytesAtomic, writeTextAtomic } from '../core/json.ts';
+import { HASH, pathInside } from '../core/git/run.ts';
 import { statusRecords } from '../core/git/parse.ts';
+import { inside, permitted, realPath } from '../core/paths.ts';
+import { guarded, type Guard } from '../files/fs/ops.ts';
 import {
     addTo,
     allowedRoots,
     applyPatch,
+    checkPaths,
+    cherryPickIn,
     failed,
-    permitted,
     porcelain,
     rebaseIn,
     removeIn,
     restore,
     mergeIn,
     revParse,
+    stoppedOn,
     unmergedPaths,
+    untrackedAmong,
     untrackedIn,
     type Outcome
 } from './git-write.ts';
@@ -213,8 +219,8 @@ export async function markResolved(
     return addTo(root, ['--', path]);
 }
 
-/** Which of the two the repository is in the middle of, read as git itself would. */
-async function inProgress(root: string): Promise<'merge' | 'rebase' | ''> {
+/** Which of the three the repository is in the middle of, read as git itself would. */
+async function inProgress(root: string): Promise<'merge' | 'rebase' | 'cherry-pick' | ''> {
     const merging = await revParse(root, ['--verify', '--quiet', 'MERGE_HEAD']);
     if (merging.ok) return 'merge';
     for (const name of ['rebase-merge', 'rebase-apply']) {
@@ -223,16 +229,164 @@ async function inProgress(root: string): Promise<'merge' | 'rebase' | ''> {
         const path = where.output.trim();
         if (existsSync(isAbsolute(path) ? path : join(root, path))) return 'rebase';
     }
-    return '';
+    const picking = await revParse(root, ['--verify', '--quiet', 'CHERRY_PICK_HEAD']);
+    return picking.ok ? 'cherry-pick' : '';
 }
 
-/** Abort Merge: take the merge, or the rebase a pull began, back to where it started. */
+/**
+ * Abort Merge: take the merge, the cherry-pick, or the rebase a pull began, back to where it
+ * started.
+ */
 export async function abortMerge(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
     const doing = await inProgress(root);
     if (doing === 'merge') return mergeIn(root, ['--abort']);
     if (doing === 'rebase') return rebaseIn(root, '--abort');
+    if (doing === 'cherry-pick') return cherryPickIn(root, ['--abort']);
     return failed('no merge is in progress here, so there is nothing to abort');
+}
+
+/** What VS Code says of a pick that changes nothing, which git calls an empty cherry-pick. */
+const ALREADY_PRESENT = 'The changes are already present in the current branch.';
+
+/**
+ * Cherry-pick a commit onto the checked-out branch. The commit is a hash, checked before git runs.
+ * A pick that stops on conflicts is left in progress for the merge editor, as a merge is, and taken
+ * back by Abort Merge; a pick that changes nothing is aborted and answered in VS Code's words.
+ */
+export async function cherryPick(
+    root: string,
+    hash: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed(UNKNOWN);
+    if (typeof hash !== 'string' || !HASH.test(hash)) return failed(`${hash} is not a commit`);
+    const done = await cherryPickIn(root, [hash]);
+    if (done.ok) return done;
+    if ((await inProgress(root)) !== 'cherry-pick') return done;
+    if ((await unmergedPaths(root)).length > 0) return stoppedOn(root, done, 'the cherry-pick');
+    const taken = await cherryPickIn(root, ['--abort']);
+    return taken.ok ? failed(ALREADY_PRESENT) : taken;
+}
+
+/** Whether a symbolic link is at the path, whatever it points at. */
+function linkAt(path: string): boolean {
+    try {
+        return lstatSync(path).isSymbolicLink();
+    } catch {
+        return false;
+    }
+}
+
+/** The dependencies a discard of untracked files is handed: the Trash, and the guard over files. */
+export type TrashInto = {
+    trash: (path: string, options: { glob: false }) => Promise<void>;
+    guard: () => Guard;
+};
+
+/**
+ * Move untracked paths to the Trash, each as one item by its real location. A path is refused
+ * before the Trash is called when git does not list it as untracked (a tracked path, a path git
+ * lists nowhere), when it is a file the server never changes or a folder holding one, and when its
+ * folder or the path itself, a symbolic link followed to its target, resolves outside the
+ * repository or cannot be resolved. A link that points inside the repository, or at nothing, is
+ * moved as the link. A collapsed untracked folder (`dir/`) is one item. The first path the Trash
+ * fails on stops the rest.
+ */
+export async function trashUntracked(
+    root: string,
+    paths: string[],
+    into: TrashInto,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const loose = await untrackedAmong(root, paths, roots);
+    if (!(loose instanceof Set)) return loose;
+    const top = realPath(root);
+    if (top === null) return failed('the repository could not be found');
+    const items: { path: string; real: string; target: string }[] = [];
+    for (const path of paths) {
+        if (!loose.has(path)) return failed(`${path} is not an untracked path, so it is kept`);
+        const bare = path.endsWith('/') ? path.slice(0, -1) : path;
+        const folder = realPath(dirname(join(root, bare)));
+        if (folder === null || !inside(folder, top)) {
+            return failed(`the path ${path} is not inside the workspace`);
+        }
+        const real = join(folder, basename(bare));
+        // A link whose target is missing is moved as the link, which changes nothing it named.
+        const target = realPath(real) ?? (linkAt(real) ? real : null);
+        if (target === null) return failed(`the path ${path} could not be found`);
+        if (!inside(target, top)) return failed(`the path ${path} is not inside the workspace`);
+        items.push({ path, real, target });
+    }
+    const guard = into.guard();
+    const kept = items.find((item) => guarded(guard, item.real) || guarded(guard, item.target));
+    if (kept !== undefined) return failed(`${kept.path} is a file this server never changes`);
+    for (const item of items) {
+        try {
+            await into.trash(item.real, { glob: false });
+        } catch {
+            return failed(`${item.path} could not be moved to the Trash`);
+        }
+    }
+    return { ok: true, output: '', error: '' };
+}
+
+/** The line a path is written as in `.gitignore`: slashes forward, an opening bracket escaped. */
+function ignoreLine(path: string): string {
+    return path.replace(/\\/g, '/').replace(/\/+$/, '').replace(/\[/g, '\\[');
+}
+
+/**
+ * Add paths of untracked and changed files to the root's `.gitignore`, one line each as VS Code
+ * writes it: the path relative to the root, nothing checked for a line already there. The file is
+ * made when missing, a line ending is added first when its last line has none, and the file's own
+ * line ending is kept. The write is atomic and the file is read again to see the lines are its
+ * last. A `.gitignore` that is a symbolic link, a folder, or lies outside the repository is
+ * refused.
+ */
+export function addToGitignore(
+    root: string,
+    paths: string[],
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    return Promise.resolve(appendIgnored(root, paths, roots));
+}
+
+/** The writes of addToGitignore, which read and write the file synchronously. */
+function appendIgnored(root: string, paths: string[], roots: string[]): Outcome {
+    const wrong = checkPaths(root, paths, roots);
+    if (wrong !== '') return failed(wrong);
+    const file = join(root, '.gitignore');
+    const top = realPath(root);
+    if (top === null) return failed('the repository could not be found');
+    let current = '';
+    try {
+        const info = lstatSync(file);
+        if (info.isSymbolicLink() || !info.isFile()) {
+            return failed('.gitignore is not a plain file, so nothing is added to it');
+        }
+        const real = realPath(file);
+        if (real === null || !inside(real, top)) {
+            return failed('.gitignore leaves the repository, so nothing is added to it');
+        }
+        current = readFileSync(file, 'utf8');
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+            return failed(`.gitignore could not be read: ${String(error)}`);
+        }
+    }
+    const eol = current.includes('\r\n') ? '\r\n' : '\n';
+    const lead = current === '' || current.endsWith('\n') ? '' : eol;
+    const added = `${paths.map(ignoreLine).join(eol)}${eol}`;
+    try {
+        writeBytesAtomic(file, Buffer.from(`${current}${lead}${added}`, 'utf8'));
+        if (!readFileSync(file, 'utf8').endsWith(added)) {
+            return failed('.gitignore changed while it was written, so check its last lines');
+        }
+    } catch (error) {
+        return failed(`.gitignore could not be written: ${String(error)}`);
+    }
+    return { ok: true, output: '.gitignore', error: '' };
 }
 
 /**

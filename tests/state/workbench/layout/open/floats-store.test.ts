@@ -14,6 +14,7 @@ import {
     type Float,
     type Pages
 } from '../../../../../src/lib/state/workbench/layout/index.ts';
+import { setLocked } from '../../../../../src/lib/state/workbench/layout/tree.ts';
 import { LAYOUT_KEY } from '../../../../../src/lib/state/workbench/layout.svelte.ts';
 import { parseFloats } from '../../../../../src/lib/state/workbench/navigation/arrangement.ts';
 import { railPages } from '../../../../../src/lib/state/workbench/navigation/rail.ts';
@@ -495,5 +496,40 @@ describe('the pages the store holds beside the floats', () => {
         expect(
             panes(client.layout.layout()).map(({ pane: one }) => one.tabs.map((tab) => tab.id))
         ).toEqual([['a'], ['x']]);
+    });
+});
+
+describe('a float locked through the store', () => {
+    it('keeps the lock across a dock, a move and a save and read back', () => {
+        const storage = booted(
+            heldPages([pageAround('main', pane(['a']))], [floating('fl', ['x'])])
+        );
+        client.layout.change((tree) => setLocked(tree, [], true), 'fl');
+        expect(client.layout.floats()[0].pane.locked).toBe(true);
+        client.layout.dockFloat('fl', 'bottom');
+        client.layout.placeFloat('fl', { kind: 'dock', edge: 'bottom', size: 0.4 });
+        client.layout.freeFloat('fl');
+        expect(client.layout.floats()[0].pane.locked).toBe(true);
+        const again = createClientState();
+        again.layout.loadLayout(storage);
+        expect(again.layout.floats()[0].pane.locked).toBe(true);
+        client.layout.change((tree) => setLocked(tree, [], false), 'fl');
+        expect(client.layout.floats()[0].pane.locked).toBeUndefined();
+    });
+
+    it('is made from a locked pane of a page, saved and read back locked', () => {
+        const storage = booted(
+            heldPages([
+                pageAround(
+                    'main',
+                    split('row', [0.5, 0.5], [pane(['a']), { ...paneOf(['b']), locked: true }])
+                )
+            ])
+        );
+        client.layout.floatPane([1], 'main');
+        expect(client.layout.floats()[0].pane.locked).toBe(true);
+        const again = createClientState();
+        again.layout.loadLayout(storage);
+        expect(again.layout.floats()[0].pane.locked).toBe(true);
     });
 });

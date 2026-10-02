@@ -95,14 +95,16 @@ const graphPageShape = z.union([
             commits: z.array(graphCommitShape),
             more: z.boolean(),
             incoming: z.array(graphCommitShape),
-            outgoing: z.array(graphCommitShape)
+            outgoing: z.array(graphCommitShape),
+            base: z.string().optional()
         })
     ),
     z.object({
         commits: survivorsShape(graphCommitShape),
         more: z.boolean(),
         incoming: survivorsShape(graphCommitShape),
-        outgoing: survivorsShape(graphCommitShape)
+        outgoing: survivorsShape(graphCommitShape),
+        base: z.string().optional()
     })
 ]) satisfies z.ZodType<GitGraphPage>;
 
@@ -145,6 +147,11 @@ const branchesBodyShape = z.object({ branches: survivorsShape(branchShape).catch
 const commitFilesBodyShape = z.object({
     files: survivorsShape(commitFileShape).catch(() => []),
     error: optionalTextShape
+});
+
+/** The refs an answer lists, by name. */
+const refsBodyShape = z.object({
+    refs: z.array(z.object({ name: z.string() })).catch(() => [])
 });
 
 /** The parts of a file's diff, each as the shape holds it or absent. */
@@ -231,6 +238,12 @@ export function graphPageOf(
     if (!ok || held.page === undefined) return { page: null, failure: held.error ?? failed };
     const page = readAs(graphPageShape, held.page);
     return page === null ? { page: null, failure: failed } : { page, failure: '' };
+}
+
+/** The names of the refs an answer lists, or null when it was refused or not read. */
+export function refNamesOf(ok: boolean, body: unknown): string[] | null {
+    if (!ok || !wasRead(body)) return null;
+    return readOr(refsBodyShape, body, { refs: [] }).refs.map((one) => one.name);
 }
 
 /** The three sides of a conflict an answer carries, or the sentence it failed with. */

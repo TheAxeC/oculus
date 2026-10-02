@@ -50,9 +50,12 @@ describe('the change lists of a status', () => {
             staged: [entry('both.txt', 'M'), entry('new.txt', 'A')],
             unstaged: [entry('both.txt', 'M', 3, 1)],
             untracked: [entry('loose', '?')],
-            conflicted: [entry('fight.txt', 'UU')]
+            conflicted: [entry('fight.txt', 'UU')],
+            held: { staged: 2, changes: 1, untracked: 1, merge: 1 }
         });
-        expect(statusLists(records, counts, 1).staged).toEqual([entry('both.txt', 'M')]);
+        const cut = statusLists(records, counts, 1);
+        expect(cut.staged).toEqual([entry('both.txt', 'M')]);
+        expect(cut.held).toEqual({ staged: 2, changes: 1, untracked: 1, merge: 1 });
     });
 
     // Revert: leave `from` out of the entry statusLists builds.

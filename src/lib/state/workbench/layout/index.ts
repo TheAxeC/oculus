@@ -57,6 +57,7 @@ export {
     removeTab,
     resize,
     restate,
+    setLocked,
     splitLeaf,
     splitPane
 } from './tree.ts';
@@ -79,6 +80,7 @@ export {
     writeHost
 } from './open/floats.ts';
 export type { FloatSpec } from './open/floats.ts';
+export { newNoteOpener } from './open/new-note.ts';
 export { asPreview, isPreview, keepInstance, previewIn, retarget } from './open/preview.ts';
 export {
     clearPage,

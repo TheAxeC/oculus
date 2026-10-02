@@ -23,6 +23,34 @@ export type ServedRoot = { key: string; dir: string };
 /** A file of a repository: the repository's folder and the path under it. */
 export type RepoFile = { root: string; path: string };
 
+/** The version of a tracked file a read-only tab holds: the last commit's, or the index's. */
+export type HeadStage = 'head' | 'index';
+
+/** The state of a source tab over a file at HEAD or in the index. */
+export type HeadTabState = {
+    id: string;
+    root: string;
+    path: string;
+    label: string;
+    head: HeadStage;
+};
+
+/**
+ * The state of a read-only tab over a tracked file at HEAD or in the index (Open File (HEAD)). The
+ * `root` is the repository's own directory, which the git route reads from, and the id names the
+ * stage as well, so the file at HEAD, in the index and on disk are three tabs.
+ */
+export function headTabState(root: string, path: string, stage: HeadStage): HeadTabState {
+    const name = path.split('/').filter(Boolean).at(-1) ?? path;
+    return {
+        id: `head:${stage}:${root}:${path}`,
+        root,
+        path,
+        label: stage === 'head' ? t('source.head_label', name) : t('source.index_label', name),
+        head: stage
+    };
+}
+
 /** A file as a source tab names it: the served root's key and the path under it. */
 export type TabFile = { root: string; path: string };
 

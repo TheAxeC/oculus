@@ -24,6 +24,12 @@
 // subscription is answered with the channel's current message, so a git watcher started after the
 // first scan reads the workspaces immediately.
 //
+// A configured root that is no repository itself is a folder of them (a `~/workspace`), so each
+// direct subfolder of it that holds a `.git`, a folder or a file, is on the channel after it. The
+// scan is one folder deep, skips links and `node_modules`, and runs when the roots are read (at
+// start, on a config push and when the workspaces file moves) and when an event names an entry on
+// the top level of such a root, which is how a repository cloned while the server runs is found.
+//
 // The hub root is on the channel whether or not a session names it, since the deposit and the pin
 // controls read the hub's own git state; the `always` option is what names it, and the root it
 // names is opened before the first sessions message and never dropped for one.
@@ -43,7 +49,7 @@
 // those would schedule a read that finds nothing new and name the root on the files channel for a
 // write that is not news.
 
-import { existsSync, lstatSync, watch } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, watch } from 'node:fs';
 import type { FSWatcher, Stats } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { byKey } from '../../../data/helpers/guards.ts';
@@ -130,6 +136,24 @@ export function rootsOf(payload: SessionsPayload): string[] {
     return roots;
 }
 
+/**
+ * The direct subfolders of a root that hold a `.git`, by path in name order. A root that is itself
+ * a repository, a subfolder that is a link, `node_modules` and a root that cannot be listed yield
+ * nothing.
+ */
+export function subrepositories(root: string): string[] {
+    if (existsSync(join(root, '.git'))) return [];
+    try {
+        return readdirSync(root, { withFileTypes: true })
+            .filter((entry) => entry.isDirectory() && entry.name !== 'node_modules')
+            .map((entry) => join(root, entry.name))
+            .filter((path) => existsSync(join(path, '.git')))
+            .sort();
+    } catch {
+        return [];
+    }
+}
+
 function reason(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
@@ -176,6 +200,10 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
      * composes its list from this copy.
      */
     let browser: string[] = [];
+    /** The repositories found one folder inside each of the file browser's roots. */
+    const inside = new Map<string, string[]>();
+    /** The roots an event on their top level says may hold a repository that is not listed yet. */
+    const rescan = new Set<string>();
     /** The poll of the saved workspaces file, when there is one. */
     let workspaces: FilePoll | null = null;
     const handles = new Map<string, FSWatcher[]>();
@@ -204,6 +232,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     // folder.
     const reread = (root: string): void => {
         if (closed || !handles.has(root)) return;
+        if (rescan.delete(root) && scan(root)) follow();
         const began = Date.now();
         hub.publish('files', { root } satisfies FilesPayload);
         try {
@@ -269,7 +298,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
 
     /** One event under a root: dropped when it is not ours or is already read, else a touch. */
     const heard = (root: string, path: string | null): void => {
-        if (path === null || !relevant(path) || timers.has(root)) return;
+        if (path === null || !relevant(path)) return;
+        if (inside.has(root) && !/[/\\]/.test(path)) rescan.add(root);
+        if (timers.has(root)) return;
         if (seenBy(root, path)) return;
         touch(root);
     };
@@ -341,10 +372,30 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         } catch (error) {
             console.error(`git watch: reading the roots failed: ${reason(error)}`);
         }
+        for (const root of [...inside.keys()]) {
+            if (!browser.includes(root)) inside.delete(root);
+        }
+        for (const root of browser) scan(root);
+    };
+    /**
+     * Read again which repositories one folder of the file browser holds, answering whether the
+     * list changed. A root that is a repository has no entry, so an event on its top level is not
+     * taken for a reason to look.
+     */
+    const scan = (root: string): boolean => {
+        const before = inside.get(root) ?? [];
+        if (existsSync(join(root, '.git'))) {
+            inside.delete(root);
+            return before.length > 0;
+        }
+        const found = subrepositories(root);
+        inside.set(root, found);
+        return found.length !== before.length || found.some((one, at) => one !== before[at]);
     };
     const wanted = (): string[] => {
         const roots: string[] = [];
-        for (const root of [always, ...browser, ...named]) {
+        const listed = browser.flatMap((root) => [root, ...(inside.get(root) ?? [])]);
+        for (const root of [always, ...listed, ...named]) {
             if (root !== '' && !roots.includes(root)) roots.push(root);
         }
         return roots;

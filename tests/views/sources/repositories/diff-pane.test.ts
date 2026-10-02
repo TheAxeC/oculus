@@ -193,6 +193,16 @@ describe('the bar of the diff pane over a file of its own', () => {
         expect(source).toContain('{reading}');
     });
 
+    // Revert: read the address of a compare pane from the commit or worktree forms.
+    it('audits that the pane reads the address diffUrl names and drops an answer a later read superseded', () => {
+        const source = readFileSync('src/lib/views/sources/repositories/diff/Diff.svelte', 'utf8');
+        const reads = readFileSync('src/lib/views/sources/repositories/diff/diff-read.ts', 'utf8');
+
+        expect(reads).toContain('diffUrl(');
+        expect(source).toContain('readPaneDiff(');
+        expect(source).toContain('latestRead(');
+    });
+
     it('keeps the side by side and inline buttons and the re-read button out of the bar', () => {
         const body = pane(FILE);
 

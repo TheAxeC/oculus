@@ -36,8 +36,18 @@ export type Split = {
  */
 export type Keeps = 'terminals';
 
-/** One pane of tabs. `keeps` is only ever set on a pane with no tab. */
-export type Pane = { kind: 'pane'; tabs: Instance[]; active: string; keeps?: Keeps };
+/**
+ * One pane of tabs. `keeps` is only ever set on a pane with no tab. `locked` marks a pane that a
+ * view opened for something does not land in; it stays when its last tab goes, and a tab opened
+ * from its own strip or dragged onto it still goes in.
+ */
+export type Pane = {
+    kind: 'pane';
+    tabs: Instance[];
+    active: string;
+    keeps?: Keeps;
+    locked?: true;
+};
 
 /**
  * Another page shown at this spot in a page's tree. It names the page by id and holds nothing of
@@ -163,6 +173,18 @@ export function samePath(left: number[], right: number[]): boolean {
 
 export function emptyPane(): Pane {
     return { kind: 'pane', tabs: [], active: '' };
+}
+
+/**
+ * A pane rebuilt with other tabs: what belongs to the pane and not to its tabs goes with it, the
+ * lock always and the kind a pane keeps only while it holds no tab. Every operation that rebuilds a
+ * pane builds it here, so a field added to a pane is carried at one place.
+ */
+export function repane(from: Pane, tabs: Instance[], active: string): Pane {
+    const pane: Pane = { kind: 'pane', tabs, active };
+    if (tabs.length === 0 && from.keeps !== undefined) pane.keeps = from.keeps;
+    if (from.locked === true) pane.locked = true;
+    return pane;
 }
 
 /** A leaf showing the page with this id. */

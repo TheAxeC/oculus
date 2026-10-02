@@ -17,9 +17,9 @@
     // Ctrl or Cmd with Enter in the field commits as the button does. The field opens one line
     // high and grows with its lines to ten and then scrolls.
     //
-    // While a merge is in progress the field starts with the message git prepared for it, and the
-    // commit waits until nothing is unmerged. An amend needs no staged path and no message: with
-    // an empty field it keeps the last commit's message.
+    // While a merge or a cherry pick is in progress the field starts with the message git prepared
+    // for it, and the commit waits until nothing is unmerged. An amend needs no staged path and no
+    // message: with an empty field it keeps the last commit's message.
 
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
@@ -33,6 +33,7 @@
         actionButton,
         checkedOutBranch,
         messageRows,
+        preparedMessage,
         publishWords,
         syncWords,
         upstreamOf
@@ -63,9 +64,9 @@
         branch === '' ? t('git.commit_placeholder_bare') : t('git.commit_placeholder', branch)
     );
 
-    // A merge in progress puts git's prepared message in an empty field, once per merge.
+    // A merge or a cherry pick in progress puts git's prepared message in an empty field, once.
     $effect(() => {
-        const prepared = git.sequence === 'merging' ? git.mergeMessage : '';
+        const prepared = preparedMessage(git);
         if (prepared === '' || prepared === offered) return;
         offered = prepared;
         if (repositories.message(root).trim() === '') repositories.setMessage(root, prepared);

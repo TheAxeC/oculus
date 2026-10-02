@@ -1,15 +1,13 @@
 /plan-orchestration oculus/migration
 
-28 steps are not landed: 5 in flight and 23 queued. Each line below is one step: its id, what it is, and what it waits for.
+28 steps are not landed: 3 in flight and 25 queued. Each line below is one step: its id, what it is, and what it waits for.
 
-In flight (5, every slot full):
-- A1 (a comment on a line of a session's diff, sent to that session): landing, its checks green on main.
-- Q88c (the Source Control rows' and the pane strip's new right-click capabilities): its repair round reviewed, landing next.
-- D18 (the Processes view): repair round 1, being built.
-- M3 (the resources registry): repair round 1, being built.
+In flight (3; S4 and Q91 take the two free slots next, and D14, D17 and X3e are prepared to wait ready):
+- D18 (the Processes view): its repair round reviewed (5 small findings, fixed at landing); landing next.
+- M3 (the resources registry): its repair round reviewed (5 small findings, fixed at landing); landing after D18.
 - D32 (replace in the Search view, as VS Code's): being built.
 
-Queued, in order (23). "Ready" means nothing in plan.md holds the step back; it starts when a slot frees.
+Queued, in order (25). "Ready" means nothing in plan.md holds the step back; it starts when a slot frees.
 - S4 (the Settings editor finished: editors for the lists, the key/value tables and the record forms, one new write for them, the table of contents below 700 px): ready.
 - Q91 (the project view and its manifest editor reworked): ready.
 - D14 (LaTeX on any folder holding a main file: several mains a folder, build on save, magic comments, outline, word count, hover preview): ready; its brief check is done.
@@ -17,7 +15,7 @@ Queued, in order (23). "Ready" means nothing in plan.md holds the step back; it 
 - X3e (the Files view's lists reordered by drag, a second Collapse Folders press closing the roots, and the Repositories view finding repositories nested one level under each root, with a depth setting): ready.
 - D25 (the editor's options, with sticky scroll from headings and brackets, and colouring of large files): ready; placed after S4 because both write the Settings editor.
 - D15 (PDF reading: the page kept per file, the PDF opened beside its source): ready; placed after D14 because D14 rebuilds the LaTeX panel D15 opens the PDF from.
-- X3c (the tab strip as VS Code's, with the path tooltip, Open Editors drag reordering the tabs and the Files breadcrumb removed): waits for Q88c.
+- X3c (the tab strip as VS Code's, with the path tooltip, Open Editors drag reordering the tabs and the Files breadcrumb removed): ready.
 - D23 (language servers in the editor: pyright for Python, clangd for C++, the Outline's code symbols): waits for D25.
 - D11 (the debug client for rite): waits for D17.
 - D20 (an agent started from a task or in a new worktree): waits for D17.
@@ -32,9 +30,13 @@ Queued, in order (23). "Ready" means nothing in plan.md holds the step back; it 
 - O29 (retiring the cockpit, each deletion listed for your yes): ready; placed after R2.
 - X2 (a new orchestrator resumes the plan from the files alone and lands one step): ready; runs at a pause.
 - O30 (the native window in Electron): ready; placed after X2.
-- O33 (oculus moved into its own repository): waits for X2; the last step.
+- O33 (oculus moved into its own repository, widened with setting up a server and the sync between machines; the rename to a new name, if Axel rules it, would come here): waits for X2.
+- O34 (remote access: oculus served from a rented server behind a Google login with two-factor): waits for O33.
+- O35 (oculus on macOS, Linux and Windows, terminals behind one backend interface with tmux and, on Windows, ConPTY): waits for O33.
 
 Landed, newest first:
+- Q88c (the Source Control rows' and the pane strip's new right-click capabilities), 2026-10-02, this commit.
+- A1 (a comment on a line of a session's diff, sent to that session), 2026-10-02, 33be30af.
 - X3a (the Files view as VS Code's Explorer), 2026-10-02, 705e588d.
 - D24 (the Personal board: side projects and the Files roots' manifests as cards), 2026-10-02, 4ce50c59.
 - D35 (every configuration file live, the server's port move and the page following it), 2026-10-02, 15824705.

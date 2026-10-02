@@ -1,0 +1,101 @@
+33a34,36
+> tests/data/sources/collections.test.ts tests/data/sources/manifests.test.ts 009d9fe6ad5d the same 17 lines at 26 and 26, to fold into one place
+> tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts 33a8d3a93398 the same 19 lines at 26 and 15, to fold into one place
+> tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts dd605d6cb92e the same 14 lines at 36 and 25, to fold into one place
+38,40d40
+< tests/data/sources/collections.test.ts tests/data/sources/manifests.test.ts 009d9fe6ad5d the same 17 lines at 26 and 26, to fold into one place
+< tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts 33a8d3a93398 the same 19 lines at 26 and 15, to fold into one place
+< tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts dd605d6cb92e the same 14 lines at 36 and 25, to fold into one place
+45,46d44
+< tests/routes/edit/write-fixture.ts tests/server/content/audit.test.ts 9b76323f8d43 the same 12 lines at 198 and 79, to fold into one place
+< tests/routes/edit/write-fixture.ts tests/server/core/changes.test.ts 34a9de1b02d0 the same 25 lines at 190 and 95, to fold into one place
+48d45
+< tests/routes/edit/write-fixture.ts tests/server/core/changes.test.ts e074895f99b7 the same 18 lines at 200 and 105, to fold into one place
+50,57c47
+< tests/routes/edit/write-fixture.ts tests/state/boards/board/board-fixture.ts d0c91890c3a4 the same 15 lines at 195 and 93, to fold into one place
+< tests/routes/edit/write-fixture.ts tests/state/boards/focus/focus-lanes.test.ts dafeccdee59e the same 14 lines at 196 and 24, to fold into one place
+< tests/routes/edit/write-fixture.ts tests/state/boards/person.test.ts dafeccdee59e the same 14 lines at 196 and 53, to fold into one place
+< tests/routes/edit/write-fixture.ts tests/state/life/present.test.ts e73cb392c983 the same 16 lines at 195 and 35, to fold into one place
+< tests/routes/edit/write-fixture.ts tests/state/workbench/rail-badges-fixture.ts 2c3040346ffa the same 13 lines at 197 and 16, to fold into one place
+< tests/routes/edit/write-fixture.ts tests/views/academic/present.test.ts b9a172f57577 the same 12 lines at 196 and 72, to fold into one place
+< tests/routes/edit/write-fixture.ts tests/views/boards/project.test.ts 9b76323f8d43 the same 12 lines at 198 and 96, to fold into one place
+< tests/routes/edit/write-fixture.ts tests/views/shared/card/card-docs.test.ts dafeccdee59e the same 14 lines at 196 and 49, to fold into one place
+---
+> tests/routes/edit/write-fixture.ts tests/server/core/changes.test.ts 6196f010c333 the same 11 lines at 249 and 94, to fold into one place
+64,68d53
+< tests/server/content/audit.test.ts tests/state/boards/board/board-fixture.ts a5689f0b5053 the same 11 lines at 81 and 98, to fold into one place
+< tests/server/content/audit.test.ts tests/state/boards/focus/focus-lanes.test.ts a5689f0b5053 the same 11 lines at 81 and 28, to fold into one place
+< tests/server/content/audit.test.ts tests/state/boards/person.test.ts a5689f0b5053 the same 11 lines at 81 and 57, to fold into one place
+< tests/server/content/audit.test.ts tests/state/workbench/rail-badges-fixture.ts a5689f0b5053 the same 11 lines at 81 and 19, to fold into one place
+< tests/server/content/audit.test.ts tests/views/shared/card/card-docs.test.ts a5689f0b5053 the same 11 lines at 81 and 53, to fold into one place
+83d67
+< tests/state/boards/board/board-fixture.ts tests/state/boards/board/board-software.test.ts 7e20bb3d8cd4 the same 24 lines at 89 and 37, to fold into one place
+86d69
+< tests/state/boards/board/board-fixture.ts tests/state/boards/collection/collection.test.ts faf13ca48de5 the same 17 lines at 92 and 510, to fold into one place
+88d70
+< tests/state/boards/board/board-fixture.ts tests/state/boards/focus/focus.test.ts 7e20bb3d8cd4 the same 24 lines at 89 and 73, to fold into one place
+89a72
+> tests/state/boards/board/board-fixture.ts tests/state/boards/focus/focus.test.ts 852a66219ab9 the same 10 lines at 90 and 73, to fold into one place
+91,92c74
+< tests/state/boards/board/board-fixture.ts tests/views/boards/focus-fixture.ts c0f12eef8455 the same 42 lines at 73 and 41, to fold into one place
+< tests/state/boards/board/board-fixture.ts tests/views/boards/projects.test.ts 6e8c7231f2ef the same 16 lines at 216 and 175, to fold into one place
+---
+> tests/state/boards/board/board-fixture.ts tests/views/boards/focus-fixture.ts 57ae7a05d9df the same 28 lines at 74 and 41, to fold into one place
+94c76
+< tests/state/boards/board/board-fixture.ts tests/views/sessions/sessions.test.ts faf13ca48de5 the same 17 lines at 92 and 561, to fold into one place
+---
+> tests/state/boards/board/board-fixture.ts tests/views/boards/projects.test.ts 0d538d381898 the same 17 lines at 204 and 163, to fold into one place
+96d77
+< tests/state/boards/board/board-software.test.ts tests/state/boards/focus/focus.test.ts 7ceb28b9af50 the same 13 lines at 50 and 86, to fold into one place
+99,106c80,84
+< tests/state/boards/board/board-software.test.ts tests/views/boards/project.test.ts 3fc3a1ea4098 the same 18 lines at 75 and 133, to fold into one place
+< tests/state/boards/board/board-software.test.ts tests/views/boards/projects.test.ts ae02abc70008 the same 15 lines at 50 and 89, to fold into one place
+< tests/state/boards/collection/collection.test.ts tests/state/feeds/feeds.test.ts 48343b99dba1 the same 21 lines at 507 and 62, to fold into one place
+< tests/state/boards/collection/collection.test.ts tests/state/sources/venues.test.ts c2b91b60f67a the same 24 lines at 507 and 26, to fold into one place
+< tests/state/boards/collection/collection.test.ts tests/state/sources/venues.test.ts e2e8417eafbc the same 15 lines at 518 and 37, to fold into one place
+< tests/state/boards/collection/collection.test.ts tests/views/boards/collection/collection-fixture.ts c2b91b60f67a the same 24 lines at 507 and 108, to fold into one place
+< tests/state/boards/focus/focus-lanes.test.ts tests/state/boards/project-context.test.ts e214197a512e the same 26 lines at 52 and 43, to fold into one place
+< tests/state/boards/focus/focus-lanes.test.ts tests/state/boards/structure/graph.test.ts 211d04712bff the same 22 lines at 57 and 89, to fold into one place
+---
+> tests/state/boards/board/board-software.test.ts tests/views/boards/project.test.ts 3946f7bd5136 the same 19 lines at 51 and 121, to fold into one place
+> tests/state/boards/collection/collection.test.ts tests/state/sources/venues.test.ts 595af90cbfa4 the same 10 lines at 508 and 28, to fold into one place
+> tests/state/boards/collection/collection.test.ts tests/views/boards/collection/collection-fixture.ts 595af90cbfa4 the same 10 lines at 508 and 108, to fold into one place
+> tests/state/boards/focus/focus-lanes.test.ts tests/state/boards/project-context.test.ts 0b797008a55e the same 27 lines at 40 and 32, to fold into one place
+> tests/state/boards/focus/focus-lanes.test.ts tests/state/boards/structure/graph.test.ts ae4bacf5cbe5 the same 23 lines at 45 and 72, to fold into one place
+110d87
+< tests/state/boards/focus/focus-lanes.test.ts tests/state/workbench/rail-badges-fixture.ts ea2ac4e96a53 the same 14 lines at 28 and 19, to fold into one place
+112,114c89
+< tests/state/boards/focus/focus-lanes.test.ts tests/views/sessions/sessions.test.ts 55f264c58572 the same 28 lines at 51 and 586, to fold into one place
+< tests/state/boards/focus/focus-lanes.test.ts tests/views/shared/card/card.test.ts 6f4a738616fb the same 12 lines at 28 and 45, to fold into one place
+< tests/state/boards/focus/focus-lanes.test.ts tests/views/shared/card/cardlinks.test.ts 7f6f35b4654b the same 16 lines at 28 and 68, to fold into one place
+---
+> tests/state/boards/focus/focus-lanes.test.ts tests/views/sessions/sessions.test.ts 1169faf8c5f6 the same 29 lines at 39 and 654, to fold into one place
+121c96
+< tests/state/boards/focus/focus.test.ts tests/views/boards/projects.test.ts f04e65979dfa the same 42 lines at 57 and 60, to fold into one place
+---
+> tests/state/boards/focus/focus.test.ts tests/views/boards/projects.test.ts 74b847caa73e the same 28 lines at 57 and 61, to fold into one place
+124d98
+< tests/state/boards/person.test.ts tests/views/boards/person.test.ts 2b12dd4a0add the same 24 lines at 124 and 150, to fold into one place
+126d99
+< tests/state/boards/person.test.ts tests/views/boards/person.test.ts cdc68e3d0fb2 the same 55 lines at 32 and 57, to fold into one place
+127a101,102
+> tests/state/boards/person.test.ts tests/views/boards/person.test.ts 88865773d6e4 the same 25 lines at 111 and 137, to fold into one place
+> tests/state/boards/person.test.ts tests/views/boards/person.test.ts c334419d6d92 the same 41 lines at 32 and 57, to fold into one place
+129d103
+< tests/state/boards/structure/graph.test.ts tests/views/structure/lines-fixture.ts bcbb7625783d the same 15 lines at 31 and 43, to fold into one place
+131,133c105,107
+< tests/state/feeds/feeds.test.ts tests/state/forms/schema.test.ts 46bb8cfb5682 the same 18 lines at 111 and 135, to fold into one place
+< tests/state/feeds/feeds.test.ts tests/views/boards/editor.test.ts 70f74ce3a0a0 the same 21 lines at 108 and 101, to fold into one place
+< tests/state/forms/schema.test.ts tests/views/boards/editor.test.ts cb51a505d1b1 the same 13 lines at 82 and 86, to fold into one place
+---
+> tests/state/feeds/feeds.test.ts tests/state/forms/schema.test.ts ef0d21093748 the same 18 lines at 99 and 132, to fold into one place
+> tests/state/feeds/feeds.test.ts tests/views/boards/editor.test.ts 31fc27de1c1f the same 22 lines at 95 and 93, to fold into one place
+> tests/state/forms/schema.test.ts tests/views/boards/editor.test.ts 7a490278351a the same 13 lines at 76 and 76, to fold into one place
+143,144c117
+< tests/views/academic/present.test.ts tests/views/academic/slides.test.ts b3566a3a49e4 the same 12 lines at 89 and 72, to fold into one place
+< tests/views/academic/present.test.ts tests/views/academic/slides.test.ts b6d46e646b71 the same 22 lines at 65 and 36, to fold into one place
+---
+> tests/views/academic/present.test.ts tests/views/academic/slides.test.ts d84bb7dd5947 the same 12 lines at 77 and 60, to fold into one place
+157,158d129
+< tests/views/shared/card/card-docs.test.ts tests/views/shared/card/card.test.ts 6955ec43bf07 the same 20 lines at 44 and 36, to fold into one place
+< tests/views/shared/card/card-docs.test.ts tests/views/shared/card/cardlinks.test.ts 0925c74d334b the same 16 lines at 48 and 63, to fold into one place

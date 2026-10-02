@@ -17,8 +17,12 @@
 <script lang="ts">
     // Layer 3, view. One diff as its own tab, as VS Code's diff editor: a file of a repository,
     // staged or as the worktree has it, one commit's change to a file, a whole stash, everything a
-    // worktree holds that its repository's branch does not, or every path of the staged or the
-    // changed group (read a few files at a time, and read-only).
+    // worktree holds that its repository's branch does not, every path of the staged or the changed
+    // group, every file a ref and a commit differ in (Compare with Remote, Compare with Merge Base,
+    // Compare with...), or a linked worktree's file against the main worktree's (Compare with
+    // Workspace); the groups and the comparisons are read a few files at a time
+    // (diff/diff-read.ts) and are read-only. Each read takes the next number from latestRead(),
+    // and an answer that is no longer the newest writes nothing.
     //
     // The bar (diff/DiffBar.svelte) holds icon buttons: Open File (a file's own diff), Previous
     // Change and Next Change, which Shift+Alt+F5 and Alt+F5 press while the pane holds the focus
@@ -30,7 +34,7 @@
     // (diff/FileHeader.svelte) that folds it when the diff holds several, Monaco's diff editor over
     // the file's two versions, which the server answers whole. For a file's own diff each hunk can
     // be staged, unstaged or reverted whole or for the lines the selections choose in it, the patch
-    // cut by state/sources/repositories/diff-patch.ts and applied by git. A revert throws work
+    // cut by state/sources/repositories/diff/diff-patch.ts and applied by git. A revert throws work
     // away, so it asks first.
     //
     // The files are read when the pane opens, again when the instance is pointed at something else,
@@ -53,6 +57,7 @@
     import DiffSection from './DiffSection.svelte';
     import { compareSentence } from './compare-words';
     import { readPaneDiff } from './diff-read';
+    import { latestRead } from '$lib/state/sources/repositories/diff/compare';
     import {
         countsOf,
         diffActions,
@@ -63,8 +68,8 @@
         type ChosenRows,
         type DiffActions,
         type LineChange
-    } from '$lib/state/sources/repositories/diff-hunks';
-    import { sidesPatch, type PatchMode } from '$lib/state/sources/repositories/diff-patch';
+    } from '$lib/state/sources/repositories/diff/diff-hunks';
+    import { sidesPatch, type PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
     import {
         diffActs,
         diffViewOf,
@@ -140,7 +145,9 @@
     const view = $derived(diffViewOf(instanceState(instance.id), loaded ? keys : undefined));
     const acts = $derived(diffActs(held) && held.path !== '');
     const grouped = $derived((held.group ?? '') !== '');
-    const subject = $derived(held.path !== '' || (held.stash ?? '') !== '' || grouped);
+    const subject = $derived(
+        held.path !== '' || (held.stash ?? '') !== '' || grouped || held.compare !== undefined
+    );
     const title = $derived(held.label === '' ? t('views.repositories_diff') : held.label);
     const busy = $derived(repositories.busy(held.root));
     const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
@@ -149,17 +156,16 @@
     const several = $derived(files.length > 1);
     const stops = $derived(counts.some((count) => count !== 0));
 
-    /** The number of the last read asked for, so an older answer that lands late is dropped. */
-    let asked = 0;
+    /** Hands out each read's check, so an older answer that lands late is dropped. */
+    const nextRead = latestRead();
 
     async function load(state: DiffState): Promise<void> {
-        asked += 1;
-        const mine = asked;
+        const current = nextRead();
         reading = true;
         failure = '';
         try {
             const read = await readPaneDiff(state, repo);
-            if (mine !== asked) return;
+            if (!current()) return;
             if (!read.ok || read.files === null) {
                 failure =
                     state.against !== undefined || (state.save ?? '') !== ''
@@ -176,7 +182,7 @@
                 conflicted = read.conflicted;
             }
         } catch {
-            if (mine !== asked) return;
+            if (!current()) return;
             failure = t('repositories.diff_failed');
         }
         reading = false;

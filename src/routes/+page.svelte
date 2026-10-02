@@ -8,6 +8,7 @@
 
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
+    import { shouldCancel } from '$lib/shell/context-guard';
     import type { Bookmark } from '$lib/shell/rail/rail';
     import { parseFloats } from '$lib/state/workbench/navigation/arrangement';
     import { readChord, readDocs, readGroups } from '$lib/state/workbench/navigation/catalogue';
@@ -189,7 +190,14 @@
         takeCarried(localStorage, window, location.origin);
         loadUi(localStorage, window);
         loadLayout(localStorage, window);
+        // The browser's own menu stays only where a control owns the right-click
+        // (context-guard.ts).
+        const guard = (event: MouseEvent): void => {
+            if (shouldCancel(event)) event.preventDefault();
+        };
+        document.addEventListener('contextmenu', guard);
         return () => {
+            document.removeEventListener('contextmenu', guard);
             disconnect();
             stopFollowing();
             stopFollowingUi();

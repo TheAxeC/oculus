@@ -1,7 +1,9 @@
 // Layer 4, test helper. What the git folder (src/lib/server/core/git/) may run, as data: the
 // subcommands it is allowed, the call sites it holds, the exact vectors of the subcommands that
 // have writing forms, the way those vectors are written in its sources, and the writing
-// subcommands no source may name. tests/server/core/git/git.test.ts holds the folder to them.
+// subcommands no source may name. tests/server/core/git/git.test.ts holds the folder to them, all
+// but compare.ts, which compare-gate.test.ts holds to its own list: its answers name the ref kind
+// `tag`, which this list forbids as a subcommand.
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -13,10 +15,10 @@ const FOLDER = resolve(
     '../../../../src/lib/server/core/git'
 );
 
-/** The text of every source file of the git folder, joined, for the scans over what it names. */
+/** The text of every source file of the git folder but compare.ts, joined, for the scans. */
 export function gitSources(): string {
     return readdirSync(FOLDER)
-        .filter((name) => name.endsWith('.ts'))
+        .filter((name) => name.endsWith('.ts') && name !== 'compare.ts')
         .sort()
         .map((name) => readFileSync(join(FOLDER, name), 'utf8'))
         .join('\n');

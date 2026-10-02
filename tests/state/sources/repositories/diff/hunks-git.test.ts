@@ -9,7 +9,10 @@ import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { hunkHead, hunksOf } from '../../../../../src/lib/state/sources/repositories/diff-hunks.ts';
+import {
+    hunkHead,
+    hunksOf
+} from '../../../../../src/lib/state/sources/repositories/diff/diff-hunks.ts';
 import { it, scratchDir } from '../../../../fixtures/scratch.ts';
 import { monacoLineChanges } from '../../../../ui/controls/editor/monaco-diff.ts';
 

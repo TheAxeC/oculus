@@ -1,8 +1,15 @@
 // The git endpoint. A route module may export only its verbs, so everything it does lives in
-// lib/server/git/git-routes.ts and this is the two lines that join them. The GET reads (the branch
+// lib/server/git/git-routes.ts and this is the few lines that join them. The GET reads (the branch
 // listing, one file's diff, a worktree's diff) and is same-origin only; the POST writes and carries
 // the token ServerContext minted, as with /api/write and /api/terminal.
+//
+// Discarding untracked files moves them to the Trash, so the request is joined to what the Files
+// view's operations hold: the roots the file browser serves, the machine's local.yml, and the write
+// chain `opsWrites`, so a discard and a Files operation over one file are ordered.
 
+import { localFile } from '$lib/data/sources/config';
+import { protectedFiles } from '$lib/server/files/fs/ops';
+import { browserRoots } from '$lib/server/files/roots';
 import { handleGit, handleGitGet } from '$lib/server/git/git-routes';
 import { allowedRoots } from '$lib/server/git/git-write';
 import { gitRoots } from '$lib/server/sessions/stores/hooks';
@@ -13,7 +20,17 @@ const options = (locals: App.Locals) => {
     return {
         config: locals.config().config,
         rootsFor: () => allowedRoots(gitRoots(server.hub), server.local.hub),
-        refresh: (root: string) => server.git.refresh(root)
+        refresh: (root: string) => server.git.refresh(root),
+        writes: server.opsWrites,
+        guard: () =>
+            protectedFiles({
+                roots: browserRoots({
+                    config: locals.config().config,
+                    engine: server.engine,
+                    local: server.local
+                }),
+                local: localFile(server.engine)
+            })
     };
 };
 

@@ -19,9 +19,15 @@ import {
     panes,
     tabsOf,
     type Float,
-    type Pages
+    type Pages,
+    type Pane
 } from '../../../../../src/lib/state/workbench/layout/index.ts';
 import { floating, heldPages, pageAround, pane, paneOf, split } from '../layout-fixture.ts';
+
+/** A pane of these tabs with Lock Group on. */
+function lockedPane(ids: string[]): Pane {
+    return { ...paneOf(ids), locked: true };
+}
 
 /** Two panes side by side, the left one 0.7 of the page. */
 function twoPanes(): Pages {
@@ -444,5 +450,43 @@ describe('floatsFrom', () => {
                 { pane: paneOf(['b']), place: same }
             ])
         ).toHaveLength(1);
+    });
+});
+
+describe('a locked pane made a float', () => {
+    const place = { kind: 'dock', edge: 'left', size: 0.3 } as const;
+
+    it('stays locked when the pane of a page is floated', () => {
+        const before = heldPages([
+            pageAround('main', split('row', [0.7, 0.3], [pane(['a', 'b']), lockedPane(['c', 'd'])]))
+        ]);
+        const after = floatPane(before, 'main', [1]);
+        expect(after.floats[0].pane.locked).toBe(true);
+    });
+
+    it('stays locked when a shipped float is made from a locked pane or takes tabs in', () => {
+        const made = floatsFrom([{ pane: lockedPane(['t1', 't2']), place }]);
+        expect(made[0].pane.locked).toBe(true);
+        const adopted = adoptFloats(heldPages([pageAround('main', pane(['m']))]), [
+            { pane: lockedPane(['n1']), place }
+        ]);
+        expect(adopted.floats[0].pane.locked).toBe(true);
+    });
+
+    it('stays locked through a dock, a free float, a move and a return to a page', () => {
+        const held = heldPages(
+            [pageAround('main', pane(['a']))],
+            [{ id: 'fl', pane: lockedPane(['x']), place: floating('fl', ['x']).place }]
+        );
+        const docked = dockFloat(held, 'fl', 'right');
+        expect(docked.floats[0].pane.locked).toBe(true);
+        expect(freeFloat(docked, 'fl').floats[0].pane.locked).toBe(true);
+        const moved = placeFloat(held, 'fl', { kind: 'free', x: 0.2, y: 0.2, w: 0.3, h: 0.3 });
+        expect(moved.floats[0].pane.locked).toBe(true);
+        const back = returnFloat(held, 'fl', 'main');
+        expect(panes(back.pages[0].workbench.root).map(({ pane: one }) => one.locked)).toEqual([
+            undefined,
+            true
+        ]);
     });
 });

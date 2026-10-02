@@ -9,13 +9,19 @@
 // the server's folder order, so every server module reads the one rule from here.
 
 import { realpathSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
+import { isAbsolute, resolve, sep } from 'node:path';
 
 /** Whether the resolved path is the resolved folder or lies below it. */
 export function inside(path: string, dir: string): boolean {
     const full = resolve(path);
     const root = resolve(dir);
     return full === root || full.startsWith(root + sep);
+}
+
+/** Whether a root is an absolute path that is one of the given roots or lies under one. */
+export function permitted(root: string, roots: string[]): boolean {
+    if (typeof root !== 'string' || root === '' || !isAbsolute(root)) return false;
+    return roots.some((one) => inside(root, one));
 }
 
 /** Whether the resolved path lies strictly below the resolved folder, never the folder itself. */

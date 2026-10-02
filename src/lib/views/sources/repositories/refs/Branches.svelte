@@ -13,7 +13,9 @@
     // Branch control of a repository's row does after it has opened the section; the request is
     // answered once with `onrevealed`.
     //
-    // It draws and reports presses; the write and its confirm are the view's.
+    // The checked-out branch is switched to nowhere and deleted by nothing; every other row offers
+    // Switch and Delete Branch. It draws and reports presses; the write and its confirm are the
+    // view's.
 
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
@@ -31,6 +33,7 @@
         open: boolean;
         ontoggle: () => void;
         onswitch: (name: string) => void;
+        ondelete: (name: string) => void;
         onbranch: (name: string) => void;
         /** The view asked for the focus to go to the section's head. */
         reveal: boolean;
@@ -38,8 +41,18 @@
         onrevealed: () => void;
     };
 
-    let { git, nav, busy, open, ontoggle, onswitch, onbranch, reveal, onrevealed }: Props =
-        $props();
+    let {
+        git,
+        nav,
+        busy,
+        open,
+        ontoggle,
+        onswitch,
+        ondelete,
+        onbranch,
+        reveal,
+        onrevealed
+    }: Props = $props();
 
     let branchName = $state('');
     const unborn = $derived(noCommitYet(git));
@@ -101,6 +114,15 @@
                                 tabindex={reach}
                                 disabled={busy}
                                 onclick={() => onswitch(branch.name)}
+                            />
+                            <ToolButton
+                                label={t('repositories.menu_delete_branch')}
+                                title={t('repositories.branch_delete_title', branch.name)}
+                                glyph="trash"
+                                compact
+                                tabindex={reach}
+                                disabled={busy}
+                                onclick={() => ondelete(branch.name)}
                             />
                         {/if}
                     {/snippet}

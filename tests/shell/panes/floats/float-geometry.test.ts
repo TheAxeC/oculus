@@ -18,9 +18,9 @@ import {
     resizePlace,
     snapEdge,
     stackOf
-} from '../../../src/lib/shell/panes/floats/float-geometry.ts';
-import { FLOAT_MIN } from '../../../src/lib/state/workbench/layout/index.ts';
-import { floating } from '../../state/workbench/layout/layout-fixture.ts';
+} from '../../../../src/lib/shell/panes/floats/float-geometry.ts';
+import { FLOAT_MIN } from '../../../../src/lib/state/workbench/layout/index.ts';
+import { floating } from '../../../state/workbench/layout/layout-fixture.ts';
 
 const FREE = { kind: 'free', x: 0.1, y: 0.2, w: 0.3, h: 0.4 } as const;
 

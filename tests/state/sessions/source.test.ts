@@ -2,12 +2,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    loadHeadFile,
     loadSource,
     loadSourceReadonly,
     sourceFileUrl,
     sourceInfoUrl,
     sourceTabState
 } from '../../../src/lib/state/sessions/source.svelte.ts';
+import { headTabState } from '../../../src/lib/state/sources/repositories/file-git.ts';
 import { stateId } from '../../../src/lib/state/workbench/layout/instance.ts';
 import { TEXT_LIMIT } from '../../../src/lib/state/sources/fs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -572,5 +574,76 @@ describe('the answer of the route that says whether a file is locked', () => {
         ['a refusal that says readonly true', '{"readonly":true}', 500, false]
     ])('is the answer of %s', async (_name, text, status, expected) => {
         expect(await lockedBy(text, status)).toBe(expected);
+    });
+});
+
+describe('a source tab over the file at HEAD or in the index', () => {
+    const answer = (body: unknown, status = 200): Response =>
+        new Response(JSON.stringify(body), {
+            status,
+            headers: { 'content-type': 'application/json' }
+        });
+
+    // Revert: build the tab id without the stage.
+    it('is a tab of its own for each stage of one file, named for the stage', () => {
+        const head = headTabState('/hub', 'src/a.ts', 'head');
+        const index = headTabState('/hub', 'src/a.ts', 'index');
+        expect(head).toEqual({
+            id: 'head:head:/hub:src/a.ts',
+            root: '/hub',
+            path: 'src/a.ts',
+            label: 'a.ts (HEAD)',
+            head: 'head'
+        });
+        expect(index.label).toBe('a.ts (Index)');
+        expect(stateId(head)).not.toBe(stateId(index));
+        expect(stateId(head)).not.toBe(stateId(sourceTabState('/hub', 'src/a.ts')));
+    });
+
+    // Revert: read the working copy from the file route.
+    it('reads the text from the head read of the git endpoint', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(() => Promise.resolve(answer({ ok: true, text: 'old\n' })))
+        );
+        await expect(loadHeadFile('/hub', 'a b.ts', 'index')).resolves.toEqual({
+            ok: true,
+            content: 'old\n',
+            truncated: false
+        });
+        expect(fetch).toHaveBeenCalledWith('/api/git?head=%2Fhub&path=a+b.ts&stage=index');
+    });
+
+    it('says a file the stage lacks is missing and a binary one is binary', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn((url: string) =>
+                Promise.resolve(
+                    url.includes('missing.txt')
+                        ? answer({ ok: true, missing: true })
+                        : answer({ ok: true, binary: true })
+                )
+            )
+        );
+        const missing = await loadHeadFile('/hub', 'missing.txt', 'head');
+        const binary = await loadHeadFile('/hub', 'blob.bin', 'head');
+        expect(missing).toEqual({ ok: false, error: catalog['source.head_missing'] });
+        expect(binary).toEqual({ ok: false, error: catalog['source.head_binary'] });
+    });
+
+    // Revert: let the draft of a head tab be saved.
+    it('holds a draft that is read-only, and never reads the file route or the mode route', async () => {
+        const fetcher = vi.fn(() => Promise.resolve(answer({ ok: true, text: 'old\n' })));
+        vi.stubGlobal('fetch', fetcher);
+        await loadSourceDraft('head-one', '/hub', 'a.ts', 'head');
+        expect(sourceDraft('head-one')).toMatchObject({
+            text: 'old\n',
+            saved: 'old\n',
+            readonly: true,
+            loaded: true
+        });
+        expect(fetcher).toHaveBeenCalledTimes(1);
+        const calls = fetcher.mock.calls as unknown as string[][];
+        expect(calls[0][0].startsWith('/api/git?head=')).toBe(true);
     });
 });

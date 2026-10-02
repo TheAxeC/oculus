@@ -11,6 +11,8 @@
 import { z } from 'zod';
 import { optionalTextShape, readAs, readJson } from '../../data/shapes/shapes.ts';
 import { TEXT_LIMIT } from '../sources/fs.ts';
+import { headUrl } from '../sources/repositories/repositories.ts';
+import type { HeadStage } from '../sources/repositories/file-git.ts';
 import { readCapped } from '../sources/fs.svelte.ts';
 import type { WriteAnswer, WritesStore, InstanceStates } from '../shared/stores/shapes.ts';
 import { t } from '../shared/words/text.ts';
@@ -30,7 +32,13 @@ export type SourceTabState = {
     label: string;
     /** The line the tab scrolls to once the draft has loaded, for a tab opened at one. */
     line?: number;
+    /** The tab's identity, for a tab that is one of several over the same file. */
+    id?: string;
+    /** Which version of the file the tab holds, for a tab over the file at HEAD or in the index. */
+    head?: HeadStage;
 };
+
+export type { HeadStage };
 
 export type SourceDraft = {
     text: string;
@@ -108,6 +116,17 @@ const draftShape = z
 /** Whether the file's own facts say its mode refuses a write. */
 const modeShape = z.object({ readonly: z.boolean().catch(false) });
 
+/** The `head` of a tab's state: one of the two stages, or absent. */
+const headShape = z.object({ head: z.enum(['head', 'index']).optional().catch(undefined) });
+
+/** What the head read of the git route answers: the text, a file the stage lacks, or a blob. */
+const headAnswerShape = z.object({
+    ok: z.boolean().catch(false),
+    text: z.string().optional().catch(undefined),
+    missing: z.boolean().optional().catch(undefined),
+    binary: z.boolean().optional().catch(undefined)
+});
+
 /** One token per page lifetime: a draft carrying it was read from disk since the page loaded. */
 const LIFETIME = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
@@ -122,6 +141,11 @@ export function sourceTabState(root: string, path: string, line?: number): Sourc
         label: path.split('/').filter(Boolean).at(-1) ?? path
     };
     return line === undefined ? state : { ...state, line };
+}
+
+/** The version a tab's state names, or undefined for a tab over the file on disk. */
+export function headOf(state: unknown): HeadStage | undefined {
+    return readAs(headShape, state)?.head;
 }
 
 /** The api/file URL, escaping each path segment without escaping its separators. */
@@ -150,6 +174,26 @@ export async function loadSource(root: string, path: string): Promise<SourceLoad
     }
 }
 
+/** Read a tracked file as HEAD or the index holds it, from the git route's head read. */
+export async function loadHeadFile(
+    root: string,
+    path: string,
+    stage: HeadStage
+): Promise<SourceLoad> {
+    try {
+        const response = await fetch(headUrl(root, path, stage));
+        const answer = readAs(headAnswerShape, await readJson(response));
+        if (!response.ok || !answer?.ok) {
+            return { ok: false, error: `HTTP ${String(response.status)}` };
+        }
+        if (answer.missing === true) return { ok: false, error: t('source.head_missing') };
+        if (answer.binary === true) return { ok: false, error: t('source.head_binary') };
+        return { ok: true, content: answer.text ?? '', truncated: false };
+    } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    }
+}
+
 /**
  * Whether the file is locked by its mode on this machine. A request that fails answers false: the
  * save is what refuses a file that cannot be written, and an editor nobody could open over a
@@ -169,7 +213,7 @@ export async function loadSourceReadonly(root: string, path: string): Promise<bo
 export type SourceStore = {
     sourceDraft: (id: string) => SourceDraft;
     sourceDirty: (id: string) => boolean;
-    loadSourceDraft: (id: string, root: string, path: string) => Promise<void>;
+    loadSourceDraft: (id: string, root: string, path: string, head?: HeadStage) => Promise<void>;
     editSourceDraft: (id: string, text: string) => void;
     revertSourceDraft: (id: string) => void;
     saveSourceDraft: (id: string, root: string, path: string) => Promise<void>;
@@ -216,8 +260,13 @@ export function createSource(writes: WritesStore, ui: InstanceStates): SourceSto
      * that ask starts its own read rather than waiting on the first, and the first, when it lands,
      * finds the draft is another file's and writes nothing.
      */
-    async function loadSourceDraft(id: string, root: string, path: string): Promise<void> {
-        const file = `${root}/${path}`;
+    async function loadSourceDraft(
+        id: string,
+        root: string,
+        path: string,
+        head?: HeadStage
+    ): Promise<void> {
+        const file = head === undefined ? `${root}/${path}` : `${head}:${root}/${path}`;
         const held = sourceDraft(id);
         if (held.readIn === LIFETIME && held.file === file) return;
         const pending = reading.get(id);
@@ -225,26 +274,29 @@ export function createSource(writes: WritesStore, ui: InstanceStates): SourceSto
         // A tab pointed at another file drops the language and the indentation chosen for the
         // last, since the choice was about that file's text.
         updateDraft(id, held.file === file ? { file } : { file, language: '', indent: null });
-        const request = Promise.all([loadSource(root, path), loadSourceReadonly(root, path)]).then(
-            ([answer, readonly]) => {
-                if (sourceDraft(id).file !== file) return;
-                if (answer.ok) {
-                    const held = sourceDraft(id);
-                    const edited = held.loaded && held.text !== held.saved;
-                    updateDraft(id, {
-                        text: edited ? held.text : answer.content,
-                        saved: answer.content,
-                        loaded: true,
-                        readIn: LIFETIME,
-                        error: '',
-                        readonly,
-                        truncated: answer.truncated
-                    });
-                } else {
-                    updateDraft(id, { error: t('source.cannot_open', answer.error) });
-                }
+        // A version at HEAD or in the index is read from the git route and is never written.
+        const reads: Promise<[SourceLoad, boolean]> =
+            head === undefined
+                ? Promise.all([loadSource(root, path), loadSourceReadonly(root, path)])
+                : loadHeadFile(root, path, head).then((answer) => [answer, true]);
+        const request = reads.then(([answer, readonly]) => {
+            if (sourceDraft(id).file !== file) return;
+            if (answer.ok) {
+                const held = sourceDraft(id);
+                const edited = held.loaded && held.text !== held.saved;
+                updateDraft(id, {
+                    text: edited ? held.text : answer.content,
+                    saved: answer.content,
+                    loaded: true,
+                    readIn: LIFETIME,
+                    error: '',
+                    readonly,
+                    truncated: answer.truncated
+                });
+            } else {
+                updateDraft(id, { error: t('source.cannot_open', answer.error) });
             }
-        );
+        });
         const entry = { file, request };
         reading.set(id, entry);
         try {

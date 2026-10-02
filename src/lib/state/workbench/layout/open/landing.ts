@@ -33,7 +33,8 @@ export function holdsOpened(pane: Pane, opened: (view: ViewId) => boolean): bool
  * the pane the received ones were in; and else a new pane to the right of the pane the reader is
  * in, which the next one then lands in. A pane holding a tool view is taken only when the reader is
  * in it and it already holds opened tabs, so the tool panes of an arrangement never receive a
- * document unasked.
+ * document unasked. A locked pane is taken by none of these steps, so with every pane locked the
+ * view goes to the new pane to the right.
  */
 export function landingFor(
     tree: Layout,
@@ -42,7 +43,8 @@ export function landingFor(
     reader: number[]
 ): Landing {
     const allowed = (pane: Pane, path: number[]): boolean =>
-        !holdsTool(pane, opened) || (samePath(path, reader) && holdsOpened(pane, opened));
+        pane.locked !== true &&
+        (!holdsTool(pane, opened) || (samePath(path, reader) && holdsOpened(pane, opened)));
     for (const id of [...received].reverse()) {
         const found = findInstance(tree, id);
         if (found === null) continue;
@@ -50,8 +52,10 @@ export function landingFor(
         if (pane !== null && allowed(pane, found.path)) return { kind: 'pane', path: found.path };
     }
     const here = paneAt(tree, reader);
-    if (here !== null && holdsOpened(here, opened)) return { kind: 'pane', path: reader };
-    const all = panes(tree);
+    if (here !== null && here.locked !== true && holdsOpened(here, opened)) {
+        return { kind: 'pane', path: reader };
+    }
+    const all = panes(tree).filter(({ pane }) => pane.locked !== true);
     // An empty documents pane is where a document lands before an empty terminals pane, which a
     // document takes only when no other pane is empty.
     const empties = all.filter(({ pane }) => pane.tabs.length === 0);

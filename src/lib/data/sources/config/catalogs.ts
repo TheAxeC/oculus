@@ -16,9 +16,9 @@ import { CATALOGS_DIR, textCatalog } from './merge.ts';
 /**
  * The keys of the merged config the client state installs before the page renders: the colours and
  * the chip vocabulary state/shared/words/tones.ts reads, and the theme list, the wallpaper and the
- * CRT default and the code theme state/shared/words/appearance.ts reads. `domains` is the research
- * domains of config/catalogs/vocab.yml; `themes`, `wallpaper`, `crt`, `code_theme` and `terminal`
- * are config/appearance.yml's.
+ * CRT default, the code theme, and the pane strip's two settings state/shared/words/appearance.ts
+ * reads. `domains` is the research domains of config/catalogs/vocab.yml; `themes`, `wallpaper`,
+ * `crt`, `code_theme`, `show_tabs`, `editor_actions` and `terminal` are config/appearance.yml's.
  */
 export const VOCAB_KEYS = [
     'palette',
@@ -31,6 +31,8 @@ export const VOCAB_KEYS = [
     'wallpaper',
     'crt',
     'code_theme',
+    'show_tabs',
+    'editor_actions',
     'terminal'
 ];
 

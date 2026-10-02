@@ -3,8 +3,9 @@
 //
 // The redraw itself is a browser fact and is not asserted here: vitest runs this suite in node,
 // where Svelte is compiled for the server and an $effect never runs, so the effect in +page.svelte
-// is read as source and its wiring is what is checked. What it does on screen needs a DOM and is
-// not run here.
+// is read as source and its wiring is what is checked, by cases titled as audits. What it does on
+// screen needs a DOM and is not run here. The behaviour behind the page-wide right-click handler,
+// shouldCancel, is run by tests/shell/context-guard.test.ts.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -76,11 +77,11 @@ describe('the page subscription', () => {
         return [...inside.matchAll(/'([^']+)'/g)].map((found) => found[1]);
     }
 
-    it('carries files beside the other channels, so an open listing follows a write', () => {
+    it('audits that the page carries files beside the other channels, so an open listing follows a write', () => {
         expect(subscribed()).toContain('files');
     });
 
-    it('carries every channel the page reads', () => {
+    it('audits that the page carries every channel it reads', () => {
         expect(subscribed()).toEqual([
             'portfolio',
             'config',
@@ -114,30 +115,49 @@ describe('the page that arrives after a move of its server', () => {
 describe('the page effect that follows a config push', () => {
     const source = readFileSync(join(ROUTES, '+page.svelte'), 'utf8');
 
-    it('registers the collections in one effect that reads the configuration generation', () => {
+    it('audits that the collections are registered in one effect that reads the configuration generation', () => {
         const wired = effects(source).filter((body) => body.includes('registerCollections('));
         expect(wired).toHaveLength(1);
         expect(wired[0]).toContain('configGeneration()');
         expect(wired[0]).toContain('config()');
     });
 
-    it('follows a push only when it carries a real collections list, so a malformed one closes no tab', () => {
+    it('audits that a push is followed only when it carries a real collections list, so a malformed one closes no tab', () => {
         const wired = effects(source).filter((body) => body.includes('registerCollections('));
         expect(wired[0]).toContain('pushedCollections(');
         expect(wired[0]).toContain('if (keys !== null) registerCollections(');
     });
 
-    it('leaves the first frame to the untracked call in the script body', () => {
+    it('audits that the first frame is left to the untracked call in the script body', () => {
         const untracked = source.split('untrack(() => {')[1]?.split('    });')[0] ?? '';
         expect(untracked).toContain('registerCollections(client.registry, data.collections);');
     });
 
-    it('installs the write token the load handed on, and follows a later load', () => {
+    it('audits that the write token the load handed on is installed, and a later load followed', () => {
         const untracked = source.split('untrack(() => {')[1]?.split('    });')[0] ?? '';
         expect(untracked).toContain('setToken(data.token);');
         const wired = effects(source).filter((body) => body.includes('setToken('));
         expect(wired).toHaveLength(1);
         expect(wired[0]).toContain('data.token');
+    });
+});
+
+describe('the page-wide right-click handler', () => {
+    const source = readFileSync(join(ROUTES, '+page.svelte'), 'utf8');
+    const mounted = source.split('onMount(() => {')[1]?.split('\n    });')[0] ?? '';
+
+    it('audits that one contextmenu listener is added on the document, once, when the page mounts', () => {
+        expect(source.match(/addEventListener\('contextmenu'/g)).toHaveLength(1);
+        expect(mounted).toContain("document.addEventListener('contextmenu'");
+    });
+
+    it('audits that the browser menu is cancelled through shouldCancel and nothing else', () => {
+        expect(source).toContain("from '$lib/shell/context-guard'");
+        expect(mounted).toMatch(/if \(shouldCancel\(event\)\) event\.preventDefault\(\);/);
+    });
+
+    it('audits that the listener is taken away when the page goes', () => {
+        expect(mounted).toContain("document.removeEventListener('contextmenu'");
     });
 });
 

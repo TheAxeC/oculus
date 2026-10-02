@@ -10,28 +10,28 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
-import Workbench from '../../../src/lib/shell/Workbench.svelte';
-import DropLayer from '../../../src/lib/shell/panes/DropLayer.svelte';
+import Workbench from '../../../../src/lib/shell/Workbench.svelte';
+import DropLayer from '../../../../src/lib/shell/panes/DropLayer.svelte';
 import {
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog
-} from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
-import { THRESHOLD } from '../../../src/lib/state/workbench/drag.svelte.ts';
-import { serialiseLayout } from '../../../src/lib/state/workbench/layout/index.ts';
-import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
+} from '../../../../src/lib/data/sources/config.ts';
+import { setCatalog, setGlyphs } from '../../../../src/lib/state/shared/words/text.ts';
+import { THRESHOLD } from '../../../../src/lib/state/workbench/drag.svelte.ts';
+import { serialiseLayout } from '../../../../src/lib/state/workbench/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
 import {
     fakeStorage,
     floating,
     heldPages,
     pageAround,
     split
-} from '../../state/workbench/layout/layout-fixture.ts';
-import { BASE_DEPTH } from '../../../src/lib/shell/panes/floats/float-geometry.ts';
-import Alpha from '../fixtures/Alpha.svelte';
-import Beta from '../fixtures/Beta.svelte';
+} from '../../../state/workbench/layout/layout-fixture.ts';
+import { BASE_DEPTH } from '../../../../src/lib/shell/panes/floats/float-geometry.ts';
+import Alpha from '../../fixtures/Alpha.svelte';
+import Beta from '../../fixtures/Beta.svelte';
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));

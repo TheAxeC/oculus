@@ -14,7 +14,9 @@ import {
     codeThemeDefault,
     crtDefault,
     defaultTheme,
+    editorActions,
     setAppearance,
+    showTabs,
     terminalFontPx,
     terminalOptions,
     terminalTheme,
@@ -52,6 +54,8 @@ describe('the config with no key', () => {
         expect(themeLabel('dark')).toBe('dark');
         expect(crtDefault()).toBe(false);
         expect(codeThemeDefault()).toBe('tokens');
+        expect(showTabs()).toBe('multiple');
+        expect(editorActions()).toBe('strip');
         expect(terminalFontPx()).toBeNull();
         expect(terminalOptions()).toStrictEqual({});
         expect(wallpaperSettings()).toBeNull();
@@ -65,9 +69,13 @@ describe('the config with no key', () => {
             wallpaper: {},
             crt: { default: true },
             code_theme: codeThemeIds()[0],
+            show_tabs: 'none',
+            editor_actions: 'hidden',
             terminal: { font_px: 14, cursor_style: 'block' }
         });
         setAppearance({});
+        expect(showTabs()).toBe('multiple');
+        expect(editorActions()).toBe('strip');
         expect(themes()).toStrictEqual([]);
         expect(wallpaperSettings()).toBeNull();
         expect(crtDefault()).toBe(false);
@@ -309,6 +317,45 @@ describe('the CRT default', () => {
     ])('reads the crt key %j as %s', (crt, expected) => {
         setAppearance({ crt });
         expect(crtDefault()).toBe(expected);
+    });
+});
+
+describe('the tab bar and the editor actions', () => {
+    it.each([
+        ['multiple', 'multiple'],
+        ['single', 'single'],
+        ['none', 'none'],
+        ['few', 'multiple'],
+        ['Single', 'multiple'],
+        ['', 'multiple'],
+        [3, 'multiple'],
+        [true, 'multiple'],
+        [null, 'multiple'],
+        [['none'], 'multiple']
+    ])('reads the show_tabs key %j as %j', (value, expected) => {
+        setAppearance({ show_tabs: value });
+        expect(showTabs()).toBe(expected);
+    });
+
+    it.each([
+        ['strip', 'strip'],
+        ['hidden', 'hidden'],
+        ['tabs', 'strip'],
+        ['Hidden', 'strip'],
+        ['', 'strip'],
+        [false, 'strip'],
+        [null, 'strip'],
+        [['hidden'], 'strip']
+    ])('reads the editor_actions key %j as %j', (value, expected) => {
+        setAppearance({ editor_actions: value });
+        expect(editorActions()).toBe(expected);
+    });
+
+    it('reads the two keys independently of each other', () => {
+        setAppearance({ show_tabs: 'none' });
+        expect([showTabs(), editorActions()]).toEqual(['none', 'strip']);
+        setAppearance({ editor_actions: 'hidden' });
+        expect([showTabs(), editorActions()]).toEqual(['multiple', 'hidden']);
     });
 });
 

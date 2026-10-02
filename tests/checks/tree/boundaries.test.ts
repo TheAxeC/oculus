@@ -298,6 +298,8 @@ const FROZEN = [
     'lib/state/shared/words/appearance.ts:crt',
     'lib/state/shared/words/appearance.ts:codeTheme',
     'lib/state/shared/words/appearance.ts:terminal',
+    'lib/state/shared/words/appearance.ts:tabBar',
+    'lib/state/shared/words/appearance.ts:actionsAt',
     'lib/state/shared/words/generation.svelte.ts:held',
     'lib/state/shared/words/glyphmode.svelte.ts:held'
 ];
@@ -507,7 +509,7 @@ describe('layer boundaries', () => {
             'ui/Shared.svelte',
             "<script>\nimport Sub from '../views/shared/forms/Subtasks.svelte';\n</script>"
         );
-        write('shell/Bad.ts', "import { branch } from '$lib/server/core/git';");
+        write('shell/Bad.ts', "import { branch } from '$lib/server/core/git/git';");
         write('shell/Shared.ts', "import Sub from '$lib/views/shared/forms/Subtasks.svelte';");
         write('shell/Runes.ts', "import { portfolio } from '$lib/state/client/entities.svelte';");
         write('shell/Store.ts', "import { apply } from '$lib/state/workbench/layout.svelte';");
@@ -535,7 +537,7 @@ describe('layer boundaries', () => {
         write('views/boards/projects/Projects.svelte', '<span></span>');
         write('state/bad.svelte.ts', "import { read } from '$lib/data/sources/config';");
         write('state/good.ts', "import { isMap } from '$lib/data/helpers/guards';");
-        write('server/core/git.ts', "import type { Project } from '../../data/model.ts';");
+        write('server/core/git/git.ts', "import type { Project } from '../../../data/model.ts';");
         write(
             'server/transcripts/bad.ts',
             "import { scan } from '../sessions/stores/transcripts.ts';"
@@ -543,7 +545,7 @@ describe('layer boundaries', () => {
 
         expect(findViolations(dir)).toEqual([
             'server/transcripts/bad.ts imports server/sessions/stores/transcripts',
-            'shell/Bad.ts imports server/core/git',
+            'shell/Bad.ts imports server/core/git/git',
             'shell/Runes.ts imports state/client/entities.svelte',
             'shell/Shared.ts imports views/shared/forms/Subtasks.svelte',
             'state/bad.svelte.ts imports data/sources/config',

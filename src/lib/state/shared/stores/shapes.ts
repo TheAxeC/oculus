@@ -98,6 +98,11 @@ export type WriteAnswer = {
      * given up for want of an answer, which says so in the words of `app.write_timed_out`.
      */
     error?: string;
+    /**
+     * Set with `error` when the server names the refusal by a code the page acts on, so the page
+     * never reads the refusal's words.
+     */
+    code?: string;
     /** True when the request never reached the server: the fetch itself threw. */
     network?: boolean;
     /** What the endpoint had to say: git's own output, or the suggested commit message. */
@@ -128,8 +133,11 @@ export type SubtaskTarget = { id: string; collection?: string };
 /** What one subtask button does to its line. */
 export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
 
-/** What a caller says about one write it sends: `said` when it words a failure itself. */
-export type SendOptions = { said?: boolean };
+/**
+ * What a caller says about one write it sends: `said` when it words a failure itself, and `asked`
+ * the codes of the refusals it answers with a question, which are not told as failures.
+ */
+export type SendOptions = { said?: boolean; asked?: readonly string[] };
 
 /**
  * What went wrong before the endpoint's answer could be read: no answer came, or the answer was not
@@ -204,7 +212,8 @@ export type WritesStore = {
     writeGit: (
         action: string,
         root: string,
-        fields?: Record<string, unknown>
+        fields?: Record<string, unknown>,
+        options?: SendOptions
     ) => Promise<WriteAnswer>;
     writeDeposit: (
         action: string,

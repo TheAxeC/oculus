@@ -19,16 +19,18 @@
     // words and the tone of views/shared/changes/repo-shape.ts at its end and git's reason as
     // their hover words, so a reader sees why a root has nothing to show before choosing it.
     //
-    // A row whose folder is there opens a right-click menu (menus/repo-menu.ts) of a shell in the
-    // repository and Reveal in Finder, which the view answers; a readable row draws the same items
-    // under its `...` control.
+    // A row opens a right-click menu (menus/repo-menu.ts) of a shell in the repository and Reveal
+    // in Finder (for a folder that is there), then Close Repository and, while more than one is
+    // listed, Close Other Repositories. The view answers them: a closed repository leaves this list
+    // for the tab and comes back through Reopen Closed Repositories. A readable row draws the same
+    // items under its `...` control.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import { REPO_REVEAL, REPO_TERMINAL, repoRowMenu } from './menus/repo-menu';
+    import { repoPick, repoRowMenu } from './menus/repo-menu';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
@@ -36,11 +38,11 @@
         canPublish,
         changeCount,
         publishWords,
-        repoListRows,
         repoShape,
         syncWords,
         tracksUpstream
     } from '$lib/state/sources/repositories/repositories';
+    import { repoListRows } from '$lib/state/sources/repositories/change-tree';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -63,6 +65,10 @@
         onterminal: (root: string) => void;
         /** A repository's folder revealed in Finder. */
         onreveal: (root: string) => void;
+        /** A repository closed in this tab. */
+        onclose: (root: string) => void;
+        /** Every other repository closed in this tab. */
+        oncloseothers: (root: string) => void;
     };
 
     let {
@@ -76,15 +82,20 @@
         onbranch,
         ask,
         onterminal,
-        onreveal
+        onreveal,
+        onclose,
+        oncloseothers
     }: Props = $props();
 
     const { repositories } = useState();
 
     /** A pick from a repository row's menu. */
     function picked(root: string, pick: string): void {
-        if (pick === REPO_TERMINAL) onterminal(root);
-        else if (pick === REPO_REVEAL) onreveal(root);
+        const asked = repoPick(pick);
+        if (asked === 'terminal') onterminal(root);
+        else if (asked === 'reveal') onreveal(root);
+        else if (asked === 'close') onclose(root);
+        else if (asked === 'close-others') oncloseothers(root);
     }
 
     const rows = $derived(repoListRows(roots, collapsed));
@@ -125,7 +136,11 @@
                     <li role="none" data-repo-row={root}>
                         <ContextMenu
                             label={labels[root] ?? root}
-                            items={repoRowMenu(shape !== 'missing' && shape !== 'unplaced', t)}
+                            items={repoRowMenu(
+                                shape !== 'missing' && shape !== 'unplaced',
+                                roots.length,
+                                t
+                            )}
                             onpick={(pick: string) => picked(root, pick)}
                         >
                             <TreeItem
@@ -198,7 +213,7 @@
                                             bare
                                             placement="down"
                                             align="right"
-                                            items={repoRowMenu(true, t)}
+                                            items={repoRowMenu(true, roots.length, t)}
                                             tabindex={reach}
                                             onpick={(pick: string) => picked(root, pick)}
                                         />

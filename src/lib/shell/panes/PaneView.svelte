@@ -23,29 +23,32 @@
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
     // Escape.
     //
-    // The strip's right end is the pane's header, drawn as an editor group's: the split to the
-    // right as a bare icon button, drawn while the pane shows a tab, and the menu as its bare
-    // more-actions opener. The one pane the next view opened would land in draws its strip
-    // focused, and it is the active pane of the page the reader is in, so one pane strip in the
-    // window carries the accent and that tab is where a view will land. The rail's button drawn in
-    // force is a different mark: it says which page is shown, not where a view opens. The split
+    // The pane's top row is strip/PaneStrip.svelte's, drawn under show_tabs and editor_actions. Its
+    // right end is the pane's header, drawn as an editor group's: the split to the right as a bare
+    // icon button, drawn while the pane shows a tab, the lock mark of a locked group, and the menu
+    // as its bare more-actions opener. The one pane the next view opened would land in draws its
+    // strip focused, and it is the active pane of the page the reader is in, so one pane strip in
+    // the window carries the accent and that tab is where a view will land. The rail's button drawn
+    // in force is a different mark: it says which page is shown, not where a view opens. The split
     // button is the pointer's shortcut to an item the menu already holds, so it takes no stop of
     // its own and the pane's stops stay the strip and the menu.
     //
     // A right-click on the strip's empty area or in an empty pane's body opens VS Code's editor
-    // group menu (pane-view.ts's stripMenu): Open File..., the four splits of the active tab, Close
-    // through the pane menu's own close and its question, and New Terminal on the pane's page. A
-    // right-click on a tab is left to the tab's own menu, so the strip's menu opens only where no
-    // tab is under the pointer.
+    // group menu (pane-view.ts's stripMenu): Open File..., New Text File, the four splits of the
+    // active tab, Lock Group, the Tab Bar and Editor Actions Position submenus (which write the two
+    // settings), Close through the pane menu's own close and its question, and New Terminal on the
+    // pane's page. With editor_actions hidden it also holds the pane menu's other items (Maximise
+    // or Restore, Fold, the page choices), and Close is always offered, so nothing is reachable
+    // only from the `...` button. A right-click on a tab is left to the tab's own menu, so the
+    // strip's menu opens only where no tab is under the pointer.
 
     import {
         EMBED,
-        FLOAT_PANE,
         PAGE,
-        floatMenu,
         foldable,
         isFloatItem,
-        pageListItems,
+        isPaneItem,
+        paneMenu,
         stripMark,
         stripMenu,
         stripPicked
@@ -53,11 +56,8 @@
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import { closeAsk, closeOnce, closeWords } from '$lib/state/workbench/navigation/pages';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
-    import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
-    import Tabs from '$lib/ui/tabs/Tabs.svelte';
     import type { Tab } from '$lib/ui/tabs/tab-strip';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { markAt, withoutOwn } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/shared/words/text';
     import {
@@ -66,7 +66,16 @@
         registrationLabel
     } from '$lib/state/workbench/navigation/registry';
     import PaneBody from './PaneBody.svelte';
-    import { instanceLabel, panes, type Instance, type Layout } from '$lib/state/workbench/layout';
+    import PaneStrip from './strip/PaneStrip.svelte';
+    import { editorActions, showTabs } from '$lib/state/shared/words/appearance';
+    import {
+        instanceLabel,
+        newNoteOpener,
+        panes,
+        setLocked,
+        type Instance,
+        type Layout
+    } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -74,6 +83,7 @@
     const {
         layout: {
             activateInstance,
+            change,
             closeInstance,
             closePane,
             currentPage,
@@ -89,6 +99,7 @@
             maximisePane,
             moveInstanceToPage,
             openingInstance,
+            openInPane,
             pages,
             restorePanes,
             returnFloat,
@@ -98,7 +109,7 @@
         drag: { dragging, hover, start },
         registry: { viewFor },
         terminals: { newTerminalIn, tabMark },
-        ui: { unsaved, busyTerminals }
+        ui: { unsaved, busyTerminals, setPaneStrip }
     } = client;
 
     type Props = {
@@ -202,31 +213,19 @@
      */
     let confirming: { message: string; act: () => void } | null = $state(null);
 
-    /**
-     * The two page choices: every page but this pane's own, as the item that moves the active tab
-     * onto it, and every page this one may show beside the pane, which is the keyboard path to
-     * embedding. Each is one line of the menu that opens its pages in place of the menu's list.
-     */
-    const pageLists = $derived<MenuItem[]>(pageListItems(pages(), currentPage().id, page, t));
-
     const items = $derived<MenuItem[]>(
-        float !== undefined
-            ? floatMenu(float.place, pages(), t)
-            : [
-                  { id: 'close', label: t('ui.pane_close') },
-                  maximised
-                      ? { id: 'restore', label: t('ui.pane_restore') }
-                      : { id: 'maximise', label: t('ui.pane_maximise') },
-                  // The root pane is in no split, and the last open child of a split stays open,
-                  // so the item is offered only where a fold would change the tree.
-                  ...(foldable(layout(page), path)
-                      ? [{ id: 'fold', label: t('ui.pane_fold') }]
-                      : []),
-                  ...pageLists,
-                  { id: 'split_right', label: t('ui.split_right') },
-                  { id: 'split_down', label: t('ui.split_down') },
-                  ...(active === '' ? [] : [{ id: FLOAT_PANE, label: t('ui.float') }])
-              ]
+        paneMenu(
+            {
+                float: float?.place,
+                pages: pages(),
+                screen: currentPage().id,
+                host: page,
+                maximised,
+                foldable: foldable(layout(page), path),
+                holdsTab: active !== ''
+            },
+            t
+        )
     );
 
     /** The strip's and the empty body's right-click menu. */
@@ -235,13 +234,21 @@
             {
                 holdsTab: active !== '',
                 panes: panes(layout(page)).length,
-                float: float?.place
+                float: float?.place,
+                locked: node.kind === 'pane' && node.locked === true,
+                tabBar: showTabs(),
+                actions: editorActions(),
+                paneItems: items
             },
             t
         )
     );
 
     function stripPick(id: string): void {
+        if (isPaneItem(id)) {
+            pick(id);
+            return;
+        }
         stripPicked(
             id,
             { active, path, page },
@@ -253,7 +260,11 @@
                 floatPane,
                 dockFloat,
                 freeFloat,
-                returnFloat
+                returnFloat,
+                newNoteIn: newNoteOpener(openInPane),
+                setLocked: (at, where, locked) =>
+                    change((tree) => setLocked(tree, where, locked), at),
+                setAppearance: setPaneStrip
             }
         );
     }
@@ -400,17 +411,22 @@
     <ContextMenu label={t('ui.pane_menu')} items={stripItems} onpick={stripPick}>
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="tabs-menu" oncontextmenu={onTab}>
-            <Tabs
+            <PaneStrip
                 {tabs}
                 {active}
+                locked={node.kind === 'pane' && node.locked === true}
+                canSplit={active !== '' && float === undefined}
+                {items}
                 {dropIndex}
+                focused={activePane}
                 onselect={(id: string) => activateInstance(id, page)}
                 onclose={closeTab}
                 ondblclick={(id: string) => keepPreview(id)}
                 onpointerdown={press}
                 onhoverindex={held === null ? undefined : stripHover}
-                menu={paneMenu}
-                focused={activePane}
+                onsplit={() => pick('split_right')}
+                onunlock={() => change((tree) => setLocked(tree, path, false), page)}
+                onpick={pick}
             />
         </div>
     </ContextMenu>
@@ -430,29 +446,6 @@
     onconfirm={confirmed}
     oncancel={() => (confirming = null)}
 />
-
-{#snippet paneMenu()}
-    {#if active !== '' && float === undefined}
-        <ToolButton
-            label={t('ui.split_right')}
-            glyph={t('ui.split_right_glyph')}
-            compact
-            bare
-            tabindex={-1}
-            onclick={() => pick('split_right')}
-        />
-    {/if}
-    <Menu
-        label={t('ui.pane_menu')}
-        glyph={t('ui.pane_more_glyph')}
-        compact
-        bare
-        placement="down"
-        align="right"
-        {items}
-        onpick={pick}
-    />
-{/snippet}
 
 <style>
     .pane {

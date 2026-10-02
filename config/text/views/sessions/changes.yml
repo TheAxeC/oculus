@@ -29,8 +29,10 @@ text:
         commit_title: Commit what is staged (Ctrl+Enter)
         commit_unmerged: '{0} files are still in conflict; resolve them before committing.'
         discard: Discard
+        cut_warning: Too many changes were detected. Only the first 200 changes will be shown below.
         discard_all: Discard All Changes
         discard_all_confirm: Throw away the changes to {0} paths?
+        discard_all_untracked: Discard All Untracked Changes
         discard_all_detail: Every tracked path goes back to what is staged, or to what is committed when nothing is. Untracked files are kept. There is no undo.
         discard_confirm: Throw away the change to {0}?
         discard_detail: The worktree goes back to what is staged, or to what is committed when nothing is. There is no undo.
@@ -47,6 +49,12 @@ text:
         stage_title: Stage this path
         suggest: Suggest
         suggest_pending: Reading the staged diff
+        trash_button: Move to Trash
+        trash_confirm: "Are you sure you want to DELETE the following untracked file: '{0}'?"
+        trash_confirm_many: Are you sure you want to DELETE the {0} untracked files?
+        trash_detail: You can restore this file from the Trash.
+        trash_detail_many: You can restore these files from the Trash.
+        trash_title: Move this untracked file to the Trash
         unstage: Unstage
         unstage_all: Unstage All Changes
         unstage_title: Take this path back out of the index

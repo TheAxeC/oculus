@@ -15,6 +15,7 @@ import type { MenuItem } from '../../../src/lib/ui/menu/menu-items.ts';
 import { rowMenu } from '../../../src/lib/views/sources/files/tree/menu/row-menu.ts';
 import {
     changeMenu,
+    folderMenu,
     groupMenu
 } from '../../../src/lib/views/sources/repositories/menus/change-menu.ts';
 import {
@@ -22,6 +23,7 @@ import {
     refMenu
 } from '../../../src/lib/views/sources/repositories/menus/graph-menu.ts';
 import {
+    closedChoices,
     repoRowMenu,
     worktreeMenu
 } from '../../../src/lib/views/sources/repositories/menus/repo-menu.ts';
@@ -58,7 +60,11 @@ const TAG = 'v1.0';
 const TERMINAL = 'build watcher';
 const ATTACHED = 'dev server';
 const ATTACHED_TOO = 'notes shell';
-const NAMES = [BRANCH, TAG, TERMINAL, ATTACHED, ATTACHED_TOO];
+const CLOSED = ['alpha repo', 'beta repo'];
+const NAMES = [BRANCH, TAG, TERMINAL, ATTACHED, ATTACHED_TOO, ...CLOSED];
+
+/** What a commit's compare items need: the upstream and the base of the checked-out branch. */
+const COMPARE = { upstream: 'origin/main', base: 'origin/main' };
 
 /**
  * The facts that give a row's menu its most items: removable, addable, a clipboard, a compare file.
@@ -77,18 +83,29 @@ function everyMenu(): MenuItem[][] {
         rowMenu({ kind: 'file', path: 'a.md', ...ROW_OPS }, words),
         rowMenu({ kind: 'dir', path: 'a', ...ROW_OPS }, words),
         rowMenu({ kind: 'root', path: '', ...ROW_OPS }, words),
-        changeMenu('changed', false, words),
-        changeMenu('staged', false, words),
-        changeMenu('untracked', false, words),
+        changeMenu('changed', false, words, true),
+        changeMenu('staged', false, words, true),
+        changeMenu('untracked', false, words, true),
+        folderMenu('changed', false, words),
+        folderMenu('untracked', false, words),
         groupMenu('changed', 1, false, words),
         groupMenu('staged', 1, false, words),
         groupMenu('untracked', 1, false, words),
-        commitMenu({ refs: [BRANCH], tags: [TAG] }, { local: [BRANCH], current: '' }, false, words),
+        commitMenu(
+            { refs: [BRANCH], tags: [TAG] },
+            { local: [BRANCH], current: '', remotes: ['origin'] },
+            false,
+            words,
+            COMPARE
+        ),
         refMenu(BRANCH, 'branch', false, words),
+        refMenu('origin/main', 'remote', false, words),
         refMenu(TAG, 'tag', false, words),
-        repoRowMenu(true, words),
+        repoRowMenu(true, 2, words),
         worktreeMenu(false, words),
+        closedChoices(['/a', '/b'], { '/a': CLOSED[0], '/b': CLOSED[1] }, words),
         stripMenu({ holdsTab: true, panes: 2 }, words),
+        stripMenu({ holdsTab: false, panes: 1, locked: true }, words),
         gridMenu(true, false, words),
         terminalRowMenu(
             readTab({ id: 't', terminals: [A, B], shown: A, row: [A, B] }),
@@ -120,9 +137,10 @@ describe('the words of every right-click menu', () => {
     it('audits that passes each name from data through exactly as it was handed', () => {
         const commit = commitMenu(
             { refs: [BRANCH], tags: [TAG] },
-            { local: [BRANCH], current: '' },
+            { local: [BRANCH], current: '', remotes: [] },
             false,
-            words
+            words,
+            COMPARE
         );
         const submenus = commit.flatMap((item) => (item.items ?? []).map((one) => one.label));
         expect(submenus).toEqual([BRANCH, TAG]);

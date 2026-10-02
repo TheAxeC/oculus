@@ -1,6 +1,6 @@
 // The patch the diff pane cuts from a file's two versions
-// (state/sources/repositories/diff-patch.ts), over the hunks and chosen rows of diff-hunks.ts and
-// the line changes Monaco draws, applied by the real git through the index write
+// (state/sources/repositories/diff/diff-patch.ts), over the hunks and chosen rows of diff-hunks.ts
+// and the line changes Monaco draws, applied by the real git through the index write
 // (server/git/git-index.ts's applyHunk). Each case reads the file through GET /api/git as the pane
 // does, cuts the patch and reads what the index or the worktree holds after. Every repository is
 // made in the system temporary directory.
@@ -17,11 +17,11 @@ import {
     hunksOf,
     type ChosenRows,
     type LineSelection
-} from '../../../src/lib/state/sources/repositories/diff-hunks.ts';
+} from '../../../src/lib/state/sources/repositories/diff/diff-hunks.ts';
 import {
     sidesPatch,
     type PatchMode
-} from '../../../src/lib/state/sources/repositories/diff-patch.ts';
+} from '../../../src/lib/state/sources/repositories/diff/diff-patch.ts';
 import type { DiffSides } from '../../../src/lib/data/model/index.ts';
 import { monacoLineChanges } from '../../ui/controls/editor/monaco-diff.ts';
 import { gitText as git, put, repositoryIn } from '../root/watch/repos.ts';

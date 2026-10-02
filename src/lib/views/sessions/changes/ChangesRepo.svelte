@@ -84,6 +84,7 @@
         staged={state.staged}
         unstaged={state.unstaged}
         untracked={state.untracked}
+        held={state.held}
         {busy}
         {onstage}
         {onunstage}

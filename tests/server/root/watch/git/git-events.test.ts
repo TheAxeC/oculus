@@ -9,13 +9,13 @@
 import { mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
-import { Hub } from '../../../../src/lib/server/core/channels.ts';
-import { watchGit } from '../../../../src/lib/server/root/watch/git.ts';
-import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts';
-import { recording, until } from './probe.ts';
-import { announce, manual, put, repositoryIn } from './repos.ts';
-import type { Manual } from './repos.ts';
-import { it, scratchDir } from '../../../fixtures/scratch.ts';
+import { Hub } from '../../../../../src/lib/server/core/channels.ts';
+import { watchGit } from '../../../../../src/lib/server/root/watch/git.ts';
+import type { Watcher } from '../../../../../src/lib/server/root/watch/portfolio.ts';
+import { recording, until } from '../probe.ts';
+import { announce, manual, put, repositoryIn } from '../repos.ts';
+import type { Manual } from '../repos.ts';
+import { it, scratchDir } from '../../../../fixtures/scratch.ts';
 
 /** What a watch hands each event to: the kind of event, and the path under what it watches. */
 type Listener = (event: string, name: string | null) => void;

@@ -3,9 +3,9 @@
     // explorer row, drawn as VS Code draws a row of Source Control: the file's Seti icon, then its
     // name in its status colour and struck through for a deleted file, its folder after it at 0.9
     // of the row's size and muted (in the list; the tree has the folder as a row above), its line
-    // counts, the controls on hover (Open File, then Discard in Changes, then Stage or Unstage),
-    // and the status letter last. In the merge group the controls are Open in Merge Editor, Open
-    // File and Mark Resolved.
+    // counts, the controls on hover (Open File, then Discard in Changes and Untracked, then Stage
+    // or Unstage), and the status letter last. In the merge group the controls are Open in Merge
+    // Editor, Open File and Mark Resolved.
     //
     // Pressing the row opens what it stands for
     // (state/sources/repositories/repositories.svelte.ts's openChange): the three-way merge editor
@@ -16,8 +16,11 @@
     // so the two lists agree.
     //
     // A row of Changes, Staged and Untracked opens a right-click menu of what its controls do
-    // (menus/change-menu.ts), with Reveal in Explorer View besides; the merge group has none. A
-    // Discard picked there asks the question the row's Discard control asks.
+    // (menus/change-menu.ts), with Reveal in Explorer View, Add to .gitignore, Open File (HEAD)
+    // and, on a linked worktree, Compare with Workspace besides; the merge group has none. A
+    // Discard picked there asks the question the row's Discard control asks: the restore question
+    // on a changed row, and on an untracked row the Trash question, whose yes moves the file to the
+    // Trash.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -30,7 +33,7 @@
     import type { GitEntry } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
-    import { askDiscard, changeMenu, changePicked, hasMenu } from '../menus/change-menu';
+    import { askDiscard, askTrash, changeMenu, changePicked, hasMenu } from '../menus/change-menu';
 
     type Props = {
         root: string;
@@ -45,12 +48,26 @@
         showFolder: boolean;
         busy: boolean;
         /** Ask before a write that loses work, in the view's own dialog. */
-        ask: (message: string, detail: string, act: () => void) => void;
+        ask: (message: string, detail: string, act: () => void, confirm?: string) => void;
+        /** Whether the repository is a linked worktree, whose rows compare with the main one. */
+        linked?: boolean;
         /** The row's measuring hook, handed by the list that draws only the rows in view. */
         measure: Attachment<HTMLElement>;
     };
 
-    let { root, entry, group, nav, level, depth, showFolder, busy, ask, measure }: Props = $props();
+    let {
+        root,
+        entry,
+        group,
+        nav,
+        level,
+        depth,
+        showFolder,
+        busy,
+        ask,
+        linked = false,
+        measure
+    }: Props = $props();
 
     const { repositories } = useState();
 
@@ -68,10 +85,18 @@
 
     /** The calls a pick from the row's menu runs, the row's own controls' among them. */
     const deps = {
-        ask: (message: string, detail: string, act: () => void) => ask(message, detail, act),
+        ask: (message: string, detail: string, act: () => void, confirm?: string) =>
+            ask(message, detail, act, confirm),
         discard: (at: string, path: string) => void repositories.discard(at, path),
+        trash: (at: string, paths: readonly string[]) =>
+            void repositories.trashUntracked(at, paths),
+        ignore: (at: string, paths: readonly string[]) => void repositories.ignore(at, paths),
         openChange: (at: string, kind: string, path: string) =>
             repositories.openChange(at, kind, path),
+        openHead: (at: string, kind: string, path: string) => repositories.openHead(at, kind, path),
+        compareWorkspace: (at: string, _kind: string, path: string) => {
+            repositories.compareWorkspace(at, path);
+        },
         openFile: (at: string, path: string) => void repositories.openFile(at, path),
         stage: (at: string, path: string) => void repositories.stage(at, path),
         unstage: (at: string, path: string) => void repositories.unstage(at, path),
@@ -83,7 +108,7 @@
     {#if hasMenu(group)}
         <ContextMenu
             label={entry.path}
-            items={changeMenu(group, busy, t)}
+            items={changeMenu(group, busy, t, linked)}
             onpick={(pick: string) =>
                 changePicked(pick, { root, group, path: entry.path }, deps, t)}
         >
@@ -145,6 +170,16 @@
                     tabindex={reach}
                     disabled={busy}
                     onclick={() => askDiscard(root, entry.path, deps, t)}
+                />
+            {:else if group === 'untracked'}
+                <ToolButton
+                    label={t('git.discard')}
+                    title={t('git.trash_title')}
+                    glyph="note_back"
+                    compact
+                    tabindex={reach}
+                    disabled={busy}
+                    onclick={() => askTrash(root, [entry.path], deps, t)}
                 />
             {/if}
             {#if group === 'staged'}

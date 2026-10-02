@@ -48,6 +48,8 @@ const heldDiffFallback = {
     stash: '',
     group: undefined,
     against: undefined,
+    compare: undefined,
+    workspace: undefined,
     line: 0,
     session: ''
 };
@@ -63,6 +65,8 @@ const heldDiffValid = {
     stash: 's',
     group: 'staged',
     against: { root: 'a', path: 'b' },
+    compare: { from: 'f', to: 't' },
+    workspace: true,
     line: 4,
     session: 's-1'
 };
@@ -81,8 +85,22 @@ const diffPathsValid = {
     folded: ['a.ts']
 };
 const diffNoPathsFallback = { mode: 'side', views: {}, unchanged: 'folded', folded: [] };
-const reposFallback = { root: '', collapsed: [], commit: '', mode: 'list', reveal: '' };
-const reposValid = { root: 'r', collapsed: ['c'], commit: 'k', mode: 'tree', reveal: 'branches' };
+const reposFallback = {
+    root: '',
+    collapsed: [],
+    commit: '',
+    mode: 'list',
+    reveal: '',
+    closed: []
+};
+const reposValid = {
+    root: 'r',
+    collapsed: ['c'],
+    commit: 'k',
+    mode: 'tree',
+    reveal: 'branches',
+    closed: ['d']
+};
 
 const READERS: Reader[] = [
     {
@@ -260,6 +278,8 @@ const READERS: Reader[] = [
             stash: 's',
             group: 'staged',
             against: { root: 'a', path: 'b' },
+            compare: { from: 'f', to: 't' },
+            workspace: true,
             line: 4,
             session: 's-1'
         },
@@ -275,6 +295,8 @@ const READERS: Reader[] = [
             stash: 3,
             group: 'both',
             against: 3,
+            compare: { from: '', to: 't' },
+            workspace: false,
             line: '4',
             session: 3
         },
@@ -318,6 +340,8 @@ const READERS: Reader[] = [
             'wrong stash': { ...heldDiffValid, stash: '' },
             'wrong group': { ...heldDiffValid, group: undefined },
             'wrong against': { ...heldDiffValid, against: undefined },
+            'wrong compare': { ...heldDiffValid, compare: undefined },
+            'wrong workspace': { ...heldDiffValid, workspace: undefined },
             'wrong line': { ...heldDiffValid, line: 0 },
             'wrong session': { ...heldDiffValid, session: '' },
             'all wrong': heldDiffFallback,
@@ -335,6 +359,8 @@ const READERS: Reader[] = [
                 worktree: true,
                 group: 'staged',
                 against: { root: 'a', path: 'b' },
+                compare: { from: 'f', to: 't' },
+                workspace: true,
                 line: 4
             },
             'no booleans': { ...heldDiffValid, staged: false, worktree: false }
@@ -459,8 +485,15 @@ const READERS: Reader[] = [
     {
         name: 'repositoriesViewOf',
         read: repositoriesViewOf,
-        valid: { root: 'r', collapsed: ['c'], commit: 'k', mode: 'tree', reveal: 'branches' },
-        wrong: { root: 3, collapsed: 'x', commit: 3, mode: 'grid', reveal: 'tags' },
+        valid: {
+            root: 'r',
+            collapsed: ['c'],
+            commit: 'k',
+            mode: 'tree',
+            reveal: 'branches',
+            closed: ['d']
+        },
+        wrong: { root: 3, collapsed: 'x', commit: 3, mode: 'grid', reveal: 'tags', closed: 'x' },
         edge: {
             'mode list': { mode: 'list' },
             'mode in capitals': { mode: 'Tree' },
@@ -470,6 +503,8 @@ const READERS: Reader[] = [
             'collapsed with duplicates': { collapsed: ['c', 'c', ''] },
             'collapsed with other items': { collapsed: [1, 'c', null, ['d']] },
             'collapsed empty': { collapsed: [] },
+            'closed with other items': { closed: [1, 'd', null, ['e']] },
+            'closed empty': { closed: [] },
             'no mode and no reveal': { mode: ABSENT, reveal: ABSENT }
         },
         notMap: reposFallback,
@@ -480,81 +515,24 @@ const READERS: Reader[] = [
             'own __proto__ key': reposFallback,
             'own __proto__ key alone': reposFallback,
             valid: reposValid,
-            'wrong root': {
-                root: '',
-                collapsed: ['c'],
-                commit: 'k',
-                mode: 'tree',
-                reveal: 'branches'
-            },
-            'wrong collapsed': {
-                root: 'r',
-                collapsed: [],
-                commit: 'k',
-                mode: 'tree',
-                reveal: 'branches'
-            },
-            'wrong commit': {
-                root: 'r',
-                collapsed: ['c'],
-                commit: '',
-                mode: 'tree',
-                reveal: 'branches'
-            },
-            'wrong mode': {
-                root: 'r',
-                collapsed: ['c'],
-                commit: 'k',
-                mode: 'list',
-                reveal: 'branches'
-            },
-            'wrong reveal': { root: 'r', collapsed: ['c'], commit: 'k', mode: 'tree', reveal: '' },
+            'wrong root': { ...reposValid, root: '' },
+            'wrong collapsed': { ...reposValid, collapsed: [] },
+            'wrong commit': { ...reposValid, commit: '' },
+            'wrong mode': { ...reposValid, mode: 'list' },
+            'wrong reveal': { ...reposValid, reveal: '' },
+            'wrong closed': { ...reposValid, closed: [] },
             'all wrong': reposFallback,
-            'mode list': {
-                root: 'r',
-                collapsed: ['c'],
-                commit: 'k',
-                mode: 'list',
-                reveal: 'branches'
-            },
-            'mode in capitals': {
-                root: 'r',
-                collapsed: ['c'],
-                commit: 'k',
-                mode: 'list',
-                reveal: 'branches'
-            },
-            'reveal empty': { root: 'r', collapsed: ['c'], commit: 'k', mode: 'tree', reveal: '' },
-            'reveal in capitals': {
-                root: 'r',
-                collapsed: ['c'],
-                commit: 'k',
-                mode: 'tree',
-                reveal: ''
-            },
-            'empty strings': {
-                root: '',
-                collapsed: ['c'],
-                commit: '',
-                mode: 'tree',
-                reveal: 'branches'
-            },
+            'mode list': { ...reposValid, mode: 'list' },
+            'mode in capitals': { ...reposValid, mode: 'list' },
+            'reveal empty': { ...reposValid, reveal: '' },
+            'reveal in capitals': { ...reposValid, reveal: '' },
+            'empty strings': { ...reposValid, root: '', commit: '' },
             'collapsed with duplicates': { ...reposValid, collapsed: ['c', 'c', ''] },
             'collapsed with other items': reposValid,
-            'collapsed empty': {
-                root: 'r',
-                collapsed: [],
-                commit: 'k',
-                mode: 'tree',
-                reveal: 'branches'
-            },
-            'no mode and no reveal': {
-                root: 'r',
-                collapsed: ['c'],
-                commit: 'k',
-                mode: 'list',
-                reveal: ''
-            }
+            'collapsed empty': { ...reposValid, collapsed: [] },
+            'closed with other items': reposValid,
+            'closed empty': { ...reposValid, closed: [] },
+            'no mode and no reveal': { ...reposValid, mode: 'list', reveal: '' }
         }
     }
 ];

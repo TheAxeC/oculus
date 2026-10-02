@@ -6,6 +6,7 @@
 import { findInstance, tabsOf } from '../instance.ts';
 import {
     clamp,
+    repane,
     type DockEdge,
     type Float,
     type FloatPlace,
@@ -102,7 +103,7 @@ export function floatsFrom(specs: FloatSpec[]): Float[] {
         const active = tabs[Math.max(at, 0)];
         made.push({
             id: crypto.randomUUID(),
-            pane: { kind: 'pane', tabs, active: active.id },
+            pane: repane(spec.pane, tabs, active.id),
             place: spec.place
         });
     }
@@ -143,7 +144,7 @@ export function adoptFloats(held: Pages, specs: FloatSpec[]): Pages {
         const active = tabs[Math.max(at, 0)];
         const float: Float = {
             id: crypto.randomUUID(),
-            pane: { kind: 'pane', tabs, active: active.id },
+            pane: repane(spec.pane, tabs, active.id),
             place: spec.place
         };
         next = withFloats(next, [...next.floats, float]);
@@ -218,7 +219,7 @@ export function floatPane(held: Pages, page: string, path: number[]): Pages {
     const root = closePane(host.workbench.root, path);
     const float: Float = {
         id: crypto.randomUUID(),
-        pane: { kind: 'pane', tabs: found.tabs.map(kept), active: found.active },
+        pane: repane(found, found.tabs.map(kept), found.active),
         place: centred()
     };
     return {
@@ -305,11 +306,7 @@ export function dockFloat(held: Pages, id: string, edge: DockEdge): Pages {
     if (holder !== undefined) {
         const merged: Float = {
             ...holder,
-            pane: {
-                kind: 'pane',
-                tabs: [...holder.pane.tabs, ...float.pane.tabs],
-                active: float.pane.active
-            }
+            pane: repane(holder.pane, [...holder.pane.tabs, ...float.pane.tabs], float.pane.active)
         };
         return withFloats(
             held,

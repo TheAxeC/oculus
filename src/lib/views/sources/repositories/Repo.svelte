@@ -1,15 +1,16 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/repositories/Repositories.svelte. The one repository the
-    // view shows: its commit box, a line saying a merge or a rebase is in progress with Abort and,
-    // for a rebase, Continue, then Changes, Graph, Stashes, Tags, Branches and Worktrees as
-    // collapsible sections of explorer rows, each with its count as a badge at the right edge of
-    // its head. The branch and how far it is from its upstream are on the repository's row in the
-    // list above, and the path is that row's hover words, so a repository that reads draws
-    // neither line of its own. The sections are one tree and one stop of the focus order through
-    // ui/tree/TreeView.svelte, moved along with the arrow keys over the rows
-    // state/sources/repositories/repositories.ts's repositoryKeyRows() lists, Right and Left
-    // opening and closing a head or a group. In the view's tree mode the change groups and the
-    // files of the open commit draw folders, and the key rows list them.
+    // view shows: its commit box, a line saying a merge, a rebase or a cherry pick is in progress
+    // with Abort and, for a rebase, Continue (a cherry pick is finished by committing, so it has
+    // none), then Changes, Graph, Stashes, Tags, Branches and Worktrees as collapsible sections of
+    // explorer rows, each with its count as a badge at the right edge of its head. The branch and
+    // how far it is from its upstream are on the repository's row in the list above, and the path
+    // is that row's hover words, so a repository that reads draws neither line of its own. The
+    // sections are one tree and one stop of the focus order through ui/tree/TreeView.svelte, moved
+    // along with the arrow keys over the rows state/sources/repositories/change-tree.ts's
+    // repositoryKeyRows() lists, Right and Left opening and closing a head or a group. In the
+    // view's tree mode the change groups and the files of the open commit draw folders, and the key
+    // rows list them.
     //
     // A state with no repository to draw says so as one row in the explorer's row style in place of
     // the sections, which such a state has nothing true to fill: git's reason in the error hue for
@@ -32,21 +33,18 @@
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import Branches from './refs/Branches.svelte';
     import Changes from './changes/Changes.svelte';
-    import Worktrees from './Worktrees.svelte';
     import Graph from './graph/Graph.svelte';
     import Stashes from './refs/Stashes.svelte';
     import Tags from './refs/Tags.svelte';
+    import Worktrees from './refs/Worktrees.svelte';
     import CommitBox from '$lib/views/shared/changes/CommitBox.svelte';
-    import {
-        repoShape,
-        repositoryKeyRows,
-        type RepoShape
-    } from '$lib/state/sources/repositories/repositories';
+    import { repoShape, type RepoShape } from '$lib/state/sources/repositories/repositories';
+    import { repositoryKeyRows } from '$lib/state/sources/repositories/change-tree';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { branchState } from '$lib/views/shared/changes/branch-state';
     import { useState } from '$lib/state/client/use';
-    import { askTagDelete } from './menus/graph-menu';
+    import { askBranchDelete, askTagDelete } from './menus/graph-menu';
 
     type Props = {
         root: string;
@@ -63,7 +61,7 @@
         reveal: '' | 'branches';
         /** The request in `reveal` was answered. */
         onrevealed: () => void;
-        ask: (message: string, detail: string, act: () => void) => void;
+        ask: (message: string, detail: string, act: () => void, confirm?: string) => void;
         onswitch: (name: string) => void;
         onbranch: (name: string) => void;
         onworktree: (name: string) => void;
@@ -113,9 +111,22 @@
     }
 
     function abort(): void {
-        ask(t('repositories.abort_confirm'), t('repositories.abort_detail'), () => {
-            void repositories.abortMerge(root);
-        });
+        const picking = git.sequence === 'cherry-picking';
+        ask(
+            picking ? t('repositories.abort_cherry_confirm') : t('repositories.abort_confirm'),
+            picking ? t('repositories.abort_cherry_detail') : t('repositories.abort_detail'),
+            () => {
+                void repositories.abortMerge(root);
+            }
+        );
+    }
+
+    /** The line that says which operation is in progress, with how many files are in conflict. */
+    function sequenceWords(held: GitState): string {
+        const count = held.conflicted.length;
+        if (held.sequence === 'merging') return t('repositories.merging', count);
+        if (held.sequence === 'cherry-picking') return t('repositories.cherry_picking', count);
+        return t('repositories.rebasing', count);
     }
 
     /** Delete a tag named on a graph commit, through the Tags section's question. */
@@ -123,6 +134,19 @@
         askTagDelete(
             name,
             { ask, deleteTag: (tag: string) => void repositories.deleteTag(root, tag) },
+            t
+        );
+    }
+
+    /** Delete a local branch, through the question the graph's Delete Branch asks. */
+    function deleteBranch(name: string): void {
+        askBranchDelete(
+            name,
+            {
+                ask,
+                deleteBranch: (branch: string) => repositories.deleteBranch(root, branch),
+                deleteAnyway: (branch: string) => void repositories.deleteBranchAnyway(root, branch)
+            },
             t
         );
     }
@@ -166,9 +190,7 @@
         {#if git.sequence !== ''}
             <div class="sequence" data-sequence={git.sequence}>
                 <span class="said">
-                    {git.sequence === 'merging'
-                        ? t('repositories.merging', git.conflicted.length)
-                        : t('repositories.rebasing', git.conflicted.length)}
+                    {sequenceWords(git)}
                 </span>
                 {#if git.sequence === 'rebasing' && git.conflicted.length === 0}
                     <ToolButton
@@ -233,6 +255,7 @@
                     open={!collapsed.includes('branches')}
                     ontoggle={() => ontoggle('branches')}
                     {onswitch}
+                    ondelete={deleteBranch}
                     {onbranch}
                     reveal={reveal === 'branches'}
                     {onrevealed}

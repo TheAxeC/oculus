@@ -15,9 +15,7 @@ import { git } from '../../../../fixtures/sessions-fixture.ts';
 import {
     diffUrl,
     plannedPath,
-    changeGroups,
     repositoriesViewOf,
-    repositoryKeyRows,
     repositoryLabels,
     pickerRoots,
     shownRoot,
@@ -43,12 +41,17 @@ import {
 import { createWrites } from '../../../../../src/lib/state/client/writes.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
-import type { LayoutStore } from '../../../../../src/lib/state/workbench/layout.svelte.ts';
+import { layoutRecorder } from '../layout-recorder.ts';
 import type { TerminalsStore } from '../../../../../src/lib/state/sessions/terminals.svelte.ts';
 import type {
     WriteAnswer,
     WritesStore
 } from '../../../../../src/lib/state/client/writes.svelte.ts';
+import {
+    changeGroups,
+    repoListRows,
+    repositoryKeyRows
+} from '../../../../../src/lib/state/sources/repositories/change-tree.ts';
 import {
     canPublish,
     changeCount,
@@ -56,7 +59,6 @@ import {
     diffActs,
     diffViewOf,
     isConflict,
-    repoListRows,
     repoShape,
     sameFiles,
     upstreamOf
@@ -123,8 +125,15 @@ describe('the repository a view shows', () => {
     it('reads what the instance keeps, and a default for anything it cannot read', () => {
         expect(
             repositoriesViewOf({ root: '/hub', collapsed: ['graph', 4], commit: 'abc' })
-        ).toEqual({ root: '/hub', collapsed: ['graph'], commit: 'abc', mode: 'list', reveal: '' });
-        const none = { root: '', collapsed: [], commit: '', mode: 'list', reveal: '' };
+        ).toEqual({
+            root: '/hub',
+            collapsed: ['graph'],
+            commit: 'abc',
+            mode: 'list',
+            reveal: '',
+            closed: []
+        });
+        const none = { root: '', collapsed: [], commit: '', mode: 'list', reveal: '', closed: [] };
         expect(repositoriesViewOf(null)).toEqual(none);
         expect(repositoriesViewOf({ root: 7, collapsed: 'log', commit: 3 })).toEqual(none);
     });
@@ -224,7 +233,7 @@ describe('the repository a view shows', () => {
     });
 
     it('offers a root whose repository check did not answer, and keeps showing it', () => {
-        // The shape server/core/git.ts gives a root whose `rev-parse --git-dir` timed out.
+        // The shape server/core/git/state.ts gives a root whose `rev-parse --git-dir` timed out.
         const states: Record<string, GitState> = {
             '/hub': git({ branch: 'main' }),
             '/slow': git({ branch: '', repository: true, error: 'git timed out' })
@@ -454,20 +463,10 @@ describe('what a press leaves behind', () => {
             }
         } as unknown as TerminalsStore;
         const kept = new Map<string, unknown>();
-        const layout = {
-            openView: (view: string, state?: unknown) => {
-                opened.push({ view, state, beside: false });
-                return 'one';
-            },
-            openBeside: (view: string, state?: unknown) => {
-                opened.push({ view, state, beside: true });
-                return 'one';
-            },
-            showInFiles: (path: string, at?: string) => {
-                revealed.push({ path, root: at });
-                return 'one';
-            }
-        } as unknown as LayoutStore;
+        const layout = layoutRecorder(opened, (path: string, at?: string) => {
+            revealed.push({ path, root: at });
+            return 'one';
+        });
         // The hub is served under the key `hub`, so a file of it opens in a source tab; `/other`
         // is served by nothing.
         const access = {
@@ -788,7 +787,8 @@ describe('what a press leaves behind', () => {
             collapsed: ['tags', `dir:${ROOT}:commit-log-abc123:lib`],
             commit: 'abc123',
             mode: 'list',
-            reveal: ''
+            reveal: '',
+            closed: []
         });
     });
 });

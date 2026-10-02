@@ -16,9 +16,18 @@
     //
     // Pressing a commit opens its changed files under it, each of which opens that commit's diff of
     // the file, with the lanes that pass beside them. A commit's menu and its names' menus are
-    // graph/CommitRow.svelte's. The commit whose files are open is the view's instance state, so
-    // the blame of the source tab can open a commit here: one the loaded pages do not reach is
-    // drawn above them, with its files, rather than paged for.
+    // graph/CommitRow.svelte's, and the section head's actions graph/GraphActions.svelte's. The
+    // commit whose files are open is the view's instance state, so the blame of the source tab can
+    // open a commit here: one the loaded pages do not reach is drawn above them, with its files,
+    // rather than paged for.
+    //
+    // The picks of a commit's menu that write or compare are answered here: Checkout (Detached),
+    // Cherry Pick and Delete Branch behind a question, Create Branch and Create Tag in a prompt
+    // that asks for the name, and for a tag its message, the new ref starting at the commit, both
+    // built in graph-picks.ts, and the compare items opening a diff pane. Compare with Remote names
+    // the checked-out branch's upstream, Compare with Merge Base the base the first page of the
+    // history carries, and Compare with... asks for any ref in a quick pick over the refs git
+    // lists.
     //
     // The history is not on the `git` channel, which carries twenty commits for a glance: it is
     // read from GET /api/git a page at a time, again from the first page whenever the branch's
@@ -38,27 +47,29 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import VirtualRows from '$lib/ui/tree/list/VirtualRows.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { BranchFacts } from '../menus/graph-menu';
+    import Prompt from '$lib/ui/forms/Prompt.svelte';
+    import type { PromptRequest } from '$lib/ui/forms/prompt';
+    import QuickPick from '$lib/ui/forms/choice/QuickPick.svelte';
+    import type { Choice } from '$lib/ui/forms/choice/quick-pick';
+    import type { BranchFacts, GraphPick } from '../menus/graph-menu';
+    import { askPick, namePrompt } from './graph-picks';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import type { Attachment } from 'svelte/attachments';
     import CommitRow from './CommitRow.svelte';
     import CommitFiles from './CommitFiles.svelte';
     import GraphHead from './GraphHead.svelte';
+    import GraphActions from './GraphActions.svelte';
     import { readJson } from '$lib/data/shapes/shapes';
-    import { graphPageOf } from '$lib/state/sources/repositories/answers';
+    import { graphPageOf, refNamesOf } from '$lib/state/sources/repositories/answers';
     import {
         laneRows,
         lanesBelow,
         type LaneRow
     } from '$lib/state/sources/repositories/graph-lanes';
     import {
-        canPublish,
         graphUrl,
+        refsUrl,
         noCommitYet,
-        publishWords,
-        pullWords,
-        pushWords,
         upstreamOf,
         type GitGraphCommit
     } from '$lib/state/sources/repositories/repositories';
@@ -84,7 +95,7 @@
         /** Delete a tag, through the Tags section's question. */
         ondeletetag: (name: string) => void;
         /** Ask a question, then run what it is about on a yes. */
-        ask: (message: string, detail: string, act: () => void) => void;
+        ask: (message: string, detail: string, act: () => void, confirm?: string) => void;
         /** Whether the open commit's files are listed or drawn as a tree. */
         mode?: 'list' | 'tree';
         /** The ids of the folders and sections the reader closed. */
@@ -132,6 +143,12 @@
     /** The open commit's file and folder rows, which follow that commit's row. */
     let fileRows: Partial<Record<string, KeyRow[]>> = $state({});
     let failure = $state('');
+    /** The merge base the first page named for the checked-out branch, or the empty string. */
+    let base = $state('');
+    /** The prompt of Create Branch or Create Tag while one is open. */
+    let prompting: PromptRequest | null = $state(null);
+    /** The refs and the commit of Compare with... while its quick pick is open. */
+    let comparing: { hash: string; choices: Choice[] } | null = $state(null);
     let reading = $state(false);
     /** Each read takes the next number, and only the newest may write what it read. */
     let asked = 0;
@@ -238,6 +255,7 @@
             if (skip === 0) {
                 incoming = page.incoming;
                 outgoing = page.outgoing;
+                base = page.base ?? '';
             }
             more = page.more;
         } catch {
@@ -250,15 +268,42 @@
     /** The local branches a name on a commit is read against. */
     const branches = $derived<BranchFacts>({
         local: git.branches.map((branch) => branch.name),
-        current: git.detached ? '' : git.branch
+        current: git.detached ? '' : git.branch,
+        remotes: git.remotes
     });
 
-    /** Whether the branch has an upstream to pull from and push to. */
-    const tracked = $derived(git.upstream === true && upstreamOf(git) !== '');
+    /** The refs the compare items name: the upstream and the merge base. */
+    const compare = $derived({ upstream: upstreamOf(git), base });
 
-    /** Ask a question, then run the write it names. */
-    function question(words: { message: string; detail: string }, act: () => void): void {
-        ask(words.message, words.detail, act);
+    /** Open the refs git lists in a quick pick, to compare the commit with the one chosen. */
+    async function graphCompareWith(hash: string): Promise<void> {
+        try {
+            const response = await fetch(refsUrl(root));
+            const names = refNamesOf(response.ok, await readJson(response));
+            if (names === null) {
+                failure = t('repositories.refs_failed');
+                return;
+            }
+            comparing = { hash, choices: names.map((name) => ({ id: name, label: name })) };
+        } catch {
+            failure = t('repositories.refs_failed');
+        }
+    }
+
+    /** A pick of a commit's menu that the commit row does not answer itself. */
+    function graphPicked(pick: GraphPick, hash: string): void {
+        if (pick.kind === 'create-branch' || pick.kind === 'create-tag') {
+            prompting = namePrompt(pick, hash, { root, repositories, t }, () => {
+                prompting = null;
+            });
+        } else if (pick.kind === 'compare-remote')
+            repositories.openCompare(root, compare.upstream, hash);
+        else if (pick.kind === 'compare-base') repositories.openCompare(root, compare.base, hash);
+        else if (pick.kind === 'compare-with') void graphCompareWith(hash);
+        else {
+            const onto = git.detached ? 'HEAD' : git.branch;
+            askPick(pick, hash, { root, onto, ask, repositories, t });
+        }
     }
 
     /** Scroll HEAD's row into view and put the focus on it. */
@@ -276,10 +321,12 @@
         {lane}
         open={commit === one.hash}
         {branches}
+        {compare}
         {busy}
         {onpick}
         {onswitch}
         {ondeletetag}
+        ongraph={graphPicked}
     />
     {#if commit === one.hash}
         <CommitFiles
@@ -299,58 +346,7 @@
 
 {#snippet headActions(reach: number)}
     {#if open}
-        {#if !noCommitYet(git)}
-            <ToolButton
-                label={t('repositories.goto_current')}
-                glyph="goto_current"
-                compact
-                tabindex={reach}
-                onclick={gotoCurrent}
-            />
-        {/if}
-        <ToolButton
-            label={t('repositories.fetch')}
-            title={busy ? t('git.busy') : undefined}
-            glyph="fetch"
-            compact
-            tabindex={reach}
-            disabled={busy}
-            onclick={() => void repositories.fetch(root)}
-        />
-        {#if tracked}
-            <ToolButton
-                label={t('repositories.pull')}
-                title={busy ? t('git.busy') : undefined}
-                glyph="pull"
-                compact
-                tabindex={reach}
-                disabled={busy}
-                onclick={() => question(pullWords(git), () => void repositories.pull(root))}
-            />
-            <ToolButton
-                label={t('git.push')}
-                title={busy ? t('git.busy') : undefined}
-                glyph="push"
-                compact
-                tabindex={reach}
-                disabled={busy}
-                onclick={() => question(pushWords(git), () => void repositories.push(root))}
-            />
-        {:else if canPublish(git)}
-            <ToolButton
-                label={t('repositories.publish')}
-                title={busy ? t('git.busy') : undefined}
-                glyph="publish"
-                compact
-                tabindex={reach}
-                disabled={busy}
-                onclick={() =>
-                    question(
-                        publishWords(git, git.remotes[0]),
-                        () => void repositories.publish(root, git.remotes[0])
-                    )}
-            />
-        {/if}
+        <GraphActions {root} {git} {busy} {reach} {ask} ongoto={gotoCurrent} />
     {/if}
 {/snippet}
 
@@ -439,6 +435,28 @@
         {/if}
     </TreeSection>
 </div>
+
+{#if prompting !== null}
+    <Prompt
+        request={prompting}
+        cancel={t('ui.confirm_cancel')}
+        oncancel={() => (prompting = null)}
+    />
+{/if}
+
+{#if comparing !== null}
+    <QuickPick
+        title={t('repositories.compare_title')}
+        placeholder={t('repositories.compare_placeholder')}
+        choices={comparing.choices}
+        onpick={(ref: string) => {
+            const hash = comparing?.hash ?? '';
+            comparing = null;
+            repositories.openCompare(root, ref, hash);
+        }}
+        onclose={() => (comparing = null)}
+    />
+{/if}
 
 <style>
     /* One commit of the list and its files when it is the open one, measured as one item. */

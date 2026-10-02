@@ -23,9 +23,10 @@ digraph layer_server {
         "folder server/root to folder server/machine" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/root to folder server/sessions" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/root to layer data" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/git to folder server/core" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/git to folder server/core" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/git to folder server/edit" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/git to layer data" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/git to folder server/files" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/git to layer data" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/content" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/core" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/edit to folder server/files" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -91,6 +92,8 @@ digraph layer_server {
     "folder server/git to folder server/core" -> "folder server/core" [];
     "folder server/git" -> "folder server/git to folder server/edit" [arrowhead=none, minlen=1, weight=10];
     "folder server/git to folder server/edit" -> "folder server/edit" [];
+    "folder server/git" -> "folder server/git to folder server/files" [arrowhead=none, minlen=3, weight=10];
+    "folder server/git to folder server/files" -> "folder server/files" [];
     "folder server/git" -> "folder server/git to layer data" [arrowhead=none, style=dashed];
     "folder server/git to layer data" -> "layer data from folder server/git" [style=dashed];
     { rank=same; "folder server/git"; "folder server/git to layer data"; "layer data from folder server/git"; }

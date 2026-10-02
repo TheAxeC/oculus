@@ -8,6 +8,7 @@ import {
     MIN_SIZE,
     clamp,
     emptyPane,
+    repane,
     samePath,
     type Instance,
     type Keeps,
@@ -166,19 +167,30 @@ export type KeepRule = (view: ViewId) => 'documents' | Keeps | null;
 /**
  * The empty pane to leave where a pane's last tab was, or null when the pane goes. The pane stays
  * when the rule names its tab's view and the tree holds no other empty pane of that kind, so a page
- * keeps at most one empty documents pane and one empty terminals pane.
+ * keeps at most one empty documents pane and one empty terminals pane. A locked empty pane is not
+ * counted, since nothing lands in it, and a locked pane stays whatever the rule says.
  */
 function keptPane(layout: Layout, path: number[], view: ViewId, keep?: KeepRule): Pane | null {
     const kind = keep?.(view) ?? null;
+    const locked = paneAt(layout, path)?.locked === true;
+    if (locked) {
+        return { ...(kind === 'terminals' ? emptiedTerminals() : emptyPane()), locked: true };
+    }
     if (kind === null) return null;
     const taken = panes(layout).some(
         ({ path: where, pane }) =>
-            !samePath(where, path) && pane.tabs.length === 0 && (pane.keeps ?? 'documents') === kind
+            !samePath(where, path) &&
+            pane.tabs.length === 0 &&
+            pane.locked !== true &&
+            (pane.keeps ?? 'documents') === kind
     );
     if (taken) return null;
-    return kind === 'terminals'
-        ? { kind: 'pane', tabs: [], active: '', keeps: 'terminals' }
-        : emptyPane();
+    return kind === 'terminals' ? emptiedTerminals() : emptyPane();
+}
+
+/** The empty pane a Terminal tab leaves. */
+function emptiedTerminals(): Pane {
+    return { kind: 'pane', tabs: [], active: '', keeps: 'terminals' };
 }
 
 /**
@@ -199,16 +211,14 @@ export function removeTab(layout: Layout, path: number[], index: number, keep?: 
     // The neighbour is the tab that took the closed one's place, or the last one when it was last.
     const neighbour = tabs[Math.min(index, tabs.length - 1)];
     const active = pane.active === removed.id ? neighbour.id : pane.active;
-    return rewrite(layout, path, () => ({ kind: 'pane', tabs, active })) ?? layout;
+    return rewrite(layout, path, () => repane(pane, tabs, active)) ?? layout;
 }
 
 /** Append an instance to a pane's tabs and make it the active one. */
 export function openInstance(layout: Layout, path: number[], instance: Instance): Layout {
     if (paneAt(layout, path) === null) return layout;
     const edit = (node: Layout): Layout =>
-        node.kind === 'pane'
-            ? { kind: 'pane', tabs: [...node.tabs, instance], active: instance.id }
-            : node;
+        node.kind === 'pane' ? repane(node, [...node.tabs, instance], instance.id) : node;
     return rewrite(layout, path, edit) ?? layout;
 }
 
@@ -238,7 +248,7 @@ export function renameInstance(layout: Layout, from: string, to: string): Layout
     const edit = (node: Layout): Layout => {
         if (node.kind !== 'pane') return node;
         const tabs = node.tabs.map((tab) => (tab.id === from ? { ...tab, id: to } : tab));
-        return { kind: 'pane', tabs, active: node.active === from ? to : node.active };
+        return repane(node, tabs, node.active === from ? to : node.active);
     };
     return rewrite(layout, found.path, edit) ?? layout;
 }
@@ -254,7 +264,7 @@ export function restate(layout: Layout, id: string, state: unknown): Layout {
     const edit = (node: Layout): Layout => {
         if (node.kind !== 'pane') return node;
         const tabs = node.tabs.map((tab) => (tab.id === id ? { ...tab, state } : tab));
-        return { kind: 'pane', tabs, active: node.active };
+        return repane(node, tabs, node.active);
     };
     return rewrite(layout, found.path, edit) ?? layout;
 }
@@ -264,7 +274,7 @@ export function activate(layout: Layout, id: string): Layout {
     const found = findInstance(layout, id);
     if (found === null) return layout;
     const edit = (node: Layout): Layout =>
-        node.kind === 'pane' ? { kind: 'pane', tabs: node.tabs, active: id } : node;
+        node.kind === 'pane' ? repane(node, node.tabs, id) : node;
     return rewrite(layout, found.path, edit) ?? layout;
 }
 
@@ -289,7 +299,7 @@ export function moveInstance(
         const rest = target.tabs.filter((_, at) => at !== found.index);
         const at = clamp(index, 0, rest.length);
         const tabs = [...rest.slice(0, at), instance, ...rest.slice(at)];
-        return rewrite(layout, path, () => ({ kind: 'pane', tabs, active: id })) ?? layout;
+        return rewrite(layout, path, () => repane(target, tabs, id)) ?? layout;
     }
 
     const inserted = insertInstance(layout, path, index, instance);
@@ -312,7 +322,21 @@ export function insertInstance(
     if (target === null) return layout;
     const at = clamp(index, 0, target.tabs.length);
     const tabs = [...target.tabs.slice(0, at), instance, ...target.tabs.slice(at)];
-    return rewrite(layout, path, () => ({ kind: 'pane', tabs, active: instance.id })) ?? layout;
+    return rewrite(layout, path, () => repane(target, tabs, instance.id)) ?? layout;
+}
+
+/**
+ * The tree with the pane at `path` locked or unlocked. Unlocking takes the field away rather than
+ * setting it false, so a pane that was never locked and one that no longer is read the same. A path
+ * naming no pane changes nothing.
+ */
+export function setLocked(layout: Layout, path: number[], locked: boolean): Layout {
+    const pane = paneAt(layout, path);
+    if (pane === null) return layout;
+    const next: Pane = { ...pane };
+    if (locked) next.locked = true;
+    else delete next.locked;
+    return rewrite(layout, path, () => next) ?? layout;
 }
 
 /**

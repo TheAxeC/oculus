@@ -68,13 +68,14 @@ const branchShape = unchanged(
  */
 const answerShape = z.object({
     error: optionalTextShape,
+    code: optionalTextShape,
     changed: survivorsShape(z.string()).catch([]),
     refused: survivorsShape(refusalShape).catch([]),
     output: optionalTextShape,
     branches: survivorsShape(branchShape).optional().catch(undefined),
     id: optionalTextShape
 }) satisfies z.ZodType<
-    Pick<WriteAnswer, 'error' | 'changed' | 'refused' | 'output' | 'branches' | 'id'>
+    Pick<WriteAnswer, 'error' | 'code' | 'changed' | 'refused' | 'output' | 'branches' | 'id'>
 >;
 
 /** The refusals an answer lists, however many of them are well formed. */
@@ -119,6 +120,9 @@ export function createWrites(
     function tell(sent: Exchange, options: SendOptions): WriteAnswer {
         const { answer, answered } = sent;
         if (options.said === true || (answer.ok && answer.refused.length === 0)) return answer;
+        if (answer.code !== undefined && options.asked?.includes(answer.code) === true) {
+            return answer;
+        }
         const fields = answer.refused.map((one) => one.reason).filter((one) => one !== '');
         const reason = fields.length > 0 ? fields.join('; ') : (answer.error ?? '');
         for (const listener of unwrittenListeners) {
@@ -419,9 +423,10 @@ export function createWrites(
     async function writeGit(
         action: string,
         root: string,
-        fields: Record<string, unknown> = {}
+        fields: Record<string, unknown> = {},
+        options: SendOptions = {}
     ): Promise<WriteAnswer> {
-        return send({ action, root, ...fields }, GIT_PATH);
+        return send({ action, root, ...fields }, GIT_PATH, options);
     }
 
     /**
@@ -487,7 +492,13 @@ export function createWrites(
                 state.error = error;
                 return {
                     answered: true,
-                    answer: { ok: false, changed: [], refused: held.refused, error }
+                    answer: {
+                        ok: false,
+                        changed: [],
+                        refused: held.refused,
+                        error,
+                        ...(held.code === undefined ? {} : { code: held.code })
+                    }
                 };
             }
             // A successful status whose body is JSON null or is not JSON is a read that failed.

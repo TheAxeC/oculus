@@ -24,6 +24,12 @@
     //
     // A group's head opens a right-click menu of what its controls do (menus/change-menu.ts), with
     // Reveal in Explorer View on a file row; the merge group keeps its own controls and has none.
+    //
+    // Discarding in the untracked group moves the paths to the Trash: its head carries Discard All
+    // Untracked Changes beside Stage All, behind the question VS Code asks, naming the count. When
+    // the list was cut at 200 entries (GitState.held holds what git reported), the group that was
+    // shortened says so in one muted row under its head. A linked worktree's rows offer Compare
+    // with Workspace.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
@@ -42,15 +48,18 @@
         visibleRows,
         type TreeRow
     } from '$lib/state/sources/repositories/change-tree';
-    import { changeCount, changeGroups } from '$lib/state/sources/repositories/repositories';
+    import { changeCount, cutGroups } from '$lib/state/sources/repositories/repositories';
+    import { changeGroups } from '$lib/state/sources/repositories/change-tree';
     import type { GitEntry, GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import {
         GROUP_DISCARD_ALL,
+        GROUP_DISCARD_UNTRACKED,
         GROUP_STAGE_ALL,
         GROUP_STAGE_UNTRACKED,
         GROUP_UNSTAGE_ALL,
+        askTrash,
         groupMenu,
         hasMenu,
         type MenuGroupId
@@ -64,7 +73,7 @@
         collapsed: string[];
         ontoggle: (id: string) => void;
         /** Ask before a write that loses work, in the view's own dialog. */
-        ask: (message: string, detail: string, act: () => void) => void;
+        ask: (message: string, detail: string, act: () => void, confirm?: string) => void;
         /** Whether the groups list their files or draw them as folders. */
         mode?: 'list' | 'tree';
     };
@@ -76,6 +85,10 @@
     const groups = $derived(changeGroups(git));
     const total = $derived(changeCount(git));
     const busy = $derived(repositories.busy(root));
+    /** The groups whose list git cut at 200 entries. */
+    const cut = $derived(cutGroups(git));
+    /** Whether the repository is a linked worktree, whose rows compare with the main one. */
+    const linked = $derived(git.worktrees.some((one) => one.path === root && !one.main));
 
     /** The words one change group is headed with. */
     function labelOf(id: string): string {
@@ -130,6 +143,21 @@
         else if (pick === GROUP_STAGE_ALL) void repositories.stageAll(root, 'changed');
         else if (pick === GROUP_STAGE_UNTRACKED) void repositories.stageAll(root, 'untracked');
         else if (pick === GROUP_DISCARD_ALL) discardAll();
+        else if (pick === GROUP_DISCARD_UNTRACKED) discardUntracked();
+    }
+
+    /** Ask before moving every untracked path to the Trash. */
+    function discardUntracked(): void {
+        askTrash(
+            root,
+            git.untracked.map((one) => one.path),
+            {
+                ask,
+                trash: (at: string, paths: readonly string[]) =>
+                    void repositories.trashUntracked(at, paths)
+            },
+            t
+        );
     }
 
     function discardAll(): void {
@@ -177,6 +205,11 @@
                     {@render groupHead(group, open)}
                 {/if}
             </li>
+            {#if open && cut.includes(group.id)}
+                <li role="none" data-cut={group.id}>
+                    <TreeItem label={t('git.cut_warning')} tone="warn" depth={1} />
+                </li>
+            {/if}
             {#if open && group.entries.length === 0}
                 <li role="none">
                     <TreeItem label={t('sessions.ch_group_empty')} depth={1} tone="muted" />
@@ -223,6 +256,7 @@
                                 showFolder={mode !== 'tree' || group.id === 'merge'}
                                 {busy}
                                 {ask}
+                                {linked}
                                 {measure}
                             />
                         {/if}
@@ -282,6 +316,14 @@
                     onclick={() => void repositories.stageAll(root, 'changed')}
                 />
             {:else if group.id === 'untracked' && group.entries.length > 0}
+                <ToolButton
+                    label={t('git.discard_all_untracked')}
+                    glyph="note_back"
+                    compact
+                    tabindex={reach}
+                    disabled={busy}
+                    onclick={discardUntracked}
+                />
                 <ToolButton
                     label={t('git.stage_all_untracked')}
                     glyph="stage"

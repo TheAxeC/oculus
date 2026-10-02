@@ -21,11 +21,11 @@ import {
     type Hunk,
     type LineChange,
     type LineSelection
-} from '../../../../../src/lib/state/sources/repositories/diff-hunks.ts';
+} from '../../../../../src/lib/state/sources/repositories/diff/diff-hunks.ts';
 import {
     sidesPatch,
     type PatchMode
-} from '../../../../../src/lib/state/sources/repositories/diff-patch.ts';
+} from '../../../../../src/lib/state/sources/repositories/diff/diff-patch.ts';
 import type { DiffAttributes, DiffSides } from '../../../../../src/lib/data/model/index.ts';
 import { monacoLineChanges } from '../../../../ui/controls/editor/monaco-diff.ts';
 

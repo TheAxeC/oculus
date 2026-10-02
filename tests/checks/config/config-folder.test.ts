@@ -105,7 +105,16 @@ describe("oculus's own config directory", () => {
     // Revert: delete `code_theme:` from config/appearance.yml; the file then lacks a listed key.
     /** Every non-text top-level key, by its root config file. */
     const EXPECTED: Record<string, string[]> = {
-        'appearance.yml': ['themes', 'wallpaper', 'memories', 'crt', 'code_theme', 'terminal'],
+        'appearance.yml': [
+            'themes',
+            'wallpaper',
+            'memories',
+            'crt',
+            'code_theme',
+            'show_tabs',
+            'editor_actions',
+            'terminal'
+        ],
         'present.yml': ['deck'],
         'behavior.yml': [
             'read_limits',

@@ -250,3 +250,46 @@ describe("a write's answer", () => {
         expect(answer.branches?.[0]).toBe(branch);
     });
 });
+
+describe('a refusal that carries a code', () => {
+    /** The writes with a listener, the messages it heard, and a fetch answering a coded 400. */
+    function coded() {
+        vi.stubGlobal('fetch', () =>
+            Promise.resolve(answering({ error: 'kept', code: 'not-merged' }, 400))
+        );
+        const writes = createWrites();
+        const heard: string[] = [];
+        writes.onUnwritten((reason) => heard.push(reason));
+        return { writes, heard };
+    }
+
+    it('hands the code on with the error', async () => {
+        const { writes } = coded();
+        const answer = await writes.writeGit('deleteBranch', '/hub', { name: 'x' });
+        expect(answer).toStrictEqual({
+            ok: false,
+            changed: [],
+            refused: [],
+            error: 'kept',
+            code: 'not-merged'
+        });
+    });
+
+    it('is told to the listeners as any failure is', async () => {
+        const { writes, heard } = coded();
+        await writes.writeGit('deleteBranch', '/hub', { name: 'x' });
+        expect(heard).toEqual(['kept']);
+    });
+
+    it('is not told when the caller answers that code with a question', async () => {
+        const { writes, heard } = coded();
+        await writes.writeGit('deleteBranch', '/hub', { name: 'x' }, { asked: ['not-merged'] });
+        expect(heard).toEqual([]);
+    });
+
+    it('is told when the caller asks about another code', async () => {
+        const { writes, heard } = coded();
+        await writes.writeGit('deleteBranch', '/hub', { name: 'x' }, { asked: ['other'] });
+        expect(heard).toEqual(['kept']);
+    });
+});

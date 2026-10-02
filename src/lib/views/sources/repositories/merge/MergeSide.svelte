@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, partial support. What one side of the merge editor is handed per conflict.
-    import type { Choice, Span } from '$lib/state/sources/repositories/merge-regions';
+    import type { Choice, Span } from '$lib/state/sources/repositories/diff/merge-regions';
 
     /** One conflict as this side draws it: where its lines are here and how it is settled. */
     export type SideConflict = { region: number; span: Span; choice: Choice };

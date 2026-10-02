@@ -92,7 +92,7 @@ function refused(step: object): step is Fail {
 }
 
 /** What one operation runs with: the roots, the files it never changes, and the Trash. */
-type Scope = {
+export type Scope = {
     roots: Root[];
     locals: Guard;
     trash: NonNullable<OpsDeps['trash']>;

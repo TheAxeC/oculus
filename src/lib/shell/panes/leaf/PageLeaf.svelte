@@ -14,8 +14,8 @@
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import FoldedPane from './FoldedPane.svelte';
-    import PaneView from './PaneView.svelte';
-    import SplitView from './SplitView.svelte';
+    import PaneView from '../PaneView.svelte';
+    import SplitView from '../SplitView.svelte';
     import PageLeaf from './PageLeaf.svelte';
     import { pageNameOf } from '$lib/state/workbench/navigation/pages';
     import { edgeAt } from '$lib/state/workbench/drag.svelte';

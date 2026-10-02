@@ -4,6 +4,7 @@
 // what each of its picks runs.
 
 import { grouped, type MenuItem as Item } from '$lib/ui/menu/menu-items';
+import type { EditorActions, TabBar } from '$lib/state/shared/words/appearance';
 import {
     fold,
     showable,
@@ -113,9 +114,63 @@ export function foldable(layout: Layout, path: number[]): boolean {
     return path.length > 0 && fold(layout, path) !== layout;
 }
 
+/**
+ * The pane menu of a pane: Close, Maximise or Restore, Fold where it would change the tree, the
+ * two page choices, the splits right and down and Float while the pane holds a tab. A float's pane
+ * has the float's menu instead.
+ */
+export function paneMenu(
+    facts: {
+        float?: FloatPlace;
+        pages: readonly Page[];
+        screen: string;
+        host: string;
+        maximised: boolean;
+        foldable: boolean;
+        holdsTab: boolean;
+    },
+    t: (key: string, ...args: (string | number)[]) => string
+): Item[] {
+    if (facts.float !== undefined) return floatMenu(facts.float, facts.pages, t);
+    return [
+        { id: 'close', label: t('ui.pane_close') },
+        facts.maximised
+            ? { id: 'restore', label: t('ui.pane_restore') }
+            : { id: 'maximise', label: t('ui.pane_maximise') },
+        // The root pane is in no split, and the last open child of a split stays open, so the item
+        // is offered only where a fold would change the tree.
+        ...(facts.foldable ? [{ id: 'fold', label: t('ui.pane_fold') }] : []),
+        ...pageListItems(facts.pages, facts.screen, facts.host, t),
+        { id: 'split_right', label: t('ui.split_right') },
+        { id: 'split_down', label: t('ui.split_down') },
+        ...(facts.holdsTab ? [{ id: FLOAT_PANE, label: t('ui.float') }] : [])
+    ];
+}
+
+/**
+ * The ids of the pane menu's items that the strip's menu has no item of its own for: Maximise,
+ * Restore, Fold and the two page choices. The strip's menu repeats them when the editor actions
+ * are hidden, so no pane operation is left to the hidden `...` button.
+ */
+const PANE_ONLY: readonly string[] = ['maximise', 'restore', 'fold', MOVE_LIST, EMBED_LIST];
+
+/** Whether a pick of the strip's menu is a pane menu item that `pick` of the pane runs. */
+export function isPaneItem(id: string): boolean {
+    return PANE_ONLY.includes(id) || id.startsWith(PAGE) || id.startsWith(EMBED);
+}
+
 export const STRIP_OPEN_FILE = 'open-file';
 export const STRIP_CLOSE = 'close';
 export const STRIP_NEW_TERMINAL = 'new-terminal';
+export const STRIP_NEW_TEXT_FILE = 'new-text-file';
+export const STRIP_LOCK = 'lock';
+export const STRIP_UNLOCK = 'unlock';
+
+/**
+ * What tells a Tab Bar choice and an Editor Actions Position choice from the menu's fixed items.
+ */
+export const TAB_BAR = 'tab-bar:';
+export const ACTIONS_AT = 'actions-at:';
 
 /** The item that floats a pane of a page, and the one that floats a docked float again. */
 export const FLOAT_PANE = 'float';
@@ -193,18 +248,50 @@ export function floatMenu(
 }
 
 /**
- * The strip's menu, in VS Code's groups: Open File... (the palette, as Cmd+K opens it); the four
- * splits of the active tab and Float, while the pane of a page holds a tab; Close, while the page
- * holds more than one pane; and New Terminal. The pane of a float (`float`, its place) has the
- * float's items in place of the splits and always offers Close, which closes the float.
+ * The strip's menu, in VS Code's groups: Open File... (the palette, as Cmd+K opens it) and New Text
+ * File; the four splits of the active tab and Float, while the pane of a page holds a tab; Lock
+ * Group or Unlock Group, on the pane of a page or of a float; the Tab Bar and Editor Actions
+ * Position submenus, each marking the setting in force; Close, while the page holds more than one
+ * pane; and New Terminal. The pane of a float (`float`, its place) has the float's items in place
+ * of the splits and always offers Close, which closes the float. With the editor actions hidden the
+ * pane menu's `...` button is not drawn, so the menu also holds the pane menu's items that it has
+ * none of its own for (`paneItems`, the pane menu as the pane draws it), and Close is always
+ * offered, as the pane menu offers it.
  */
 export function stripMenu(
-    facts: { holdsTab: boolean; panes: number; float?: FloatPlace },
+    facts: {
+        holdsTab: boolean;
+        panes: number;
+        float?: FloatPlace;
+        locked?: boolean;
+        tabBar?: TabBar;
+        actions?: EditorActions;
+        paneItems?: readonly Item[];
+    },
     t: (key: string, ...args: (string | number)[]) => string
 ): Item[] {
     const floated = facts.float !== undefined;
+    const bar = facts.tabBar ?? 'multiple';
+    const place = facts.actions ?? 'strip';
+    const hidden = place === 'hidden';
+    const paneOnly = hidden
+        ? (facts.paneItems ?? []).filter((one) => PANE_ONLY.includes(one.id))
+        : [];
+    const barItem = (value: TabBar, label: string): Item => ({
+        id: `${TAB_BAR}${value}`,
+        label,
+        active: value === bar
+    });
+    const placeItem = (value: EditorActions, label: string): Item => ({
+        id: `${ACTIONS_AT}${value}`,
+        label,
+        active: value === place
+    });
     return grouped([
-        [{ id: STRIP_OPEN_FILE, label: t('ui.strip_open_file') }],
+        [
+            { id: STRIP_OPEN_FILE, label: t('ui.strip_open_file') },
+            { id: STRIP_NEW_TEXT_FILE, label: t('ui.strip_new_text_file') }
+        ],
         facts.float !== undefined
             ? floatItems(facts.float, t)
             : facts.holdsTab
@@ -216,7 +303,32 @@ export function stripMenu(
                     { id: FLOAT_PANE, label: t('ui.float') }
                 ]
               : [],
-        floated || facts.panes > 1 ? [{ id: STRIP_CLOSE, label: t('ui.strip_close') }] : [],
+        [...paneOnly],
+        facts.locked === true
+            ? [{ id: STRIP_UNLOCK, label: t('ui.strip_unlock') }]
+            : [{ id: STRIP_LOCK, label: t('ui.strip_lock') }],
+        [
+            {
+                id: 'tab-bar',
+                label: t('ui.strip_tab_bar'),
+                items: [
+                    barItem('multiple', t('ui.tab_bar_multiple')),
+                    barItem('single', t('ui.tab_bar_single')),
+                    barItem('none', t('ui.tab_bar_none'))
+                ]
+            },
+            {
+                id: 'actions-at',
+                label: t('ui.strip_editor_actions'),
+                items: [
+                    placeItem('strip', t('ui.editor_actions_strip')),
+                    placeItem('hidden', t('ui.editor_actions_hidden'))
+                ]
+            }
+        ],
+        floated || hidden || facts.panes > 1
+            ? [{ id: STRIP_CLOSE, label: t('ui.strip_close') }]
+            : [],
         [{ id: STRIP_NEW_TERMINAL, label: t('ui.strip_new_terminal') }]
     ]);
 }
@@ -245,6 +357,12 @@ export type StripDeps = {
     freeFloat: (id: string) => void;
     /** Return to Page: the float's tabs go back into the page on screen. */
     returnFloat: (id: string) => void;
+    /** New Text File: a scratch Note opened in the pane the menu was opened on. */
+    newNoteIn: (page: string, path: number[]) => void;
+    /** Lock Group and Unlock Group: the pane at `path` of the page. */
+    setLocked: (page: string, path: number[], locked: boolean) => void;
+    /** A Tab Bar or Editor Actions Position choice: the config key and the value it is set to. */
+    setAppearance: (key: 'show_tabs' | 'editor_actions', value: string) => void;
 };
 
 /** Run a pick from the strip's menu over the pane's active tab, its path and its page. */
@@ -264,6 +382,13 @@ export function stripPicked(
     else if (id === STRIP_OPEN_FILE) deps.openPalette('');
     else if (id === STRIP_CLOSE) deps.close();
     else if (id === STRIP_NEW_TERMINAL) deps.newTerminalIn(pane.page, pane.path);
+    else if (id === STRIP_NEW_TEXT_FILE) deps.newNoteIn(pane.page, pane.path);
+    else if (id === STRIP_LOCK) deps.setLocked(pane.page, pane.path, true);
+    else if (id === STRIP_UNLOCK) deps.setLocked(pane.page, pane.path, false);
+    else if (id.startsWith(TAB_BAR)) deps.setAppearance('show_tabs', id.slice(TAB_BAR.length));
+    else if (id.startsWith(ACTIONS_AT)) {
+        deps.setAppearance('editor_actions', id.slice(ACTIONS_AT.length));
+    }
 }
 
 /**

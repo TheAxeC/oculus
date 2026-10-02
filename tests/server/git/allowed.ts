@@ -9,6 +9,7 @@ export const ALLOWED = [
     'apply',
     'branch',
     'check-ref-format',
+    'cherry-pick',
     'commit',
     'diff',
     'fetch',

@@ -10,21 +10,26 @@
 
 import { mkdirSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { byKey } from '../../../../src/lib/data/helpers/guards.ts';
+import { byKey } from '../../../../../src/lib/data/helpers/guards.ts';
 import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
-import { Hub } from '../../../../src/lib/server/core/channels.ts';
-import { IGNORED, relevant, rootsOf, watchGit } from '../../../../src/lib/server/root/watch/git.ts';
-import type { Watcher } from '../../../../src/lib/server/root/watch/portfolio.ts';
+import { Hub } from '../../../../../src/lib/server/core/channels.ts';
+import {
+    IGNORED,
+    relevant,
+    rootsOf,
+    watchGit
+} from '../../../../../src/lib/server/root/watch/git.ts';
+import type { Watcher } from '../../../../../src/lib/server/root/watch/portfolio.ts';
 import type {
     FilesPayload,
     Message,
     SessionsPayload
-} from '../../../../src/lib/data/model/index.ts';
-import { recording } from './probe.ts';
-import { announce, commitAll, latest, manual, put, repositoryIn } from './repos.ts';
-import type { Manual } from './repos.ts';
-import { noop } from '../../../fixtures/doubles.ts';
-import { it, scratchDir } from '../../../fixtures/scratch.ts';
+} from '../../../../../src/lib/data/model/index.ts';
+import { recording } from '../probe.ts';
+import { announce, commitAll, latest, manual, put, repositoryIn } from '../repos.ts';
+import type { Manual } from '../repos.ts';
+import { noop } from '../../../../fixtures/doubles.ts';
+import { it, scratchDir } from '../../../../fixtures/scratch.ts';
 
 // A watcher test waits on real file events and on git, and the suite runs several files at once, so
 // the waits are generous: they are how long a failure takes, not how long a pass takes.

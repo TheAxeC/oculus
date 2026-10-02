@@ -23,8 +23,8 @@
     import DropLayer from './panes/DropLayer.svelte';
     import { createWorkbenchKeys } from './keys/workbench-keys.svelte';
     import Palette from './keys/Palette.svelte';
-    import FoldedPane from './panes/FoldedPane.svelte';
-    import PageLeaf from './panes/PageLeaf.svelte';
+    import FoldedPane from './panes/leaf/FoldedPane.svelte';
+    import PageLeaf from './panes/leaf/PageLeaf.svelte';
     import PaneView from './panes/PaneView.svelte';
     import FloatLayer from './panes/floats/FloatLayer.svelte';
     import { bodyTracks } from './panes/floats/float-geometry';

@@ -1,7 +1,7 @@
 // Layer 2, server. The one place a git command is run: the call site every read-only git form of
-// this folder goes through (state.ts, reads.ts, files.ts), the outcome it answers with and the
-// small helpers they share. The git watcher, the file browser's listing and the git writes all run
-// git through this folder, so it sits in server/core, below every folder that reads git.
+// this folder goes through (state.ts, reads.ts, files.ts, compare.ts), the outcome it answers with
+// and the small helpers they share. The git watcher, the file browser's listing and the git writes
+// all run git through this folder, so it sits in server/core, below every folder that reads git.
 //
 // What a session touched comes from its transcript. What the checkout looks like right now only git
 // can say, and that is state.ts: whether the root is a repository at all, the branch, the distance
@@ -60,11 +60,11 @@
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
 // dashboard watcher must never be the thing that runs one. tests/server/core/git/git.test.ts holds
-// two gates over that: the folder's sources name no writing subcommand, and the suite records every
-// argument vector the process runs and asserts the whole suite ran only the commands above,
-// `for-each-ref`,
-// `worktree`, `symbolic-ref`, `check-ignore`, `ls-files`, `remote`, `config` and `rev-parse` only
-// as the vectors written here.
+// two gates over that: the folder's sources but compare.ts name no writing subcommand, and the
+// suite records every argument vector the process runs and asserts the whole suite ran only the
+// commands above, `for-each-ref`, `worktree`, `symbolic-ref`, `check-ignore`, `ls-files`, `remote`,
+// `config` and `rev-parse` only as the vectors written here. compare.ts lists its own forms in its
+// head, and tests/server/core/git/compare-gate.test.ts holds it to them.
 //
 // A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
 // (never a shell string), carries a timeout, and collapses any failure into the empty shape with a

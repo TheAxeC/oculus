@@ -4,8 +4,9 @@
     // whole path when a chain of folders with one child each was joined into it. Its controls, on
     // hover and in its right-click menu (menus/change-menu.ts), act on every path under the folder
     // in one write: Unstage in Staged, Discard (asking first, naming how many paths and the folder)
-    // and Stage in Changes, Stage in Untracked. All are disabled while a write runs on the
-    // repository.
+    // and Stage in Changes, Stage in Untracked; the menu adds Add to .gitignore, and Discard in
+    // Untracked sends the paths to the Trash behind the Trash question. All are disabled while a
+    // write runs on the repository.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -32,7 +33,7 @@
         /** Open or close the folder, by its id in the instance's closed list. */
         ontoggle: (id: string) => void;
         /** Ask before a write that loses work, in the view's own dialog. */
-        ask: (message: string, detail: string, act: () => void) => void;
+        ask: (message: string, detail: string, act: () => void, confirm?: string) => void;
         /** The row's measuring hook, handed by the list that draws only the rows in view. */
         measure: Attachment<HTMLElement>;
     };
@@ -45,16 +46,20 @@
 
     /** The calls a pick from the folder's menu runs, and its Discard control's question. */
     const deps = {
-        ask: (message: string, detail: string, act: () => void) => ask(message, detail, act),
+        ask: (message: string, detail: string, act: () => void, confirm?: string) =>
+            ask(message, detail, act, confirm),
         stagePaths: (at: string, paths: readonly string[]) =>
             void repositories.stagePaths(at, paths),
         unstagePaths: (at: string, paths: readonly string[]) =>
             void repositories.unstagePaths(at, paths),
         discardPaths: (at: string, paths: readonly string[]) =>
-            void repositories.discardPaths(at, paths)
+            void repositories.discardPaths(at, paths),
+        trashPaths: (at: string, paths: readonly string[]) =>
+            void repositories.trashUntracked(at, paths),
+        ignorePaths: (at: string, paths: readonly string[]) => void repositories.ignore(at, paths)
     };
 
-    const target = $derived({ root, folder: row.path, paths: row.paths });
+    const target = $derived({ root, folder: row.path, paths: row.paths, group });
 </script>
 
 <li role="none" data-folder={row.path} {@attach measure}>

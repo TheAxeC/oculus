@@ -12,13 +12,14 @@
 //     git -C <root> restore [--staged] -- <paths | .>
 //     git -C <root> rm --quiet -- <path>
 //     git -C <root> commit [--amend] -F <file> | commit --amend --no-edit
+//     git -C <root> cherry-pick <hash> | cherry-pick --abort
 //     git -C <root> merge-base --is-ancestor HEAD @{upstream}
 //     git -C <root> push [--set-upstream <remote> <branch> | --tags]
 //     git -C <root> pull
 //     git -C <root> fetch --prune
 //     git -C <root> remote
-//     git -C <root> branch [--format=... | -d <name>]
-//     git -C <root> switch [-c] <name>
+//     git -C <root> branch [--format=... | -d <name> | -D <name>]
+//     git -C <root> switch [-c <name> [<hash>] | --detach <ref> | <name>]
 //     git -C <root> check-ref-format [--branch <name> | refs/tags/<name>]
 //     git -C <root> status --porcelain=v1 -z
 //     git -C <root> diff [--cached | --ours] [-U0] [--name-only --diff-filter=U | <range>]
@@ -30,7 +31,12 @@
 //     git -C <root> rebase [--abort | --continue]
 //     git -C <root> stash [push [--include-untracked | --staged] [--message=<text>] | apply |
 //         pop | drop] [stash@{<n>}]
-//     git -C <root> tag [-a <name> -F <file> | <name> | -d <name>]
+//     git -C <root> tag [-a <name> -F <file> [<hash>] | <name> [<hash>] | -d <name>]
+//
+// A commit is made with `user.useConfigOnly` set through the environment (`GIT_CONFIG_COUNT`,
+// `GIT_CONFIG_KEY_0`, `GIT_CONFIG_VALUE_0`), so a repository with no configured name and email is
+// refused with git's own message instead of committing as a name guessed from the machine; the
+// argument vector is the one written above.
 //
 // The operations over the remote, over the index and over stashes and tags are in the modules
 // beside this one (git-remote.ts, git-index.ts, git-refs.ts), each reaching git through the call
@@ -57,9 +63,10 @@
 // unless it is relative and stays inside the repository. Every operation answers
 // `{ ok, output, error }` and never throws.
 //
-// Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
-// (`inside`, `realPath`); a path handed to git is checked by core/git/run.ts's `pathInside`; the
-// records of `status --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
+// Whether a root is one the payload names and where a path really is are read from
+// server/core/paths.ts (`permitted`, `realPath`); a path handed to git is checked by
+// core/git/run.ts's `pathInside`; the records of `status --porcelain=v1 -z` are split by
+// core/git/parse.ts's `statusRecords`.
 
 import { execFile } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -77,7 +84,7 @@ import {
     statusRecords
 } from '../core/git/parse.ts';
 import { GIT, pathInside } from '../core/git/run.ts';
-import { inside, realPath } from '../core/paths.ts';
+import { permitted, realPath } from '../core/paths.ts';
 
 export { parseBranches };
 
@@ -92,8 +99,11 @@ export const PUSH_TIMEOUT_MS = 60000;
 /** How much output one command may produce. A staged diff is the big one. */
 export const MAX_OUTPUT = 8 * 1024 * 1024;
 
-/** What every operation answers. `ok` false always carries a reason in `error`. */
-export type Outcome = { ok: boolean; output: string; error: string };
+/**
+ * What every operation answers. `ok` false always carries a reason in `error`, and a refusal the
+ * page acts on carries a `code` that names it.
+ */
+export type Outcome = { ok: boolean; output: string; error: string; code?: string };
 
 /** One row of `git branch --format`, as the branch menu draws it. */
 export type Branch = GitBranch;
@@ -102,8 +112,11 @@ export function failed(error: string): Outcome {
     return { ok: false, output: '', error };
 }
 
-/** What one command may carry beside its arguments: text on its standard input, and variables. */
-type Extra = { input?: string; env?: Record<string, string> };
+/**
+ * What one command may carry beside its arguments: text on its standard input, variables, and the
+ * codes of refusals the page acts on, each named by a phrase of git's whole error stream.
+ */
+type Extra = { input?: string; env?: Record<string, string>; codes?: Record<string, string> };
 
 /**
  * One git command, as a list, with a timeout. This is the module's one subprocess call site, and
@@ -135,7 +148,11 @@ function run(root: string, args: string[], timeout: number, extra: Extra = {}): 
                               short(stdout) ||
                               short(failure.message) ||
                               'git failed';
-                    settle(failed(reason));
+                    const whole = typeof stderr === 'string' ? stderr : '';
+                    const code = Object.entries(extra.codes ?? {}).find(([phrase]) =>
+                        whole.includes(phrase)
+                    )?.[1];
+                    settle(code === undefined ? failed(reason) : { ...failed(reason), code });
                     return;
                 }
                 settle({ ok: true, output: typeof stdout === 'string' ? stdout : '', error: '' });
@@ -161,12 +178,6 @@ export function allowedRoots(workspaces: string[] = [], hub?: string): string[] 
     if (hub !== undefined) roots.add(hub);
     roots.add(defaultMirrorsDir());
     return [...roots].filter((root) => root !== '');
-}
-
-/** Whether a root is one of the allowed ones, or a directory under one. */
-export function permitted(root: string, roots: string[] = allowedRoots()): boolean {
-    if (typeof root !== 'string' || root === '' || !isAbsolute(root)) return false;
-    return roots.some((one) => inside(root, one));
 }
 
 export function checkPaths(root: string, paths: unknown[], roots: string[]): string {
@@ -215,11 +226,8 @@ export async function discard(
     paths: string[],
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const wrong = checkPaths(root, paths, roots);
-    if (wrong !== '') return failed(wrong);
-    const state = await porcelain(root);
-    if (!state.ok) return state;
-    const loose = untrackedIn(state.output);
+    const loose = await untrackedAmong(root, paths, roots);
+    if (!(loose instanceof Set)) return loose;
     const refused = paths.filter((path) => loose.has(path));
     if (refused.length > 0) {
         return failed(`git does not track ${refused[0]}, so there is nothing to restore it to`);
@@ -295,9 +303,9 @@ async function pushedAlready(root: string): Promise<boolean> {
 /**
  * Push the current branch to its upstream. A branch with no upstream is refused with that as the
  * reason, before anything is sent: `--set-upstream` decides where a branch lives, and that decision
- * is Axel's at a terminal rather than a side effect of a button. Nothing is ever forced: the gate
- * in tests/server/git/git-write.test.ts asserts that the option does not appear in this file at
- * all.
+ * is Axel's at a terminal rather than a side effect of a button. This push never forces: the gate
+ * in tests/server/git/git-write.test.ts asserts that the force option of git appears nowhere in
+ * this file.
  */
 export async function push(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
     if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
@@ -312,15 +320,35 @@ export async function branches(root: string, roots: string[] = allowedRoots()): 
     return branch(root, [REFS_FORMAT]);
 }
 
-/** Make a branch and check it out. The name is git's own to judge, so git judges it first. */
+/**
+ * A commit named as a start point: a whole or abbreviated hash and nothing a revision or an option
+ * could be read as.
+ */
+const START = /^[0-9a-f]{4,64}$/;
+
+/** Why a start point is refused, or the empty string when it is a hash. Checked before git runs. */
+export function checkStart(start: string): string {
+    return typeof start === 'string' && START.test(start)
+        ? ''
+        : `${typeof start === 'string' ? start : ''} is not a commit hash`;
+}
+
+/**
+ * Make a branch and check it out, at HEAD or at the commit `start` names. The name is git's own to
+ * judge, so git judges it first.
+ */
 export async function createBranch(
     root: string,
     name: string,
-    roots: string[] = allowedRoots()
+    roots: string[] = allowedRoots(),
+    start?: string
 ): Promise<Outcome> {
     const wrong = await checkName(root, name, roots);
     if (wrong !== '') return failed(wrong);
-    return switchTo(root, ['-c', name]);
+    if (start === undefined) return switchTo(root, ['-c', name]);
+    const refusal = checkStart(start);
+    if (refusal !== '') return failed(refusal);
+    return switchTo(root, ['-c', name, start]);
 }
 
 /**
@@ -340,6 +368,25 @@ export async function switchBranch(
         return failed('the working tree is dirty, so switching would carry the changes across');
     }
     return switchTo(root, [name]);
+}
+
+/**
+ * Detach HEAD at a commit or a remote branch. Refused on a dirty tree like `switchBranch`, for the
+ * same reason: git carries uncommitted changes across a switch.
+ */
+export async function switchDetached(
+    root: string,
+    ref: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const wrong = await checkName(root, ref, roots);
+    if (wrong !== '') return failed(wrong);
+    const state = await porcelain(root);
+    if (!state.ok) return state;
+    if (state.output.trim() !== '') {
+        return failed('the working tree is dirty, so switching would carry the changes across');
+    }
+    return switchTo(root, ['--detach', ref]);
 }
 
 /** What is staged right now, which is what the suggested message is written from. */
@@ -451,8 +498,8 @@ export async function createWorktree(
 /**
  * Take a worktree away, and the branch it was on with it. A worktree holding uncommitted work is
  * refused before anything runs: `git worktree remove` would refuse it too, and the reason is worth
- * more than git's. The branch goes by `-d`, which git refuses for work no other branch holds, so a
- * branch that is not merged stays and the answer says so.
+ * more than git's. The branch goes by `-d`, which git refuses for a branch not merged into its
+ * upstream, or into HEAD when it has none, so such a branch stays and the answer says so.
  */
 export async function removeWorktree(
     root: string,
@@ -578,7 +625,22 @@ export function applyPatch(root: string, flags: string[], patch: string): Promis
 
 /** The one `commit` call site: a message from a file, an amend, and a merge's commit. */
 function commitWith(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['commit', ...args], TIMEOUT_MS);
+    return run(root, ['commit', ...args], TIMEOUT_MS, { env: CONFIG_ONLY });
+}
+
+/**
+ * `user.useConfigOnly=true` for one command, through the environment: git refuses a commit made
+ * without a name and an address in its configuration instead of guessing them from the machine.
+ */
+const CONFIG_ONLY = {
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'user.useConfigOnly',
+    GIT_CONFIG_VALUE_0: 'true'
+};
+
+/** The one `cherry-pick` call site: a commit picked onto the checked-out branch, and the abort. */
+export function cherryPickIn(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['cherry-pick', ...args], TIMEOUT_MS);
 }
 
 /** The one `push` call site: the branch to its upstream, a branch published, and the tags. */
@@ -668,10 +730,11 @@ export function diff(root: string, args: string[]): Promise<Outcome> {
 }
 
 /**
- * The one `branch` call site: the listing the menu draws, and the delete a worktree removal makes.
+ * The one `branch` call site: the listing the menu draws, the `-d` a worktree removal and Delete
+ * Branch make, and the `-D` Delete Anyway makes after its question.
  */
-function branch(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['branch', ...args], TIMEOUT_MS);
+export function branch(root: string, args: string[], extra: Extra = {}): Promise<Outcome> {
+    return run(root, ['branch', ...args], TIMEOUT_MS, extra);
 }
 
 /**
@@ -688,7 +751,7 @@ export function mergeIn(root: string, args: string[]): Promise<Outcome> {
 }
 
 /** Whether a name is a branch name git accepts, judged by git, or the empty string when it is. */
-async function checkName(root: string, name: string, roots: string[]): Promise<string> {
+export async function checkName(root: string, name: string, roots: string[]): Promise<string> {
     if (!permitted(root, roots)) return 'that directory is not a workspace oculus knows';
     if (typeof name !== 'string' || name.trim() === '') return 'a branch needs a name';
     if (name.startsWith('-')) return `${name} is not a branch name git accepts`;
@@ -719,6 +782,21 @@ export function untrackedIn(output: string): Set<string> {
             .filter((record) => record.code === '??')
             .map((record) => record.path)
     );
+}
+
+/**
+ * The paths git lists as untracked in a repository, or the refusal when `paths` holds one the
+ * write may not touch or the status could not be read.
+ */
+export async function untrackedAmong(
+    root: string,
+    paths: string[],
+    roots: string[]
+): Promise<Set<string> | Outcome> {
+    const wrong = checkPaths(root, paths, roots);
+    if (wrong !== '') return failed(wrong);
+    const state = await porcelain(root);
+    return state.ok ? untrackedIn(state.output) : state;
 }
 
 /** A one-line reason for the page, git's first line of it. */

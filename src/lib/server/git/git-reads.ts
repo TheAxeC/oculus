@@ -1,9 +1,11 @@
 // Layer 2, server. The reads of GET /api/git, one per parameter the request names: the branch
 // listing, one file's diff, a worktree's diff, a page of the graph, one commit's files or its diff
 // of one file, a file's blame, its gutter marks, the three versions of a conflicted path, a stash's
-// diff and the commits that touched one file. Each is same-origin only and refused for a root this
-// server has not published, and each is read when a pane asks rather than published, since the
-// channel carries state and these are text or a page of history a reader asked for.
+// diff, the commits that touched one file, a file as HEAD or the index holds it, a comparison
+// between a ref and a commit, the refs a picker lists, and a file of a linked worktree against the
+// main worktree's. Each is same-origin only and refused for a root this server has not published,
+// and each is read when a pane asks rather than published, since the channel carries state and
+// these are text or a page of history a reader asked for.
 //
 // The four diff reads answer `files`, the two versions of each file with git's head lines for it
 // (`DiffSides`); a file's own diff also answers what git's attributes say of converting it, which
@@ -13,6 +15,7 @@
 // Every read is an option with a real default, so tests/routes/git/git.test.ts drives the endpoint
 // without git.
 
+import { permitted } from '../core/paths.ts';
 import { json } from '@sveltejs/kit';
 import type { DiffAttributes, DiffSides } from '../../data/model/index.ts';
 import {
@@ -30,11 +33,18 @@ import {
 import { fileLog } from '../core/git/files.ts';
 import type { Read } from '../core/git/run.ts';
 import {
+    branchBase,
+    compareFiles,
+    compareSides,
+    headFile,
+    refNames,
+    workspaceSides
+} from '../core/git/compare.ts';
+import {
     allowedRoots,
     branches,
     fileDiff,
     parseBranches,
-    permitted,
     worktreeFrom,
     worktreeRange
 } from './git-write.ts';
@@ -58,7 +68,7 @@ export type ReadOptions = {
     ) => Promise<Read<FileDiff>>;
     /** A worktree's diff against its repository's branch; the real one when absent. */
     worktree?: (root: string, path: string, roots: string[]) => Promise<Read<DiffSides[]>>;
-    /** The on-demand reads of server/core/git/reads.ts, by name; the real ones when absent. */
+    /** The on-demand reads of server/core/git/, by name; the real ones when absent. */
     reads?: Partial<CoreReads>;
 };
 
@@ -72,6 +82,12 @@ export type CoreReads = {
     sides: typeof mergeSides;
     stash: typeof stashDiff;
     log: typeof fileLog;
+    head: typeof headFile;
+    compareFiles: typeof compareFiles;
+    compareSides: typeof compareSides;
+    refs: typeof refNames;
+    workspace: typeof workspaceSides;
+    base: typeof branchBase;
 };
 
 const REAL: CoreReads = {
@@ -82,7 +98,13 @@ const REAL: CoreReads = {
     marks: lineMarks,
     sides: mergeSides,
     stash: stashDiff,
-    log: fileLog
+    log: fileLog,
+    head: headFile,
+    compareFiles,
+    compareSides,
+    refs: refNames,
+    workspace: workspaceSides,
+    base: branchBase
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -139,8 +161,10 @@ export async function worktreeSides(
  * file's diff, `worktree=<path>&root=` a worktree's, `graph=<root>&skip=<n>` a page of the graph,
  * `commit=<hash>&root=[&path=]` a commit's files or its diff of one, `blame=<root>&path=`,
  * `marks=<root>&path=`, `sides=<root>&path=`, `log=<root>&path=` (the commits that touched the
- * file, newest first and across renames) and `stash=<ref>&root=`, and `root=` alone the
- * branch listing.
+ * file, newest first and across renames) and `stash=<ref>&root=`, `head=<root>&path=&stage=` a file
+ * as HEAD or the index holds it, `compare=<root>&from=<ref>&to=<hash>[&path=]` a comparison,
+ * `refs=<root>` the refs a picker lists, `workspace=<root>&path=` a linked worktree's file against
+ * the main worktree's, and `root=` alone the branch listing.
  */
 export async function handleGitGet(request: Request, options: ReadOptions): Promise<Response> {
     const parameters = new URL(request.url).searchParams;
@@ -170,7 +194,47 @@ export async function handleGitGet(request: Request, options: ReadOptions): Prom
         const root = named('graph');
         if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
         const skip = Number.parseInt(parameters.get('skip') ?? '0', 10);
-        return answer(reads.graph(root, Number.isInteger(skip) ? skip : 0), 'page');
+        const first = !Number.isInteger(skip) || skip <= 0;
+        const page = reads.graph(root, first ? 0 : skip);
+        // The base is the first page's alone: it belongs to the branch, not to a stretch of
+        // history.
+        return answer(
+            page.ok && first
+                ? { ok: true, value: { ...page.value, base: reads.base(root) } }
+                : page,
+            'page'
+        );
+    }
+    if (parameters.has('head')) {
+        const root = named('head');
+        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        const stage = parameters.get('stage');
+        if (stage !== 'head' && stage !== 'index') {
+            return json(
+                { error: 'that is not a side of a file' },
+                { status: 400, headers: NO_STORE }
+            );
+        }
+        const read = reads.head(root, stage, path);
+        if (!read.ok) return json({ error: read.error }, { status: 400, headers: NO_STORE });
+        return json({ ok: true, ...read.value }, { headers: NO_STORE });
+    }
+    if (parameters.has('compare')) {
+        const root = named('compare');
+        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        const [from, to] = [parameters.get('from') ?? '', parameters.get('to') ?? ''];
+        if (path === '') return answer(reads.compareFiles(root, from, to), 'files');
+        return answer(reads.compareSides(root, from, to, path), 'files');
+    }
+    if (parameters.has('refs')) {
+        const root = named('refs');
+        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        return answer(reads.refs(root), 'refs');
+    }
+    if (parameters.has('workspace')) {
+        const root = named('workspace');
+        if (root === null) return json(UNKNOWN, { status: 400, headers: NO_STORE });
+        return answer(reads.workspace(root, path, roots), 'files');
     }
     if (parameters.has('commit')) {
         const root = named('root');

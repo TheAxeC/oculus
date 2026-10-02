@@ -6,7 +6,7 @@
 // Line numbers are Monaco's, from 1. A change with an empty side names that side by the line
 // before where it would be, with an end of 0, as `getLineChanges()` answers it.
 
-import type { DiffAttributes, DiffSides } from '../../../data/model/index.ts';
+import type { DiffAttributes, DiffSides } from '../../../../data/model/index.ts';
 
 /** The lines of unchanged context a hunk keeps each side, as git's default. */
 export const CONTEXT = 3;

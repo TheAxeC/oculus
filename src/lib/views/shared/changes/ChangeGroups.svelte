@@ -6,6 +6,9 @@
     // Stage All Changes). What a row offers beyond these is the caller's: the "also open" mark is a
     // snippet the session views supply.
     //
+    // A group whose list git cut at 200 entries (GitState.held holds the count git reported) says
+    // so in one line under its head, as the Repositories view does.
+    //
     // The rows of a group are one grid of five columns (the letter, the path, the caller's mark,
     // the line counts and the controls) and each row takes the group's columns by subgrid, so the
     // counts and the controls start at one x in every row of the group. A path is drawn whole in
@@ -34,6 +37,8 @@
         staged: GitEntry[];
         unstaged: GitEntry[];
         untracked: GitEntry[];
+        /** How many paths git reported in each group, which exceeds the list once it was cut. */
+        held: { merge: number; staged: number; changes: number; untracked: number };
         /** Whether a write is in flight, which disables every control that writes. */
         busy: boolean;
         onstage: (path: string) => void;
@@ -56,6 +61,7 @@
         staged,
         unstaged,
         untracked,
+        held,
         busy,
         onstage,
         onunstage,
@@ -66,6 +72,17 @@
         beside,
         marked
     }: Props = $props();
+
+    /** Whether git reported more paths in a group than the list holds. */
+    function cut(kind: string, entries: GitEntry[]): boolean {
+        const reported = {
+            merge: held.merge,
+            staged: held.staged,
+            changed: held.changes,
+            untracked: held.untracked
+        };
+        return reported[kind as keyof typeof reported] > entries.length;
+    }
 
     /** The words of a row's Open control, which say what it opens. */
     function openWords(kind: string): string {
@@ -120,6 +137,9 @@
                 {@render heads(kind, entries)}
             </span>
         </div>
+        {#if cut(kind, entries)}
+            <p class="cut" data-cut={kind}>{t('git.cut_warning')}</p>
+        {/if}
         {#if entries.length === 0}
             <Empty message={t('sessions.ch_group_empty')} />
         {:else}
@@ -247,6 +267,11 @@
     }
     .group {
         margin-top: 6px;
+    }
+    .cut {
+        margin: 0;
+        color: var(--c-amber-txt, var(--muted-txt));
+        font-size: var(--fs-sm);
     }
     .group-h .n {
         margin-left: auto;

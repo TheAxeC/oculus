@@ -1,8 +1,9 @@
 // Layer 2, server. Stashes and tags, as VS Code's Source Control makes them: a stash of the tracked
 // changes, of every change with the untracked files, or of what is staged, each with an optional
-// message; a stash applied, popped or dropped; a tag made at HEAD, annotated when it has a message,
-// and a tag deleted. Every call reaches git through the one call site server/git/git-write.ts
-// exports for its subcommand.
+// message; a stash applied, popped or dropped; a tag made at HEAD or at a commit, annotated when it
+// has a message, and a tag deleted; and a local branch deleted by `branch -d`, or by `branch -D`
+// once the page has asked. Every call reaches git through the one call site
+// server/git/git-write.ts exports for its subcommand.
 //
 // A stash is addressed by git's own name for it, `stash@{<n>}`, and nothing else is taken, so a
 // request can never hand the stash command a revision or an option. A stash applied or popped over
@@ -11,12 +12,16 @@
 //
 // The records of `status --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
 
+import { permitted } from '../core/paths.ts';
 import { byKey } from '../../data/helpers/guards.ts';
-import { STASH_REF, statusRecords } from '../core/git/parse.ts';
+import { BRANCH_NOT_MERGED } from '../../data/model/index.ts';
+import { REFS_FORMAT, STASH_REF, parseBranches, statusRecords } from '../core/git/parse.ts';
 import {
     allowedRoots,
+    branch as branchIn,
+    checkName,
+    checkStart,
     failed,
-    permitted,
     porcelain,
     refFormat,
     stashIn,
@@ -105,21 +110,28 @@ async function tagName(root: string, name: string): Promise<string> {
 }
 
 /**
- * Make a tag at HEAD: a plain one, or an annotated one carrying the message when it has one. The
- * message goes through a file, as a commit's does.
+ * Make a tag at HEAD, or at the commit `start` names: a plain one, or an annotated one carrying
+ * the message when it has one. The message goes through a file, as a commit's does.
  */
 export async function createTag(
     root: string,
     name: string,
     message: string,
-    roots: string[] = allowedRoots()
+    roots: string[] = allowedRoots(),
+    start?: string
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(UNKNOWN);
     const wrong = await tagName(root, name);
     if (wrong !== '') return failed(wrong);
+    const at: string[] = [];
+    if (start !== undefined) {
+        const refusal = checkStart(start);
+        if (refusal !== '') return failed(refusal);
+        at.push(start);
+    }
     const text = typeof message === 'string' ? message.trim() : '';
-    if (text === '') return tagIn(root, [name]);
-    return withFile('oculus-tag-', text, (file) => tagIn(root, ['-a', name, '-F', file]));
+    if (text === '') return tagIn(root, [name, ...at]);
+    return withFile('oculus-tag-', text, (file) => tagIn(root, ['-a', name, '-F', file, ...at]));
 }
 
 /** Delete one tag here; a tag already pushed stays on the remote. */
@@ -132,4 +144,55 @@ export async function deleteTag(
     const wrong = await tagName(root, name);
     if (wrong !== '') return failed(wrong);
     return tagIn(root, ['-d', name]);
+}
+
+/**
+ * The refusal of a branch that cannot be deleted before git is asked, or null: a name git does not
+ * accept, a branch the repository lacks, and the branch checked out here.
+ */
+async function undeletable(root: string, name: string, roots: string[]): Promise<Outcome | null> {
+    const wrong = await checkName(root, name, roots);
+    if (wrong !== '') return failed(wrong);
+    const listed = await branchIn(root, [REFS_FORMAT]);
+    if (!listed.ok) return listed;
+    const found = parseBranches(listed.output).find((one) => one.name === name);
+    if (found === undefined) return failed(`${name} is not a branch of this repository`);
+    if (found.current) return failed(`${name} is the branch that is checked out, so it is kept`);
+    return null;
+}
+
+/**
+ * Delete a local branch with `branch -d`, which git refuses for a branch not merged into its
+ * upstream, or into HEAD when it has none, and for one a worktree has checked out; git's reason is
+ * the answer and the branch stays. A branch git calls not fully merged is refused with the code
+ * `not-merged`, found in git's whole error stream, which the page answers with its second
+ * question; the command runs with git's messages in English so that refusal is recognised whatever
+ * the reader's language. The branch checked out here is refused before git is asked.
+ */
+export async function deleteBranch(
+    root: string,
+    name: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const refused = await undeletable(root, name, roots);
+    if (refused !== null) return refused;
+    return branchIn(root, ['-d', name], {
+        env: { LC_ALL: 'C' },
+        codes: { 'is not fully merged': BRANCH_NOT_MERGED }
+    });
+}
+
+/**
+ * Delete a local branch with `branch -D`, which git runs whether or not the branch is merged. It is
+ * the one write of this module that discards commits no other branch holds, and the page sends it
+ * only after the question Delete Anyway asks. The same refusals as `deleteBranch` come first.
+ */
+export async function deleteBranchAnyway(
+    root: string,
+    name: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const refused = await undeletable(root, name, roots);
+    if (refused !== null) return refused;
+    return branchIn(root, ['-D', name]);
 }

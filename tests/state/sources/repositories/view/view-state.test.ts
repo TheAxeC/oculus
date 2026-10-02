@@ -25,7 +25,7 @@ import {
 import {
     revealAsked,
     revealDue
-} from '../../../../../src/lib/state/sources/repositories/diff-hunks.ts';
+} from '../../../../../src/lib/state/sources/repositories/diff/diff-hunks.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
 import { git } from '../../../../fixtures/sessions-fixture.ts';

@@ -27,6 +27,11 @@
     // locks, and a file too long to have been read whole, where writing the copy back would take
     // the rest of the file off the disk.
     //
+    // A tab over the file at HEAD or in the index (Open File (HEAD)) is read from the git route
+    // and is never written: it is drawn as a locked file, has no gutter marks or blame, and carries
+    // no bookmark or program control, since its root is a repository's own directory and not a
+    // served root.
+    //
     // A keystroke keeps a preview tab. A file opened by a single click is the tab the next single
     // click replaces, and typing into it is a reader saying they are working in it.
     //
@@ -77,6 +82,7 @@
     import { languageOf, opensInProgram } from '$lib/state/sources/fs';
     import { listOf } from '$lib/state/sources/repositories/answers';
     import { instanceText } from '$lib/state/workbench/layout/instance';
+    import { headOf } from '$lib/state/sessions/source.svelte';
     import {
         blameRows,
         blameStatus,
@@ -129,6 +135,8 @@
     const root = $derived(instanceText(instance.state, 'root'));
     const path = $derived(instanceText(instance.state, 'path'));
     const label = $derived(instanceText(instance.state, 'label'));
+    /** The version of the file the tab holds, when it is the file at HEAD or in the index. */
+    const head = $derived(headOf(instance.state));
     /** The line the tab was opened at, and zero for one opened at the file itself. */
     const line = $derived(readAs(openedAtShape, instance.state)?.line ?? 0);
     const title = $derived(label === '' ? t('views.source') : label);
@@ -139,7 +147,15 @@
     const error = $derived(blocked ? t('source.cannot_open', path) : draft.error);
     /** The line a tab that may not write its file draws, and the empty string for one that may. */
     const locked = $derived(
-        draft.readonly ? t('source.readonly') : draft.truncated ? t('source.truncated') : ''
+        head !== undefined
+            ? head === 'head'
+                ? t('source.head_locked')
+                : t('source.index_locked')
+            : draft.readonly
+              ? t('source.readonly')
+              : draft.truncated
+                ? t('source.truncated')
+                : ''
     );
     /** Whether the editor is drawn, which is when the text controls have text to act on. */
     const editing = $derived(error === '' && draft.loaded && locked === '');
@@ -155,7 +171,7 @@
 
     /** The repository holding the file and its path there, or null for a file in none. */
     const inRepo = $derived.by<RepoFile | null>(() => {
-        if (blocked) return null;
+        if (blocked || head !== undefined) return null;
         const served = workspaces().workspaces.flatMap((workspace) => workspace.roots);
         const repos = gitRoots().filter((one) => {
             const held = gitFor(one);
@@ -304,7 +320,8 @@
         const id = instance.id;
         const fileRoot = root;
         const filePath = path;
-        untrack(() => void loadSourceDraft(id, fileRoot, filePath));
+        const stage = head;
+        untrack(() => void loadSourceDraft(id, fileRoot, filePath, stage));
     });
 
     async function save(): Promise<void> {
@@ -344,8 +361,10 @@
                 onclick={() => revertSourceDraft(instance.id)}
             />
         {/if}
-        <BookmarkStar bare {root} {path} onsaid={(words: string) => (said = words)} />
-        {#if !blocked && opensInProgram(path, programApps())}
+        {#if head === undefined}
+            <BookmarkStar bare {root} {path} onsaid={(words: string) => (said = words)} />
+        {/if}
+        {#if !blocked && head === undefined && opensInProgram(path, programApps())}
             <ProgramButton bare {root} {path} onsaid={(words: string) => (said = words)} />
         {/if}
     </Toolbar>
@@ -389,7 +408,7 @@
     <ToolButton
         small
         label={t('source.retry')}
-        onclick={() => void loadSourceDraft(instance.id, root, path)}
+        onclick={() => void loadSourceDraft(instance.id, root, path, head)}
     />
 {/snippet}
 

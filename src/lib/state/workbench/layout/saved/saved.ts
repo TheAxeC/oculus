@@ -332,6 +332,8 @@ function readPane(
     const read: Pane = { kind: 'pane', tabs, active };
     // Only an empty pane keeps a kind: the pane a Terminal tab left stays a terminals pane.
     if (tabs.length === 0 && value.keeps === 'terminals') read.keeps = 'terminals';
+    // A pane saved before panes could be locked has no field, which reads as unlocked.
+    if (value.locked === true) read.locked = true;
     return read;
 }
 

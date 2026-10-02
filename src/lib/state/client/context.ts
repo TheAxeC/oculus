@@ -198,7 +198,7 @@ export function createClientState(): ClientState {
     const entities = createEntities();
     const writes = createWrites(() => entities.config()?.config ?? null);
     const socket = createSocket(entities, writes);
-    const ui = createUi();
+    const ui = createUi(writes.writeConfigKey);
     const formDrafts = createFormDrafts(ui, snapshotEntries(entities.portfolio));
     // A tab's close, a pane's close and a page's close forget the state of every instance they take
     // away, and the layout is the one store that knows an instance closed. The entry forms of an

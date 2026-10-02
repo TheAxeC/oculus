@@ -68,3 +68,11 @@ crt:
 # === Code theme =============================================================
 # How the editors colour code. `tokens` takes the syntax colours from the UI theme's own code tokens. Any id of Shiki's bundled themes (such as `dark-plus`, `github-light`, `nord`) takes that theme's syntax colours, while the editor's background and chrome stay on the UI theme. The Code theme row under This browser in the Settings view writes the viewer's own choice into the appearance store, as its CRT row does, and the `code_theme` row of this file sets the value below.
 code_theme: tokens
+
+
+# === Pane strip =============================================================
+# What the top row of every pane draws, as VS Code's workbench.editor.showTabs and workbench.editor.editorActionsLocation do. The strip menu's Tab Bar and Editor Actions Position submenus write these two keys.
+# `multiple` draws every tab, `single` draws the active tab alone, `none` draws no tab and leaves a title row that holds the actions.
+show_tabs: multiple
+# `strip` draws Split Right and the `...` pane menu at the right of the row, `hidden` draws neither (the pane menu stays reachable by a right click on the strip or on an empty pane).
+editor_actions: strip

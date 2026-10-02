@@ -89,6 +89,18 @@ options:
             description: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens, and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours while the editor's background and chrome stay on the UI theme. An id Shiki does not bundle is reported as a finding and read as tokens. The Code theme row under This browser in the Settings view saves the viewer's own choice, which takes over.
             default: tokens
             control: text
+        show_tabs:
+            section: Appearance
+            description: How many tabs the top row of a pane draws. multiple draws every tab, single draws the active tab alone, none draws no tab and keeps a title row that holds the pane's actions. Any other value counts as multiple. The Tab Bar submenu of a pane strip's right-click menu writes this key.
+            default: multiple
+            control: choice
+            values: [multiple, single, none]
+        editor_actions:
+            section: Appearance
+            description: Where a pane draws its Split Right button and its pane menu. strip draws them at the right end of the top row, hidden draws neither; the pane menu stays reachable by a right click on the strip or on an empty pane. Any other value counts as strip. The Editor Actions Position submenu of a pane strip's right-click menu writes this key.
+            default: strip
+            control: choice
+            values: [strip, hidden]
     behavior.yml:
         read_limits:
             section: Audit

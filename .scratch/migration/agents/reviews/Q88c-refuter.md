@@ -426,3 +426,19 @@ Both pass alone. Run alone with the verbose reporter at load 14.8, the compare-g
 
 Reviewer usage: tokens not available to me; about 60 tool uses; about 45 minutes (13:42 to 14:26).
 
+
+## Closed
+
+Every finding of the run over repair round 1, closed at landing on main (2026-10-02), none sent to the builder:
+
+- Ruling 8, `HELP.md` "No write ever carries `--force`": the sentence now reads that no Source Control action carries `--force` and that the push of a deposit snapshot is the one forced push in oculus.
+- Ruling 16 and Standards 1, the two head comments: `graph-picks.ts` and `Graph.svelte` say the prompt asks for the name, and for a tag its message, the new ref starting at the commit.
+- Spec 1, a dangling untracked link: `trashUntracked` (`git-index.ts`) moves a link whose target is missing as the link, through `linkAt`, and a path it cannot find says so; `trash.test.ts` "moves an untracked link whose target is missing as the link, wherever it pointed" failed on the unfixed tree with "expected false to be true" and passes; `DESIGN.md` says so.
+- Standards 2: as ruling 8.
+- Standards 3, `Graph.svelte` near its cap: the section head's actions moved to `graph/GraphActions.svelte`; `Graph.svelte` is 473 lines.
+- Standards 4, exports with no importer: `GitOperation` (`git-routes.ts`) and `Extra` (`git-write.ts`) are local; `git-run.ts`'s `Extra` no longer exists (the merge with X3a's split of the git folder keeps main's `run.ts`).
+- Standards 5, the `branch -d` wording: `branch_delete_detail`, `branch_unmerged_detail` and the comments of `git-refs.ts`, `repositories.svelte.ts` and `git-write.ts` (`removeWorktree`) say git refuses a branch not merged into its upstream, or into HEAD when it has none.
+- Proof 1, the report's file table: the booking states that `ui.test.ts`, `graph-row.test.ts`, `instance-state-sources.test.ts` and `tones.test.ts` exist on the base and ran there; the builder's report is left as written.
+- Proof 2, module-level mutables in `git-fixture.ts`: the fixture is gone. The merge keeps main's `tests/server/core/git/git.test.ts` and `git-gates.ts`, whose recorder is file-scope `vi.hoisted` state, and drops Q88c's `git-gate.test.ts` and `git-fixture.ts`, which repeated that gate.
+- Proof 3, `compare-gate.test.ts` timing out: its run case is split into three cases, one per group of reads, each asserting its vectors against the forms, and a last case asserting that the file ran every listed subcommand.
+- Behaviour 1, Delete Anyway's match on a cut reason: `git-write.ts`'s `run` takes `codes`, a phrase of git's whole error stream per refusal code, and `deleteBranch` passes `is not fully merged`; `delete-branch.test.ts` "gives the code not-merged for a branch whose long name pushes the phrase past the reason" failed on the unfixed tree with "expected undefined to be 'not-merged'" and passes.

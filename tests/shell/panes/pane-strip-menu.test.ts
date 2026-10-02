@@ -11,12 +11,17 @@ import {
     floatItems,
     floatMenu,
     isFloatItem,
+    isPaneItem,
+    paneMenu,
     stripEdge,
     stripMenu,
     stripPicked,
     type StripDeps
 } from '../../../src/lib/shell/panes/pane-view.ts';
+import { newNoteOpener } from '../../../src/lib/state/workbench/layout/index.ts';
+import { noteId } from '../../../src/lib/state/life/notes.ts';
 import type { FloatPlace } from '../../../src/lib/state/workbench/layout/index.ts';
+import type { MenuItem } from '../../../src/lib/ui/menu/menu-items.ts';
 
 /** The float operations of a StripDeps, for a case that picks no float item. */
 const NO_FLOAT = {
@@ -24,6 +29,13 @@ const NO_FLOAT = {
     dockFloat: () => undefined,
     freeFloat: () => undefined,
     returnFloat: () => undefined
+};
+
+/** The operations of a StripDeps this file's cases do not pick. */
+const NO_SETTINGS = {
+    newNoteIn: () => undefined,
+    setLocked: () => undefined,
+    setAppearance: () => undefined
 };
 
 const words = (key: string, ...args: (string | number)[]): string =>
@@ -34,11 +46,15 @@ describe('the pane strip menu', () => {
     it('offers a pane holding a tab on a page of two panes every item', () => {
         expect(stripMenu({ holdsTab: true, panes: 2 }, words).map((item) => item.label)).toEqual([
             '@ui.strip_open_file',
+            '@ui.strip_new_text_file',
             '@ui.strip_split_up',
             '@ui.strip_split_down',
             '@ui.strip_split_left',
             '@ui.strip_split_right',
             '@ui.float',
+            '@ui.strip_lock',
+            '@ui.strip_tab_bar',
+            '@ui.strip_editor_actions',
             '@ui.strip_close',
             '@ui.strip_new_terminal'
         ]);
@@ -48,8 +64,62 @@ describe('the pane strip menu', () => {
     it('offers an empty pane alone on its page Open File and New Terminal', () => {
         expect(stripMenu({ holdsTab: false, panes: 1 }, words).map((item) => item.label)).toEqual([
             '@ui.strip_open_file',
+            '@ui.strip_new_text_file',
+            '@ui.strip_lock',
+            '@ui.strip_tab_bar',
+            '@ui.strip_editor_actions',
             '@ui.strip_new_terminal'
         ]);
+    });
+
+    // Revert: ignore `locked` in stripMenu.
+    it('offers Unlock Group on a locked pane, the empty one included', () => {
+        for (const holdsTab of [true, false]) {
+            const labels = stripMenu({ holdsTab, panes: 2, locked: true }, words).map(
+                (item) => item.label
+            );
+            expect(labels).toContain('@ui.strip_unlock');
+            expect(labels).not.toContain('@ui.strip_lock');
+        }
+    });
+
+    // Revert: take Lock Group and Unlock Group away from a float's strip.
+    it("offers Lock Group on a float's strip, and Unlock Group once the pane is locked", () => {
+        const free: FloatPlace = { kind: 'free', x: 0.1, y: 0.1, w: 0.3, h: 0.4 };
+        const open = stripMenu({ holdsTab: true, panes: 1, float: free }, words).map(
+            (item) => item.label
+        );
+        expect(open).toContain('@ui.strip_lock');
+        expect(open).not.toContain('@ui.strip_unlock');
+        const shut = stripMenu({ holdsTab: true, panes: 1, float: free, locked: true }, words).map(
+            (item) => item.label
+        );
+        expect(shut).toContain('@ui.strip_unlock');
+        expect(shut).not.toContain('@ui.strip_lock');
+    });
+
+    // Revert: drop the `active` mark from the Tab Bar and Editor Actions Position submenus.
+    it('offers Tab Bar and Editor Actions Position as submenus marking the setting in force', () => {
+        const menu = stripMenu(
+            { holdsTab: true, panes: 1, tabBar: 'single', actions: 'hidden' },
+            words
+        );
+        const bar = menu.find((item) => item.label === '@ui.strip_tab_bar');
+        const actions = menu.find((item) => item.label === '@ui.strip_editor_actions');
+        expect(bar?.items?.map((item) => [item.label, item.active === true])).toEqual([
+            ['@ui.tab_bar_multiple', false],
+            ['@ui.tab_bar_single', true],
+            ['@ui.tab_bar_none', false]
+        ]);
+        expect(actions?.items?.map((item) => [item.label, item.active === true])).toEqual([
+            ['@ui.editor_actions_strip', false],
+            ['@ui.editor_actions_hidden', true]
+        ]);
+        const fresh = stripMenu({ holdsTab: true, panes: 1 }, words);
+        const marks = (label: string) =>
+            fresh.find((item) => item.label === label)?.items?.map((item) => item.active === true);
+        expect(marks('@ui.strip_tab_bar')).toEqual([true, false, false]);
+        expect(marks('@ui.strip_editor_actions')).toEqual([true, false]);
     });
 });
 
@@ -58,7 +128,19 @@ describe('the edge a split takes', () => {
     it('splits left on the left edge and up on the top edge', () => {
         const items = stripMenu({ holdsTab: true, panes: 1 }, words);
         const edges = items.map((item) => stripEdge(item.id));
-        expect(edges).toEqual([null, 'top', 'bottom', 'left', 'right', null, null]);
+        expect(edges).toEqual([
+            null,
+            null,
+            'top',
+            'bottom',
+            'left',
+            'right',
+            null,
+            null,
+            null,
+            null,
+            null
+        ]);
     });
 
     // Revert: pass `pane.path` as [] to splitInstance in stripPicked.
@@ -66,6 +148,7 @@ describe('the edge a split takes', () => {
         const calls: unknown[][] = [];
         const deps = {
             ...NO_FLOAT,
+            ...NO_SETTINGS,
             splitInstance: (...args: unknown[]) => calls.push(args),
             openPalette: () => undefined,
             close: () => undefined,
@@ -89,6 +172,7 @@ describe('what the strip menu runs', () => {
         const calls: string[] = [];
         const deps = {
             ...NO_FLOAT,
+            ...NO_SETTINGS,
             splitInstance: () => calls.push('split'),
             openPalette: (prefill: string) => calls.push(`palette:${prefill}`),
             close: () => calls.push('close'),
@@ -103,6 +187,66 @@ describe('what the strip menu runs', () => {
         stripPicked(id('@ui.strip_new_terminal'), pane, deps);
         expect(calls).toEqual(['palette:', 'close', 'new:p:1']);
     });
+
+    // Revert: drop the path from newNoteIn, or lock the pane the menu was not opened on.
+    it('opens a text file in the pane, locks and unlocks it, and writes the two settings', () => {
+        const calls: string[] = [];
+        const deps = {
+            ...NO_FLOAT,
+            splitInstance: () => undefined,
+            openPalette: () => undefined,
+            close: () => undefined,
+            newTerminalIn: () => undefined,
+            newNoteIn: (page: string, path: number[]) =>
+                calls.push(`note:${page}:${path.join('.')}`),
+            setLocked: (page: string, path: number[], locked: boolean) =>
+                calls.push(`lock:${page}:${path.join('.')}:${locked}`),
+            setAppearance: (key: string, value: string) => calls.push(`set:${key}=${value}`)
+        };
+        const pane = { active: 'tab-1', path: [1], page: 'p' };
+        const open = stripMenu({ holdsTab: true, panes: 2 }, words);
+        const locked = stripMenu({ holdsTab: true, panes: 2, locked: true }, words);
+        const id = (items: typeof open, label: string): string =>
+            items.find((item) => item.label === label)?.id ?? '';
+        const sub = (items: typeof open, label: string, inner: string): string =>
+            items.find((item) => item.label === label)?.items?.find((one) => one.label === inner)
+                ?.id ?? '';
+        stripPicked(id(open, '@ui.strip_new_text_file'), pane, deps);
+        stripPicked(id(open, '@ui.strip_lock'), pane, deps);
+        stripPicked(id(locked, '@ui.strip_unlock'), pane, deps);
+        stripPicked(sub(open, '@ui.strip_tab_bar', '@ui.tab_bar_single'), pane, deps);
+        stripPicked(sub(open, '@ui.strip_tab_bar', '@ui.tab_bar_none'), pane, deps);
+        stripPicked(sub(open, '@ui.strip_tab_bar', '@ui.tab_bar_multiple'), pane, deps);
+        stripPicked(sub(open, '@ui.strip_editor_actions', '@ui.editor_actions_hidden'), pane, deps);
+        stripPicked(sub(open, '@ui.strip_editor_actions', '@ui.editor_actions_strip'), pane, deps);
+        expect(calls).toEqual([
+            'note:p:1',
+            'lock:p:1:true',
+            'lock:p:1:false',
+            'set:show_tabs=single',
+            'set:show_tabs=none',
+            'set:show_tabs=multiple',
+            'set:editor_actions=hidden',
+            'set:editor_actions=strip'
+        ]);
+    });
+});
+
+describe('New Text File', () => {
+    // Revert: open the note without `fresh`, so the tab asks the server for a file it has not got.
+    it('opens a scratch Note in the pane the menu was opened on, with an id of the moment', () => {
+        const calls: unknown[][] = [];
+        const at = new Date(2026, 9, 2, 10, 30, 15);
+        const open = newNoteOpener(
+            (...args: unknown[]) => {
+                calls.push(args);
+                return 'tab-9';
+            },
+            () => at
+        );
+        open('p', [1, 0]);
+        expect(calls).toEqual([['note', { id: noteId(at), fresh: true }, 'p', [1, 0]]]);
+    });
 });
 
 describe('the strip menu of a float', () => {
@@ -115,10 +259,14 @@ describe('the strip menu of a float', () => {
         const free_ = labels(free);
         expect(free_).toEqual([
             '@ui.strip_open_file',
+            '@ui.strip_new_text_file',
             '@ui.float_dock_left',
             '@ui.float_dock_right',
             '@ui.float_dock_bottom',
             '@ui.float_return',
+            '@ui.strip_lock',
+            '@ui.strip_tab_bar',
+            '@ui.strip_editor_actions',
             '@ui.strip_close',
             '@ui.strip_new_terminal'
         ]);
@@ -128,10 +276,14 @@ describe('the strip menu of a float', () => {
     it('offers a float docked right the other docks, Float and Return to Page', () => {
         expect(labels(right)).toEqual([
             '@ui.strip_open_file',
+            '@ui.strip_new_text_file',
             '@ui.float_dock_left',
             '@ui.float_dock_bottom',
             '@ui.float',
             '@ui.float_return',
+            '@ui.strip_lock',
+            '@ui.strip_tab_bar',
+            '@ui.strip_editor_actions',
             '@ui.strip_close',
             '@ui.strip_new_terminal'
         ]);
@@ -205,6 +357,7 @@ describe('the strip menu of a float', () => {
     it('runs each pick through the layout: float the pane, dock, free, return', () => {
         const calls: string[] = [];
         const deps: StripDeps = {
+            ...NO_SETTINGS,
             splitInstance: () => calls.push('split'),
             openPalette: () => undefined,
             close: () => calls.push('close'),
@@ -224,5 +377,102 @@ describe('the strip menu of a float', () => {
         stripPicked(id(docked, '@ui.float'), onFloat, deps);
         stripPicked(id(docked, '@ui.float_return'), onFloat, deps);
         expect(calls).toEqual(['float p [1]', 'dock fl left', 'free fl', 'return fl']);
+    });
+});
+
+describe('the strip menu with the editor actions hidden', () => {
+    const page = (id: string) => ({
+        id,
+        label: id.toUpperCase(),
+        workbench: { root: { kind: 'pane' as const, tabs: [], active: '' } }
+    });
+    const pages = [page('a'), page('b'), page('c')];
+
+    /** Every item id of a menu, the ones inside a choice included. */
+    function every(items: readonly MenuItem[]): string[] {
+        return items.flatMap((item) => [item.id, ...every(item.items ?? [])]);
+    }
+
+    /** The strip menu's item that does what a pane menu item does, where the ids differ. */
+    const SAME = { split_right: 'split-right', split_down: 'split-down' } as Record<string, string>;
+
+    // Revert: leave the pane menu's items out of stripMenu when the actions are hidden.
+    it.each([
+        [false, false],
+        [false, true],
+        [true, false],
+        [true, true]
+    ])(
+        'holds every item of the pane menu of a page pane holding a tab (maximised %s, foldable %s)',
+        (maximised, foldable) => {
+            const pane = paneMenu(
+                { pages, screen: 'a', host: 'a', maximised, foldable, holdsTab: true },
+                words
+            );
+            const strip = stripMenu(
+                { holdsTab: true, panes: 1, actions: 'hidden', paneItems: pane },
+                words
+            );
+            const reachable = new Set(every(strip));
+            for (const id of every(pane)) expect(reachable.has(SAME[id] ?? id), id).toBe(true);
+            expect(every(pane)).toContain(maximised ? 'restore' : 'maximise');
+            expect(every(pane).includes('fold')).toBe(foldable);
+        }
+    );
+
+    // Revert: leave the pane menu's items out of stripMenu when the actions are hidden.
+    it('holds every item of the pane menu of a float', () => {
+        const place: FloatPlace = { kind: 'dock', edge: 'right', size: 0.3 };
+        const pane = paneMenu(
+            {
+                float: place,
+                pages,
+                screen: 'a',
+                host: 'f',
+                maximised: false,
+                foldable: false,
+                holdsTab: true
+            },
+            words
+        );
+        const strip = stripMenu(
+            { holdsTab: true, panes: 1, float: place, actions: 'hidden', paneItems: pane },
+            words
+        );
+        const reachable = new Set(every(strip));
+        for (const id of every(pane)) expect(reachable.has(id), id).toBe(true);
+    });
+
+    // Revert: offer Close only while the page holds more than one pane, whatever the actions.
+    it('offers Close on a page of one pane, which the pane menu offers', () => {
+        const hidden = stripMenu({ holdsTab: true, panes: 1, actions: 'hidden' }, words);
+        expect(hidden.map((item) => item.label)).toContain('@ui.strip_close');
+        const strip = stripMenu({ holdsTab: true, panes: 1, actions: 'strip' }, words);
+        expect(strip.map((item) => item.label)).not.toContain('@ui.strip_close');
+    });
+
+    // Revert: add the pane items to the strip menu whatever the setting.
+    it('adds none of them while the actions are drawn', () => {
+        const pane = paneMenu(
+            { pages, screen: 'a', host: 'a', maximised: false, foldable: true, holdsTab: true },
+            words
+        );
+        const strip = stripMenu(
+            { holdsTab: true, panes: 2, actions: 'strip', paneItems: pane },
+            words
+        );
+        const reachable = new Set(every(strip));
+        for (const id of ['maximise', 'fold', 'move-to-page', 'show-a-page']) {
+            expect(reachable.has(id), id).toBe(false);
+        }
+    });
+
+    it('tells the pane menu items the strip repeats from the strip menu ones', () => {
+        for (const id of ['maximise', 'restore', 'fold', 'page:b', 'embed:b']) {
+            expect(isPaneItem(id), id).toBe(true);
+        }
+        for (const id of ['close', 'split-up', 'float', 'lock', 'tab-bar:single', 'new-terminal']) {
+            expect(isPaneItem(id), id).toBe(false);
+        }
     });
 });

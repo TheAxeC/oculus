@@ -1,10 +1,11 @@
 // Layer 2, client state. config/appearance.yml as the page reads it: the picker's order, the class
 // string each theme puts on the body, the words it is offered under and the glyph drawn before
 // them, the wallpaper's numbers, what the CRT overlay and terminal text size start as, the terminal
-// grid's cursor, Option key and copy-on-selection settings, and the code theme the editors start
-// on. It is installed the way the tone vocabulary is: the server ships the `themes` key as the
-// page's data at first load, and every later edit of config/appearance.yml arrives on the `config`
-// channel, so a theme is added by editing YAML and nothing else.
+// grid's cursor, Option key and copy-on-selection settings, the code theme the editors start on,
+// and what a pane's top row draws (`show_tabs`, `editor_actions`). It is installed the way the tone
+// vocabulary is: the server ships the `themes` key as the page's data at first load, and every
+// later edit of config/appearance.yml arrives on the `config` channel, so a theme is added by
+// editing YAML and nothing else.
 //
 // This holds no runes of its own: every lookup is pure over what was last installed and reads the
 // configuration's generation, state/shared/words/generation.svelte.ts, so a component calling one
@@ -66,6 +67,12 @@ export type TerminalOptions = {
     cursorBlink?: boolean;
 };
 
+/** How many tabs a pane's top row draws: all, the active one alone, or none. */
+export type TabBar = 'multiple' | 'single' | 'none';
+
+/** Where a pane draws its Split Right button and pane menu. */
+export type EditorActions = 'strip' | 'hidden';
+
 /** The class the terminal palettes carry, and the one `themes: rice` selects on. */
 const RICE = 'rice';
 
@@ -77,6 +84,8 @@ let byName: Record<string, Theme | undefined> = {};
 let paper: Wallpaper | null = null;
 let crt = false;
 let codeTheme = CODE_TOKENS;
+let tabBar: TabBar = 'multiple';
+let actionsAt: EditorActions = 'strip';
 /** The terminal settings as last installed: the text size, and the four other keys. */
 let terminal: { fontPx: number | null; options: TerminalOptions } = { fontPx: null, options: {} };
 
@@ -189,6 +198,12 @@ const themeRowShape = z
 /** The rows of the `themes` key that are themes, in the config's order. */
 const themeRowsShape = rowsShape(themeRowShape);
 
+/** The `show_tabs` key; a value that is none of the three reads as `multiple`. */
+const tabBarShape = z.enum(['multiple', 'single', 'none']).catch('multiple');
+
+/** The `editor_actions` key; a value that is neither of the two reads as `strip`. */
+const editorActionsShape = z.enum(['strip', 'hidden']).catch('strip');
+
 /** The `crt` key: whether the overlay starts on. */
 const crtShape = z.object({ default: z.boolean().catch(false) });
 
@@ -206,6 +221,8 @@ export function setAppearance(config: Record<string, unknown>): void {
     paper = readAs(wallpaperShape, config.wallpaper);
     crt = readAs(crtShape, config.crt)?.default ?? false;
     codeTheme = isCodeTheme(config.code_theme) ? config.code_theme : CODE_TOKENS;
+    tabBar = readAs(tabBarShape, config.show_tabs) ?? 'multiple';
+    actionsAt = readAs(editorActionsShape, config.editor_actions) ?? 'strip';
     terminal = readTerminal(config);
     for (const theme of readAs(themeRowsShape, config.themes) ?? []) {
         if (Object.hasOwn(byName, theme.name)) continue;
@@ -256,6 +273,18 @@ export function crtDefault(): boolean {
 export function codeThemeDefault(): string {
     configGeneration();
     return codeTheme;
+}
+
+/** How many tabs a pane's top row draws, the `show_tabs` of config/appearance.yml. */
+export function showTabs(): TabBar {
+    configGeneration();
+    return tabBar;
+}
+
+/** Where a pane draws its actions, the `editor_actions` of config/appearance.yml. */
+export function editorActions(): EditorActions {
+    configGeneration();
+    return actionsAt;
 }
 
 /** The terminal grid's configured CSS pixel size, or null when it follows the page's type scale. */

@@ -60,7 +60,7 @@ const COMMIT: GitGraphCommit = {
     message: 'Add the thing\n\nMore'
 };
 
-const FACTS = { local: ['main'], current: 'main' };
+const FACTS = { local: ['main'], current: 'main', remotes: [] };
 
 /** One commit row drawn from its props. */
 function row(commit: GitGraphCommit, open = false): string {
@@ -74,10 +74,12 @@ function row(commit: GitGraphCommit, open = false): string {
             lane: laneRows([commit])[0],
             open,
             branches: FACTS,
+            compare: { upstream: '', base: '' },
             busy: false,
             onpick: () => undefined,
             onswitch: () => undefined,
-            ondeletetag: () => undefined
+            ondeletetag: () => undefined,
+            ongraph: () => undefined
         }
     }).body;
 }

@@ -17,7 +17,7 @@ import {
     themes,
     wallpaperOnTheme
 } from '../../../src/lib/state/shared/words/appearance.ts';
-import { UI_KEY, UI_VERSION } from '../../../src/lib/state/workbench/ui.svelte.ts';
+import { UI_KEY, UI_VERSION, createUi } from '../../../src/lib/state/workbench/ui.svelte.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;
@@ -675,5 +675,26 @@ describe('the values this browser chose of its own', () => {
             wallpaper: true,
             icons: true
         });
+    });
+});
+
+describe('the pane strip settings', () => {
+    // Revert: save the pick in the browser instead of writing config/appearance.yml.
+    it('writes a Tab Bar and an Editor Actions Position pick to appearance.yml', () => {
+        const written: unknown[][] = [];
+        const ui = createUi((...args: unknown[]) => {
+            written.push(args);
+            return Promise.resolve(null);
+        });
+        ui.setPaneStrip('show_tabs', 'single');
+        ui.setPaneStrip('editor_actions', 'hidden');
+        expect(written).toEqual([
+            ['appearance.yml', 'show_tabs', 'single'],
+            ['appearance.yml', 'editor_actions', 'hidden']
+        ]);
+    });
+
+    it('ignores a pick when the store was given no writer', () => {
+        expect(() => createUi().setPaneStrip('show_tabs', 'none')).not.toThrow();
     });
 });

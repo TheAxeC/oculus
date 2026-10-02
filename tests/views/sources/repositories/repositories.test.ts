@@ -271,7 +271,7 @@ describe('the Repositories view', () => {
         expect(changes.match(badge(1))).toHaveLength(3);
     });
 
-    it('draws each change row with Open File, its staging and, for a changed path, its discard', () => {
+    it('draws each change row with Open File, its staging and, for a changed or untracked path, its discard', () => {
         const changes = group(html({ [HUB]: HUB_GIT }), 'changes');
         expect(changes).toContain('data-entry="code/one.py"');
         expect(changes).toContain('one.py');
@@ -287,7 +287,8 @@ describe('the Repositories view', () => {
         );
         expect(count(changes, `aria-label="${catalog['git.unstage']}"`)).toBe(1);
         expect(count(changes, `aria-label="${catalog['git.stage']}"`)).toBe(2);
-        expect(count(changes, `aria-label="${catalog['git.discard']}"`)).toBe(1);
+        // the changed row and the untracked row, whose Discard sends the file to the Trash
+        expect(count(changes, `aria-label="${catalog['git.discard']}"`)).toBe(2);
     });
 
     it('draws no row of a group or a section the instance keeps closed', () => {
@@ -417,6 +418,15 @@ describe('the Repositories view', () => {
         // The checked-out branch is the current row.
         const main = branches.slice(branches.indexOf('data-branch="main"'));
         expect(main.slice(0, main.indexOf('</li>'))).toContain('aria-current="true"');
+    });
+
+    it('offers Delete Branch on each branch not checked out, as Delete Tag is offered on a tag', () => {
+        const branches = group(html({ [HUB]: HUB_GIT }), 'branches');
+        const control = `aria-label="${catalog['repositories.menu_delete_branch']}"`;
+        expect(count(branches, control)).toBe(count(branches, 'data-branch="') - 1);
+        const main = branches.slice(branches.indexOf('data-branch="main"'));
+        // The checked-out branch cannot be deleted, so its row holds no such control.
+        expect(main.slice(0, main.indexOf('</li>'))).not.toContain(control);
     });
 
     it('lists every worktree but the checkout, each with its four controls', () => {

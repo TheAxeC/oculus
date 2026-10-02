@@ -56,8 +56,8 @@
         type DiffActions,
         type Hunk,
         type LineChange
-    } from '$lib/state/sources/repositories/diff-hunks';
-    import type { PatchMode } from '$lib/state/sources/repositories/diff-patch';
+    } from '$lib/state/sources/repositories/diff/diff-hunks';
+    import type { PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
     import {
         fileDeleted,
         type DiffMode,

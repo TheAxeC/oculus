@@ -8,7 +8,7 @@
 
 import { findInstance } from '../instance.ts';
 import { rewrite } from '../tree.ts';
-import type { Instance, Layout, Pane, ViewId } from '../model.ts';
+import { repane, type Instance, type Layout, type Pane, type ViewId } from '../model.ts';
 
 /** Whether a tab is the one the next preview open replaces. */
 export function isPreview(instance: Instance): boolean {
@@ -36,7 +36,7 @@ export function retarget(layout: Layout, id: string, view: ViewId, state: unknow
     const edit = (node: Layout): Layout => {
         if (node.kind !== 'pane') return node;
         const tabs = node.tabs.map((tab) => (tab.id === id ? { ...tab, view, state } : tab));
-        return { kind: 'pane', tabs, active: id };
+        return repane(node, tabs, id);
     };
     return rewrite(layout, found.path, edit) ?? layout;
 }
@@ -48,7 +48,7 @@ export function keepInstance(layout: Layout, id: string): Layout {
     const edit = (node: Layout): Layout => {
         if (node.kind !== 'pane') return node;
         const tabs = node.tabs.map((tab) => (tab.id === id ? kept(tab) : tab));
-        return { kind: 'pane', tabs, active: node.active };
+        return repane(node, tabs, node.active);
     };
     return rewrite(layout, found.path, edit) ?? layout;
 }

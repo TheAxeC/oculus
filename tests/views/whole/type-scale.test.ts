@@ -189,7 +189,7 @@ const VIEWS: Record<string, string> = {
     'sources/repositories/changes/FolderRow.svelte': '',
     'sources/repositories/Repo.svelte':
         '.branch=fs-md | .branch .lb=fs-xs | .branch .mt=fs-sm | .path=fs-sm | .none=fs-md | .outcome=fs-md | .sequence=fs-md',
-    'sources/repositories/Worktrees.svelte': '',
+    'sources/repositories/refs/Worktrees.svelte': '',
     'sessions/agents/Agents.svelte': '.agent=fs-md | .st=fs-sm | .mo=fs-sm',
     'sessions/changes/Changes.svelte': '.sec-h=fs-xs',
     'sessions/changes/ChangesRepo.svelte':
@@ -219,7 +219,7 @@ const VIEWS: Record<string, string> = {
         '.turn=fs-md | .who=fs-xs | .ts=fs-sm | .sum=fs-sm | .cut=fs-md | .doc=fs-md | .doc :global(h1), .doc :global(h2), .doc :global(h3), .doc :global(h4)=fs-md | .doc :global(code), .doc :global(pre)=fs-sm',
     'shared/code/Code.svelte': '.gutter, .text=fs-sm',
     'shared/changes/ChangeCounts.svelte': '.bin=fs-sm | .add, .del=fs-sm',
-    'shared/changes/ChangeGroups.svelte': '.group-h=fs-xs | .file=fs-md',
+    'shared/changes/ChangeGroups.svelte': '.group-h=fs-xs | .cut=fs-sm | .file=fs-md',
     'shared/links/BookmarkStar.svelte': '.failed=fs-sm',
     'shared/card/Clamp.svelte': '',
     'shared/links/CrossLinks.svelte': '',
@@ -263,6 +263,7 @@ const VIEWS: Record<string, string> = {
     'sources/repositories/diff/FileHeader.svelte': '',
     'sources/repositories/graph/CommitFiles.svelte': '',
     'sources/repositories/graph/CommitRow.svelte': '',
+    'sources/repositories/graph/GraphActions.svelte': '',
     'sources/repositories/graph/GraphHead.svelte': '',
     'sources/repositories/graph/Graph.svelte': '',
     'sources/repositories/graph/Lanes.svelte': '',
@@ -326,6 +327,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/forms/choice/GlyphList.svelte': '',
     'src/lib/ui/forms/choice/GlyphSelect.svelte': '.select=fs-md',
     'src/lib/ui/forms/choice/MultiSelect.svelte': '.filter=fs-md',
+    'src/lib/ui/forms/choice/QuickPick.svelte': '.heading=fs-xs | .row=fs-md',
     'src/lib/ui/forms/choice/Select.svelte': '.select=fs-md',
     'src/lib/ui/forms/NumberInput.svelte': '',
     'src/lib/ui/forms/Prompt.svelte': '.message=fs-md | .detail, .name=fs-xs | .row button=fs-sm',

@@ -13,7 +13,7 @@
 // saw. Those are Monaco's model lines, where a text that ends with a newline has one more, empty,
 // line; that line is not one of git's, and a change of it is the change of the newline before it.
 
-import type { DiffSides } from '../../../data/model/index.ts';
+import type { DiffSides } from '../../../../data/model/index.ts';
 import { CONTEXT, type ChosenRows, type LineChange } from './diff-hunks.ts';
 
 /** What a patch does, which is also the flags the server gives `apply`. */

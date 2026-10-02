@@ -17,7 +17,7 @@ import {
     typedPieces,
     type Choice,
     type Region
-} from '../../../../../src/lib/state/sources/repositories/merge-regions.ts';
+} from '../../../../../src/lib/state/sources/repositories/diff/merge-regions.ts';
 
 const BASE = 'a\nb\nc\nd\ne\nf\ng\n';
 // Both sides changed b, each its own way; both changed e the same way; only Incoming changed g.

@@ -15,25 +15,37 @@
     // diff of. The merge back is offered only while the repository has a branch checked out, since
     // a detached HEAD has nothing to merge into.
     //
-    // A worktree row opens a right-click menu (menus/repo-menu.ts) of its shell and Delete
-    // Worktree, which run the row's own terminal and removal controls, the removal behind its
-    // question.
+    // A worktree row opens a right-click menu (menus/repo-menu.ts) of its shell, Open Worktree,
+    // Open Worktree in New Window and Delete Worktree. The shell and the removal run the row's own
+    // terminal and removal controls, the removal behind its question. Open Worktree adds the
+    // worktree's folder as a root of the workspace and shows it in the Files view
+    // (state/sources/repositories/repositories.ts's openWorktree), and the new-window form opens
+    // this page's address again as well; a folder the workspace refuses is said in one muted row
+    // under the section's rows until the next open.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
-    import { REPO_TERMINAL, WORKTREE_DELETE, worktreeMenu } from './menus/repo-menu';
+    import {
+        WORKTREE_DELETE,
+        WORKTREE_OPEN,
+        WORKTREE_OPEN_WINDOW,
+        REPO_TERMINAL,
+        worktreeMenu
+    } from '../menus/repo-menu';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
         linkedWorktrees,
+        openWorktree,
         plannedPath,
         worktreeLabel,
         type DiffSubject
     } from '$lib/state/sources/repositories/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { useState } from '$lib/state/client/use';
 
     type Props = {
         root: string;
@@ -63,7 +75,14 @@
         oncreate
     }: Props = $props();
 
+    const {
+        fs: { addRoot },
+        layout: { showInFiles }
+    } = useState();
+
     let name = $state('');
+    /** Why the last Open Worktree was refused, or the empty string. */
+    let refused = $state('');
 
     const planned = $derived(name.trim() === '' ? '' : plannedPath(root, name));
     const others = $derived(linkedWorktrees(git));
@@ -79,6 +98,20 @@
     function picked(path: string, label: string, pick: string): void {
         if (pick === REPO_TERMINAL) onterminal(path, label);
         else if (pick === WORKTREE_DELETE) onremove(path, label);
+        else if (pick === WORKTREE_OPEN) void opened(path, false);
+        else if (pick === WORKTREE_OPEN_WINDOW) void opened(path, true);
+    }
+
+    /** Add a worktree's folder to the workspace and show it in Files, in a new window if asked. */
+    async function opened(path: string, newWindow: boolean): Promise<void> {
+        refused = '';
+        const answer = await openWorktree(path, newWindow, {
+            addRoot,
+            showInFiles: (dir: string) => showInFiles(dir),
+            openWindow: (address: string) => void window.open(address, '_blank'),
+            address: () => window.location.href
+        });
+        if (answer !== '') refused = t('repositories.worktree_open_failed', answer);
     }
 
     function diff(path: string, label: string): void {
@@ -99,6 +132,11 @@
         {#if !git.ignoresWorktrees}
             <li role="none">
                 <TreeItem label={t('repositories.worktrees_unignored')} tone="warn" />
+            </li>
+        {/if}
+        {#if refused !== ''}
+            <li role="none" data-refused>
+                <TreeItem label={refused} tone="error" />
             </li>
         {/if}
         {#if others.length === 0}

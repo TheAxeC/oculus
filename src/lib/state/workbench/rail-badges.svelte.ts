@@ -24,7 +24,7 @@ import {
     typeSplit
 } from './rail-badges.ts';
 import type { BoardItem, BoardPreset } from '../boards/board/index.ts';
-import type { Collection } from '../../data/model/index.ts';
+import type { Collection, GitState } from '../../data/model/index.ts';
 
 /** One coloured count drawn as a cell on a pane tab. `color` is a theme hue name. */
 export type BadgeCell = { count: number; color: string; label: string };
@@ -67,6 +67,7 @@ export type RailBadgesStore = {
     linkedinBadgeGlyph: () => string;
     applicationsBadge: () => string;
     auditBadge: () => string;
+    repositoriesBadge: () => string;
     boardCells: (view: string) => BadgeCell[];
     queueCells: () => BadgeCell[];
     calendarCells: () => BadgeCell[];
@@ -76,14 +77,17 @@ export type RailBadgesStore = {
 };
 
 /**
- * What the badges read of the selectors: the configuration, one board by its preset, and one
- * collection. The selectors store in state/client, the folder above this one, satisfies it.
+ * What the badges read of the selectors: the configuration, one board by its preset, one
+ * collection, and the `git` channel's roots and their states. The selectors store in state/client,
+ * the folder above this one, satisfies it.
  */
 export type BadgeSelectors = {
     configMap: () => Record<string, unknown>;
     boardPreset: (view: string) => BoardPreset;
     board: (preset: BoardPreset) => BoardItem[];
     collectionOf: (key: string) => Collection | null;
+    gitRoots: () => string[];
+    gitFor: (workspace: string) => GitState | null;
 };
 
 export function createRailBadges(
@@ -183,6 +187,23 @@ export function createRailBadges(
         return countText(audit.openCount());
     }
 
+    /**
+     * The changes of every repository the `git` channel lists, as VS Code's git.countBadge "all"
+     * counts them: the held merge, staged, changes and untracked counts summed, so a file in two
+     * groups counts twice and a list cut at 200 counts what git reported. A root that is no
+     * repository adds nothing, and a repository a Repositories tab closed still counts, since the
+     * closed list is that tab's own.
+     */
+    function repositoriesBadge(): string {
+        let total = 0;
+        for (const root of selectors.gitRoots()) {
+            const held = selectors.gitFor(root);
+            if (!held?.repository) continue;
+            total += held.held.merge + held.held.staged + held.held.changes + held.held.untracked;
+        }
+        return countText(total);
+    }
+
     /** The project-board types from `scan`, in the vocabulary's configured type order. */
     function projectTypeOrder(): string[] {
         const preset = selectors.boardPreset('projects');
@@ -262,6 +283,7 @@ export function createRailBadges(
         linkedinBadgeGlyph,
         applicationsBadge,
         auditBadge,
+        repositoriesBadge,
         boardCells,
         queueCells,
         calendarCells,

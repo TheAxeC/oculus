@@ -15,23 +15,28 @@
 // Every operation is an option with a real default, so tests/routes/git/git.test.ts drives the
 // whole endpoint without running git at all.
 
+import { permitted } from '../core/paths.ts';
 import { json } from '@sveltejs/kit';
+import trashLibrary from 'trash';
 import { z } from 'zod';
 import { textCatalog } from '../../data/sources/config.ts';
 import { byKey, isMap } from '../../data/helpers/guards.ts';
 import { tokenedBody } from '../core/auth.ts';
+import { chained, type FsWrites } from '../core/json.ts';
+import type { Guard } from '../files/fs/ops.ts';
 import {
     allowedRoots,
     commit,
     createBranch,
     createWorktree,
     discard,
+    failed,
     merge,
-    permitted,
     push,
     removeWorktree,
     stage,
     switchBranch,
+    switchDetached,
     unstage,
     type Outcome
 } from './git-write.ts';
@@ -39,15 +44,26 @@ import { fetchAll, publish, pull, pushTags, sync } from './git-remote.ts';
 import {
     abortMerge,
     acceptDeletion,
+    addToGitignore,
     applyHunk,
+    cherryPick,
     continueRebase,
     discardAll,
     markResolved,
     resolveMerge,
     stageAll,
+    trashUntracked,
     unstageAll
 } from './git-index.ts';
-import { createTag, deleteTag, stash, stashAct, type StashMode } from './git-refs.ts';
+import {
+    createTag,
+    deleteBranch,
+    deleteBranchAnyway,
+    deleteTag,
+    stash,
+    stashAct,
+    type StashMode
+} from './git-refs.ts';
 import { messageModel, suggestMessage, type MessageOptions } from './git-message.ts';
 import { handleGitBranches, handleGitGet, type ReadOptions } from './git-reads.ts';
 
@@ -87,6 +103,12 @@ export const ACTIONS = [
     'createTag',
     'deleteTag',
     'pushTags',
+    'trashUntracked',
+    'ignore',
+    'cherryPick',
+    'checkoutDetached',
+    'deleteBranch',
+    'deleteBranchAnyway',
     'suggest'
 ] as const;
 
@@ -133,7 +155,12 @@ export const CONFIRMED = [
     'acceptDeletion',
     'stashDrop',
     'deleteTag',
-    'pushTags'
+    'pushTags',
+    'trashUntracked',
+    'cherryPick',
+    'checkoutDetached',
+    'deleteBranch',
+    'deleteBranchAnyway'
 ];
 
 /** One action, its root and whatever fields it takes. */
@@ -157,6 +184,15 @@ export type GitOptions = {
     message?: MessageOptions;
     /** Re-read a root after a write, whatever git answered. */
     refresh?: (root: string) => void;
+    /** The Trash; the real one, called with `{ glob: false }`, when absent. */
+    trash?: (path: string, options: { glob: false }) => Promise<void>;
+    /**
+     * The files the server never changes, by identity, as the Files view's operations build them.
+     * Without it Discard of untracked files is refused, since nothing says what it must not take.
+     */
+    guard?: () => Guard;
+    /** The chain the Files view's writes wait on, so a discard and a Files write are ordered. */
+    writes?: FsWrites;
 } & ReadOptions;
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -170,7 +206,7 @@ const textFieldShape = z.string().catch('');
  * the fallback the action gives it. The page sends `mode` as a word, and an empty one reads as
  * `tracked`; a word that is no stash mode reaches `stash`, which refuses it in its own sentence.
  */
-const gitBodyShape = z.looseObject({
+export const gitBodyShape = z.looseObject({
     action: z.enum(ACTIONS),
     root: textFieldShape,
     paths: z
@@ -190,6 +226,12 @@ const gitBodyShape = z.looseObject({
     branch: textFieldShape,
     content: textFieldShape,
     ref: textFieldShape,
+    start: z
+        .unknown()
+        .optional()
+        .transform((held) =>
+            held === undefined ? undefined : typeof held === 'string' ? held : ''
+        ),
     mode: z.custom<StashMode>((held) => typeof held === 'string' && held !== '').catch('tracked')
 });
 
@@ -225,10 +267,20 @@ async function suggestFor(
 }
 
 /** One real operation: the root, the parsed body and the roots a request may name. */
-type GitOperation = (root: string, fields: GitBody, roots: string[]) => Promise<Outcome>;
+type GitOperation = (
+    root: string,
+    fields: GitBody,
+    roots: string[],
+    options: GitOptions
+) => Promise<Outcome>;
+
+/** Run a write that changes files the Files view also writes behind that view's write chain. */
+function ordered(options: GitOptions, work: () => Promise<Outcome>): Promise<Outcome> {
+    return options.writes === undefined ? work() : chained(options.writes, work);
+}
 
 /** The real operations, one per action. `suggest` is answered before this is reached. */
-const OPERATIONS: Record<string, GitOperation> = {
+export const OPERATIONS: Record<string, GitOperation> = {
     stage: (root, fields, roots) => stage(root, fields.paths, roots),
     unstage: (root, fields, roots) => unstage(root, fields.paths, roots),
     discard: (root, fields, roots) => discard(root, fields.paths, roots),
@@ -244,7 +296,7 @@ const OPERATIONS: Record<string, GitOperation> = {
     fetch: (root, _fields, roots) => fetchAll(root, roots),
     sync: (root, _fields, roots) => sync(root, roots),
     publish: (root, fields, roots) => publish(root, fields.remote, roots),
-    createBranch: (root, fields, roots) => createBranch(root, fields.name, roots),
+    createBranch: (root, fields, roots) => createBranch(root, fields.name, roots, fields.start),
     switchBranch: (root, fields, roots) => switchBranch(root, fields.name, roots),
     createWorktree: (root, fields, roots) => createWorktree(root, fields.name, roots),
     removeWorktree: (root, fields, roots) => removeWorktree(root, fields.path, roots),
@@ -258,17 +310,37 @@ const OPERATIONS: Record<string, GitOperation> = {
     stashApply: (root, fields, roots) => stashAct(root, 'apply', fields.ref, roots),
     stashPop: (root, fields, roots) => stashAct(root, 'pop', fields.ref, roots),
     stashDrop: (root, fields, roots) => stashAct(root, 'drop', fields.ref, roots),
-    createTag: (root, fields, roots) => createTag(root, fields.name, fields.message, roots),
+    createTag: (root, fields, roots) =>
+        createTag(root, fields.name, fields.message, roots, fields.start),
     deleteTag: (root, fields, roots) => deleteTag(root, fields.name, roots),
-    pushTags: (root, _fields, roots) => pushTags(root, roots)
+    pushTags: (root, _fields, roots) => pushTags(root, roots),
+    cherryPick: (root, fields, roots) => cherryPick(root, fields.ref, roots),
+    checkoutDetached: (root, fields, roots) => switchDetached(root, fields.ref, roots),
+    deleteBranch: (root, fields, roots) => deleteBranch(root, fields.name, roots),
+    deleteBranchAnyway: (root, fields, roots) => deleteBranchAnyway(root, fields.name, roots),
+    ignore: (root, fields, roots, options) =>
+        ordered(options, () => addToGitignore(root, fields.paths, roots)),
+    trashUntracked: (root, fields, roots, options) => {
+        const guard = options.guard;
+        if (guard === undefined) {
+            return Promise.resolve(failed('nothing says which files the server must not take'));
+        }
+        const trash = options.trash ?? ((path, flags) => trashLibrary(path, flags));
+        return ordered(options, () => trashUntracked(root, fields.paths, { trash, guard }, roots));
+    }
 };
 
-async function operate(root: string, fields: GitBody, roots: string[]): Promise<Outcome> {
+async function operate(
+    root: string,
+    fields: GitBody,
+    roots: string[],
+    options: GitOptions
+): Promise<Outcome> {
     const operation = byKey(OPERATIONS, fields.action);
     if (operation === undefined) {
         return { ok: false, output: '', error: `no git action named ${fields.action}` };
     }
-    return operation(root, fields, roots);
+    return operation(root, fields, roots, options);
 }
 
 /**
@@ -308,13 +380,16 @@ export async function handleGit(
 
     const outcome = await (
         options.run ??
-        ((_action, selected, _body, allowed) => operate(selected, parsed.data, allowed))
+        ((_action, selected, _body, allowed) => operate(selected, parsed.data, allowed, options))
     )(action, root, body, roots);
     // The watcher would find this at its next event, up to two seconds later and only if the write
     // touched a path it watches; re-reading here is what makes the panel answer the click. A write
     // git refused may still have moved the repository (a merge that stopped on conflicts leaves
     // them in the index), so it is read again either way.
     options.refresh?.(root);
-    if (!outcome.ok) return json({ error: outcome.error }, { status: 400, headers: NO_STORE });
+    if (!outcome.ok) {
+        const refusal = outcome.code === undefined ? {} : { code: outcome.code };
+        return json({ error: outcome.error, ...refusal }, { status: 400, headers: NO_STORE });
+    }
     return json({ ok: true, output: outcome.output }, { headers: NO_STORE });
 }

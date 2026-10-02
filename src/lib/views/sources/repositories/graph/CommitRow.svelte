@@ -6,17 +6,27 @@
     // are at weight 600. The short hash and the time are in the row's hover words, not in the row.
     //
     // A commit's menu, opened by a right-click on the row or by its `...`, opens its files, copies
-    // its id or its message, checks out a local branch named on it and deletes a tag on it, each
-    // through the question the Branches or Tags section asks. A right-click on a local branch or a
-    // tag pill opens that name's own menu; a name offering none (a write in flight) has no menu of
-    // its own, so its right-click reaches the commit's.
+    // its id or its message, checks out a local branch named on it, deletes a tag on it, and
+    // detaches, branches, tags, cherry-picks and compares from it (menus/graph-menu.ts). The
+    // checkout and the tag's removal go through the question the Branches or Tags section asks, and
+    // every other pick is handed to the graph with the commit it was made on. A right-click on a
+    // local branch, a remote branch or a tag pill opens that name's own menu; a name offering none
+    // (a write in flight) has no menu of its own, so its right-click reaches the commit's.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
-    import { commitMenu, graphPick, refKind, refMenu, type BranchFacts } from '../menus/graph-menu';
+    import {
+        commitMenu,
+        graphPick,
+        refKind,
+        refMenu,
+        type BranchFacts,
+        type CompareFacts,
+        type GraphPick
+    } from '../menus/graph-menu';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import Lanes from './Lanes.svelte';
     import { commitKind, type LaneRow } from '$lib/state/sources/repositories/graph-lanes';
@@ -33,15 +43,31 @@
         /** Whether the commit's files are open under it. */
         open: boolean;
         branches: BranchFacts;
+        /** The refs the compare items name: the upstream and the merge base. */
+        compare: CompareFacts;
         /** Whether a write is in flight on the repository, which offers no checkout or removal. */
         busy: boolean;
         onpick: (hash: string) => void;
         onswitch: (name: string) => void;
         ondeletetag: (name: string) => void;
+        /** A pick that acts on the commit or on a name on it, handed with the commit's hash. */
+        ongraph: (pick: GraphPick, hash: string) => void;
     };
 
-    let { commit, id, nav, lane, open, branches, busy, onpick, onswitch, ondeletetag }: Props =
-        $props();
+    let {
+        commit,
+        id,
+        nav,
+        lane,
+        open,
+        branches,
+        compare,
+        busy,
+        onpick,
+        onswitch,
+        ondeletetag,
+        ongraph
+    }: Props = $props();
 
     type Pill = { name: string; kind: 'local' | 'remote' | 'tag' };
 
@@ -56,7 +82,7 @@
         ...commit.tags.map((name): Pill => ({ name, kind: 'tag' }))
     ]);
 
-    const items = $derived<MenuItem[]>(commitMenu(commit, branches, busy, t));
+    const items = $derived<MenuItem[]>(commitMenu(commit, branches, busy, t, compare));
 
     /** A pick from the commit's menu or from a name's on it. */
     function picked(id: string): void {
@@ -66,10 +92,11 @@
         else if (pick.kind === 'copy-id') void navigator.clipboard.writeText(commit.hash);
         else if (pick.kind === 'copy-message') void navigator.clipboard.writeText(commit.message);
         else if (pick.kind === 'checkout') onswitch(pick.name);
-        else ondeletetag(pick.name);
+        else if (pick.kind === 'delete-tag') ondeletetag(pick.name);
+        else ongraph(pick, commit.hash);
     }
 
-    /** The menu of one pill: a checkout on a local branch not checked out, a tag's removal. */
+    /** The menu of one pill: a local branch's checkout and removal, a remote's, a tag's removal. */
     function pillMenu(pill: Pill): MenuItem[] {
         if (pill.kind === 'tag') return refMenu(pill.name, 'tag', busy, t);
         return refMenu(pill.name, refKind(pill.name, branches), busy, t);

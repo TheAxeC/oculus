@@ -16,11 +16,12 @@
 // The stores it works through are handed in, so a test drives the whole thing with its own writes,
 // terminals, panes and roots, and no component is mounted.
 
+import { BRANCH_NOT_MERGED } from '../../../data/model/index.ts';
 import { diffState, plannedPath, repositoriesViewOf, type DiffSubject } from './repositories.ts';
 import { isFolderPath, withoutClosedCommits } from './change-tree.ts';
-import { tabOfFile, type ServedRoot } from './file-git.ts';
-import type { PatchMode } from './diff-patch.ts';
-import type { WritesStore } from '../../shared/stores/shapes.ts';
+import { headTabState, tabOfFile, type ServedRoot } from './file-git.ts';
+import type { PatchMode } from './diff/diff-patch.ts';
+import type { SendOptions, WritesStore } from '../../shared/stores/shapes.ts';
 import { t } from '../../shared/words/text.ts';
 import { openShell, type ShellStarter } from '../../shared/stores/shell.ts';
 
@@ -38,6 +39,9 @@ export type StashMode = 'tracked' | 'untracked' | 'staged';
 
 /** A group of changes a section head acts on as a whole. */
 export type ChangeGroup = 'changed' | 'untracked';
+
+/** What a Delete Branch came to: deleted, kept as git calls it not fully merged, or refused. */
+export type BranchDeletion = 'deleted' | 'not-merged' | 'refused';
 
 export type RepositoriesStore = {
     /** Whether a write is in flight on this root. */
@@ -64,9 +68,27 @@ export type RepositoriesStore = {
     stageAll: (root: string, group: ChangeGroup) => Promise<void>;
     unstageAll: (root: string) => Promise<void>;
     discardAll: (root: string) => Promise<void>;
+    /** Send untracked paths to the Trash; the view asks first. A folder path ends in `/`. */
+    trashUntracked: (root: string, paths: readonly string[]) => Promise<void>;
+    /** Append paths to the repository's .gitignore, then open that file in a source tab. */
+    ignore: (root: string, paths: readonly string[]) => Promise<void>;
+    /** Check a commit or a remote branch out detached, answering whether git did. */
+    checkoutDetached: (root: string, ref: string) => Promise<boolean>;
+    /** Apply one commit to the checked-out branch; the view asks first. */
+    cherryPick: (root: string, hash: string) => Promise<void>;
+    /**
+     * Delete a branch with `branch -d`; the view asks first. The answer is `not-merged` when git
+     * keeps the branch because it is not merged into its upstream, or into HEAD when it has none,
+     * which the view answers with its second question, and `refused` for any other refusal, which
+     * the store has said already.
+     */
+    deleteBranch: (root: string, name: string) => Promise<BranchDeletion>;
+    /** Delete a branch with `branch -D`, after the second question has been answered yes. */
+    deleteBranchAnyway: (root: string, name: string) => Promise<void>;
     /** Apply a patch the diff pane cut, answering whether git took it. */
     applyPatch: (root: string, patch: string, mode: PatchMode) => Promise<boolean>;
-    createBranch: (root: string, name: string) => Promise<void>;
+    /** Make a branch and check it out; `start` is the commit it is made from, else the head. */
+    createBranch: (root: string, name: string, start?: string) => Promise<void>;
     /** Check a branch out, answering whether git did. */
     switchBranch: (root: string, name: string) => Promise<boolean>;
     /** Push the checked-out branch to its upstream, answering whether git did. */
@@ -87,7 +109,7 @@ export type RepositoriesStore = {
     acceptDeletion: (root: string, path: string) => Promise<boolean>;
     stash: (root: string, mode: StashMode, message: string) => Promise<void>;
     stashAct: (root: string, act: 'apply' | 'pop' | 'drop', ref: string) => Promise<void>;
-    createTag: (root: string, name: string, message: string) => Promise<void>;
+    createTag: (root: string, name: string, message: string, start?: string) => Promise<void>;
     deleteTag: (root: string, name: string) => Promise<void>;
     pushTags: (root: string) => Promise<void>;
     /** Make the worktree and open a shell in it; the path is the view's own rule. */
@@ -104,6 +126,15 @@ export type RepositoriesStore = {
      * given when the row is a session's.
      */
     openChange: (root: string, group: string, path: string, session?: string) => void;
+    /**
+     * Open a tracked file as HEAD or the index holds it, in a read-only source tab: HEAD for a
+     * staged row and the index for a changed one. An untracked row has no such version.
+     */
+    openHead: (root: string, group: string, path: string) => void;
+    /** Open the files between a ref and a commit in a diff pane of its own. */
+    openCompare: (root: string, from: string, to: string) => void;
+    /** Open a linked worktree's file against the main worktree's in a diff pane. */
+    compareWorkspace: (root: string, path: string) => void;
     /** Open a repository's file in a source tab, at a line when one is given. */
     openFile: (root: string, path: string, line?: number) => boolean;
     /**
@@ -180,8 +211,9 @@ export function createRepositories(
         root: string,
         action: string,
         fields: Record<string, unknown> = {},
-        confirmed = false
-    ): Promise<{ ok: boolean; output: string }> {
+        confirmed = false,
+        options: SendOptions = {}
+    ): Promise<{ ok: boolean; output: string; code?: string }> {
         if (root === '' || busy(root)) return { ok: false, output: '' };
         state.busy = [...state.busy, root];
         say(root, '');
@@ -189,10 +221,14 @@ export function createRepositories(
             const answer = await writes.writeGit(
                 action,
                 root,
-                confirmed ? { ...fields, confirm: true } : fields
+                confirmed ? { ...fields, confirm: true } : fields,
+                options
             );
-            say(root, answer.ok ? t('git.done') : (answer.error ?? ''));
-            return { ok: answer.ok, output: answer.output ?? '' };
+            // A refusal the caller answers with a question is not said: the question is the answer.
+            const asked =
+                answer.code !== undefined && options.asked?.includes(answer.code) === true;
+            say(root, answer.ok ? t('git.done') : asked ? '' : (answer.error ?? ''));
+            return { ok: answer.ok, output: answer.output ?? '', code: answer.code };
         } finally {
             state.busy = state.busy.filter((one) => one !== root);
         }
@@ -311,8 +347,28 @@ export function createRepositories(
             if (mode === 'unstage') return act(root, 'unstagePatch', { patch });
             return act(root, 'revertPatch', { patch }, true);
         },
-        async createBranch(root, name) {
-            await act(root, 'createBranch', { name }, true);
+        async trashUntracked(root, paths) {
+            await act(root, 'trashUntracked', { paths: [...paths] }, true);
+        },
+        async ignore(root, paths) {
+            if (await act(root, 'ignore', { paths: [...paths] })) openFile(root, '.gitignore');
+        },
+        checkoutDetached: (root, ref) => act(root, 'checkoutDetached', { ref }, true),
+        async cherryPick(root, hash) {
+            await act(root, 'cherryPick', { ref: hash }, true);
+        },
+        async deleteBranch(root, name) {
+            const done = await send(root, 'deleteBranch', { name }, true, {
+                asked: [BRANCH_NOT_MERGED]
+            });
+            if (done.ok) return 'deleted';
+            return done.code === BRANCH_NOT_MERGED ? 'not-merged' : 'refused';
+        },
+        async deleteBranchAnyway(root, name) {
+            await act(root, 'deleteBranchAnyway', { name }, true);
+        },
+        async createBranch(root, name, start) {
+            await act(root, 'createBranch', start === undefined ? { name } : { name, start }, true);
         },
         switchBranch: (root, name) => act(root, 'switchBranch', { name }, true),
         push: (root) => act(root, 'push', {}, true),
@@ -339,8 +395,12 @@ export function createRepositories(
             else if (verb === 'pop') await act(root, 'stashPop', { ref });
             else await act(root, 'stashDrop', { ref }, true);
         },
-        async createTag(root, name, message) {
-            await act(root, 'createTag', { name, message });
+        async createTag(root, name, message, start) {
+            await act(
+                root,
+                'createTag',
+                start === undefined ? { name, message } : { name, message, start }
+            );
         },
         async deleteTag(root, name) {
             await act(root, 'deleteTag', { name }, true);
@@ -367,6 +427,33 @@ export function createRepositories(
                 const subject = { root, path, staged: group === 'staged', worktree: false };
                 openDiff(session === undefined ? subject : { ...subject, session }, path);
             }
+        },
+        openHead(root, group, path) {
+            if (group !== 'staged' && group !== 'changed') return;
+            layout.openView(
+                'source',
+                headTabState(root, path, group === 'staged' ? 'head' : 'index')
+            );
+        },
+        openCompare(root, from, to) {
+            const subject = {
+                root,
+                path: '',
+                staged: false,
+                worktree: false,
+                compare: { from, to }
+            };
+            openDiff(subject, t('repositories.compare_label', from, to.slice(0, 7)));
+        },
+        compareWorkspace(root, path) {
+            const subject = {
+                root,
+                path,
+                staged: false,
+                worktree: false,
+                workspace: true as const
+            };
+            openDiff(subject, t('repositories.workspace_label', nameOf(path)));
         },
         openFile,
         revealFile,

@@ -61,6 +61,7 @@ export function empty(error: string | null = null): GitState {
         unstaged: [],
         untracked: [],
         conflicted: [],
+        held: { staged: 0, changes: 0, untracked: 0, merge: 0 },
         sequence: '',
         mergeMessage: '',
         remotes: [],
@@ -244,8 +245,9 @@ function remotes(root: string, timeout: number): string[] {
 
 /**
  * What the repository is in the middle of, read from its git folder: a merge while MERGE_HEAD is
- * there, with the message git prepared for it, and a rebase while either rebase folder is. The
- * folder is the one `rev-parse --git-dir` named, so a worktree reads its own.
+ * there, with the message git prepared for it, a cherry-pick while CHERRY_PICK_HEAD is, with the
+ * message git prepared for that, and a rebase while either rebase folder is. The folder is the one
+ * `rev-parse --git-dir` named, so a worktree reads its own.
  */
 function sequenceOf(root: string, gitDir: string, found: GitState): void {
     const dir = isAbsolute(gitDir) ? gitDir : join(root, gitDir);
@@ -254,9 +256,11 @@ function sequenceOf(root: string, gitDir: string, found: GitState): void {
         sequence = 'rebasing';
     } else if (existsSync(join(dir, 'MERGE_HEAD'))) {
         sequence = 'merging';
+    } else if (existsSync(join(dir, 'CHERRY_PICK_HEAD'))) {
+        sequence = 'cherry-picking';
     }
     found.sequence = sequence;
-    if (sequence !== 'merging') return;
+    if (sequence !== 'merging' && sequence !== 'cherry-picking') return;
     try {
         found.mergeMessage = readFileSync(join(dir, 'MERGE_MSG'), 'utf8')
             .split('\n')
@@ -276,7 +280,7 @@ function sequenceOf(root: string, gitDir: string, found: GitState): void {
  * the file browser use. Each path under the real root is put back under the root as asked for, so
  * one vocabulary reaches the page and the checks a write makes.
  */
-function worktrees(root: string, timeout: number): GitWorktree[] {
+export function worktrees(root: string, timeout: number = TIMEOUT_MS): GitWorktree[] {
     const done = run(root, ['worktree', 'list', '--porcelain'], timeout);
     if (!done.ok) return [];
     const real = realpath(root);

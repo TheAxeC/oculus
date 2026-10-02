@@ -9,7 +9,7 @@
 
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import ToolButton from '../../../../src/lib/ui/controls/ToolButton.svelte';
+import ToolButton from '../../../../../src/lib/ui/controls/ToolButton.svelte';
 import {
     catalog,
     drawn,
@@ -23,11 +23,11 @@ import {
     listItem,
     press,
     fresh
-} from './harness.ts';
-import type { ClientState } from '../../../fixtures/client.ts';
+} from '../harness.ts';
+import type { ClientState } from '../../../../fixtures/client.ts';
 
-vi.mock('../../../../src/lib/ui/controls/ToolButton.svelte', async (original) =>
-    (await import('./press-on-render.ts')).recorded(original)
+vi.mock('../../../../../src/lib/ui/controls/ToolButton.svelte', async (original) =>
+    (await import('../press-on-render.ts')).recorded(original)
 );
 
 let client: ClientState;
@@ -179,10 +179,10 @@ describe('the controls of a change row', () => {
         expect(labelsIn(row, ALL)).toEqual([OPEN, catalog['git.unstage']]);
     });
 
-    it('are Open File and Stage on an untracked row', () => {
+    it('are Open File, Discard and Stage on an untracked row, which Discard sends to the Trash', () => {
         const row = listItem(html({ [HUB]: HUB_GIT }), 'data-entry="loose.txt"');
 
-        expect(labelsIn(row, ALL)).toEqual([OPEN, catalog['git.stage']]);
+        expect(labelsIn(row, ALL)).toEqual([OPEN, catalog['git.discard'], catalog['git.stage']]);
     });
 
     it('include no Diff control on any row, since pressing the row opens the diff', () => {
@@ -229,6 +229,7 @@ describe('the head of a change group', () => {
         OPEN_CHANGES,
         catalog['git.unstage_all'],
         catalog['git.discard_all'],
+        catalog['git.discard_all_untracked'],
         catalog['git.stage_all'],
         catalog['git.stage_all_untracked']
     ];
@@ -259,10 +260,13 @@ describe('the head of a change group', () => {
         ]);
     });
 
-    it('offers Stage All and no Open Changes on the untracked group', () => {
+    it('offers Discard All Untracked Changes and Stage All and no Open Changes on the untracked group', () => {
         const head = listItem(html({ [HUB]: HUB_GIT }), 'data-changes="untracked"');
 
-        expect(labelsIn(head, CONTROLS)).toEqual([catalog['git.stage_all_untracked']]);
+        expect(labelsIn(head, CONTROLS)).toEqual([
+            catalog['git.discard_all_untracked'],
+            catalog['git.stage_all_untracked']
+        ]);
     });
 
     it('draws the actions of a group with the icons of the same actions on a row', () => {
@@ -274,6 +278,7 @@ describe('the head of a change group', () => {
         expect(glyphOf(catalog['git.unstage_all'])).toBe('unstage');
         expect(glyphOf(catalog['git.discard_all'])).toBe('note_back');
         expect(glyphOf(catalog['git.stage_all_untracked'])).toBe('stage');
+        expect(glyphOf(catalog['git.discard_all_untracked'])).toBe('note_back');
         expect(glyphOf(OPEN_CHANGES)).toBe('diff');
     });
 

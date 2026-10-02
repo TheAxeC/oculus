@@ -8,6 +8,12 @@ text:
         cannot_open: 'Cannot open: {0}'
         code: '{0}, read only'
         failed: failed
+        head_binary: This version of the file is not text, so it cannot be shown here.
+        head_label: '{0} (HEAD)'
+        head_locked: This is the file as the last commit holds it; it cannot be edited.
+        head_missing: The repository does not hold this file at this version.
+        index_label: '{0} (Index)'
+        index_locked: This is the file as the index holds it; it cannot be edited.
         locked_glyph: lock
         next_change: Go to Next Change
         open_change: Open Change

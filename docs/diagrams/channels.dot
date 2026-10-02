@@ -56,8 +56,8 @@ digraph channels {
         "? src/lib/state/system/config/write.ts:70" [label="src/lib/state/system/config/write.ts:70 message('refused', answer.refused.map((one)"];
         "? src/lib/state/system/config/write.ts:75" [label="src/lib/state/system/config/write.ts:75 message('unwritable', row.file)"];
         "? src/lib/state/system/config/write.ts:76" [label="src/lib/state/system/config/write.ts:76 message('failed', answer.error ?? '')"];
-        "? src/lib/views/shared/changes/CommitBox.svelte:54" [label="src/lib/views/shared/changes/CommitBox.svelte:54 message(root)"];
-        "? src/lib/views/shared/changes/CommitBox.svelte:71" [label="src/lib/views/shared/changes/CommitBox.svelte:71 message(root)"];
+        "? src/lib/views/shared/changes/CommitBox.svelte:55" [label="src/lib/views/shared/changes/CommitBox.svelte:55 message(root)"];
+        "? src/lib/views/shared/changes/CommitBox.svelte:72" [label="src/lib/views/shared/changes/CommitBox.svelte:72 message(root)"];
         "? src/lib/views/system/workbench/settings/Item.svelte:95" [label="src/lib/views/system/workbench/settings/Item.svelte:95 message('missing', row.file)"];
     }
     subgraph "cluster_read state" {
@@ -123,8 +123,8 @@ digraph channels {
     "? src/lib/state/system/config/write.ts:70" -> "state/system/config/write";
     "? src/lib/state/system/config/write.ts:75" -> "state/system/config/write";
     "? src/lib/state/system/config/write.ts:76" -> "state/system/config/write";
-    "? src/lib/views/shared/changes/CommitBox.svelte:54" -> "views/shared/changes";
-    "? src/lib/views/shared/changes/CommitBox.svelte:71" -> "views/shared/changes";
+    "? src/lib/views/shared/changes/CommitBox.svelte:55" -> "views/shared/changes";
+    "? src/lib/views/shared/changes/CommitBox.svelte:72" -> "views/shared/changes";
     "? src/lib/views/system/workbench/settings/Item.svelte:95" -> "views/system/workbench";
     "ch audit" -> "routes/+page" [style=dashed];
     "ch audit" -> "state/system/audit";

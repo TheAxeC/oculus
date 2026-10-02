@@ -46,13 +46,13 @@
 <!-- folder ui/tabs to folder ui/frame -->
 <g id="node11" class="node">
 <title>folder ui/tabs to folder ui/frame</title>
-<polygon fill="none" stroke="none" points="35.88,-563.44 26.12,-563.44 26.12,-550.96 35.88,-550.96 35.88,-563.44"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="31" y="-554.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
+<polygon fill="none" stroke="none" points="31.88,-563.44 22.12,-563.44 22.12,-550.96 31.88,-550.96 31.88,-563.44"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="27" y="-554.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1</text>
 </g>
 <!-- folder ui/tabs&#45;&gt;folder ui/tabs to folder ui/frame -->
 <g id="edge12" class="edge">
 <title>folder ui/tabs&#45;&gt;folder ui/tabs to folder ui/frame</title>
-<path fill="none" stroke="currentColor" d="M113.74,-811.22C82.54,-795.8 31,-763.36 31,-717.32 31,-717.32 31,-717.32 31,-662.28 31,-624.7 31,-579.48 31,-563.84"/>
+<path fill="none" stroke="currentColor" d="M113.03,-811.21C81.21,-795.88 29,-763.67 29,-717.32 29,-717.32 29,-717.32 29,-662.28 29,-624.69 27.68,-579.47 27.18,-563.84"/>
 </g>
 <!-- folder ui/tabs to folder ui/menu -->
 <g id="node12" class="node">
@@ -137,13 +137,13 @@
 <!-- folder ui/forms to folder ui/controls -->
 <g id="node18" class="node">
 <title>folder ui/forms to folder ui/controls</title>
-<polygon fill="none" stroke="none" points="91.88,-563.44 82.12,-563.44 82.12,-550.96 91.88,-550.96 91.88,-563.44"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="87" y="-554.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
+<polygon fill="none" stroke="none" points="91.88,-563.44 78.12,-563.44 78.12,-550.96 91.88,-550.96 91.88,-563.44"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="85" y="-554.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">10</text>
 </g>
 <!-- folder ui/forms&#45;&gt;folder ui/forms to folder ui/controls -->
 <g id="edge26" class="edge">
 <title>folder ui/forms&#45;&gt;folder ui/forms to folder ui/controls</title>
-<path fill="none" stroke="currentColor" d="M127.36,-599.4C116.92,-588.74 100.64,-572.12 92.3,-563.61"/>
+<path fill="none" stroke="currentColor" d="M126.73,-599.16C115.95,-588.58 99.41,-572.34 90.74,-563.84"/>
 </g>
 <!-- folder ui/forms to folder ui/display -->
 <g id="node19" class="node">
@@ -160,7 +160,7 @@
 <g id="node20" class="node">
 <title>folder ui/forms to folder ui/frame</title>
 <polygon fill="none" stroke="none" points="139.88,-457.36 130.12,-457.36 130.12,-444.88 139.88,-444.88 139.88,-457.36"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="135" y="-448.72" font-family="Helvetica,Arial,sans-serif" font-size="8.00">3</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="135" y="-448.72" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
 </g>
 <!-- folder ui/forms&#45;&gt;folder ui/forms to folder ui/frame -->
 <g id="edge30" class="edge">
@@ -353,7 +353,7 @@
 <!-- folder ui/tabs to folder ui/frame&#45;&gt;folder ui/frame -->
 <g id="edge13" class="edge">
 <title>folder ui/tabs to folder ui/frame&#45;&gt;folder ui/frame</title>
-<path fill="none" stroke="currentColor" d="M29.71,-550.59C26.24,-535.05 17,-490.04 17,-452.12 17,-452.12 17,-452.12 17,-397.08 17,-370.93 10.88,-360.81 25,-338.8 34.16,-324.53 49.52,-313.86 63.71,-306.43"/>
+<path fill="none" stroke="currentColor" d="M26.08,-550.58C23.6,-534.99 17,-489.88 17,-452.12 17,-452.12 17,-452.12 17,-397.08 17,-370.93 10.88,-360.81 25,-338.8 34.16,-324.53 49.52,-313.86 63.71,-306.43"/>
 <polygon fill="currentColor" stroke="currentColor" points="64.33,-308.47 68.76,-303.92 62.46,-304.71 64.33,-308.47"/>
 </g>
 <!-- folder ui/tabs to folder ui/menu&#45;&gt;folder ui/menu -->
@@ -401,8 +401,8 @@
 <!-- folder ui/forms to folder ui/controls&#45;&gt;folder ui/controls -->
 <g id="edge27" class="edge">
 <title>folder ui/forms to folder ui/controls&#45;&gt;folder ui/controls</title>
-<path fill="none" stroke="currentColor" d="M84.32,-550.74C80.97,-543.88 75.06,-531.82 70.16,-521.82"/>
-<polygon fill="currentColor" stroke="currentColor" points="72.17,-521.14 67.64,-516.68 68.4,-522.99 72.17,-521.14"/>
+<path fill="none" stroke="currentColor" d="M82.54,-550.74C79.48,-543.95 74.12,-532.05 69.64,-522.11"/>
+<polygon fill="currentColor" stroke="currentColor" points="71.58,-521.31 67.2,-516.7 67.75,-523.03 71.58,-521.31"/>
 </g>
 <!-- folder ui/forms to folder ui/display&#45;&gt;folder ui/display -->
 <g id="edge29" class="edge">

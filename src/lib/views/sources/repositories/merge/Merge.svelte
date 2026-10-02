@@ -18,8 +18,8 @@
     // Layer 3, view. VS Code's three-way merge editor over one conflicted path: Incoming (theirs)
     // and Current (ours) side by side above the Result. The three versions are read from the index
     // (stages 1, 2 and 3 of the path, through GET /api/git) and cut into regions by
-    // state/sources/repositories/merge-regions.ts: what the two sides agree on is taken as it is,
-    // and each stretch both changed differently is a conflict. Each conflict offers Accept
+    // state/sources/repositories/diff/merge-regions.ts: what the two sides agree on is taken as it
+    // is, and each stretch both changed differently is a conflict. Each conflict offers Accept
     // Incoming, Accept Current, Accept Both in either order, and Ignore, which leaves the common
     // ancestor's lines; an open conflict shows the ancestor's lines in the Result until then.
     //
@@ -55,7 +55,7 @@
         type EditKind,
         type MergeHistory,
         type Region
-    } from '$lib/state/sources/repositories/merge-regions';
+    } from '$lib/state/sources/repositories/diff/merge-regions';
     import { readJson } from '$lib/data/shapes/shapes';
     import { mergeSidesOf } from '$lib/state/sources/repositories/answers';
     import { sidesUrl, type GitMergeSides } from '$lib/state/sources/repositories/repositories';

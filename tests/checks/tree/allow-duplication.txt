@@ -73,12 +73,12 @@ tests/server/core/git/git.test.ts tests/server/git/git-write.test.ts 9dc876dad71
 tests/server/core/git/git.test.ts tests/server/git/git-write.test.ts ceacb188c0cf the same 9 lines at 111 and 74, to fold into one place
 tests/server/git/deposit.test.ts tests/server/git/git-write.test.ts b9a8c9c31c31 the same 10 lines at 86 and 83, to fold into one place
 tests/server/git/deposit.test.ts tests/server/git/git-write.test.ts b9e79a8b99aa the same 20 lines at 52 and 54, to fold into one place
-tests/server/git/deposit.test.ts tests/server/root/watch/git.test.ts 1aa4ec535a71 the same 12 lines at 52 and 44, to fold into one place
+tests/server/git/deposit.test.ts tests/server/root/watch/git/git.test.ts 1aa4ec535a71 the same 12 lines at 52 and 44, to fold into one place
 tests/server/git/git-ops.test.ts tests/server/git/git-write.test.ts 1ef8898fbc76 the same 9 lines at 96 and 88, to fold into one place
-tests/server/root/watch/git-workspaces.test.ts tests/server/root/watch/git.test.ts 2e72ec0a1ec9 the same 13 lines at 32 and 58, to fold into one place
-tests/server/root/watch/git-workspaces.test.ts tests/server/root/watch/git.test.ts a11022f63461 the same 6 lines at 91 and 550, to fold into one place
-tests/server/root/watch/git-workspaces.test.ts tests/server/root/watch/git.test.ts a5969e8bb3a1 the same 8 lines at 83 and 543, to fold into one place
-tests/server/root/watch/git.test.ts tests/server/root/watch/sessions.test.ts e1102a973265 the same 16 lines at 76 and 173, to fold into one place
+tests/server/root/watch/git/git-workspaces.test.ts tests/server/root/watch/git/git.test.ts 2e72ec0a1ec9 the same 13 lines at 32 and 58, to fold into one place
+tests/server/root/watch/git/git-workspaces.test.ts tests/server/root/watch/git/git.test.ts a11022f63461 the same 6 lines at 91 and 550, to fold into one place
+tests/server/root/watch/git/git-workspaces.test.ts tests/server/root/watch/git/git.test.ts a5969e8bb3a1 the same 8 lines at 83 and 543, to fold into one place
+tests/server/root/watch/git/git.test.ts tests/server/root/watch/sessions.test.ts e1102a973265 the same 16 lines at 76 and 173, to fold into one place
 tests/shell/keys/palette.test.ts tests/views/sources/source.test.ts e66b6e074680 the same 11 lines at 26 and 55, to fold into one place
 tests/state/boards/board/board-fixture.ts tests/state/boards/board/board-software.test.ts 7e20bb3d8cd4 the same 24 lines at 89 and 37, to fold into one place
 tests/state/boards/board/board-fixture.ts tests/state/boards/board/board-software.test.ts 84b0d7108bb0 the same 13 lines at 75 and 21, to fold into one place

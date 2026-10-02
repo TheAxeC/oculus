@@ -18,6 +18,8 @@ text:
         drag_hint: Moving {0}
         drag_float: Floating {0}
         drag_open: Opening {0}
+        editor_actions_hidden: Hidden
+        editor_actions_strip: Title Bar
         embed_page: 'Show {0} here'
         embed_page_list: Show a page here...
         embed_refused: '{0} cannot be shown here'
@@ -67,12 +69,21 @@ text:
         split_right: Split tab to the right
         split_right_glyph: split_right
         strip_close: Close
+        strip_editor_actions: Editor Actions Position
+        strip_lock: Lock Group
+        strip_lock_glyph: lock
         strip_new_terminal: New Terminal
+        strip_new_text_file: New Text File
         strip_open_file: Open File...
         strip_split_down: Split Down
         strip_split_left: Split Left
         strip_split_right: Split Right
         strip_split_up: Split Up
+        strip_tab_bar: Tab Bar
+        strip_unlock: Unlock Group
+        tab_bar_multiple: Multiple Tabs
+        tab_bar_none: Hidden
+        tab_bar_single: Single Tab
         tab_close_dirty: Close this tab and lose its unsaved changes?
         tab_unsaved: '{0}, unsaved'
         tabs_scroll_left: Scroll tabs left

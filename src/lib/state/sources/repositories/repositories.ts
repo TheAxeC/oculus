@@ -15,7 +15,6 @@ import type {
     DiffSides,
     GitBlameLine,
     GitCommitFile,
-    GitEntry,
     GitGraphCommit,
     GitGraphPage,
     GitLineMark,
@@ -36,7 +35,7 @@ import {
 } from '../../../data/shapes/shapes.ts';
 import { worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
 import { t } from '../../shared/words/text.ts';
-import { changeTree, folderId, visibleRows } from './change-tree.ts';
+import { refCompareUrl, workspaceUrl } from './diff/compare.ts';
 
 export { validName, worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
 
@@ -78,6 +77,19 @@ export function blameUrl(root: string, path: string): string {
     return gitUrl({ blame: root, path });
 }
 
+/**
+ * The endpoint a tracked file is read from as HEAD or the index holds it: `stage` is `head` for the
+ * last commit's version and `index` for the staged one. The path is read literally.
+ */
+export function headUrl(root: string, path: string, stage: 'head' | 'index'): string {
+    return gitUrl({ head: root, path, stage });
+}
+
+/** The endpoint the refs a picker lists (branches, remote branches, tags) are read from. */
+export function refsUrl(root: string): string {
+    return gitUrl({ refs: root });
+}
+
 /** The endpoint a file's gutter marks are read from. */
 export function marksUrl(root: string, path: string): string {
     return gitUrl({ marks: root, path });
@@ -109,11 +121,13 @@ export function worktreeDiffUrl(root: string, path: string): string {
 
 /**
  * What one diff pane is over: a file under a root, staged or not; a whole worktree; one commit's
- * change to a file (`commit`); a whole stash (`stash`); or every path of a change group (`group`).
- * `against` is the file selected for compare, which makes the pane the comparison of two files:
- * the file at `root` and `path` on the right and `against` on the left. `line` is the line of the
- * new side the pane opens at, 0 for its top. `session` is the id of the session record the pane
- * was opened for, empty or absent for a pane opened from the Repositories view.
+ * change to a file (`commit`); a whole stash (`stash`); every path of a change group (`group`); the
+ * files between a ref and a commit (`compare`); or one file of a linked worktree against the main
+ * worktree's (`workspace`). `against` is the file selected for compare, which makes the pane the
+ * comparison of two files: the file at `root` and `path` on the right and `against` on the left.
+ * `line` is the line of the new side the pane opens at, 0 for its top. `session` is the id of the
+ * session record the pane was opened for, empty or absent for a pane opened from the Repositories
+ * view.
  */
 export type DiffSubject = {
     root: string;
@@ -124,6 +138,10 @@ export type DiffSubject = {
     stash?: string;
     /** Every path of a change group, for the diff pane a group head opens; the path is empty. */
     group?: 'staged' | 'changed';
+    /** A ref and a commit hash, for the pane over `git diff <from> <to>`; the path is empty. */
+    compare?: { from: string; to: string };
+    /** The file is read from the main worktree (left) and this worktree (right), both on disk. */
+    workspace?: true;
     /** The file selected for compare, for the pane over two files. */
     against?: { root: string; path: string };
     /** The id of a copy in the file's local history, for the pane over the file and that copy. */
@@ -139,6 +157,8 @@ export type DiffState = DiffSubject & { id: string; label: string };
 
 /** Which diff a subject is, the part of its id that is not the root and the path. */
 function sideOf(subject: DiffSubject): string {
+    if (subject.compare !== undefined) return `ref@${subject.compare.from}...${subject.compare.to}`;
+    if (subject.workspace === true) return 'workspace';
     if (subject.against !== undefined)
         return `compare@${subject.against.root}:${subject.against.path}`;
     if ((subject.save ?? '') !== '') return `save@${subject.save ?? ''}`;
@@ -169,6 +189,9 @@ export function diffState(subject: DiffSubject, label: string): DiffState {
 /** The file selected for compare: a named root and a path, both filled. */
 const againstShape = z.object({ root: z.string().min(1), path: z.string().min(1) });
 
+/** The two sides of a ref compare: a ref and a commit hash, both filled. */
+const compareShape = z.object({ from: z.string().min(1), to: z.string().min(1) });
+
 /** The fields of a diff pane's state, each read as itself and otherwise as its empty value. */
 const heldDiffShape = z
     .object({
@@ -183,6 +206,8 @@ const heldDiffShape = z
         stash: z.string().catch(''),
         group: z.enum(['staged', 'changed']).optional().catch(undefined),
         against: againstShape.optional().catch(undefined),
+        compare: compareShape.optional().catch(undefined),
+        workspace: z.literal(true).optional().catch(undefined),
         line: anyNumberShape.catch(0),
         session: z.string().catch('')
     })
@@ -198,6 +223,8 @@ const heldDiffShape = z
         stash: held.stash,
         group: held.group,
         against: held.against,
+        compare: held.compare,
+        workspace: held.workspace,
         line: held.line,
         session: held.session
     }));
@@ -217,6 +244,8 @@ export function heldDiff(state: unknown): DiffState {
             stash: '',
             group: undefined,
             against: undefined,
+            compare: undefined,
+            workspace: undefined,
             line: 0,
             session: ''
         }
@@ -227,6 +256,9 @@ export function heldDiff(state: unknown): DiffState {
 export function diffUrl(state: DiffSubject): string {
     if (state.against !== undefined) return compareUrl(state, state.against);
     if ((state.save ?? '') !== '') return savedUrl(state, state.save ?? '');
+    if (state.compare !== undefined)
+        return refCompareUrl(state.root, state.compare.from, state.compare.to);
+    if (state.workspace === true) return workspaceUrl(state.root, state.path);
     if (state.worktree) return worktreeDiffUrl(state.root, state.path);
     if ((state.commit ?? '') !== '') return commitUrl(state.root, state.commit ?? '', state.path);
     if ((state.stash ?? '') !== '') return stashUrl(state.root, state.stash ?? '');
@@ -244,6 +276,8 @@ export function diffActs(state: DiffSubject): boolean {
         (state.stash ?? '') === '' &&
         (state.group ?? '') === '' &&
         (state.save ?? '') === '' &&
+        state.compare === undefined &&
+        state.workspace !== true &&
         state.against === undefined
     );
 }
@@ -460,8 +494,10 @@ export function plannedPath(root: string, name: string): string {
 /**
  * What one Repositories view keeps about itself across a tab switch and a saved page: the
  * repository it shows, the sections and folders the reader closed, the commit of the graph whose
- * files are open (the empty string for none), whether the change groups are lists or trees, and a
- * request to open the Branches section, which the repository answers and clears.
+ * files are open (the empty string for none), whether the change groups are lists or trees, a
+ * request to open the Branches section, which the repository answers and clears, and the roots the
+ * reader closed (Close Repository), which this view's list leaves out and Reopen Closed
+ * Repositories brings back.
  */
 export type RepositoriesView = {
     root: string;
@@ -469,6 +505,7 @@ export type RepositoriesView = {
     commit: string;
     mode: 'list' | 'tree';
     reveal: '' | 'branches';
+    closed: string[];
 };
 
 const repositoriesViewShape = z.object({
@@ -476,7 +513,8 @@ const repositoriesViewShape = z.object({
     collapsed: fieldItemsShape,
     commit: z.string().catch(''),
     mode: z.enum(['list', 'tree']).catch('list'),
-    reveal: z.enum(['', 'branches']).catch('')
+    reveal: z.enum(['', 'branches']).catch(''),
+    closed: fieldItemsShape
 }) satisfies z.ZodType<RepositoriesView>;
 
 /**
@@ -489,9 +527,36 @@ export function repositoriesViewOf(state: unknown): RepositoriesView {
             collapsed: [],
             commit: '',
             mode: 'list',
-            reveal: ''
+            reveal: '',
+            closed: []
         }
     );
+}
+
+/** The roots a view draws: the channel's, in its order, without the ones the view has closed. */
+export function visibleRoots(roots: readonly string[], closed: readonly string[]): string[] {
+    return roots.filter((root) => !closed.includes(root));
+}
+
+/** The view with one more root closed; a root closed already stays closed once. */
+export function closeRepository(view: RepositoriesView, root: string): RepositoriesView {
+    return view.closed.includes(root) ? view : { ...view, closed: [...view.closed, root] };
+}
+
+/** The view with every root of `roots` but `root` closed, those it had closed already included. */
+export function closeOthers(
+    view: RepositoriesView,
+    roots: readonly string[],
+    root: string
+): RepositoriesView {
+    const closed = new Set([...view.closed, ...roots.filter((one) => one !== root)]);
+    closed.delete(root);
+    return { ...view, closed: [...closed] };
+}
+
+/** The view with one closed root reopened, or with every one for `*`. */
+export function reopenRepositories(view: RepositoriesView, root: string): RepositoriesView {
+    return { ...view, closed: root === '*' ? [] : view.closed.filter((one) => one !== root) };
 }
 
 /**
@@ -553,122 +618,27 @@ export function noCommitYet(git: GitState): boolean {
 }
 
 /**
- * The change groups in the order they are drawn, with the entries each holds: Merge Changes first,
- * as VS Code draws it, then staged, changed and untracked.
+ * The message git prepared for the commit that ends the operation in progress: a merge's or a
+ * cherry pick's, and the empty string for any other state, a rebase's included.
  */
-export function changeGroups(git: GitState): { id: string; entries: GitEntry[] }[] {
-    const groups = [
-        { id: 'merge', entries: git.conflicted },
-        { id: 'staged', entries: git.staged },
-        { id: 'changed', entries: git.unstaged },
-        { id: 'untracked', entries: git.untracked }
-    ];
-    // An empty merge or staged group says nothing a reader acts on, so it is not drawn.
-    return groups.filter(
-        (group) => (group.id !== 'staged' && group.id !== 'merge') || group.entries.length > 0
-    );
+export function preparedMessage(git: GitState): string {
+    return git.sequence === 'merging' || git.sequence === 'cherry-picking' ? git.mergeMessage : '';
 }
 
 /**
- * One row of the keyboard's order: its id, the row it sits under, whether it is open, and whether
- * it is held as it is drawn, so a key never opens or closes it.
+ * The change groups whose list was cut to its first 200 entries: those holding more than the
+ * state shows, in the order they are drawn.
  */
-export type KeyRow = { id: string; parent: string | null; open?: boolean; fixed?: boolean };
-
-/**
- * The rows of the Repositories section as its keyboard reads them: its head, and under it while it
- * is open one row per repository.
- */
-export function repoListRows(roots: readonly string[], collapsed: readonly string[]): KeyRow[] {
-    const open = !collapsed.includes('repos');
-    const rows: KeyRow[] = [{ id: 'repos', parent: null, open }];
-    if (open) for (const root of roots) rows.push({ id: `repo:${root}`, parent: 'repos' });
-    return rows;
-}
-
-/** The key rows of one group in tree mode: its folder rows and file rows that stay drawn. */
-function treeKeyRows(
-    group: string,
-    entries: readonly GitEntry[],
-    collapsed: readonly string[],
-    root: string
-): KeyRow[] {
-    const closed = (path: string): boolean => collapsed.includes(folderId(root, group, path));
-    const rows: KeyRow[] = [];
-    const folders: string[] = [];
-    for (const row of visibleRows(changeTree(entries), closed)) {
-        const parent = row.depth === 0 ? `group:${group}` : folders[row.depth - 1];
-        if (row.kind === 'folder') {
-            const id = folderId(root, group, row.path);
-            folders[row.depth] = id;
-            rows.push({ id, parent, open: !closed(row.path) });
-        } else {
-            rows.push({ id: `change:${group}:${row.path}`, parent });
-        }
-    }
-    return rows;
-}
-
-/**
- * The rows of one repository as its keyboard reads them (ui/tree/tree-keys.ts's KeyRow), in the
- * order the view draws them: each section head, and under an open one its groups and rows. A line
- * that only says something (a section is empty, the .gitignore lacks the rule) and the lines a name
- * is typed into are not among them.
- */
-export function repositoryKeyRows(
-    git: GitState,
-    collapsed: string[],
-    graph: readonly KeyRow[] = [],
-    tree?: { root: string; mode: 'list' | 'tree' }
-): KeyRow[] {
-    const rows: KeyRow[] = [];
-    const head = (id: string): boolean => {
-        const open = !collapsed.includes(id);
-        rows.push({ id, parent: null, open });
-        return open;
+export function cutGroups(git: GitState): string[] {
+    const shown = {
+        merge: [git.conflicted.length, git.held.merge],
+        staged: [git.staged.length, git.held.staged],
+        changed: [git.unstaged.length, git.held.changes],
+        untracked: [git.untracked.length, git.held.untracked]
     };
-    const under = (parent: string, ids: string[]): void => {
-        for (const id of ids) rows.push({ id, parent });
-    };
-    if (head('changes')) {
-        for (const group of changeGroups(git)) {
-            const open = !collapsed.includes(group.id);
-            rows.push({ id: `group:${group.id}`, parent: 'changes', open });
-            if (open && tree?.mode === 'tree' && group.id !== 'merge') {
-                rows.push(...treeKeyRows(group.id, group.entries, collapsed, tree.root));
-            } else if (open) {
-                under(
-                    `group:${group.id}`,
-                    group.entries.map((entry) => `change:${group.id}:${entry.path}`)
-                );
-            }
-        }
-    }
-    // The graph's rows are read on demand, so the view hands in the rows it has drawn, each under
-    // the section or under the commit whose files it is.
-    if (head('graph')) rows.push(...graph);
-    if (head('stashes'))
-        under(
-            'stashes',
-            git.stashes.map((stash) => `stash:${stash.ref}`)
-        );
-    if (head('tags'))
-        under(
-            'tags',
-            git.tags.map((tag) => `tag:${tag.name}`)
-        );
-    if (head('branches'))
-        under(
-            'branches',
-            git.branches.map((branch) => `branch:${branch.name}`)
-        );
-    if (head('worktrees')) {
-        under(
-            'worktrees',
-            git.worktrees.filter((one) => !one.main).map((tree) => `worktree:${tree.path}`)
-        );
-    }
-    return rows;
+    return Object.entries(shown)
+        .filter(([, [drawn, held]]) => held > drawn)
+        .map(([group]) => group);
 }
 
 /**
@@ -867,4 +837,33 @@ export function publishWords(git: GitState, remote: string): Words {
         message: t('repositories.publish_confirm', git.branch, remote),
         detail: t('repositories.publish_detail')
     };
+}
+
+/**
+ * What Open Worktree needs: the write that adds a folder to the workspace's roots, Files showing
+ * it, the window opener, and the address of this page.
+ */
+export type WorktreeOpening = {
+    addRoot: (dir: string) => Promise<{ ok: boolean; error?: string }>;
+    showInFiles: (path: string) => string;
+    openWindow: (address: string) => void;
+    address: () => string;
+};
+
+/**
+ * Open a worktree as a root of the workspace and show it in Files; in a new window as well, when
+ * asked, which is this page's own address opened again. A folder that is a root already is opened
+ * as it stands. The answer is the reason the root was refused, and the empty string for an opened
+ * worktree; a refused root opens nothing.
+ */
+export async function openWorktree(
+    dir: string,
+    newWindow: boolean,
+    opening: WorktreeOpening
+): Promise<string> {
+    const added = await opening.addRoot(dir);
+    if (!added.ok && added.error !== 'root-held') return added.error ?? '';
+    opening.showInFiles(dir);
+    if (newWindow) opening.openWindow(opening.address());
+    return '';
 }

@@ -184,11 +184,23 @@ export type UiStore = {
     setCodeTheme: (id: string | null) => void;
     setStatusHidden: (item: string, hidden: boolean) => void;
     setStatusQuiet: (on: boolean) => void;
+    setPaneStrip: (key: PaneStripKey, value: string) => void;
     setInstanceState: (id: string, state: unknown) => void;
     clearInstanceState: (id: string) => void;
 };
 
-export function createUi(): UiStore {
+/** The two keys of config/appearance.yml that say what a pane's top row draws. */
+export type PaneStripKey = 'show_tabs' | 'editor_actions';
+
+/**
+ * The store of the page's look. `writeConfigKey` is the client writes store's: the two pane strip
+ * settings live in config/appearance.yml, so a pick of the strip menu is written there rather than
+ * saved in the browser, and the store given none ignores the pick.
+ */
+export function createUi(
+    writeConfigKey: (file: string, key: string, value: unknown) => Promise<unknown> = () =>
+        Promise.resolve(null)
+): UiStore {
     /**
      * What a browser that has saved nothing starts on. Two of the seven come from
      * config/appearance.yml rather than from a literal here: the theme is the first of its list and
@@ -606,6 +618,11 @@ export function createUi(): UiStore {
         save({ ...store.current, instances });
     }
 
+    /** Write one pane strip setting to config/appearance.yml. */
+    function setPaneStrip(key: PaneStripKey, value: string): void {
+        void writeConfigKey('appearance.yml', key, value);
+    }
+
     return {
         theme,
         crt,
@@ -642,6 +659,7 @@ export function createUi(): UiStore {
         setCodeTheme,
         setStatusHidden,
         setStatusQuiet,
+        setPaneStrip,
         setInstanceState,
         clearInstanceState
     };

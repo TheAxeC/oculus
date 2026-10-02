@@ -2,6 +2,9 @@
 // folder rows and file rows, what a folder row is called in the instance's closed list, which
 // rows stay after a folder is closed, and which closed folders of a repository still name a folder.
 //
+// It also holds the rows of a repository as the keyboard walks them (`repositoryKeyRows`,
+// `repoListRows`) and the change groups they are drawn in (`changeGroups`).
+//
 // An untracked folder that git lists as a whole (`newdir/`, from `--untracked-files=normal`) is one
 // file row named for the folder, not a folder row holding a row without a name.
 //
@@ -10,7 +13,7 @@
 // VS Code compacts folders. Files at the root of a group make no folder row. Folders come before
 // files, each sorted by name with the case and the accent ignored, ties broken by code unit.
 
-import type { GitState } from '../../../data/model/index.ts';
+import type { GitEntry, GitState } from '../../../data/model/index.ts';
 
 /** A folder row: its name (the joined chain), its whole path, its depth and every path below it. */
 export type FolderRow = {
@@ -197,4 +200,123 @@ export function prunedCollapsed(
     return withoutClosedCommits(collapsed, root, commit).filter(
         (id) => !prefixes.some((prefix) => id.startsWith(prefix)) || alive.has(id)
     );
+}
+
+/**
+ * The change groups in the order they are drawn, with the entries each holds: Merge Changes first,
+ * as VS Code draws it, then staged, changed and untracked.
+ */
+export function changeGroups(git: GitState): { id: string; entries: GitEntry[] }[] {
+    const groups = [
+        { id: 'merge', entries: git.conflicted },
+        { id: 'staged', entries: git.staged },
+        { id: 'changed', entries: git.unstaged },
+        { id: 'untracked', entries: git.untracked }
+    ];
+    // An empty merge or staged group says nothing a reader acts on, so it is not drawn.
+    return groups.filter(
+        (group) => (group.id !== 'staged' && group.id !== 'merge') || group.entries.length > 0
+    );
+}
+
+/**
+ * One row of the keyboard's order: its id, the row it sits under, whether it is open, and whether
+ * it is held as it is drawn, so a key never opens or closes it.
+ */
+export type KeyRow = { id: string; parent: string | null; open?: boolean; fixed?: boolean };
+
+/**
+ * The rows of the Repositories section as its keyboard reads them: its head, and under it while it
+ * is open one row per repository.
+ */
+export function repoListRows(roots: readonly string[], collapsed: readonly string[]): KeyRow[] {
+    const open = !collapsed.includes('repos');
+    const rows: KeyRow[] = [{ id: 'repos', parent: null, open }];
+    if (open) for (const root of roots) rows.push({ id: `repo:${root}`, parent: 'repos' });
+    return rows;
+}
+
+/** The key rows of one group in tree mode: its folder rows and file rows that stay drawn. */
+function treeKeyRows(
+    group: string,
+    entries: readonly GitEntry[],
+    collapsed: readonly string[],
+    root: string
+): KeyRow[] {
+    const closed = (path: string): boolean => collapsed.includes(folderId(root, group, path));
+    const rows: KeyRow[] = [];
+    const folders: string[] = [];
+    for (const row of visibleRows(changeTree(entries), closed)) {
+        const parent = row.depth === 0 ? `group:${group}` : folders[row.depth - 1];
+        if (row.kind === 'folder') {
+            const id = folderId(root, group, row.path);
+            folders[row.depth] = id;
+            rows.push({ id, parent, open: !closed(row.path) });
+        } else {
+            rows.push({ id: `change:${group}:${row.path}`, parent });
+        }
+    }
+    return rows;
+}
+
+/**
+ * The rows of one repository as its keyboard reads them (ui/tree/tree-keys.ts's KeyRow), in the
+ * order the view draws them: each section head, and under an open one its groups and rows. A line
+ * that only says something (a section is empty, the .gitignore lacks the rule) and the lines a name
+ * is typed into are not among them.
+ */
+export function repositoryKeyRows(
+    git: GitState,
+    collapsed: string[],
+    graph: readonly KeyRow[] = [],
+    tree?: { root: string; mode: 'list' | 'tree' }
+): KeyRow[] {
+    const rows: KeyRow[] = [];
+    const head = (id: string): boolean => {
+        const open = !collapsed.includes(id);
+        rows.push({ id, parent: null, open });
+        return open;
+    };
+    const under = (parent: string, ids: string[]): void => {
+        for (const id of ids) rows.push({ id, parent });
+    };
+    if (head('changes')) {
+        for (const group of changeGroups(git)) {
+            const open = !collapsed.includes(group.id);
+            rows.push({ id: `group:${group.id}`, parent: 'changes', open });
+            if (open && tree?.mode === 'tree' && group.id !== 'merge') {
+                rows.push(...treeKeyRows(group.id, group.entries, collapsed, tree.root));
+            } else if (open) {
+                under(
+                    `group:${group.id}`,
+                    group.entries.map((entry) => `change:${group.id}:${entry.path}`)
+                );
+            }
+        }
+    }
+    // The graph's rows are read on demand, so the view hands in the rows it has drawn, each under
+    // the section or under the commit whose files it is.
+    if (head('graph')) rows.push(...graph);
+    if (head('stashes'))
+        under(
+            'stashes',
+            git.stashes.map((stash) => `stash:${stash.ref}`)
+        );
+    if (head('tags'))
+        under(
+            'tags',
+            git.tags.map((tag) => `tag:${tag.name}`)
+        );
+    if (head('branches'))
+        under(
+            'branches',
+            git.branches.map((branch) => `branch:${branch.name}`)
+        );
+    if (head('worktrees')) {
+        under(
+            'worktrees',
+            git.worktrees.filter((one) => !one.main).map((tree) => `worktree:${tree.path}`)
+        );
+    }
+    return rows;
 }

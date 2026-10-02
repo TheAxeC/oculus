@@ -10,13 +10,13 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
-import Changes from '../../../../src/lib/views/sources/repositories/changes/Changes.svelte';
-import CommitFiles from '../../../../src/lib/views/sources/repositories/graph/CommitFiles.svelte';
-import AskConfirm from '../../../../src/lib/views/shared/writes/AskConfirm.svelte';
-import ToolButton from '../../../../src/lib/ui/controls/ToolButton.svelte';
-import TreeItem from '../../../../src/lib/ui/tree/TreeItem.svelte';
-import { folderId } from '../../../../src/lib/state/sources/repositories/change-tree.ts';
-import { pressWhenDrawn } from './press-on-render.ts';
+import Changes from '../../../../../src/lib/views/sources/repositories/changes/Changes.svelte';
+import CommitFiles from '../../../../../src/lib/views/sources/repositories/graph/CommitFiles.svelte';
+import AskConfirm from '../../../../../src/lib/views/shared/writes/AskConfirm.svelte';
+import ToolButton from '../../../../../src/lib/ui/controls/ToolButton.svelte';
+import TreeItem from '../../../../../src/lib/ui/tree/TreeItem.svelte';
+import { folderId } from '../../../../../src/lib/state/sources/repositories/change-tree.ts';
+import { pressWhenDrawn } from '../press-on-render.ts';
 import {
     catalog,
     clear,
@@ -30,20 +30,20 @@ import {
     OTHER,
     press,
     fresh
-} from './harness.ts';
-import type { TreeNav } from '../../../../src/lib/ui/tree/tree-keys.ts';
-import { clientContext, type ClientState } from '../../../fixtures/client.ts';
+} from '../harness.ts';
+import type { TreeNav } from '../../../../../src/lib/ui/tree/tree-keys.ts';
+import { clientContext, type ClientState } from '../../../../fixtures/client.ts';
 
-vi.mock('../../../../src/lib/views/shared/writes/AskConfirm.svelte', async (original) =>
-    (await import('./press-on-render.ts')).recorded(original)
+vi.mock('../../../../../src/lib/views/shared/writes/AskConfirm.svelte', async (original) =>
+    (await import('../press-on-render.ts')).recorded(original)
 );
 
-vi.mock('../../../../src/lib/ui/tree/TreeItem.svelte', async (original) =>
-    (await import('./press-on-render.ts')).recorded(original)
+vi.mock('../../../../../src/lib/ui/tree/TreeItem.svelte', async (original) =>
+    (await import('../press-on-render.ts')).recorded(original)
 );
 
-vi.mock('../../../../src/lib/ui/controls/ToolButton.svelte', async (original) =>
-    (await import('./press-on-render.ts')).recorded(original)
+vi.mock('../../../../../src/lib/ui/controls/ToolButton.svelte', async (original) =>
+    (await import('../press-on-render.ts')).recorded(original)
 );
 
 let client: ClientState;

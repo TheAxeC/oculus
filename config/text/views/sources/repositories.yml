@@ -3,6 +3,8 @@ text:
     repositories:
         abort: Abort
         abort_confirm: Abort the merge in progress?
+        abort_cherry_confirm: Abort the cherry pick in progress?
+        abort_cherry_detail: The worktree and the index go back to where they were before the cherry pick started. Resolutions made so far are lost.
         abort_detail: The worktree and the index go back to where they were before the merge or the rebase started. Resolutions made so far are lost.
         accept_both_current: Accept Both (Current First)
         accept_both_incoming: Accept Both (Incoming First)
@@ -206,6 +208,7 @@ text:
         terminal: Terminal here
         terminal_title: Open a shell in this worktree
         worktree_detached: detached
+        worktree_open_failed: 'The workspace could not take this worktree: {0}'
         worktree_new: New worktree
         worktree_new_create: Create
         worktree_new_confirm: Make the worktree {0}?
@@ -214,7 +217,46 @@ text:
         worktrees: Worktrees
         worktrees_empty: This repository has no worktree beside itself.
         worktrees_unignored: The .gitignore of this repository does not carry /.agents/worktrees/, so a worktree made here becomes content of the repository.
+        all_closed: Every repository is closed in this tab.
+        branch_delete_button: Delete Branch
+        branch_delete_confirm: "Are you sure you want to delete the branch '{0}'?"
+        branch_delete_title: Delete the branch {0}
+        branch_delete_detail: git deletes the branch at once when it is merged into its upstream, or into HEAD when it has none; otherwise it asks once more.
+        branch_unmerged_confirm: "The branch '{0}' is not fully merged. Delete anyway?"
+        branch_unmerged_detail: It is not merged into its upstream, or into HEAD when it has none. After the delete, commits no other branch holds stay reachable only through the reflog.
+        branch_do: Create
+        branch_name: Branch name
+        cherry_pick_confirm: Cherry-pick {0} onto {1}?
+        cherry_pick_detail: The commit's changes are applied to the checked-out branch as a new commit. A conflict stops the pick and is shown under Merge Changes; an empty pick is dropped.
+        cherry_picking: Cherry-picking. {0} files are in conflict.
+        detach_confirm: Check out {0} with a detached HEAD?
+        detach_detail: HEAD leaves its branch and points at that commit. The working tree must be clean; a dirty tree is refused.
+        compare_label: '{0} compared with {1}'
+        compare_placeholder: Select a reference to compare with
+        compare_title: Compare with...
+        menu_checkout_detached: Checkout (Detached)
+        menu_cherry_pick: Cherry Pick
+        menu_close_others: Close Other Repositories
+        menu_close_repository: Close Repository
+        menu_compare_base: Compare with Merge Base
+        menu_compare_remote: Compare with Remote
+        menu_compare_with: Compare with...
+        menu_compare_workspace: Compare with Workspace
+        menu_create_branch: Create Branch...
+        menu_create_tag: Create Tag...
+        menu_delete_branch: Delete Branch
+        menu_ignore: Add to .gitignore
+        menu_open_head: Open File (HEAD)
+        menu_open_worktree: Open Worktree
+        menu_open_worktree_window: Open Worktree in New Window
+        refs_failed: The refs could not be read.
+        reopen_all: All Repositories
+        reopen_closed: Reopen Closed Repositories
+        reopen_placeholder: Pick a repository to reopen
+        reopen_title: Reopen Closed Repositories
+        workspace_label: '{0} (Workspace)'
         menu_checkout: Checkout
+        menu_closed: Closed Repositories
         menu_delete_worktree: Delete Worktree
         menu_discard: Discard Changes
         menu_open_changes: Open Changes

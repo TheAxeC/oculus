@@ -29,7 +29,6 @@ import {
     fileDiff,
     merge,
     parseBranches,
-    permitted,
     push,
     removeWorktree,
     stage,
@@ -38,6 +37,7 @@ import {
     unstage,
     worktreeDiff
 } from '../../../src/lib/server/git/git-write.ts';
+import { permitted } from '../../../src/lib/server/core/paths.ts';
 import { worktreePath } from '../../../src/lib/data/helpers/worktrees.ts';
 import { messageModel, suggestMessage } from '../../../src/lib/server/git/git-message.ts';
 import { abortMerge } from '../../../src/lib/server/git/git-index.ts';
