@@ -83,6 +83,19 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with D18, `data/model/index.ts` (D18 a channel type, M3 the entities' `resources`), `data/sources/config/settings.ts` (separate readers), `config/catalogs/options.yml` and `config/behavior.yml` (separate blocks), `server/root/live-settings.ts` (D18 `processes` in `LiveStart` and `LiveTargets`, M3 the HPC host and `resources`), `server/root/context.ts` (separate starts; M3 adds at most six lines, so the second landing keeps it under 900), `config/text/views/system/hpc.yml` (D18 moves it, M3 adds lines; carried into the moved file at the second landing), `DESIGN.md`, `HELP.md` and the config and context tests (separate lines); with X3a, `settings.ts`, `options.yml`, `behavior.yml`, `config-folder.test.ts`, `DESIGN.md`, `HELP.md` (separate blocks and lines); with Q88c, `options.yml`, `config-folder.test.ts`, `DESIGN.md`, `HELP.md` (separate blocks and lines); `docs/diagrams/`, regenerated at each landing
   landing: not-started
   round: 0
+- step: A1
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 09:13)
+  session_id: a0a84b2fcd6bf4f22 (launched 2026-10-02 09:12 local)
+  worktree: .agents/worktrees/A1
+  base: ce71ecf1
+  launched: 2026-10-02 09:12 local
+  report: agents/reviews/A1-report.md
+  brief_check: agents/reviews/A1-brief-check.md; claude-sonnet-5-5, 269,064 tokens, 76 tool uses, 11.9 min
+  shared_paths: with Q88c, `repositories.ts` (A1 `DiffSubject`, `diffState`, `heldDiffShape`; Q88c other functions), `repositories.svelte.ts` (A1 `openChange`; Q88c the menus' wiring), `config/text/views/sessions/changes.yml` (A1 the `sessions:` group, Q88c the `git:` group), `tests/views/sources/repositories/` (A1 `diff-pane.test.ts`, which follows Q88c's split if Q88c makes one); with X3a, `state/sources/explorer/follow.ts` (A1 one field in `followedDiffTab`, X3a new modules beside it) and `tests/views/whole/type-scale.test.ts` (separate rows), as with D18; `HELP.md` 87 and 132 and `DESIGN.md` 399 against the other steps' lines; `docs/diagrams/`, regenerated at each landing. Each is added lines in separate places.
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -774,6 +787,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-02 09:13. A1 (review with feedback) prepared at ce71ecf1, its brief check's findings closed in the brief, builder a0a84b2fcd6bf4f22 launched on claude-sonnet-5-5; five builders in flight (X3a round 1, D18, Q88c, M3, A1).
 - 2026-10-02 09:03. M3 (the resources registry) prepared at f3bf2b6d, its brief check's findings closed in the brief, builder a4af0ef105f4b6e97 launched on claude-sonnet-5-5; Z241 ruled (b) by Axel, for Q88c's repair round or landing; A1 being prepared (brief written, its brief check running).
 - 2026-10-02 08:23. D24 landed (the Personal board), a conflict in `server/root/context.ts` and the diagrams resolved, fixes at landing: the four findings of the run over round 1, one test call given L4's floats argument, the floats tests moved out of an over-size file; the six repositories' manifests committed in their repositories; the look on TEST taken (nine cards, no console error); `checks: 7 commands passed` on the third run. D24 is the 15th landing with a Sonnet reviewer, so the three-way comparison is ready to be asked for. X3a's review is in (14 findings). D18's brief check is in. In flight: X3a (repair round 1 next), Q88c (building). Next: send X3a's round 1; close D18's brief-check findings and launch its builder; /spec M3. Open items: Z241.
 - 2026-10-02 07:50. D35 landed (every configuration file live, the server's port move and the page following it), a diagram conflict resolved on D35's side, six fixes at landing (the six findings of the run over round 1), the look on TEST taken, `checks: 7 commands passed` on main. D24's run over round 1 is in (4 findings, closed at its landing). In flight: X3a and Q88c (building), D24 (ready to land). Next: /land D24; /spec D32 and D18; /spec M3 after D24. Open items: Z241.

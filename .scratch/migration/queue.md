@@ -5,6 +5,7 @@ In flight:
 - D18 (the Processes view), building.
 - Q88c (the Source Control rows' and the pane strip's new right-click capabilities, Z240), builder at ordo-high; Z241 ruled (b): Delete Branch's force retry goes into its repair round or its landing.
 - M3 (the resources registry), building.
+- A1 (review with feedback), building.
 
 Three queued steps are kept prepared ahead (Z185).
 
@@ -23,7 +24,6 @@ Queued, in order (25 steps):
 - D33 (the Problems view), once D23 and D17 have landed.
 - D36 (linters on save, ChkTeX, ruff, eslint and shellcheck, into the editor's marks and D33's Problems view), once D33 has landed (Z196).
 - D20 (an agent from a task or in a new worktree), once D17 has landed (Z195: a seeded agent runs after the approval D17's store keeps).
-- A1 (review with feedback), being prepared.
 - A3 (scheduled runs), once D17 has landed.
 - Q72 (the architecture re-read).
 - E4 (the apps built), after Q72.
