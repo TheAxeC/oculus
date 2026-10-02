@@ -138,21 +138,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- **Z241 (2026-10-02 06:50, Q88c): Delete Branch on a branch git calls not fully merged.** VS Code runs `git branch -d`, and when git refuses because the branch is not fully merged it asks "The branch '{0}' is not fully merged. Delete anyway?" and runs `git branch -D`. Oculus's `DESIGN.md:128` says "no form carries `--force`", the `git-write.ts` comment on push says "Nothing is ever forced", and `tests/server/git/git-write.test.ts:571-575` asserts no file of `server/git` contains `--force`. `-D` is `--delete --force`, so VS Code's retry meets that rule. Q88c is built with `-d` only: an unmerged branch is refused with git's reason and kept.
-  - (a) Keep `-d` only. Pro: the no-force rule stands as written; nothing that holds commits no other branch holds is deleted from a button. Con: VS Code's "Delete anyway?" path is absent; an unmerged branch is deleted at a terminal.
-  - (b) Add VS Code's retry: after git's "not fully merged" refusal, VS Code's question, then `git branch -D <name>`, listed in `CONFIRMED`; `DESIGN.md:128` amended to "no form carries `--force` except `branch -D` after its question", and the gate's test keeps refusing the `--force` spelling. Pro: VS Code parity; the commits stay reachable through the reflog for git's expiry period. Con: a rule written for every write gets one exception.
-  - Recommendation: (b), since the parity ruling asks for every capability VS Code has, the question stands between the reader and the loss, and the exception is one named form under its own confirmation. It would be added to Q88c in a repair round or at landing, with no new step.
-
-
-
-
-
-
-
-
-
-
-
+None.
 
 ## Time per step (Axel asked 2026-09-27 for how it evolves with Q77; measured from each builder's transcript: each tool call from call to result, each background wait from the builder stopping to the run waking it)
 
@@ -191,12 +177,16 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Z238 (2026-10-02 02:47, M4): the path list widened; a blank equation draws no card (the orchestrator, automode).
 - Z239 (2026-10-02 05:20, D35): a page that follows a moved server carries its layout and its "This browser" settings across in `window.name` (the orchestrator, automode).
 - Z240 (2026-10-02 06:50, Q88c): the brief check's open points closed with VS Code's behaviour; `useConfigOnly` through git's environment; the read module moved into `server/core/git/`; Delete Branch `-d` only until Z241 (the orchestrator, automode).
+- Z241 (2026-10-02 08:51, Q88c): (b), Delete Branch on a branch git calls not fully merged asks VS Code's question "The branch '{0}' is not fully merged. Delete anyway?" and then runs `git branch -D <name>`, listed in `CONFIRMED`; `DESIGN.md:128` reads "no form carries `--force` except `branch -D` after its question", and the gate's test keeps refusing the `--force` spelling. Carried into Q88c's repair round 1, or made at landing when Q88c's review sends no round (Axel).
 - Z242 (2026-10-02 08:24, X3a): the delete copies in the local history are pruned: the newest 50 are kept over all files, the oldest removed first, and an undo of a pruned delete says the copy is gone (the orchestrator, automode).
 - Z243 (2026-10-02 08:24, X3a): a drop of a file onto another root moves it, one `move` record, as the tree's `paste` in `mode: 'move'` does and as VS Code moves between workspace folders; the brief's "a copy and a trash of the source" is corrected (the orchestrator, automode).
 - Z244 (2026-10-02 08:24, D18): the Processes watcher reads every ten seconds while at least one page is connected, the `processes` channel subscribed with every other channel in `+page.svelte`, and reads nothing while no page is connected (the orchestrator, automode).
 - Z245 (2026-10-02 08:24, D18): oculus's own processes are the trees under every pane of its terminal sessions (`oculus-<id>` with a terminal id); the hidden usage sessions and a hand-made `oculus-` session with no terminal id are not oculus's own and are listed only when a pattern matches (the orchestrator, automode).
 - Z246 (2026-10-02 08:24, D18): the head line's agents are counted over the whole process table, a `claude` or `codex` process whose parent is the same program counted once (the orchestrator, automode).
 - Z247 (2026-10-02 08:24, D18): a command line is cut at 1,000 characters in the payload with an ellipsis; the row count is not cut (the orchestrator, automode).
+- Z248 (2026-10-02 08:37, M3): the seed entries `utwente`, `this-mac`, `data`; manifests `hpc` to `[utwente]`, `local` to `[this-mac]`, comments kept (the orchestrator, automode).
+- Z249 (2026-10-02 08:37, M3): facet values are entry keys labelled by name; a card tag per entry, the HPC glyph for a cluster; the form field `chips, from: resources` (the orchestrator, automode).
+- Z250 (2026-10-02 08:37, M3): the HPC host is `hpc_host`, else the host of the cluster `slurm.resource` names, re-resolved after each portfolio rebuild; no host gives `unreachable` with a sentence and no ssh (the orchestrator, automode).
 - Z224 (2026-10-02 02:08, M4): each equation a single-quoted YAML scalar (the orchestrator, automode).
 - Z225 (2026-10-02 02:08, M4): the image branch removed, one finding kept for an image name (the orchestrator, automode).
 - Z226 (2026-10-02 02:08, M4): the subtitle names the Present view (the orchestrator, automode).

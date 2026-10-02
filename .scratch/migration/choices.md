@@ -850,3 +850,32 @@ The question: how much of each command line the `processes` payload carries ever
 - Not chosen: (c) a row cap, which hides processes the reader is looking for.
 
 Where it is built: D18. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z248 (2026-10-02 08:37, step M3)
+
+The question: which entries `registries/resources.yml` starts with, and what the 17 manifests' `compute: hpc` and `compute: local` become.
+
+- Chosen (a): three entries, `utwente` (cluster, host `utwente`, the access rules of the UTwente cluster), `this-mac` (machine) and `data` (storage, `~/data`); `hpc` becomes `[utwente]` and `local` becomes `[this-mac]`, each trailing comment kept.
+- Not chosen: (b) only the cluster entry, which leaves the eight `local` manifests with no key to name;
+- Not chosen: (c) leaving the manifests as they are, which the validator then reports in 17 places and the board stops reading.
+
+Where it is built: M3. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z249 (2026-10-02 08:37, step M3)
+
+The question: how the board, the card and the form show a list of resource keys.
+
+- Chosen (a): the Compute facet's values are the keys, labelled by the entry's name; the card draws one tag per entry, the HPC glyph on a cluster; the form field is `type: chips, from: resources`, as the datasets field is.
+- Not chosen: (b) collapsing the list back to "HPC" or "Local" by kind, which hides which cluster or machine a project uses, the reason the registry exists.
+
+Where it is built: M3. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z250 (2026-10-02 08:37, step M3)
+
+The question: how the Live HPC poller finds its host once `slurm.resource` names a registry entry, and what happens when the key names no cluster with a host.
+
+- Chosen (a): `hpc_host` of local.yml when set, else the `host` of the cluster entry `slurm.resource` names, resolved at start, at each config push, at each local.yml change and after each portfolio rebuild; a key that resolves to no host gives the existing `unreachable` status with a sentence naming why, and no ssh runs; the server still starts.
+- Not chosen: (b) refusing to start, which takes the whole server down over a registry edit;
+- Not chosen: (c) resolving at start only, which leaves the poller on a stale host after the registry changes.
+
+Where it is built: M3. Booked in the state file's closed log and `plan.md` Rulings.
