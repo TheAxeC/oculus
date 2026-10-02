@@ -32,8 +32,6 @@ Queued, in order (23 steps). "Ready" means nothing in plan.md holds it back; it 
 - O30 (the native window).
 - O33, last, after X2 (oculus in its own repository).
 
-Done: the three-way Opus and Sonnet comparison, written 2026-10-02 at Axel's request, is `agents/reviews/sonnet-vs-opus.md`.
-
 Landed, newest first:
 - X3a (the Files view as VS Code's Explorer), 2026-10-02, 705e588d.
 - D24 (the Personal board: side projects and the Files roots' manifests as cards), 2026-10-02, 4ce50c59.
