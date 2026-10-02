@@ -87,8 +87,8 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   landing: not-started
   cases: agents/briefs/Q35-cases.md (round 0: case 8's `fit(100, 50)` corrected to 50 / 720 by item 5's rule)
   builder_usage: first run of the cases 260,277 tokens, 65 tool uses, 12.7 min (0 full-list runs); continuation builder a7e830c8a488197ee to the report 219,390 tokens, 63 tool uses, 42.7 min (5 full-list runs, the last passed)
-  reviewer_report: agents/reviews/Q35-refuter.md (first run, reviewer a20db24a8714e7263, claude-sonnet-5-5 read at 01:50, launched 2026-10-02 01:50; usage on its completion)
-  round: 0 (agents/briefs/Q35-cases.md, sent 23:27)
+  reviewer_report: agents/reviews/Q35-refuter.md (first run, reviewer a20db24a8714e7263, claude-sonnet-5-5 read at 01:50, launched 2026-10-02 01:50; 190,538 tokens, 61 tool uses, 36.9 min; 3 Spec, 4 Proof, 1 Standards, 3 Behaviour findings)
+  round: 1 (agents/briefs/Q35-round1.md, sent 02:31); round 0 agents/briefs/Q35-cases.md, sent 23:27
 - step: X3a
   executor: agent
   worker: claude:sonnet at ordo-high

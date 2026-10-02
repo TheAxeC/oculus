@@ -4,7 +4,7 @@ In flight:
 - D35 (every configuration file live, `local.yml` included, by Z198 and Axel's D35 redo ruling), builder at ordo-high building after its first-run rulings.
 - L4 (floating panes and kept empty panes), repair round 1 with the builder.
 - Q66 (a hidden tab defers its work), built; its review running.
-- Q35 (Changes, Customizations, Audit, Present), built; its review in, the findings being ruled.
+- Q35 (Changes, Customizations, Audit, Present), repair round 1 with the builder.
 - X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), builder at ordo-high.
 - D24 (the Personal board: side projects and the Files roots' `.oculus/project.yml` as cards, with the six repositories' manifests drafted), builder at ordo-high.
 - M4 (the Present view's equations as LaTeX, the image branch removed, the cockpit deck kept drawing them), builder at ordo-high.
