@@ -782,3 +782,12 @@ The question: a page that follows the server to its new port lands on a new orig
 - Not chosen: (a) follow and state the loss, which is the lazy option and drops the reader's open tabs and pages on every port change; (c) tell the page the new address and leave the reader to go, which loses the same state when the reader goes.
 
 Where it is built: D35, repair round 1. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z240 (2026-10-02 07:10, step Q88c)
+
+The question: the user-visible choices and blocking findings Q88c's brief check left open (`agents/reviews/Q88c-brief-check.md`, sections 5 and 6).
+
+- Chosen (a): each closed in the brief with VS Code's own behaviour, read from VS Code 1.137.0's git extension: the Trash question's strings, singular and plural; Add to .gitignore written as `ignore` writes it; Open File (HEAD) opening the change's left side (HEAD for a staged change, the index for a working-tree change, not offered on an untracked file); the "Reopen Closed Repositories" quick pick with "All Repositories"; Close Other Repositories only with more than one open; Cherry Pick on every commit, an empty pick aborted; Compare with Remote and Compare with... with the ref on the left; Compare with Merge Base against the base `getBranchBase` reads, without writing the setting back; Open Worktree and Open Worktree in New Window; the badge as `countBadge: all`; the status-limit warning with oculus's 200. Oculus's own: `user.useConfigOnly` passed through git's environment variables so the write gate's reading of the argument vector is unchanged; the read module moved into `server/core/git/` to stay under the size and folder limits; the git route given the Files route's Trash guard. Delete Branch runs `-d` only until Axel rules on Z241.
+- Not chosen: (b) a smaller brief leaving these to the builder, which is the lazy option and leaves the builder to take user-visible choices.
+
+Where it is built: Q88c. Booked in the state file's closed log and `plan.md` Rulings.

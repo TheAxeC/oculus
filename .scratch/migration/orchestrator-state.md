@@ -40,9 +40,9 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   report: agents/reviews/D35-report.md
   brief_check: agents/reviews/D35-brief-check.md (the first build's, not run again: the spec skill checks a step once); claude-sonnet-5-5, 279,072 tokens, 70 tool uses, 13.0 min
   shared_paths: with L4, Q66 and Q35, `DESIGN.md` (L4 210 and 358-365, Q66 194, Q35 367 and 378; D35 224-235), `HELP.md` (L4 27-45 and 127, Q35 120; D35 216 and 236), `options.yml` (L4 the `floats` entry at 336; D35 the behaviour descriptions and 591-622), different lines, a simple merge; `docs/diagrams/`, regenerated at each landing; with X3a, `src/routes/+page.svelte` (D35 round 1 one call before `loadUi` at 185; X3a its own lines), a simple merge
-  reviewer_report: agents/reviews/D35-refuter.md (first run, reviewer a1fc727999ec8d0d1, claude-sonnet-5-5 read at 04:08, launched 2026-10-02 04:08; 310,206 tokens, 90 tool uses, 53.0 min; 0 Spec, 4 Proof, 3 Standards, 5 Behaviour findings)
+  reviewer_report: agents/reviews/D35-refuter.md (first run, reviewer a1fc727999ec8d0d1, claude-sonnet-5-5 read at 04:08, launched 2026-10-02 04:08; 310,206 tokens, 90 tool uses, 53.0 min; 0 Spec, 4 Proof, 3 Standards, 5 Behaviour findings); run over round 1, reviewer ac2a30247e591a557 launched 06:43, claude-sonnet-5-5 read at 06:43; usage on its completion
   landing: not-started
-  builder_usage: first run of the cases 257,278 tokens, 46 tool uses, 13.2 min (0 full-list runs); from the round-0 ruling to the report, as its completion notice gives it, 158,708 tokens, 111 tool uses, 135.2 min (7 full-list runs, runs 1 to 6 red at `npm test` on 5000 ms timeouts under load, the 7th passed)
+  builder_usage: first run of the cases 257,278 tokens, 46 tool uses, 13.2 min (0 full-list runs); from the round-0 ruling to the report, as its completion notice gives it, 158,708 tokens, 111 tool uses, 135.2 min (7 full-list runs, runs 1 to 6 red at `npm test` on 5000 ms timeouts under load, the 7th passed); repair round 1, as its completion notice gives it, 362,735 tokens, 96 tool uses, 94.7 min (4 full-list runs, the 4th passed)
   round: 1 (agents/briefs/D35-round1.md, sent 05:24; round 0 agents/briefs/D35-cases.md, sent 01:48)
 - step: X3a
   executor: agent
@@ -140,6 +140,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
+- **Z241 (2026-10-02 07:10, Q88c): Delete Branch on a branch git calls not fully merged.** VS Code runs `git branch -d`, and when git refuses because the branch is not fully merged it asks "The branch '{0}' is not fully merged. Delete anyway?" and runs `git branch -D`. Oculus's `DESIGN.md:128` says "no form carries `--force`", the `git-write.ts` comment on push says "Nothing is ever forced", and `tests/server/git/git-write.test.ts:571-575` asserts no file of `server/git` contains `--force`. `-D` is `--delete --force`, so VS Code's retry meets that rule. Q88c is built with `-d` only: an unmerged branch is refused with git's reason and kept.
+  - (a) Keep `-d` only. Pro: the no-force rule stands as written; nothing that holds commits no other branch holds is deleted from a button. Con: VS Code's "Delete anyway?" path is absent; an unmerged branch is deleted at a terminal.
+  - (b) Add VS Code's retry: after git's "not fully merged" refusal, VS Code's question, then `git branch -D <name>`, listed in `CONFIRMED`; `DESIGN.md:128` amended to "no form carries `--force` except `branch -D` after its question", and the gate's test keeps refusing the `--force` spelling. Pro: VS Code parity; the commits stay reachable through the reflog for git's expiry period. Con: a rule written for every write gets one exception.
+  - Recommendation: (b), since the parity ruling asks for every capability VS Code has, the question stands between the reader and the loss, and the exception is one named form under its own confirmation. It would be added to Q88c in a repair round or at landing, with no new step.
+
 
 
 
@@ -187,6 +192,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - Z237 (2026-10-02 02:47, M4): the `\text{\small X}` rewrite for MathJax, the check counting `merror` and red nodes (the orchestrator, automode).
 - Z238 (2026-10-02 02:47, M4): the path list widened; a blank equation draws no card (the orchestrator, automode).
 - Z239 (2026-10-02 05:20, D35): a page that follows a moved server carries its layout and its "This browser" settings across in `window.name` (the orchestrator, automode).
+- Z240 (2026-10-02 07:10, Q88c): the brief check's open points closed with VS Code's behaviour; `useConfigOnly` through git's environment; the read module moved into `server/core/git/`; Delete Branch `-d` only until Z241 (the orchestrator, automode).
 - Z224 (2026-10-02 02:08, M4): each equation a single-quoted YAML scalar (the orchestrator, automode).
 - Z225 (2026-10-02 02:08, M4): the image branch removed, one finding kept for an image name (the orchestrator, automode).
 - Z226 (2026-10-02 02:08, M4): the subtitle names the Present view (the orchestrator, automode).
@@ -761,7 +767,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-02 06:55. M4 landed (the Present view's equations as LaTeX), a conflict resolved on M4's side, three fixes at landing (two head comments, the formula fitted to its card after the look found all 13 cut off), `checks: 7 commands passed` on the fourth run. D35's repair round 1 is in. In flight: D35 (round review next), D24 (repair round 1), X3a (building). Next: /refute D35 over round 1; /spec Q88c. Open items: none.
+- 2026-10-02 06:40. M4 landed (the Present view's equations as LaTeX), a conflict resolved on M4's side, three fixes at landing (two head comments, the formula fitted to its card after the look found all 13 cut off), `checks: 7 commands passed` on the fourth run. D35's repair round 1 is in. In flight: D35 (round review next), D24 (repair round 1), X3a (building). Next: /refute D35 over round 1; /spec Q88c. Open items: none.
 - 2026-10-02 06:05. L4 landed (floating panes and kept empty panes), conflicts in DESIGN.md, context.ts, Usage.svelte and the diagrams resolved, three fixes at landing, the look on TEST taken, `checks: 7 commands passed` on the fifth run (the earlier ones red only on 5000 ms timeouts in files L4 does not touch, and one type error from a fix). In flight: D35 (repair round 1), M4 (round review running), D24 (review running), X3a (building). Next: M4's round review saved and /land M4; D24's findings. Open items: none.
 - 2026-10-02 05:30. Q66 landed (a hidden tab defers its work), a diagram conflict resolved by regenerating, the look on TEST taken, `checks: 7 commands passed` on the second run (the first red only on a 30000 ms timeout in a file Q66 does not touch). In flight: L4 (ready to land, one fix at landing), D35 and M4 (repair round 1), X3a and D24 (building). Next: /land L4. Open items: none.
 - 2026-10-02 04:40. Q35 landed (Changes, Customizations, Audit, Present), a diagram conflict resolved by regenerating, one merge fix and one test added at landing, the look on TEST taken, `checks: 7 commands passed` on the third run (the first two red only on 5000 ms timeouts in files Q35 does not touch, under load 19 to 21). In flight: L4 (round review), D35 (review), Q66 (ready to land), M4 (round 1 to send), X3a and D24 (building). Next: send M4's round 1, /land Q66. Open items: none.

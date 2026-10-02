@@ -37,7 +37,7 @@ Queued, in order (27 steps):
 Owed: the three-way Opus and Sonnet comparison, once 15 steps have landed with Sonnet reviewers. When the 15th lands, this line becomes "Ready: the three-way Opus and Sonnet comparison can be asked for", and the comparison is written when Axel asks for it.
 
 Landed, newest first:
-- M4 (the Present view's equations as LaTeX), 2026-10-02, HASH.
+- M4 (the Present view's equations as LaTeX), 2026-10-02, d210de04.
 - L4 (floating panes and kept empty panes), 2026-10-02, ce7346bb.
 - Q66 (a hidden tab defers its work), 2026-10-02, 41e7583b.
 - Q35 (Changes, Customizations, Audit, Present), 2026-10-02, 36e0a3b5.

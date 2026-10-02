@@ -171,3 +171,21 @@ None found. `ls docs/adr` and `ls ../../docs/adr` both print "No such file or di
 - Which fix to choose for the HEAD-only graph against the cherry-pick reachability (restrict to incoming commits, or widen the graph, or offer Cherry Pick on every visible commit).
 
 Usage, from the completion notice: claude-sonnet-5-5 (agent a5ef36663a256e394), 78,134 tokens, 94 tool uses, 15.0 min.
+
+## Closed
+
+Every finding is closed in `agents/briefs/Q88c.md` as written on main at d210de04, by ruling Z240 (the orchestrator, automode) and open item Z241.
+
+- Section 1, docs outside the paths: `DESIGN.md:128` and `HELP.md:44` and `:222` are in the path list and item 21; L4 has landed, so `HELP.md:27-45` is no longer shared.
+- Section 1, tests outside the paths: `menu-words.test.ts`, `config-folder.test.ts`, `sessions-fixture.ts` are in the path list; case 21 names their expected changes. `VOCAB_KEYS` tests run unchanged as part of the list.
+- Section 1, source files outside the paths: `catalogs.ts`, every pane literal (re-listed on the current tree after L4), the badge wiring, the git route, `CommitBox.svelte`, `ChangeGroups.svelte`, `Source.svelte` and `source.svelte.ts` are in the path list.
+- Section 1, line references: corrected (`OPERATIONS` :231-264, `handleGitGet` :141-196, the read forms :11-39).
+- Section 2, Discard All Untracked and the inline control: item 1. Checkout (Detached) on a remote branch name: item 7. Open Worktree in New Window: item 6. Reopen: item 5.
+- Section 4: case 16 isolates git's global and system config; case 15 tests `shouldCancel` as a pure function; case 12 lists every way the lock could be lost; Cherry Pick is offered on every commit (item 9); case 18 counts held counts and a file in two groups twice; item 3 uses `isBinaryFile`'s rule; case 20 adds the superseded read; the look list is in the Report section.
+- Section 5: each decision and behaviour closed with VS Code's behaviour (Decisions 1, 2, 9; items 3, 5, 9, 10, 17, 18). Delete Branch: `-d` only, the `-D` retry is open item Z241. The wire and saved shapes are named in items 3, 5, 9, 10, 12, 17.
+- Section 6.1: `user.useConfigOnly` goes through git's environment (item 16), so the gate is unchanged; probed in a scratch repository.
+- Section 6.2: `'cherry-picking'`, `sequenceOf`, the banner, the commit box, the commit action, the empty pick, `ALLOWED` (item 9).
+- Section 6.3 and 6.4: the folders at ten are named with the split rule; `server/core/git/` (item 20); `git-write.ts` is held under 900 by the verify list; `PaneView.svelte` (489 after L4) under 540 with a new subfolder.
+- Section 6.5: the git route gets the Files route's guard and Trash, in `opsWrites` (item 1).
+- Other implied inputs: the `.gitignore` write re-reads its result and refuses a link (item 2, case 2); argument injection (items 8 and 10, cases 8 and 10); Compare with Workspace through `GitState.worktrees[0]` (item 4); the badge (item 18); the scan's ignored folders and refresh (item 19); New Text File reuses the Note opening (item 13).
+- Overlap: L4 has landed; Q85d and U4 have landed; D35, D24 and X3a are compared under "Paths this step writes".
