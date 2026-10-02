@@ -968,3 +968,24 @@ Where it is built: D32. Booked in the state file's closed log and `plan.md` Ruli
 - Not chosen: running the script without `test_presentation.py` in a worktree, the lazy option, which leaves one part of the cockpit's check unrun on every step.
 
 Where it applies: every worktree made from now on. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z192 (2026-10-02, D14's brief check): the LaTeX view's shape
+
+- Chosen: a view `latex` ("LaTeX") opened from the Files row menu on a `.tex` file or a folder holding one, state `{ root, path }`; `/api/latex` folder forms beside the project form, both with `outline` and `count`; `latex.auto_build` (`on_save`, `never`) in `behavior.yml`; latexmk with the magic comment's program; the save's build not shown; Count Words on a press. This is how LaTeX Workshop is reached and behaves.
+- Not chosen: the panel kept on project tabs only, the lazy option, which leaves the funding and application folders without a build.
+
+Where it applies: D14. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z278 (2026-10-02, D14's brief check): LaTeX formatting
+
+- Chosen: Format Document in a `.tex` source tab through `tex-fmt --stdin` (LaTeX Workshop's other formatter; `latexindent` stops on this machine with `Can't locate File/HomeDir.pm`), an undoable edit of the tab's text, in D14; ChkTeX stays D36's.
+- Not chosen: the parity row's formatting left unbuilt, the lazy option.
+
+Where it applies: D14. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z279 (2026-10-02, D14's brief check): one LaTeX reader on latex-utensils
+
+- Chosen: magic comments, the root and the sections read with `latex-utensils` (LA18), and the Files Outline's hand reader replaced by the same shared reader.
+- Not chosen: the hand readers kept beside the library, the lazy option, which leaves two LaTeX section readers.
+
+Where it applies: D14, and the Files Outline and D25's sticky scroll through the shared reader. Booked in the state file's closed log and `plan.md` Rulings.

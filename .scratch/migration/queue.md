@@ -7,9 +7,9 @@ In flight (2; S4, Q91, D14 and D17 take the free slots next, and X3e, D25 and X3
 - D32 (replace in the Search view, as VS Code's): being built.
 
 Queued, in order (25). "Ready" means nothing in plan.md holds the step back; it starts when a slot frees.
-- S4 (the Settings editor finished: editors for the lists, the key/value tables and the record forms, one new write for them, the table of contents below 700 px): ready.
+- S4 (the Settings editor finished: editors for the lists, the key/value tables and the record forms, one new write for them, the table of contents below 700 px, the Config view removed and the System and Views and Settings pages merged into one rail item): being prepared; its brief is written and its brief check is running. Its landing, like D18's, waits for your ruling on the rail order (open item Z275), since it rewrites the rail in `config/layout.yml`.
 - Q91 (the project view and its manifest editor reworked): ready.
-- D14 (LaTeX on any folder holding a main file: several mains a folder, build on save, magic comments, outline, word count, hover preview): ready; its brief check is done.
+- D14 (LaTeX on any folder holding a main file: several mains a folder, build on save, magic comments, outline, word count, hover preview, Format Document; build errors published for the Problems view; ChkTeX moved to D36): being prepared; its brief is rewritten against today's tree and its brief check's findings are closed. Format Document needs a formatter installed on your machine (open item Z280).
 - D17 (project commands from `.oculus/commands.yml`, a form and what oculus finds, run after you approve their text): ready; its brief check is done.
 - X3e (the Files view's lists reordered by drag, a second Collapse Folders press closing the roots, and the Repositories view finding repositories nested one level under each root, with a depth setting): ready.
 - D25 (the editor's options, with sticky scroll from headings and brackets, and colouring of large files): ready; placed after S4 because both write the Settings editor.
@@ -34,7 +34,7 @@ Queued, in order (25). "Ready" means nothing in plan.md holds the step back; it 
 - O35 (oculus on macOS, Linux and Windows, terminals behind one backend interface with tmux and, on Windows, ConPTY): waits for O33.
 
 Landed, newest first:
-- M3 (the resources registry), 2026-10-02, 18b8d036.
+- M3 (the resources registry), 2026-10-02, 8ef3abbe.
 - Q88c (the Source Control rows' and the pane strip's new right-click capabilities), 2026-10-02, 81f5e4fe.
 - A1 (a comment on a line of a session's diff, sent to that session), 2026-10-02, 33be30af.
 - X3a (the Files view as VS Code's Explorer), 2026-10-02, 705e588d.
