@@ -7,10 +7,6 @@ Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/
 ## To take
 
 - M3: the resource tags on cards (This Mac and the others), the Compute facet, the manifest editor's chips field, the Live HPC view with `slurm.resource`.
-- D27: a rite file's Cmd+/ and bracket matching, the language picker set to Lua, a diff of two Lua files, the Settings Files section.
-- D13a: an italic run in Markdown; Shift+Alt+F5 over a file with several marks.
-- L4: a Terminal tab's scrollback across Dock and Float.
-- M4: the cockpit deck `tools/present/present.html` with a wide formula.
 - Q66: look items 16, 17, 19 and the Changes and Graph resets on a session switch.
 - Q67: whether the console links of `account-setup.yml` open the pages they name.
 - Q78: a project document's fenced block over a wallpaper; the doc view and the manual.
@@ -72,6 +68,26 @@ Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/
   - A1-2: in a 340 px pane the diff stays side by side with two columns of about 125 px each; VS Code turns a diff inline below 900 px.
   - A1-3: in a narrow pane the hunk header's Stage Block and Revert Block buttons are cut to "+ Sta" and "Rev" over the header text.
   - A1-4: a click or double-click on a Changed row in the Changes view opens no diff; only the row's Open Changes button does. VS Code opens the diff on a click.
+- D27, 2026-10-02, TEST, dark theme, on a throwaway folder `zz-look-d27` in the hub root (a copy of cathedra's `examples/transform2d.rite`, two Lua files, a text file), deleted after; no file was saved. Seen working: the rite file opens coloured with "Rite" in the status bar; Cmd+/ puts `; ` before the line and a second Cmd+/ takes it off, as cathedra's own VS Code extension sets `lineComment: ";"`; the bracket at the cursor is boxed and the pairs are coloured by depth; Cmd+/ in a Lua file toggles `-- `; the language picker (the status bar's language) lists Lua and Rite, and choosing Lua recolours notes.txt and the status bar says Lua; Compare Selected on a.lua and b.lua opens a side-by-side diff in Lua colours with the right three changed lines; a search for "languages" in the Settings view finds Files, Languages under sources.yml with its description, the entry shape and "Edit in sources.yml". Defects:
+  - D27-1: the language picker opens with Plain Text highlighted and no mark on the file's current language (Lua); VS Code marks the current one "(current)" and offers Auto Detect and "Configure File Association for '.txt'..." at the top.
+  - D27-2: the compare header of two chosen files reads "b.lua hub:zz-look-d27 R hub:zz-look-d27/a.lua", a git rename letter between two files that were never renamed, with b first while the tab says "a.lua vs b.lua".
+  - D27-3: two single clicks on notes.txt in the Files tree selected the row and opened nothing; a double-click opened it. One click opened t.rite and a.lua.
+  - D27-4: the Settings view's Languages setting shows only "Edit in sources.yml"; VS Code's Files: Associations is edited in place as a list of item and value rows with Add Item.
+  - D27-5: the Settings search box draws two clear buttons, one inside the field and one after "1 Setting Found".
+- D13a, 2026-10-02, TEST, dark theme, on a throwaway `zz-look-d13a/i.md` (deleted after) and on the changed brief `agents/briefs/X3c.md` opened with Open File from its diff and moved through by keys only (`git diff --numstat` gives 123 4 before and after). Seen working: `*one italic run*` and `_another italic run_` draw in italic, `**bold**` in bold; the brief's four changes carry marks on lines 1, 3, 5 and 7 to 126; from the last line Shift+Alt+F5 puts the caret on lines 7, 5, 3, 1 and then wraps to 7. Defects:
+  - D13a-1: `***bold italic***` draws italic at weight 400, not bold; VS Code draws it bold and italic.
+  - D13a-2: a modified line's gutter mark is drawn in `--c-scm-modified` (#e2c08d, the colour of a changed file's name), `Editor.svelte:474`; VS Code's gutter mark for a modified line is `editorGutter.modifiedBackground` (#1B81A8 in the dark themes), so the mark reads as a different thing from VS Code's.
+  - D13a-3: a 130-byte Markdown file showed "Waiting for the first snapshot" for 4 to 6 seconds before the editor drew.
+  - D13a-4: a Markdown file opens with the preview on beside the source; in a 340 px pane the preview takes over half the width and draws the brief's heading one or two words per line at heading size, leaving the source about 70 px wide.
+  - D13a-5: a changed row in the Changes view offers Open Changes, Stage and Discard, with no Open File; VS Code's row offers Open File, Discard and Stage, and a click on the row opens the changes (A1-4).
+- L4, 2026-10-02, TEST, dark theme, a Terminal tab opened from the palette with a shell started by the header's new-terminal control, `seq -f 'line %g' 1 300` run in it, and the shell ended with `exit` after (its tab closed with it). Seen working: the scrollback reaches line 1 by the scrollbar in the page pane, after Float, after Dock Left, after Float again from the dock, and after Return to Page; the lines rewrap to each width; Dock Left keeps the view where it was. Defects:
+  - L4-1: the first Float of the page pane drew an empty grid for 2 to 3 seconds, then drew the end of the output, so the view the reader had scrolled to (line 1 at the top) was lost; Return to Page also drew the end of the output instead of the view the float showed.
+  - L4-2: the Terminal tab is titled "45a932-shell", an internal id, while the bar inside says "zsh research-hub"; VS Code titles a terminal tab by its process ("zsh").
+  - Not settled: a 30-step wheel gesture from the look's tool moved the grid three lines; a real trackpad or mouse scroll would settle whether the wheel is slow.
+- M4, 2026-10-02, TEST, dark theme, the cockpit deck opened as a document tab from the Files view (Show Ignored Files on for the look and off after, since the deck is gitignored). The deck on disk was built on 2026-09-09, before M4, and drew its equations as PNG images; for the look it was rebuilt with `python3 tools/present/build.py` (13 LaTeX equation cards, 0 image cards) and the 09-09 file was put back after (`shasum` 630fa54d before and after). Seen working: all 13 formulas typeset with no MathJax error, and none wider than its card in a maximised pane. Defects:
+  - M4-1: every typeset formula is unreadable: the card's background is #f7f8fa and the formula takes the deck's text colour #e7ecf3 (`.eqcard` in `tools/present/assets/css/deck.css` sets a background and no colour), so the formula is near-white on near-white. Seen on the HCCNet slide's positional-encoding formula.
+  - M4-2: in a 230 px pane the equation card grows to its formula's width (605 px for the HCCNet formula) and is cut at the frame's edge with no scroll, so `.eqcard mjx-container{max-width:100%;overflow-x:auto}` never acts; the PNG it replaced shrank to the card.
+  - M4-3: Restore panes after Maximise pane reloaded the document frame, so the deck went back from slide 3 to slide 1.
 
 ## Blocked, for Axel
 
