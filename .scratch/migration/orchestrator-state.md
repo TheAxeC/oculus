@@ -114,7 +114,7 @@ dispatch:      # X3d continued by a new builder on Z104 (a). Ruled 2026-09-30: Z
   shared_paths: with Q35, `tests/views/academic/present.test.ts` and `tests/state/life/present.test.ts` (Q35 adds cases after 312 and 830; M4 lines 72-228 and 553-783); with Q35, X3a and D24, `tests/views/whole/type-scale.test.ts` (M4 the `Equation.svelte` row at 153 only, Z238; the others their own rows; Q35 changes that row and `Equation.svelte`'s `.gap` too, M4's removal winning at the second landing); with D24, as D24's entry says: separate hunks, a simple merge; `docs/diagrams/`, regenerated at each landing
   reviewer_report: agents/reviews/M4-refuter.md (first run, reviewer a75e5398f951f4f92, claude-sonnet-5-5 read at 03:48, launched 2026-10-02 03:48; 227,976 tokens, 69 tool uses, 37.9 min; 4 Spec, 2 Proof, 2 Standards, 4 Behaviour findings)
   landing: not-started
-  round: 0 (agents/briefs/M4-cases.md, sent 02:49)
+  round: 1 (agents/briefs/M4-round1.md, sent 04:46; round 0 agents/briefs/M4-cases.md, sent 02:49)
 ```
 
 ## The standing demands (from Axel, in force)
