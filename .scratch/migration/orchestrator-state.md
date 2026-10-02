@@ -68,8 +68,8 @@ dispatch:      # four in flight (workers_at_once: 5), A1 landed 14:40: Q88c and 
   base: eaf8034f
   launched: 2026-10-02 16:33 local
   report: agents/reviews/D14-report.md
-  builder_usage: 262,810 tokens, 505 tool uses, 234.3 min (its completion notice, 2026-10-02)
-  reviewer_report: agents/reviews/D14-refuter.md; reviewer a3769009482f05dfa at ordo-high, claude-opus-5-5 (the transcript's message.model, read 2026-10-02 at its launch); 329,067 tokens, 85 tool uses, 22.0 min (its completion notice, 2026-10-02)
+  builder_usage: 262,810 tokens, 505 tool uses, 234.3 min (its completion notice, 2026-10-02); round 1 265,815 tokens, 316 tool uses, 86.2 min (its completion notice, 2026-10-02)
+  reviewer_report: agents/reviews/D14-refuter.md; reviewer a3769009482f05dfa at ordo-high, claude-opus-5-5 (the transcript's message.model, read 2026-10-02 at its launch); 329,067 tokens, 85 tool uses, 22.0 min (its completion notice, 2026-10-02); round 1 run: reviewer a9abcd12e349e6eea at ordo-high, claude-opus-5-5 (read at its launch), pending
   brief_check: agents/reviews/D14-brief-check.md; claude-sonnet-5-5, 272,742 tokens, 109 tool uses, 15.3 min (run 2026-10-01; findings closed 2026-10-02 under Closed)
   shared_paths: with D32, `state/sessions/latex.svelte.ts` (D32 replaces the error lines 161 and 166 with a shared reader; D14's new fetch keeps its error reading as one call there, so the second landing takes D32's reader), `package.json` and the lockfile (regenerated with `npm install` at the second landing), `HELP.md` and `DESIGN.md` (separate lines); with D18, `package.json` and the lockfile, `config/behavior.yml` (separate sections), `config/catalogs/options.yml` (separate entries of the `behavior.yml:` block), `config-folder.test.ts` and `allow-duplication.txt` (separate rows), `HELP.md` and `DESIGN.md` (separate lines)
   landing: not-started
@@ -202,6 +202,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z303 (2026-10-02 22:00, D14's round 1 report): D14-glyph; Z300's `paper` premise was wrong (the Document view's glyph, refused twice by the registry test); the LaTeX tab keeps `journals` as built (the orchestrator, automode). Not chosen: changing Document's glyph; an exemption in the registry test, the lazy option; `publish`.
 - Z302 (2026-10-02 21:40, S4's refuter report): B5, `holds: lists` on a family entry of the options catalog, carried by `tab_rollup`; the rollup form for an empty map and the write refusing the wrong record shape; sent in S4's repair round 1 (the orchestrator, automode). Not chosen: (b), the records form, the lazy option.
 - Z301 (2026-10-02 21:20, D17's refuter report): the form in `shell/commands/`; preset names `cmake:`, `cmake build:`, `ctest:`; the approvals folder made 0700; the repository in a command's approval key; quoted placeholders refused; the chain approved as one text; sent in D17's repair round 1 (the orchestrator, automode). Not chosen: the shapes as built; leaving quoted placeholders, the lazy option.
 - Z300 (2026-10-02 21:00, D14's refuter report): Spec 2 and Spec 3; the LaTeX reader at `data/prose/latex.ts`, the LaTeX tab on the existing `paper` glyph instead of `publish`; sent in D14's repair round 1 (the orchestrator, automode). Not chosen: the places as built; a new glyph key.

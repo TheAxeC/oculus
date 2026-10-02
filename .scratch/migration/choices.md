@@ -997,6 +997,17 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z303 (2026-10-02, D14's round 1 report, D14-glyph): the LaTeX tab's glyph, again
+
+Chosen: (a), `journals` (`[n]`, `newspaper`), a typeset page that no view uses; the tree has it now. Z300 chose `paper` on a wrong premise: `paper` is the Document view's glyph, and `tests/state/workbench/navigation/registry.test.ts` refuses two views sharing one.
+
+Not chosen:
+- (b), `paper` for LaTeX and another glyph for Document: it changes a view D14 does not own.
+- (c), `paper` for both with an exemption in the registry test: the lazy option, a check loosened.
+- (d), `publish`: Source Control's Publish action, replaced by Z300.
+
+Where it applies: D14. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z302 (2026-10-02, S4's refuter report, B5): an emptied `tab_rollup`
 
 Chosen: (a), a family entry of the options catalog may carry `holds: lists`, meaning each key of the map holds a list of records; `tab_rollup` carries it. The editor draws the rollup form for `tab_rollup: {}`, and the write refuses a key holding a single record under such a family, so a shape the boards' roll-up does not take is never saved.
