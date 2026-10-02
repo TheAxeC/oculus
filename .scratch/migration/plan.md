@@ -888,6 +888,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z265 (2026-10-02): (a), D32: a refusal's own text reaches the reader only as a catalog word; the search route answers refusal words, and an unknown body text gives the `answer_refused` sentence; this narrows Z259's "a body's own `error` text is kept" (the orchestrator, automode).
 - Open item Z266 (2026-10-02): every message to Axel written to an expert colleague, plain, precise and complete; a step always named by its id and what it is; no ruling numbers and no ledger text quoted; exactly his questions in his order, each answered in full; every decision of his as an open item with options, pros and cons, one recommendation and the lazy option named, decisions first; no unasked corrections, narration, meta or passive-aggressive phrasing; replaces opening reports with the open items verbatim (the user).
 - Open item Z263 (2026-10-02): (a), a new step X3e: the roots, the folder bookmarks, the notes and the Files view's sections reordered by drag, and a second Collapse Folders press closing the roots, as VS Code's (the user).
+- Open item Z267 (2026-10-02): (a), no separate path bar: a tab's full path shows in X3c's tooltip on hover and in X3c's breadcrumbs above the active file tab, as VS Code's; (b), a Finder-style path item on the status bar, declined (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
