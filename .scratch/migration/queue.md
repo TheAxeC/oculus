@@ -1,16 +1,16 @@
 /plan-orchestration oculus/migration
 
-27 steps are not landed: 3 in flight and 24 queued. Each line below is one step: its id, what it is, and what it waits for.
+27 steps are not landed: 4 in flight and 23 queued. Each line below is one step: its id, what it is, and what it waits for.
 
-In flight (3; S4, Q91 and D17 take the free slots next, and X3e, D25 and X3c are prepared to wait ready):
+In flight (4; S4 and Q91 take the free slots next, and X3e, D25 and X3c are prepared to wait ready):
 - D18 (the Processes view): its repair round reviewed (5 small findings, fixed at landing); its landing waits for your ruling on the rail order (open item Z275), since it changes `config/layout.yml`, which holds your uncommitted change.
 - D32 (replace in the Search view, as VS Code's): being built.
+- D17 (project commands from `.oculus/commands.yml`, a form and what oculus finds, run after you approve their text; a default build on Cmd+Shift+B and test on Cmd+Alt+T; compiler errors clickable): being built.
 - D14 (LaTeX on any folder holding a main file: several mains a folder, build on save, magic comments, outline, word count, hover preview, Format Document; build errors published for the Problems view; ChkTeX moved to D36): being built. Format Document needs a formatter installed on your machine (open item Z280).
 
-Queued, in order (24). "Ready" means nothing in plan.md holds the step back; it starts when a slot frees.
+Queued, in order (23). "Ready" means nothing in plan.md holds the step back; it starts when a slot frees.
 - S4 (the Settings editor finished: editors for the lists, the key/value tables and the record forms, one new write for them, the table of contents below 700 px, the Config view removed and the System and Views and Settings pages merged into one rail item): being prepared; its brief is written and its brief check is running. Its landing, like D18's, waits for your ruling on the rail order (open item Z275), since it rewrites the rail in `config/layout.yml`.
 - Q91 (the project view and its manifest editor reworked): ready.
-- D17 (project commands from `.oculus/commands.yml`, a form and what oculus finds, run after you approve their text): ready; its brief check is done.
 - X3e (the Files view's lists reordered by drag, a second Collapse Folders press closing the roots, and the Repositories view finding repositories nested one level under each root, with a depth setting): ready.
 - D25 (the editor's options, with sticky scroll from headings and brackets, and colouring of large files): ready; placed after S4 because both write the Settings editor.
 - D15 (PDF reading: the page kept per file, the PDF opened beside its source): ready; placed after D14 because D14 rebuilds the LaTeX panel D15 opens the PDF from.
