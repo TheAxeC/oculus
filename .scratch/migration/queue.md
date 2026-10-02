@@ -2,19 +2,19 @@
 
 27 steps are not landed: 5 in flight and 22 queued. Each line below is one step: its id, what it is, and what it waits for.
 
-In flight (5, every slot taken; Q91, X3e and X3c are being prepared to wait ready, each with its brief checked):
+In flight (5, every slot taken; Q91 waits ready with its brief checked, X3e and X3c have their brief checks running, and E4 is being prepared as the third step that can start beside Q91 and X3c):
 - D18 (the Processes view): its repair round reviewed (5 small findings, fixed at landing); its landing waits for your ruling on the rail order (open item Z275), since it changes `config/layout.yml`, which holds your uncommitted change.
-- D32 (replace in the Search view, as VS Code's): being built.
+- D32 (replace in the Search view, as VS Code's): built; its review is running. Its repair round will also turn the Replace Preview's request into a POST, so a file with many hits can still be previewed.
 - D17 (project commands from `.oculus/commands.yml`, a form and what oculus finds, run after you approve their text; a default build on Cmd+Shift+B and test on Cmd+Alt+T; compiler errors clickable): being built.
 - D14 (LaTeX on any folder holding a main file: several mains a folder, build on save, magic comments, outline, word count, hover preview, Format Document; build errors published for the Problems view; ChkTeX moved to D36): being built. Format Document needs a formatter installed on your machine (open item Z280).
 - S4 (the Settings editor finished: editors for the lists, the key/value tables and the record forms, one new write for them, the table of contents below 700 px, the Config view removed and the System and Views and Settings pages merged into one rail item named System): being built. Its landing, like D18's, waits for your ruling on the rail order (open item Z275), since it rewrites the rail in `config/layout.yml`. Once D18 is on main, its Processes view sits last on the merged page with no number key, since the keys reach nine views.
 
 Queued, in order (22). "Ready" means nothing in plan.md holds the step back; it starts when a slot frees.
-- Q91 (the project view and its manifest editor reworked): ready.
-- X3e (the Files view's lists reordered by drag, a second Collapse Folders press closing the roots, and the Repositories view finding repositories nested one level under each root, with a depth setting): ready.
+- Q91 (the project view and its manifest editor reworked: the follow-up notes and the priority, waiting-on, snooze and subtasks shown in the editor, the follow-ups drawn on the card, the status line drawn as a labelled field with its code, and the project's file list drawn as the Files view's tree rooted at the project folder): its brief is written and checked; it waits ready for the next free slot. Its project file list is the Files view's tree moved to a shared folder, which every card draws.
+- X3e (the Files view's lists reordered by drag: the roots, the folder bookmarks, the notes and the view's sections; a second Collapse Folders press closing the roots; and the Repositories view finding repositories nested under every root, the website inside the hub among them, to a depth set in `sources.yml`): its brief is written and its brief check is running; it waits for Q91, which moves the Files tree it edits.
 - D25 (the editor's options, with sticky scroll from headings and brackets, and colouring of large files): waits for S4, since both write the Settings editor's rows and S4 rebuilds them.
 - D15 (PDF reading: the page kept per file, the PDF opened beside its source): ready; placed after D14 because D14 rebuilds the LaTeX panel D15 opens the PDF from.
-- X3c (the tab strip as VS Code's, with the path tooltip, Open Editors drag reordering the tabs and the Files breadcrumb removed): ready.
+- X3c (the tab strip as VS Code's: pinned tabs, the tab's right-click menu, the session pin relabelled "Lock to this session", wrapped tabs as a setting, breadcrumbs over a file tab, the full path in a file tab's tooltip, Open Editors dragging the tabs into order, and the Files tree's breadcrumb removed): its brief is written and its brief check is running; it waits ready for a free slot.
 - D23 (language servers in the editor: pyright for Python, clangd for C++, the Outline's code symbols): waits for D25.
 - D11 (the debug client for rite): waits for D17.
 - D20 (an agent started from a task or in a new worktree): waits for D17.

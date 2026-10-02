@@ -997,6 +997,38 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z286 (2026-10-02, Q91's brief check): the card's tree, revising Z283
+
+Chosen: the explorer tree moves under `views/shared/explorer/`, and the Files view and every card (the board's open card and the project tab's) draw it; each card's tree has its own state record `<tab id>#files:<project id>`, cleared when the tab closes and followed on a rename; the card's finder box stays above the tree and lists flat matches while text is typed; the tree's row menu gains Open in Program; a `followup:` list of one note is written as that note, and emptying the note's text removes the note (the orchestrator, automode).
+
+Not chosen:
+- An allow row in the boundaries test so the card imports from `views/sources/`. Cheaper, and it widens the layer rule instead of meeting it: the lazy option.
+- The tree replacing the finder. The tree's filter reads only listed folders, so project-wide search, opening in a program, sizes and recency would be lost.
+- The tree in the project view only (Z283 as first booked). The board card would keep a second, different file list for the same project.
+
+Where it applies: `agents/briefs/Q91.md` items 1 and 4, decisions 1-4.
+
+## Z285 (2026-10-02, D32's report): the Replace Preview request
+
+- Chosen: the preview read is a POST carrying the hits in its body, the same shape as the replace, so no address length limits it.
+- Not chosen: (a) leaving the HTTP 431 past about 1400 hits in one file with its failure sentence; (c) refusing such a replace, the lazy option.
+
+Where it applies: D32, its repair round. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z284 (2026-10-02, X3e's /spec): where each reordered list is written, and the scan depth key
+
+- Chosen: roots reorder within their group (default workspace: `sources.yml` through the `roots` write's `order` action; named workspace: `workspaces.json` through `POST /api/fs` `order-roots`); the hub and config folder fixed; the notes' order in `~/.oculus/notes/order.json`, a new note on top; the sections' order in the Files tab's instance state; Alt+Up and Alt+Down move a focused row; `repository_scan_depth` in `config/sources.yml`, default 1, range 0 to 3.
+- Not chosen: notes left newest first with no stored order, the lazy option; moving the fixed roots, which no file holds.
+
+Where it applies: X3e. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z283 (2026-10-02, Q91's /spec): the project's file list as the Files view's tree
+
+- Chosen: the project view draws the Files view's tree rooted at the project's folder, through one component moved out of `Files.svelte` and drawn by both; the card in the project view drops its flat list, the board's open card keeps it; several follow-up notes are read-only in the editor.
+- Not chosen: restyling the card's flat list to look like the tree, the lazy option; the tree in every board card, which has no height to live in.
+
+Where it applies: Q91. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z282 (2026-10-02, S4's brief check): Processes in the merged System page
 
 - Chosen: `processes` registers last in the merged group (order 9, after Gallery, lower right pane) with no chord; the second of D18 and S4 to land makes the merge; the group keeps the `settings` glyph and the rail button `sliders`.
