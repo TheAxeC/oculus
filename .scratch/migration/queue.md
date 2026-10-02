@@ -1,16 +1,14 @@
 /plan-orchestration oculus/migration
 
 In flight:
-- X3a (the Files view as VS Code's Explorer, with the macOS folder panel of Z187 (f), Q114's undo and Z199 to Z214), repair round 1 back (3 full-list runs, the 3rd passing); the review over the round running.
-- D18 (the Processes view), building.
-- Q88c (the Source Control rows' and the pane strip's new right-click capabilities, Z240), builder at ordo-high; Z241 ruled (b): Delete Branch's force retry goes into its repair round or its landing.
-- M3 (the resources registry), building.
-- A1 (review with feedback), building.
+- Q88c (the Source Control rows' and the pane strip's new right-click capabilities), repair round 1 back; the review over the round running.
+- A1 (review with feedback on diffs), repair round 1 back; the review over the round running.
+- D18 (the Processes view), repair round 1, a continuation builder.
+- M3 (the resources registry), repair round 1, a continuation builder.
 
 Three queued steps are kept prepared ahead (Z185).
 
-Queued, in order (25 steps):
-- D32 (replace in Search, and the seven state-layer answers Z154 accepted judged one by one, by Z198), once X3a has landed: both add a change-log record written outside `api/write`, each with its own `UndoKind`, `undo.ts` row, History words and recorded-kinds gate (`tests/fixtures/kinds.ts`), and both change `source.ts` and `edit/writes.ts`; its brief check is in, its brief is written at that /spec.
+Queued, in order (24 steps):
 - S4 (the Settings editor finished: lists, maps, records, the table of contents, the Config view folded in and the two system pages merged), Z190 ruled (a); /spec once X3a and D35 have landed (X3a adds the `roots` list edit S4's list editor covers, D35 changes the config write and `options.yml`).
 - X3c (the tab strip as VS Code's), once Q88c has landed.
 - Q91 (the project view and its editor), once X3a has landed.
@@ -35,6 +33,7 @@ Queued, in order (25 steps):
 Done: the three-way Opus and Sonnet comparison, written 2026-10-02 at Axel's request, is `agents/reviews/sonnet-vs-opus.md`.
 
 Landed, newest first:
+- X3a (the Files view as VS Code's Explorer), 2026-10-02, 705e588d.
 - D24 (the Personal board: side projects and the Files roots' manifests as cards), 2026-10-02, 4ce50c59.
 - D35 (every configuration file live, the server's port move and the page following it), 2026-10-02, 15824705.
 - M4 (the Present view's equations as LaTeX), 2026-10-02, d210de04.

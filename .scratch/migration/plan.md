@@ -881,6 +881,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item Z262 (2026-10-02): (a), X3c: the tab tooltip with the full path, Open Editors drag reordering the tabs, the Files tree's breadcrumb removed once X3c's file-tab breadcrumbs are in (the orchestrator, automode).
 - Open item Z264 (2026-10-02): (a), D32: replace reads its text exactly as VS Code's `ReplacePattern` and `buildReplaceStringWithCasePreserved` do, emulated over the groups ripgrep reports; the differences kept are listed in D32's brief (the orchestrator, automode).
 - Open item Z265 (2026-10-02): (a), D32: a refusal's own text reaches the reader only as a catalog word; the search route answers refusal words, and an unknown body text gives the `answer_refused` sentence; this narrows Z259's "a body's own `error` text is kept" (the orchestrator, automode).
+- Open item Z266 (2026-10-02): every message to Axel in plain human words: no ledger codes without saying what they are, no ledger text quoted, exactly his questions in his order, each labelled as nothing changes, a step changed (which, by whom) or his decision (options, recommendation), decisions first; replaces opening reports with the open items verbatim (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
