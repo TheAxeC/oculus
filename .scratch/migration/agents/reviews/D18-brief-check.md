@@ -162,3 +162,17 @@ DECLINED TO JUDGE
 
 USAGE
 About 70 tool calls and about 250k tokens read into context; minutes not measured (no clock was read). No file was written or changed, no skill invoked, no agent started, no process-reading command run, local.yml never opened.
+
+# Closed
+
+Each point closed in `agents/briefs/D18.md`, the tree re-read on main at 8a343fa6 after D24 landed:
+
+- A (5.1, 6.1, 5.2): Z244 (b), the reads run every ten seconds while the hub has a `processes` subscriber, every page subscribing with its other channels in `+page.svelte`; the wire is unchanged; item 3 and case 11 rewritten.
+- B (3.4, 6.9, 6.17, 6.18): Z245, every pane of every terminal session through `tmux list-panes -a`; the usage and foreign sessions are not own and not counted; item 2, Decision 1, cases 1 and 2b.
+- C (1.1, 1.2): the importer grep is `system/(hpc|usage)`, 21 files listed by name; the view tests move to `tests/views/system/machine/` so the mirror holds; `allow-audits.txt:61` re-keyed.
+- D (1.4 to 1.6): the System arrangement (`layout.yml:93`), y1 to y7 (`HELP.md:70`, `app.yml:12`, `catalogue.test.ts`, `help.test.ts`), `registry.test.ts`, `shapes.ts`, `entities.svelte.ts`, `+page.svelte`, `page.test.ts`, `client-state.test.ts`, the context fixture and tests, `channels.test.ts`, the glyph `(p)` and icon `cpu`, `README.md:13`, `DESIGN.md:114` written whole and `:162`, the settings head comment, the options entry's `default` and `control: list`: each in an item and in the path list.
+- E (5.5): verify 3 expects empty output.
+- F (4.9): Decision 4 and item 6 say the terminal and everything in it ends, a process started by hand included, and the question names the terminal and its pane process, as `DESIGN.md:150` requires; no clash remains. The end is the terminals store's `endTerminals([id])`.
+- G (4.1 to 4.12, 6.2 to 6.25): cases 1 (a real terminal id, a second pane), 2 and 2a to 2c, 3, 8, 9, 11 to 16, 18 and the new 19 to 21; `lsof` read whatever its exit and pids as integers; a 10 s timeout on `processes()`; patterns changed in flight and close in flight; real paths for the project match; `project` dropped from the row; the reading sentence; sort within groups; a group without its pane process keeps Stop; Z246 for the agent count; Z247 for the command length; the library's fields read from its own type declarations and quoted in the report; the CPU and memory figures' meaning said in HELP.md.
+- 2 ("found in Activity Monitor"): HELP.md says PID, user and command match Activity Monitor and the CPU and memory figures come from `ps`.
+- 3.9: the shared-file list rewritten for X3a and Q88c; D24 has landed.
