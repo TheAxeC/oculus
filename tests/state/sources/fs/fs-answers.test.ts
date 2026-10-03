@@ -74,9 +74,10 @@ const KINDS: Kind[] = [
         name: 'workspaces',
         read: (state) => state.fs.workspaces(),
         retry: (state) => state.fs.retryWorkspaces(),
-        nothing: { current: '', workspaces: [], dropped: [], loading: false },
+        nothing: { home: '', current: '', workspaces: [], dropped: [], loading: false },
         wrongTyped: [
             [{ workspaces: {}, current: 3 }, {}],
+            [{ home: 7 }, {}],
             [{ workspaces: 'x', current: null, dropped: {} }, {}],
             [{ workspaces: null, dropped: null, current: 'a' }, { current: 'a' }]
         ],

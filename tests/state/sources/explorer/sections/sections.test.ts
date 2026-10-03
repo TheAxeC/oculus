@@ -10,10 +10,10 @@
 import { describe, expect, it } from 'vitest';
 import {
     dirtyIds,
-    fileOfTab,
     openGroups,
     openIds
 } from '../../../../../src/lib/state/sources/explorer/sections/open-editors.ts';
+import { fileOfTab } from '../../../../../src/lib/state/workbench/navigation/pages.ts';
 import {
     createLatexReader,
     latexOutline,
@@ -65,7 +65,8 @@ describe('Open Editors', () => {
                 { path: [1], pane: pane('t3', c, term) }
             ],
             nameFor,
-            (id) => id === 't2'
+            (id) => id === 't2',
+            fileOfTab
         );
 
         expect(groups.map((group) => group.rows.map((row) => row.id))).toEqual([
@@ -84,7 +85,12 @@ describe('Open Editors', () => {
 
     // Revert: draw the tab id as the name when the strip gives none.
     it('names a row by its strip and falls back to the file name, with the folder beside it', () => {
-        const [group] = openGroups([{ path: [0], pane: pane('t1', a, b) }], nameFor, () => false);
+        const [group] = openGroups(
+            [{ path: [0], pane: pane('t1', a, b) }],
+            nameFor,
+            () => false,
+            fileOfTab
+        );
 
         expect(group.rows.map((row) => [row.name, row.where, row.active])).toEqual([
             ['a.md', 'notes', true],
@@ -94,9 +100,9 @@ describe('Open Editors', () => {
 
     // Revert: keep a pane with no file tab.
     it('leaves out a pane that holds no file tab', () => {
-        expect(openGroups([{ path: [0], pane: pane('t4', term) }], nameFor, () => false)).toEqual(
-            []
-        );
+        expect(
+            openGroups([{ path: [0], pane: pane('t4', term) }], nameFor, () => false, fileOfTab)
+        ).toEqual([]);
     });
 });
 

@@ -21,7 +21,7 @@
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { nameOf, type RowRef } from '$lib/state/sources/fs';
-    import { fileOfTab } from '$lib/state/sources/explorer/sections/open-editors';
+    import { fileOfTab } from '$lib/state/workbench/navigation/pages';
     import { timelineOf, type TimelineEntry } from '$lib/state/sources/explorer/sections/timeline';
     import { ago, repoOfFile } from '$lib/state/sources/repositories/file-git';
     import { useState } from '$lib/state/client/use';

@@ -7,8 +7,8 @@
 // Pure functions over plain values; nothing is read or written.
 
 import { describe, expect, it } from 'vitest';
+import { absoluteOf } from '../../../src/lib/state/workbench/navigation/pages.ts';
 import {
-    absoluteOf,
     filesViewOf,
     followRevealed,
     followView,

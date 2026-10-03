@@ -23,16 +23,13 @@ import {
     textCatalog
 } from '../../../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs, t } from '../../../../../src/lib/state/shared/words/text.ts';
-import { noop } from '../../../../fixtures/doubles.ts';
+import { keyWords as words, noop } from '../../../../fixtures/doubles.ts';
 import { treePropsOver } from '../files-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../../../../fixtures/client.ts';
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
 setGlyphs(glyphCatalog(config));
-
-const words = (key: string, ...args: (string | number)[]): string =>
-    args.length === 0 ? `@${key}` : `@${key}(${args.join(',')})`;
 
 describe('the message under the name input', () => {
     const none = (): boolean => false;

@@ -218,6 +218,29 @@ describe('the repository of the tab on screen', () => {
         );
     });
 
+    // Revert: look the tab's root up among the served root keys only.
+    it('finds the repository a diff tab names by folder, as the source tab on the same repository', () => {
+        const git: GitPayload = {
+            '/work/hub': repo({ ahead: 1 }),
+            '/work/hub/projects/paper': repo({ branch: 'draft' })
+        };
+        const bySource = repoStatus({ root: 'hub', path: 'tools/a.ts' }, ROOTS, git, 'hub');
+        const byDiff = repoStatus({ root: '/work/hub', path: 'tools/a.ts' }, ROOTS, git, 'hub');
+
+        expect(byDiff).not.toBeNull();
+        expect(byDiff).toEqual(bySource);
+        expect(
+            repoStatus({ root: '/work/hub/projects/paper', path: 'x.tex' }, ROOTS, git, 'hub')
+                ?.branch
+        ).toBe('draft');
+    });
+
+    it('holds no repository for a folder no repository contains, and for a key that is no folder', () => {
+        const git: GitPayload = { '/work/hub': repo() };
+        expect(repoStatus({ root: '/elsewhere', path: 'a.ts' }, ROOTS, git, 'hub')).toBe(null);
+        expect(repoStatus({ root: 'unknown', path: 'a.ts' }, ROOTS, git, 'hub')).toBe(null);
+    });
+
     it('holds no file in a repository whose key is empty', () => {
         expect(repoStatus({ root: 'hub', path: 'a.md' }, ROOTS, { '': repo() }, 'hub')).toBe(null);
     });

@@ -43,6 +43,7 @@
         buildIndex,
         commands,
         editorItems,
+        pinItems,
         folderCommand,
         kindWord,
         lineQuery,
@@ -110,9 +111,16 @@
     const source = $derived(sourceOnScreen(activeInstance(), statusOf));
     /** The tab on screen whose editor actions are listed: a source tab or a diff pane. */
     const acting = $derived(editorOnScreen(activeInstance(), statusOf));
+    /** The active tab of the pane the reader last worked in, which Pin Editor toggles. */
+    const tab = $derived(activeInstance());
+    const pinnable = $derived(tab === null ? null : { id: tab.id, pinned: tab.pinned === true });
     const index = $derived(
         open
-            ? [...buildIndex(current.snapshot, current.feeds, knownViews), ...editorItems(acting)]
+            ? [
+                  ...buildIndex(current.snapshot, current.feeds, knownViews),
+                  ...editorItems(acting),
+                  ...pinItems(pinnable, t)
+              ]
             : []
     );
     const parsed = $derived(parseCommand(query));

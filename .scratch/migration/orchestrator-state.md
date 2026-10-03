@@ -28,22 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # two steps in flight (2026-10-03): X3c refuted after round 1, T1c launched (workers_at_once: 5).
-- step: X3c
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 07:51)
-  session_id: aa0cc6392e8b3076f (builder, launched 2026-10-03 07:51 local)
-  worktree: .agents/worktrees/X3c
-  base: ddcd610c
-  launched: 2026-10-03 07:51 local
-  report: agents/reviews/X3c-report.md
-  builder_usage: 221,047 tokens, 823 tool uses, 195.1 min (report saved 2026-10-03); round 1: 336,267 tokens, 375 tool uses, 117.4 min (report saved 2026-10-03, one full-list run)
-  reviewer_report: agents/reviews/X3c-refuter.md (first run; reviewer a535e06539cbd8738, claude-opus-5-5, 364,675 tokens, 113 tool uses, 33.4 min); round 1 run: reviewer afe977eb85adbd5f1, claude-opus-5-5, 113,188 tokens, 116 tool uses, 33.9 min, appended under "Repair round 1, refuted"
-  brief_check: agents/reviews/X3c-brief-check.md; claude-opus-5-5, 318,282 tokens, 113 tool uses, 17.0 min (run on main at a9c0d38d; findings closed 2026-10-03 under Closed)
-  landing_merge: D25 landed first; X3c's landing merges `DESIGN.md:391` (D25 moved `gutter.ts` to `ui/controls/editor/gutter/`, X3c rewords the same line) and `DESIGN.md:404` (D25's `ui/controls/editor/diff/DiffEditor.svelte` path beside X3c's change of the next line) by hand, keeping both steps' changes (D25 refuter, round 1 Spec 1)
-  landing: not-started
-  round: 1 (sent 2026-10-03, rulings agents/briefs/X3c-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's x3c-round1-start/ for the delta)
+dispatch:   # one step in flight (2026-10-04): T1c, its repair round 1 reported (workers_at_once: 5).
 - step: T1c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -53,10 +38,10 @@ dispatch:   # two steps in flight (2026-10-03): X3c refuted after round 1, T1c l
   base: d160d13f
   launched: 2026-10-03 16:27 local
   report: agents/reviews/T1c-report.md
-  builder_usage: 187,752 tokens, 744 tool uses, 261.4 min (report saved 2026-10-03 19:10; four full-list runs; breaches: one read-only `git diff --stat`, reads of main's `tests/server`, and a stray file `139` written into the main ledger by a shell redirect, holding `test.ts files 138 -`, removed by the orchestrator)
+  builder_usage: 187,752 tokens, 744 tool uses, 261.4 min (report saved 2026-10-03 19:10; four full-list runs; breaches: one read-only `git diff --stat`, reads of main's `tests/server`, and a stray file `139` written into the main ledger by a shell redirect, holding `test.ts files 138 -`, removed by the orchestrator); round 1: 368,506 tokens, 377 tool uses, 183.1 min (report saved 2026-10-04, section 11 of the report; two full-list runs; read-only git commands run against the prompt, listed in the report)
   reviewer_report: agents/reviews/T1c-refuter.md (first run; reviewer a194094e84c8be37a, claude-opus-5-5, 79,507 tokens, 146 tool uses, 39.3 min)
   brief_check: agents/reviews/T1c-brief-check.md; claude-opus-5-5, 204,893 tokens, 70 tool uses, 9.4 min (run on main at 4bc8983b; findings closed under Closed)
-  shared_paths: with X3c, `tests/checks/tree/allow-duplication.txt` only (T1c lines 39-65, the entries naming a `tests/server` file; X3c's one hunk at 16-23), separate lines, so the merge is simple
+  shared_paths: with X3c, landed 2026-10-04: `tests/checks/tree/allow-duplication.txt` only (T1c lines 39-65, the entries naming a `tests/server` file; X3c's one hunk at 16-23), separate lines, so the merge is simple
   landing: not-started
   round: 1 (sent 2026-10-03, rulings agents/briefs/T1c-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's t1c-round1-start/ for the delta)
 ```
@@ -208,9 +193,9 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-03 16:27. Q116 landed. In flight: X3c (the tab strip), round 1 refuted; T1c (the sweep of `tests/server/`), its builder launched. T1b, T1d and T1e wait for X3c's landing: X3c changes 23, 31 and 6 of their test files, and a sweep rewriting the same files is no simple merge (the `spec` skill's Steps 5). Next:
-  1. T1c: repair round 1 sent; its report, the run over the round, then `/land` with `subscriptionChannels` removed.
-  2. X3c: after D25's four owed looks, `/land` with the zero-width tab list fixed at landing and the Q78 steps replayed in its look (Z372 (a)), then `/land` with its round 1 run's findings disposed at landing (Z361 (b), Z355's deletions, the `landing_merge` line, the git breach).
-  3. T1b, T1d and T1e once X3c lands; T1a after the four sweeps, its timings under a reproduced load (Z370 (a)); then the queue in order, O33 to O36 paused (Z369).
-  4. The recurring-findings pass (Z251); D25's four owed looks (Z362); the rail reorder `/diagnose`; the Q81 look when Axel sets `skip_permissions`.
+- 2026-10-04. X3c landed (the tab strip). In flight: T1c (the sweep of `tests/server/`), its repair round 1 reported. Next:
+  1. T1c: the run over round 1 (`/refute`), then `/land` with `subscriptionChannels` removed and the `allow-duplication.txt` merge with X3c. Its report raises three points (the 100 ms boundary, a slow `paths.test.ts` case red in the slow tier, one `git-ops.test.ts` timeout under load), each judged after the run over the round.
+  2. T1b, T1d and T1e, unblocked by X3c's landing: `/spec` each.
+  3. T1a after the four sweeps, its timings under a reproduced load (Z370 (a)); then the queue in order, O33 to O36 paused (Z369).
+  4. The recurring-findings pass (Z251); the rail reorder `/diagnose`; the Q81 look when Axel sets `skip_permissions`.
   Open for Axel: Z314.

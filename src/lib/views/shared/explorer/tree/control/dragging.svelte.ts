@@ -6,10 +6,10 @@
 // prompt box) reads, and a folder row under FOLDER_DRAG, which only this tree takes. The folder a
 // drop would land in is tinted, with the rows open under it.
 
+import { absoluteOf } from '$lib/state/workbench/navigation/pages';
 import {
     FILE_DRAG,
     FOLDER_DRAG,
-    absoluteOf,
     type FsRoot,
     type RowRef,
     type TreeRow

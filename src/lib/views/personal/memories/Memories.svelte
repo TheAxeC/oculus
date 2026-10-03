@@ -29,10 +29,10 @@
     //
     // The enlarged picture is this view's own overlay rather than a primitive, since it is the one
     // place in oculus where a picture is shown over the pane and `ui/` would gain a component with
-    // one reader. It is a modal on bits-ui's Dialog, drawn in place in the pane: Tab stays inside
-    // it while it shows and while its tab shows. It closes on its own Escape, on a press outside
-    // the picture and on its own control, and the tile that opened it takes the keyboard back, so
-    // the wall is where the reader left it.
+    // one reader. It is a modal on bits-ui's Dialog, moved to the body (`portal`) so it stands over
+    // every pane and float: Tab stays inside it while it shows and while its tab shows. It closes
+    // on its own Escape, on a press outside the picture and on its own control, and the tile that
+    // opened it takes the keyboard back, so the wall is where the reader left it.
 
     import { Dialog } from 'bits-ui';
     import { tick, untrack } from 'svelte';
@@ -47,7 +47,8 @@
     import { tileRatio } from '$lib/state/life/memories.svelte';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
-    import { watchShown } from '$lib/ui/shown';
+    import { focusQuietly } from '$lib/ui/frame/quiet-focus';
+    import { portal, watchShown } from '$lib/ui/shown';
 
     const {
         memories: { wall, reload },
@@ -113,17 +114,16 @@
      */
     let overlay: HTMLDivElement | undefined = $state();
 
+    /** This pane's own box, so a second Memories pane keeps its own tiles and its own keyboard. */
+    let box: HTMLDivElement | null = $state(null);
+
     /**
      * Whether the overlay's tab shows, so its focus trap holds nothing of the page while hidden.
+     * The pane's own box says it, since the overlay stands in the body and has a size always.
      */
     let overlayShown = $state(true);
 
-    $effect(() =>
-        overlay === undefined ? undefined : watchShown(overlay, (shown) => (overlayShown = shown))
-    );
-
-    /** This pane's own box, so a second Memories pane keeps its own tiles and its own keyboard. */
-    let box: HTMLDivElement | null = $state(null);
+    $effect(() => watchShown(box, (shown) => (overlayShown = shown)));
 
     /** Show one picture over the pane, and put the keyboard inside it. */
     async function enlarge(name: string): Promise<void> {
@@ -138,7 +138,7 @@
         open = '';
         await tick();
         const tile = box?.querySelector(`[data-tile="${CSS.escape(name)}"]`);
-        if (tile instanceof HTMLElement) tile.focus();
+        if (tile instanceof HTMLElement) focusQuietly(tile);
     }
 
     /** Escape closes the overlay, wherever the keyboard is inside it. */
@@ -267,7 +267,9 @@
                         <div
                             {...props}
                             bind:this={overlay}
+                            use:portal
                             class="lightbox"
+                            class:away={!overlayShown}
                             aria-label={t('memories.lightbox', open)}
                             tabindex="-1"
                             onkeydown={keys}
@@ -385,6 +387,10 @@
 
     .lightbox:focus-visible {
         outline: none;
+    }
+
+    .lightbox.away {
+        display: none;
     }
 
     .lightbox {

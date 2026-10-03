@@ -10,12 +10,14 @@ import { z } from 'zod';
 import { tabsOf } from '../instance.ts';
 import {
     FLOATLESS_VERSION,
+    FLOATS_VERSION,
     LAYOUT_VERSION,
     MIN_SIZE,
     PAGES_VERSION,
     WORKBENCH_VERSION,
     newPage,
     pageLeaf,
+    pinnedTabsFirst,
     show,
     type Float,
     type Instance,
@@ -57,7 +59,8 @@ const tabIdShape = z.object({
     id: z.string().min(1),
     view: z.unknown().optional(),
     state: z.unknown().optional(),
-    preview: z.unknown().optional()
+    preview: z.unknown().optional(),
+    pinned: z.unknown().optional()
 });
 
 /** A tab's view, which is any text. */
@@ -65,6 +68,9 @@ const tabViewShape = z.string();
 
 /** The id of the tab that is active: any text, the empty text for a pane with no tab. */
 const activeShape = z.string();
+
+/** The ids of the tabs a pane showed before its active one: a list, read id by id. */
+const recentShape = z.array(z.unknown());
 
 /** A saved focus path: whole, non-negative steps, answered as the list the file held. */
 const pathShape = unchanged(z.array(wholeNumberShape.pipe(z.number().nonnegative())));
@@ -314,9 +320,11 @@ function readPane(
             problems.push(`${where}: tab ${index} repeats the instance id ${held.id}`);
         ids.add(held.id);
         const tab: Instance = { id: held.id, view, state: held.state };
-        // The flag is optional, so a layout saved before there were preview tabs reads as one whose
-        // tabs are all kept, and a reader who left one open finds it as it was.
-        if (held.preview === true) tab.preview = true;
+        // The flags are optional, so a layout saved before there were preview tabs reads as one
+        // whose tabs are all kept, and one saved before there were pinned tabs as one with none. A
+        // tab is never both: a pin keeps a preview.
+        if (held.pinned === true) tab.pinned = true;
+        else if (held.preview === true) tab.preview = true;
         tabs.push(tab);
     }
     const active = readAs(activeShape, value.active);
@@ -331,12 +339,29 @@ function readPane(
             `${where}: active is ${JSON.stringify(active)}, which is not one of its tabs`
         );
     }
-    const read: Pane = { kind: 'pane', tabs, active };
+    // The pinned tabs lead the strip, each run in its saved order.
+    const read: Pane = { kind: 'pane', tabs: pinnedTabsFirst(tabs), active };
+    const recent = recentOf(value.recent, tabs, active);
+    if (recent.length > 0) read.recent = recent;
     // Only an empty pane keeps a kind: the pane a Terminal tab left stays a terminals pane.
     if (tabs.length === 0 && value.keeps === 'terminals') read.keeps = 'terminals';
     // A pane saved before panes could be locked has no field, which reads as unlocked.
     if (value.locked === true) read.locked = true;
     return read;
+}
+
+/**
+ * The order a saved pane showed its tabs in: the ids that name another tab of the pane, each once,
+ * in their saved order. A pane saved before the order was kept, and a value that is no list, show
+ * the active tab alone.
+ */
+function recentOf(value: unknown, tabs: readonly Instance[], active: string): string[] {
+    const listed = readAs(recentShape, value) ?? [];
+    const held = new Set(tabs.map((tab) => tab.id));
+    const ids = listed.filter(
+        (id): id is string => typeof id === 'string' && id !== active && held.has(id)
+    );
+    return ids.filter((id, at) => ids.indexOf(id) === at);
 }
 
 /** Every violation in a whole workbench: its tree, and a focus that names no pane of it. */
@@ -459,11 +484,11 @@ export function serialiseFloatless(pages: Pages): string {
  */
 export function needsFloats(value: unknown): boolean {
     const version = asEnvelope(value)?.version;
-    return typeof version === 'number' && version < LAYOUT_VERSION;
+    return typeof version === 'number' && version < FLOATS_VERSION;
 }
 
 /**
- * Read valid pages from the current envelope, or from either supported older one by migration: a
+ * Read valid pages from the current envelope, or from any supported older one by migration: a
  * page that held two trees and a docked panel becomes a page holding one tree. A page is read as
  * its id, label, tree and rail key; any other field a saved page carries is dropped, so the next
  * save writes it no more.
@@ -478,7 +503,12 @@ export function parseLayout(value: unknown, label: string): Pages | null {
             : defaultPagesOf(newPage(label, { ...only, root: treeWithoutConfig(only.root) }));
     }
     const version = envelope.version;
-    if (version !== LAYOUT_VERSION && version !== FLOATLESS_VERSION && version !== PAGES_VERSION) {
+    if (
+        version !== LAYOUT_VERSION &&
+        version !== FLOATS_VERSION &&
+        version !== FLOATLESS_VERSION &&
+        version !== PAGES_VERSION
+    ) {
         return null;
     }
     const held = readAs(pagesEnvelopeShape, envelope);
@@ -502,7 +532,10 @@ export function parseLayout(value: unknown, label: string): Pages | null {
     // a `config` tab becomes a `settings` tab (migrate.ts); a leaf naming a page this envelope does
     // not hold, or one that would make a page show itself, then becomes an empty pane: the rest of
     // the arrangement is still the one the viewer left.
-    const floats = version === LAYOUT_VERSION ? readFloats(held.floats, pages) : [];
+    const floats =
+        version === LAYOUT_VERSION || version === FLOATS_VERSION
+            ? readFloats(held.floats, pages)
+            : [];
     const migrated = withSystemLabel(withInfoFolded(withoutConfigTabs({ pages, current, floats })));
     const read: Pages = settlePageLeaves(migrated);
     return checkPages(read).length === 0 ? read : null;

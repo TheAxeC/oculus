@@ -96,8 +96,8 @@ const indentShape = z.object({
 
 /**
  * The fields of a draft kept in the instance's state, each as typed or at its default. A tab that
- * has never been told otherwise shows the rendered half, so opening a Markdown file reads as the
- * document it is without a control being found first.
+ * has never been told otherwise shows the source alone, as VS Code opens a Markdown file; the
+ * rendered half is the Preview control's.
  */
 const draftShape = z
     .object({
@@ -108,7 +108,7 @@ const draftShape = z
         error: z.string().catch(''),
         message: z.string().catch(''),
         failed: z.boolean().catch(false),
-        rendered: z.boolean().catch(true),
+        rendered: z.boolean().catch(false),
         blame: z.boolean().catch(false),
         readonly: z.boolean().catch(false),
         truncated: z.boolean().catch(false),
@@ -221,6 +221,11 @@ export type SourceStore = {
     sourceDraft: (id: string) => SourceDraft;
     sourceDirty: (id: string) => boolean;
     loadSourceDraft: (id: string, root: string, path: string, head?: HeadStage) => Promise<void>;
+    /**
+     * Give a tab that shows no file yet an empty text to type into: an untitled text file, which
+     * the first Save writes to a file of its own. A tab that already holds a text keeps it.
+     */
+    loadUntitledDraft: (id: string) => void;
     /** Read a tab's file again when the tab holds no unsaved text; a tab with some keeps it. */
     reloadSource: (id: string) => Promise<void>;
     editSourceDraft: (id: string, text: string) => void;
@@ -326,6 +331,21 @@ export function createSource(
         } finally {
             if (reading.get(id) === entry) reading.delete(id);
         }
+    }
+
+    function loadUntitledDraft(id: string): void {
+        const file = `untitled:${id}`;
+        if (sourceDraft(id).loaded && sourceDraft(id).file === file) return;
+        updateDraft(id, {
+            file,
+            text: '',
+            saved: '',
+            loaded: true,
+            readIn: LIFETIME,
+            error: '',
+            readonly: false,
+            truncated: false
+        });
     }
 
     /**
@@ -450,6 +470,7 @@ export function createSource(
         sourceDraft,
         sourceDirty,
         loadSourceDraft,
+        loadUntitledDraft,
         reloadSource,
         editSourceDraft,
         revertSourceDraft,

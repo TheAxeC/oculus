@@ -41,15 +41,16 @@
     // browser's find does not open. A URL in the output is a link (the web links addon), opened in
     // a new tab on Cmd+click (Ctrl+click off macOS) and left to the program on a plain click. The
     // Unicode 11 width tables draw an emoji and a wide character over two cells, as the shell
-    // counts them.
+    // counts them. In a task terminal a line naming a file of the command's repository is a link to
+    // it (grid-links.ts).
     //
     // The grid is subscribed once its window has the grid's size (`subscribePty`), and an effect of
     // its own follows the `terminal:` cursor, Option and copy settings (grid-look.ts).
 
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
-    import { errorMatch } from '$lib/state/sessions/terminal/commands.svelte';
     import { titleStripper } from '$lib/state/sessions/terminals.svelte';
+    import { scrollTarget, viewportOf } from '$lib/state/sessions/terminal/viewport';
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import {
         MENU_CLEAR,
@@ -85,6 +86,7 @@
         pageClipboard,
         type HtmlSerializer
     } from './grid-actions';
+    import { errorLinks } from './grid-links';
     import FindBar from './FindBar.svelte';
     import {
         FIND_LIMIT,
@@ -150,10 +152,12 @@
         commands: { errorFile, note, openAt },
         terminals: {
             clearHistory,
+            keepViewport,
             resizeTerminal,
             sendInput,
             sendResize,
             subscribePty,
+            takeViewport,
             terminalById,
             unsubscribePty
         },
@@ -333,30 +337,16 @@
             // once more here; a character cut across two chunks is carried to the next.
             let decoder = new TextDecoder();
             // A line naming a file of the command's repository that is there is a link to it.
-            const linking = term.registerLinkProvider({
-                provideLinks(y, done) {
-                    const line = term.buffer.active.getLine(y - 1)?.translateToString(true) ?? '';
-                    const match = errorMatch(line);
-                    if (match === null || terminalById(wanted)?.task !== true) {
-                        done(undefined);
-                        return;
-                    }
-                    void errorFile(wanted, match.file).then((found) => {
-                        if (found === null) {
-                            done(undefined);
-                            return;
-                        }
-                        const end = match.start + match.length;
-                        done([
-                            {
-                                range: { start: { x: match.start + 1, y }, end: { x: end, y } },
-                                text: line.slice(match.start, end),
-                                activate: () => openAt(found.repo, found.path, match.line)
-                            }
-                        ]);
-                    });
-                }
-            });
+            const linking = term.registerLinkProvider(
+                errorLinks(term, {
+                    isTask: () => terminalById(wanted)?.task === true,
+                    errorFile: (file: string) => errorFile(wanted, file),
+                    openAt
+                })
+            );
+            // The viewport the last grid of this terminal kept, scrolled to once the scrollback is
+            // written (a grid drawn again by Float or Return to Page).
+            let kept = takeViewport(wanted);
             // The window takes the grid's size before the channel is asked for (`subscribePty`).
             const off = subscribePty(
                 wanted,
@@ -369,7 +359,13 @@
                         decoder = new TextDecoder();
                     }
                     const shown = titles(bytes);
-                    term.write(shown);
+                    if (scrollback && kept !== undefined) {
+                        const place = kept;
+                        kept = undefined;
+                        term.write(shown, () =>
+                            term.scrollToLine(scrollTarget(place, term.buffer.active.baseY))
+                        );
+                    } else term.write(shown);
                     note(wanted, decoder.decode(shown, { stream: true }), scrollback);
                 }
             );
@@ -392,6 +388,11 @@
                 rang.dispose();
                 linking.dispose();
                 detachFind();
+                // A terminal that ended keeps nothing.
+                if (terminalById(wanted) !== null) {
+                    const { viewportY, baseY } = term.buffer.active;
+                    keepViewport(wanted, viewportOf(viewportY, baseY));
+                }
                 serializer = null;
                 oncontrol(wanted, null);
                 unhold();

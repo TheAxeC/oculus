@@ -2,12 +2,9 @@
 // carries, the actions of /api/terminal, and the two messages a page writes on a `pty:`
 // channel.
 //
-// The bytes of a pane are not state. entities.receive keeps one message per channel, the latest,
-// which for a stream of output would be the page seeing only the chunk that happened to be last; so
-// a `pty:` channel is read through socket.listen instead and nothing of it is stored. The server
-// sends the scrollback to the attaching socket alone at version 0 and counts the chunks from 1
-// (server/machine/pty/channel.ts, `#attach`), so the listener is told which of the two it was
-// handed and a reconnect repaints rather than appending a second copy of the scrollback.
+// The `pty:` channel of a terminal, its two messages and the panes reading its output are
+// state/sessions/terminal/pty/pty-wire.ts's; this store builds one wire over its socket and hands
+// its calls on.
 //
 // A Terminal tab is a terminal panel of its own, and this store keeps which tab owns which terminal
 // over every page's Terminal tabs (the rules over one tab's state are state/sessions/terminal/
@@ -41,8 +38,6 @@ import type {
     SessionRecord,
     Terminal,
     TerminalKind,
-    TerminalInput,
-    TerminalResize,
     TerminalResume
 } from '../../data/model/index.ts';
 import { tabMarkOf } from './terminal/terminal-marks.ts';
@@ -67,12 +62,14 @@ import {
     endedTerminals,
     moveInto,
     terminalLabel,
+    terminalTabTitle,
     unownedTerminals
 } from './terminal/terminal-lists.ts';
 import type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
-import { decodeBytes, encodeBytes } from './terminal/pty/pty-bytes.ts';
 import { createPtyOrder, type PtySize } from './terminal/pty/pty-subscribe.ts';
-import { ptyBytesOf, terminalsReader } from './terminal/terminal-payloads.ts';
+import { createPtyWire, type PtyListener } from './terminal/pty/pty-wire.ts';
+import { terminalsReader } from './terminal/terminal-payloads.ts';
+import { createViewports, type Viewport } from './terminal/viewport.ts';
 import {
     COLS,
     ROWS,
@@ -88,6 +85,7 @@ export { endedTerminals, terminalLabel, unownedTerminals } from './terminal/term
 export type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
 
 export { decodeBytes, encodeBytes, titleStripper } from './terminal/pty/pty-bytes.ts';
+export { ptyChannel, type PtyListener } from './terminal/pty/pty-wire.ts';
 export { RESIZE_WAIT } from './terminal/pty/pty-subscribe.ts';
 
 // The three model types a view needs of a terminal. The boundary table lets `state/` import
@@ -95,22 +93,11 @@ export { RESIZE_WAIT } from './terminal/pty/pty-subscribe.ts';
 // state/client/selectors.svelte.ts re-exports the ones the session views read.
 export type { Terminal, TerminalKind, TerminalResume } from '../../data/model/index.ts';
 
-/** The prefix of a terminal's channel, the server's `ptyChannel` seen from the page. */
-const PREFIX = 'pty:';
-
 /** The four update skills accepted by the server's task action. */
 export type TaskKind = 'litwatch' | 'scout' | 'linkedin' | 'inbox';
 
 /** What a LaTeX terminal does to one main file: build it, or clear what a build left beside it. */
 export type LatexStep = 'build' | 'clean';
-
-/** What a `pty:` subscriber is handed: the decoded bytes, and whether they are the scrollback. */
-export type PtyListener = (bytes: Uint8Array, scrollback: boolean) => void;
-
-/** The channel one terminal's output travels on. */
-export function ptyChannel(id: string): string {
-    return `${PREFIX}${id}`;
-}
 
 /**
  * A refused resume in words. The endpoint answers the catalog key of the two refusals the page has
@@ -245,6 +232,9 @@ export type TerminalsStore = {
     runningOf: (instances: readonly { view: string; state?: unknown }[]) => string[];
     busyOf: (ids: string[]) => Promise<BusyTerminal[]>;
     endTerminals: (ids: string[]) => void;
+    /** Keep where a terminal's viewport sat as its grid goes, and hand it to the next grid once. */
+    keepViewport: (id: string, viewport: Viewport) => void;
+    takeViewport: (id: string) => Viewport | undefined;
 };
 
 export function createTerminals(
@@ -267,6 +257,8 @@ export function createTerminals(
      * moment ago is not in the payload yet, but its kind and folder are known, and it is running.
      */
     const started = new Map<string, Terminal>();
+    /** Where each terminal's viewport sat when its grid went, for the grid drawn next. */
+    const viewports = createViewports();
 
     /** What a tab's last refused action said, by tab id. */
     const refused: { words: Record<string, string> } = $state({ words: {} });
@@ -292,7 +284,9 @@ export function createTerminals(
             const selected = workbench.selected();
             const held = terminalTabs().flatMap((tab) => readTab(tab.state).terminals);
             if (isTerminalId(selected)) held.push(selected);
-            closeEnded(workbench, terminalTabs(), endedTerminals(seen, now, first, held));
+            const ended = endedTerminals(seen, now, first, held);
+            for (const id of ended) viewports.drop(id);
+            closeEnded(workbench, terminalTabs(), ended);
         }
         for (const id of now) {
             seen.add(id);
@@ -760,7 +754,7 @@ export function createTerminals(
 
     function adopt(made: Terminal): void {
         started.set(made.id, made);
-        showTerminal(made.id, terminalLabel(made));
+        showTerminal(made.id, terminalTabTitle(made));
         workbench?.select(made.id);
     }
 
@@ -768,68 +762,15 @@ export function createTerminals(
     function endTerminals(ids: string[]): void {
         for (const id of ids) {
             started.delete(id);
+            viewports.drop(id);
             void stopTerminal(id);
         }
     }
 
-    /** Send keystrokes, which xterm.js's `onData` produced; held while a subscribe waits. */
-    function sendInput(id: string, text: string): boolean {
-        const input: TerminalInput = {
-            type: 'input',
-            channel: ptyChannel(id),
-            bytes: encodeBytes(text)
-        };
-        const held = order.hold(id, input);
-        return held ?? socket.send(input);
-    }
-
-    /**
-     * Tell a terminal its pane's new size. Whole numbers from 1 to 2000, which is the range
-     * server/machine/pty/channel.ts accepts.
-     */
-    function sendResize(id: string, cols: number, rows: number): boolean {
-        const resize: TerminalResize = {
-            type: 'resize',
-            channel: ptyChannel(id),
-            cols: Math.round(cols),
-            rows: Math.round(rows)
-        };
-        return socket.send(resize);
-    }
-
-    /** How many panes read each terminal's output now. */
-    const reading = new Map<string, number>();
-
-    function subscribePty(id: string, size: () => PtySize, onBytes: PtyListener): () => void {
-        const channel = ptyChannel(id);
-        reading.set(id, (reading.get(id) ?? 0) + 1);
-        let released = false;
-        const off = socket.listen(channel, (received) => {
-            onBytes(decodeBytes(ptyBytesOf(received.payload)), received.version === 0);
-        });
-        const leave = order.attach(
-            id,
-            size,
-            () => socket.subscribe([channel]),
-            (message) => socket.send(message)
-        );
-        return () => {
-            leave();
-            off();
-            if (released) return;
-            released = true;
-            const left = (reading.get(id) ?? 1) - 1;
-            if (left > 0) reading.set(id, left);
-            else reading.delete(id);
-        };
-    }
-
-    /**
-     * Stop reading one terminal's output, and stop asking for its channel on the next reconnect.
-     */
-    function unsubscribePty(id: string): void {
-        socket.unsubscribe([ptyChannel(id)]);
-    }
+    const { sendInput, sendResize, subscribePty, unsubscribePty, subscribed } = createPtyWire(
+        socket,
+        order
+    );
 
     return {
         terminals,
@@ -853,7 +794,7 @@ export function createTerminals(
         sendResize,
         subscribePty,
         unsubscribePty,
-        subscribed: (id) => (reading.get(id) ?? 0) > 0,
+        subscribed,
         showTerminal,
         adopt,
         moveTerminal,
@@ -871,6 +812,8 @@ export function createTerminals(
         clearHistory,
         runningOf,
         busyOf,
-        endTerminals
+        endTerminals,
+        keepViewport: viewports.keep,
+        takeViewport: viewports.take
     };
 }

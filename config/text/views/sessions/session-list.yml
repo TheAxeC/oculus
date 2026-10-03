@@ -40,7 +40,7 @@ text:
         open_sessions_tip: the Sessions view lists every session and terminal, and a row picks one
         pick_session: Pick a session
         pick_session_tip: the session this view shows
-        pin_pane: Pin this pane
+        pin_pane: Lock to this session
         pin_top: Pin to the top
         prompts_n: '{0} prompts'
         prompts_tip: prompts the session was given
@@ -64,5 +64,5 @@ text:
         top_failed: could not save that pin
         top_mark: pinned to the top of its group
         unarchive: Bring back from the archive
-        unpin_pane: Unpin this pane
+        unpin_pane: Unlock from this session
         unpin_top: Unpin from the top

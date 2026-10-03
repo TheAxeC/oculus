@@ -1,7 +1,6 @@
 # Oculus text owned by the source view.
 text:
     source:
-        bar: Source actions
         binary: This file is not text on disk; the editor saves nothing over it.
         blame: Blame
         blame_title: Show who last changed each line, and when
@@ -30,6 +29,12 @@ text:
         toggle_word_wrap: 'View: Toggle Word Wrap'
         toolbar: Source controls
         truncated: This file is longer than the editor reads; its first 2 MB are shown and it saves nothing.
+        untitled_name: File name
+        untitled_no_root: No folder is served to save the file in.
+        untitled_outside: The file name must stay inside the chosen folder; it cannot start with a slash or hold a '..' folder.
+        untitled_root: Folder
+        untitled_save: Save the new text file as
+        untitled_where: The file is made in the chosen folder; a name with folders in it makes them.
     views:
         source: Source
         source_glyph: edit

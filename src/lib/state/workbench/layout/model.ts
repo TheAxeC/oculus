@@ -13,9 +13,17 @@ export type ViewId = string;
 /**
  * One tab: the view it mounts and the state that view was opened with. `preview` marks the tab a
  * single click opened, which the next single click in the same pane replaces; a double click, a
- * keystroke in its editor, a drag or a split keeps it, which is the flag going away.
+ * keystroke in its editor, a drag or a split keeps it, which is the flag going away. `pinned` marks
+ * a tab kept at the start of its pane's strip: Close Others and Close All leave it open, and a tab
+ * is never both pinned and a preview.
  */
-export type Instance = { id: string; view: ViewId; state: unknown; preview?: true };
+export type Instance = {
+    id: string;
+    view: ViewId;
+    state: unknown;
+    preview?: true;
+    pinned?: true;
+};
 
 /**
  * A split and its children. `folded` holds the indexes of the children collapsed to the split's
@@ -37,14 +45,17 @@ export type Split = {
 export type Keeps = 'terminals';
 
 /**
- * One pane of tabs. `keeps` is only ever set on a pane with no tab. `locked` marks a pane that a
- * view opened for something does not land in; it stays when its last tab goes, and a tab opened
- * from its own strip or dragged onto it still goes in.
+ * One pane of tabs. The pinned tabs come first, in their order, then the rest. `recent` holds the
+ * ids of the other tabs the pane showed, the one shown last first, which is where closing the
+ * active tab goes next; a tab never shown is not in it. `keeps` is only ever set on a pane with no
+ * tab. `locked` marks a pane that a view opened for something does not land in; it stays when its
+ * last tab goes, and a tab opened from its own strip or dragged onto it still goes in.
  */
 export type Pane = {
     kind: 'pane';
     tabs: Instance[];
     active: string;
+    recent?: string[];
     keeps?: Keeps;
     locked?: true;
 };
@@ -126,9 +137,15 @@ export const MAIN_VIEW = 'status';
 
 /**
  * The envelope version serialiseLayout writes and parseLayout demands: the list of pages, one tree
- * each, and the floats beside them.
+ * each, and the floats beside them, with the tabs a pane pins and the order it showed them in.
  */
-export const LAYOUT_VERSION = 5;
+export const LAYOUT_VERSION = 6;
+
+/**
+ * The envelope version that held floats before a tab could be pinned. It is still read as it is: no
+ * tab is pinned, and the floats it holds are kept.
+ */
+export const FLOATS_VERSION = 5;
 
 /**
  * The envelope version that held the pages without floats. It is still read, with no floats, and
@@ -175,13 +192,55 @@ export function emptyPane(): Pane {
     return { kind: 'pane', tabs: [], active: '' };
 }
 
+/** How many tabs lead a strip pinned: the pinned run, which is always the strip's first tabs. */
+export function pinnedRun(tabs: readonly Instance[]): number {
+    return tabs.filter((tab) => tab.pinned === true).length;
+}
+
+/** The tabs with the pinned ones first, each run in its order. */
+export function pinnedTabsFirst(tabs: Instance[]): Instance[] {
+    const run = pinnedRun(tabs);
+    if (run === 0 || run === tabs.length) return tabs;
+    return [
+        ...tabs.filter((tab) => tab.pinned === true),
+        ...tabs.filter((tab) => tab.pinned !== true)
+    ];
+}
+
+/** A tab pinned: a pinned tab is never a preview. */
+export function pinned(tab: Instance): Instance {
+    return { id: tab.id, view: tab.view, state: tab.state, pinned: true };
+}
+
+/** A tab with its pin taken off. */
+export function unpinned(tab: Instance): Instance {
+    if (tab.pinned === undefined) return tab;
+    return tab.preview === true
+        ? { id: tab.id, view: tab.view, state: tab.state, preview: true }
+        : { id: tab.id, view: tab.view, state: tab.state };
+}
+
+/**
+ * The ids of the other tabs a pane showed, the one shown last first, after `active` became the
+ * shown one: the tab shown before it joins the front, and an id no tab carries any longer is
+ * dropped.
+ */
+function recentAfter(from: Pane, tabs: readonly Instance[], active: string): string[] {
+    const held = new Set(tabs.map((tab) => tab.id));
+    const before = [from.active, ...(from.recent ?? [])];
+    return before.filter((id, at) => id !== active && held.has(id) && before.indexOf(id) === at);
+}
+
 /**
  * A pane rebuilt with other tabs: what belongs to the pane and not to its tabs goes with it, the
- * lock always and the kind a pane keeps only while it holds no tab. Every operation that rebuilds a
- * pane builds it here, so a field added to a pane is carried at one place.
+ * lock always and the kind a pane keeps only while it holds no tab. The pinned tabs are put first
+ * and the order the tabs were shown in follows `active`. Every operation that rebuilds a pane
+ * builds it here, so a field added to a pane is carried at one place.
  */
 export function repane(from: Pane, tabs: Instance[], active: string): Pane {
-    const pane: Pane = { kind: 'pane', tabs, active };
+    const pane: Pane = { kind: 'pane', tabs: pinnedTabsFirst(tabs), active };
+    const recent = recentAfter(from, tabs, active);
+    if (recent.length > 0) pane.recent = recent;
     if (tabs.length === 0 && from.keeps !== undefined) pane.keeps = from.keeps;
     if (from.locked === true) pane.locked = true;
     return pane;

@@ -15,7 +15,6 @@ text:
         bookmarks: Bookmarks
         bookmarks_empty: No bookmark yet.
         bookmarks_failed: 'The bookmarks could not be read: {0}'
-        breadcrumb: Path of the selected row
         cancel: cancel
         collapse_title: Close {0}
         compare_missing: One of the two files is not there.
@@ -37,7 +36,7 @@ text:
         editors_close: close
         editors_close_all: close all
         editors_close_all_confirm: Close the {0} open editors?
-        editors_close_all_title: Close every editor on this page
+        editors_close_all_title: Close every editor on this page except the pinned ones
         editors_close_title: Close {0}
         editors_dirty: Unsaved changes
         editors_empty: No editor is open.

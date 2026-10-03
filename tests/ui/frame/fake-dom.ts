@@ -1,8 +1,8 @@
 // Layer 4, test helper. A page's document with only what Svelte's client runtime reads to mount a
 // component and to reconcile a keyed each block: nodes with children and siblings, the templates
-// a component clones, attributes, text, comments and event listeners. Elements hold no layout and
-// run no script, and `innerHTML` of a template reads the markup Svelte compiles, which is well
-// formed (tags, quoted attributes, text and comments).
+// a component clones, attributes, the class list a `class:` directive toggles, text, comments and
+// event listeners. Elements hold no layout and run no script, and `innerHTML` of a template reads
+// the markup Svelte compiles, which is well formed (tags, quoted attributes, text and comments).
 //
 // `installDom()` puts the globals in place and returns the root element a component is mounted
 // on; `removeDom()` takes them away. The cases that use it run in the client runtime
@@ -152,6 +152,16 @@ export class FakeElement extends FakeNode {
     removeAttribute(name: string): void {
         this.attributes.delete(name);
     }
+    /** The class list a `class:` directive toggles, kept in the `class` attribute. */
+    readonly classList = {
+        toggle: (name: string, force?: boolean): boolean => {
+            const names = this.className.split(/\s+/).filter((one) => one !== '');
+            const on = force ?? !names.includes(name);
+            const kept = names.filter((one) => one !== name);
+            this.className = (on ? [...kept, name] : kept).join(' ');
+            return on;
+        }
+    };
     get className(): string {
         return this.attributes.get('class') ?? '';
     }

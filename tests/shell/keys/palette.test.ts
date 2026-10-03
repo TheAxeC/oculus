@@ -272,6 +272,23 @@ describe("the editor's Cmd+K actions in the palette", () => {
         expect(body).toContain('Add Line Comment');
         expect(body).toContain(`>${catalog['app.palette.kind_editor']}<`);
     });
+
+    // Revert: draw the matched row without the whole title as its tooltip.
+    it('gives a row whose title is longer than the row the whole title as its tooltip', () => {
+        const long = `Go to ${'a very long title of an action '.repeat(10)}end`;
+        const status = { ...EDITING, actions: [{ id: 'long', label: long, hint: '' }] };
+        client.layout.loadLayout(fakeStorage());
+        const id = client.layout.openView('source', { root: 'hub', path: 'run.py' });
+        client.editorStatus.publish(id, status);
+        const body = render(Palette, {
+            context: clientContext(client),
+            props: { ...props, open: true, prefill: 'a very long title' }
+        }).body.replace(/<!--[^>]*-->/g, '');
+
+        expect(long.length).toBeGreaterThan(300);
+        // The page's tooltip is the hidden description its bubble reads (ui/menu/Tooltip.svelte).
+        expect(body).toMatch(new RegExp(`<span id="tip-\\d+"[^>]*hidden[^>]*>${long}</span>`));
+    });
 });
 
 describe('UpdateTray', () => {

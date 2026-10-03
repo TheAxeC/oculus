@@ -135,16 +135,19 @@
        a tree row is: the tab's height (35, editorTabsControl.ts), the room before its glyph (10,
        multieditortabscontrol.css), the gap from glyph to label (6, iconlabel.css), the width the
        close control sits centred in (28) and that control's own box (a 16 icon padded 2, both
-       multieditortabscontrol.css). The accent line on the current tab's top edge is a hairline and
-       does not grow. The unsaved dot is drawn from the bullet icon, whose dot is a sixth of its
-       box, so the box is set in ems of the text. */
+       multieditortabscontrol.css), and the least width the tabs get on a line before the strip's
+       buttons move to a line of their own (120, the width of a fitted tab,
+       EditorTabsControl.TAB_WIDTH.fit). The accent line on the current tab's top edge is a hairline
+       and does not grow. The unsaved dot is drawn from the bullet icon, whose dot is a sixth of its
+       box, so the box is six times the dot VS Code draws (8, its circle-filled icon at 16). */
     --tab-height: calc(35px * var(--text-scale, 1));
     --tab-pad: calc(10px * var(--text-scale, 1));
     --tab-icon-gap: calc(6px * var(--text-scale, 1));
     --tab-actions: calc(28px * var(--text-scale, 1));
     --tab-close: calc(20px * var(--text-scale, 1));
+    --tabs-least: calc(120px * var(--text-scale, 1));
     --tab-accent-line: 1px;
-    --tab-dot-size: 3em;
+    --tab-dot-size: calc(48px * var(--text-scale, 1));
     /* A strip's own buttons, the scroll controls and the header's actions: one bare icon box, the
        room either side of its glyph, and the gap between two of them. */
     --tab-action: calc(22px * var(--text-scale, 1));
@@ -158,6 +161,11 @@
     --tab-badge-min: calc(16px * var(--text-scale, 1));
     --tab-badge-pad: calc(5px * var(--text-scale, 1));
     --tab-badge-line: calc(16px * var(--text-scale, 1));
+    /* The breadcrumb row under the tabs, from VS Code's `.breadcrumbs-control` (22px high) and the
+       box of its separator (`.monaco-breadcrumb-item:before`, 16px wide), both grown with the text;
+       an item is at most 80% of the row. */
+    --crumb-row: calc(22px * var(--text-scale, 1));
+    --crumb-icon: calc(16px * var(--text-scale, 1));
     /* A tree's measures at the text's own size: a row's height, a name's size, one level's indent,
        and the size of a section head's name. A row multiplies each by `--text-scale` where it is
        drawn, so a tree grows with a scale any ancestor of it sets. */

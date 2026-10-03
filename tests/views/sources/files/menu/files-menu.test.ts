@@ -332,6 +332,25 @@ describe('what a pick from a row menu runs', () => {
             'search:tab-1,{"root":"r","under":"notes"}'
         ]);
     });
+
+    // Revert: leave the refusal of the clipboard write unsaid in rowPicker.
+    it.each([
+        ['refuses', () => Promise.reject(new Error('denied')), ['@ui.tab_copy_refused']],
+        ['takes', () => Promise.resolve(), []]
+    ])(
+        "says the tab menu's refusal sentence only when the clipboard %s the copy",
+        async (_, copy, expected) => {
+            const said: string[] = [];
+            const deps = {
+                dirOf: () => '/tmp/r',
+                copy,
+                say: (note: string) => said.push(note)
+            } as unknown as RowPickDeps;
+            rowPicker(deps, words)(note, ROW_COPY_RELATIVE);
+            await settled();
+            expect(said).toEqual(expected);
+        }
+    );
 });
 
 describe('the Run Command items of a repository row', () => {

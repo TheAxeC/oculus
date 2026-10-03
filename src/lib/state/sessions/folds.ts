@@ -17,7 +17,7 @@ import type {
     Terminal,
     Workspace
 } from '../../data/model/index.ts';
-import { t } from '../shared/words/text.ts';
+import { terminalTabTitle } from './terminal/terminal-lists.ts';
 
 export { ago } from '../../data/helpers/dates.ts';
 
@@ -263,14 +263,11 @@ function folderName(path: string): string {
 }
 
 /**
- * The terminals a Terminal tab can show, in the order the payload lists them. An agent terminal is
- * titled by its agent, since what tmux reports running in its pane says nothing of it, and is
- * described by the session running in it (its resume, else its process), else by its own name. A
- * shell is titled by the command running in it, or by the word for a shell when tmux reports none,
- * a task terminal by the name of the project command it ran, and a shell is described by the last
- * segment of its folder. A title the reader gave a terminal takes the
- * place of that title, and its icon, colour and task result travel with the row. A terminal oculus
- * did not start is left out, since the tab cannot attach to it.
+ * The terminals a Terminal tab can show, in the order the payload lists them, each titled by
+ * `terminalTabTitle` and its icon, colour and task result travelling with the row. An agent
+ * terminal is described by the session running in it (its resume, else its process), else by its
+ * own name; a shell is described by the last segment of its folder. A terminal oculus did not
+ * start is left out, since the tab cannot attach to it.
  */
 export function terminalChoices(
     terminals: readonly Pick<
@@ -303,22 +300,8 @@ export function terminalChoices(
                 task: one.task,
                 exit: one.exit
             };
-            if (one.kind === 'shell') {
-                const command =
-                    one.job !== null
-                        ? one.job.name
-                        : one.command === ''
-                          ? t('sessions.terminal_title_shell')
-                          : one.command;
-                return {
-                    ...row,
-                    title: one.title === '' ? command : one.title,
-                    description: folderName(one.cwd)
-                };
-            }
-            const agent =
-                one.kind === 'claude' ? t('sessions.kind_claude') : t('sessions.kind_codex');
-            const title = one.title === '' ? agent : one.title;
+            const title = terminalTabTitle(one);
+            if (one.kind === 'shell') return { ...row, title, description: folderName(one.cwd) };
             const running = sessions.find(
                 (session) =>
                     one.resumes?.id === session.id ||

@@ -1,0 +1,132 @@
+// Layer 3, shell. The state behind the right-click menu of a pane's tabs: which tab the open menu
+// is for, the items it reads from the right-click, and what each pick does over the stores. The
+// pane's strip menu shares the right-click, so a pick that is not a tab's goes back to the pane.
+// The items and the picks' dispatch are strip/tab-menu.ts's; this is the part that holds a value
+// between the right-click and the pick, and the refusal a pick said.
+
+import type { ClientState } from '$lib/state/client/context';
+import { t } from '$lib/state/shared/words/text';
+import type { Instance } from '$lib/state/workbench/layout';
+import { fileOfTab, openComparison, type TabRoot } from '$lib/state/workbench/navigation/pages';
+import type { MenuItem } from '$lib/ui/menu/menu-items';
+import { copyTabPath, tabMenu, tabPicked, tabsToClose, type CloseKind } from './tab-menu';
+
+/** What the menu reads of the pane it is in. */
+export type TabMenuDeps = {
+    client: ClientState;
+    instances: () => Instance[];
+    page: () => string;
+    path: () => number[];
+    /** The roots the server serves; a file under another is not offered the file items. */
+    roots: () => TabRoot[];
+    /** The strip's own menu, for a right-click that lands on no tab. */
+    stripItems: () => MenuItem[];
+    /** A pick of the strip's menu. */
+    stripPick: (id: string) => void;
+    /** Close one tab, asking first when it holds unsaved text or a running program. */
+    closeTab: (id: string) => void;
+    /** Close these tabs, asking first, and run `act` once they may go. */
+    askAndClose: (key: string, ids: string[], many: string, act: () => void) => Promise<void>;
+};
+
+/** The menu of the tabs of one pane. */
+export function createTabMenu(deps: TabMenuDeps) {
+    const { layout, explorer, writes, ui } = deps.client;
+
+    /** The tab the open right-click menu is for, or null when it is the strip's. */
+    let menuTab: string | null = null;
+
+    /** What the last pick could not do, said under the strip until the next right-click. */
+    let said = $state('');
+
+    const copier = copyTabPath(
+        (text) => navigator.clipboard.writeText(text),
+        (sentence) => (said = sentence),
+        t
+    );
+
+    /** The menu of a right-click: the tab's when one is under the pointer, else the strip's. */
+    function read(event: MouseEvent): MenuItem[] {
+        const hit =
+            event.target instanceof Element
+                ? event.target.closest<HTMLElement>('[data-tab]')
+                : null;
+        menuTab = hit?.dataset.tab ?? null;
+        said = '';
+        const instances = deps.instances();
+        const at = instances.findIndex((one) => one.id === menuTab);
+        if (at < 0) return deps.stripItems();
+        const found = instances[at];
+        const file = fileOfTab(found);
+        const held = explorer.compareFile();
+        const other =
+            held !== null && !(held.root === file?.root && held.path === file.path) ? held : null;
+        return tabMenu(
+            {
+                pinned: found.pinned === true,
+                preview: found.preview === true,
+                file: file !== null && deps.roots().some((one) => one.key === file.root),
+                tabs: instances.length,
+                right: instances.length - at - 1,
+                compareWith: other !== null
+            },
+            t
+        );
+    }
+
+    /** The close items: the tabs each closes, after the guard's question. */
+    function close(kind: CloseKind, id: string): void {
+        if (kind === 'close') {
+            deps.closeTab(id);
+            return;
+        }
+        const { ids, keep } = tabsToClose(kind, deps.instances(), id, (one) => !ui.unsaved(one));
+        void deps.askAndClose(`menu:${kind}:${id}`, ids, t('ui.tab_close_many', ids.length), () => {
+            for (const one of ids) layout.closeInstance(one, deps.page());
+            if (keep !== null) layout.keepPreview(keep);
+        });
+    }
+
+    /** A pick: the strip's when the menu was the strip's, else the tab's. */
+    function pick(id: string): void {
+        const tab = menuTab;
+        menuTab = null;
+        const found = deps.instances().find((one) => one.id === tab);
+        if (tab === null || found === undefined) {
+            deps.stripPick(id);
+            return;
+        }
+        const file = fileOfTab(found);
+        const dir = deps.roots().find((one) => one.key === file?.root)?.dir ?? '';
+        tabPicked(id, {
+            close: (kind) => close(kind, tab),
+            copy: (which) => {
+                if (file !== null) void copier(which, file, dir);
+            },
+            reveal: () => {
+                if (file === null) return;
+                void writes.revealPath(file.root, file.path).then((answer) => {
+                    if (!answer.ok) said = t('files.reveal_failed', answer.error ?? '');
+                });
+            },
+            showInFiles: () => {
+                if (file !== null) layout.showInFiles(file.path, file.root);
+            },
+            selectForCompare: () => {
+                if (file !== null) explorer.selectForCompare(file);
+            },
+            compareWith: () => {
+                const against = explorer.compareFile();
+                if (file !== null && against !== null) {
+                    openComparison(layout.openView, file, against);
+                }
+            },
+            keepOpen: () => layout.keepPreview(tab),
+            pin: () => layout.pinTab(tab),
+            unpin: () => layout.unpinTab(tab),
+            split: (edge) => layout.splitInstance(tab, deps.path(), edge, deps.page())
+        });
+    }
+
+    return { read, pick, said: () => said };
+}

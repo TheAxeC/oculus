@@ -145,7 +145,7 @@ describe('the store', () => {
         loadLayout(storage);
         change((tree) => openInstance(tree, [], instance('q')));
         expect(Object.keys(storage.held)).toEqual([LAYOUT_KEY]);
-        expect(layout()).toEqual(pane(['a', 'q'], 'q'));
+        expect(layout()).toEqual({ ...pane(['a', 'q'], 'q'), recent: ['a'] });
         expect(savedBench(storage)).toEqual(workbench());
     });
 
@@ -359,10 +359,11 @@ describe('the store: the panes of one tree', () => {
         maximisePane([1]);
         openView('venues');
         expect(paneAt(layout(), [0])?.tabs.map((tab) => tab.view)).toEqual(['projects']);
+        // the pane's active tab is its first, so the new tab opens to the right of it
         expect(paneAt(layout(), [1])?.tabs.map((tab) => tab.view)).toEqual([
             'projects',
-            'projects',
-            'venues'
+            'venues',
+            'projects'
         ]);
         expect(focused()).toEqual({ path: [1] });
     });
@@ -467,7 +468,8 @@ describe('the store: folding a child of a split', () => {
         expect(layout()).toEqual({
             kind: 'pane',
             tabs: [instance('a'), instance('b'), instance('c')],
-            active: 'a'
+            active: 'a',
+            recent: ['b']
         });
     });
 

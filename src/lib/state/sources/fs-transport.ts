@@ -35,6 +35,8 @@ export type Listing = {
 
 /** The workspaces as the toolbar reads them. */
 export type WorkspacesState = {
+    /** The server account's home folder, which a path under it is written `~` from; else empty. */
+    home: string;
     current: string;
     workspaces: { name: string; roots: FsRoot[] }[];
     /** The keys the server dropped because the configuration reserves them. */
@@ -170,6 +172,7 @@ export function matchedNothing(rows: TreeRow[]): boolean {
 }
 
 export const NO_WORKSPACES: WorkspacesState = {
+    home: '',
     current: '',
     workspaces: [],
     dropped: [],

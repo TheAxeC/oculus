@@ -1,6 +1,7 @@
 // Layer 3, primitive. The numbers a split is laid out by: the drag handle's thickness, which
 // SplitView subtracts from the container before it turns a drag into a fraction, how far one arrow
-// key moves it, and the thickness of a collapsed child's strip, which is subtracted the same way.
+// key moves it, and the thickness of a collapsed child's strip, which is subtracted the same way;
+// and the share a drag of the handle leaves the first child, kept between two bounds.
 
 /**
  * The handle's thickness in pixels. SplitView subtracts it from the container before it turns a
@@ -17,3 +18,18 @@ export const STEP = 16;
  * share for the same reason it takes out the handles.
  */
 export const FOLD_PX = 28;
+
+/**
+ * The share the first child of a split holds after a drag of `delta` pixels in a row with `room`
+ * pixels to share, kept between `least` and `most`. A row with no room holds the share it had.
+ */
+export function draggedShare(
+    share: number,
+    delta: number,
+    room: number,
+    least: number,
+    most: number
+): number {
+    if (room <= 0) return share;
+    return Math.min(most, Math.max(least, share + delta / room));
+}

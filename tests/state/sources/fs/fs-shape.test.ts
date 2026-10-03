@@ -299,6 +299,7 @@ describe('the file browser lookups over what its store holds', () => {
         { key: 'code', dir: '/code', fixed: false }
     ];
     const saved = {
+        home: '/Users/a',
         current: 'work',
         workspaces: [
             { name: 'home', roots: [] },

@@ -60,6 +60,13 @@ body.vscode-dark-modern {
     --c-scm-added-bg: #2d382f;
     --c-scm-deleted-bg: #3b231f;
     --c-scm-conflict-bg: #412829;
+    /* The tab strip's colours that the surfaces do not already give, from dark_modern.json: the
+       shown tab's label (tab.activeForeground). Its other keys are the surfaces this block sets:
+       tab.activeBackground is --panel, tab.inactiveBackground and editorGroupHeader.tabsBackground
+       are --bg, tab.border and editorGroupHeader.tabsBorder and tab.unfocusedActiveBorderTop are
+       --line, tab.activeBorderTop is --accent, tab.activeBorder is the shown tab's own --panel,
+       and tab.inactiveForeground is --muted. */
+    --tab-active-txt: #ffffff;
 }
 
 /* --- VS Code Light Modern ------------------------------------------------ */
@@ -81,6 +88,13 @@ body.vscode-light-modern {
     --c-scm-added-bg: #d8dfc9;
     --c-scm-deleted-bg: #e9c8c8;
     --c-scm-conflict-bg: #e7cbcb;
+    /* The tab strip's colours that the surfaces do not already give, from light_modern.json: the
+       other tabs' label (tab.inactiveForeground, darkened from #868686 to reach 4.5:1 on the
+       strip) and the line under the shown tab (tab.activeBorder), which is the strip's colour. Its
+       other keys are the surfaces this block sets, as in the dark block, and tab.activeForeground
+       is --ink. */
+    --tab-inactive-txt: #717171;
+    --tab-active-border: #f8f8f8;
 }
 
 /* --- Catppuccin Mocha ---------------------------------------------------- */

@@ -50,13 +50,16 @@ describe('the address of a document', () => {
 });
 
 describe('a document as its own tab', () => {
-    it('frames the file the bookmark names, with the pane titled by its label', () => {
+    // Revert: draw the pane's title row over the frame again.
+    it('frames the file the bookmark names, titled by its label, and draws no title row', () => {
         const { body } = render(Document, {
             context: clientContext(client),
             props: { instance: instance(MANUAL) }
         });
         expect(body).toContain('src="/api/file/cathedra/docs/user/manual.html"');
-        expect(body).toContain('cathedra manual');
+        expect(body).toContain('title="cathedra manual"');
+        // the pane draws the file's path as a breadcrumb, so the tab keeps no heading of its own
+        expect(body).not.toContain('<h2');
         expect(body).toContain('data-root="cathedra"');
     });
 

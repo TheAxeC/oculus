@@ -210,10 +210,11 @@ describe('a float addressed by its id', () => {
     it('opens a tab in the float, and its last tab closing removes the float', () => {
         withFloat();
         const opened = client.layout.openInPane('status', {}, 'fl', []);
+        // the float's active tab is its first, so the new tab opens to the right of it
         expect(client.layout.floats()[0].pane.tabs.map((tab) => tab.id)).toEqual([
             'x',
-            'y',
-            opened
+            opened,
+            'y'
         ]);
         client.layout.closeInstance('x');
         client.layout.closeInstance('y');

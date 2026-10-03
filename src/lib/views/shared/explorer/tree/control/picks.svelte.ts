@@ -8,11 +8,10 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import type { CommandSource, ProjectCommand } from '$lib/state/sessions/terminal/commands.svelte';
-import { absoluteOf, nameOf, shownOf, type FsRoot, type TreeRow } from '$lib/state/sources/fs';
+import { shownOf, type FsRoot, type TreeRow } from '$lib/state/sources/fs';
 import { rowsActed } from '$lib/state/sources/explorer/acts/selection';
 import { confirmDelete } from '$lib/state/sources/explorer/acts/confirm';
-import { diffState } from '$lib/state/sources/repositories/repositories';
-import { DIFF_VIEW } from '$lib/state/sources/repositories/repositories.svelte';
+import { absoluteOf, openComparison } from '$lib/state/workbench/navigation/pages';
 import { t } from '$lib/state/shared/words/text';
 import type { MenuItem } from '$lib/ui/menu/menu-items';
 import { targetOf } from '../drag';
@@ -103,21 +102,7 @@ export function createPicks(deps: PicksDeps) {
             confirm: asking.ask,
             choose: asking.choose,
             startName: naming.start,
-            openCompare: (file, against) => {
-                client.layout.openView(
-                    DIFF_VIEW,
-                    diffState(
-                        {
-                            root: file.root,
-                            path: file.path,
-                            staged: false,
-                            worktree: false,
-                            against
-                        },
-                        t('files.compare_title', nameOf(against.path), nameOf(file.path))
-                    )
-                );
-            },
+            openCompare: (file, against) => openComparison(client.layout.openView, file, against),
             draftOf: (row: TreeRow) =>
                 explorer.unsaved({ root: row.root, path: row.path }, holdsContents(row)),
             selected: () =>

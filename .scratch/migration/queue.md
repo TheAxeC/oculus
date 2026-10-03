@@ -1,11 +1,10 @@
 In flight:
-- X3c (the tab strip as VS Code's): repair round 1 refuted; lands after D25's owed looks, with its findings disposed and the zero-width tab list fixed at landing.
-- T1c (the test sweep of tests/server/): refuted, repair round 1 at work.
+- T1c (the test sweep of tests/server/): repair round 1 reported; the run over it, then its landing.
 
 Queued, in order (36 steps):
-- T1b (the test sweep of tests/state/): once X3c has landed, since X3c changes 23 of its test files.
-- T1d (the test sweep of tests/views/, shell/, ui/ and themes/): once X3c has landed, since X3c changes 31 of its test files.
-- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures): once X3c has landed, since X3c changes 6 of its test files.
+- T1b (the test sweep of tests/state/): unblocked, next to prepare.
+- T1d (the test sweep of tests/views/, shell/, ui/ and themes/): unblocked, next to prepare.
+- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures): unblocked, next to prepare.
 - T1a (the test tiers): once T1b, T1c, T1d and T1e have landed; the queue below resumes after it.
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
@@ -43,6 +42,7 @@ Queued, in order (36 steps):
 Owed: the look of Q81 (a Confirm over the update tray).
 
 Landed, newest first:
+- X3c (the tab strip as VS Code's), 2026-10-04, this commit.
 - Q116 (the Status view's line count of everything under src/), 2026-10-03, 5a7654bf.
 - D25 (the editor's options), 2026-10-03, 4c7cf915.
 - Q91 (the project view and its editor), 2026-10-03, a8ba6553.

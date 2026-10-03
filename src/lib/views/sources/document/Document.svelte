@@ -125,7 +125,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane {title} toolbar={tools}>
+<Pane {title} titled={false} toolbar={tools}>
     <div class="document" data-instance={instance.id} data-root={root} data-path={path}>
         {#if src === ''}
             <Empty message={t('document.none')} glyph={t('document.none_glyph')} />

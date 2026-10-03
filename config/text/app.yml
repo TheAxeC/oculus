@@ -23,6 +23,8 @@ text:
             kind_project: Project
             kind_view: View
             kind_workspace: Workspace
+            pin_editor: Pin Editor
+            unpin_editor: Unpin Editor
             workspace_save: 'Save the folders in force as the workspace {0}'
             workspace_save_name: Type a name for the workspace
         palette_empty: No match

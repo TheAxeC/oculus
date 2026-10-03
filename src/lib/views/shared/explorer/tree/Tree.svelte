@@ -54,8 +54,8 @@
     import { rowIndexOf } from './control/row-index';
     import { viewAccess } from './control/view-access';
     import { useState } from '$lib/state/client/use';
+    import { absoluteOf } from '$lib/state/workbench/navigation/pages';
     import {
-        absoluteOf,
         decorationOf,
         filesViewOf,
         rowKey,

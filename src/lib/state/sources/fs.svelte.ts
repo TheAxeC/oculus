@@ -1,6 +1,6 @@
 // Layer 2, client state. What the file browser fetched: one directory's entries, the workspaces,
-// one file's text, the reader's own bookmarks and their scratch notes, and the history of one file:
-// the copies the server kept before its saves and the commits that touched it.
+// one file's text, the reader's own bookmarks and their scratch notes, and the history of one file
+// (fs-history.ts): the copies the server kept before its saves and the commits that touched it.
 //
 // It is state/system/docs.svelte.ts's shape over the reads this endpoint offers, and for the same
 // reason: none of them is in the snapshot, so the first call asks the server and every later call
@@ -78,6 +78,7 @@ import {
     NO_NOTES,
     NO_TEXT,
     NO_WORKSPACES,
+    currentWorkspace,
     fileBytesUrl,
     FS_PATH,
     listingAnswer,
@@ -110,15 +111,7 @@ import {
     type ListingShown
 } from './fs.ts';
 import { t } from '../shared/words/text.ts';
-import type { GitCommit } from '../../data/model/index.ts';
-import {
-    commitsOf,
-    copiesOf,
-    copyTextOf,
-    historyUrl,
-    logUrl
-} from './explorer/sections/timeline-reads.ts';
-import type { SavedCopy } from './explorer/sections/timeline.ts';
+import { createFileHistory, reasonOf, type FileCommits, type FileCopies } from './fs-history.ts';
 
 export { fileBytesUrl, FS_PATH, listingUrl, readCapped } from './fs-transport.ts';
 export type {
@@ -147,16 +140,6 @@ export type BookmarkForms = {
      */
     shift: (owner: string, now: FilesForms, next: FilesForms) => void;
 };
-
-/** The local-history copies of one file, as far as they are read. */
-export type FileCopies = { copies: SavedCopy[]; error: string; loading: boolean };
-
-/** The commits that touched one file, as far as they are read. */
-export type FileCommits = { commits: GitCommit[]; error: string; loading: boolean };
-
-const NO_COPIES: FileCopies = { copies: [], error: '', loading: true };
-
-const NO_COMMITS: FileCommits = { commits: [], error: '', loading: true };
 
 /**
  * The collection key the write path resolves to the reader's own bookmarks file. A bookmark is
@@ -189,6 +172,7 @@ const workspaceShape = unchanged(
 
 /** The workspaces answer: the current one's name, every workspace, the keys the server dropped. */
 const workspacesShape = z.object({
+    home: z.string().catch(''),
     current: z.string().catch(''),
     workspaces: survivorsShape(workspaceShape).catch([]),
     dropped: survivorsShape(z.string()).catch([])
@@ -265,6 +249,8 @@ export type FsStore = {
      */
     relistFolder: (root: string, path: string, below?: boolean) => void;
     workspaces: () => WorkspacesState;
+    /** The roots of the workspace the saved state names as current. */
+    roots: () => FsRoot[];
     fileText: (root: string, path: string) => FileText;
     markText: (root: string, path: string) => void;
     /**
@@ -484,12 +470,18 @@ export function createFs(
         return data ?? NO_WORKSPACES;
     }
 
+    /** The roots of the current workspace, which are none while the workspaces are being read. */
+    function roots(): FsRoot[] {
+        return currentWorkspace(workspaces()).roots;
+    }
+
     async function readWorkspaces(): Promise<WorkspacesState> {
         try {
             const answer = await readAnswer(await fetch(FS_PATH));
             if (!answer.ok) return { ...NO_WORKSPACES, error: answer.error, loading: false };
             const body = readAs(workspacesShape, answer.body);
             return {
+                home: body?.home ?? '',
                 current: body?.current ?? '',
                 workspaces: body?.workspaces ?? [],
                 dropped: body?.dropped ?? [],
@@ -568,56 +560,7 @@ export function createFs(
         }
     }
 
-    /** The copies of one file's local history, read again whenever the file is written. */
-    function copies(root: string, path: string): FileCopies {
-        if (root === '' || path === '') return { copies: [], error: '', loading: false };
-        const key = ['fs', 'history', root, treeKey(root, path), String(fileVersion(root, path))];
-        const { data } = queries.read(key, () => readCopies(root, path), { enabled: inBrowser() });
-        return data ?? NO_COPIES;
-    }
-
-    async function readCopies(root: string, path: string): Promise<FileCopies> {
-        try {
-            const answer = await readAnswer(await fetch(historyUrl(root, path)));
-            if (!answer.ok) return { copies: [], error: answer.error, loading: false };
-            return { copies: copiesOf(answer.body), error: '', loading: false };
-        } catch (error) {
-            return { copies: [], error: reasonOf(error), loading: false };
-        }
-    }
-
-    /**
-     * The commits that touched one file. `repository` and `path` are the file as the repository
-     * names it; `root` and `shown` are the file as the file browser names it, whose version is
-     * part of the key so a save of the file asks again.
-     */
-    function commits(repository: string, path: string, root: string, shown: string): FileCommits {
-        if (repository === '' || path === '') return { commits: [], error: '', loading: false };
-        const key = ['fs', 'log', repository, path, String(fileVersion(root, shown))];
-        const { data } = queries.read(key, () => readCommits(repository, path), {
-            enabled: inBrowser()
-        });
-        return data ?? NO_COMMITS;
-    }
-
-    async function readCommits(repository: string, path: string): Promise<FileCommits> {
-        try {
-            const answer = await readAnswer(await fetch(logUrl(repository, path)));
-            if (!answer.ok) return { commits: [], error: answer.error, loading: false };
-            return { commits: commitsOf(answer.body), error: '', loading: false };
-        } catch (error) {
-            return { commits: [], error: reasonOf(error), loading: false };
-        }
-    }
-
-    async function copyText(root: string, path: string, id: string): Promise<string | null> {
-        try {
-            const answer = await readAnswer(await fetch(historyUrl(root, path, id)));
-            return answer.ok ? copyTextOf(answer.body) : null;
-        } catch {
-            return null;
-        }
-    }
+    const history = createFileHistory(queries, fileVersion);
 
     /** The reader's own bookmarks, asked for once and held until they are marked. */
     function bookmarks(): BookmarksState {
@@ -715,10 +658,6 @@ export function createFs(
         } catch (error) {
             return { ...NO_NOTE, id, error: reasonOf(error), loading: false };
         }
-    }
-
-    function reasonOf(error: unknown): string {
-        return error instanceof Error ? error.message : String(error);
     }
 
     /**
@@ -828,6 +767,7 @@ export function createFs(
         relist,
         relistFolder,
         workspaces,
+        roots,
         fileText,
         markText,
         readFileKind,
@@ -835,9 +775,9 @@ export function createFs(
         refresh,
         fileVersion,
         bump,
-        copies,
-        commits,
-        copyText,
+        copies: history.copies,
+        commits: history.commits,
+        copyText: history.copyText,
         bookmarks,
         bookmarksNow,
         notes: noteList,

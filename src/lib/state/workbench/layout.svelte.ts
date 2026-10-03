@@ -67,6 +67,7 @@ import {
     type Focus,
     type Host,
     type Instance,
+    type Instances,
     type KeepRule,
     type LayoutAccess,
     type Layout,
@@ -91,7 +92,7 @@ export type { OpenOptions };
 const GONE: Workbench = { root: { kind: 'pane', tabs: [], active: '' } };
 
 /** The pages one client is rendering, and their persistence. */
-export type LayoutStore = {
+export type LayoutStore = Omit<Instances, 'forgetTabs'> & {
     currentPage: () => Page;
     /** Every page, never a float. */
     pages: () => Page[];
@@ -108,19 +109,8 @@ export type LayoutStore = {
     touchPane: (page: string) => void;
     workbench: (page?: string) => Workbench;
     layout: (page?: string) => Layout;
-    activeInstance: (page?: string) => Instance | null;
     /** The instance the next view opened would join, which is the pane it would open into. */
     openingInstance: () => Instance | null;
-    instanceLayoutState: (id: string) => unknown;
-    /** The view one instance shows, from whichever page's tree holds it, or undefined for none. */
-    instanceView: (id: string) => ViewId | undefined;
-    restateInstance: (id: string, state: unknown) => void;
-    pinInstance: (id: string, session: string, label: string) => void;
-    unpinInstance: (id: string) => void;
-    /**
-     * Keep a preview tab, which is what a double click, a keystroke, a drag and a split do to one.
-     */
-    keepPreview: (id: string) => void;
     loadLayout: (storage?: Storable, source?: EventTarget) => boolean;
     /** Stop taking the arrangement another browser tab saves, which a load with a source began. */
     stopFollowing: () => void;
@@ -172,14 +162,6 @@ export type LayoutStore = {
     closePage: (id: string) => void;
     apply: (next: Workbench, page?: string) => void;
     change: (edit: (tree: Layout) => Layout, page?: string) => void;
-    activateInstance: (id: string, page?: string) => void;
-    closeInstancesOfView: (view: ViewId) => void;
-    closeRecord: (view: ViewId, id: string) => void;
-    moveInstanceToPage: (id: string, page: string) => void;
-    closeInstance: (id: string, page?: string) => void;
-    closePane: (path: number[], page?: string) => void;
-    transferInstance: (id: string, path: number[], index: number, page?: string) => void;
-    splitInstance: (id: string, path: number[], edge: Edge, page?: string) => void;
     embedPage: (nested: string, path: number[], edge: Edge, page?: string) => void;
     unembedPage: (path: number[], page?: string) => void;
     maximisePane: (path: number[], page?: string) => void;
@@ -775,6 +757,8 @@ export function createLayout(ui: UiStore): LayoutStore {
         pinInstance: instances.pinInstance,
         unpinInstance: instances.unpinInstance,
         keepPreview: instances.keepPreview,
+        pinTab: instances.pinTab,
+        unpinTab: instances.unpinTab,
         loadLayout,
         stopFollowing: () => {
             unfollow();

@@ -15,8 +15,8 @@
 // the view's own form, question and refusal line as calls handed in, so a test hands in fakes.
 
 import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
+import { absoluteOf } from '$lib/state/workbench/navigation/pages';
 import {
-    absoluteOf,
     languageOf,
     nameOf,
     opensInProgram,
@@ -346,7 +346,8 @@ export type RowStores = {
     startTerminal: ClientState['terminals']['startTerminal'];
     showTerminal: ClientState['terminals']['showTerminal'];
     setSearchState: ClientState['search']['setSearchState'];
-    copy: (text: string) => void;
+    /** Write to the clipboard; rejects when the page's clipboard refuses the write. */
+    copy: (text: string) => Promise<void>;
     download: (url: string, name: string) => void;
 };
 
@@ -364,7 +365,7 @@ export function rowStores(client: ClientState): RowStores {
         startTerminal: client.terminals.startTerminal,
         showTerminal: client.terminals.showTerminal,
         setSearchState: client.search.setSearchState,
-        copy: (text) => void navigator.clipboard.writeText(text).catch(() => undefined),
+        copy: (text) => navigator.clipboard.writeText(text),
         download: (url, name) => {
             const link = document.createElement('a');
             link.href = url;
@@ -437,6 +438,15 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         return rows.map((one) => rowPaths(deps.dirOf(one.root), one.path)[which]).join('\n');
     }
 
+    /** Copy to the clipboard, saying the refusal sentence the tab menu says when it is refused. */
+    async function copy(text: string): Promise<void> {
+        try {
+            await deps.copy(text);
+        } catch {
+            deps.say(t('ui.tab_copy_refused'));
+        }
+    }
+
     /** The newest Open LaTeX pick, so a pick whose root answer comes late opens nothing. */
     let newestLatex = 0;
 
@@ -471,8 +481,8 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         else if (pick === ROW_FIND)
             deps.setSearchState(deps.openView('search'), { root: row.root, under: row.path });
         else if (pick === ROW_DOWNLOAD) deps.download(fileUrl(row.root, row.path), row.name);
-        else if (pick === ROW_COPY_PATH) deps.copy(copied(row, 'absolute'));
-        else if (pick === ROW_COPY_RELATIVE) deps.copy(copied(row, 'relative'));
+        else if (pick === ROW_COPY_PATH) void copy(copied(row, 'absolute'));
+        else if (pick === ROW_COPY_RELATIVE) void copy(copied(row, 'relative'));
         else if (pick === ROW_ADD_ROOT) deps.addRoot();
         else if (pick === ROW_REMOVE_ROOT) deps.removeRoot(row.root);
         else if (pick === ROW_LATEX) void latex(row);

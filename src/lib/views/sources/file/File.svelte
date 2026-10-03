@@ -215,7 +215,7 @@
     <ToolButton small label={t('file.retry')} onclick={retry} />
 {/snippet}
 
-<Pane {title} toolbar={tools} {bar}>
+<Pane {title} titled={false} toolbar={tools} {bar}>
     <div class="file" data-instance={instance.id} data-root={root} data-path={path}>
         {#if src === '' && (root === '' || path === '')}
             <Empty message={t('file.none')} glyph={t('file.none_glyph')} />

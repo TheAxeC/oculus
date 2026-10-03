@@ -6,7 +6,9 @@
 // What this does NOT cover: the menu opened by a right-click on the strip or the body, the palette
 // it opens and the terminal it starts, which need a DOM and are seen at the look.
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import {
     floatItems,
     floatMenu,
@@ -18,8 +20,10 @@ import {
     stripPicked,
     type StripDeps
 } from '../../../src/lib/shell/panes/pane-view.ts';
-import { newNoteOpener } from '../../../src/lib/state/workbench/layout/index.ts';
-import { noteId } from '../../../src/lib/state/life/notes.ts';
+import {
+    newTextFileOpener,
+    untitledLabel
+} from '../../../src/lib/state/workbench/layout/open/new-text-file.ts';
 import type { FloatPlace } from '../../../src/lib/state/workbench/layout/index.ts';
 import type { MenuItem } from '../../../src/lib/ui/menu/menu-items.ts';
 
@@ -33,10 +37,12 @@ const NO_FLOAT = {
 
 /** The operations of a StripDeps this file's cases do not pick. */
 const NO_SETTINGS = {
-    newNoteIn: () => undefined,
+    newTextFileIn: () => undefined,
     setLocked: () => undefined,
     setAppearance: () => undefined
 };
+
+beforeAll(() => setCatalog(textCatalog(loadConfig(engineDir()).config)));
 
 const words = (key: string, ...args: (string | number)[]): string =>
     args.length === 0 ? `@${key}` : `@${key}(${args.join(',')})`;
@@ -111,8 +117,8 @@ describe('the pane strip menu', () => {
             ['@ui.tab_bar_single', true],
             ['@ui.tab_bar_none', false]
         ]);
-        expect(actions?.items?.map((item) => [item.label, item.active === true])).toEqual([
-            ['@ui.editor_actions_strip', false],
+        expect(actions?.items?.map((item) => [item.label, item.checked])).toEqual([
+            ['@ui.editor_actions_tab_bar', false],
             ['@ui.editor_actions_hidden', true]
         ]);
         const fresh = stripMenu({ holdsTab: true, panes: 1 }, words);
@@ -188,7 +194,7 @@ describe('what the strip menu runs', () => {
         expect(calls).toEqual(['palette:', 'close', 'new:p:1']);
     });
 
-    // Revert: drop the path from newNoteIn, or lock the pane the menu was not opened on.
+    // Revert: drop the path from newTextFileIn, or lock the pane the menu was not opened on.
     it('opens a text file in the pane, locks and unlocks it, and writes the two settings', () => {
         const calls: string[] = [];
         const deps = {
@@ -197,8 +203,8 @@ describe('what the strip menu runs', () => {
             openPalette: () => undefined,
             close: () => undefined,
             newTerminalIn: () => undefined,
-            newNoteIn: (page: string, path: number[]) =>
-                calls.push(`note:${page}:${path.join('.')}`),
+            newTextFileIn: (page: string, path: number[]) =>
+                calls.push(`text:${page}:${path.join('.')}`),
             setLocked: (page: string, path: number[], locked: boolean) =>
                 calls.push(`lock:${page}:${path.join('.')}:${locked}`),
             setAppearance: (key: string, value: string) => calls.push(`set:${key}=${value}`)
@@ -218,9 +224,13 @@ describe('what the strip menu runs', () => {
         stripPicked(sub(open, '@ui.strip_tab_bar', '@ui.tab_bar_none'), pane, deps);
         stripPicked(sub(open, '@ui.strip_tab_bar', '@ui.tab_bar_multiple'), pane, deps);
         stripPicked(sub(open, '@ui.strip_editor_actions', '@ui.editor_actions_hidden'), pane, deps);
-        stripPicked(sub(open, '@ui.strip_editor_actions', '@ui.editor_actions_strip'), pane, deps);
+        stripPicked(
+            sub(open, '@ui.strip_editor_actions', '@ui.editor_actions_tab_bar'),
+            pane,
+            deps
+        );
         expect(calls).toEqual([
-            'note:p:1',
+            'text:p:1',
             'lock:p:1:true',
             'lock:p:1:false',
             'set:show_tabs=single',
@@ -233,19 +243,24 @@ describe('what the strip menu runs', () => {
 });
 
 describe('New Text File', () => {
-    // Revert: open the note without `fresh`, so the tab asks the server for a file it has not got.
-    it('opens a scratch Note in the pane the menu was opened on, with an id of the moment', () => {
+    // Revert: open the tab without `untitled: true`, so the source tab asks the server for a file.
+    it('opens an untitled text in a source tab of the pane the menu was opened on', () => {
         const calls: unknown[][] = [];
-        const at = new Date(2026, 9, 2, 10, 30, 15);
-        const open = newNoteOpener(
+        const open = newTextFileOpener(
             (...args: unknown[]) => {
                 calls.push(args);
                 return 'tab-9';
             },
-            () => at
+            () => ['Untitled-1', 'notes.md']
         );
         open('p', [1, 0]);
-        expect(calls).toEqual([['note', { id: noteId(at), fresh: true }, 'p', [1, 0]]]);
+        expect(calls).toEqual([['source', { untitled: true, label: 'Untitled-2' }, 'p', [1, 0]]]);
+    });
+
+    it('names the lowest number no open tab holds', () => {
+        expect(untitledLabel([])).toBe('Untitled-1');
+        expect(untitledLabel(['Untitled-2', 'Untitled-1', 'Untitled-4'])).toBe('Untitled-3');
+        expect(untitledLabel(['Untitled-0', 'Untitled-x'])).toBe('Untitled-1');
     });
 });
 

@@ -162,7 +162,8 @@ describe('moveInstance', () => {
         expect(next).toEqual({
             kind: 'pane',
             tabs: [instance('a'), instance('b'), instance('c')],
-            active: 'a'
+            active: 'a',
+            recent: ['b']
         });
         expect(checkLayout(next)).toEqual([]);
     });
@@ -174,7 +175,15 @@ describe('moveInstance', () => {
             split(
                 'row',
                 [0.5, 0.5],
-                [pane(['a']), { kind: 'pane', tabs: [instance('c'), instance('b')], active: 'b' }]
+                [
+                    pane(['a']),
+                    {
+                        kind: 'pane',
+                        tabs: [instance('c'), instance('b')],
+                        active: 'b',
+                        recent: ['c']
+                    }
+                ]
             )
         );
         expect(checkLayout(next)).toEqual([]);

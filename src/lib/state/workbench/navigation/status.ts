@@ -165,8 +165,10 @@ function folderName(dir: string): string {
 /**
  * The repository holding a tab's file: the innermost root of the `git` channel that is a
  * repository and holds the file's path, the file's root key resolved through the served roots. A
- * tab holding no file is read as the hub itself, the root served under `hub`. A file in no
- * repository, a root key no served root carries and a channel not yet delivered answer null.
+ * diff tab names the repository's folder itself in place of a key, so a root that is an absolute
+ * path is read as that folder. A tab holding no file is read as the hub itself, the root served
+ * under `hub`. A file in no repository, a root key that is neither a served root nor a folder and
+ * a channel not yet delivered answer null.
  */
 export function repoStatus(
     file: TabFile | null,
@@ -176,7 +178,8 @@ export function repoStatus(
 ): RepoStatus | null {
     if (git === null) return null;
     const key = file?.root ?? hubKey;
-    const dir = roots.find((root) => root.key === key)?.dir;
+    const dir =
+        roots.find((root) => root.key === key)?.dir ?? (key.startsWith('/') ? key : undefined);
     if (dir === undefined) return null;
     const path = (file?.path ?? '').split('/').filter(Boolean).join('/');
     const target = joinPath(dir, path);

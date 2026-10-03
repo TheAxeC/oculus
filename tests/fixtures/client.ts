@@ -13,6 +13,14 @@ import GroupContexts from '../ui/menu/GroupContexts.svelte';
 
 export { createClientState, type ClientState };
 
+/** A fresh client whose ui store is loaded from an empty storage and whose page holds no tab. */
+export function emptyClient(): ClientState {
+    const client = createClientState();
+    client.ui.loadUi({ getItem: () => null, setItem: () => undefined });
+    client.layout.apply({ root: { kind: 'pane', tabs: [], active: '' } });
+    return client;
+}
+
 /** Hands the client a `sessions` payload that holds these terminals and no session records. */
 export function holdTerminals(client: ClientState, terminals: Terminal[]): void {
     client.entities.receive({

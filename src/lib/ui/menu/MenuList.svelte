@@ -61,6 +61,13 @@
 
 {#snippet face(item: MenuItem)}
     <span class="label">{item.label}</span>
+    {#if item.checked !== undefined}
+        <span class="check" aria-hidden="true">
+            {#if item.checked}
+                <Glyph name="check" />
+            {/if}
+        </span>
+    {/if}
     {#if item.tone !== undefined}
         <span class="dot" style={dotStyle(item.tone)}></span>
     {/if}
@@ -243,6 +250,17 @@
         border-radius: 50%;
         background: var(--tone);
         flex: none;
+    }
+
+    /* The check mark of the chosen one of a set, in a box of the icon's size before the words. */
+    .check {
+        order: -2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 1em;
+        height: 1em;
     }
 
     .item-badge {

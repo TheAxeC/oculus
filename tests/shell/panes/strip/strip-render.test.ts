@@ -10,7 +10,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Workbench from '../../../../src/lib/shell/Workbench.svelte';
-import Alpha from '../../fixtures/Alpha.svelte';
+import { registerAlpha } from '../../fixtures/alpha-view.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -30,14 +30,7 @@ let client: ClientState;
 
 beforeEach(() => {
     client = createClientState();
-    client.registry.registerView({
-        id: 'alpha',
-        label: 'views.status',
-        glyph: 'views.status_glyph',
-        component: Alpha,
-        group: 'probe',
-        order: 0
-    });
+    registerAlpha(client);
     setAppearance({});
 });
 

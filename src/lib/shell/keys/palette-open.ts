@@ -4,7 +4,8 @@
 // cleared with it, so a card the search would hide is mounted for the reveal.
 //
 // An editor action opens nothing: it asks the source tab or diff pane it names to run the action,
-// and answers that tab's instance.
+// and answers that tab's instance. Pin Editor and Unpin Editor are editor items too, and act on the
+// tab they name through the layout.
 
 import { z } from 'zod';
 import { readOr, rowsShape } from '$lib/data/shapes/shapes';
@@ -28,6 +29,12 @@ export function openPaletteItem(
     if (item.kind === 'editor') {
         const instance = item.state?.instance;
         const action = item.state?.action;
+        const pin = item.state?.pin;
+        if (typeof instance === 'string' && typeof pin === 'boolean') {
+            if (pin) layout.pinTab(instance);
+            else layout.unpinTab(instance);
+            return instance;
+        }
         if (typeof instance !== 'string' || typeof action !== 'string') return '';
         editor.ask(instance, { kind: 'action', id: action });
         return instance;

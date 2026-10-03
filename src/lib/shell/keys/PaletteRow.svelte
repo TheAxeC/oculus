@@ -21,8 +21,10 @@
 <script lang="ts">
     // Layer 3, partial of shell/keys/Palette.svelte. One result row of the palette's list: what it
     // is in words, then the control that opens it filling the rest. A `parts` label draws its
-    // matched letters marked. The Command reads the row's id and selection from the item, so the
-    // row's own control is pressed through the row and does nothing more.
+    // matched letters marked. A title longer than the row is cut with an ellipsis at the row's end
+    // and its whole words are the row's tooltip, as VS Code's quick pick does. The Command reads
+    // the row's id and selection from the item, so the row's own control is pressed through the row
+    // and does nothing more.
 
     import { Command } from 'bits-ui';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -42,17 +44,25 @@
         <div {...props} class="result" data-language={row.language}>
             <span class="kind">{row.kind}</span>
             {#if row.parts !== undefined}
-                <ToolButton plain label={row.label} active={row.active} onclick={pressed}>
+                <ToolButton
+                    plain
+                    cut
+                    label={row.label}
+                    title={row.label}
+                    active={row.active}
+                    onclick={pressed}
+                >
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render marked(row.parts)}
                 </ToolButton>
             {:else}
                 <ToolButton
                     plain
+                    cut
                     label={row.label}
                     active={row.active}
                     disabled={row.disabled}
-                    title={row.note}
+                    title={row.note ?? row.label}
                     onclick={pressed}
                 />
             {/if}
@@ -68,7 +78,7 @@
        ring. */
     .result {
         display: grid;
-        grid-template-columns: minmax(5rem, auto) 1fr auto;
+        grid-template-columns: minmax(5rem, auto) minmax(0, 1fr) auto;
         align-items: center;
         gap: 6px;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
@@ -91,7 +101,7 @@
         justify-content: flex-start;
         width: 100%;
         text-align: left;
-        white-space: normal;
+        white-space: nowrap;
     }
 
     /* The letters a query matched, marked as the Search view marks a match

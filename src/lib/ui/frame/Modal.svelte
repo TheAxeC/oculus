@@ -7,12 +7,16 @@
     // While it is drawn it holds the page: the focus moves into the box, Tab stays inside it
     // through bits-ui's focus trap, and Escape and a press on the ground outside the box close it
     // through bits-ui, calling `onclose`. A box raised over another, as a confirm is over the tray,
-    // takes the first Escape. It is drawn in place, where its caller draws it: one left open in a
-    // tab the pane hides is kept drawn with its trap, its Escape and its press outside off, so it
-    // holds nothing of the page while hidden, and takes the keyboard again when its tab shows.
+    // takes the first Escape. Its ground is moved to the body (`portal`), out of the stacking
+    // contexts of the pane and the page, so it stands over the floats wherever its caller draws it.
+    // An anchor left in place, which has a size only while the caller's tab shows, says whether it
+    // does: one left open in a tab the pane hides is hidden, with its trap, its Escape and its
+    // press outside off, so it holds nothing of the page, and takes the keyboard again when its tab
+    // shows.
     //
-    // When it opens, the keyboard goes where the box asks through `onopen`. A box that asks nothing
-    // gets it on the first control Tab reaches inside it, or on the box itself when it holds none.
+    // When it opens, the keyboard goes where the box asks through `onopen`, once the bindings the
+    // box is found through are set (`focusOnOpen`). A box that asks nothing gets it on the first
+    // control Tab reaches inside it, or on the box itself when it holds none.
     // When it goes, the keyboard comes back to the control that held it when the ground was drawn,
     // once the ground is gone and only where nothing holds it: a yes may take that control away,
     // and the strip it was in is then what says where the keyboard lands, and a view the answer
@@ -21,9 +25,9 @@
     // `giveBackQuietly` (ui/frame/quiet-focus.ts) and open no tooltip on the control they land on.
 
     import { AlertDialog, Dialog } from 'bits-ui';
-    import type { Snippet } from 'svelte';
-    import { watchShown } from '$lib/ui/shown';
-    import { focusFirstQuietly, giveBackQuietly } from '$lib/ui/frame/quiet-focus';
+    import { tick, type Snippet } from 'svelte';
+    import { portal, watchShown } from '$lib/ui/shown';
+    import { focusOnOpen, giveBackQuietly } from '$lib/ui/frame/quiet-focus';
 
     type Props = {
         /** A question that must be answered, drawn as an alert dialog. */
@@ -54,6 +58,9 @@
 
     let ground: HTMLDivElement | undefined = $state();
 
+    /** The element left where the caller draws the modal, which has a size while its tab shows. */
+    let anchor: HTMLSpanElement | undefined = $state();
+
     /** Whether the box holds the page: while it is drawn and its tab shows. */
     let open = $state(true);
 
@@ -63,7 +70,7 @@
     const came = typeof document === 'undefined' ? null : document.activeElement;
 
     $effect(() =>
-        ground === undefined ? undefined : watchShown(ground, (shown) => (open = shown))
+        anchor === undefined ? undefined : watchShown(anchor, (shown) => (open = shown))
     );
 
     // No dependency, so the body runs once and the cleanup runs when the ground goes. The keyboard
@@ -73,7 +80,7 @@
     /** bits-ui closing the box on Escape or a press outside, which is the caller's to answer. */
     function asked(next: boolean): void {
         if (next) return;
-        open = ground !== undefined && ground.clientWidth > 0;
+        open = anchor !== undefined && anchor.clientWidth > 0;
         onclose();
     }
 
@@ -81,13 +88,7 @@
     const BOX = '[role="dialog"], [role="alertdialog"]';
 
     function opened(event: Event): void {
-        event.preventDefault();
-        if (onopen !== undefined) {
-            onopen();
-            return;
-        }
-        const box = ground?.querySelector<HTMLElement>(BOX);
-        if (box !== null && box !== undefined) focusFirstQuietly(box);
+        focusOnOpen(event, tick(), onopen, () => ground?.querySelector<HTMLElement>(BOX));
     }
 
     /** What both kinds of content take: drawn while the ground is, the focus given back here. */
@@ -100,7 +101,7 @@
 </script>
 
 {#snippet stand(box: Snippet)}
-    <div class="ground {level}" bind:this={ground}>
+    <div class="ground {level}" class:away={!open} bind:this={ground} use:portal>
         <div class="scrim"></div>
         {@render box()}
         {@render over?.()}
@@ -123,6 +124,7 @@
     </Dialog.Content>
 {/snippet}
 
+<span class="anchor" bind:this={anchor}></span>
 {#if alert}
     <AlertDialog.Root bind:open onOpenChange={asked}>
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -136,6 +138,21 @@
 {/if}
 
 <style>
+    /* Left where the caller draws the modal. It takes no room, and has a size only while the
+       caller's tab shows. */
+    .anchor {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .ground.away {
+        display: none;
+    }
+
     .ground {
         position: fixed;
         inset: 0;

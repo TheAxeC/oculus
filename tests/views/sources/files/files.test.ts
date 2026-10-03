@@ -344,3 +344,21 @@ describe('a root nothing saved', () => {
         expect(body).not.toContain('Take workspace out of this workspace');
     });
 });
+
+describe('the Files view as it is written', () => {
+    // An audit: the breadcrumb is the tab strip's over a file tab, not the Files tree's.
+    // Revert: draw Breadcrumb in Files.svelte again.
+    it('audits that draws no breadcrumb over its tree', () => {
+        const written = readFileSync(
+            join(
+                dirname(fileURLToPath(import.meta.url)),
+                '../../../../src/lib/views/sources/files/Files.svelte'
+            ),
+            'utf8'
+        );
+        // the tab strip draws the path over a file tab, so the tree holds no path row of its own
+        expect(written).not.toContain('Breadcrumb');
+        // the segments of a path are cut by the tab strip's own module and not by the tree
+        expect(written).not.toContain('crumbsOf');
+    });
+});

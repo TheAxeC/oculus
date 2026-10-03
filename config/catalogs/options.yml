@@ -101,6 +101,11 @@ options:
             default: strip
             control: choice
             values: [strip, hidden]
+        wrap_tabs:
+            section: Appearance
+            description: Whether the tabs of a pane wrap onto more rows when they do not fit, instead of scrolling along one row. It applies only while show_tabs is multiple. Any value that is not true counts as false.
+            default: false
+            control: toggle
     behavior.yml:
         read_limits:
             section: Audit

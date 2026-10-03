@@ -18,6 +18,11 @@ export type MenuItem = {
     /** The keys that run the choice, drawn muted at its end, as VS Code's menus write them. */
     hint?: string;
     active?: boolean;
+    /**
+     * The choice is one of a set of which one is chosen: drawn with a check mark in a box before
+     * the words when true and with the empty box when false, so the words of the set line up.
+     */
+    checked?: boolean;
     /** Draw the choice dimmed and let a press do nothing, as a disabled button does (`clickOf`). */
     disabled?: boolean;
     glyph?: string;

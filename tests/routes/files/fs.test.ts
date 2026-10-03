@@ -8,6 +8,7 @@
 // reading the machine's own config/local.yml.
 
 import { existsSync, mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
@@ -166,6 +167,13 @@ describe('the fs route, reading', () => {
             'hub:true',
             'workspace:true'
         ]);
+    });
+
+    // Revert: leave `home` out of workspacesAnswer.
+    it('answers the home folder, which the page writes as ~ in a tab hint', async () => {
+        const body = await read(handleFs(get(''), target()));
+
+        expect(body.home).toBe(homedir());
     });
 
     it('names a saved root the configuration reserves, and does not serve it', async () => {

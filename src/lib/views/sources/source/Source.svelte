@@ -6,6 +6,9 @@
     /** The line a tab was opened at: a finite number above zero, and 0 for anything else. */
     const openedAtShape = z.object({ line: z.number().positive().catch(0) });
 
+    /** A tab over an untitled text: it names no file until its first Save gives it one. */
+    const untitledShape = z.object({ untitled: z.literal(true) });
+
     export const registration: ViewRegistration = {
         id: 'source',
         label: 'views.source',
@@ -35,15 +38,16 @@
     // A keystroke keeps a preview tab. A file opened by a single click is the tab the next single
     // click replaces, and typing into it is a reader saying they are working in it.
     //
-    // The tab's controls are on the pane's header and bar. The header holds the icon actions: Save
-    // and Revert, drawn while the text may be written, then the star,
-    // `shared/links/BookmarkStar.svelte`, which the file view draws too, so a reader bookmarks the
-    // file in front of them whichever of the two tabs is showing it, and, for a file whose
-    // extension `open.program_ext` names an application for, such as a `.rtf` whose bytes are
-    // text, `shared/links/ProgramButton.svelte`, the control the file view draws. The bar holds the
-    // toggles (the rendered half of a Markdown file and Blame) and, at its end, the save outcome
-    // and what a refused bookmark write or open said. The editor below draws no bar of its own. A
+    // The tab draws no title row and no row of controls: its path is the breadcrumb the pane draws
+    // under the strip, and its controls (StripActions.svelte) are handed up to the pane's tab strip
+    // through ui/tabs/tab-actions.svelte.ts, which draws them at its end for the active tab. The
+    // save outcome, while the text may be written, and what a refused bookmark write or open said,
+    // whether or not it may, stay in view as a line under the editor (save/SourceNote.svelte). A
     // file that could not be read is the message box with a control that reads it again.
+    //
+    // A tab over an untitled text (New Text File) holds an empty draft and no file. Its first Save
+    // asks for a served root of the current workspace and a name, makes the file there, writes the
+    // text to it and becomes a tab over that file.
     //
     // What the status bar draws for the tab is published from here to the editor status store,
     // keyed by the instance, while the tab is mounted: the caret the editor reports, the
@@ -64,13 +68,11 @@
     // in CRLF.
     //
     // For a file in a repository the gutter carries VS Code's quick diff marks against the index,
-    // and the bar's Blame toggle, kept with the draft, adds each line's blame to it and the caret
-    // line's blame to the status bar. Both are read from GET /api/git for the repository holding
-    // the file, again whenever the repository's state on the `git` channel moves and after every
-    // save (a hidden tab reads again once, when it is shown), and a press on a mark opens the
-    // file's diff at its change while a press on a line's blame opens its commit in the
-    // Repositories view's graph. The editor draws them as its own decorations; the code window
-    // draws them with Gutter.svelte.
+    // and the Blame toggle, kept with the draft, adds each line's blame to it and the caret line's
+    // blame to the status bar. They are read (source-gutter.svelte.ts) again whenever the
+    // repository's state on the `git` channel moves and after every save; a hidden tab reads again
+    // once, when it is shown. A press on a mark opens the file's diff at its change and a press on
+    // a line's blame opens its commit in the Repositories view's graph.
     //
     // A Markdown or LaTeX file adds the headings of its text as document symbols (`symbols.ts`),
     // which sticky scroll pins at the top of the editor. A LaTeX file adds to its editor the
@@ -79,17 +81,20 @@
     // `latex.auto_build` says so (state/sessions/latex.svelte.ts).
 
     import { onDestroy, untrack } from 'svelte';
-    import Chip from '$lib/ui/controls/Chip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Prompt from '$lib/ui/forms/Prompt.svelte';
+    import type { PromptRequest } from '$lib/ui/forms/prompt';
+    import { useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import BookmarkStar from '../../shared/links/BookmarkStar.svelte';
-    import ProgramButton from '../../shared/links/ProgramButton.svelte';
     import Code from '../../shared/prose/Code.svelte';
     import Editor from './Editor.svelte';
     import Gutter from './Gutter.svelte';
+    import SourceNote from './save/SourceNote.svelte';
+    import StripActions from './StripActions.svelte';
+    import { performAsk } from './ask-perform';
+    import { askUntitledName } from './save/untitled-save';
     import { latexEditor } from './latex-editor';
     import { createSourceGutter } from './source-gutter.svelte';
     import { createSourceOptions } from '$lib/views/shared/prose/source-options';
@@ -122,14 +127,16 @@
     const client = useState();
     const {
         editorStatus: { asked, focus, forget, publish },
-        fs: { fileText, workspaces },
-        layout: { keepPreview },
+        explorer,
+        fs: { fileText, roots: currentRoots, workspaces },
+        layout: { keepPreview, restateInstance },
         repositories,
         selectors: { editorOptions, gitFor, gitRoots, languages, paintLimit, programApps },
         source: {
             revertSourceDraft,
             editSourceDraft,
             loadSourceDraft,
+            loadUntitledDraft,
             saveSourceDraft,
             setSourceIndent,
             setSourceLanguage,
@@ -151,10 +158,12 @@
     const line = $derived(readAs(openedAtShape, instance.state)?.line ?? 0);
     const title = $derived(label === '' ? t('views.source') : label);
     const draft = $derived(sourceDraft(instance.id));
+    /** Whether the tab names no file: an untitled text, or a state that lost its address. */
     const blocked = $derived(root === '' || path === '');
+    const untitled = $derived(readAs(untitledShape, instance.state) !== null);
     /** What the star or the program control was refused with, or the empty string. */
     let said = $state('');
-    const error = $derived(blocked ? t('source.cannot_open', path) : draft.error);
+    const error = $derived(blocked && !untitled ? t('source.cannot_open', path) : draft.error);
     /** The line a tab that may not write its file draws, and the empty string for one that may. */
     const locked = $derived(
         head !== undefined
@@ -169,6 +178,13 @@
     );
     /** Whether the editor is drawn, which is when the text controls have text to act on. */
     const editing = $derived(error === '' && draft.loaded && locked === '');
+
+    /** The save outcome the row under the editor shows: only while the text may be written. */
+    const saveMessage = $derived(editing ? draft.message : '');
+
+    /** Whether the row under the editor is drawn: a save outcome or a sentence from a refusal. */
+    const noted = $derived(saveMessage !== '' || said !== '');
+
     /** The indentation, word wrap and rulers of the tab, in the order `resolveEditor` states. */
     const options = createSourceOptions({
         path: () => path,
@@ -279,33 +295,36 @@
 
     onDestroy(() => forget(instance.id));
 
+    // The controls go to the pane's strip while the tab is mounted. They are handed over as the
+    // component starts, since a render on the server runs no effect, and taken back by the cleanup.
+    const handed = useTabActions();
+    untrack(() => handed?.set(instance.id, stripActions));
+    $effect(() => {
+        const id = instance.id;
+        return () => handed?.clear(id);
+    });
+
     // An ask of the status bar, performed once on the draft.
     $effect(() => {
         const ask = asked(instance.id);
         if (ask === null || ask.seq === performed) return;
         performed = ask.seq;
-        untrack(() => {
-            const id = instance.id;
-            if (ask.kind === 'commit') {
-                openBlamed(blameMap.get(caret.line));
-            } else if (ask.kind === 'language') {
-                setSourceLanguage(id, ask.language);
-            } else if (ask.kind === 'indent') {
-                setSourceIndent(id, ask.indent);
-            } else if (!editing) {
-                return;
-            } else if (ask.kind === 'convert') {
-                setSourceIndent(id, { tabs: ask.tabs, size: indent.size });
-                editor?.perform(ask);
-            } else {
-                editor?.perform(ask);
-            }
-        });
+        untrack(() =>
+            performAsk(ask, {
+                editing,
+                indent,
+                editor,
+                openCommit: () => openBlamed(blameMap.get(caret.line)),
+                setLanguage: (next) => setSourceLanguage(instance.id, next),
+                setIndent: (next) => setSourceIndent(instance.id, next)
+            })
+        );
     });
 
     $effect(() => {
-        if (blocked) return;
         const id = instance.id;
+        if (untitled) untrack(() => loadUntitledDraft(id));
+        if (blocked) return;
         const fileRoot = root;
         const filePath = path;
         const stage = head;
@@ -317,8 +336,24 @@
         setSourceWrap(instance.id, options.toggled);
     }
 
+    /** The question an untitled text's first Save asks: the name of the file to make. */
+    let asking: PromptRequest | null = $state(null);
+
     async function save(): Promise<void> {
-        await saveSourceDraft(instance.id, root, path);
+        if (!untitled) {
+            await saveSourceDraft(instance.id, root, path);
+            return;
+        }
+        askUntitledName({
+            id: instance.id,
+            title: () => title,
+            roots: currentRoots,
+            create: explorer.create,
+            saveDraft: saveSourceDraft,
+            restate: restateInstance,
+            said: (words) => (said = words),
+            ask: (request) => (asking = request)
+        });
     }
 
     /**
@@ -343,58 +378,24 @@
     />
 {/snippet}
 
-{#snippet tools()}
-    <Toolbar label={t('source.toolbar')} overflow>
-        {#if editing}
-            <ToolButton bare label={t('editor.save')} glyph="check" onclick={() => void save()} />
-            <ToolButton
-                bare
-                label={t('editor.revert')}
-                glyph={t('editor.revert_glyph')}
-                onclick={() => revertSourceDraft(instance.id)}
-            />
-        {/if}
-        {#if head === undefined}
-            <BookmarkStar bare {root} {path} onsaid={(words: string) => (said = words)} />
-        {/if}
-        {#if !blocked && head === undefined && opensInProgram(path, programApps())}
-            <ProgramButton bare {root} {path} onsaid={(words: string) => (said = words)} />
-        {/if}
-    </Toolbar>
-{/snippet}
-
-{#snippet bar()}
-    <Toolbar label={t('source.bar')}>
-        {#if editing && markdown}
-            <Chip
-                label={t('source.preview')}
-                title={t('source.preview_title')}
-                glyph={t('source.preview_glyph')}
-                pressed={draft.rendered}
-                onclick={() => toggleSourceRendered(instance.id)}
-            />
-        {/if}
-        {#if inRepo !== null && draft.loaded}
-            <Chip
-                label={t('source.blame')}
-                title={t('source.blame_title')}
-                glyph="blame"
-                pressed={draft.blame}
-                onclick={() => toggleSourceBlame(instance.id)}
-            />
-        {/if}
-    </Toolbar>
-    {#if editing && draft.message !== ''}
-        <span class="message" aria-live="polite">
-            {#if draft.failed}
-                <Glyph name="cross" />
-            {/if}
-            {draft.message}
-        </span>
-    {/if}
-    {#if said !== ''}
-        <span class="refused" role="alert">{said}</span>
-    {/if}
+<!-- The tab's controls, handed up to the pane's tab strip. -->
+{#snippet stripActions()}
+    <StripActions
+        {root}
+        {path}
+        {editing}
+        bookmarkable={head === undefined && !blocked}
+        program={!blocked && head === undefined && opensInProgram(path, programApps())}
+        previewable={editing && markdown}
+        rendered={draft.rendered}
+        blameable={inRepo !== null && draft.loaded}
+        blamed={draft.blame}
+        onsave={() => void save()}
+        onrevert={() => revertSourceDraft(instance.id)}
+        onpreview={() => toggleSourceRendered(instance.id)}
+        onblame={() => toggleSourceBlame(instance.id)}
+        onsaid={(words: string) => (said = words)}
+    />
 {/snippet}
 
 {#snippet again()}
@@ -405,10 +406,12 @@
     />
 {/snippet}
 
-<Pane {title} toolbar={tools} {bar}>
+<Pane {title} titled={false}>
     <!-- Focus in the tab makes it the source a command run from another view reads. -->
     <div
         class="source"
+        class:lined={locked !== '' && error === '' && draft.loaded}
+        class:noted
         data-instance={instance.id}
         data-root={root}
         data-path={path}
@@ -455,8 +458,15 @@
                 onactions={(offered: EditorAction[]) => (actions = offered)}
             />
         {/if}
+        {#if noted}
+            <SourceNote message={saveMessage} failed={draft.failed} {said} />
+        {/if}
     </div>
 </Pane>
+
+{#if asking !== null}
+    <Prompt request={asking} cancel={t('ui.confirm_cancel')} oncancel={() => (asking = null)} />
+{/if}
 
 <style>
     .source {
@@ -467,27 +477,18 @@
     }
 
     /* A tab drawing the line and the window is two rows: the line takes what it needs. */
-    .source:has(.locked) {
+    .source.lined {
         grid-template-rows: auto minmax(0, 1fr);
         gap: 6px;
     }
 
-    /* The save outcome: status words at the end of the bar. */
-    .message {
-        margin-left: auto;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+    /* The save outcome and what a refused write said take a row of their own under the editor. */
+    .source.noted {
+        grid-template-rows: minmax(0, 1fr) auto;
     }
 
-    /* What a refused bookmark write or open said: alert words at the end of the bar. */
-    .refused {
-        margin-left: auto;
-        color: var(--c-red-txt);
-        font-size: var(--fs-sm);
-    }
-
-    .message ~ .refused {
-        margin-left: 0;
+    .source.lined.noted {
+        grid-template-rows: auto minmax(0, 1fr) auto;
     }
 
     .locked {

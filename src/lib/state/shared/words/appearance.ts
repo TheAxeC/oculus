@@ -86,6 +86,7 @@ let crt = false;
 let codeTheme = CODE_TOKENS;
 let tabBar: TabBar = 'multiple';
 let actionsAt: EditorActions = 'strip';
+let wrapping = false;
 /** The terminal settings as last installed: the text size, and the four other keys. */
 let terminal: { fontPx: number | null; options: TerminalOptions } = { fontPx: null, options: {} };
 
@@ -223,6 +224,7 @@ export function setAppearance(config: Record<string, unknown>): void {
     codeTheme = isCodeTheme(config.code_theme) ? config.code_theme : CODE_TOKENS;
     tabBar = readAs(tabBarShape, config.show_tabs) ?? 'multiple';
     actionsAt = readAs(editorActionsShape, config.editor_actions) ?? 'strip';
+    wrapping = config.wrap_tabs === true;
     terminal = readTerminal(config);
     for (const theme of readAs(themeRowsShape, config.themes) ?? []) {
         if (Object.hasOwn(byName, theme.name)) continue;
@@ -285,6 +287,14 @@ export function showTabs(): TabBar {
 export function editorActions(): EditorActions {
     configGeneration();
     return actionsAt;
+}
+
+/**
+ * Whether a pane's strip wraps its tabs onto more rows, the `wrap_tabs` of config/appearance.yml.
+ */
+export function wrapTabs(): boolean {
+    configGeneration();
+    return wrapping;
 }
 
 /** The terminal grid's configured CSS pixel size, or null when it follows the page's type scale. */

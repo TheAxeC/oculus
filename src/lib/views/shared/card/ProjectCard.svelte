@@ -39,7 +39,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { chipGlyphName, chipLabel, statusTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
-    import { absoluteOf } from '$lib/state/sources/explorer/view/place';
+    import { absoluteOf } from '$lib/state/workbench/navigation/pages';
 
     const client = useState();
 

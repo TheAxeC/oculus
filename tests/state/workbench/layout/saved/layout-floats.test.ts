@@ -43,10 +43,10 @@ function envelope(floats: unknown, over: Record<string, unknown> = {}): string {
 }
 
 describe('a layout with floats', () => {
-    it('is written as version 5 and read back as the same pages, a free float and a docked one', () => {
+    it('is written as version 6 and read back as the same pages, a free float and a docked one', () => {
         const written = pages([FREE, DOCKED]);
         const text = serialiseLayout(written);
-        expect((JSON.parse(text) as { version: number }).version).toBe(5);
+        expect((JSON.parse(text) as { version: number }).version).toBe(6);
         expect(parseLayout(text, '')).toEqual(written);
     });
 

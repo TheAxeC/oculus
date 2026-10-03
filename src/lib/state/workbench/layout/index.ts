@@ -80,7 +80,7 @@ export {
     writeHost
 } from './open/floats.ts';
 export type { FloatSpec } from './open/floats.ts';
-export { newNoteOpener } from './open/new-note.ts';
+export { newTextFileOpener, untitledLabel } from './open/new-text-file.ts';
 export { asPreview, isPreview, keepInstance, previewIn, retarget } from './open/preview.ts';
 export {
     clearPage,

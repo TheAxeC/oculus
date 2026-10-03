@@ -12,6 +12,7 @@
 
 import {
     type TabScrollState,
+    controlsFit,
     type TabSpan,
     horizontalWheelDelta,
     revealOffset,
@@ -30,15 +31,21 @@ export type TabScrollParts = {
     strip: () => HTMLElement | undefined | null;
     /** The menu opener at the strip's right, whose width the tabs never have. */
     opener: () => HTMLElement | undefined | null;
+    /** The two scroll controls, measured while they are drawn. */
+    controls: () => readonly (HTMLElement | undefined | null)[];
     /** Each tab's element, in order; a tab that has gone leaves null. */
     faces: () => readonly (HTMLElement | undefined | null)[];
     /** The index of the showing tab, or -1. */
     shown: () => number;
+    /** Whether the strip wraps its tabs onto rows, which leaves nothing to scroll. */
+    wrapped: () => boolean;
 };
 
 export type TabScroll = {
     /** The overflow state the scroll controls are drawn from. */
     state: () => TabScrollState;
+    /** Whether the strip has room for the scroll controls beside the tabs' least width. */
+    controls: () => boolean;
     /** Measure the strip again after a scroll. */
     scrolled: () => void;
     /**
@@ -64,6 +71,13 @@ export function createTabScroll(parts: TabScrollParts): TabScroll {
      */
     let shownWhole = false;
     let measuredWidth = -1;
+
+    /**
+     * Whether the scroll controls fit beside the tabs, and the width the two took when last drawn,
+     * which a strip that hides them is measured against.
+     */
+    let controls = $state(true);
+    let controlsWidth = 0;
 
     function spans(list: HTMLElement): TabSpan[] {
         const origin = list.getBoundingClientRect().left - list.scrollLeft;
@@ -94,7 +108,18 @@ export function createTabScroll(parts: TabScrollParts): TabScroll {
         // A measure queued before the strip unmounts finds the bindings null, not undefined.
         if (!list || !strip) return;
         const fits = strip.clientWidth - (parts.opener()?.offsetWidth ?? 0);
-        state = tabScrollState(list.scrollWidth, list.clientWidth, list.scrollLeft, fits);
+        const drawn = parts.controls().reduce((sum, one) => sum + (one?.offsetWidth ?? 0), 0);
+        if (drawn > 0) controlsWidth = drawn;
+        // The list's flex basis is `--tabs-least`, resolved to pixels at the text size in force.
+        const least = Number.parseFloat(getComputedStyle(list).flexBasis) || 0;
+        controls = controlsFit(strip.clientWidth, least, controlsWidth);
+        state = tabScrollState(
+            list.scrollWidth,
+            list.clientWidth,
+            list.scrollLeft,
+            fits,
+            parts.wrapped()
+        );
     }
 
     function scrolled(): void {
@@ -123,7 +148,7 @@ export function createTabScroll(parts: TabScrollParts): TabScroll {
 
     function reveal(index: number): void {
         const list = parts.list();
-        if (!list || index < 0) return;
+        if (!list || index < 0 || parts.wrapped()) return;
         const all = spans(list);
         const target = all.at(index);
         if (target === undefined) return;
@@ -136,7 +161,7 @@ export function createTabScroll(parts: TabScrollParts): TabScroll {
 
     function step(direction: -1 | 1): void {
         const list = parts.list();
-        if (!list) return;
+        if (!list || parts.wrapped()) return;
         restAt(tabEdgeStep(spans(list), list.scrollLeft, maxScroll(list), direction));
     }
 
@@ -152,6 +177,7 @@ export function createTabScroll(parts: TabScrollParts): TabScroll {
 
     return {
         state: () => state,
+        controls: () => controls,
         scrolled,
         resized,
         reveal,

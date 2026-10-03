@@ -7,8 +7,14 @@
     // and asks the close question first (state/workbench/navigation/pages.ts's closeAsk) whenever
     // one of them holds unsaved text.
     //
+    // A row drags onto another row, and the tab moves to the place of the target row's tab in that
+    // row's pane (state/sources/explorer/sections/open-editors.ts's editorDrop), through
+    // transferInstance, so a pinned tab dropped among unpinned ones unpins as it does in the strip.
+    // Close All leaves the pinned tabs open.
+    //
     // The groups are read from the page's layout on every change of it, so the section never holds
-    // a copy of the tabs. It holds nothing of its own but the close that waits on the dialog.
+    // a copy of the tabs. It holds nothing of its own but the close that waits on the dialog and
+    // the row being dragged.
 
     import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
@@ -18,11 +24,13 @@
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
     import {
         dirtyIds,
+        editorDrop,
         openGroups,
         openIds,
         type OpenEditor
     } from '$lib/state/sources/explorer/sections/open-editors';
     import { instanceLabel, panes } from '$lib/state/workbench/layout';
+    import { fileOfTab } from '$lib/state/workbench/navigation/pages';
     import { closingEditors, type Confirming } from '../control/editor-closing';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
@@ -35,17 +43,19 @@
     let { open, ontoggle }: Props = $props();
 
     const {
-        layout: { activateInstance, closeInstance, currentPage, layout },
+        layout: { activateInstance, closeInstance, currentPage, layout, transferInstance },
         ui: { unsaved },
         source: { saveSourceDraft }
     } = useState();
 
     const page = $derived(currentPage().id);
+    const held = $derived(panes(layout(page)));
     const groups = $derived(
         openGroups(
-            panes(layout(page)),
+            held,
             (tab) => instanceLabel(tab.state) ?? '',
-            (id) => unsaved(id)
+            (id) => unsaved(id),
+            fileOfTab
         )
     );
     const several = $derived(groups.length > 1);
@@ -94,6 +104,34 @@
                 }
             }
         }
+    }
+
+    /** The drag type a row carries: the id of its tab. */
+    const EDITOR_DRAG = 'application/x-oculus-editor';
+
+    /** The tab being dragged, set when a drag starts and read by the rows it passes over. */
+    let dragged: string | null = null;
+
+    function dragStarted(event: DragEvent, id: string): void {
+        if (event.dataTransfer === null) return;
+        dragged = id;
+        event.dataTransfer.setData(EDITOR_DRAG, id);
+        event.dataTransfer.effectAllowed = 'move';
+    }
+
+    /** A drag over a row is let drop where the drop would move the tab. */
+    function dragOver(event: DragEvent, id: string): void {
+        if (dragged === null || editorDrop(held, dragged, id) === null) return;
+        event.preventDefault();
+        if (event.dataTransfer !== null) event.dataTransfer.dropEffect = 'move';
+    }
+
+    function dropped(event: DragEvent, id: string): void {
+        const moved = dragged === null ? null : editorDrop(held, dragged, id);
+        if (dragged === null || moved === null) return;
+        event.preventDefault();
+        transferInstance(dragged, moved.path, moved.index, page);
+        dragged = null;
     }
 
     /** Take the question away and perform the close it asked about. */
@@ -147,7 +185,15 @@
                         </li>
                     {/if}
                     {#each group.rows as row (row.id)}
-                        <li role="none" data-fs-editor={row.id}>
+                        <li
+                            role="none"
+                            data-fs-editor={row.id}
+                            draggable="true"
+                            ondragstart={(event) => dragStarted(event, row.id)}
+                            ondragover={(event) => dragOver(event, row.id)}
+                            ondrop={(event) => dropped(event, row.id)}
+                            ondragend={() => (dragged = null)}
+                        >
                             <TreeItem
                                 label={row.name}
                                 id={rowKey(row)}

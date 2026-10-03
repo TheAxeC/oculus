@@ -5,6 +5,11 @@
 // System page all name a page, close one and reset one, so the rules live here, where
 // each of them may read them.
 //
+// The file a tab shows is defined here too, once, for the shell and the Files view alike: which
+// file a tab shows, the segments of its path, its absolute path, its path as a reader writes it,
+// and the comparison of two files. The pane's tab strip, its breadcrumb and its right-click menu
+// name a file by these rules, and so do the Files view's outline, timeline, tree and row menu.
+//
 // Whether an instance holds unsaved text is not decided here. The caller passes the ui store's
 // answer for an instance id, so a view that keeps unsaved text registers its rule once and none of
 // the closes is edited for it.
@@ -23,6 +28,11 @@ import { registrationLabel, type Registration } from './registry.ts';
 import { t } from '../../shared/words/text.ts';
 import { parseArrangement } from './arrangement.ts';
 import type { BusyTerminal } from '../ui.svelte.ts';
+import type { TabFile } from './status.ts';
+import { diffState } from '../../sources/repositories/repositories.ts';
+import { DIFF_VIEW } from '../../sources/repositories/repositories.svelte.ts';
+import { HUB_ROOT, type RowRef } from '../../sources/explorer/view/place.ts';
+import { nameOf } from '../../../data/helpers/files/paths.ts';
 
 /** The field of a tab's state that names the tab. */
 const tabLabelShape = z.object({ label: filledTextShape });
@@ -116,8 +126,9 @@ export function busyLines(busy: readonly BusyTerminal[]): string {
  * What closing these instances asks, given a fresh read of the busy terminals they own; null when
  * it acts at once. Without a busy terminal it is closeQuestion's answer in words: nothing for one
  * saved tab, the unsaved question for one holding unsaved text, the caller's own `many` question
- * for more than one. With a busy terminal the one question names it and its program, and a close
- * that also loses unsaved text names those tabs first, so one press asks one question.
+ * for more than one, with the tabs holding unsaved text named under it. With a busy terminal the
+ * one question names it and its program, and a close that also loses unsaved text names those tabs
+ * first, so one press asks one question.
  */
 export function closeAsk(over: {
     ids: string[];
@@ -129,14 +140,13 @@ export function closeAsk(over: {
     const { ids, unsaved, nameOf, many, busy } = over;
     if (ids.length === 0) return null;
     const asked = closeQuestion(ids, unsaved);
+    const lost = ids.filter(unsaved).map(nameOf);
+    const named = lost.length > 0 ? t('ui.terminal_close_unsaved', lost.join(', ')) : '';
     if (busy.length === 0) {
-        if (asked === 'many') return { message: many, detail: '' };
+        if (asked === 'many') return { message: many, detail: named };
         return asked === 'dirty' ? { message: t('ui.tab_close_dirty'), detail: '' } : null;
     }
-    const lost = ids.filter(unsaved).map(nameOf);
-    const lines = [lost.length > 0 ? t('ui.terminal_close_unsaved', lost.join(', ')) : '']
-        .concat(busyLines(busy))
-        .filter((line) => line !== '');
+    const lines = [named].concat(busyLines(busy)).filter((line) => line !== '');
     const message =
         asked === 'many'
             ? many
@@ -332,4 +342,75 @@ export async function resetAfterAsking(
     }
     act();
     return true;
+}
+
+/** A root the server serves: its key and the folder it stands for. */
+export type TabRoot = { key: string; dir: string };
+
+/** The root and path a tab's state names. */
+const fileShape = z.object({ root: z.string().min(1), path: z.string().min(1) });
+
+/** The path a document tab holds, which is relative to the hub root. */
+const docShape = z.object({ path: z.string().min(1) });
+
+/**
+ * The file a tab shows, or null when its view shows no one file. A document tab holds a path under
+ * the hub and no root, so it is read as a file of the hub root.
+ */
+export function fileOfTab(tab: { view: string; state: unknown }): RowRef | null {
+    if (tab.view === 'doc') {
+        const doc = readAs(docShape, tab.state);
+        return doc === null ? null : { root: HUB_ROOT, path: doc.path };
+    }
+    return readAs(fileShape, tab.state);
+}
+
+/**
+ * The segments of the path one row sits at: the root, then each folder down to the row itself, each
+ * with the row it names.
+ */
+export function crumbsOf(selected: RowRef | null): { row: RowRef; label: string }[] {
+    if (selected === null) return [];
+    const parts = selected.path.split('/').filter((part) => part !== '');
+    return [
+        { row: { root: selected.root, path: '' }, label: selected.root },
+        ...parts.map((part, at) => ({
+            row: { root: selected.root, path: parts.slice(0, at + 1).join('/') },
+            label: part
+        }))
+    ];
+}
+
+/** The absolute path of a row, from its root's folder and its path inside it. */
+export function absoluteOf(rootDir: string, path: string): string {
+    const base = rootDir.endsWith('/') ? rootDir.slice(0, -1) : rootDir;
+    return path === '' ? base : `${base}/${path}`;
+}
+
+/**
+ * The path of a row as a reader writes it: the absolute path with the home folder written `~`. A
+ * path outside the home folder is written whole, and so is every path when the home folder is not
+ * known.
+ */
+export function shownPath(rootDir: string, path: string, home: string): string {
+    const whole = absoluteOf(rootDir, path);
+    const base = home.endsWith('/') ? home.slice(0, -1) : home;
+    if (base === '') return whole;
+    if (whole === base) return '~';
+    return whole.startsWith(`${base}/`) ? `~${whole.slice(base.length)}` : whole;
+}
+
+/** Open the diff of `file` against the file selected for compare, titled by the two names. */
+export function openComparison(
+    openView: (view: string, state: unknown) => string,
+    file: TabFile,
+    against: TabFile
+): void {
+    openView(
+        DIFF_VIEW,
+        diffState(
+            { root: file.root, path: file.path, staged: false, worktree: false, against },
+            t('files.compare_title', nameOf(against.path), nameOf(file.path))
+        )
+    );
 }

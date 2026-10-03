@@ -5,18 +5,27 @@
     // (`none`), or no row at all. The actions are the Split Right button, the lock mark of a locked
     // pane, and the pane menu's `...` opener; `editor_actions: hidden` leaves out the first and the
     // last, and a locked pane keeps its mark whatever either setting says, since the mark is what
-    // unlocks the group.
+    // unlocks the group. The active file tab's own actions (Save, Revert and the rest, handed in as
+    // `tabActions`) stand before those, and `editor_actions` does not hide them, being the tab's
+    // and not the pane's. With `wrap_tabs` and `show_tabs: multiple` the tabs wrap onto rows.
+    //
+    // The path of the active file tab is a breadcrumb: under the strip, or, when the strip shows
+    // the active tab alone, in the strip's own row beside the tab. A tab naming no file draws none.
     //
     // It draws and reports. Closing, selecting, the drag and every menu item are the pane's, which
     // hands them in.
 
+    import type { Snippet } from 'svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
+    import Breadcrumb from '$lib/ui/tabs/Breadcrumb.svelte';
+    import type { Crumb } from './tab-crumbs';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Tabs from '$lib/ui/tabs/Tabs.svelte';
     import type { Tab } from '$lib/ui/tabs/tab-strip';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { stripShape } from './strip-shape';
-    import { editorActions, showTabs } from '$lib/state/shared/words/appearance';
+    import { stripWraps } from '$lib/ui/tabs/tab-strip';
+    import { editorActions, showTabs, wrapTabs } from '$lib/state/shared/words/appearance';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -29,6 +38,13 @@
         canSplit: boolean;
         /** The pane menu's items. */
         items: MenuItem[];
+        /** The active file tab's own actions, drawn at the end of the row. */
+        tabActions?: Snippet;
+        /** The segments of the active tab's path, or none. */
+        crumbs?: Crumb[];
+        oncrumb?: (crumb: Crumb) => void;
+        /** The pin of a pinned tab was pressed. */
+        onunpin?: (id: string) => void;
         /** Where a dragged tab would land, in the index of `tabs`. */
         dropIndex: number | null;
         focused: boolean;
@@ -49,6 +65,10 @@
         locked,
         canSplit,
         items,
+        tabActions,
+        crumbs = [],
+        oncrumb,
+        onunpin,
         dropIndex,
         focused,
         onselect,
@@ -61,7 +81,11 @@
         onpick
     }: Props = $props();
 
-    const shape = $derived(stripShape(showTabs(), editorActions(), tabs, active, locked));
+    const shape = $derived(
+        stripShape(showTabs(), editorActions(), tabs, active, locked, tabActions !== undefined)
+    );
+    const wrap = $derived(stripWraps(wrapTabs(), showTabs()));
+    const beside = $derived(showTabs() === 'single' && crumbs.length > 0);
     const place = $derived(tabs.findIndex((tab) => tab.id === active));
     const title = $derived(tabs.find((tab) => tab.id === active)?.label ?? '');
 
@@ -91,12 +115,15 @@
         dropIndex={markAt}
         {onselect}
         {onclose}
+        {onunpin}
         {ondblclick}
         {onpointerdown}
         onhoverindex={onhoverindex === undefined
             ? undefined
             : (i: number | null) => onhoverindex(inAll(i))}
         menu={actions}
+        beside={beside ? path : undefined}
+        {wrap}
         {focused}
     />
 {:else if shape.row === 'title'}
@@ -106,8 +133,25 @@
         <div class="actions">{@render actions()}</div>
     </div>
 {/if}
+{#if crumbs.length > 0 && !beside}
+    <div class="path">
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render path()}
+    </div>
+{/if}
+
+{#snippet path()}
+    <Breadcrumb
+        label={t('ui.tab_path')}
+        segments={crumbs.map((crumb, at) => ({ id: String(at), label: crumb.label }))}
+        onselect={(id: string) => oncrumb?.(crumbs[Number(id)])}
+    />
+{/snippet}
 
 {#snippet actions()}
+    {#if tabActions !== undefined}
+        {@render tabActions()}
+    {/if}
     {#if shape.lock}
         <ToolButton
             label={t('ui.strip_unlock')}
@@ -143,6 +187,20 @@
 {/snippet}
 
 <style>
+    /* The path under the strip: a row of its own, on the surface of the view it heads. */
+    .path {
+        display: flex;
+        align-items: center;
+        flex: none;
+        min-width: 0;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+    }
+
+    :global(body.wall) .path {
+        background: transparent;
+    }
+
     /* The row of `show_tabs: none`: the active tab's name at the left, the actions at the right,
        on the line a tab strip would stand on. */
     .title {

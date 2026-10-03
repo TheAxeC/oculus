@@ -193,7 +193,9 @@
         padding: 0;
     }
 
-    /* A table wider than the pane scrolls inside its own box rather than widening the document. */
+    /* A table wider than the pane scrolls inside its own box rather than widening the document. Its
+       cells break at spaces and not inside a word, so no column is narrower than its longest word:
+       the document's `overflow-wrap: anywhere` would let each column shrink to one letter. */
     .doc :global(table) {
         display: block;
         overflow-x: auto;
@@ -206,6 +208,7 @@
         border: 1px solid var(--line);
         padding: 3px 6px;
         text-align: left;
+        overflow-wrap: normal;
     }
 
     .doc :global(blockquote) {

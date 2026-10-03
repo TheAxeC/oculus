@@ -8,8 +8,11 @@ import {
     MIN_SIZE,
     clamp,
     emptyPane,
+    pinned,
+    pinnedRun,
     repane,
     samePath,
+    unpinned,
     type Instance,
     type Keeps,
     type Layout,
@@ -208,17 +211,43 @@ export function removeTab(layout: Layout, path: number[], index: number, keep?: 
         if (kept === null) return removeNode(layout, path);
         return rewrite(layout, path, () => kept) ?? layout;
     }
-    // The neighbour is the tab that took the closed one's place, or the last one when it was last.
-    const neighbour = tabs[Math.min(index, tabs.length - 1)];
-    const active = pane.active === removed.id ? neighbour.id : pane.active;
-    return rewrite(layout, path, () => repane(pane, tabs, active)) ?? layout;
+    return (
+        rewrite(layout, path, () => repane(pane, tabs, activeAfterClose(pane, tabs, index))) ??
+        layout
+    );
 }
 
-/** Append an instance to a pane's tabs and make it the active one. */
+/**
+ * The tab a pane shows once the tab at `index` is gone: the one it shows already when that was not
+ * the closed one, else the tab shown most recently, else the tab that took the closed one's place
+ * (or the last, when it was last), which is what a pane that never showed another tab holds.
+ */
+function activeAfterClose(pane: Pane, tabs: Instance[], index: number): string {
+    const removed = item(pane.tabs, index);
+    if (pane.active !== removed?.id) return pane.active;
+    const held = new Set(tabs.map((tab) => tab.id));
+    const last = (pane.recent ?? []).find((id) => held.has(id));
+    return last ?? tabs[Math.min(index, tabs.length - 1)].id;
+}
+
+/** The position a new tab takes in a pane: right after the active tab, or at the end with none. */
+function openedAt(pane: Pane): number {
+    const at = pane.tabs.findIndex((tab) => tab.id === pane.active);
+    return at < 0 ? pane.tabs.length : at + 1;
+}
+
+/**
+ * Open an instance in a pane, to the right of the active tab, and make it the active one. A pane
+ * with no active tab takes it at the end, and an unpinned tab never lands among the pinned ones.
+ */
 export function openInstance(layout: Layout, path: number[], instance: Instance): Layout {
     if (paneAt(layout, path) === null) return layout;
-    const edit = (node: Layout): Layout =>
-        node.kind === 'pane' ? repane(node, [...node.tabs, instance], instance.id) : node;
+    const edit = (node: Layout): Layout => {
+        if (node.kind !== 'pane') return node;
+        const at = openedAt(node);
+        const tabs = [...node.tabs.slice(0, at), instance, ...node.tabs.slice(at)];
+        return repane(node, tabs, instance.id);
+    };
     return rewrite(layout, path, edit) ?? layout;
 }
 
@@ -248,7 +277,9 @@ export function renameInstance(layout: Layout, from: string, to: string): Layout
     const edit = (node: Layout): Layout => {
         if (node.kind !== 'pane') return node;
         const tabs = node.tabs.map((tab) => (tab.id === from ? { ...tab, id: to } : tab));
-        return repane(node, tabs, node.active === from ? to : node.active);
+        const recent = node.recent?.map((id) => (id === from ? to : id));
+        const shown = node.active === from ? to : node.active;
+        return repane({ ...node, active: shown, recent }, tabs, shown);
     };
     return rewrite(layout, found.path, edit) ?? layout;
 }
@@ -298,7 +329,8 @@ export function moveInstance(
     if (samePath(found.path, path)) {
         const rest = target.tabs.filter((_, at) => at !== found.index);
         const at = clamp(index, 0, rest.length);
-        const tabs = [...rest.slice(0, at), instance, ...rest.slice(at)];
+        const placed = pinnedAt(rest, at, instance);
+        const tabs = [...rest.slice(0, at), placed, ...rest.slice(at)];
         return rewrite(layout, path, () => repane(target, tabs, id)) ?? layout;
     }
 
@@ -321,8 +353,19 @@ export function insertInstance(
     const target = paneAt(layout, path);
     if (target === null) return layout;
     const at = clamp(index, 0, target.tabs.length);
-    const tabs = [...target.tabs.slice(0, at), instance, ...target.tabs.slice(at)];
+    const placed = pinnedAt(target.tabs, at, instance);
+    const tabs = [...target.tabs.slice(0, at), placed, ...target.tabs.slice(at)];
     return rewrite(layout, path, () => repane(target, tabs, instance.id)) ?? layout;
+}
+
+/**
+ * The instance as it lands at `at` among `rest`: pinned when it lands inside the pinned run (a
+ * pinned instance also at the run's end), unpinned anywhere else, so a drop decides the pin.
+ */
+function pinnedAt(rest: readonly Instance[], at: number, instance: Instance): Instance {
+    const run = pinnedRun(rest);
+    const inside = at < run || (instance.pinned === true && at <= run);
+    return inside ? (instance.pinned === true ? instance : pinned(instance)) : unpinned(instance);
 }
 
 /**

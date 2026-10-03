@@ -54,7 +54,7 @@ digraph writes {
     subgraph "cluster_lost" {
         label="not placed"; style=dashed;
         "? src/lib/server/edit/writes/config/audit-mute.ts:65" [label="src/lib/server/edit/writes/config/audit-mute.ts:65 SIGNATURE.test("];
-        "? src/lib/server/files/fs.ts:207" [label="src/lib/server/files/fs.ts:207 rootShape.safeParse("];
+        "? src/lib/server/files/fs.ts:209" [label="src/lib/server/files/fs.ts:209 rootShape.safeParse("];
     }
     "file on disk" [shape=cylinder];
     "lib/server/core/changes.ts to file on disk (calls)" [label="appendFileSync, mkdirSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -145,7 +145,7 @@ reorderCollection, writeEntry"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/subtasks.ts" [tooltip="hostStatus, restoreSubtask, subtaskValue
 writeHost, writeSubtask, writeSubtaskAdd"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/sessions/overrides.ts" [tooltip="overrides, setFlag, setOverride"];
-    "lib/server/files/fs.ts" -> "? src/lib/server/files/fs.ts:207" [style=dashed];
+    "lib/server/files/fs.ts" -> "? src/lib/server/files/fs.ts:209" [style=dashed];
     "lib/server/files/fs.ts" -> "lib/server/core/json.ts" [headport=nw, tooltip="readJson"];
     "lib/server/files/fs/bookmarks.ts" -> "lib/server/core/json.ts" [tooltip="writeTextAtomic"];
     "lib/server/files/fs/file-changes.ts" -> "lib/server/files/fs/history.ts" [tooltip="keepCopy"];

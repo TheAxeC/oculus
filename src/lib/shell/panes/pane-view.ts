@@ -11,9 +11,11 @@ import {
     type DockEdge,
     type Edge,
     type FloatPlace,
+    type Instance,
     type Layout,
     type Page
 } from '$lib/state/workbench/layout';
+import { fileOfTab, shownPath, type TabRoot } from '$lib/state/workbench/navigation/pages';
 
 /** What tells a move-to-page item from the menu's fixed items. */
 export const PAGE = 'page:';
@@ -251,7 +253,8 @@ export function floatMenu(
  * The strip's menu, in VS Code's groups: Open File... (the palette, as Cmd+K opens it) and New Text
  * File; the four splits of the active tab and Float, while the pane of a page holds a tab; Lock
  * Group or Unlock Group, on the pane of a page or of a float; the Tab Bar and Editor Actions
- * Position submenus, each marking the setting in force; Close, while the page holds more than one
+ * Position submenus, each marking the setting in force with a check, the first place named Tab
+ * Bar, or Title Bar while the tab bar is not drawn; Close, while the page holds more than one
  * pane; and New Terminal. The pane of a float (`float`, its place) has the float's items in place
  * of the splits and always offers Close, which closes the float. With the editor actions hidden the
  * pane menu's `...` button is not drawn, so the menu also holds the pane menu's items that it has
@@ -280,12 +283,14 @@ export function stripMenu(
     const barItem = (value: TabBar, label: string): Item => ({
         id: `${TAB_BAR}${value}`,
         label,
-        active: value === bar
+        active: value === bar,
+        checked: value === bar
     });
     const placeItem = (value: EditorActions, label: string): Item => ({
         id: `${ACTIONS_AT}${value}`,
         label,
-        active: value === place
+        active: value === place,
+        checked: value === place
     });
     return grouped([
         [
@@ -321,7 +326,12 @@ export function stripMenu(
                 id: 'actions-at',
                 label: t('ui.strip_editor_actions'),
                 items: [
-                    placeItem('strip', t('ui.editor_actions_strip')),
+                    placeItem(
+                        'strip',
+                        bar === 'none'
+                            ? t('ui.editor_actions_title_bar')
+                            : t('ui.editor_actions_tab_bar')
+                    ),
                     placeItem('hidden', t('ui.editor_actions_hidden'))
                 ]
             }
@@ -357,8 +367,8 @@ export type StripDeps = {
     freeFloat: (id: string) => void;
     /** Return to Page: the float's tabs go back into the page on screen. */
     returnFloat: (id: string) => void;
-    /** New Text File: a scratch Note opened in the pane the menu was opened on. */
-    newNoteIn: (page: string, path: number[]) => void;
+    /** New Text File: an untitled text file opened in a source tab of the pane the menu was on. */
+    newTextFileIn: (page: string, path: number[]) => void;
     /** Lock Group and Unlock Group: the pane at `path` of the page. */
     setLocked: (page: string, path: number[], locked: boolean) => void;
     /** A Tab Bar or Editor Actions Position choice: the config key and the value it is set to. */
@@ -382,7 +392,7 @@ export function stripPicked(
     else if (id === STRIP_OPEN_FILE) deps.openPalette('');
     else if (id === STRIP_CLOSE) deps.close();
     else if (id === STRIP_NEW_TERMINAL) deps.newTerminalIn(pane.page, pane.path);
-    else if (id === STRIP_NEW_TEXT_FILE) deps.newNoteIn(pane.page, pane.path);
+    else if (id === STRIP_NEW_TEXT_FILE) deps.newTextFileIn(pane.page, pane.path);
     else if (id === STRIP_LOCK) deps.setLocked(pane.page, pane.path, true);
     else if (id === STRIP_UNLOCK) deps.setLocked(pane.page, pane.path, false);
     else if (id.startsWith(TAB_BAR)) deps.setAppearance('show_tabs', id.slice(TAB_BAR.length));
@@ -401,4 +411,31 @@ export function stripMark(
     mark: { glyph?: string; token?: string }
 ): { glyph: string; tint?: string } {
     return { glyph: mark.glyph ?? viewGlyph, tint: mark.token };
+}
+
+/**
+ * The tooltip of a tab: the full path of the file it shows (the home folder written `~`), then, for
+ * a preview tab, the sentence that says so; a tab showing no file keeps the preview sentence, else
+ * the words of its view when its own label differs from them.
+ */
+export function tabHint(
+    facts: { preview: boolean; path: string | null; viewWords: string | undefined },
+    t: (key: string) => string
+): string | undefined {
+    if (facts.path === null) return facts.preview ? t('ui.preview_tab') : facts.viewWords;
+    return facts.preview ? `${facts.path}\n${t('ui.preview_tab')}` : facts.path;
+}
+
+/**
+ * The path of the file a tab shows as a reader writes it, from its root's folder with the home
+ * folder as `~`, or null when the tab shows no file or the server serves no such root.
+ */
+export function shownTabPath(
+    tab: Pick<Instance, 'id' | 'view' | 'state'>,
+    roots: readonly TabRoot[],
+    home: string
+): string | null {
+    const file = fileOfTab(tab);
+    const root = roots.find((one) => one.key === file?.root);
+    return file === null || root === undefined ? null : shownPath(root.dir, file.path, home);
 }

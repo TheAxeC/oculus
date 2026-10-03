@@ -63,3 +63,27 @@ export function focusFirstQuietly(box: HTMLElement): void {
     const first = [...box.querySelectorAll(FOCUSABLE)].find(tabbable);
     focusQuietly(first ?? box);
 }
+
+/**
+ * A dialog's first-focus handler: bits-ui's own focus is kept off, and the keyboard goes where the
+ * dialog asks once `settled` has resolved, since the bindings the box is found through are set in
+ * the flush after the box is drawn and not yet when the handler runs. `onopen` puts the keyboard
+ * where the box wants it; without one it goes to the first control Tab reaches in the box found by
+ * `find`, or to the box itself when it holds none.
+ */
+export function focusOnOpen(
+    event: Event,
+    settled: Promise<void>,
+    onopen: (() => void) | undefined,
+    find: () => HTMLElement | null | undefined
+): void {
+    event.preventDefault();
+    void settled.then(() => {
+        if (onopen !== undefined) {
+            onopen();
+            return;
+        }
+        const box = find();
+        if (box !== null && box !== undefined) focusFirstQuietly(box);
+    });
+}

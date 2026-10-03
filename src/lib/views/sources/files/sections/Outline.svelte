@@ -16,7 +16,7 @@
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { languageOf } from '$lib/state/sources/fs';
-    import { fileOfTab } from '$lib/state/sources/explorer/sections/open-editors';
+    import { fileOfTab } from '$lib/state/workbench/navigation/pages';
     import {
         outlineFollower,
         outlineOf,

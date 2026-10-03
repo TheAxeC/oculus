@@ -7,6 +7,7 @@
     // and nothing once it is gone.
 
     import Modal from '../frame/Modal.svelte';
+    import Select from './choice/Select.svelte';
     import TextInput from './TextInput.svelte';
     import type { PromptRequest } from './prompt';
 
@@ -41,12 +42,21 @@
                 {#each request.fields as field, at (at)}
                     <label class="field">
                         <span class="name">{field.label}</span>
-                        <TextInput
-                            value={values[at]}
-                            label={field.label}
-                            placeholder={field.placeholder}
-                            oninput={(next: string) => (values[at] = next)}
-                        />
+                        {#if field.choices !== undefined}
+                            <Select
+                                value={values[at]}
+                                label={field.label}
+                                choices={field.choices}
+                                onchange={(next: string) => (values[at] = next)}
+                            />
+                        {:else}
+                            <TextInput
+                                value={values[at]}
+                                label={field.label}
+                                placeholder={field.placeholder}
+                                oninput={(next: string) => (values[at] = next)}
+                            />
+                        {/if}
                     </label>
                 {/each}
                 <div class="row">

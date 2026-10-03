@@ -76,3 +76,5 @@ code_theme: tokens
 show_tabs: multiple
 # `strip` draws Split Right and the `...` pane menu at the right of the row, `hidden` draws neither (the pane menu stays reachable by a right click on the strip or on an empty pane).
 editor_actions: strip
+# `true` wraps the tabs of a pane onto more rows instead of scrolling the one row; it applies only while `show_tabs` is `multiple`, as VS Code's workbench.editor.wrapTabs.
+wrap_tabs: false

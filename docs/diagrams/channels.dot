@@ -47,6 +47,7 @@ digraph channels {
         label="not placed"; style=dashed;
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
+        "? src/lib/shell/panes/PaneView.svelte:453" [label="src/lib/shell/panes/PaneView.svelte:453 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
         "? src/lib/state/system/config/editors/draft.ts:247" [label="src/lib/state/system/config/editors/draft.ts:247 message('notYaml', index + 1, name)"];
@@ -90,6 +91,7 @@ digraph channels {
         "state/life/present";
         "state/sessions/latex";
         "state/sessions/terminal/commands";
+        "state/sessions/terminal/pty/pty-wire";
         "state/sessions/terminals";
         "state/sources/search/search";
         "state/system/audit";
@@ -126,10 +128,15 @@ digraph channels {
         "views/system/status";
         "views/system/workbench";
     }
+    subgraph "cluster_read shell" {
+        label="shell"; style=solid;
+        "shell/panes/PaneView";
+    }
     subgraph "cluster_read routes" {
         label="routes"; style=solid;
         "routes/+page";
     }
+    "? src/lib/shell/panes/PaneView.svelte:453" -> "shell/panes/PaneView";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
     "? src/lib/state/client/queries.svelte.ts:79" -> "state/client/queries";
     "? src/lib/state/system/config/editors/draft.ts:247" -> "state/system/config/editors/draft";
@@ -225,7 +232,7 @@ digraph channels {
     "ch portfolio" -> "views/system/status";
     "ch processes" -> "routes/+page" [style=dashed];
     "ch processes" -> "state/system/machine/processes";
-    "ch pty:*" -> "state/sessions/terminals";
+    "ch pty:*" -> "state/sessions/terminal/pty/pty-wire";
     "ch sessions" -> "routes/+page" [style=dashed];
     "ch sessions" -> "routes/+page";
     "ch sessions" -> "state/client/selectors";

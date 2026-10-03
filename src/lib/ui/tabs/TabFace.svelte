@@ -9,12 +9,19 @@
     // strip measures: the caller binds it, and the face button too, which is what the arrow keys
     // carry the focus between.
     //
+    // A pinned tab draws a pin where the close control stands, and a press on it unpins the tab: a
+    // pinned tab is closed from the tab menu and kept by Close All, so the control that closes
+    // would be the wrong one to leave under the pointer. A pinned tab holding unsaved text draws
+    // the dot there until hovered, as an unpinned one does.
+    //
     // It is drawn as an editor's tab, every measure a token of themes/tokens.css: one height with a
     // line down its right side; the shown tab on the surface it heads, over a gap in the line under
     // the strip, with an accent line along its top on a focused strip only; a close control on the
     // shown tab and under the pointer, keeping its room on every tab; and a tab holding unsaved
     // text showing a dot there until hovered, and named for it, since a dot says nothing to a
-    // screen reader.
+    // screen reader. On a strip that does not hold the focus the labels and the control are drawn
+    // at half strength, as VS Code draws an editor group that is not the active one. A tab is never
+    // wider than the strip: its label is cut with an ellipsis and its close control keeps its room.
 
     import { type Tab } from '$lib/ui/tabs/tab-strip';
     import Glyph from '../display/Glyph.svelte';
@@ -32,6 +39,8 @@
         onselect: () => void;
         ondblclick: () => void;
         onclose: () => void;
+        /** The pin was pressed: the tab is unpinned. */
+        onunpin: () => void;
         onkeydown: (event: KeyboardEvent) => void;
         onpointerdown: (event: PointerEvent) => void;
         /** The wrapper around the pair, which is the element the strip measures. */
@@ -48,6 +57,7 @@
         onselect,
         ondblclick,
         onclose,
+        onunpin,
         onkeydown,
         onpointerdown,
         face = $bindable(),
@@ -76,6 +86,7 @@
     class="tab"
     class:current
     class:dirty={tab.dirty === true}
+    class:pinned={tab.pinned === true}
     role="presentation"
     bind:this={face}
 >
@@ -87,6 +98,7 @@
             role="tab"
             aria-selected={current}
             aria-label={tab.dirty === true ? t('ui.tab_unsaved', tab.label) : undefined}
+            data-tab={tab.id}
             data-tab-preview={tab.preview === true ? '' : undefined}
             data-drag-handle={handle ? '' : undefined}
             bind:this={head}
@@ -135,13 +147,13 @@
             {/if}
         </button>
     </Tooltip>
-    <Tooltip text={t('ui.close_tab')} presentational>
+    <Tooltip text={tab.pinned === true ? t('ui.tab_unpin') : t('ui.close_tab')} presentational>
         <button
             type="button"
             class="close"
-            aria-label={t('ui.close_tab')}
+            aria-label={tab.pinned === true ? t('ui.tab_unpin') : t('ui.close_tab')}
             tabindex={-1}
-            onclick={onclose}
+            onclick={tab.pinned === true ? onunpin : onclose}
         >
             {#if tab.dirty === true}
                 <span class="dot">
@@ -149,7 +161,7 @@
                 </span>
             {/if}
             <span class="cross">
-                <Glyph name={t('ui.close_glyph')} />
+                <Glyph name={tab.pinned === true ? t('ui.pin_glyph') : t('ui.close_glyph')} />
             </span>
         </button>
     </Tooltip>
@@ -160,12 +172,14 @@
         display: flex;
         align-items: stretch;
         flex: 0 0 auto;
+        min-width: 0;
+        max-width: 100%;
         box-sizing: border-box;
         height: var(--tab-height);
         border-top: var(--tab-accent-line) solid transparent;
         border-right: 1px solid var(--line);
         border-bottom: 1px solid var(--line);
-        color: var(--muted-txt, var(--muted));
+        color: var(--tab-inactive-txt, var(--muted-txt, var(--muted)));
         white-space: nowrap;
     }
 
@@ -173,11 +187,16 @@
         display: contents;
     }
 
+    /* The face gives way to the close control, which keeps its room whatever the tab is cut to. */
+    .tab > :global(.tip:last-child) {
+        flex: none;
+    }
+
     .tab.current {
         background: var(--panel);
         border-top-color: var(--accent);
-        border-bottom-color: transparent;
-        color: var(--ink-txt, var(--ink));
+        border-bottom-color: var(--tab-active-border, transparent);
+        color: var(--tab-active-txt, var(--ink-txt, var(--ink)));
     }
 
     /* The accent line along the top is the strip's answer to being the active one, so the strip is
@@ -222,17 +241,31 @@
         line-height: 1.5;
     }
 
+    /* The label is VS Code's tab label: the workbench's 13px. */
     .face {
         display: flex;
         align-items: center;
         gap: var(--tab-icon-gap);
+        min-width: 0;
+        overflow: hidden;
         border: none;
         background: none;
         color: inherit;
         font: inherit;
-        font-size: var(--fs-lg);
+        font-size: var(--fs-md);
         padding: 0 0 0 var(--tab-pad);
         cursor: pointer;
+    }
+
+    .label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tab-badge,
+    .cells {
+        flex: none;
     }
 
     /* Seen only on the shown tab, under the pointer and as the unsaved dot. It takes no stop, so it
@@ -252,15 +285,29 @@
         background: none;
         color: inherit;
         font: inherit;
-        font-size: var(--fs-lg);
+        font-size: var(--fs-xl);
         cursor: pointer;
         opacity: 0;
     }
 
     .tab.current .close,
     .tab.dirty .close,
+    .tab.pinned .close,
     .tab:hover .close {
         opacity: 1;
+    }
+
+    /* A strip that does not hold the focus draws the control at half strength where it shows, and
+       its labels the same. */
+    :global(.strip.unfocused) .tab.current .close,
+    :global(.strip.unfocused) .tab.dirty .close,
+    :global(.strip.unfocused) .tab.pinned .close,
+    :global(.strip.unfocused) .tab:hover .close {
+        opacity: 0.5;
+    }
+
+    :global(.strip.unfocused) .label {
+        opacity: 0.5;
     }
 
     .close:hover {

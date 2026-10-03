@@ -22,12 +22,29 @@
     // the strip carries a depth of its own wherever it blurs, over the pane body beside it, and a
     // menu opened from its right end is drawn over what the pane holds rather than under it.
     //
+    // The tabs get at least `--tabs-least` on their line: the scroll controls are not drawn in a
+    // strip too narrow for them beside that width (`controlsFit` of tab-strip.ts), and the caller's
+    // buttons that would leave the tabs less move to a line of their own under them, so in a narrow
+    // pane or at a large text size the shown tab keeps its title and its close control. A tab is
+    // never wider than the strip, and a button row too wide for it folds its own overflow.
+    //
+    // With `wrap` the tabs fill as many rows as they need and the strip does not scroll; the
+    // caller's buttons then stand at the end of the last row. A drop on such a strip lands by the
+    // row under the pointer as well as by its x position. A pinned tab draws a pin for its close
+    // control, and Delete on it keeps it and shows the first tab that is not pinned.
+    //
     // It is drawn as an editor's tab strip, every measure a token of themes/tokens.css: the surface
     // the strip sits on, the line under it with a gap where the shown tab heads it, the mark where
     // a dragged tab would land, and the scroll controls as bare icons, as the caller's buttons at
     // the right are. One tab's own face, marks and close control are ui/tabs/TabFace.svelte.
 
-    import { type Tab, insertionIndex } from '$lib/ui/tabs/tab-strip';
+    import {
+        type Tab,
+        afterDelete,
+        insertionIndex,
+        tabRows,
+        wrappedInsertion
+    } from '$lib/ui/tabs/tab-strip';
     import { createTabScroll } from '$lib/ui/tabs/tab-scroll.svelte';
     import { heldStop, nextStop } from '$lib/ui/tree/roving';
     import { focusIsFree } from '$lib/ui/frame/quiet-focus';
@@ -42,6 +59,8 @@
         active: string;
         onselect: (id: string) => void;
         onclose: (id: string) => void;
+        /** The pin of a pinned tab was pressed. */
+        onunpin?: (id: string) => void;
         /** A second press on a tab face, which is what keeps a preview tab. */
         ondblclick?: (id: string) => void;
         /** A pointer went down on a tab face, at this point in the viewport. */
@@ -54,6 +73,10 @@
         dropIndex?: number | null;
         /** The caller's buttons at the right end, drawn `bare` to match the scroll controls. */
         menu?: Snippet;
+        /** Drawn after the tabs, in the room they leave: the path of a strip that shows one tab. */
+        beside?: Snippet;
+        /** Whether the tabs wrap onto rows in place of scrolling. */
+        wrap?: boolean;
         /**
          * Whether what the strip heads is the active one: only then is the shown tab's line accent.
          */
@@ -65,11 +88,14 @@
         active,
         onselect,
         onclose,
+        onunpin,
         ondblclick,
         onpointerdown,
         onhoverindex,
         dropIndex = null,
         menu,
+        beside,
+        wrap = false,
         focused = true
     }: Props = $props();
 
@@ -85,7 +111,11 @@
     let heads: (HTMLButtonElement | undefined | null)[] = $state([]);
     let strip: HTMLDivElement | undefined = $state();
     let opener: HTMLDivElement | undefined = $state();
+    let leftControl: HTMLDivElement | undefined = $state();
+    let rightControl: HTMLDivElement | undefined = $state();
     let scroller: HTMLDivElement | undefined = $state();
+    /** The width of the caller's buttons, which the last row of a wrapped strip leaves room for. */
+    let openerWidth = $state(0);
 
     /**
      * The tab a Delete asked to close, with the ring it asked from. The caller may put a question
@@ -108,10 +138,20 @@
         list: () => scroller,
         strip: () => strip,
         opener: () => opener,
+        controls: () => [leftControl, rightControl],
         faces: () => faces.slice(0, tabs.length),
-        shown: () => tabs.findIndex((tab) => tab.id === active)
+        shown: () => tabs.findIndex((tab) => tab.id === active),
+        wrapped: () => wrap
     });
     const scroll = $derived(scrolling.state());
+    /** Whether the scroll controls are drawn: an overflowing strip that has room for them. */
+    const controlled = $derived(scroll.overflowing && !wrap && scrolling.controls());
+
+    $effect(() => {
+        // The strip's height changes with wrapping, so its scroll state is measured again.
+        $state.snapshot(wrap);
+        queueMicrotask(scrolling.resized);
+    });
 
     $effect(() => {
         const node = scroller;
@@ -194,19 +234,40 @@
         }
         if (event.key !== 'Delete') return;
         event.preventDefault();
+        const after = afterDelete(tabs, tabs[index].id);
+        if (after.kind === 'activate') {
+            onselect(after.id);
+            return;
+        }
+        if (after.kind === 'none') return;
         asked = { id: tabs[index].id, ring: tabs.map((tab) => tab.id) };
         onclose(tabs[index].id);
     }
 
     function over(event: PointerEvent): void {
         if (onhoverindex === undefined) return;
-        const midpoints: number[] = [];
-        for (const face of faces.slice(0, tabs.length)) {
-            if (face === undefined || face === null) continue;
-            const rect = face.getBoundingClientRect();
-            midpoints.push(rect.x + rect.width / 2);
+        const boxes = faces
+            .slice(0, tabs.length)
+            .flatMap((face) => (face === undefined || face === null ? [] : [face]))
+            .map((face) => face.getBoundingClientRect());
+        if (wrap) {
+            const rows = tabRows(
+                boxes.map((box) => ({
+                    left: box.left,
+                    right: box.right,
+                    top: box.top,
+                    bottom: box.bottom
+                }))
+            );
+            onhoverindex(wrappedInsertion(rows, event.clientX, event.clientY));
+            return;
         }
-        onhoverindex(insertionIndex(midpoints, event.clientX));
+        onhoverindex(
+            insertionIndex(
+                boxes.map((box) => box.x + box.width / 2),
+                event.clientX
+            )
+        );
     }
 
     function out(): void {
@@ -221,6 +282,7 @@
     class="strip"
     data-tab-strip
     class:unfocused={!focused}
+    class:wrapping={wrap}
     bind:this={strip}
     onpointermove={over}
     onpointerleave={out}
@@ -228,7 +290,7 @@
     <!-- The scroll controls are the pointer's way along an overflowing strip and take no stop of
          their own: the arrow keys reach every tab whether it is on screen or not, and bring the one
          they land on into view, so a keyboard that had to scroll first would be doing it twice. -->
-    <div class="scroll-control scroll-left" hidden={!scroll.overflowing}>
+    <div class="scroll-control scroll-left" hidden={!controlled} bind:this={leftControl}>
         <ToolButton
             label={t('ui.tabs_scroll_left')}
             glyph="arrow_to"
@@ -243,6 +305,7 @@
          owns. -->
     <div
         class="tabs"
+        style={wrap ? `--opener-width: ${String(openerWidth)}px` : undefined}
         role="tablist"
         bind:this={scroller}
         onscroll={scrolling.scrolled}
@@ -260,6 +323,7 @@
                 onselect={() => press(index)}
                 ondblclick={() => ondblclick?.(tab.id)}
                 onclose={() => onclose(tab.id)}
+                onunpin={() => onunpin?.(tab.id)}
                 onkeydown={(event: KeyboardEvent) => keys(event, index)}
                 onpointerdown={(event: PointerEvent) => down(tab.id, event)}
                 bind:face={faces[index]}
@@ -269,8 +333,13 @@
         {#if dropIndex !== null && dropIndex >= tabs.length}
             <span class="mark" aria-hidden="true"></span>
         {/if}
+        {#if beside !== undefined}
+            <div class="beside">
+                {@render beside()}
+            </div>
+        {/if}
     </div>
-    <div class="scroll-control" hidden={!scroll.overflowing}>
+    <div class="scroll-control" hidden={!controlled} bind:this={rightControl}>
         <ToolButton
             label={t('ui.tabs_scroll_right')}
             glyph="arrow_to"
@@ -282,7 +351,7 @@
         />
     </div>
     {#if menu !== undefined}
-        <div class="opener" bind:this={opener}>
+        <div class="opener" bind:this={opener} bind:clientWidth={openerWidth}>
             {@render menu()}
         </div>
     {/if}
@@ -291,7 +360,9 @@
 <style>
     .strip {
         display: flex;
+        flex-wrap: wrap;
         align-items: stretch;
+        align-content: flex-start;
         min-height: var(--tab-height);
         background: var(--bg);
     }
@@ -313,7 +384,7 @@
     .tabs {
         display: flex;
         align-items: flex-end;
-        flex: 1 1 auto;
+        flex: 1000 1 var(--tabs-least);
         min-width: 0;
         overflow-x: auto;
         scrollbar-width: none;
@@ -332,14 +403,72 @@
         border-bottom: 1px solid var(--line);
     }
 
+    /* A wrapping strip lets the tabs fill rows and puts the caller's buttons at the end of the last
+       one, the filler after the last tab keeping room for them. */
+    .strip.wrapping {
+        position: relative;
+        flex-wrap: nowrap;
+    }
+
+    .wrapping .tabs {
+        flex: 1 1 auto;
+        flex-wrap: wrap;
+        overflow: visible;
+    }
+
+    .wrapping .tabs::after {
+        flex: 1 0 var(--opener-width, 0);
+    }
+
+    .wrapping .opener {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        height: var(--tab-height);
+        box-sizing: border-box;
+    }
+
+    /* What a strip that shows one tab draws after it: it takes the room the tab leaves. */
+    .beside {
+        display: flex;
+        align-items: center;
+        flex: 1 1 0;
+        align-self: stretch;
+        min-width: 0;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .tabs:has(.beside)::after {
+        display: none;
+    }
+
     .scroll-control,
     .opener {
         display: flex;
         align-items: center;
         gap: var(--tab-action-gap);
-        flex: 0 0 auto;
+        min-height: var(--tab-height);
+        box-sizing: border-box;
         padding: 0 var(--tab-action-gap);
         border-bottom: 1px solid var(--line);
+    }
+
+    .scroll-control {
+        flex: 0 0 auto;
+    }
+
+    /* On a line of its own the buttons' row takes the strip's width, so the line under it is
+       whole; beside the tabs it takes only what the tabs leave of a thousandth. */
+    .opener {
+        flex: 1 1 auto;
+        justify-content: flex-end;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .opener > :global(.toolbar) {
+        flex: 0 1 auto;
+        min-width: 0;
     }
 
     .scroll-control[hidden] {

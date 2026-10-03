@@ -165,22 +165,6 @@ export function collapseRoot(expanded: string[], root: string, from = ''): strin
 }
 
 /**
- * The segments of the path one row sits at: the root, then each folder down to the row itself, each
- * with the row it names.
- */
-export function crumbsOf(selected: RowRef | null): { row: RowRef; label: string }[] {
-    if (selected === null) return [];
-    const parts = selected.path.split('/').filter((part) => part !== '');
-    return [
-        { row: { root: selected.root, path: '' }, label: selected.root },
-        ...parts.map((part, at) => ({
-            row: { root: selected.root, path: parts.slice(0, at + 1).join('/') },
-            label: part
-        }))
-    ];
-}
-
-/**
  * The folder a tree is drawn from when it is not its root's top: its path inside the root, and the
  * name its head row shows.
  */
@@ -194,9 +178,3 @@ export const FILE_DRAG = 'application/x-oculus-file';
  * target that reads a file (the composer's prompt box) never sees a folder.
  */
 export const FOLDER_DRAG = 'application/x-oculus-folder';
-
-/** The absolute path of a row, from its root's folder and its path inside it. */
-export function absoluteOf(rootDir: string, path: string): string {
-    const base = rootDir.endsWith('/') ? rootDir.slice(0, -1) : rootDir;
-    return path === '' ? base : `${base}/${path}`;
-}

@@ -13,10 +13,10 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { crumbsOf } from '../../../../src/lib/state/workbench/navigation/pages.ts';
 import {
     bookmarkLeft,
     collapseRoot,
-    crumbsOf,
     editedGone,
     patchedFilesView,
     editShown,

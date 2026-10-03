@@ -284,7 +284,9 @@ export function layerDot(sources, layers, layer, order, read = parseReader()) {
         const same = row === 0 ? [from, node.id, box] : [node.id, box];
         arrows.push(`    { rank=same; ${same.map(quote).join('; ')}; }`);
     }
-    const lines = header(`layer_${layer}`, 'rankdir=TB, newrank=true');
+    // Four times the crossing-minimisation passes Graphviz runs by default: with fewer, two long
+    // arrows between folders can be routed through one channel and drawn along each other.
+    const lines = header(`layer_${layer}`, 'rankdir=TB, newrank=true, mclimit=4');
     lines.push(...cluster(layer, layer, inside), ...boxes);
     for (let at = 1; at < order.length; at += 1) {
         const [above, below] = [order[at - 1], order[at]].map((one) => `folder ${one}`);

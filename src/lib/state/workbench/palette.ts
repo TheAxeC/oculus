@@ -174,6 +174,34 @@ export function editorItems(source: SourceOnScreen | null): PaletteItem[] {
     }));
 }
 
+/** The chord VS Code binds Pin Editor and Unpin Editor to, which the palette stands in for. */
+const PIN_CHORD = 'Cmd+K Shift+Enter';
+
+/**
+ * Pin Editor for an unpinned active tab and Unpin Editor for a pinned one, as palette items of kind
+ * `editor` with VS Code's chord as the hint, and none while the pane holds no tab. Picking one
+ * toggles the pin of the tab it names.
+ */
+export function pinItems(
+    active: { id: string; pinned: boolean } | null,
+    t: (key: string) => string
+): PaletteItem[] {
+    if (active === null) return [];
+    const label = active.pinned ? t('app.palette.unpin_editor') : t('app.palette.pin_editor');
+    return [
+        {
+            id: 'editor:pin',
+            kind: 'editor',
+            label,
+            title: label,
+            text: 'pin',
+            view: '',
+            hint: PIN_CHORD,
+            state: { instance: active.id, pin: !active.pinned }
+        }
+    ];
+}
+
 export type { TextPart };
 
 /** One result the palette draws: the item, and its title in matched and unmatched runs. */

@@ -1,9 +1,10 @@
 // Layer 4, test helper. The inert callbacks a case hands to a component, a fixture or a double when
-// it asserts nothing about the call, the write request a page sends, the entries of a hand-built
-// folder listing, and the child process a case drives in place of `ps`. They exist once here so a
-// case says "nothing happens on this callback" in one word rather than writing an empty function at
-// every prop, every route test posts the same page request, every listing is built from the same
-// two entries, and every test of the process table drives the same child.
+// it asserts nothing about the call, the stand-in for the words function, the write request a page
+// sends, the entries of a hand-built folder listing, and the child process a case drives in place
+// of `ps`. They exist once here so a case says "nothing happens on this callback" in one word
+// rather than writing an empty function at every prop, every route test posts the same page
+// request, every listing is built from the same two entries, and every test of the process table
+// drives the same child.
 
 import { EventEmitter } from 'node:events';
 import type { FsEntry } from '../../src/lib/state/sources/fs.ts';
@@ -13,6 +14,13 @@ export const noop = (): void => undefined;
 
 /** The same where the caller awaits what the callback returns. */
 export const noopAsync = (): Promise<void> => Promise.resolve();
+
+/**
+ * A stand-in for the words function: a key answers `@key`, with its arguments after it in
+ * parentheses, so a case reads which key and which arguments a sentence was made from.
+ */
+export const keyWords = (key: string, ...args: (string | number)[]): string =>
+    args.length === 0 ? `@${key}` : `@${key}(${args.join(',')})`;
 
 /** A POST as the page sends one: JSON, from the page's own origin, carrying the write token. */
 export function pagePost(url: string, body: unknown, token: string): Request {

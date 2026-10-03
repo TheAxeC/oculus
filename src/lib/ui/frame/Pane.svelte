@@ -5,7 +5,9 @@
     // happens inside the view rather than around it.
     //
     // The header is VS Code's pane header: 22 px, one line, the title cut with an
-    // ellipsis, and the actions in 20 px boxes that are always drawn. It holds icon actions only,
+    // ellipsis, and the actions in 20 px boxes that are always drawn. A view whose title is its
+    // file's path, which the pane's breadcrumb draws, asks for `titled: false` and has no title row
+    // at all, or only its actions. It holds icon actions only,
     // in a Toolbar that asks for `overflow`; a search box, a select, a segment, a toggle, a chip
     // and a text button go in the bar, which wraps and does not scroll with the body.
 
@@ -14,6 +16,8 @@
     type Props = {
         /** The view's own words, already translated. */
         title: string;
+        /** Whether the header draws the title; a view that has none still draws its actions. */
+        titled?: boolean;
         /** The icon actions at the right of the header, a Toolbar that asks for `overflow`. */
         toolbar?: Snippet;
         /** The strip under the header for the view's other controls, usually a Toolbar. */
@@ -29,16 +33,20 @@
         children?: Snippet;
     };
 
-    let { title, toolbar, bar, tinted = false, children }: Props = $props();
+    let { title, titled = true, toolbar, bar, tinted = false, children }: Props = $props();
 </script>
 
 <section class="pane" class:tinted>
-    <header>
-        <h2 class="title">{title}</h2>
-        {#if toolbar}
-            <div class="tools">{@render toolbar()}</div>
-        {/if}
-    </header>
+    {#if titled || toolbar}
+        <header>
+            {#if titled}
+                <h2 class="title">{title}</h2>
+            {/if}
+            {#if toolbar}
+                <div class="tools">{@render toolbar()}</div>
+            {/if}
+        </header>
+    {/if}
     {#if bar}
         <div class="viewbar">{@render bar()}</div>
     {/if}

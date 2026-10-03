@@ -17,11 +17,12 @@ text:
         crt_title: 'CRT overlay: scanlines + vignette. Cosmetic only.'
         dirty_glyph: bullet
         docs: Bookmarks
-        drag_hint: Moving {0}
         drag_float: Floating {0}
+        drag_hint: Moving {0}
         drag_open: Opening {0}
         editor_actions_hidden: Hidden
-        editor_actions_strip: Title Bar
+        editor_actions_tab_bar: Tab Bar
+        editor_actions_title_bar: Title Bar
         embed_page: 'Show {0} here'
         embed_page_list: Show a page here...
         embed_refused: '{0} cannot be shown here'
@@ -56,6 +57,7 @@ text:
         pane_menu_glyph: list
         pane_more_glyph: more
         pane_restore: Restore panes
+        pin_glyph: pin
         preview_tab: 'The next single click replaces this tab; double-click to keep it.'
         prose_copy: Copy
         prose_copy_image: Copy Image
@@ -86,7 +88,24 @@ text:
         tab_bar_multiple: Multiple Tabs
         tab_bar_none: Hidden
         tab_bar_single: Single Tab
+        tab_close: Close
+        tab_close_all: Close All
         tab_close_dirty: Close this tab and lose its unsaved changes?
+        tab_close_many: Close these {0} tabs?
+        tab_close_others: Close Others
+        tab_close_right: Close to the Right
+        tab_close_saved: Close Saved
+        tab_copy_refused: The clipboard refused the copy.
+        tab_keep_open: Keep Open
+        tab_path: Path of the open file
+        tab_pin: Pin
+        tab_show_in_files: Show in Files
+        tab_split_down: Split Down
+        tab_split_left: Split Left
+        tab_split_move: Split & Move
+        tab_split_right: Split Right
+        tab_split_up: Split Up
+        tab_unpin: Unpin
         tab_unsaved: '{0}, unsaved'
         tabs_scroll_left: Scroll tabs left
         tabs_scroll_right: Scroll tabs right
@@ -105,5 +124,6 @@ text:
         toolbar_more: More actions
         toolbar_more_glyph: more
         unknown_view: 'Unknown view: {0}'
+        untitled_word: Untitled-
         wallpaper: Wallpaper
         wallpaper_title: Wallpaper behind the panels - and the slight transparency that goes with it

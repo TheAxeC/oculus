@@ -2,8 +2,9 @@
     // Layer 3, primitive. One of a list of choices. The choices are values and words the caller
     // resolved; this knows nothing about where they came from.
     //
-    // The empty choice is always there and always first: a field of the manifest that is set to
-    // nothing is a field that is not there, and clearing one is as ordinary as setting it.
+    // The empty choice is there and first whenever the caller gives its words: a field of the
+    // manifest that is set to nothing is a field that is not there, and clearing one is as ordinary
+    // as setting it. A caller that gives none draws a pick that always holds one of the choices.
 
     import { isStray } from './choices';
 
@@ -11,8 +12,8 @@
         value: string;
         /** The control's accessible name, already translated by the view. */
         label: string;
-        /** The words of the empty choice, already translated. */
-        empty: string;
+        /** The words of the empty choice, already translated; omitted, there is no empty choice. */
+        empty?: string;
         choices: { id: string; label: string }[];
         onchange: (value: string) => void;
     };
@@ -34,7 +35,9 @@
 </script>
 
 <select class="select" aria-label={label} onchange={picked}>
-    <option value="" selected={value === ''}>{empty}</option>
+    {#if empty !== undefined}
+        <option value="" selected={value === ''}>{empty}</option>
+    {/if}
     {#if stray}
         <option {value} selected>{value}</option>
     {/if}

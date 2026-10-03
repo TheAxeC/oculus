@@ -1,11 +1,13 @@
 // Layer 2, client state. The rules that read the terminal list against the Terminal tabs: which
 // terminals have ended as one `sessions` message says, which running terminals no tab owns, what a
-// terminal is called wherever it is listed, what the ended ones take out of the tabs and where a
-// moved terminal goes. The store in state/sessions/terminals.svelte.ts calls them with what it
-// holds and the tests call them with what a case builds. The file holds two functions that write
-// to the workbench they are handed, closeEnded and moveInto; the others are pure.
+// terminal is called wherever it is listed and what a Terminal tab calls it, what the ended ones
+// take out of the tabs and where a moved terminal goes. The store in
+// state/sessions/terminals.svelte.ts calls them with what it holds and the tests call them with
+// what a case builds. The file holds two functions that write to the workbench they are handed,
+// closeEnded and moveInto; the others are pure.
 
 import type { Terminal } from '../../../data/model/index.ts';
+import { t } from '../../shared/words/text.ts';
 import {
     isTerminalId,
     ownerOf,
@@ -53,6 +55,22 @@ export function unownedTerminals(
 /** What a terminal is called wherever it is listed: its title when it has one, else its name. */
 export function terminalLabel(held: Pick<Terminal, 'name' | 'title'>): string {
     return held.title === '' ? held.name : held.title;
+}
+
+/**
+ * What a Terminal tab calls a terminal it shows: the title the reader gave it; else the agent's
+ * word for an agent terminal, since what tmux reports running in its pane says nothing of it; else
+ * the name of the project command a task terminal ran; else the process tmux reports; else the
+ * word for a shell.
+ */
+export function terminalTabTitle(
+    held: Pick<Terminal, 'title' | 'kind' | 'command' | 'job'>
+): string {
+    if (held.title !== '') return held.title;
+    if (held.kind === 'claude') return t('sessions.kind_claude');
+    if (held.kind === 'codex') return t('sessions.kind_codex');
+    if (held.job !== null) return held.job.name;
+    return held.command === '' ? t('sessions.terminal_title_shell') : held.command;
 }
 
 /**

@@ -1,5 +1,5 @@
 digraph layer_server {
-    graph [bgcolor="transparent", rankdir=TB, newrank=true, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.5];
+    graph [bgcolor="transparent", rankdir=TB, newrank=true, mclimit=4, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.5];
     node [shape=box, color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=10, height=0.3, margin="0.12,0.04"];
     edge [color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=8, arrowsize=0.6];
     subgraph "cluster_server" {

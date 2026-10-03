@@ -34,6 +34,7 @@ setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 
 const WORKSPACES = {
+    home: '/r',
     current: 'thesis',
     workspaces: [
         { name: '', roots: [{ key: 'hub', dir: '/r/hub', fixed: true }] },

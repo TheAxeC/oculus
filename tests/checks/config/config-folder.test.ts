@@ -113,6 +113,7 @@ describe("oculus's own config directory", () => {
             'code_theme',
             'show_tabs',
             'editor_actions',
+            'wrap_tabs',
             'terminal'
         ],
         'present.yml': ['deck'],

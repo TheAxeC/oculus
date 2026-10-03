@@ -1,10 +1,12 @@
 // Layer 3, primitive test. Where a scroll control or a reveal brings an overflowing tab strip to
 // rest: a tab's start at its left edge, or the strip's end, which is the browser's largest offset
-// and may fall short of a start. Plain numbers stand for the measured extents; the strip that
-// measures them needs a DOM and is not run here.
+// and may fall short of a start; and whether a narrow strip draws its scroll controls at all. Plain
+// numbers stand for the measured extents; the strip that measures them needs a DOM and is not run
+// here.
 
 import { describe, expect, it } from 'vitest';
 import {
+    controlsFit,
     revealOffset,
     tabEdgeStep,
     wholeAt,
@@ -91,5 +93,18 @@ describe('a tab whole at an offset', () => {
         expect(wholeAt(spans[2], 102, WIDTH)).toBe(false);
         expect(wholeAt(spans[0], 102, WIDTH)).toBe(false);
         expect(wholeAt(spans[4], 0, WIDTH)).toBe(false);
+    });
+});
+
+describe('the scroll controls of a narrow strip', () => {
+    // The tabs' least width is 120 and the two controls take 52: a strip narrower than both
+    // together draws no controls, so the tab list keeps its line and the shown tab in sight.
+    it.each([
+        [97, false],
+        [171, false],
+        [172, true],
+        [400, true]
+    ])('stand beside the tabs in a strip %i px wide: %s', (strip, fits) => {
+        expect(controlsFit(strip, 120, 52)).toBe(fits);
     });
 });

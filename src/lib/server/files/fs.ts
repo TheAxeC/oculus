@@ -81,6 +81,8 @@ export type ShownRoot = Root & { fixed: boolean };
  * dropped.
  */
 export type WorkspacesAnswer = {
+    /** The home folder of the account the server runs as, which the page writes as `~`. */
+    home: string;
     current: string;
     workspaces: { name: string; roots: ShownRoot[] }[];
     dropped: string[];
@@ -396,6 +398,7 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
     const names = [DEFAULT_WORKSPACE];
     for (const one of saved.workspaces) if (!names.includes(one.name)) names.push(one.name);
     return {
+        home: homedir(),
         current: saved.current,
         workspaces: names.map((name) => ({
             name,

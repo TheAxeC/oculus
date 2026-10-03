@@ -16,18 +16,19 @@
     // size in force, and builds its look again whenever either changes. It is also handed the code
     // theme, whose syntax colours the editor paints its text with.
     //
-    // A Markdown file is written and read at once: the row splits into the editor and the rendered
-    // half, with the handle between them, and the rendered half follows how far the editor is
-    // scrolled through its text. A file of any other kind is the editor alone.
+    // A Markdown file opens as the editor alone. With the rendered half turned on, the row splits
+    // into the editor and the rendered half, with the handle between them: the rendered half takes
+    // at most half the row (`EDITOR_LEAST`) and follows how far the editor is scrolled through its
+    // text. A file of any other kind is the editor alone.
     //
-    // The controls that act on the text (Save, Revert and the rendered half) are the pane's own
-    // bar, which Source.svelte draws, so the tab spends one row on its controls and the editor
-    // none. What the status bar and the palette ask of the tab, Source.svelte hands to `perform`.
+    // The controls that act on the text (Save, Revert and the rendered half) are drawn at the end
+    // of the pane's tab strip (StripActions.svelte), so the editor spends no row on them. What the
+    // status bar and the palette ask of the tab, Source.svelte hands to `perform`.
 
     import { untrack } from 'svelte';
     import Preview from './Preview.svelte';
     import Sash from '$lib/ui/frame/Sash.svelte';
-    import { SASH_PX } from '$lib/ui/frame/sash-size';
+    import { SASH_PX, draggedShare } from '$lib/ui/frame/sash-size';
     import MonacoEditor from '$lib/ui/controls/editor/Editor.svelte';
     import type {
         EditorAction,
@@ -106,7 +107,7 @@
         wrap = 'off',
         rulers = [],
         ontogglewrap,
-        rendered = true,
+        rendered = false,
         marks = [],
         blame = [],
         extension,
@@ -122,7 +123,11 @@
     let box: HTMLDivElement | undefined = $state();
     /** The line already gone to, so a redraw does not take the reader back to it. */
     let placed = 0;
-    /** The share of the row the editor holds. The rendered half takes what is left. */
+    /** The editor's least and most share of the row; the rendered half takes at most half. */
+    const EDITOR_LEAST = 0.5;
+    const EDITOR_MOST = 0.9;
+
+    /** The share of the row the editor holds, at least half. The rendered half takes the rest. */
     let share = $state(0.5);
     /** How far the editor is scrolled through its text, which is what the rendered half follows. */
     let fraction = $state(0);
@@ -171,9 +176,13 @@
      * A drag is pixels; what the two halves are laid out by is a share, so the row's width sets it.
      */
     function moved(delta: number): void {
-        const room = (box?.clientWidth ?? 0) - SASH_PX;
-        if (room <= 0) return;
-        share = Math.min(0.9, Math.max(0.1, share + delta / room));
+        share = draggedShare(
+            share,
+            delta,
+            (box?.clientWidth ?? 0) - SASH_PX,
+            EDITOR_LEAST,
+            EDITOR_MOST
+        );
     }
 
     function reset(): void {

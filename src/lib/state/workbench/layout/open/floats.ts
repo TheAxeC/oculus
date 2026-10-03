@@ -65,8 +65,9 @@ function centred(): FloatPlace {
     return { kind: 'free', x: (1 - START_W) / 2, y: (1 - START_H) / 2, w: START_W, h: START_H };
 }
 
-/** A tab as a float holds it: a tab put in a float is one the reader means to keep. */
+/** A tab as a float holds it: a tab put in a float is one the reader keeps, pin included. */
 function kept(tab: Instance): Instance {
+    if (tab.pinned === true) return { id: tab.id, view: tab.view, state: tab.state, pinned: true };
     return { id: tab.id, view: tab.view, state: tab.state };
 }
 

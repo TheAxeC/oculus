@@ -7,7 +7,8 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import { absoluteOf, childPath, rootHolding } from '$lib/state/sources/fs';
+    import { childPath, rootHolding } from '$lib/state/sources/fs';
+    import { absoluteOf } from '$lib/state/workbench/navigation/pages';
     import { currentWorkspace } from '$lib/state/sources/fs-transport';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

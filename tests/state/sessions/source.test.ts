@@ -247,20 +247,21 @@ describe('source tab state', () => {
         expect(fetcher).toHaveBeenCalledTimes(1);
     });
 
-    it('keeps the rendered half per instance, on until the toggle says otherwise', () => {
-        expect(sourceDraft('one').rendered).toBe(true);
+    // Revert: default `rendered` to true in the draft.
+    it('keeps the rendered half per instance, off until the toggle turns it on', () => {
+        expect(sourceDraft('one').rendered).toBe(false);
 
         toggleSourceRendered('one');
-        expect(sourceDraft('one').rendered).toBe(false);
+        expect(sourceDraft('one').rendered).toBe(true);
         // The other tab knows nothing of it, which is what per instance means.
-        expect(sourceDraft('two').rendered).toBe(true);
+        expect(sourceDraft('two').rendered).toBe(false);
 
         // Typing and reverting are the draft's other writes, and neither touches the toggle.
         editSourceDraft('one', 'typed');
-        expect(sourceDraft('one')).toMatchObject({ text: 'typed', rendered: false });
+        expect(sourceDraft('one')).toMatchObject({ text: 'typed', rendered: true });
 
         toggleSourceRendered('one');
-        expect(sourceDraft('one').rendered).toBe(true);
+        expect(sourceDraft('one').rendered).toBe(false);
     });
 
     it('keeps the blame per instance, off until the toggle turns it on', () => {
@@ -500,7 +501,7 @@ describe('a draft read from an instance state of the wrong shape', () => {
         error: '',
         message: '',
         failed: false,
-        rendered: true,
+        rendered: false,
         blame: false,
         readonly: false,
         truncated: false,
@@ -535,7 +536,7 @@ describe('a draft read from an instance state of the wrong shape', () => {
                 error: 'e',
                 message: 'm',
                 failed: true,
-                rendered: false,
+                rendered: true,
                 blame: true,
                 readonly: true,
                 truncated: true,
@@ -551,7 +552,7 @@ describe('a draft read from an instance state of the wrong shape', () => {
                 error: 'e',
                 message: 'm',
                 failed: true,
-                rendered: false,
+                rendered: true,
                 blame: true,
                 readonly: true,
                 truncated: true,
@@ -780,5 +781,32 @@ describe('a tab with no unsaved text read again after its file was written', () 
         read.resolve(new Response('a replaced'));
         await reloading;
         expect(sourceDraft(tab)).toMatchObject({ file: 'hub/b.md', text: 'b on disk' });
+    });
+});
+
+describe('an untitled source tab', () => {
+    // Revert: read the untitled tab's draft from a file route.
+    it('holds an empty loaded draft and asks the server for no file', () => {
+        const fetcher = vi.fn(() => Promise.resolve(new Response('')));
+        vi.stubGlobal('fetch', fetcher);
+        client.source.loadUntitledDraft('one');
+        expect(sourceDraft('one')).toMatchObject({ text: '', saved: '', loaded: true, error: '' });
+        expect(fetcher).not.toHaveBeenCalled();
+    });
+
+    // Revert: leave the draft clean once the reader typed.
+    it('is unsaved once the reader types, which is what closing it asks about', () => {
+        client.source.loadUntitledDraft('one');
+        expect(sourceDirty('one')).toBe(false);
+        editSourceDraft('one', 'typed');
+        expect(sourceDirty('one')).toBe(true);
+        expect(client.ui.unsaved('one')).toBe(true);
+    });
+
+    it('keeps the typed text when it is opened again', () => {
+        client.source.loadUntitledDraft('one');
+        editSourceDraft('one', 'typed');
+        client.source.loadUntitledDraft('one');
+        expect(sourceDraft('one').text).toBe('typed');
     });
 });

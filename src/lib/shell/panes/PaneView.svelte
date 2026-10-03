@@ -28,19 +28,21 @@
     // icon button, drawn while the pane shows a tab, the lock mark of a locked group, and the menu
     // as its bare more-actions opener. The one pane the next view opened would land in draws its
     // strip focused, and it is the active pane of the page the reader is in, so one pane strip in
-    // the window carries the accent and that tab is where a view will land. The rail's button drawn
-    // in force is a different mark: it says which page is shown, not where a view opens. The split
-    // button is the pointer's shortcut to an item the menu already holds, so it takes no stop of
-    // its own and the pane's stops stay the strip and the menu.
+    // the window carries the accent and that tab is where a view will land. The split button is the
+    // pointer's shortcut to an item the menu already holds, so it takes no stop of its own and the
+    // pane's stops stay the strip and the menu.
+    //
+    // A right-click on a tab opens that tab's menu (strip/tab-menu-state.svelte.ts), whose closes
+    // go through the pane's close question (strip/close-question.svelte.ts). The pane also provides
+    // the place the active file tab hands its own actions to (ui/tabs/tab-actions.svelte.ts), which
+    // the strip draws at its end, and passes the breadcrumb of that tab's path to the strip.
     //
     // A right-click on the strip's empty area or in an empty pane's body opens VS Code's editor
     // group menu (pane-view.ts's stripMenu): Open File..., New Text File, the four splits of the
     // active tab, Lock Group, the Tab Bar and Editor Actions Position submenus (which write the two
-    // settings), Close through the pane menu's own close and its question, and New Terminal on the
-    // pane's page. With editor_actions hidden it also holds the pane menu's other items (Maximise
-    // or Restore, Fold, the page choices), and Close is always offered, so nothing is reachable
-    // only from the `...` button. A right-click on a tab is left to the tab's own menu, so the
-    // strip's menu opens only where no tab is under the pointer.
+    // settings), Close through the pane menu's own close and its question, and New Terminal. With
+    // editor_actions hidden it also holds the pane menu's other items (Maximise or Restore, Fold,
+    // the page choices), and Close is always offered, so nothing needs the `...` button.
 
     import {
         EMBED,
@@ -51,10 +53,15 @@
         paneMenu,
         stripMark,
         stripMenu,
-        stripPicked
+        shownTabPath,
+        stripPicked,
+        tabHint
     } from '$lib/shell/panes/pane-view';
+    import { createCloseQuestion } from './strip/close-question.svelte';
+    import { createTabMenu } from './strip/tab-menu-state.svelte';
+    import { crumbPicked, tabCrumbs, type Crumb } from './strip/tab-crumbs';
+    import { provideTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
-    import { closeAsk, closeOnce, closeWords } from '$lib/state/workbench/navigation/pages';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import type { Tab } from '$lib/ui/tabs/tab-strip';
@@ -70,7 +77,7 @@
     import { editorActions, showTabs } from '$lib/state/shared/words/appearance';
     import {
         instanceLabel,
-        newNoteOpener,
+        newTextFileOpener,
         panes,
         setLocked,
         type Instance,
@@ -84,7 +91,6 @@
         layout: {
             activateInstance,
             change,
-            closeInstance,
             closePane,
             currentPage,
             dockFloat,
@@ -103,14 +109,21 @@
             pages,
             restorePanes,
             returnFloat,
+            showFolderInFiles,
+            showInFiles,
             splitInstance,
-            touchPane
+            touchPane,
+            unpinTab
         },
         drag: { dragging, hover, start },
+        fs: { roots: servedRoots, workspaces },
         registry: { viewFor },
         terminals: { newTerminalIn, tabMark },
-        ui: { unsaved, busyTerminals, setPaneStrip }
+        ui: { unsaved, setPaneStrip }
     } = client;
+
+    /** The place the views of this pane hand the active tab's own actions to. */
+    const tabActions = provideTabActions();
 
     type Props = {
         /**
@@ -155,6 +168,14 @@
         if (active !== '' && !activePane) activateInstance(active, page);
     }
 
+    /** The roots the server serves, which a file tab's path and breadcrumb are read against. */
+    const served = $derived(workspaces());
+    const roots = $derived(servedRoots());
+
+    /** The path a tab shows, written from its root's folder with the home folder as `~`. */
+    const pathOf = (instance: Instance): string | null =>
+        shownTabPath(instance, roots, served.home);
+
     /**
      * A tab per instance: the registry's words and glyph, or the view's own id when it has none. A
      * state carrying a `label` shows that instead of the view's name, so two documents read as two.
@@ -173,11 +194,15 @@
                 label: own ?? registrationLabel(found),
                 ...stripMark(registrationGlyph(found), tabMark(instance)),
                 preview,
-                hint: preview
-                    ? t('ui.preview_tab')
-                    : own === null
-                      ? undefined
-                      : registrationLabel(found),
+                pinned: instance.pinned === true,
+                hint: tabHint(
+                    {
+                        preview,
+                        path: pathOf(instance),
+                        viewWords: own === null ? undefined : registrationLabel(found)
+                    },
+                    t
+                ),
                 badge: badge.tabText,
                 badgeGlyph: badge.glyph,
                 badgeTone: badge.tone,
@@ -205,13 +230,6 @@
             ? markAt(held.drop.index, own)
             : null
     );
-
-    /**
-     * The close that is waiting on the dialog: the words it asks and what a yes does. One dialog
-     * serves the pane menu's close and a tab holding unsaved text, since both ask the same question
-     * about work that would be lost.
-     */
-    let confirming: { message: string; act: () => void } | null = $state(null);
 
     const items = $derived<MenuItem[]>(
         paneMenu(
@@ -261,7 +279,13 @@
                 dockFloat,
                 freeFloat,
                 returnFloat,
-                newNoteIn: newNoteOpener(openInPane),
+                newTextFileIn: newTextFileOpener(openInPane, () =>
+                    pages().flatMap((one) =>
+                        panes(layout(one.id)).flatMap(({ pane }) =>
+                            pane.tabs.flatMap((tab) => instanceLabel(tab.state) ?? [])
+                        )
+                    )
+                ),
                 setLocked: (at, where, locked) =>
                     change((tree) => setLocked(tree, where, locked), at),
                 setAppearance: setPaneStrip
@@ -269,16 +293,35 @@
         );
     }
 
-    /**
-     * Keep a right-click on a tab from reaching the strip's menu: a tab has a menu of its own, and
-     * a right-click on it is not a right-click on the strip's empty area. A key's menu, dispatched
-     * by the menu itself at the focused control, is let through.
-     */
-    function onTab(event: MouseEvent): void {
-        const target = event.target;
-        if (!event.isTrusted || !(target instanceof Element)) return;
-        if (target.closest('[role="tab"]') !== null) event.stopPropagation();
-    }
+    const question = createCloseQuestion({
+        client,
+        instances: () => instances,
+        labelOf: (id) => tabs.find((tab) => tab.id === id)?.label ?? id,
+        page: () => page
+    });
+    const { askAndClose, closeTab } = question;
+
+    const tabMenu = createTabMenu({
+        client,
+        instances: () => instances,
+        page: () => page,
+        path: () => path,
+        roots: () => roots,
+        stripItems: () => stripItems,
+        stripPick,
+        closeTab,
+        askAndClose
+    });
+
+    /** The breadcrumb of the active tab's path, empty for a tab naming no file. */
+    const crumbs = $derived(
+        shown === undefined
+            ? []
+            : tabCrumbs(
+                  shown,
+                  roots.map((one) => one.key)
+              )
+    );
 
     /** Whether a drop is this pane's: the same page, and the same path inside that page's tree. */
     function here(drop: { path: number[]; page?: string }): boolean {
@@ -287,44 +330,6 @@
             drop.path.length === path.length &&
             drop.path.every((step, index) => step === path[index])
         );
-    }
-
-    const once = closeOnce();
-
-    /**
-     * Close these tabs, asking first when one holds text no save has taken or runs a program in a
-     * terminal it owns. The rule is the instance ids and the ui store's answers for them, so the
-     * close control, Delete and the pane menu take the same guard and no view is scanned for what
-     * it holds. A second press while the read of the terminals is in flight does nothing.
-     */
-    function askAndClose(key: string, ids: string[], many: string, act: () => void): Promise<void> {
-        const owned = instances.filter((one) => ids.includes(one.id));
-        return once(
-            key,
-            () => busyTerminals(owned),
-            (busy) => {
-                const nameOf = (one: string): string =>
-                    tabs.find((tab) => tab.id === one)?.label ?? one;
-                const asked = closeAsk({ ids, unsaved, nameOf, many, busy });
-                if (asked === null) act();
-                else confirming = { message: closeWords(asked), act };
-            }
-        );
-    }
-
-    function closeTab(id: string): void {
-        void askAndClose(`tab:${id}`, [id], t('ui.tab_close_dirty'), () => closeInstance(id, page));
-    }
-
-    /**
-     * Perform the close the dialog was asking about. What to do is taken out of the state before
-     * the dialog is taken away, since the markup reads the same state and would have nothing to
-     * call.
-     */
-    function confirmed(): void {
-        const act = confirming?.act;
-        confirming = null;
-        act?.();
     }
 
     function press(id: string, point: { x: number; y: number }): void {
@@ -396,7 +401,6 @@
 
 <!-- The pointer press is taken on the way down, before the control under it takes the focus, so the
      page a view opens into is this pane's page from the first press. -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
     class="pane"
     class:floated={float !== undefined}
@@ -408,28 +412,32 @@
     data-pane-active={active}
     data-pane-view={shown?.view}
 >
-    <ContextMenu label={t('ui.pane_menu')} items={stripItems} onpick={stripPick}>
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="tabs-menu" oncontextmenu={onTab}>
-            <PaneStrip
-                {tabs}
-                {active}
-                locked={node.kind === 'pane' && node.locked === true}
-                canSplit={active !== '' && float === undefined}
-                {items}
-                {dropIndex}
-                focused={activePane}
-                onselect={(id: string) => activateInstance(id, page)}
-                onclose={closeTab}
-                ondblclick={(id: string) => keepPreview(id)}
-                onpointerdown={press}
-                onhoverindex={held === null ? undefined : stripHover}
-                onsplit={() => pick('split_right')}
-                onunlock={() => change((tree) => setLocked(tree, path, false), page)}
-                onpick={pick}
-            />
-        </div>
+    <ContextMenu label={t('ui.pane_menu')} read={tabMenu.read} onpick={tabMenu.pick}>
+        <PaneStrip
+            {tabs}
+            {active}
+            locked={node.kind === 'pane' && node.locked === true}
+            canSplit={active !== '' && float === undefined}
+            {items}
+            {crumbs}
+            tabActions={tabActions.of(active)}
+            oncrumb={(crumb: Crumb) => crumbPicked(crumb, { showFolderInFiles, showInFiles })}
+            onunpin={unpinTab}
+            {dropIndex}
+            focused={activePane}
+            onselect={(id: string) => activateInstance(id, page)}
+            onclose={closeTab}
+            ondblclick={(id: string) => keepPreview(id)}
+            onpointerdown={press}
+            onhoverindex={held === null ? undefined : stripHover}
+            onsplit={() => pick('split_right')}
+            onunlock={() => change((tree) => setLocked(tree, path, false), page)}
+            onpick={pick}
+        />
     </ContextMenu>
+    {#if tabMenu.said() !== ''}
+        <p class="said" role="status">{tabMenu.said()}</p>
+    {/if}
     <PaneBody
         {instances}
         {active}
@@ -442,9 +450,9 @@
 </div>
 
 <CloseQuestion
-    message={confirming?.message ?? null}
-    onconfirm={confirmed}
-    oncancel={() => (confirming = null)}
+    message={question.message()}
+    onconfirm={question.confirmed}
+    oncancel={question.cancel}
 />
 
 <style>
@@ -475,8 +483,13 @@
         background: transparent;
     }
 
-    /* The strip's menu wrapper, which draws nothing of its own around the tab strip. */
-    .tabs-menu {
-        display: contents;
+    /* What a tab menu item could not do, under the strip. */
+    .said {
+        flex: none;
+        margin: 0;
+        padding: 2px var(--tab-pad);
+        border-bottom: 1px solid var(--line);
+        color: var(--c-red-txt);
+        font-size: var(--fs-sm);
     }
 </style>

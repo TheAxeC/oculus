@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Prompt from '../../../src/lib/ui/forms/Prompt.svelte';
 import TextArea from '../../../src/lib/ui/forms/TextArea.svelte';
+import type { PromptRequest } from '../../../src/lib/ui/forms/prompt.ts';
 
 const REQUEST = {
     message: 'Create Tag',
@@ -19,7 +20,7 @@ const REQUEST = {
     act: () => undefined
 };
 
-function prompt(request = REQUEST): string {
+function prompt(request: PromptRequest = REQUEST): string {
     return render(Prompt, { props: { request, cancel: 'Cancel', oncancel: () => undefined } }).body;
 }
 
@@ -41,6 +42,29 @@ describe('Prompt', () => {
         expect(body).toContain('>Create<');
         expect(body).toContain('>Cancel<');
         expect(body).toContain('A tag names the commit checked out.');
+    });
+
+    // Revert: draw a field that has choices as a text input.
+    it('draws a field that has choices as a select of them with its value chosen', () => {
+        const body = prompt({
+            ...REQUEST,
+            fields: [
+                {
+                    label: 'Folder',
+                    value: 'data',
+                    choices: [
+                        { id: 'hub', label: 'hub' },
+                        { id: 'data', label: 'data' }
+                    ]
+                },
+                { label: 'File name', value: '' }
+            ]
+        });
+        const options = [...body.matchAll(/<option value="([^"]*)"( selected)?/g)].map(
+            (found) => `${found[1]}${found[2] ? '*' : ''}`
+        );
+        expect(options).toEqual(['hub', 'data*']);
+        expect(body).toContain('aria-label="File name"');
     });
 
     it('leaves the detail line out when there is none', () => {

@@ -29,6 +29,7 @@ import {
     type ViewId,
     type Workbench
 } from './model.ts';
+import { pinTab as pinInTree, unpinTab as unpinInTree } from './open/pinned.ts';
 import { keepInstance } from './open/preview.ts';
 import {
     activate,
@@ -53,7 +54,13 @@ export type Instances = {
     restateInstance: (id: string, state: unknown) => void;
     pinInstance: (id: string, session: string, label: string) => void;
     unpinInstance: (id: string) => void;
+    /**
+     * Keep a preview tab, which is what a double click, a keystroke, a drag and a split do to one.
+     */
     keepPreview: (id: string) => void;
+    /** Pin a tab to its pane's pinned run, or take the pin off; an unknown id changes nothing. */
+    pinTab: (id: string) => void;
+    unpinTab: (id: string) => void;
     activateInstance: (id: string, page?: string) => void;
     closeInstancesOfView: (view: ViewId) => void;
     closeRecord: (view: ViewId, id: string) => void;
@@ -138,6 +145,20 @@ export function createInstances(
         const page = access.holding(id);
         if (page === null) return;
         access.change((tree) => keepInstance(tree, id), page.id);
+    }
+
+    /** Pin a tab: it joins its pane's pinned run, and a preview tab it was stops being one. */
+    function pinTab(id: string): void {
+        const host = access.holding(id);
+        if (host === null) return;
+        access.change((tree) => pinInTree(tree, id), host.id);
+    }
+
+    /** Take a tab's pin off: it becomes the first unpinned tab of its pane. */
+    function unpinTab(id: string): void {
+        const host = access.holding(id);
+        if (host === null) return;
+        access.change((tree) => unpinInTree(tree, id), host.id);
     }
 
     /**
@@ -342,6 +363,8 @@ export function createInstances(
         pinInstance,
         unpinInstance,
         keepPreview,
+        pinTab,
+        unpinTab,
         activateInstance,
         closeInstancesOfView,
         closeRecord,

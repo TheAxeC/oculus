@@ -10,6 +10,7 @@
 // node, where DOMPurify has no document and ui/html.ts hands the text back, which its own head
 // comment says; the filtering needs a DOM and is not run here.
 
+import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Code from '../../../src/lib/views/shared/prose/Code.svelte';
@@ -35,7 +36,9 @@ import {
 import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
-import { barOf, headerOf, toolsOf } from '../shared/pane-parts.ts';
+import { toolsOf } from '../shared/pane-parts.ts';
+import SnippetProbe from '../shared/SnippetProbe.svelte';
+import { TAB_ACTIONS, TabActions } from '../../../src/lib/ui/tabs/tab-actions.svelte.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -76,6 +79,20 @@ beforeEach(() => loadUi({ getItem: () => null, setItem: noop }));
 afterEach(() => vi.unstubAllGlobals());
 
 const actions = { oninput: noop };
+
+/** Source drawn in a pane's strip context: its body, and the markup of the actions it handed up. */
+function drawn(instance: { id: string; view: string; state: unknown }): {
+    body: string;
+    strip: string;
+} {
+    const held = new TabActions();
+    const context = new Map([...clientContext(client), [TAB_ACTIONS, held]]);
+    const body = render(Source, { context, props: { instance } }).body;
+    const snippet = held.of(instance.id);
+    const strip =
+        snippet === undefined ? '' : render(SnippetProbe, { context, props: { snippet } }).body;
+    return { body, strip };
+}
 
 describe('the source editor', () => {
     it('restores the working and saved copies when Source is rendered again after another tab', async () => {
@@ -134,12 +151,9 @@ describe('the source editor', () => {
         };
         await loadSourceDraft(instance.id, 'hub', 'notes.md');
         await saveSourceDraft(instance.id, 'hub', 'notes.md');
-        const editable = render(Source, {
-            context: clientContext(client),
-            props: { instance }
-        }).body;
+        const { body: editable, strip } = drawn(instance);
         expect(editable).toContain('data-editor-host');
-        expect(editable).toContain(`>${catalog['editor.save']}</span>`);
+        expect(strip).toContain(`aria-label="${catalog['editor.save']}"`);
         expect(editable).toContain(catalog['source.saved']);
     });
 
@@ -181,11 +195,8 @@ describe('the source editor', () => {
             state: sourceTabState('hub', 'notes.md')
         };
         const message = (): string => {
-            const body = render(Source, {
-                context: clientContext(client),
-                props: { instance }
-            }).body;
-            // The message is the last thing on the pane's bar, so it runs to the bar's end.
+            const { body } = drawn(instance);
+            // The message is its own line under the editor, so it runs to the line's end.
             const from = body.indexOf('class="message');
             return from === -1 ? '' : body.slice(from, body.indexOf('</div>', from));
         };
@@ -205,7 +216,8 @@ describe('the source editor', () => {
         expect(saved).not.toContain('data-glyph="cross"');
     });
 
-    it('puts Save, Revert and the star in the header as bare icons, and Preview and the saved word in the bar', async () => {
+    // Revert: draw Save, Revert, the star and Preview in the view's own header and bar.
+    it('hands the strip Save, Revert, the star and Preview, and draws no header and no bar', async () => {
         vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
             Promise.resolve(
                 new Response(init === undefined ? '# notes' : JSON.stringify({ ok: true }))
@@ -219,33 +231,32 @@ describe('the source editor', () => {
         };
         await loadSourceDraft(instance.id, 'hub', 'notes.md');
         await saveSourceDraft(instance.id, 'hub', 'notes.md');
-        const body = render(Source, { context: clientContext(client), props: { instance } }).body;
-        const header = headerOf(body);
-        const bar = barOf(body);
+        const { body, strip } = drawn(instance);
 
-        const tools = toolsOf(header);
+        const tools = toolsOf(strip);
         expect(tools.length).toBe(3);
         for (const tool of tools) expect(tool).toMatch(/\bbare\b/);
         expect(tools[0]).toContain(`aria-label="${catalog['editor.save']}"`);
         expect(tools[1]).toContain(`aria-label="${catalog['editor.revert']}"`);
         expect(tools[2]).toContain(`aria-label="${catalog['file.bookmark']}"`);
-        expect(header).toContain(`data-glyph="${catalog['editor.revert_glyph']}"`);
+        expect(strip).toContain(`data-glyph="${catalog['editor.revert_glyph']}"`);
         // an icon action carries its words as the name and draws none beside the icon
-        expect(header).not.toContain('<span class="label">');
-
-        // the toggle is a pressable chip and the saved word ends the bar; the star is the header's
-        const preview = bar.indexOf(`>${catalog['source.preview']}</span>`);
-        expect(bar).toMatch(
+        expect(tools[0]).not.toContain('class="label');
+        // the toggle is a pressable chip after the icons
+        const preview = strip.indexOf(`>${catalog['source.preview']}</span>`);
+        expect(strip).toMatch(
             /<button[^>]*class="chip[^"]*pressable[^"]*"[^>]*aria-pressed="(true|false)"/
         );
-        expect(preview).toBeGreaterThan(-1);
-        // the bookmark star is a header icon, so the bar does not repeat it
-        expect(bar).not.toContain(catalog['file.bookmark']);
-        expect(bar.indexOf(catalog['source.saved'])).toBeGreaterThan(preview);
-        // Save is a header icon, so no word of it sits in the bar
-        expect(bar).not.toContain(`>${catalog['editor.save']}</span>`);
-        // the header and the bar are the two rows of controls: the body under them holds none
-        expect(body.split('role="toolbar"').length - 1).toBe(2);
+        expect(preview).toBeGreaterThan(strip.indexOf(catalog['file.bookmark']));
+
+        // The view itself draws no title row, no second row and no control of its own;
+        // the saved word is a line under the editor.
+        expect(body).not.toContain('<header');
+        // the file buttons moved to the strip's end, so no second row is left under the header
+        expect(body).not.toContain('viewbar');
+        // the editor holds no toolbar of its own, since the strip carries every control
+        expect(body).not.toContain('role="toolbar"');
+        expect(body).toContain(catalog['source.saved']);
     });
 
     it('draws the Preview chip pressed while the rendered half is shown and not pressed after it is taken away', async () => {
@@ -257,12 +268,8 @@ describe('the source editor', () => {
         };
         await loadSourceDraft(instance.id, 'hub', 'notes.md');
         const pressedWhile = (): string => {
-            const body = render(Source, {
-                context: clientContext(client),
-                props: { instance }
-            }).body;
-            const chip =
-                /<button[^>]*class="chip[^"]*pressable[^"]*"[^>]*>/.exec(barOf(body))?.[0] ?? '';
+            const { strip } = drawn(instance);
+            const chip = /<button[^>]*class="chip[^"]*pressable[^"]*"[^>]*>/.exec(strip)?.[0] ?? '';
             return /aria-pressed="(true|false)"/.exec(chip)?.[1] ?? 'none';
         };
         const before = (instanceState(instance.id) as { rendered: boolean }).rendered;
@@ -302,18 +309,13 @@ describe('the source editor', () => {
         expect(body).not.toContain(`<span class="label">${catalog['source.retry']}</span>`);
     });
 
-    it('carries the program control in its header for a listed .rtf, and none for a Markdown file', () => {
+    it('hands the strip the program control for a listed .rtf, and none for a Markdown file', () => {
         const tab = (path: string): string =>
-            render(Source, {
-                context: clientContext(client),
-                props: {
-                    instance: {
-                        id: `source-${path}`,
-                        view: 'source',
-                        state: sourceTabState('hub', path)
-                    }
-                }
-            }).body;
+            drawn({
+                id: `source-${path}`,
+                view: 'source',
+                state: sourceTabState('hub', path)
+            }).strip;
         const words = `aria-label="${catalog['file.open_program']}"`;
         expect(tab('letters/cover.rtf')).toContain(words);
         // a .md is read in the tab itself, so it is offered no program control
@@ -416,11 +418,21 @@ describe('the source editor', () => {
     });
 
     it('draws the rendered half beside a Markdown file and nothing beside a YAML one', () => {
-        const drawn = (path: string): string =>
+        const drawn = (path: string, rendered = true): string =>
             render(Editor, {
                 context: clientContext(client),
-                props: { path, text: '# A heading\n\ntext of it\n', ...actions }
+                props: { path, text: '# A heading\n\ntext of it\n', rendered, ...actions }
             }).body;
+
+        // Revert: default the editor's `rendered` prop to true.
+        const plain = render(Editor, {
+            context: clientContext(client),
+            props: { path: 'notes.md', text: '# A heading\n', ...actions }
+        }).body;
+        // the rendered half is off by default, so an editor given no flag draws no preview
+        expect(plain).not.toContain('data-source-preview');
+        // the flag is passed false here, which is the plain form the editor opens in
+        expect(drawn('notes.md', false)).not.toContain('data-source-preview');
 
         const markdown = drawn('notes.md');
         expect(markdown).toContain('data-source-preview="notes.md"');
@@ -437,6 +449,7 @@ describe('the source editor', () => {
             props: {
                 path: 'PRESENT.md',
                 text: '---\ntitle: A deck\nlevel: 2\n---\n\n# Prose\n\n![fig](figures/a.png)\n',
+                rendered: true,
                 ...actions
             }
         }).body;
@@ -447,6 +460,29 @@ describe('the source editor', () => {
         // and no rule where the front matter ended
         expect(preview).not.toContain('<hr');
         expect(preview).toContain('src="figures/a.png"');
+    });
+
+    // Revert: read a missing `rendered` as true in source.svelte.ts's draftShape.
+    it('opens a Markdown file as source, with the rendered half off until it is turned on', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(() => Promise.resolve(new Response('# A heading\n')))
+        );
+        const instance = {
+            id: 'source-default',
+            view: 'source',
+            state: sourceTabState('hub', 'notes.md')
+        };
+        await loadSourceDraft(instance.id, 'hub', 'notes.md');
+        expect(instanceState(instance.id)).toMatchObject({ rendered: false });
+        const opened = render(Source, { context: clientContext(client), props: { instance } }).body;
+        expect(opened).toContain('data-editor-host');
+        // a markdown tab opens in its plain form until the Preview chip is pressed
+        expect(opened).not.toContain('data-source-preview');
+
+        toggleSourceRendered(instance.id);
+        const turned = render(Source, { context: clientContext(client), props: { instance } }).body;
+        expect(turned).toContain('data-source-preview="notes.md"');
     });
 
     it('takes the rendered half away when the instance state says the toggle is off', async () => {
@@ -460,15 +496,16 @@ describe('the source editor', () => {
             state: sourceTabState('hub', 'notes.md')
         };
         await loadSourceDraft(instance.id, 'hub', 'notes.md');
+        toggleSourceRendered(instance.id);
         const shown = render(Source, { context: clientContext(client), props: { instance } }).body;
         expect(shown).toContain('<h1 id="user-content-a-heading">A heading</h1>');
 
         toggleSourceRendered(instance.id);
         expect(instanceState(instance.id)).toMatchObject({ rendered: false });
-        const hidden = render(Source, { context: clientContext(client), props: { instance } }).body;
+        const { body: hidden, strip } = drawn(instance);
         // the instance was toggled to the plain form, so the preview is not drawn
         expect(hidden).not.toContain('data-source-preview');
-        expect(hidden).toContain(catalog['source.preview']);
+        expect(strip).toContain(catalog['source.preview']);
     });
 });
 
@@ -551,7 +588,7 @@ describe('a file the source tab may not write', () => {
         const body = render(Source, { context: clientContext(client), props: { instance } }).body;
 
         expect(body).toContain('data-source-editor="notes.md"');
-        expect(body).toContain(`>${catalog['editor.save']}</span>`);
+        expect(body).toContain('data-editor-writable="true"');
         // the mode leaves the file writable, so the read-only sentence is not drawn
         expect(body).not.toContain(catalog['source.readonly']);
     });
@@ -738,6 +775,17 @@ describe('the languages a research tree asks for', () => {
         const svelte = '<p class="a">{x}</p>';
         expect(fenced('svelte', svelte).replace('language-svelte', 'language-html')).toBe(
             fenced('html', svelte)
+        );
+    });
+});
+
+describe("the Markdown row's handle", () => {
+    // Revert: pass a lower bound than EDITOR_LEAST to draggedShare, or set EDITOR_LEAST under 0.5.
+    it('audits that the editor keeps at least half the row beside the rendered half', () => {
+        const source = readFileSync('src/lib/views/sources/source/Editor.svelte', 'utf8');
+        expect(source).toMatch(/const EDITOR_LEAST = 0\.5;/);
+        expect(source).toMatch(
+            /draggedShare\(\s*share,\s*delta,[\s\S]*?EDITOR_LEAST,\s*EDITOR_MOST\s*\)/
         );
     });
 });

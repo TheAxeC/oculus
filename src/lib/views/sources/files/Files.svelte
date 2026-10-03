@@ -66,7 +66,6 @@
     // and says so) and scrolls it into view.
 
     import { untrack } from 'svelte';
-    import Breadcrumb from '$lib/ui/tabs/Breadcrumb.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
@@ -87,14 +86,12 @@
     import { sectionOpen } from '$lib/state/sources/explorer/sections/section-state';
     import type { Entry } from '$lib/state/boards/collection';
     import {
-        crumbsOf,
         filesViewOf,
         followView,
         followedDirOf,
         formsOf,
         markSchemaFor,
         rootedView,
-        rowKey,
         type RowRef
     } from '$lib/state/sources/fs';
     import { bookmarkById, rootKeysOf } from '$lib/state/sources/fs-transport';
@@ -147,7 +144,7 @@
         following: () => follow.following
     });
     const { tab, marking } = tree;
-    const { patch, patchAt, answerAt, selectRow, flip, toggleSection } = tab;
+    const { patch, patchAt, answerAt, flip, toggleSection } = tab;
 
     /** Add the folder Open Folder found outside every root, and drop the line that offered it. */
     async function addOutside(dir: string): Promise<void> {
@@ -156,11 +153,6 @@
         answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
         if (answer.ok) patchAt(owner, { outside: '' });
     }
-
-    /** The selection's path, while the tree on screen draws the root it is under. */
-    const crumbs = $derived(
-        shownRoots.some((root) => root.key === view.selected?.root) ? crumbsOf(view.selected) : []
-    );
     /** The root keys an ask to show a path is answered against, and null until they are read. */
     const rootKeys = $derived(rootKeysOf(saved));
     /** Whether the roots show under the workspace header. */
@@ -278,16 +270,6 @@
             rows={tree.shown}
             onpatch={patchAt}
         />
-        {#if crumbs.length > 0}
-            <Breadcrumb
-                label={t('files.breadcrumb')}
-                segments={crumbs.map((one) => ({ id: rowKey(one.row), label: one.label }))}
-                onselect={(id: string) => {
-                    const found = crumbs.find((one) => rowKey(one.row) === id);
-                    if (found !== undefined) selectRow(found.row);
-                }}
-            />
-        {/if}
         <Follow owner={instance.id} {follow} />
         {#if saved.error !== ''}
             <Empty error message={t('files.read_failed', saved.error)} />

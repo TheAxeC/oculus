@@ -1,37 +1,37 @@
-<svg width="833pt" height="2121pt"
- viewBox="0.00 0.00 833.00 2121.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="833pt" height="2172pt"
+ viewBox="0.00 0.00 833.00 2172.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <style>svg { color: #333333; } @media (prefers-color-scheme: dark) { svg { color: #cccccc; background: #1e1e1e; } }</style>
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 2117)">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 2168)">
 <title>channels</title>
 <g id="clust1" class="cluster">
 <title>cluster_publish server/accounts</title>
-<polygon fill="none" stroke="currentColor" points="13.83,-392 13.83,-488 164.28,-488 164.28,-392 13.83,-392"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-473.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">server/accounts</text>
+<polygon fill="none" stroke="currentColor" points="13.83,-413 13.83,-509 164.28,-509 164.28,-413 13.83,-413"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-494.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">server/accounts</text>
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_publish server/machine</title>
-<polygon fill="none" stroke="currentColor" points="8,-708 8,-876 170.11,-876 170.11,-708 8,-708"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-861.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">server/machine</text>
+<polygon fill="none" stroke="currentColor" points="8,-835 8,-1003 170.11,-1003 170.11,-835 8,-835"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-988.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">server/machine</text>
 </g>
 <g id="clust3" class="cluster">
 <title>cluster_publish server/root</title>
-<polygon fill="none" stroke="currentColor" points="13.82,-496 13.82,-700 164.29,-700 164.29,-496 13.82,-496"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-685.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">server/root</text>
+<polygon fill="none" stroke="currentColor" points="13.82,-517 13.82,-721 164.29,-721 164.29,-517 13.82,-517"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-706.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">server/root</text>
 </g>
 <g id="clust4" class="cluster">
 <title>cluster_channels</title>
-<polygon fill="none" stroke="currentColor" points="332.84,-266 332.84,-993 449.46,-993 449.46,-266 332.84,-266"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-978.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">channels</text>
+<polygon fill="none" stroke="currentColor" points="332.84,-281 332.84,-1008 449.46,-1008 449.46,-281 332.84,-281"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-993.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">channels</text>
 </g>
 <g id="clust5" class="cluster">
 <title>cluster_lost</title>
-<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="190.11,-1001 190.11,-2105 592.18,-2105 592.18,-1001 190.11,-1001"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-2090.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">not placed</text>
+<polygon fill="none" stroke="currentColor" stroke-dasharray="5,2" points="190.11,-1016 190.11,-2156 592.18,-2156 592.18,-1016 190.11,-1016"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-2141.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">not placed</text>
 </g>
 <g id="clust6" class="cluster">
 <title>cluster_read state</title>
-<polygon fill="none" stroke="currentColor" points="612.18,-684 612.18,-1716 816.52,-1716 816.52,-684 612.18,-684"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1701.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">state</text>
+<polygon fill="none" stroke="currentColor" points="612.18,-684 612.18,-1752 816.52,-1752 816.52,-684 612.18,-684"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1737.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">state</text>
 </g>
 <g id="clust7" class="cluster">
 <title>cluster_read views</title>
@@ -39,6 +39,11 @@
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-661.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">views</text>
 </g>
 <g id="clust8" class="cluster">
+<title>cluster_read shell</title>
+<polygon fill="none" stroke="currentColor" points="653.55,-2096 653.55,-2156 775.14,-2156 775.14,-2096 653.55,-2096"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-2141.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">shell</text>
+</g>
+<g id="clust9" class="cluster">
 <title>cluster_read routes</title>
 <polygon fill="none" stroke="currentColor" points="671.84,-8 671.84,-68 756.86,-68 756.86,-8 671.84,-8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-53.2" font-family="Helvetica,Arial,sans-serif" font-size="12.00">routes</text>
@@ -46,1364 +51,1388 @@
 <!-- server/accounts/calendar/poll -->
 <g id="node1" class="node">
 <title>server/accounts/calendar/poll</title>
-<polygon fill="none" stroke="currentColor" points="156.28,-457.8 21.83,-457.8 21.83,-436.2 156.28,-436.2 156.28,-457.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-444" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/accounts/calendar/poll</text>
+<polygon fill="none" stroke="currentColor" points="156.28,-478.8 21.83,-478.8 21.83,-457.2 156.28,-457.2 156.28,-478.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-465" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/accounts/calendar/poll</text>
 </g>
 <!-- ch calendar -->
 <g id="node13" class="node">
 <title>ch calendar</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-677" rx="36.16" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-674" font-family="Helvetica,Arial,sans-serif" font-size="10.00">calendar</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-692" rx="36.16" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-689" font-family="Helvetica,Arial,sans-serif" font-size="10.00">calendar</text>
 </g>
 <!-- server/accounts/calendar/poll&#45;&gt;ch calendar -->
-<g id="edge108" class="edge">
+<g id="edge109" class="edge">
 <title>server/accounts/calendar/poll&#45;&gt;ch calendar</title>
-<path fill="none" stroke="currentColor" d="M124.02,-458.21C140.63,-465.48 159.31,-476.7 170.11,-493 210.9,-554.59 137.21,-606.45 190.11,-658 233.19,-699.97 308.97,-694.03 353.87,-685.67"/>
-<polygon fill="currentColor" stroke="currentColor" points="354.1,-687.77 359.58,-684.55 353.29,-683.65 354.1,-687.77"/>
+<path fill="none" stroke="currentColor" d="M123.99,-479.23C140.59,-486.51 159.28,-497.72 170.11,-514 209.57,-573.29 138.99,-623.41 190.11,-673 233.28,-714.87 309.03,-708.97 353.9,-700.64"/>
+<polygon fill="currentColor" stroke="currentColor" points="354.12,-702.74 359.61,-699.53 353.31,-698.62 354.12,-702.74"/>
 </g>
 <!-- server/accounts/mail/poll -->
 <g id="node2" class="node">
 <title>server/accounts/mail/poll</title>
-<polygon fill="none" stroke="currentColor" points="148.24,-421.8 29.88,-421.8 29.88,-400.2 148.24,-400.2 148.24,-421.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-408" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/accounts/mail/poll</text>
+<polygon fill="none" stroke="currentColor" points="148.24,-442.8 29.88,-442.8 29.88,-421.2 148.24,-421.2 148.24,-442.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-429" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/accounts/mail/poll</text>
 </g>
 <!-- ch inbox -->
 <g id="node21" class="node">
 <title>ch inbox</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-638" rx="28.33" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-635" font-family="Helvetica,Arial,sans-serif" font-size="10.00">inbox</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-653" rx="28.33" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-650" font-family="Helvetica,Arial,sans-serif" font-size="10.00">inbox</text>
 </g>
 <!-- server/accounts/mail/poll&#45;&gt;ch inbox -->
-<g id="edge109" class="edge">
+<g id="edge110" class="edge">
 <title>server/accounts/mail/poll&#45;&gt;ch inbox</title>
-<path fill="none" stroke="currentColor" d="M148.59,-415.12C156.77,-418.09 164.34,-422.51 170.11,-429 198.34,-460.71 159.94,-589.13 190.11,-619 234.53,-662.96 314.73,-654.7 358.89,-645.78"/>
-<polygon fill="currentColor" stroke="currentColor" points="359.26,-647.85 364.7,-644.55 358.39,-643.74 359.26,-647.85"/>
+<path fill="none" stroke="currentColor" d="M148.57,-436.14C156.75,-439.1 164.32,-443.52 170.11,-450 197.51,-480.68 160.83,-605.11 190.11,-634 234.6,-677.89 314.77,-669.66 358.91,-660.76"/>
+<polygon fill="currentColor" stroke="currentColor" points="359.28,-662.83 364.71,-659.53 358.41,-658.72 359.28,-662.83"/>
 </g>
 <!-- server/machine/hpc/poll -->
 <g id="node3" class="node">
 <title>server/machine/hpc/poll</title>
-<polygon fill="none" stroke="currentColor" points="146.01,-773.8 32.1,-773.8 32.1,-752.2 146.01,-752.2 146.01,-773.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-760" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/machine/hpc/poll</text>
+<polygon fill="none" stroke="currentColor" points="146.01,-900.8 32.1,-900.8 32.1,-879.2 146.01,-879.2 146.01,-900.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-887" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/machine/hpc/poll</text>
 </g>
 <!-- ch hpc -->
 <g id="node20" class="node">
 <title>ch hpc</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-482" rx="27" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-479" font-family="Helvetica,Arial,sans-serif" font-size="10.00">hpc</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-497" rx="27" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-494" font-family="Helvetica,Arial,sans-serif" font-size="10.00">hpc</text>
 </g>
 <!-- server/machine/hpc/poll&#45;&gt;ch hpc -->
-<g id="edge110" class="edge">
+<g id="edge111" class="edge">
 <title>server/machine/hpc/poll&#45;&gt;ch hpc</title>
-<path fill="none" stroke="currentColor" d="M146.29,-759.83C155.38,-756.87 163.85,-752.2 170.11,-745 205.81,-703.95 151.89,-539.72 190.11,-501 234.36,-456.18 315.7,-465.13 359.8,-474.3"/>
-<polygon fill="currentColor" stroke="currentColor" points="359.27,-476.33 365.58,-475.56 360.17,-472.23 359.27,-476.33"/>
+<path fill="none" stroke="currentColor" d="M146.44,-886.96C155.52,-883.99 163.94,-879.28 170.11,-872 221.33,-811.54 135.18,-573.1 190.11,-516 233.9,-470.49 315.78,-479.84 359.99,-489.23"/>
+<polygon fill="currentColor" stroke="currentColor" points="359.48,-491.26 365.79,-490.51 360.39,-487.16 359.48,-491.26"/>
 </g>
 <!-- server/machine/processes/watch -->
 <g id="node4" class="node">
 <title>server/machine/processes/watch</title>
-<polygon fill="none" stroke="currentColor" points="162.11,-845.8 16,-845.8 16,-824.2 162.11,-824.2 162.11,-845.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-832" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/machine/processes/watch</text>
+<polygon fill="none" stroke="currentColor" points="162.11,-972.8 16,-972.8 16,-951.2 162.11,-951.2 162.11,-972.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-959" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/machine/processes/watch</text>
 </g>
 <!-- ? src/lib/server/machine/processes/watch.ts:63 -->
 <g id="node30" class="node">
 <title>? src/lib/server/machine/processes/watch.ts:63</title>
-<polygon fill="none" stroke="currentColor" points="532.26,-1030.8 250.04,-1030.8 250.04,-1009.2 532.26,-1009.2 532.26,-1030.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1017" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)</text>
+<polygon fill="none" stroke="currentColor" points="532.26,-1081.8 250.04,-1081.8 250.04,-1060.2 532.26,-1060.2 532.26,-1081.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1068" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)</text>
 </g>
 <!-- server/machine/processes/watch&#45;&gt;? src/lib/server/machine/processes/watch.ts:63 -->
-<g id="edge111" class="edge">
+<g id="edge112" class="edge">
 <title>server/machine/processes/watch&#45;&gt;? src/lib/server/machine/processes/watch.ts:63</title>
-<path fill="none" stroke="currentColor" d="M93.2,-845.98C102.41,-875.93 132.38,-959.23 190.11,-996 206.01,-1006.12 224.08,-1013.05 242.7,-1017.67"/>
-<polygon fill="currentColor" stroke="currentColor" points="241.78,-1019.62 248.1,-1018.93 242.74,-1015.53 241.78,-1019.62"/>
+<path fill="none" stroke="currentColor" d="M98.19,-973.13C113.56,-993.19 149.05,-1034.96 190.11,-1053 206.53,-1060.21 224.42,-1065.25 242.54,-1068.7"/>
+<polygon fill="currentColor" stroke="currentColor" points="241.99,-1070.74 248.27,-1069.73 242.73,-1066.6 241.99,-1070.74"/>
 </g>
 <!-- ? src/lib/server/machine/processes/watch.ts:67 -->
 <g id="node31" class="node">
 <title>? src/lib/server/machine/processes/watch.ts:67</title>
-<polygon fill="none" stroke="currentColor" points="532.26,-1066.8 250.04,-1066.8 250.04,-1045.2 532.26,-1045.2 532.26,-1066.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1053" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)</text>
+<polygon fill="none" stroke="currentColor" points="532.26,-1045.8 250.04,-1045.8 250.04,-1024.2 532.26,-1024.2 532.26,-1045.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1032" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)</text>
 </g>
 <!-- server/machine/processes/watch&#45;&gt;? src/lib/server/machine/processes/watch.ts:67 -->
-<g id="edge112" class="edge">
+<g id="edge113" class="edge">
 <title>server/machine/processes/watch&#45;&gt;? src/lib/server/machine/processes/watch.ts:67</title>
-<path fill="none" stroke="currentColor" d="M91.74,-846.25C97.66,-881.56 121.1,-990.65 190.11,-1038 205.8,-1048.76 223.88,-1055.75 242.63,-1060.09"/>
-<polygon fill="currentColor" stroke="currentColor" points="241.78,-1062.06 248.08,-1061.26 242.65,-1057.95 241.78,-1062.06"/>
+<path fill="none" stroke="currentColor" d="M108.11,-973.16C127.58,-984.64 159.88,-1002.06 190.11,-1011 206.84,-1015.95 224.65,-1019.87 242.47,-1023"/>
+<polygon fill="currentColor" stroke="currentColor" points="241.81,-1025.01 248.08,-1023.94 242.51,-1020.87 241.81,-1025.01"/>
 </g>
 <!-- server/machine/pty/channel -->
 <g id="node5" class="node">
 <title>server/machine/pty/channel</title>
-<polygon fill="none" stroke="currentColor" points="152.95,-809.8 25.16,-809.8 25.16,-788.2 152.95,-788.2 152.95,-809.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-796" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/machine/pty/channel</text>
+<polygon fill="none" stroke="currentColor" points="152.95,-936.8 25.16,-936.8 25.16,-915.2 152.95,-915.2 152.95,-936.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-923" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/machine/pty/channel</text>
 </g>
 <!-- ch pty:* -->
 <g id="node26" class="node">
 <title>ch pty:*</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-755" rx="27" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-752" font-family="Helvetica,Arial,sans-serif" font-size="10.00">pty:*</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-926" rx="27" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-923" font-family="Helvetica,Arial,sans-serif" font-size="10.00">pty:*</text>
 </g>
 <!-- server/machine/pty/channel&#45;&gt;ch pty:* -->
-<g id="edge113" class="edge">
+<g id="edge114" class="edge">
 <title>server/machine/pty/channel&#45;&gt;ch pty:*</title>
-<path fill="none" stroke="currentColor" d="M144.1,-787.74C152.84,-785.67 161.76,-783.39 170.11,-781 179.17,-778.41 180.91,-776.02 190.11,-774 247.86,-761.35 316.8,-757.12 356.82,-755.71"/>
-<polygon fill="currentColor" stroke="currentColor" points="356.5,-757.82 362.43,-755.53 356.37,-753.62 356.5,-757.82"/>
+<path fill="none" stroke="currentColor" d="M153.33,-926C215.19,-926 307.04,-926 356.19,-926"/>
+<polygon fill="currentColor" stroke="currentColor" points="356.19,-928.1 362.19,-926 356.19,-923.9 356.19,-928.1"/>
 </g>
 <!-- server/machine/usage/watch -->
 <g id="node6" class="node">
 <title>server/machine/usage/watch</title>
-<polygon fill="none" stroke="currentColor" points="154.34,-737.8 23.78,-737.8 23.78,-716.2 154.34,-716.2 154.34,-737.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-724" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/machine/usage/watch</text>
+<polygon fill="none" stroke="currentColor" points="154.34,-864.8 23.78,-864.8 23.78,-843.2 154.34,-843.2 154.34,-864.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-851" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/machine/usage/watch</text>
 </g>
 <!-- ch usage -->
 <g id="node29" class="node">
 <title>ch usage</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-404" rx="28.32" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-401" font-family="Helvetica,Arial,sans-serif" font-size="10.00">usage</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-380" rx="28.32" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-377" font-family="Helvetica,Arial,sans-serif" font-size="10.00">usage</text>
 </g>
 <!-- server/machine/usage/watch&#45;&gt;ch usage -->
-<g id="edge114" class="edge">
+<g id="edge115" class="edge">
 <title>server/machine/usage/watch&#45;&gt;ch usage</title>
-<path fill="none" stroke="currentColor" d="M154.48,-715.77C160.45,-712.5 165.85,-708.32 170.11,-703 209.12,-654.32 146.52,-467.62 190.11,-423 233.9,-378.18 314.71,-386.9 359.04,-396.09"/>
-<polygon fill="currentColor" stroke="currentColor" points="358.56,-398.14 364.87,-397.36 359.46,-394.03 358.56,-398.14"/>
+<path fill="none" stroke="currentColor" d="M99.68,-842.78C117.4,-821.38 154.75,-772.52 170.11,-724 181.04,-689.51 164.96,-425 190.11,-399 233.68,-353.97 314.58,-362.77 358.98,-372.04"/>
+<polygon fill="currentColor" stroke="currentColor" points="358.52,-374.08 364.83,-373.31 359.41,-369.98 358.52,-374.08"/>
 </g>
 <!-- server/root/hooks -->
 <g id="node7" class="node">
 <title>server/root/hooks</title>
-<polygon fill="none" stroke="currentColor" points="132.69,-597.8 45.42,-597.8 45.42,-576.2 132.69,-576.2 132.69,-597.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-584" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/root/hooks</text>
+<polygon fill="none" stroke="currentColor" points="132.69,-546.8 45.42,-546.8 45.42,-525.2 132.69,-525.2 132.69,-546.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-533" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/root/hooks</text>
 </g>
 <!-- ch sessions -->
 <g id="node27" class="node">
 <title>ch sessions</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-521" rx="35.4" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-518" font-family="Helvetica,Arial,sans-serif" font-size="10.00">sessions</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-536" rx="35.4" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-533" font-family="Helvetica,Arial,sans-serif" font-size="10.00">sessions</text>
 </g>
 <!-- server/root/hooks&#45;&gt;ch sessions -->
-<g id="edge115" class="edge">
+<g id="edge116" class="edge">
 <title>server/root/hooks&#45;&gt;ch sessions</title>
-<path fill="none" stroke="currentColor" d="M133.16,-583.34C145.86,-580.72 159.25,-576.34 170.11,-569 183.09,-560.24 176.61,-547.93 190.11,-540 239.49,-511.01 307.79,-511.38 350.44,-515.39"/>
-<polygon fill="currentColor" stroke="currentColor" points="350.15,-517.47 356.33,-515.99 350.57,-513.29 350.15,-517.47"/>
+<path fill="none" stroke="currentColor" d="M133.05,-536C190.44,-536 291.42,-536 348.25,-536"/>
+<polygon fill="currentColor" stroke="currentColor" points="348.11,-538.1 354.11,-536 348.11,-533.9 348.11,-538.1"/>
 </g>
 <!-- server/root/watch/bookmarks -->
 <g id="node8" class="node">
 <title>server/root/watch/bookmarks</title>
-<polygon fill="none" stroke="currentColor" points="156.29,-669.8 21.82,-669.8 21.82,-648.2 156.29,-648.2 156.29,-669.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-656" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/root/watch/bookmarks</text>
+<polygon fill="none" stroke="currentColor" points="156.29,-690.8 21.82,-690.8 21.82,-669.2 156.29,-669.2 156.29,-690.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-677" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/root/watch/bookmarks</text>
 </g>
 <!-- ch files -->
 <g id="node18" class="node">
 <title>ch files</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-716" rx="27" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-713" font-family="Helvetica,Arial,sans-serif" font-size="10.00">files</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-731" rx="27" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-728" font-family="Helvetica,Arial,sans-serif" font-size="10.00">files</text>
 </g>
 <!-- server/root/watch/bookmarks&#45;&gt;ch files -->
-<g id="edge116" class="edge">
+<g id="edge117" class="edge">
 <title>server/root/watch/bookmarks&#45;&gt;ch files</title>
-<path fill="none" stroke="currentColor" d="M114.15,-670.25C134.07,-679.04 163.33,-690.76 190.11,-697 247.69,-710.41 316.68,-714.39 356.76,-715.55"/>
-<polygon fill="currentColor" stroke="currentColor" points="356.33,-717.64 362.38,-715.7 356.44,-713.44 356.33,-717.64"/>
+<path fill="none" stroke="currentColor" d="M119.38,-691.22C139.09,-698.3 165.81,-707.02 190.11,-712 248.02,-723.87 316.91,-728.35 356.87,-730.02"/>
+<polygon fill="currentColor" stroke="currentColor" points="356.4,-732.11 362.48,-730.24 356.57,-727.91 356.4,-732.11"/>
 </g>
 <!-- server/root/watch/git -->
 <g id="node9" class="node">
 <title>server/root/watch/git</title>
-<polygon fill="none" stroke="currentColor" points="139.35,-561.8 38.76,-561.8 38.76,-540.2 139.35,-540.2 139.35,-561.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-548" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/root/watch/git</text>
+<polygon fill="none" stroke="currentColor" points="139.35,-654.8 38.76,-654.8 38.76,-633.2 139.35,-633.2 139.35,-654.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-641" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/root/watch/git</text>
 </g>
 <!-- server/root/watch/git&#45;&gt;ch files -->
-<g id="edge117" class="edge">
+<g id="edge118" class="edge">
 <title>server/root/watch/git&#45;&gt;ch files</title>
-<path fill="none" stroke="currentColor" d="M139.67,-552.82C151.05,-555.56 162.13,-560.47 170.11,-569 209.46,-611.04 148.19,-657.53 190.11,-697 235.73,-739.95 315.8,-731.98 359.53,-723.41"/>
-<polygon fill="currentColor" stroke="currentColor" points="359.8,-725.49 365.26,-722.23 358.96,-721.38 359.8,-725.49"/>
+<path fill="none" stroke="currentColor" d="M139.66,-647.45C150.64,-650.19 161.55,-654.7 170.11,-662 188.33,-677.52 170.95,-697.66 190.11,-712 239.51,-748.97 316.14,-743.92 358.79,-737.27"/>
+<polygon fill="currentColor" stroke="currentColor" points="359.02,-739.36 364.6,-736.31 358.34,-735.22 359.02,-739.36"/>
 </g>
 <!-- ch git -->
 <g id="node19" class="node">
 <title>ch git</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-365" rx="27" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-362" font-family="Helvetica,Arial,sans-serif" font-size="10.00">git</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-419" rx="27" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-416" font-family="Helvetica,Arial,sans-serif" font-size="10.00">git</text>
 </g>
 <!-- server/root/watch/git&#45;&gt;ch git -->
-<g id="edge118" class="edge">
+<g id="edge119" class="edge">
 <title>server/root/watch/git&#45;&gt;ch git</title>
-<path fill="none" stroke="currentColor" d="M139.8,-549.3C151.17,-546.56 162.22,-541.61 170.11,-533 215.24,-483.73 141.96,-430.32 190.11,-384 235.39,-340.45 315.95,-348.77 359.75,-357.53"/>
-<polygon fill="currentColor" stroke="currentColor" points="359.18,-359.56 365.49,-358.74 360.05,-355.45 359.18,-359.56"/>
+<path fill="none" stroke="currentColor" d="M139.55,-642.54C151.07,-639.82 162.25,-634.83 170.11,-626 198.06,-594.63 160.24,-467.54 190.11,-438 234.78,-393.83 315.59,-402.4 359.59,-411.37"/>
+<polygon fill="currentColor" stroke="currentColor" points="359.06,-413.4 365.36,-412.6 359.94,-409.29 359.06,-413.4"/>
 </g>
 <!-- server/root/watch/portfolio -->
 <g id="node10" class="node">
 <title>server/root/watch/portfolio</title>
-<polygon fill="none" stroke="currentColor" points="151.57,-525.8 26.54,-525.8 26.54,-504.2 151.57,-504.2 151.57,-525.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-512" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/root/watch/portfolio</text>
+<polygon fill="none" stroke="currentColor" points="151.57,-618.8 26.54,-618.8 26.54,-597.2 151.57,-597.2 151.57,-618.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-605" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/root/watch/portfolio</text>
 </g>
 <!-- ch audit -->
 <g id="node12" class="node">
 <title>ch audit</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-326" rx="27" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-323" font-family="Helvetica,Arial,sans-serif" font-size="10.00">audit</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-302" rx="27" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-299" font-family="Helvetica,Arial,sans-serif" font-size="10.00">audit</text>
 </g>
 <!-- server/root/watch/portfolio&#45;&gt;ch audit -->
-<g id="edge119" class="edge">
+<g id="edge120" class="edge">
 <title>server/root/watch/portfolio&#45;&gt;ch audit</title>
-<path fill="none" stroke="currentColor" d="M151.81,-504.68C158.75,-501.29 165.11,-496.84 170.11,-491 212.7,-441.24 142.85,-390.34 190.11,-345 235.44,-301.51 315.98,-309.8 359.77,-318.55"/>
-<polygon fill="currentColor" stroke="currentColor" points="359.2,-320.57 365.5,-319.75 360.06,-316.46 359.2,-320.57"/>
+<path fill="none" stroke="currentColor" d="M151.94,-602.78C158.86,-599.84 165.18,-595.72 170.11,-590 209.27,-544.62 148.16,-363.82 190.11,-321 234.19,-276.01 315.6,-285.03 359.75,-294.26"/>
+<polygon fill="currentColor" stroke="currentColor" points="359.24,-296.29 365.55,-295.52 360.14,-292.19 359.24,-296.29"/>
 </g>
 <!-- ch config -->
 <g id="node14" class="node">
 <title>ch config</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-599" rx="30.28" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-596" font-family="Helvetica,Arial,sans-serif" font-size="10.00">config</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-614" rx="30.28" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-611" font-family="Helvetica,Arial,sans-serif" font-size="10.00">config</text>
 </g>
 <!-- server/root/watch/portfolio&#45;&gt;ch config -->
-<g id="edge120" class="edge">
+<g id="edge121" class="edge">
 <title>server/root/watch/portfolio&#45;&gt;ch config</title>
-<path fill="none" stroke="currentColor" d="M151.92,-522.51C158.51,-525.11 164.75,-528.53 170.11,-533 187.55,-547.53 171.79,-566.6 190.11,-580 238.72,-615.56 312.74,-611.8 355.79,-605.58"/>
-<polygon fill="currentColor" stroke="currentColor" points="356.09,-607.66 361.7,-604.67 355.45,-603.51 356.09,-607.66"/>
+<path fill="none" stroke="currentColor" d="M151.87,-609.24C212.58,-610.45 303.18,-612.26 353.36,-613.26"/>
+<polygon fill="currentColor" stroke="currentColor" points="353.21,-615.36 359.25,-613.38 353.29,-611.16 353.21,-615.36"/>
 </g>
 <!-- ch feeds -->
 <g id="node17" class="node">
 <title>ch feeds</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-287" rx="27.14" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-284" font-family="Helvetica,Arial,sans-serif" font-size="10.00">feeds</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-341" rx="27.14" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-338" font-family="Helvetica,Arial,sans-serif" font-size="10.00">feeds</text>
 </g>
 <!-- server/root/watch/portfolio&#45;&gt;ch feeds -->
-<g id="edge121" class="edge">
+<g id="edge122" class="edge">
 <title>server/root/watch/portfolio&#45;&gt;ch feeds</title>
-<path fill="none" stroke="currentColor" d="M151.97,-504.81C158.88,-501.41 165.2,-496.91 170.11,-491 196.55,-459.2 160.68,-335.05 190.11,-306 234.82,-261.87 315.61,-270.42 359.6,-279.38"/>
-<polygon fill="currentColor" stroke="currentColor" points="359.07,-281.41 365.37,-280.61 359.94,-277.3 359.07,-281.41"/>
+<path fill="none" stroke="currentColor" d="M151.87,-602.72C158.8,-599.79 165.14,-595.69 170.11,-590 203.87,-551.37 153.98,-396.42 190.11,-360 234.47,-315.29 315.76,-324.19 359.83,-333.33"/>
+<polygon fill="currentColor" stroke="currentColor" points="359.3,-335.36 365.61,-334.58 360.19,-331.26 359.3,-335.36"/>
 </g>
 <!-- ch portfolio -->
 <g id="node24" class="node">
 <title>ch portfolio</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-560" rx="36.96" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-557" font-family="Helvetica,Arial,sans-serif" font-size="10.00">portfolio</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-575" rx="36.96" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-572" font-family="Helvetica,Arial,sans-serif" font-size="10.00">portfolio</text>
 </g>
 <!-- server/root/watch/portfolio&#45;&gt;ch portfolio -->
-<g id="edge122" class="edge">
+<g id="edge123" class="edge">
 <title>server/root/watch/portfolio&#45;&gt;ch portfolio</title>
-<path fill="none" stroke="currentColor" d="M145.48,-526.25C153.8,-528.29 162.22,-530.55 170.11,-533 179.26,-535.84 180.81,-538.75 190.11,-541 242.94,-553.79 305.56,-558.05 346.48,-559.43"/>
-<polygon fill="currentColor" stroke="currentColor" points="346.29,-561.52 352.35,-559.6 346.42,-557.32 346.29,-561.52"/>
+<path fill="none" stroke="currentColor" d="M151.92,-598.91C164.54,-597.18 177.74,-595.45 190.11,-594 244.26,-587.64 306.84,-581.97 347.38,-578.51"/>
+<polygon fill="currentColor" stroke="currentColor" points="347.38,-580.62 353.18,-578.02 347.02,-576.43 347.38,-580.62"/>
 </g>
 <!-- server/root/watch/sessions -->
 <g id="node11" class="node">
 <title>server/root/watch/sessions</title>
-<polygon fill="none" stroke="currentColor" points="150.46,-633.8 27.65,-633.8 27.65,-612.2 150.46,-612.2 150.46,-633.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-620" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/root/watch/sessions</text>
+<polygon fill="none" stroke="currentColor" points="150.46,-582.8 27.65,-582.8 27.65,-561.2 150.46,-561.2 150.46,-582.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="89.06" y="-569" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/root/watch/sessions</text>
 </g>
 <!-- server/root/watch/sessions&#45;&gt;ch sessions -->
-<g id="edge123" class="edge">
+<g id="edge124" class="edge">
 <title>server/root/watch/sessions&#45;&gt;ch sessions</title>
-<path fill="none" stroke="currentColor" d="M150.79,-616.67C157.89,-613.9 164.57,-610.13 170.11,-605 192.3,-584.47 166.68,-559.09 190.11,-540 236.01,-502.62 308.95,-506.44 352.91,-513.27"/>
-<polygon fill="currentColor" stroke="currentColor" points="352.49,-515.33 358.75,-514.24 353.17,-511.19 352.49,-515.33"/>
+<path fill="none" stroke="currentColor" d="M150.8,-560.94C163.75,-558.79 177.36,-556.69 190.11,-555 244.81,-547.77 308.27,-542.22 348.79,-539.03"/>
+<polygon fill="currentColor" stroke="currentColor" points="348.76,-541.14 354.57,-538.59 348.43,-536.96 348.76,-541.14"/>
 </g>
 <!-- state/system/audit -->
-<g id="node74" class="node">
+<g id="node76" class="node">
 <title>state/system/audit</title>
-<polygon fill="none" stroke="currentColor" points="758.82,-749.8 669.88,-749.8 669.88,-728.2 758.82,-728.2 758.82,-749.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-736" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/audit</text>
+<polygon fill="none" stroke="currentColor" points="758.82,-713.8 669.88,-713.8 669.88,-692.2 758.82,-692.2 758.82,-713.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-700" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/audit</text>
 </g>
 <!-- ch audit&#45;&gt;state/system/audit -->
-<g id="edge30" class="edge">
+<g id="edge31" class="edge">
 <title>ch audit&#45;&gt;state/system/audit</title>
-<path fill="none" stroke="currentColor" d="M415.04,-319.83C456.94,-310.08 545.94,-296.79 592.18,-345 650.11,-405.38 556.76,-658.31 612.18,-721 624.6,-735.04 643.86,-740.59 662.26,-742.25"/>
-<polygon fill="currentColor" stroke="currentColor" points="661.89,-744.33 668.01,-742.62 662.16,-740.14 661.89,-744.33"/>
+<path fill="none" stroke="currentColor" d="M415.02,-295.84C456.91,-286.11 545.87,-272.85 592.18,-321 647.42,-378.43 561.04,-617.9 612.18,-679 624.4,-693.6 643.73,-700.25 662.24,-703.01"/>
+<polygon fill="currentColor" stroke="currentColor" points="661.83,-705.08 668.04,-703.73 662.34,-700.91 661.83,-705.08"/>
 </g>
 <!-- routes/+page -->
-<g id="node104" class="node">
+<g id="node107" class="node">
 <title>routes/+page</title>
 <polygon fill="none" stroke="currentColor" points="748.86,-37.8 679.84,-37.8 679.84,-16.2 748.86,-16.2 748.86,-37.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-24" font-family="Helvetica,Arial,sans-serif" font-size="10.00">routes/+page</text>
 </g>
 <!-- ch audit&#45;&gt;routes/+page -->
-<g id="edge29" class="edge">
+<g id="edge30" class="edge">
 <title>ch audit&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M415.22,-332.1C457.02,-341.61 545.29,-354.34 592.18,-307 628.91,-269.92 582.09,-115.64 612.18,-73 626.18,-53.17 650.84,-41.72 672.31,-35.21"/>
-<polygon fill="currentColor" stroke="currentColor" points="672.8,-37.25 678,-33.6 671.65,-33.21 672.8,-37.25"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M400.96,-290.02C428.49,-253.26 516.78,-140.54 612.18,-73 630.98,-59.69 654.23,-48.8 673.71,-40.96"/>
+<polygon fill="currentColor" stroke="currentColor" points="674.47,-42.91 679.29,-38.76 672.94,-39 674.47,-42.91"/>
 </g>
 <!-- state/life/accounts -->
-<g id="node67" class="node">
+<g id="node68" class="node">
 <title>state/life/accounts</title>
 <polygon fill="none" stroke="currentColor" points="759.09,-1289.8 669.61,-1289.8 669.61,-1268.2 759.09,-1268.2 759.09,-1289.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1276" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/life/accounts</text>
 </g>
 <!-- ch calendar&#45;&gt;state/life/accounts -->
-<g id="edge32" class="edge">
+<g id="edge33" class="edge">
 <title>ch calendar&#45;&gt;state/life/accounts</title>
-<path fill="none" stroke="currentColor" d="M420.99,-669.42C464.99,-659.79 548.4,-649.54 592.18,-696 635.26,-741.72 571,-1213.57 612.18,-1261 624.42,-1275.09 643.55,-1280.67 661.89,-1282.34"/>
-<polygon fill="currentColor" stroke="currentColor" points="661.51,-1284.42 667.63,-1282.72 661.78,-1280.23 661.51,-1284.42"/>
+<path fill="none" stroke="currentColor" d="M420.98,-684.43C464.98,-674.81 548.38,-664.56 592.18,-711 634.14,-755.48 572.07,-1214.85 612.18,-1261 624.43,-1275.09 643.56,-1280.66 661.9,-1282.34"/>
+<polygon fill="currentColor" stroke="currentColor" points="661.51,-1284.42 667.64,-1282.71 661.79,-1280.23 661.51,-1284.42"/>
 </g>
 <!-- state/life/calendar -->
-<g id="node68" class="node">
+<g id="node69" class="node">
 <title>state/life/calendar</title>
 <polygon fill="none" stroke="currentColor" points="758.52,-1325.8 670.17,-1325.8 670.17,-1304.2 758.52,-1304.2 758.52,-1325.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1312" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/life/calendar</text>
 </g>
 <!-- ch calendar&#45;&gt;state/life/calendar -->
-<g id="edge33" class="edge">
+<g id="edge34" class="edge">
 <title>ch calendar&#45;&gt;state/life/calendar</title>
-<path fill="none" stroke="currentColor" d="M420.64,-669.49C464.57,-659.82 548.33,-649.37 592.18,-696 637.95,-744.67 568.43,-1246.5 612.18,-1297 624.56,-1311.28 644.02,-1316.83 662.57,-1318.42"/>
-<polygon fill="currentColor" stroke="currentColor" points="662.27,-1320.51 668.39,-1318.77 662.52,-1316.31 662.27,-1320.51"/>
+<path fill="none" stroke="currentColor" d="M420.63,-684.49C464.56,-674.84 548.31,-664.39 592.18,-711 636.83,-758.44 569.5,-1247.78 612.18,-1297 624.56,-1311.28 644.02,-1316.82 662.58,-1318.41"/>
+<polygon fill="currentColor" stroke="currentColor" points="662.28,-1320.5 668.39,-1318.76 662.53,-1316.31 662.28,-1320.5"/>
 </g>
 <!-- ch calendar&#45;&gt;routes/+page -->
-<g id="edge31" class="edge">
+<g id="edge32" class="edge">
 <title>ch calendar&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M420.63,-684.51C464.55,-694.16 548.31,-704.61 592.18,-658 636.76,-610.64 576.05,-127.07 612.18,-73 625.76,-52.68 650.68,-41.2 672.38,-34.8"/>
-<polygon fill="currentColor" stroke="currentColor" points="672.91,-36.83 678.14,-33.22 671.79,-32.78 672.91,-36.83"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M420.64,-699.51C464.57,-709.17 548.33,-719.63 592.18,-673 637.88,-624.41 575.14,-128.48 612.18,-73 625.75,-52.67 650.67,-41.2 672.37,-34.79"/>
+<polygon fill="currentColor" stroke="currentColor" points="672.9,-36.83 678.13,-33.21 671.79,-32.78 672.9,-36.83"/>
 </g>
 <!-- state/client/context -->
-<g id="node60" class="node">
+<g id="node61" class="node">
 <title>state/client/context</title>
 <polygon fill="none" stroke="currentColor" points="760.75,-1073.8 667.95,-1073.8 667.95,-1052.2 760.75,-1052.2 760.75,-1073.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1060" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/client/context</text>
 </g>
 <!-- ch config&#45;&gt;state/client/context -->
-<g id="edge36" class="edge">
+<g id="edge37" class="edge">
 <title>ch config&#45;&gt;state/client/context</title>
-<path fill="none" stroke="currentColor" d="M417.41,-592.26C460.26,-582.53 546.93,-570.53 592.18,-618 624.95,-652.38 580.84,-1009.32 612.18,-1045 624.19,-1058.67 642.68,-1064.3 660.58,-1066.14"/>
-<polygon fill="currentColor" stroke="currentColor" points="660.02,-1068.2 666.16,-1066.56 660.33,-1064.01 660.02,-1068.2"/>
+<path fill="none" stroke="currentColor" d="M417.4,-607.27C460.24,-597.55 546.89,-585.57 592.18,-633 623.83,-666.15 581.91,-1010.59 612.18,-1045 624.2,-1058.66 642.69,-1064.29 660.6,-1066.12"/>
+<polygon fill="currentColor" stroke="currentColor" points="660.03,-1068.19 666.17,-1066.55 660.35,-1064 660.03,-1068.19"/>
 </g>
 <!-- state/client/selectors -->
-<g id="node63" class="node">
+<g id="node64" class="node">
 <title>state/client/selectors</title>
 <polygon fill="none" stroke="currentColor" points="763.53,-893.8 665.17,-893.8 665.17,-872.2 763.53,-872.2 763.53,-893.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-880" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/client/selectors</text>
 </g>
 <!-- ch config&#45;&gt;state/client/selectors -->
-<g id="edge37" class="edge">
+<g id="edge38" class="edge">
 <title>ch config&#45;&gt;state/client/selectors</title>
-<path fill="none" stroke="currentColor" d="M417.58,-592.35C460.3,-582.88 546.25,-571.43 592.18,-618 630.85,-657.21 575.14,-824.25 612.18,-865 623.68,-877.65 640.74,-883.35 657.59,-885.53"/>
-<polygon fill="currentColor" stroke="currentColor" points="657.1,-887.59 663.28,-886.11 657.52,-883.42 657.1,-887.59"/>
+<path fill="none" stroke="currentColor" d="M417.56,-607.38C460.23,-597.95 546.13,-586.55 592.18,-633 628.61,-669.75 577.28,-826.8 612.18,-865 623.71,-877.62 640.78,-883.31 657.63,-885.5"/>
+<polygon fill="currentColor" stroke="currentColor" points="657.13,-887.56 663.32,-886.08 657.56,-883.38 657.13,-887.56"/>
 </g>
 <!-- state/client/socket -->
-<g id="node64" class="node">
+<g id="node65" class="node">
 <title>state/client/socket</title>
-<polygon fill="none" stroke="currentColor" points="758.81,-1181.8 669.89,-1181.8 669.89,-1160.2 758.81,-1160.2 758.81,-1181.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1168" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/client/socket</text>
+<polygon fill="none" stroke="currentColor" points="758.81,-1145.8 669.89,-1145.8 669.89,-1124.2 758.81,-1124.2 758.81,-1145.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1132" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/client/socket</text>
 </g>
 <!-- ch config&#45;&gt;state/client/socket -->
-<g id="edge38" class="edge">
+<g id="edge39" class="edge">
 <title>ch config&#45;&gt;state/client/socket</title>
-<path fill="none" stroke="currentColor" d="M417.12,-592.29C459.92,-582.49 547.04,-570.19 592.18,-618 633.02,-661.25 573.14,-1108.12 612.18,-1153 624.48,-1167.14 643.73,-1172.7 662.14,-1174.35"/>
-<polygon fill="currentColor" stroke="currentColor" points="661.78,-1176.43 667.9,-1174.72 662.05,-1172.24 661.78,-1176.43"/>
+<path fill="none" stroke="currentColor" d="M417.44,-607.23C460.33,-597.47 547.06,-585.4 592.18,-633 629.21,-672.06 576.77,-1076.46 612.18,-1117 624.51,-1131.11 643.76,-1136.68 662.17,-1138.33"/>
+<polygon fill="currentColor" stroke="currentColor" points="661.81,-1140.41 667.93,-1138.69 662.07,-1136.22 661.81,-1140.41"/>
 </g>
 <!-- state/life/present -->
-<g id="node69" class="node">
+<g id="node70" class="node">
 <title>state/life/present</title>
 <polygon fill="none" stroke="currentColor" points="756.03,-1037.8 672.67,-1037.8 672.67,-1016.2 756.03,-1016.2 756.03,-1037.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1024" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/life/present</text>
 </g>
 <!-- ch config&#45;&gt;state/life/present -->
-<g id="edge39" class="edge">
+<g id="edge40" class="edge">
 <title>ch config&#45;&gt;state/life/present</title>
-<path fill="none" stroke="currentColor" d="M417.39,-592.28C460.21,-582.59 546.83,-570.63 592.18,-618 622.26,-649.42 583.4,-976.38 612.18,-1009 625.21,-1023.77 645.82,-1029.15 665.04,-1030.49"/>
-<polygon fill="currentColor" stroke="currentColor" points="664.72,-1032.58 670.81,-1030.75 664.91,-1028.38 664.72,-1032.58"/>
+<path fill="none" stroke="currentColor" d="M417.38,-607.29C460.18,-597.61 546.78,-585.67 592.18,-633 650.11,-693.38 556.76,-946.31 612.18,-1009 625.23,-1023.76 645.83,-1029.13 665.06,-1030.47"/>
+<polygon fill="currentColor" stroke="currentColor" points="664.74,-1032.56 670.82,-1030.73 664.92,-1028.37 664.74,-1032.56"/>
 </g>
 <!-- state/sessions/latex -->
-<g id="node70" class="node">
+<g id="node71" class="node">
 <title>state/sessions/latex</title>
-<polygon fill="none" stroke="currentColor" points="761.04,-1217.8 667.66,-1217.8 667.66,-1196.2 761.04,-1196.2 761.04,-1217.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1204" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/sessions/latex</text>
+<polygon fill="none" stroke="currentColor" points="761.04,-1109.8 667.66,-1109.8 667.66,-1088.2 761.04,-1088.2 761.04,-1109.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1096" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/sessions/latex</text>
 </g>
 <!-- ch config&#45;&gt;state/sessions/latex -->
-<g id="edge40" class="edge">
+<g id="edge41" class="edge">
 <title>ch config&#45;&gt;state/sessions/latex</title>
-<path fill="none" stroke="currentColor" d="M417.13,-592.28C459.95,-582.46 547.09,-570.14 592.18,-618 635.71,-664.21 570.57,-1141.06 612.18,-1189 624.05,-1202.68 642.42,-1208.34 660.26,-1210.19"/>
-<polygon fill="currentColor" stroke="currentColor" points="659.67,-1212.25 665.82,-1210.62 660,-1208.06 659.67,-1212.25"/>
+<path fill="none" stroke="currentColor" d="M417.42,-607.25C460.29,-597.51 546.98,-585.48 592.18,-633 626.52,-669.1 579.34,-1043.53 612.18,-1081 624.12,-1094.62 642.5,-1100.27 660.34,-1102.13"/>
+<polygon fill="currentColor" stroke="currentColor" points="659.74,-1104.19 665.88,-1102.56 660.06,-1100 659.74,-1104.19"/>
 </g>
 <!-- state/sessions/terminals -->
-<g id="node72" class="node">
+<g id="node74" class="node">
 <title>state/sessions/terminals</title>
 <polygon fill="none" stroke="currentColor" points="769.93,-1001.8 658.77,-1001.8 658.77,-980.2 769.93,-980.2 769.93,-1001.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-988" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/sessions/terminals</text>
 </g>
 <!-- ch config&#45;&gt;state/sessions/terminals -->
-<g id="edge41" class="edge">
+<g id="edge42" class="edge">
 <title>ch config&#45;&gt;state/sessions/terminals</title>
-<path fill="none" stroke="currentColor" d="M417.37,-592.31C460.14,-582.65 546.71,-570.74 592.18,-618 646.97,-674.93 559.76,-913.88 612.18,-973 622.1,-984.18 636.36,-989.97 651.06,-992.7"/>
-<polygon fill="currentColor" stroke="currentColor" points="650.56,-994.75 656.8,-993.58 651.19,-990.6 650.56,-994.75"/>
+<path fill="none" stroke="currentColor" d="M417.35,-607.32C460.11,-597.68 546.65,-585.8 592.18,-633 644.73,-687.47 561.89,-916.44 612.18,-973 622.11,-984.17 636.38,-989.96 651.08,-992.69"/>
+<polygon fill="currentColor" stroke="currentColor" points="650.57,-994.73 656.82,-993.56 651.21,-990.58 650.57,-994.73"/>
 </g>
 <!-- state/sources/search/search -->
-<g id="node73" class="node">
+<g id="node75" class="node">
 <title>state/sources/search/search</title>
-<polygon fill="none" stroke="currentColor" points="776.85,-1145.8 651.85,-1145.8 651.85,-1124.2 776.85,-1124.2 776.85,-1145.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1132" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/sources/search/search</text>
+<polygon fill="none" stroke="currentColor" points="776.85,-1181.8 651.85,-1181.8 651.85,-1160.2 776.85,-1160.2 776.85,-1181.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1168" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/sources/search/search</text>
 </g>
 <!-- ch config&#45;&gt;state/sources/search/search -->
-<g id="edge42" class="edge">
+<g id="edge43" class="edge">
 <title>ch config&#45;&gt;state/sources/search/search</title>
-<path fill="none" stroke="currentColor" d="M417.45,-592.23C460.35,-582.45 547.09,-570.38 592.18,-618 630.33,-658.29 575.7,-1075.19 612.18,-1117 620.52,-1126.55 632.02,-1132.19 644.28,-1135.35"/>
-<polygon fill="currentColor" stroke="currentColor" points="643.79,-1137.39 650.1,-1136.61 644.68,-1133.28 643.79,-1137.39"/>
+<path fill="none" stroke="currentColor" d="M417.45,-607.22C460.37,-597.43 547.13,-585.34 592.18,-633 631.9,-675.02 574.21,-1109.4 612.18,-1153 620.51,-1162.56 632.01,-1168.2 644.27,-1171.36"/>
+<polygon fill="currentColor" stroke="currentColor" points="643.78,-1173.4 650.09,-1172.62 644.67,-1169.29 643.78,-1173.4"/>
 </g>
 <!-- state/workbench/palette&#45;source -->
-<g id="node86" class="node">
+<g id="node88" class="node">
 <title>state/workbench/palette&#45;source</title>
-<polygon fill="none" stroke="currentColor" points="785.18,-1109.8 643.51,-1109.8 643.51,-1088.2 785.18,-1088.2 785.18,-1109.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1096" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/workbench/palette&#45;source</text>
+<polygon fill="none" stroke="currentColor" points="785.18,-1217.8 643.51,-1217.8 643.51,-1196.2 785.18,-1196.2 785.18,-1217.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1204" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/workbench/palette&#45;source</text>
 </g>
 <!-- ch config&#45;&gt;state/workbench/palette&#45;source -->
-<g id="edge43" class="edge">
+<g id="edge44" class="edge">
 <title>ch config&#45;&gt;state/workbench/palette&#45;source</title>
-<path fill="none" stroke="currentColor" d="M417.43,-592.24C460.31,-582.49 547.02,-570.45 592.18,-618 627.64,-655.34 578.27,-1042.25 612.18,-1081 618.64,-1088.38 626.99,-1093.42 636.13,-1096.79"/>
-<polygon fill="currentColor" stroke="currentColor" points="635.45,-1098.78 641.8,-1098.59 636.72,-1094.77 635.45,-1098.78"/>
+<path fill="none" stroke="currentColor" d="M417.13,-607.29C459.94,-597.47 547.07,-585.16 592.18,-633 634.59,-677.98 571.64,-1142.34 612.18,-1189 618.62,-1196.4 626.95,-1201.46 636.08,-1204.83"/>
+<polygon fill="currentColor" stroke="currentColor" points="635.4,-1206.82 641.75,-1206.63 636.67,-1202.81 635.4,-1206.82"/>
 </g>
 <!-- views/feeds/leads -->
-<g id="node91" class="node">
+<g id="node93" class="node">
 <title>views/feeds/leads</title>
 <polygon fill="none" stroke="currentColor" points="758.26,-573.8 670.44,-573.8 670.44,-552.2 758.26,-552.2 758.26,-573.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-560" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/feeds/leads</text>
 </g>
 <!-- ch config&#45;&gt;views/feeds/leads -->
-<g id="edge44" class="edge">
+<g id="edge45" class="edge">
 <title>ch config&#45;&gt;views/feeds/leads</title>
-<path fill="none" stroke="currentColor" d="M421.34,-596.64C460.34,-593.39 531.55,-587.13 592.18,-580 615.4,-577.27 641.05,-573.75 662.75,-570.61"/>
-<polygon fill="currentColor" stroke="currentColor" points="662.81,-572.73 668.45,-569.79 662.21,-568.57 662.81,-572.73"/>
+<path fill="none" stroke="currentColor" d="M421.32,-615.79C461.21,-617.24 534.4,-616.27 592.18,-595 602.36,-591.25 602.16,-585.16 612.18,-581 628.19,-574.36 646.61,-570.17 663.31,-567.52"/>
+<polygon fill="currentColor" stroke="currentColor" points="663.23,-569.65 668.85,-566.7 662.61,-565.5 663.23,-569.65"/>
 </g>
 <!-- views/feeds/radar -->
-<g id="node92" class="node">
+<g id="node94" class="node">
 <title>views/feeds/radar</title>
 <polygon fill="none" stroke="currentColor" points="758.25,-465.8 670.45,-465.8 670.45,-444.2 758.25,-444.2 758.25,-465.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-452" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/feeds/radar</text>
 </g>
 <!-- ch config&#45;&gt;views/feeds/radar -->
-<g id="edge45" class="edge">
+<g id="edge46" class="edge">
 <title>ch config&#45;&gt;views/feeds/radar</title>
-<path fill="none" stroke="currentColor" d="M417.75,-605.26C459.94,-613.91 544.15,-623.89 592.18,-580 627.9,-547.37 577.82,-507.06 612.18,-473 625.44,-459.86 644.75,-454.45 662.96,-452.66"/>
-<polygon fill="currentColor" stroke="currentColor" points="662.8,-454.77 668.63,-452.23 662.49,-450.58 662.8,-454.77"/>
+<path fill="none" stroke="currentColor" d="M417.86,-620.38C460.21,-629.2 544.65,-639.42 592.18,-595 632.33,-557.49 573.59,-512.12 612.18,-473 625.29,-459.71 644.58,-454.28 662.81,-452.5"/>
+<polygon fill="currentColor" stroke="currentColor" points="662.65,-454.62 668.48,-452.09 662.35,-450.43 662.65,-454.62"/>
 </g>
 <!-- views/sessions/terminal -->
-<g id="node93" class="node">
+<g id="node95" class="node">
 <title>views/sessions/terminal</title>
-<polygon fill="none" stroke="currentColor" points="770.48,-141.8 658.21,-141.8 658.21,-120.2 770.48,-120.2 770.48,-141.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-128" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/sessions/terminal</text>
+<polygon fill="none" stroke="currentColor" points="770.48,-429.8 658.21,-429.8 658.21,-408.2 770.48,-408.2 770.48,-429.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-416" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/sessions/terminal</text>
 </g>
 <!-- ch config&#45;&gt;views/sessions/terminal -->
-<g id="edge46" class="edge">
+<g id="edge47" class="edge">
 <title>ch config&#45;&gt;views/sessions/terminal</title>
-<path fill="none" stroke="currentColor" d="M417.41,-605.74C460.27,-615.47 546.94,-627.48 592.18,-580 625.25,-545.29 580.55,-185.02 612.18,-149 621.99,-137.83 636.14,-132.02 650.76,-129.27"/>
-<polygon fill="currentColor" stroke="currentColor" points="650.86,-131.38 656.47,-128.39 650.22,-127.23 650.86,-131.38"/>
+<path fill="none" stroke="currentColor" d="M417.7,-620.5C460.2,-629.61 545.34,-640.4 592.18,-595 643.01,-545.74 563.4,-488.29 612.18,-437 622.27,-426.39 636.29,-420.73 650.68,-417.94"/>
+<polygon fill="currentColor" stroke="currentColor" points="650.68,-420.07 656.27,-417.04 650.01,-415.93 650.68,-420.07"/>
 </g>
 <!-- views/sources/doc -->
-<g id="node96" class="node">
+<g id="node98" class="node">
 <title>views/sources/doc</title>
 <polygon fill="none" stroke="currentColor" points="759.65,-537.8 669.05,-537.8 669.05,-516.2 759.65,-516.2 759.65,-537.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-524" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/sources/doc</text>
 </g>
 <!-- ch config&#45;&gt;views/sources/doc -->
-<g id="edge47" class="edge">
+<g id="edge48" class="edge">
 <title>ch config&#45;&gt;views/sources/doc</title>
-<path fill="none" stroke="currentColor" d="M419.59,-603.83C460.67,-609.54 538.99,-614.34 592.18,-580 607.23,-570.28 597.54,-555.32 612.18,-545 626.41,-534.97 644.49,-529.98 661.41,-527.63"/>
-<polygon fill="currentColor" stroke="currentColor" points="661.37,-529.75 667.08,-526.96 660.87,-525.58 661.37,-529.75"/>
+<path fill="none" stroke="currentColor" d="M418.86,-619.52C460.38,-626.49 540.93,-633.36 592.18,-595 611.34,-580.66 593.62,-560.11 612.18,-545 625.92,-533.82 644.23,-528.6 661.49,-526.41"/>
+<polygon fill="currentColor" stroke="currentColor" points="661.55,-528.51 667.3,-525.8 661.11,-524.33 661.55,-528.51"/>
 </g>
 <!-- views/system/findings -->
-<g id="node100" class="node">
+<g id="node102" class="node">
 <title>views/system/findings</title>
 <polygon fill="none" stroke="currentColor" points="767.71,-501.8 660.99,-501.8 660.99,-480.2 767.71,-480.2 767.71,-501.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-488" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/system/findings</text>
 </g>
 <!-- ch config&#45;&gt;views/system/findings -->
-<g id="edge48" class="edge">
+<g id="edge49" class="edge">
 <title>ch config&#45;&gt;views/system/findings</title>
-<path fill="none" stroke="currentColor" d="M418.34,-604.97C460.23,-612.86 542.63,-621.35 592.18,-580 617.35,-558.99 587.89,-531.01 612.18,-509 623.43,-498.81 638.37,-493.4 653.32,-490.73"/>
-<polygon fill="currentColor" stroke="currentColor" points="653.52,-492.82 659.14,-489.85 652.89,-488.67 653.52,-492.82"/>
+<path fill="none" stroke="currentColor" d="M418.22,-620.16C460.32,-628.44 543.47,-637.6 592.18,-595 621.72,-569.17 583.72,-536.01 612.18,-509 623.25,-498.5 638.21,-493.01 653.23,-490.35"/>
+<polygon fill="currentColor" stroke="currentColor" points="653.46,-492.43 659.09,-489.48 652.85,-488.28 653.46,-492.43"/>
 </g>
 <!-- views/system/machine -->
-<g id="node101" class="node">
+<g id="node103" class="node">
 <title>views/system/machine</title>
-<polygon fill="none" stroke="currentColor" points="768.26,-429.8 660.44,-429.8 660.44,-408.2 768.26,-408.2 768.26,-429.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-416" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/system/machine</text>
+<polygon fill="none" stroke="currentColor" points="768.26,-393.8 660.44,-393.8 660.44,-372.2 768.26,-372.2 768.26,-393.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-380" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/system/machine</text>
 </g>
 <!-- ch config&#45;&gt;views/system/machine -->
-<g id="edge49" class="edge">
+<g id="edge50" class="edge">
 <title>ch config&#45;&gt;views/system/machine</title>
-<path fill="none" stroke="currentColor" d="M417.64,-605.43C460.04,-614.45 545.05,-625.1 592.18,-580 638.55,-535.64 567.65,-483.21 612.18,-437 622.77,-426.02 637.57,-420.36 652.59,-417.7"/>
-<polygon fill="currentColor" stroke="currentColor" points="652.83,-419.79 658.46,-416.84 652.22,-415.63 652.83,-419.79"/>
+<path fill="none" stroke="currentColor" d="M417.48,-620.54C460.02,-629.84 545.75,-641.06 592.18,-595 622.95,-564.48 582.68,-432.75 612.18,-401 622.62,-389.77 637.45,-384.05 652.55,-381.41"/>
+<polygon fill="currentColor" stroke="currentColor" points="652.82,-383.49 658.46,-380.56 652.23,-379.33 652.82,-383.49"/>
 </g>
 <!-- views/system/workbench -->
-<g id="node103" class="node">
+<g id="node105" class="node">
 <title>views/system/workbench</title>
-<polygon fill="none" stroke="currentColor" points="773.54,-609.8 655.16,-609.8 655.16,-588.2 773.54,-588.2 773.54,-609.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-596" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/system/workbench</text>
+<polygon fill="none" stroke="currentColor" points="773.54,-645.8 655.16,-645.8 655.16,-624.2 773.54,-624.2 773.54,-645.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-632" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/system/workbench</text>
 </g>
 <!-- ch config&#45;&gt;views/system/workbench -->
-<g id="edge50" class="edge">
+<g id="edge51" class="edge">
 <title>ch config&#45;&gt;views/system/workbench</title>
-<path fill="none" stroke="currentColor" d="M421.79,-599C472.81,-599 578.4,-599 647.52,-599"/>
-<polygon fill="currentColor" stroke="currentColor" points="647.41,-601.1 653.41,-599 647.41,-596.9 647.41,-601.1"/>
-</g>
-<!-- ch config&#45;&gt;routes/+page -->
-<g id="edge34" class="edge">
-<title>ch config&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M420.96,-602.12C464.94,-609.15 548.31,-619.37 592.18,-573 630.93,-532.05 580.73,-112.79 612.18,-66 625.82,-45.71 650.73,-34.24 672.42,-28.67"/>
-<polygon fill="currentColor" stroke="currentColor" points="672.78,-30.75 678.16,-27.35 671.84,-26.65 672.78,-30.75"/>
+<path fill="none" stroke="currentColor" d="M421.5,-615.92C472.38,-619.25 578.13,-626.16 647.38,-630.69"/>
+<polygon fill="currentColor" stroke="currentColor" points="647.17,-632.78 653.29,-631.07 647.44,-628.59 647.17,-632.78"/>
 </g>
 <!-- ch config&#45;&gt;routes/+page -->
 <g id="edge35" class="edge">
 <title>ch config&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" d="M412.22,-608.4C452.9,-621.42 545.19,-636.66 592.18,-587 630.93,-546.05 580.73,-126.79 612.18,-80 626.17,-59.19 652.02,-47.66 674.09,-40.43"/>
-<polygon fill="currentColor" stroke="currentColor" points="674.56,-42.48 679.66,-38.68 673.3,-38.47 674.56,-42.48"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M420.97,-617.12C464.96,-624.17 548.33,-634.4 592.18,-588 632.05,-545.82 579.83,-114.19 612.18,-66 625.8,-45.71 650.72,-34.23 672.41,-28.67"/>
+<polygon fill="currentColor" stroke="currentColor" points="672.78,-30.74 678.15,-27.34 671.83,-26.65 672.78,-30.74"/>
+</g>
+<!-- ch config&#45;&gt;routes/+page -->
+<g id="edge36" class="edge">
+<title>ch config&#45;&gt;routes/+page</title>
+<path fill="none" stroke="currentColor" d="M412.22,-623.41C452.91,-636.43 545.22,-651.69 592.18,-602 632.05,-559.82 579.83,-128.19 612.18,-80 626.15,-59.18 652.01,-47.65 674.08,-40.42"/>
+<polygon fill="currentColor" stroke="currentColor" points="674.55,-42.47 679.65,-38.67 673.29,-38.46 674.55,-42.47"/>
 </g>
 <!-- ch draftDropped -->
 <g id="node15" class="node">
 <title>ch draftDropped</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-950" rx="50.31" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-947" font-family="Helvetica,Arial,sans-serif" font-size="10.00">draftDropped</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-965" rx="50.31" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-962" font-family="Helvetica,Arial,sans-serif" font-size="10.00">draftDropped</text>
 </g>
 <!-- state/system/config/editors/writer -->
-<g id="node77" class="node">
+<g id="node79" class="node">
 <title>state/system/config/editors/writer</title>
-<polygon fill="none" stroke="currentColor" points="789.92,-1505.8 638.78,-1505.8 638.78,-1484.2 789.92,-1484.2 789.92,-1505.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1492" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/config/editors/writer</text>
+<polygon fill="none" stroke="currentColor" points="789.92,-1541.8 638.78,-1541.8 638.78,-1520.2 789.92,-1520.2 789.92,-1541.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1528" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/config/editors/writer</text>
 </g>
 <!-- ch draftDropped&#45;&gt;state/system/config/editors/writer -->
-<g id="edge51" class="edge">
+<g id="edge52" class="edge">
 <title>ch draftDropped&#45;&gt;state/system/config/editors/writer</title>
-<path fill="none" stroke="currentColor" d="M440.12,-946.57C486.81,-946.16 555.87,-953.87 592.18,-998 626.03,-1039.13 577.13,-1436.89 612.18,-1477 617.53,-1483.12 624.18,-1487.63 631.49,-1490.91"/>
-<polygon fill="currentColor" stroke="currentColor" points="630.62,-1492.83 636.97,-1493.04 632.14,-1488.91 630.62,-1492.83"/>
+<path fill="none" stroke="currentColor" d="M440.14,-961.56C486.84,-961.13 555.91,-968.84 592.18,-1013 627.47,-1055.96 575.63,-1471.1 612.18,-1513 617.52,-1519.12 624.17,-1523.64 631.48,-1526.92"/>
+<polygon fill="currentColor" stroke="currentColor" points="630.61,-1528.83 636.96,-1529.05 632.13,-1524.92 630.61,-1528.83"/>
 </g>
 <!-- ch empty -->
 <g id="node16" class="node">
 <title>ch empty</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-833" rx="29.89" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-830" font-family="Helvetica,Arial,sans-serif" font-size="10.00">empty</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-887" rx="29.89" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-884" font-family="Helvetica,Arial,sans-serif" font-size="10.00">empty</text>
 </g>
 <!-- state/system/config/write -->
-<g id="node80" class="node">
+<g id="node82" class="node">
 <title>state/system/config/write</title>
 <polygon fill="none" stroke="currentColor" points="773.26,-1469.8 655.44,-1469.8 655.44,-1448.2 773.26,-1448.2 773.26,-1469.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1456" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/config/write</text>
 </g>
 <!-- ch empty&#45;&gt;state/system/config/write -->
-<g id="edge52" class="edge">
+<g id="edge53" class="edge">
 <title>ch empty&#45;&gt;state/system/config/write</title>
-<path fill="none" stroke="currentColor" d="M417.14,-826.28C459.96,-816.45 547.12,-804.11 592.18,-852 637.06,-899.69 569.28,-1391.53 612.18,-1441 621.29,-1451.5 634.22,-1457.28 647.81,-1460.23"/>
-<polygon fill="currentColor" stroke="currentColor" points="647.19,-1462.26 653.47,-1461.26 647.94,-1458.12 647.19,-1462.26"/>
+<path fill="none" stroke="currentColor" d="M417.12,-880.29C459.92,-870.49 547.04,-858.19 592.18,-906 633.02,-949.25 573.14,-1396.12 612.18,-1441 621.31,-1451.49 634.25,-1457.26 647.84,-1460.21"/>
+<polygon fill="currentColor" stroke="currentColor" points="647.22,-1462.23 653.5,-1461.24 647.97,-1458.1 647.22,-1462.23"/>
 </g>
 <!-- state/feeds/feeds -->
-<g id="node65" class="node">
+<g id="node66" class="node">
 <title>state/feeds/feeds</title>
-<polygon fill="none" stroke="currentColor" points="756.03,-713.8 672.67,-713.8 672.67,-692.2 756.03,-692.2 756.03,-713.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-700" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/feeds/feeds</text>
+<polygon fill="none" stroke="currentColor" points="756.03,-749.8 672.67,-749.8 672.67,-728.2 756.03,-728.2 756.03,-749.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-736" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/feeds/feeds</text>
 </g>
 <!-- ch feeds&#45;&gt;state/feeds/feeds -->
-<g id="edge54" class="edge">
+<g id="edge55" class="edge">
 <title>ch feeds&#45;&gt;state/feeds/feeds</title>
-<path fill="none" stroke="currentColor" d="M415.36,-280.76C457.4,-271.01 546.05,-257.93 592.18,-306 649.66,-365.89 558.98,-615.28 612.18,-679 625.01,-694.36 645.69,-700.92 665.02,-703.42"/>
-<polygon fill="currentColor" stroke="currentColor" points="664.66,-705.49 670.84,-704.03 665.1,-701.31 664.66,-705.49"/>
+<path fill="none" stroke="currentColor" d="M415.36,-334.76C457.38,-325.03 546,-311.97 592.18,-360 647.87,-417.92 558.9,-660.86 612.18,-721 625.24,-735.74 645.85,-741.12 665.07,-742.46"/>
+<polygon fill="currentColor" stroke="currentColor" points="664.75,-744.55 670.84,-742.72 664.94,-740.35 664.75,-744.55"/>
 </g>
 <!-- ch feeds&#45;&gt;routes/+page -->
-<g id="edge53" class="edge">
+<g id="edge54" class="edge">
 <title>ch feeds&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M401.55,-275.36C430.06,-240.67 519.33,-136.41 612.18,-73 631.42,-59.86 655.02,-48.88 674.59,-40.95"/>
-<polygon fill="currentColor" stroke="currentColor" points="675.12,-43 679.92,-38.83 673.57,-39.09 675.12,-43"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M415.24,-347.13C457.08,-356.68 545.41,-369.46 592.18,-322 631.15,-282.46 580.29,-118.43 612.18,-73 626.13,-53.14 650.79,-41.69 672.27,-35.18"/>
+<polygon fill="currentColor" stroke="currentColor" points="672.76,-37.23 677.96,-33.57 671.62,-33.18 672.76,-37.23"/>
 </g>
 <!-- state/sessions/terminal/commands -->
-<g id="node71" class="node">
+<g id="node72" class="node">
 <title>state/sessions/terminal/commands</title>
 <polygon fill="none" stroke="currentColor" points="791.03,-1397.8 637.66,-1397.8 637.66,-1376.2 791.03,-1376.2 791.03,-1397.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1384" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/sessions/terminal/commands</text>
 </g>
 <!-- ch files&#45;&gt;state/sessions/terminal/commands -->
-<g id="edge56" class="edge">
+<g id="edge57" class="edge">
 <title>ch files&#45;&gt;state/sessions/terminal/commands</title>
-<path fill="none" stroke="currentColor" d="M415.14,-709.74C457.21,-699.83 546.46,-686.29 592.18,-735 640.42,-786.39 566.07,-1315.69 612.18,-1369 617.32,-1374.94 623.68,-1379.37 630.7,-1382.63"/>
-<polygon fill="currentColor" stroke="currentColor" points="629.55,-1384.43 635.9,-1384.74 631.13,-1380.54 629.55,-1384.43"/>
+<path fill="none" stroke="currentColor" d="M415.13,-724.74C457.2,-714.83 546.44,-701.31 592.18,-750 639.3,-800.15 567.14,-1316.97 612.18,-1369 617.32,-1374.94 623.69,-1379.37 630.7,-1382.63"/>
+<polygon fill="currentColor" stroke="currentColor" points="629.56,-1384.43 635.91,-1384.74 631.13,-1380.54 629.56,-1384.43"/>
 </g>
 <!-- state/system/docs -->
-<g id="node81" class="node">
+<g id="node83" class="node">
 <title>state/system/docs</title>
 <polygon fill="none" stroke="currentColor" points="757.98,-1361.8 670.71,-1361.8 670.71,-1340.2 757.98,-1340.2 757.98,-1361.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1348" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/docs</text>
 </g>
 <!-- ch files&#45;&gt;state/system/docs -->
-<g id="edge57" class="edge">
+<g id="edge58" class="edge">
 <title>ch files&#45;&gt;state/system/docs</title>
-<path fill="none" stroke="currentColor" d="M415.13,-709.74C457.18,-699.85 546.41,-686.34 592.18,-735 637.73,-783.43 568.64,-1282.76 612.18,-1333 624.66,-1347.4 644.34,-1352.92 663.04,-1354.46"/>
-<polygon fill="currentColor" stroke="currentColor" points="662.8,-1356.55 668.9,-1354.79 663.03,-1352.35 662.8,-1356.55"/>
+<path fill="none" stroke="currentColor" d="M415.12,-724.75C457.17,-714.86 546.39,-701.36 592.18,-750 636.61,-797.19 569.71,-1284.04 612.18,-1333 624.67,-1347.4 644.35,-1352.91 663.05,-1354.45"/>
+<polygon fill="currentColor" stroke="currentColor" points="662.8,-1356.54 668.91,-1354.78 663.04,-1352.35 662.8,-1356.54"/>
 </g>
 <!-- ch files&#45;&gt;routes/+page -->
-<g id="edge55" class="edge">
+<g id="edge56" class="edge">
 <title>ch files&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M415.13,-722.26C457.2,-732.17 546.45,-745.69 592.18,-697 639.67,-646.44 573.7,-130.72 612.18,-73 625.74,-52.66 650.65,-41.19 672.36,-34.79"/>
-<polygon fill="currentColor" stroke="currentColor" points="672.89,-36.82 678.12,-33.21 671.78,-32.77 672.89,-36.82"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M415.14,-737.27C457.21,-747.18 546.47,-760.71 592.18,-712 640.79,-660.2 572.8,-132.12 612.18,-73 625.73,-52.66 650.65,-41.18 672.36,-34.78"/>
+<polygon fill="currentColor" stroke="currentColor" points="672.89,-36.82 678.12,-33.2 671.77,-32.77 672.89,-36.82"/>
 </g>
 <!-- ch git&#45;&gt;state/client/selectors -->
-<g id="edge60" class="edge">
+<g id="edge61" class="edge">
 <title>ch git&#45;&gt;state/client/selectors</title>
-<path fill="none" stroke="currentColor" d="M415.09,-358.78C457.09,-348.94 546.22,-335.52 592.18,-384 628.99,-422.82 576.99,-824.72 612.18,-865 623.48,-877.93 640.58,-883.68 657.53,-885.83"/>
-<polygon fill="currentColor" stroke="currentColor" points="657.08,-887.89 663.26,-886.39 657.49,-883.71 657.08,-887.89"/>
+<path fill="none" stroke="currentColor" d="M415.07,-412.8C457.02,-403 546.09,-389.64 592.18,-438 624.95,-472.38 580.84,-829.32 612.18,-865 623.51,-877.9 640.63,-883.64 657.57,-885.79"/>
+<polygon fill="currentColor" stroke="currentColor" points="657.12,-887.86 663.3,-886.35 657.53,-883.68 657.12,-887.86"/>
 </g>
 <!-- ch git&#45;&gt;views/sessions/terminal -->
-<g id="edge61" class="edge">
+<g id="edge62" class="edge">
 <title>ch git&#45;&gt;views/sessions/terminal</title>
-<path fill="none" stroke="currentColor" d="M415.14,-371.03C456.83,-380.42 544.92,-392.96 592.18,-346 623.4,-314.99 582.25,-181.26 612.18,-149 622.19,-138.21 636.26,-132.51 650.72,-129.73"/>
-<polygon fill="currentColor" stroke="currentColor" points="650.75,-131.85 656.35,-128.83 650.09,-127.7 650.75,-131.85"/>
+<path fill="none" stroke="currentColor" d="M418.43,-419C468.84,-419 580.35,-419 650.89,-419"/>
+<polygon fill="currentColor" stroke="currentColor" points="650.49,-421.1 656.49,-419 650.49,-416.9 650.49,-421.1"/>
 </g>
 <!-- views/system/status -->
-<g id="node102" class="node">
+<g id="node104" class="node">
 <title>views/system/status</title>
 <polygon fill="none" stroke="currentColor" points="762.71,-105.8 665.99,-105.8 665.99,-84.2 762.71,-84.2 762.71,-105.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-92" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/system/status</text>
 </g>
 <!-- ch git&#45;&gt;views/system/status -->
-<g id="edge62" class="edge">
+<g id="edge63" class="edge">
 <title>ch git&#45;&gt;views/system/status</title>
-<path fill="none" stroke="currentColor" d="M415.22,-371.1C457.02,-380.61 545.28,-393.33 592.18,-346 628.76,-309.09 577.13,-151.37 612.18,-113 623.87,-100.21 641.25,-94.53 658.32,-92.41"/>
-<polygon fill="currentColor" stroke="currentColor" points="658.32,-94.52 664.09,-91.86 657.92,-90.34 658.32,-94.52"/>
-</g>
-<!-- ch git&#45;&gt;routes/+page -->
-<g id="edge58" class="edge">
-<title>ch git&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M417.97,-367.49C460.85,-374.27 546.55,-385.62 592.18,-339 634.73,-295.53 577.41,-115.91 612.18,-66 626.06,-46.09 650.72,-34.64 672.22,-28.97"/>
-<polygon fill="currentColor" stroke="currentColor" points="672.55,-31.05 677.9,-27.62 671.57,-26.97 672.55,-31.05"/>
+<path fill="none" stroke="currentColor" d="M415.29,-425.17C457.21,-434.8 545.66,-447.7 592.18,-400 636.82,-354.23 569.45,-160.55 612.18,-113 623.82,-100.06 641.28,-94.36 658.43,-92.28"/>
+<polygon fill="currentColor" stroke="currentColor" points="658.46,-94.38 664.24,-91.73 658.07,-90.2 658.46,-94.38"/>
 </g>
 <!-- ch git&#45;&gt;routes/+page -->
 <g id="edge59" class="edge">
 <title>ch git&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" d="M410.86,-373.88C450.63,-386.73 543.87,-402.36 592.18,-353 634.73,-309.53 577.41,-129.91 612.18,-80 626.61,-59.29 652.72,-47.73 674.8,-40.45"/>
-<polygon fill="currentColor" stroke="currentColor" points="675.28,-42.5 680.36,-38.68 674.01,-38.5 675.28,-42.5"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M418.03,-421.55C461,-428.42 546.84,-439.9 592.18,-393 642.79,-340.66 570.92,-125.98 612.18,-66 626.03,-45.86 650.95,-34.39 672.59,-28.79"/>
+<polygon fill="currentColor" stroke="currentColor" points="672.94,-30.86 678.31,-27.45 671.99,-26.77 672.94,-30.86"/>
+</g>
+<!-- ch git&#45;&gt;routes/+page -->
+<g id="edge60" class="edge">
+<title>ch git&#45;&gt;routes/+page</title>
+<path fill="none" stroke="currentColor" d="M410.9,-427.92C450.76,-440.87 544.17,-456.65 592.18,-407 642.79,-354.66 570.92,-139.98 612.18,-80 626.49,-59.2 652.6,-47.65 674.71,-40.39"/>
+<polygon fill="currentColor" stroke="currentColor" points="675.19,-42.44 680.28,-38.63 673.93,-38.43 675.19,-42.44"/>
 </g>
 <!-- state/system/machine/hpc -->
-<g id="node82" class="node">
+<g id="node84" class="node">
 <title>state/system/machine/hpc</title>
 <polygon fill="none" stroke="currentColor" points="774.36,-857.8 654.33,-857.8 654.33,-836.2 774.36,-836.2 774.36,-857.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-844" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/machine/hpc</text>
 </g>
 <!-- ch hpc&#45;&gt;state/system/machine/hpc -->
-<g id="edge65" class="edge">
+<g id="edge66" class="edge">
 <title>ch hpc&#45;&gt;state/system/machine/hpc</title>
-<path fill="none" stroke="currentColor" d="M415.33,-475.79C457.31,-466.1 545.87,-453.1 592.18,-501 642.94,-553.5 563.6,-774.48 612.18,-829 621.09,-839 633.48,-844.69 646.54,-847.72"/>
-<polygon fill="currentColor" stroke="currentColor" points="646.07,-849.77 652.36,-848.86 646.87,-845.65 646.07,-849.77"/>
+<path fill="none" stroke="currentColor" d="M415.32,-490.8C457.28,-481.13 545.8,-468.16 592.18,-516 640.7,-566.04 565.74,-777.03 612.18,-829 621.11,-838.99 633.5,-844.67 646.56,-847.7"/>
+<polygon fill="currentColor" stroke="currentColor" points="646.09,-849.75 652.38,-848.84 646.9,-845.63 646.09,-849.75"/>
 </g>
 <!-- state/workbench/navigation/notice&#45;sources -->
-<g id="node85" class="node">
+<g id="node87" class="node">
 <title>state/workbench/navigation/notice&#45;sources</title>
 <polygon fill="none" stroke="currentColor" points="808.52,-929.8 620.18,-929.8 620.18,-908.2 808.52,-908.2 808.52,-929.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-916" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/workbench/navigation/notice&#45;sources</text>
 </g>
 <!-- ch hpc&#45;&gt;state/workbench/navigation/notice&#45;sources -->
-<g id="edge66" class="edge">
+<g id="edge67" class="edge">
 <title>ch hpc&#45;&gt;state/workbench/navigation/notice&#45;sources</title>
-<path fill="none" stroke="currentColor" d="M415.05,-475.82C456.98,-466.04 546.01,-452.72 592.18,-501 622.94,-533.16 582.76,-867.61 612.18,-901 612.92,-901.84 613.68,-902.64 614.46,-903.42"/>
-<polygon fill="currentColor" stroke="currentColor" points="612.89,-904.83 618.8,-907.15 615.62,-901.65 612.89,-904.83"/>
-</g>
-<!-- ch hpc&#45;&gt;routes/+page -->
-<g id="edge63" class="edge">
-<title>ch hpc&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M418.08,-484.6C461.13,-491.54 547.07,-503.12 592.18,-456 622.19,-424.66 587.77,-101.87 612.18,-66 625.94,-45.79 650.85,-34.32 672.51,-28.74"/>
-<polygon fill="currentColor" stroke="currentColor" points="672.87,-30.81 678.24,-27.41 671.92,-26.72 672.87,-30.81"/>
+<path fill="none" stroke="currentColor" d="M415.04,-490.82C456.96,-481.06 545.97,-467.76 592.18,-516 621.82,-546.93 583.83,-868.89 612.18,-901 612.92,-901.84 613.68,-902.64 614.47,-903.42"/>
+<polygon fill="currentColor" stroke="currentColor" points="612.89,-904.83 618.81,-907.15 615.62,-901.64 612.89,-904.83"/>
 </g>
 <!-- ch hpc&#45;&gt;routes/+page -->
 <g id="edge64" class="edge">
 <title>ch hpc&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" d="M410.94,-490.96C450.88,-503.97 544.41,-519.89 592.18,-470 622.19,-438.66 587.77,-115.87 612.18,-80 626.29,-59.28 652.14,-47.74 674.18,-40.49"/>
-<polygon fill="currentColor" stroke="currentColor" points="674.65,-42.54 679.73,-38.73 673.38,-38.54 674.65,-42.54"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M418.09,-499.61C461.15,-506.56 547.11,-518.16 592.18,-471 623.31,-438.43 586.87,-103.27 612.18,-66 625.92,-45.78 650.83,-34.31 672.5,-28.73"/>
+<polygon fill="currentColor" stroke="currentColor" points="672.86,-30.8 678.23,-27.4 671.91,-26.71 672.86,-30.8"/>
+</g>
+<!-- ch hpc&#45;&gt;routes/+page -->
+<g id="edge65" class="edge">
+<title>ch hpc&#45;&gt;routes/+page</title>
+<path fill="none" stroke="currentColor" d="M410.95,-505.97C450.9,-518.99 544.46,-534.94 592.18,-485 623.31,-452.43 586.87,-117.27 612.18,-80 626.27,-59.26 652.12,-47.73 674.16,-40.48"/>
+<polygon fill="currentColor" stroke="currentColor" points="674.63,-42.53 679.72,-38.72 673.37,-38.52 674.63,-42.53"/>
 </g>
 <!-- state/feeds/inbox -->
-<g id="node66" class="node">
+<g id="node67" class="node">
 <title>state/feeds/inbox</title>
 <polygon fill="none" stroke="currentColor" points="756.87,-1253.8 671.83,-1253.8 671.83,-1232.2 756.87,-1232.2 756.87,-1253.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1240" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/feeds/inbox</text>
 </g>
 <!-- ch inbox&#45;&gt;state/feeds/inbox -->
-<g id="edge68" class="edge">
+<g id="edge69" class="edge">
 <title>ch inbox&#45;&gt;state/feeds/inbox</title>
-<path fill="none" stroke="currentColor" d="M416.12,-631.52C458.56,-621.66 546.73,-608.76 592.18,-657 635.49,-702.96 570.78,-1177.31 612.18,-1225 624.88,-1239.63 645.01,-1245.08 663.98,-1246.52"/>
-<polygon fill="currentColor" stroke="currentColor" points="663.84,-1248.61 669.94,-1246.81 664.05,-1244.42 663.84,-1248.61"/>
+<path fill="none" stroke="currentColor" d="M416.11,-646.52C458.55,-636.67 546.71,-623.78 592.18,-672 634.37,-716.73 571.85,-1178.59 612.18,-1225 624.89,-1239.62 645.02,-1245.08 663.99,-1246.51"/>
+<polygon fill="currentColor" stroke="currentColor" points="663.85,-1248.61 669.95,-1246.81 664.06,-1244.41 663.85,-1248.61"/>
 </g>
 <!-- ch inbox&#45;&gt;state/life/accounts -->
-<g id="edge69" class="edge">
+<g id="edge70" class="edge">
 <title>ch inbox&#45;&gt;state/life/accounts</title>
-<path fill="none" stroke="currentColor" d="M416.13,-631.51C458.58,-621.64 546.78,-608.71 592.18,-657 638.18,-705.92 568.21,-1210.25 612.18,-1261 624.4,-1275.11 643.53,-1280.69 661.88,-1282.36"/>
-<polygon fill="currentColor" stroke="currentColor" points="661.49,-1284.44 667.61,-1282.73 661.76,-1280.25 661.49,-1284.44"/>
+<path fill="none" stroke="currentColor" d="M416.12,-646.51C458.57,-636.65 546.76,-623.73 592.18,-672 637.06,-719.69 569.28,-1211.53 612.18,-1261 624.41,-1275.1 643.54,-1280.68 661.88,-1282.35"/>
+<polygon fill="currentColor" stroke="currentColor" points="661.5,-1284.43 667.62,-1282.73 661.77,-1280.24 661.5,-1284.43"/>
 </g>
 <!-- ch inbox&#45;&gt;state/workbench/navigation/notice&#45;sources -->
-<g id="edge70" class="edge">
+<g id="edge71" class="edge">
 <title>ch inbox&#45;&gt;state/workbench/navigation/notice&#45;sources</title>
-<path fill="none" stroke="currentColor" d="M416.23,-631.66C458.45,-622.15 545.74,-609.96 592.18,-657 630.4,-695.72 575.57,-860.76 612.18,-901 612.93,-901.82 613.71,-902.62 614.5,-903.39"/>
-<polygon fill="currentColor" stroke="currentColor" points="612.95,-904.83 618.9,-907.07 615.65,-901.61 612.95,-904.83"/>
+<path fill="none" stroke="currentColor" d="M416.2,-646.68C458.38,-637.21 545.62,-625.08 592.18,-672 628.17,-708.26 577.7,-863.31 612.18,-901 612.93,-901.82 613.71,-902.62 614.51,-903.38"/>
+<polygon fill="currentColor" stroke="currentColor" points="612.96,-904.83 618.92,-907.06 615.65,-901.6 612.96,-904.83"/>
 </g>
 <!-- ch inbox&#45;&gt;state/workbench/palette&#45;source -->
-<g id="edge71" class="edge">
+<g id="edge72" class="edge">
 <title>ch inbox&#45;&gt;state/workbench/palette&#45;source</title>
-<path fill="none" stroke="currentColor" d="M416.06,-631.57C458.41,-621.8 546.44,-609.03 592.18,-657 624.73,-691.13 581.05,-1045.57 612.18,-1081 618.61,-1088.32 626.9,-1093.33 635.96,-1096.69"/>
-<polygon fill="currentColor" stroke="currentColor" points="635.22,-1098.66 641.58,-1098.49 636.5,-1094.66 635.22,-1098.66"/>
+<path fill="none" stroke="currentColor" d="M416.1,-646.53C458.52,-636.7 546.65,-623.84 592.18,-672 631.68,-713.77 574.42,-1145.66 612.18,-1189 618.63,-1196.4 626.97,-1201.45 636.1,-1204.81"/>
+<polygon fill="currentColor" stroke="currentColor" points="635.42,-1206.8 641.77,-1206.62 636.69,-1202.8 635.42,-1206.8"/>
 </g>
 <!-- ch inbox&#45;&gt;routes/+page -->
-<g id="edge67" class="edge">
+<g id="edge68" class="edge">
 <title>ch inbox&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M416.11,-644.48C458.54,-654.32 546.7,-667.21 592.18,-619 633.84,-574.84 578.39,-123.43 612.18,-73 625.79,-52.69 650.7,-41.22 672.4,-34.81"/>
-<polygon fill="currentColor" stroke="currentColor" points="672.93,-36.84 678.15,-33.23 671.81,-32.79 672.93,-36.84"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M416.11,-659.48C458.55,-669.34 546.72,-682.23 592.18,-634 634.96,-588.61 577.49,-124.83 612.18,-73 625.78,-52.69 650.69,-41.21 672.39,-34.81"/>
+<polygon fill="currentColor" stroke="currentColor" points="672.92,-36.84 678.15,-33.22 671.8,-32.79 672.92,-36.84"/>
 </g>
 <!-- ch network -->
 <g id="node22" class="node">
 <title>ch network</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-872" rx="35.39" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-869" font-family="Helvetica,Arial,sans-serif" font-size="10.00">network</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-809" rx="35.39" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-806" font-family="Helvetica,Arial,sans-serif" font-size="10.00">network</text>
 </g>
 <!-- ch network&#45;&gt;state/system/config/write -->
-<g id="edge72" class="edge">
+<g id="edge73" class="edge">
 <title>ch network&#45;&gt;state/system/config/write</title>
-<path fill="none" stroke="currentColor" d="M420.26,-864.58C464.07,-854.92 548.14,-844.31 592.18,-891 634.14,-935.48 572.07,-1394.85 612.18,-1441 621.3,-1451.49 634.24,-1457.26 647.83,-1460.22"/>
-<polygon fill="currentColor" stroke="currentColor" points="647.21,-1462.24 653.49,-1461.25 647.96,-1458.11 647.21,-1462.24"/>
+<path fill="none" stroke="currentColor" d="M420.29,-801.56C464.12,-791.87 548.23,-781.23 592.18,-828 638.85,-877.66 567.57,-1389.48 612.18,-1441 621.28,-1451.51 634.21,-1457.29 647.8,-1460.24"/>
+<polygon fill="currentColor" stroke="currentColor" points="647.18,-1462.26 653.46,-1461.27 647.93,-1458.13 647.18,-1462.26"/>
 </g>
 <!-- ch notNumber -->
 <g id="node23" class="node">
 <title>ch notNumber</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-794" rx="44.43" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-791" font-family="Helvetica,Arial,sans-serif" font-size="10.00">notNumber</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-770" rx="44.43" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-767" font-family="Helvetica,Arial,sans-serif" font-size="10.00">notNumber</text>
 </g>
 <!-- state/system/config/browser -->
-<g id="node75" class="node">
+<g id="node77" class="node">
 <title>state/system/config/browser</title>
 <polygon fill="none" stroke="currentColor" points="779.09,-1433.8 649.61,-1433.8 649.61,-1412.2 779.09,-1412.2 779.09,-1433.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1420" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/config/browser</text>
 </g>
 <!-- ch notNumber&#45;&gt;state/system/config/browser -->
-<g id="edge73" class="edge">
+<g id="edge74" class="edge">
 <title>ch notNumber&#45;&gt;state/system/config/browser</title>
-<path fill="none" stroke="currentColor" d="M425.07,-785.54C469.99,-776.21 549.75,-767.9 592.18,-813 637.28,-860.93 569.07,-1355.27 612.18,-1405 619.97,-1413.99 630.57,-1419.51 641.97,-1422.77"/>
-<polygon fill="currentColor" stroke="currentColor" points="641.37,-1424.79 647.69,-1424.16 642.36,-1420.7 641.37,-1424.79"/>
+<path fill="none" stroke="currentColor" d="M425.08,-761.53C470.01,-752.19 549.78,-743.87 592.18,-789 639.07,-838.91 567.36,-1353.23 612.18,-1405 619.97,-1413.99 630.56,-1419.52 641.96,-1422.78"/>
+<polygon fill="currentColor" stroke="currentColor" points="641.36,-1424.79 647.68,-1424.17 642.35,-1420.71 641.36,-1424.79"/>
 </g>
 <!-- ch notNumber&#45;&gt;state/system/config/write -->
-<g id="edge74" class="edge">
+<g id="edge75" class="edge">
 <title>ch notNumber&#45;&gt;state/system/config/write</title>
-<path fill="none" stroke="currentColor" d="M425.08,-785.53C470.02,-776.18 549.8,-767.86 592.18,-813 639.97,-863.89 566.5,-1388.21 612.18,-1441 621.28,-1451.51 634.21,-1457.29 647.8,-1460.25"/>
-<polygon fill="currentColor" stroke="currentColor" points="647.18,-1462.27 653.46,-1461.28 647.93,-1458.14 647.18,-1462.27"/>
+<path fill="none" stroke="currentColor" d="M425.09,-761.52C470.04,-752.17 549.82,-743.84 592.18,-789 641.77,-841.86 564.79,-1386.16 612.18,-1441 621.32,-1451.57 634.34,-1457.36 648.01,-1460.3"/>
+<polygon fill="currentColor" stroke="currentColor" points="647.44,-1462.33 653.71,-1461.32 648.18,-1458.2 647.44,-1462.33"/>
 </g>
 <!-- ch portfolio&#45;&gt;state/client/context -->
-<g id="edge77" class="edge">
+<g id="edge78" class="edge">
 <title>ch portfolio&#45;&gt;state/client/context</title>
-<path fill="none" stroke="currentColor" d="M421.31,-552.38C465.35,-542.83 548.35,-532.83 592.18,-579 627.87,-616.58 578.06,-1006 612.18,-1045 624.16,-1058.69 642.65,-1064.33 660.56,-1066.16"/>
-<polygon fill="currentColor" stroke="currentColor" points="659.99,-1068.22 666.13,-1066.58 660.31,-1064.04 659.99,-1068.22"/>
+<path fill="none" stroke="currentColor" d="M421.3,-567.39C465.33,-557.85 548.31,-547.86 592.18,-594 626.75,-630.35 579.13,-1007.27 612.18,-1045 624.17,-1058.68 642.66,-1064.32 660.57,-1066.15"/>
+<polygon fill="currentColor" stroke="currentColor" points="660,-1068.21 666.14,-1066.58 660.32,-1064.03 660,-1068.21"/>
 </g>
 <!-- ch portfolio&#45;&gt;state/client/selectors -->
-<g id="edge78" class="edge">
+<g id="edge79" class="edge">
 <title>ch portfolio&#45;&gt;state/client/selectors</title>
-<path fill="none" stroke="currentColor" d="M421.51,-552.45C465.45,-543.12 547.85,-533.55 592.18,-579 636.67,-624.61 569.59,-817.62 612.18,-865 623.61,-877.71 640.65,-883.43 657.51,-885.61"/>
-<polygon fill="currentColor" stroke="currentColor" points="657.02,-887.67 663.2,-886.18 657.44,-883.49 657.02,-887.67"/>
+<path fill="none" stroke="currentColor" d="M421.49,-567.47C465.4,-558.17 547.76,-548.64 592.18,-594 634.43,-637.15 571.72,-820.17 612.18,-865 623.63,-877.69 640.68,-883.4 657.54,-885.58"/>
+<polygon fill="currentColor" stroke="currentColor" points="657.05,-887.64 663.23,-886.16 657.47,-883.46 657.05,-887.64"/>
 </g>
 <!-- ch portfolio&#45;&gt;state/life/present -->
-<g id="edge79" class="edge">
+<g id="edge80" class="edge">
 <title>ch portfolio&#45;&gt;state/life/present</title>
-<path fill="none" stroke="currentColor" d="M421.29,-552.4C465.3,-542.88 548.26,-532.91 592.18,-579 625.18,-613.63 580.62,-973.06 612.18,-1009 625.18,-1023.8 645.78,-1029.18 665.01,-1030.52"/>
-<polygon fill="currentColor" stroke="currentColor" points="664.69,-1032.6 670.78,-1030.77 664.88,-1028.41 664.69,-1032.6"/>
+<path fill="none" stroke="currentColor" d="M421.28,-567.41C465.28,-557.9 548.22,-547.95 592.18,-594 624.06,-627.39 581.69,-974.34 612.18,-1009 625.19,-1023.79 645.79,-1029.17 665.02,-1030.51"/>
+<polygon fill="currentColor" stroke="currentColor" points="664.7,-1032.59 670.79,-1030.76 664.89,-1028.4 664.7,-1032.59"/>
 </g>
 <!-- ch portfolio&#45;&gt;state/sessions/terminals -->
-<g id="edge80" class="edge">
+<g id="edge81" class="edge">
 <title>ch portfolio&#45;&gt;state/sessions/terminals</title>
-<path fill="none" stroke="currentColor" d="M421.26,-552.42C465.25,-542.93 548.17,-533 592.18,-579 622.49,-610.67 583.19,-940.12 612.18,-973 622.12,-984.27 636.47,-990.07 651.25,-992.78"/>
-<polygon fill="currentColor" stroke="currentColor" points="650.78,-994.84 657.03,-993.65 651.4,-990.68 650.78,-994.84"/>
+<path fill="none" stroke="currentColor" d="M421.25,-567.44C465.22,-557.96 548.12,-548.05 592.18,-594 650.55,-654.88 556.33,-909.8 612.18,-973 622.08,-984.2 636.34,-990 651.04,-992.73"/>
+<polygon fill="currentColor" stroke="currentColor" points="650.53,-994.78 656.78,-993.6 651.16,-990.62 650.53,-994.78"/>
 </g>
 <!-- ch portfolio&#45;&gt;state/workbench/navigation/notice&#45;sources -->
-<g id="edge81" class="edge">
+<g id="edge82" class="edge">
 <title>ch portfolio&#45;&gt;state/workbench/navigation/notice&#45;sources</title>
-<path fill="none" stroke="currentColor" d="M421.56,-552.41C465.55,-543.02 548.03,-533.38 592.18,-579 642.04,-630.52 564.46,-847.5 612.18,-901 612.92,-901.83 613.69,-902.63 614.48,-903.41"/>
-<polygon fill="currentColor" stroke="currentColor" points="612.91,-904.83 618.84,-907.12 615.63,-901.63 612.91,-904.83"/>
+<path fill="none" stroke="currentColor" d="M421.54,-567.43C465.51,-558.06 547.96,-548.45 592.18,-594 639.8,-643.05 566.6,-850.05 612.18,-901 612.93,-901.83 613.69,-902.63 614.48,-903.4"/>
+<polygon fill="currentColor" stroke="currentColor" points="612.92,-904.83 618.85,-907.11 615.64,-901.63 612.92,-904.83"/>
 </g>
 <!-- ch portfolio&#45;&gt;state/workbench/palette&#45;source -->
-<g id="edge82" class="edge">
+<g id="edge83" class="edge">
 <title>ch portfolio&#45;&gt;state/workbench/palette&#45;source</title>
-<path fill="none" stroke="currentColor" d="M421.32,-552.37C465.39,-542.79 548.42,-532.76 592.18,-579 630.56,-619.54 575.49,-1038.93 612.18,-1081 618.63,-1088.39 626.97,-1093.44 636.1,-1096.81"/>
-<polygon fill="currentColor" stroke="currentColor" points="635.42,-1098.79 641.78,-1098.61 636.7,-1094.79 635.42,-1098.79"/>
+<path fill="none" stroke="currentColor" d="M421.36,-567.33C465.47,-557.72 548.56,-547.63 592.18,-594 637.51,-642.18 568.86,-1139.02 612.18,-1189 618.61,-1196.41 626.94,-1201.47 636.06,-1204.84"/>
+<polygon fill="currentColor" stroke="currentColor" points="635.38,-1206.83 641.73,-1206.65 636.65,-1202.83 635.38,-1206.83"/>
 </g>
 <!-- state/workbench/rail&#45;badges -->
-<g id="node87" class="node">
+<g id="node89" class="node">
 <title>state/workbench/rail&#45;badges</title>
 <polygon fill="none" stroke="currentColor" points="779.36,-965.8 649.34,-965.8 649.34,-944.2 779.36,-944.2 779.36,-965.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-952" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/workbench/rail&#45;badges</text>
 </g>
 <!-- ch portfolio&#45;&gt;state/workbench/rail&#45;badges -->
-<g id="edge83" class="edge">
+<g id="edge84" class="edge">
 <title>ch portfolio&#45;&gt;state/workbench/rail&#45;badges</title>
-<path fill="none" stroke="currentColor" d="M421.23,-552.45C465.18,-543 548.05,-533.12 592.18,-579 647.42,-636.43 559.33,-877.37 612.18,-937 620.02,-945.84 630.58,-951.32 641.92,-954.57"/>
-<polygon fill="currentColor" stroke="currentColor" points="641.27,-956.57 647.6,-955.96 642.27,-952.49 641.27,-956.57"/>
+<path fill="none" stroke="currentColor" d="M421.58,-567.39C465.6,-557.97 548.11,-548.3 592.18,-594 645.18,-648.96 561.47,-879.93 612.18,-937 620.03,-945.83 630.6,-951.3 641.94,-954.55"/>
+<polygon fill="currentColor" stroke="currentColor" points="641.29,-956.56 647.62,-955.94 642.29,-952.48 641.29,-956.56"/>
 </g>
 <!-- views/boards/collection -->
-<g id="node88" class="node">
+<g id="node90" class="node">
 <title>views/boards/collection</title>
-<polygon fill="none" stroke="currentColor" points="770.48,-285.8 658.22,-285.8 658.22,-264.2 770.48,-264.2 770.48,-285.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-272" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/collection</text>
+<polygon fill="none" stroke="currentColor" points="770.48,-213.8 658.22,-213.8 658.22,-192.2 770.48,-192.2 770.48,-213.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-200" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/collection</text>
 </g>
 <!-- ch portfolio&#45;&gt;views/boards/collection -->
-<g id="edge84" class="edge">
+<g id="edge85" class="edge">
 <title>ch portfolio&#45;&gt;views/boards/collection</title>
-<path fill="none" stroke="currentColor" d="M421.45,-567.49C465.31,-576.74 547.61,-586.21 592.18,-541 631,-501.63 575,-333.92 612.18,-293 622.13,-282.05 636.25,-276.31 650.8,-273.54"/>
-<polygon fill="currentColor" stroke="currentColor" points="650.86,-275.66 656.46,-272.65 650.2,-271.51 650.86,-275.66"/>
+<path fill="none" stroke="currentColor" d="M421.57,-582.6C465.58,-592.01 548.08,-601.67 592.18,-556 643.98,-502.35 562.61,-276.71 612.18,-221 622.02,-209.95 636.1,-204.17 650.64,-201.4"/>
+<polygon fill="currentColor" stroke="currentColor" points="650.7,-203.52 656.3,-200.51 650.05,-199.37 650.7,-203.52"/>
 </g>
 <!-- views/boards/focus -->
-<g id="node89" class="node">
+<g id="node91" class="node">
 <title>views/boards/focus</title>
-<polygon fill="none" stroke="currentColor" points="761.59,-177.8 667.11,-177.8 667.11,-156.2 761.59,-156.2 761.59,-177.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-164" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/focus</text>
+<polygon fill="none" stroke="currentColor" points="761.59,-357.8 667.11,-357.8 667.11,-336.2 761.59,-336.2 761.59,-357.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-344" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/focus</text>
 </g>
 <!-- ch portfolio&#45;&gt;views/boards/focus -->
-<g id="edge85" class="edge">
+<g id="edge86" class="edge">
 <title>ch portfolio&#45;&gt;views/boards/focus</title>
-<path fill="none" stroke="currentColor" d="M421.23,-567.55C465.18,-577 548.04,-586.88 592.18,-541 647.12,-483.9 559.61,-244.29 612.18,-185 623.94,-171.74 641.8,-166.06 659.26,-164.08"/>
-<polygon fill="currentColor" stroke="currentColor" points="659.39,-166.17 665.19,-163.57 659.03,-161.99 659.39,-166.17"/>
+<path fill="none" stroke="currentColor" d="M421.68,-582.43C465.45,-591.48 547.2,-600.55 592.18,-556 622.5,-525.97 583.11,-396.24 612.18,-365 624.2,-352.09 642.03,-346.46 659.38,-344.43"/>
+<polygon fill="currentColor" stroke="currentColor" points="659.48,-346.53 665.26,-343.9 659.1,-342.34 659.48,-346.53"/>
 </g>
 <!-- views/boards/person -->
-<g id="node90" class="node">
+<g id="node92" class="node">
 <title>views/boards/person</title>
-<polygon fill="none" stroke="currentColor" points="764.09,-249.8 664.61,-249.8 664.61,-228.2 764.09,-228.2 764.09,-249.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-236" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/person</text>
+<polygon fill="none" stroke="currentColor" points="764.09,-177.8 664.61,-177.8 664.61,-156.2 764.09,-156.2 764.09,-177.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-164" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/boards/person</text>
 </g>
 <!-- ch portfolio&#45;&gt;views/boards/person -->
-<g id="edge86" class="edge">
+<g id="edge87" class="edge">
 <title>ch portfolio&#45;&gt;views/boards/person</title>
-<path fill="none" stroke="currentColor" d="M421.51,-567.55C465.44,-576.87 547.84,-586.44 592.18,-541 636.37,-495.72 569.87,-304.04 612.18,-257 623.51,-244.41 640.35,-238.68 657.05,-236.46"/>
-<polygon fill="currentColor" stroke="currentColor" points="656.93,-238.58 662.68,-235.87 656.5,-234.4 656.93,-238.58"/>
+<path fill="none" stroke="currentColor" d="M421.24,-582.56C465.21,-592.03 548.09,-601.93 592.18,-556 649.36,-496.44 557.47,-246.84 612.18,-185 623.46,-172.26 640.37,-166.51 657.16,-164.32"/>
+<polygon fill="currentColor" stroke="currentColor" points="657.07,-166.44 662.82,-163.74 656.64,-162.26 657.07,-166.44"/>
 </g>
 <!-- ch portfolio&#45;&gt;views/feeds/radar -->
-<g id="edge87" class="edge">
+<g id="edge88" class="edge">
 <title>ch portfolio&#45;&gt;views/feeds/radar</title>
-<path fill="none" stroke="currentColor" d="M422.84,-566.72C465.85,-574.23 544.15,-580.62 592.18,-541 616.48,-520.95 588.72,-494.02 612.18,-473 625.91,-460.71 645.03,-455.4 662.95,-453.45"/>
-<polygon fill="currentColor" stroke="currentColor" points="662.71,-455.58 668.5,-452.97 662.35,-451.39 662.71,-455.58"/>
+<path fill="none" stroke="currentColor" d="M422.75,-581.98C466.01,-589.9 545.01,-596.92 592.18,-556 620.85,-531.14 584.55,-499.01 612.18,-473 625.66,-460.32 644.82,-454.96 662.85,-453.07"/>
+<polygon fill="currentColor" stroke="currentColor" points="662.64,-455.19 668.45,-452.61 662.3,-451 662.64,-455.19"/>
 </g>
 <!-- views/shared/card -->
-<g id="node94" class="node">
+<g id="node96" class="node">
 <title>views/shared/card</title>
-<polygon fill="none" stroke="currentColor" points="759.09,-213.8 669.61,-213.8 669.61,-192.2 759.09,-192.2 759.09,-213.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-200" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/shared/card</text>
+<polygon fill="none" stroke="currentColor" points="759.09,-141.8 669.61,-141.8 669.61,-120.2 759.09,-120.2 759.09,-141.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-128" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/shared/card</text>
 </g>
 <!-- ch portfolio&#45;&gt;views/shared/card -->
-<g id="edge88" class="edge">
+<g id="edge89" class="edge">
 <title>ch portfolio&#45;&gt;views/shared/card</title>
-<path fill="none" stroke="currentColor" d="M421.56,-567.59C465.55,-576.97 548.02,-586.61 592.18,-541 641.74,-489.81 564.74,-274.16 612.18,-221 624.61,-207.08 643.77,-201.53 662.09,-199.83"/>
-<polygon fill="currentColor" stroke="currentColor" points="661.97,-201.94 667.82,-199.45 661.69,-197.75 661.97,-201.94"/>
+<path fill="none" stroke="currentColor" d="M421.27,-582.58C465.27,-592.09 548.2,-602.03 592.18,-556 623.46,-523.26 582.26,-182.98 612.18,-149 624.51,-134.99 643.66,-129.43 662,-127.74"/>
+<polygon fill="currentColor" stroke="currentColor" points="661.88,-129.86 667.72,-127.37 661.6,-125.67 661.88,-129.86"/>
 </g>
 <!-- views/structure/domains -->
-<g id="node97" class="node">
+<g id="node99" class="node">
 <title>views/structure/domains</title>
-<polygon fill="none" stroke="currentColor" points="771.87,-321.8 656.83,-321.8 656.83,-300.2 771.87,-300.2 771.87,-321.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-308" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/structure/domains</text>
+<polygon fill="none" stroke="currentColor" points="771.87,-249.8 656.83,-249.8 656.83,-228.2 771.87,-228.2 771.87,-249.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-236" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/structure/domains</text>
 </g>
 <!-- ch portfolio&#45;&gt;views/structure/domains -->
-<g id="edge89" class="edge">
+<g id="edge90" class="edge">
 <title>ch portfolio&#45;&gt;views/structure/domains</title>
-<path fill="none" stroke="currentColor" d="M421.74,-567.49C465.58,-576.62 547.43,-585.79 592.18,-541 625.63,-507.53 580.12,-363.8 612.18,-329 621.81,-318.55 635.23,-312.86 649.16,-309.98"/>
-<polygon fill="currentColor" stroke="currentColor" points="649.42,-312.07 654.98,-308.98 648.71,-307.93 649.42,-312.07"/>
+<path fill="none" stroke="currentColor" d="M421.53,-582.56C465.49,-591.92 547.92,-601.52 592.18,-556 638.61,-508.26 567.74,-306.59 612.18,-257 621.71,-246.37 635.17,-240.62 649.18,-237.75"/>
+<polygon fill="currentColor" stroke="currentColor" points="649.48,-239.83 655.04,-236.75 648.77,-235.69 649.48,-239.83"/>
 </g>
 <!-- views/structure/map -->
-<g id="node98" class="node">
+<g id="node100" class="node">
 <title>views/structure/map</title>
-<polygon fill="none" stroke="currentColor" points="763.53,-357.8 665.16,-357.8 665.16,-336.2 763.53,-336.2 763.53,-357.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-344" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/structure/map</text>
+<polygon fill="none" stroke="currentColor" points="763.53,-285.8 665.16,-285.8 665.16,-264.2 763.53,-264.2 763.53,-285.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-272" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/structure/map</text>
 </g>
 <!-- ch portfolio&#45;&gt;views/structure/map -->
-<g id="edge90" class="edge">
+<g id="edge91" class="edge">
 <title>ch portfolio&#45;&gt;views/structure/map</title>
-<path fill="none" stroke="currentColor" d="M421.63,-567.38C465.34,-576.37 547,-585.36 592.18,-541 648.36,-485.85 558.29,-422.39 612.18,-365 623.83,-352.6 640.84,-346.94 657.6,-344.72"/>
-<polygon fill="currentColor" stroke="currentColor" points="657.5,-346.84 663.25,-344.12 657.06,-342.66 657.5,-346.84"/>
+<path fill="none" stroke="currentColor" d="M421.48,-582.51C465.37,-591.8 547.71,-601.31 592.18,-556 633.24,-514.17 572.86,-336.47 612.18,-293 623.65,-280.32 640.7,-274.61 657.56,-272.43"/>
+<polygon fill="currentColor" stroke="currentColor" points="657.49,-274.55 663.24,-271.86 657.06,-270.37 657.49,-274.55"/>
 </g>
 <!-- views/structure/pillars -->
-<g id="node99" class="node">
+<g id="node101" class="node">
 <title>views/structure/pillars</title>
-<polygon fill="none" stroke="currentColor" points="767.42,-393.8 661.28,-393.8 661.28,-372.2 767.42,-372.2 767.42,-393.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-380" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/structure/pillars</text>
+<polygon fill="none" stroke="currentColor" points="767.42,-321.8 661.28,-321.8 661.28,-300.2 767.42,-300.2 767.42,-321.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-308" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/structure/pillars</text>
 </g>
 <!-- ch portfolio&#45;&gt;views/structure/pillars -->
-<g id="edge91" class="edge">
+<g id="edge92" class="edge">
 <title>ch portfolio&#45;&gt;views/structure/pillars</title>
-<path fill="none" stroke="currentColor" d="M421.83,-567.29C465.42,-576.03 546.49,-584.58 592.18,-541 637.66,-497.62 568.5,-446.2 612.18,-401 623.09,-389.71 638.46,-384.05 653.93,-381.49"/>
-<polygon fill="currentColor" stroke="currentColor" points="653.87,-383.62 659.53,-380.73 653.3,-379.46 653.87,-383.62"/>
+<path fill="none" stroke="currentColor" d="M421.41,-582.45C465.21,-591.65 547.44,-601.05 592.18,-556 627.87,-520.07 577.99,-366.35 612.18,-329 622.84,-317.36 638.21,-311.62 653.76,-309.08"/>
+<polygon fill="currentColor" stroke="currentColor" points="653.73,-311.2 659.4,-308.33 653.18,-307.04 653.73,-311.2"/>
 </g>
 <!-- ch portfolio&#45;&gt;views/system/findings -->
-<g id="edge92" class="edge">
+<g id="edge93" class="edge">
 <title>ch portfolio&#45;&gt;views/system/findings</title>
-<path fill="none" stroke="currentColor" d="M425.04,-565.26C467.11,-570.23 540.69,-572.81 592.18,-541 606.45,-532.18 598.28,-518.39 612.18,-509 624.31,-500.8 639.06,-496.01 653.51,-493.29"/>
-<polygon fill="currentColor" stroke="currentColor" points="653.5,-495.42 659.07,-492.36 652.8,-491.27 653.5,-495.42"/>
+<path fill="none" stroke="currentColor" d="M424.02,-581.21C466.66,-587.64 542.63,-592.25 592.18,-556 610.5,-542.6 594.42,-523.14 612.18,-509 623.88,-499.69 638.75,-494.55 653.48,-491.84"/>
+<polygon fill="currentColor" stroke="currentColor" points="653.59,-493.95 659.18,-490.94 652.93,-489.8 653.59,-493.95"/>
 </g>
 <!-- ch portfolio&#45;&gt;views/system/status -->
-<g id="edge93" class="edge">
+<g id="edge94" class="edge">
 <title>ch portfolio&#45;&gt;views/system/status</title>
-<path fill="none" stroke="currentColor" d="M421.28,-567.6C465.3,-577.12 548.26,-587.08 592.18,-541 625.03,-506.54 580.77,-148.77 612.18,-113 623.67,-99.92 641.09,-94.2 658.26,-92.12"/>
-<polygon fill="currentColor" stroke="currentColor" points="658.3,-94.23 664.08,-91.59 657.91,-90.05 658.3,-94.23"/>
-</g>
-<!-- ch portfolio&#45;&gt;routes/+page -->
-<g id="edge75" class="edge">
-<title>ch portfolio&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M426.54,-563.97C471.66,-570.85 550.03,-578.4 592.18,-534 628.02,-496.25 583.08,-109.15 612.18,-66 625.85,-45.74 650.76,-34.26 672.45,-28.69"/>
-<polygon fill="currentColor" stroke="currentColor" points="672.81,-30.76 678.18,-27.36 671.86,-26.67 672.81,-30.76"/>
+<path fill="none" stroke="currentColor" d="M421.29,-582.61C465.32,-592.14 548.29,-602.12 592.18,-556 626.15,-520.31 579.7,-150.05 612.18,-113 623.66,-99.91 641.08,-94.19 658.25,-92.11"/>
+<polygon fill="currentColor" stroke="currentColor" points="658.29,-94.22 664.07,-91.58 657.9,-90.04 658.29,-94.22"/>
 </g>
 <!-- ch portfolio&#45;&gt;routes/+page -->
 <g id="edge76" class="edge">
 <title>ch portfolio&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" d="M414.43,-570.09C456.14,-582.9 545.95,-596.7 592.18,-548 628.02,-510.25 583.08,-123.15 612.18,-80 626.2,-59.22 652.05,-47.68 674.11,-40.44"/>
-<polygon fill="currentColor" stroke="currentColor" points="674.58,-42.5 679.68,-38.69 673.32,-38.49 674.58,-42.5"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M426.55,-578.98C471.68,-585.87 550.06,-593.43 592.18,-549 629.14,-510.02 582.18,-110.55 612.18,-66 625.84,-45.73 650.75,-34.25 672.44,-28.68"/>
+<polygon fill="currentColor" stroke="currentColor" points="672.8,-30.76 678.17,-27.36 671.85,-26.66 672.8,-30.76"/>
+</g>
+<!-- ch portfolio&#45;&gt;routes/+page -->
+<g id="edge77" class="edge">
+<title>ch portfolio&#45;&gt;routes/+page</title>
+<path fill="none" stroke="currentColor" d="M414.44,-585.09C456.16,-597.92 545.98,-611.73 592.18,-563 629.14,-524.02 582.18,-124.55 612.18,-80 626.19,-59.21 652.04,-47.67 674.1,-40.44"/>
+<polygon fill="currentColor" stroke="currentColor" points="674.57,-42.49 679.67,-38.69 673.32,-38.48 674.57,-42.49"/>
 </g>
 <!-- ch processes -->
 <g id="node25" class="node">
 <title>ch processes</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-443" rx="39.32" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-440" font-family="Helvetica,Arial,sans-serif" font-size="10.00">processes</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-458" rx="39.32" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-455" font-family="Helvetica,Arial,sans-serif" font-size="10.00">processes</text>
 </g>
 <!-- state/system/machine/processes -->
-<g id="node83" class="node">
+<g id="node85" class="node">
 <title>state/system/machine/processes</title>
 <polygon fill="none" stroke="currentColor" points="786.3,-821.8 642.39,-821.8 642.39,-800.2 786.3,-800.2 786.3,-821.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-808" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/machine/processes</text>
 </g>
 <!-- ch processes&#45;&gt;state/system/machine/processes -->
-<g id="edge95" class="edge">
+<g id="edge96" class="edge">
 <title>ch processes&#45;&gt;state/system/machine/processes</title>
-<path fill="none" stroke="currentColor" d="M422.66,-435.17C466.93,-425.85 548.43,-416.72 592.18,-462 643.39,-514.99 563.18,-737.97 612.18,-793 618.41,-799.99 626.33,-804.87 635,-808.21"/>
-<polygon fill="currentColor" stroke="currentColor" points="634.29,-810.19 640.65,-810.1 635.62,-806.21 634.29,-810.19"/>
+<path fill="none" stroke="currentColor" d="M422.65,-450.18C466.89,-440.88 548.36,-431.78 592.18,-477 641.15,-527.53 565.31,-740.52 612.18,-793 618.42,-799.98 626.35,-804.86 635.01,-808.2"/>
+<polygon fill="currentColor" stroke="currentColor" points="634.31,-810.18 640.67,-810.08 635.64,-806.19 634.31,-810.18"/>
 </g>
 <!-- ch processes&#45;&gt;routes/+page -->
-<g id="edge94" class="edge">
+<g id="edge95" class="edge">
 <title>ch processes&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M422.68,-450.85C466.98,-460.2 548.51,-469.36 592.18,-424 646.37,-367.72 568.04,-137.46 612.18,-73 625.99,-52.83 650.91,-41.36 672.56,-34.92"/>
-<polygon fill="currentColor" stroke="currentColor" points="673.07,-36.95 678.29,-33.32 671.95,-32.91 673.07,-36.95"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M422.7,-465.87C467.01,-475.23 548.56,-484.41 592.18,-439 620.4,-409.63 589.21,-106.63 612.18,-73 625.97,-52.82 650.88,-41.35 672.54,-34.91"/>
+<polygon fill="currentColor" stroke="currentColor" points="673.06,-36.94 678.28,-33.31 671.93,-32.89 673.06,-36.94"/>
 </g>
-<!-- ch pty:*&#45;&gt;state/sessions/terminals -->
-<g id="edge96" class="edge">
-<title>ch pty:*&#45;&gt;state/sessions/terminals</title>
-<path fill="none" stroke="currentColor" d="M415.15,-748.97C456.84,-739.56 544.94,-727.01 592.18,-774 623.7,-805.34 581.97,-940.4 612.18,-973 622.29,-983.91 636.54,-989.62 651.17,-992.36"/>
-<polygon fill="currentColor" stroke="currentColor" points="650.61,-994.4 656.87,-993.25 651.26,-990.25 650.61,-994.4"/>
+<!-- state/sessions/terminal/pty/pty&#45;wire -->
+<g id="node73" class="node">
+<title>state/sessions/terminal/pty/pty&#45;wire</title>
+<polygon fill="none" stroke="currentColor" points="794.09,-1505.8 634.61,-1505.8 634.61,-1484.2 794.09,-1484.2 794.09,-1505.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1492" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/sessions/terminal/pty/pty&#45;wire</text>
+</g>
+<!-- ch pty:*&#45;&gt;state/sessions/terminal/pty/pty&#45;wire -->
+<g id="edge97" class="edge">
+<title>ch pty:*&#45;&gt;state/sessions/terminal/pty/pty&#45;wire</title>
+<path fill="none" stroke="currentColor" d="M415.11,-919.76C457.13,-909.89 546.31,-896.43 592.18,-945 632.8,-988 573.35,-1432.38 612.18,-1477 616.57,-1482.04 621.84,-1485.99 627.63,-1489.06"/>
+<polygon fill="currentColor" stroke="currentColor" points="626.42,-1490.81 632.74,-1491.43 628.18,-1487 626.42,-1490.81"/>
 </g>
 <!-- ch sessions&#45;&gt;state/client/selectors -->
-<g id="edge99" class="edge">
+<g id="edge100" class="edge">
 <title>ch sessions&#45;&gt;state/client/selectors</title>
-<path fill="none" stroke="currentColor" d="M420.48,-513.64C464.2,-504.18 547.68,-493.99 592.18,-540 642.49,-592.01 564.03,-810.99 612.18,-865 623.61,-877.82 640.74,-883.54 657.68,-885.69"/>
-<polygon fill="currentColor" stroke="currentColor" points="657.22,-887.76 663.4,-886.26 657.64,-883.58 657.22,-887.76"/>
+<path fill="none" stroke="currentColor" d="M420.47,-528.65C464.16,-519.21 547.61,-509.06 592.18,-555 640.25,-604.55 566.17,-813.54 612.18,-865 623.63,-877.8 640.77,-883.52 657.7,-885.67"/>
+<polygon fill="currentColor" stroke="currentColor" points="657.25,-887.74 663.42,-886.24 657.66,-883.56 657.25,-887.74"/>
 </g>
 <!-- ch sessions&#45;&gt;state/sessions/terminals -->
-<g id="edge100" class="edge">
+<g id="edge101" class="edge">
 <title>ch sessions&#45;&gt;state/sessions/terminals</title>
-<path fill="none" stroke="currentColor" d="M420.57,-513.56C464.4,-503.99 548.03,-493.65 592.18,-540 625.4,-574.87 580.41,-936.81 612.18,-973 622.09,-984.29 636.43,-990.1 651.21,-992.81"/>
-<polygon fill="currentColor" stroke="currentColor" points="650.75,-994.87 656.99,-993.68 651.37,-990.71 650.75,-994.87"/>
+<path fill="none" stroke="currentColor" d="M420.56,-528.57C464.37,-519.01 547.99,-508.69 592.18,-555 624.28,-588.64 581.48,-938.08 612.18,-973 622.1,-984.28 636.45,-990.09 651.23,-992.8"/>
+<polygon fill="currentColor" stroke="currentColor" points="650.76,-994.86 657,-993.67 651.38,-990.7 650.76,-994.86"/>
 </g>
 <!-- ch sessions&#45;&gt;state/workbench/navigation/notice&#45;sources -->
-<g id="edge101" class="edge">
+<g id="edge102" class="edge">
 <title>ch sessions&#45;&gt;state/workbench/navigation/notice&#45;sources</title>
-<path fill="none" stroke="currentColor" d="M420.52,-513.61C464.28,-504.1 547.82,-493.85 592.18,-540 647.87,-597.92 558.9,-840.86 612.18,-901 612.92,-901.83 613.69,-902.64 614.47,-903.41"/>
-<polygon fill="currentColor" stroke="currentColor" points="612.9,-904.83 618.82,-907.14 615.63,-901.64 612.9,-904.83"/>
+<path fill="none" stroke="currentColor" d="M420.5,-528.62C464.25,-519.13 547.76,-508.91 592.18,-555 645.63,-610.46 561.04,-843.42 612.18,-901 612.92,-901.83 613.69,-902.64 614.47,-903.41"/>
+<polygon fill="currentColor" stroke="currentColor" points="612.9,-904.83 618.83,-907.13 615.63,-901.64 612.9,-904.83"/>
 </g>
 <!-- ch sessions&#45;&gt;views/system/status -->
-<g id="edge102" class="edge">
+<g id="edge103" class="edge">
 <title>ch sessions&#45;&gt;views/system/status</title>
-<path fill="none" stroke="currentColor" d="M420.54,-528.42C464.33,-537.95 547.91,-548.23 592.18,-502 622.12,-470.74 583.55,-145.45 612.18,-113 623.7,-99.95 641.13,-94.23 658.3,-92.15"/>
-<polygon fill="currentColor" stroke="currentColor" points="658.33,-94.26 664.11,-91.61 657.94,-90.08 658.33,-94.26"/>
-</g>
-<!-- ch sessions&#45;&gt;routes/+page -->
-<g id="edge97" class="edge">
-<title>ch sessions&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M425.37,-524.77C470.27,-531.67 549.58,-539.7 592.18,-495 625.1,-460.46 585.42,-105.51 612.18,-66 625.89,-45.76 650.8,-34.29 672.48,-28.71"/>
-<polygon fill="currentColor" stroke="currentColor" points="672.84,-30.78 678.21,-27.38 671.89,-26.69 672.84,-30.78"/>
+<path fill="none" stroke="currentColor" d="M420.55,-543.43C464.35,-552.97 547.95,-563.28 592.18,-517 623.24,-484.51 582.48,-146.73 612.18,-113 623.69,-99.94 641.11,-94.22 658.28,-92.14"/>
+<polygon fill="currentColor" stroke="currentColor" points="658.32,-94.25 664.1,-91.6 657.93,-90.07 658.32,-94.25"/>
 </g>
 <!-- ch sessions&#45;&gt;routes/+page -->
 <g id="edge98" class="edge">
 <title>ch sessions&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" d="M414.09,-530.97C455.63,-543.79 545.73,-557.74 592.18,-509 625.1,-474.46 585.42,-119.51 612.18,-80 626.24,-59.24 652.09,-47.71 674.14,-40.46"/>
-<polygon fill="currentColor" stroke="currentColor" points="674.61,-42.52 679.7,-38.71 673.35,-38.51 674.61,-42.52"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M425.38,-539.78C470.29,-546.69 549.62,-554.73 592.18,-510 626.22,-474.22 584.52,-106.91 612.18,-66 625.87,-45.75 650.79,-34.28 672.46,-28.7"/>
+<polygon fill="currentColor" stroke="currentColor" points="672.82,-30.78 678.2,-27.38 671.88,-26.68 672.82,-30.78"/>
+</g>
+<!-- ch sessions&#45;&gt;routes/+page -->
+<g id="edge99" class="edge">
+<title>ch sessions&#45;&gt;routes/+page</title>
+<path fill="none" stroke="currentColor" d="M414.1,-545.98C455.64,-558.81 545.77,-572.78 592.18,-524 626.22,-488.22 584.52,-120.91 612.18,-80 626.22,-59.23 652.08,-47.7 674.13,-40.45"/>
+<polygon fill="currentColor" stroke="currentColor" points="674.6,-42.51 679.69,-38.7 673.34,-38.5 674.6,-42.51"/>
 </g>
 <!-- ch timedOut -->
 <g id="node28" class="node">
 <title>ch timedOut</title>
-<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-911" rx="38.93" ry="12.56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-908" font-family="Helvetica,Arial,sans-serif" font-size="10.00">timedOut</text>
+<ellipse fill="none" stroke="currentColor" cx="391.15" cy="-848" rx="38.93" ry="12.56"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-845" font-family="Helvetica,Arial,sans-serif" font-size="10.00">timedOut</text>
 </g>
 <!-- ch timedOut&#45;&gt;state/system/config/write -->
-<g id="edge103" class="edge">
+<g id="edge104" class="edge">
 <title>ch timedOut&#45;&gt;state/system/config/write</title>
-<path fill="none" stroke="currentColor" d="M422.42,-903.13C466.76,-893.62 548.79,-884.13 592.18,-930 631.23,-971.28 574.85,-1398.17 612.18,-1441 621.32,-1451.48 634.26,-1457.25 647.85,-1460.2"/>
-<polygon fill="currentColor" stroke="currentColor" points="647.23,-1462.22 653.51,-1461.23 647.98,-1458.09 647.23,-1462.22"/>
+<path fill="none" stroke="currentColor" d="M422.45,-840.1C466.82,-830.57 548.89,-821.04 592.18,-867 635.94,-913.46 570.35,-1392.8 612.18,-1441 621.29,-1451.5 634.23,-1457.27 647.82,-1460.23"/>
+<polygon fill="currentColor" stroke="currentColor" points="647.2,-1462.25 653.48,-1461.26 647.95,-1458.12 647.2,-1462.25"/>
 </g>
 <!-- state/system/machine/usage&#45;refresh -->
-<g id="node84" class="node">
+<g id="node86" class="node">
 <title>state/system/machine/usage&#45;refresh</title>
 <polygon fill="none" stroke="currentColor" points="794.07,-785.8 634.63,-785.8 634.63,-764.2 794.07,-764.2 794.07,-785.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-772" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/machine/usage&#45;refresh</text>
 </g>
 <!-- ch usage&#45;&gt;state/system/machine/usage&#45;refresh -->
-<g id="edge106" class="edge">
+<g id="edge107" class="edge">
 <title>ch usage&#45;&gt;state/system/machine/usage&#45;refresh</title>
-<path fill="none" stroke="currentColor" d="M416,-397.63C458.25,-387.95 546.14,-375.32 592.18,-423 643.83,-476.49 562.75,-701.46 612.18,-757 616.62,-761.99 621.93,-765.91 627.76,-768.96"/>
-<polygon fill="currentColor" stroke="currentColor" points="626.56,-770.72 632.89,-771.3 628.31,-766.9 626.56,-770.72"/>
+<path fill="none" stroke="currentColor" d="M416.02,-373.61C458.3,-363.9 546.23,-351.23 592.18,-399 647.42,-456.43 559.33,-697.37 612.18,-757 616.61,-762 621.91,-765.92 627.73,-768.97"/>
+<polygon fill="currentColor" stroke="currentColor" points="626.53,-770.73 632.86,-771.33 628.28,-766.92 626.53,-770.73"/>
 </g>
 <!-- ch usage&#45;&gt;views/system/machine -->
-<g id="edge107" class="edge">
+<g id="edge108" class="edge">
 <title>ch usage&#45;&gt;views/system/machine</title>
-<path fill="none" stroke="currentColor" d="M419.81,-405.29C471.27,-407.7 582.81,-412.9 652.62,-416.16"/>
-<polygon fill="currentColor" stroke="currentColor" points="652.47,-418.26 658.56,-416.44 652.67,-414.06 652.47,-418.26"/>
-</g>
-<!-- ch usage&#45;&gt;routes/+page -->
-<g id="edge104" class="edge">
-<title>ch usage&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M419.05,-406.7C462.34,-413.56 547.13,-424.45 592.18,-378 640.55,-328.13 572.72,-123.18 612.18,-66 626.06,-45.88 650.98,-34.41 672.61,-28.8"/>
-<polygon fill="currentColor" stroke="currentColor" points="672.96,-30.88 678.33,-27.47 672.01,-26.79 672.96,-30.88"/>
+<path fill="none" stroke="currentColor" d="M419.81,-380.26C471.27,-380.74 582.81,-381.78 652.62,-382.43"/>
+<polygon fill="currentColor" stroke="currentColor" points="652.54,-384.53 658.56,-382.49 652.58,-380.33 652.54,-384.53"/>
 </g>
 <!-- ch usage&#45;&gt;routes/+page -->
 <g id="edge105" class="edge">
 <title>ch usage&#45;&gt;routes/+page</title>
-<path fill="none" stroke="currentColor" d="M411.5,-413.11C451.67,-425.99 544.34,-441.33 592.18,-392 640.55,-342.13 572.72,-137.18 612.18,-80 626.52,-59.22 652.63,-47.67 674.73,-40.4"/>
-<polygon fill="currentColor" stroke="currentColor" points="675.21,-42.45 680.3,-38.64 673.95,-38.45 675.21,-42.45"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M419.03,-382.68C462.27,-389.5 547.01,-400.33 592.18,-354 636.97,-308.06 575.6,-118.71 612.18,-66 626.02,-46.06 650.68,-34.61 672.19,-28.95"/>
+<polygon fill="currentColor" stroke="currentColor" points="672.52,-31.03 677.87,-27.6 671.55,-26.95 672.52,-31.03"/>
+</g>
+<!-- ch usage&#45;&gt;routes/+page -->
+<g id="edge106" class="edge">
+<title>ch usage&#45;&gt;routes/+page</title>
+<path fill="none" stroke="currentColor" d="M411.48,-389.09C451.61,-401.93 544.21,-417.21 592.18,-368 636.97,-322.06 575.6,-132.71 612.18,-80 626.58,-59.26 652.68,-47.7 674.77,-40.43"/>
+<polygon fill="currentColor" stroke="currentColor" points="675.25,-42.48 680.34,-38.67 673.98,-38.47 675.25,-42.48"/>
+</g>
+<!-- ? src/lib/shell/panes/PaneView.svelte:453 -->
+<g id="node32" class="node">
+<title>? src/lib/shell/panes/PaneView.svelte:453</title>
+<polygon fill="none" stroke="currentColor" points="501.15,-2125.8 281.15,-2125.8 281.15,-2104.2 501.15,-2104.2 501.15,-2125.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-2112" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/shell/panes/PaneView.svelte:453 message()</text>
+</g>
+<!-- shell/panes/PaneView -->
+<g id="node106" class="node">
+<title>shell/panes/PaneView</title>
+<polygon fill="none" stroke="currentColor" points="767.14,-2125.8 661.55,-2125.8 661.55,-2104.2 767.14,-2104.2 767.14,-2125.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-2112" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/panes/PaneView</text>
+</g>
+<!-- ? src/lib/shell/panes/PaneView.svelte:453&#45;&gt;shell/panes/PaneView -->
+<g id="edge1" class="edge">
+<title>? src/lib/shell/panes/PaneView.svelte:453&#45;&gt;shell/panes/PaneView</title>
+<path fill="none" stroke="currentColor" d="M501.34,-2115C552.3,-2115 610.97,-2115 653.66,-2115"/>
+<polygon fill="currentColor" stroke="currentColor" points="653.65,-2117.1 659.65,-2115 653.65,-2112.9 653.65,-2117.1"/>
 </g>
 <!-- ? src/lib/state/client/entities.svelte.ts:56 -->
-<g id="node32" class="node">
+<g id="node33" class="node">
 <title>? src/lib/state/client/entities.svelte.ts:56</title>
-<polygon fill="none" stroke="currentColor" points="518.35,-1462.8 263.94,-1462.8 263.94,-1441.2 518.35,-1441.2 518.35,-1462.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1449" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/client/entities.svelte.ts:56 channel === channel</text>
+<polygon fill="none" stroke="currentColor" points="518.35,-1405.8 263.94,-1405.8 263.94,-1384.2 518.35,-1384.2 518.35,-1405.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1392" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/client/entities.svelte.ts:56 channel === channel</text>
 </g>
 <!-- state/client/entities -->
-<g id="node61" class="node">
+<g id="node62" class="node">
 <title>state/client/entities</title>
 <polygon fill="none" stroke="currentColor" points="760.48,-1577.8 668.22,-1577.8 668.22,-1556.2 760.48,-1556.2 760.48,-1577.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1564" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/client/entities</text>
 </g>
 <!-- ? src/lib/state/client/entities.svelte.ts:56&#45;&gt;state/client/entities -->
-<g id="edge1" class="edge">
+<g id="edge2" class="edge">
 <title>? src/lib/state/client/entities.svelte.ts:56&#45;&gt;state/client/entities</title>
-<path fill="none" stroke="currentColor" d="M450.66,-1440.71C494.65,-1435.77 553.72,-1437.19 592.18,-1470 619.74,-1493.51 585.67,-1524.33 612.18,-1549 625.09,-1561.02 643.12,-1566.44 660.39,-1568.56"/>
-<polygon fill="currentColor" stroke="currentColor" points="660.05,-1570.64 666.22,-1569.13 660.46,-1566.46 660.05,-1570.64"/>
+<path fill="none" stroke="currentColor" d="M443.52,-1383.73C488.7,-1377.09 553.16,-1376.11 592.18,-1413 636.58,-1454.97 569.64,-1505.16 612.18,-1549 624.63,-1561.83 642.83,-1567.37 660.37,-1569.37"/>
+<polygon fill="currentColor" stroke="currentColor" points="660.16,-1571.46 666.32,-1569.89 660.53,-1567.27 660.16,-1571.46"/>
 </g>
 <!-- ? src/lib/state/client/queries.svelte.ts:79 -->
-<g id="node33" class="node">
+<g id="node34" class="node">
 <title>? src/lib/state/client/queries.svelte.ts:79</title>
-<polygon fill="none" stroke="currentColor" points="512.25,-1498.8 270.04,-1498.8 270.04,-1477.2 512.25,-1477.2 512.25,-1498.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1485" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/client/queries.svelte.ts:79 .subscribe((event)</text>
+<polygon fill="none" stroke="currentColor" points="512.25,-1441.8 270.04,-1441.8 270.04,-1420.2 512.25,-1420.2 512.25,-1441.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1428" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/client/queries.svelte.ts:79 .subscribe((event)</text>
 </g>
 <!-- state/client/queries -->
-<g id="node62" class="node">
+<g id="node63" class="node">
 <title>state/client/queries</title>
 <polygon fill="none" stroke="currentColor" points="760.47,-1613.8 668.22,-1613.8 668.22,-1592.2 760.47,-1592.2 760.47,-1613.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1600" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/client/queries</text>
 </g>
 <!-- ? src/lib/state/client/queries.svelte.ts:79&#45;&gt;state/client/queries -->
-<g id="edge2" class="edge">
+<g id="edge3" class="edge">
 <title>? src/lib/state/client/queries.svelte.ts:79&#45;&gt;state/client/queries</title>
-<path fill="none" stroke="currentColor" d="M450.66,-1476.71C494.65,-1471.77 553.72,-1473.19 592.18,-1506 619.74,-1529.51 585.67,-1560.33 612.18,-1585 625.09,-1597.02 643.12,-1602.44 660.39,-1604.56"/>
-<polygon fill="currentColor" stroke="currentColor" points="660.05,-1606.64 666.22,-1605.13 660.46,-1602.46 660.05,-1606.64"/>
+<path fill="none" stroke="currentColor" d="M443.52,-1419.73C488.7,-1413.09 553.16,-1412.11 592.18,-1449 636.58,-1490.97 569.64,-1541.16 612.18,-1585 624.63,-1597.83 642.83,-1603.37 660.37,-1605.37"/>
+<polygon fill="currentColor" stroke="currentColor" points="660.16,-1607.46 666.32,-1605.89 660.53,-1603.27 660.16,-1607.46"/>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:247 -->
-<g id="node34" class="node">
+<g id="node35" class="node">
 <title>? src/lib/state/system/config/editors/draft.ts:247</title>
-<polygon fill="none" stroke="currentColor" points="567.15,-1678.8 215.14,-1678.8 215.14,-1657.2 567.15,-1657.2 567.15,-1678.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1665" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:247 message(&#39;notYaml&#39;, index + 1, name)</text>
+<polygon fill="none" stroke="currentColor" points="567.15,-1477.8 215.14,-1477.8 215.14,-1456.2 567.15,-1456.2 567.15,-1477.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1464" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:247 message(&#39;notYaml&#39;, index + 1, name)</text>
 </g>
 <!-- state/system/config/editors/draft -->
-<g id="node76" class="node">
+<g id="node78" class="node">
 <title>state/system/config/editors/draft</title>
 <polygon fill="none" stroke="currentColor" points="787.42,-1649.8 641.28,-1649.8 641.28,-1628.2 787.42,-1628.2 787.42,-1649.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1636" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/config/editors/draft</text>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:247&#45;&gt;state/system/config/editors/draft -->
-<g id="edge3" class="edge">
+<g id="edge4" class="edge">
 <title>? src/lib/state/system/config/editors/draft.ts:247&#45;&gt;state/system/config/editors/draft</title>
-<path fill="none" stroke="currentColor" d="M517.8,-1656.71C542.46,-1654.49 568.13,-1652.17 592.18,-1650 605.62,-1648.79 619.89,-1647.49 633.75,-1646.24"/>
-<polygon fill="currentColor" stroke="currentColor" points="633.66,-1648.35 639.44,-1645.72 633.28,-1644.17 633.66,-1648.35"/>
+<path fill="none" stroke="currentColor" d="M443.52,-1455.73C488.7,-1449.09 553.16,-1448.11 592.18,-1485 636.58,-1526.97 569.64,-1577.16 612.18,-1621 618.3,-1627.3 625.8,-1631.85 633.93,-1635.07"/>
+<polygon fill="currentColor" stroke="currentColor" points="633.11,-1637.01 639.46,-1636.99 634.48,-1633.04 633.11,-1637.01"/>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:272 -->
-<g id="node35" class="node">
+<g id="node36" class="node">
 <title>? src/lib/state/system/config/editors/draft.ts:272</title>
-<polygon fill="none" stroke="currentColor" points="557.15,-1714.8 225.14,-1714.8 225.14,-1693.2 557.15,-1693.2 557.15,-1714.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1701" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:272 message(&#39;emptyKey&#39;, index + 1)</text>
+<polygon fill="none" stroke="currentColor" points="557.15,-1513.8 225.14,-1513.8 225.14,-1492.2 557.15,-1492.2 557.15,-1513.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1500" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:272 message(&#39;emptyKey&#39;, index + 1)</text>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:272&#45;&gt;state/system/config/editors/draft -->
-<g id="edge4" class="edge">
+<g id="edge5" class="edge">
 <title>? src/lib/state/system/config/editors/draft.ts:272&#45;&gt;state/system/config/editors/draft</title>
-<path fill="none" stroke="currentColor" d="M557.41,-1700.99C569.59,-1697.23 581.34,-1692.33 592.18,-1686 605.7,-1678.11 599.01,-1665.47 612.18,-1657 618.84,-1652.71 626.24,-1649.37 633.91,-1646.78"/>
-<polygon fill="currentColor" stroke="currentColor" points="634.46,-1648.81 639.58,-1645.05 633.23,-1644.79 634.46,-1648.81"/>
+<path fill="none" stroke="currentColor" d="M446.61,-1491.73C491.28,-1485.89 553.26,-1486.06 592.18,-1521 625.91,-1551.28 579.79,-1589.29 612.18,-1621 618.41,-1627.09 625.94,-1631.52 634.05,-1634.69"/>
+<polygon fill="currentColor" stroke="currentColor" points="633.2,-1636.61 639.55,-1636.57 634.56,-1632.64 633.2,-1636.61"/>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:274 -->
-<g id="node36" class="node">
+<g id="node37" class="node">
 <title>? src/lib/state/system/config/editors/draft.ts:274</title>
-<polygon fill="none" stroke="currentColor" points="551.27,-1750.8 231.02,-1750.8 231.02,-1729.2 551.27,-1729.2 551.27,-1750.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1737" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:274 message(&#39;duplicateKey&#39;, key)</text>
+<polygon fill="none" stroke="currentColor" points="551.27,-1549.8 231.02,-1549.8 231.02,-1528.2 551.27,-1528.2 551.27,-1549.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1536" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:274 message(&#39;duplicateKey&#39;, key)</text>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:274&#45;&gt;state/system/config/editors/draft -->
-<g id="edge5" class="edge">
+<g id="edge6" class="edge">
 <title>? src/lib/state/system/config/editors/draft.ts:274&#45;&gt;state/system/config/editors/draft</title>
-<path fill="none" stroke="currentColor" d="M455.71,-1751.28C498.79,-1755.2 554.53,-1752.51 592.18,-1722 615.67,-1702.97 589.54,-1677.03 612.18,-1657 618.55,-1651.37 626.05,-1647.21 634.05,-1644.17"/>
-<polygon fill="currentColor" stroke="currentColor" points="634.42,-1646.26 639.43,-1642.35 633.07,-1642.28 634.42,-1646.26"/>
+<path fill="none" stroke="currentColor" d="M456.13,-1527.73C499.13,-1523.9 554.6,-1526.68 592.18,-1557 615.38,-1575.71 589.82,-1601.31 612.18,-1621 618.56,-1626.62 626.07,-1630.77 634.07,-1633.8"/>
+<polygon fill="currentColor" stroke="currentColor" points="633.1,-1635.69 639.46,-1635.61 634.44,-1631.71 633.1,-1635.69"/>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:290 -->
-<g id="node37" class="node">
+<g id="node38" class="node">
 <title>? src/lib/state/system/config/editors/draft.ts:290</title>
-<polygon fill="none" stroke="currentColor" points="549.65,-1534.8 232.64,-1534.8 232.64,-1513.2 549.65,-1513.2 549.65,-1534.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1521" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:290 message(&#39;emptyKey&#39;, at + 1)</text>
+<polygon fill="none" stroke="currentColor" points="549.65,-1585.8 232.64,-1585.8 232.64,-1564.2 549.65,-1564.2 549.65,-1585.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1572" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:290 message(&#39;emptyKey&#39;, at + 1)</text>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:290&#45;&gt;state/system/config/editors/draft -->
-<g id="edge6" class="edge">
+<g id="edge7" class="edge">
 <title>? src/lib/state/system/config/editors/draft.ts:290&#45;&gt;state/system/config/editors/draft</title>
-<path fill="none" stroke="currentColor" d="M450.66,-1512.71C494.65,-1507.77 553.72,-1509.19 592.18,-1542 619.74,-1565.51 585.67,-1596.33 612.18,-1621 618.46,-1626.84 625.94,-1631.12 633.96,-1634.22"/>
-<polygon fill="currentColor" stroke="currentColor" points="633.01,-1636.12 639.37,-1636.07 634.37,-1632.15 633.01,-1636.12"/>
+<path fill="none" stroke="currentColor" d="M550.13,-1576.17C564.89,-1580.09 579.17,-1585.55 592.18,-1593 605.45,-1600.6 599.25,-1612.83 612.18,-1621 618.82,-1625.19 626.17,-1628.48 633.79,-1631.04"/>
+<polygon fill="currentColor" stroke="currentColor" points="633.04,-1633.01 639.4,-1632.75 634.27,-1628.99 633.04,-1633.01"/>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:292 -->
-<g id="node38" class="node">
+<g id="node39" class="node">
 <title>? src/lib/state/system/config/editors/draft.ts:292</title>
-<polygon fill="none" stroke="currentColor" points="551.27,-1570.8 231.02,-1570.8 231.02,-1549.2 551.27,-1549.2 551.27,-1570.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1557" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:292 message(&#39;duplicateKey&#39;, key)</text>
+<polygon fill="none" stroke="currentColor" points="551.27,-1621.8 231.02,-1621.8 231.02,-1600.2 551.27,-1600.2 551.27,-1621.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1608" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:292 message(&#39;duplicateKey&#39;, key)</text>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:292&#45;&gt;state/system/config/editors/draft -->
-<g id="edge7" class="edge">
+<g id="edge8" class="edge">
 <title>? src/lib/state/system/config/editors/draft.ts:292&#45;&gt;state/system/config/editors/draft</title>
-<path fill="none" stroke="currentColor" d="M551.67,-1558.74C566.13,-1563.15 579.92,-1569.38 592.18,-1578 609.43,-1590.12 595.48,-1608.15 612.18,-1621 618.75,-1626.06 626.28,-1629.87 634.18,-1632.73"/>
-<polygon fill="currentColor" stroke="currentColor" points="633.11,-1634.59 639.47,-1634.44 634.41,-1630.59 633.11,-1634.59"/>
+<path fill="none" stroke="currentColor" d="M521.4,-1622.27C559.49,-1625.59 600.02,-1629.12 633.97,-1632.08"/>
+<polygon fill="currentColor" stroke="currentColor" points="633.45,-1634.14 639.61,-1632.57 633.81,-1629.96 633.45,-1634.14"/>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:307 -->
-<g id="node39" class="node">
+<g id="node40" class="node">
 <title>? src/lib/state/system/config/editors/draft.ts:307</title>
-<polygon fill="none" stroke="currentColor" points="557.99,-1606.8 224.31,-1606.8 224.31,-1585.2 557.99,-1585.2 557.99,-1606.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1593" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:307 message(&#39;emptyItem&#39;, index + 1)</text>
+<polygon fill="none" stroke="currentColor" points="557.99,-1657.8 224.31,-1657.8 224.31,-1636.2 557.99,-1636.2 557.99,-1657.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1644" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:307 message(&#39;emptyItem&#39;, index + 1)</text>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:307&#45;&gt;state/system/config/editors/draft -->
-<g id="edge8" class="edge">
+<g id="edge9" class="edge">
 <title>? src/lib/state/system/config/editors/draft.ts:307&#45;&gt;state/system/config/editors/draft</title>
-<path fill="none" stroke="currentColor" d="M555.05,-1607.27C567.67,-1609.17 580.17,-1611.4 592.18,-1614 601.39,-1615.99 603.07,-1618.61 612.18,-1621 619.45,-1622.9 627.06,-1624.67 634.71,-1626.29"/>
-<polygon fill="currentColor" stroke="currentColor" points="633.95,-1628.28 640.26,-1627.43 634.8,-1624.16 633.95,-1628.28"/>
+<path fill="none" stroke="currentColor" d="M558.39,-1642.86C584.64,-1642.21 610.68,-1641.56 633.71,-1640.98"/>
+<polygon fill="currentColor" stroke="currentColor" points="633.63,-1643.09 639.57,-1640.84 633.52,-1638.89 633.63,-1643.09"/>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:319 -->
-<g id="node40" class="node">
+<g id="node41" class="node">
 <title>? src/lib/state/system/config/editors/draft.ts:319</title>
-<polygon fill="none" stroke="currentColor" points="568.95,-1642.8 213.34,-1642.8 213.34,-1621.2 568.95,-1621.2 568.95,-1642.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1629" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:319 message(&#39;notYaml&#39;, index + 1, &#39;value&#39;)</text>
+<polygon fill="none" stroke="currentColor" points="568.95,-1693.8 213.34,-1693.8 213.34,-1672.2 568.95,-1672.2 568.95,-1693.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1680" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/draft.ts:319 message(&#39;notYaml&#39;, index + 1, &#39;value&#39;)</text>
 </g>
 <!-- ? src/lib/state/system/config/editors/draft.ts:319&#45;&gt;state/system/config/editors/draft -->
-<g id="edge9" class="edge">
+<g id="edge10" class="edge">
 <title>? src/lib/state/system/config/editors/draft.ts:319&#45;&gt;state/system/config/editors/draft</title>
-<path fill="none" stroke="currentColor" d="M569.19,-1635.86C591.63,-1636.35 613.64,-1636.83 633.43,-1637.26"/>
-<polygon fill="currentColor" stroke="currentColor" points="633.35,-1639.36 639.39,-1637.39 633.44,-1635.16 633.35,-1639.36"/>
+<path fill="none" stroke="currentColor" d="M558.66,-1671.74C570.07,-1669.83 581.33,-1667.6 592.18,-1665 601.49,-1662.77 602.98,-1659.63 612.18,-1657 619.06,-1655.03 626.28,-1653.24 633.54,-1651.62"/>
+<polygon fill="currentColor" stroke="currentColor" points="633.91,-1653.68 639.34,-1650.37 633.03,-1649.58 633.91,-1653.68"/>
 </g>
 <!-- ? src/lib/state/system/config/editors/writer.ts:118 -->
-<g id="node41" class="node">
+<g id="node42" class="node">
 <title>? src/lib/state/system/config/editors/writer.ts:118</title>
-<polygon fill="none" stroke="currentColor" points="563.35,-1354.8 218.94,-1354.8 218.94,-1333.2 563.35,-1333.2 563.35,-1354.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1341" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/writer.ts:118 message(&#39;changedSince&#39;, row.file)</text>
+<polygon fill="none" stroke="currentColor" points="563.35,-1369.8 218.94,-1369.8 218.94,-1348.2 563.35,-1348.2 563.35,-1369.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1356" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/editors/writer.ts:118 message(&#39;changedSince&#39;, row.file)</text>
 </g>
 <!-- ? src/lib/state/system/config/editors/writer.ts:118&#45;&gt;state/system/config/editors/writer -->
-<g id="edge10" class="edge">
+<g id="edge11" class="edge">
 <title>? src/lib/state/system/config/editors/writer.ts:118&#45;&gt;state/system/config/editors/writer</title>
-<path fill="none" stroke="currentColor" d="M445.06,-1332.72C489.98,-1326.49 553.19,-1326.1 592.18,-1362 630.35,-1397.14 575.57,-1440.25 612.18,-1477 617.77,-1482.61 624.47,-1486.82 631.72,-1489.94"/>
-<polygon fill="currentColor" stroke="currentColor" points="630.74,-1491.82 637.1,-1491.97 632.23,-1487.89 630.74,-1491.82"/>
+<path fill="none" stroke="currentColor" d="M443.52,-1347.73C488.7,-1341.09 553.16,-1340.11 592.18,-1377 636.58,-1418.97 569.64,-1469.16 612.18,-1513 617.7,-1518.69 624.35,-1522.94 631.56,-1526.09"/>
+<polygon fill="currentColor" stroke="currentColor" points="630.57,-1527.96 636.93,-1528.14 632.07,-1524.03 630.57,-1527.96"/>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:220 -->
-<g id="node42" class="node">
+<g id="node43" class="node">
 <title>? src/lib/state/system/config/rows.ts:220</title>
-<polygon fill="none" stroke="currentColor" points="524.34,-2038.8 257.95,-2038.8 257.95,-2017.2 524.34,-2017.2 524.34,-2038.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-2025" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:220 message(&#39;loading&#39;, file)</text>
+<polygon fill="none" stroke="currentColor" points="524.34,-1873.8 257.95,-1873.8 257.95,-1852.2 524.34,-1852.2 524.34,-1873.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1860" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:220 message(&#39;loading&#39;, file)</text>
 </g>
 <!-- state/system/config/rows -->
-<g id="node78" class="node">
+<g id="node80" class="node">
 <title>state/system/config/rows</title>
-<polygon fill="none" stroke="currentColor" points="772.7,-1685.8 656,-1685.8 656,-1664.2 772.7,-1664.2 772.7,-1685.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1672" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/config/rows</text>
+<polygon fill="none" stroke="currentColor" points="772.7,-1721.8 656,-1721.8 656,-1700.2 772.7,-1700.2 772.7,-1721.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1708" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/config/rows</text>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:220&#45;&gt;state/system/config/rows -->
-<g id="edge11" class="edge">
+<g id="edge12" class="edge">
 <title>? src/lib/state/system/config/rows.ts:220&#45;&gt;state/system/config/rows</title>
-<path fill="none" stroke="currentColor" d="M463.25,-2039.29C504.87,-2041.92 556.14,-2037.78 592.18,-2010 696.51,-1929.58 711.11,-1751.1 713.07,-1693.39"/>
-<polygon fill="currentColor" stroke="currentColor" points="715.17,-1693.64 713.23,-1687.58 710.97,-1693.52 715.17,-1693.64"/>
+<path fill="none" stroke="currentColor" d="M524.59,-1865.03C547.97,-1861.54 571.43,-1855.35 592.18,-1845 645.15,-1818.58 685.87,-1758.29 703.62,-1728.42"/>
+<polygon fill="currentColor" stroke="currentColor" points="705.28,-1729.75 706.48,-1723.51 701.65,-1727.63 705.28,-1729.75"/>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:222 -->
-<g id="node43" class="node">
+<g id="node44" class="node">
 <title>? src/lib/state/system/config/rows.ts:222</title>
-<polygon fill="none" stroke="currentColor" points="553.35,-2074.8 228.95,-2074.8 228.95,-2053.2 553.35,-2053.2 553.35,-2074.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-2061" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:222 message(&#39;unreadable&#39;, file, held.error)</text>
+<polygon fill="none" stroke="currentColor" points="553.35,-1909.8 228.95,-1909.8 228.95,-1888.2 553.35,-1888.2 553.35,-1909.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1896" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:222 message(&#39;unreadable&#39;, file, held.error)</text>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:222&#45;&gt;state/system/config/rows -->
-<g id="edge12" class="edge">
+<g id="edge13" class="edge">
 <title>? src/lib/state/system/config/rows.ts:222&#45;&gt;state/system/config/rows</title>
-<path fill="none" stroke="currentColor" d="M457.88,-2075.28C500.55,-2078.8 554.95,-2075.65 592.18,-2046 706.07,-1955.32 714.14,-1755.53 713.79,-1693.64"/>
-<polygon fill="currentColor" stroke="currentColor" points="715.89,-1693.65 713.72,-1687.68 711.69,-1693.7 715.89,-1693.65"/>
+<path fill="none" stroke="currentColor" d="M553.73,-1896.85C567.21,-1893.02 580.23,-1887.85 592.18,-1881 653.79,-1845.67 692.07,-1764.84 706.64,-1728.85"/>
+<polygon fill="currentColor" stroke="currentColor" points="708.43,-1730.04 708.68,-1723.68 704.53,-1728.49 708.43,-1730.04"/>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:224 -->
-<g id="node44" class="node">
+<g id="node45" class="node">
 <title>? src/lib/state/system/config/rows.ts:224</title>
-<polygon fill="none" stroke="currentColor" points="515.45,-1786.8 266.84,-1786.8 266.84,-1765.2 515.45,-1765.2 515.45,-1786.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1773" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:224 message(&#39;cut&#39;, file)</text>
+<polygon fill="none" stroke="currentColor" points="515.45,-1945.8 266.84,-1945.8 266.84,-1924.2 515.45,-1924.2 515.45,-1945.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1932" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:224 message(&#39;cut&#39;, file)</text>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:224&#45;&gt;state/system/config/rows -->
-<g id="edge13" class="edge">
+<g id="edge14" class="edge">
 <title>? src/lib/state/system/config/rows.ts:224&#45;&gt;state/system/config/rows</title>
-<path fill="none" stroke="currentColor" d="M515.94,-1774.76C541.67,-1771.78 568.23,-1766.61 592.18,-1758 633.59,-1743.11 674.23,-1710.58 696.33,-1690.95"/>
-<polygon fill="currentColor" stroke="currentColor" points="697.62,-1692.62 700.67,-1687.04 694.81,-1689.5 697.62,-1692.62"/>
+<path fill="none" stroke="currentColor" d="M515.77,-1941.94C542.54,-1938.67 569.57,-1931.32 592.18,-1917 662.64,-1872.39 697.15,-1770.85 708.73,-1729.27"/>
+<polygon fill="currentColor" stroke="currentColor" points="710.7,-1730.03 710.23,-1723.69 706.64,-1728.94 710.7,-1730.03"/>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:229 -->
-<g id="node45" class="node">
+<g id="node46" class="node">
 <title>? src/lib/state/system/config/rows.ts:229</title>
-<polygon fill="none" stroke="currentColor" points="537.95,-1822.8 244.35,-1822.8 244.35,-1801.2 537.95,-1801.2 537.95,-1822.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1809" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:229 message(&#39;unparsed&#39;, file, first)</text>
+<polygon fill="none" stroke="currentColor" points="537.95,-1981.8 244.35,-1981.8 244.35,-1960.2 537.95,-1960.2 537.95,-1981.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1968" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:229 message(&#39;unparsed&#39;, file, first)</text>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:229&#45;&gt;state/system/config/rows -->
-<g id="edge14" class="edge">
+<g id="edge15" class="edge">
 <title>? src/lib/state/system/config/rows.ts:229&#45;&gt;state/system/config/rows</title>
-<path fill="none" stroke="currentColor" d="M538.37,-1810.62C557.01,-1807.07 575.41,-1801.76 592.18,-1794 641.73,-1771.09 682.99,-1719.07 702.03,-1692.03"/>
-<polygon fill="currentColor" stroke="currentColor" points="703.63,-1693.41 705.31,-1687.28 700.18,-1691.03 703.63,-1693.41"/>
+<path fill="none" stroke="currentColor" d="M538.37,-1975.28C557.56,-1970.98 576.12,-1963.95 592.18,-1953 671.83,-1898.72 701.63,-1776.05 710.33,-1729.44"/>
+<polygon fill="currentColor" stroke="currentColor" points="712.38,-1729.91 711.37,-1723.63 708.25,-1729.17 712.38,-1729.91"/>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:260 -->
-<g id="node46" class="node">
+<g id="node47" class="node">
 <title>? src/lib/state/system/config/rows.ts:260</title>
-<polygon fill="none" stroke="currentColor" points="543.78,-1858.8 238.51,-1858.8 238.51,-1837.2 543.78,-1837.2 543.78,-1858.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1845" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:260 message(&#39;mismatchToggle&#39;, text)</text>
+<polygon fill="none" stroke="currentColor" points="543.78,-2017.8 238.51,-2017.8 238.51,-1996.2 543.78,-1996.2 543.78,-2017.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-2004" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:260 message(&#39;mismatchToggle&#39;, text)</text>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:260&#45;&gt;state/system/config/rows -->
-<g id="edge15" class="edge">
+<g id="edge16" class="edge">
 <title>? src/lib/state/system/config/rows.ts:260&#45;&gt;state/system/config/rows</title>
-<path fill="none" stroke="currentColor" d="M544.09,-1847.63C560.92,-1843.75 577.33,-1838.09 592.18,-1830 650.16,-1798.44 689.65,-1726.2 705.53,-1692.68"/>
-<polygon fill="currentColor" stroke="currentColor" points="707.3,-1693.85 707.92,-1687.52 703.49,-1692.08 707.3,-1693.85"/>
+<path fill="none" stroke="currentColor" d="M544.04,-2010.8C561.31,-2006.3 577.83,-1999.35 592.18,-1989 681.16,-1924.84 705.56,-1780.97 711.57,-1729.64"/>
+<polygon fill="currentColor" stroke="currentColor" points="713.65,-1729.92 712.21,-1723.72 709.47,-1729.46 713.65,-1729.92"/>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:261 -->
-<g id="node47" class="node">
+<g id="node48" class="node">
 <title>? src/lib/state/system/config/rows.ts:261</title>
-<polygon fill="none" stroke="currentColor" points="546.01,-1894.8 236.29,-1894.8 236.29,-1873.2 546.01,-1873.2 546.01,-1894.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1881" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:261 message(&#39;mismatchNumber&#39;, text)</text>
+<polygon fill="none" stroke="currentColor" points="546.01,-2053.8 236.29,-2053.8 236.29,-2032.2 546.01,-2032.2 546.01,-2053.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-2040" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:261 message(&#39;mismatchNumber&#39;, text)</text>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:261&#45;&gt;state/system/config/rows -->
-<g id="edge16" class="edge">
+<g id="edge17" class="edge">
 <title>? src/lib/state/system/config/rows.ts:261&#45;&gt;state/system/config/rows</title>
-<path fill="none" stroke="currentColor" d="M546.45,-1884.66C562.59,-1880.54 578.19,-1874.53 592.18,-1866 658.82,-1825.36 695.02,-1732.7 707.88,-1693.29"/>
-<polygon fill="currentColor" stroke="currentColor" points="709.87,-1693.94 709.68,-1687.59 705.87,-1692.67 709.87,-1693.94"/>
+<path fill="none" stroke="currentColor" d="M546.5,-2046.83C562.95,-2042.22 578.61,-2035.23 592.18,-2025 690.9,-1950.56 709.21,-1784.66 712.59,-1729.35"/>
+<polygon fill="currentColor" stroke="currentColor" points="714.68,-1729.63 712.9,-1723.52 710.48,-1729.4 714.68,-1729.63"/>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:262 -->
-<g id="node48" class="node">
+<g id="node49" class="node">
 <title>? src/lib/state/system/config/rows.ts:262</title>
-<polygon fill="none" stroke="currentColor" points="543.78,-1930.8 238.51,-1930.8 238.51,-1909.2 543.78,-1909.2 543.78,-1930.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1917" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:262 message(&#39;mismatchChoice&#39;, text)</text>
+<polygon fill="none" stroke="currentColor" points="543.78,-2089.8 238.51,-2089.8 238.51,-2068.2 543.78,-2068.2 543.78,-2089.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-2076" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:262 message(&#39;mismatchChoice&#39;, text)</text>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:262&#45;&gt;state/system/config/rows -->
-<g id="edge17" class="edge">
+<g id="edge18" class="edge">
 <title>? src/lib/state/system/config/rows.ts:262&#45;&gt;state/system/config/rows</title>
-<path fill="none" stroke="currentColor" d="M544.04,-1922.5C561.16,-1918.18 577.65,-1911.63 592.18,-1902 667.89,-1851.84 699.77,-1738.2 709.68,-1693.53"/>
-<polygon fill="currentColor" stroke="currentColor" points="711.72,-1694.04 710.92,-1687.73 707.61,-1693.16 711.72,-1694.04"/>
+<path fill="none" stroke="currentColor" d="M460.53,-2090.28C502.69,-2093.34 555.51,-2089.67 592.18,-2061 700.53,-1976.28 712.41,-1788.79 713.39,-1729.41"/>
+<polygon fill="currentColor" stroke="currentColor" points="715.48,-1729.74 713.45,-1723.72 711.28,-1729.7 715.48,-1729.74"/>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:263 -->
-<g id="node49" class="node">
+<g id="node50" class="node">
 <title>? src/lib/state/system/config/rows.ts:263</title>
-<polygon fill="none" stroke="currentColor" points="537.4,-1966.8 244.9,-1966.8 244.9,-1945.2 537.4,-1945.2 537.4,-1966.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1953" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:263 message(&#39;mismatchList&#39;, text)</text>
+<polygon fill="none" stroke="currentColor" points="537.4,-1801.8 244.9,-1801.8 244.9,-1780.2 537.4,-1780.2 537.4,-1801.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1788" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:263 message(&#39;mismatchList&#39;, text)</text>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:263&#45;&gt;state/system/config/rows -->
-<g id="edge18" class="edge">
+<g id="edge19" class="edge">
 <title>? src/lib/state/system/config/rows.ts:263&#45;&gt;state/system/config/rows</title>
-<path fill="none" stroke="currentColor" d="M537.67,-1960.99C557.18,-1956.64 576.01,-1949.41 592.18,-1938 677.21,-1878.02 703.95,-1743.11 711.07,-1693.64"/>
-<polygon fill="currentColor" stroke="currentColor" points="713.15,-1693.93 711.88,-1687.7 708.99,-1693.36 713.15,-1693.93"/>
+<path fill="none" stroke="currentColor" d="M537.86,-1784.48C556.35,-1781.73 574.85,-1778.01 592.18,-1773 628.49,-1762.51 666.74,-1740.92 690.32,-1726.2"/>
+<polygon fill="currentColor" stroke="currentColor" points="691.34,-1728.04 695.29,-1723.05 689.09,-1724.49 691.34,-1728.04"/>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:264 -->
-<g id="node50" class="node">
+<g id="node51" class="node">
 <title>? src/lib/state/system/config/rows.ts:264</title>
-<polygon fill="none" stroke="currentColor" points="538.78,-2002.8 243.51,-2002.8 243.51,-1981.2 538.78,-1981.2 538.78,-2002.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1989" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:264 message(&#39;mismatchText&#39;, text)</text>
+<polygon fill="none" stroke="currentColor" points="538.78,-1837.8 243.51,-1837.8 243.51,-1816.2 538.78,-1816.2 538.78,-1837.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1824" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/rows.ts:264 message(&#39;mismatchText&#39;, text)</text>
 </g>
 <!-- ? src/lib/state/system/config/rows.ts:264&#45;&gt;state/system/config/rows -->
-<g id="edge19" class="edge">
+<g id="edge20" class="edge">
 <title>? src/lib/state/system/config/rows.ts:264&#45;&gt;state/system/config/rows</title>
-<path fill="none" stroke="currentColor" d="M539.18,-1997.43C558.26,-1992.96 576.56,-1985.57 592.18,-1974 686.78,-1903.9 707.72,-1747.32 712.19,-1693.55"/>
-<polygon fill="currentColor" stroke="currentColor" points="714.28,-1693.76 712.64,-1687.61 710.09,-1693.44 714.28,-1693.76"/>
+<path fill="none" stroke="currentColor" d="M539.03,-1823.85C557.32,-1820.55 575.46,-1815.78 592.18,-1809 637.03,-1790.83 678.35,-1750.22 699.19,-1727.39"/>
+<polygon fill="currentColor" stroke="currentColor" points="700.57,-1728.99 703.02,-1723.12 697.45,-1726.18 700.57,-1728.99"/>
 </g>
 <!-- ? src/lib/state/system/config/view/folders.ts:42 -->
-<g id="node51" class="node">
+<g id="node52" class="node">
 <title>? src/lib/state/system/config/view/folders.ts:42</title>
-<polygon fill="none" stroke="currentColor" points="568.08,-1390.8 214.22,-1390.8 214.22,-1369.2 568.08,-1369.2 568.08,-1390.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1377" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/view/folders.ts:42 message(&#39;listFailed&#39;, folder, held.error)</text>
+<polygon fill="none" stroke="currentColor" points="568.08,-1765.8 214.22,-1765.8 214.22,-1744.2 568.08,-1744.2 568.08,-1765.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1752" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/view/folders.ts:42 message(&#39;listFailed&#39;, folder, held.error)</text>
 </g>
 <!-- state/system/config/view/folders -->
-<g id="node79" class="node">
+<g id="node81" class="node">
 <title>state/system/config/view/folders</title>
-<polygon fill="none" stroke="currentColor" points="787.97,-1541.8 640.72,-1541.8 640.72,-1520.2 787.97,-1520.2 787.97,-1541.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1528" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/config/view/folders</text>
+<polygon fill="none" stroke="currentColor" points="787.97,-1685.8 640.72,-1685.8 640.72,-1664.2 787.97,-1664.2 787.97,-1685.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-1672" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/system/config/view/folders</text>
 </g>
 <!-- ? src/lib/state/system/config/view/folders.ts:42&#45;&gt;state/system/config/view/folders -->
-<g id="edge20" class="edge">
+<g id="edge21" class="edge">
 <title>? src/lib/state/system/config/view/folders.ts:42&#45;&gt;state/system/config/view/folders</title>
-<path fill="none" stroke="currentColor" d="M445.06,-1368.72C489.98,-1362.49 553.19,-1362.1 592.18,-1398 630.35,-1433.14 575.57,-1476.25 612.18,-1513 618.23,-1519.07 625.57,-1523.5 633.51,-1526.69"/>
-<polygon fill="currentColor" stroke="currentColor" points="632.52,-1528.56 638.87,-1528.58 633.91,-1524.6 632.52,-1528.56"/>
+<path fill="none" stroke="currentColor" d="M568.5,-1750.22C576.83,-1746.61 584.79,-1742.25 592.18,-1737 609.7,-1724.57 595.21,-1706.17 612.18,-1693 618.49,-1688.1 625.69,-1684.36 633.28,-1681.53"/>
+<polygon fill="currentColor" stroke="currentColor" points="633.87,-1683.55 638.9,-1679.66 632.54,-1679.57 633.87,-1683.55"/>
 </g>
 <!-- ? src/lib/state/system/config/view/folders.ts:65 -->
-<g id="node52" class="node">
+<g id="node53" class="node">
 <title>? src/lib/state/system/config/view/folders.ts:65</title>
-<polygon fill="none" stroke="currentColor" points="550.17,-1426.8 232.13,-1426.8 232.13,-1405.2 550.17,-1405.2 550.17,-1426.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1413" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/view/folders.ts:65 message(&#39;listLoading&#39;, folder)</text>
+<polygon fill="none" stroke="currentColor" points="550.17,-1729.8 232.13,-1729.8 232.13,-1708.2 550.17,-1708.2 550.17,-1729.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1716" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/view/folders.ts:65 message(&#39;listLoading&#39;, folder)</text>
 </g>
 <!-- ? src/lib/state/system/config/view/folders.ts:65&#45;&gt;state/system/config/view/folders -->
-<g id="edge21" class="edge">
+<g id="edge22" class="edge">
 <title>? src/lib/state/system/config/view/folders.ts:65&#45;&gt;state/system/config/view/folders</title>
-<path fill="none" stroke="currentColor" d="M450.66,-1404.71C494.65,-1399.77 553.72,-1401.19 592.18,-1434 619.74,-1457.51 585.67,-1488.33 612.18,-1513 618.35,-1518.74 625.7,-1522.98 633.57,-1526.07"/>
-<polygon fill="currentColor" stroke="currentColor" points="632.5,-1527.92 638.86,-1527.91 633.88,-1523.96 632.5,-1527.92"/>
+<path fill="none" stroke="currentColor" d="M550.63,-1709.04C564.76,-1706.86 578.79,-1704.21 592.18,-1701 601.49,-1698.77 602.98,-1695.63 612.18,-1693 618.94,-1691.07 626.01,-1689.31 633.13,-1687.71"/>
+<polygon fill="currentColor" stroke="currentColor" points="633.37,-1689.81 638.79,-1686.48 632.49,-1685.7 633.37,-1689.81"/>
 </g>
 <!-- ? src/lib/state/system/config/write.ts:70 -->
-<g id="node53" class="node">
+<g id="node54" class="node">
 <title>? src/lib/state/system/config/write.ts:70</title>
-<polygon fill="none" stroke="currentColor" points="565.98,-1246.8 216.31,-1246.8 216.31,-1225.2 565.98,-1225.2 565.98,-1246.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1233" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/write.ts:70 message(&#39;refused&#39;, answer.refused.map((one)</text>
+<polygon fill="none" stroke="currentColor" points="565.98,-1333.8 216.31,-1333.8 216.31,-1312.2 565.98,-1312.2 565.98,-1333.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1320" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/write.ts:70 message(&#39;refused&#39;, answer.refused.map((one)</text>
 </g>
 <!-- ? src/lib/state/system/config/write.ts:70&#45;&gt;state/system/config/write -->
-<g id="edge22" class="edge">
+<g id="edge23" class="edge">
 <title>? src/lib/state/system/config/write.ts:70&#45;&gt;state/system/config/write</title>
-<path fill="none" stroke="currentColor" d="M441.68,-1224.7C487.18,-1217.53 553.27,-1215.74 592.18,-1254 621.98,-1283.3 583.68,-1410.44 612.18,-1441 621.56,-1451.05 634.46,-1456.69 647.91,-1459.65"/>
-<polygon fill="currentColor" stroke="currentColor" points="647.21,-1461.65 653.49,-1460.68 647.98,-1457.52 647.21,-1461.65"/>
+<path fill="none" stroke="currentColor" d="M446.61,-1311.73C491.28,-1305.89 553.26,-1306.06 592.18,-1341 625.91,-1371.28 579.79,-1409.29 612.18,-1441 621.81,-1450.42 634.56,-1455.85 647.75,-1458.83"/>
+<polygon fill="currentColor" stroke="currentColor" points="647.34,-1460.89 653.62,-1459.95 648.13,-1456.76 647.34,-1460.89"/>
 </g>
 <!-- ? src/lib/state/system/config/write.ts:75 -->
-<g id="node54" class="node">
+<g id="node55" class="node">
 <title>? src/lib/state/system/config/write.ts:75</title>
-<polygon fill="none" stroke="currentColor" points="537.81,-1282.8 244.49,-1282.8 244.49,-1261.2 537.81,-1261.2 537.81,-1282.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1269" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/write.ts:75 message(&#39;unwritable&#39;, row.file)</text>
+<polygon fill="none" stroke="currentColor" points="537.81,-1261.8 244.49,-1261.8 244.49,-1240.2 537.81,-1240.2 537.81,-1261.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1248" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/write.ts:75 message(&#39;unwritable&#39;, row.file)</text>
 </g>
 <!-- ? src/lib/state/system/config/write.ts:75&#45;&gt;state/system/config/write -->
-<g id="edge23" class="edge">
+<g id="edge24" class="edge">
 <title>? src/lib/state/system/config/write.ts:75&#45;&gt;state/system/config/write</title>
-<path fill="none" stroke="currentColor" d="M442.77,-1260.73C488.07,-1253.89 553.17,-1252.59 592.18,-1290 641.04,-1336.85 565.39,-1392.08 612.18,-1441 621.69,-1450.93 634.64,-1456.52 648.1,-1459.47"/>
-<polygon fill="currentColor" stroke="currentColor" points="647.39,-1461.48 653.68,-1460.51 648.16,-1457.35 647.39,-1461.48"/>
+<path fill="none" stroke="currentColor" d="M442.04,-1239.72C487.46,-1232.66 553.22,-1231.04 592.18,-1269 647.3,-1322.71 559.43,-1384.97 612.18,-1441 621.61,-1451.01 634.52,-1456.62 647.98,-1459.58"/>
+<polygon fill="currentColor" stroke="currentColor" points="647.28,-1461.59 653.56,-1460.62 648.05,-1457.46 647.28,-1461.59"/>
 </g>
 <!-- ? src/lib/state/system/config/write.ts:76 -->
-<g id="node55" class="node">
+<g id="node56" class="node">
 <title>? src/lib/state/system/config/write.ts:76</title>
-<polygon fill="none" stroke="currentColor" points="545.98,-1318.8 236.31,-1318.8 236.31,-1297.2 545.98,-1297.2 545.98,-1318.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1305" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/write.ts:76 message(&#39;failed&#39;, answer.error ?? &#39;&#39;)</text>
+<polygon fill="none" stroke="currentColor" points="545.98,-1297.8 236.31,-1297.8 236.31,-1276.2 545.98,-1276.2 545.98,-1297.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1284" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/system/config/write.ts:76 message(&#39;failed&#39;, answer.error ?? &#39;&#39;)</text>
 </g>
 <!-- ? src/lib/state/system/config/write.ts:76&#45;&gt;state/system/config/write -->
-<g id="edge24" class="edge">
+<g id="edge25" class="edge">
 <title>? src/lib/state/system/config/write.ts:76&#45;&gt;state/system/config/write</title>
-<path fill="none" stroke="currentColor" d="M445.06,-1296.72C489.98,-1290.49 553.19,-1290.1 592.18,-1326 630.35,-1361.14 575.57,-1404.25 612.18,-1441 621.83,-1450.69 634.77,-1456.19 648.16,-1459.14"/>
-<polygon fill="currentColor" stroke="currentColor" points="647.42,-1461.14 653.71,-1460.18 648.2,-1457.01 647.42,-1461.14"/>
+<path fill="none" stroke="currentColor" d="M443.52,-1275.73C488.7,-1269.09 553.16,-1268.11 592.18,-1305 636.58,-1346.97 569.64,-1397.16 612.18,-1441 621.7,-1450.81 634.59,-1456.36 647.98,-1459.32"/>
+<polygon fill="currentColor" stroke="currentColor" points="647.23,-1461.32 653.52,-1460.36 648.01,-1457.19 647.23,-1461.32"/>
 </g>
 <!-- ? src/lib/views/shared/changes/CommitBox.svelte:55 -->
-<g id="node56" class="node">
+<g id="node57" class="node">
 <title>? src/lib/views/shared/changes/CommitBox.svelte:55</title>
-<polygon fill="none" stroke="currentColor" points="532.26,-1174.8 250.03,-1174.8 250.03,-1153.2 532.26,-1153.2 532.26,-1174.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1161" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/shared/changes/CommitBox.svelte:55 message(root)</text>
+<polygon fill="none" stroke="currentColor" points="532.26,-1117.8 250.03,-1117.8 250.03,-1096.2 532.26,-1096.2 532.26,-1117.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1104" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/shared/changes/CommitBox.svelte:55 message(root)</text>
 </g>
 <!-- views/shared/changes -->
-<g id="node95" class="node">
+<g id="node97" class="node">
 <title>views/shared/changes</title>
-<polygon fill="none" stroke="currentColor" points="766.59,-645.8 662.11,-645.8 662.11,-624.2 766.59,-624.2 766.59,-645.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-632" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/shared/changes</text>
+<polygon fill="none" stroke="currentColor" points="766.59,-609.8 662.11,-609.8 662.11,-588.2 766.59,-588.2 766.59,-609.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="714.35" y="-596" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/shared/changes</text>
 </g>
 <!-- ? src/lib/views/shared/changes/CommitBox.svelte:55&#45;&gt;views/shared/changes -->
-<g id="edge25" class="edge">
+<g id="edge26" class="edge">
 <title>? src/lib/views/shared/changes/CommitBox.svelte:55&#45;&gt;views/shared/changes</title>
-<path fill="none" stroke="currentColor" d="M438.76,-1175.26C484.73,-1183.28 553.55,-1186.49 592.18,-1146 627.88,-1108.59 583.26,-723.87 612.18,-681 622.38,-665.89 638.82,-655.67 655.52,-648.79"/>
-<polygon fill="currentColor" stroke="currentColor" points="655.91,-650.88 660.75,-646.76 654.4,-646.97 655.91,-650.88"/>
+<path fill="none" stroke="currentColor" d="M438.77,-1118.26C484.74,-1126.29 553.56,-1129.5 592.18,-1089 628.41,-1051.01 577.63,-656.51 612.18,-617 622.77,-604.89 638.46,-599.08 654.33,-596.63"/>
+<polygon fill="currentColor" stroke="currentColor" points="654.42,-598.73 660.12,-595.92 653.91,-594.57 654.42,-598.73"/>
 </g>
 <!-- ? src/lib/views/shared/changes/CommitBox.svelte:72 -->
-<g id="node57" class="node">
+<g id="node58" class="node">
 <title>? src/lib/views/shared/changes/CommitBox.svelte:72</title>
-<polygon fill="none" stroke="currentColor" points="532.26,-1210.8 250.03,-1210.8 250.03,-1189.2 532.26,-1189.2 532.26,-1210.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1197" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/shared/changes/CommitBox.svelte:72 message(root)</text>
+<polygon fill="none" stroke="currentColor" points="532.26,-1153.8 250.03,-1153.8 250.03,-1132.2 532.26,-1132.2 532.26,-1153.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1140" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/shared/changes/CommitBox.svelte:72 message(root)</text>
 </g>
 <!-- ? src/lib/views/shared/changes/CommitBox.svelte:72&#45;&gt;views/shared/changes -->
-<g id="edge26" class="edge">
+<g id="edge27" class="edge">
 <title>? src/lib/views/shared/changes/CommitBox.svelte:72&#45;&gt;views/shared/changes</title>
-<path fill="none" stroke="currentColor" d="M438.79,-1211.28C484.77,-1219.33 553.61,-1222.55 592.18,-1182 630.58,-1141.64 581.1,-727.23 612.18,-681 622.3,-665.95 638.64,-655.75 655.25,-648.86"/>
-<polygon fill="currentColor" stroke="currentColor" points="655.63,-650.97 660.46,-646.84 654.11,-647.06 655.63,-650.97"/>
+<path fill="none" stroke="currentColor" d="M438.79,-1154.29C484.78,-1162.33 553.62,-1165.56 592.18,-1125 631.11,-1084.06 575.06,-659.58 612.18,-617 622.81,-604.81 638.59,-599 654.54,-596.57"/>
+<polygon fill="currentColor" stroke="currentColor" points="654.66,-598.68 660.36,-595.87 654.15,-594.51 654.66,-598.68"/>
 </g>
 <!-- ? src/lib/views/system/workbench/editors/Editor.svelte:101 -->
-<g id="node58" class="node">
+<g id="node59" class="node">
 <title>? src/lib/views/system/workbench/editors/Editor.svelte:101</title>
-<polygon fill="none" stroke="currentColor" points="584.18,-1102.8 198.11,-1102.8 198.11,-1081.2 584.18,-1081.2 584.18,-1102.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1089" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/system/workbench/editors/Editor.svelte:101 message(&#39;changedSince&#39;, row.file)</text>
+<polygon fill="none" stroke="currentColor" points="584.18,-1189.8 198.11,-1189.8 198.11,-1168.2 584.18,-1168.2 584.18,-1189.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1176" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/system/workbench/editors/Editor.svelte:101 message(&#39;changedSince&#39;, row.file)</text>
 </g>
 <!-- ? src/lib/views/system/workbench/editors/Editor.svelte:101&#45;&gt;views/system/workbench -->
-<g id="edge27" class="edge">
+<g id="edge28" class="edge">
 <title>? src/lib/views/system/workbench/editors/Editor.svelte:101&#45;&gt;views/system/workbench</title>
-<path fill="none" stroke="currentColor" d="M438.75,-1103.25C484.72,-1111.27 553.53,-1114.47 592.18,-1074 627.29,-1037.24 578.7,-655.24 612.18,-617 621.29,-606.6 634.15,-600.85 647.66,-597.88"/>
-<polygon fill="currentColor" stroke="currentColor" points="647.76,-600 653.28,-596.85 647,-595.87 647.76,-600"/>
+<path fill="none" stroke="currentColor" d="M438.77,-1190.27C484.75,-1198.3 553.57,-1201.51 592.18,-1161 629.01,-1122.36 582.36,-725.27 612.18,-681 622.37,-665.88 638.81,-655.66 655.5,-648.78"/>
+<polygon fill="currentColor" stroke="currentColor" points="655.9,-650.88 660.74,-646.75 654.39,-646.96 655.9,-650.88"/>
 </g>
 <!-- ? src/lib/views/system/workbench/settings/Item.svelte:100 -->
-<g id="node59" class="node">
+<g id="node60" class="node">
 <title>? src/lib/views/system/workbench/settings/Item.svelte:100</title>
-<polygon fill="none" stroke="currentColor" points="570.31,-1138.8 211.99,-1138.8 211.99,-1117.2 570.31,-1117.2 570.31,-1138.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1125" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/system/workbench/settings/Item.svelte:100 message(&#39;missing&#39;, row.file)</text>
+<polygon fill="none" stroke="currentColor" points="570.31,-1225.8 211.99,-1225.8 211.99,-1204.2 570.31,-1204.2 570.31,-1225.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="391.15" y="-1212" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/views/system/workbench/settings/Item.svelte:100 message(&#39;missing&#39;, row.file)</text>
 </g>
 <!-- ? src/lib/views/system/workbench/settings/Item.svelte:100&#45;&gt;views/system/workbench -->
-<g id="edge28" class="edge">
+<g id="edge29" class="edge">
 <title>? src/lib/views/system/workbench/settings/Item.svelte:100&#45;&gt;views/system/workbench</title>
-<path fill="none" stroke="currentColor" d="M438.78,-1139.28C484.76,-1147.32 553.59,-1150.53 592.18,-1110 629.98,-1070.29 576.13,-658.3 612.18,-617 621.27,-606.59 634.13,-600.83 647.64,-597.86"/>
-<polygon fill="currentColor" stroke="currentColor" points="647.74,-599.98 653.26,-596.83 646.98,-595.85 647.74,-599.98"/>
+<path fill="none" stroke="currentColor" d="M438.8,-1226.29C484.79,-1234.34 553.63,-1237.57 592.18,-1197 631.71,-1155.41 580.19,-728.63 612.18,-681 622.3,-665.94 638.63,-655.74 655.24,-648.86"/>
+<polygon fill="currentColor" stroke="currentColor" points="655.62,-650.96 660.45,-646.84 654.1,-647.05 655.62,-650.96"/>
 </g>
 </g>
 </svg>

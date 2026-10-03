@@ -3,8 +3,9 @@
 // sizes carried as flex on each child; and a folded child drawn as a strip through the fold
 // snippet, with no sash on either side of it.
 //
-// What this does NOT cover: the sash's pointer behaviour and the drag arithmetic. There is no DOM
-// in this suite, so a pointer drag cannot be simulated here; svelte-check and the page are what
+// What this does NOT cover: the sash's pointer behaviour and the pixel-to-fraction arithmetic of
+// SplitView's own drag (draggedShare, the share a drag leaves a child, is run below). There is no
+// DOM in this suite, so a pointer drag cannot be simulated here; svelte-check and the page are what
 // exercise Sash, and the drag itself needs a DOM and is not run here.
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -13,7 +14,7 @@ import { render } from 'svelte/server';
 import SplitView from '../../../src/lib/shell/panes/SplitView.svelte';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
-import { FOLD_PX } from '../../../src/lib/ui/frame/sash-size.ts';
+import { FOLD_PX, draggedShare } from '../../../src/lib/ui/frame/sash-size.ts';
 import type { Layout } from '../../../src/lib/state/workbench/layout/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -211,5 +212,23 @@ describe('SplitView', () => {
         expect(single).toContain('data-path=""');
         expect(single).not.toContain('role="separator"');
         expect(single).not.toContain('flex:');
+    });
+});
+
+describe('the share a drag of a handle leaves the first child (draggedShare)', () => {
+    // Revert: let the share fall to a tenth, which leaves the rendered half most of the row.
+    it('keeps the editor at least half the row of a Markdown file, so the rendered half takes at most half', () => {
+        // a 340px pane minus the handle, dragged 300px toward the editor
+        expect(draggedShare(0.5, -300, 334, 0.5, 0.9)).toBe(0.5);
+        expect(draggedShare(0.6, -300, 334, 0.5, 0.9)).toBe(0.5);
+    });
+
+    it('follows a drag toward the other child, up to the most', () => {
+        expect(draggedShare(0.5, 83.5, 334, 0.5, 0.9)).toBeCloseTo(0.75);
+        expect(draggedShare(0.5, 3000, 334, 0.5, 0.9)).toBe(0.9);
+    });
+
+    it('holds the share when the row has no room to share', () => {
+        expect(draggedShare(0.6, 40, 0, 0.5, 0.9)).toBe(0.6);
     });
 });

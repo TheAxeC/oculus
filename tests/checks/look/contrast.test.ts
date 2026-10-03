@@ -1,15 +1,16 @@
 // Every text-on-background pair the tokens declare, under every theme, at 4.5:1 or better.
 //
 // The pairs are the ones a component can actually produce: a `-txt` colour on the page, the panel
-// the card and the chip; a hue's `-txt` on its own tint; a hue's `-lane-txt` on its `-lane` and on
-// nothing else, since a Focus lane or column header is where it is painted. That every word of
-// those headers sits on its own lane surface in the page needs a DOM and is not run here; the src/
-// reading case below only reports a lane text token referenced outside the one shape the header
-// uses; `--on-accent-bg` on the selected tree row's surface `--accent-bg`; and the on-chip ink on
-// its filled chip. A pair below the threshold is printed with its ratio and fails. It is never
-// fixed by loosening the threshold or by editing a colour here: a colour is an authored value in
-// tokens.css or themes.css, and a failure is a finding about that value or about derive.ts, not
-// something this file repairs.
+// the card and the chip, whether derive.ts mints it or a theme authors it, and a tab label's
+// `--tab-*-txt` on the strip and the shown tab only; a hue's `-txt` on its own tint; a hue's
+// `-lane-txt` on its `-lane` and on nothing else, since a Focus lane or column header is where it
+// is painted. That every word of those headers sits on its own lane surface in the page needs a DOM
+// and is not run here; the src/ reading case below only reports a lane text token referenced
+// outside the one shape the header uses; `--on-accent-bg` on the selected tree row's surface
+// `--accent-bg`; and the on-chip ink on its filled chip. A pair below the threshold is printed with
+// its ratio and fails. It is never fixed by loosening the threshold or by editing a colour here: a
+// colour is an authored value in tokens.css or themes.css, and a failure is a finding about that
+// value or about derive.ts, not something this file repairs.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -30,6 +31,10 @@ const LANE_TEXT = /^--c-.+-lane-txt$/;
 /** The four surfaces any text can land on. */
 const SURFACES = ['--bg', '--panel', '--card', '--chip'];
 
+/** A tab label's text token, which lands on the strip (`--bg`) or on the shown tab (`--panel`). */
+const TAB_TEXT = /^--tab-.+-txt$/;
+const TAB_SURFACES = ['--bg', '--panel'];
+
 type Pair = { fg: string; bg: string; ratio: number };
 
 /** Every pair one theme declares: the token names, and the ratio between their two colours. */
@@ -42,10 +47,12 @@ function pairs(name: string): Pair[] {
         found.push({ fg, bg, ratio: ratio(all[fg], all[bg]) });
     };
 
-    for (const fg of Object.keys(derived)) {
+    // A `-txt` token the theme authors by hand is measured as one derive.ts mints.
+    for (const fg of Object.keys(all)) {
         if (!fg.endsWith('-txt')) continue;
+        const grounds = TAB_TEXT.test(fg) ? TAB_SURFACES : SURFACES;
         if (!LANE_TEXT.test(fg))
-            for (const surface of SURFACES) if (all[surface]) measure(fg, surface);
+            for (const surface of grounds) if (all[surface]) measure(fg, surface);
         const own = `${fg.slice(0, -'-txt'.length)}-bg`;
         if (fg.startsWith('--c-') && all[own]) measure(fg, own);
         const lane = fg.slice(0, -'-txt'.length);

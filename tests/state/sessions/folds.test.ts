@@ -29,11 +29,13 @@ import {
     timelineTurns,
     toggled
 } from '../../../src/lib/state/sessions/folds.ts';
+import { terminalTabTitle } from '../../../src/lib/state/sessions/terminal/terminal-lists.ts';
 import type {
     GroupedSession,
     SessionAgent,
     SessionEvent,
     SizedAgent,
+    Terminal,
     Workspace
 } from '../../../src/lib/data/model/index.ts';
 
@@ -470,5 +472,75 @@ describe("an agent's tokens out of a result of the wrong shape", () => {
 
     it('is null for an agent whose result reports none', () => {
         expect(agentTokens({ id: 'a' } as SizedAgent)).toBe(null);
+    });
+});
+
+// The title a Terminal tab takes from its terminal is the rule the Terminal view's list row has.
+const namedShell: Terminal = {
+    id: '45a932-shell',
+    name: '45a932-shell',
+    title: '',
+    icon: '',
+    color: '',
+    kind: 'shell',
+    cwd: '/work',
+    command: '',
+    pid: 14,
+    created: '2026-10-02T10:00:00Z',
+    attached: true,
+    resumes: null,
+    task: false,
+    exit: null,
+    job: null
+};
+
+describe('the title of a Terminal tab (terminalTabTitle)', () => {
+    // Revert: label the tab by the terminal's name, the internal id.
+    it('is the process tmux reports when the terminal has no title and no job', () => {
+        expect(terminalTabTitle({ ...namedShell, command: 'zsh' })).toBe('zsh');
+        expect(terminalTabTitle({ ...namedShell, command: 'vim' })).toBe('vim');
+    });
+
+    // Revert: read the name before the title.
+    it('is the title the reader gave, over everything else', () => {
+        const task = { ...namedShell, task: true, job: { repo: '/r', name: 'build' } };
+        expect(terminalTabTitle({ ...namedShell, title: 'mine', command: 'zsh' })).toBe('mine');
+        expect(terminalTabTitle({ ...task, title: 'mine' })).toBe('mine');
+    });
+
+    // Revert: drop the job from the rule.
+    it('is the name of the command a task terminal runs', () => {
+        const task = {
+            ...namedShell,
+            command: 'zsh',
+            task: true,
+            job: { repo: '/r', name: 'build' }
+        };
+        expect(terminalTabTitle(task)).toBe('build');
+    });
+
+    // Revert: answer the name when the process is not yet known.
+    it('is the word for a shell when tmux has reported no process yet', () => {
+        expect(terminalTabTitle(namedShell)).toBe(catalog['sessions.terminal_title_shell']);
+    });
+
+    it('is the agent word for an agent terminal with no title', () => {
+        expect(terminalTabTitle({ ...namedShell, kind: 'claude' })).toBe(
+            catalog['sessions.kind_claude']
+        );
+        expect(terminalTabTitle({ ...namedShell, kind: 'codex', title: 'Plan' })).toBe('Plan');
+    });
+
+    it('names a terminal as the Terminal view lists it', () => {
+        const rows = [
+            namedShell,
+            { ...namedShell, command: 'vim' },
+            { ...namedShell, title: 'mine' },
+            { ...namedShell, task: true, job: { repo: '/r', name: 'build' } },
+            { ...namedShell, kind: 'claude' as const }
+        ];
+        expect(terminalChoices(rows, []).map((one) => one.title)).toEqual(
+            rows.map(terminalTabTitle)
+        );
     });
 });

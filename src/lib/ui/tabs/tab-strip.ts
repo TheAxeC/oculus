@@ -31,6 +31,8 @@ export type Tab = {
      * says so.
      */
     dirty?: boolean;
+    /** The tab is pinned: a pin stands in the close control's place and presses to unpin. */
+    pinned?: boolean;
 };
 
 /**
@@ -44,6 +46,72 @@ export function insertionIndex(midpoints: number[], x: number): number {
     return found < 0 ? midpoints.length : found;
 }
 
+/** One tab's measured box in the viewport, which is how the rows of a wrapped strip are found. */
+export type TabBox = { left: number; right: number; top: number; bottom: number };
+
+/**
+ * One row of a wrapped strip: the index of its first tab, its extent down the page, and the middle
+ * of each of its tabs along the row.
+ */
+export type TabRow = { first: number; top: number; bottom: number; mids: number[] };
+
+/** Where a row starts being a new one: a tab whose top is at or below the row's bottom edge. */
+const ROW_SLACK = 1;
+
+/** The tabs grouped by the line they sit on, in order; a strip that did not wrap is one row. */
+export function tabRows(boxes: readonly TabBox[]): TabRow[] {
+    const rows: TabRow[] = [];
+    for (const [index, box] of boxes.entries()) {
+        const row = rows.at(-1);
+        if (row !== undefined && box.top < row.bottom - ROW_SLACK) {
+            row.mids.push((box.left + box.right) / 2);
+            continue;
+        }
+        rows.push({
+            first: index,
+            top: box.top,
+            bottom: box.bottom,
+            mids: [(box.left + box.right) / 2]
+        });
+    }
+    return rows;
+}
+
+/**
+ * Where a tab dropped at (`x`, `y`) would be inserted into a strip of several rows: the row under
+ * the pointer (the first above the strip, the last below it, the nearer one in a gap between two)
+ * gives the place by `insertionIndex` along the row, counted from the strip's first tab.
+ */
+export function wrappedInsertion(rows: readonly TabRow[], x: number, y: number): number {
+    const first = rows.at(0);
+    const last = rows.at(-1);
+    if (first === undefined || last === undefined) return 0;
+    const row =
+        rows.find((one) => y >= one.top && y < one.bottom) ??
+        (y < first.top ? first : y >= last.bottom ? last : nearest(rows, y));
+    return row.first + insertionIndex(row.mids, x);
+}
+
+/** The row whose extent is nearest a vertical position, for a pointer in the gap between rows. */
+function nearest(rows: readonly TabRow[], y: number): TabRow {
+    const gap = (row: TabRow): number => Math.min(Math.abs(y - row.top), Math.abs(y - row.bottom));
+    return rows.reduce((best, row) => (gap(row) < gap(best) ? row : best));
+}
+
+/**
+ * What Delete on a focused tab comes to: an unpinned tab closes; a pinned tab stays open and the
+ * first unpinned tab of the pane becomes the active one, as VS Code does with
+ * `preventPinnedEditorClose`; a pane with no unpinned tab changes nothing.
+ */
+export function afterDelete(
+    tabs: readonly { id: string; pinned?: boolean }[],
+    id: string
+): { kind: 'close' } | { kind: 'activate'; id: string } | { kind: 'none' } {
+    if (tabs.find((tab) => tab.id === id)?.pinned !== true) return { kind: 'close' };
+    const first = tabs.find((tab) => tab.pinned !== true);
+    return first === undefined ? { kind: 'none' } : { kind: 'activate', id: first.id };
+}
+
 export type TabScrollState = {
     overflowing: boolean;
     atStart: boolean;
@@ -51,15 +119,35 @@ export type TabScrollState = {
 };
 
 /**
+ * Whether the scroll controls stand beside the tabs: only when the strip holds the tabs' least
+ * width and both controls on one line. A narrower strip draws no controls, so the tabs keep their
+ * line and the shown tab its room; the wheel and the arrow keys still move along the tabs.
+ */
+export function controlsFit(strip: number, least: number, controls: number): boolean {
+    return strip >= least + controls;
+}
+
+/**
+ * Whether a strip wraps its tabs onto several rows: when the reader asked for it and the strip
+ * draws every tab, which is `show_tabs: multiple`. Under any other value the setting is ignored.
+ */
+export function stripWraps(wrapTabs: boolean, bar: string): boolean {
+    return wrapTabs && bar === 'multiple';
+}
+
+/**
  * Overflow uses the width without controls; edge state uses the current viewport, with one pixel of
- * rounding slack.
+ * rounding slack. A strip that wraps has no overflow and no scroll offset, however wide its tabs
+ * are in all.
  */
 export function tabScrollState(
     scrollWidth: number,
     clientWidth: number,
     scrollLeft: number,
-    widthWithoutControls: number = clientWidth
+    widthWithoutControls: number = clientWidth,
+    wrapped = false
 ): TabScrollState {
+    if (wrapped) return { overflowing: false, atStart: true, atEnd: true };
     const end = Math.max(0, scrollWidth - clientWidth);
     return {
         overflowing: scrollWidth - widthWithoutControls > 1,

@@ -123,6 +123,12 @@ describe('one file as its own tab', () => {
         expect(drawn({ root: 'hub', path: 'paper.pdf' })).toContain('Open in a browser tab');
     });
 
+    // Revert: draw the pane's title row over the file again.
+    it('draws no title row, the path being the breadcrumb the pane draws over it', () => {
+        // the pane draws the file's path as a breadcrumb, so the tab keeps no heading of its own
+        expect(drawn({ root: 'hub', path: 'paper.pdf', label: 'paper.pdf' })).not.toContain('<h2');
+    });
+
     it('offers no control that opens an editor: every text file opens in one already', () => {
         const body = drawn({ root: 'hub', path: 'README.md', label: 'README.md' });
 
