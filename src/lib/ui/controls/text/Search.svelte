@@ -14,6 +14,10 @@
     //
     // A right-click on the box opens the text boxes' editing menu (TextBoxMenu.svelte), as a
     // TextInput's does.
+    //
+    // A caller that moves the cursor into the box binds `input`, and one that gives a key a meaning
+    // of its own in the box (Up and Down in a box with a history) hands `onkey`, which is asked
+    // first and answers true for a press it took.
 
     import TextBoxMenu from './TextBoxMenu.svelte';
     import { typedInto } from './text-menu';
@@ -29,13 +33,28 @@
         field?: Record<string, unknown>;
         /** The box takes the width its row leaves free, for a box set in a flex row. */
         fill?: boolean;
+        /** The input element, for a caller that puts the cursor in it. */
+        input?: HTMLInputElement | null;
+        /** A key press the caller takes for itself; true when it did. */
+        onkey?: (event: KeyboardEvent) => boolean;
     };
 
-    let { value, placeholder, oninput, onenter, field = {}, fill = false }: Props = $props();
-
-    let box: HTMLInputElement | null = $state(null);
+    let {
+        value,
+        placeholder,
+        oninput,
+        onenter,
+        field = {},
+        fill = false,
+        input = $bindable(null),
+        onkey
+    }: Props = $props();
 
     function keys(event: KeyboardEvent): void {
+        if (onkey?.(event) === true) {
+            event.preventDefault();
+            return;
+        }
         if (event.key === 'Enter' && onenter !== undefined) {
             event.preventDefault();
             onenter();
@@ -47,7 +66,7 @@
     }
 </script>
 
-<TextBoxMenu label={placeholder} box={() => box}>
+<TextBoxMenu label={placeholder} box={() => input}>
     <input
         {...field}
         class="search"
@@ -59,7 +78,7 @@
         aria-label={placeholder}
         oninput={(event) => typedInto(event, oninput)}
         onkeydown={keys}
-        bind:this={box}
+        bind:this={input}
     />
 </TextBoxMenu>
 

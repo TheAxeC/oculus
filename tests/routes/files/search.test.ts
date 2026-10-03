@@ -95,7 +95,7 @@ describe('the gates', () => {
             options()
         );
         expect(response.status).toBe(403);
-        expect(await response.json()).toEqual({ error: 'the write token is missing or stale' });
+        expect(await response.json()).toEqual({ error: 'token' });
         expect(ran).toEqual([]);
     });
 
@@ -115,7 +115,7 @@ describe('the answer', () => {
                 {
                     root: 'hub',
                     path: 'src/a.ts',
-                    hits: [{ line: 12, column: 5, length: 6, text: 'the needle here' }]
+                    hits: [{ line: 12, column: 5, length: 6, text: 'the needle here', at: 4 }]
                 }
             ],
             total: 1,
@@ -179,33 +179,24 @@ describe('what is refused', () => {
     it('refuses an empty pattern with 400 and starts nothing', async () => {
         const response = await handleSearch(request('q='), TOKEN, options());
         expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({
-            error: 'the search carries no pattern',
-            refused: 'empty'
-        });
+        expect(await response.json()).toEqual({ error: 'empty' });
         expect(ran).toEqual([]);
     });
 
     it('refuses a pattern past the bound with 400', async () => {
         const response = await handleSearch(request(`q=${'x'.repeat(1001)}`), TOKEN, options());
         expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({
-            error: 'the pattern is longer than a search takes',
-            refused: 'too_long'
-        });
+        expect(await response.json()).toEqual({ error: 'too_long' });
     });
 
     it('refuses a root outside the served list with 400 and starts nothing', async () => {
         const response = await handleSearch(request('q=needle&root=elsewhere'), TOKEN, options());
         expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({
-            error: 'that root is not one oculus serves',
-            refused: 'unknown_root'
-        });
+        expect(await response.json()).toEqual({ error: 'unknown_root' });
         expect(ran).toEqual([]);
     });
 
-    it('answers 400 with the one-line reason for a regex ripgrep would not read', async () => {
+    it('answers 400 with the word and the one-line reason for a regex ripgrep would not read', async () => {
         const response = await handleSearch(
             request('q=fo(&regex=1&root=hub'),
             TOKEN,
@@ -216,6 +207,19 @@ describe('what is refused', () => {
             })
         );
         expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: 'error: unclosed group' });
+        expect(await response.json()).toEqual({
+            error: 'pattern',
+            reason: 'error: unclosed group'
+        });
+    });
+
+    it('answers 400 with the word timed_out for a run that ran out of time', async () => {
+        const response = await handleSearch(
+            request('q=needle&root=hub'),
+            TOKEN,
+            options({ code: undefined, stdout: '', timedOut: true })
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ error: 'timed_out' });
     });
 });

@@ -5,6 +5,7 @@
 // address it reads.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { diffRequest } from '../../../../../src/lib/state/sources/repositories/answers.ts';
 import {
     diffActs,
     diffState,
@@ -16,6 +17,10 @@ import {
     worktreeDiffUrl,
     type DiffView
 } from '../../../../../src/lib/state/sources/repositories/repositories.ts';
+import {
+    previewKey,
+    previewSubject
+} from '../../../../../src/lib/state/sources/repositories/replace-preview.ts';
 import type { DiffSides } from '../../../../../src/lib/data/model/index.ts';
 
 /** One entry of a diff at a path, the way git lists it. */
@@ -227,5 +232,54 @@ describe('a diff pane over two files', () => {
         const alone = diffState({ ...subject, against: undefined }, 'a');
         expect(new Set([one.id, other.id, swapped.id, alone.id]).size).toBe(4);
         expect(diffState(subject, 'a vs b').id).toBe(one.id);
+    });
+});
+
+describe('a diff pane previewing a replace', () => {
+    const query = { q: 'foo', word: false, case: true, regex: true, under: 'src' };
+    const file = { root: 'hub', path: 'src/a.ts', hits: [{ line: 3, at: 4 }] };
+    const subject = previewSubject(file, { query, replace: 'bar', preserve: true }, 3);
+
+    it('carries the query, the replace text, Preserve Case and the hits of the file, opened at the hit', () => {
+        expect(subject).toEqual({
+            root: 'hub',
+            path: 'src/a.ts',
+            staged: false,
+            worktree: false,
+            line: 3,
+            replace: { query, replace: 'bar', preserveCase: true, hits: [{ line: 3, at: 4 }] }
+        });
+    });
+
+    it('reads the preview by a POST of its query, replace text and hits, and acts on no hunks', () => {
+        const request = diffRequest(subject, 'tok');
+        expect([request.url, request.init?.method]).toEqual(['/api/ops', 'POST']);
+        expect(JSON.parse(request.init?.body ?? '')).toEqual({
+            op: 'preview',
+            query,
+            replace: 'bar',
+            preserveCase: true,
+            root: 'hub',
+            path: 'src/a.ts',
+            hits: [{ line: 3, at: 4 }]
+        });
+        expect(diffActs(subject)).toBe(false);
+    });
+
+    it('is one pane for a file whatever the replace text, and reads again when the replace text changes', () => {
+        const other = previewSubject(file, { query, replace: 'baz', preserve: true }, 3);
+        expect(diffState(other, 'x').id).toBe(diffState(subject, 'x').id);
+        expect(diffState(subject, 'x').id).not.toBe(
+            diffState({ ...subject, replace: undefined }, 'x').id
+        );
+        expect(previewKey(other.replace)).not.toBe(previewKey(subject.replace));
+        expect(previewKey(undefined)).toBe('');
+    });
+
+    it('keeps a well-formed replace field when it is read back, and drops a malformed one', () => {
+        const held = heldDiff(diffState(subject, 'x'));
+        expect(held.replace).toEqual(subject.replace);
+        expect(heldDiff({ ...held, replace: { query: 'foo' } }).replace).toBeUndefined();
+        expect(heldDiff({ ...held, replace: 'foo' }).replace).toBeUndefined();
     });
 });

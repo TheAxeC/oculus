@@ -403,17 +403,17 @@
 <path fill="none" stroke="currentColor" d="M401.22,-628.58C441.3,-620.17 518.72,-611.11 559.44,-654 589.39,-685.55 550.66,-1012.38 579.44,-1045 589.38,-1056.27 603.73,-1062.07 618.51,-1064.78"/>
 <polygon fill="currentColor" stroke="currentColor" points="618.04,-1066.83 624.28,-1065.65 618.66,-1062.68 618.04,-1066.83"/>
 </g>
-<!-- state/sources/search -->
+<!-- state/sources/search/search -->
 <g id="node59" class="node">
-<title>state/sources/search</title>
-<polygon fill="none" stroke="currentColor" points="729.95,-1253.8 633.26,-1253.8 633.26,-1232.2 729.95,-1232.2 729.95,-1253.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="681.61" y="-1240" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/sources/search</text>
+<title>state/sources/search/search</title>
+<polygon fill="none" stroke="currentColor" points="744.11,-1253.8 619.1,-1253.8 619.1,-1232.2 744.11,-1232.2 744.11,-1253.8"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="681.61" y="-1240" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/sources/search/search</text>
 </g>
-<!-- ch config&#45;&gt;state/sources/search -->
+<!-- ch config&#45;&gt;state/sources/search/search -->
 <g id="edge30" class="edge">
-<title>ch config&#45;&gt;state/sources/search</title>
-<path fill="none" stroke="currentColor" d="M401.31,-628.5C441.49,-619.99 519.06,-610.78 559.44,-654 602.77,-700.39 537.82,-1177.06 579.44,-1225 590.9,-1238.2 608.41,-1243.93 625.66,-1245.98"/>
-<polygon fill="currentColor" stroke="currentColor" points="625.35,-1248.06 631.51,-1246.51 625.72,-1243.88 625.35,-1248.06"/>
+<title>ch config&#45;&gt;state/sources/search/search</title>
+<path fill="none" stroke="currentColor" d="M401.31,-628.5C441.49,-619.99 519.06,-610.78 559.44,-654 602.77,-700.39 537.82,-1177.06 579.44,-1225 587.75,-1234.57 599.24,-1240.22 611.5,-1243.38"/>
+<polygon fill="currentColor" stroke="currentColor" points="611.01,-1245.42 617.32,-1244.64 611.9,-1241.32 611.01,-1245.42"/>
 </g>
 <!-- state/workbench/palette&#45;source -->
 <g id="node69" class="node">

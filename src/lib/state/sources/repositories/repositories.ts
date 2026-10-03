@@ -1,10 +1,10 @@
 // Layer 2, client state. What the Repositories view computes rather than draws: the addresses of
-// the reads it asks for on demand (a diff, a page of the graph, a commit's files, a blame, the
-// gutter marks, the three versions of a conflict), the identity of a diff pane, the worktree rule
-// the view and the write share, which repository one view shows with which of its sections closed
-// and in which mode, the rows its keyboard moves along, the colour and word of a status letter both
-// change lists draw, what the commit box's one button is, and the words of the questions the sync,
-// pull, push and publish controls ask.
+// the reads it asks for on demand (a diff, a Replace Preview, a page of the graph, a commit's
+// files, a blame, the gutter marks, the three versions of a conflict), the identity of a diff pane,
+// the worktree rule the view and the write share, which repository one view shows with which of its
+// sections closed and in which mode, the rows its keyboard moves along, the colour and word of a
+// status letter both change lists draw, what the commit box's one button is, and the words of the
+// questions the sync, pull, push and publish controls ask.
 //
 // The worktree rule comes from data/helpers/worktrees.ts, the one place it lives, so the path the
 // view shows before a worktree is made is the path the write makes. Nothing here fetches: the view
@@ -25,7 +25,7 @@ import type {
     GitWorktree
 } from '../../../data/model/index.ts';
 import { z } from 'zod';
-import { compareUrl, savedUrl } from '../../../data/file-ops.ts';
+import { compareUrl, savedUrl, type ReplacePreview } from '../../../data/file-ops.ts';
 import {
     anyNumberShape,
     fieldItemsShape,
@@ -36,6 +36,7 @@ import {
 import { worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
 import { t } from '../../shared/words/text.ts';
 import { refCompareUrl, workspaceUrl } from './diff/compare.ts';
+import { replacePreviewShape } from './replace-preview.ts';
 
 export { validName, worktreePath, worktreesDir } from '../../../data/helpers/worktrees.ts';
 
@@ -146,6 +147,8 @@ export type DiffSubject = {
     against?: { root: string; path: string };
     /** The id of a copy in the file's local history, for the pane over the file and that copy. */
     save?: string;
+    /** The replacements of a Search tab, for the pane previewing them in the file. */
+    replace?: ReplacePreview;
     line?: number;
     session?: string;
 };
@@ -162,6 +165,7 @@ function sideOf(subject: DiffSubject): string {
     if (subject.against !== undefined)
         return `compare@${subject.against.root}:${subject.against.path}`;
     if ((subject.save ?? '') !== '') return `save@${subject.save ?? ''}`;
+    if (subject.replace !== undefined) return 'replace';
     if ((subject.group ?? '') !== '') return `group@${subject.group ?? ''}`;
     if (subject.worktree) return 'worktree';
     if ((subject.commit ?? '') !== '') return `commit@${subject.commit ?? ''}`;
@@ -208,6 +212,7 @@ const heldDiffShape = z
         against: againstShape.optional().catch(undefined),
         compare: compareShape.optional().catch(undefined),
         workspace: z.literal(true).optional().catch(undefined),
+        replace: replacePreviewShape.optional().catch(undefined),
         line: anyNumberShape.catch(0),
         session: z.string().catch('')
     })
@@ -225,6 +230,7 @@ const heldDiffShape = z
         against: held.against,
         compare: held.compare,
         workspace: held.workspace,
+        replace: held.replace,
         line: held.line,
         session: held.session
     }));
@@ -246,13 +252,17 @@ export function heldDiff(state: unknown): DiffState {
             against: undefined,
             compare: undefined,
             workspace: undefined,
+            replace: undefined,
             line: 0,
             session: ''
         }
     );
 }
 
-/** The address one diff pane reads, by what it is over. */
+/**
+ * The address one diff pane reads, by what it is over. A Replace Preview is no address: it is read
+ * by the POST `diffRequest` of answers.ts makes.
+ */
 export function diffUrl(state: DiffSubject): string {
     if (state.against !== undefined) return compareUrl(state, state.against);
     if ((state.save ?? '') !== '') return savedUrl(state, state.save ?? '');
@@ -278,6 +288,7 @@ export function diffActs(state: DiffSubject): boolean {
         (state.save ?? '') === '' &&
         state.compare === undefined &&
         state.workspace !== true &&
+        state.replace === undefined &&
         state.against === undefined
     );
 }

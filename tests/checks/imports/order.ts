@@ -8,14 +8,15 @@
 // composition roots head their layers (`server/root`, `state/client`, `shell`, and `data` itself,
 // whose index.ts builds the portfolio out of every data folder) since they import every folder
 // beside them and none imports them; the modules every folder of a layer shares sit at its foot
-// (`server/core`, `state/shared` with the catalogs in `words/` and, in `stores/`, the shapes of the
-// stores other stores are handed, the shell action and the browser test, `data/model` with the
-// facade of every type, the files of `ui`).
+// (`server/core`, `state/shared` with the catalogs in `words/`, the sentences of an answer in
+// `answers/` and, in `stores/`, the shapes of the stores other stores are handed, the shell action
+// and the browser test, `data/model` with the facade of every type, the files of `ui`).
 //
 // A listed folder that holds folders of its own may carry an inner order in INNER, read the same
 // way one level down: a module of one of its sub-folders imports only its own sub-folder or one
-// below it. `state/shared` is the one folder that carries one, `words` above `stores`, since the
-// two are the foot of the state layer and nothing else would hold an import between them.
+// below it. `state/shared` is the one folder that carries one, `answers` above
+// `words` above `stores`, since the three are the foot of the state layer and nothing else would
+// hold an import between them.
 //
 // Imports between layers are the boundary test's (tests/checks/tree/boundaries.test.ts); this reads
 // only imports inside one layer, the type-only ones with the runtime ones, since a type a folder
@@ -96,7 +97,7 @@ export const ORDER: Record<string, string[]> = {
  * as ORDER is one level down.
  */
 export const INNER: Record<string, string[]> = {
-    'state/shared': ['state/shared/words', 'state/shared/stores']
+    'state/shared': ['state/shared/answers', 'state/shared/words', 'state/shared/stores']
 };
 
 /** The folder a lib-relative module sits in: its layer and first sub-folder, or its layer alone. */

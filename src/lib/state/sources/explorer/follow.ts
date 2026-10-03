@@ -71,7 +71,11 @@ export function followedDiffTab(state: unknown, moves: Move[]): DiffState | null
     const held = heldDiff(state);
     const own: OpsPlace = { root: held.root, path: held.path };
     const history =
-        held.commit !== '' || held.stash !== '' || held.worktree || held.group !== undefined;
+        held.commit !== '' ||
+        held.stash !== '' ||
+        held.worktree ||
+        held.group !== undefined ||
+        held.replace !== undefined;
     const path = history || held.path === '' ? null : followedAny(own, moves);
     const against = held.against === undefined ? null : followedAny(held.against, moves);
     if (path === null && against === null) return null;

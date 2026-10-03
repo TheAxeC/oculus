@@ -112,7 +112,8 @@ writeSubtaskAdd"];
     "lib/server/edit/writes/file-undo.ts" -> "lib/server/core/json.ts" [tooltip="chained"];
     "lib/server/edit/writes/file-undo.ts" -> "lib/server/files/fs/file-changes.ts" [tooltip="holds, recordOf, stampKept
 stampOf"];
-    "lib/server/edit/writes/file-undo.ts" -> "lib/server/files/fs/history.ts" [tailport=se, tooltip="defaultHistoryDir, readCopy, restoreCopy"];
+    "lib/server/edit/writes/file-undo.ts" -> "lib/server/files/fs/history.ts" [tailport=se, tooltip="defaultHistoryDir, keepCopy, readCopy
+restoreCopy"];
     "lib/server/edit/writes/manifest.ts to file on disk (calls)" [label="mkdirSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/edit/writes/manifest.ts" -> "lib/server/edit/writes/manifest.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/edit/writes/manifest.ts to file on disk (calls)" -> "file on disk" [];

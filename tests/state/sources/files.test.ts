@@ -7,8 +7,18 @@
 // is not run here.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createClientState, stubGated, type ClientState } from '../../fixtures/client.ts';
+import {
+    createClientState,
+    stubGated,
+    type ClientState,
+    refused,
+    unreadable
+} from '../../fixtures/client.ts';
 import { matchingFiles } from '../../../src/lib/state/sources/files.svelte.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 let client: ClientState;
 let files: ClientState['files']['files'];
@@ -158,11 +168,11 @@ describe('the files of a project', () => {
         expect(asked).toEqual(['/api/project-files?id=hotel', '/api/project-files?id=hotel']);
     });
 
-    it('holds what the endpoint refused with instead of the rows', async () => {
+    it('holds the refusal sentence the endpoint earned instead of the rows', async () => {
         serving({ status: 404, body: { error: 'no such project' } });
         files('delta');
         await settle();
-        expect(files('delta').error).toBe('no such project');
+        expect(files('delta').error).toBe(refused(404));
         expect(files('delta').rows).toEqual([]);
     });
 
@@ -286,38 +296,48 @@ describe('the answer of the project files endpoint', () => {
     });
 
     it.each([
-        [{ error: 'no such project' }, 404, 'no such project'],
-        [{ error: '' }, 404, ''],
-        [{ error: null }, 404, '404'],
-        [{}, 500, '500'],
-        [[], 500, '500'],
-        ['x', 502, '502'],
-        [7, 500, '500']
-    ])('says why a refused read %j at %i was refused', async (body, status, error) => {
-        expect(await read(json(body, status))).toStrictEqual({ ...none, error });
+        [{ error: 'no such project' }, 404],
+        [{ error: '' }, 404],
+        [{ error: null }, 404],
+        [{}, 500],
+        [[], 500],
+        ['x', 502],
+        [7, 500]
+    ])('says the refusal sentence for a refused read %j at %i', async (body, status) => {
+        expect(await read(json(body, status))).toStrictEqual({ ...none, error: refused(status) });
+    });
+
+    it('says the sentence of the catalog for a refused read whose error is one of its words', async () => {
+        expect(await read(json({ error: 'missing' }, 404))).toStrictEqual({
+            ...none,
+            error: t('files.refused_missing')
+        });
     });
 
     it.each([[{ error: 3 }], [{ error: ['a'] }]])(
-        'says the status for a refused read whose error is not text: %j',
+        'says the refusal sentence for a refused read whose error is not text: %j',
         async (body) => {
-            expect(await read(json(body, 404))).toStrictEqual({ ...none, error: '404' });
+            expect(await read(json(body, 404))).toStrictEqual({ ...none, error: refused(404) });
         }
     );
 
     it.each([['null'], ['<html>gateway</html>']])(
-        'says the status of a refused read whose body is %s',
+        'says the unreadable sentence for a refused read whose body is %s',
         async (text) => {
             expect(await read(new Response(text, { status: 503 }))).toStrictEqual({
                 ...none,
-                error: '503'
+                error: unreadable(503)
             });
         }
     );
 
     it.each([['null'], ['<html>gateway</html>']])(
-        'says the status of a successful read whose body is %s',
+        'says the unreadable sentence for a successful read whose body is %s',
         async (text) => {
-            expect(await read(new Response(text))).toStrictEqual({ ...none, error: '200' });
+            expect(await read(new Response(text))).toStrictEqual({
+                ...none,
+                error: unreadable(200)
+            });
         }
     );
 });

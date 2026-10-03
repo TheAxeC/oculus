@@ -9,8 +9,12 @@
 // drawing again when a document is marked, which needs a DOM.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { createClientState, type ClientState, refused, unreadable } from '../../fixtures/client.ts';
 import { holds } from '../../../src/lib/state/system/docs.svelte.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 let client: ClientState;
 let document: ClientState['docs']['document'];
@@ -129,11 +133,11 @@ describe('the documents of a project', () => {
         expect(asked).toEqual(['/api/docs?project=alpha&name=README.md']);
     });
 
-    it('holds what the endpoint refused with instead of the document', async () => {
+    it('holds the refusal sentence the endpoint earned instead of the document', async () => {
         serving({ status: 404, body: { error: 'document does not exist' } });
         document('bravo', 'code/README.md');
         await settle();
-        expect(document('bravo', 'code/README.md').error).toBe('document does not exist');
+        expect(document('bravo', 'code/README.md').error).toBe(refused(404));
         expect(document('bravo', 'code/README.md').html).toBe('');
     });
 
@@ -272,13 +276,13 @@ describe('the documents that belong to no project', () => {
         expect(asked).toEqual(['/api/docs?manual=1']);
     });
 
-    it('says what a refused read failed with', async () => {
+    it('says the refusal sentence for a refused read', async () => {
         serving({ status: 404, body: { error: 'document does not exist' } });
         hubDocument('nothing.md');
         await settle();
 
         const held = hubDocument('nothing.md');
-        expect(held.error).toBe('document does not exist');
+        expect(held.error).toBe(refused(404));
         expect(held.loading).toBe(false);
     });
 });
@@ -482,7 +486,7 @@ describe('a re-read that fails', () => {
         wrote(HUB);
         hubDocument('docs/RESEARCH-APPROACH.md');
         await settle();
-        expect(hubDocument('docs/RESEARCH-APPROACH.md').error).toBe('document does not exist');
+        expect(hubDocument('docs/RESEARCH-APPROACH.md').error).toBe(refused(404));
     });
     // Revert: in fetcherOf of state/system/docs.svelte.ts, answer a network error over an error
     // answer without the held file.
@@ -508,7 +512,7 @@ describe('a re-read that fails', () => {
         expect(asked).toEqual([]);
     });
 
-    it("replaces a drawn document with the status of an answer whose body is not the endpoint's", async () => {
+    it("replaces a drawn document with the unreadable sentence for an answer whose body is not the endpoint's", async () => {
         serving({ status: 200, body: { html: '<h1>One</h1>', frontmatter: null, file: APPROACH } });
         hubDocument('docs/RESEARCH-APPROACH.md');
         await settle();
@@ -519,7 +523,7 @@ describe('a re-read that fails', () => {
         wrote(HUB);
         hubDocument('docs/RESEARCH-APPROACH.md');
         await settle();
-        expect(hubDocument('docs/RESEARCH-APPROACH.md').error).toBe('502');
+        expect(hubDocument('docs/RESEARCH-APPROACH.md').error).toBe(unreadable(502));
     });
 });
 
@@ -677,14 +681,20 @@ describe('an answer of the wrong shape', () => {
     });
 
     it.each([
-        ['an error that is a word', { error: 'gone' }, 404, 'gone'],
-        ['an error that is empty', { error: '' }, 404, ''],
-        ['an error that is a number', { error: 3 }, 404, '404'],
-        ['an error that is null', { error: null }, 404, '404'],
-        ['no error', {}, 500, '500'],
-        ['a body that is a list', [], 500, '500'],
-        ['a body that is a string', 'x', 502, '502']
-    ])('holds a refusal with %s', async (_name, body, status, error) => {
+        ['an error that is a text of its own', { error: 'gone' }, 404, refused(404)],
+        ['an error that is empty', { error: '' }, 404, refused(404)],
+        ['an error that is a number', { error: 3 }, 404, refused(404)],
+        ['an error that is null', { error: null }, 404, refused(404)],
+        ['no error', {}, 500, refused(500)],
+        ['a body that is a list', [], 500, refused(500)],
+        ['a body that is a string', 'x', 502, refused(502)],
+        [
+            'an error that is a word of the catalog',
+            { error: 'missing' },
+            404,
+            t('files.refused_missing')
+        ]
+    ])('holds the sentence for a refusal with %s', async (_name, body, status, error) => {
         const held = await read({ status, body });
         expect(held).toStrictEqual({
             html: '',
@@ -741,18 +751,21 @@ describe('an answer that is no JSON map', () => {
         { name: 'JSON null', text: 'null', status: 502 },
         { name: 'a page that is no JSON', text: '<html>Bad Gateway</html>', status: 200 },
         { name: 'a page that is no JSON', text: '<html>Bad Gateway</html>', status: 502 }
-    ])('holds the status of $name sent with status $status', async ({ text, status }) => {
-        vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
-        document('alpha', 'README.md');
-        await settle();
-        expect(document('alpha', 'README.md')).toStrictEqual({
-            html: '',
-            frontmatter: null,
-            error: String(status),
-            loading: false,
-            parts: []
-        });
-    });
+    ])(
+        'holds the unreadable sentence for $name sent with status $status',
+        async ({ text, status }) => {
+            vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
+            document('alpha', 'README.md');
+            await settle();
+            expect(document('alpha', 'README.md')).toStrictEqual({
+                html: '',
+                frontmatter: null,
+                error: unreadable(status),
+                loading: false,
+                parts: []
+            });
+        }
+    );
 });
 
 describe('a 200 answer whose body is no JSON map, for a document already drawn', () => {

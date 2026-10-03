@@ -1,22 +1,39 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/search/Search.svelte. What a run answered: the count line,
-    // and the hits under one heading per file.
+    // and the hits under one heading per file, drawn as the rows of one tree (ui/tree/TreeView),
+    // so the arrow keys walk the rows and the keys of the Search keymap act on the row in focus.
     //
-    // A heading opens its file at its first hit and a row opens it at its own line, so the list is
-    // the way into the file rather than a report about it. The match is emboldened from the hit's
-    // own column and length: the page never matches the pattern a second time, which is the only
-    // way a regular-expression hit could be marked at all.
+    // A heading opens its file at its first hit and a row opens it at its own line, or its Replace
+    // Preview while the replace row is shown, so the list is the way into the file rather than a
+    // report about it. The match is emboldened from the hit's own column and length: the page never
+    // matches the pattern a second time, which is the only way a regular-expression hit could be
+    // marked at all. While the replace row is shown the match is struck through and the text that
+    // replaces it follows it, read from the groups the run reported, so it follows the replace text
+    // as it is typed.
     //
-    // A heading and a hit are each one line of the tree's row height with the words at the
-    // workbench size; a failed run is the message box with a control that runs the same query
-    // again.
+    // A row's controls are drawn beside it: Replace and Dismiss on a hit, Replace All and Dismiss
+    // on a heading, Replace and Replace All only while the replace row is shown and none while a
+    // replace is in flight. A heading and a hit are each one line of the tree's row height with the
+    // words at the workbench size; a failed run is the message box with a control that runs the
+    // same query again.
 
+    import { tick } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { firstLine, hitParts } from '$lib/state/sources/search';
+    import TreeItem from '$lib/ui/tree/TreeItem.svelte';
+    import TreeView from '$lib/ui/tree/TreeView.svelte';
+    import type { Chord, TreeNav } from '$lib/ui/tree/tree-keys';
+    import { firstLine, hitParts } from '$lib/state/sources/search/search';
+    import {
+        fileKey,
+        hitKey,
+        replacementShown,
+        resultRows,
+        type Chosen,
+        type ReplaceSettings
+    } from '$lib/state/sources/search/hits';
     import { t } from '$lib/state/shared/words/text';
-    import type { SearchAnswer, SearchFile, SearchHit } from '$lib/state/sources/search';
+    import type { SearchAnswer, SearchFile, SearchHit } from '$lib/state/sources/search/search';
 
     type Props = {
         /** The last answer, and null for a tab that has not run one. */
@@ -28,21 +45,80 @@
         all: boolean;
         /** The cap the run was given, which is the number the cap word says. */
         max: number;
-        onopen: (file: SearchFile, line: number) => void;
+        /** Whether the replace row is shown. */
+        replacing: boolean;
+        /** Whether a replace is in flight, which is when Replace and Replace All wait. */
+        busy: boolean;
+        /**
+         * What the last replace said, which takes the place of the count line until the next run
+         * or edit of the query, or null for a tab whose count line is the count.
+         */
+        said: { text: string; refused: boolean } | null;
+        /**
+         * What the replace text and Preserve Case are, for the text a hit would be replaced with.
+         */
+        settings: ReplaceSettings;
+        /** The keys of the rows and what each asks for. */
+        keymap: readonly Chord[];
+        /** A hit pressed: its Replace Preview while the replace row is shown, else its file. */
+        onhit: (file: SearchFile, hit: SearchHit) => void;
+        /** A heading pressed: its file at the first hit. */
+        onfile: (file: SearchFile, line: number) => void;
+        onreplace: (pick: Chosen) => void;
+        ondismiss: (pick: Chosen) => void;
+        /** A key of the keymap pressed on a row. */
+        onkey: (action: string, id: string, event: KeyboardEvent) => boolean;
         /** Run the same query again, which is what the failed run's message box offers. */
         onretry: () => void;
     };
 
-    let { answer, running, error, all, max, onopen, onretry }: Props = $props();
+    let {
+        answer,
+        running,
+        error,
+        all,
+        max,
+        replacing,
+        busy,
+        said,
+        settings,
+        keymap,
+        onhit,
+        onfile,
+        onreplace,
+        ondismiss,
+        onkey,
+        onretry
+    }: Props = $props();
 
     const files = $derived(answer?.files ?? []);
+    const rows = $derived(resultRows(files));
+    // The count the line says is the hits listed, which a dismiss or a replace takes down.
+    const hitCount = $derived(String(files.reduce((sum, file) => sum + file.hits.length, 0)));
+
+    let host: HTMLElement | undefined = $state();
+
+    /** Put the focus on a row once the rows drawn are the ones the last change left. */
+    export async function focusRow(id: string): Promise<void> {
+        await tick();
+        const row = Array.from(host?.querySelectorAll<HTMLElement>('[data-value]') ?? []).find(
+            (one) => one.dataset.value === id
+        );
+        row?.focus({ preventScroll: false });
+    }
 
     function heading(file: SearchFile): string {
         return all ? t('search.file_in_root', file.path, file.root) : file.path;
     }
 
     function hitTitle(file: SearchFile, hit: SearchHit): string {
-        return t('search.hit_title', file.path, String(hit.line));
+        return replacing
+            ? t('search.preview_hit_title', file.path, String(hit.line))
+            : t('search.hit_title', file.path, String(hit.line));
+    }
+
+    function hitLabel(file: SearchFile, hit: SearchHit): string {
+        return `${file.path}:${String(hit.line)}`;
     }
 </script>
 
@@ -56,60 +132,137 @@
     <Empty error message={error} action={again} />
 {:else if answer === null}
     <Empty message={t('search.empty')} glyph={t('search.empty_glyph')} />
-{:else if files.length === 0}
+{:else if files.length === 0 && said === null}
     <Empty message={t('search.none')} glyph={t('search.empty_glyph')} />
 {:else}
-    <p class="count" data-search-count>
-        {t('search.count', String(answer.total), String(files.length), String(answer.ms))}
-        {#if answer.truncated}
-            <span class="capped">{t('search.capped', String(max))}</span>
-        {/if}
-    </p>
+    {#if said !== null}
+        <p
+            class="count"
+            class:refused={said.refused}
+            role={said.refused ? 'alert' : 'status'}
+            data-search-count
+        >
+            {said.text}
+        </p>
+    {:else}
+        <p class="count" data-search-count>
+            {replacing
+                ? t('search.count_replacing', hitCount, String(files.length), String(answer.ms))
+                : t('search.count', hitCount, String(files.length), String(answer.ms))}
+            {#if answer.truncated}
+                <span class="capped">{t('search.capped', String(max))}</span>
+            {/if}
+        </p>
+    {/if}
     {#if answer.failed.length > 0}
         <p class="count" data-search-failed>
             {t('search.failed_roots', answer.failed.map((one) => one.root).join(', '))}
         </p>
     {/if}
-    <ul class="files">
-        {#each files as file (`${file.root}:${file.path}`)}
-            <li class="file" data-search-file={`${file.root}:${file.path}`}>
-                <div class="row head">
-                    <ToolButton
-                        cell
-                        label={heading(file)}
-                        title={t('search.file_title', file.path)}
-                        onclick={() => onopen(file, firstLine(file))}
-                    >
-                        <span class="line-box">
-                            <Glyph name={t('search.file_glyph')} />
-                            <span class="path">{heading(file)}</span>
-                        </span>
-                    </ToolButton>
-                </div>
-                <ul class="hits">
-                    {#each file.hits as hit (`${hit.line}:${hit.column}`)}
-                        <li class="row hit" data-search-hit={`${file.path}:${hit.line}`}>
-                            <ToolButton
-                                cell
-                                label={hitTitle(file, hit)}
-                                title={hitTitle(file, hit)}
-                                onclick={() => onopen(file, hit.line)}
+    <div class="results" bind:this={host}>
+        <TreeView label={t('search.results')} {rows} {keymap} {onkey}>
+            {#snippet children(nav: TreeNav)}
+                <ul class="files" role="none">
+                    {#each files as file (fileKey(file))}
+                        <li class="file" role="none" data-search-file={`${file.root}:${file.path}`}>
+                            <TreeItem
+                                label={heading(file)}
+                                id={fileKey(file)}
+                                {nav}
+                                level={1}
+                                glyph={t('search.file_glyph')}
+                                title={t('search.file_title', file.path)}
+                                onclick={() => onfile(file, firstLine(file))}
                             >
-                                <span class="line-box">
-                                    <span class="line">{hit.line}</span>
-                                    <span class="text">
-                                        {hitParts(hit).before}<strong class="match"
-                                            >{hitParts(hit).match}</strong
-                                        >{hitParts(hit).after}
-                                    </span>
-                                </span>
-                            </ToolButton>
+                                {#snippet actions(reach: number)}
+                                    {#if replacing}
+                                        <ToolButton
+                                            label={t('search.replace_all')}
+                                            glyph={t('search.replace_all_glyph')}
+                                            title={t('search.replace_file_title')}
+                                            compact
+                                            disabled={busy}
+                                            tabindex={reach}
+                                            onclick={() => onreplace({ kind: 'file', file })}
+                                        />
+                                    {/if}
+                                    <ToolButton
+                                        label={t('search.dismiss')}
+                                        glyph={t('search.dismiss_glyph')}
+                                        title={t('search.dismiss_file_title', file.path)}
+                                        compact
+                                        tabindex={reach}
+                                        onclick={() => ondismiss({ kind: 'file', file })}
+                                    />
+                                {/snippet}
+                            </TreeItem>
+                            <ul class="hits" role="none">
+                                {#each file.hits as hit (hitKey(file, hit))}
+                                    {@const parts = hitParts(hit)}
+                                    {@const replacement = replacing
+                                        ? replacementShown(hit, settings)
+                                        : null}
+                                    <li
+                                        class="hit"
+                                        role="none"
+                                        data-search-hit={`${file.path}:${hit.line}`}
+                                    >
+                                        <TreeItem
+                                            label={hitLabel(file, hit)}
+                                            id={hitKey(file, hit)}
+                                            {nav}
+                                            level={2}
+                                            depth={1}
+                                            title={hitTitle(file, hit)}
+                                            onclick={() => onhit(file, hit)}
+                                        >
+                                            {#snippet words()}
+                                                <span class="line">{hit.line}</span>
+                                                <span class="text"
+                                                    >{parts.before}{#if replacing}<span
+                                                            class="struck"
+                                                            data-search-struck>{parts.match}</span
+                                                        >{#if replacement !== null}<span
+                                                                class="with"
+                                                                data-search-with>{replacement}</span
+                                                            >{/if}{:else}<strong class="match"
+                                                            >{parts.match}</strong
+                                                        >{/if}{parts.after}</span
+                                                >
+                                            {/snippet}
+                                            {#snippet actions(reach: number)}
+                                                {#if replacing}
+                                                    <ToolButton
+                                                        label={t('search.replace_hit')}
+                                                        glyph={t('search.replace_glyph')}
+                                                        title={t('search.replace_hit_title')}
+                                                        compact
+                                                        disabled={busy}
+                                                        tabindex={reach}
+                                                        onclick={() =>
+                                                            onreplace({ kind: 'hit', file, hit })}
+                                                    />
+                                                {/if}
+                                                <ToolButton
+                                                    label={t('search.dismiss')}
+                                                    glyph={t('search.dismiss_glyph')}
+                                                    title={t('search.dismiss_hit_title')}
+                                                    compact
+                                                    tabindex={reach}
+                                                    onclick={() =>
+                                                        ondismiss({ kind: 'hit', file, hit })}
+                                                />
+                                            {/snippet}
+                                        </TreeItem>
+                                    </li>
+                                {/each}
+                            </ul>
                         </li>
                     {/each}
                 </ul>
-            </li>
-        {/each}
-    </ul>
+            {/snippet}
+        </TreeView>
+    </div>
 {/if}
 
 <style>
@@ -117,6 +270,10 @@
         margin: 0 0 6px;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
+    }
+
+    .count.refused {
+        color: var(--c-red-txt);
     }
 
     .capped {
@@ -133,45 +290,9 @@
         min-width: 0;
     }
 
-    /* Hits sit under their file by the width of its icon. */
-    .hits {
-        padding-left: calc(var(--icon-box) * var(--text-scale, 1));
-    }
-
-    /* One line of the tree's row height; the button inside is the whole row. */
-    .row {
-        display: flex;
-        height: calc(var(--tree-row) * var(--text-scale, 1));
-        min-width: 0;
-        border-radius: var(--radius-sm);
-        font-size: var(--fs-md);
-    }
-
-    .row:hover {
-        background: var(--chip);
-    }
-
-    .line-box {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        width: 100%;
-        height: 100%;
-        min-width: 0;
-        padding: 0 4px;
-        text-align: left;
-    }
-
-    .path {
-        min-width: 0;
-        overflow: hidden;
-        color: var(--ink-txt, var(--ink));
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
     .line {
         flex: 0 0 auto;
+        margin-right: 6px;
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-num);
         font-size: var(--fs-sm);
@@ -179,15 +300,23 @@
 
     .text {
         min-width: 0;
-        overflow: hidden;
         color: var(--ink-txt, var(--ink));
         font-family: var(--font-mono);
         white-space: pre;
-        text-overflow: ellipsis;
     }
 
     .match {
         color: var(--accent-txt, var(--accent));
         font-weight: 700;
+    }
+
+    /* The match a replace would take out, then the text that replaces it. */
+    .struck {
+        color: var(--c-red-txt);
+        text-decoration: line-through;
+    }
+
+    .with {
+        color: var(--c-green-txt);
     }
 </style>

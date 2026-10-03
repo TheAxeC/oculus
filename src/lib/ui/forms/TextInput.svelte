@@ -9,6 +9,10 @@
     // input method's composition and the loss of focus respectively. The box keeps nothing of its
     // own either way.
     //
+    // A caller that moves the cursor into the box binds `input`, and one that gives a key a meaning
+    // of its own in the box hands `onkey`, which is asked first and answers true for a press it
+    // took.
+    //
     // A right-click on the box opens its editing menu (TextBoxMenu.svelte), read from the box as
     // the right-click arrives; the menu is the box's own, so a menu of a row or a view around it
     // does not open over it.
@@ -32,6 +36,10 @@
         secret?: boolean;
         /** The keypad a touch screen offers, for a box holding a number. */
         inputmode?: 'decimal';
+        /** The input element, for a caller that puts the cursor in it. */
+        input?: HTMLInputElement | null;
+        /** A key press the caller takes for itself; true when it did. */
+        onkey?: (event: KeyboardEvent) => boolean;
     };
 
     let {
@@ -43,12 +51,16 @@
         readonly = false,
         placeholder,
         secret = false,
-        inputmode
+        inputmode,
+        input = $bindable(null),
+        onkey
     }: Props = $props();
 
-    let box: HTMLInputElement | null = $state(null);
-
     function keyed(event: KeyboardEvent): void {
+        if (onkey?.(event) === true) {
+            event.preventDefault();
+            return;
+        }
         if (event.key !== 'Enter' || event.isComposing || onenter === undefined) return;
         const field = event.currentTarget;
         if (field instanceof HTMLInputElement) onenter(field.value);
@@ -60,7 +72,7 @@
     }
 </script>
 
-<TextBoxMenu {label} box={() => box} {secret}>
+<TextBoxMenu {label} box={() => input} {secret}>
     <input
         class="text"
         type={secret ? 'password' : 'text'}
@@ -74,7 +86,7 @@
         oninput={(event) => typedInto(event, oninput)}
         onkeydown={keyed}
         onblur={left}
-        bind:this={box}
+        bind:this={input}
     />
 </TextBoxMenu>
 

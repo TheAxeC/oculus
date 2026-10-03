@@ -53,8 +53,11 @@ export function shown(value: unknown): Shown {
 /** The `kind` the change log files a file operation under. */
 export const FILE_RECORD = 'files';
 
-/** The word an operation of a file record is called: VS Code's own name for it. */
-export function fileOperation(field: string): string {
+/**
+ * The word an operation of a file record is called: VS Code's own name for it. A replace says in
+ * how many files it wrote, which is the number of files its record names after the change.
+ */
+export function fileOperation(field: string, after: unknown): string {
     if (field === 'create') return t('history.file_create');
     if (field === 'rename') return t('history.file_rename');
     if (field === 'move') return t('history.file_move');
@@ -62,6 +65,12 @@ export function fileOperation(field: string): string {
     if (field === 'upload') return t('history.file_upload');
     if (field === 'trash') return t('history.file_trash');
     if (field === 'delete') return t('history.file_delete');
+    if (field === 'replace') {
+        const files = stampPaths(after).length;
+        return files === 1
+            ? t('history.file_replace_one')
+            : t('history.file_replace', String(files));
+    }
     return field;
 }
 

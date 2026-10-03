@@ -19,14 +19,9 @@
 // at: an open PDF tab then fetches the new build instead of the bytes the browser cached.
 
 import { z } from 'zod';
-import {
-    anyNumberShape,
-    optionalTextShape,
-    readAs,
-    readJson,
-    rowsShape
-} from '../../data/shapes/shapes.ts';
+import { anyNumberShape, readAs, readJson, rowsShape } from '../../data/shapes/shapes.ts';
 import { HUB_ROOT } from '../sources/fs.ts';
+import { failedAnswer } from '../shared/answers/answers.ts';
 import type { EntitiesStore, Queries } from '../shared/stores/shapes.ts';
 import type { FsStore } from '../sources/fs.svelte.ts';
 import type { TerminalsStore } from './terminals.svelte.ts';
@@ -95,15 +90,14 @@ const mainShape = z.object({
     warnings: issuesShape
 }) satisfies z.ZodType<LatexMain>;
 
-/** The body of an answer: its mains and folder as typed or at their fallback, and its sentence. */
+/** The body of an answer: its mains and folder as typed or at their fallback. */
 const bodyShape = z.object({
     mains: rowsShape(mainShape).catch([]),
-    folder: z.string().catch(''),
-    error: optionalTextShape
+    folder: z.string().catch('')
 });
 
-/** What a body that is not a map says: no mains, no folder and no sentence. */
-const NO_BODY = { mains: [], folder: '', error: undefined };
+/** What a body that is not a map says: no mains and no folder. */
+const NO_BODY = { mains: [], folder: '' };
 
 export function createLatex(
     entities: EntitiesStore,
@@ -158,15 +152,10 @@ export function createLatex(
         try {
             const response = await fetch(`/api/latex?id=${encodeURIComponent(id)}`);
             const raw = await readJson(response);
-            if (raw === undefined) throw new Error(String(response.status));
-            const body = readAs(bodyShape, raw) ?? NO_BODY;
-            if (!response.ok) {
-                return {
-                    ...PENDING,
-                    error: body.error ?? String(response.status),
-                    loading: false
-                };
+            if (raw === undefined || !response.ok) {
+                return { ...PENDING, error: failedAnswer(response, raw), loading: false };
             }
+            const body = readAs(bodyShape, raw) ?? NO_BODY;
             const next: LatexState = {
                 mains: body.mains,
                 folder: body.folder,

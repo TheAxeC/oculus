@@ -1,9 +1,9 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/files/Files.svelte. The Timeline section: the history of
-    // one file, newest first, as the local copies the server keeps before a save or a delete
-    // ("File Saved", "File Deleted") merged with the commits that touched the file, each row with
-    // how long ago it was and a commit's subject. The file is the one selected in the tree when a
-    // file is, else the file of the active tab.
+    // one file, newest first, as the local copies the server keeps before a save, a replace or a
+    // delete ("File Saved", "File Replaced", "File Deleted") merged with the commits that touched
+    // the file, each row with how long ago it was and a commit's subject. The file is the one
+    // selected in the tree when a file is, else the file of the active tab.
     //
     // A press on a copy opens the diff of that copy against the file now; a press on a commit opens
     // the diff of the file at that commit against its parent, both in the diff view the
@@ -85,6 +85,7 @@
 
     function labelOf(row: TimelineEntry): string {
         if (row.kind === 'commit') return row.subject;
+        if (row.kind === 'replace') return t('files.timeline_replaced');
         return row.kind === 'save' ? t('files.timeline_saved') : t('files.timeline_deleted');
     }
 

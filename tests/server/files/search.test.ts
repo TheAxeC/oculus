@@ -10,18 +10,20 @@ import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
-    TIMED_OUT,
-    createFold,
-    foldStream,
-    reasonOf,
     runSearch,
     type RunOutcome,
     type SearchRunner
 } from '../../../src/lib/server/files/search.ts';
 import { handleSearch } from '../../../src/lib/server/files/search-routes.ts';
-import { ALL_ROOTS, emptyQuery, type SearchQuery } from '../../../src/lib/data/helpers/search.ts';
-import type { SearchHit } from '../../../src/lib/data/model/index.ts';
+import {
+    ALL_ROOTS,
+    HIT_WIDTH,
+    emptyQuery,
+    type SearchQuery
+} from '../../../src/lib/data/helpers/search/query.ts';
+import type { SearchFile, SearchHit } from '../../../src/lib/data/model/index.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
+import { hitKey } from '../../../src/lib/state/sources/search/hits.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const ROOTS: Root[] = [
@@ -51,6 +53,23 @@ function speaks(stdout: string, extra: Partial<RunOutcome> = {}): SearchRunner {
         }
         return Promise.resolve({ code: 0, stderr: '', timedOut: false, stopped, ...extra });
     };
+}
+
+/** The sentence a root that ran out of time is named with. */
+const TIMED_OUT = 'the search timed out';
+
+/** What one root's stream is folded into. */
+type Folded = { files: SearchFile[]; total: number; truncated: boolean };
+
+/** The files, the hit total and whether the stream had more, for one root's stream of lines. */
+async function foldedBy(stream: string, root = 'hub', max = 500): Promise<Folded> {
+    const outcome = await runSearch([{ key: root, dir: `/${root}` }], query({ root, max }), {
+        run: speaks(stream),
+        timeout: TIMEOUT
+    });
+    if (!outcome.ok) throw new Error(`the run did not answer: ${JSON.stringify(outcome)}`);
+    const { files, total, truncated } = outcome.answer;
+    return { files, total, truncated };
 }
 
 /** A run that answers nothing at all, so the fold sees an empty stream. */
@@ -180,14 +199,14 @@ describe('what the process is given', () => {
 });
 
 describe('the JSON stream', () => {
-    it('folds matches into files with their line, column, length and text', () => {
+    it('folds matches into files with their line, column, length and text', async () => {
         const stream = file('src/a.ts', [match('src/a.ts', 12, 'the needle here', 4, 'needle')]);
-        expect(foldStream(stream, 'hub', 500)).toEqual({
+        expect(await foldedBy(stream)).toEqual({
             files: [
                 {
                     root: 'hub',
                     path: 'src/a.ts',
-                    hits: [{ line: 12, column: 5, length: 6, text: 'the needle here' }]
+                    hits: [{ line: 12, column: 5, length: 6, text: 'the needle here', at: 4 }]
                 }
             ],
             total: 1,
@@ -195,39 +214,41 @@ describe('the JSON stream', () => {
         });
     });
 
-    it('leaves out a file that begins and ends with no match, and a line that is not JSON', () => {
+    it('leaves out a file that begins and ends with no match, and a line that is not JSON', async () => {
         const stream = [
             file('src/empty.ts', []),
             'not json at all',
             file('src/a.ts', [match('src/a.ts', 1, 'needle', 0, 'needle')])
         ].join('\n');
-        const folded = foldStream(stream, 'hub', 500);
+        const folded = await foldedBy(stream);
         expect(folded.files.map((one) => one.path)).toEqual(['src/a.ts']);
     });
 
-    it('counts a column in characters where the line carries more bytes than characters', () => {
+    it('counts a column in characters where the line carries more bytes than characters', async () => {
         const stream = file('src/a.ts', [
             // The three leading characters are two bytes each, so ripgrep's start is 6 and the
             // column the page draws with is 4.
             match('src/a.ts', 3, 'aaaneedle', 6, 'needle')
         ]);
         const line = stream.replace(/aaa/g, '\u00e9\u00e9\u00e9');
-        expect(foldStream(line, 'hub', 500).files[0].hits[0].column).toBe(4);
+        const hit = (await foldedBy(line)).files[0].hits[0];
+        expect(hit.column).toBe(4);
+        expect(hit.at).toBe(3);
     });
 
-    it('stops at the room it is given and says the stream had more', () => {
+    it('stops at the room it is given and says the stream had more', async () => {
         const stream = file('src/a.ts', [
             match('src/a.ts', 1, 'needle one', 0, 'needle'),
             match('src/a.ts', 2, 'needle two', 0, 'needle'),
             match('src/a.ts', 3, 'needle three', 0, 'needle')
         ]);
-        const folded = foldStream(stream, 'hub', 2);
+        const folded = await foldedBy(stream, 'hub', 2);
         expect(folded.total).toBe(2);
         expect(folded.truncated).toBe(true);
         expect(folded.files[0].hits.map((hit) => hit.line)).toEqual([1, 2]);
     });
 
-    it('says the stream had more when the end record counts more lines than the hits kept', () => {
+    it('says the stream had more when the end record counts more lines than the hits kept', async () => {
         // ripgrep's own --max-count cut the file at three and emitted no record for the rest, so
         // its count in the end record is the only place the loss shows.
         const stream = file(
@@ -239,23 +260,40 @@ describe('the JSON stream', () => {
             ],
             5
         );
-        const folded = foldStream(stream, 'hub', 500);
+        const folded = await foldedBy(stream);
         expect(folded.total).toBe(3);
         expect(folded.truncated).toBe(true);
     });
 
-    it('says nothing was cut when the end record counts exactly the hits kept', () => {
+    it('says nothing was cut when the end record counts exactly the hits kept', async () => {
         const stream = file('src/a.ts', [match('src/a.ts', 1, 'needle', 0, 'needle')], 1);
-        expect(foldStream(stream, 'hub', 500).truncated).toBe(false);
+        expect((await foldedBy(stream)).truncated).toBe(false);
     });
 
-    it('asks a run to stop only once a match has been dropped', () => {
-        const fold = createFold('hub', 1);
-        fold.line(JSON.stringify({ type: 'begin', data: { path: { text: './a.ts' } } }));
-        fold.line(match('a.ts', 1, 'needle one', 0, 'needle'));
-        expect(fold.cut()).toBe(false);
-        fold.line(match('a.ts', 2, 'needle two', 0, 'needle'));
-        expect(fold.cut()).toBe(true);
+    it('asks a run to stop only once a match has been dropped', async () => {
+        const lines = [
+            JSON.stringify({ type: 'begin', data: { path: { text: './a.ts' } } }),
+            match('a.ts', 1, 'needle one', 0, 'needle'),
+            match('a.ts', 2, 'needle two', 0, 'needle'),
+            match('a.ts', 3, 'needle three', 0, 'needle')
+        ];
+        const fed: string[] = [];
+        await runSearch([{ key: 'hub', dir: '/hub' }], query({ root: 'hub', max: 1 }), {
+            run: (_dir, _args, _timeout, onLine) => {
+                let stopped = false;
+                for (const line of lines) {
+                    fed.push(line);
+                    if (!onLine(line)) {
+                        stopped = true;
+                        break;
+                    }
+                }
+                return Promise.resolve({ code: 0, stderr: '', timedOut: false, stopped });
+            },
+            timeout: TIMEOUT
+        });
+        // The first match fits; the line after it is read, and the second match is the one dropped.
+        expect(fed).toEqual(lines.slice(0, 3));
     });
 });
 
@@ -332,7 +370,7 @@ describe('the answer', () => {
                 }),
             timeout: TIMEOUT
         });
-        expect(outcome).toEqual({ ok: false, error: 'error: unclosed group' });
+        expect(outcome).toEqual({ ok: false, error: 'error: unclosed group', timedOut: false });
     });
 
     it('keeps the hits of the roots that answered and names the root that failed', async () => {
@@ -384,13 +422,20 @@ describe('the answer', () => {
             run: () => new Promise<RunOutcome>(() => undefined),
             timeout: 30
         });
-        expect(outcome).toEqual({ ok: false, error: TIMED_OUT });
+        expect(outcome).toEqual({ ok: false, error: TIMED_OUT, timedOut: true });
     });
 
-    it('cuts the reason down to one line', () => {
-        expect(reasonOf('')).toBe('');
-        expect(reasonOf('rg: one thing\n')).toBe('rg: one thing');
-        expect(reasonOf(`a\n${'x'.repeat(400)}`)).toHaveLength(203);
+    it('cuts the reason down to one line', async () => {
+        const reason = async (stderr: string): Promise<string | null> => {
+            const outcome = await runSearch(ROOTS.slice(0, 1), query(), {
+                run: () => Promise.resolve({ code: 2, stderr, timedOut: false, stopped: false }),
+                timeout: TIMEOUT
+            });
+            return outcome.ok || 'refused' in outcome ? null : outcome.error;
+        };
+        expect(await reason('')).toBe('');
+        expect(await reason('rg: one thing\n')).toBe('rg: one thing');
+        expect(await reason(`a\n${'x'.repeat(400)}`)).toHaveLength(203);
     });
 });
 
@@ -412,7 +457,7 @@ describe('the binary the dependency carries', () => {
         ]);
         expect(plain.answer.truncated).toBe(false);
         const hit = plain.answer.files.find((one) => one.path === 'literal.txt')?.hits[0];
-        expect(hit).toEqual({ line: 1, column: 3, length: 6, text: 'a needle in here' });
+        expect(hit).toEqual({ line: 1, column: 3, length: 6, text: 'a needle in here', at: 2 });
 
         const word = await runSearch(roots, query({ root: 'scratch', word: true }), {
             timeout: TIMEOUT
@@ -524,59 +569,59 @@ describe('the JSON stream with records of an odd shape', () => {
     }
 
     /** The answer for one stream of these lines over the root `r` with room for ten hits. */
-    function folded(...lines: string[]): ReturnType<typeof foldStream> {
-        return foldStream(lines.join('\n'), 'r', 10);
+    function folded(...lines: string[]): Promise<Folded> {
+        return foldedBy(lines.join('\n'), 'r', 10);
     }
 
-    const WHOLE = { line: 3, column: 1, length: 3, text: 'abc def' };
-    const BARE = { line: 3, column: 1, length: 0, text: 'abc def' };
-    const one = (hit: SearchHit, truncated = false): ReturnType<typeof foldStream> => ({
+    const WHOLE = { line: 3, column: 1, length: 3, text: 'abc def', at: 0 };
+    const BARE = { line: 3, column: 1, length: 0, text: 'abc def', at: 0 };
+    const one = (hit: SearchHit, truncated = false): Folded => ({
         files: [{ root: 'r', path: 'a.ts', hits: [hit] }],
         total: 1,
         truncated
     });
 
-    it('drops a match whose line number is text and says the file held more', () => {
+    it('drops a match whose line number is text and says the file held more', async () => {
         expect(
-            folded(begin, matchWith({ line_number: '3' }), endWith({ matched_lines: 1 }))
+            await folded(begin, matchWith({ line_number: '3' }), endWith({ matched_lines: 1 }))
         ).toStrictEqual({ files: [], total: 0, truncated: true });
     });
 
-    it('reads a hit at column 1 of length 0 when its first submatch is not an object holding a match', () => {
+    it('reads a hit at column 1 of length 0 when its first submatch is not an object holding a match', async () => {
         for (const submatches of ['x', [null], ['abc'], [5], []]) {
             expect(
-                folded(begin, matchWith({ submatches }), endWith({ matched_lines: 1 })),
+                await folded(begin, matchWith({ submatches }), endWith({ matched_lines: 1 })),
                 JSON.stringify(submatches)
             ).toStrictEqual(one(BARE));
         }
     });
 
-    it('takes the count of an end record only when matched_lines is a number', () => {
+    it('takes the count of an end record only when matched_lines is a number', async () => {
         for (const stats of [[], { matched_lines: '5' }]) {
-            expect(folded(begin, matchWith({}), endWith(stats))).toStrictEqual(one(WHOLE));
+            expect(await folded(begin, matchWith({}), endWith(stats))).toStrictEqual(one(WHOLE));
         }
-        expect(folded(begin, matchWith({}), endWith({ matched_lines: 9 }))).toStrictEqual(
+        expect(await folded(begin, matchWith({}), endWith({ matched_lines: 9 }))).toStrictEqual(
             one(WHOLE, true)
         );
     });
 
-    it('keeps a count, a line number and an offset of infinity as numbers', () => {
+    it('keeps a count, a line number and an offset of infinity as numbers', async () => {
         const infinite = (text: string): string => text.replace('"@inf"', '1e999');
         expect(
-            folded(begin, matchWith({}), infinite(endWith({ matched_lines: '@inf' })))
+            await folded(begin, matchWith({}), infinite(endWith({ matched_lines: '@inf' })))
         ).toStrictEqual(one(WHOLE, true));
-        expect(folded(begin, infinite(matchWith({ line_number: '@inf' })))).toStrictEqual(
+        expect(await folded(begin, infinite(matchWith({ line_number: '@inf' })))).toStrictEqual(
             one({ ...WHOLE, line: Infinity })
         );
         const offset = [{ match: { text: 'abc' }, start: '@inf', end: 3 }];
-        expect(folded(begin, infinite(matchWith({ submatches: offset })))).toStrictEqual(
-            one({ ...WHOLE, column: 9 })
+        expect(await folded(begin, infinite(matchWith({ submatches: offset })))).toStrictEqual(
+            one({ ...WHOLE, column: 9, at: 8 })
         );
     });
 
-    it('skips a line that is not JSON, a list, a number, null and a record whose data is a list', () => {
+    it('skips a line that is not JSON, a list, a number, null and a record whose data is a list', async () => {
         expect(
-            folded(
+            await folded(
                 begin,
                 'not json',
                 '[]',
@@ -586,7 +631,9 @@ describe('the JSON stream with records of an odd shape', () => {
                 endWith({ matched_lines: 1 })
             )
         ).toStrictEqual(one(WHOLE));
-        expect(folded(JSON.stringify({ type: 'begin', data: [] }), matchWith({}))).toStrictEqual({
+        expect(
+            await folded(JSON.stringify({ type: 'begin', data: [] }), matchWith({}))
+        ).toStrictEqual({
             files: [],
             total: 0,
             truncated: false
@@ -657,9 +704,8 @@ describe('the folder a search is scoped to', () => {
         expect(started).toBe(0);
     });
 
-    it('answers the route a 400 with a sentence of its own for each of the two refusals', async () => {
+    it('answers the route a 400 with the refusal word, which the page words from its catalog', async () => {
         const { roots } = scoped();
-        const sentences: string[] = [];
         const words: string[] = [];
         for (const under of ['out', 'nowhere', '../x']) {
             const response = await handleSearch(
@@ -671,14 +717,10 @@ describe('the folder a search is scoped to', () => {
                 { roots, cap: 500, timeout: TIMEOUT, run: () => Promise.resolve(quiet()) }
             );
             expect(response.status, under).toBe(400);
-            const body = (await response.json()) as { error: string; refused: string };
-            sentences.push(body.error);
-            words.push(body.refused);
+            const body = (await response.json()) as { error: string };
+            words.push(body.error);
         }
         expect(words).toEqual(['outside', 'missing', 'outside']);
-        expect(sentences.every((one) => one !== '')).toBe(true);
-        expect(sentences[0]).toBe(sentences[2]);
-        expect(sentences[1]).not.toBe(sentences[0]);
     });
 
     it('searches a hidden folder it is given whole, with the real binary', async () => {
@@ -689,5 +731,50 @@ describe('the folder a search is scoped to', () => {
         expect(outcome.ok && outcome.answer.files.map((one) => one.path)).toEqual([
             '.hidden/h.txt'
         ]);
+    });
+});
+
+describe('a line longer than a hit row is wide, with the real binary', () => {
+    it('answers two matches of one long line as two hits that differ in `at` though the windows share a column', async () => {
+        const dir = scratch();
+        const line = `${'a'.repeat(500)} foo ${'b'.repeat(100)} foo ${'c'.repeat(500)}`;
+        writeFileSync(join(dir, 'long.txt'), `${line}\n`);
+        const outcome = await runSearch(
+            [{ key: 'scratch', dir }],
+            query({ root: 'scratch', q: 'foo' }),
+            {
+                timeout: TIMEOUT
+            }
+        );
+        expect(outcome.ok).toBe(true);
+        const hits = outcome.ok ? outcome.answer.files[0].hits : [];
+        expect(hits).toHaveLength(2);
+        expect(hits[0].column).toBe(hits[1].column);
+        expect(hits[0].text.length).toBeLessThanOrEqual(HIT_WIDTH);
+        expect(hits.map((one) => one.at)).toEqual([line.indexOf('foo'), line.lastIndexOf('foo')]);
+        const file = outcome.ok ? outcome.answer.files[0] : undefined;
+        const keys = file === undefined ? [] : hits.map((one) => hitKey(file, one));
+        expect(new Set(keys).size).toBe(2);
+    });
+
+    it('carries a match longer than the window whole as group 0, in both modes', async () => {
+        const dir = scratch();
+        const long = 'x'.repeat(300);
+        writeFileSync(join(dir, 'long.txt'), `a ${long} b\n`);
+        writeFileSync(join(dir, 'short.txt'), 'a xx b\n');
+        const roots = [{ key: 'scratch', dir }];
+        const regex = await runSearch(roots, query({ root: 'scratch', q: 'x+', regex: true }), {
+            timeout: TIMEOUT
+        });
+        const byPath = (path: string) =>
+            regex.ok ? regex.answer.files.find((one) => one.path === path)?.hits[0] : undefined;
+        expect(byPath('long.txt')?.groups).toEqual({ '0': long });
+        expect(byPath('short.txt')?.groups).toEqual({ '0': 'xx' });
+        const literal = await runSearch(roots, query({ root: 'scratch', q: long }), {
+            timeout: TIMEOUT
+        });
+        const hit = literal.ok ? literal.answer.files[0].hits[0] : undefined;
+        expect(hit?.groups).toEqual({ '0': long });
+        expect(hit?.length).toBe(300);
     });
 });

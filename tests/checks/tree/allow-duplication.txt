@@ -107,7 +107,6 @@ tests/state/feeds/feeds.test.ts tests/views/boards/editor.test.ts 31fc27de1c1f t
 tests/state/forms/schema.test.ts tests/views/boards/editor.test.ts 7a490278351a the same 13 lines at 76 and 76, to fold into one place
 tests/state/sessions/terminals.test.ts tests/state/system/machine/hpc.test.ts f86fb737d860 the same 11 lines at 137 and 35, to fold into one place
 tests/state/sources/explorer/explorer.test.ts tests/state/sources/fs/fs-shape.test.ts 20171008d2f9 the same 9 lines at 44 and 41, to fold into one place
-tests/state/sources/search.test.ts tests/views/sources/search.test.ts 29fce2fb85d5 the same 10 lines at 38 and 51, to fold into one place
 tests/state/workbench/layout/layout-close.test.ts tests/state/workbench/layout/open/preview.test.ts 575b1e88cd84 the same 9 lines at 100 and 108, to fold into one place
 tests/state/workbench/layout/layout-fixture.ts tests/state/workbench/layout/layout-parts.test.ts 3d6329a7c2d7 the same 9 lines at 88 and 30, to fold into one place
 tests/state/workbench/layout/layout-fixture.ts tests/state/workbench/ui.test.ts 3d6329a7c2d7 the same 9 lines at 88 and 82, to fold into one place

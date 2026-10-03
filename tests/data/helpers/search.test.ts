@@ -8,32 +8,44 @@ import { describe, expect, it } from 'vitest';
 import {
     ALL_ROOTS,
     emptyQuery,
-    MAX_QUERY,
+    fileArgs,
     clampMax,
     queryFrom,
     refusalOf,
     rootsOf,
-    searchArgs,
     searchCap,
-    searchParams,
     pathIn,
-    perFileCount,
     searchQuery,
     searchUrl,
     trimAround,
     type SearchQuery
-} from '../../../src/lib/data/helpers/search.ts';
+} from '../../../src/lib/data/helpers/search/query.ts';
 
 const ROOTS = ['hub', 'engine', 'cathedra'];
+
+/** The longest pattern a query may carry. */
+const LONGEST_QUERY = 1000;
 
 /** A query with everything at its default, and whatever a case wants instead. */
 function query(changes: Partial<SearchQuery> = {}): SearchQuery {
     return { ...emptyQuery(500), q: 'needle', ...changes };
 }
 
+/** The parameters of the address a query is fetched at, as the server reads them. */
+function sentParameters(held: SearchQuery): URLSearchParams {
+    return new URL(searchUrl(held), 'http://localhost').searchParams;
+}
+
+/** The argument list a query runs as, which is what the plan of an accepted query holds. */
+function argsOf(held: SearchQuery): string[] {
+    const plan = searchQuery(held, ROOTS);
+    if (!plan.ok) throw new Error(`refused: ${plan.refused}`);
+    return plan.args;
+}
+
 describe('the argument list', () => {
     it('reads the pattern as text, ignoring case, when no option is on', () => {
-        expect(searchArgs(query())).toEqual([
+        expect(argsOf(query())).toEqual([
             '--json',
             '--max-count',
             '501',
@@ -54,7 +66,7 @@ describe('the argument list', () => {
     });
 
     it('adds the word boundary for word, and keeps the pattern one argument', () => {
-        const args = searchArgs(query({ word: true }));
+        const args = argsOf(query({ word: true }));
         expect(args).toContain('--word-regexp');
         expect(args.at(-3)).toBe('--regexp');
         expect(args.at(-2)).toBe('needle');
@@ -62,17 +74,17 @@ describe('the argument list', () => {
     });
 
     it('matches the pattern case for case', () => {
-        expect(searchArgs(query({ case: true }))).toContain('--case-sensitive');
-        expect(searchArgs(query({ case: true }))).not.toContain('--ignore-case');
+        expect(argsOf(query({ case: true }))).toContain('--case-sensitive');
+        expect(argsOf(query({ case: true }))).not.toContain('--ignore-case');
     });
 
     it('drops the fixed-strings flag for regex, and keeps it for every other combination', () => {
-        expect(searchArgs(query({ regex: true }))).not.toContain('--fixed-strings');
-        expect(searchArgs(query({ word: true, case: true }))).toContain('--fixed-strings');
+        expect(argsOf(query({ regex: true }))).not.toContain('--fixed-strings');
+        expect(argsOf(query({ word: true, case: true }))).toContain('--fixed-strings');
     });
 
     it('carries all three options together', () => {
-        const args = searchArgs(query({ word: true, case: true, regex: true, q: 'fo+' }));
+        const args = argsOf(query({ word: true, case: true, regex: true, q: 'fo+' }));
         expect(args).toEqual([
             '--json',
             '--max-count',
@@ -87,21 +99,41 @@ describe('the argument list', () => {
             '!.svelte-kit',
             '--word-regexp',
             '--case-sensitive',
+            '--replace',
+            '\ue0020\ue003${0}',
             '--regexp',
             'fo+',
             '.'
         ]);
     });
 
+    it('hands a regular expression its group template and a literal search none', () => {
+        const template = argsOf(query({ regex: true, q: '(a)(?<n>b)' }));
+        expect(template[template.indexOf('--replace') + 1]).toBe(
+            '\ue0020\ue003${0}\ue0021\ue003${1}\ue0022\ue003${2}\ue002n\ue003${n}'
+        );
+        expect(argsOf(query({ q: '(a)' }))).not.toContain('--replace');
+    });
+
+    it('names one file to ripgrep and asks for every match of it, with no cap or skipped folder', () => {
+        expect(fileArgs(query({ q: 'a.b' }), 'src/a b.ts')).toEqual([
+            '--json',
+            '--fixed-strings',
+            '--ignore-case',
+            '--regexp',
+            'a.b',
+            './src/a b.ts'
+        ]);
+    });
+
     it('passes a pattern that opens with a dash as the pattern it is', () => {
-        expect(searchArgs(query({ q: '--help' })).at(-2)).toBe('--help');
+        expect(argsOf(query({ q: '--help' })).at(-2)).toBe('--help');
     });
 });
 
 describe('the per-file count', () => {
     it('asks for one match past the cap, so a file cut short sends a record with no room', () => {
-        expect(perFileCount(500)).toBe(501);
-        expect(searchArgs(query({ max: 3 }))[2]).toBe('4');
+        expect(argsOf(query({ max: 3 }))[2]).toBe('4');
     });
 });
 
@@ -112,8 +144,8 @@ describe('what is refused', () => {
     });
 
     it('refuses a query longer than the bound and allows one exactly at it', () => {
-        expect(refusalOf(query({ q: 'x'.repeat(MAX_QUERY + 1) }), ROOTS)).toBe('too_long');
-        expect(refusalOf(query({ q: 'x'.repeat(MAX_QUERY) }), ROOTS)).toBeNull();
+        expect(refusalOf(query({ q: 'x'.repeat(LONGEST_QUERY + 1) }), ROOTS)).toBe('too_long');
+        expect(refusalOf(query({ q: 'x'.repeat(LONGEST_QUERY) }), ROOTS)).toBeNull();
     });
 
     it('refuses a root the list does not hold, and allows every root it does', () => {
@@ -170,7 +202,7 @@ describe('the path a hit carries', () => {
 describe('the parameters', () => {
     it('writes what queryFrom reads back, both ways round', () => {
         const held = query({ q: 'a b', root: 'hub', word: true, regex: true, max: 20 });
-        expect(queryFrom(searchParams(held), 500)).toEqual(held);
+        expect(queryFrom(sentParameters(held), 500)).toEqual(held);
     });
 
     it('escapes the pattern into the address rather than into the path', () => {
@@ -222,9 +254,9 @@ describe('the folder a search is scoped to', () => {
     });
 
     it('ends the arguments with the folder as ./<under>, and with . for the whole root', () => {
-        const scoped = searchArgs(held({ under: 'src/lib' }));
+        const scoped = argsOf(held({ under: 'src/lib', root: 'hub' }));
         expect(scoped.slice(-3)).toEqual(['--regexp', 'needle', './src/lib']);
-        const whole = searchArgs(held());
+        const whole = argsOf(held());
         expect(whole.slice(-3)).toEqual(['--regexp', 'needle', '.']);
     });
 
@@ -249,7 +281,7 @@ describe('the folder a search is scoped to', () => {
 
     it('writes under into the parameters and reads it back, and reads a request without it as the whole root', () => {
         const scoped = held({ q: 'a b', root: 'hub', under: 'src/lib', max: 20 });
-        expect(queryFrom(searchParams(scoped), 500)).toEqual(scoped);
+        expect(queryFrom(sentParameters(scoped), 500)).toEqual(scoped);
         expect(queryFrom(new URLSearchParams({ q: 'x' }), 500).under).toBe('');
     });
 });

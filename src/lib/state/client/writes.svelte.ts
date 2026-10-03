@@ -25,6 +25,7 @@ import {
     survivorsShape,
     unchanged
 } from '../../data/shapes/shapes.ts';
+import { failedAnswer, unreadableAnswer } from '../shared/answers/answers.ts';
 import { t } from '../shared/words/text.ts';
 import type {
     SendOptions,
@@ -488,7 +489,7 @@ export function createWrites(
             }
             const held = answerShape.parse(fields(body));
             if (!response.ok) {
-                const error = held.error ?? `HTTP ${response.status}`;
+                const error = held.error ?? failedAnswer(response, body);
                 state.error = error;
                 return {
                     answered: true,
@@ -502,7 +503,7 @@ export function createWrites(
                 };
             }
             // A successful status whose body is JSON null or is not JSON is a read that failed.
-            if (body === undefined) return failedRead(`HTTP ${response.status}`);
+            if (body === undefined) return failedRead(unreadableAnswer(response.status));
             return {
                 answered: true,
                 answer: {

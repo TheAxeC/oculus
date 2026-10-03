@@ -9,8 +9,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
-import { createClientState, stubFetch, type ClientState } from '../../../fixtures/client.ts';
+import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
+import {
+    createClientState,
+    stubFetch,
+    type ClientState,
+    refused,
+    unreadable
+} from '../../../fixtures/client.ts';
 import { fakeStorage } from '../../workbench/layout/layout-fixture.ts';
 
 // Opening a file browser tab reads the view's own label out of the catalog, as the page does.
@@ -197,17 +203,27 @@ describe.each(KINDS)('the answer of $name', (kind) => {
     );
 
     it.each([
-        [{ error: 'origin' }, 403, 'origin'],
-        [{ error: '' }, 500, ''],
-        [{ error: 3 }, 500, '500'],
-        [{ error: ['a'] }, 404, '404'],
-        [{ error: null }, 500, '500'],
-        [{}, 502, '502'],
-        [[], 500, '500'],
-        ['x', 500, '500'],
-        [7, 500, '500']
-    ])('says why a refused read was refused: %j at %i', async (body, status, error) => {
-        expect(await held(kind, answered(body, status))).toStrictEqual({ ...empty, error });
+        [{ error: 'origin' }, 403],
+        [{ error: '' }, 500],
+        [{ error: 3 }, 500],
+        [{ error: ['a'] }, 404],
+        [{ error: null }, 500],
+        [{}, 502],
+        [[], 500],
+        ['x', 500],
+        [7, 500]
+    ])('says the refusal sentence for a refused read: %j at %i', async (body, status) => {
+        expect(await held(kind, answered(body, status))).toStrictEqual({
+            ...empty,
+            error: refused(status)
+        });
+    });
+
+    it('says the sentence of the catalog for a refused read whose error is one of its words', async () => {
+        expect(await held(kind, answered({ error: 'outside' }, 400))).toStrictEqual({
+            ...empty,
+            error: t('files.refused_outside')
+        });
     });
 
     if (kind.listed !== undefined && kind.dirty !== undefined) {
@@ -227,16 +243,22 @@ describe.each(KINDS)('the answer of $name', (kind) => {
     }
 
     it.each([['null'], ['<html>gateway</html>']])(
-        'holds the status as the reason when a refused body is %s',
+        'holds the unreadable sentence when a refused body is %s',
         async (text) => {
-            expect(await held(kind, texted(text, 500))).toStrictEqual({ ...empty, error: '500' });
+            expect(await held(kind, texted(text, 500))).toStrictEqual({
+                ...empty,
+                error: unreadable(500)
+            });
         }
     );
 
     it.each([['null'], ['<html>gateway</html>']])(
-        'holds the status as the reason when a successful body is %s',
+        'holds the unreadable sentence when a successful body is %s',
         async (text) => {
-            expect(await held(kind, texted(text))).toStrictEqual({ ...empty, error: '200' });
+            expect(await held(kind, texted(text))).toStrictEqual({
+                ...empty,
+                error: unreadable(200)
+            });
         }
     );
 

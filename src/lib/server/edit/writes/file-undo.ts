@@ -15,6 +15,11 @@
 //   A file with no kept content and a link are not brought back; an undo that brings back nothing
 //   is refused as `nothing`. A file whose kept copy the history has since pruned refuses the whole
 //   undo as `copy-gone`, before anything is written.
+// - `replace` is taken back by writing each file back from the copy the replace kept of it, only
+//   while every file is as the replace left it (`moved` otherwise). The undo keeps a copy of each
+//   file as the replace left it and records itself as a `replace` whose `before` names those
+//   copies, so the undo of that record writes the replaced text back: the redo is the same path.
+//   A copy the history has since pruned refuses the whole undo as `copy-gone`.
 //
 // The paths of a record are absolute, the log being a file a hand may edit, so every path must lie
 // in a served root and none may be the machine's own config/local.yml or a folder that holds it.
@@ -28,12 +33,12 @@ import { mkdir, rename } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import trashLibrary from 'trash';
 import { z } from 'zod';
-import { FILES_KIND, type FileField, type FileStamp } from '../../../data/file-ops.ts';
+import { FILES_KIND, FILE_FIELDS, type FileField, type FileStamp } from '../../../data/file-ops.ts';
 import type { Change, ChangeRecord } from '../../core/changes.ts';
 import { chained, type FsWrites } from '../../core/json.ts';
 import { below, realPath } from '../../core/paths.ts';
 import { holds, recordOf, stampKept, stampOf } from '../../files/fs/file-changes.ts';
-import { defaultHistoryDir, readCopy, restoreCopy } from '../../files/fs/history.ts';
+import { defaultHistoryDir, keepCopy, readCopy, restoreCopy } from '../../files/fs/history.ts';
 import { guarded, protectedFiles } from '../../files/fs/ops.ts';
 import type { Root } from '../../files/files.ts';
 import type { UndoOutcome } from './undo.ts';
@@ -77,7 +82,7 @@ const stampShape = z.object({
 
 const stampsShape = z.array(stampShape);
 
-const fieldShape = z.enum(['create', 'rename', 'move', 'copy', 'upload', 'trash', 'delete']);
+const fieldShape = z.enum(FILE_FIELDS);
 
 /** What an undo of file operations answers: the records of what it did, or the word refusing it. */
 type FilesOutcome = UndoOutcome;
@@ -141,6 +146,31 @@ async function writeBack(target: FilesTarget, stamp: FileStamp, done: Done): Pro
     return true;
 }
 
+/**
+ * Write the files of a `replace` record back from the copies it kept, keeping a copy of each file
+ * as it is first so that the record this undo makes can be taken back too. Each stamp of `before`
+ * is paired with the stamp of `after` at the same place.
+ */
+function writeReplaced(
+    target: FilesTarget,
+    before: FileStamp[],
+    after: FileStamp[],
+    done: Done
+): void {
+    const history = target.history;
+    if (history === undefined) return;
+    for (const [at, was] of before.entries()) {
+        const left = after.at(at);
+        if (left === undefined || was.kept === undefined) continue;
+        const kept = keepCopy(history, left.path, 'replace');
+        const id = kept.ok ? kept.kept?.id : undefined;
+        if (!restoreCopy(history, was.path, was.kept, was.path)) continue;
+        done.before.push(id === undefined ? left : { ...left, kept: id });
+        const now = stampOf(was.path);
+        if (now !== null) done.after.push(now);
+    }
+}
+
 /** The records of what an undo did, none when it did nothing. */
 function recordsOf(done: Done): ChangeRecord[] {
     if (done.before.length === 0 && done.after.length === 0) return [];
@@ -198,6 +228,23 @@ async function undoNow(
                 const now = stampOf(home.path);
                 if (now !== null) done.after.push(now);
             }
+        } catch {
+            return finish(done, 'unwritable');
+        }
+    } else if (via === 'replace') {
+        const paired = before.data.length === after.data.length;
+        if (!paired || before.data.length === 0) return { error: 'nothing' };
+        if (before.data.some((one, at) => one.path !== after.data[at]?.path)) {
+            return { error: 'nothing' };
+        }
+        if (after.data.some((one) => stampOf(one.path) === null)) return { error: 'gone' };
+        if (!after.data.every((one) => holds(one))) return { error: 'moved' };
+        if (before.data.some((one) => one.kept === undefined || copyGone(target, one))) {
+            return { error: 'copy-gone' };
+        }
+        done = { field: 'replace', before: [], after: [] };
+        try {
+            writeReplaced(target, before.data, after.data, done);
         } catch {
             return finish(done, 'unwritable');
         }

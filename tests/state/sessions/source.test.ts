@@ -13,7 +13,7 @@ import { headTabState } from '../../../src/lib/state/sources/repositories/file-g
 import { stateId } from '../../../src/lib/state/workbench/layout/instance.ts';
 import { TEXT_LIMIT } from '../../../src/lib/state/sources/fs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { fields, scalar } from '../../../src/lib/data/helpers/guards.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -645,5 +645,110 @@ describe('a source tab over the file at HEAD or in the index', () => {
         expect(fetcher).toHaveBeenCalledTimes(1);
         const calls = fetcher.mock.calls as unknown as string[][];
         expect(calls[0][0].startsWith('/api/git?head=')).toBe(true);
+    });
+});
+
+describe('a file the route refuses', () => {
+    it('is a failed read that says the refused sentence with the status, and not the status alone', async () => {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('gone', { status: 404 })));
+        expect(await loadSource('hub', 'a.md')).toEqual({
+            ok: false,
+            error: t('ui.answer_refused', 404)
+        });
+    });
+
+    it('is a tab that says it cannot open the file, with the refused sentence', async () => {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('no', { status: 503 })));
+        await loadSourceDraft('one', 'hub', 'a.md');
+        expect(sourceDraft('one').error).toBe(t('source.cannot_open', t('ui.answer_refused', 503)));
+    });
+});
+
+describe('a tab with no unsaved text read again after its file was written', () => {
+    /** A fetch that answers every read with what `disk.text` holds when it is asked. */
+    function reading(disk: { text: string }): ReturnType<typeof vi.fn> {
+        const fetcher = vi.fn(() => Promise.resolve(new Response(disk.text)));
+        vi.stubGlobal('fetch', fetcher);
+        return fetcher;
+    }
+
+    it('shows the text the disk holds now, as the saved text too', async () => {
+        // Revert: leave the draft as it is in reloadSource.
+        const disk = { text: 'old' };
+        reading(disk);
+        await loadSourceDraft('one', 'hub', 'notes.md');
+        disk.text = 'new';
+        await client.source.reloadSource('one');
+        expect(sourceDraft('one')).toMatchObject({ text: 'new', saved: 'new' });
+        expect(sourceDirty('one')).toBe(false);
+    });
+
+    it('asks nothing for a tab holding text the reader typed, and keeps it', async () => {
+        // Revert: drop the `draft.text !== draft.saved` return of reloadSource.
+        const disk = { text: 'old' };
+        const fetcher = reading(disk);
+        await loadSourceDraft('one', 'hub', 'notes.md');
+        editSourceDraft('one', 'typed');
+        const asked = fetcher.mock.calls.length;
+        disk.text = 'new';
+        await client.source.reloadSource('one');
+        expect(fetcher.mock.calls).toHaveLength(asked);
+        expect(sourceDraft('one')).toMatchObject({ text: 'typed', saved: 'old' });
+    });
+
+    it('keeps the text typed while the read was out, and moves the saved text to the disk', async () => {
+        // Revert: write `answer.content` as the text without the `edited` check.
+        const disk = { text: 'old' };
+        reading(disk);
+        await loadSourceDraft('one', 'hub', 'notes.md');
+        const read = Promise.withResolvers<Response>();
+        vi.stubGlobal('fetch', () => read.promise);
+        const reloading = client.source.reloadSource('one');
+        editSourceDraft('one', 'typed while reading');
+        read.resolve(new Response('new'));
+        await reloading;
+        expect(sourceDraft('one')).toMatchObject({ text: 'typed while reading', saved: 'new' });
+    });
+
+    it('writes nothing under a tab its pane closed while the read was out', async () => {
+        // Revert: drop both `ui.instanceState(id) === undefined` and the file comparison after the
+        // read in reloadSource; either one holds this case alone.
+        client.layout.apply({
+            root: {
+                kind: 'pane',
+                tabs: [{ id: 'one', view: 'source', state: null }],
+                active: 'one'
+            }
+        });
+        const disk = { text: 'old' };
+        reading(disk);
+        await loadSourceDraft('one', 'hub', 'notes.md');
+        const read = Promise.withResolvers<Response>();
+        vi.stubGlobal('fetch', () => read.promise);
+        const reloading = client.source.reloadSource('one');
+        client.layout.closeInstance('one');
+        expect(client.ui.instanceState('one')).toBeUndefined();
+        read.resolve(new Response('new'));
+        await reloading;
+        expect(client.ui.instanceState('one')).toBeUndefined();
+    });
+
+    it("leaves the next file's draft alone in a preview tab pointed at it", async () => {
+        // Revert: drop `if (held.file !== draft.file) return;` from reloadSource.
+        const state = (path: string) => ({ root: 'hub', path, label: path });
+        const tab = client.layout.openView('source', state('a.md'), undefined, { preview: true });
+        const disk = { text: 'a on disk' };
+        reading(disk);
+        await loadSourceDraft(tab, 'hub', 'a.md');
+        const read = Promise.withResolvers<Response>();
+        vi.stubGlobal('fetch', () => read.promise);
+        const reloading = client.source.reloadSource(tab);
+        client.layout.openView('source', state('b.md'), undefined, { preview: true });
+        disk.text = 'b on disk';
+        reading(disk);
+        await loadSourceDraft(tab, 'hub', 'b.md');
+        read.resolve(new Response('a replaced'));
+        await reloading;
+        expect(sourceDraft(tab)).toMatchObject({ file: 'hub/b.md', text: 'b on disk' });
     });
 });

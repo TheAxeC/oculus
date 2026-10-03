@@ -1,7 +1,8 @@
 // Layer 2, server route. The file operations of the Files view and the comparison of two files.
 // A route module may export only its verbs, so everything the request does is in
 // lib/server/files/fs/ops.ts and this is the few lines that join Kit's request to it. The POST
-// creates, renames, trashes, deletes, pastes and uploads under the served roots and carries the
+// creates, renames, trashes, deletes, pastes, uploads and replaces under the served roots, and
+// reads one file with a replace applied (`preview`) as the Replace Preview reads it, behind the
 // token ServerContext minted; the GET reads two files as the diff pane reads a change.
 //
 // The roots are the file browser's own list, folded by lib/server/files/roots.ts, so a folder the
@@ -10,7 +11,7 @@
 // bookmarks and notes wait on. The change log, the hub and the history folder come from the same
 // target the write route uses, so a file operation is recorded where every other write is.
 
-import { localFile } from '$lib/data/sources/config';
+import { localFile, searchSettings } from '$lib/data/sources/config';
 import { target } from '$lib/server/edit/writes';
 import { defaultHistoryDir } from '$lib/server/files/fs/history';
 import { handleCompare, handleOps } from '$lib/server/files/fs/ops';
@@ -25,6 +26,10 @@ const roots = (locals: App.Locals) =>
         local: locals.server.local
     });
 
+/** Milliseconds one file's search is given by a replace or its preview. */
+const searchTimeout = (locals: App.Locals) =>
+    searchSettings(locals.config().config).timeoutS * 1000;
+
 export const GET: RequestHandler = ({ url, locals }) =>
     handleCompare(url, roots(locals), locals.server.local.history ?? defaultHistoryDir());
 
@@ -36,6 +41,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
         local: localFile(locals.server.engine),
         changes: held.changes,
         hub: held.hub,
-        history: locals.server.local.history ?? defaultHistoryDir()
+        history: locals.server.local.history ?? defaultHistoryDir(),
+        searchTimeout: searchTimeout(locals)
     });
 };

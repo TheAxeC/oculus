@@ -8,6 +8,11 @@ text:
         clear_scope: Search the whole root
         clear_scope_glyph: dismiss
         count: '{0} hits in {1} files, {2} ms'
+        count_replacing: '{0} hits would be replaced in {1} files, {2} ms'
+        dismiss: Dismiss
+        dismiss_file_title: Take {0} out of these results without changing it
+        dismiss_glyph: dismiss
+        dismiss_hit_title: Take this hit out of these results without changing the file
         empty: Type a pattern and press Enter.
         empty_glyph: search
         failed: The search answered something this page could not read.
@@ -20,13 +25,54 @@ text:
         in_folder: In {0}/{1}
         none: Nothing in these files carries that.
         placeholder: What to find
+        preserve: AB
+        preserve_title: 'Preserve Case: the text that replaces a match takes the capitals of the match'
+        preview_hit_title: Open the Replace Preview of {0} at line {1}
+        preview_title: '{0} <-> {1} (Replace Preview)'
         refused_empty: A search needs a pattern.
         refused_missing: That folder is not there.
         refused_outside: A folder is searched under one root, inside it.
+        refused_pattern: 'The pattern could not be read: {0}'
+        refused_timed_out: The search ran out of time.
+        refused_token: The write token was refused; reload the page.
         refused_too_long: That pattern is longer than a search takes.
         refused_unknown_root: That root is not one oculus serves.
         regex: regex
         regex_title: Read the pattern as a regular expression instead of as text to find
+        replace_all: Replace All
+        replace_all_glyph: replace_all
+        replace_all_title: Replace every hit listed here
+        replace_ask_1_1: Replace {0} occurrence across {1} file with '{2}'?
+        replace_ask_1_1_empty: Replace {0} occurrence across {1} file?
+        replace_ask_1_n: Replace {0} occurrence across {1} files with '{2}'?
+        replace_ask_1_n_empty: Replace {0} occurrence across {1} files?
+        replace_ask_capped: The search stopped at {0} hits, so only the hits listed are replaced.
+        replace_ask_n_1: Replace {0} occurrences across {1} file with '{2}'?
+        replace_ask_n_1_empty: Replace {0} occurrences across {1} file?
+        replace_ask_n_n: Replace {0} occurrences across {1} files with '{2}'?
+        replace_ask_n_n_empty: Replace {0} occurrences across {1} files?
+        replace_box: Replace
+        replace_done_1_1: Replaced {0} occurrence across {1} file with '{2}'.
+        replace_done_1_1_empty: Replaced {0} occurrence across {1} file.
+        replace_done_1_n: Replaced {0} occurrence across {1} files with '{2}'.
+        replace_done_1_n_empty: Replaced {0} occurrence across {1} files.
+        replace_done_n_1: Replaced {0} occurrences across {1} file with '{2}'.
+        replace_done_n_1_empty: Replaced {0} occurrences across {1} file.
+        replace_done_n_n: Replaced {0} occurrences across {1} files with '{2}'.
+        replace_done_n_n_empty: Replaced {0} occurrences across {1} files.
+        replace_file_title: Replace All in this file
+        replace_glyph: replace
+        replace_hit: Replace
+        replace_hit_title: Replace this hit
+        replace_none: 'Nothing was written: no hit is left to replace.'
+        replace_stopped: Nothing was written to {0}. {1}
+        replace_stopped_after: Replaced in {0} of the files; it stopped at {1}. {2}
+        replace_toggle: Toggle Replace
+        replace_toggle_title: Show or hide the replace row
+        replace_unsaved: '{0} has unsaved changes in an open tab and was left out.'
+        replace_unsaved_all: 'Nothing was written: {0} has unsaved changes in an open tab.'
+        replacing_aria: Replace row
+        results: Search results
         retry: Search again
         root: Where to look
         root_all: Every root
@@ -34,6 +80,8 @@ text:
         run_glyph: search
         run_title: Run this search over the files of the chosen root
         running: Searching...
+        toggle_glyph_closed: chevron
+        toggle_glyph_open: disclosure
         toolbar: Search
         word: word
         word_title: Match whole words only, which is how an identifier is found without its neighbours

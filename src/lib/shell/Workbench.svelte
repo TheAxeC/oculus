@@ -174,6 +174,7 @@
             if (entry !== undefined) client.layout.openView('doc', docState(entry), at);
         },
         composeIn: (page) => client.terminals.composeIn(page),
+        focusSearchBox: (id, box) => client.search.wantFocus(id, box),
         railPage: (index) => {
             const entry = pages.at(index - 1);
             if (index < 1 || entry === undefined) return false;

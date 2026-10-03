@@ -8,9 +8,10 @@
 // Cmd+Z takes back the newest operation of the log that is not undone: a record that undoes none
 // and has a way back. Shift+Cmd+Z takes back the newest undo that is not itself taken back, which
 // puts its operation again: a record that undoes an operation, as opposed to one that undoes an
-// undo.
+// undo. The files a taken-back replace writes are named from its record, so the tabs over them read
+// the file again.
 
-import { FILES_KIND } from '../../../../data/file-ops.ts';
+import { FILES_KIND, type OpsPlace } from '../../../../data/file-ops.ts';
 import { readAs } from '../../../../data/shapes/shapes.ts';
 import { z } from 'zod';
 import type { Move } from '../follow.ts';
@@ -80,5 +81,18 @@ export function undoneMoves(record: FileRecord, roots: FsRoot[]): Move[] {
                 to: { root: now.root.key, path: now.path }
             }
         ];
+    });
+}
+
+/**
+ * The files taking a replace record back writes, as the root and path each is served under, so
+ * the source tabs over them read the file again. A path outside the served roots, and any other
+ * kind of operation, gives none.
+ */
+export function replacedPlaces(record: FileRecord, roots: FsRoot[]): OpsPlace[] {
+    if (record.field !== 'replace') return [];
+    return stampPaths(record.after).flatMap((path): OpsPlace[] => {
+        const held = rootHolding(roots, path);
+        return held === null ? [] : [{ root: held.root.key, path: held.path }];
     });
 }

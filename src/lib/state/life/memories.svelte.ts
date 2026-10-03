@@ -14,8 +14,9 @@
 // what was wrong, rather than as a wall with fewer tiles or none.
 
 import { z } from 'zod';
-import { itemsShape, optionalTextShape, readAs, readJson } from '../../data/shapes/shapes.ts';
+import { itemsShape, readAs, readJson } from '../../data/shapes/shapes.ts';
 import type { Picture } from '../../data/model/index.ts';
+import { failedAnswer } from '../shared/answers/answers.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 
@@ -69,8 +70,8 @@ const pictureShape = z
         };
     });
 
-/** The body of the answer: the pictures as they came, and the reason a refusal gives. */
-const answerShape = z.object({ images: z.unknown().optional(), error: optionalTextShape });
+/** The body of the answer: the pictures as they came. */
+const answerShape = z.object({ images: z.unknown().optional() });
 
 /** Why an answer is not a list of pictures, as the word the wall's `error` holds. */
 type Malformed = 'images_not_a_list' | 'image_without_name' | 'image_name_repeated';
@@ -112,13 +113,10 @@ async function ask(): Promise<Wall> {
     try {
         const response = await fetch('/api/memories');
         const raw = await readJson(response);
-        if (raw === undefined) {
-            return { images: [], error: String(response.status), loading: false };
+        if (raw === undefined || !response.ok) {
+            return { images: [], error: failedAnswer(response, raw), loading: false };
         }
         const body = readAs(answerShape, raw);
-        if (!response.ok) {
-            return { images: [], error: body?.error ?? String(response.status), loading: false };
-        }
         const answer = pictures(body?.images);
         return 'malformed' in answer
             ? { images: [], error: answer.malformed, loading: false }

@@ -8,7 +8,8 @@
     // Enter in the box and the pane's Search action are the two ways a run starts, since a search
     // reads every file of a root and a run per keystroke would be one process per letter.
     //
-    // It is drawn in the pane's bar: the query box, the root picker, and the three options as
+    // It is drawn in the pane's bar: the Toggle Replace control that shows the replace row
+    // (search/ReplaceRow.svelte), the query box, the root picker, and the three options as
     // pressable chips.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -16,7 +17,7 @@
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { ALL_ROOTS } from '$lib/state/sources/search';
+    import { ALL_ROOTS } from '$lib/state/sources/search/search';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -39,6 +40,13 @@
         oncase: () => void;
         onregex: () => void;
         onrun: () => void;
+        /** Whether the replace row is shown. */
+        replacing: boolean;
+        ontogglereplace: () => void;
+        /** The query box's input element, for the cursor to be put in it. */
+        input?: HTMLInputElement | null;
+        /** A key the query box leaves to the view: history, and Replace All. */
+        onkey: (event: KeyboardEvent) => boolean;
     };
 
     let {
@@ -55,7 +63,11 @@
         onword,
         oncase,
         onregex,
-        onrun
+        onrun,
+        replacing,
+        ontogglereplace,
+        input = $bindable(null),
+        onkey
     }: Props = $props();
 
     // The picker's empty choice is every root, which is what a search opens on: a search over
@@ -65,7 +77,23 @@
 </script>
 
 <Toolbar label={t('search.toolbar')}>
-    <Search fill value={q} placeholder={t('search.placeholder')} oninput={onq} onenter={onrun} />
+    <ToolButton
+        label={t('search.replace_toggle')}
+        glyph={replacing ? t('search.toggle_glyph_open') : t('search.toggle_glyph_closed')}
+        title={t('search.replace_toggle_title')}
+        compact
+        expanded={replacing}
+        onclick={ontogglereplace}
+    />
+    <Search
+        fill
+        value={q}
+        placeholder={t('search.placeholder')}
+        oninput={onq}
+        onenter={onrun}
+        {onkey}
+        bind:input
+    />
     <Select
         value={picked}
         label={t('search.root')}

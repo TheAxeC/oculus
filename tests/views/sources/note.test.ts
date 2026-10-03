@@ -16,7 +16,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, setGlyphs, t } from '../../../src/lib/state/shared/words/text.ts';
 import { findView, type Instance } from '../../../src/lib/state/workbench/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 
@@ -122,7 +122,7 @@ describe('one note as its own tab', () => {
         const fresh = await answering({ error: 'no-such-note' }, 404);
         const body = drawn(fresh, { id: '20260915-120000-001' });
 
-        expect(body).toContain('The note could not be read: no-such-note');
+        expect(body).toContain(`The note could not be read: ${t('ui.answer_refused', 404)}`);
         // the note could not be read, so there is nothing to type into
         expect(body).not.toContain('<textarea');
     });
@@ -150,7 +150,7 @@ describe('one note as its own tab', () => {
         const body = drawn(fresh, { id: '20260915-120000-001' });
 
         expect(body).toMatch(/<p class="empty[^"]*\berror\b[^"]*"[^>]*role="alert"/);
-        expect(body).toContain('The note could not be read: no-such-note');
+        expect(body).toContain(`The note could not be read: ${t('ui.answer_refused', 404)}`);
     });
 
     it('is one instance per note, so opening the same note twice is one tab', () => {

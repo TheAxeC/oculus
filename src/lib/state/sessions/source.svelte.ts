@@ -1,6 +1,6 @@
-// Layer 2, client state. The source tab's file address, its initial whole-text read, whether this
-// machine's mode lets it be written, and the whole-text save through the shared authenticated write
-// sender.
+// Layer 2, client state. The source tab's file address, its initial whole-text read, the read again
+// of a tab with no unsaved text after its file was written, whether this machine's mode lets it be
+// written, and the whole-text save through the shared authenticated write sender.
 //
 // Whether a file may be saved is the file's own mode, asked of the source route when the tab opens
 // and held with the draft: no list of extensions decides it, so a tab over a file this machine
@@ -15,6 +15,7 @@ import { headUrl } from '../sources/repositories/repositories.ts';
 import type { HeadStage } from '../sources/repositories/file-git.ts';
 import { readCapped } from '../sources/fs.svelte.ts';
 import type { WriteAnswer, WritesStore, InstanceStates } from '../shared/stores/shapes.ts';
+import { refusedAnswer } from '../shared/answers/answers.ts';
 import { t } from '../shared/words/text.ts';
 
 /**
@@ -166,7 +167,7 @@ export function sourceInfoUrl(root: string, path: string): string {
 export async function loadSource(root: string, path: string): Promise<SourceLoad> {
     try {
         const response = await fetch(sourceFileUrl(root, path));
-        if (!response.ok) return { ok: false, error: `HTTP ${response.status}` };
+        if (!response.ok) return { ok: false, error: refusedAnswer(response.status) };
         const held = await readCapped(response, TEXT_LIMIT);
         return { ok: true, content: held.text, truncated: held.truncated };
     } catch (error) {
@@ -214,6 +215,8 @@ export type SourceStore = {
     sourceDraft: (id: string) => SourceDraft;
     sourceDirty: (id: string) => boolean;
     loadSourceDraft: (id: string, root: string, path: string, head?: HeadStage) => Promise<void>;
+    /** Read a tab's file again when the tab holds no unsaved text; a tab with some keeps it. */
+    reloadSource: (id: string) => Promise<void>;
     editSourceDraft: (id: string, text: string) => void;
     revertSourceDraft: (id: string) => void;
     saveSourceDraft: (id: string, root: string, path: string) => Promise<void>;
@@ -304,6 +307,26 @@ export function createSource(writes: WritesStore, ui: InstanceStates): SourceSto
         } finally {
             if (reading.get(id) === entry) reading.delete(id);
         }
+    }
+
+    /**
+     * Show the file as the disk holds it now, for a tab that holds nothing the reader typed. The
+     * answer belongs to the file the draft is of, and text typed while the read was out is kept.
+     */
+    async function reloadSource(id: string): Promise<void> {
+        const draft = sourceDraft(id);
+        const at = draft.file.indexOf('/');
+        if (!draft.loaded || draft.text !== draft.saved || at < 0) return;
+        const answer = await loadSource(draft.file.slice(0, at), draft.file.slice(at + 1));
+        if (!answer.ok || ui.instanceState(id) === undefined) return;
+        const held = sourceDraft(id);
+        if (held.file !== draft.file) return;
+        const edited = held.text !== held.saved;
+        updateDraft(id, {
+            text: edited ? held.text : answer.content,
+            saved: answer.content,
+            truncated: answer.truncated
+        });
     }
 
     /** Keep typing local to this instance until the user saves. */
@@ -401,6 +424,7 @@ export function createSource(writes: WritesStore, ui: InstanceStates): SourceSto
         sourceDraft,
         sourceDirty,
         loadSourceDraft,
+        reloadSource,
         editSourceDraft,
         revertSourceDraft,
         saveSourceDraft,

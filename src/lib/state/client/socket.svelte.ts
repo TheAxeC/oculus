@@ -10,9 +10,10 @@
 // page again.
 //
 // The page starts from the configuration its own HTML was built from, seeded here with the newest
-// push version that read is at least as new as (server/root/config-seed.ts). A `config` push at or
-// below that version is dropped: it is the hub's replay of a read made before the page's, and
-// installing it would put the values from before a config change back for the watcher's debounce.
+// push version that read is at least as new as (server/root/config-seed.ts), when the seed passes
+// the schema of a `config` payload. A `config` push at or below that version is dropped: it is the
+// hub's replay of a read made before the page's, and installing it would put the values from before
+// a config change back for the watcher's debounce.
 //
 // The payload carries the address the server listens at. A server that moves to another port
 // (a changed `port` in local.yml) reports its new address on the open socket, and the page goes
@@ -306,9 +307,13 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     /**
      * Take no `config` push at or below `through`, and put the page's own configuration on the
      * channel when the seed carries it. The stores the catalog lives in were filled from the same
-     * read before the first render, so nothing is installed again here.
+     * read before the first render, so nothing is installed again here. The seed is held to the
+     * schema a frame's payload is held to; one that fails it is not held, and the push the socket
+     * subscribes with is the page's configuration instead, so the channel only ever holds a payload
+     * a schema accepted.
      */
     function seedConfig(payload: ConfigPayload | undefined, through: number): void {
+        if (payload !== undefined && !payloadShapes.config.safeParse(payload).success) return;
         seededThrough = through;
         if (payload === undefined) return;
         followServer(payload.host);

@@ -32,7 +32,7 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/deck`, `data/helpers/editor`,
 // `data/accounts/leads`, `data/helpers/worktrees`, `data/helpers/files/text-kind`,
 // `data/helpers/files/opens-in-program`, `data/helpers/files/languages`, `data/helpers/tasks` and
-// `data/helpers/search` and `data/helpers/finding-text` and `data/helpers/code-themes` join
+// `data/helpers/search/**` and `data/helpers/finding-text` and `data/helpers/code-themes` join
 // `data/model` in the state row as pure helpers with no reader and no I/O. `data/accounts/calendar`
 // and `data/accounts/mail` are there because how a connector account is named, and how old a thread
 // is, are read by the server that builds the credential file and reads the mailbox and by the page
@@ -58,26 +58,28 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/tasks`, the server building an update task's argv from the `tasks:` block and the
 // update tray asking that block whether the task it is about to start runs unattended;
 // `data/helpers/editor`, the server requiring `editor.paint_limit_kb` at start and the source
-// editor reading the same cap out of the configuration it was sent; and `data/helpers/search`, the
-// Search view refusing a query before it sends it and the search route refusing the same query when
-// it arrives, from one rule and one argument list; and `data/helpers/finding-text`, whose
-// placeholder rule is the one the client's t() fills a catalog string with and the one the server
-// words every finding with before the snapshot carries it; `data/helpers/code-themes`, the list of
-// Shiki's bundled themes (ids, display names, dark or light), which the server words the finding
-// for a bad `code_theme:` from, the appearance store checks a saved pick against and the Settings
-// view draws as the Code theme menu; and `data/sources/config/rail`, the rule over the `rail:` list
-// of config/layout.yml, which the page drawing the rail, the Settings view editing it and the
-// server writing it and wording its findings all read, so the three agree on which entries are
-// pages; and `data/sources/config/settings`, the typed readers of single settings, of which the
-// Files view reads `files.confirm_delete` so a delete asks only while the setting says so; and
-// `data/sources/config/catalog/options`, the options catalog's types and the reader of it from the
-// merged config, which the Settings view's rows are made from, so the rows and the server's write
-// of one option (server/edit/writes/config/config-key.ts) read one description of what an option
-// is; and `data/hub-address`, the rule telling a path of the hub from a web address, which the
-// collection card reads to decide what a click opens and the Audit reads to decide which links to
-// look for on disk. `data/helpers/files/paths` holds the `/` path rules (a path's last name, the
-// path under a folder, the deepest folder holding a target) that the file browser, the source tab
-// and the status bar read a root or a repository by, so the three agree on which one holds a file.
+// editor reading the same cap out of the configuration it was sent; and `data/helpers/search/**`,
+// the Search view refusing a query before it sends it and the search route refusing the same query
+// when it arrives, from one rule and one argument list (`query`), and the Search view drawing the
+// replacement of each hit with the rules the server writes it by (`replace`); and
+// `data/helpers/finding-text`, whose placeholder rule is the one the client's t() fills a catalog
+// string with and the one the server words every finding with before the snapshot carries it;
+// `data/helpers/code-themes`, the list of Shiki's bundled themes (ids, display names, dark or
+// light), which the server words the finding for a bad `code_theme:` from, the appearance store
+// checks a saved pick against and the Settings view draws as the Code theme menu; and
+// `data/sources/config/rail`, the rule over the `rail:` list of config/layout.yml, which the page
+// drawing the rail, the Settings view editing it and the server writing it and wording its findings
+// all read, so the three agree on which entries are pages; and `data/sources/config/settings`, the
+// typed readers of single settings, of which the Files view reads `files.confirm_delete` so a
+// delete asks only while the setting says so; and `data/sources/config/catalog/options`, the
+// options catalog's types and the reader of it from the merged config, which the Settings view's
+// rows are made from, so the rows and the server's write of one option
+// (server/edit/writes/config/config-key.ts) read one description of what an option is; and
+// `data/hub-address`, the rule telling a path of the hub from a web address, which the collection
+// card reads to decide what a click opens and the Audit reads to decide which links to look for on
+// disk. `data/helpers/files/paths` holds the `/` path rules (a path's last name, the path under a
+// folder, the deepest folder holding a target) that the file browser, the source tab and the status
+// bar read a root or a repository by, so the three agree on which one holds a file.
 // `data/shapes/shapes` holds the zod helpers (a schema that answers its input, the map and number
 // schemas, the quick path) that the server's, the state layer's, the views' and the shell's readers
 // of untyped input share, so all four read by one rule. `data/file-ops` holds what a file or folder
@@ -146,7 +148,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/nesting',
         'data/helpers/tasks',
         'data/helpers/editor',
-        'data/helpers/search',
+        'data/helpers/search/**',
         'data/file-ops',
         'data/helpers/code-themes',
         'data/helpers/finding-text',
@@ -307,7 +309,8 @@ const FROZEN = [
 /**
  * The stores a shell file may take out of the client object: the shell's row, by store name. The
  * palette runs the workspace commands through `fs` (switch and save a workspace) and `explorer`
- * (the folder panel).
+ * (the folder panel), and the key that finds in files or replaces in files asks the Search box of
+ * the pane in focus for the cursor through `search`.
  */
 const SHELL_STORES = [
     'explorer',
@@ -317,6 +320,7 @@ const SHELL_STORES = [
     'ui',
     'selection',
     'terminals',
+    'search',
     'paletteSource',
     'editorStatus',
     'notices',

@@ -12,7 +12,8 @@
 // server-rendered page holds nothing and asks for nothing.
 
 import { z } from 'zod';
-import { optionalTextShape, readJson } from '../../data/shapes/shapes.ts';
+import { readJson } from '../../data/shapes/shapes.ts';
+import { failedAnswer } from '../shared/answers/answers.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 
@@ -75,10 +76,9 @@ const mirrorStateShape = z.object({
     plan: planShape.nullable()
 }) satisfies z.ZodType<MirrorState>;
 
-/** What GET /api/deposit answers: the state, or the error a refusal carries. */
+/** What GET /api/deposit answers: the state. */
 const bodyShape = z.object({
-    state: mirrorStateShape.nullable().catch(null),
-    error: optionalTextShape
+    state: mirrorStateShape.nullable().catch(null)
 });
 
 /** What the panel reads for one project. */
@@ -114,9 +114,8 @@ export function createDeposit(queries: Queries): DepositStore {
         try {
             const response = await fetch(`/api/deposit?id=${encodeURIComponent(id)}`);
             const raw = await readJson(response);
-            if (raw === undefined) return failed(String(response.status));
+            if (raw === undefined || !response.ok) return failed(failedAnswer(response, raw));
             const body = bodyShape.safeParse(raw).data;
-            if (!response.ok) return failed(body?.error ?? String(response.status));
             return { state: body?.state ?? null, error: '', loading: false };
         } catch (error) {
             return failed(error instanceof Error ? error.message : String(error));

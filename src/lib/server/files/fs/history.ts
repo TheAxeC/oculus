@@ -8,7 +8,10 @@
 // `-2`, `-3` and so on for a second copy in the same millisecond.
 //
 // A copy of kind `save` is made only for a file of at most 256 KB, and the newest 50 of them are
-// kept per file. A copy of kind `delete`, made before a delete, is made for a file of at most 5 MB
+// kept per file. A copy of kind `replace`, made before a replace in the Search view writes the
+// file, and again before the undo of a replace writes it back, has the limit and the pruning of a
+// `save`: a file of at most 256 KB, the newest 50 of that kind per file. A copy of kind `delete`,
+// made before a delete, is made for a file of at most 5 MB
 // and is not counted in those 50, since the undo of the delete reads it; the newest 50 copies of
 // kind `delete` over all files are kept, and when a delete adds one the oldest beyond 50 are
 // removed, so an undo of an older delete finds its copy gone. `deletes.json` beside the file
@@ -52,8 +55,11 @@ export const SAVES_KEPT = 50;
 /** How many copies of kind `delete` are kept over all files. */
 export const DELETES_KEPT = 50;
 
-/** What a copy was made before: a save of the file, or the delete of it. */
-export type HistoryKind = 'save' | 'delete';
+/** What a copy was made before: a save of the file, a replace in it, or the delete of it. */
+export type HistoryKind = 'save' | 'replace' | 'delete';
+
+/** The kinds of copy kept per file, newest `SAVES_KEPT` of each, which are the edits of a file. */
+const EDIT_KINDS: readonly HistoryKind[] = ['save', 'replace'];
 
 /** One copy of a file: its id, the time it was made (ms), the file's size and why it was made. */
 export type HistorySave = { id: string; at: number; size: number; kind: HistoryKind };
@@ -68,7 +74,7 @@ const entriesShape = z.object({
             id: z.string().regex(/^\d{8}T\d{9}(-\d+)?$/),
             at: z.number(),
             size: z.number(),
-            kind: z.enum(['save', 'delete'])
+            kind: z.enum(['save', 'replace', 'delete'])
         })
     )
 });
@@ -116,9 +122,9 @@ export type KeepResult = { ok: true; kept: HistorySave | null } | { ok: false; r
 /**
  * Copy the file at `file` into the history before it is changed. The file is not there, is not a
  * file, or is over the limit of `kind`: nothing is copied and that is `kept: null`. The copy is
- * written before `entries.json` names it, and the 51st and older copies of kind `save` are removed
- * after, as are the delete copies beyond the newest 50 over all files, so a failure never leaves
- * an entry without its copy.
+ * written before `entries.json` names it, and the 51st and older copies of kind `save` and of kind
+ * `replace` are removed after, as are the delete copies beyond the newest 50 over all files, so a
+ * failure never leaves an entry without its copy.
  */
 export function keepCopy(
     history: string,
@@ -130,7 +136,7 @@ export function keepCopy(
     if (real === null) return { ok: true, kept: null };
     try {
         const info = statSync(real);
-        const limit = kind === 'save' ? SAVE_MAX_BYTES : DELETE_MAX_BYTES;
+        const limit = kind === 'delete' ? DELETE_MAX_BYTES : SAVE_MAX_BYTES;
         if (!info.isFile() || info.size > limit) return { ok: true, kept: null };
         const bytes = readFileSync(real);
         const folder = historyFolder(history, real);
@@ -144,7 +150,9 @@ export function keepCopy(
         };
         writeBytesAtomic(join(folder, save.id), bytes);
         const saves = [...entries.saves, save];
-        const old = saves.filter((one) => one.kind === 'save').slice(0, -SAVES_KEPT);
+        const old = EDIT_KINDS.flatMap((edit) =>
+            saves.filter((one) => one.kind === edit).slice(0, -SAVES_KEPT)
+        );
         const dropped = new Set(old.map((one) => one.id));
         writeTextAtomic(
             join(folder, 'entries.json'),

@@ -997,6 +997,13 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z316 (2026-10-03, D32's look): the three defects of the Search view's replace
+
+- Chosen: a new step D32b after D32, queued after Q91 and built by a builder: the hits of a written file read again after a replace; the cap note and the Replace All question's cap sentence only when the cap cut, a root that ran out of time said to have done so; the Replace Preview opened beside the Search view.
+- Not chosen: fixing them at landing, too large for a landing fix; an open item, or a later step on another surface, the lazy option.
+
+Where it applies: D32b. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z313 (2026-10-03, the Q99 and Q79c looks): the Sessions New button into D20, the Memories exception into X3c
 
 Chosen: the New button's press opening the composer is built in D20, which changes the Sessions and Terminal views, its cause found at D20's /spec; the Memories view's exception joins Z310 in X3c, whose paths already hold `Memories.svelte`.

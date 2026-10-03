@@ -15,7 +15,7 @@ import {
 } from '../../../src/lib/state/life/memories.ts';
 import { MAX_UPLOAD_BYTES as SERVER_LIMIT } from '../../../src/lib/server/content/memories.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 import type { Wall } from '../../../src/lib/state/life/memories.svelte.ts';
 import { createClientState } from '../../fixtures/client.ts';
 
@@ -155,32 +155,40 @@ describe('the wall read from an answer of the wrong shape', () => {
         }
     );
 
-    it('reads a refused request as the text of its error, an empty one kept, else its status', async () => {
-        expect(await wallOf('{"error":"boom"}', 500)).toStrictEqual(failed('boom'));
-        expect(await wallOf('{"error":""}', 500)).toStrictEqual(failed(''));
+    it('reads a refused request as the refusal sentence, whatever text it carries', async () => {
+        const said = failed(t('ui.answer_refused', 500));
+        expect(await wallOf('{"error":"boom"}', 500)).toStrictEqual(said);
+        expect(await wallOf('{"error":""}', 500)).toStrictEqual(said);
         for (const text of ['{"error":null}', '{}', '[]']) {
-            expect(await wallOf(text, 500)).toStrictEqual(failed('500'));
+            expect(await wallOf(text, 500)).toStrictEqual(said);
         }
         expect(await wallOf('{"images":[{"name":"a"}],"error":"x"}', 404)).toStrictEqual(
-            failed('x')
+            failed(t('ui.answer_refused', 404))
         );
     });
 
-    it('reads a refusal whose error is a number as its status', async () => {
-        expect(await wallOf('{"error":3}', 500)).toStrictEqual(failed('500'));
+    it('reads a refusal that is a word of the catalog as that word sentence', async () => {
+        expect(await wallOf('{"error":"outside"}', 400)).toStrictEqual(
+            failed(t('files.refused_outside'))
+        );
     });
 
-    it('reads a body that is JSON null or is not JSON as a failed read carrying the status', async () => {
+    it('reads a refusal whose error is a number as the refusal sentence', async () => {
+        expect(await wallOf('{"error":3}', 500)).toStrictEqual(failed(t('ui.answer_refused', 500)));
+    });
+
+    it('reads a body that is JSON null or is not JSON as the unreadable sentence with its status', async () => {
         for (const status of [200, 500]) {
-            expect(await wallOf('null', status)).toStrictEqual(failed(String(status)));
-            expect(await wallOf('not json', status)).toStrictEqual(failed(String(status)));
+            const said = failed(t('ui.answer_unreadable', status));
+            expect(await wallOf('null', status)).toStrictEqual(said);
+            expect(await wallOf('not json', status)).toStrictEqual(said);
         }
     });
 
-    it('reads a body that is JSON but no map as a list that is missing, or as a refusal by status', async () => {
+    it('reads a body that is JSON but no map as a list that is missing, or as the refusal sentence', async () => {
         for (const text of ['[1]', '"x"', '7', 'true']) {
             expect(await wallOf(text)).toStrictEqual(failed('images_not_a_list'));
-            expect(await wallOf(text, 500)).toStrictEqual(failed('500'));
+            expect(await wallOf(text, 500)).toStrictEqual(failed(t('ui.answer_refused', 500)));
         }
     });
 });

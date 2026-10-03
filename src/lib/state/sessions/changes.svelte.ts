@@ -16,12 +16,12 @@
 import { z } from 'zod';
 import {
     anyNumberShape,
-    optionalTextShape,
     readAs,
     readJson,
     survivorsShape,
     unchangedAs
 } from '../../data/shapes/shapes.ts';
+import { failedAnswer } from '../shared/answers/answers.ts';
 import type { Fetcher, Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 
@@ -89,16 +89,15 @@ const changeShape = unchangedAs<Change>(
 
 /**
  * One answer of the endpoint, each field as typed or absent: the rows that read as changes, the
- * size of a full page, and the sentence of a refusal.
+ * size of a full page.
  */
 const answerShape = z.object({
     changes: survivorsShape(changeShape).catch([]),
-    page: anyNumberShape.optional().catch(undefined),
-    error: optionalTextShape
+    page: anyNumberShape.optional().catch(undefined)
 });
 
-/** What a body that is not a map says: no rows, no page size and no sentence. */
-const NO_ANSWER = { changes: [], page: undefined, error: undefined };
+/** What a body that is not a map says: no rows and no page size. */
+const NO_ANSWER = { changes: [], page: undefined };
 
 /** What is held: the rows, whether the first page is still to come, what failed, and more. */
 type Held = { rows: Change[]; loading: boolean; error: string; more: boolean };
@@ -121,11 +120,10 @@ async function page(held: Held | undefined, before?: string): Promise<Held> {
         const query = before === undefined ? '' : `?before=${encodeURIComponent(before)}`;
         const response = await fetch(`/api/changes${query}`);
         const raw = await readJson(response);
-        if (raw === undefined) throw new Error(String(response.status));
-        const body = readAs(answerShape, raw) ?? NO_ANSWER;
-        if (!response.ok) {
-            return { rows, more, error: body.error ?? String(response.status), loading: false };
+        if (raw === undefined || !response.ok) {
+            return { rows, more, error: failedAnswer(response, raw), loading: false };
         }
+        const body = readAs(answerShape, raw) ?? NO_ANSWER;
         const next = body.changes;
         return {
             rows: before === undefined ? next : [...rows, ...next],

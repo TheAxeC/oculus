@@ -1,13 +1,15 @@
 // Layer 1, data. What a search across files answers: the hits of one file, the files of one run,
 // and what the run cost.
 //
-// A hit carries the line's own text rather than an offset into the file, so the page draws a result
-// without reading the file, and it carries where the match sits in that text so the page emboldens
-// the match without matching the pattern again. `length` is the matched text's own length, which is
-// the only way a regular-expression hit can be emboldened at all: the page knows the pattern, not
-// what it matched.
+// A hit is one match, so a line holding two matches is two hits. It carries the line's own text
+// rather than an offset into the file, so the page draws a result without reading the file, and it
+// carries where the match sits in that text so the page emboldens the match without matching the
+// pattern again. `length` is the matched text's own length, which is the only way a
+// regular-expression hit can be emboldened at all: the page knows the pattern, not what it matched.
+// `at` places the match in the whole line, which is what names it to a replace, and `groups` is the
+// text of every group of the pattern, which is what a replace text with `$1` in it is read over.
 
-/** One matching line: where it is, where the match sits in the text, and the text itself. */
+/** One match: where its line is, where the match sits in the line and in the text, and the text. */
 export type SearchHit = {
     /** The line's number in the file, counting from one. */
     line: number;
@@ -17,6 +19,14 @@ export type SearchHit = {
     length: number;
     /** The matching line, cut to a window around the match. */
     text: string;
+    /** Where the match starts in the whole line, in UTF-16 units counted from zero. */
+    at: number;
+    /**
+     * The text of every group of a regular-expression pattern, by number and by name, group 0 being
+     * the match. A literal search has no groups, and its hit carries group 0 alone when the match
+     * is longer than the window `text` is cut to, since `text` then holds only the start of it.
+     */
+    groups?: Record<string, string>;
 };
 
 /** The hits of one file, under the root it was found in. */

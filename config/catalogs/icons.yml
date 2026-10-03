@@ -17,6 +17,8 @@ icons:
     open_program: app-window
     copy: copy
     goto: corner-down-right
+    replace: replace
+    replace_all: replace-all
     note_back: undo-2
     current_month: calendar-check
     arrow_to: arrow-right

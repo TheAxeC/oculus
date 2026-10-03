@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 import type { Terminal } from '../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../src/lib/state/client/context.ts';
 import { STATE_KEY } from '../../src/lib/state/client/use.ts';
+import { t } from '../../src/lib/state/shared/words/text.ts';
 import { TIP_KEY, createTipIds } from '../../src/lib/ui/menu/tip-ids.ts';
 import GroupContexts from '../ui/menu/GroupContexts.svelte';
 
@@ -20,6 +21,12 @@ export function holdTerminals(client: ClientState, terminals: Terminal[]): void 
         payload: { records: [], workspaces: [], terminals }
     });
 }
+
+/** The sentence a refused answer is said in, with the status it came with. */
+export const refused = (status: number): string => t('ui.answer_refused', status);
+
+/** The sentence an answer the page could not read is said in, with the status it came with. */
+export const unreadable = (status: number): string => t('ui.answer_unreadable', status);
 
 /**
  * The contexts the page's one tooltip group gives what it wraps, drawn fresh for each caller: every

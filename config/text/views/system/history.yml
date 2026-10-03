@@ -60,3 +60,5 @@ text:
         file_upload: Upload
         file_trash: Delete
         file_delete: Delete Permanently
+        file_replace: Replaced in {0} files
+        file_replace_one: Replaced in 1 file

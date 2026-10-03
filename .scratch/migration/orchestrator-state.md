@@ -29,21 +29,6 @@ workers_at_once: 3           # Axel, 2026-10-02 19:25 (Z291): lowered from five,
 
 ```yaml
 dispatch:      # four steps in flight, no agent running (ListAgents, 2026-10-03): D32, D14, S4 and D17 refuted and waiting to land in that order (workers_at_once: 3, so no step is dispatched until fewer than three are in flight).
-- step: D32
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 12:31)
-  session_id: add9186f54bd823d9 (continuation builder, launched 2026-10-02 13:45 local, served claude-sonnet-5-5 read 13:46; the 13:20 continuation a6412ed0d51dbc641 was stopped by the user; the 13:00 continuation a63512de536942373 was stopped by the user; the first builder a5cf8bf3bb8e620a6, launched 12:30, was stopped at 12:58 by an interruption, its work kept in the worktree and its usage for the stopped run not reported)
-  worktree: .agents/worktrees/D32
-  base: bdc0ac53
-  launched: 2026-10-02 12:30 local
-  report: agents/reviews/D32-report.md
-  builder_usage: continuation add9186f54bd823d9, 329,466 tokens, 643 tool uses, 187.8 min (its completion notice); the report written from its final message, since its Write of the file was refused; round 1, the same builder resumed: 192,745 tokens, 285 tool uses, 100.8 min (its completion notice), the round's section saved from its final message under the appendices it copied into the worktree report
-  brief_check: agents/reviews/D32-brief-check.md; a56701fda4fc5b483 at ordo-high, served claude-opus-5-5; 287,991 tokens, 100 tool uses, 14.7 min (881,464 ms); every finding closed in the brief, Z264 and Z265 booked
-  shared_paths: with A1, `state/sources/repositories/repositories.ts` (separate fields of `DiffSubject` and `heldDiffShape`, one line each in `sideOf`, adjacent and merged by hand at the second landing), `tests/views/whole/type-scale.test.ts` (separate rows), `HELP.md`, `DESIGN.md` (separate lines); with Q88c, `server/files/fs/ops.ts` (Q88c two `export` words, D32 the replace and preview branches), `repositories.ts` (Q88c `:450-830`, D32 `:110-230`), `state/sessions/source.svelte.ts` (Q88c the HEAD tab, D32 `reloadSource` and line 145), `config/text/ui.yml` (separate keys), `HELP.md` (Q88c line 113, D32 115 and 162-170), `DESIGN.md`; D32 adds no file to and moves none out of `tests/server/files/` or `tests/state/sources/`, which Q88c splits; with D18, `state/client/entities.svelte.ts` (separate functions), `package.json` and the lockfile (regenerated with `npm install` at the second landing), `HELP.md`, `DESIGN.md`; with M3, `HELP.md`, `DESIGN.md` (separate lines)
-  landing: not-started
-  reviewer_report: agents/reviews/D32-refuter.md (claude-opus-5-5, 107,087 tokens, 103 tool uses, 15.9 min); round 1 run: reviewer a0129346811f03d66 at ordo-high, served claude-opus-5-5 (read on launch), 309,013 tokens, 86 tool uses, 28.7 min, saved under "Repair round 1, refuted" in agents/reviews/D32-refuter.md: checks 7 commands passed, findings 1 to 11 (none a violated item; items 2 and 5 partial in findings 9 and 8)
-  round: 1 (sent 2026-10-02, agents/briefs/D32-round1.md)
 - step: D14
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -204,6 +189,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items (kept as the log of what was raised and how it ended)
 
+- Z316 (2026-10-03, D32's look): three defects seen on TEST, a Replace refused on a later match of a file already written (the hits left keep their old place), a root that ran out of time said as the 500-hit cap in the count line and the Replace All question, and the Replace Preview opening in the Search view's own pane over the view, are the new step D32b, queued after Q91 and built by a builder (the orchestrator, automode). Not chosen: fixing them at landing, too large for a landing fix; leaving them as an open item or folding them into a later step on another surface, the lazy option.
 - Z313 (2026-10-03, the Q99 and Q79c looks): Q99-look-3 (the Sessions view's New button opens nothing, its key `n` works) booked into D20, which changes the Sessions and Terminal views; Q79c-look-1 (the Memories view's `$effect` throwing on a null element from `watchShown`) added to Z310 in X3c, which already widens to `Memories.svelte` (the orchestrator, automode). Not chosen: /diagnose by the orchestrator, which is investigation outside a step.
 - Z312 (2026-10-03, the Q88 look): Q88-look-1 (a Graph pill's right-click opens the commit's menu when idle and nothing during a write) and Q88-look-2 (a commit with a hook over 10 s fails at `TIMEOUT_MS`, the message giving no reason) booked into D20, which changes the Repositories view and starts git worktrees; Q88-look-3 (the commit Confirm takes no focus and its ground lies under the right pane) added to Z310 in X3c (the orchestrator, automode). Not chosen: /diagnose by the orchestrator, which is investigation outside a step.
 - Z311 (2026-10-03, the Q82 look): Q82-look-1 (Cmd+A in a tree selects the page's text) and Q82-look-2 (Cmd+Enter on a row opens nothing) booked into X3e, which rebuilds the Files trees' keys and drag (the orchestrator, automode). Not chosen: X3c, whose paths hold no tree.
@@ -877,6 +863,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-03 03:40, item 4 taken: D32 landed (`agents/reviews/D32-landing.md`) with Z308's eleven fixes and a test that a preview POST from a foreign origin is refused; its look on TEST met cases 27 to 31 and found three defects, booked as step D32b (Z316), queued after Q91; its worktree and branches are removed after the landing commit. Next: item 5, D14's landing with its Closed fixes and Z280 (c), its look setting tex-fmt and putting it back.
 - 2026-10-03 02:58, items 2 and 3 taken: the carried sections of the X3c, Q91 and X3e briefs are items, cases and paths (commits 7774cf43 and 13dec385); X3e names eighteen causes for `/spec X3e` to find. D18 landed (`agents/reviews/D18-landing.md`); its worktree and branches are removed after the landing commit. Next: item 4, D32 with Z308 and its look (cases 27 to 31).
 - 2026-10-03 02:36, item 1 taken: the Q81, Q82, Q88, Q99 and Q79c looks recorded in `agents/reviews/owed-looks.md` "Taken", their defects booked as Z310 to Z313 (X3c, X3e, D20). Two points wait on Axel and are open items: a Confirm over the update tray (it needs `tasks.skip_permissions` on for the look, which the session's permission classifier refused) and the Live HPC jobs table and log (the cluster unreachable, EduVPN). Next: item 2, the carried sections of the X3c, Q91 and X3e briefs.
 - 2026-10-03 02:00. Paused by Axel ("The pause"). No agent running. Main holds D18 staged (98 paths, `git diff --cached --name-only | wc -l`) with six unstaged landing fixes. The order on Axel's go, each item done in full before the next, nothing moved later:

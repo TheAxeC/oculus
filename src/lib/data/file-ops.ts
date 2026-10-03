@@ -13,6 +13,10 @@
 // and `after` are lists of FileStamp, so the server that writes them, the server that takes them
 // back and the History view that draws them read one shape.
 //
+// A replace names the hits it replaces by the line and the place in it where each match starts,
+// with the text matched, which is what lets the server refuse a file that has changed since the
+// search.
+//
 // Nothing here runs a process or touches a file: text in, a verdict out.
 
 /** The largest text a code window draws, and the largest file a comparison reads. */
@@ -48,7 +52,12 @@ export type OpsRefusal =
     | 'denied'
     | 'trash_failed'
     | 'too_large'
-    | 'not_base64';
+    | 'not_base64'
+    | 'bad-query'
+    | 'binary'
+    | 'search-failed'
+    | 'changed'
+    | 'marker';
 
 /** Every refusal word, for a map that must name each of them. */
 export const OPS_REFUSALS: readonly OpsRefusal[] = [
@@ -65,11 +74,39 @@ export const OPS_REFUSALS: readonly OpsRefusal[] = [
     'denied',
     'trash_failed',
     'too_large',
-    'not_base64'
+    'not_base64',
+    'bad-query',
+    'binary',
+    'search-failed',
+    'changed',
+    'marker'
 ];
 
 /** A file or folder as an operation names it: a served root's key and a path under it. */
 export type OpsPlace = { root: string; path: string };
+
+/** One match a replace names: its line, where it starts in the line, and the text it matched. */
+export type ReplaceHit = {
+    /** The line's number in the file, counting from one. */
+    line: number;
+    /** Where the match starts in the whole line, in UTF-16 units counted from zero. */
+    at: number;
+    /** The text the match covered when the search found it. */
+    match: string;
+};
+
+/** One file a replace names, with the matches in it to replace. */
+type ReplaceItem = { root: string; path: string; hits: ReplaceHit[] };
+
+/** The half of a search that decides what matches: the pattern, how it is read, and its folder. */
+export type ReplaceQuery = {
+    q: string;
+    word: boolean;
+    case: boolean;
+    regex: boolean;
+    /** The folder under the root the search was scoped to, the empty string for the whole root. */
+    under: string;
+};
 
 /** One operation, as the page posts it and the server reads it. */
 export type OpsRequest =
@@ -92,11 +129,32 @@ export type OpsRequest =
           name: string;
           data: string;
           replace: boolean;
+      }
+    | {
+          op: 'replace';
+          query: ReplaceQuery;
+          /** The replace text as typed, read as the search view's replace box reads it. */
+          replace: string;
+          preserveCase: boolean;
+          items: ReplaceItem[];
+      }
+    | {
+          op: 'preview';
+          query: ReplaceQuery;
+          /** The replace text as typed, read as the search view's replace box reads it. */
+          replace: string;
+          preserveCase: boolean;
+          /** The one file previewed. */
+          root: string;
+          path: string;
+          /** The matches to replace; one the file no longer holds is left unreplaced. */
+          hits: Pick<ReplaceHit, 'line' | 'at'>[];
       };
 
 /**
  * What an operation answers. A list of items that stopped part way names the items done before it
- * and the one it stopped at, both by the path the request gave.
+ * and the one it stopped at, both by the path the request gave; a replace names a file as its root
+ * and its path joined by a slash.
  */
 export type OpsAnswer =
     | { ok: true; path?: string; paths?: string[] }
@@ -190,6 +248,34 @@ export function savedUrl(file: OpsPlace, save: string): string {
     return `${OPS_PATH}?${parameters.toString()}`;
 }
 
+/** What a preview of a replace in one file is read with: the replace and the hits to replace. */
+export type ReplacePreview = {
+    query: ReplaceQuery;
+    replace: string;
+    preserveCase: boolean;
+    hits: Pick<ReplaceHit, 'line' | 'at'>[];
+};
+
+/**
+ * The request the file with a replace applied is read with, as the right side of a comparison with
+ * the file as it is: a POST of the replace's own fields, with the file and its hits in the body so
+ * that the number of hits is not limited by the length of an address.
+ */
+export function previewRequest(
+    file: OpsPlace,
+    preview: ReplacePreview
+): Extract<OpsRequest, { op: 'preview' }> {
+    return {
+        op: 'preview',
+        query: preview.query,
+        replace: preview.replace,
+        preserveCase: preview.preserveCase,
+        root: file.root,
+        path: file.path,
+        hits: preview.hits.map((one) => ({ line: one.line, at: one.at }))
+    };
+}
+
 /**
  * The `kind` the change log files a file operation under, which is the writer an undo goes through.
  */
@@ -205,7 +291,8 @@ export const FILE_FIELDS = [
     'copy',
     'upload',
     'trash',
-    'delete'
+    'delete',
+    'replace'
 ] as const;
 
 /** One of the operations a `files` record names. */

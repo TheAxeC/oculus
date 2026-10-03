@@ -11,13 +11,8 @@
 
 import { z } from 'zod';
 import type { AgentsAnswer, CustomizationsAnswer, AgentId } from '../../data/model/index.ts';
-import {
-    itemsShape,
-    optionalTextShape,
-    readAs,
-    readJson,
-    unchangedAs
-} from '../../data/shapes/shapes.ts';
+import { itemsShape, readAs, readJson, unchangedAs } from '../../data/shapes/shapes.ts';
+import { failedAnswer, unreadableAnswer } from '../shared/answers/answers.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 
 export type {
@@ -64,9 +59,6 @@ const customizationTextShape = unchangedAs<CustomizationText>(
     z.looseObject({ path: z.string(), text: z.string() })
 );
 
-/** The sentence a refusal carries, when it carries one. */
-const refusalShape = z.object({ error: optionalTextShape });
-
 /** The scope one Customizations read is for. */
 export type CustomizationScope = { agent: AgentId; account: string; workspace: string };
 
@@ -99,13 +91,10 @@ export function createAgents(queries: Queries): AgentsStore {
         try {
             const response = await fetch(url);
             const body = await readJson(response);
-            if (body === undefined) throw new Error(String(response.status));
-            if (!response.ok) {
-                return failed(readAs(refusalShape, body)?.error ?? String(response.status));
-            }
+            if (body === undefined || !response.ok) return failed(failedAnswer(response, body));
             const value = readAs(shape, body);
             return value === null
-                ? failed(String(response.status))
+                ? failed(unreadableAnswer(response.status))
                 : { value, pending: false, error: '' };
         } catch (error) {
             return failed(error instanceof Error ? error.message : String(error));

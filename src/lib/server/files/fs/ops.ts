@@ -23,6 +23,13 @@
 // newest 50 delete copies (server/files/fs/history.ts) still hold it. The record is
 // appended when the operation ends, for the items it did before an item it stopped at.
 //
+// A replace of the Search view is the same endpoint's `replace` operation (fs/replace.ts): the
+// matches a request names are replaced file by file, and the request is recorded as one `files`
+// record whose field is `replace`, with each file's content before it kept in the local history so
+// the undo can write it back. The Replace Preview is the same endpoint's `preview` operation,
+// read-only and outside the write chain, whose body names the file and its hits as the replace
+// names them.
+//
 // Each operation runs behind the write chain `opsWrites`, apart from the workspace chain, so a long
 // copy holds up another file operation and nothing else. The Trash is a parameter of the entry
 // point, so a test hands in a spy and moves nothing to the real Trash.
@@ -51,8 +58,10 @@ import { chained, writeBytesAtomic, type FsWrites } from '../../core/json.ts';
 import { below, inside, realPath } from '../../core/paths.ts';
 import { ENGINE_ROOT, resolveRootPath, type Root } from '../files.ts';
 import { isBinaryFile } from '../source.ts';
+import type { SearchRunner } from '../search.ts';
 import { recordOf, stampKept, stampOf, unkeep } from './file-changes.ts';
 import { defaultHistoryDir, historyPath, readCopy } from './history.ts';
+import { previewReplace, replaceFiles } from './replace.ts';
 
 /** What an operation runs over: the roots it may touch and the chain that orders its writes. */
 export type OpsTarget = {
@@ -70,12 +79,18 @@ export type OpsTarget = {
      * The local history folder a trash or a delete keeps the content of a file in; none keeps none.
      */
     history?: string;
+    /**
+     * Milliseconds the search of one file is given when a replace or its preview runs ripgrep, from
+     * `search.timeout_s`; none refuses a replace as `search-failed`.
+     */
+    searchTimeout?: number;
 };
 
-/** The two calls a test replaces: the Trash, and a step held inside the write chain. */
+/** The calls a test replaces: the Trash, a step held inside the write chain, and ripgrep. */
 export type OpsDeps = {
     trash?: (path: string, options: { glob: false }) => Promise<void>;
     slow?: () => Promise<void>;
+    search?: SearchRunner;
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -97,6 +112,8 @@ export type Scope = {
     locals: Guard;
     trash: NonNullable<OpsDeps['trash']>;
     history?: string;
+    /** The search timeout and the ripgrep runner a replace uses. */
+    search: { timeout?: number; run?: SearchRunner };
     /** What the operation has changed so far, which becomes its record. */
     note: Note;
 };
@@ -117,6 +134,15 @@ function noted(
 }
 
 const place = z.object({ root: z.string(), path: z.string() });
+
+/** The half of a search that a replace and its preview are made under. */
+const queryShape = z.object({
+    q: z.string(),
+    word: z.boolean(),
+    case: z.boolean(),
+    regex: z.boolean(),
+    under: z.string()
+});
 
 /** The body of POST /api/ops, one shape per operation. */
 const opsShape = z.discriminatedUnion('op', [
@@ -145,6 +171,34 @@ const opsShape = z.discriminatedUnion('op', [
         name: z.string(),
         data: z.string(),
         replace: z.boolean()
+    }),
+    z.object({
+        op: z.literal('replace'),
+        query: queryShape,
+        replace: z.string(),
+        preserveCase: z.boolean(),
+        items: z.array(
+            z.object({
+                root: z.string(),
+                path: z.string(),
+                hits: z.array(
+                    z.object({
+                        line: z.number().int().min(1),
+                        at: z.number().int().min(0),
+                        match: z.string()
+                    })
+                )
+            })
+        )
+    }),
+    z.object({
+        op: z.literal('preview'),
+        query: queryShape,
+        replace: z.string(),
+        preserveCase: z.boolean(),
+        root: z.string(),
+        path: z.string(),
+        hits: z.array(z.object({ line: z.number().int().min(1), at: z.number().int().min(0) }))
     })
 ]) satisfies z.ZodType<OpsRequest>;
 
@@ -566,8 +620,8 @@ async function uploadItem(
     return { ok: true, path: under(dest.rootFolder, target) };
 }
 
-/** Run one operation. */
-function run(scope: Scope, request: OpsRequest): Promise<OpsAnswer> {
+/** Run one operation that writes. */
+function run(scope: Scope, request: Exclude<OpsRequest, { op: 'preview' }>): Promise<OpsAnswer> {
     switch (request.op) {
         case 'create':
             return createItem(scope, request);
@@ -580,6 +634,18 @@ function run(scope: Scope, request: OpsRequest): Promise<OpsAnswer> {
             return pasteItems(scope, request);
         case 'upload':
             return uploadItem(scope, request);
+        case 'replace':
+            return replaceFiles(
+                {
+                    roots: scope.roots,
+                    guarded: (path) => guarded(scope.locals, path),
+                    history: scope.history,
+                    timeout: scope.search.timeout,
+                    run: scope.search.run,
+                    note: (before, after) => noted(scope, 'replace', before, after)
+                },
+                request
+            );
     }
 }
 
@@ -596,7 +662,8 @@ async function recordNote(into: OpsTarget, note: Note): Promise<void> {
 
 /**
  * POST /api/ops: one operation, behind the process's token and in its place in the write chain.
- * A body that is no operation is `not-an-action`.
+ * A body that is no operation is `not-an-action`. The `preview` operation writes nothing, so it
+ * runs outside the chain.
  */
 export async function handleOps(
     request: Request,
@@ -611,6 +678,8 @@ export async function handleOps(
     if (read instanceof Response) return read;
     const body = opsShape.safeParse(read.body);
     if (!body.success) return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
+    const operation = body.data;
+    if (operation.op === 'preview') return previewed(operation, into, deps);
     const trash = deps.trash ?? ((path, options) => trashLibrary(path, options));
     const answer = await chained(into.writes, async () => {
         await deps.slow?.();
@@ -620,10 +689,11 @@ export async function handleOps(
             locals: protectedFiles(into),
             trash,
             history: into.history,
+            search: { timeout: into.searchTimeout, run: deps.search },
             note: { field: null, before: [], after: [] }
         };
         try {
-            return await run(scope, body.data);
+            return await run(scope, operation);
         } finally {
             await recordNote(into, scope.note);
         }
@@ -694,6 +764,42 @@ export function handleCompare(
             encoded: false,
             original: binary ? '' : original.text,
             modified: binary ? '' : modified.text
+        }
+    ];
+    return json({ ok: true, files }, { headers: NO_STORE });
+}
+
+/**
+ * POST /api/ops `preview`: the file as it is and as it would be with the named matches replaced,
+ * as the two sides of the diff pane the Replace Preview opens. A file the preview cannot show is
+ * refused with the word of the check that refused it.
+ */
+async function previewed(
+    request: Extract<OpsRequest, { op: 'preview' }>,
+    into: Pick<OpsTarget, 'roots' | 'local' | 'searchTimeout'>,
+    deps: Pick<OpsDeps, 'search'>
+): Promise<Response> {
+    const { root, path } = request;
+    const preview = await previewReplace(
+        {
+            roots: into.roots,
+            guarded: (one) => guarded(protectedFiles(into), one),
+            timeout: into.searchTimeout,
+            run: deps.search
+        },
+        { root, path },
+        request
+    );
+    if (refused(preview)) return json(preview, { status: 400, headers: NO_STORE });
+    const files: DiffSides[] = [
+        {
+            oldPath: `${root}:${path}`,
+            newPath: `${root}:${path}`,
+            head: [],
+            binary: false,
+            encoded: false,
+            original: preview.original,
+            modified: preview.modified
         }
     ];
     return json({ ok: true, files }, { headers: NO_STORE });

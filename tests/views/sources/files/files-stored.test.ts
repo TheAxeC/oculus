@@ -13,6 +13,7 @@ import Bookmarks from '../../../../src/lib/views/sources/files/sections/Bookmark
 import EntryForm from '../../../../src/lib/views/shared/forms/EntryForm.svelte';
 import { BOOKMARK_COLLECTION } from '../../../../src/lib/state/sources/fs.svelte.ts';
 import { installRealText } from '../../shared/real-text.ts';
+import { t } from '../../../../src/lib/state/shared/words/text.ts';
 import { instance } from './files-instance.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
@@ -67,7 +68,7 @@ describe('a read the server refused', () => {
             props: { instance: instance() }
         });
 
-        expect(body).toContain('The roots could not be read: origin');
+        expect(body).toContain(`The roots could not be read: ${t('ui.answer_refused', 403)}`);
         // the roots could not be read, which is said in its own words rather than as an empty list
         expect(body).not.toContain('No roots yet');
     });
@@ -93,7 +94,7 @@ describe('a read the server refused', () => {
             props: { instance: instance() }
         });
 
-        expect(body).toContain('hub could not be read: missing');
+        expect(body).toContain(`hub could not be read: ${t('files.refused_missing')}`);
         expect(body).toContain('aria-expanded="true"');
     });
 
@@ -299,14 +300,14 @@ describe("the reader's own bookmarks and notes", () => {
             props: { instance: instance() }
         });
 
-        expect(body).toContain('The bookmarks could not be read: origin');
-        expect(body).toContain('The notes could not be read: origin');
+        expect(body).toContain(`The bookmarks could not be read: ${t('ui.answer_refused', 403)}`);
+        expect(body).toContain(`The notes could not be read: ${t('ui.answer_refused', 403)}`);
         const marks = body.slice(body.indexOf('data-fs-bookmarks'), body.indexOf('data-fs-notes'));
         const held = body.slice(body.indexOf('data-fs-notes'), body.indexOf('data-fs-workspaces'));
         expect(marks).toContain('aria-label="+ bookmark"');
-        expect(marks).toContain('The bookmarks could not be read: origin');
+        expect(marks).toContain(`The bookmarks could not be read: ${t('ui.answer_refused', 403)}`);
         expect(held).toContain('aria-label="+ note"');
-        expect(held).toContain('The notes could not be read: origin');
+        expect(held).toContain(`The notes could not be read: ${t('ui.answer_refused', 403)}`);
     });
 
     it('carries the control that reads it again on the line that says a read failed', async () => {

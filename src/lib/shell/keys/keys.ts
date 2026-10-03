@@ -37,6 +37,8 @@ export type KeyAction =
     | { kind: 'move'; direction: 'left' | 'right' }
     | { kind: 'activate' }
     | { kind: 'search' }
+    | { kind: 'find-in-files' }
+    | { kind: 'replace-in-files' }
     | { kind: 'scroll'; edge: 'top' | 'bottom' }
     | { kind: 'sheet' }
     | { kind: 'new-session' }
@@ -91,6 +93,24 @@ export function resolveKey(
     // under an overlay; Cmd plus a digit is left to the browser, which has its own use for it.
     if (event.ctrlKey === true && event.metaKey !== true && /^[1-9]$/.test(event.key)) {
         return { action: { kind: 'tab', index: Number(event.key) }, state };
+    }
+    // Cmd+Shift+F and Cmd+Shift+H open the Search view, the second with its replace row shown, as
+    // VS Code's Find in Files and Replace in Files do. Cmd is the Meta key on macOS and the Control
+    // key elsewhere, so the chord is the one of the two held. Like the tab keys it answers with a
+    // field focused, and an overlay keeps the keyboard while it is open.
+    const command = (event.metaKey === true) !== (event.ctrlKey === true);
+    if (
+        command &&
+        event.shiftKey === true &&
+        event.altKey !== true &&
+        event.defaultPrevented !== true &&
+        !context.paletteOpen &&
+        !context.trayOpen &&
+        !context.confirmOpen &&
+        (event.key.toLowerCase() === 'f' || event.key.toLowerCase() === 'h')
+    ) {
+        const kind = event.key.toLowerCase() === 'f' ? 'find-in-files' : 'replace-in-files';
+        return { action: { kind }, state: { ...state, chord: '' } };
     }
     const held = context.typing || context.paletteOpen || context.trayOpen || context.confirmOpen;
     // Ctrl and a bracket carry the focused pane one tab along, the left one backwards. The browser

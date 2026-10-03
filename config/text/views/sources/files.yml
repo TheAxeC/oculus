@@ -151,10 +151,14 @@ text:
         read_again_notes: Read the notes again
         read_failed: 'The roots could not be read: {0}'
         read_offline: there is no page to read from
+        refused_bad_query: The search behind this request cannot be run.
+        refused_binary: That is not a text file.
+        refused_changed: The file changed since it was searched.
         refused_denied: The folder does not allow that change.
         refused_exists: A file or folder of that name is already there.
         refused_into_itself: A folder cannot be put inside itself.
         refused_invalid_name: That is not a name a file or folder can have.
+        refused_marker: The file or the replace text holds a character the search keeps for itself.
         refused_missing: It is not there any more.
         refused_name_held: A workspace already carries that name.
         refused_network: The server could not be reached.
@@ -175,6 +179,7 @@ text:
         refused_root: A root cannot be changed here.
         refused_root_fixed: A configured root is in every workspace and cannot be removed.
         refused_root_held: That folder is already a root of this workspace.
+        refused_search_failed: The search could not be run on the file.
         refused_token: The write token was refused; reload the page.
         refused_too_large: That file is larger than an upload may be.
         refused_trash_failed: The Trash could not take it.
@@ -204,6 +209,7 @@ text:
         timeline_menu: History entry
         timeline_no_file: The active editor cannot provide timeline information.
         timeline_reading: Reading...
+        timeline_replaced: File Replaced
         timeline_restore: Restore
         timeline_restore_failed: The file could not be restored.
         timeline_row_title: Compare {0} with the file now

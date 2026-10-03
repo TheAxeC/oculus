@@ -36,6 +36,12 @@ const venuesValid = {
     editing: 'e',
     reveal: 'r'
 };
+const REPLACE_VALID = {
+    query: { q: 'q', word: true, case: false, regex: true, under: 'src' },
+    replace: 'r',
+    preserveCase: true,
+    hits: [{ line: 2, at: 5 }]
+};
 const heldDiffFallback = {
     id: '',
     label: '',
@@ -50,6 +56,7 @@ const heldDiffFallback = {
     against: undefined,
     compare: undefined,
     workspace: undefined,
+    replace: undefined,
     line: 0,
     session: ''
 };
@@ -67,6 +74,7 @@ const heldDiffValid = {
     against: { root: 'a', path: 'b' },
     compare: { from: 'f', to: 't' },
     workspace: true,
+    replace: { ...REPLACE_VALID },
     line: 4,
     session: 's-1'
 };
@@ -280,6 +288,7 @@ const READERS: Reader[] = [
             against: { root: 'a', path: 'b' },
             compare: { from: 'f', to: 't' },
             workspace: true,
+            replace: { ...REPLACE_VALID },
             line: 4,
             session: 's-1'
         },
@@ -297,6 +306,7 @@ const READERS: Reader[] = [
             against: 3,
             compare: { from: '', to: 't' },
             workspace: false,
+            replace: { query: 3 },
             line: '4',
             session: 3
         },
@@ -342,6 +352,7 @@ const READERS: Reader[] = [
             'wrong against': { ...heldDiffValid, against: undefined },
             'wrong compare': { ...heldDiffValid, compare: undefined },
             'wrong workspace': { ...heldDiffValid, workspace: undefined },
+            'wrong replace': { ...heldDiffValid, replace: undefined },
             'wrong line': { ...heldDiffValid, line: 0 },
             'wrong session': { ...heldDiffValid, session: '' },
             'all wrong': heldDiffFallback,
@@ -361,6 +372,7 @@ const READERS: Reader[] = [
                 against: { root: 'a', path: 'b' },
                 compare: { from: 'f', to: 't' },
                 workspace: true,
+                replace: { ...REPLACE_VALID },
                 line: 4
             },
             'no booleans': { ...heldDiffValid, staged: false, worktree: false }

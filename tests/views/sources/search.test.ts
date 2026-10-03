@@ -6,9 +6,11 @@
 // answer.
 
 import { render } from 'svelte/server';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Search from '../../../src/lib/views/sources/search/Search.svelte';
-import { hitParts, type SearchAnswer } from '../../../src/lib/state/sources/search.ts';
+import { hitParts, type SearchAnswer } from '../../../src/lib/state/sources/search/search.ts';
+import { createWalk } from '../../../src/lib/state/sources/search/walk.ts';
+import { boxKey } from '../../../src/lib/views/sources/search/box-keys.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -23,6 +25,8 @@ import { between } from '../shared/pane-parts.ts';
 
 let client: ClientState;
 
+afterEach(() => vi.unstubAllGlobals());
+
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
 setCatalog(catalog);
@@ -36,14 +40,14 @@ const ANSWER: SearchAnswer = {
             root: 'hub',
             path: 'src/one.ts',
             hits: [
-                { line: 12, column: 5, length: 6, text: 'the needle here' },
-                { line: 40, column: 1, length: 6, text: 'needle again' }
+                { line: 12, column: 5, length: 6, text: 'the needle here', at: 4 },
+                { line: 40, column: 1, length: 6, text: 'needle again', at: 0 }
             ]
         },
         {
             root: 'engine',
             path: 'config/two.yml',
-            hits: [{ line: 7, column: 3, length: 6, text: '  needle: yes' }]
+            hits: [{ line: 7, column: 3, length: 6, text: '  needle: yes', at: 2 }]
         }
     ],
     total: 3,
@@ -64,7 +68,9 @@ beforeEach(() => {
 
 /** The view with whatever this case put into the instance's state. */
 function drawn(state: Record<string, unknown> = {}): string {
-    client.ui.setInstanceState(instance.id, state);
+    // An answer is held with the query it was found by; the view draws none without it.
+    const ran = { q: 'needle', word: false, case: false, regex: false, under: '' };
+    client.ui.setInstanceState(instance.id, state.answer === undefined ? state : { ran, ...state });
     return render(Search, { context: clientContext(client), props: { instance } }).body;
 }
 
@@ -115,8 +121,11 @@ describe('where the search view puts its controls', () => {
         expect(chips[0]).toContain('aria-pressed="true"');
         expect(chips[1]).toContain('aria-pressed="false"');
         expect(chips[2]).toContain('aria-pressed="false"');
-        // the toggles are chips, so the bar draws no bordered text button for them
-        expect(bar).not.toMatch(/<button[^>]*class="tool[ "]/);
+        // the toggles are chips, so the bar draws no bordered text button for them; its one tool
+        // button is the one that shows the replace row
+        const tools = bar.match(/<button[^>]*class="tool[^"]*"[^>]*>/g) ?? [];
+        expect(tools).toHaveLength(1);
+        expect(tools[0]).toContain('aria-label="Toggle Replace"');
     });
 
     it('lets the query box fill the bar', () => {
@@ -151,8 +160,10 @@ describe('the results', () => {
 
     it('emboldens the match and leaves the rest of the line as it is', () => {
         const body = drawn({ q: 'needle', answer: ANSWER });
-        expect(body).toMatch(/the <strong class="match[^"]*">needle<\/strong> here/);
-        expect(body).toMatch(/<strong class="match[^"]*">needle<\/strong> again/);
+        expect(body).toMatch(
+            /the (<!--\[-1-->)?<strong class="match[^"]*">needle<\/strong>(<!--\]-->)? here/
+        );
+        expect(body).toMatch(/<strong class="match[^"]*">needle<\/strong>(<!--\]-->)? again/);
         expect(hitParts(ANSWER.files[0].hits[0])).toEqual({
             before: 'the ',
             match: 'needle',
@@ -217,13 +228,169 @@ describe('the results', () => {
         expect(drawn({ q: 'needle', answer: ANSWER })).not.toContain('Search again');
     });
 
-    it('draws each file heading and each hit as one pressable row of the tree height', () => {
+    it('draws each file heading and each hit as one pressable row of the tree', () => {
         const body = drawn({ q: 'needle', answer: ANSWER });
-        const heads = body.match(/<div class="row head[^"]*"/g) ?? [];
-        const hits = body.match(/<li class="row hit[^"]*"/g) ?? [];
-        expect(heads.length).toBe(2);
-        expect(hits.length).toBe(3);
-        const cells = body.match(/<button[^>]*class="tool[^"]*\bcell\b/g) ?? [];
-        expect(cells.length).toBe(5);
+        const rows = body.match(/<div class="item[^"]*" role="treeitem"[^>]*>/g) ?? [];
+        expect(rows.filter((one) => one.includes('aria-level="1"'))).toHaveLength(2);
+        expect(rows.filter((one) => one.includes('aria-level="2"'))).toHaveLength(3);
+        const presses = body.match(/<button[^>]*class="main[^"]*"/g) ?? [];
+        expect(presses).toHaveLength(5);
+    });
+});
+
+describe('the keys of the two boxes', () => {
+    const press = (init: Partial<KeyboardEvent>): KeyboardEvent =>
+        ({
+            key: '',
+            code: '',
+            isComposing: false,
+            altKey: false,
+            metaKey: false,
+            ctrlKey: false,
+            shiftKey: false,
+            ...init
+        }) as KeyboardEvent;
+
+    function keys(): { box: Parameters<typeof boxKey>[1]; set: string[]; alls: number } {
+        const held = { set: [] as string[], alls: 0 };
+        const box: Parameters<typeof boxKey>[1] = {
+            walk: createWalk(),
+            texts: ['newer', 'older'],
+            text: 'typed',
+            set: (text) => held.set.push(text),
+            all: () => (held.alls += 1)
+        };
+        return Object.assign(held, { box });
+    }
+
+    it('audits that Up and Down walk the texts and take the press', () => {
+        const held = keys();
+        expect(boxKey(press({ key: 'ArrowUp' }), held.box)).toBe(true);
+        expect(boxKey(press({ key: 'ArrowUp' }), held.box)).toBe(true);
+        expect(boxKey(press({ key: 'ArrowDown' }), held.box)).toBe(true);
+        expect(held.set).toEqual(['newer', 'older', 'newer']);
+    });
+
+    it('audits that Replace All is asked on Cmd+Alt+Enter and Ctrl+Alt+Enter, not with Shift or without Alt', () => {
+        const held = keys();
+        expect(boxKey(press({ code: 'Enter', altKey: true, metaKey: true }), held.box)).toBe(true);
+        expect(boxKey(press({ code: 'NumpadEnter', altKey: true, ctrlKey: true }), held.box)).toBe(
+            true
+        );
+        expect(held.alls).toBe(2);
+        expect(
+            boxKey(press({ code: 'Enter', altKey: true, metaKey: true, shiftKey: true }), held.box)
+        ).toBe(false);
+        expect(boxKey(press({ code: 'Enter', metaKey: true }), held.box)).toBe(false);
+        expect(held.alls).toBe(2);
+    });
+
+    it('audits that every other key, a modified arrow and a press inside a composition are left to the box', () => {
+        const held = keys();
+        expect(boxKey(press({ key: 'a' }), held.box)).toBe(false);
+        expect(boxKey(press({ key: 'ArrowUp', shiftKey: true }), held.box)).toBe(false);
+        expect(boxKey(press({ key: 'ArrowDown', metaKey: true }), held.box)).toBe(false);
+        expect(boxKey(press({ key: 'ArrowUp', isComposing: true }), held.box)).toBe(false);
+        expect(boxKey(press({ key: 'ArrowDown' }), held.box)).toBe(false);
+        expect(held.set).toEqual([]);
+    });
+});
+
+describe('the replace row and the hits with it', () => {
+    it('draws no replace row, no Replace and no struck-through match while Toggle Replace is off', () => {
+        const body = drawn({ q: 'needle', answer: ANSWER });
+        // the row belongs to the tab state that Toggle Replace sets, which this case leaves off
+        expect(body).not.toContain('data-search-replace');
+        // a match is struck through only where a replacement follows it, and none is shown
+        expect(body).not.toContain('data-search-struck');
+        // with the row hidden no hit has a replacement to draw after its match
+        expect(body).not.toContain('data-search-with');
+        // the button over a whole file or a whole answer waits for the row
+        expect(body).not.toContain('Replace All');
+        expect(body).toMatch(/<strong class="match[^"]*">needle<\/strong>/);
+        expect(body).toContain('3 hits in 2 files');
+    });
+
+    it('draws the replace box, Preserve Case and Replace All once the row is shown', () => {
+        const body = drawn({ q: 'needle', replacing: true, replace: 'pin', answer: ANSWER });
+        const row = between(body, 'data-search-replace', 'class="body');
+        expect(row).toContain('aria-label="Replace"');
+        expect(row).toContain('value="pin"');
+        expect(row).toContain('>AB<');
+        expect(row).toContain('Replace All');
+    });
+
+    it('marks Preserve Case as pressed only when it is on', () => {
+        const chip = (preserve: boolean): string => {
+            const body = drawn({ q: 'needle', replacing: true, preserve, answer: ANSWER });
+            const row = between(body, 'data-search-replace', 'class="body');
+            return (row.match(/<button[^>]*class="chip[^"]*"[^>]*>/g) ?? [])[0] ?? '';
+        };
+        expect(chip(true)).toContain('aria-pressed="true"');
+        expect(chip(false)).toContain('aria-pressed="false"');
+    });
+
+    it('strikes the match of every hit through and follows it with the text that replaces it', () => {
+        const body = drawn({ q: 'needle', replacing: true, replace: 'pin', answer: ANSWER });
+        expect(body.match(/data-search-struck/g)).toHaveLength(3);
+        expect(body.match(/data-search-with="">pin</g)).toHaveLength(3);
+        // the emphasis a plain result draws is replaced by the strike while the row is shown
+        expect(body).not.toContain('<strong class="match');
+    });
+
+    it('follows the replace text as it changes, and draws no text after a match an empty one deletes', () => {
+        const typed = drawn({ q: 'needle', replacing: true, replace: 'nail', answer: ANSWER });
+        expect(typed).toContain('data-search-with="">nail<');
+        const empty = drawn({ q: 'needle', replacing: true, replace: '', answer: ANSWER });
+        expect(empty.match(/data-search-struck/g)).toHaveLength(3);
+        // the box is empty now, so the earlier typed word is not drawn after any match
+        expect(empty).not.toContain('data-search-with="">nail<');
+    });
+
+    it('draws Replace on every hit and Replace All on every file heading, with Dismiss beside them', () => {
+        const body = drawn({ q: 'needle', replacing: true, replace: 'pin', answer: ANSWER });
+        // the box has the label "Replace" too: one for the box and one per hit
+        expect(body.match(/aria-label="Replace"/g)).toHaveLength(1 + 3);
+        // the row's own Replace All and one per file heading
+        expect(body.match(/aria-label="Replace All"/g)).toHaveLength(1 + 2);
+        expect(body.match(/aria-label="Dismiss"/g)).toHaveLength(2 + 3);
+    });
+
+    it('says how many hits would be replaced instead of how many were found', () => {
+        const body = drawn({ q: 'needle', replacing: true, answer: ANSWER });
+        expect(between(body, 'data-search-count', '</p>')).toContain(
+            '3 hits would be replaced in 2 files'
+        );
+    });
+
+    it('says what a Replace All came to in place of the count line, with no paragraph of its own', async () => {
+        client.writes.setToken('token');
+        vi.stubGlobal('fetch', () =>
+            Promise.resolve(
+                new Response(
+                    JSON.stringify({ ok: true, paths: ['hub/src/one.ts', 'engine/config/two.yml'] })
+                )
+            )
+        );
+        drawn({ q: 'needle', replacing: true, replace: 'pin', answer: ANSWER });
+        await client.search.replaceHits(instance.id, { kind: 'all' });
+        const body = render(Search, { context: clientContext(client), props: { instance } }).body;
+        expect(between(body, 'data-search-count', '</p>')).toContain(
+            "Replaced 3 occurrences across 2 files with 'pin'."
+        );
+        // the sentence has no paragraph of its own above the results
+        expect(body).not.toContain('data-search-said');
+        expect(body.match(/data-search-count/g)).toHaveLength(1);
+        // every hit is out of the answer, and the sentence stands where the empty message would
+        expect(body).not.toContain('Nothing in these files carries that.');
+    });
+
+    it('titles a hit by its Replace Preview while the row is shown', () => {
+        const off = drawn({ q: 'needle', answer: ANSWER });
+        const on = drawn({ q: 'needle', replacing: true, answer: ANSWER });
+        expect(on).not.toBe(off);
+        expect(on).toContain('Open the Replace Preview of src/one.ts at line 12');
+        // opening a hit goes to its file while the row is hidden, so the title names the file only
+        expect(off).not.toContain('Replace Preview');
     });
 });

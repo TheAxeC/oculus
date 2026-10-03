@@ -8,7 +8,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createChanges, matching } from '../../../src/lib/state/sessions/changes.svelte.ts';
 import type { Change, ChangesStore } from '../../../src/lib/state/sessions/changes.svelte.ts';
 import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
-import { stubHeld } from '../../fixtures/client.ts';
+import { stubHeld, refused, unreadable } from '../../fixtures/client.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 /** One change, with whatever the case cares about over the rest. */
 function change(at: string, over: Partial<Change> = {}): Change {
@@ -164,11 +168,11 @@ describe('the change store', () => {
         expect(store.rows().map((one) => one.at)).toEqual(['b', 'c']);
     });
 
-    it('holds what a refused request said and stops waiting', async () => {
+    it('holds the refusal sentence for a refused request and stops waiting', async () => {
         answers = [{ ok: false, body: { error: 'origin' } }];
         store.rows();
         await settle();
-        expect(store.error()).toBe('origin');
+        expect(store.error()).toBe(refused(500));
         expect(store.loading()).toBe(false);
         expect(store.rows()).toEqual([]);
     });
@@ -231,9 +235,17 @@ describe('an answer whose fields are of the wrong type', () => {
         expect(await heldAfter(absent)).toStrictEqual({ ...NOTHING, rows: [row] });
     });
 
-    it('answers a refusal as its sentence, and as its status when it names none', async () => {
-        expect(await heldAfter('{"error":"x"}', 500)).toStrictEqual({ ...NOTHING, error: 'x' });
-        expect(await heldAfter('[]', 500)).toStrictEqual({ ...NOTHING, error: '500' });
+    it('answers a refusal as the refusal sentence, whatever text it carries', async () => {
+        const said = { ...NOTHING, error: refused(500) };
+        expect(await heldAfter('{"error":"x"}', 500)).toStrictEqual(said);
+        expect(await heldAfter('[]', 500)).toStrictEqual(said);
+    });
+
+    it('answers a refusal that is a word of the catalog as that word sentence', async () => {
+        expect(await heldAfter('{"error":"outside"}', 400)).toStrictEqual({
+            ...NOTHING,
+            error: t('files.refused_outside')
+        });
     });
 
     it.each([
@@ -252,16 +264,16 @@ describe('an answer whose fields are of the wrong type', () => {
         }
     );
 
-    it('answers a refusal whose error is a number as its status', async () => {
+    it('answers a refusal whose error is a number as the refusal sentence', async () => {
         const held = await heldAfter('{"error":3}', 500);
-        expect(held).toStrictEqual({ ...NOTHING, error: '500' });
+        expect(held).toStrictEqual({ ...NOTHING, error: refused(500) });
     });
 
-    it('answers a body that is null or not JSON as the failed read with its status', async () => {
+    it('answers a body that is null or not JSON as the unreadable sentence with its status', async () => {
         for (const text of ['null', 'nope']) {
-            const [fine, refused] = [await heldAfter(text), await heldAfter(text, 500)];
-            expect(fine).toStrictEqual({ ...NOTHING, error: '200' });
-            expect(refused).toStrictEqual({ ...NOTHING, error: '500' });
+            const [fine, failed] = [await heldAfter(text), await heldAfter(text, 500)];
+            expect(fine).toStrictEqual({ ...NOTHING, error: unreadable(200) });
+            expect(failed).toStrictEqual({ ...NOTHING, error: unreadable(500) });
         }
     });
 

@@ -1,7 +1,7 @@
 // Layer 2, client state. The two requests the terminals store makes of /api/terminal that carry no
-// state of their own: an action posted with the write token, answered as ok or as the server's
-// words, and the busy read that says which terminals run a program other than their shell. Both go
-// through `fetch`, which a test replaces.
+// state of their own: an action posted with the write token, answered as ok or as a sentence of the
+// catalog, and the busy read that says which terminals run a program other than their shell. Both
+// go through `fetch`, which a test replaces.
 
 import { z } from 'zod';
 import type { Terminal } from '../../../data/model/index.ts';
@@ -13,13 +13,14 @@ import {
     rowsShape,
     unchangedAs
 } from '../../../data/shapes/shapes.ts';
+import { refusedAnswer, unreadableAnswer } from '../../shared/answers/answers.ts';
 
 /** What an action answered: the terminal it names, or what the server refused it with. */
 export type TerminalAnswer = {
     ok: boolean;
     /** The terminal the action was about, empty when the server refused before naming one. */
     id: string;
-    /** What went wrong, or the empty string. Already the server's words. */
+    /** What went wrong in the catalog's words, or the empty string. */
     error: string;
     /** The terminal a start answered, when it did. */
     terminal?: Terminal;
@@ -65,9 +66,15 @@ const busyListShape = z
 /** The body of a busy read. */
 const busyAnswerShape = z.object({ busy: busyListShape });
 
+/** The action field of a request body, which is how `postTerminal` knows a start from the rest. */
+const actionShape = z.object({ action: z.string() });
+
 /**
  * Post one action with the write token. A page rendered on the server has no fetch and posts
- * nothing.
+ * nothing. A refusal is told in the catalog's sentence for it (state/shared/answers/answers.ts),
+ * never in the server's own text. An answer at 200 is ok whatever it names, except for a start: a
+ * terminal started with no id is one the page cannot attach to, so a start whose answer names no
+ * terminal with an id is a failed start.
  */
 export async function postTerminal(body: unknown, token: string): Promise<TerminalAnswer> {
     if (typeof fetch !== 'function') return { ok: false, id: '', error: '' };
@@ -78,10 +85,16 @@ export async function postTerminal(body: unknown, token: string): Promise<Termin
             body: JSON.stringify(body)
         });
         const raw = await readJson(response);
-        if (raw === undefined) throw new Error(String(response.status));
+        if (raw === undefined)
+            return { ok: false, id: '', error: unreadableAnswer(response.status) };
         const answer = readAs(actionAnswerShape, raw);
-        if (!response.ok)
-            return { ok: false, id: '', error: answer?.error ?? String(response.status) };
+        if (!response.ok) {
+            return { ok: false, id: '', error: refusedAnswer(response.status, answer?.error) };
+        }
+        const starting = readAs(actionShape, body)?.action === 'start';
+        if (starting && (answer?.terminal?.id ?? '') === '') {
+            return { ok: false, id: '', error: unreadableAnswer(response.status) };
+        }
         return {
             ok: true,
             id: answer?.terminal?.id ?? answer?.id ?? '',
@@ -110,14 +123,14 @@ export async function readBusy(
         const group = ids.slice(at, at + BUSY_READ);
         try {
             const response = await fetch(`/api/terminal?busy=${group.join(',')}`);
-            if (!response.ok) throw new Error(String(response.status));
+            if (!response.ok) throw new Error(refusedAnswer(response.status));
             const raw = await readJson(response);
-            if (raw === undefined) throw new Error(String(response.status));
+            if (raw === undefined) throw new Error(unreadableAnswer(response.status));
             // A body that is no map names no terminal; a map whose `busy` is no list is no answer.
             const body = readAs(mapShape, raw);
             if (body === null) continue;
             const answer = readAs(busyAnswerShape, body);
-            if (answer === null) throw new Error(String(response.status));
+            if (answer === null) throw new Error(unreadableAnswer(response.status));
             for (const one of answer.busy ?? []) {
                 if (!one.busy) continue;
                 found.push({ id: one.id, name: labelOf(one.id), command: one.command });

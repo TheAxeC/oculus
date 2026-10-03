@@ -27,7 +27,8 @@
 
 import { z } from 'zod';
 import type { ManualPart, Message } from '../../data/model/index.ts';
-import { mapShape, optionalTextShape, readJson, rowsShape } from '../../data/shapes/shapes.ts';
+import { mapShape, readJson, rowsShape } from '../../data/shapes/shapes.ts';
+import { failedAnswer } from '../shared/answers/answers.ts';
 import type { EntitiesStore, Fetcher, Fetching, Queries } from '../shared/stores/shapes.ts';
 
 export type { ManualPart };
@@ -89,7 +90,6 @@ const manualPartShape = z.union([
 const bodyShape = z.object({
     html: z.string().catch(''),
     frontmatter: mapShape.nullable().catch(null),
-    error: optionalTextShape,
     file: z.string().catch(''),
     parts: rowsShape(manualPartShape).catch([])
 });
@@ -231,12 +231,12 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
                     // The server answered, but with a body that is not the endpoint's (a proxy's
                     // page, an empty 5xx). A refusal replaces what is held; an answer that claims
                     // success reads as a request that went wrong on the way.
-                    if (!response.ok) return failure(held, String(response.status));
-                    return unreached(held, fetching, String(response.status));
+                    if (!response.ok) return failure(held, failedAnswer(response, raw));
+                    return unreached(held, fetching, failedAnswer(response, raw));
                 }
                 const body = bodyShape.safeParse(raw).data ?? NO_BODY;
                 if (!response.ok) {
-                    return failure(held, body.error ?? String(response.status), body.file);
+                    return failure(held, failedAnswer(response, raw), body.file);
                 }
                 return keep(held, {
                     doc: {

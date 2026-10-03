@@ -8,7 +8,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { terminal } from '../../fixtures/sessions-fixture.ts';
 import type { SessionsPayload } from '../../../src/lib/data/model/index.ts';
 import type { LatexState } from '../../../src/lib/state/sessions/latex.svelte.ts';
-import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { createClientState, type ClientState, refused, unreadable } from '../../fixtures/client.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 let client: ClientState;
 
@@ -98,7 +102,7 @@ describe("one project's LaTeX state", () => {
         expect(asks).toBe(0);
     });
 
-    it('carries the reason a refused request gave', async () => {
+    it('carries the refusal sentence for a refused request, not the text it gave', async () => {
         vi.stubGlobal('fetch', () =>
             Promise.resolve(
                 new Response(JSON.stringify({ error: 'no project with the id ghost' }), {
@@ -111,7 +115,7 @@ describe("one project's LaTeX state", () => {
         fresh.latex.state('ghost');
         await settle();
 
-        expect(fresh.latex.state('ghost').error).toBe('no project with the id ghost');
+        expect(fresh.latex.state('ghost').error).toBe(refused(404));
     });
 });
 
@@ -367,32 +371,42 @@ describe('an answer whose fields are of the wrong type', () => {
         ['a list as the body', '[]', 200, NOTHING_HELD],
         ['an empty map as the body', '{}', 200, NOTHING_HELD],
         ['an error that is a number on a 200', '{"error":3}', 200, NOTHING_HELD],
-        ['a list as the body of a refusal', '[]', 500, { ...NOTHING_HELD, error: '500' }],
+        ['a list as the body of a refusal', '[]', 500, { ...NOTHING_HELD, error: refused(500) }],
         [
-            'a refusal with its sentence',
+            'a refusal with a text of its own',
             '{"error":"boom"}',
             500,
-            { ...NOTHING_HELD, error: 'boom' }
+            { ...NOTHING_HELD, error: refused(500) }
         ],
-        ['a refusal with an empty sentence', '{"error":""}', 500, NOTHING_HELD]
+        [
+            'a refusal with an empty text',
+            '{"error":""}',
+            500,
+            { ...NOTHING_HELD, error: refused(500) }
+        ]
     ])('answers %s as the state it names', async (_name, text, status, expected) => {
         expect(await answeredWith(text, status)).toStrictEqual(expected);
     });
 
-    it('answers the status for a refusal whose error is a number', async () => {
+    it('answers the refusal sentence for a refusal whose error is a number', async () => {
         expect(await answeredWith('{"error":3}', 500)).toStrictEqual({
             ...NOTHING_HELD,
-            error: '500'
+            error: refused(500)
         });
     });
 
     it.each([
-        ['null', 'null', 200, { ...NOTHING_HELD, error: '200' }],
-        ['text that is not JSON', 'nope', 200, { ...NOTHING_HELD, error: '200' }],
-        ['null on a refusal', 'null', 500, { ...NOTHING_HELD, error: '500' }],
-        ['text that is not JSON on a refusal', 'nope', 500, { ...NOTHING_HELD, error: '500' }]
+        ['null', 'null', 200, { ...NOTHING_HELD, error: unreadable(200) }],
+        ['text that is not JSON', 'nope', 200, { ...NOTHING_HELD, error: unreadable(200) }],
+        ['null on a refusal', 'null', 500, { ...NOTHING_HELD, error: unreadable(500) }],
+        [
+            'text that is not JSON on a refusal',
+            'nope',
+            500,
+            { ...NOTHING_HELD, error: unreadable(500) }
+        ]
     ])(
-        'answers a body that is %s as the failed read with the status text',
+        'answers a body that is %s as the unreadable sentence with its status',
         async (_name, text, status, expected) => {
             expect(await answeredWith(text, status)).toStrictEqual(expected);
         }

@@ -201,9 +201,14 @@ describe("a write's answer", () => {
         ['an error that is a number', { ok: false, error: 3 }],
         ['a body that is a list', []],
         ['a refused that is a string', { refused: 'x' }]
-    ])('is HTTP 500 for %s on a 500', async (_name, body) => {
+    ])('is the refusal sentence with 500 for %s on a 500', async (_name, body) => {
         const answer = await answered(answering(body, 500));
-        expect(answer).toStrictEqual({ ok: false, changed: [], refused: [], error: 'HTTP 500' });
+        expect(answer).toStrictEqual({
+            ok: false,
+            changed: [],
+            refused: [],
+            error: t('ui.answer_refused', 500)
+        });
     });
 
     it('says the error text a failing answer carries', async () => {
@@ -214,13 +219,13 @@ describe("a write's answer", () => {
     it.each([
         ['JSON null', () => answering(null, 200)],
         ['text that is not JSON', () => new Response('<html>', { status: 200 })]
-    ])('is a failed read with the status text for %s on a 200', async (_name, make) => {
+    ])('is a failed read with the unreadable sentence for %s on a 200', async (_name, make) => {
         const answer = await answered(make());
         expect(answer).toStrictEqual({
             ok: false,
             changed: [],
             refused: [],
-            error: 'HTTP 200',
+            error: t('ui.answer_unreadable', 200),
             network: true
         });
     });
@@ -228,9 +233,14 @@ describe("a write's answer", () => {
     it.each([
         ['JSON null', () => answering(null, 500)],
         ['text that is not JSON', () => new Response('<html>', { status: 500 })]
-    ])('is the refusal with the status text for %s on a 500', async (_name, make) => {
+    ])('is the unreadable sentence with 500 for %s on a 500', async (_name, make) => {
         const answer = await answered(make());
-        expect(answer).toStrictEqual({ ok: false, changed: [], refused: [], error: 'HTTP 500' });
+        expect(answer).toStrictEqual({
+            ok: false,
+            changed: [],
+            refused: [],
+            error: t('ui.answer_unreadable', 500)
+        });
     });
 
     it('leaves out the items of a list that are not what the list holds', async () => {

@@ -103,14 +103,18 @@
     /** The words a row is named by in a control's tooltip and in the status region. */
     function named(row: Change): string {
         if (row.kind === FILE_RECORD) {
-            return t('history.file_named', fileOperation(row.field), row.file);
+            const operation = fileOperation(row.field, row.after);
+            // A replace already says how many files it wrote; the files are the lists under it.
+            return row.field === 'replace'
+                ? operation
+                : t('history.file_named', operation, row.file);
         }
         return row.field === '' ? row.key : t('history.named', row.key, row.field);
     }
 
     /** What a row says it addressed: the operation of a file record, else the key and field. */
     function whatOf(row: Change): string {
-        return row.kind === FILE_RECORD ? fileOperation(row.field) : named(row);
+        return row.kind === FILE_RECORD ? fileOperation(row.field, row.after) : named(row);
     }
 
     /**

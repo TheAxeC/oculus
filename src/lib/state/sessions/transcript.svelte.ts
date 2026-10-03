@@ -19,11 +19,11 @@ import type { Turn } from '../../data/model/index.ts';
 import {
     anyNumberShape,
     mapOfShape,
-    optionalTextShape,
     readAs,
     readJson,
     survivorsShape
 } from '../../data/shapes/shapes.ts';
+import { failedAnswer } from '../shared/answers/answers.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 
@@ -67,17 +67,16 @@ const turnShape = z.object({
 
 /**
  * An answer of the transcript route, each field as typed or absent: the turns that read as turns,
- * the offset to ask from next, the outcome of each tool call by id, and the refusal's sentence.
+ * the offset to ask from next, and the outcome of each tool call by id.
  */
 const bodyShape = z.object({
     turns: survivorsShape(turnShape).catch([]),
     offset: anyNumberShape.optional().catch(undefined),
-    results: mapOfShape(z.boolean()).catch({}),
-    error: optionalTextShape
+    results: mapOfShape(z.boolean()).catch({})
 });
 
-/** What a body that is not a map says: no turns, no offset, no outcomes and no sentence. */
-const NO_BODY = { turns: [], offset: undefined, results: {}, error: undefined };
+/** What a body that is not a map says: no turns, no offset and no outcomes. */
+const NO_BODY = { turns: [], offset: undefined, results: {} };
 
 /** The turns of each session, held for one client while an instance shows it. */
 export type TranscriptsStore = {
@@ -122,16 +121,15 @@ async function tail(id: string, held: TurnsState | undefined): Promise<TurnsStat
         const url = `/api/transcript?id=${encodeURIComponent(id)}&from=${from}`;
         const response = await fetch(url);
         const raw = await readJson(response);
-        if (raw === undefined) throw new Error(String(response.status));
-        const body = readAs(bodyShape, raw) ?? NO_BODY;
-        if (!response.ok) {
+        if (raw === undefined || !response.ok) {
             return {
                 turns: kept,
                 offset: from,
                 pending: false,
-                error: body.error ?? String(response.status)
+                error: failedAnswer(response, raw)
             };
         }
+        const body = readAs(bodyShape, raw) ?? NO_BODY;
         return merged(held, from, body.turns, body.offset ?? from, body.results);
     } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);

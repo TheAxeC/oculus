@@ -8,10 +8,11 @@
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import Help from '../../../src/lib/views/system/help/Help.svelte';
 import { newestAnswer } from '../../../src/lib/views/system/help/newest.ts';
+import { loadDiagram } from '../../../src/lib/views/system/help/manual.ts';
 import { NAMES, OUT } from '../../../utils/diagrams/diagrams.mjs';
 import { renderManual, renderManualParts } from '../../../src/lib/server/content/docs.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
@@ -25,7 +26,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, setGlyphs, t } from '../../../src/lib/state/shared/words/text.ts';
 import type { DocState } from '../../../src/lib/state/system/docs.svelte.ts';
 import {
     railOrder,
@@ -351,5 +352,31 @@ describe('the manual itself', () => {
         expect(MANUAL).toContain('`npm test`');
         expect(MANUAL).toContain('`npm run check`');
         expect(MANUAL).toContain('`hub` key of `local.yml`');
+    });
+});
+
+describe('the diagram the manual fetches', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('audits that the diagram is the text of the file, and the refused sentence with the status when the route refuses', async () => {
+        const signal = new AbortController().signal;
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('<svg/>')));
+        expect(await loadDiagram('flow', signal)).toEqual({
+            name: 'flow',
+            svg: '<svg/>',
+            error: ''
+        });
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('no', { status: 404 })));
+        expect(await loadDiagram('flow', signal)).toEqual({
+            name: 'flow',
+            svg: '',
+            error: t('ui.answer_refused', 404)
+        });
+    });
+
+    it('audits that a failed fetch says what it failed with when no answer came', async () => {
+        vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')));
+        const held = await loadDiagram('flow', new AbortController().signal);
+        expect(held).toEqual({ name: 'flow', svg: '', error: 'offline' });
     });
 });

@@ -215,7 +215,7 @@ describe('New Terminal on the bar', () => {
         expect(answer.ok).toBe(false);
         expect(JSON.stringify(tab(id))).toBe(before);
         expect(tab(id).composing).toBe(false);
-        expect(client.terminals.refusal(id)).toContain('cwd does not exist');
+        expect(client.terminals.refusal(id)).toBe(t('ui.answer_refused', 400));
     });
 
     // Revert: leave the terminal running in startInTab when its tab is gone at the answer.

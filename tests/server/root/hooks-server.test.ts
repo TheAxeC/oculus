@@ -165,6 +165,18 @@ describe('the origin guard on /api/', () => {
         expect(await out.response.json()).toEqual({ error: 'forbidden' });
     });
 
+    it('refuses a preview POST to /api/ops from a foreign Origin before the route reads it', async () => {
+        const out = await guarded(
+            `${SERVER}/api/ops`,
+            '/api/(files)/ops',
+            { origin: 'https://evil.example', 'content-type': 'application/json' },
+            'POST'
+        );
+        expect(out.reached).toBe(false);
+        expect(out.response.status).toBe(403);
+        expect(await out.response.json()).toEqual({ error: 'forbidden' });
+    });
+
     it('refuses a cross-site request that names no Origin', async () => {
         const out = await guarded(`${SERVER}/api/fs`, FS, { 'sec-fetch-site': 'cross-site' });
         expect(out.reached).toBe(false);

@@ -31,6 +31,7 @@ import {
     type Question
 } from '$lib/state/sources/explorer/ops.svelte';
 import { base64Of, encoded } from '$lib/ui/forms/file/file-data';
+import { refusalSentence as refusalWordSentence } from '$lib/state/shared/answers/answers';
 
 type Words = (key: string, ...args: (string | number)[]) => string;
 
@@ -96,38 +97,9 @@ export type RowOpsDeps = {
 
 /** The refusal words a sentence is held for, as the catalog's literal keys. */
 function refusalSentence(outcome: Extract<Outcome, { ok: false }>, t: Words): string {
-    switch (outcome.error) {
-        case 'outside':
-            return t('files.refused_outside');
-        case 'missing':
-            return t('files.refused_missing');
-        case 'root':
-            return t('files.refused_root');
-        case 'protected':
-            return t('files.refused_protected');
-        case 'invalid_name':
-            return t('files.refused_invalid_name');
-        case 'exists':
-            return t('files.refused_exists');
-        case 'into_itself':
-            return t('files.refused_into_itself');
-        case 'not_a_folder':
-            return t('files.refused_not_a_folder');
-        case 'denied':
-            return t('files.refused_denied');
-        case 'trash_failed':
-            return t('files.refused_trash_failed');
-        case 'too_large':
-            return t('files.refused_too_large');
-        case 'not_base64':
-            return t('files.refused_not_base64');
-        case 'token':
-            return t('files.refused_token');
-        case 'not-an-action':
-            return t('files.refused_not_an_action');
-        case 'network':
-            return t('files.refused_network');
-    }
+    return outcome.error === 'network'
+        ? t('files.refused_network')
+        : refusalWordSentence(outcome.error, t);
 }
 
 /** What a refused operation says, and the empty string for one that went through. */

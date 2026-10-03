@@ -7,8 +7,10 @@
 // This module has one subprocess call site, as server/core/git/run.ts does: one list argument
 // vector, never a shell string, a timeout, and a bounded read, so a pattern the reader typed can
 // never be read as syntax and a slow mount cannot hold a request open. The arguments and every
-// refusal come from data/helpers/search.ts, which the page runs too, so the two sides cannot
-// disagree about what a query is.
+// refusal come from data/helpers/search/query.ts, which the page runs too, so the two sides cannot
+// disagree about what a query is. The replace of the Search view (server/files/fs/replace.ts) runs
+// ripgrep through `runRipgrep` as well, which is why it is exported: this module stays the one
+// place a process is started.
 //
 // The cap bounds the work and not only the answer. The child's output is read as it arrives, line
 // by line, and folded as it is read; the moment a match arrives with no room left the child is
@@ -27,9 +29,11 @@ import {
     rootsOf,
     searchQuery,
     trimAround,
+    HIT_WIDTH,
     type SearchQuery,
-    type SearchRefusal
-} from '../../data/helpers/search.ts';
+    type QueryRefusal
+} from '../../data/helpers/search/query.ts';
+import { groupsFrom } from '../../data/helpers/search/replace.ts';
 import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model/index.ts';
 import { anyNumberShape } from '../../data/shapes/shapes.ts';
 import { resolveRootPath, type Root } from './files.ts';
@@ -39,13 +43,13 @@ import { resolveRootPath, type Root } from './files.ts';
  * in characters of the decoded stream. The fold's own cut is what ends an ordinary run; this ends a
  * run whose every record the fold had to drop, so no output can grow without a bound.
  */
-export const MAX_OUTPUT = 32 * 1024 * 1024;
+const MAX_OUTPUT = 32 * 1024 * 1024;
 
 /** How much of a root's error output is kept, which is more than the one line ever shown. */
 const MAX_STDERR = 4096;
 
 /** What a root whose search did not run is reported as. */
-export const TIMED_OUT = 'the search timed out';
+const TIMED_OUT = 'the search timed out';
 
 /** What one run of the binary answered. `code` is ripgrep's own exit status. */
 export type RunOutcome = {
@@ -79,8 +83,8 @@ export type SearchOptions = {
 /** What a search answers: the files, or the reason it did not run. */
 export type SearchOutcome =
     | { ok: true; answer: SearchAnswer }
-    | { ok: false; refused: SearchRefusal }
-    | { ok: false; error: string };
+    | { ok: false; refused: QueryRefusal }
+    | { ok: false; error: string; timedOut: boolean };
 
 /** ripgrep's exit status for a run that failed rather than one that found nothing. */
 const FAILED = 2;
@@ -91,7 +95,7 @@ const FAILED = 2;
  * pipe nobody writes to. A failure to start and a timeout both come back as an outcome rather than
  * as a throw, so every caller above reads one shape.
  */
-function runRipgrep(
+export function runRipgrep(
     dir: string,
     args: string[],
     timeout: number,
@@ -171,7 +175,7 @@ function within(work: Promise<RunOutcome>, timeout: number): Promise<RunOutcome>
 }
 
 /** ripgrep's reason for a failure, as the one line the page shows. */
-export function reasonOf(stderr: string): string {
+function reasonOf(stderr: string): string {
     const lines = stderr
         .split('\n')
         .map((line) => line.trim())
@@ -180,18 +184,18 @@ export function reasonOf(stderr: string): string {
     return last.length > 200 ? `${last.slice(0, 200)}...` : last;
 }
 
-/**
- * A number of any value, as ripgrep's counts and offsets are read: `typeof` is the whole test, so
- * `NaN` and the infinite numbers are numbers here.
- */
-
 /** A `{ text }` field of ripgrep's output; one that carried bytes instead reads as absent. */
 const textFieldShape = z.object({ text: z.string() }).optional().catch(undefined);
 
-/** The first submatch of a match: the text it matched and the byte offset it starts at. */
+/**
+ * One submatch of a match record: the text it matched, the byte offset it starts at and, when
+ * ripgrep was given a replacement, the text it replaces the match with.
+ */
 const submatchShape = z.object({
     match: textFieldShape,
-    start: anyNumberShape.optional().catch(undefined)
+    replacement: textFieldShape,
+    start: anyNumberShape.optional().catch(undefined),
+    end: anyNumberShape.optional().catch(undefined)
 });
 
 /**
@@ -214,6 +218,7 @@ const ripgrepLineShape = z.discriminatedUnion('type', [
         type: z.literal('match'),
         data: z.object({
             line_number: anyNumberShape.optional().catch(undefined),
+            absolute_offset: anyNumberShape.optional().catch(undefined),
             lines: textFieldShape,
             submatches: z.array(z.unknown()).optional().catch(undefined)
         })
@@ -222,8 +227,11 @@ const ripgrepLineShape = z.discriminatedUnion('type', [
 
 type RipgrepLine = z.output<typeof ripgrepLineShape>;
 
-/** One line of `rg --json` as a record this fold reads, or null for a line that is not one. */
-function record(line: string): RipgrepLine | null {
+/** The data of a match record of `rg --json`. */
+type MatchData = Extract<RipgrepLine, { type: 'match' }>['data'];
+
+/** One line of `rg --json` as a record this module reads, or null for a line that is not one. */
+export function ripgrepRecord(line: string): RipgrepLine | null {
     if (line.trim() === '') return null;
     let held: unknown;
     try {
@@ -236,36 +244,104 @@ function record(line: string): RipgrepLine | null {
 }
 
 /**
- * One match record as a hit. ripgrep counts its submatch offsets in bytes of the line; the line is
- * read back as characters, so the offset is turned into a character column through the same bytes.
+ * The characters before byte `bytes` of a line, counted in UTF-16 units and never past the end of
+ * the line. A line whose bytes are as many as its characters is ASCII, where the two counts are
+ * one.
  */
-function hitOf(data: Extract<RipgrepLine, { type: 'match' }>['data']): SearchHit | null {
-    const line = data.line_number;
-    const text = data.lines?.text;
-    if (line === undefined || text === undefined) return null;
-    const first = submatchShape.safeParse(data.submatches?.[0]);
-    const matched = first.success ? first.data.match?.text : undefined;
-    const before = first.success ? (first.data.start ?? 0) : 0;
-    const column = characters(text, before) + 1;
-    const length = matched === undefined ? 0 : matched.length;
-    const cut = trimAround(text, column, length);
-    return { line, column: cut.column, length, text: cut.text };
+function charactersBefore(line: Buffer, text: string, bytes: number): number {
+    if (bytes <= 0) return 0;
+    if (line.length === text.length) return Math.min(bytes, text.length);
+    return line.subarray(0, bytes).toString('utf8').length;
 }
 
-/** How many characters the first `bytes` bytes of a line hold. */
-function characters(text: string, bytes: number): number {
-    if (bytes <= 0) return 0;
-    const encoder = new TextEncoder();
-    let seen = 0;
-    for (let at = 0; at < text.length; at += 1) {
-        if (seen >= bytes) return at;
-        seen += encoder.encode(text[at]).length;
+/**
+ * One match of a line as ripgrep reported it: the line, the place the match starts at in
+ * characters and in bytes, the text it matched and, when ripgrep was given a replacement, the text
+ * it replaces the match with. `offset` is the byte at which the line starts in its file.
+ */
+export type LineMatch = {
+    line: number;
+    /** The whole line, with its line end. */
+    text: string;
+    /** Where the match starts in the line, in UTF-16 units counted from zero. */
+    at: number;
+    /** Where the match starts and ends in the line, in bytes. */
+    start: number;
+    end: number;
+    offset: number;
+    matched: string | undefined;
+    replacement: string | undefined;
+};
+
+/**
+ * The matches of one match record, one per submatch that can be read. ripgrep counts its submatch
+ * offsets in bytes of the line, and the line is read back as characters, so each offset is turned
+ * into a character place through the same bytes.
+ */
+export function lineMatches(data: MatchData): LineMatch[] {
+    const line = data.line_number;
+    const text = data.lines?.text;
+    if (line === undefined || text === undefined) return [];
+    const bytes = Buffer.from(text, 'utf8');
+    return (data.submatches ?? []).flatMap((one) => {
+        const parsed = submatchShape.safeParse(one);
+        if (!parsed.success) return [];
+        const start = parsed.data.start ?? 0;
+        return [
+            {
+                line,
+                text,
+                at: charactersBefore(bytes, text, start),
+                start,
+                end: parsed.data.end ?? start,
+                offset: data.absolute_offset ?? 0,
+                matched: parsed.data.match?.text,
+                replacement: parsed.data.replacement?.text
+            }
+        ];
+    });
+}
+
+/**
+ * One match as a hit. In regular-expression mode the replacement ripgrep reported holds the text
+ * of every group, which is split back into `groups`.
+ */
+function hitOf(found: LineMatch, pattern: string | undefined): SearchHit {
+    const length = found.matched === undefined ? 0 : found.matched.length;
+    const cut = trimAround(found.text, found.at + 1, length);
+    const hit: SearchHit = {
+        line: found.line,
+        column: cut.column,
+        length,
+        text: cut.text,
+        at: found.at
+    };
+    if (pattern !== undefined && found.replacement !== undefined) {
+        const groups = groupsFrom(found.replacement, pattern);
+        if (groups !== null) hit.groups = groups;
     }
-    return text.length;
+    // A match longer than the window is cut in `text`, so the whole of it travels as group 0.
+    if (length > HIT_WIDTH && found.matched !== undefined) {
+        hit.groups = { ...hit.groups, '0': found.matched };
+    }
+    return hit;
+}
+
+/**
+ * The hits of one match record, one per match. A record with no match that can be read is one hit
+ * at the start of its line, so a line ripgrep matched is never left out of the answer.
+ */
+function hitsOf(data: MatchData, pattern: string | undefined): SearchHit[] {
+    const found = lineMatches(data);
+    if (found.length > 0) return found.map((one) => hitOf(one, pattern));
+    const line = data.line_number;
+    const text = data.lines?.text;
+    if (line === undefined || text === undefined) return [];
+    return [{ line, column: 1, length: 0, text: trimAround(text, 1, 0).text, at: 0 }];
 }
 
 /** One root's stream folded into files as its lines arrive. */
-export type Fold = {
+type Fold = {
     /** Take one line of the stream. */
     line: (text: string) => void;
     /** Whether a match has already been dropped for want of room, which is when a run may stop. */
@@ -275,28 +351,32 @@ export type Fold = {
 };
 
 /**
- * The fold over one root's JSON stream, keeping at most `room` hits.
+ * The fold over one root's JSON stream, keeping at most `room` hits. A line holding two matches is
+ * two hits. `pattern` is the query's pattern in regular-expression mode, which is what the groups
+ * of each hit are split out of the replacement ripgrep reported, and absent for a literal search.
  *
  * `truncated` has two sources. A match that arrives with no room left is the fold's own cut, and it
  * is what a file holding more matches than the answer can carry produces, since ripgrep is asked
- * for one match per file past the cap. A file whose `end` record counts more matching lines than
- * the hits kept for it is the second: that record counts what ripgrep printed, so the two differ
- * only where a printed record was one this fold could not read.
+ * for one matching line per file past the cap. A file whose `end` record counts more matching lines
+ * than the lines the fold kept for it is the second: that record counts what ripgrep printed, so
+ * the two differ only where a printed record was one this fold could not read.
  */
-export function createFold(root: string, room: number): Fold {
+function createFold(root: string, room: number, pattern?: string): Fold {
     const files: SearchFile[] = [];
     let held: SearchFile | null = null;
+    let lines = new Set<number>();
     let total = 0;
     let truncated = false;
 
     function close(): void {
         if (held !== null && held.hits.length > 0) files.push(held);
         held = null;
+        lines = new Set<number>();
     }
 
     return {
         line(text: string): void {
-            const held_ = record(text);
+            const held_ = ripgrepRecord(text);
             if (held_ === null) return;
             if (held_.type === 'begin') {
                 close();
@@ -306,7 +386,7 @@ export function createFold(root: string, room: number): Fold {
             }
             if (held_.type === 'end') {
                 const counted = held_.data.stats?.matched_lines;
-                if (held !== null && counted !== undefined && counted > held.hits.length) {
+                if (held !== null && counted !== undefined && counted > lines.size) {
                     truncated = true;
                 }
                 close();
@@ -317,10 +397,15 @@ export function createFold(root: string, room: number): Fold {
                 truncated = true;
                 return;
             }
-            const hit = hitOf(held_.data);
-            if (hit === null) return;
-            held.hits.push(hit);
-            total += 1;
+            for (const hit of hitsOf(held_.data, pattern)) {
+                if (total >= room) {
+                    truncated = true;
+                    return;
+                }
+                held.hits.push(hit);
+                lines.add(hit.line);
+                total += 1;
+            }
         },
         cut(): boolean {
             return truncated && total >= room;
@@ -330,17 +415,6 @@ export function createFold(root: string, room: number): Fold {
             return { files, total, truncated };
         }
     };
-}
-
-/** One whole stream folded at once, for a caller that already holds all of it. */
-export function foldStream(
-    output: string,
-    root: string,
-    room: number
-): { files: SearchFile[]; total: number; truncated: boolean } {
-    const fold = createFold(root, room);
-    for (const line of output.split('\n')) fold.line(line);
-    return fold.done();
 }
 
 /**
@@ -393,7 +467,7 @@ export async function runSearch(
             truncated = true;
             break;
         }
-        const fold = createFold(root.key, query.max - total);
+        const fold = createFold(root.key, query.max - total, query.regex ? query.q : undefined);
         const outcome = await within(
             run(root.dir, plan.args, options.timeout, (line) => {
                 fold.line(line);
@@ -412,6 +486,8 @@ export async function runSearch(
             failed.push({ root: root.key, reason: reasonOf(outcome.stderr) });
         }
     }
-    if (total === 0 && failed.length > 0) return { ok: false, error: failed[0].reason };
+    if (total === 0 && failed.length > 0) {
+        return { ok: false, error: failed[0].reason, timedOut: failed[0].reason === TIMED_OUT };
+    }
     return { ok: true, answer: { files, total, truncated, ms: clock() - started, failed } };
 }

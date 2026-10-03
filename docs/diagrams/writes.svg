@@ -327,7 +327,7 @@
 </g>
 <!-- lib/server/edit/writes/file&#45;undo.ts&#45;&gt;lib/server/files/fs/history.ts -->
 <g id="edge47" class="edge">
-<title>lib/server/edit/writes/file&#45;undo.ts&#45;&gt;lib/server/files/fs/history.ts: defaultHistoryDir, readCopy, restoreCopy</title>
+<title>lib/server/edit/writes/file&#45;undo.ts&#45;&gt;lib/server/files/fs/history.ts: defaultHistoryDir, keepCopy, readCopy, restoreCopy</title>
 <path fill="none" stroke="currentColor" d="M204.42,-640.2C268.84,-575.78 184.53,-780.55 254.42,-839 335.13,-906.5 676.74,-844.16 785.83,-822.07"/>
 <polygon fill="currentColor" stroke="currentColor" points="786.03,-824.17 791.49,-820.91 785.19,-820.05 786.03,-824.17"/>
 </g>

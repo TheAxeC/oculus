@@ -59,6 +59,22 @@ describe("the page's config channel", () => {
         client.socket.disconnect();
     });
 
+    it('does not hold a seed whose configuration fails its schema, and holds one that reads', () => {
+        const client = createClientState();
+        client.socket.seedConfig(
+            { ...payload(1), config: 'not a map' } as unknown as ConfigPayload,
+            4
+        );
+        expect(client.entities.config()).toBeNull();
+        client.socket.seedConfig(
+            { ...payload(1), findings: 'none' } as unknown as ConfigPayload,
+            4
+        );
+        expect(client.entities.config()).toBeNull();
+        client.socket.seedConfig(payload(7), 4);
+        expect(client.entities.config()?.config).toEqual({ writes: { timeout_seconds: 7 } });
+    });
+
     it('takes every push after a reconnect, which may reach a restarted server numbering from 1', () => {
         const { deliver, open } = stubSocket();
         const client = createClientState();

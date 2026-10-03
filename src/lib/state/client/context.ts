@@ -76,11 +76,13 @@ import { settingsTyped } from '../system/config/typed.ts';
 import { createRailBadges, type RailBadgesStore } from '../workbench/rail-badges.svelte.ts';
 import {
     createRepositories,
+    DIFF_VIEW,
     type RepositoriesStore
 } from '../sources/repositories/repositories.svelte.ts';
+import { heldDiff } from '../sources/repositories/repositories.ts';
 import { createSelection, type SelectionStore } from '../workbench/selection.svelte.ts';
 import { createExplorer, type ExplorerStore } from '../sources/explorer/ops.svelte.ts';
-import { createSearch, type SearchStore } from '../sources/search.svelte.ts';
+import { createSearch, type SearchStore } from '../sources/search/search.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
 import { createSource, type SourceStore } from '../sessions/source.svelte.ts';
@@ -213,7 +215,7 @@ export function createClientState(): ClientState {
     // away, and the layout is the one store that knows an instance closed. The entry forms of an
     // instance keep their drafts in an entry of their own beside that state, so the layout is
     // handed a forget that takes all three, with the entries its add forms made and the mark saying
-    // a save from one of its forms is out.
+    // a save from one of its forms is out, and the Search store lets go of a closed tab's requests.
     const layout = createLayout({
         ...ui,
         clearInstanceState: (id: string) => {
@@ -221,6 +223,7 @@ export function createClientState(): ClientState {
             ui.clearInstanceState(formsKey(id));
             ui.clearInstanceState(addedKey(id));
             formDrafts.forgetForms(id);
+            search.forgetSearch(id);
         }
     });
     const drag = createDrag(layout);
@@ -338,7 +341,6 @@ export function createClientState(): ClientState {
         instanceState: ui.instanceState,
         setInstanceState: ui.setInstanceState
     });
-    const search = createSearch(entities, writes, ui);
     const explorer = createExplorer(
         writes,
         fs,
@@ -351,6 +353,14 @@ export function createClientState(): ClientState {
         ui,
         source
     );
+    const search = createSearch(entities, writes, ui, explorer, {
+        open: repositories.openDiff,
+        shown: () =>
+            layout
+                .hosts()
+                .flatMap((host) => tabsOf(host.workbench.root))
+                .some((tab) => tab.view === DIFF_VIEW && heldDiff(tab.state).replace !== undefined)
+    });
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);
     const manifestDraft = createManifestDraft(ui, selectors.projectOf);

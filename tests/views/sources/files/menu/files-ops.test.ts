@@ -15,7 +15,7 @@ import { MAX_UPLOAD_BYTES } from '../../../../../src/lib/data/file-ops.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../../../../src/lib/state/shared/words/text.ts';
 import type { TreeRow } from '../../../../../src/lib/state/sources/fs.ts';
-import { compareSentence } from '../../../../../src/lib/views/sources/repositories/diff/compare-words.ts';
+import { failureSentence } from '../../../../../src/lib/views/sources/repositories/diff/compare-words.ts';
 import {
     ROW_COPY,
     ROW_CUT,
@@ -329,21 +329,60 @@ describe('the words of the operations', () => {
     });
 });
 
+/** The sentence a failed read of a comparison of two files is told in. */
+const compared = (word: unknown) =>
+    failureSentence({ against: { root: 'hub', path: 'b' } }, word as string, t);
+
+/** The sentence a failed read of a Replace Preview is told in. */
+const previewed = (word: unknown) => failureSentence({ replace: {} }, word as string, t);
+
 describe('the sentences of a refused comparison', () => {
     it('audits that maps each refusal of the compare to a sentence of files.yml', () => {
-        expect(compareSentence('outside', t)).toBe(t('files.compare_outside'));
-        expect(compareSentence('missing', t)).toBe(t('files.compare_missing'));
-        expect(compareSentence('not_a_folder', t)).toBe(t('files.compare_not_a_file'));
-        expect(compareSentence('too_large', t)).toBe(t('files.compare_too_large'));
+        expect(compared('outside')).toBe(t('files.compare_outside'));
+        expect(compared('missing')).toBe(t('files.compare_missing'));
+        expect(compared('not_a_folder')).toBe(t('files.compare_not_a_file'));
+        expect(compared('too_large')).toBe(t('files.compare_too_large'));
         const sentences = ['outside', 'missing', 'not_a_folder', 'too_large'].map((word) =>
-            compareSentence(word, t)
+            compared(word)
         );
         expect(new Set(sentences).size).toBe(4);
         for (const sentence of sentences) expect(sentence).not.toMatch(/^files\./);
     });
 
     it("says the pane's own failure sentence for a word it does not know", () => {
-        expect(compareSentence('something else', t)).toBe(t('repositories.diff_failed'));
-        expect(compareSentence('', t)).toBe(t('repositories.diff_failed'));
+        expect(compared('something else')).toBe(t('repositories.diff_failed'));
+        expect(compared('')).toBe(t('repositories.diff_failed'));
+    });
+});
+
+describe('the sentences of a refused Replace Preview', () => {
+    it('audits that each word of the replace refusals has its catalog sentence', () => {
+        for (const word of [
+            'binary',
+            'changed',
+            'marker',
+            'bad-query',
+            'search-failed',
+            'too_large'
+        ]) {
+            const sentence = previewed(word);
+            expect(sentence, word).not.toMatch(/^files\./);
+            expect(sentence.trim(), word).not.toBe('');
+        }
+        expect(previewed('binary')).toBe(t('files.refused_binary'));
+        expect(previewed('bad-query')).toBe(t('files.refused_bad_query'));
+    });
+
+    it("says the pane's own failure sentence for a word it does not know", () => {
+        expect(previewed('something else')).toBe(t('repositories.diff_failed'));
+        expect(previewed(undefined)).toBe(t('repositories.diff_failed'));
+    });
+});
+
+describe('the sentence of a failed read of any other diff', () => {
+    it("says the server's own text, and the pane's own failure sentence when it gave none", () => {
+        expect(failureSentence({}, 'the server said', t)).toBe('the server said');
+        expect(failureSentence({ save: '' }, undefined, t)).toBe(t('repositories.diff_failed'));
+        expect(failureSentence({ save: 'k' }, 'missing', t)).toBe(t('files.compare_missing'));
     });
 });

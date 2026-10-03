@@ -7,7 +7,12 @@
 // tests/state/sessions/terminals.test.ts and tests/state/client/terminal/.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { postTerminal, readBusy } from '../../../../src/lib/state/sessions/terminal/pty-io.ts';
+import { refused, unreadable } from '../../../fixtures/client.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -33,9 +38,9 @@ describe('the answer of an action posted to /api/terminal', () => {
         ['an empty map', '{}', BARE],
         ['an ok that is false', '{"ok":false}', BARE],
         ['a list', '[]', BARE]
-    ])('is the terminal of %s in the body of a 200', async (_name, text, expected) => {
+    ])('is the terminal of %s in the body of a 200 to a stop', async (_name, text, expected) => {
         answering(text);
-        expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual(expected);
+        expect(await postTerminal({ action: 'stop', id: A }, 't')).toStrictEqual(expected);
     });
 
     it.each([
@@ -44,38 +49,81 @@ describe('the answer of an action posted to /api/terminal', () => {
         ['a terminal whose id is a number', '{"ok":true,"terminal":{"id":3}}', ''],
         ['a terminal that is a list beside an id', '{"ok":true,"terminal":[],"id":"z"}', 'z'],
         ['a terminal that is null beside an id', '{"ok":true,"terminal":null,"id":"z"}', 'z']
-    ])('reads %s as a started action with no sentence', async (_name, text, id) => {
+    ])('reads %s as an action that is ok, with no sentence', async (_name, text, id) => {
         answering(text);
-        expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual({
+        expect(await postTerminal({ action: 'stop', id: A }, 't')).toStrictEqual({
             ...BARE,
             id
         });
     });
 
-    it.each([
-        ['an error that is a number', '{"error":3}', '500'],
-        ['a sentence', '{"error":"x"}', 'x'],
-        ['an empty sentence', '{"error":""}', ''],
-        ['a list', '[]', '500']
-    ])('is the refusal of %s in the body of a 500', async (_name, text, error) => {
-        answering(text, 500);
+    it('is ok for a stop answered `{ ok: true }` at 200', async () => {
+        answering('{"ok":true}');
+        expect(await postTerminal({ action: 'stop', id: A }, 't')).toStrictEqual(BARE);
+    });
+
+    it('starts the terminal a start answers with an id', async () => {
+        answering('{"terminal":{"id":"t1"}}');
         expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual({
-            ok: false,
-            id: '',
-            error
+            ok: true,
+            id: 't1',
+            error: '',
+            terminal: { id: 't1' }
         });
     });
 
     it.each([
-        ['null on a refusal', 'null', 500, { ok: false, id: '', error: '500' }],
-        ['text that is not JSON on a refusal', 'nope', 500, { ok: false, id: '', error: '500' }],
-        ['null', 'null', 200, { ok: false, id: '', error: '200' }],
-        ['text that is not JSON', 'nope', 200, { ok: false, id: '', error: '200' }]
+        ['a terminal whose id is a number', '{"terminal":{"id":3}}'],
+        ['a terminal whose id is empty', '{"terminal":{"id":""}}'],
+        ['a terminal that is a string', '{"terminal":"x"}'],
+        ['no terminal beside an id', `{"ok":true,"id":"${A}"}`],
+        ['an empty map', '{}']
+    ])('fails a start answered at 200 with %s, in the unreadable sentence', async (_name, text) => {
+        answering(text);
+        expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual({
+            ok: false,
+            id: '',
+            error: unreadable(200)
+        });
+    });
+
+    it.each([
+        ['an error that is a number', '{"error":3}'],
+        ['a sentence', '{"error":"x"}'],
+        ['an empty sentence', '{"error":""}'],
+        ['a list', '[]']
+    ])('is the refusal sentence for %s in the body of a 500', async (_name, text) => {
+        answering(text, 500);
+        expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual({
+            ok: false,
+            id: '',
+            error: refused(500)
+        });
+    });
+
+    it('is the catalog sentence for a refusal word in the body of a 400', async () => {
+        answering('{"error":"outside"}', 400);
+        expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual({
+            ok: false,
+            id: '',
+            error: t('files.refused_outside')
+        });
+    });
+
+    it.each([
+        ['null on a refusal', 'null', 500],
+        ['text that is not JSON on a refusal', 'nope', 500],
+        ['null', 'null', 200],
+        ['text that is not JSON', 'nope', 200]
     ])(
-        'is the failed read with the status text for a body that is %s',
-        async (_name, text, status, expected) => {
+        'is the unreadable sentence with its status for a body that is %s',
+        async (_name, text, status) => {
             answering(text, status);
-            expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual(expected);
+            expect(await postTerminal({ action: 'start' }, 't')).toStrictEqual({
+                ok: false,
+                id: '',
+                error: unreadable(status)
+            });
         }
     );
 });

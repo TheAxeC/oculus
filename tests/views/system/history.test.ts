@@ -225,6 +225,31 @@ describe('the History view', () => {
         expect(row('f2')).toContain(catalog['history.undo']);
     });
 
+    it('draws a replace as the number of files it wrote, with the undo control', () => {
+        const stamp = (path: string) => ({ path, kind: 'file', size: 1, mtime: 1, kept: 'k' });
+        const replace = (at: string, paths: string[]): Change =>
+            change(at, {
+                kind: 'files',
+                file: paths[0],
+                key: 'files',
+                field: 'replace',
+                before: paths.map(stamp),
+                after: paths.map(stamp),
+                undo: 'file'
+            });
+        const body = drawn([replace('r1', ['notes/a.md']), replace('r2', ['a.md', 'b.md'])]);
+        const row = (at: string): string =>
+            body.slice(
+                body.indexOf(`data-change="${at}"`),
+                body.indexOf('</li>', body.indexOf(`data-change="${at}"`))
+            );
+
+        expect(row('r1')).toContain('>Replaced in 1 file</span>');
+        expect(row('r2')).toContain('>Replaced in 2 files</span>');
+        expect(row('r1')).toContain(catalog['history.undo']);
+        expect(row('r2')).toContain(catalog['history.undo']);
+    });
+
     it('draws only the rows the filter leaves', () => {
         const rows = [
             change('a'),

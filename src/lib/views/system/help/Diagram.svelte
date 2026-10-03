@@ -14,7 +14,7 @@
 
     import { t } from '$lib/state/shared/words/text';
     import { sanitiseGraph } from '$lib/ui/html';
-    import { diagramUrl } from './manual';
+    import { loadDiagram, type DiagramFile } from './manual';
     import { newestAnswer } from './newest';
 
     type Props = {
@@ -26,28 +26,13 @@
 
     let { name, alt }: Props = $props();
 
-    /** One answer: the diagram it is for, the file's text, or what went wrong. */
-    type Drawn = { name: string; svg: string; error: string };
-
-    let drawn = $state<Drawn | null>(null);
+    let drawn = $state<DiagramFile | null>(null);
 
     /** The answer for the name shown now; one for an earlier name is not drawn. */
     const shown = $derived(drawn !== null && drawn.name === name ? drawn : null);
 
-    /** Fetch one diagram, or say why there is none; the signal stops the fetch. */
-    async function load(asked: string, signal: AbortSignal): Promise<Drawn> {
-        try {
-            const response = await fetch(diagramUrl(asked), { signal });
-            if (!response.ok) return { name: asked, svg: '', error: String(response.status) };
-            return { name: asked, svg: await response.text(), error: '' };
-        } catch (error) {
-            const reason = error instanceof Error ? error.message : String(error);
-            return { name: asked, svg: '', error: reason };
-        }
-    }
-
     /** Takes the answer of the newest fetch and drops one for a name no longer shown. */
-    const ask = newestAnswer<Drawn>((answer) => {
+    const ask = newestAnswer<DiagramFile>((answer) => {
         drawn = answer;
     });
 
@@ -55,7 +40,7 @@
     // name changes and when the view closes.
     $effect(() => {
         const asked = name;
-        return ask((signal) => load(asked, signal));
+        return ask((signal) => loadDiagram(asked, signal));
     });
 </script>
 

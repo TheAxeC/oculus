@@ -13,6 +13,7 @@ import {
     survivorsShape,
     unchanged
 } from '../../data/shapes/shapes.ts';
+import { failedAnswer } from '../shared/answers/answers.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
 import { SHOWN_DEFAULT, type FsEntry, type FsRoot, type ListingShown, type TreeRow } from './fs.ts';
 
@@ -232,22 +233,16 @@ export const LISTING_FORMS = [false, true].flatMap((hidden) =>
 /** What a read of an endpoint came to: the body of a successful answer, or why the read failed. */
 export type Answered = { ok: true; body: unknown } | { ok: false; error: string };
 
-/** The `error` text of a refused answer's body, and nothing for a body that carries none. */
-const refusalShape = z.object({ error: z.string() });
-
 /**
  * A response read as an endpoint's answer. A body that is JSON null or is not JSON is a failed
- * read whatever the status, worded with `status`; a refused answer is worded with the body's own
- * `error` when it is text and with `status` otherwise; any other body of a successful answer is
- * handed on to be read for its fields.
+ * read whatever the status, and a refused answer is a failed read; both are told in the sentences
+ * of state/shared/answers/answers.ts. Any other body of a successful answer is handed on to be read
+ * for its fields.
  */
-export async function readAnswer(
-    response: Response,
-    status = String(response.status)
-): Promise<Answered> {
+export async function readAnswer(response: Response): Promise<Answered> {
     const body = await readJson(response);
-    if (body === undefined) return { ok: false, error: status };
-    if (!response.ok) return { ok: false, error: readAs(refusalShape, body)?.error ?? status };
+    if (body === undefined || !response.ok)
+        return { ok: false, error: failedAnswer(response, body) };
     return { ok: true, body };
 }
 

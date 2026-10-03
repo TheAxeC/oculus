@@ -19,10 +19,11 @@
     // staged or as the worktree has it, one commit's change to a file, a whole stash, everything a
     // worktree holds that its repository's branch does not, every path of the staged or the changed
     // group, every file a ref and a commit differ in (Compare with Remote, Compare with Merge Base,
-    // Compare with...), or a linked worktree's file against the main worktree's (Compare with
-    // Workspace); the groups and the comparisons are read a few files at a time
-    // (diff/diff-read.ts) and are read-only. Each read takes the next number from latestRead(),
-    // and an answer that is no longer the newest writes nothing.
+    // Compare with...), a linked worktree's file against the main worktree's (Compare with
+    // Workspace), or the Replace Preview of a Search tab: a file as it is against the file as the
+    // tab's replacements would leave it. The groups and the comparisons are read a few files at a
+    // time (diff/diff-read.ts) and every read is read-only; the reader drops an answer that is no
+    // longer the newest, and every answer once the pane is closed.
     //
     // The bar (diff/DiffBar.svelte) holds icon buttons: Open File (a file's own diff), Previous
     // Change and Next Change, which Shift+Alt+F5 and Alt+F5 press while the pane holds the focus
@@ -55,9 +56,10 @@
     import type { DiffCommand, EditorAction } from '$lib/ui/controls/editor/types';
     import DiffBar from './DiffBar.svelte';
     import DiffSection from './DiffSection.svelte';
-    import { compareSentence } from './compare-words';
+    import { failureSentence } from './compare-words';
     import { readPaneDiff } from './diff-read';
     import { latestRead } from '$lib/state/sources/repositories/diff/compare';
+    import { diffReader } from '$lib/state/sources/repositories/answers';
     import {
         countsOf,
         diffActions,
@@ -70,6 +72,7 @@
         type LineChange
     } from '$lib/state/sources/repositories/diff/diff-hunks';
     import { sidesPatch, type PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
+    import { previewKey } from '$lib/state/sources/repositories/replace-preview';
     import {
         diffActs,
         diffViewOf,
@@ -93,6 +96,7 @@
     const {
         repositories,
         selectors: { gitFor, gitRoots },
+        writes,
         editorStatus: { asked: askedOf, forget, publish },
         layout: { instanceView },
         ui: { codeTheme, instanceState, setInstanceState, theme, textScale }
@@ -107,6 +111,8 @@
     const KEEP_AFTER_MS = 400;
 
     const held = $derived(heldDiff(instance.state));
+    /** What a read is made under: the pane's id, and for a Replace Preview its replacements. */
+    const readKey = $derived(`${held.id}${previewKey(held.replace)}`);
 
     let files: DiffSides[] = $state([]);
     let attributes: DiffAttributes | null = $state(null);
@@ -156,22 +162,21 @@
     const several = $derived(files.length > 1);
     const stops = $derived(counts.some((count) => count !== 0));
 
-    /** Hands out each read's check, so an older answer that lands late is dropped. */
-    const nextRead = latestRead();
+    /** The reads of this pane: the newest answer is drawn, and none once the pane is closed. */
+    const reader = diffReader(
+        (state) => readPaneDiff(state, repo, writes.writeToken()),
+        latestRead()
+    );
 
     async function load(state: DiffState): Promise<void> {
-        const current = nextRead();
         reading = true;
         failure = '';
-        try {
-            const read = await readPaneDiff(state, repo);
-            if (!current()) return;
-            if (!read.ok || read.files === null) {
-                failure =
-                    state.against !== undefined || (state.save ?? '') !== ''
-                        ? compareSentence(read.error, t)
-                        : (read.error ?? t('repositories.diff_failed'));
-            } else {
+        const drawn = await reader.load(state, {
+            answered(read) {
+                if (!read.ok || read.files === null) {
+                    failure = failureSentence(state, read.error, t);
+                    return;
+                }
                 // A read that changed nothing keeps the files drawn, and with them the view.
                 if (!sameFiles(files, read.files)) {
                     files = read.files;
@@ -180,20 +185,21 @@
                 }
                 attributes = read.attributes;
                 conflicted = read.conflicted;
+            },
+            failed() {
+                failure = t('repositories.diff_failed');
             }
-        } catch {
-            if (!current()) return;
-            failure = t('repositories.diff_failed');
-        }
+        });
+        if (!drawn) return;
         reading = false;
         loaded = true;
     }
 
     $effect(() => {
         const wanted = held;
-        if (!subject || wanted.id === taken) return;
+        if (!subject || readKey === taken) return;
         if (grouped && groupWaits(repo, gitRoots())) return;
-        taken = wanted.id;
+        taken = readKey;
         at = null;
         placed = -1;
         void load(wanted);
@@ -217,7 +223,7 @@
         }
         if (!gate.due([now])) return;
         untrack(() => {
-            if (taken === held.id) void load(held);
+            if (taken === readKey) void load(held);
         });
     });
 
@@ -356,6 +362,7 @@
     // Closed first: an editor torn down with the pane says its view state after this. A tab still
     // open keeps it; a closed tab's instance state is gone, and nothing may write it back.
     onDestroy(() => {
+        reader.close();
         keeper.close(() => instanceView(instance.id) !== undefined);
         forget(instance.id);
     });

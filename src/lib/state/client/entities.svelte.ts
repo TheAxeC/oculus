@@ -57,9 +57,11 @@ export function createEntities(): EntitiesStore {
     }
 
     /**
-     * The payload of one channel, or null before its first message. The socket kept the message
-     * only after the channel's schema accepted its payload (state/client/socket.svelte.ts), so the
-     * channel's declared type is applied here without reading the payload again.
+     * The payload of one channel, or null before its first message. A message reaches `receive`
+     * from two places, and both hand it a payload the channel's schema accepted: the socket checks
+     * each frame (`handle` in state/client/socket.svelte.ts) and `seedConfig` checks the page's own
+     * configuration, so the channel's declared type is applied here without reading the payload
+     * again on every read.
      */
     function payload<K extends keyof Payloads>(channel: K): Payloads[K] | null {
         const held = messages[channel]?.payload;

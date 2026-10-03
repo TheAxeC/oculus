@@ -321,6 +321,19 @@ describe('Timeline', () => {
         expect(namesOf(body)).toEqual(expect.arrayContaining(['File Saved', 'File Deleted']));
     });
 
+    // Revert: name a replace copy as a save.
+    it('audits that a copy a replace kept is drawn as File Replaced', async () => {
+        const kept = [
+            { id: '20260101T130000000', at: 1_767_272_400_000, size: 4, kind: 'replace' }
+        ];
+        const body = timelineDrawn(await listed(kept), { root: 'hub', path: 'a.md' });
+
+        expect(marked(body, 'data-fs-timeline-row')).toEqual(['20260101T130000000']);
+        expect(namesOf(body)).toContain('File Replaced');
+        // the copy was kept by a replace, so it is not named as a plain write
+        expect(namesOf(body)).not.toContain('File Saved');
+    });
+
     // Revert: leave the onclick out of a copy row of Timeline.svelte.
     it('audits that every copy row carries the button Enter presses', async () => {
         const body = timelineDrawn(await listed(copies), { root: 'hub', path: 'a.md' });

@@ -13,6 +13,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import type { OpsRequest } from '../../../../src/lib/data/file-ops.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import { sourceTabState } from '../../../../src/lib/state/sessions/source.svelte.ts';
 import { DIFF_VIEW } from '../../../../src/lib/state/sources/repositories/repositories.svelte.ts';
@@ -605,5 +606,89 @@ describe('whether a delete would lose text', () => {
         expect(client.explorer.unsaved({ root: 'hub', path: 'dir/sub/a.md' }, true)).toBe(true);
         expect(client.explorer.unsaved({ root: 'hub', path: 'dir' }, false)).toBe(false);
         expect(client.explorer.unsaved({ root: 'other', path: 'dir' }, true)).toBe(false);
+    });
+});
+
+describe('the source tabs a replace and its undo read again', () => {
+    /** The text each file holds on disk now, which a tab reads when it reads again. */
+    let disk: Record<string, string> = {};
+
+    /** The stub of `serve`, with the file route answering `disk` and an undo that changed files. */
+    function serveFiles(): void {
+        const base = fetch;
+        vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+            if (url.startsWith('/api/file/')) {
+                return new Response(disk[decodeURIComponent(url.slice('/api/file/'.length))] ?? '');
+            }
+            if (url === '/api/write' && (init?.body as string).includes('"undo"')) {
+                return json({ ok: true, changed: ['a.md'], refused: [] });
+            }
+            return base(url, init);
+        });
+    }
+
+    /** Open a source tab over `hub/<path>` holding `text`, saved as `saved`. */
+    function tab(path: string, text: string, saved = 'old'): string {
+        const id = client.layout.openView('source', sourceTabState('hub', path));
+        client.ui.setInstanceState(id, { text, saved, loaded: true, file: `hub/${path}` });
+        return id;
+    }
+
+    const request: Extract<OpsRequest, { op: 'replace' }> = {
+        op: 'replace',
+        query: { q: 'old', word: false, case: false, regex: false, under: '' },
+        replace: 'new',
+        preserveCase: false,
+        items: [{ root: 'hub', path: 'a.md', hits: [{ line: 1, at: 0, match: 'old' }] }]
+    };
+
+    beforeEach(() => {
+        disk = { 'hub/a.md': 'new', 'hub/b.md': 'new' };
+        serveFiles();
+    });
+
+    it('shows the replaced text in a clean tab, and keeps the text typed in a tab with unsaved text', async () => {
+        const clean = tab('a.md', 'old');
+        const typed = tab('b.md', 'typed in the tab');
+        answers = [() => ok(['hub/a.md', 'hub/b.md'])];
+        await client.explorer.replace(request);
+        await settle();
+        expect(client.source.sourceDraft(clean)).toMatchObject({ text: 'new', saved: 'new' });
+        expect(client.source.sourceDraft(typed)).toMatchObject({
+            text: 'typed in the tab',
+            saved: 'old'
+        });
+    });
+
+    it('reads again the files a refused replace wrote before it stopped, and none it did not', async () => {
+        const done = tab('a.md', 'old');
+        const left = tab('c.md', 'old');
+        disk['hub/c.md'] = 'untouched on disk';
+        answers = [() => refused('changed', 'hub/c.md', ['hub/a.md'])];
+        await client.explorer.replace(request);
+        await settle();
+        expect(client.source.sourceDraft(done).text).toBe('new');
+        expect(client.source.sourceDraft(left).text).toBe('old');
+    });
+
+    it('shows the old text in a clean tab after the undo of a replace, and keeps typed text', async () => {
+        const clean = tab('a.md', 'new', 'new');
+        const typed = tab('b.md', 'typed in the tab', 'new');
+        disk = { 'hub/a.md': 'old', 'hub/b.md': 'old' };
+        const stamp = (path: string) => ({ path: `/r/hub/${path}` });
+        await client.explorer.undoFile(
+            {
+                at: '1',
+                kind: 'files',
+                undo: 'file',
+                field: 'replace',
+                before: ['a.md', 'b.md'].map(stamp),
+                after: ['a.md', 'b.md'].map(stamp)
+            },
+            [{ key: 'hub', dir: '/r/hub', fixed: true }]
+        );
+        await settle();
+        expect(client.source.sourceDraft(clean)).toMatchObject({ text: 'old', saved: 'old' });
+        expect(client.source.sourceDraft(typed)).toMatchObject({ text: 'typed in the tab' });
     });
 });

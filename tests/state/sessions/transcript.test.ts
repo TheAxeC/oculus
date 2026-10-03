@@ -5,7 +5,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Turn } from '../../../src/lib/data/model/index.ts';
 import type { TurnsState } from '../../../src/lib/state/sessions/transcript.svelte.ts';
-import { createClientState, stubHeld, type ClientState } from '../../fixtures/client.ts';
+import {
+    createClientState,
+    stubHeld,
+    type ClientState,
+    refused,
+    unreadable
+} from '../../fixtures/client.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 let client: ClientState;
 let forget: ClientState['transcripts']['forget'];
@@ -270,9 +280,10 @@ describe('an answer whose fields are of the wrong type', () => {
         });
     });
 
-    it('answers a refusal as its sentence, and as its status when it names none', async () => {
-        expect(await answeredWith('{"error":"x"}', 500)).toStrictEqual({ ...NOTHING, error: 'x' });
-        expect(await answeredWith('[]', 500)).toStrictEqual({ ...NOTHING, error: '500' });
+    it('answers a refusal as the refusal sentence, whatever text it carries', async () => {
+        const said = { ...NOTHING, error: refused(500) };
+        expect(await answeredWith('{"error":"x"}', 500)).toStrictEqual(said);
+        expect(await answeredWith('[]', 500)).toStrictEqual(said);
     });
 
     it.each([
@@ -308,14 +319,20 @@ describe('an answer whose fields are of the wrong type', () => {
         }
     );
 
-    it('answers a refusal whose error is a number as its status', async () => {
-        expect(await answeredWith('{"error":3}', 500)).toStrictEqual({ ...NOTHING, error: '500' });
+    it('answers a refusal whose error is a number as the refusal sentence', async () => {
+        expect(await answeredWith('{"error":3}', 500)).toStrictEqual({
+            ...NOTHING,
+            error: refused(500)
+        });
     });
 
-    it('answers a body that is null or not JSON as the failed read with its status', async () => {
+    it('answers a body that is null or not JSON as the unreadable sentence with its status', async () => {
         for (const text of ['null', 'nope']) {
-            expect(await answeredWith(text)).toStrictEqual({ ...NOTHING, error: '200' });
-            expect(await answeredWith(text, 500)).toStrictEqual({ ...NOTHING, error: '500' });
+            expect(await answeredWith(text)).toStrictEqual({ ...NOTHING, error: unreadable(200) });
+            expect(await answeredWith(text, 500)).toStrictEqual({
+                ...NOTHING,
+                error: unreadable(500)
+            });
         }
     });
 
@@ -334,7 +351,7 @@ describe('an answer whose fields are of the wrong type', () => {
                 turns: [user],
                 offset: 2,
                 pending: false,
-                error: '200'
+                error: unreadable(200)
             });
         }
     });

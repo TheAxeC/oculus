@@ -26,7 +26,7 @@ import { createClientState, type ClientState } from '../../fixtures/client.ts';
 import { fakeStorage } from '../workbench/layout/layout-fixture.ts';
 import { openOwning, tabOf, terminalTabsOf } from '../client/terminal/terminal-tabs-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 
 // The layout names its default page from the catalog, so the real one is installed.
 setCatalog(textCatalog(loadConfig(engineDir()).config));
@@ -320,10 +320,10 @@ describe('the four actions of /api/terminal', () => {
         });
     });
 
-    it('reports what the server refused it with, in the server words', async () => {
+    it('reports a refusal in the refusal sentence, never in the text the server gave', async () => {
         serving(400, { error: 'cwd must be an absolute path' });
         const answer = await startTerminal('shell', 'relative');
-        expect(answer).toEqual({ ok: false, id: '', error: 'cwd must be an absolute path' });
+        expect(answer).toEqual({ ok: false, id: '', error: t('ui.answer_refused', 400) });
     });
 });
 

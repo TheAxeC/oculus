@@ -189,6 +189,18 @@ describe('the Timeline', () => {
         ]);
     });
 
+    // Revert: leave the replace kind out of the copies the Timeline reads.
+    it('keeps a copy a replace made as a row of its own kind, and drops a kind it does not know', () => {
+        const read = copiesOf({
+            saves: [
+                { id: 'r', at: 3, size: 1, kind: 'replace' },
+                { id: 'x', at: 2, size: 1, kind: 'other' }
+            ]
+        });
+        expect(read).toEqual([{ id: 'r', at: 3, size: 1, kind: 'replace' }]);
+        expect(timelineOf(read, []).map((row) => [row.kind, row.key])).toEqual([['replace', 'r']]);
+    });
+
     // Revert: let a date that does not read throw.
     it('reads a commit whose date does not read as time zero', () => {
         const rows = timelineOf([], [{ hash: 'h', short: 'h', subject: 's', when: 'soon' }]);

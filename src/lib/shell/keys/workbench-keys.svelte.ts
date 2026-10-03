@@ -40,6 +40,8 @@ type Options = {
     openDoc: (path: string, page: string | undefined) => void;
     /** New: the composer in the Terminal tab of the page named, the terminals store's rule. */
     composeIn: (page: string) => void;
+    /** Ask the Search tab with this id to put the cursor in its query box or its replace box. */
+    focusSearchBox: (id: string, box: 'query' | 'replace') => void;
     /**
      * Show the page of the rail button at `index`, counting from 1, which is what the digits 1 to 9
      * do. It answers whether there was one, so the key is swallowed only when it did something.
@@ -169,6 +171,11 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return activateCursor(pane, cursorIn(pane));
         } else if (action.kind === 'search') {
             return focusSearch(pane);
+        } else if (action.kind === 'find-in-files' || action.kind === 'replace-in-files') {
+            clearCursor();
+            const id = options.layout.openView('search', undefined, pageOf());
+            if (id === '') return false;
+            options.focusSearchBox(id, action.kind === 'find-in-files' ? 'query' : 'replace');
         } else if (action.kind === 'scroll') {
             return scrollRegion(scrollContainer(pane), action.edge);
         } else if (action.kind === 'page') {

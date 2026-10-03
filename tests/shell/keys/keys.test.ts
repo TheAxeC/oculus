@@ -280,6 +280,65 @@ describe('shortcut guards', () => {
     });
 });
 
+describe('Find in Files and Replace in Files', () => {
+    it.each([
+        ['f', { kind: 'find-in-files' }],
+        ['F', { kind: 'find-in-files' }],
+        ['h', { kind: 'replace-in-files' }],
+        ['H', { kind: 'replace-in-files' }]
+    ])('routes Cmd-Shift-%s', (key, action) => {
+        expect(
+            press(key, initialKeyState(), 1000, {}, { metaKey: true, shiftKey: true }).action
+        ).toEqual(action);
+    });
+
+    it('routes Ctrl-Shift-F, which is Cmd on a keyboard with no Cmd key', () => {
+        expect(
+            press('f', initialKeyState(), 1000, {}, { ctrlKey: true, shiftKey: true }).action
+        ).toEqual({
+            kind: 'find-in-files'
+        });
+    });
+
+    it('answers with a field being typed in', () => {
+        expect(
+            press('h', initialKeyState(), 1000, { typing: true }, { metaKey: true, shiftKey: true })
+                .action
+        ).toEqual({ kind: 'replace-in-files' });
+    });
+
+    it.each([
+        { name: 'the palette', guard: { paletteOpen: true } },
+        { name: 'the update tray', guard: { trayOpen: true } },
+        { name: 'a confirmation', guard: { confirmOpen: true } }
+    ] satisfies { name: string; guard: Partial<KeyContext> }[])(
+        'does nothing under $name',
+        ({ guard }) => {
+            expect(
+                press('f', initialKeyState(), 1000, guard, { metaKey: true, shiftKey: true }).action
+            ).toBe(null);
+        }
+    );
+
+    it.each([
+        { name: 'Shift is not held', held: { metaKey: true } },
+        { name: 'Alt is held too', held: { metaKey: true, shiftKey: true, altKey: true } },
+        {
+            name: 'Cmd and Ctrl are both held',
+            held: { metaKey: true, ctrlKey: true, shiftKey: true }
+        },
+        {
+            name: 'a child handler consumed the event',
+            held: { metaKey: true, shiftKey: true, defaultPrevented: true }
+        }
+    ] satisfies { name: string; held: Partial<KeyEventLike> }[])(
+        'does nothing when $name',
+        ({ held }) => {
+            expect(press('f', initialKeyState(), 1000, {}, held).action).toBe(null);
+        }
+    );
+});
+
 describe('carrying the card under the cursor', () => {
     it('asks for a move left on J and right on K while a cursor is held', () => {
         expect(press('J', initialKeyState(), 1000, { cursorActive: true }).action).toEqual({

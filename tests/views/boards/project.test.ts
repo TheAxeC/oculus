@@ -18,7 +18,7 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, setGlyphs, t } from '../../../src/lib/state/shared/words/text.ts';
 import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
 import { area, payload, record, workspace } from '../../fixtures/sessions-fixture.ts';
 import type {
@@ -405,7 +405,7 @@ describe('the LaTeX panel of a project tab', () => {
         for (const one of buttons) expect(one).toMatch(/\bsmall\b/);
     });
 
-    it('draws a failed read as the error box with a retry button', async () => {
+    it('draws a failed read as the error box, in the refusal sentence, with a retry button', async () => {
         vi.stubGlobal('fetch', () =>
             Promise.resolve(
                 new Response(JSON.stringify({ error: 'the folder is locked' }), {
@@ -416,7 +416,7 @@ describe('the LaTeX panel of a project tab', () => {
         );
         const body = await settled();
         expect(body).toContain(
-            catalog['project.latex.read_failed'].replace('{0}', 'the folder is locked')
+            catalog['project.latex.read_failed'].replace('{0}', t('ui.answer_refused', 500))
         );
         expect(body).toContain('role="alert"');
         expect(body).toContain(catalog['project.latex.retry']);

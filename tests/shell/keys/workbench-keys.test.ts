@@ -149,7 +149,8 @@ function handler(
     overlays: Overlays = {},
     setUpdateOpen: (open: boolean) => void = noop,
     railPage: (index: number) => boolean = () => false,
-    composeIn: (page: string) => void = noop
+    composeIn: (page: string) => void = noop,
+    focusSearchBox: (id: string, box: 'query' | 'replace') => void = noop
 ) {
     const element = paneElement(path, 'b', page);
     held.document = fakeDocument(element, overlays.confirm === true);
@@ -169,6 +170,7 @@ function handler(
         openPalette: noop,
         openDoc: noop,
         composeIn,
+        focusSearchBox,
         railPage
     });
     keys.paneFocused({ target: element } as unknown as FocusEvent);
@@ -537,5 +539,71 @@ describe('typing inside the editor', () => {
         expect(railPage).not.toHaveBeenCalled();
         expect(digit.prevented).not.toHaveBeenCalled();
         expect(colon.prevented).not.toHaveBeenCalled();
+    });
+});
+
+describe('Find in Files and Replace in Files', () => {
+    /**
+     * The handler, with the asks for a Search box recorded where the workbench would carry them
+     * out.
+     */
+    function withSearch(page?: string): {
+        keys: ReturnType<typeof handler>;
+        asked: [string, 'query' | 'replace'][];
+    } {
+        const asked: [string, 'query' | 'replace'][] = [];
+        const keys = handler(
+            '1',
+            page,
+            undefined,
+            {},
+            noop,
+            undefined,
+            noop,
+            (id: string, box: 'query' | 'replace') => asked.push([id, box])
+        );
+        return { keys, asked };
+    }
+
+    it.each([
+        ['f', 'query'],
+        ['h', 'replace']
+    ] as const)('opens the Search view and asks for its %s box', (key, box) => {
+        const { keys, asked } = withSearch();
+        const { event, prevented } = keyEvent(key, true, { shiftKey: true });
+        keys.keys(event);
+        expect(prevented).toHaveBeenCalledOnce();
+        expect(asked).toHaveLength(1);
+        expect(asked[0]?.[1]).toBe(box);
+        const id = asked[0]?.[0] ?? '';
+        expect(id).not.toBe('');
+        expect(client.layout.activeInstance()?.id).toBe(id);
+        expect(client.layout.activeInstance()?.view).toBe('search');
+    });
+
+    it('does nothing without Shift', () => {
+        const { keys, asked } = withSearch();
+        const { event, prevented } = keyEvent('f', true);
+        keys.keys(event);
+        expect(asked).toEqual([]);
+        expect(prevented).not.toHaveBeenCalled();
+    });
+
+    it('does nothing under the palette', () => {
+        const asked: string[] = [];
+        const keys = handler(
+            '1',
+            undefined,
+            undefined,
+            { palette: true },
+            noop,
+            undefined,
+            noop,
+            (id) => asked.push(id)
+        );
+        const { event, prevented } = keyEvent('f', true, { shiftKey: true });
+        keys.keys(event);
+        expect(asked).toEqual([]);
+        expect(prevented).not.toHaveBeenCalled();
     });
 });

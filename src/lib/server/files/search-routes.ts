@@ -10,28 +10,22 @@
 // Nothing is searched outside a served root. The roots are the list the route composed, the same
 // one the file route and the source route compose, and a `root` that is not one of their keys is
 // refused before any process starts.
+//
+// A refusal is answered as a word (data/helpers/search/query.ts SearchRefusal) and the page says it
+// in the catalog's sentence for that word. A pattern ripgrep could not read is the word `pattern`
+// with ripgrep's own one-line reason beside it, which the sentence carries.
 
 import { json } from '@sveltejs/kit';
 import { hasToken } from '../core/auth.ts';
-import { queryFrom } from '../../data/helpers/search.ts';
+import { queryFrom } from '../../data/helpers/search/query.ts';
 import { runSearch, type SearchOptions } from './search.ts';
 import type { Root } from './files.ts';
-import type { SearchRefusal } from '../../data/helpers/search.ts';
 
 export type SearchRouteOptions = SearchOptions & {
     /** Every root this request may search. */
     roots: Root[];
     /** How many hits one answer carries, from config/behavior.yml. */
     cap: number;
-};
-
-/** The sentence each refusal is answered with. */
-const REFUSALS: Record<SearchRefusal, string> = {
-    empty: 'the search carries no pattern',
-    too_long: 'the pattern is longer than a search takes',
-    unknown_root: 'that root is not one oculus serves',
-    outside: 'the folder is not inside the root',
-    missing: 'the folder is not there'
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -47,20 +41,18 @@ export async function handleSearch(
     options: SearchRouteOptions
 ): Promise<Response> {
     if (!hasToken(request, token)) {
-        return json(
-            { error: 'the write token is missing or stale' },
-            { status: 403, headers: NO_STORE }
-        );
+        return json({ error: 'token' }, { status: 403, headers: NO_STORE });
     }
     const query = queryFrom(new URL(request.url).searchParams, options.cap);
     const outcome = await runSearch(options.roots, query, options);
     if (!outcome.ok) {
-        return json(
+        const body =
             'refused' in outcome
-                ? { error: REFUSALS[outcome.refused], refused: outcome.refused }
-                : { error: outcome.error },
-            { status: 400, headers: NO_STORE }
-        );
+                ? { error: outcome.refused }
+                : outcome.timedOut
+                  ? { error: 'timed_out' }
+                  : { error: 'pattern', reason: outcome.error };
+        return json(body, { status: 400, headers: NO_STORE });
     }
     return json({ ok: true, ...outcome.answer }, { headers: NO_STORE });
 }

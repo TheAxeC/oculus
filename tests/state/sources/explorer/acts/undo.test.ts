@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    replacedPlaces,
     stampPaths,
     undoPlan,
     undoneMoves,
@@ -119,5 +120,26 @@ describe('the moves a taken-back rename restates', () => {
                 ROOTS
             ).length
         ).toBe(2);
+    });
+});
+
+describe('the places a taken-back replace wrote', () => {
+    const ROOTS: FsRoot[] = [{ key: 'hub', dir: '/r/hub', fixed: true }];
+    const stamps = (...paths: string[]) => paths.map((path) => ({ path }));
+    const record = (field: string, after: string[]): FileRecord => ({
+        ...op('1'),
+        field,
+        before: stamps(...after),
+        after: stamps(...after)
+    });
+
+    it('names each file the replace left, by its root and path, and skips one outside every root', () => {
+        expect(
+            replacedPlaces(record('replace', ['/r/hub/a.md', '/elsewhere/b.md']), ROOTS)
+        ).toEqual([{ root: 'hub', path: 'a.md' }]);
+    });
+
+    it('names nothing for any other operation', () => {
+        expect(replacedPlaces(record('rename', ['/r/hub/a.md']), ROOTS)).toEqual([]);
     });
 });

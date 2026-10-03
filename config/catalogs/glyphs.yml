@@ -18,6 +18,8 @@ glyphs:
   open_program: "[o]"
   copy: "[c]"
   goto: ">>"
+  replace: "[r]"
+  replace_all: "[R]"
   note_back: "<<"
   current_month: "|"
   arrow_to: "->"

@@ -1,6 +1,8 @@
 # Oculus text owned by the UI primitives.
 text:
     ui:
+        answer_refused: 'The server refused the request (HTTP {0}).'
+        answer_unreadable: "The server's answer could not be read (HTTP {0})."
         bookmarks_glyph: star
         bookmarks_none: No bookmarks
         bookmarks_none_tip: The star on a file in the Files view adds one.

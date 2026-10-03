@@ -10,8 +10,14 @@
 // the view's own failure sentence. They sit apart from repositories.ts, which builds the addresses
 // of these reads, because the shapes here are held to the data model's types and nothing there
 // reads a body.
+//
+// A diff pane's read is the one that is not always a GET of an address: the Replace Preview is a
+// POST of the preview operation with the write token, since the hits it names have no limit and an
+// address does. `diffRequest` says which request a pane's subject is read with, and `diffReader`
+// keeps the answer of the newest read of a pane and none once the pane is closed.
 
 import { z } from 'zod';
+import { OPS_PATH, previewRequest } from '../../../data/file-ops.ts';
 import type {
     DiffAttributes,
     DiffSides,
@@ -32,6 +38,7 @@ import {
     unchanged
 } from '../../../data/shapes/shapes.ts';
 import { t } from '../../shared/words/text.ts';
+import { diffUrl, type DiffState, type DiffSubject } from './repositories.ts';
 
 /** One branch row, as the server sent it. */
 const branchShape = unchanged(
@@ -224,6 +231,67 @@ export function diffAnswerOf(ok: boolean, body: unknown): DiffAnswer {
         attributes: held.attributes,
         conflicted: held.conflicted,
         error: held.error
+    };
+}
+
+/** One request of a diff read: the address and, for a POST, how it is made. */
+export type DiffRequest = {
+    url: string;
+    init?: { method: 'POST'; headers: Record<string, string>; body: string };
+};
+
+/** The request that reads one diff pane's subject; `token` is the page's write token. */
+export function diffRequest(state: DiffSubject, token: string): DiffRequest {
+    const { replace } = state;
+    if (replace === undefined || state.against !== undefined || (state.save ?? '') !== '') {
+        return { url: diffUrl(state) };
+    }
+    return {
+        url: OPS_PATH,
+        init: {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-oculus-token': token },
+            body: JSON.stringify(previewRequest(state, replace))
+        }
+    };
+}
+
+/** What a pane does with the answer of a read it took, or with a read that threw. */
+type DiffDraw = { answered: (read: DiffAnswer) => void; failed: () => void };
+
+/** The reads of one pane, whose newest answer is the one drawn. */
+type DiffReader = {
+    /** Read a subject and draw its answer; true when this read was the one drawn. */
+    load: (state: DiffState, draw: DiffDraw) => Promise<boolean>;
+    /** The pane is closed: no read in flight is drawn. */
+    close: () => void;
+};
+
+/**
+ * A reader over `read`, which answers one subject; `nextRead` hands out each read's check, which
+ * says whether that read is still the newest (diff/compare.ts's `latestRead`).
+ */
+export function diffReader(
+    read: (state: DiffState) => Promise<DiffAnswer>,
+    nextRead: () => () => boolean
+): DiffReader {
+    let closed = false;
+    return {
+        async load(state, draw) {
+            const current = nextRead();
+            try {
+                const answer = await read(state);
+                if (!current() || closed) return false;
+                draw.answered(answer);
+            } catch {
+                if (!current() || closed) return false;
+                draw.failed();
+            }
+            return true;
+        },
+        close() {
+            closed = true;
+        }
     };
 }
 

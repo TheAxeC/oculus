@@ -12,24 +12,29 @@
 // no path and a pipe for its standard input reads that pipe instead of the working directory, which
 // is what a server process hands a child, so a search with no path would wait for input nobody
 // sends. A search scoped to one folder (`under`) names `./<folder>` there instead.
+//
+// In regular-expression mode the arguments also carry the replacement template of ./replace.ts, so
+// that each match ripgrep reports holds the text of every group of the pattern. A replace names one
+// file instead of a directory and asks for every match of it (`fileArgs`).
 
 import { z } from 'zod';
-import { fields } from './guards.ts';
+import { fields } from '../guards.ts';
+import { replaceTemplate } from './replace.ts';
 
 /** The root key that means every served root rather than one of them. */
 export const ALL_ROOTS = 'all';
 
 /** The longest pattern a query may carry. A longer one is a paste, not a search. */
-export const MAX_QUERY = 1000;
+const MAX_QUERY = 1000;
 
 /** How much of the matching line one hit carries, centred on the match. */
 export const HIT_WIDTH = 240;
 
 /** The largest file ripgrep opens, as ripgrep's own size word. */
-export const MAX_FILESIZE = '2M';
+const MAX_FILESIZE = '2M';
 
 /** The directories no search descends into, whatever a .gitignore says. */
-export const SKIP_GLOBS = ['!node_modules', '!.git', '!.svelte-kit'];
+const SKIP_GLOBS = ['!node_modules', '!.git', '!.svelte-kit'];
 
 /** One search as both sides hold it. */
 export type SearchQuery = {
@@ -49,15 +54,24 @@ export type SearchQuery = {
     under: string;
 };
 
-/** Why a query was refused, as a key each side says in its own words. */
-export type SearchRefusal = 'empty' | 'too_long' | 'unknown_root' | 'outside' | 'missing';
+/** Why a query was refused before anything ran, as a key each side says in its own words. */
+export type QueryRefusal = 'empty' | 'too_long' | 'unknown_root' | 'outside' | 'missing';
+
+/**
+ * Why a search was refused, as a key each side says in its own words: a refusal of the query, the
+ * write token, a pattern ripgrep could not read, and a search that ran out of time.
+ */
+export type SearchRefusal = QueryRefusal | 'token' | 'pattern' | 'timed_out';
 
 const REFUSAL_WORDS: readonly string[] = [
     'empty',
     'too_long',
     'unknown_root',
     'outside',
-    'missing'
+    'missing',
+    'token',
+    'pattern',
+    'timed_out'
 ];
 
 /** The refusal a server answer names, or null for a value that is none of them. */
@@ -68,7 +82,7 @@ export function refusalFrom(value: unknown): SearchRefusal | null {
 }
 
 /** The argument list a query runs as, or why it will not run. */
-export type SearchPlan = { ok: true; args: string[] } | { ok: false; refused: SearchRefusal };
+export type SearchPlan = { ok: true; args: string[] } | { ok: false; refused: QueryRefusal };
 
 /** The query as it would be typed into a fresh view. */
 export function emptyQuery(max: number): SearchQuery {
@@ -85,7 +99,7 @@ export function clampMax(max: number, cap: number): number {
 }
 
 /** Why this query is refused, and null when it is not. */
-export function refusalOf(query: SearchQuery, rootKeys: string[]): SearchRefusal | null {
+export function refusalOf(query: SearchQuery, rootKeys: string[]): QueryRefusal | null {
     if (query.q.trim() === '') return 'empty';
     if (query.q.length > MAX_QUERY) return 'too_long';
     if (query.root !== ALL_ROOTS && !rootKeys.includes(query.root)) return 'unknown_root';
@@ -111,7 +125,7 @@ export function rootsOf<T extends { key: string }>(query: SearchQuery, list: T[]
 }
 
 /** The directory ripgrep is pointed at, the working directory the call site sets. */
-export const SEARCH_PATH = '.';
+const SEARCH_PATH = '.';
 
 /**
  * How many matches ripgrep may print per file: one more than the answer can hold.
@@ -121,16 +135,31 @@ export const SEARCH_PATH = '.';
  * the cap makes the loss visible instead: a file with more matches than the answer has room for
  * sends one record the fold has nowhere to put, and that is what says the answer was cut.
  */
-export function perFileCount(max: number): number {
+function perFileCount(max: number): number {
     return max + 1;
+}
+
+/** The half of a query that decides what matches. */
+type MatchQuery = Pick<SearchQuery, 'q' | 'word' | 'case' | 'regex'>;
+
+/** The options that say how the pattern is read, in the order every list of arguments has them. */
+function matchArgs(query: MatchQuery): string[] {
+    const args: string[] = [];
+    if (!query.regex) args.push('--fixed-strings');
+    if (query.word) args.push('--word-regexp');
+    args.push(query.case ? '--case-sensitive' : '--ignore-case');
+    const template = replaceTemplate(query.q, query.regex);
+    if (template !== '') args.push('--replace', template);
+    args.push('--regexp', query.q);
+    return args;
 }
 
 /**
  * ripgrep's arguments for this query. The order is fixed so a test reads the list word for word:
- * the JSON stream, the caps, the skipped directories, the three options, the pattern, and the
- * directory.
+ * the JSON stream, the caps, the skipped directories, the options that say how the pattern is read
+ * (with the replacement template in regular-expression mode), the pattern, and the directory.
  */
-export function searchArgs(query: SearchQuery): string[] {
+function searchArgs(query: SearchQuery): string[] {
     const args = [
         '--json',
         '--max-count',
@@ -139,11 +168,17 @@ export function searchArgs(query: SearchQuery): string[] {
         MAX_FILESIZE
     ];
     for (const glob of SKIP_GLOBS) args.push('--glob', glob);
-    if (!query.regex) args.push('--fixed-strings');
-    if (query.word) args.push('--word-regexp');
-    args.push(query.case ? '--case-sensitive' : '--ignore-case');
-    args.push('--regexp', query.q, query.under === '' ? SEARCH_PATH : `./${query.under}`);
+    args.push(...matchArgs(query), query.under === '' ? SEARCH_PATH : `./${query.under}`);
     return args;
+}
+
+/**
+ * ripgrep's arguments for every match of the query in one file, named by its path under the root:
+ * no cap and no skipped directory, since a file named to ripgrep is searched whatever a glob or a
+ * .gitignore says.
+ */
+export function fileArgs(query: MatchQuery, path: string): string[] {
+    return ['--json', ...matchArgs(query), `./${path}`];
 }
 
 /** The checks and the arguments as one call, which is what both sides use. */
@@ -183,7 +218,7 @@ export function trimAround(
  * written only when the search is scoped to a folder, so a search of a whole root is the address it
  * always was.
  */
-export function searchParams(query: SearchQuery): URLSearchParams {
+function searchParams(query: SearchQuery): URLSearchParams {
     const parameters = new URLSearchParams({
         root: query.root,
         q: query.q,

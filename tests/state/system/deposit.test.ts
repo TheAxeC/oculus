@@ -8,7 +8,11 @@
 // is tests/views/boards/deposit.test.ts.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createClientState, type ClientState } from '../../fixtures/client.ts';
+import { createClientState, type ClientState, refused, unreadable } from '../../fixtures/client.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 let client: ClientState;
 
@@ -107,21 +111,37 @@ describe('the mirror of a project', () => {
     });
 
     it.each([
-        ['a word', '{"error":"no mirror"}', 404, 'no mirror'],
-        ['an empty word', '{"error":""}', 404, ''],
-        ['a number', '{"error":3}', 500, '500'],
-        ['null', '{"error":null}', 500, '500'],
-        ['nothing', '{}', 500, '500'],
-        ['a list body', '[]', 500, '500'],
-        ['a string body', '"x"', 502, '502']
-    ])('holds a refusal whose error is %s', async (_name, text, status, error) => {
-        answering(text, status);
-        expect(await held()).toStrictEqual({ state: null, error, loading: false });
+        ['a text of its own', '{"error":"no mirror"}', 404],
+        ['an empty text', '{"error":""}', 404],
+        ['a number', '{"error":3}', 500],
+        ['null', '{"error":null}', 500],
+        ['nothing', '{}', 500],
+        ['a list body', '[]', 500],
+        ['a string body', '"x"', 502]
+    ])(
+        'holds the refusal sentence for a refusal whose error is %s',
+        async (_name, text, status) => {
+            answering(text, status);
+            expect(await held()).toStrictEqual({
+                state: null,
+                error: refused(status),
+                loading: false
+            });
+        }
+    );
+
+    it('holds the sentence of the catalog for a refusal that is one of its words', async () => {
+        answering('{"error":"missing"}', 404);
+        expect(await held()).toStrictEqual({
+            state: null,
+            error: t('files.refused_missing'),
+            loading: false
+        });
     });
 
-    it('holds the error and no state when a refusal also names a state', async () => {
+    it('holds the refusal sentence and no state when a refusal also names a state', async () => {
         answering(JSON.stringify({ state: STATE, error: 'broken' }), 500);
-        expect(await held()).toStrictEqual({ state: null, error: 'broken', loading: false });
+        expect(await held()).toStrictEqual({ state: null, error: refused(500), loading: false });
     });
 
     it('holds the sentence of a request that never reached the server', async () => {
@@ -148,12 +168,15 @@ describe('the mirror of a project', () => {
         { name: 'JSON null', text: 'null', status: 500 },
         { name: 'a page that is no JSON', text: '<html>Bad Gateway</html>', status: 200 },
         { name: 'a page that is no JSON', text: '<html>Bad Gateway</html>', status: 502 }
-    ])('holds the status for $name sent with status $status', async ({ text, status }) => {
-        answering(text, status);
-        expect(await held()).toStrictEqual({
-            state: null,
-            error: String(status),
-            loading: false
-        });
-    });
+    ])(
+        'holds the unreadable sentence for $name sent with status $status',
+        async ({ text, status }) => {
+            answering(text, status);
+            expect(await held()).toStrictEqual({
+                state: null,
+                error: unreadable(status),
+                loading: false
+            });
+        }
+    );
 });

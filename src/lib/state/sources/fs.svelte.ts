@@ -110,6 +110,7 @@ import {
     type FsRoot,
     type ListingShown
 } from './fs.ts';
+import { refusedAnswer } from '../shared/answers/answers.ts';
 import { t } from '../shared/words/text.ts';
 import type { GitCommit } from '../../data/model/index.ts';
 import {
@@ -516,7 +517,7 @@ export function createFs(
         try {
             const response = await fetch(fileBytesUrl(root, path));
             if (!response.ok) {
-                return { ...NO_TEXT, error: String(response.status), loading: false };
+                return { ...NO_TEXT, error: refusedAnswer(response.status), loading: false };
             }
             const body = await readCapped(response, TEXT_LIMIT);
             return { ...body, error: '', loading: false };

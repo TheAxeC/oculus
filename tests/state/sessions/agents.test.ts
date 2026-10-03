@@ -12,8 +12,13 @@ import {
     scopeQuery,
     type AgentsStore
 } from '../../../src/lib/state/sessions/agents.svelte.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
 import type { Held } from '../../../src/lib/state/sessions/agents.svelte.ts';
+import { refused, unreadable } from '../../fixtures/client.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 type Out = { url: string; answer: (status: number, body: unknown) => void; fail: () => void };
 
@@ -68,7 +73,7 @@ describe('a read of the agents answer', () => {
         expect(asked.map((one) => one.url)).toEqual(['/api/agents?account=Uni', '/api/agents']);
     });
 
-    it("reads a refusal as the server's error, a bare one as its status, and a thrown fetch as its message", async () => {
+    it('reads a refusal as its sentence, whatever text the server gave, and a thrown fetch as its message', async () => {
         agents.agentChoices('a');
         agents.agentChoices('b');
         agents.agentChoices('c');
@@ -80,9 +85,9 @@ describe('a read of the agents answer', () => {
         expect(agents.agentChoices('a')).toEqual({
             value: null,
             pending: false,
-            error: 'no such account'
+            error: refused(400)
         });
-        expect(agents.agentChoices('b').error).toBe('500');
+        expect(agents.agentChoices('b').error).toBe(refused(500));
         expect(agents.agentChoices('c').error).toBe('offline');
     });
 });
@@ -135,10 +140,16 @@ describe('an answer whose fields are of the wrong type', () => {
     }
 
     it.each([
-        ['a refusal whose error is a number', '{"error":3}', 500, '500'],
-        ['a refusal with a list as its body', '[]', 500, '500'],
-        ['a refusal with its sentence', '{"error":"x"}', 500, 'x']
-    ])('answers %s as the error it names', async (_name, text, status, error) => {
+        ['a refusal whose error is a number', '{"error":3}', 500, refused(500)],
+        ['a refusal with a list as its body', '[]', 500, refused(500)],
+        ['a refusal with a text of its own', '{"error":"x"}', 500, refused(500)],
+        [
+            'a refusal with a word of the catalog',
+            '{"error":"outside"}',
+            400,
+            t('files.refused_outside')
+        ]
+    ])('answers %s as its sentence', async (_name, text, status, error) => {
         expect(await heldAfter(text, status)).toStrictEqual({ value: null, pending: false, error });
     });
 
@@ -147,19 +158,16 @@ describe('an answer whose fields are of the wrong type', () => {
         ['no findings', '{"agents":[],"accounts":[]}'],
         ['no accounts', '{"agents":[],"findings":[]}'],
         ['no agents', '{"accounts":[],"findings":[]}']
-    ])(
-        'answers an agents body that carries %s as the failed read with the status',
-        async (_n, text) => {
-            expect(await heldAfter(text)).toStrictEqual({
-                value: null,
-                pending: false,
-                error: '200'
-            });
-        }
-    );
+    ])('answers an agents body that carries %s as the unreadable sentence', async (_n, text) => {
+        expect(await heldAfter(text)).toStrictEqual({
+            value: null,
+            pending: false,
+            error: unreadable(200)
+        });
+    });
 
     it.each(['rows', 'agent', 'account', 'workspace'])(
-        'answers a customizations body without %s as the failed read with the status',
+        'answers a customizations body without %s as the unreadable sentence',
         async (field) => {
             const whole: Record<string, unknown> = {
                 agent: 'claude',
@@ -177,13 +185,13 @@ describe('an answer whose fields are of the wrong type', () => {
             expect(fresh.customizations(SCOPE)).toStrictEqual({
                 value: null,
                 pending: false,
-                error: '200'
+                error: unreadable(200)
             });
         }
     );
 
     it.each(['path', 'text'])(
-        'answers a customization file body without %s as the failed read with the status',
+        'answers a customization file body without %s as the unreadable sentence',
         async (field) => {
             const whole: Record<string, unknown> = { path: 'p', text: 't' };
             const body = Object.fromEntries(
@@ -196,7 +204,7 @@ describe('an answer whose fields are of the wrong type', () => {
             expect(fresh.customizationText(SCOPE, 'p')).toStrictEqual({
                 value: null,
                 pending: false,
-                error: '200'
+                error: unreadable(200)
             });
         }
     );
@@ -226,15 +234,15 @@ describe('an answer whose fields are of the wrong type', () => {
     });
 
     it.each([
-        ['null on a refusal', 'null', 500, '500'],
-        ['text that is not JSON on a refusal', 'nope', 500, '500'],
-        ['null', 'null', 200, '200'],
-        ['text that is not JSON', 'nope', 200, '200'],
-        ['a list', '[]', 200, '200'],
-        ['a map whose agents are a string', '{"agents":"x"}', 200, '200'],
-        ['a map whose accounts are a map', '{"accounts":{}}', 200, '200']
+        ['null on a refusal', 'null', 500, unreadable(500)],
+        ['text that is not JSON on a refusal', 'nope', 500, unreadable(500)],
+        ['null', 'null', 200, unreadable(200)],
+        ['text that is not JSON', 'nope', 200, unreadable(200)],
+        ['a list', '[]', 200, unreadable(200)],
+        ['a map whose agents are a string', '{"agents":"x"}', 200, unreadable(200)],
+        ['a map whose accounts are a map', '{"accounts":{}}', 200, unreadable(200)]
     ])(
-        'answers a body that is %s as the failed read with the status',
+        'answers a body that is %s as the unreadable sentence',
         async (_name, text, status, error) => {
             expect(await heldAfter(text, status)).toStrictEqual({
                 value: null,
@@ -250,7 +258,7 @@ describe('an answer whose fields are of the wrong type', () => {
         fresh.customizations(SCOPE);
         fresh.customizationText(SCOPE, 'p');
         await settle();
-        const failed = { value: null, pending: false, error: '200' };
+        const failed = { value: null, pending: false, error: unreadable(200) };
         expect(fresh.customizations(SCOPE)).toStrictEqual(failed);
         expect(fresh.customizationText(SCOPE, 'p')).toStrictEqual(failed);
     });

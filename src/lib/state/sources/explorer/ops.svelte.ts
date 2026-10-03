@@ -1,6 +1,7 @@
 // Layer 2, client state. The Files view's file operations: the clipboard Cut and Copy fill and
 // Paste empties, the file Select for Compare holds, and the calls that post one operation to
-// /api/ops, read what it answered and leave the page as the operation left the disk.
+// /api/ops, read what it answered and leave the page as the operation left the disk. The Search
+// view's replace is posted here too, as the operation `replace`.
 //
 // What an answer changes on the page is done here and not in the view, because it reaches past the
 // view that asked: the listings of the folders the operation touched are marked to be read again,
@@ -45,7 +46,7 @@ import {
     type FoldersAdded,
     type PickRefusal
 } from './acts/folders.ts';
-import { undoneMoves, type FileRecord } from './acts/undo.ts';
+import { replacedPlaces, undoneMoves, type FileRecord } from './acts/undo.ts';
 import { nameOf } from './file-type.ts';
 import { patchedFilesView } from './view/files-view.ts';
 import {
@@ -89,10 +90,14 @@ export type ExplorerLayout = {
     showFolderInFiles: (path: string, root?: string) => string;
 };
 
-/** The source editors as the explorer uses them: whether one holds unsaved text, and its file. */
+/**
+ * The source editors as the explorer uses them: whether one holds unsaved text, its file, and
+ * reading its file again.
+ */
 export type ExplorerSource = {
     sourceDirty: (id: string) => boolean;
     sourceDraft: (id: string) => { file: string };
+    reloadSource: (id: string) => Promise<void>;
 };
 
 /** What Open Folder came to: the panel's refusal, or where the folder went. */
@@ -109,6 +114,11 @@ export type ExplorerStore = {
     /** The file Select for Compare holds, or null. */
     compareFile: () => OpsPlace | null;
     selectForCompare: (file: OpsPlace | null) => void;
+    /**
+     * Post a replace of the Search view and read the answer. A clean source tab over a file the
+     * replace wrote reads the file again, and the folders of those files are listed again.
+     */
+    replace: (request: Extract<OpsRequest, { op: 'replace' }>) => Promise<Outcome>;
     /**
      * Whether an open source tab holds text of the file, or of a file under the folder, not saved.
      */
@@ -242,6 +252,38 @@ export function createExplorer(
             const file = source.sourceDraft(tab.id).file;
             return file === own || (folder && file.startsWith(`${own}/`));
         });
+    }
+
+    /** The place a replace names a file by: its root's key, a slash, and its path. */
+    function placeOfName(name: string): OpsPlace | null {
+        const at = name.indexOf('/');
+        return at < 0 ? null : { root: name.slice(0, at), path: name.slice(at + 1) };
+    }
+
+    /** Every clean source tab over one of the places reads its file again. */
+    function reloadClean(places: OpsPlace[]): void {
+        const wanted = new Set(places.map((one) => `${one.root}/${one.path}`));
+        for (const tab of layout.tabs()) {
+            if (tab.view !== 'source' || source.sourceDirty(tab.id)) continue;
+            if (wanted.has(source.sourceDraft(tab.id).file)) void source.reloadSource(tab.id);
+        }
+    }
+
+    /** What the page does for files that were written in place: tabs read again, folders listed. */
+    async function rewritten(places: OpsPlace[]): Promise<void> {
+        reloadClean(places);
+        await landed(
+            [],
+            places.map((one) => ({ root: one.root, path: parentPath(one.path) })),
+            []
+        );
+    }
+
+    async function replace(request: Extract<OpsRequest, { op: 'replace' }>): Promise<Outcome> {
+        const outcome = await send(request);
+        const names = outcome.ok ? outcome.paths : (outcome.done ?? []);
+        await rewritten(names.flatMap((one) => placeOfName(one) ?? []));
+        return outcome;
     }
 
     /** Post one request and read the answer. */
@@ -498,6 +540,7 @@ export function createExplorer(
         if (answer.ok && answer.changed.length > 0) {
             answeredCount += 1;
             await landed(undoneMoves(record, roots), [], []);
+            await rewritten(replacedPlaces(record, roots));
             fs.invalidate();
         }
         return answer;
@@ -561,6 +604,7 @@ export function createExplorer(
         rename,
         upload,
         undoFile,
+        replace,
         addFolders,
         openFolder
     };
