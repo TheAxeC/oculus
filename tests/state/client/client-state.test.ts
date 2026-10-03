@@ -20,6 +20,7 @@ const STORES: (keyof ClientState)[] = [
     'drag',
     'changes',
     'clock',
+    'commands',
     'selection',
     'terminals',
     'agents',
@@ -108,9 +109,10 @@ describe('the client object', () => {
 });
 
 describe('the copy of the stores a tab provides', () => {
-    /** The stores that read through the query client, in the order the client hands it to them. */
+    /** The stores that read through the query client, in the order STORES lists them. */
     const RECORDED: (keyof ClientState)[] = [
         'changes',
+        'commands',
         'agents',
         'files',
         'fs',
@@ -144,7 +146,7 @@ describe('the copy of the stores a tab provides', () => {
 
     // Revert: in wrap of the tabScope member of state/client/context.ts, answer the original store
     // for one of the ten, or copy a store the list does not hold.
-    it('audit: replaces exactly the ten stores handed the query client and no other', () => {
+    it('audit: replaces exactly the eleven stores handed the query client and no other', () => {
         const client = createClientState();
         const copy = client.tabScope.wrap(client, () => false);
         const replaced = STORES.filter((name) => copy[name] !== client[name]);

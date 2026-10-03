@@ -10,14 +10,16 @@
 // pick's effect in a browser (a tab opened beside, a shell drawn, the clipboard written), which
 // need a DOM and are seen at the look.
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { languageMap } from '../../../../../src/lib/data/helpers/files/languages.ts';
-import { engineDir, loadConfig } from '../../../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
 import { openShell } from '../../../../../src/lib/state/shared/stores/shell.ts';
 import {
     ROW_COPY_PATH,
     ROW_COPY_RELATIVE,
     ROW_FIND,
+    ROW_RUN,
     ROW_REVEAL,
     ROW_TERMINAL,
     rowFacts,
@@ -29,6 +31,7 @@ import {
 } from '../../../../../src/lib/views/sources/files/tree/menu/row-menu.ts';
 import type { MenuItem } from '../../../../../src/lib/ui/menu/menu-items.ts';
 import type { TreeRow } from '../../../../../src/lib/state/sources/fs.ts';
+import type { ProjectCommand } from '../../../../../src/lib/state/sessions/terminal/commands.svelte.ts';
 
 // The one start-and-show path of a shell, watched so a case sees the picker reach it.
 vi.mock('../../../../../src/lib/state/shared/stores/shell.ts', { spy: true });
@@ -240,6 +243,8 @@ describe('what a pick from a row menu runs', () => {
             setSearchState: (id: string, state: unknown) =>
                 calls.push(`search:${id},${JSON.stringify(state)}`),
             copy: (text: string) => calls.push(`copy:${text}`),
+            runCommand: (repo: string, name: string, source: string) =>
+                calls.push(`run:${repo},${name},${source}`),
             say: (note: string) => calls.push(`say:${note}`)
         } as unknown as RowPickDeps;
         return { pick: rowPicker(deps, words), calls };
@@ -314,6 +319,84 @@ describe('what a pick from a row menu runs', () => {
             'openView:search',
             'search:tab-1,{"root":"r","under":"notes"}'
         ]);
+    });
+});
+
+describe('the Run Command items of a repository row', () => {
+    // The tooltip of a command is worded by the real catalog.
+    beforeAll(() => setCatalog(textCatalog(loadConfig(engineDir()).config)));
+
+    const build = { name: 'build', run: 'make build', source: 'file' } as unknown as ProjectCommand;
+    const test = { name: 'test', run: 'make test', source: 'saved' } as unknown as ProjectCommand;
+
+    const nested = (items: MenuItem[]): MenuItem | undefined =>
+        items.find((item) => item.id === ROW_RUN);
+
+    it('audits that a folder and a root with commands offer a Run Command submenu of them, after Find', () => {
+        for (const kind of ['dir', 'root'] as const) {
+            const items = rowMenu(
+                facts(kind, kind === 'root' ? '' : 'notes', { commands: [build, test] }),
+                words
+            );
+            const run = nested(items);
+            expect(run?.label).toBe('@commands.run_menu');
+            expect(run?.items?.map((item) => item.label)).toEqual(['build', 'test']);
+            expect(run?.items?.map((item) => item.id)).toEqual([
+                'run-command:file:build',
+                'run-command:saved:test'
+            ]);
+            const flat = items.map((item) => item.id);
+            expect(flat.indexOf(ROW_RUN)).toBeGreaterThan(flat.indexOf(ROW_FIND));
+        }
+    });
+
+    it('audits that a folder or a root with no commands, and a file, offer no Run Command', () => {
+        expect(nested(rowMenu(facts('dir', 'notes'), words))).toBeUndefined();
+        expect(nested(rowMenu(facts('root', ''), words))).toBeUndefined();
+        expect(nested(rowMenu(facts('dir', 'notes', { commands: [] }), words))).toBeUndefined();
+        expect(
+            nested(rowMenu(facts('file', 'a.md', { commands: [build] }), words))
+        ).toBeUndefined();
+    });
+
+    it('audits that a pick runs the command of the repository whose absolute path the row has', () => {
+        const calls: string[] = [];
+        const pick = rowPicker(
+            {
+                dirOf: (key: string) => (key === 'r' ? '/tmp/r' : ''),
+                runCommand: (repo: string, name: string, source: string) =>
+                    calls.push(`run:${repo},${name},${source}`)
+            } as unknown as RowPickDeps,
+            words
+        );
+        const root: TreeRow = {
+            root: 'r',
+            path: '',
+            name: 'r',
+            kind: 'dir',
+            size: 0,
+            depth: 0,
+            open: true
+        };
+        pick(root, 'run-command:file:build');
+        pick({ ...root, path: 'notes', name: 'notes', depth: 1 }, 'run-command:saved:test');
+        pick(root, 'run-command:found:npm: dev');
+        pick(root, 'run-command:build');
+        expect(calls).toEqual([
+            'run:/tmp/r,build,file',
+            'run:/tmp/r/notes,test,saved',
+            'run:/tmp/r,npm: dev,found'
+        ]);
+    });
+
+    it('audits that a name two sources hold is two items, each with its source in its label', () => {
+        const saved = { ...build, run: 'make -j4', source: 'saved' } as unknown as ProjectCommand;
+        const run = nested(rowMenu(facts('root', '', { commands: [build, saved] }), words));
+        expect(run?.items?.map((item) => item.id)).toEqual([
+            'run-command:file:build',
+            'run-command:saved:build'
+        ]);
+        expect(run?.items?.map((item) => item.label)).toEqual(['build (file)', 'build (saved)']);
     });
 });
 

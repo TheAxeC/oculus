@@ -11,7 +11,11 @@
 // to that terminal, so a machine with no terminal open runs no tmux child. While one is open,
 // tmux's own `%session-changed` and its relatives say when the terminal list moved; while none is,
 // a `list-sessions` does, every five seconds while a page is attached to a terminal and once a
-// minute while none is, since nothing but a hand-made session can move the list then.
+// minute while none is, since nothing but a hand-made session can move the list then. A task
+// terminal stays in the list after its line ended, and tmux sends no notice when that happens, so
+// while a task terminal runs the list is read every five seconds whether or not a page is attached
+// and whether or not a control client is open, which is how its result reaches the page within
+// five seconds of the line's end.
 //
 // Reads of the list run side by side and may answer in any order, so every read takes a turn
 // when it starts and its answer is taken only while no read that started later has been taken: an
@@ -61,9 +65,10 @@ export const IDLE_MS = 60000;
 export const POLL_MS = 5000;
 
 /**
- * Milliseconds between two `list-sessions` calls while nothing is attached. Nobody is looking at a
- * terminal then, and the only thing the list can report is a session started outside oculus, so a
- * minute is soon enough and costs a twelfth of the calls the attached rate does.
+ * Milliseconds between two `list-sessions` calls while nothing is attached and no task terminal
+ * runs. Nobody is looking at a terminal then, and the only thing the list can report is a session
+ * started outside oculus, so a minute is soon enough and costs a twelfth of the calls the attached
+ * rate does.
  */
 export const IDLE_POLL_MS = 60000;
 
@@ -282,7 +287,10 @@ export type TerminalsOptions = {
     driver?: TerminalDriver;
     /** How many lines of scrollback an attaching page is given. */
     scrollbackLines?: number;
-    /** Milliseconds between two list polls while a page is attached; 0 turns the poll off. */
+    /**
+     * Milliseconds between two list polls while a page is attached or a task terminal runs; 0 turns
+     * the poll off.
+     */
     poll?: number;
     /** Milliseconds between two list polls while nothing is attached; 0 turns the poll off. */
     idlePoll?: number;
@@ -338,19 +346,29 @@ export class Terminals {
     }
 
     /**
-     * Arm the list poll at the rate the current attachment calls for, and do nothing when it is
-     * already armed at that rate. Called at construction and whenever a page attaches or detaches.
+     * Whether a task terminal's line is running in the last list taken. Its end is a change tmux
+     * does not announce, so it keeps the fast rate and the poll that ignores the control client.
+     */
+    #taskRuns(): boolean {
+        return (this.#terminals ?? []).some((one) => one.task && one.exit === null);
+    }
+
+    /**
+     * Arm the list poll at the rate the current attachment and the last list call for, and do
+     * nothing when it is already armed at that rate. Called at construction, whenever a page
+     * attaches or detaches and whenever the list changes.
      */
     #arm(): void {
-        const wanted = this.#attached.size > 0 ? this.#poll : this.#idlePoll;
+        const wanted = this.#attached.size > 0 || this.#taskRuns() ? this.#poll : this.#idlePoll;
         if (this.#closed || wanted === this.#period) return;
         if (this.#timer !== null) clearInterval(this.#timer);
         this.#timer = null;
         this.#period = wanted;
         if (wanted <= 0) return;
         this.#timer = setInterval(() => {
-            // While a control client is open, tmux itself says when the list moved.
-            if (!this.#driver.live()) this.refresh();
+            // While a control client is open, tmux itself says when the list moved, except for the
+            // end of a task terminal's line.
+            if (!this.#driver.live() || this.#taskRuns()) this.refresh();
         }, wanted);
         const timer = this.#timer;
         if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();
@@ -528,15 +546,24 @@ export class Terminals {
 
     #took(terminals: Terminal[]): void {
         // Everything the reader sets on a terminal is in the signature, so a rename or a new icon
-        // or colour is a change the pages are told of.
+        // or colour is a change the pages are told of, and so is the end of a task terminal's line.
         const signature = JSON.stringify(
-            terminals.map((one) => [one.id, one.name, one.title, one.icon, one.color])
+            terminals.map((one) => [
+                one.id,
+                one.name,
+                one.title,
+                one.icon,
+                one.color,
+                one.task,
+                one.exit
+            ])
         );
         // The first list is taken even when it is empty: it is what turns "not read yet" into a
         // list.
         if (this.#terminals !== null && signature === this.#signature) return;
         this.#signature = signature;
         this.#terminals = terminals;
+        this.#arm();
         for (const listener of this.#listeners) listener();
     }
 

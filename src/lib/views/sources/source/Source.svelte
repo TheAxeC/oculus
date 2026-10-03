@@ -94,6 +94,7 @@
         markWords,
         marksByLine,
         repoOfFile,
+        wholePath,
         type RepoFile
     } from '$lib/state/sources/repositories/file-git';
     import {
@@ -118,7 +119,7 @@
 
     const client = useState();
     const {
-        editorStatus: { asked, forget, publish },
+        editorStatus: { asked, focus, forget, publish },
         fs: { workspaces },
         layout: { keepPreview },
         repositories,
@@ -181,10 +182,16 @@
     /** Whether the file has a rendered half, which is what a Markdown file has. */
     const markdown = $derived(language === 'markdown');
 
+    /** The roots the file routes serve, which name a tab's file by a key and a path. */
+    const served = $derived(workspaces().workspaces.flatMap((workspace) => workspace.roots));
+    /** The absolute path of the file on disk, empty for a tab that shows no file on disk. */
+    const wholeFile = $derived(
+        blocked || head !== undefined ? '' : (wholePath(served, { root, path }) ?? '')
+    );
+
     /** The repository holding the file and its path there, or null for a file in none. */
     const inRepo = $derived.by<RepoFile | null>(() => {
         if (blocked || head !== undefined) return null;
-        const served = workspaces().workspaces.flatMap((workspace) => workspace.roots);
         const repos = gitRoots().filter((one) => {
             const held = gitFor(one);
             return held !== null && held.repository && held.error === null;
@@ -217,6 +224,8 @@
 
     /** Where the editor's caret is, as it last reported. */
     let caret: Caret = $state(START);
+    /** The text selected in the editor, as it last reported. */
+    let selection = $state('');
     /** The editor, which performs the asks that act on its model. */
     let editor: EditorHandle | undefined = $state();
     /** The editor's actions the palette lists, as the editor labelled them once it loaded. */
@@ -240,7 +249,9 @@
             language,
             writable: editing,
             blame: draft.blame ? blameStatus(blameMap.get(caret.line), readAt) : '',
-            actions: editing ? actions : []
+            actions: editing ? actions : [],
+            file: wholeFile,
+            selection: editing ? selection : ''
         });
     });
 
@@ -425,7 +436,14 @@
 {/snippet}
 
 <Pane {title} toolbar={tools} {bar}>
-    <div class="source" data-instance={instance.id} data-root={root} data-path={path}>
+    <!-- Focus in the tab makes it the source a command run from another view reads. -->
+    <div
+        class="source"
+        data-instance={instance.id}
+        data-root={root}
+        data-path={path}
+        onfocusin={() => focus(instance.id)}
+    >
         {#if error !== ''}
             <Empty error message={error} action={blocked ? undefined : again} />
         {:else if !draft.loaded}
@@ -458,6 +476,7 @@
                 {extension}
                 oninput={typed}
                 oncaret={(at: Caret) => (caret = at)}
+                onselect={(text: string) => (selection = text)}
                 onmark={(mark: EditorMark) => openMark(mark.line)}
                 onblame={(row: EditorBlame) => openBlamed(blameMap.get(row.line))}
                 onactions={(offered: EditorAction[]) => (actions = offered)}

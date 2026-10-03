@@ -8,6 +8,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
     colorToken,
+    markOf,
+    resultMark,
     tabMark,
     tabMarkOf
 } from '../../../../src/lib/state/sessions/terminal/terminal-marks.ts';
@@ -41,7 +43,10 @@ function terminal(icon: string, color: string): Terminal {
         pid: 1,
         created: '2026-09-11T08:00:00.000Z',
         attached: true,
-        resumes: null
+        resumes: null,
+        task: false,
+        exit: null,
+        job: null
     };
 }
 
@@ -82,5 +87,42 @@ describe('the mark of a terminal on the strip', () => {
         expect(colorToken('yellow')).toBe('--c-gold');
         expect(colorToken('black')).toBe('--muted');
         expect(colorToken('chartreuse')).toBe(null);
+    });
+});
+
+describe('the result mark of a task terminal', () => {
+    const task = (exit: number | null, icon = 'refresh', color = 'red'): Terminal => ({
+        ...terminal(icon, color),
+        task: true,
+        exit
+    });
+
+    it('is a green check for an exit code of zero and a red cross for any other', () => {
+        expect(resultMark(task(0))).toEqual({ glyph: 'check', token: '--c-green' });
+        expect(resultMark(task(1))).toEqual({ glyph: 'fail', token: '--c-red' });
+        expect(resultMark(task(137))).toEqual({ glyph: 'fail', token: '--c-red' });
+    });
+
+    it('is empty while the line runs and for a terminal that is no task terminal', () => {
+        expect(resultMark(task(null))).toBeNull();
+        expect(resultMark({ task: false, exit: 0 })).toBeNull();
+        expect(resultMark({ task: false, exit: null })).toBeNull();
+    });
+
+    it('replaces the icon and the colour on the strip and on the row once the line ended', () => {
+        expect(tabMark(task(0))).toEqual({ glyph: 'check', token: '--c-green' });
+        expect(tabMark(task(2))).toEqual({ glyph: 'fail', token: '--c-red' });
+        expect(markOf(task(0))).toEqual({ glyph: 'check', token: '--c-green' });
+        expect(markOf(task(2))).toEqual({ glyph: 'fail', token: '--c-red' });
+    });
+
+    it('keeps the icon and the colour of the terminal while its line runs', () => {
+        expect(tabMark(task(null))).toEqual({ glyph: 'refresh', token: '--c-red' });
+        expect(markOf(task(null))).toEqual({ glyph: 'refresh', token: '--c-red' });
+    });
+
+    it('draws the kind glyph and no token for a shell with no icon and no colour', () => {
+        const shell = terminal('', '');
+        expect(markOf(shell)).toEqual({ glyph: 'terminal_shell', token: null });
     });
 });

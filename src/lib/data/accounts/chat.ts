@@ -3,7 +3,7 @@
 //
 // The block has no schema, so a value of any other shape than a name reads as no model at all,
 // which leaves the choice to the CLI rather than guessing at what a mistyped line meant. How an
-// update task is started is the `tasks:` block, in data/helpers/tasks.ts.
+// update task is started is the `tasks:` block, in data/helpers/run/tasks.ts.
 
 import { fields, str } from '../helpers/guards.ts';
 

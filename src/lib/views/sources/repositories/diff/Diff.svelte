@@ -347,7 +347,9 @@
             language: '',
             writable: false,
             blame: '',
-            actions
+            actions,
+            file: '',
+            selection: ''
         });
     });
 

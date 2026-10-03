@@ -307,6 +307,23 @@ describe('the Repositories view', () => {
         expect(body).toContain(`aria-label="${catalog['git.commit_more']}"`);
     });
 
+    it('draws the commands of the repository above its commit box, and no bar for one with none read', () => {
+        const unread = html({ [HUB]: HUB_GIT });
+        // The bar draws nothing until the repository's list has been read.
+        expect(unread).not.toContain('data-command-bar');
+        client.commands.seed(HUB, {
+            commands: [
+                { name: 'build', run: 'make', cwd: HUB, depends_on: [], source: 'file' },
+                { name: 'test', run: 'make test', cwd: HUB, depends_on: [], source: 'saved' }
+            ],
+            findings: []
+        });
+        const body = html({ [HUB]: HUB_GIT });
+        expect(body).toContain('data-command="build"');
+        expect(body).toContain('data-command="test"');
+        expect(body.indexOf('data-command-bar')).toBeLessThan(body.indexOf('data-commit-box'));
+    });
+
     it('audits that holds the commit box 11px in from the left of the row and 12px from its right', () => {
         const source = readFileSync('src/lib/views/sources/repositories/Repo.svelte', 'utf8');
         const at = source.indexOf('    .commit {');

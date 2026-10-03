@@ -22,6 +22,7 @@
     import type { Bookmark } from './rail/rail';
     import DropLayer from './panes/DropLayer.svelte';
     import { createWorkbenchKeys } from './keys/workbench-keys.svelte';
+    import CommandAsk from './commands/CommandAsk.svelte';
     import Palette from './keys/Palette.svelte';
     import FoldedPane from './panes/leaf/FoldedPane.svelte';
     import PageLeaf from './panes/leaf/PageLeaf.svelte';
@@ -31,6 +32,7 @@
     import SplitView from './panes/SplitView.svelte';
     import UpdateTray from './rail/UpdateTray.svelte';
     import KeySheet from '$lib/ui/menu/keys/KeySheet.svelte';
+    import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import { paneAt, resize, type FloatSpec, type Layout } from '$lib/state/workbench/layout';
     import {
@@ -175,6 +177,8 @@
         },
         composeIn: (page) => client.terminals.composeIn(page),
         focusSearchBox: (id, box) => client.search.wantFocus(id, box),
+        runDefault: (which) => void client.commands.runDefault(which),
+        mac: onMac(),
         railPage: (index) => {
             const entry = pages.at(index - 1);
             if (index < 1 || entry === undefined) return false;
@@ -342,6 +346,7 @@
     onupdate={openUpdate}
 />
 <UpdateTray open={updateOpen} onclose={() => (updateOpen = false)} />
+<CommandAsk />
 {#if sheetOpen}
     <KeySheet
         title={t('app.keys.title')}

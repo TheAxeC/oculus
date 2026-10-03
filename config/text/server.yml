@@ -13,6 +13,14 @@ text:
             chat_name_focus: '{0}'
             seed_focus: "Ask about {0}: methods, results, what's next..."
             seed_portfolio: Ask about the portfolio, e.g. "what's blocked?", "summarise a project". Runs on your Claude Code / Max plan; I remember this conversation.
+        commands:
+            capture_unlisted: '{0} is not a terminal oculus lists, so its output is not read'
+            held_file: '{0} is already a command in .oculus/commands.yml of this repository, so it cannot be saved under that name'
+            held_found: '{0} is already a command found in this repository, so it cannot be saved under that name'
+            no_file: 'No value for {0}: open a file in a source tab first'
+            no_selection: 'No value for {0}: select text in a source tab first'
+            nul: 'The value of {0} holds a NUL character, which no environment variable can carry'
+            source: A press names the source of the command it runs, which is file, saved or found
         config_key:
             local: local.yml is the machine's own file and is not written from here
             no_entry: The options catalog has no option of that name in a tracked config file

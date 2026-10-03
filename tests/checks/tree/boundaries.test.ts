@@ -31,22 +31,22 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/guards`, `data/accounts/calendar`, `data/accounts/mail`, `data/accounts/connect`,
 // `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/deck`, `data/helpers/editor`,
 // `data/accounts/leads`, `data/helpers/worktrees`, `data/helpers/files/text-kind`,
-// `data/helpers/files/opens-in-program`, `data/helpers/files/languages`, `data/helpers/tasks` and
-// `data/helpers/search/**` and `data/helpers/finding-text` and `data/helpers/code-themes` join
-// `data/model` in the state row as pure helpers with no reader and no I/O. `data/accounts/calendar`
-// and `data/accounts/mail` are there because how a connector account is named, and how old a thread
-// is, are read by the server that builds the credential file and reads the mailbox and by the page
-// that presses Connect and draws the age on a card; `data/accounts/connect` because the rule a new
-// account's label and a provider's client half are held to is read by the Add form and the setup
-// page before they send and by the server before it writes, and a copy on each side would let them
-// disagree; `data/helpers/deck` because the deck's placement rule has two readers, the Present view
-// and the write that saves a selection, and a copy of it on each side would let them disagree about
-// what a slide key is; `data/accounts/leads` for the same reason, since the statuses that close a
-// lead are read by the Position Leads view, its badge and the ticker on the client, and by the
-// summary the snapshot carries on the server; `data/helpers/worktrees` likewise, the Repositories
-// view naming the path a worktree will take and the write making it;
-// `data/helpers/files/text-kind`, the file browser deciding which tab a file opens in and the
-// source route refusing a save over bytes no editor could have read;
+// `data/helpers/files/opens-in-program`, `data/helpers/files/languages`, `data/helpers/run/tasks`,
+// `data/helpers/run/marker`, `data/helpers/search/**`, `data/helpers/finding-text` and
+// `data/helpers/code-themes` join `data/model` in the state row as pure helpers with no reader and
+// no I/O. `data/accounts/calendar` and `data/accounts/mail` are there because how a connector
+// account is named, and how old a thread is, are read by the server that builds the credential file
+// and reads the mailbox and by the page that presses Connect and draws the age on a card;
+// `data/accounts/connect` because the rule a new account's label and a provider's client half are
+// held to is read by the Add form and the setup page before they send and by the server before it
+// writes, and a copy on each side would let them disagree; `data/helpers/deck` because the deck's
+// placement rule has two readers, the Present view and the write that saves a selection, and a copy
+// of it on each side would let them disagree about what a slide key is; `data/accounts/leads` for
+// the same reason, since the statuses that close a lead are read by the Position Leads view, its
+// badge and the ticker on the client, and by the summary the snapshot carries on the server;
+// `data/helpers/worktrees` likewise, the Repositories view naming the path a worktree will take and
+// the write making it; `data/helpers/files/text-kind`, the file browser deciding which tab a file
+// opens in and the source route refusing a save over bytes no editor could have read;
 // `data/helpers/files/opens-in-program`, the open endpoint opening only a file whose extension
 // `open.program_ext` lists and the cards and the file view offering the control for that name
 // alone; `data/helpers/files/languages`, the reader of the `languages:` map: the server words its
@@ -55,8 +55,10 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `data/helpers/files/nesting`, the reader of the `patterns:` map of file-nesting.yml and the rule
 // that nests a folder's names: the server words its findings from it and the Files view nests the
 // rows it draws through it, so the two cannot disagree about which patterns were dropped;
-// `data/helpers/tasks`, the server building an update task's argv from the `tasks:` block and the
-// update tray asking that block whether the task it is about to start runs unattended;
+// `data/helpers/run/tasks`, the server building an update task's argv from the `tasks:` block and
+// the update tray asking that block whether the task it is about to start runs unattended;
+// `data/helpers/run/marker`, the line a project command's chain prints before each command, which
+// the server writes into the chain's line and the page reads the task's output by;
 // `data/helpers/editor`, the server requiring `editor.paint_limit_kb` at start and the source
 // editor reading the same cap out of the configuration it was sent; and `data/helpers/search/**`,
 // the Search view refusing a query before it sends it and the search route refusing the same query
@@ -152,7 +154,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/languages',
         'data/prose/latex',
         'data/helpers/files/nesting',
-        'data/helpers/tasks',
+        'data/helpers/run/tasks',
+        'data/helpers/run/marker',
         'data/helpers/editor',
         'data/helpers/search/**',
         'data/file-ops',
@@ -315,10 +318,13 @@ const FROZEN = [
 /**
  * The stores a shell file may take out of the client object: the shell's row, by store name. The
  * palette runs the workspace commands through `fs` (switch and save a workspace) and `explorer`
- * (the folder panel), and the key that finds in files or replaces in files asks the Search box of
- * the pane in focus for the cursor through `search`.
+ * (the folder panel), the key that finds in files or replaces in files asks the Search box of the
+ * pane in focus for the cursor through `search`, the default build and test keys in shell/keys run
+ * a project command through `commands`, and CommandAsk.svelte and CommandForm.svelte in
+ * shell/commands draw the question and the form `commands` holds.
  */
 const SHELL_STORES = [
+    'commands',
     'explorer',
     'fs',
     'layout',

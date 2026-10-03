@@ -2,7 +2,8 @@
 // lib/server/machine/pty/routes.ts and this is the two lines that join them. The token it checks is
 // the one ServerContext minted and hooks.server.ts put on the event, as with /api/write.
 
-import { browserRoots } from '$lib/server/files/roots';
+import { browserRoots, repositoryRoots } from '$lib/server/files/roots';
+import { defaultApprovalsPath } from '$lib/server/machine/approvals/approvals';
 import { handleTerminal, handleTerminalList } from '$lib/server/machine/pty/routes';
 import { datasetIds, project, sessionRecord } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
@@ -16,7 +17,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
         recordFor: (id) => sessionRecord(server.hub, id),
         datasetIdsFor: () => datasetIds(server.hub),
         hubFor: () => server.local.hub,
-        rootsFor: () =>
+        servedRootsFor: () =>
             browserRoots({
                 config: locals.config().config,
                 engine: server.engine,
@@ -28,6 +29,15 @@ export const POST: RequestHandler = ({ request, locals }) => {
         // republishes on every save, so the two agree without a restart.
         configFor: () => locals.config().config,
         localFor: () => server.local,
+        // A project command runs in a repository under the roots the file browser serves, after the
+        // approval kept in the file `approvals` of local.yml names.
+        rootsFor: () =>
+            repositoryRoots({
+                config: locals.config().config,
+                engine: server.engine,
+                local: server.local
+            }),
+        approvalsFor: () => server.local.approvals ?? defaultApprovalsPath(),
         refresh: () => server.terminals.refresh()
     });
 };

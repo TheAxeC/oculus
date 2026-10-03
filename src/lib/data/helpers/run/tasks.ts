@@ -11,7 +11,7 @@
 // off, which leaves the prompts to be answered in the terminal rather than guessing at what a
 // mistyped line meant.
 
-import { fields } from './guards.ts';
+import { fields } from '../guards.ts';
 
 /**
  * Whether an update task carries `--dangerously-skip-permissions`. The chat terminal does not read

@@ -4,10 +4,13 @@
     //
     // The card's controls are views/shared/card/CardActions.svelte, shown under the pointer and
     // kept on one line; the project's folder is offered twice among them, shown in Finder through
-    // the host and selected in the Files view of this page. Its ELI5 is
-    // views/shared/card/Clamp.svelte wherever the caller keeps an open state for it; its subtasks
-    // block is drawn only for a project that has subtasks, adding the first being one of the
-    // controls. The card is a positioned box whose content may reach past its edge, so the More
+    // the host and selected in the Files view of this page. A project whose folder is a repository
+    // also has its project commands, drawn below the chips by the commands bar the Repositories
+    // view uses (views/shared/sessions/CommandBar.svelte): five buttons, an overflow menu for the
+    // rest, the control that adds a command and the mark of a file that was not read. The card's
+    // ELI5 is views/shared/card/Clamp.svelte wherever the caller keeps an open state for it; its
+    // subtasks block is drawn only for a project that has subtasks, adding the first being one of
+    // the controls. The card is a positioned box whose content may reach past its edge, so the More
     // menu of its controls is not cut off at the foot of a short card.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -17,6 +20,7 @@
     import CardDetails from './CardDetails.svelte';
     import CardLinks from './CardLinks.svelte';
     import CardSessions from './CardSessions.svelte';
+    import CommandBar from '../sessions/CommandBar.svelte';
     import Clamp from './Clamp.svelte';
     import Subtasks from '../forms/Subtasks.svelte';
     import { codeLabel, deadline, deckSlideOf, openDocument } from './card';
@@ -33,6 +37,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { chipGlyphName, chipLabel, statusTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
+    import { absoluteOf } from '$lib/state/sources/explorer/view/place';
 
     const client = useState();
 
@@ -40,6 +45,7 @@
         entities: { portfolio },
         layout: { openBeside, openView, showFolderInFiles },
         selection: { select },
+        selectors: { gitRoots, hubRoot },
         terminals: { showTerminal, startChat },
         ui: { setInstanceState },
         writes: { openFolder, writeManifest }
@@ -109,6 +115,12 @@
                   snapshot.entities.projects
               )
     );
+    /** The project's folder when the `git` channel carries it as a repository, else ''. */
+    const repo = $derived.by((): string => {
+        const folder = item.project.folder;
+        const whole = folder.startsWith('/') ? folder : absoluteOf(hubRoot(), folder);
+        return whole !== '' && gitRoots().includes(whole) ? whole : '';
+    });
     const actions = $derived.by((): CardAction[] => {
         const rows: CardAction[] = [];
         if (!item.project.ghost) {
@@ -347,6 +359,9 @@
         {#if wait !== null}
             <p class="waiting {wait.kind}">{wait.text}</p>
         {/if}
+        {#if repo !== ''}
+            <div class="commands"><CommandBar {repo} /></div>
+        {/if}
         <CardLinks {item} />
         <CardSessions {item} />
         {#if item.project.ghost}
@@ -429,6 +444,10 @@
         gap: 4px;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
+    }
+
+    .commands {
+        margin-top: 6px;
     }
 
     .eli5 {

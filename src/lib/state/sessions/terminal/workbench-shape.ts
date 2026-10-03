@@ -1,6 +1,6 @@
 // Layer 2, client state. What the terminals store needs of the workbench, handed in by
 // state/client/context.ts: the tabs of every page as the layout holds them and the calls that
-// change them. The store in state/sessions/terminals.svelte.ts is the only reader.
+// change them. The store in state/sessions/terminals.svelte.ts and terminal-lists.ts read it.
 
 import type { TerminalTabState } from './terminal-tabs.ts';
 

@@ -21,6 +21,17 @@ export const terminalShape = z.object({
     created: z.string(),
     attached: z.boolean(),
     resumes: z.object({ tool: z.enum(['claude', 'codex']), id: z.string() }).nullable(),
+    task: z.boolean(),
+    exit: z.number().nullable(),
+    job: z
+        .object({
+            repo: z.string(),
+            name: z.string(),
+            source: z.enum(['file', 'saved', 'found']).optional(),
+            token: z.string().optional(),
+            chain: z.array(z.object({ name: z.string(), cwd: z.string() })).optional()
+        })
+        .nullable(),
     foreign: z.boolean().optional()
 }) satisfies z.ZodType<Terminal>;
 

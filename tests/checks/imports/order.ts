@@ -78,7 +78,7 @@ export const ORDER: Record<string, string[]> = {
         'ui/display',
         'ui'
     ],
-    shell: ['shell', 'shell/rail', 'shell/status', 'shell/panes', 'shell/keys'],
+    shell: ['shell', 'shell/rail', 'shell/status', 'shell/panes', 'shell/keys', 'shell/commands'],
     views: [
         'views/academic',
         'views/boards',

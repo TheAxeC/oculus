@@ -55,7 +55,7 @@ export function headTabState(root: string, path: string, stage: HeadStage): Head
 export type TabFile = { root: string; path: string };
 
 /** The whole path of a tab's file, or null for a key no served root has. */
-function wholePath(served: readonly ServedRoot[], file: TabFile): string | null {
+export function wholePath(served: readonly ServedRoot[], file: TabFile): string | null {
     const dir = served.find((root) => root.key === file.root)?.dir;
     if (dir === undefined) return null;
     const path = file.path.split('/').filter(Boolean).join('/');

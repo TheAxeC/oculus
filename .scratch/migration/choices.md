@@ -997,6 +997,34 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z323 (2026-10-03, D17's look): a task terminal's row title
+
+- Chosen: a task terminal's row in the Terminal tab's list is titled by the project command it ran, as its tab is, a title the reader gave still winning.
+- Not chosen: the process tmux reports, which reads `cd` for every task line.
+
+Where it applies: D17. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z322 (2026-10-03, D17's look): a run's source tab
+
+- Chosen: a command run from a button in another view (the bar, the card, the Files menu) reads its placeholders from the source tab on screen, or else from the source tab whose editor had the focus last, as VS Code's `${file}` reads the last active editor; the default keys keep the active source tab.
+- Not chosen: the active tab alone, under which a press on the bar always made the Repositories view active and refused every placeholder but `${workspaceFolder}`, the lazy option; the last-published tab, which a tab merely mounting would take.
+
+Where it applies: D17. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z321 (2026-10-03, D17's landing, the merge with D32): command refusals in the server's words
+
+- Chosen: the refusals of the terminal route's `command`, `rerun`, `restart` and `capture` actions reach the reader as the server's own sentence (the missing selection, the missing file, a cycle, an unknown command), narrowing Z265 as Z287 did.
+- Not chosen: Z265 as it stands, which says "The server refused the request (HTTP 400)" for a missing selection; a catalog word per refusal on the page, which repeats the server's catalog.
+
+Where it applies: D17. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z320 (2026-10-03, D17's placeholders at landing): the placeholder form
+
+- Chosen: each placeholder becomes `${OCULUS_ARG_<n>+"$OCULUS_ARG_<n>"}` in the run line, its value set in the task's environment, in place of Z305's literal `"$OCULUS_ARG_<n>"`, which closes a run line's own double quotes and splits and globs the value there; a line that evaluates text itself (`eval`, `sh -c`, `$((...))` in bash) still evaluates the value.
+- Not chosen: the literal `"$OCULUS_ARG_<n>"`, which splits a value written inside double quotes; refusing a placeholder inside double quotes, which brings back the check Z305 removed.
+
+Where it applies: D17. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z319 (2026-10-03, S4's look): the two defects of the Settings editors
 
 - Chosen: D25 widened, the step that adds its controls to the Settings editors: Save of an emptied key/value family of single values ends its draft once the file holds what was sent, its cause found at /spec; Undo of a `config-value` write gives back the lines the write replaced, the file's alignment included.

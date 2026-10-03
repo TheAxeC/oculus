@@ -57,6 +57,8 @@ function driver(): {
     screen(text: string): void;
     cursor(answer: string | Error): void;
     list(answer: string | Error): void;
+    /** Whether a control client is open, which is when tmux says itself that the list moved. */
+    control(open: boolean): void;
 } {
     const calls: string[][] = [];
     let output: (id: string, bytes: Buffer) => void = noop;
@@ -65,6 +67,7 @@ function driver(): {
     // The pane the one-line screen above is: one row high, the cursor at its start.
     let cursor: string | Error = '0 0 1\n';
     let list: string | Error = LIST;
+    let controlled = false;
     return {
         calls,
         emit: (id, bytes) => output(id, bytes),
@@ -72,6 +75,7 @@ function driver(): {
         screen: (text) => (screen = text),
         cursor: (answer) => (cursor = answer),
         list: (answer) => (list = answer),
+        control: (open) => (controlled = open),
         driver: {
             run(args: string[]): Promise<string> {
                 calls.push(args);
@@ -93,7 +97,7 @@ function driver(): {
             attached(next: string[]): void {
                 ids = [...next];
             },
-            live: () => false,
+            live: () => controlled,
             serverRuns: () => Promise.resolve(false),
             close: noop
         }
@@ -367,6 +371,90 @@ describe('the list poll', () => {
             const after = lists(record.calls);
             await vi.advanceTimersByTimeAsync(POLL_MS);
             expect(lists(record.calls)).toBe(after);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});
+
+/** The list row of a task terminal, running when `exit` is null and ended with that status else. */
+function taskRow(exit: number | null): string {
+    const job = JSON.stringify({ repo: '/tmp', name: 'build' });
+    return `${[
+        SESSION,
+        '1757500000',
+        '0',
+        'make',
+        '4242',
+        '/tmp',
+        'build',
+        '',
+        '',
+        '',
+        '',
+        job,
+        exit === null ? '0' : '1',
+        exit === null ? '' : String(exit),
+        '4242'
+    ].join('\t')}\n`;
+}
+
+describe('the list poll while a task terminal runs', () => {
+    it('runs at the fast rate with no page attached, and at the slow rate once none runs', async () => {
+        const lists = (calls: string[][]): number =>
+            calls.filter((args) => args[0] === 'list-sessions').length;
+        vi.useFakeTimers();
+        try {
+            const record = driver();
+            record.list(taskRow(null));
+            const hub = new Hub();
+            const held = new Terminals(hub, { driver: record.driver });
+            open.push(held);
+            let moved = 0;
+            held.onChange(() => (moved += 1));
+            await vi.advanceTimersByTimeAsync(0);
+            expect(held.list()?.[0]).toMatchObject({ task: true, exit: null });
+
+            // No page is attached and a task terminal runs: the fast rate reads the list.
+            const first = lists(record.calls);
+            await vi.advanceTimersByTimeAsync(POLL_MS);
+            expect(lists(record.calls)).toBe(first + 1);
+
+            // A control client open does not stop it: tmux sends no notice when a line ends.
+            record.control(true);
+            await vi.advanceTimersByTimeAsync(POLL_MS);
+            expect(lists(record.calls)).toBe(first + 2);
+
+            // The line ended: the next read tells the pages, and the slow rate follows.
+            record.list(taskRow(1));
+            const before = moved;
+            await vi.advanceTimersByTimeAsync(POLL_MS);
+            expect(held.list()?.[0]).toMatchObject({ task: true, exit: 1 });
+            expect(moved).toBe(before + 1);
+            record.control(false);
+            const ended = lists(record.calls);
+            await vi.advanceTimersByTimeAsync(POLL_MS);
+            expect(lists(record.calls)).toBe(ended);
+            await vi.advanceTimersByTimeAsync(IDLE_POLL_MS - POLL_MS);
+            expect(lists(record.calls)).toBe(ended + 1);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('stays at the slow rate for a list with no task terminal', async () => {
+        const lists = (calls: string[][]): number =>
+            calls.filter((args) => args[0] === 'list-sessions').length;
+        vi.useFakeTimers();
+        try {
+            const record = driver();
+            const hub = new Hub();
+            const held = new Terminals(hub, { driver: record.driver });
+            open.push(held);
+            await vi.advanceTimersByTimeAsync(0);
+            const idle = lists(record.calls);
+            await vi.advanceTimersByTimeAsync(POLL_MS * 3);
+            expect(lists(record.calls)).toBe(idle);
         } finally {
             vi.useRealTimers();
         }

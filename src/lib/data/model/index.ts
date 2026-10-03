@@ -467,6 +467,7 @@ export type {
     Terminal,
     TerminalColor,
     TerminalInput,
+    TerminalJob,
     TerminalKind,
     TerminalResize,
     TerminalResume,
@@ -497,3 +498,14 @@ export type {
 
 export type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from './model-search.ts';
 export type { ProcessesPayload, ProcessRow } from './model-processes.ts';
+export type {
+    ChainLine,
+    CommandContext,
+    CommandDefault,
+    CommandDiagnostic,
+    CommandFinding,
+    CommandSeverity,
+    CommandSource,
+    CommandsAnswer,
+    ProjectCommand
+} from './model-sessions.ts';

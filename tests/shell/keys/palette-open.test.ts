@@ -88,7 +88,9 @@ describe('an editor action chosen in the palette', () => {
             language: 'python',
             writable: true,
             blame: '',
-            actions: []
+            actions: [],
+            file: '/work/a.py',
+            selection: ''
         });
         const before = viewsOf(layout());
         const item: PaletteItem = {

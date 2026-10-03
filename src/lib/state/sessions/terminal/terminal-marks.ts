@@ -1,6 +1,8 @@
 // Layer 2, client state. How a terminal is marked: the icon and the colour its reader gave it, or
-// its kind's own glyph and the default look. The terminal's row, its bar title and the tab strip's
-// tab of a Terminal tab all draw the mark from these rules, so one terminal reads the same in each.
+// its kind's own glyph and the default look; a task terminal whose line ended is marked by its
+// result instead, a check in green for exit 0 and a cross in red for any other status. The
+// terminal's row, its bar title and the tab strip's tab of a Terminal tab all draw the mark from
+// these rules, so one terminal reads the same in each.
 
 import { TERMINAL_COLORS, type Terminal, type TerminalColor } from '../../../data/model/index.ts';
 import { hasGlyph, t } from '../../shared/words/text.ts';
@@ -38,15 +40,45 @@ export function markGlyph(kind: Terminal['kind'], icon: string): string {
 }
 
 /**
- * What the strip's tab of a Terminal tab is drawn with, given the terminal the tab shows: the
- * icon it was given and the token of its colour. A terminal with neither (or none shown) gives
- * nothing, and the tab keeps the view's own glyph and the default colour.
+ * The result a task terminal shows once its line ended, or null for a terminal that is no task
+ * terminal or whose line is still running.
  */
-export function tabMark(shown: Pick<Terminal, 'icon' | 'color'> | null): {
+export function resultMark(held: Pick<Terminal, 'task' | 'exit'>): {
+    glyph: string;
+    token: string;
+} | null {
+    if (!held.task || held.exit === null) return null;
+    return held.exit === 0
+        ? { glyph: t('commands.ok_glyph'), token: '--c-green' }
+        : { glyph: t('commands.failed_glyph'), token: '--c-red' };
+}
+
+/** The glyph and colour token a terminal's row and bar title are drawn with. */
+export function markOf(held: Pick<Terminal, 'kind' | 'icon' | 'color' | 'task' | 'exit'>): {
+    glyph: string;
+    token: string | null;
+} {
+    return (
+        resultMark(held) ?? {
+            glyph: markGlyph(held.kind, held.icon),
+            token: colorToken(held.color)
+        }
+    );
+}
+
+/**
+ * What the strip's tab of a Terminal tab is drawn with, given the terminal the tab shows: the
+ * icon it was given and the token of its colour, or the result of a task terminal whose line
+ * ended. A terminal with neither (or none shown) gives nothing, and the tab keeps the view's own
+ * glyph and the default colour.
+ */
+export function tabMark(shown: Pick<Terminal, 'icon' | 'color' | 'task' | 'exit'> | null): {
     glyph?: string;
     token?: string;
 } {
     if (shown === null) return {};
+    const result = resultMark(shown);
+    if (result !== null) return result;
     const token = colorToken(shown.color);
     return {
         ...(shown.icon !== '' && hasGlyph(shown.icon) ? { glyph: shown.icon } : {}),

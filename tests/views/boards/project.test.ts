@@ -20,7 +20,7 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs, t } from '../../../src/lib/state/shared/words/text.ts';
 import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
-import { area, payload, record, workspace } from '../../fixtures/sessions-fixture.ts';
+import { area, git, payload, record, workspace } from '../../fixtures/sessions-fixture.ts';
 import type {
     Id,
     PresentSlide,
@@ -163,6 +163,65 @@ function html(id: string, state: Record<string, unknown> = {}): string {
     const instance: Instance = { id: INSTANCE, view: 'project', state: { id } };
     return render(Project, { context: clientContext(client), props: { instance } }).body;
 }
+
+describe('the commands of a project whose folder is a repository', () => {
+    const LISTED = {
+        commands: [
+            { name: 'build', run: 'make', cwd: FOLDER, depends_on: [], source: 'file' },
+            { name: 'test', run: 'make test', cwd: FOLDER, depends_on: [], source: 'file' }
+        ],
+        findings: []
+    };
+
+    /** The tab with the `git` channel naming these folders as repositories. */
+    function withRepos(repos: string[]): string {
+        receive({
+            channel: 'git',
+            version: 1,
+            payload: Object.fromEntries(repos.map((one) => [one, git()]))
+        });
+        client.commands.seed(FOLDER, LISTED as never);
+        return html('alpha');
+    }
+
+    it('draws the command bar on the card, one button for each command', () => {
+        const body = withRepos([FOLDER]);
+        expect(body).toContain('data-command-bar');
+        expect(body).toContain('data-command="build"');
+        expect(body).toContain('data-command="test"');
+        expect(body).toContain('data-command-add');
+    });
+
+    it('draws five buttons and the overflow menu for seven commands, as the bar does elsewhere', () => {
+        const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+        receive({
+            channel: 'git',
+            version: 1,
+            payload: { [FOLDER]: git() }
+        });
+        client.commands.seed(FOLDER, {
+            commands: names.map((name) => ({
+                name,
+                run: `make ${name}`,
+                cwd: FOLDER,
+                depends_on: [],
+                source: 'file'
+            })),
+            findings: []
+        } as never);
+        const body = html('alpha');
+        expect(body.split('data-command="').length - 1).toBe(5);
+        expect(body).toContain('data-command-more');
+        // The bar holds five buttons, so the sixth command is reached from the overflow menu.
+        expect(body).not.toContain('data-command="f"');
+    });
+
+    it('draws none when the folder is no repository the git channel carries', () => {
+        const body = withRepos(['/hub/projects/manuscripts/other']);
+        // A folder the git channel does not carry has no repository to run a command in.
+        expect(body).not.toContain('data-command-bar');
+    });
+});
 
 describe('a project as its own tab', () => {
     let body: string;

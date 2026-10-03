@@ -9,6 +9,7 @@ import { z } from 'zod';
 import type { UsageAccountConfig, UsageRefresher } from '../../../data/model/index.ts';
 import { CADENCE_WORDS, cadenceShape, usageAccountLabel } from '../../../data/sources/config.ts';
 import { sendKeysArgs, startArgs, USAGE_PREFIX, type Runner } from '../pty/sessions.ts';
+import { shellWord } from '../pty/shell-word.ts';
 import { run } from '../pty/tmux.ts';
 import { claudeUsageFetchedAt, isDefaultClaudeDir } from './accounts.ts';
 
@@ -60,10 +61,6 @@ export type UsageRefreshWatcher = {
 
 function iso(now: () => number): string {
     return new Date(now()).toISOString();
-}
-
-function shellWord(value: string): string {
-    return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
 
 /**

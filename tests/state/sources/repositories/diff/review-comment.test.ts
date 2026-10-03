@@ -25,7 +25,7 @@ import {
     type SendDeps
 } from '../../../../../src/lib/state/sources/repositories/review-comment.ts';
 import { STEER_MAX } from '../../../../../src/lib/data/model/index.ts';
-import type { TerminalAnswer } from '../../../../../src/lib/state/sessions/terminal/pty-io.ts';
+import type { TerminalAnswer } from '../../../../../src/lib/state/sessions/terminal/pty/pty-io.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
 

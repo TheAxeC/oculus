@@ -19,7 +19,9 @@ const SAID: EditorStatus = {
     language: 'python',
     writable: true,
     blame: '',
-    actions: []
+    actions: [],
+    file: '/work/a.py',
+    selection: ''
 };
 
 describe('the editor status store', () => {

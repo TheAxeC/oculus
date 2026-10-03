@@ -32,6 +32,7 @@ import { createDocs, type DocsStore } from '../system/docs.svelte.ts';
 import { createDrag, type DragStore } from '../workbench/drag.svelte.ts';
 import {
     createEditorStatus,
+    sourceOnScreen,
     type EditorStatusStore
 } from '../workbench/navigation/editor-status.svelte.ts';
 import { createEntities, type EntitiesStore } from './entities.svelte.ts';
@@ -91,6 +92,7 @@ import {
     terminalLabel,
     type TerminalsStore
 } from '../sessions/terminals.svelte.ts';
+import { createCommands, type CommandsStore } from '../sessions/terminal/commands.svelte.ts';
 import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
 import { createTranscripts, type TranscriptsStore } from '../sessions/transcript.svelte.ts';
 import { createUi, type UiStore } from '../workbench/ui.svelte.ts';
@@ -129,6 +131,8 @@ export type ClientState = {
     changes: ChangesStore;
     selection: SelectionStore;
     terminals: TerminalsStore;
+    /** The project commands of the repositories, and the questions a run asks. */
+    commands: CommandsStore;
     /** The composer's choices, the Customizations section's rows, and a session's export. */
     agents: AgentsStore;
     files: FilesStore;
@@ -391,6 +395,21 @@ export function createClientState(): ClientState {
     const paletteSource = createPaletteSource(entities, feeds);
     const editorStatus = createEditorStatus();
     const notices = createNotices(ui);
+    const commands = withQueries(
+        'commands',
+        createCommands({
+            entities,
+            writes,
+            queries,
+            notices,
+            terminals,
+            onScreen: () => sourceOnScreen(layout.activeInstance(), editorStatus.statusOf),
+            focusedSource: () => editorStatus.focused(),
+            gitRoots: selectors.gitRoots,
+            served: () => fs.workspaces().workspaces.flatMap((workspace) => workspace.roots),
+            openFile: (repo, path, line) => repositories.openFile(repo, path, line)
+        })
+    );
     // The notifications the channels and the writes post: a session that starts waiting, a job
     // that ends, an update task whose results land, each heard once per message the entities store
     // keeps, and a write that does not land, heard from the writes store.
@@ -432,6 +451,7 @@ export function createClientState(): ClientState {
         changes,
         selection,
         terminals,
+        commands,
         agents,
         files,
         fs,

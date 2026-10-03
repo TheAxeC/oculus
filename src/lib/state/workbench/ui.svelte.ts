@@ -19,7 +19,7 @@
 // saves, leaving the appearance as this tab has it (`takeSavedInstances`).
 
 import { z } from 'zod';
-import type { BusyTerminal } from '../sessions/terminal/pty-io.ts';
+import type { BusyTerminal } from '../sessions/terminal/pty/pty-io.ts';
 import { mapOfShape, mapShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import { followKey } from '../shared/stores/storage-events.ts';
 import {

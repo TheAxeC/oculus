@@ -31,6 +31,8 @@ import {
     type KeyWords
 } from '$lib/state/sources/explorer/acts/keys';
 import { sourceTabState } from '$lib/state/sessions/source.svelte';
+import type { CommandSource, ProjectCommand } from '$lib/state/sessions/terminal/commands.svelte';
+import { commandKey, commandLabel, commandTip, keyOf } from '../../../../shared/sessions/commands';
 import type { ClientState } from '$lib/state/client/context';
 import type { ExplorerStore } from '$lib/state/sources/explorer/ops.svelte';
 import { fileUrl } from '../../../../shared/links/file-url';
@@ -63,6 +65,10 @@ export const ROW_ADD_ROOT = 'add-root';
 export const ROW_REMOVE_ROOT = 'remove-root';
 export const ROW_PREVIEW = 'preview';
 export const ROW_LATEX = 'latex';
+export const ROW_RUN = 'run-command';
+
+/** The id of one command in the Run Command submenu, ahead of its source and its name. */
+const RUN_PREFIX = 'run-command:';
 
 /**
  * What the menu is built from: a root's own line, a folder or a file, its path under its root,
@@ -88,6 +94,8 @@ export type RowMenuFacts = {
     latex?: boolean;
     /** The key hint of an item by its id; none when omitted. */
     hints?: Readonly<Record<string, string>>;
+    /** The project commands of the repository a root or a folder row is; none when omitted. */
+    commands?: readonly ProjectCommand[];
 };
 
 /**
@@ -161,7 +169,8 @@ export function rowFacts(
     languages: LanguageMap,
     selection: MenuSelection = { size: 1, files: row.kind === 'file' ? 1 : 0 },
     hints: Readonly<Record<string, string>> = {},
-    entriesOf: HeldEntries = () => null
+    entriesOf: HeldEntries = () => null,
+    commands: readonly ProjectCommand[] = []
 ): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
@@ -183,7 +192,8 @@ export function rowFacts(
                 : (entriesOf(row.root, row.path) ?? []).some(
                       (one) => one.kind === 'file' && isTex(one.name)
                   ),
-        hints
+        hints,
+        commands
     };
 }
 
@@ -194,11 +204,13 @@ export function rowFacts(
  * group after Reveal in Finder and the terminal, on a `.tex` file and on a folder or root whose
  * held listing has one. A folder: New File... and
  * New Folder..., Reveal in Finder and its shell, Find in Folder..., Cut, Copy and Paste, Upload...,
- * the two copies, then Rename... and Delete. A root: those of a folder without Cut, Copy, Rename...
- * and Delete, and Add Folder to Workspace... with Remove Folder from Workspace on a root the reader
- * added. Compare with Selected needs a file selected for compare. With two or more rows selected
- * the menu is the one for the selection: Compare Selected for exactly two files, Cut and Copy, the
- * two copies of every path, and Delete. Each item carries the key hint its id has in `hints`.
+ * the two copies, then Rename... and Delete. A folder or root that is a repository with project
+ * commands also offers Run Command, a submenu of them. A root: those of a folder without Cut, Copy,
+ * Rename... and Delete, and Add Folder to Workspace... with Remove Folder from Workspace on a root
+ * the reader added. Compare with Selected needs a file selected for compare. With two or more rows
+ * selected the menu is the one for the selection: Compare Selected for exactly two files, Cut and
+ * Copy, the two copies of every path, and Delete. Each item carries the key hint its id has in
+ * `hints`.
  */
 export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string): MenuItem => {
@@ -248,6 +260,20 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         item(ROW_NEW_FOLDER, t('files.menu_new_folder'))
     ];
     const find = [item(ROW_FIND, t('files.menu_find'))];
+    const run: MenuItem[] =
+        (facts.commands ?? []).length === 0
+            ? []
+            : [
+                  {
+                      id: ROW_RUN,
+                      label: t('commands.run_menu'),
+                      items: (facts.commands ?? []).map((command) => ({
+                          id: `${RUN_PREFIX}${commandKey(command)}`,
+                          label: commandLabel(command, facts.commands ?? []),
+                          title: commandTip(command)
+                      }))
+                  }
+              ];
     const upload = [item(ROW_UPLOAD, t('files.menu_upload'))];
     if (facts.kind === 'dir') {
         return grouped([
@@ -255,6 +281,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
             [reveal, terminal],
             latex,
             find,
+            run,
             [...cutCopy, paste],
             upload,
             copies,
@@ -266,6 +293,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         [reveal, terminal],
         latex,
         find,
+        run,
         [paste],
         upload,
         copies,
@@ -353,6 +381,8 @@ export type RowPickDeps = RowStores & {
     say: (note: string) => void;
     addRoot: () => void;
     removeRoot: (root: string) => void;
+    /** Run the project command of that name and source in the repository at an absolute folder. */
+    runCommand: (repo: string, name: string, source: CommandSource) => void;
     /**
      * The rows a pick on a row acts on: the selection when the row is in it, else the row alone.
      * Omitted, the row alone.
@@ -425,7 +455,10 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         else if (pick === ROW_ADD_ROOT) deps.addRoot();
         else if (pick === ROW_REMOVE_ROOT) deps.removeRoot(row.root);
         else if (pick === ROW_LATEX) void latex(row);
-        else if (pick === ROW_PREVIEW) {
+        else if (pick.startsWith(RUN_PREFIX)) {
+            const command = keyOf(pick.slice(RUN_PREFIX.length));
+            if (command !== null) deps.runCommand(paths.absolute, command.name, command.source);
+        } else if (pick === ROW_PREVIEW) {
             deps.keepPreview(deps.openView('source', sourceTabState(row.root, row.path)));
         }
     };

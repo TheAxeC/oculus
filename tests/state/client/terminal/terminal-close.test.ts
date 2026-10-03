@@ -36,7 +36,7 @@ let reads: string[][] = [];
 let busy: Record<string, { busy: boolean; command: string }> = {};
 let failRead = false;
 
-function terminal(id: string): Terminal {
+function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
     return {
         id,
         name: `name-${id}`,
@@ -49,7 +49,11 @@ function terminal(id: string): Terminal {
         pid: 321,
         created: '2026-09-11T08:00:00.000Z',
         attached: true,
-        resumes: null
+        resumes: null,
+        task: false,
+        exit: null,
+        job: null,
+        ...over
     };
 }
 
@@ -90,12 +94,16 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllGlobals());
 
-function listed(ids: string[]): void {
+function listed(ids: string[], over: Record<string, Partial<Terminal>> = {}): void {
     version += 1;
     client.entities.receive({
         channel: 'sessions',
         version,
-        payload: { records: [], workspaces: [], terminals: ids.map(terminal) }
+        payload: {
+            records: [],
+            workspaces: [],
+            terminals: ids.map((id) => terminal(id, over[id]))
+        }
     });
 }
 
@@ -332,5 +340,40 @@ describe('the busy read a close asks first', () => {
         await settle();
         expect(stops).toEqual([]);
         expect(holds(id)).toBe(true);
+    });
+});
+
+describe('a task terminal', () => {
+    const JOB = { repo: '/x', name: 'build' };
+
+    it('asks nothing about a line that ended, and is stopped when its tab closes', async () => {
+        const id = owning([A]);
+        listed([A], { [A]: { task: true, exit: 1, job: JOB } });
+        busy = { [A]: { busy: true, command: 'make' } };
+        expect(await client.ui.busyTerminals(instances([id]))).toEqual([]);
+        expect(reads).toEqual([]);
+        client.layout.closeInstance(id);
+        await settle();
+        expect(stops).toEqual([A]);
+    });
+
+    it('asks about a line that runs, whatever program the pane names', async () => {
+        const id = owning([A, B]);
+        listed([A, B], { [A]: { task: true, exit: null, job: JOB } });
+        busy = {
+            [A]: { busy: false, command: 'zsh' },
+            [B]: { busy: false, command: 'zsh' }
+        };
+        const found = await client.ui.busyTerminals(instances([id]));
+        expect(found).toEqual([{ id: A, name: `name-${A}`, command: 'zsh' }]);
+    });
+
+    it('asks about the running terminals of a tab that also holds an ended task terminal', async () => {
+        const id = owning([A, B]);
+        listed([A, B], { [A]: { task: true, exit: 0, job: JOB } });
+        busy = { [B]: { busy: true, command: 'npm' } };
+        const found = await client.ui.busyTerminals(instances([id]));
+        expect(found).toEqual([{ id: B, name: `name-${B}`, command: 'npm' }]);
+        expect(reads).toEqual([[B]]);
     });
 });

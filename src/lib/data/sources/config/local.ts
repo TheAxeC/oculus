@@ -63,6 +63,12 @@ export type LocalConfig = {
      */
     history?: string;
     /**
+     * Where the approvals live, `approvals` in the file: the one file of the texts a reader has
+     * approved to run. Absent unless the machine sets it, and the approval check then uses
+     * ~/.oculus/approvals.json.
+     */
+    approvals?: string;
+    /**
      * Absolute or PATH-resolved Claude CLI the update tasks and the chat terminal are started with.
      */
     claudeBin: string;
@@ -110,6 +116,7 @@ export const LOCAL_KEYS = [
     'notes',
     'changes',
     'history',
+    'approvals',
     'claude_bin',
     'open_bin',
     'accounts',
@@ -301,6 +308,7 @@ function applyLocal(
         ['notes', 'notes'],
         ['changes', 'changes'],
         ['history', 'history'],
+        ['approvals', 'approvals'],
         ['calendar_dir', 'calendarDir'],
         ['mail_dir', 'mailDir']
     ] as const) {

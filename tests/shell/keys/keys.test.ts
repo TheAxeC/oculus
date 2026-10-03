@@ -376,3 +376,62 @@ describe('carrying the card under the cursor', () => {
         ).toBe(null);
     });
 });
+
+describe('the default build and test keys', () => {
+    const build = { key: 'B', code: 'KeyB', metaKey: true, shiftKey: true };
+    const test = { key: '\u2020', code: 'KeyT', metaKey: true, altKey: true };
+
+    it('routes Cmd+Shift+B to the default build and Cmd+Alt+T to the default test', () => {
+        expect(press('B', initialKeyState(), 1000, {}, build).action).toEqual({
+            kind: 'command-default',
+            which: 'build'
+        });
+        // Option and T types a dagger on macOS, so the key is read by its code.
+        expect(press('\u2020', initialKeyState(), 1000, {}, test).action).toEqual({
+            kind: 'command-default',
+            which: 'test'
+        });
+    });
+
+    it('takes Ctrl in place of Cmd off macOS, and Cmd not at all there', () => {
+        const off = { mac: false };
+        expect(
+            press('B', initialKeyState(), 1000, off, { ...build, metaKey: false, ctrlKey: true })
+                .action
+        ).toEqual({ kind: 'command-default', which: 'build' });
+        expect(press('B', initialKeyState(), 1000, off, build).action).toBe(null);
+        expect(
+            press(
+                'B',
+                initialKeyState(),
+                1000,
+                { mac: true },
+                { ...build, metaKey: false, ctrlKey: true }
+            ).action
+        ).toBe(null);
+    });
+
+    it('answers while a field is typed in, and under no overlay', () => {
+        expect(press('B', initialKeyState(), 1000, { typing: true }, build).action).toEqual({
+            kind: 'command-default',
+            which: 'build'
+        });
+        for (const held of [{ paletteOpen: true }, { trayOpen: true }, { confirmOpen: true }]) {
+            expect(press('B', initialKeyState(), 1000, held, build).action).toBe(null);
+        }
+    });
+
+    it('leaves the neighbouring chords to the browser and the editor', () => {
+        const neighbours: Partial<KeyEventLike>[] = [
+            { key: 'b', code: 'KeyB', metaKey: true },
+            { key: 'B', code: 'KeyB', shiftKey: true },
+            { key: 'T', code: 'KeyT', metaKey: true, shiftKey: true },
+            { key: 'b', code: 'KeyB', metaKey: true, altKey: true },
+            { key: 'B', code: 'KeyB', metaKey: true, shiftKey: true, altKey: true },
+            { ...build, defaultPrevented: true }
+        ];
+        for (const event of neighbours) {
+            expect(press(event.key ?? '', initialKeyState(), 1000, {}, event).action).toBe(null);
+        }
+    });
+});

@@ -7,12 +7,14 @@
 // opened on, which the pick the menu hands back acts on.
 
 import type { ClientState } from '$lib/state/client/context';
-import { nameOf, shownOf, type FsRoot, type TreeRow } from '$lib/state/sources/fs';
+import type { CommandSource, ProjectCommand } from '$lib/state/sessions/terminal/commands.svelte';
+import { absoluteOf, nameOf, shownOf, type FsRoot, type TreeRow } from '$lib/state/sources/fs';
 import { rowsActed } from '$lib/state/sources/explorer/acts/selection';
 import { confirmDelete } from '$lib/state/sources/explorer/acts/confirm';
 import { diffState } from '$lib/state/sources/repositories/repositories';
 import { DIFF_VIEW } from '$lib/state/sources/repositories/repositories.svelte';
 import { t } from '$lib/state/shared/words/text';
+import type { MenuItem } from '$lib/ui/menu/menu-items';
 import { targetOf } from '../drag';
 import { rowDropper } from '../menu/row-drop';
 import { rootNameIn, rowFacts, rowMenu, rowPicker, rowStores } from '../menu/row-menu';
@@ -56,6 +58,14 @@ export function createPicks(deps: PicksDeps) {
         refused = note;
     };
 
+    /** The absolute folder of a root or folder row that is a repository, else null. */
+    function repoOf(row: TreeRow): string | null {
+        if (row.kind === 'file') return null;
+        const dir = deps.roots()?.find((one) => one.key === row.root)?.dir ?? '';
+        const folder = absoluteOf(dir, row.path);
+        return client.selectors.gitRoots().includes(folder) ? folder : null;
+    }
+
     /** The rows a pick on a row acts on: the selection when the row is in it. */
     const acted = (row: TreeRow): TreeRow[] => rowsActed(view.picked(), deps.rows(), row);
 
@@ -67,6 +77,8 @@ export function createPicks(deps: PicksDeps) {
             say,
             addRoot: deps.addRoot,
             removeRoot: deps.removeRoot,
+            runCommand: (repo: string, name: string, source: CommandSource) =>
+                void client.commands.press(repo, name, source),
             acting: acted
         },
         t
@@ -135,26 +147,44 @@ export function createPicks(deps: PicksDeps) {
         if (target !== null) run(target, pick);
     }
 
-    /** The menu of a row: a right-click on a row outside the selection selects it first. */
+    /**
+     * The menu of a row: a right-click on a row outside the selection selects it first. A row that
+     * is a repository has its list of commands read when its menu opens, not before; the menu is
+     * returned at once, as reactive items that the Run Command submenu joins when the list
+     * arrives, so a repository nobody opens a menu on is never asked for.
+     */
     function menuOf(row: TreeRow, event: MouseEvent) {
         const here = targetOf(row, event);
         target = here;
         if (!deps.isSelected(here)) deps.select(here);
         const group = acted(here);
-        return rowMenu(
-            rowFacts(
-                here,
-                deps.fixed(),
-                deps.addable(),
-                explorer,
-                client.selectors.languages(),
-                { size: group.length, files: group.filter((one) => one.kind === 'file').length },
-                deps.hints,
-                (root: string, path: string) =>
-                    client.fs.heldEntries(root, path, shownOf(view.now()))
-            ),
-            t
-        );
+        const repo = repoOf(here);
+        const built = (commands: readonly ProjectCommand[]): MenuItem[] =>
+            rowMenu(
+                rowFacts(
+                    here,
+                    deps.fixed(),
+                    deps.addable(),
+                    explorer,
+                    client.selectors.languages(),
+                    {
+                        size: group.length,
+                        files: group.filter((one) => one.kind === 'file').length
+                    },
+                    deps.hints,
+                    (root: string, path: string) =>
+                        client.fs.heldEntries(root, path, shownOf(view.now())),
+                    commands
+                ),
+                t
+            );
+        const items: MenuItem[] = $state(built([]));
+        if (repo !== null) {
+            void client.commands.load(repo).then((answer) => {
+                items.splice(0, items.length, ...built(answer.commands));
+            });
+        }
+        return items;
     }
 
     return {

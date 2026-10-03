@@ -256,7 +256,10 @@ describe("the Terminal view's list of terminals", () => {
         created: at,
         pid: 11,
         foreign: false,
-        resumes: null
+        resumes: null,
+        task: false,
+        exit: null,
+        job: null
     };
     const resumed = {
         id: 'd4e5f6-claude',
@@ -270,7 +273,10 @@ describe("the Terminal view's list of terminals", () => {
         created: at,
         pid: 12,
         foreign: false,
-        resumes: { tool: 'claude' as const, id: 'ended-one' }
+        resumes: { tool: 'claude' as const, id: 'ended-one' },
+        task: false,
+        exit: null,
+        job: null
     };
     const started = {
         id: '0a0b0c-codex',
@@ -284,7 +290,10 @@ describe("the Terminal view's list of terminals", () => {
         created: at,
         pid: 13,
         foreign: false,
-        resumes: null
+        resumes: null,
+        task: false,
+        exit: null,
+        job: null
     };
     const idle = {
         id: '0d0e0f-shell',
@@ -298,7 +307,10 @@ describe("the Terminal view's list of terminals", () => {
         created: at,
         pid: 14,
         foreign: false,
-        resumes: null
+        resumes: null,
+        task: false,
+        exit: null,
+        job: null
     };
     const outside = { ...shell, id: 'outside', name: 'work', pid: 15, foreign: true };
     const sessions = [
@@ -344,8 +356,30 @@ describe("the Terminal view's list of terminals", () => {
                 icon: '',
                 color: '',
                 title: 'vim',
-                description: 'oculus'
+                description: 'oculus',
+                task: false,
+                exit: null
             }
+        ]);
+    });
+
+    it('carries whether a terminal is a task terminal and its exit code into the row', () => {
+        const ran = { ...shell, task: true, exit: 2, job: { repo: '/r', name: 'build' } };
+        const running = { ...shell, task: true, exit: null, job: { repo: '/r', name: 'test' } };
+        expect(
+            terminalChoices([ran, running], sessions).map((one) => [one.task, one.exit])
+        ).toEqual([
+            [true, 2],
+            [true, null]
+        ]);
+    });
+
+    it('titles a task terminal by its command, unless the reader gave it a title', () => {
+        const ran = { ...shell, task: true, exit: 1, job: { repo: '/r', name: 'build' } };
+        const renamed = { ...ran, title: 'mine' };
+        expect(terminalChoices([ran, renamed], sessions).map((one) => one.title)).toEqual([
+            'build',
+            'mine'
         ]);
     });
 

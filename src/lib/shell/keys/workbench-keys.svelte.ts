@@ -47,6 +47,10 @@ type Options = {
      * do. It answers whether there was one, so the key is swallowed only when it did something.
      */
     railPage: (index: number) => boolean;
+    /** Run the default build or the default test of the repository holding the file on screen. */
+    runDefault: (which: 'build' | 'test') => void;
+    /** Whether the command modifier is Cmd (macOS) and not Ctrl. */
+    mac: boolean;
 };
 
 export type WorkbenchKeys = {
@@ -119,7 +123,8 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
                 typing: typingIn(event.target),
                 paletteOpen: options.paletteOpen(),
                 trayOpen: options.updateOpen(),
-                confirmOpen: dialogShown()
+                confirmOpen: dialogShown(),
+                mac: options.mac
             },
             keyState,
             Date.now()
@@ -184,6 +189,8 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return activateTab(pane, action.index);
         } else if (action.kind === 'cycle-tab') {
             return cycleTab(pane, action.by);
+        } else if (action.kind === 'command-default') {
+            options.runDefault(action.which);
         } else if (action.kind === 'new-session') {
             clearCursor();
             options.composeIn(pageOf());

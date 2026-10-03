@@ -1,0 +1,53 @@
+# Oculus text owned by the project commands.
+text:
+    commands:
+        add: Add Command...
+        add_tip: Save a command for this repository on this machine
+        approve_ask: Run {0}?
+        approve_in: '{0} (in {1})'
+        approve_yes: Approve and Run
+        default_build: Build
+        default_none: None
+        default_test: Test
+        delete: Delete
+        delete_ask: Delete the command {0}?
+        edit: Edit...
+        failed_glyph: fail
+        field_cwd: Folder
+        field_cwd_help: A folder inside the repository the line runs in. Empty runs it in the repository.
+        field_default: Default for
+        field_depends: Runs after
+        field_depends_help: Names of commands that run first, separated by commas.
+        field_name: Name
+        field_run: Line
+        field_run_help: 'The shell line. ${file}, ${fileDirname}, ${fileBasename}, ${fileBasenameNoExtension}, ${lineNumber}, ${selectedText} and ${workspaceFolder} are filled from the source tab on screen, or else from the source tab focused last.'
+        findings: '{0} not read'
+        form_add: Add a command
+        form_edit: Edit the command
+        manage: Edit or Open
+        more: More
+        named: '{0} ({1})'
+        no_default_build: This repository has no default build command. Give a command the default Build in its form or in .oculus/commands.yml.
+        no_default_test: This repository has no default test command. Give a command the default Test in its form or in .oculus/commands.yml.
+        no_file: Open a file in a source tab to run its repository's command.
+        no_repo: The file in the source tab is in no repository oculus watches.
+        ok_glyph: check
+        open_entry: Open File at Entry
+        refused: The server refused the command.
+        rerun: Rerun
+        rerun_tip: Run the line again in this terminal
+        restart: Restart
+        restart_ask: Stop {0} and run it again?
+        restart_tip: Stop the line if it runs, and run it again
+        run_menu: Run Command
+        save: Save
+        save_needs: A command needs a name and a line.
+        source_file: from .oculus/commands.yml
+        source_found: found in the repository
+        source_saved: saved on this machine
+        tip: '{0} ({1})'
+        unreachable: The server did not answer.
+        unreadable: The server's answer could not be read.
+        word_file: file
+        word_found: found
+        word_saved: saved

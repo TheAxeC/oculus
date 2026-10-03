@@ -173,7 +173,10 @@ function terminal(id: string): Terminal {
         pid: 4242,
         created: '2026-09-10T09:00:00.000Z',
         attached: false,
-        resumes: null
+        resumes: null,
+        task: false,
+        exit: null,
+        job: null
     };
 }
 

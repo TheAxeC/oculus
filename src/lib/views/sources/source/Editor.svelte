@@ -76,6 +76,8 @@
         oninput: (value: string) => void;
         /** Where the caret is now, said on every move. */
         oncaret?: (caret: EditorCaret) => void;
+        /** The selected text on every caret move, empty with no selection. */
+        onselect?: (text: string) => void;
         onmark?: (mark: EditorMark) => void;
         onblame?: (row: EditorBlame) => void;
         /** The editor's actions the palette offers, said once the editor has loaded. */
@@ -96,6 +98,7 @@
         extension,
         oninput,
         oncaret,
+        onselect,
         onmark,
         onblame,
         onactions
@@ -170,6 +173,7 @@
                 {blame}
                 {extension}
                 {oncaret}
+                {onselect}
                 {onmark}
                 {onblame}
                 {onactions}

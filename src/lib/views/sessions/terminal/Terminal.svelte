@@ -89,6 +89,7 @@
         pressKill,
         routePick,
         tabRows,
+        taskStateOf,
         terminalRowMenu,
         terminalTip,
         type PickHandlers
@@ -99,6 +100,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
+        commands: { pressRerun, pressRestart },
         entities: { config },
         layout: { holding, instanceLayoutState, restateInstance, hosts },
         selectors: { sessionsByWorkspace },
@@ -287,7 +289,9 @@
         icon: (which: string) => (iconFor = which),
         clear: (which: string) => void clearOf(which),
         color: (which: string, color: string) => void restyle(which, { color }),
-        join: joinInto
+        join: joinInto,
+        rerun: (which: string) => void pressRerun(which),
+        restart: (which: string) => void pressRestart(which)
     };
 
     /** What a start from the composer does: the terminal joins this tab (terminal-tabs.ts). */
@@ -328,6 +332,9 @@
             kind={terminal?.kind}
             {attachables}
             onsplit={splitOn}
+            task={taskStateOf(terminal)}
+            onrerun={handlers.rerun}
+            onrestart={handlers.restart}
         />
     </Toolbar>
 {/snippet}
@@ -347,7 +354,8 @@
                         shownRow.terminal,
                         others,
                         arming === shownRow.terminal,
-                        t
+                        t,
+                        taskStateOf(shownRow)
                     )}
                 onpick={(pick: string) => routePick(pick, shownRow.terminal, handlers)}
                 onsave={(value: string) => void renamed(shownRow.terminal, value)}
@@ -373,6 +381,8 @@
         onsplit={splitOn}
         armed={arming === id}
         onkill={kill}
+        onrerun={handlers.rerun}
+        onrestart={handlers.restart}
         onrename={rename}
         onicon={(which: string) => (iconFor = which)}
         oncolor={(which: string, color: string) => void restyle(which, { color })}

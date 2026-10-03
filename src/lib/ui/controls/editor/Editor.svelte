@@ -66,6 +66,9 @@
         EditorIndent
     } from './types';
 
+    /** The most characters of selected text handed to `onselect`; a longer selection hands none. */
+    const SELECTED_MAX = 65536;
+
     type Props = {
         text: string;
         /** Oculus's name for the language, which kit/grammars.ts answers the Shiki id of. */
@@ -89,6 +92,8 @@
         breakpoints?: number[];
         onchange?: (text: string, edit: EditorEdit) => void;
         oncaret?: (caret: EditorCaret) => void;
+        /** The selected text on every caret move; empty with none or a selection too long. */
+        onselect?: (text: string) => void;
         /** How far the text is scrolled, 0 at the top and 1 at the bottom. */
         onscroll?: (fraction: number) => void;
         onmark?: (mark: EditorMark) => void;
@@ -122,6 +127,7 @@
         breakpoints = [],
         onchange,
         oncaret,
+        onselect,
         onscroll,
         onmark,
         onblame,
@@ -243,6 +249,8 @@
             column: selection.positionColumn,
             selected: held.getValueLengthInRange(selection, LF)
         });
+        const length = held.getValueLengthInRange(selection, LF);
+        onselect?.(length > 0 && length <= SELECTED_MAX ? held.getValueInRange(selection, LF) : '');
     }
 
     /** A press in the gutter: a quick diff mark, a blamed line number, or the glyph margin. */

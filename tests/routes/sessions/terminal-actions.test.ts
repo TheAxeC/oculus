@@ -27,7 +27,7 @@ import {
 } from '../../../src/lib/server/machine/pty/routes.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { chatIndexPath } from '../../../src/lib/server/machine/pty/chat.ts';
-import { taskSkipPermissions } from '../../../src/lib/data/helpers/tasks.ts';
+import { taskSkipPermissions } from '../../../src/lib/data/helpers/run/tasks.ts';
 import {
     HERE_FILE,
     SERVER,
@@ -474,7 +474,7 @@ describe('POST /api/terminal, the latex action over a folder of a root', () => {
             hubFor: () => task.chatHub,
             configFor: () => BASE_CHAT_CONFIG,
             projectFor: () => null,
-            rootsFor: roots
+            servedRootsFor: roots
         };
     }
 
@@ -532,7 +532,7 @@ describe('POST /api/terminal, the latex action over a folder of a root', () => {
 
     it('refuses every root when the server serves none', async () => {
         const driver = tmux();
-        const { rootsFor: _served, ...served } = folderOptions(driver);
+        const { servedRootsFor: _served, ...served } = folderOptions(driver);
 
         // `src` is a folder of the working directory, which a fallback root of `.` would serve.
         const response = await handleTerminal(ask('main.tex', 'src'), TOKEN, served);

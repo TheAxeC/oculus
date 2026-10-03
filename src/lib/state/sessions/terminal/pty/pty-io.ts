@@ -5,7 +5,7 @@
 // which a test replaces.
 
 import { z } from 'zod';
-import type { Terminal } from '../../../data/model/index.ts';
+import type { ChainLine, Terminal } from '../../../../data/model/index.ts';
 import {
     mapShape,
     optionalTextShape,
@@ -13,8 +13,12 @@ import {
     readJson,
     rowsShape,
     unchangedAs
-} from '../../../data/shapes/shapes.ts';
-import { refusedAnswer, unreadableAnswer } from '../../shared/answers/answers.ts';
+} from '../../../../data/shapes/shapes.ts';
+import { refusedAnswer, unreadableAnswer } from '../../../shared/answers/answers.ts';
+
+/** The geometry a terminal is started at when the pane has not been measured yet. */
+export const COLS = 80;
+export const ROWS = 24;
 
 /** What an action answered: the terminal it names, or what the server refused it with. */
 export type TerminalAnswer = {
@@ -25,6 +29,12 @@ export type TerminalAnswer = {
     error: string;
     /** The terminal a start answered, when it did. */
     terminal?: Terminal;
+    /** The lines of the chain a project command run asked to have approved before it starts. */
+    approve?: ChainLine[];
+    /** All the text of the pane a capture read. */
+    output?: string;
+    /** The process a Restart asked to have confirmed before it stops it. */
+    confirm?: string;
 };
 
 /** A terminal running a program other than its shell, and the program; empty when unread. */
@@ -36,11 +46,17 @@ export type BusyTerminal = { id: string; name: string; command: string };
  */
 const startedShape = unchangedAs<Terminal>(z.looseObject({ id: z.string() }));
 
+/** One line of a chain to approve: its folder, relative to the repository, and the line. */
+const chainLineShape = z.object({ folder: z.string(), run: z.string() });
+
 /** What an action answers: the terminal a start made, its id, and a refusal's sentence. */
 const actionAnswerShape = z.object({
     id: optionalTextShape,
     terminal: startedShape.optional().catch(undefined),
-    error: optionalTextShape
+    error: optionalTextShape,
+    approve: z.array(chainLineShape).optional().catch(undefined),
+    output: z.string().optional().catch(undefined),
+    confirm: z.string().optional().catch(undefined)
 });
 
 /** One terminal of a busy read: the busy ones are named, with the program they run. */
@@ -74,11 +90,18 @@ const listAnswerShape = z.object({ terminals: rowsShape(z.object({ id: z.string(
 const actionShape = z.object({ action: z.string() });
 
 /**
+ * The actions of a project command. Their refusals are sentences the server words for the reader
+ * (server/machine/commands/), naming the command, the placeholder or the cycle that stops the run.
+ */
+const COMMAND_ACTIONS = ['command', 'rerun', 'restart', 'capture'];
+
+/**
  * Post one action with the write token. A page rendered on the server has no fetch and posts
  * nothing. A refusal is told in the catalog's sentence for it (state/shared/answers/answers.ts),
- * never in the server's own text. An answer at 200 is ok whatever it names, except for a start: a
- * terminal started with no id is one the page cannot attach to, so a start whose answer names no
- * terminal with an id is a failed start.
+ * never in the server's own text, except a refusal of a project command's action, which is the
+ * server's sentence. An answer at 200 is ok whatever it names, except for a start: a terminal
+ * started with no id is one the page cannot attach to, so a start whose answer names no terminal
+ * with an id is a failed start.
  */
 export async function postTerminal(body: unknown, token: string): Promise<TerminalAnswer> {
     if (typeof fetch !== 'function') return { ok: false, id: '', error: '' };
@@ -92,10 +115,16 @@ export async function postTerminal(body: unknown, token: string): Promise<Termin
         if (raw === undefined)
             return { ok: false, id: '', error: unreadableAnswer(response.status) };
         const answer = readAs(actionAnswerShape, raw);
+        const action = readAs(actionShape, body)?.action ?? '';
         if (!response.ok) {
-            return { ok: false, id: '', error: refusedAnswer(response.status, answer?.error) };
+            const said = answer?.error ?? '';
+            const error =
+                COMMAND_ACTIONS.includes(action) && said !== ''
+                    ? said
+                    : refusedAnswer(response.status, answer?.error);
+            return { ok: false, id: '', error };
         }
-        const starting = readAs(actionShape, body)?.action === 'start';
+        const starting = action === 'start';
         if (starting && (answer?.terminal?.id ?? '') === '') {
             return { ok: false, id: '', error: unreadableAnswer(response.status) };
         }
@@ -103,7 +132,10 @@ export async function postTerminal(body: unknown, token: string): Promise<Termin
             ok: true,
             id: answer?.terminal?.id ?? answer?.id ?? '',
             error: '',
-            terminal: answer?.terminal
+            terminal: answer?.terminal,
+            ...(answer?.approve === undefined ? {} : { approve: answer.approve }),
+            ...(answer?.confirm === undefined ? {} : { confirm: answer.confirm }),
+            ...(answer?.output === undefined ? {} : { output: answer.output })
         };
     } catch (error) {
         return { ok: false, id: '', error: error instanceof Error ? error.message : String(error) };
@@ -131,12 +163,14 @@ const BUSY_READ = 64;
 
 /**
  * Which of these terminals run a program other than their shell, from a fresh read of the server,
- * in groups of at most BUSY_READ ids. A group whose read fails names every terminal of it with no
- * program, so a close asks.
+ * in groups of at most BUSY_READ ids. A terminal `always` names is listed whatever the server says
+ * of its program, with the program the server read. A group whose read fails names every terminal
+ * of it with no program, so a close asks.
  */
 export async function readBusy(
     ids: string[],
-    labelOf: (id: string) => string
+    labelOf: (id: string) => string,
+    always: (id: string) => boolean = () => false
 ): Promise<BusyTerminal[]> {
     const found: BusyTerminal[] = [];
     for (let at = 0; at < ids.length; at += BUSY_READ) {
@@ -152,7 +186,7 @@ export async function readBusy(
             const answer = readAs(busyAnswerShape, body);
             if (answer === null) throw new Error(unreadableAnswer(response.status));
             for (const one of answer.busy ?? []) {
-                if (!one.busy) continue;
+                if (!one.busy && !always(one.id)) continue;
                 found.push({ id: one.id, name: labelOf(one.id), command: one.command });
             }
         } catch {

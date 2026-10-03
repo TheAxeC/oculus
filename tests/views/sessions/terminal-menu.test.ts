@@ -16,6 +16,8 @@ import {
     BELL_MS,
     attachedOf,
     bellMark,
+    MENU_RERUN,
+    MENU_RESTART,
     emptyListMenu,
     gridMenu,
     joinedOf,
@@ -25,6 +27,7 @@ import {
     pressKill,
     profileOf,
     routePick,
+    taskStateOf,
     terminalRowMenu,
     type PickHandlers
 } from '../../../src/lib/views/sessions/terminal/terminal-list.ts';
@@ -340,6 +343,70 @@ describe("the bar's menu of a sole terminal", () => {
     });
 });
 
+describe('the menus of a task terminal', () => {
+    const sole = readTab({ id: 't', terminals: [A], shown: A, row: [A], composing: false });
+    const labelsOf = (items: ReturnType<typeof gridMenu>): string[] =>
+        items.map((item) => item.label);
+
+    it('audits that the task state is null for a shell, running with no exit and ended with one', () => {
+        expect(taskStateOf(null)).toBeNull();
+        expect(taskStateOf({ task: false, exit: null })).toBeNull();
+        expect(taskStateOf({ task: false, exit: 0 })).toBeNull();
+        expect(taskStateOf({ task: true, exit: null })).toBe('running');
+        expect(taskStateOf({ task: true, exit: 0 })).toBe('ended');
+        expect(taskStateOf({ task: true, exit: 2 })).toBe('ended');
+    });
+
+    it('audits that a running task offers Restart and an ended one Rerun then Restart in the grid menu', () => {
+        const base = labelsOf(gridMenu(false, false, words));
+        expect(labelsOf(gridMenu(false, false, words, null))).toEqual(base);
+        expect(labelsOf(gridMenu(false, false, words, 'running'))).toEqual([
+            ...base.slice(0, 3),
+            '@commands.restart',
+            ...base.slice(3)
+        ]);
+        expect(labelsOf(gridMenu(false, false, words, 'ended'))).toEqual([
+            ...base.slice(0, 3),
+            '@commands.rerun',
+            '@commands.restart',
+            ...base.slice(3)
+        ]);
+    });
+
+    it('audits that a running task offers Restart and an ended one Rerun then Restart in the row menu', () => {
+        const base = labelsOf(terminalRowMenu(sole, A, [], false, words));
+        expect(labelsOf(terminalRowMenu(sole, A, [], false, words, null))).toEqual(base);
+        expect(labelsOf(terminalRowMenu(sole, A, [], false, words, 'running'))).toEqual([
+            '@commands.restart',
+            ...base
+        ]);
+        expect(labelsOf(terminalRowMenu(sole, A, [], false, words, 'ended'))).toEqual([
+            '@commands.rerun',
+            '@commands.restart',
+            ...base
+        ]);
+    });
+
+    it('audits that the Rerun and Restart picks reach their own handler with the terminal', () => {
+        const calls: string[] = [];
+        const given: PickHandlers = {
+            split: () => undefined,
+            kill: () => undefined,
+            unsplit: () => undefined,
+            rename: () => undefined,
+            icon: () => undefined,
+            clear: () => undefined,
+            color: () => undefined,
+            join: () => undefined,
+            rerun: (one) => calls.push(`rerun:${one}`),
+            restart: (one) => calls.push(`restart:${one}`)
+        };
+        routePick(MENU_RERUN, B, given);
+        routePick(MENU_RESTART, C, given);
+        expect(calls).toEqual([`rerun:${B}`, `restart:${C}`]);
+    });
+});
+
 describe('the pick routing a row and the bar share', () => {
     /** Every handler a pick can reach, each recording its call. */
     function handlers(): { calls: string[]; handlers: PickHandlers } {
@@ -359,7 +426,9 @@ describe('the pick routing a row and the bar share', () => {
                 icon: record('icon'),
                 clear: record('clear'),
                 color: record('color'),
-                join: record('join')
+                join: record('join'),
+                rerun: record('rerun'),
+                restart: record('restart')
             }
         };
     }

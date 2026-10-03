@@ -203,6 +203,7 @@ describe('a path key of local.yml', () => {
         ['bookmarks', 'bookmarks'],
         ['notes', 'notes'],
         ['changes', 'changes'],
+        ['approvals', 'approvals'],
         ['calendar_dir', 'calendarDir'],
         ['mail_dir', 'mailDir']
     ] as const;

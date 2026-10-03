@@ -89,6 +89,7 @@ digraph channels {
         "state/life/calendar";
         "state/life/present";
         "state/sessions/latex";
+        "state/sessions/terminal/commands";
         "state/sessions/terminals";
         "state/sources/search/search";
         "state/system/audit";
@@ -184,6 +185,7 @@ digraph channels {
     "ch feeds" -> "routes/+page" [style=dashed];
     "ch feeds" -> "state/feeds/feeds";
     "ch files" -> "routes/+page" [style=dashed];
+    "ch files" -> "state/sessions/terminal/commands";
     "ch files" -> "state/system/docs";
     "ch git" -> "routes/+page" [style=dashed];
     "ch git" -> "routes/+page";

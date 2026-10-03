@@ -8,7 +8,7 @@
 // @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync, renameSync, rmSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, renameSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import {
@@ -42,48 +42,26 @@ import {
     tmuxRuns
 } from '../../../../src/lib/server/machine/pty/tmux.ts';
 import { noop } from '../../../fixtures/doubles.ts';
-import { it, scratchDir, test } from '../../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../../fixtures/scratch.ts';
+import { TMUX, privateTmux } from './tmux-fixture.ts';
 
 vi.setConfig({ testTimeout: 30000 });
-
-/** Whether tmux answers at all; without it the whole file is skipped with the reason printed. */
-const TMUX = (() => {
-    try {
-        return spawnSync('tmux', ['-V'], { encoding: 'utf8' }).status === 0;
-    } catch {
-        return false;
-    }
-})();
 
 if (!TMUX)
     console.error('tests/server/machine/pty/sessions.test.ts: skipped, tmux is not on the PATH');
 
-// The directory of the socket is made before the file's first case, so a run that skips every case
-// makes none.
-let dir = '';
-const options = { socket: '' };
-
-test.beforeAll(() => {
-    dir = scratchDir('oculus-tmux-');
-    options.socket = join(dir, 'server.sock');
-});
+const server = privateTmux('oculus-tmux-');
+const options = {
+    get socket(): string {
+        return server.socket;
+    }
+};
 
 // A line with a dash at its start, a dollar, a double quote and a backslash: everything the quoting
 // and the `--` of send-keys have to survive. tmux expands $name inside double quotes, so HOME here
 // is the case that says the escaping works.
 const TYPED = '-x "$HOME" a\\b';
 const STEERED = '-y "$HOME" steered';
-
-// A socket still unset means the hook that makes it failed: no server was started, and tmux is
-// never run without this file's own socket.
-test.afterAll(() => {
-    if (options.socket === '') return;
-    try {
-        spawnSync('tmux', ['-S', options.socket, 'kill-server'], { encoding: 'utf8' });
-    } finally {
-        rmSync(dir, { recursive: true, force: true });
-    }
-});
 
 /** Wait until the collected output holds the text, or fail by timing out. */
 async function until(has: () => boolean | Promise<boolean>, what: string): Promise<void> {
@@ -97,7 +75,7 @@ async function until(has: () => boolean | Promise<boolean>, what: string): Promi
 
 it.skipIf(!TMUX)('starts, lists, feeds, resizes, captures and stops a terminal', async () => {
     const started = await startTerminal(
-        { kind: 'shell', cwd: dir, cols: 80, rows: 24, name: 'a named terminal' },
+        { kind: 'shell', cwd: server.dir, cols: 80, rows: 24, name: 'a named terminal' },
         { ...options, command: 'cat' }
     );
     expect(started.kind).toBe('shell');
@@ -110,7 +88,7 @@ it.skipIf(!TMUX)('starts, lists, feeds, resizes, captures and stops a terminal',
     expect(listed.map((terminal) => terminal.id)).toEqual([started.id]);
     expect(listed[0].command).toBe('cat');
     // macOS puts the temporary directory behind a symlink, and tmux reports the real one.
-    expect(listed[0].cwd).toBe(realpathSync(dir));
+    expect(listed[0].cwd).toBe(realpathSync(server.dir));
     expect(listed[0].attached).toBe(false);
 
     // The control client is how the page reads the pane: one client sees every session's output.
@@ -163,7 +141,7 @@ it.skipIf(!TMUX)('starts, lists, feeds, resizes, captures and stops a terminal',
 
 it.skipIf(!TMUX)('lists the pane process of a terminal and of a hidden usage session', async () => {
     const started = await startTerminal(
-        { kind: 'shell', cwd: dir, cols: 80, rows: 24 },
+        { kind: 'shell', cwd: server.dir, cols: 80, rows: 24 },
         { ...options, command: 'cat' }
     );
     await run(
@@ -190,10 +168,13 @@ it.skipIf(!TMUX)('refuses a cwd that is not an absolute existing directory', asy
         startTerminal({ kind: 'shell', cwd: 'relative', cols: 80, rows: 24 }, options)
     ).rejects.toThrow('cwd must be an absolute path');
     await expect(
-        startTerminal({ kind: 'shell', cwd: join(dir, 'nothing'), cols: 80, rows: 24 }, options)
+        startTerminal(
+            { kind: 'shell', cwd: join(server.dir, 'nothing'), cols: 80, rows: 24 },
+            options
+        )
     ).rejects.toThrow('cwd does not exist');
     await expect(
-        startTerminal({ kind: 'shell', cwd: dir, cols: 0, rows: 24 }, options)
+        startTerminal({ kind: 'shell', cwd: server.dir, cols: 0, rows: 24 }, options)
     ).rejects.toThrow('cols must be a whole number');
     await expect(stopTerminal('../elsewhere', options)).rejects.toThrow('not a terminal id');
 });
@@ -281,7 +262,7 @@ it.skipIf(!TMUX)('lists what it started from a process whose locale is not UTF-8
     for (const name of ['LC_ALL', 'LC_CTYPE', 'LANG']) vi.stubEnv(name, 'C');
     try {
         const started = await startTerminal(
-            { kind: 'shell', cwd: dir, cols: 80, rows: 24, name: 'a plain locale' },
+            { kind: 'shell', cwd: server.dir, cols: 80, rows: 24, name: 'a plain locale' },
             { ...options, command: 'cat' }
         );
         const listed = await listTerminals(options);
@@ -294,7 +275,7 @@ it.skipIf(!TMUX)('lists what it started from a process whose locale is not UTF-8
 
 it.skipIf(!TMUX)('runs a line typed as bytes into a shell', async () => {
     const started = await startTerminal(
-        { kind: 'shell', cwd: dir, cols: 80, rows: 24 },
+        { kind: 'shell', cwd: server.dir, cols: 80, rows: 24 },
         { ...options, command: 'sh' }
     );
     const seen: Buffer[] = [];
@@ -323,7 +304,7 @@ it.skipIf(!TMUX)(
     'takes a piece of the most bytes in one command, and refuses one more',
     async () => {
         const started = await startTerminal(
-            { kind: 'shell', cwd: dir, cols: 80, rows: 24 },
+            { kind: 'shell', cwd: server.dir, cols: 80, rows: 24 },
             { ...options, command: 'cat' }
         );
         try {
@@ -341,9 +322,9 @@ it.skipIf(!TMUX)(
 it.skipIf(!TMUX)('types a 20000-character steer into a pane whole, then Enter', async () => {
     // The pane writes every byte it is given to a file: raw mode, so nothing is edited or echoed,
     // and the file is made only once raw mode is in force.
-    const file = join(dir, 'steered.bin');
+    const file = join(server.dir, 'steered.bin');
     const started = await startTerminal(
-        { kind: 'claude', cwd: dir, cols: 80, rows: 24 },
+        { kind: 'claude', cwd: server.dir, cols: 80, rows: 24 },
         { ...options, command: `stty raw -echo; exec cat > ${file}` }
     );
     try {

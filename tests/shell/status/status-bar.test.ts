@@ -54,7 +54,9 @@ const SOURCE: EditorStatus = {
     language: 'python',
     writable: true,
     blame: '',
-    actions: []
+    actions: [],
+    file: '/work/a.py',
+    selection: ''
 };
 
 let client: ClientState;

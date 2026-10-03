@@ -17,6 +17,7 @@ import { words } from '../../core/words.ts';
 import { projectDirectory } from '../../files/files.ts';
 import { portfolioContext } from './context.ts';
 import { listTerminals, newId, startTerminal, type StartOptions } from './sessions.ts';
+import { shellWord } from './shell-word.ts';
 
 type ChatProject = Pick<Project, 'title' | 'folder'>;
 
@@ -33,11 +34,6 @@ export type ChatOptions = StartOptions & {
     /** Machine-local paths carried by ServerContext. */
     localFor?: () => LocalConfig;
 };
-
-/** Quote one word for the shell command tmux starts. */
-function shellWord(value: string): string {
-    return `'${value.replaceAll("'", `'"'"'`)}'`;
-}
 
 /** The chat index path beside the configured sessions file, under its own retained folder. */
 export function chatIndexPath(sessionsOverrides: string | undefined, id: string): string {

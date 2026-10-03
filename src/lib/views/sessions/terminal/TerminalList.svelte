@@ -60,7 +60,8 @@
         armKept,
         attachedOf,
         emptyListMenu,
-        markStyle,
+        taskStateOf,
+        tokenStyle,
         movedOrder,
         profileOf,
         routePick,
@@ -69,7 +70,7 @@
         terminalTip,
         type TerminalListProps
     } from './terminal-list';
-    import { markGlyph } from '$lib/state/sessions/terminal/terminal-marks';
+    import { markOf } from '$lib/state/sessions/terminal/terminal-marks';
     import { useState } from '$lib/state/client/use';
 
     let {
@@ -265,7 +266,15 @@
             {/if}
             <ContextMenu
                 label={row.title}
-                read={() => terminalRowMenu(tab, row.terminal, others, arming === row.terminal, t)}
+                read={() =>
+                    terminalRowMenu(
+                        tab,
+                        row.terminal,
+                        others,
+                        arming === row.terminal,
+                        t,
+                        taskStateOf(row)
+                    )}
                 own
                 onpick={(pick: string) => rowPicked(row, pick)}
             >
@@ -284,8 +293,8 @@
                             <!-- The field is not inside the row's button: a text box cannot be
                                  typed into within one. -->
                             <span class="face">
-                                <span class="markglyph" style={markStyle(row.color)}>
-                                    <Glyph name={markGlyph(row.kind, row.icon)} />
+                                <span class="markglyph" style={tokenStyle(markOf(row).token)}>
+                                    <Glyph name={markOf(row).glyph} />
                                 </span>
                                 <RenameField
                                     value={row.title}
@@ -305,8 +314,8 @@
                                 onkeydown={(event: KeyboardEvent) => keys(event, index)}
                             >
                                 <span class="face">
-                                    <span class="markglyph" style={markStyle(row.color)}>
-                                        <Glyph name={markGlyph(row.kind, row.icon)} />
+                                    <span class="markglyph" style={tokenStyle(markOf(row).token)}>
+                                        <Glyph name={markOf(row).glyph} />
                                     </span>
                                     <!-- svelte-ignore a11y_no_static_element_interactions -->
                                     <span

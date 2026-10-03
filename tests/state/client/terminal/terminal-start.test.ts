@@ -54,7 +54,10 @@ function terminal(id: string, cwd = '/x', kind: TerminalKind = 'shell'): Termina
         pid: 321,
         created: '2026-09-11T08:00:00.000Z',
         attached: true,
-        resumes: null
+        resumes: null,
+        task: false,
+        exit: null,
+        job: null
     };
 }
 

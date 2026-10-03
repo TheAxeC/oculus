@@ -14,8 +14,8 @@
     import type { TerminalChoice } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import RenameField from './RenameField.svelte';
-    import { markGlyph } from '$lib/state/sessions/terminal/terminal-marks';
-    import { markStyle } from './terminal-list';
+    import { markOf } from '$lib/state/sessions/terminal/terminal-marks';
+    import { tokenStyle } from './terminal-list';
 
     type Props = {
         /** The row of the terminal shown. */
@@ -44,8 +44,8 @@
 
 <ContextMenu label={shown.title} read={menu} own {onpick}>
     <span class="shown" title={tip} data-terminal-shown>
-        <span class="mark" style={markStyle(shown.color)}>
-            <Glyph name={markGlyph(shown.kind, shown.icon)} />
+        <span class="mark" style={tokenStyle(markOf(shown).token)}>
+            <Glyph name={markOf(shown).glyph} />
         </span>
         {#if renaming}
             <RenameField

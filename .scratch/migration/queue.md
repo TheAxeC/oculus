@@ -1,9 +1,8 @@
 /plan-orchestration oculus/migration
 
-Running on Axel's go (2026-10-03); the order is `orchestrator-state.md`, "Current position", 2026-10-03 02:00: the owed looks first, then D18, D32, D14, S4, D17 landed, then X3c and Q91.
+Running on Axel's go (2026-10-03); the order is `orchestrator-state.md`, "Current position", 2026-10-03 02:00: the owed looks first, then D18, D32, D14, S4 and D17 landed (2026-10-03), then X3c and Q91.
 
-In flight:
-- D17 (project commands): refuted; lands after D18, D32, D14 and S4, with Z305 (a) and the Z304 marker fixed at landing.
+In flight: none.
 
 Queued, in order (24 steps):
 - X3c (the tab strip as VS Code's): brief being closed; once fewer than three steps are in flight (Z291).
@@ -14,14 +13,14 @@ Queued, in order (24 steps):
 - D25 (the editor's options, with the two Settings editor defects S4's look found, Z319): ready; once fewer than three steps are in flight.
 - D15 (PDF reading): once D14b has landed, since both change the LaTeX view.
 - D23 (language servers): once D25 has landed.
-- D11 (the debug client for rite): once D17 has landed.
-- D20 (an agent from a task or a worktree): once D17 has landed.
-- A3 (scheduled Update runs): once D17 has landed.
+- D11 (the debug client for rite): ready; once fewer than three steps are in flight.
+- D20 (an agent from a task or a worktree): ready; once fewer than three steps are in flight.
+- A3 (scheduled Update runs): ready; once fewer than three steps are in flight.
 - D28 (saving a file as VS Code does): once D25 has landed.
 - D23b (cross-file language features): once D23 has landed.
-- D33 (the Problems view): once D23 and D17 have landed.
+- D33 (the Problems view): once D23 has landed.
 - D36 (linters on save): once D33 has landed.
-- E4 (the apps): once D17 has landed.
+- E4 (the apps): ready; once fewer than three steps are in flight.
 - Q72 (the architecture re-read): after every code step.
 - R2 (release readiness): after Q72.
 - O29 (retiring the cockpit): after R2.

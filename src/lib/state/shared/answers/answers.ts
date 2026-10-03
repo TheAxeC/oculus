@@ -1,11 +1,13 @@
 // Layer 2, client state. The sentences an endpoint's answer is said in when the page cannot use
 // it: an answer it could not read, and a refusal.
 //
-// A refusal's own text is never shown. The server answers a refusal as a word (data/file-ops.ts
-// OPS_REFUSALS, and data/prose/latex.ts LATEX_REFUSALS for the LaTeX endpoint and the LaTeX
-// terminal action), and the page says the sentence the catalog holds for that word; any other body
-// text, a status with no body and a body that is no word all say the refusal with its status. The
-// status is in parentheses so the reader is told in words and a bug report still carries it.
+// A refusal's own text is never shown here. The server answers a refusal as a word
+// (data/file-ops.ts OPS_REFUSALS, and data/prose/latex.ts LATEX_REFUSALS for the LaTeX endpoint and
+// the LaTeX terminal action), and the page says the sentence the catalog holds for that word; any
+// other body text, a status with no body and a body that is no word all say the refusal with its
+// status. The status is in parentheses so the reader is told in words and a bug report still
+// carries it. The refusals of a project command's actions are the server's own sentences and do not
+// come here (state/sessions/terminal/pty/pty-io.ts).
 
 import { z } from 'zod';
 import { OPS_REFUSALS, type OpsRefusal } from '../../../data/file-ops.ts';

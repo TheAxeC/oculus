@@ -48,6 +48,7 @@
 
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import { errorMatch } from '$lib/state/sessions/terminal/commands.svelte';
     import { titleStripper } from '$lib/state/sessions/terminals.svelte';
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import {
@@ -57,6 +58,8 @@
         MENU_ICON,
         MENU_KILL,
         MENU_RENAME,
+        MENU_RERUN,
+        MENU_RESTART,
         MENU_PASTE,
         MENU_SELECT_ALL,
         MENU_SPLIT,
@@ -67,7 +70,8 @@
         holdMenuKeys,
         holdPastes,
         pasteRoute,
-        shellQuote
+        shellQuote,
+        taskStateOf
     } from '../terminal-list';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -110,6 +114,9 @@
         armed: boolean;
         /** Kill Terminal from the grid's menu, as a press of the row's Kill: arm, then kill. */
         onkill: (id: string) => void;
+        /** Rerun and Restart from the menu of a task terminal. */
+        onrerun: (id: string) => void;
+        onrestart: (id: string) => void;
         /** Rename from the grid's menu. */
         onrename: (id: string) => void;
         /** Change Icon from the grid's menu. */
@@ -130,6 +137,8 @@
         onsplit,
         armed,
         onkill,
+        onrerun,
+        onrestart,
         onrename,
         onicon,
         oncolor,
@@ -138,6 +147,7 @@
     }: Props = $props();
 
     const {
+        commands: { errorFile, note, openAt },
         terminals: {
             clearHistory,
             resizeTerminal,
@@ -226,6 +236,8 @@
         else if (pick === MENU_SELECT_ALL) grid?.selectAll();
         else if (pick === MENU_SPLIT) onsplit(id);
         else if (pick === MENU_KILL) onkill(id);
+        else if (pick === MENU_RERUN) onrerun(id);
+        else if (pick === MENU_RESTART) onrestart(id);
     }
 
     /** Send the paste the question held, or drop it. */
@@ -317,6 +329,34 @@
             // which xterm does not know and would print as the name itself; the title is dropped,
             // and a sequence cut across two chunks is carried to the next one.
             const titles = titleStripper();
+            // The text of a task terminal's output is read for errors, so its bytes are decoded
+            // once more here; a character cut across two chunks is carried to the next.
+            let decoder = new TextDecoder();
+            // A line naming a file of the command's repository that is there is a link to it.
+            const linking = term.registerLinkProvider({
+                provideLinks(y, done) {
+                    const line = term.buffer.active.getLine(y - 1)?.translateToString(true) ?? '';
+                    const match = errorMatch(line);
+                    if (match === null || terminalById(wanted)?.task !== true) {
+                        done(undefined);
+                        return;
+                    }
+                    void errorFile(wanted, match.file).then((found) => {
+                        if (found === null) {
+                            done(undefined);
+                            return;
+                        }
+                        const end = match.start + match.length;
+                        done([
+                            {
+                                range: { start: { x: match.start + 1, y }, end: { x: end, y } },
+                                text: line.slice(match.start, end),
+                                activate: () => openAt(found.repo, found.path, match.line)
+                            }
+                        ]);
+                    });
+                }
+            });
             // The window takes the grid's size before the channel is asked for (`subscribePty`).
             const off = subscribePty(
                 wanted,
@@ -324,8 +364,13 @@
                 (bytes, scrollback) => {
                     // The scrollback is sent to this socket alone at version 0, so a reconnect
                     // hands it over again; repainting from it keeps a second copy off the grid.
-                    if (scrollback) term.reset();
-                    term.write(titles(bytes));
+                    if (scrollback) {
+                        term.reset();
+                        decoder = new TextDecoder();
+                    }
+                    const shown = titles(bytes);
+                    term.write(shown);
+                    note(wanted, decoder.decode(shown, { stream: true }), scrollback);
                 }
             );
             let settle: ReturnType<typeof setTimeout> | null = null;
@@ -345,6 +390,7 @@
                 unsubscribePty(wanted);
                 typed.dispose();
                 rang.dispose();
+                linking.dispose();
                 detachFind();
                 serializer = null;
                 oncontrol(wanted, null);
@@ -409,7 +455,7 @@
 <div class="half">
     <ContextMenu
         label={t('sessions.view_terminal')}
-        read={() => gridMenu(grid?.hasSelection() === true, armed, t)}
+        read={() => gridMenu(grid?.hasSelection() === true, armed, t, taskStateOf(terminal))}
         onpick={picked}
     >
         <!-- The grid takes a file dropped from the Files view; its keyboard is xterm's. -->

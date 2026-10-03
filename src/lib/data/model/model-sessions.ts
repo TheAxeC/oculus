@@ -1,5 +1,8 @@
-// Layer 1, data. Session, terminal, git and HPC records carried by runtime channels.
-// This concern module keeps the live operational wire types separate from portfolio snapshots.
+// Layer 1, data. Session, terminal, project command, git and HPC records carried by runtime
+// channels. This concern module keeps the live operational wire types separate from portfolio
+// snapshots. The project commands of a repository are here as the server lists them and the page
+// draws them: the command, where it was read from, what could not be read, the context the page
+// sends with a run, and the diagnostics a task terminal's output gives.
 
 import type { Id } from './model-entities.ts';
 
@@ -273,6 +276,21 @@ export const STEER_MAX = 100_000;
 // eslint-disable-next-line no-control-regex
 export const STEER_CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f]/;
 
+/**
+ * The command a task terminal runs: the repository it belongs to, the command's name and the source
+ * that name was read from, which tells apart two commands of one name, the token its line prints
+ * with each command's name, and the commands of its chain in run order, each with the folder it
+ * runs in, so the output is read by the chain the line was made of whatever the repository's list
+ * says now. A mark that carries no source, no token or no chain leaves it absent.
+ */
+export type TerminalJob = {
+    repo: string;
+    name: string;
+    source?: CommandSource;
+    token?: string;
+    chain?: { name: string; cwd: string }[];
+};
+
 /** One tmux session oculus started, as `tmux list-sessions` reports it. */
 export type Terminal = {
     /** The session name without the `oculus-` prefix; the `pty:<id>` channel is named from it. */
@@ -298,6 +316,18 @@ export type Terminal = {
     attached: boolean;
     /** The session this terminal continues, or null when it continues nothing. */
     resumes: TerminalResume | null;
+    /**
+     * True for a terminal a project command started (tmux user option `@oculus_task`). Its session
+     * stays in the list after its line ended, with the status of that line in `exit`.
+     */
+    task: boolean;
+    /**
+     * The exit status of a task terminal's line once it ended, and null while it runs and on a
+     * terminal that is no task.
+     */
+    exit: number | null;
+    /** The repository and command name a task terminal ran, or null when it is no task. */
+    job: TerminalJob | null;
     /**
      * True for a tmux session that carries the `oculus-` prefix but whose name oculus did not mint.
      * It is listed, since it is there and the prefix claims it, and the stop and resize actions
@@ -701,3 +731,72 @@ export type UsageDay = {
     cacheCreation: number;
 };
 export type UsagePayload = { accounts: UsageAccount[]; days: UsageDay[]; builtAt: string };
+
+/** Where a command was read from, in the order they are listed. */
+export type CommandSource = 'file' | 'saved' | 'found';
+
+/** The two roles a command may hold for a repository, each on a key. */
+export type CommandDefault = 'build' | 'test';
+
+/** One project command. `cwd` is absolute and inside the repository. */
+export type ProjectCommand = {
+    name: string;
+    /** The shell line, with its placeholders as written. */
+    run: string;
+    cwd: string;
+    /** Names of the commands that run before this one. */
+    depends_on: string[];
+    /** Present when the command is the repository's default build or default test. */
+    default?: CommandDefault;
+    source: CommandSource;
+    /** The file and line the command is written at, for a file and a found command. */
+    entry?: { file: string; line: number };
+};
+
+/**
+ * One command of a chain as the reader approves it: its folder relative to the repository (`.` for
+ * the repository itself) and its line as written, before any placeholder is replaced.
+ */
+export type ChainLine = { folder: string; run: string };
+
+/** Something a source holds that could not be read as a command, with where it is. */
+export type CommandFinding = {
+    file: string;
+    /** The path of the field inside the file, such as `commands[2].run`. */
+    field: string;
+    message: string;
+};
+
+/** The answer of `GET /api/commands`: a repository's commands and what could not be read. */
+export type CommandsAnswer = {
+    commands: ProjectCommand[];
+    findings: CommandFinding[];
+};
+
+/**
+ * What the page knows when it asks for a run, for the placeholders of the line: the active source
+ * tab's absolute file, the line the cursor is on and the selected text. A field the page has no
+ * value for is absent.
+ */
+export type CommandContext = {
+    file?: string;
+    line?: number;
+    selectedText?: string;
+};
+
+/** The two severities a task terminal's output is read for. */
+export type CommandSeverity = 'error' | 'warning';
+
+/** One `file:line:column: error|warning` line of a task terminal's output. */
+export type CommandDiagnostic = {
+    /** The repository the command belongs to. */
+    root: string;
+    /** The file the line names, relative to the command's folder or absolute as written. */
+    file: string;
+    line: number;
+    column?: number;
+    severity: CommandSeverity;
+    message: string;
+    /** `command:<name>`. */
+    source: string;
+};

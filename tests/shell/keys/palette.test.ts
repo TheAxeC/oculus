@@ -187,7 +187,9 @@ const EDITING: EditorStatus = {
             hint: 'Cmd+K Cmd+U'
         },
         { id: 'editor.foldAll', label: 'Fold All', hint: 'Cmd+K Cmd+0' }
-    ]
+    ],
+    file: '/work/a.py',
+    selection: ''
 };
 
 describe("the editor's Cmd+K actions in the palette", () => {

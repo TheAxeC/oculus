@@ -665,6 +665,8 @@ options:
             description: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         history:
             description: Where the local history lives, one folder per file with a copy of the file as it was before each save and before each delete. Up to 50 copies of a save are kept per file, none of a file over 256 KB, and a delete keeps the content of a file up to 5 MB, the newest 50 such copies over all files. Without it the folder is ~/.oculus/history. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+        approvals:
+            description: Where the approvals live, the texts of the project commands a reader approved to run, each under a key made from its text. Without it the file is ~/.oculus/approvals.json, mode 0600, in ~/.oculus, which each write makes mode 0700 when it is looser; a file named here leaves the mode of its folder as it is. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         claude_bin:
             description: The Claude command line that the update tasks and the chat terminal are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
         open_bin:

@@ -364,12 +364,16 @@ describe('a list line with the title, icon and colour', () => {
             color: 'red'
         });
         expect(parseTerminal(head.join('\t'))).toMatchObject({ title: '', icon: '', color: '' });
-        // The line the list asks tmux for carries the three options, in that order, and then the
-        // pid of the server that answers.
+        // The line the list asks tmux for carries the three options, in that order, then the task
+        // mark, whether the pane's process ended and the status it ended with, and last the pid of
+        // the server that answers.
         expect(LIST_FORMAT.split('\t').slice(8)).toEqual([
             '#{@oculus_title}',
             '#{@oculus_icon}',
             '#{@oculus_color}',
+            '#{@oculus_task}',
+            '#{pane_dead}',
+            '#{pane_dead_status}',
             '#{pid}'
         ]);
     });

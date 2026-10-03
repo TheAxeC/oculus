@@ -75,6 +75,9 @@ export function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
         created: '2026-09-11T08:00:00.000Z',
         attached: false,
         resumes: null,
+        task: false,
+        exit: null,
+        job: null,
         ...over
     };
 }

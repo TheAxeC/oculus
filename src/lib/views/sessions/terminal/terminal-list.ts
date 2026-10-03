@@ -30,7 +30,7 @@ import {
     tabTerminals,
     type TerminalTabState
 } from '$lib/state/sessions/terminal/terminal-tabs';
-import { COLOR_NAMES, colorToken } from '$lib/state/sessions/terminal/terminal-marks';
+import { COLOR_NAMES } from '$lib/state/sessions/terminal/terminal-marks';
 import type { ComposerAgent } from '$lib/state/sessions/terminal/composer';
 import { stamp } from '$lib/state/shared/words/format';
 import { t } from '$lib/state/shared/words/text';
@@ -83,12 +83,8 @@ export type TerminalListProps = {
 /** The width the composer keeps at the right of a row that is being composed into, in rem. */
 export const COMPOSER_REM = 20;
 
-/**
- * The style a terminal's mark is drawn with: the colour token of the name it was given, or nothing
- * for the default look (and for a name outside the eight).
- */
-export function markStyle(color: string): string | undefined {
-    const token = colorToken(color);
+/** The style that draws a mark in a colour token, or nothing for no token. */
+export function tokenStyle(token: string | null): string | undefined {
     return token === null ? undefined : `color: var(${token})`;
 }
 
@@ -293,6 +289,8 @@ export const MENU_SPLIT = 'split';
 export const MENU_KILL = 'kill';
 export const MENU_UNSPLIT = 'unsplit';
 export const MENU_NEW = 'new';
+export const MENU_RERUN = 'rerun';
+export const MENU_RESTART = 'restart';
 const JOIN_LIST = 'join';
 const JOIN = 'join:';
 const ATTACH_LIST = 'attach';
@@ -336,6 +334,27 @@ export function killItem(armed: boolean, t: Words): MenuItem {
         id: MENU_KILL,
         label: armed ? t('sessions.terminal_kill_armed') : t('sessions.menu_kill')
     };
+}
+
+/**
+ * Where a task terminal's line is: running, or ended; null for a terminal that is no task
+ * terminal. Rerun is offered once the line ended, Restart always.
+ */
+export type TaskState = 'running' | 'ended' | null;
+
+/** The task state of a terminal as the list carries it. */
+export function taskStateOf(held: Pick<Terminal, 'task' | 'exit'> | null): TaskState {
+    if (!held?.task) return null;
+    return held.exit === null ? 'running' : 'ended';
+}
+
+/** Rerun and Restart, the items a task terminal has beside Split and Kill. */
+function taskItems(task: TaskState, t: Words): MenuItem[] {
+    if (task === null) return [];
+    return [
+        ...(task === 'ended' ? [{ id: MENU_RERUN, label: t('commands.rerun') }] : []),
+        { id: MENU_RESTART, label: t('commands.restart') }
+    ];
 }
 
 /** The two items the grid and a row both have: the row's own Split and Kill. */
@@ -383,7 +402,12 @@ function styleItems(t: Words): MenuItem[] {
  * then Split, Rename, Change Icon, Change Color and Kill, Kill with its armed label while the
  * grid's terminal is armed.
  */
-export function gridMenu(selected: boolean, armed: boolean, t: Words): MenuItem[] {
+export function gridMenu(
+    selected: boolean,
+    armed: boolean,
+    t: Words,
+    task: TaskState = null
+): MenuItem[] {
     const [split, kill] = rowActions(armed, t);
     return grouped([
         [
@@ -397,6 +421,7 @@ export function gridMenu(selected: boolean, armed: boolean, t: Words): MenuItem[
             { id: MENU_SELECT_ALL, label: t('sessions.menu_select_all') }
         ],
         [{ id: MENU_CLEAR, label: t('sessions.menu_clear') }],
+        taskItems(task, t),
         [split, ...styleItems(t), kill]
     ]);
 }
@@ -416,21 +441,23 @@ function inShownRow(tab: TerminalTabState, terminal: string): boolean {
 }
 
 /**
- * A row's items: Split Terminal and Kill Terminal, Kill with its armed label while the row's
- * terminal is armed; Rename, Change Icon, Change Color and Clear; then Unsplit Terminal on a
- * terminal of the row the tab shows, and Join Terminals, a submenu of the terminals other Terminal
- * tabs own, each by the name it is handed.
+ * A row's items: Rerun (once a task terminal's line ended) and Restart for a task terminal, Split
+ * Terminal and Kill Terminal, Kill with its armed label while the row's terminal is armed; Rename,
+ * Change Icon, Change Color and Clear; then Unsplit Terminal on a terminal of the row the tab
+ * shows, and Join Terminals, a submenu of the terminals other Terminal tabs own, each by the name
+ * it is handed.
  */
 export function terminalRowMenu(
     tab: TerminalTabState,
     terminal: string,
     others: readonly { terminal: string; title: string }[],
     armed: boolean,
-    t: Words
+    t: Words,
+    task: TaskState = null
 ): MenuItem[] {
     const joins = others.map((one) => ({ id: `${JOIN}${one.terminal}`, label: one.title }));
     return grouped([
-        rowActions(armed, t),
+        [...taskItems(task, t), ...rowActions(armed, t)],
         [...styleItems(t), { id: MENU_CLEAR, label: t('sessions.menu_clear') }],
         [
             ...(inShownRow(tab, terminal)
@@ -544,6 +571,10 @@ export type PickHandlers = {
     color: (terminal: string, color: string) => void;
     /** Join Terminals: the terminal another tab owns moves in beside `terminal`. */
     join: (terminal: string, moving: string) => void;
+    /** Rerun: the ended line of a task terminal runs again in the same terminal. */
+    rerun: (terminal: string) => void;
+    /** Restart: the line of a task terminal stops if it runs, and runs again. */
+    restart: (terminal: string) => void;
 };
 
 /**
@@ -561,6 +592,8 @@ export function routePick(pick: string, terminal: string, handlers: PickHandlers
     else if (pick === MENU_RENAME) handlers.rename(terminal);
     else if (pick === MENU_ICON) handlers.icon(terminal);
     else if (pick === MENU_CLEAR) handlers.clear(terminal);
+    else if (pick === MENU_RERUN) handlers.rerun(terminal);
+    else if (pick === MENU_RESTART) handlers.restart(terminal);
 }
 
 /** The terminal an Attach to Session pick names, or null for any other item. */

@@ -227,6 +227,7 @@ const VIEWS: Record<string, string> = {
     'sessions/transcript/Transcript.svelte':
         '.turn=fs-md | .who=fs-xs | .ts=fs-sm | .sum=fs-sm | .cut=fs-md | .doc=fs-md | .doc :global(h1), .doc :global(h2), .doc :global(h3), .doc :global(h4)=fs-md | .doc :global(code), .doc :global(pre)=fs-sm',
     'shared/code/Code.svelte': '.gutter, .text=fs-sm',
+    'shared/sessions/CommandBar.svelte': '',
     'shared/changes/ChangeCounts.svelte': '.bin=fs-sm | .add, .del=fs-sm',
     'shared/changes/ChangeGroups.svelte': '.group-h=fs-xs | .cut=fs-sm | .file=fs-md',
     'shared/links/BookmarkStar.svelte': '.failed=fs-sm',

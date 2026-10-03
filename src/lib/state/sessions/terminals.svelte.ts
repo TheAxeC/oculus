@@ -33,7 +33,7 @@
 // POST carries the token state/client/writes.svelte.ts holds, and the socket carries it in its
 // subscribe message, which is what lets that socket send input at all.
 
-import { taskSkipPermissions } from '../../data/helpers/tasks.ts';
+import { taskSkipPermissions } from '../../data/helpers/run/tasks.ts';
 import type { EntitiesStore, SocketStore, WritesStore } from '../shared/stores/shapes.ts';
 import { t } from '../shared/words/text.ts';
 import type {
@@ -59,29 +59,36 @@ import {
     splitRight,
     tabFolder,
     withTerminal,
-    withoutTerminal,
     type TerminalTabState
 } from './terminal/terminal-tabs.ts';
 import { freshComposer, splitState } from './terminal/composer.ts';
-import { endedTerminals, unownedTerminals } from './terminal/terminal-lists.ts';
+import {
+    closeEnded,
+    endedTerminals,
+    moveInto,
+    terminalLabel,
+    unownedTerminals
+} from './terminal/terminal-lists.ts';
 import type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
-import { decodeBytes, encodeBytes } from './terminal/pty-bytes.ts';
-import { createPtyOrder, type PtySize } from './terminal/pty-subscribe.ts';
+import { decodeBytes, encodeBytes } from './terminal/pty/pty-bytes.ts';
+import { createPtyOrder, type PtySize } from './terminal/pty/pty-subscribe.ts';
 import { ptyBytesOf, terminalsReader } from './terminal/terminal-payloads.ts';
 import {
+    COLS,
+    ROWS,
     postTerminal,
     readBusy,
     type BusyTerminal,
     type TerminalAnswer
-} from './terminal/pty-io.ts';
+} from './terminal/pty/pty-io.ts';
 
 export type { BusyTerminal, TerminalAnswer };
 
 export { endedTerminals, terminalLabel, unownedTerminals } from './terminal/terminal-lists.ts';
 export type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
 
-export { decodeBytes, encodeBytes, titleStripper } from './terminal/pty-bytes.ts';
-export { RESIZE_WAIT } from './terminal/pty-subscribe.ts';
+export { decodeBytes, encodeBytes, titleStripper } from './terminal/pty/pty-bytes.ts';
+export { RESIZE_WAIT } from './terminal/pty/pty-subscribe.ts';
 
 // The three model types a view needs of a terminal. The boundary table lets `state/` import
 // `data/model` and lets a view import `state/`, so they reach a view from here, the way
@@ -90,10 +97,6 @@ export type { Terminal, TerminalKind, TerminalResume } from '../../data/model/in
 
 /** The prefix of a terminal's channel, the server's `ptyChannel` seen from the page. */
 const PREFIX = 'pty:';
-
-/** The geometry a terminal is started at when the pane has not been measured yet. */
-const COLS = 80;
-const ROWS = 24;
 
 /** The four update skills accepted by the server's task action. */
 export type TaskKind = 'litwatch' | 'scout' | 'linkedin' | 'inbox';
@@ -176,12 +179,16 @@ export type TerminalsStore = {
      */
     subscribePty: (id: string, size: () => PtySize, onBytes: PtyListener) => () => void;
     unsubscribePty: (id: string) => void;
+    /** Whether a call of `subscribePty` for the terminal is still reading its output. */
+    subscribed: (id: string) => boolean;
     /**
      * Show a terminal: in the tab that owns it, on its page, else in the Terminal tab of the page
      * on screen or a new one, which takes it. The label names a tab that takes it until the
      * terminal's own name arrives.
      */
     showTerminal: (id: string, label?: string) => void;
+    /** Show and select a terminal a project command just started, before the list names it. */
+    adopt: (made: Terminal) => void;
     /**
      * Move a terminal to a Terminal tab at an index of its order; a tab left owning none closes
      * unless the reader is composing in it.
@@ -272,25 +279,6 @@ export function createTerminals(
         return workbench?.tabs().filter((tab) => tab.view === TERMINAL_VIEW) ?? [];
     }
 
-    /**
-     * Take the ended terminals out of every tab that owned them, on any page; a tab left owning
-     * none closes unless the reader is composing in it, where it keeps its composer, shown alone,
-     * and what was typed. A selection that was one of them is cleared. A tab that owned none of
-     * them is left as it is, so a tab showing a composer it never started from stays.
-     */
-    function closeEnded(ended: string[]): void {
-        if (workbench === undefined || ended.length === 0) return;
-        for (const tab of terminalTabs()) {
-            const held = readTab(tab.state);
-            if (!ended.some((id) => held.terminals.includes(id))) continue;
-            const next = ended.reduce(withoutTerminal, held);
-            workbench.restate(tab.id, tab.page, next);
-            if (next.terminals.length === 0 && !held.composing) workbench.close(tab.id, tab.page);
-        }
-        const selected = workbench.selected();
-        if (selected !== null && ended.includes(selected)) workbench.select(null);
-    }
-
     entities.afterReceive((message) => {
         if (message.channel === 'portfolio') releaseHubWaiters();
         if (message.channel !== 'sessions') return;
@@ -304,7 +292,7 @@ export function createTerminals(
             const selected = workbench.selected();
             const held = terminalTabs().flatMap((tab) => readTab(tab.state).terminals);
             if (isTerminalId(selected)) held.push(selected);
-            closeEnded(endedTerminals(seen, now, first, held));
+            closeEnded(workbench, terminalTabs(), endedTerminals(seen, now, first, held));
         }
         for (const id of now) {
             seen.add(id);
@@ -371,31 +359,9 @@ export function createTerminals(
         workbench.activate(target.id, page);
     }
 
-    /**
-     * Move a terminal into a Terminal tab before the row at `index` of that tab's order (`index`
-     * equal to its length puts it last), shown there. Within one tab it is a reorder. The tab it
-     * left closes when it owns nothing more, unless the reader is composing in it, where it keeps
-     * its composer shown alone. A tab id no page holds moves nothing.
-     */
+    /** Move a terminal into a Terminal tab; the rule is moveInto's. */
     function moveTerminal(id: string, toTab: string, toPage: string, index: number): void {
-        if (workbench === undefined || !isTerminalId(id)) return;
-        const tabs = terminalTabs();
-        const target =
-            tabs.find((tab) => tab.id === toTab && tab.page === toPage) ??
-            tabs.find((tab) => tab.id === toTab);
-        if (target === undefined) return;
-        const from = ownerOf(tabs, id);
-        if (from !== null && from.id !== target.id) {
-            const was = readTab(from.state);
-            const left = withoutTerminal(was, id);
-            workbench.restate(from.id, from.page, left);
-            if (left.terminals.length === 0 && !was.composing) workbench.close(from.id, from.page);
-        }
-        const held = readTab(target.state);
-        const before = held.terminals.indexOf(id);
-        const at = before >= 0 && before < index ? index - 1 : index;
-        workbench.restate(target.id, target.page, withTerminal(held, id, at));
-        workbench.activate(target.id, target.page);
+        if (workbench !== undefined) moveInto(workbench, terminalTabs(), id, toTab, toPage, index);
     }
 
     /** The running terminals no Terminal tab owns, from the latest list and every page's tabs. */
@@ -528,8 +494,8 @@ export function createTerminals(
 
     /**
      * Whether a task started now runs with the CLI's permission prompts turned off. The rule is
-     * data/helpers/tasks.ts's, the one the server builds the argv from, so what the tray tells the
-     * reader and what the command does are one answer to one configured key.
+     * data/helpers/run/tasks.ts's, the one the server builds the argv from, so what the tray
+     * tells the reader and what the command does are one answer to one configured key.
      */
     function taskSkipsPermissions(): boolean {
         return taskSkipPermissions(entities.config()?.config ?? {});
@@ -778,14 +744,24 @@ export function createTerminals(
 
     /**
      * Which of these terminals run a program other than their shell, from a fresh read of the
-     * server, each named by its title, else its name.
+     * server. An ended task terminal is not asked about; a running one is always busy.
      */
     function busyOf(ids: string[]): Promise<BusyTerminal[]> {
-        return readBusy(ids, (id) => {
-            const record = terminalRecord(id);
-            if (record === null) return id;
-            return record.title !== '' ? record.title : record.name;
-        });
+        const open = ids.filter((id) => (terminalRecord(id)?.exit ?? null) === null);
+        return readBusy(
+            open,
+            (id) => {
+                const record = terminalRecord(id);
+                return record === null ? id : terminalLabel(record);
+            },
+            (id) => terminalRecord(id)?.task === true
+        );
+    }
+
+    function adopt(made: Terminal): void {
+        started.set(made.id, made);
+        showTerminal(made.id, terminalLabel(made));
+        workbench?.select(made.id);
     }
 
     /** End terminals: their tmux sessions stop, and with them what runs inside. */
@@ -821,8 +797,13 @@ export function createTerminals(
         return socket.send(resize);
     }
 
+    /** How many panes read each terminal's output now. */
+    const reading = new Map<string, number>();
+
     function subscribePty(id: string, size: () => PtySize, onBytes: PtyListener): () => void {
         const channel = ptyChannel(id);
+        reading.set(id, (reading.get(id) ?? 0) + 1);
+        let released = false;
         const off = socket.listen(channel, (received) => {
             onBytes(decodeBytes(ptyBytesOf(received.payload)), received.version === 0);
         });
@@ -835,6 +816,11 @@ export function createTerminals(
         return () => {
             leave();
             off();
+            if (released) return;
+            released = true;
+            const left = (reading.get(id) ?? 1) - 1;
+            if (left > 0) reading.set(id, left);
+            else reading.delete(id);
         };
     }
 
@@ -867,7 +853,9 @@ export function createTerminals(
         sendResize,
         subscribePty,
         unsubscribePty,
+        subscribed: (id) => (reading.get(id) ?? 0) > 0,
         showTerminal,
+        adopt,
         moveTerminal,
         attachable,
         attachTerminal,

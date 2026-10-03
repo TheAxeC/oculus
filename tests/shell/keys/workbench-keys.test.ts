@@ -150,7 +150,8 @@ function handler(
     setUpdateOpen: (open: boolean) => void = noop,
     railPage: (index: number) => boolean = () => false,
     composeIn: (page: string) => void = noop,
-    focusSearchBox: (id: string, box: 'query' | 'replace') => void = noop
+    focusSearchBox: (id: string, box: 'query' | 'replace') => void = noop,
+    runDefault: (which: 'build' | 'test') => void = noop
 ) {
     const element = paneElement(path, 'b', page);
     held.document = fakeDocument(element, overlays.confirm === true);
@@ -171,7 +172,9 @@ function handler(
         openDoc: noop,
         composeIn,
         focusSearchBox,
-        railPage
+        railPage,
+        runDefault,
+        mac: true
     });
     keys.paneFocused({ target: element } as unknown as FocusEvent);
     return keys;
@@ -605,5 +608,63 @@ describe('Find in Files and Replace in Files', () => {
         keys.keys(event);
         expect(asked).toEqual([]);
         expect(prevented).not.toHaveBeenCalled();
+    });
+});
+
+describe('the default build and test keys', () => {
+    /** A Cmd chord as the browser reports it. */
+    function chord(key: string, code: string, shiftKey: boolean, altKey: boolean) {
+        const prevented = vi.fn();
+        const event = {
+            key,
+            code,
+            ctrlKey: false,
+            metaKey: true,
+            altKey,
+            shiftKey,
+            defaultPrevented: false,
+            target: null,
+            preventDefault: prevented
+        };
+        return { event: event as unknown as KeyboardEvent, prevented };
+    }
+
+    it('asks for the default build on Cmd+Shift+B and the default test on Cmd+Alt+T, once each', () => {
+        const runs: string[] = [];
+        const keys = handler(
+            '1',
+            undefined,
+            () => null,
+            {},
+            noop,
+            () => false,
+            noop,
+            noop,
+            (which) => runs.push(which)
+        );
+        const built = chord('B', 'KeyB', true, false);
+        keys.keys(built.event);
+        const tested = chord('\u2020', 'KeyT', false, true);
+        keys.keys(tested.event);
+        expect(runs).toEqual(['build', 'test']);
+        expect(built.prevented).toHaveBeenCalledOnce();
+        expect(tested.prevented).toHaveBeenCalledOnce();
+    });
+
+    it('asks for nothing under the palette', () => {
+        const runs: string[] = [];
+        const keys = handler(
+            '1',
+            undefined,
+            () => null,
+            { palette: true },
+            noop,
+            () => false,
+            noop,
+            noop,
+            (which) => runs.push(which)
+        );
+        keys.keys(chord('B', 'KeyB', true, false).event);
+        expect(runs).toEqual([]);
     });
 });

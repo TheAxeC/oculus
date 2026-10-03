@@ -11,10 +11,14 @@ export type KeyContext = {
     paletteOpen: boolean;
     trayOpen: boolean;
     confirmOpen: boolean;
+    /** Whether the command modifier is Cmd (macOS) and not Ctrl; macOS when absent. */
+    mac?: boolean;
 };
 
 export type KeyEventLike = {
     key: string;
+    /** The physical key, which names the letter of a chord Option turns into another character. */
+    code?: string;
     defaultPrevented?: boolean;
     metaKey?: boolean;
     ctrlKey?: boolean;
@@ -42,6 +46,7 @@ export type KeyAction =
     | { kind: 'scroll'; edge: 'top' | 'bottom' }
     | { kind: 'sheet' }
     | { kind: 'new-session' }
+    | { kind: 'command-default'; which: 'build' | 'test' }
     | { kind: 'clear-cursor' };
 
 export type KeyResult = { action: KeyAction | null; state: KeyState };
@@ -81,6 +86,23 @@ export function rowCursor(rects: CardRect[], current: number, direction: -1 | 1)
     return best < 0 ? current : best;
 }
 
+/**
+ * The default build on Cmd+Shift+B and the default test on Cmd+Alt+T (Ctrl in place of Cmd off
+ * macOS), or null. The letter is read from the physical key, since Option and T type another
+ * character on macOS. Both answer while a field is typed in, as the numbered tab keys do, and under
+ * no overlay.
+ */
+function defaultCommand(event: KeyEventLike, context: KeyContext): 'build' | 'test' | null {
+    if (event.defaultPrevented === true) return null;
+    if (context.paletteOpen || context.trayOpen || context.confirmOpen) return null;
+    const mac = context.mac !== false;
+    if ((mac ? event.metaKey : event.ctrlKey) !== true) return null;
+    if ((mac ? event.ctrlKey : event.metaKey) === true) return null;
+    if (event.code === 'KeyB' && event.shiftKey === true && event.altKey !== true) return 'build';
+    if (event.code === 'KeyT' && event.altKey === true && event.shiftKey !== true) return 'test';
+    return null;
+}
+
 /** Resolve one workbench key, retaining only the two short-lived chord timestamps. */
 export function resolveKey(
     event: KeyEventLike,
@@ -111,6 +133,10 @@ export function resolveKey(
     ) {
         const kind = event.key.toLowerCase() === 'f' ? 'find-in-files' : 'replace-in-files';
         return { action: { kind }, state: { ...state, chord: '' } };
+    }
+    const which = defaultCommand(event, context);
+    if (which !== null) {
+        return { action: { kind: 'command-default', which }, state: { ...state, chord: '' } };
     }
     const held = context.typing || context.paletteOpen || context.trayOpen || context.confirmOpen;
     // Ctrl and a bracket carry the focused pane one tab along, the left one backwards. The browser

@@ -1,5 +1,5 @@
 // Layer 4, test. The two requests the terminals store makes of /api/terminal that carry no state
-// of their own (state/sessions/terminal/pty-io.ts): the action posted with the write token, and
+// of their own (state/sessions/terminal/pty/pty-io.ts): the action posted with the write token, and
 // the busy read. Each case states the body the stub `fetch` answers and what the request makes of
 // it, for bodies of the right shape and for bodies whose fields are of the wrong type.
 //
@@ -9,7 +9,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { postTerminal, readBusy } from '../../../../src/lib/state/sessions/terminal/pty-io.ts';
+import { postTerminal, readBusy } from '../../../../src/lib/state/sessions/terminal/pty/pty-io.ts';
 import { refused, unreadable } from '../../../fixtures/client.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
@@ -128,6 +128,40 @@ describe('the answer of an action posted to /api/terminal', () => {
     );
 });
 
+describe('the questions an action is answered with', () => {
+    it('hands on the chain lines a run asked to have approved', async () => {
+        answering('{"approve":[{"folder":".","run":"make"},{"folder":"sub","run":"make test"}]}');
+        expect(await postTerminal({ action: 'command' }, 't')).toStrictEqual({
+            ok: true,
+            id: '',
+            error: '',
+            terminal: undefined,
+            approve: [
+                { folder: '.', run: 'make' },
+                { folder: 'sub', run: 'make test' }
+            ]
+        });
+    });
+
+    it('hands on the process a Restart asked to have confirmed', async () => {
+        answering('{"confirm":"make"}');
+        expect(await postTerminal({ action: 'restart' }, 't')).toStrictEqual({
+            ok: true,
+            id: '',
+            error: '',
+            terminal: undefined,
+            confirm: 'make'
+        });
+    });
+
+    it('reads an approve list holding a number, and a confirm that is a number, as no question', async () => {
+        answering('{"approve":[3],"confirm":3}');
+        const answer = await postTerminal({ action: 'command' }, 't');
+        expect(answer.approve).toBeUndefined();
+        expect(answer.confirm).toBeUndefined();
+    });
+});
+
 describe('the terminals a busy read names', () => {
     const IDS = ['a', 'b', 'c'];
     const label = (id: string) => `L${id}`;
@@ -167,6 +201,18 @@ describe('the terminals a busy read names', () => {
     ])('are every terminal of the group with no program for %s', async (_name, text, status) => {
         answering(text, status);
         expect(await readBusy(IDS, label)).toStrictEqual(FAILED);
+    });
+
+    it('names a terminal `always` picks even when the server says it is not busy', async () => {
+        answering('{"busy":[{"id":"a","busy":false,"command":"zsh"},{"id":"b","busy":false}]}');
+        expect(await readBusy(IDS, label, (id) => id === 'a')).toStrictEqual([
+            { id: 'a', name: 'La', command: 'zsh' }
+        ]);
+    });
+
+    it('names no terminal the server calls idle when `always` picks none', async () => {
+        answering('{"busy":[{"id":"a","busy":false,"command":"zsh"}]}');
+        expect(await readBusy(IDS, label, () => false)).toStrictEqual([]);
     });
 
     it('leaves out an item that is null and names the busy ones that follow it', async () => {

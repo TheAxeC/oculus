@@ -16,6 +16,7 @@ import {
     isTerminalId,
     listTerminals,
     sessionName,
+    tmuxValue,
     type RunOptions
 } from './sessions.ts';
 
@@ -33,15 +34,6 @@ export const NOT_LISTED = 'the terminal is not running: it may have ended';
 
 /** What a busy read answers for one terminal. */
 export type Busy = { id: string; busy: boolean; command: string };
-
-/**
- * A value as one tmux argument that reads back as the value. tmux takes an argument ending in `;`
- * as the end of a command, and `\;` as a literal `;`, so a value ending in `;` has that last
- * character escaped.
- */
-export function tmuxValue(value: string): string {
-    return value.endsWith(';') ? `${value.slice(0, -1)}\\;` : value;
-}
 
 /** Refuse an id that is not oculus's, or a terminal that is not listed. Throws the sentence. */
 async function listedTerminal(id: unknown, options: RunOptions): Promise<string> {

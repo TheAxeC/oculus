@@ -3,8 +3,9 @@
     // starts a shell at once in the tab's folder, the kinds dropdown beside it, which starts Shell,
     // Claude or Codex the same way, shows the composer (With a Prompt) in the shown terminal's
     // kind, or, under Attach to Session, joins a running terminal no Terminal tab owns to the end
-    // of the tab, and Split, which splits the shown terminal. The words of each are its tooltip and
-    // its accessible name. The title, the font buttons and what the tab said are on the view's bar.
+    // of the tab, and Split, which splits the shown terminal. A task terminal also has Rerun (once
+    // its line ended) and Restart. The words of each are its tooltip and its accessible name. The
+    // title, the font buttons and what the tab said are on the view's bar.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -16,7 +17,8 @@
         attachedOf,
         kindsMenu,
         profileOf,
-        type Attachable
+        type Attachable,
+        type TaskState
     } from '../terminal-list';
 
     type Props = {
@@ -30,9 +32,14 @@
         attachables: Attachable[];
         /** Split a terminal of this tab. */
         onsplit: (terminal: string) => void;
+        /** Where the shown terminal's line is, or null when it is no task terminal. */
+        task: TaskState;
+        /** Rerun and Restart the shown task terminal. */
+        onrerun: (terminal: string) => void;
+        onrestart: (terminal: string) => void;
     };
 
-    let { instance, shown, kind, attachables, onsplit }: Props = $props();
+    let { instance, shown, kind, attachables, onsplit, task, onrerun, onrestart }: Props = $props();
 
     const {
         terminals: { attachTerminal, composeInTab, startInTab }
@@ -75,5 +82,23 @@
         title={t('sessions.terminal_split_tip')}
         glyph="split_right"
         onclick={() => onsplit(shown)}
+    />
+{/if}
+{#if shown !== null && task === 'ended'}
+    <ToolButton
+        bare
+        label={t('commands.rerun')}
+        title={t('commands.rerun_tip')}
+        glyph="refresh"
+        onclick={() => onrerun(shown)}
+    />
+{/if}
+{#if shown !== null && task !== null}
+    <ToolButton
+        bare
+        label={t('commands.restart')}
+        title={t('commands.restart_tip')}
+        glyph="refresh_live"
+        onclick={() => onrestart(shown)}
     />
 {/if}

@@ -24,8 +24,10 @@
     // the view's dialog, handed in as `ask`. The graph's menus check a branch out through the
     // view's switch and delete a tag through the Tags section's question. Which sections and
     // folders are closed and which commit of the graph is open are the view's instance state,
-    // handed in, so both survive a tab switch. The Branch control of a repository's row asks for
-    // the Branches section to open with the focus on its head, through `reveal`.
+    // handed in, so both survive a tab switch. The repository's project commands are a row of
+    // buttons above the commit box (views/shared/sessions/CommandBar.svelte). The Branch control
+    // of a repository's row asks for the Branches section to open with the focus on its head,
+    // through `reveal`.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
@@ -37,6 +39,7 @@
     import Stashes from './refs/Stashes.svelte';
     import Tags from './refs/Tags.svelte';
     import Worktrees from './refs/Worktrees.svelte';
+    import CommandBar from '$lib/views/shared/sessions/CommandBar.svelte';
     import CommitBox from '$lib/views/shared/changes/CommitBox.svelte';
     import { repoShape, type RepoShape } from '$lib/state/sources/repositories/repositories';
     import { repositoryKeyRows } from '$lib/state/sources/repositories/change-tree';
@@ -184,6 +187,9 @@
             <TreeItem label={rowLabel(shape, git)} tone={shape === 'failed' ? 'error' : 'muted'} />
         </div>
     {:else}
+        <div class="commands">
+            <CommandBar repo={root} />
+        </div>
         <div class="commit">
             <CommitBox {root} {git} />
         </div>
@@ -290,6 +296,12 @@
     /* The message box and its button, 11px in from the left of the row and 12px from its right. */
     .commit {
         padding: 0 12px 0 11px;
+    }
+
+    /* The row of project commands, in line with the message box beneath it. */
+    .commands {
+        padding: 0 12px 0 11px;
+        margin-bottom: 4px;
     }
 
     .branch {

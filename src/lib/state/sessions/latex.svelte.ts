@@ -50,7 +50,7 @@ import type { EntitiesStore, Queries, WritesStore } from '../shared/stores/shape
 import type { FsStore } from '../sources/fs.svelte.ts';
 import { emptyTarget, targetFields, targetKey, type LatexTarget } from './terminal/latex-target.ts';
 import type { LatexStep, TerminalAnswer, TerminalsStore } from './terminals.svelte.ts';
-import { readListed } from './terminal/pty-io.ts';
+import { readListed } from './terminal/pty/pty-io.ts';
 
 export type { LatexTarget };
 

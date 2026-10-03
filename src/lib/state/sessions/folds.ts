@@ -247,6 +247,10 @@ export type TerminalChoice = {
     icon: string;
     /** The colour name the reader gave it, or the empty string for the default. */
     color: string;
+    /** Whether a project command started it. */
+    task: boolean;
+    /** The exit status of a task terminal whose line ended, else null. */
+    exit: number | null;
 };
 
 /** The last segment of a folder, or the folder itself when it has none (the root). */
@@ -263,9 +267,10 @@ function folderName(path: string): string {
  * titled by its agent, since what tmux reports running in its pane says nothing of it, and is
  * described by the session running in it (its resume, else its process), else by its own name. A
  * shell is titled by the command running in it, or by the word for a shell when tmux reports none,
- * and is described by the last segment of its folder. A title the reader gave a terminal takes the
- * place of that title, and its icon and colour travel with the row. A terminal oculus did not start
- * is left out, since the tab cannot attach to it.
+ * a task terminal by the name of the project command it ran, and a shell is described by the last
+ * segment of its folder. A title the reader gave a terminal takes the
+ * place of that title, and its icon, colour and task result travel with the row. A terminal oculus
+ * did not start is left out, since the tab cannot attach to it.
  */
 export function terminalChoices(
     terminals: readonly Pick<
@@ -281,16 +286,30 @@ export function terminalChoices(
         | 'title'
         | 'icon'
         | 'color'
+        | 'task'
+        | 'exit'
+        | 'job'
     >[],
     sessions: readonly Pick<GroupedSession, 'id' | 'title' | 'pid'>[]
 ): TerminalChoice[] {
     return terminals
         .filter((one) => one.foreign !== true)
         .map((one) => {
-            const row = { terminal: one.id, kind: one.kind, icon: one.icon, color: one.color };
+            const row = {
+                terminal: one.id,
+                kind: one.kind,
+                icon: one.icon,
+                color: one.color,
+                task: one.task,
+                exit: one.exit
+            };
             if (one.kind === 'shell') {
                 const command =
-                    one.command === '' ? t('sessions.terminal_title_shell') : one.command;
+                    one.job !== null
+                        ? one.job.name
+                        : one.command === ''
+                          ? t('sessions.terminal_title_shell')
+                          : one.command;
                 return {
                     ...row,
                     title: one.title === '' ? command : one.title,

@@ -16,8 +16,14 @@
 import { randomBytes } from 'node:crypto';
 import { statSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
+import { z } from 'zod';
 import { STEER_CONTROL, STEER_MAX } from '../../../data/model/index.ts';
-import type { Terminal, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
+import type {
+    Terminal,
+    TerminalJob,
+    TerminalKind,
+    TerminalResume
+} from '../../../data/model/index.ts';
 import { inputChunks, run, type KeyChunk, type TmuxOptions } from './tmux.ts';
 
 /** Every tmux session oculus owns carries this prefix and nothing else does. */
@@ -33,6 +39,9 @@ export const KINDS: TerminalKind[] = ['claude', 'codex', 'shell'];
 export function isTerminalKind(value: unknown): value is TerminalKind {
     return KINDS.some((kind) => kind === value);
 }
+
+/** The longest name a terminal may carry, which is what `label` accepts. */
+export const NAME_MAX = 80;
 
 /** The default scrollback handed to a page that attaches. */
 export const SCROLLBACK_LINES = 2000;
@@ -50,6 +59,15 @@ const NAME_OPTION = '@oculus_name';
  * only store: `<tool>:<session id>`, and unset on a terminal that continues nothing.
  */
 const RESUMES_OPTION = '@oculus_resumes';
+
+/**
+ * Marks a terminal a project command started and holds the command it ran as JSON,
+ * `{"repo":..., "name":..., "source":..., "token":..., "chain":[{"name":..., "cwd":...}]}`: the
+ * token its line prints before each command's name and the commands of its chain with their
+ * folders. tmux stays the only store and the mark survives a server restart. Unset on a terminal
+ * that is no task.
+ */
+const TASK_OPTION = '@oculus_task';
 
 /** The title, icon and colour a reader gave a terminal, each a tmux user option. */
 export const TITLE_OPTION = '@oculus_title';
@@ -75,9 +93,10 @@ export function isSessionId(id: unknown): id is string {
  * The fields a terminal is read from. The first six are the session and its active pane; the
  * seventh is the label the starter gave, the eighth the session it resumes, and the ninth to the
  * eleventh the title, icon and colour the reader gave, each kept as a tmux user option so tmux
- * stays the only store. The twelfth and last is the pid of the tmux server that answered, the same
- * on every row, which names that server to whoever cannot reach it by its socket later (see
- * serverPid).
+ * stays the only store. The twelfth is the task mark, the thirteenth whether the pane's process
+ * has ended (`remain-on-exit` keeps a task's pane) and the fourteenth the status it ended with.
+ * The fifteenth and last is the pid of the tmux server that answered, the same on every row, which
+ * names that server to whoever cannot reach it by its socket later (see serverPid).
  */
 export const LIST_FORMAT = [
     '#{session_name}',
@@ -91,6 +110,9 @@ export const LIST_FORMAT = [
     `#{${TITLE_OPTION}}`,
     `#{${ICON_OPTION}}`,
     `#{${COLOR_OPTION}}`,
+    `#{${TASK_OPTION}}`,
+    '#{pane_dead}',
+    '#{pane_dead_status}',
     '#{pid}'
 ].join('\t');
 
@@ -151,10 +173,59 @@ export type StartOptions = RunOptions & {
      * quote reaches the process as those characters. Wins over `command`.
      */
     argv?: string[];
+    /**
+     * Makes the terminal a task terminal of this command: its session is kept after its line
+     * ended, with the status of the line, and marked so the list reports it. Server-side only.
+     */
+    task?: TerminalJob;
+    /**
+     * The values of a task's placeholders, each set in the session's environment under a name
+     * that starts with TASK_ENV_PREFIX, which the line names as `"$OCULUS_ARG_<n>"`. Server-side
+     * only, and only beside `task`.
+     */
+    taskEnv?: Record<string, string>;
 };
 
 /** The environment names a start may set: the two agents' account folders. */
 export const ENV_NAMES = ['CLAUDE_CONFIG_DIR', 'CODEX_HOME'];
+
+/** The prefix of the environment names a task's placeholder values are set under. */
+export const TASK_ENV_PREFIX = 'OCULUS_ARG_';
+
+/**
+ * A value as one tmux argument that reads back as the value. tmux takes an argument ending in `;`
+ * as the end of a command, and `\;` as a literal `;`, so a value ending in `;` has that last
+ * character escaped.
+ */
+export function tmuxValue(value: string): string {
+    return value.endsWith(';') ? `${value.slice(0, -1)}\\;` : value;
+}
+
+/** The task mark of a job, and the job a mark names or null when it names none. */
+function jobOption(job: TerminalJob): string {
+    return JSON.stringify(job);
+}
+
+const jobShape = z.object({
+    repo: z.string(),
+    name: z.string(),
+    source: z.enum(['file', 'saved', 'found']).optional().catch(undefined),
+    token: z.string().optional().catch(undefined),
+    chain: z
+        .array(z.object({ name: z.string(), cwd: z.string() }))
+        .optional()
+        .catch(undefined)
+});
+
+/** The job a task mark holds, or null for a mark that is not the JSON of one. */
+function parseJob(value: string): TerminalJob | null {
+    try {
+        const read = jobShape.safeParse(JSON.parse(value));
+        return read.success ? read.data : null;
+    } catch {
+        return null;
+    }
+}
 
 /** The tmux session name of a terminal id. */
 export function sessionName(id: string): string {
@@ -252,13 +323,23 @@ function label(name: unknown, id: string): string {
     if (typeof name !== 'string') throw new Error('name must be a string');
     // eslint-disable-next-line no-control-regex
     if (/[\u0000-\u001f]/.test(name)) throw new Error('name must not hold control characters');
-    if (name.length > 80) throw new Error('name must be at most 80 characters');
+    if (name.length > NAME_MAX) throw new Error(`name must be at most ${NAME_MAX} characters`);
     return name;
 }
 
 /** The arguments of the list; separate from listTerminals so a test can read them. */
 export function listArgs(): string[] {
     return ['list-sessions', '-F', LIST_FORMAT];
+}
+
+/**
+ * The status a task terminal's line ended with, or null while it runs. A line that ended with no
+ * status (tmux reports none for a process a signal ended) is read as 1, so it is shown as a
+ * failure and not as still running.
+ */
+function exitOf(dead: string, status: string): number | null {
+    if (dead !== '1') return null;
+    return /^\d+$/.test(status) ? Number(status) : 1;
 }
 
 /** One line of the list as a Terminal, or null when it is not an oculus session. */
@@ -271,8 +352,12 @@ export function parseTerminal(line: string): Terminal | null {
     const created = Number(fields[1]);
     const command = fields[3] ?? '';
     const named = fields[6] ?? '';
+    const mark = fields[11] ?? '';
     return {
         resumes: parseResumes(fields[7] ?? ''),
+        task: mark !== '',
+        exit: mark === '' ? null : exitOf(fields[12] ?? '', fields[13] ?? ''),
+        job: parseJob(mark),
         // A session named by hand under the prefix is listed and flagged: the page can say why its
         // controls are refused instead of offering a stop that cannot be built.
         foreign: !isTerminalId(id),
@@ -394,6 +479,22 @@ export function envArgs(env: Record<string, string> | undefined): string[] {
     return args;
 }
 
+/**
+ * The `-e NAME=value` pairs of a task's placeholder values. A name that is not TASK_ENV_PREFIX and
+ * a number, or a value holding a NUL, is refused; any other text is a value, line breaks included,
+ * since it reaches the shell as a variable and is never read as code.
+ */
+export function taskEnvArgs(env: Record<string, string> | undefined): string[] {
+    const args: string[] = [];
+    const named = new RegExp(`^${TASK_ENV_PREFIX}[1-9][0-9]*$`);
+    for (const [name, value] of Object.entries(env ?? {})) {
+        if (!named.test(name)) throw new Error(`env must name ${TASK_ENV_PREFIX}<n>`);
+        if (value.includes('\u0000')) throw new Error(`${name} must hold no NUL`);
+        args.push('-e', tmuxValue(`${name}=${value}`));
+    }
+    return args;
+}
+
 /** A vector tmux runs directly: at least two words, `env` before a vector of one. */
 function vector(command: string[]): string[] {
     return command.length === 1 ? ['env', ...command] : command;
@@ -405,12 +506,19 @@ function vector(command: string[]): string[] {
  * of more words directly, so a vector of one word gets `env` in front: `env` runs the word as the
  * program it names, and no shell reads it.
  */
-export function startArgs(id: string, request: CheckedStart, command: string | string[]): string[] {
+export function startArgs(
+    id: string,
+    request: CheckedStart,
+    command: string | string[],
+    task?: TerminalJob,
+    taskEnv?: Record<string, string>
+): string[] {
+    const session = sessionName(id);
     return [
         'new-session',
         '-d',
         '-s',
-        sessionName(id),
+        session,
         '-c',
         request.cwd,
         '-x',
@@ -418,8 +526,33 @@ export function startArgs(id: string, request: CheckedStart, command: string | s
         '-y',
         String(request.rows),
         ...envArgs(request.env),
+        ...(task === undefined ? [] : taskEnvArgs(taskEnv)),
         '--',
-        ...(typeof command === 'string' ? [command] : vector(command))
+        ...(typeof command === 'string' ? [command] : vector(command)),
+        ...(task === undefined ? [] : taskArgs(session, task))
+    ];
+}
+
+/**
+ * The commands that make a session a task terminal, joined to its `new-session` by tmux's `;`
+ * separator so they run in the same invocation: a session set up by a later call loses the status
+ * of a line that ended before that call arrived. `remain-on-exit` keeps the pane after its line
+ * ended, and the task option marks the session and names the command.
+ */
+function taskArgs(session: string, task: TerminalJob): string[] {
+    return [
+        ';',
+        'set-option',
+        '-t',
+        session,
+        'remain-on-exit',
+        'on',
+        ';',
+        'set-option',
+        '-t',
+        session,
+        TASK_OPTION,
+        jobOption(task)
     ];
 }
 
@@ -449,7 +582,16 @@ export async function startTerminal(
         (resume === undefined ? commandFor(kind) : resumeArgs(resume));
     if (Array.isArray(command) && command.length === 0) throw new Error('argv must not be empty');
     const exec = options.run ?? run;
-    await exec(startArgs(id, { kind, cwd, cols, rows, env: request.env }, command), options);
+    await exec(
+        startArgs(
+            id,
+            { kind, cwd, cols, rows, env: request.env },
+            command,
+            options.task,
+            options.taskEnv
+        ),
+        options
+    );
     if (name !== id) {
         await exec(['set-option', '-t', sessionName(id), NAME_OPTION, name], options);
     }
@@ -463,6 +605,19 @@ export async function startTerminal(
     const found = terminals.find((terminal) => terminal.id === id);
     if (found !== undefined) return found;
     throw new Error(`the terminal did not start: ${id}`);
+}
+
+/**
+ * The arguments that run a task terminal's line again in the same pane. `-k` ends a line still
+ * running first; without a command, tmux runs the one the pane was started with.
+ */
+function respawnArgs(id: string): string[] {
+    return ['respawn-pane', '-k', '-t', sessionName(id)];
+}
+
+export async function respawnTerminal(id: string, options: RunOptions = {}): Promise<void> {
+    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
+    await (options.run ?? run)(respawnArgs(id), options);
 }
 
 /** The arguments that resize a terminal's window. */
@@ -496,6 +651,20 @@ export async function stopTerminal(id: string, options: RunOptions = {}): Promis
 /** The arguments that capture what the pane already shows, escape sequences and all. */
 export function captureArgs(id: string, lines: number = SCROLLBACK_LINES): string[] {
     return ['capture-pane', '-p', '-e', '-S', `-${lines}`, '-t', sessionName(id)];
+}
+
+/**
+ * The arguments that capture all the text a pane holds, its history and its screen, as lines
+ * rather than as the screen's rows: a line the pane wrapped is joined again.
+ */
+function outputArgs(id: string): string[] {
+    return ['capture-pane', '-p', '-J', '-S', '-', '-t', sessionName(id)];
+}
+
+/** All the text a terminal's pane holds, for the output of a task no grid shows. */
+export async function paneOutput(id: string, options: RunOptions = {}): Promise<string> {
+    if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
+    return (options.run ?? run)(outputArgs(id), options);
 }
 
 /** What the pane already shows, so an attaching page starts with the screen rather than blank. */

@@ -6,8 +6,10 @@
 // A GET lists the terminals and is same-origin only, like every read. A POST starts, stops, resizes
 // or resumes a terminal, starts the composer's session, types a message into one or interrupts its
 // turn, forks a session, starts dataset recovery, starts an update task, or builds or cleans one
-// main file of a project's manuscript or of a folder of a served root, and additionally carries the
-// write token, since it is a write in DESIGN.md's "Auth" sense: it runs a process on the machine.
+// main file of a project's manuscript or of a folder of a served root, runs a project command,
+// runs a task terminal's line again or reads the output of a listed terminal, and additionally
+// carries the write token, since it is a write in DESIGN.md's "Auth" sense: it runs a process on
+// the machine.
 //
 // The resume action is DESIGN.md's one explicit migration: an observed session becomes a terminal
 // oculus holds by running `claude --resume <id>` or `codex resume <id>` in its own cwd. Nothing is
@@ -20,13 +22,14 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { join } from 'node:path';
-import { taskSkipPermissions } from '../../../data/helpers/tasks.ts';
+import { taskSkipPermissions } from '../../../data/helpers/run/tasks.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, loadLocalOrDefaults, textCatalog } from '../../../data/sources/config.ts';
 import { MANUSCRIPT, isMainOf, programOf } from '../../content/latex.ts';
 import type { Program } from '../../../data/prose/latex.ts';
 import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
+import { captureTask, restartTask, rerunTask, startCommand } from '../commands/run.ts';
 import { startChat, type ChatOptions } from './chat.ts';
 import { words } from '../../core/words.ts';
 import {
@@ -49,6 +52,7 @@ import {
     RESUME_TOOLS,
     interruptTerminal,
     isSessionId,
+    NAME_MAX,
     isTerminalId,
     listTerminals,
     newId,
@@ -59,14 +63,12 @@ import {
     stopTerminal,
     type StartOptions
 } from './sessions.ts';
+import { shellWord } from './shell-word.ts';
 import type { SessionRecord, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
 
 /** The catalog keys the page has words for; every other refusal is the server's own sentence. */
 const UNKNOWN = 'sessions.resume_unknown';
 const LIVE = 'sessions.resume_live';
-
-/** The longest name a terminal may carry, which is what sessions.ts `label` accepts. */
-const NAME_MAX = 80;
 
 /** The four update skills the palette and tray may start. */
 const TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
@@ -122,11 +124,15 @@ export type TerminalOptions = StartOptions &
         /**
          * The roots the file browser serves, which a latex request for a folder is looked up in.
          */
-        rootsFor?: () => Root[];
+        servedRootsFor?: () => Root[];
         /** Re-read the terminal manager after a write. */
         refresh?: () => void;
         /** The user's shell, whose base name a busy read compares a pane's command with. */
         shell?: string;
+        /** The directories the file browser serves, one of which holds a command's repository. */
+        rootsFor?: () => string[];
+        /** The approvals file the command texts are checked against. */
+        approvalsFor?: () => string;
     };
 
 /** The options a list request takes: a tmux runner and the shell a busy read compares against. */
@@ -279,11 +285,6 @@ async function composeSession(
     return json({ ok: true, terminal }, { headers: NO_STORE });
 }
 
-/** Quote one word for the shell command tmux starts. */
-function shellWord(value: string): string {
-    return `'${value.replaceAll("'", `'"'"'`)}'`;
-}
-
 /** Start the registry's recovery script for one dataset the current snapshot holds. */
 async function recoverDataset(
     key: unknown,
@@ -407,7 +408,11 @@ function latexFolder(
         return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
     }
     if (named.data.id === undefined) {
-        const found = resolveRootPath(options.rootsFor?.() ?? [], named.data.root, named.data.path);
+        const found = resolveRootPath(
+            options.servedRootsFor?.() ?? [],
+            named.data.root,
+            named.data.path
+        );
         if ('error' in found) {
             return json({ error: found.error }, { status: 400, headers: NO_STORE });
         }
@@ -480,7 +485,7 @@ function sessionOf(message: Record<string, unknown>): TerminalResume | Response 
 
 /**
  * POST /api/terminal: start, compose, steer, interrupt, fork, stop, resize, resume or recover one
- * terminal.
+ * terminal, run a project command, or run a task terminal's line again.
  */
 export async function handleTerminal(
     request: Request,
@@ -518,6 +523,18 @@ export async function handleTerminal(
         }
         if (message.action === 'latex') {
             return await startLatex(message, options);
+        }
+        if (message.action === 'command') {
+            return await startCommand(message, options);
+        }
+        if (message.action === 'rerun') {
+            return await rerunTask(message, options);
+        }
+        if (message.action === 'restart') {
+            return await restartTask(message, options);
+        }
+        if (message.action === 'capture') {
+            return await captureTask(message, options);
         }
         if (message.action === 'chat') {
             const terminal = await startChat(message.id, message.cols, message.rows, options);
@@ -587,7 +604,7 @@ export async function handleTerminal(
     }
     return json(
         {
-            error: 'action must be start, compose, steer, interrupt, fork, stop, resize, resume, rename, restyle, clear, recover, task, latex or chat'
+            error: 'action must be start, compose, steer, interrupt, fork, stop, resize, resume, rename, restyle, clear, recover, task, latex, command, rerun, restart, capture or chat'
         },
         { status: 400, headers: NO_STORE }
     );

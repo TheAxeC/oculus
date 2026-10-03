@@ -170,6 +170,9 @@ function terminal(over: Partial<Terminal> = {}): Terminal {
         created: '2026-09-11T08:00:00.000Z',
         attached: true,
         resumes: null,
+        task: false,
+        exit: null,
+        job: null,
         ...over
     };
 }
@@ -471,6 +474,22 @@ describe('subscribing to a terminal', () => {
         expect(socket.written()[0].channels).toEqual(['sessions', CHANNEL]);
     });
 
+    it('says a terminal is read while a call of subscribePty holds it, until the last lets go', () => {
+        connected();
+        serving(200, { ok: true, id: ID });
+        const { subscribed } = client.terminals;
+        expect(subscribed(ID)).toBe(false);
+        const one = subscribePty(ID, grid, () => undefined);
+        const two = subscribePty(ID, grid, () => undefined);
+        expect(subscribed(ID)).toBe(true);
+        one();
+        one();
+        expect(subscribed(ID)).toBe(true);
+        two();
+        expect(subscribed(ID)).toBe(false);
+        expect(subscribed('ffffff-shell')).toBe(false);
+    });
+
     it('resizes the window to the grid before it asks for the channel', async () => {
         const socket = connected();
         const requests = gated();
@@ -717,6 +736,9 @@ describe('the terminals no Terminal tab owns', () => {
             created: '2026-09-11T08:00:00.000Z',
             attached: false,
             resumes: null,
+            task: false,
+            exit: null,
+            job: null,
             ...over
         };
     }

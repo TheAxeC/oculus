@@ -254,6 +254,7 @@ describe("oculus's own config directory", () => {
         'views/sessions/terminal.yml',
         'views/sessions/timeline.yml',
         'views/sessions/transcript.yml',
+        'views/shared/commands.yml',
         'views/sources/data.yml',
         'views/sources/doc.yml',
         'views/sources/document.yml',
