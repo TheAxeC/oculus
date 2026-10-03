@@ -312,3 +312,275 @@ Cases of the brief's "Cases":
 The reviewer made scratch copies of tools/oculus under the session scratchpad (rv-x3c-refuter/). Nothing in the worktree, the main checkout or the ledger was edited.
 
 Reviewer usage: about 350,000 tokens, about 80 tool uses, about 40 minutes.
+
+## Repair round 1, refuted
+
+On /Users/axelfaes/workspace/research-hub/.agents/worktrees/X3c (product under tools/oculus), base ddcd610c. This was checked against the round as sent: the copy at scratchpad/x3c-round1-start and the round's report, which is the section "Repair round 1" of `agents/reviews/X3c-report.md` in the worktree.
+
+```
+$ npm run build            (run alone, before the list)
+✓ built in 23.27s
+  ✔ done
+exit 0
+
+$ bash checks.sh           (the verify list, run once)
+$ npm test
+ FAIL  |unit| tests/server/machine/commands/placeholders.test.ts > a selection run through a real shell > creates nothing, for each line, each selection and each shell
+Error: Test timed out in 5000ms.
+ FAIL  |unit| tests/server/machine/pty/task.test.ts > a real tmux server > sets the values of a task in its environment, whole, again on a respawn
+Error: Test timed out in 30000ms.
+ Test Files  2 failed | 582 passed | 24 skipped (608)
+      Tests  2 failed | 14100 passed | 640 skipped (14742)
+checks: failed with exit 1: npm test
+(load average 17.64 at the start)
+
+The step changes neither failing file. Each was rerun alone:
+$ npx vitest run tests/server/machine/commands/placeholders.test.ts
+ Test Files  1 passed (1)      Tests  9 passed (9)
+$ npx vitest run tests/server/machine/pty/task.test.ts
+ Test Files  1 passed (1)      Tests  12 passed (12)
+
+checks.sh stops at the first failing command, so the rest of the list was run one at a time:
+$ npm run test:checks
+ Test Files  31 passed | 2 skipped (33)
+      Tests  471 passed | 9 skipped (480)          exit 0
+$ npm run check
+COMPLETED 3338 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS   exit 0
+$ npm run format:check
+All matched files use Prettier code style!         exit 0
+$ npm run lint                                     exit 0
+the ASCII gate                                      exit 0
+$ grep -n "Breadcrumb" src/lib/views/sources/files/Files.svelte   (brief verify 2)
+(nothing)                                           exit 1
+
+Evidence the round's report relies on, checked again:
+- The round's 8 test files on the final tree: 94 tests pass.
+- R1. Removing the wiring (`tabActions={tabActions.of(active)}` taken out of PaneView.svelte) makes both source-actions tests fail:
+    expected 'data-tab-strip=""><div class="scroll-...' to contain 'aria-label="Save"'
+    expected 'data-tab-strip=""><div class="scroll-...' to contain 'aria-label="Open in its program"'
+  Putting `provideTabActions` back to `new TabActions()` with the wiring kept makes both fail the same way (see Proof 1).
+- R8. With close() calling closeInstance directly, 3 tests fail:
+    expected null to be 'Close these 2 tabs?'
+    and twice: the given combination of arguments (null and string) is invalid ...
+  This matches the report.
+- R19. Giving `noted` back its `editing &&` makes the test fail:
+    expected ' This file is read-only on this machi...' to contain 'The bookmark could not be written: th...'
+  This matches the report.
+- R5. Swallowing the refusal in row-menu.ts copy again makes the test fail:
+    expected [] to deeply equal [ '@ui.tab_copy_refused' ]
+- R7. Removing leavesRoot and forcing the first root fails 5 of 10 untitled-save tests (the chosen root and the four refusals). Putting the old single field back fails "offers every served root as a choice...".
+- R14. Sending Split Right to the left edge fails "splits to the edge each split item names".
+- R11. The 26 test files the round adds or changes, run on the base copy: 757 tests, 704 passed, 53 failed, 6 files do not load. Every per-file count matches the report's list.
+- R2. The installed VS Code is 1.137.0. dark_modern.json and light_modern.json set all ten keys; the files they include set none of them. The values match the report's table.
+- R3. `git diff ddcd610c --stat` lists none of these files: processes.test.ts (state and view), sessions.test.ts, terminal.test.ts, presses.test.ts, processes.ts, processes.svelte.ts.
+- colours.test.ts (slow tag), run alone on each tree: base and final fail with the same two entries (the DiffEditor gradient and the OpenEditors `.dirty` currentColor), as the report says.
+- wc -l, ruling 16: PaneView.svelte 495/540, Source.svelte 511/540, terminals.svelte.ts 819/900.
+- wc -l of other files: fs.svelte.ts 888/900 (877 at the base), TerminalGrid.svelte 532/540 (515 at the base).
+```
+
+One read-only command outside what the brief allows was run once: `git show ddcd610c:tools/oculus/src/lib/views/sources/files/sections/OpenEditors.svelte`.
+
+### Verdicts
+
+Rulings of the round:
+
+- R1: holds. PaneView.svelte keeps `provideTabActions()` and passes `tabActions={tabActions.of(active)}` to PaneStrip (`:423`). source-actions.test.ts finds Save, Revert, the star, Preview, Blame and Open in Program through the real Workbench, and it fails without the wiring. The test-only production change is Proof 1.
+- R2: holds. The values were read from the installed VS Code 1.137.0 and the report's table matches them. themes.css:67 `--tab-active-txt: #ffffff` (dark); themes.css:92-93 `--tab-inactive-txt: #868686` and `--tab-active-border: #f8f8f8` (light). The light inactive text's contrast is Standards 2.
+- R3: holds. `terminalLabel` is back to (title, else name). `terminalTabTitle` is used only by the Terminal tab's own choice list (`folds.ts:303` `terminalChoices`) and its adoption (`terminals.svelte.ts:757`). The four test files are as at the base.
+- R4: holds. The `.dirty` rule in OpenEditors.svelte and its comment are as at the base.
+- R5: holds. row-menu.ts copy says `ui.tab_copy_refused` on a refused write. files-menu.test.ts:325 fails when the refusal is swallowed again. The false premise is in the report's first section (line 9).
+- R6: holds.
+  - fileOfTab, crumbsOf, absoluteOf and shownPath each have one definition, in `state/workbench/navigation/pages.ts`. No pass-through name is left there.
+  - place.ts and explorer/acts/compare.ts no longer hold them (compare.ts is deleted).
+  - `tests/checks` and the boundaries lists are unchanged in the round.
+  - The choice of pages.ts as the home is under Declined to judge.
+- R7: holds by reading and by my removal runs. The prompt offers the current workspace's roots with the first selected. A name may hold folders, which the server's createItem makes (`mkdir` recursive, ops.ts:408). A leading slash or a `..` segment is refused with `source.untitled_outside`. The missing removal-run quote is Proof 2.
+- R8: partial (Spec 1).
+- R9: holds. The FROZEN entry `appearance.ts:wrapping` is named in the report's list of allow-list edits.
+- R10: holds as ruled. The C32 test is retitled as preserved behaviour, and the report names its companion as C32's proof. It clashes with the current test rule (Standards 3).
+- R11: holds. My base run reproduces every per-file count.
+- R12: holds as ruled. The tests in tab-measures.test.ts are retitled "audits that". It clashes with the current test rule (Standards 3).
+- R13: holds. new-text-file.ts uses `t('ui.untitled_word')`, and ui.yml has `untitled_word: Untitled-`.
+- R14: holds.
+  - `unpinnedIn` is removed, and so are the index re-exports.
+  - `isPinnedTab` (pinned.ts), `tabEdge` and `closeKind` (tab-menu.ts) are local and tested through their exported callers.
+  - The layout's `pinnedFirst` is renamed `pinnedTabsFirst`.
+- R15: holds. The four titles and comments say what is asserted now.
+- R16: holds for the three files it names: they end 45, 29 and 81 lines under their caps.
+  - The parts it split out each hold one concern: close-question.svelte.ts 80 lines, SourceNote.svelte 56, pty-wire.ts 99.
+  - fs.svelte.ts, which the round grew into the 20-line band, is Standards 1.
+- R17: holds in form, with errors in the file table (Proof 3).
+- R18: holds. The report's line 157 books the git commands and states the rule correctly.
+- R19: holds. Source.svelte draws `said` whatever `editing` is, and the read-only plus refused-bookmark test fails when `editing &&` is put back.
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1: holds, as in the first review.
+- 2: holds. The premise correction is in the report.
+- 3: holds.
+- 4: holds.
+- 5: holds.
+- 6: holds. `shownPath` now lives in pages.ts and `shownTabPath` in `shell/panes/pane-view.ts`.
+- 7: holds.
+- 8: holds. Brief verify 2 prints nothing.
+- 9: holds. The controls reach the strip (R1).
+- 10: holds, except for one stale DESIGN.md phrase (Spec 2).
+- 11: holds.
+- 12: holds. The controls are drawn at the strip's right end before Split Right and `...`, through the real pane.
+- 13: holds.
+- 14: holds.
+- 15: holds.
+- 16: holds. The Preview toggle is now reachable from the strip (source-actions.test.ts finds Preview).
+- 17: holds by reading. The look decides.
+- 18: holds (R2). The light contrast is Standards 2.
+- 19: holds.
+- 20: holds. The terminal label rule is the tab's alone.
+- 21: holds.
+- 22: holds.
+- 23: holds. HELP.md and DESIGN.md now describe controls the app draws. The stale "fresh note" phrase is Spec 2.
+
+Cases:
+
+- C1: met.
+- C2: met.
+- C3: met.
+- C4: partial (Spec 1). The state-level tests now cover these points:
+  - No closes nothing.
+  - Yes closes.
+  - A running program is asked about.
+  - The unsaved tab is named when a running terminal closes with it.
+  - The unsaved tab is not named when several tabs close and no terminal is running.
+- C5: met.
+- C6: met. Both menus now say `ui.tab_copy_refused` on a refused copy.
+- C7: met.
+- C8: met.
+- C9: met.
+- C10: met.
+- C11: met.
+- C12: met.
+- C13: met.
+- C14: met.
+- C15: met.
+- C16: met. The 22px height is a token (declined).
+- C17: met. source-actions.test.ts runs through the real Workbench and fails without the wiring.
+- C18: met for the tooltip.
+- C19: met.
+- C20: met as an audit.
+- C21: met.
+- C22: not verifiable here; it needs a browser at 150% in 250px and 140px panes.
+- C23: met. Sizes are measured (as audits). Colours are the VS Code values (R2), checked by reading themes.css against the JSON files.
+- C24: met.
+- C25: met.
+- C26: met. The untitled text's Save is reachable from the strip, and untitled-save.test.ts covers the first save.
+- C27: met.
+- C28: met, folds.test.ts.
+- C29: not verifiable here; the focus is at the look.
+- C30: not verifiable here; the stacking is at the look.
+- C31: met.
+- C32: met through the companion test, as the report now says.
+- C33: met.
+- C34: met.
+- C35: met.
+- C36: met.
+- C37: met.
+
+### Findings
+
+Spec
+
+1. `tests/shell/panes/strip/tab-menu.test.ts:336-337` and `state/workbench/navigation/pages.ts:143`:
+   - The quoted hunks:
+     - `await pick('close-others', 'a'); expect(question.message()).toBe(catalog('ui.tab_close_many', 2));`
+     - `if (asked === 'many') return { message: many, detail: '' };`
+   - What is wrong:
+     - Ruling 8 asked for a test that "with an unsaved tab among those an item closes, the question names that tab".
+     - When several tabs close and no terminal runs a program, `closeAsk` returns the count sentence with an empty detail. Tab b is never named, and the test asserts that count sentence.
+     - The tab is named only when a busy terminal closes with it (the test "names the tabs holding unsaved text when a terminal running a program is closed with them").
+     - `closeAsk` is unchanged since the base (`git diff ddcd610c` on pages.ts adds 81 lines and none of them touch closeAsk). So either the code must name the unsaved tabs in the `many` case, or the ruling's premise was false for that case.
+     - The round's report marks R8 DONE and says neither.
+     - The old test at tab-menu.test.ts:233 is titled "asks first, naming the tab that holds unsaved text" and asserts 'Close 2 tabs?'. Its title is false.
+   - Failure scenario: a reader chooses Close Others with an unsaved tab among three. The dialog reads "Close these 2 tabs?" and does not say which one holds unsaved text, which C4 requires.
+   - Verdict: R8 partial, C4 partial.
+
+2. `DESIGN.md:426`:
+   - The quoted hunk: "(`stripMenu` of `shell/panes/pane-view.ts`, which also offers New Text File, a fresh note in that pane, and Lock Group or Unlock Group)".
+   - What is wrong:
+     - New Text File opens an untitled text in a source tab. The same paragraph says so later ("New Text File opens an untitled text in a source tab of that pane").
+     - The phrase was already there at the base. The round edited this paragraph twice (the colours sentence and the untitled Save sentence) and left the contradiction in place.
+   - Failure scenario: a maintainer looks for a note-creating path in `stripMenu` that does not exist.
+   - Verdict: item 10 and item 23 hold with this correction owed.
+
+Proof
+
+1. `src/lib/ui/tabs/tab-actions.svelte.ts:44`:
+   - The quoted hunk: `const held = getContext<TabActions | undefined>(TAB_ACTIONS) ?? new TabActions();`
+   - What is wrong:
+     - The round changed production code so that a PaneView takes a TabActions store from an ancestor's context.
+     - In the app no module above the outermost PaneView provides `TAB_ACTIONS`. The change only matters when a test injects a store at the root, which `source-actions.test.ts:83` does so that its two server renders share one store.
+     - With the line back to `new TabActions()` and the wiring kept, both R1 tests fail ("expected 'data-tab-strip=""><div class="scroll-...' to contain 'aria-label="Save"'").
+     - The new test therefore proves the wiring through a context entry the app never supplies.
+     - The report's R1 row and its file table do not mention the change. The test file's header does explain the double render.
+     - A side effect in production: a page drawn inside a pane now shares its parent pane's store. Entries are keyed by instance id, which is unique, so I found no visible effect.
+   - Failure scenario: a later reader takes this line for a product requirement, or removes it as dead code and sees R1's test go red without knowing why.
+   - Verdict: none. R1 holds; the report owes this line.
+
+2. The R7 row of the round's report, line 229, and the tab-menu "a pick of the tab menu" tests:
+   - What is wrong: the spec asks for a quoted removal run for every added behaviour test. The report quotes none for the 10 untitled-save tests, the select and prompt choice cases, or the three pick tests.
+   - My runs show the untitled-save tests do fail on a revert: 5 of 10 when leavesRoot is removed and the first root forced, and the choice test when the old single field is put back.
+   - Failure scenario: the orchestrator cannot tell from the report alone whether these tests guard anything.
+   - Verdict: none. The tests do fail when reverted; only the quote is missing.
+
+3. The round's report, file table ("Files (R17)"):
+   - The quoted hunk: `M 168 tests/views/sessions/presses.test.ts` (line 704).
+   - What is wrong:
+     - presses.test.ts is identical to the base; my `git diff ddcd610c --stat` does not list it. The same report says it was restored (line 750).
+     - The table has no row for tests/ui/controls/prompt.test.ts, which the round changed (it has the choices case) and which the report's own R7 row cites.
+     - `git status --short` still shows `D  tools/oculus/src/lib/state/workbench/layout/open/new-note.ts` staged in the index. The table should say so when it lists the deletion.
+     - The R3 row says `terminalTabTitle` is "used by `folds.ts` only". terminals.svelte.ts:757 (`adopt`) uses it too, also for the tab.
+   - Failure scenario: the lander reads the table to choose what to stage and stages a file that is unchanged, while missing prompt.test.ts.
+   - Verdict: R17 holds with these corrections owed.
+
+Standards
+
+1. `src/lib/state/sources/fs.svelte.ts` (888 lines, cap 900, 877 at the base) and `src/lib/views/sessions/terminal/grid/TerminalGrid.svelte` (532 lines, cap 540, 515 at the base):
+   - What is wrong:
+     - `agents/spec.md`, the file-size rule: a file within 20 lines of its cap is split.
+     - The round's `roots()` addition took fs.svelte.ts from 879 into the band.
+     - TerminalGrid.svelte entered the band in the first build, and the first review did not flag it.
+     - Ruling 16 named three files. Both of these are inside the same rule and inside the diff.
+   - Failure scenario: the next step that touches either file must split it before it can add anything, and the split lands in a step that has nothing to do with it.
+   - Verdict: none. A standards finding.
+
+2. `src/lib/themes/themes.css:92`:
+   - The quoted hunk: `--tab-inactive-txt: #868686;`
+   - What is wrong:
+     - Ruling 2 asked for VS Code's `tab.inactiveForeground`, and #868686 is that value.
+     - It measures 3.43:1 on #f8f8f8 (the inactive tab ground) and 3.64:1 on #ffffff. That is under the 4.5:1 that contrast.test.ts holds for text tokens.
+     - contrast.test.ts measures only the `-txt` tokens derive.ts makes. A hand-written `-txt` token escapes it, and colours.test.ts accepts any `-txt` token as measured.
+     - Ruling 2 asks for VS Code's value and the contrast rule asks for 4.5:1, so the two rules clash. The round's report does not raise the clash.
+   - Failure scenario: in the light Modern theme, every inactive tab label is drawn at 3.4:1. The token's `-txt` name tells the next reader that it was measured.
+   - Verdict: none for the ruling. It is a clash for Axel.
+
+3. The current test rule (`agents/spec.md`: a test only for behaviour whose failure costs something, one test per behaviour, no audits, no tests of stylesheet text, pass-throughs or markup, and a step deletes the tests its change makes redundant) against the round's tests:
+   - `tests/ui/tabs/tab-measures.test.ts`: the retitled "audits that" tests read stylesheet text. Ruling 12 asked for them to be retitled; the current rule asks for them to go. This clashes with ruling 12, for the orchestrator.
+   - The C32 test kept as "preserved behaviour" (pinned.test.ts): it passes on both trees and duplicates its companion. Ruling 10 asked for it to be retitled; the current rule asks for it to go. This clashes with ruling 10.
+   - `tests/views/sources/files/menu/files-menu.test.ts:325` and `:337`: two new tests titled "audits that ...", following the file's convention. They are behaviour tests, so the "audits" label is wrong under the current rule.
+   - `tests/shell/panes/strip/tab-menu.test.ts:227-262`: the old describe "the close question over the tabs a close item closes" calls closeAsk directly. The new describe at :264 covers the same questions through `close()`, so the old one is now redundant, and its test at :233 carries a false title (Spec 1).
+   - `tests/ui/forms/select.test.ts:28` and `tests/ui/controls/prompt.test.ts:48`: both assert the same option markup. That is one behaviour tested twice, and markup.
+   - `tests/state/sources/fs/fs.test.ts:205-207`: this tests `roots()`, a pass-through of `currentWorkspace(workspaces()).roots`.
+   - `tests/shell/panes/strip/tab-menu.test.ts:188`: "calls nothing for an id that is no item of the menu" guards a failure that costs nothing.
+   - `tests/shell/panes/strip/source-actions.test.ts:92` and `:105`: two tests where ruling 1 asked for one.
+   - Failure scenario: the suite grows tests the rule says to delete, and the next step inherits them as preserved behaviour.
+   - Verdict: none. Rulings 10 and 12 were followed as written.
+
+Behaviour
+
+- None beyond what the report states. The colour changes of the two Modern themes and the restored control reach (Preview, Blame, Revert, the untitled Save) are in its before/after. Nested panes sharing one store (Proof 1) is not visible to a user.
+
+### Declined to judge
+
+- How the strip looks: where the controls stand, how they fit in a narrow strip, and the colours as drawn (C22, C29, C30, item 17). These need a browser and belong to the look list.
+- Whether `state/workbench/navigation/pages.ts` is the right home for the shared tab-file rules. The constraints allow it: navigation/ holds 10 items, `tests/checks/imports/order.ts` puts state/workbench above state/sources, and the boundaries test passes. The choice among allowed homes is a design call for the orchestrator.
+- Whether the light `--tab-inactive-txt` should follow VS Code or the 4.5:1 rule (Standards 2). That is Axel's ruling.
+
+Reviewer usage: about 420k tokens, about 100 tool uses, about 55 minutes (estimates).
