@@ -1058,6 +1058,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z369 (2026-10-03): O33, O34, O35 and O36 are paused; the loop goes on with every other step until a stop, Axel's word, or only those four remain (the user).
 - Z370 (2026-10-03): (a), T1a's builder and its landing take every timing while four full `npm test` runs loop in the background in scratch copies of the tree, each timing with the load average beside it, so the 30 s is measured under the load it must hold at (the user).
 - Z371 (2026-10-03): (b), X3c's diagnosis of the active tab left out of sight runs its probes in a headless browser (Playwright, installed only in the diagnosis's scratch folder under `$TMPDIR`, its browser there too, never in oculus's `package.json`) against a scratch copy of the code, since the TEST window is covered and drawn no frames whenever Axel works in the terminal (the user).
+- Z372 (2026-10-03): (a), X3c fixes the zero-width tab list: the list always keeps room for the active tab, and the history arrows and the strip's controls give way first as the pane narrows, as VS Code keeps the active tab in a narrow group; X3c's landing look replays the Q78 look's own steps (the mocha palette with its wallpaper, then back) on TEST under Z290. X3c's one repair round is used, so the fix is made at X3c's landing with its test (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

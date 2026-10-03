@@ -1,5 +1,5 @@
 In flight:
-- X3c (the tab strip as VS Code's): repair round 1 refuted, its findings disposed at landing; waits on the diagnosis of an active tab left out of sight, which needs the TEST window in front.
+- X3c (the tab strip as VS Code's): repair round 1 refuted; lands after D25's owed looks, with its findings disposed and the zero-width tab list fixed at landing.
 - T1c (the test sweep of tests/server/): refuted, repair round 1 at work.
 
 Queued, in order (36 steps):
