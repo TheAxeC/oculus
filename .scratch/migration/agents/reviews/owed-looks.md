@@ -134,6 +134,13 @@ Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/
   - Defect Q66-1 (item 17): the Transcript of the running session S2 status draws "This session has no turns yet". The session's log is 634,850,633 bytes, above Node's `buffer.constants.MAX_STRING_LENGTH` of 536,870,888, so `foldFrom` in `server/sessions/stores/transcripts.ts:104` throws on `toString` and its `catch` answers 0 bytes; `/api/transcript` then answers `{"turns":[],"offset":0,"results":{}}` (36 bytes), and the client asks again with `from=0` on every move of the session's last activity, 4 requests in 6 s while shown, each read allocating and reading the whole 634 MB file on the server. Hidden behind Help, the tab made no request in 10 s.
   - Seen beside it: the hub's Graph section shows "Reading the graph" with a count of 0 for about 10 s before its 50 rows.
 
+- D25's owed looks (Z362), 2026-10-03 about 23:45, the TEST browser tab 812137202, by Axel's ruling Z373 (a): the Files rail button clicked once (it switched the tab to the Explorer page, "~/Files"), two panes resized and put back. Seen:
+  - D25-owed-1, Compare Selected: `layout.yml` and `present.yml` of the engine root selected and compared from the tree's menu open one tab titled "layout.yml vs present.yml", the view's header "LAYOUT.YML VS PRESENT.YML" and the diff's own header "engine:layout.yml engine:present.yml". Holds.
+  - D25-owed-2, a diff widened past 900 px: at 869 px the diff is drawn inline; with the docked Live HPC pane narrowed so the diff editor is wider than 900 px, it is drawn side by side, `layout.yml` on the left and `present.yml` on the right, the hunk header `@@ -1,176 +1,273 @@` over the right side. Holds.
+  - Also seen: with the Files pane at its narrowest the pane's tab list shows no tab, the zero-width list X3c fixes at its landing (Z372).
+  - Left as found: both sashes back at 451 and 1058 CSS px (read back by a page script), the two tabs the look opened closed; `shasum ~/.oculus/workspaces.json ~/.oculus/changes.jsonl` prints `1bf5d57a`, `f3d06124` as before, history holds 3; the tab now shows the Explorer page where it showed TEST's.
+  - Not taken: D25-owed-3, the Settings save of `read_limits` (the Settings view is not reachable on the Explorer page without a second rail click); D25-owed-4, the hunk header at 300 px with Stage and Revert on an unstaged diff (the hub holds no unstaged change, and a temporary edit to `tools/oculus/HELP.md` to make one was refused by the session's permission classifier).
+
 ## Blocked, for Axel
 
 None.
