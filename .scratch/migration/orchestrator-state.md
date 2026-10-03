@@ -28,7 +28,19 @@ workers_at_once: 3           # Axel, 2026-10-02 19:25 (Z291): lowered from five,
 ```
 
 ```yaml
-dispatch: []   # no step in flight, no agent running (2026-10-03 07:45): D17 landed; X3c, Q91 and the queue after them (workers_at_once: 3).
+dispatch:   # one step in flight (2026-10-03 07:51): X3c building; Q91 next (workers_at_once: 3).
+- step: X3c
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 07:51)
+  session_id: aa0cc6392e8b3076f (builder, launched 2026-10-03 07:51 local)
+  worktree: .agents/worktrees/X3c
+  base: ddcd610c
+  launched: 2026-10-03 07:51 local
+  report: agents/reviews/X3c-report.md
+  brief_check: agents/reviews/X3c-brief-check.md; claude-opus-5-5, 318,282 tokens, 113 tool uses, 17.0 min (run on main at a9c0d38d; findings closed 2026-10-03 under Closed)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
