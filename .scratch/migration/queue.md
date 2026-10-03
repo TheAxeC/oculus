@@ -1,7 +1,7 @@
 In flight:
 - X3c (the tab strip as VS Code's): in review.
 - Q91 (the project view and its editor): building.
-- D25 (the editor's options): building.
+- D25 (the editor's options): in review.
 
 Queued, in order (32 steps):
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.

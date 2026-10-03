@@ -65,6 +65,9 @@ dispatch:   # three steps in flight (2026-10-03): X3c, Q91 and D25 building; D32
   base: 5f492a9b
   launched: 2026-10-03 08:41 local
   report: agents/reviews/D25-report.md
+  builder_usage: 262,512 tokens, 638 tool uses, 170.1 min (report saved 2026-10-03)
+  reviewer_report: agents/reviews/D25-refuter.md (first run; reviewer ae98977243dfc074f, claude-opus-5-5, launched 2026-10-03, running)
+  full_list_runs: 4 by the builder's report, against `agents/spec.md:25`'s one (Z348 (b)); booked as a breach at landing
   brief_check: agents/reviews/D25-brief-check.md; claude-opus-5-5, 274,600 tokens, 112 tool uses, 14.5 min (run on main at 3949d212; findings closed under Closed, Z330 booked)
   shared_paths: with X3c, `views/sources/source/Source.svelte` (D25 lines 45-55, 100-145, 155-345, 455-485; X3c `:149` and `:350-436`), `state/sessions/source.svelte.ts` (D25 75-90, 108-116, 220-232, 280-300, 365-375, 425-450; X3c `:93-106`), `shell/keys/Palette.svelte` (D25 the language list and its second list; X3c the row drawing, mainly in `PaletteRow.svelte`), `state/workbench/navigation/status.ts` (D25 after `:292`; X3c `:169-206`), `state/sources/fs.svelte.ts` and `fs-transport.ts` (D25 `readText` moved to the end of `fs-transport.ts`; X3c the roots answer at `:488-503`), `data/sources/config/catalogs.ts` (D25 `:155-185`; X3c `:19-34`), `config/catalogs/options.yml` (D25 `:290-300`; X3c `:92-104`), `config/text/` (separate keys), `HELP.md` and `DESIGN.md` (separate passages, except `HELP.md:98` and `DESIGN.md:429`, one line each merged by hand at the second landing); D25 adds no case to the four test files X3c changed. With Q91, `Source.svelte` (Q91 the import at `:82`), `views/sources/source/Gutter.svelte` (Q91 the comment at `:3`, D25 near `:168`), `tests/views/whole/type-scale.test.ts` (Q91 `:229`, `:237`; D25 `:330`), `HELP.md`, `DESIGN.md` and the diagrams (separate passages, the diagrams regenerated at the second landing)
   landing: not-started
