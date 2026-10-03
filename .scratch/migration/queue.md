@@ -1,10 +1,10 @@
 In flight:
-- X3c (the tab strip as VS Code's): repair round 1 in review.
+- X3c (the tab strip as VS Code's): repair round 1 refuted, its landing after D25's.
 - D25 (the editor's options): repair round 1 refuted, its landing next.
+- Q116 (the Status view's line count of everything under src/): building.
 
-Queued, in order (34 steps):
+Queued, in order (33 steps):
 - T1 (the test suite in three tiers, unnecessary tests removed): held until Axel has discussed the tests further.
-- Q116 (the Status view's line count of everything under src/): next, a slot is free.
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - M6 (the collection forms removed): once S5 has landed.

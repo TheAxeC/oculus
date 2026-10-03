@@ -28,7 +28,7 @@ workers_at_once: 3           # Axel, 2026-10-02 19:25 (Z291): lowered from five,
 ```
 
 ```yaml
-dispatch:   # three steps in flight (2026-10-03): X3c, Q91 and D25 building; D32b and D14b wait on Z327 (workers_at_once: 3).
+dispatch:   # three steps in flight (2026-10-03): X3c and D25 refuted after round 1, Q116 building (workers_at_once: 3).
 - step: X3c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -61,6 +61,19 @@ dispatch:   # three steps in flight (2026-10-03): X3c, Q91 and D25 building; D32
   shared_paths: with X3c, `views/sources/source/Source.svelte` (D25 lines 45-55, 100-145, 155-345, 455-485; X3c `:149` and `:350-436`), `state/sessions/source.svelte.ts` (D25 75-90, 108-116, 220-232, 280-300, 365-375, 425-450; X3c `:93-106`), `shell/keys/Palette.svelte` (D25 the language list and its second list; X3c the row drawing, mainly in `PaletteRow.svelte`), `state/workbench/navigation/status.ts` (D25 after `:292`; X3c `:169-206`), `state/sources/fs.svelte.ts` and `fs-transport.ts` (D25 `readText` moved to the end of `fs-transport.ts`; X3c the roots answer at `:488-503`), `data/sources/config/catalogs.ts` (D25 `:155-185`; X3c `:19-34`), `config/catalogs/options.yml` (D25 `:290-300`; X3c `:92-104`), `config/text/` (separate keys), `HELP.md` and `DESIGN.md` (separate passages, except `HELP.md:98` and `DESIGN.md:429`, one line each merged by hand at the second landing); D25 adds no case to the four test files X3c changed. With Q91, `Source.svelte` (Q91 the import at `:82`), `views/sources/source/Gutter.svelte` (Q91 the comment at `:3`, D25 near `:168`), `tests/views/whole/type-scale.test.ts` (Q91 `:229`, `:237`; D25 `:330`), `HELP.md`, `DESIGN.md` and the diagrams (separate passages, the diagrams regenerated at the second landing)
   landing: not-started
   round: 1 (sent 2026-10-03, rulings agents/briefs/D25-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's d25-round1-start/ for the delta)
+- step: Q116
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 14:34)
+  session_id: a5abb57454b9e1db7 (builder, launched 2026-10-03 14:33 local)
+  worktree: .agents/worktrees/Q116
+  base: e24474a9
+  launched: 2026-10-03 14:33 local
+  report: agents/reviews/Q116-report.md
+  brief_check: agents/reviews/Q116-brief-check.md; claude-opus-5-5, 141,851 tokens, 31 tool uses, 4.8 min (run on main at 780125bf; findings closed under Closed)
+  shared_paths: with X3c and D25, `HELP.md` only (Q116 line 137; X3c's diff changes `:132`, D25's `:147`), separate lines, so the merge is simple
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -207,9 +220,9 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-03 14:20. Q91 (the project view) landed. In flight: X3c (the tab strip), repair round 1 in review by afe977eb85adbd5f1; D25 (the editor's options), round 1 refuted, its landing next. Next:
-  1. D25: `/diagnose` A1-1 on TEST, then `/land` D25 with Z349's test moves, its round findings and Z355's test-rule deletions; its `ReplacedText` meets Q91's `{ offset, before, after }`.
-  2. X3c: on its round report, `/diagnose` the active tab out of sight on TEST, then `/land` X3c with the git breach booked and Z355's deletions; it merges Q91's move of `picks.svelte.ts` to `views/shared/explorer/tree/control/` and `Files.svelte`'s imports and `selectRow`.
-  3. Q116 through /spec, now that a slot is free; X3e is unblocked by Q91 and stays in queue order; T1 held (Z356).
+- 2026-10-03 14:35. Q116 (the Status view's count of everything under `src/`) prepared (e24474a9) and building, builder a5abb57454b9e1db7. In flight also: X3c (the tab strip), round 1 refuted (findings to dispose); D25 (the editor's options), round 1 refuted, its landing next; A1-1's cause diagnosed in `agents/reviews/D25-diagnosis.md`. Next:
+  1. D25: `/land` D25 with Z349's test moves, its round findings, Z355's test-rule deletions and A1-1's fix (the comment mark as a line-decorations decoration, its test red first); its `ReplacedText` meets Q91's `{ offset, before, after }`.
+  2. X3c: dispositions of its round 1 run findings, its light-tab contrast finding raised to Axel; `/diagnose` the active tab out of sight on TEST, then `/land` X3c with the git breach booked and Z355's deletions; it merges Q91's move of `picks.svelte.ts` to `views/shared/explorer/tree/control/` and `Files.svelte`'s imports and `selectRow`.
+  3. Q116: on its report, `/refute` as `review: earned` decides; X3e stays in queue order; T1 held (Z356).
   4. The rail reorder `/diagnose`; the Q81 look once Axel sets `skip_permissions`.
   Open for Axel: Z251 (its count reached 10 with Q91); Z314.
