@@ -3,7 +3,8 @@ In flight:
 - Q91 (the project view and its editor): building.
 - D25 (the editor's options): building.
 
-Queued, in order (20 steps):
+Queued, in order (21 steps):
+- S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - X3e (Files lists reordered by drag): once Q91 has landed.
 - D15 (PDF reading): once D37 has landed.
