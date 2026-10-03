@@ -3,11 +3,13 @@ In flight:
 - Q91 (the project view and its editor): building.
 - D25 (the editor's options): building.
 
-Queued, in order (24 steps):
+Queued, in order (26 steps):
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - M6 (the collection forms' controls): once S5 has landed.
 - M5 (every hub YAML file editable): once M6 has landed.
+- M7 (a project folder moved in Files): once M6 has landed.
+- H3 (the hub's data map): once fewer than three steps are in flight.
 - D38 (the Literature search view): once D37 has landed.
 - X3e (Files lists reordered by drag): once Q91 has landed.
 - D15 (PDF reading): once D37 has landed.
