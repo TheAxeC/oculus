@@ -997,6 +997,13 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z364 (2026-10-03, the slow tier's run): the bare `isMap` imports
+
+- Chosen (a): T1 fixes the three imports and lands with the slow tier green but for X3e's colour finding.
+- Not chosen: (b) a fix outside any step; (c) a new step, which only Axel adds.
+
+Where it applies: T1. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z362 (2026-10-03, D25's landing): the looks not taken
 
 - Chosen (a): the four looks are owed in `queue.md` and taken at the next look session.
