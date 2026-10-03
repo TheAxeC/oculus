@@ -3,9 +3,12 @@ In flight:
 - Q91 (the project view and its editor): building.
 - D25 (the editor's options): building.
 
-Queued, in order (22 steps):
+Queued, in order (24 steps):
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
+- M6 (the collection forms' controls): once S5 has landed.
+- M5 (every hub YAML file editable): once M6 has landed.
+- D38 (the Literature search view): once D37 has landed.
 - X3e (Files lists reordered by drag): once Q91 has landed.
 - D15 (PDF reading): once D37 has landed.
 - D23 (language servers): once D25 has landed.
@@ -20,9 +23,8 @@ Queued, in order (22 steps):
 - Q72 (the architecture re-read): after every code step.
 - R2 (release readiness): after Q72.
 - O29 (retiring the cockpit): after R2.
-- X2 (a new orchestrator resumes the plan): at a pause.
-- O30 (the native window in Electron): after X2.
-- O33 (oculus in its own repository): once X2 has landed.
+- O30 (the native window in Electron): after O29.
+- O33 (oculus in its own repository): once O29 has landed.
 - O34 (remote access): once O33 has landed.
 - O35 (macOS, Linux and Windows): once O33 has landed.
 - O36 (a second person in the hub): once O34 has landed.
