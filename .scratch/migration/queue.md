@@ -1,6 +1,6 @@
 /plan-orchestration oculus/migration
 
-Paused by Axel (2026-10-03); on his go the order is `orchestrator-state.md`, "Current position", 2026-10-03 02:00: the owed looks first, then D18, D32, D14, S4, D17 landed, then X3c and Q91.
+Running on Axel's go (2026-10-03); the order is `orchestrator-state.md`, "Current position", 2026-10-03 02:00: the owed looks first, then D18, D32, D14, S4, D17 landed, then X3c and Q91.
 
 In flight:
 - D18 (the Processes view): landing, waits on the build being allowed.

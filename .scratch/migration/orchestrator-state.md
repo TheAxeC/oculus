@@ -180,7 +180,7 @@ dispatch:      # five steps in flight, no agent running (ListAgents, 2026-10-03)
 
 ## The pause
 
-In force from 2026-10-03 01:15, Axel: "do not continue orchestration". Nothing is dispatched, refuted, landed or prepared until Axel's go. The work the go starts, in order, is the list under "Current position", entry 2026-10-03 02:00.
+Lifted 2026-10-03 by Axel's go ("You have the greenlight"): the order under "Current position", entry 2026-10-03 02:00, runs item by item. Before it, from 2026-10-03 01:15, Axel: "do not continue orchestration", and nothing was dispatched, refuted, landed or prepared.
 
 Lifted 2026-09-30 by Axel's green light: the two round-1 refutations are saved, Q102 and E1 land, then X3d, S3, the U2 audit and D23 are prepared, three slots kept filled, open items booked and reported without ending the turn. Before it, from 2026-09-30 08:42, nothing was dispatched, saved from a reviewer or landed. What follows is the go before that.
 
@@ -886,6 +886,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-03, item 1 under way. The Q81 pointer-open and Escape points are taken (`agents/reviews/owed-looks.md`, "Taken"). The rest of item 1 waits on the TEST window being brought in front of the Chrome window "Research - 3MI Labs" by Axel: while it is behind, the page is `hidden` and animation frames do not run. Nothing after item 1 starts before it, as the order says.
 - 2026-10-03 02:00. Paused by Axel ("The pause"). No agent running. Main holds D18 staged (98 paths, `git diff --cached --name-only | wc -l`) with six unstaged landing fixes. The order on Axel's go, each item done in full before the next, nothing moved later:
   1. The owed looks on TEST (`agents/reviews/owed-looks.md`, "To take"), the tab in front: the Q81 and Q82 focus points; Q88's graph bare name (during a git write on a scratch repository) and the Document view's frame menu (from the Views catalogue); Q99's click and paste in a Claude grid (a session the look starts and ends); Q79c's Memories add press (the macOS panel closed afterwards by its pid) and the Live HPC jobs table and log (when the cluster answers; otherwise written down as waiting on the cluster). Each look recorded in `owed-looks.md` and each defect booked into the step that changes its files, in `plan.md`, the step's brief, `choices.md` and the closed log.
   2. The bookings into the briefs already written: `agents/briefs/X3c.md`, `Q91.md` and `X3e.md` each hold a section "Carried into this brief before dispatch"; before its builder is launched each widening there becomes items, cases and paths, its premise checked on main. D25, D28, D15 and D20 have no brief yet: /spec writes theirs from their `plan.md` lines, which carry Z289, Z293, Z297 and Z307.
