@@ -28,7 +28,7 @@ workers_at_once: 3           # Axel, 2026-10-02 19:25 (Z291): lowered from five,
 ```
 
 ```yaml
-dispatch:   # two steps in flight (2026-10-03 07:54): X3c and Q91 building; D32b and D14b next (workers_at_once: 3).
+dispatch:   # three steps in flight (2026-10-03): X3c, Q91 and D25 building; D32b and D14b wait on Z327 (workers_at_once: 3).
 - step: X3c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -52,6 +52,19 @@ dispatch:   # two steps in flight (2026-10-03 07:54): X3c and Q91 building; D32b
   report: agents/reviews/Q91-report.md
   brief_check: agents/reviews/Q91-brief-check.md; claude-opus-5-5, 240,437 tokens, 84 tool uses, 11.5 min (run on main at a9c0d38d; findings closed under Closed by Z286)
   shared_paths: with X3c, `views/sources/files/Files.svelte` (X3c removes the breadcrumb nav and `crumbs`, Q91 moves the tree wiring into `RootedTree.svelte`; separate regions), `views/sources/source/Source.svelte` (Q91 one import line for the moved `Code.svelte`, X3c the header and toolbar), `config/text/views/sources/files.yml` (separate keys), `HELP.md`, `DESIGN.md` and the diagrams (separate passages, the diagrams regenerated); X3c's new imports of `views/sources/files/tree/menu/row-menu.ts` follow Q91's move to `views/shared/explorer/` at the second landing, an import line each
+  landing: not-started
+  round: 0
+- step: D25
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 08:42)
+  session_id: a5d2ad20a1f12524e (builder, launched 2026-10-03 08:41 local)
+  worktree: .agents/worktrees/D25
+  base: 5f492a9b
+  launched: 2026-10-03 08:41 local
+  report: agents/reviews/D25-report.md
+  brief_check: agents/reviews/D25-brief-check.md; claude-opus-5-5, 274,600 tokens, 112 tool uses, 14.5 min (run on main at 3949d212; findings closed under Closed, Z330 booked)
+  shared_paths: with X3c, `views/sources/source/Source.svelte` (D25 lines 45-55, 100-145, 155-345, 455-485; X3c `:149` and `:350-436`), `state/sessions/source.svelte.ts` (D25 75-90, 108-116, 220-232, 280-300, 365-375, 425-450; X3c `:93-106`), `shell/keys/Palette.svelte` (D25 the language list and its second list; X3c the row drawing, mainly in `PaletteRow.svelte`), `state/workbench/navigation/status.ts` (D25 after `:292`; X3c `:169-206`), `state/sources/fs.svelte.ts` and `fs-transport.ts` (D25 `readText` moved to the end of `fs-transport.ts`; X3c the roots answer at `:488-503`), `data/sources/config/catalogs.ts` (D25 `:155-185`; X3c `:19-34`), `config/catalogs/options.yml` (D25 `:290-300`; X3c `:92-104`), `config/text/` (separate keys), `HELP.md` and `DESIGN.md` (separate passages, except `HELP.md:98` and `DESIGN.md:429`, one line each merged by hand at the second landing); D25 adds no case to the four test files X3c changed. With Q91, `Source.svelte` (Q91 the import at `:82`), `views/sources/source/Gutter.svelte` (Q91 the comment at `:3`, D25 near `:168`), `tests/views/whole/type-scale.test.ts` (Q91 `:229`, `:237`; D25 `:330`), `HELP.md`, `DESIGN.md` and the diagrams (separate passages, the diagrams regenerated at the second landing)
   landing: not-started
   round: 0
 ```
