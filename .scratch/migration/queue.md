@@ -3,7 +3,7 @@ In flight:
 - Q91 (the project view and its editor): building.
 - D25 (the editor's options): building.
 
-Queued, in order (21 steps):
+Queued, in order (22 steps):
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - X3e (Files lists reordered by drag): once Q91 has landed.
@@ -25,6 +25,7 @@ Queued, in order (21 steps):
 - O33 (oculus in its own repository): once X2 has landed.
 - O34 (remote access): once O33 has landed.
 - O35 (macOS, Linux and Windows): once O33 has landed.
+- O36 (a second person in the hub): once O34 has landed.
 
 Owed: the look of Q81 (a Confirm over the update tray).
 
