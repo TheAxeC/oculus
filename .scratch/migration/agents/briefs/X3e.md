@@ -14,11 +14,7 @@ A design ruling decides what is built. It never exempts the code: every line is 
 
 ## Carried into this brief before dispatch
 
-These widenings of the step's line in `plan.md` were booked after this brief was written. Before the builder is launched, each becomes an item under "What to build", its cases under "Cases" and its files under "Paths this step writes", with its premise checked on main's head; each defect's full look record is in `agents/reviews/owed-looks.md` under its id.
-
-- Widened 2026-10-02 (Z289, the orchestrator, automode): the Files tree follows the disk (X3a-1), the breadcrumb row pushes no row (X3a-2), a deleted file's tab is marked (X3a-3), the folder-panel line clears (X3a-4), a Changes row shows its folder in Files (X3a-5), removed roots leave the tree (X3a-6), long paths show the file name first (X3a-7); the Source Control defects Q88c-1 to Q88c-14 and Q88c-19 to Q88c-22, a single click opens a text file (D27-3), a changed row offers Open File (D13a-5) and a click on it opens the diff (A1-4); the hub's Graph draws its count and rows without a 10 s wait at 0.
-- Widened 2026-10-03 (Z311, the orchestrator, automode): Cmd+A in a tree selects its rows, as VS Code's `list.selectAll`, and no longer the page's text (Q82-look-1: in the Repositories changes tree it selected 121598 characters across every pane and no row); Cmd+Enter on a row opens it to the side, as VS Code's `list.openToSide` (Q82-look-2: on a staged change it opened nothing). Files: `ui/tree/TreeView.svelte`, `ui/tree/tree-keys.ts`.
-
+The widenings Z289 (X3a-1 to X3a-7, Q88c-1 to Q88c-14, Q88c-19 to Q88c-22, D27-3, D13a-5, A1-4, the hub Graph's slow first read) and Z311 (Q82-look-1, Q82-look-2) of the step's line in `plan.md` are items 9 to 22 under "What to build", cases C19 to C45 under "Cases" and their files under "Paths this step writes", their premises checked on main at 7774cf43 under "What is on the tree", the last group of bullets. Each defect's full look record is in `agents/reviews/owed-looks.md` under its id. Eighteen causes are still unfound and are found at `/spec X3e` before dispatch, read-only, each written into its item or raised as an open item: Q88c-3, Q88c-5, Q88c-9, Q88c-14, Q88c-19, Q88c-20, Q88c-22, X3a-1 to X3a-6, D27-3, Q82-look-1, Q82-look-2, the Graph's slow first read and why Q88c-11's commits are not known to be in HEAD at the menu.
 
 ## What is on the tree (read on main at a9c0d38d)
 
@@ -32,6 +28,24 @@ All paths below `tools/oculus/` unless they start with `.agents/`.
 - **Drag in the tree.** `state/sources/explorer/acts/drop.ts` (96) decides a drop of files and folders; a root's own line takes no move (`:44`). The board's drag reorder is `views/boards/collection/Collection.svelte:186-212`: `drop` and the keyboard `carry`, both through `movedOrder(order, at, to)` and one whole-order write.
 - **Nested repositories.** `server/root/watch/git.ts:143-155` `subrepositories(root)` lists the direct subfolders holding a `.git`, and returns nothing for a root that is itself a repository (`:144`). So `~/workspace/research-hub/theaxec.github.io` (a repository inside the hub, `find . -maxdepth 3 -name .git` from the hub prints `./theaxec.github.io/.git`) is never on the `git` channel and never in the Repositories view.
 - Folder sizes (`git ls-files <dir>`, first segment, `sort -u | wc -l`): `views/sources/files/sections/` 8, `state/sources/explorer/acts/` 8, `state/sources/explorer/sections/` 6, `server/files/fs/` 7, `server/root/watch/` 6.
+
+- **The widenings, read on main at 7774cf43.**
+  - Q88c-1: `state/sources/repositories/repositories.svelte.ts:431-436` `openHead` opens `headTabState(root, path, group === 'staged' ? 'head' : 'index')`, so a changed (unstaged) row opens the index copy as "(Index)"; VS Code's Open File (HEAD) opens the file at HEAD from either group.
+  - Q88c-2: `state/sessions/source.svelte.ts:271` returns early when `held.readIn === LIFETIME && held.file === file`, and a HEAD or index tab (`:277-281`, `loadHeadFile`) is never read again in the page's life: nothing clears `readIn` for it when the repository's index or HEAD moves.
+  - Q88c-3: `repositories.svelte.ts:267-273` `openFile` says `repositories.open_unserved` when `tabOfFile` (`file-git.ts:84-89`) finds no served root holding the file; the cause on a served root is not found yet.
+  - Q88c-4: `server/git/git-write.ts:354-371` `switchBranch` refuses when `porcelain(root)` prints anything, and porcelain lists untracked files (`??`), so an untracked file alone refuses the checkout.
+  - Q88c-6: forty refusals in `server/git/*.ts` are lower-case sentences in code, `failed('the working tree is dirty, ...')` (`git-write.ts:368`) among them (`grep -n "failed('[a-z]" src/lib/server/git/*.ts | wc -l` prints 40); `config/text/views/sources/repositories.yml:123`, `:135`, `:231` say `{0} files are in conflict` for any count.
+  - Q88c-7: `views/sources/repositories/changes/Changes.svelte:215` draws a `sessions.ch_group_empty` ("nothing") row under an empty group, and `views/shared/changes/ChangeGroups.svelte:144` an `Empty` with it.
+  - Q88c-8, Q88c-9: `views/sources/repositories/graph/CommitRow.svelte` and `GraphHead.svelte:47` (`count`); the chips take the row's width and the count reads 0 before the first read.
+  - Q88c-10: a detached HEAD is said only by `RepoList.svelte:103-105` on the repository row; `Graph.svelte:271` passes `current: ''` and no row marks HEAD.
+  - Q88c-11: `views/sources/repositories/menus/graph-menu.ts:113` offers Cherry Pick on every commit when not busy, and Checkout (Detached) likewise.
+  - Q88c-12, Q88c-13: `views/sources/repositories/refs/Worktrees.svelte` draws the absolute path as the row's label and its New worktree field has no Enter handler (`grep -n "onkeydown\|Enter" Worktrees.svelte` prints nothing).
+  - Q88c-14: the Repositories list's "no repository" rows come from `views/shared/changes/repo-shape.ts:18` for a root whose shape is `none`; where those roots come from is not found yet.
+  - Q88c-19, X3a-4: the folder panel is `server/files/open.ts`; the failure line's key is in `config/text/views/sources/files.yml`.
+  - Q88c-21: the palette's `:folder` row; Q88c-22: three empty folders under the hub named `config/behavior.yml`, `config/layout.yml`, `config/sources.yml`.
+  - X3a-7: the Changes view's lists draw the whole path cut at its end.
+  - D13a-5, A1-4: a Changed row's inline buttons are Open Changes, Stage and Discard (`views/sources/repositories/changes/ChangeRow.svelte`), and a click on the row opens nothing.
+  - Q82-look-1, Q82-look-2: the trees' keys are `ui/tree/tree-keys.ts` and `ui/tree/TreeView.svelte`; neither handles Cmd+A or Cmd+Enter.
 
 ## What to build
 
@@ -47,7 +61,21 @@ All paths below `tools/oculus/` unless they start with `.agents/`.
 5. **The sections reordered**: the section heads (Open Editors, the tree's own head, Outline, Timeline, Bookmarks, Notes) drag among themselves, the order kept in the tab's instance state as `sections: string[]` beside `collapsed` and `opened` (decision 4); an order that misses a section or names an unknown one is read as the default order with the missing ones appended.
 6. **The second Collapse Folders press**: when no folder under any shown root is open, the press closes the roots themselves (VS Code's `collapseAll` collapsing the workspace folders); a rooted or following tab (one head row) closes its head likewise.
 7. **Nested repositories** (Z269): `subrepositories` scans every root, a repository root included, down to `repository_scan_depth` levels (a new key of `config/sources.yml`, default `1`, an integer from 0 to 3, 0 turning the scan off, with its catalog entry in `config/catalogs/options.yml` and its row in the Settings view), skipping links, the `IGNORED` names and a folder inside a found repository's own `.git`; a repository found is on the `git` channel and in the Repositories view after its root, as a subfolder repository is today. The rescan rules stay (at start, on a config push, on the workspaces file moving, on an event naming a top-level entry).
-8. **Words and docs**: every new sentence a key of the text catalog; HELP.md's Files view and Repositories passages and DESIGN.md's lines on the roots, the notes and the git watcher updated.
+8. **Words and docs** (for items 1 to 22): every new sentence a key of the text catalog; HELP.md's Files view and Repositories passages and DESIGN.md's lines on the roots, the notes and the git watcher updated.
+9. **Open File (HEAD) opens HEAD (Q88c-1)**, from a staged or a changed row, as VS Code's; a HEAD or index tab is read again when its repository's HEAD or index moves (Q88c-2), from the repositories status it already receives.
+10. **Add to .gitignore opens the file it wrote (Q88c-3)**, by the cause `/spec` finds.
+11. **Checkout (Detached) and a branch switch with only untracked files go ahead (Q88c-4)**: the dirty check ignores `??` lines; git's own refusal, when an untracked file would be overwritten, is said.
+12. **The commit box is cleared after Abort (Q88c-5)**, by the cause `/spec` finds.
+13. **Sentences (Q88c-6)**: every refusal of `server/git/` is a key of `config/text/server.yml`, starting with a capital; the conflict lines take a singular for one file.
+14. **No empty group (Q88c-7)**: an empty group of the Repositories changes and of the Changes view is not drawn, as VS Code's.
+15. **The Graph (Q88c-8 to Q88c-11)**: a commit row keeps its subject readable, the chips shrinking first with an ellipsis; the header count is the commits read, and before the first read no count; a detached HEAD is marked on its commit row and as the first branch row (`HEAD (detached at <short>)`); Cherry Pick is not offered on a commit HEAD contains and Checkout (Detached) not on HEAD's commit, by a rule over what the graph has read (the reachability read named at `/spec`).
+16. **Worktrees (Q88c-12, Q88c-13)**: a worktree row shows its folder name, the path after it dimmed and in the tooltip; Enter in the New worktree field submits.
+17. **The Repositories list (Q88c-14)** holds only folders that exist, by the cause `/spec` finds.
+18. **The folder panel (Q88c-19, X3a-4)**: while a panel is open oculus says so and a second press does not open another; a cancelled panel says nothing; the failure line clears at the next action.
+19. **Paths and the palette (Q88c-20, Q88c-21, Q88c-22)**: a missing folder is said by its path from the root, never glued to the root's name; the `:folder` row has its hint and description; the write that made the three empty folders is found at `/spec` and ended, and the orchestrator removes the three empty folders at landing (they are not tracked).
+20. **The Files tree follows the disk (X3a-1, X3a-3, X3a-5, X3a-6)**: a folder made, a file restored by undo, a move and a delete outside or inside oculus show in the tree without Refresh; a tab over a deleted file is marked deleted, as VS Code's; a root removed from `sources.yml` leaves the tree; by the causes `/spec` finds.
+21. **Rows stay where they were clicked (X3a-2, X3a-7, D27-3)**: the breadcrumb row's arrival does not move the tree under the pointer; a long path in the Changes view's lists shows the file name first and the folder after it dimmed; one click opens a text file in the Files tree as a preview, as for `t.rite`, by the cause `/spec` finds.
+22. **Changed rows and tree keys (D13a-5, A1-4, Q82-look-1, Q82-look-2, the Graph's first read)**: a Changed row's inline buttons are Open File, Discard and Stage, and a click on the row opens its diff; Cmd+A in a tree selects its rows (`list.selectAll`) and Cmd+Enter opens the row to the side (`list.openToSide`); the hub's Graph draws its count and rows without the 10 s wait, by the cause `/spec` finds.
 
 ## Cases
 
@@ -85,6 +113,36 @@ The builder's first task, before any change, is the first run of every case abov
 
 When the first run finds a case the brief's own rules get wrong, the builder stops there, before changing any code, and hands back the first run and that case, with the rule and the result it gives. The orchestrator rules on the case and resumes the builder with the ruling, and the final report carries it.
 
+Widenings (items 9 to 22):
+
+- C19. Open File (HEAD) on a changed row and on a staged row: a tab `head:head:<root>:<path>` in both.
+- C20. A HEAD tab open, then a commit: the tab reads the new HEAD.
+- C21. Add to .gitignore in a repository that is a served root: `.gitignore` opens in a tab.
+- C22. Checkout (Detached) with one untracked file: checked out; with an untracked file a checkout would overwrite: git's refusal said.
+- C23. After Cherry Pick stopped on a conflict and Abort: the commit box empty.
+- C24. Every refusal of `server/git/` read from the catalog with a capital first letter (an audit by grep); one file in conflict: "1 file is in conflict".
+- C25. A repository with no untracked file: no Untracked group drawn; the same in the Changes view.
+- C26. A commit row with three refs in a 300 px pane: the subject keeps at least its first 20 characters.
+- C27. The Graph header before the first read: no count; after it: the rows read.
+- C28. A detached HEAD: its commit row marked, a first branch row `HEAD (detached at <short>)`.
+- C29. The graph menu on HEAD's commit and on an ancestor: no Cherry Pick; on HEAD's commit no Checkout (Detached); on a commit HEAD does not contain: both (a preserved behaviour).
+- C30. A worktree row: its folder name first; Enter in New worktree with a name: created.
+- C31. A root folder deleted: no row for it in the Repositories list.
+- C32. The folder panel pressed twice: one panel; cancelled: no failure line.
+- C33. A root removed: no `hub/<absolute path>` sentence.
+- C34. The `:folder` palette row: hint and description drawn.
+- C35. The write that made `config/behavior.yml` as a folder, run as before: makes no folder.
+- C36. A folder made outside oculus, a delete, a move and an undo: the tree shows each without Refresh.
+- C37. A tab over a file deleted on disk: marked deleted.
+- C38. A root removed from `sources.yml`: gone from the tree.
+- C39. The breadcrumb row arriving: the row under the pointer stays the same row.
+- C40. A long path in the Changes view's Untracked list: the name first, the folder after it.
+- C41. One click on `notes.txt` in the Files tree: a preview tab.
+- C42. A Changed row: inline Open File, Discard, Stage; a click on it: the diff tab.
+- C43. Cmd+A in the Repositories changes tree: every row selected, `window.getSelection()` empty.
+- C44. Cmd+Enter on a staged change: its diff opened to the side.
+- C45. The hub's Graph opened: rows drawn within the time `/spec` states from the measured cause.
+
 ## Paths this step writes
 
 - `tools/oculus/src/lib/state/sources/explorer/acts/reorder.ts` (new)
@@ -106,6 +164,16 @@ When the first run finds a case the brief's own rules get wrong, the builder sto
 - `tools/oculus/config/sources.yml` (the `repository_scan_depth` key)
 - `tools/oculus/config/catalogs/options.yml` (its entry)
 - `tools/oculus/config/text/server.yml`, `tools/oculus/config/text/views/sources/files.yml`
+- `tools/oculus/src/lib/state/sources/repositories/` (`repositories.svelte.ts`, `file-git.ts`)
+- `tools/oculus/src/lib/state/sessions/source.svelte.ts` (the HEAD tab's reread)
+- `tools/oculus/src/lib/server/git/` (`git-write.ts` and every file holding a refusal sentence)
+- `tools/oculus/src/lib/views/sources/repositories/` (`changes/Changes.svelte`, `changes/ChangeRow.svelte`, `graph/CommitRow.svelte`, `graph/GraphHead.svelte`, `graph/Graph.svelte`, `menus/graph-menu.ts`, `menus/change-menu.ts`, `refs/Worktrees.svelte`, `RepoList.svelte`)
+- `tools/oculus/src/lib/views/shared/changes/` (`ChangeGroups.svelte`, `repo-shape.ts`)
+- `tools/oculus/src/lib/views/sessions/changes/` (the path lists, X3a-7)
+- `tools/oculus/src/lib/ui/tree/TreeView.svelte`, `tools/oculus/src/lib/ui/tree/tree-keys.ts`
+- `tools/oculus/src/lib/server/files/open.ts` (the folder panel)
+- the files `/spec X3e` names with each cause it finds
+- `tools/oculus/config/text/views/sources/repositories.yml`, `tools/oculus/config/text/views/sessions/changes.yml`, `tools/oculus/config/text/views/sources/source.yml`
 - `tools/oculus/HELP.md`, `tools/oculus/DESIGN.md`
 - `tools/oculus/tests/` (the tests of the cases)
 - `tools/oculus/.scratch/migration/agents/reviews/X3e-report.md`
@@ -134,7 +202,7 @@ When the first run finds a case the brief's own rules get wrong, the builder sto
 
 ## What it must do
 
-As "What to build" says, items 1 to 8. Every sentence a reader sees is a key of the text catalog; no sentence is written in code.
+As "What to build" says, items 1 to 22. Every sentence a reader sees is a key of the text catalog; no sentence is written in code.
 
 ## Conventions
 
