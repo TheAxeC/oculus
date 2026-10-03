@@ -53,10 +53,12 @@ dispatch:   # two steps in flight (2026-10-03): X3c refuted after round 1, T1c l
   base: d160d13f
   launched: 2026-10-03 16:27 local
   report: agents/reviews/T1c-report.md
+  builder_usage: 187,752 tokens, 744 tool uses, 261.4 min (report saved 2026-10-03 19:10; four full-list runs; breaches: one read-only `git diff --stat`, reads of main's `tests/server`, and a stray file `139` written into the main ledger by a shell redirect, holding `test.ts files 138 -`, removed by the orchestrator)
+  reviewer_report: agents/reviews/T1c-refuter.md (first run; reviewer a194094e84c8be37a, claude-opus-5-5, 79,507 tokens, 146 tool uses, 39.3 min)
   brief_check: agents/reviews/T1c-brief-check.md; claude-opus-5-5, 204,893 tokens, 70 tool uses, 9.4 min (run on main at 4bc8983b; findings closed under Closed)
   shared_paths: with X3c, `tests/checks/tree/allow-duplication.txt` only (T1c lines 39-65, the entries naming a `tests/server` file; X3c's one hunk at 16-23), separate lines, so the merge is simple
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-10-03, rulings agents/briefs/T1c-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's t1c-round1-start/ for the delta)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -208,7 +210,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 ## Current position (rewrite at every package)
 
 - 2026-10-03 16:27. Q116 landed. In flight: X3c (the tab strip), round 1 refuted; T1c (the sweep of `tests/server/`), its builder launched. T1b, T1d and T1e wait for X3c's landing: X3c changes 23, 31 and 6 of their test files, and a sweep rewriting the same files is no simple merge (the `spec` skill's Steps 5). Next:
-  1. T1c: its report, then `/refute` and `/land`.
+  1. T1c: repair round 1 sent; its report, the run over the round, then `/land` with `subscriptionChannels` removed.
   2. X3c: the diagnosis of the active tab out of sight once Axel has the TEST window in front (Z371), then `/land` with its round 1 run's findings disposed at landing (Z361 (b), Z355's deletions, the `landing_merge` line, the git breach).
   3. T1b, T1d and T1e once X3c lands; T1a after the four sweeps, its timings under a reproduced load (Z370 (a)); then the queue in order, O33 to O36 paused (Z369).
   4. The recurring-findings pass (Z251); D25's four owed looks (Z362); the rail reorder `/diagnose`; the Q81 look when Axel sets `skip_permissions`.
