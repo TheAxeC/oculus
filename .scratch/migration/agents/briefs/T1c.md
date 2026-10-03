@@ -1,0 +1,119 @@
+# Brief: T1c, the test sweep of `tests/server/`
+
+Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern this step unchanged, its test rule at `:57` above all, with its last three sentences (a test runs in well under a second or is tagged slow; a behaviour is tested at the lowest level that reaches the defect; a behaviour is tested once there, a higher-level test existing only for the wiring, one case per wire), and `:64` (a test waits on a signal, never on a fixed sleep or a wall-clock margin). The configuration lists no other standards page, and no ADR touches this step.
+
+A design ruling decides what is built. It never exempts the code: every line is written to the standards pages, so that people can read, use and maintain it.
+
+## What is on the tree (read on main at 11418b375)
+
+- The step line, `plan.md:226`, rests on the rulings Z350, Z351, Z354, Z363, Z365 and Z367, each a line of `plan.md`'s Rulings ending "(the user).". Z363: the sweep may cut harder than one test per behaviour. Z367: four sweeps run side by side; T1a (the tiers) follows all four.
+- `tests/server/` holds 138 test files and 49,184 lines in all `.ts` files (`find tests/server -name '*.test.ts' | wc -l`; `find tests/server -name '*.ts' -exec cat {} + | wc -l`). By folder (test files / lines): accounts 15 / 5,571; content 7 / 2,090; core 15 / 3,807; edit 12 / 5,455; files 8 / 3,299; git 11 / 4,194; machine 35 / 11,632; root 24 / 8,752; sessions 9 / 4,043; transcripts 2 / 341. No file sits directly in `tests/server/` (`ls -p tests/server | grep -v /` prints nothing).
+- 17 files carry the slow tag as `// @module-tag slow: <reason>`, the last line of the head comment (`grep -rl "@module-tag slow" tests/server`; the form at `core/paths.test.ts:9`): `core/changes`, `core/paths`, `core/git/git-file-log`, `core/git/git`, `core/git/git-reads`, `edit/writes`, `edit/yaml/yaml-edit`, `machine/lines`, `machine/pty/task`, `machine/pty/sessions`, `machine/hpc/ssh`, `machine/commands/placeholders`, `root/watch/portfolio/roots`, `root/watch/portfolio/portfolio`, `git/git-write`, `git/git-ops`, `git/deposit` (each `.test.ts`).
+- Eight tests are titled as audits (`grep -rn "it('audits\|it(\"audits" tests/server`): `edit/yaml/yaml-edit-followup.test.ts:157`, `sessions/folders.test.ts:173`, `edit/yaml/block-edit.test.ts:411`, `sessions/stores/customizations.test.ts:99`, `files/picker.test.ts:111`, `files/ignored.test.ts:153` and `:158`, `git/autofetch.test.ts:799`.
+- Source checks that keep a forbidden write out of the server code, each failing when the forbidden thing appears in the source: `git/git-write.test.ts:564` (each allowed subcommand at one call site), `:571` (no `--force`), `:579` (no subprocess in the modules beside it); `git/deposit.test.ts:633` (the force option once), `:638` (only enumerated subcommands); `core/git/git.test.ts:751` (no writing subcommand), `:761`; `core/git/compare-gate.test.ts:83`, `:115`, `:123`; `root/process/server-args.test.ts:127`, `:136`; `git/autofetch.test.ts:799` (the watcher runs no process of its own and only `fetchIn` and `remoteNames`). `DESIGN.md:128` says these vectors are "held to their exact vectors in the source and in every command the suite ran, and a test asserts both", and the head comments of `src/lib/server/core/git/run.ts:61-67`, `core/git/compare.ts:6`, `git/git-write.ts:3-8` and `:305-308`, and `git/deposit-git.ts:16-19`, `:72` and `:251-254` rely on them.
+- The largest files: `sessions/stores/transcripts.test.ts` 900, `machine/usage/usage.test.ts` 896, `accounts/calendar/poll.test.ts` 892, `edit/entry-edit.test.ts` 865, `root/context/context-reload.test.ts` 848 (`find tests/server -name '*.ts' -exec wc -l {} + | sort -n | tail -6`).
+- Vitest is 4.1.11. The tag `slow` is declared in `vite.config.ts:35`. A probe file run on main, then deleted, using the `it` of `tests/fixtures/scratch.ts` (the `test.extend` form 99 server files use) showed: `it('name', { tags: ['slow'], timeout: 5000 }, fn)` is skipped by `--tagsFilter '!slow'` and run by `--tagsFilter slow`; `it.each(rows)('name %s', { tags: ['slow'] }, fn)` is tagged too, but its titles lose the `%s` (printed "slow table "). `describe(name, { tags: ['slow'] }, fn)` exists in the runner's types (`@vitest/runner` `tasks.d.ts:1200-1201`). No test of the tree uses a per-test or describe tag yet (`grep -rn "{ tags:" tests`).
+- Times are load-bound: the same cases measured 250 to 308 ms at load 8.9 and 86 to 277 ms at load 5.5 to 7.9 (this session and the brief check), so a bound in milliseconds alone moves a test between tiers with the load.
+- `ignoredIn` (`src/lib/server/core/git/files.ts:29-41`) has one branch for every failure of git, `if (!done.ok) return none;` (`:38`); `run()` (`run.ts:160-168`) answers `ok: false` for a spawn error, a timeout and a non-zero exit alike.
+- `tests/server/core/paths.test.ts:105` ("leave `isMap` to the guard") fails in the slow tier on main: three source files import the yaml library's `isMap` under its own name (`npx vitest run tests/server/core/paths.test.ts --tagsFilter slow`: `1 failed | 8 passed`). Z364 (the orchestrator, automode) puts that fix into T1a, which lands with `npm run test:slow` green apart from X3e's colour finding (Z359).
+- A folder may hold at most 10 items (`tests/checks/tree/`); `tests/server/files/` is at 10. A `.ts` file may not pass 900 lines (`tests/checks/tree/size.test.ts:28`).
+- `tests/checks/tree/allow-duplication.txt` lists clone pairs, 24 of them naming a `tests/server` file, all within `:39-65` on main (`grep -n "tests/server" tests/checks/tree/allow-duplication.txt`); `tests/checks/tree/duplication.test.ts` fails on an entry whose clone is no longer shared (`:597-606`) and on a new clone among `tests/` (`:304`). X3c, in flight, changes only `:16-23` of that file (`git diff ddcd610c -- tools/oculus/tests/checks/tree/allow-duplication.txt` in its worktree: one hunk `@@ -16,8 +16,6 @@`).
+- Helper modules under `tests/server/` are imported from other folders: `writes-fixture`, `history-fixture`, `ops-fixture`, `git/refs/repo`, `machine/commands/commands-fixture`, `machine/line-counts` (also by `tests/state/system/lines.test.ts`, landed with Q116), `machine/pty/tmux-fixture`, `root/context-fixture` (`grep -rn "tests/server\|\.\./server/" tests --include=*.ts | grep import` outside `tests/server`).
+- Comments outside `tests/server/` name `tests/server` files: twelve in `tests/state`, two in `tests/data`, two in `tests/views`, six in `tests/routes`, and four in `src` (`machine/pty/tmux.ts:118`, `machine/pty/sessions.ts:166`, `root/hooks.ts:63`, `git/git-message.ts:11`) (`grep -rn "tests/server" tests src | grep -v "^tests/server/"`); 44 comments inside `tests/server` name a test file.
+- Sentences that describe the slow tier only by its file form: `vite.config.ts:31-35`, `README.md:15`, `HELP.md:342`, `agents/spec.md:56`.
+- The steps in flight: X3c changes no file under `tests/server/`. Q116 has landed (5a7654bf).
+- `agents/spec.md:37` named `tests/server/edit/yaml-edit.test.ts`; the file is `tests/server/edit/yaml/yaml-edit.test.ts`. Corrected in `spec.md` at this /spec.
+- No ADR folder exists (`ls tools/oculus/docs` prints `diagrams` alone), so no ADR touches the step.
+
+## What to build
+
+The sweep reads every file under `tools/oculus/tests/server/`, slow-tagged files included, test by test, and applies the rules below. `core/paths.test.ts` is left wholly untouched (Decision 3).
+
+1. **Delete** each test that breaks `agents/spec.md:57`:
+   - a test of behaviour whose failure costs nothing, the costs being the rule's list: lost or corrupted work, a write to the wrong file, a broken start or install, a wrong configuration or input accepted, or a view, key or command the user relies on that stops working;
+   - a test of a constant, a label or catalog string, a type, a pass-through or re-export;
+   - an assertion over source text that pins how the code is written (which library call it uses, which names it holds) while a behaviour test already holds what the code does; a source check that fails when a forbidden write enters the code (a git subcommand outside the allowed list, `--force`, a process started where none may be) is kept, since its failure is lost work and `DESIGN.md:128` promises it (Decision 5);
+   - a test that cannot fail on its own fixture, or that still passes with its behaviour taken out, judged by reading what the code does on that path;
+   - a test whose outcome another case already gives through the same branch of the code (Z363): of such cases the one at the lowest level that reaches the branch stays (a function's own test before a test through its caller), and among cases at one level the one that reaches the most of the branch;
+   - a server test of a behaviour that a test under `tests/data/` already holds at the data layer, which sits below the server (`tests/checks/tree/boundaries.test.ts:20`), unless it is the one case of the wiring between the two.
+2. **Fold** cases of one outcome that differ only in their input into rows of one table, one test per outcome, each row naming its case.
+3. **Tag** each test that cannot run well under a second as slow, by its cause and by its time (Decision 1): the whole file with `// @module-tag slow: <reason>` as the last line of the head comment, as the tree writes it, when every test left in it is slow; otherwise a slow describe with `describe(name, { tags: ['slow'] }, fn)`, and a slow single test with `{ tags: ['slow'] }` as its second argument, a numeric timeout moving into that object as `timeout`. A slow table takes its tag on its describe, since the options form of `it.each` drops the row's name from the title. A file already tagged whose tests are all quick after the sweep loses the tag.
+4. **Keep** every other test. No assertion of a kept test is loosened, widened or rewritten except to fold it into a table under item 2. A kept test's title is corrected when it is false, and the word "audits" leaves the title of a kept test, which is a test of behaviour. A kept test's setup may lose what the test does not use (a `git init` under a faked git), its assertions unchanged. A wall-clock margin in a kept test (`files/ignored.test.ts:169`, `machine/lines.test.ts:240`) breaks `spec.md:64`: the deadline is passed with the code's own timeout argument and the assertion holds on the answer, not on the clock.
+5. **Comments and helpers.** Every comment under `tests/server/` that names a deleted or renamed test is corrected, in the files the sweep changes and in those it does not, and each file it changes has its head comment say what the file tests after the sweep. A file left with no test is deleted, and a describe or a `beforeAll` left with no test is deleted. A helper module under `tests/server/` imported from outside `tests/server/` keeps every export (Decision 2); a helper nothing imports any more is deleted.
+6. **The duplication allow list.** Each entry of `tests/checks/tree/allow-duplication.txt` that names a `tests/server` file and that the sweep makes stale (its clone no longer shared) is removed; a fold that makes a new clone among `tests/` is changed until `duplication.test.ts` passes, never listed.
+7. **The report** (path below) lists every test deleted, folded, retitled or tagged, file by file, each with the behaviour it guarded or why it guarded none; each fold as a list of the old case titles against the table's rows; the line count and test-file count of each folder of `tests/server/` before and after; the time of `npx vitest run tests/server --tagsFilter '!slow'` before any change and after the last, with the load average beside each; and a section "Doc text" (below).
+8. **Doc text.** Every sentence outside the step's paths that the sweep makes false, with the line as `grep -n` prints it and its replacement, which the orchestrator applies at landing: the comments outside `tests/server/` that name a deleted test file; the source comments of `src/lib/server/...` that name a test; and the sentences that describe the slow tier only by its file form (`vite.config.ts:31-35`, `README.md:15`, `HELP.md:342`, `agents/spec.md:56`), each rewritten to say a file, a describe or a test may carry the tag.
+
+## Cases
+
+Read on the unchanged tree; the builder's first task is to reread each and confirm the verdict or hand it back.
+
+- `edit/yaml/block-edit.test.ts:411` "audits that the scalar writer is the yaml library's ...": reads `block-render.ts` and `block-edit.ts` as text and asserts which library calls they hold. Verdict: delete (item 1, source text pinning how the code is written); the writer's behaviour stays held by `:405` and `:420`.
+- `git/autofetch.test.ts:799` "audits the source: no process of its own, ...": a source check that fails when the watcher starts a process or calls a git write. Verdict: keep (item 1, a forbidden write; Decision 5), retitled without "audits". The file's real-git cases (509 to 2,168 ms, each building a repository) are tagged slow (item 3).
+- `sessions/folders.test.ts:173` "audits that nothing is read when no account is named": `scan` is always given `stores: []`, and the planted transcript sits where no fallback in `sessionFolders` (`src/lib/server/sessions/folders.ts:52-60`) would look, so the test cannot fail on its own fixture. Verdict: delete.
+- `sessions/stores/customizations.test.ts:99` "audits that lists the seven rows in the section order": asserts the order of the constant `CUSTOMIZATION_KINDS` (`customizations.ts:389` maps it) and the constant's length. Verdict: delete; its import goes if nothing else uses it, the describe's `beforeAll` stays for the other cases.
+- `files/picker.test.ts:111` "audits that the script chooses folders only, ...": asserts strings of the constant `PICKER_SCRIPT`. Verdict: delete (a constant).
+- `edit/yaml/yaml-edit-followup.test.ts:157` "audits that a comment after a flow list stays after its last value": asserts the written text of `setFields`, a comment lost or moved being corrupted work. Verdict: keep, retitled without "audits".
+- `files/ignored.test.ts:153` (a folder in no repository), `:158` (git cannot be started), `:164` (git does not answer in time) and `:172` (a failed git that printed a name): all four reach `ignoredIn`'s one failure branch (`files.ts:38`) and give "nothing left out". Verdict: `:153` and `:158` are cut as variations of that outcome; `:172` stays, since a change that read a failed git's output breaks it alone; `:164` stays for its own outcome, the answer at the timeout, with its wall-clock margin replaced as item 4 says, and is tagged slow (a real timer). The file's cases that start git are tagged slow.
+- `git/git-write.test.ts:564`, `:571`, `:579` and the other source checks of forbidden writes listed above: kept untouched (Decision 5).
+- `core/paths.test.ts` (`:89` and `:105` among its cases): left wholly untouched, its file tag kept (Decision 3).
+- A helper module under `tests/server/` imported from outside it, such as `machine/line-counts.ts` (`folder`, `tally`, `COUNT` imported by `tests/state/system/lines.test.ts`): every export kept.
+- A deletion that makes an entry of `allow-duplication.txt` stale: the entry removed, `npm run test:checks` green.
+- A fold of several cases into a table: the report lists each old title against its row, each row's expectation the one the deleted case asserted, and the table's run passes.
+
+The builder's first task, before any change, is the first run of every case above on the unchanged tree, with each case's result noted: each verdict checked by reading the test and the code it reaches. This is a judgment step over tests: no new test is written for it, and no prototype script stands in for the reading. When the first run finds a case the brief's own rules get wrong, the builder stops there, before changing any file, and hands back the first run and that case, with the rule and the result it gives.
+
+## Paths this step writes
+
+- `tools/oculus/tests/server/` (every file under it, files deleted included), except `tools/oculus/tests/server/core/paths.test.ts`
+- `tools/oculus/tests/checks/tree/allow-duplication.txt` lines 39-65 (the entries that name a `tests/server` file)
+- `tools/oculus/.scratch/migration/agents/reviews/T1c-report.md`, written in the worktree's copy of the ledger
+
+The step writes these paths and nothing else. T1b (`tests/state/`), T1d (`tests/views/`, `tests/shell/`, `tests/ui/`, `tests/themes/`) and T1e (`tests/routes/`, `tests/data/`, `tests/checks/`, `tests/fixtures/`) sweep the other folders; a sentence of theirs or of `src/` that the sweep makes false goes into the report's "Doc text". A helper of `tests/fixtures/` that the sweep leaves unused is named in the report for T1e, not deleted.
+
+## Decisions taken in this brief (each reversible, none silent)
+
+1. **Slow, by cause and by time.** A test is slow when it starts a real process (git, a shell, cloc, ssh), awaits a real timer of 1 ms or more, or opens a socket (a loopback server included), in its body or in a hook it runs under; a zero-delay yield (`setTimeout(0)`, `setImmediate`, a resolved promise) is no timer. Any other test is slow when a verbose run of its own file (`npx vitest run <file> --reporter=verbose`) gives it 100 ms or more; the report gives the load average of each such run. The cause rule follows the causes `spec.md:57` names and does not move with the load. Applied: `ignored.test.ts`'s git-starting cases (86 to 308 ms) slow by cause; its no-repository case (11 to 27 ms, starts git) slow by cause, though cut under item 1; `autofetch.test.ts`'s real fetch slow by cause; `block-edit.test.ts:411` (1 to 2 ms, no process) quick; `folders.test.ts:173` (7 to 57 ms, reads files only) quick.
+2. **Shared helpers.** A helper module under `tests/server/` that a file outside `tests/server/` imports keeps every export, so the other sweeps' files and the steps in flight still compile; only a helper nothing anywhere imports is deleted.
+3. **`core/paths.test.ts` stays as it is.** Z364 has T1a fix the three imports that make `:105` red; touching the file here (a tag change, a deletion of `:89`) would put `:105` into `npm test` before that fix, or overlap T1a's work. The report names the file as left untouched.
+4. **Per-test and describe tags.** The test and describe forms are used where a file mixes quick and slow tests, so its quick tests stay in `npm test`; the doc sentences that name only the file form are rewritten through "Doc text" (item 8).
+5. **Source checks of forbidden writes stay.** The checks listed under "What is on the tree" fail when a git write, `--force` or a process enters code that must not hold one, which is lost work; `DESIGN.md:128` and the source comments listed there rely on them. `spec.md:61`'s sentence on source text is about behaviours that need a DOM, which these are not. A source check that only pins how code is written, with its behaviour held by a test of what the code does, is deleted (item 1).
+
+## Libraries checked
+
+No new dependency: the step changes tests only, with the test runner the tree has.
+
+The builder adds no dependency this brief does not name. A library the builder finds that would cover its work is reported, not installed.
+
+## Read, with sections or line ranges
+
+1. `tools/oculus/.scratch/migration/agents/spec.md` whole, `:56-66` above all: the test rule the sweep applies.
+2. Every file under `tools/oculus/tests/server/`, and for each test the `src/` code it reaches, as far as needed to judge items 1 to 4.
+3. `tools/oculus/vite.config.ts:30-70`: the projects and the declared tag.
+4. `tools/oculus/tests/checks/tree/duplication.test.ts` and `allow-duplication.txt`: how a stale or a new clone fails.
+5. `tools/oculus/DESIGN.md:128`: the source checks it promises.
+
+## What it must do
+
+- Read every file, one at a time; never delete by a pattern over names.
+- Never read, open, grep or hash `tools/oculus/config/local.yml`, and never fetch a calendar address; the calendar tests run on fixtures. Every grep over `config/` uses `--exclude=local.yml`. Never touch ports 8787 or 8790.
+- Every test that touches a temporary folder keeps doing so under the system temporary folder, as it does today.
+- The real-hub readers (`edit/entry-edit.test.ts`, `edit/yaml/yaml-edit.test.ts`, `spec.md:37`) stay read-only and are judged under item 1 like any test.
+
+## Conventions
+
+The rules file's conventions: ASCII only, one line per Markdown paragraph, comments that say what and why with no history (no step id, no date, no "was"), no comment naming a deleted test. Prettier and eslint pass on every changed file.
+
+## Verify before you report
+
+Run from the worktree's `tools/oculus`, each must hold:
+
+1. The plan's verify list, run once after the last change through the `land` skill's `templates/checks.sh` from the root of the checkout it checks, as `sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`, prints `$ <command>` and the output of each command, then `checks: 7 commands passed`, and exits 0; the lines it prints are what the report quotes. While working, run only the files you change (`npx vitest run <file>`), as `spec.md:25` says.
+2. Each file the sweep changed that holds a slow tag, run alone with `npx vitest run <file> --tagsFilter slow`, passes.
+3. Each file the sweep changed, run alone with `npx vitest run <file> --tagsFilter '!slow' --reporter=verbose`, shows no test at 100 ms or more and no quick test with a cause of Decision 1; the report quotes the slowest line of each with the load average.
+4. `grep -rn "it('audits\|it(\"audits" tests/server` prints nothing.
+5. Every fold's table run passes after the change, and the report quotes the run and its title-to-row list.
+
+## Report
+
+Write it to `tools/oculus/.scratch/migration/agents/reviews/T1c-report.md` in the worktree's copy of the ledger. First line: anything NOT done, or "Everything in the brief is done". Then the open items of the state file, verbatim, which hold only what the user must rule on. Then the cases' first run: each case of "Cases" with its verdict on the unchanged tree, and each case the brief's rules got wrong with the rule, the result and the orchestrator's ruling. Then the DONE / NOT DONE table with the checks above and their output verbatim, the number of full-list runs, the line and file counts per folder before and after, and the two timings with their load averages. Then the removals, folds, retitles and tags file by file (item 7). Then "Doc text" (item 8). Then every judgment call the brief left open, and anything in the brief that was wrong or impossible, with the evidence.
