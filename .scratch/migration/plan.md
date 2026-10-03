@@ -1061,6 +1061,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z372 (2026-10-03): (a), X3c fixes the zero-width tab list: the list always keeps room for the active tab, and the history arrows and the strip's controls give way first as the pane narrows, as VS Code keeps the active tab in a narrow group; X3c's landing look replays the Q78 look's own steps (the mocha palette with its wallpaper, then back) on TEST under Z290. X3c's one repair round is used, so the fix is made at X3c's landing with its test (the user).
 - Z373 (2026-10-03): (a), for D25's two owed looks that need it, one TEST pane is widened past 900 px and put back, and the Files rail button on TEST is clicked once; `workspaces.json` may then differ from its snapshot only in TEST's pane sizes (the user).
 - Z374 (2026-10-03): (a), for D25's two last looks one more rail click on the TEST browser tab (System, then back to TEST's page) and a temporary edit of `tools/oculus/HELP.md`, put back after with its checksum; Axel: "Please just do whatever you need to do to finish the looks" (the user).
+- Z375 (2026-10-03): D25-owed-4a, the hunk bar's Revert Block drawn under the diff's overview ruler in a pane about 300 px wide (label cut to "Revert Bl"), is built in D42, the next open step on the diff view (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.

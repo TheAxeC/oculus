@@ -40,7 +40,7 @@ Queued, in order (36 steps):
 - O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.
 - O36 (a second person in the hub): paused (Axel); once O34 has landed.
 
-Owed: the look of Q81 (a Confirm over the update tray); D25's two looks left (the Settings save of `read_limits`, the hunk header at 300 px with its own buttons on an unstaged diff).
+Owed: the look of Q81 (a Confirm over the update tray).
 
 Landed, newest first:
 - Q116 (the Status view's line count of everything under src/), 2026-10-03, 5a7654bf.

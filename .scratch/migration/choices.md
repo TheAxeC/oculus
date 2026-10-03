@@ -997,6 +997,10 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z375 (2026-10-03, D25's owed look of the hunk bar at 300 px): where the cut Revert Block is fixed
+
+The look found Revert Block drawn under the diff's overview ruler in a pane about 300 px wide, its label cut to "Revert Bl". Options: (a) built in D42, the next open step on the diff view; (b) a step of its own, which enters the plan only by Axel's ruling; (c) left, the lazy option. Taken: (a).
+
 ## Z364 (2026-10-03, the slow tier's run): the bare `isMap` imports
 
 - Chosen (a): T1 fixes the three imports and lands with the slow tier green but for X3e's colour finding.
