@@ -4,6 +4,9 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z369, ruled by Axel 2026-10-03 ("Mark O33-O34-O35-O36 as paused"): those four are paused; the loop runs until a stop, his word, or only they remain.
+- Z368, ruled by Axel 2026-10-03 ("I would set workers_at_once to 5 (in both plan.yaml and state)"): five.
+- Z367, ruled by Axel 2026-10-03 ("Yes ... 4 would run the 4 sweeps and then T1a after"): T1 split into T1b to T1e and T1a.
 - Z366, ruled by Axel 2026-10-03 ("Agreed"): `npm run test:slow` in T1's landing list.
 - Z365, ruled by Axel 2026-10-03 ("Agreed"): the three test-rule sentences (speed, lowest level, once per behaviour) written into `agents/spec.md:57` before T1 is prepared.
 - Z364, closed by the orchestrator in automode 2026-10-03: where the slow tier's `isMap` red (three bare imports from S4's and D17's landings) is fixed; options (a) in T1, the step that owns the tiers, (b) a fix outside any step, which the plan's rules leave to landings, (c) a new step, which only Axel's ruling adds; (a) taken.

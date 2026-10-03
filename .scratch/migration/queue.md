@@ -2,8 +2,12 @@ In flight:
 - X3c (the tab strip as VS Code's): repair round 1 refuted, its findings to dispose; paused (Axel).
 - Q116 (the Status view's line count of everything under src/): built, its review next; paused (Axel).
 
-Queued, in order (33 steps):
-- T1 (the test suite in three tiers, unnecessary tests removed): held until Axel has discussed the tests further.
+Queued, in order (37 steps):
+- T1b (the test sweep of tests/state/): next, beside T1c and T1d.
+- T1c (the test sweep of tests/server/): next, beside T1b and T1d.
+- T1d (the test sweep of tests/views/, shell/, ui/ and themes/): next, beside T1b and T1c.
+- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures): once X3c or Q116 has landed, so five are in flight at most.
+- T1a (the test tiers): once T1b, T1c, T1d and T1e have landed; the queue below resumes after it.
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - M6 (the collection forms removed): once S5 has landed.
@@ -32,10 +36,10 @@ Queued, in order (33 steps):
 - R2 (release readiness): after Q72.
 - O29 (retiring the cockpit): after R2.
 - O30 (the native window in Electron): after O29.
-- O33 (oculus in its own repository): once O29 has landed.
-- O34 (remote access): once O33 has landed.
-- O35 (macOS, Linux and Windows): once O33 has landed.
-- O36 (a second person in the hub): once O34 has landed.
+- O33 (oculus in its own repository): paused (Axel); once O29 has landed.
+- O34 (remote access): paused (Axel); once O33 has landed.
+- O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.
+- O36 (a second person in the hub): paused (Axel); once O34 has landed.
 
 Owed: the look of Q81 (a Confirm over the update tray); D25's four looks (a diff widened past 900 px drawn side by side, the Compare Selected header, the Settings save of `read_limits`, the hunk header at 300 px with its own buttons).
 
