@@ -377,6 +377,21 @@ export function createWrites(
     }
 
     /**
+     * Set one list option or one family of a tracked config file as a whole: the endpoint rewrites
+     * the key's lines in `file` at the dotted `key` with `value`, and refuses, writing nothing,
+     * unless the file still holds `base` there (the value the caller read). A refusal is answered
+     * as for `writeConfigKey`. The change is recorded in History and can be taken back.
+     */
+    async function writeConfigValue(
+        file: string,
+        key: string,
+        value: unknown,
+        base: unknown
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'config-value', file, key, value, base });
+    }
+
+    /**
      * Park one audit finding, or bring it back. The signature is the scan's own; the endpoint
      * writes it into the `audit_ignore:` list of config/behavior.yml and the watcher pushes the
      * scan again.
@@ -557,6 +572,7 @@ export function createWrites(
         writeDeck,
         writeRail,
         writeConfigKey,
+        writeConfigValue,
         muteFinding,
         addMemory,
         newIdea,

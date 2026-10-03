@@ -8,8 +8,8 @@ import {
     LAYOUT_VERSION,
     PAGES_VERSION,
     WORKBENCH_VERSION
-} from '../../../../../src/lib/state/workbench/layout/index.ts';
-import { docked, pane } from '../layout-fixture.ts';
+} from '../../../../../../src/lib/state/workbench/layout/index.ts';
+import { docked, pane } from '../../layout-fixture.ts';
 import {
     splitOf,
     paneOf,

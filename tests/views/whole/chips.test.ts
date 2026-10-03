@@ -283,7 +283,7 @@ describe('the chip audit over every view', () => {
         );
         const toned = tags.filter((tag) => toneAttribute(tag.replace(/\s+/g, ' ')) !== null);
         expect(toned.length).toBeGreaterThanOrEqual(34);
-        expect(tags.length - toned.length).toBeGreaterThanOrEqual(56);
+        expect(tags.length - toned.length).toBeGreaterThanOrEqual(55);
     });
 
     it('audits that catches a tag toned by a token no theme paints, and passes the four chip forms', () => {

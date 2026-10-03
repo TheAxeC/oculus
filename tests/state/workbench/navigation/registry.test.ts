@@ -177,7 +177,6 @@ describe('the real registrations', () => {
                 'status',
                 'findings',
                 'help',
-                'config',
                 'audit',
                 'memories',
                 'calendar',
@@ -239,16 +238,15 @@ describe('the real registrations', () => {
         const expected: Record<string, { group: string; order: number }> = {
             agents: { group: 'sessions', order: 6 },
             applications: { group: 'academic', order: 3 },
-            audit: { group: 'info', order: 2 },
+            audit: { group: 'views', order: 6 },
             calendar: { group: 'incoming', order: 4 },
-            'account-setup': { group: 'views', order: 2 },
-            catalogue: { group: 'views', order: 0 },
+            'account-setup': { group: 'views', order: 1 },
+            catalogue: { group: 'views', order: 2 },
             archive: { group: 'projects', order: 3 },
             changes: { group: 'sessions', order: 5 },
             coauthor: { group: 'projects', order: 2 },
             code: { group: 'references', order: 2 },
             'joint-work': { group: 'academic', order: 4 },
-            config: { group: 'info', order: 4 },
             customization: { group: '', order: 0 },
             data: { group: 'references', order: 1 },
             deposit: { group: '', order: 0 },
@@ -260,12 +258,12 @@ describe('the real registrations', () => {
             files: { group: 'explorer', order: 0 },
             education: { group: 'academic', order: 2 },
             events: { group: 'academic', order: 1 },
-            findings: { group: 'info', order: 1 },
+            findings: { group: 'views', order: 5 },
             focus: { group: 'focus', order: 0 },
             funding: { group: 'academic', order: 0 },
-            gallery: { group: 'info', order: 5 },
+            gallery: { group: 'views', order: 8 },
             help: { group: 'help', order: 0 },
-            history: { group: 'info', order: 3 },
+            history: { group: 'views', order: 7 },
             hpc: { group: 'focus', order: 1 },
             inbox: { group: 'incoming', order: 0 },
             latex: { group: '', order: 0 },
@@ -276,7 +274,7 @@ describe('the real registrations', () => {
             note: { group: '', order: 0 },
             pages: { group: 'views', order: 3 },
             person: { group: '', order: 0 },
-            processes: { group: 'info', order: 6 },
+            processes: { group: 'views', order: 9 },
             personal: { group: 'projects', order: 4 },
             present: { group: 'present', order: 0 },
             pillars: { group: 'pillars', order: 0 },
@@ -289,11 +287,11 @@ describe('the real registrations', () => {
             search: { group: 'explorer', order: 2 },
             'session-detail': { group: 'sessions', order: 4 },
             'session-list': { group: 'sessions', order: 0 },
-            settings: { group: 'views', order: 1 },
+            settings: { group: 'views', order: 0 },
             slides: { group: '', order: 0 },
             source: { group: '', order: 0 },
             statements: { group: 'references', order: 3 },
-            status: { group: 'info', order: 0 },
+            status: { group: 'views', order: 4 },
             tasks: { group: 'academic', order: 5 },
             terminal: { group: 'sessions', order: 1 },
             timeline: { group: 'sessions', order: 3 },
@@ -350,18 +348,12 @@ describe('the real registrations', () => {
         });
     });
 
-    it('registers the manual, the configuration and a hub document with their catalog keys', () => {
+    it('registers the manual and a hub document with their catalog keys', () => {
         expect(viewFor('help')).toMatchObject({
             id: 'help',
             label: 'views.help',
             glyph: 'views.help_glyph',
             group: 'help'
-        });
-        expect(viewFor('config')).toMatchObject({
-            id: 'config',
-            label: 'views.config',
-            glyph: 'views.config_glyph',
-            group: 'info'
         });
         // A hub document is opened for one path, so it is not listed bare in the catalogue.
         expect(viewFor('doc')).toMatchObject({

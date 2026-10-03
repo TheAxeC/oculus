@@ -3,8 +3,8 @@
 // envelope may be shows as a row that fails. Nothing here touches localStorage or the DOM.
 
 import { describe, expect, it } from 'vitest';
-import { LAYOUT_VERSION } from '../../../../../src/lib/state/workbench/layout/index.ts';
-import { pane } from '../layout-fixture.ts';
+import { LAYOUT_VERSION } from '../../../../../../src/lib/state/workbench/layout/index.ts';
+import { pane } from '../../layout-fixture.ts';
 import { envelopeOf, holding, parsed, pageWith } from './refusal-fixture.ts';
 
 describe('parseLayout over an envelope of the wrong type', () => {

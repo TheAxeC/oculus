@@ -1,12 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. The Processes view is the seventh view of the System page.
+    // Layer 3, view registration. The Processes view is the last view of the System page's group,
+    // after Gallery, past the nine a chord reaches.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'processes',
         label: 'views.processes',
         glyph: 'views.processes_glyph',
-        group: 'info',
-        order: 6
+        group: 'views',
+        order: 9
     };
 </script>
 

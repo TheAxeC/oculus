@@ -162,7 +162,7 @@ describe('the rail pages the page hands the shell', () => {
         ]);
     });
 
-    it('reads the shipped list in its order, Views and Settings last', () => {
+    it('reads the shipped list in its order, System last', () => {
         const pages = railPages(config);
         expect(pages.map((one) => one.label)).toEqual(SHIPPED_RAIL_LABELS);
         expect(pages.every((one) => one.node !== undefined)).toBe(true);

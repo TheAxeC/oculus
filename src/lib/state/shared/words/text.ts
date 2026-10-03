@@ -60,6 +60,12 @@ export function lookup(key: string): string {
     return catalogEntry(key);
 }
 
+/** Whether the catalog holds a key, for the keys named by data that some data has no word for. */
+export function hasText(key: string): boolean {
+    configGeneration();
+    return catalog[key] !== undefined;
+}
+
 /**
  * The string for a dotted key, with {0} and {1} replaced by the arguments.
  * A key that is not in the catalog throws, so a typo fails loudly instead of rendering blank.

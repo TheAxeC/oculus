@@ -2,7 +2,7 @@
 //
 // The source half is the gate that keeps HELP.md true as the tool changes: every listed view is
 // named there by its id, every key of the sheet is in its table, every letter a group is reached by
-// is written down, and every configuration file is described in the same words the Config view
+// is written down, and every configuration file is described in the same words the Settings view
 // shows. A view, a key or a file added without a line here fails this file rather than leaving the
 // manual quietly wrong.
 
@@ -17,7 +17,7 @@ import { NAMES, OUT } from '../../../utils/diagrams/diagrams.mjs';
 import { renderManual, renderManualParts } from '../../../src/lib/server/content/docs.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { LOCAL_KEYS } from '../../../src/lib/data/sources/config/local.ts';
-import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
+import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import { sheetRows } from '../../../src/lib/ui/menu/keys/key-rows.ts';
 import {
     collectionKeys,
@@ -322,7 +322,7 @@ describe('the manual itself', () => {
         expect(drawn).toEqual([]);
     });
 
-    it('describes every configuration file in the words the Config view shows', () => {
+    it('describes every configuration file in the words the Settings view shows', () => {
         const files = readdirSync(join(engineDir(), 'config')).filter((name) =>
             name.endsWith('.yml')
         );

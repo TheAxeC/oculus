@@ -26,8 +26,11 @@ export type Control = (typeof CONTROLS)[number];
 /**
  * One option, or one family. A leaf option carries `default`, the value the tracked file holds, and
  * `control`, plus `values` when the control is a `choice`. A family carries `fields` and none of
- * the three, and so does a `local.yml` key, which has a description alone. `section` is the heading
- * the option is shown under, and the first segment of its key path when absent.
+ * the three, and so does a `local.yml` key, which has a description alone. A family that is a map
+ * may carry `holds: lists`, meaning each key of the map holds a list: of records, or of values
+ * for a key/value family (fields `key` and `value`); a family without it takes no list at a key.
+ * `section` is the heading the option is shown under, and the first segment of its key path when
+ * absent.
  */
 export type CatalogEntry = {
     description: string;
@@ -36,6 +39,7 @@ export type CatalogEntry = {
     control?: Control;
     values?: string[];
     fields?: Record<string, string>;
+    holds?: 'lists';
 };
 
 /** Config file name, then dotted key path, then entry. */

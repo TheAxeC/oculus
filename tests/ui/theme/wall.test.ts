@@ -99,7 +99,7 @@ function audit(file: string): { painted: string[]; answered: Set<string> } {
  * The surfaces that stay solid over a picture, each with why. A control is what a reader presses
  * and reads a word off at the size of a word, and a hover response is the control answering, so
  * neither takes the picture behind it. A track is read as a proportion of itself, which a picture
- * through it would take away.
+ * through it would take away. A panel drawn over the rows of its own pane covers them.
  */
 const SOLID: Record<string, string> = {
     'src/lib/ui/controls/Chip.svelte .chip': 'a control, read at the size of a word',
@@ -161,6 +161,8 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which row the pointer is on',
     'src/lib/views/system/machine/hpc/Capacity.svelte .bar':
         'a track, read as the proportion of it the fill covers',
+    'src/lib/views/system/workbench/Settings.svelte .contents.over':
+        'a table drawn over the list of its own pane, which would read through a picture and the list',
     'src/lib/views/system/workbench/settings/Item.svelte .item:hover, .item:focus-within':
         'a hover response, saying which setting the pointer or the focus is on',
     'src/lib/views/sessions/session-list/SessionWorkspace.svelte .row:hover':

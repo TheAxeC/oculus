@@ -18,7 +18,6 @@ text:
         other_glyph: paper
         retry: Read again
         toolbar: File controls
-        truncated: This file is longer than the window draws; its first 2 MB are shown.
         unbookmark: Take this bookmark out
         unreadable: 'The file {0} could not be read.'
     views:

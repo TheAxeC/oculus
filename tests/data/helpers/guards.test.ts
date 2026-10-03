@@ -15,6 +15,7 @@ import {
     isMap,
     item,
     numericSetting,
+    sameInOrder,
     scalar,
     str,
     strings,
@@ -163,5 +164,25 @@ describe('numericSetting', () => {
         expect(numericSetting({}, 'leads_badge_days')).toBe(null);
         expect(numericSetting({ leads_badge_days: '14' }, 'leads_badge_days')).toBe(null);
         expect(numericSetting({ leads_badge_days: Number.NaN }, 'leads_badge_days')).toBe(null);
+    });
+});
+
+describe('sameInOrder', () => {
+    it('holds for equal values, nested maps and lists included', () => {
+        expect(
+            sameInOrder({ a: [1, { b: 2, c: 3 }], d: null }, { a: [1, { b: 2, c: 3 }], d: null })
+        ).toBe(true);
+        expect(sameInOrder([], [])).toBe(true);
+    });
+
+    it('fails for a map whose keys come in another order, at any depth', () => {
+        expect(sameInOrder({ a: 1, b: 2 }, { b: 2, a: 1 })).toBe(false);
+        expect(sameInOrder({ k: { a: 1, b: 2 } }, { k: { b: 2, a: 1 } })).toBe(false);
+        expect(sameInOrder([{ a: 1, b: 2 }], [{ b: 2, a: 1 }])).toBe(false);
+    });
+
+    it('fails for values that differ', () => {
+        expect(sameInOrder({ a: 1 }, { a: 2 })).toBe(false);
+        expect(sameInOrder([1, 2], [2, 1])).toBe(false);
     });
 });

@@ -65,7 +65,7 @@ export function commit(row: ConfigRow, input: string | boolean): Committed {
 }
 
 /** The message an answer earns, or null when it wrote or changed nothing and has nothing to say. */
-function answered(answer: WriteAnswer, row: ConfigRow): Message | null {
+export function answered(answer: WriteAnswer, row: ConfigRow): Message | null {
     if (answer.refused.length > 0) {
         return message('refused', answer.refused.map((one) => one.reason).join('; '));
     }

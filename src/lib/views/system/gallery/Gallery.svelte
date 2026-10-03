@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Gallery follows Config in the System page's group.
+    // Layer 3, view registration. Gallery closes the System page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'gallery',
         label: 'views.gallery',
         glyph: 'views.gallery_glyph',
-        group: 'info',
-        order: 5
+        group: 'views',
+        order: 8
     };
 </script>
 

@@ -11,8 +11,8 @@ import {
     type Layout,
     type Pages,
     type Workbench
-} from '../../../../../src/lib/state/workbench/layout/index.ts';
-import { docked, pane, split } from '../layout-fixture.ts';
+} from '../../../../../../src/lib/state/workbench/layout/index.ts';
+import { docked, pane, split } from '../../layout-fixture.ts';
 
 /** A tab's state as text: nothing for null, `:undefined` for an absent one, else its JSON. */
 export const stateText = (state: unknown): string =>

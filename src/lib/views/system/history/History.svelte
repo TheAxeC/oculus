@@ -7,8 +7,8 @@
         id: 'history',
         label: 'views.history',
         glyph: 'views.history_glyph',
-        group: 'info',
-        order: 3
+        group: 'views',
+        order: 7
     };
 </script>
 

@@ -6,7 +6,7 @@
 # Shape. `options:` maps a config file name (appearance.yml, behavior.yml, layout.yml, present.yml, sources.yml, and local.yml for the machine's own keys) to a map of dotted key path to an entry.
 # An option is a leaf of its file: a scalar, a null or a list. A map is walked into, so `slurm.poll_min` is the key path of `poll_min` under `slurm`, and a list is one option, set as a whole.
 # A family is a list of records, or a map whose keys are names the data or the reader chooses (page names, tier names, field names, project types, tag names, file extensions, theme names) rather than names oculus reads. A family is one entry whose `fields` describe the record once; every other leaf is an option.
-# An option's entry holds `description`, `default` (the value the tracked file holds), `control` (toggle, number, text, choice or list), `values` (the words a `choice` accepts) and an optional `section`, the heading the option is shown under (the first segment of the key path when absent). A family's entry holds `description` and `fields`, and a local.yml entry holds `description` alone.
+# An option's entry holds `description`, `default` (the value the tracked file holds), `control` (toggle, number, text, choice or list), `values` (the words a `choice` accepts) and an optional `section`, the heading the option is shown under (the first segment of the key path when absent). A family's entry holds `description` and `fields`, and `holds: lists` when it is a map whose every key holds a list: a list of records (`tab_rollup`), or for a key/value family (fields `key` and `value`) a list of values (`languages`); a family without it is refused a key that holds a list, whatever the file holds at the time. A local.yml entry holds `description` alone.
 # A reader clamps or refuses a value it cannot use, so a description gives the range where the reader applies one.
 options:
     appearance.yml:
@@ -427,6 +427,7 @@ options:
                 value: the palette hue name the type's count wears
         tab_rollup:
             section: Tab badges
+            holds: lists
             description: The count buckets of each board. The Archive and Coauthor tab buttons draw their counts split by bucket, and the category facet of a board's filter takes the bucket's colour. Buckets are mutually exclusive, and a card lands in the first bucket whose keys its type or one of its status chips matches.
             fields:
                 key: a board id, projects, archive or coauthor
@@ -566,6 +567,7 @@ options:
                 tier: the board whose tab splits its count by this rule's type; projects puts the rule's type in the split of the Projects tab, and any other word adds no type to it
         languages:
             section: Files
+            holds: lists
             description: The language each file opens in, for its colours, its comment keys and the status bar. A file's language is the first match of its whole name lowercased, then of its extension lowercased, so a file called CMakeLists.txt is CMake before its .txt is read; a file no entry matches opens as plain text, a dotfile such as .bashrc included, since it has no extension. A language the editor does not colour is refused, and so is an entry that is not an extension with its dot or a file name without a slash; two languages that claim one ending keep the first in the file.
             fields:
                 key: the language's name as the editor and the status bar show it

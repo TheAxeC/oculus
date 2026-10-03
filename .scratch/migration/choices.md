@@ -997,6 +997,13 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z319 (2026-10-03, S4's look): the two defects of the Settings editors
+
+- Chosen: D25 widened, the step that adds its controls to the Settings editors: Save of an emptied key/value family of single values ends its draft once the file holds what was sent, its cause found at /spec; Undo of a `config-value` write gives back the lines the write replaced, the file's alignment included.
+- Not chosen: a new step of its own, against the rule that a defect goes into the step that changes its files; fixing them at landing, since the first has no known cause; an open item, the lazy option.
+
+Where it applies: D25. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z318 (2026-10-03, D14's look): the seven defects of the LaTeX build and view
 
 - Chosen: a new step D14b after D14, queued after D32b and built by a builder: a build's terminal kept readable when latexmk exits at once, with every terminal refusal a word; the folder read once a build has ended and whenever the view opens or a `.tex` file or PDF in it changes; Format Document undoable; "1 problem" in the singular; Open LaTeX on a folder holding a `.tex` file whether or not it was expanded; the picture hover drawn at the image's size.

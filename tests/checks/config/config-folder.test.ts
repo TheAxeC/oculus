@@ -1,5 +1,5 @@
 // The config folder oculus ships, read the way the server reads it: which keys sit in which file,
-// that no key is defined in two, that every file carries the one line the Config view and the
+// that no key is defined in two, that every file carries the one line the Settings view and the
 // manual show, and that the glyphs, the icons and the catalogue groups the files name resolve. The
 // machine's own local.yml is left out of every list here, since a checkout has one or it has none
 // and neither may change a result.
@@ -21,7 +21,7 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { readRoots, rootsFile } from '../../../src/lib/server/files/files.ts';
-import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
+import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import {
     arrange,
     isChorded,
@@ -86,7 +86,7 @@ function glyphReaders(engine: string): Set<string> {
 }
 
 /** Every description key opens with this, which is what makes an orphan one findable. */
-const DESC_PREFIX = 'config.desc_';
+const DESC_PREFIX = 'settings.desc_';
 
 /**
  * The tracked YAML of the config folder, in name order. The machine's own local.yml is left out: it
@@ -268,7 +268,6 @@ describe("oculus's own config directory", () => {
         'views/structure/map.yml',
         'views/structure/pillars.yml',
         'views/system/audit.yml',
-        'views/system/config.yml',
         'views/system/findings.yml',
         'views/system/gallery.yml',
         'views/system/help.yml',
@@ -475,14 +474,17 @@ describe("oculus's own config directory", () => {
         );
     });
 
-    it('keys every catalogue group by the rail page it holds, in rail order, Help after System', () => {
+    it('keys every catalogue group by the rail page it holds, in rail order, System after Help', () => {
         const { config } = loadConfig(engineDir());
         const groups = config.nav_groups as Record<string, { label: string }>;
         const rail = config.rail as { label: string; page: string }[];
         const pages = Object.keys(groups);
         expect(pages).toEqual(rail.map((entry) => entry.page));
         expect(pages.map((key) => groups[key].label)).toEqual(rail.map((entry) => entry.label));
-        expect(pages.indexOf('help')).toBe(pages.indexOf('info') + 1);
+        expect(pages.indexOf('views')).toBe(pages.indexOf('help') + 1);
+        expect(groups.views.label).toBe('System');
+        expect(pages).not.toContain('info');
+        expect(config.arrangements).not.toHaveProperty('info');
         expect(groups.help.label).toBe('Help');
         expect(config.arrangements).toHaveProperty('help');
     });
@@ -641,9 +643,8 @@ describe("oculus's own config directory", () => {
             'l',
             'r',
             't',
-            'y',
             'h',
-            'w'
+            'y'
         ]);
         // One letter reaches one thing: the direct chord and every group's are all distinct.
         const letters = [

@@ -1,7 +1,7 @@
 // Layer 2, client state. The view catalogue: every listed registration and every configured hub
 // document under the `nav_groups` heading it belongs to, which is the rail page it sits on, the
 // Help page's included, and the key order the chords count into.
-// The Views view on the Views and Settings page draws the sections and the shell's keyboard counts
+// The Views view on the System page draws the sections and the shell's keyboard counts
 // the chords over the same sections, so a key and the entry it opens are read from one fold.
 //
 // The readers of the three `layout.yml` keys the fold is built from are here too, since the page
@@ -263,7 +263,7 @@ export function nodeHolds(node: unknown, view: string): boolean {
 }
 
 /**
- * Whether the catalogue sits on the Views and Settings page: the page on screen is a rail page
+ * Whether the catalogue sits on the System page: the page on screen is a rail page
  * whose arrangement holds the catalogue. A press there opens on the page the reader came from; a
  * press from a catalogue the reader moved onto a page of their own opens on that page.
  */

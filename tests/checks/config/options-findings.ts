@@ -24,7 +24,7 @@ import { isMap } from '../../../src/lib/data/helpers/guards.ts';
 const TRACKED = ['appearance.yml', 'behavior.yml', 'layout.yml', 'present.yml', 'sources.yml'];
 
 /** The fields of a tracked file's entry, and of a machine-local file's entry. */
-const ENTRY_FIELDS = ['description', 'default', 'section', 'control', 'values', 'fields'];
+const ENTRY_FIELDS = ['description', 'default', 'section', 'control', 'values', 'fields', 'holds'];
 const LOCAL_ENTRY_FIELDS = ['description'];
 
 export type Entries = Record<string, unknown>;
@@ -88,6 +88,11 @@ function valueAt(value: unknown, path: string): { value: unknown } | null {
     return null;
 }
 
+/** Whether a value is a map whose every key holds a list; an empty map is one. */
+function isMapOfLists(value: unknown): boolean {
+    return isMap(value) && Object.values(value).every((item) => Array.isArray(item));
+}
+
 /** Whether the file's value, where an entry says `fields`, is not a list or a map of records. */
 function isNoFamily(value: unknown): boolean {
     if (Array.isArray(value)) return value.length > 0 && value.every(isScalar);
@@ -148,6 +153,7 @@ function optionFindings(
         say(path, 'a choice needs values: a non-empty list of distinct strings');
         valuesOk = false;
     }
+    if (Object.hasOwn(entry, 'holds')) say(path, 'holds belongs to a family and to nothing else');
     if (control !== 'choice' && Object.hasOwn(entry, 'values')) {
         say(path, 'values belong to a choice and to nothing else');
     }
@@ -177,7 +183,13 @@ function familyFindings(
         Object.keys(fields).length > 0 &&
         Object.values(fields).every((line) => typeof line === 'string');
     if (!named) say(path, 'fields is missing, empty or holds a line that is not a string');
+    if (Object.hasOwn(entry, 'holds') && entry.holds !== 'lists') {
+        say(path, `holds ${String(entry.holds)} is not lists, the one word it takes`);
+    }
     const held = valueAt(file, path);
+    if (entry.holds === 'lists' && held !== null && !isMapOfLists(held.value)) {
+        say(path, 'holds lists, but the file holds a value here that is not a map of lists');
+    }
     if (held !== null && isNoFamily(held.value)) {
         say(path, 'the file holds a scalar or a list of scalars here, which is not a family');
     }

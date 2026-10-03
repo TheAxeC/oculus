@@ -2,9 +2,8 @@
     // Layer 3, shared view. One read-only code window: the line numbers down the left and the
     // file's text painted beside them. The source tab draws it instead of an editor for a file it
     // holds but may not write, one this machine's mode locks and one too long for the tab to hold
-    // whole, and the Config view draws each configuration file it opens with it, so a file is
-    // painted in the same hues wherever it is read. It sits under views/shared because two views
-    // draw it and a view may not import another view's partial.
+    // whole, so a file is painted in the same hues wherever it is read. It sits under views/shared
+    // beside the other pieces of the code window the source tab draws.
     //
     // The two columns scroll as one box rather than two synchronised ones, so a long line moves the
     // text under fixed numbers and nothing has to be kept in step by hand. The source tab hands its

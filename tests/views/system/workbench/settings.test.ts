@@ -19,12 +19,16 @@ import { clientContext, createClientState, type ClientState } from '../../../fix
 import { setAppearance } from '../../../../src/lib/state/shared/words/appearance.ts';
 import type { FileText } from '../../../../src/lib/state/sources/fs-transport.ts';
 import {
+    buttonNamed,
     catalog,
     config,
     configured,
+    groupOf,
+    itemOf,
     read,
     READING,
     shippedTexts,
+    shippedWith,
     withFiles,
     words,
     type FileLog
@@ -48,51 +52,10 @@ function draw(files: Record<string, FileText> = shippedTexts(), shown = instance
     }).body;
 }
 
-/** The shipped text of one tracked file with one line replaced. */
-function shippedWith(name: string, from: string, to: string): Record<string, FileText> {
-    const files = shippedTexts();
-    const text = files[name].text;
-    if (!text.includes(from)) throw new Error(`${name} has no ${from}`);
-    return { ...files, [name]: read(text.replace(from, to)) };
-}
-
 /** The 1-based line of the first line of a shipped file that starts, indented or not, as given. */
 function lineOf(name: string, start: RegExp): number {
     const lines = shippedTexts()[name].text.split('\n');
     return lines.findIndex((one) => start.test(one)) + 1;
-}
-
-/** The markup of one item, from its opening tag to the next item or group. */
-function itemOf(body: string, id: string): string {
-    const open = new RegExp(
-        `<[a-z0-9]+[^>]*data-setting="${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`
-    );
-    const from = body.search(open);
-    if (from < 0) return '';
-    const inside = from + (open.exec(body.slice(from))?.[0].length ?? 1);
-    const rest = body.slice(inside);
-    const ends = [rest.search(/data-setting="/), rest.search(/data-settings-group="/)].filter(
-        (at) => at >= 0
-    );
-    return body.slice(from, ends.length === 0 ? body.length : inside + Math.min(...ends));
-}
-
-/** The markup of one group, from its opening to the next group. */
-function groupOf(body: string, id: string): string {
-    const from = body.indexOf(`data-settings-group="${id}"`);
-    if (from < 0) return '';
-    const next = body.indexOf('data-settings-group="', from + 10);
-    return body.slice(from, next < 0 ? body.length : next);
-}
-
-/** The opening tag of the button carrying these words as its accessible name or label. */
-function buttonNamed(body: string, words: string): string {
-    return (
-        [...body.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)]
-            .map(([one]) => one)
-            .find((one) => one.includes(`aria-label="${words}"`) || one.includes(`>${words}<`)) ??
-        ''
-    );
 }
 
 /** The markup of one rail row: from its opening to the next row, or to what follows the list. */
@@ -220,8 +183,10 @@ describe('the appearance half', () => {
 describe('the rail half', () => {
     it('draws one row per button of the file, holding its label', () => {
         const body = draw();
-        expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(12);
-        expect(body).toContain('value="Views and Settings"');
+        expect([...body.matchAll(/data-rail-row="/g)]).toHaveLength(11);
+        expect(body).toContain('value="System"');
+        // the merged button is labelled System, so the label of the two pages it replaced is gone
+        expect(body).not.toContain('value="Views and Settings"');
     });
 
     it('draws the list being typed rather than the file, and Save offered for it', () => {
@@ -461,20 +426,17 @@ describe('the controls of the options', () => {
         expect(toggle).not.toContain('`');
     });
 
-    it('summarises a list and a family and offers to edit them in the file, with no input', () => {
+    it('draws a list and a family with an editor of their own and the link to their file line', () => {
         const body = draw();
         const list = itemOf(body, 'behavior.yml:waiting_status');
         expect(list).toContain('data-control="list"');
-        expect(list).toContain(words('workbench.settings_items', 4));
-        expect(list).toContain(words('workbench.settings_edit_in', 'behavior.yml'));
-        // a list is edited in its file, so the item draws no field for it
-        expect(list).not.toContain('<input');
+        expect(list).toContain('data-editor="items"');
+        expect(list).toContain(words('workbench.settings_edit_in_tip', 'behavior.yml'));
         const family = itemOf(body, 'appearance.yml:themes');
         expect(family).toContain('data-control="family"');
-        expect(family).toContain(words('workbench.settings_edit_in', 'appearance.yml'));
+        expect(family).toContain('data-editor="records"');
+        expect(family).toContain(words('workbench.settings_edit_in_tip', 'appearance.yml'));
         expect(family).toMatch(/<code[^>]*>class<\/code>/);
-        // a family is edited in its file, so the item draws no field for it
-        expect(family).not.toContain('<input');
         // a family has no single starting value, only the fields of its entries
         expect(family).not.toContain('Default:');
     });
@@ -508,7 +470,7 @@ describe('the machine-local rows', () => {
         // a key of the machine's own file has no value here to differ from a default
         expect(hub).not.toContain('data-modified');
         const group = groupOf(body, 'local.yml');
-        expect(group).toContain(words('config.local_tag'));
+        expect(group).toContain(words('settings.local_tag'));
         // the machine's own file is described from the catalog and its text is never read
         expect(log2.asked).not.toContain('local.yml');
         expect(log2.asked.sort()).toEqual([
@@ -773,5 +735,50 @@ describe('the files the view asks for', () => {
         expect(new Set(log.asked)).toEqual(
             new Set(['appearance.yml', 'behavior.yml', 'layout.yml', 'present.yml', 'sources.yml'])
         );
+    });
+});
+
+describe('the open action of the file groups', () => {
+    const NAMES = [
+        'appearance.yml',
+        'behavior.yml',
+        'layout.yml',
+        'present.yml',
+        'sources.yml',
+        'local.yml'
+    ];
+
+    it('is in the heading of every file group, the machine file included', () => {
+        const body = draw();
+        for (const name of NAMES) {
+            const group = groupOf(body, name);
+            expect(group, name).not.toBe('');
+            expect(group, name).toContain(words('views.open_source_tip', name));
+        }
+    });
+
+    it('never reads the text of the machine file, and draws none of it', () => {
+        const base = shippedTexts();
+        const asked: string[] = [];
+        const seen = withFiles(client, {}, log);
+        const guarded: ClientState = {
+            ...seen,
+            fs: {
+                ...seen.fs,
+                fileText: (_root: string, name: string) => {
+                    asked.push(name);
+                    if (name === 'local.yml') throw new Error('the machine file was read');
+                    return base[name];
+                }
+            }
+        };
+        const body = render(Settings, {
+            context: clientContext(guarded),
+            props: { instance }
+        }).body;
+        // the machine's own file holds secrets, so the view never asks the file browser for its
+        // text
+        expect(asked).not.toContain('local.yml');
+        expect(groupOf(body, 'local.yml')).toContain(words('views.open_source_tip', 'local.yml'));
     });
 });

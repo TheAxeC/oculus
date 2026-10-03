@@ -29,9 +29,9 @@
 // bookmark added by hand or by another tool reaches an open page without a write from it.
 //
 // One root alone is re-read by refresh(root, version): it marks the listings, texts and file kinds
-// held under that root, so a view watching a channel (the Config view watching the config one) asks
-// again for that root's listings and texts and for nothing under any other root. A refresh at a
-// version already seen marks nothing.
+// held under that root, so a view watching a channel (the Settings view watching the config one)
+// asks again for that root's listings and texts and for nothing under any other root. A refresh at
+// a version already seen marks nothing.
 //
 // A folder can also be read awaited (readListing), which is how the Files view reads the folders on
 // the way to a path it was asked to show, one after the other; that read and a render's read of the

@@ -26,6 +26,8 @@ import {
     type Workbench
 } from '../model.ts';
 import { placeFits } from '../open/floats.ts';
+import { withInfoFolded, withSystemLabel } from './fold.ts';
+import { treeWithoutConfig, withoutConfigTabs } from './migrate.ts';
 import { refusedLeaves, settlePageLeaves, type Refusal } from '../nested.ts';
 import { normaliseSizes } from '../tree.ts';
 import { focusedPane, settleFocus } from '../workbench.ts';
@@ -471,7 +473,9 @@ export function parseLayout(value: unknown, label: string): Pages | null {
     if (envelope === null) return null;
     if (envelope.version === WORKBENCH_VERSION) {
         const only = readDockedWorkbench(envelope.workbench);
-        return only === null ? null : defaultPagesOf(newPage(label, only));
+        return only === null
+            ? null
+            : defaultPagesOf(newPage(label, { ...only, root: treeWithoutConfig(only.root) }));
     }
     const version = envelope.version;
     if (version !== LAYOUT_VERSION && version !== FLOATLESS_VERSION && version !== PAGES_VERSION) {
@@ -494,10 +498,13 @@ export function parseLayout(value: unknown, label: string): Pages | null {
         if (rail !== null) page.rail = rail;
         pages.push(page);
     }
-    // A leaf naming a page this envelope does not hold, or one that would make a page show itself,
-    // becomes an empty pane: the rest of the arrangement is still the one the viewer left.
+    // A saved info page is folded into the views page, which takes the System label (fold.ts), and
+    // a `config` tab becomes a `settings` tab (migrate.ts); a leaf naming a page this envelope does
+    // not hold, or one that would make a page show itself, then becomes an empty pane: the rest of
+    // the arrangement is still the one the viewer left.
     const floats = version === LAYOUT_VERSION ? readFloats(held.floats, pages) : [];
-    const read: Pages = settlePageLeaves({ pages, current, floats });
+    const migrated = withSystemLabel(withInfoFolded(withoutConfigTabs({ pages, current, floats })));
+    const read: Pages = settlePageLeaves(migrated);
     return checkPages(read).length === 0 ? read : null;
 }
 

@@ -5,13 +5,15 @@
 // input" says. What is here is for the bare map test and for the values a reader already holds:
 // is this a map, what map is it with an empty one for anything else, is this a string, what string
 // is it with a fallback, what text is this scalar, which items of this list are strings, and what
-// does a record or a list hold under a key or at a position it may not have. The contracts here
-// are the ones their readers agreed on: nothing trims, nothing coerces a number to text, and a
-// value of the wrong shape is dropped rather than repaired, so a bad line of a config file loses
-// that line and nothing else.
+// does a record or a list hold under a key or at a position it may not have, and are two values
+// equal with the keys of every map in the same order. The contracts here are the ones their readers
+// agreed on: nothing trims, nothing coerces a number to text, and a value of the wrong shape is
+// dropped rather than repaired, so a bad line of a config file loses that line and nothing else.
 //
 // `state/` may import this beside `data/model`, which is the one row of DESIGN.md's boundary table
 // this file widened; `ui/`, `shell/` and `themes/` may not.
+
+import { isEqual } from 'lodash-es';
 
 /** An object that is not null and not an array, which is what a YAML map parses to. */
 export function isMap(value: unknown): value is Record<string, unknown> {
@@ -77,4 +79,13 @@ export function strings(value: unknown): string[] {
 export function numericSetting(config: Record<string, unknown>, key: string): number | null {
     const value = config[key];
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Whether two values are equal with the keys of every map in the same order. A deep equality
+ * alone calls `{ a, b }` and `{ b, a }` equal, and a write that only reorders a map is a change to
+ * a file.
+ */
+export function sameInOrder(a: unknown, b: unknown): boolean {
+    return isEqual(a, b) && JSON.stringify(a) === JSON.stringify(b);
 }

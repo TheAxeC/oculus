@@ -1,6 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. Account setup follows Settings in the Views and Settings page's
-    // group, a tab beside it. It is opened from the Calendar's and the Inbox's Add and `...` menus
+    // Layer 3, view registration. Account setup follows Settings in the System page's group, a tab
+    // beside it. It is opened from the Calendar's and the Inbox's Add and `...` menus
     // as much as from the catalogue, since what it sets up is their accounts.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
@@ -9,7 +9,7 @@
         label: 'views.account_setup',
         glyph: 'views.account_setup_glyph',
         group: 'views',
-        order: 2
+        order: 1
     };
 </script>
 

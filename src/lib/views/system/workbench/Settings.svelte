@@ -1,41 +1,46 @@
 <script module lang="ts">
-    // Layer 3, view registration. Settings follows the Views catalogue in the Views and Settings
-    // page's group.
+    // Layer 3, view registration. Settings opens the System page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'settings',
         label: 'views.settings',
         glyph: 'views.settings_glyph',
         group: 'views',
-        order: 1
+        order: 0
     };
 </script>
 
 <script lang="ts">
     // Layer 3, view. The Settings editor over the options catalog (config/catalogs/options.yml),
     // drawn as VS Code's: a search with the count of the settings found, a table of contents on
-    // the left, and a list of groups, one for this browser's own values and one for each config
-    // file, each setting an item with its control, its default and the file and line of its key.
-    // A text, number, choice or toggle is written to its file as it is changed, through the same
-    // write the History view records and can undo; a list or a family is edited in the file.
+    // the left, and a list of groups, one for this browser's own values, one for each config file
+    // and one each for the catalog files and the text files, each setting an item with its control,
+    // its default and the file and line of its key. A text, number, choice or toggle is written to
+    // its file as it is changed, through the same write the History view records and can undo; a
+    // list or a family is edited in its item (editors/) and written whole on Save.
     //
-    // The files are read through the file browser's `engine` root, as the Config view reads them,
-    // and handed the version of the config channel, so a write that the watcher pushes back
-    // redraws the value. Only the five tracked files are asked for; the machine's own file is
-    // listed from the catalog alone and its text is never read.
+    // The files are read through the file browser's `engine` root, and handed the version of the
+    // config channel, so a write that the watcher pushes back redraws the value. Only the five
+    // tracked files are asked for; the machine's own file is listed from the catalog alone and its
+    // text is never read. The Catalogs and Texts groups are made from the listings of the two
+    // folders, which the same version re-reads.
     //
-    // The query, the text being typed in a field and the rail list being edited are the tab's
-    // instance state, so they are there again after a tab switch or a reload. The rail's Settings
-    // choice opens the tab with `reveal: 'rail'`: while that ask stands the rail row is drawn
-    // whatever the query, and once it is drawn the view clears a query that would have hidden it,
-    // waits for the list to be redrawn, scrolls the row into view and takes the ask out.
+    // The query, the text being typed in a field, the drafts of the list and family editors and the
+    // rail list being edited are the tab's instance state, so they are there again after a tab
+    // switch or a reload. The rail's Settings choice opens the tab with `reveal: 'rail'`: while
+    // that ask stands the rail row is drawn whatever the query, and once it is drawn the view
+    // clears a query that would have hidden it, waits for the list to be redrawn, scrolls the row
+    // into view and takes the ask out.
     //
-    // The table of contents is drawn at every width and hidden by a class while the view is under
-    // 700 px wide. The heading at the top of the list is the table's selected row.
+    // The table of contents is beside the list from 700 px and over. Under that the header offers a
+    // toggle that shows it over the list; a press on one of its entries or Escape hides it again
+    // (state/system/config/view/contents.ts). The heading at the top of the list is the table's
+    // selected row.
     //
-    // The partials are in settings/: Header (search, count, filter), Contents (table of contents),
-    // List (groups and sections), Item (one setting), Control (one option's control),
-    // BrowserControl (the controls of this browser's values), Gear (the item's menu).
+    // The partials are in settings/: Header (search, count, filter, the table's toggle), Contents
+    // (table of contents), List (groups and sections), Item (one setting), Control (one option's
+    // control), BrowserControl (the controls of this browser's values), Gear (the item's menu); the
+    // editors of lists and families are in editors/.
 
     import { tick, untrack } from 'svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -43,6 +48,8 @@
     import { t } from '$lib/state/shared/words/text';
     import { wallpaperOnTheme } from '$lib/state/shared/words/appearance';
     import { thisBrowserRows } from '$lib/state/system/config/browser';
+    import { CATALOGS } from '$lib/state/system/config/config-files';
+    import { savedDraft, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import {
         RAIL_ROW,
         catalogOf,
@@ -51,6 +58,8 @@
         type Group
     } from '$lib/state/system/config/groups';
     import { searchGroups } from '$lib/state/system/config/search';
+    import { contentsAfter, contentsPlace } from '$lib/state/system/config/view/contents';
+    import { listedFiles } from '$lib/state/system/config/view/folders';
     import {
         settingsQuery,
         settingsReveal,
@@ -63,19 +72,20 @@
     import Header from './settings/Header.svelte';
     import List from './settings/List.svelte';
     import { reactiveWriter } from './settings/writer.svelte';
+    import { reactiveEditors } from './editors/writer.svelte';
 
     const {
         entities: { config, message },
-        fs: { fileText, refresh },
+        fs: { fileText, listing, refresh },
         layout: { instanceLayoutState, restateInstance },
         ui,
-        writes: { writeConfigKey }
+        writes: { writeConfigKey, writeConfigValue }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
-    /** The narrowest the view may be with the table of contents beside the list. */
-    const NARROW = 700;
+    /** The folder of the text files, under the engine root like the catalogs'. */
+    const TEXT = 'text';
 
     /** The version of the config channel, which the watcher moves after a write in the folder. */
     const pushed = $derived(message('config')?.version ?? 0);
@@ -87,6 +97,19 @@
     const writer = reactiveWriter(writeConfigKey);
     $effect(() => () => writer.close());
 
+    // A draft ends when the file holds what it sent, another value, or a form the editor does not
+    // draw: the tab's state drops it.
+    const editors = reactiveEditors(
+        writeConfigValue,
+        (row) =>
+            ui.setInstanceState(
+                instance.id,
+                withSavedDraft(ui.instanceState(instance.id), row.file, row.key, null)
+            ),
+        (row) => savedDraft(ui.instanceState(instance.id), row.file, row.key) !== undefined
+    );
+    $effect(() => () => editors.close());
+
     const query = $derived(settingsQuery(ui.instanceState(instance.id)));
     const revealing = $derived(settingsReveal(instanceLayoutState(instance.id)) === 'rail');
 
@@ -94,9 +117,21 @@
         settingsGroups(
             catalogOf(config()?.config ?? {}),
             (file) => fileText(ENGINE_ROOT, file),
-            thisBrowserRows(ui, wallpaperOnTheme(ui.theme()))
+            thisBrowserRows(ui, wallpaperOnTheme(ui.theme())),
+            {
+                catalogs: listedFiles(CATALOGS, (path) => listing(ENGINE_ROOT, path)),
+                texts: listedFiles(TEXT, (path) => listing(ENGINE_ROOT, path))
+            }
         )
     );
+
+    // The watcher's push moves a row's value; each editor learns what the file now holds.
+    $effect(() => {
+        const rows = groups.flatMap((group) => group.sections.flatMap((section) => section.rows));
+        untrack(() => {
+            for (const row of rows) if (row.kind === 'config') editors.pushed(row);
+        });
+    });
 
     /** Whether a result holds the rail row. */
     function holdsRail(result: Group[]): boolean {
@@ -115,7 +150,10 @@
 
     let list: HTMLElement | undefined = $state();
     let width = $state(0);
-    const narrow = $derived(width > 0 && width < NARROW);
+
+    /** Whether the reader asked for the table of contents over the list. */
+    let contentsOpen = $state(false);
+    const place = $derived(contentsPlace(width, contentsOpen));
 
     /** The id of the heading at the top of the list. */
     let top = $state('');
@@ -143,6 +181,14 @@
         headings()
             .find((heading) => heading.dataset.tocTarget === id)
             ?.scrollIntoView({ block: 'start' });
+        contentsOpen = contentsAfter(contentsOpen, 'choose', width);
+    }
+
+    /** Escape hides the table shown over the list, and nothing else. */
+    function escaped(event: KeyboardEvent): void {
+        if (event.key !== 'Escape' || !place.over) return;
+        event.stopPropagation();
+        contentsOpen = contentsAfter(contentsOpen, 'escape', width);
     }
 
     function setQuery(next: string): void {
@@ -175,14 +221,34 @@
 </script>
 
 <Pane title={t('views.settings')} tinted>
-    <div class="view" data-instance={instance.id} data-settings-view bind:clientWidth={width}>
-        <Header {query} count={found.count} onquery={setQuery} ondown={focusFirst} />
+    <div
+        class="view"
+        role="presentation"
+        data-instance={instance.id}
+        data-settings-view
+        bind:clientWidth={width}
+        onkeydown={escaped}
+    >
+        <Header
+            {query}
+            count={found.count}
+            onquery={setQuery}
+            ondown={focusFirst}
+            toggle={place.toggle}
+            showing={place.over}
+            ontoggle={() => (contentsOpen = contentsAfter(contentsOpen, 'toggle', width))}
+        />
         <div class="body">
-            <nav class="contents" class:narrow aria-label={t('workbench.settings_contents')}>
+            <nav
+                class="contents"
+                class:hidden={!place.beside && !place.over}
+                class:over={place.over}
+                aria-label={t('workbench.settings_contents')}
+            >
                 <Contents entries={toc} current={top} onpick={scrollTo} />
             </nav>
             <div class="list" bind:this={list} onscroll={follow}>
-                <List groups={found.groups} id={instance.id} {writer} />
+                <List groups={found.groups} id={instance.id} {writer} {editors} />
             </div>
         </div>
     </div>
@@ -197,6 +263,7 @@
     }
 
     .body {
+        position: relative;
         display: flex;
         flex: 1 1 auto;
         min-height: 0;
@@ -209,8 +276,22 @@
         padding: 0 0 0 12px;
     }
 
-    .contents.narrow {
+    .contents.hidden {
         display: none;
+    }
+
+    /* Under 700 px the table is drawn over the list, from the top-left of the body. */
+    .contents.over {
+        position: absolute;
+        z-index: 2;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: min(280px, 90%);
+        padding: 0 8px 0 12px;
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+        box-shadow: var(--shadow);
     }
 
     .list {

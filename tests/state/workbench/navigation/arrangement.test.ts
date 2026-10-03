@@ -249,7 +249,7 @@ describe('the shipped pages', () => {
         );
     }
 
-    it('draws the twelve buttons in the ruled order, Help right after System', () => {
+    it('draws the eleven buttons in the ruled order, System last after Help', () => {
         expect(railPages(shipped).map((entry) => `${entry.label}:${entry.page}`)).toEqual([
             'Focus:focus',
             'Sessions:sessions',
@@ -260,9 +260,8 @@ describe('the shipped pages', () => {
             'Pillars:pillars',
             'References:references',
             'Present:present',
-            'System:info',
             'Help:help',
-            'Views and Settings:views'
+            'System:views'
         ]);
     });
 
@@ -286,12 +285,15 @@ describe('the shipped pages', () => {
             pillars: [['pillars', 'domains', 'map']],
             references: [['venues', 'data', 'code', 'statements']],
             present: [['present']],
-            info: [['status', 'findings', 'audit', 'history', 'config', 'gallery', 'processes']],
             help: [
                 ['help', 'doc:docs/HPC-UTwente-howto.md'],
                 ['doc:docs/RESEARCH-APPROACH.md', 'doc:docs/AGENT-APPROACH.md', 'memories']
             ],
-            views: [['catalogue'], ['settings', 'account-setup'], ['pages']]
+            views: [
+                ['settings', 'account-setup'],
+                ['catalogue', 'pages'],
+                ['status', 'findings', 'audit', 'history', 'gallery', 'processes']
+            ]
         });
     });
 
@@ -316,7 +318,7 @@ describe('the shipped pages', () => {
         const seen = [...onPages, ...onFloats];
         const pagesOf = (tab: string): string[] =>
             seen.filter((one) => one.tab === tab).map((one) => one.page);
-        expect(wanted).toHaveLength(52);
+        expect(wanted).toHaveLength(51);
         expect(wanted.filter((tab) => pagesOf(tab).length !== 1)).toEqual(['files']);
         // The one entry on two pages is the Files view: Explorer's own and the Sessions page's
         // tab that follows the selected session.
@@ -326,7 +328,7 @@ describe('the shipped pages', () => {
     });
 });
 
-describe('a System page saved before the Help page was its own', () => {
+describe('a System page saved before the two system pages were one', () => {
     const shipped = loadConfig(engineDir()).config;
     const arrangements = shipped.arrangements as Record<string, unknown>;
 
@@ -387,13 +389,14 @@ describe('a System page saved before the Help page was its own', () => {
         return again;
     }
 
+    /** The saved page's tabs once it is the System page: its Config tab is a Settings tab. */
     const OLD_TABS = [
         [
             'status',
             'findings',
             'audit',
             'history',
-            'config',
+            'settings',
             'gallery',
             'help',
             'doc:docs/HPC-UTwente-howto.md'
@@ -401,10 +404,12 @@ describe('a System page saved before the Help page was its own', () => {
         ['doc:docs/RESEARCH-APPROACH.md', 'doc:docs/AGENT-APPROACH.md', 'memories']
     ];
 
-    it('shows the saved System page with its old tabs, whatever the shipped arrangement says', () => {
+    it('shows the saved page on the System button with its old tabs, whatever the shipped arrangement says', () => {
         const browser = savedBrowser();
-        const saved = browser.layout.pages().find((page) => page.rail === 'info');
-        expect(browser.layout.openRailPage('info', 'System', arrangements.info)).toBe(true);
+        expect(browser.layout.pages().some((page) => page.rail === 'info')).toBe(false);
+        const saved = browser.layout.pages().find((page) => page.rail === 'views');
+        expect(saved).toBeDefined();
+        expect(browser.layout.openRailPage('views', 'System', arrangements.views)).toBe(true);
         expect(browser.layout.currentPage().id).toBe(saved?.id);
         expect(tabsOnScreen(browser)).toEqual(OLD_TABS);
     });
@@ -420,7 +425,7 @@ describe('a System page saved before the Help page was its own', () => {
             ['doc:docs/RESEARCH-APPROACH.md', 'doc:docs/AGENT-APPROACH.md', 'memories']
         ]);
         // The System page the browser saved is still the one its button shows.
-        browser.layout.openRailPage('info', 'System', arrangements.info);
+        browser.layout.openRailPage('views', 'System', arrangements.views);
         expect(tabsOnScreen(browser)).toEqual(OLD_TABS);
     });
 });

@@ -31,6 +31,7 @@ import {
 import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
 import { deckNow, writeDeck } from './config/deck.ts';
 import { configKeyNow, writeConfigKey } from './config/config-key.ts';
+import { configValueNow, writeConfigValue } from './config/config-value.ts';
 import { railNow, writeRail } from './config/rail.ts';
 import { rootsNow, writeRoots } from './config/roots.ts';
 import { railRows } from '../../../data/sources/config/rail.ts';
@@ -141,6 +142,9 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         return roots === null ? { found: false, value: null } : { found: true, value: roots };
     }
     if (change.kind === 'config-key') return configKeyNow(into.engine, change.key, change.field);
+    if (change.kind === 'config-value') {
+        return configValueNow(into.engine, change.key, change.field);
+    }
     if (change.kind === 'subtask' || change.kind === 'subtask-add') {
         return subtaskValue(into.hub, into.config, subtaskTarget(into, change), change.field);
     }
@@ -296,6 +300,16 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     }
     if (change.kind === 'config-key') {
         const outcome = writeConfigKey(into.engine, change.key, change.field, change.before);
+        return { found: true, ...outcome };
+    }
+    if (change.kind === 'config-value') {
+        const outcome = writeConfigValue(
+            into.engine,
+            change.key,
+            change.field,
+            change.before,
+            change.after
+        );
         return { found: true, ...outcome };
     }
     if (change.kind === 'subtask') {

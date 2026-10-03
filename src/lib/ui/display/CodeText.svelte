@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, primitive. One catalog line with its backticked words drawn as code, for a line that
-    // names a key, a field or a file: the Config view's descriptions, the Audit view's messages and
-    // every Empty line. It draws the pieces ui/html.ts's codeSpans cuts the line into, a code
+    // names a key, a field or a file: the Settings view's descriptions, the Audit view's messages
+    // and every Empty line. It draws the pieces ui/html.ts's codeSpans cuts the line into, a code
     // piece as `code` and a plain piece as text, with no element of its own around them, so the
     // line sits in its parent's layout as the bare text did. The pieces are Svelte markup rather
     // than HTML, so nothing here passes through the sanitiser and a code piece is escaped like any

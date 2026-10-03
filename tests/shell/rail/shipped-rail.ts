@@ -13,7 +13,6 @@ export const SHIPPED_RAIL_KEYS = [
     'pillars',
     'references',
     'present',
-    'info',
     'help',
     'views'
 ];
@@ -29,7 +28,6 @@ export const SHIPPED_RAIL_LABELS = [
     'Pillars',
     'References',
     'Present',
-    'System',
     'Help',
-    'Views and Settings'
+    'System'
 ];

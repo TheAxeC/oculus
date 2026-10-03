@@ -2,16 +2,14 @@
 // search box, and the text typed into a field and not yet written, one record per file and key. It
 // is the tab's instance state (state/workbench/ui.svelte.ts), merged into the blob the rail draft
 // already lives in, so a tab switch or a reload brings it back and the rail list is never replaced.
-// A tab holding a typed field text holds unsaved text, since each write is a record in History and
-// a half-typed value is not one yet; the query alone is not.
+// A tab holding a typed field text or an editor's draft holds unsaved work, since each write is a
+// record in History and a half-typed value is not one yet; the query alone is not.
 
 import { z } from 'zod';
+import { draftsHeld, mapOf } from './editors/slots.ts';
 
 /** One field's unsent text. */
 type Typed = { file: string; key: string; text: string };
-
-/** The tab's state is an object; anything else is taken as no state. */
-const stateShape = z.looseObject({}) satisfies z.ZodType<Record<string, unknown>>;
 
 /** The query is a string; any other value is taken as no query. */
 const queryShape = z.string().catch('') satisfies z.ZodType<string>;
@@ -36,14 +34,6 @@ const typedListShape = z
 
 /** The ask the rail's Settings choice leaves: the section to scroll to, or no ask. */
 const revealShape = z.enum(['rail']).optional().catch(undefined);
-
-/**
- * The state itself when it is a map, so the keys it holds stay as they are when it is handed on,
- * and an empty map when the tab has none. The schema only accepts or refuses.
- */
-function mapOf(state: unknown): Record<string, unknown> {
-    return stateShape.safeParse(state).success ? (state as Record<string, unknown>) : {};
-}
 
 /** The unsent texts a state holds. */
 function typedList(state: unknown): Typed[] {
@@ -84,11 +74,12 @@ export function withTypedText(
 }
 
 /**
- * Whether a state holds text no write has taken: an unsent field text. The tab asked is a Settings
- * tab, which state/client/context.ts checks before asking.
+ * Whether a state holds work no write has taken: an unsent field text or a list or family draft
+ * (editors/slots.ts). The tab asked is a Settings tab, which state/client/context.ts checks before
+ * asking.
  */
 export function settingsTyped(state: unknown): boolean {
-    return typedList(state).length > 0;
+    return typedList(state).length > 0 || draftsHeld(state) > 0;
 }
 
 /** The section a tab was opened to show, or undefined when it was opened for no section. */

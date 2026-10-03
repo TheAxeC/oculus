@@ -50,14 +50,14 @@ describe('the Views catalogue', () => {
     it('draws each group under its heading, with its chord letter where it has one', () => {
         const body = draw();
         const headings = [...body.matchAll(/data-group="([^"]+)"/g)].map((found) => found[1]);
-        // One heading per rail page, in rail order, Help right after System.
+        // One heading per rail page, in rail order, System right after Help.
         expect(headings).toEqual((config.rail as { label: string }[]).map((entry) => entry.label));
-        expect(headings.indexOf('Help')).toBe(headings.indexOf('System') + 1);
+        expect(headings.indexOf('System')).toBe(headings.indexOf('Help') + 1);
         const sessions = body.slice(body.indexOf('data-group="Sessions"'));
         expect(sessions).toMatch(/class="chord[^"]*">m</);
     });
 
-    it('draws a key beside every entry of every group, System y1 to y7 and Help h1 to h5', () => {
+    it('draws a key beside each of the first nine entries of every group, System y1 to y9 and Help h1 to h5', () => {
         const body = draw();
         const focus = body.slice(body.indexOf('data-view="focus"'));
         expect(focus).toMatch(/class="key[^"]*"[^>]*>f1</);
@@ -69,18 +69,29 @@ describe('the Views catalogue', () => {
             const keys = [...section.matchAll(/class="key[^"]*"[^>]*>([^<]+)</g)].map(
                 (one) => one[1]
             );
-            // Every entry of the group carries its key.
-            expect([found[1], keys.length]).toEqual([found[1], entries]);
+            // Each of the first nine entries of the group carries its key; a chord reaches no
+            // further.
+            expect([found[1], keys.length]).toEqual([found[1], Math.min(entries, 9)]);
             keysOf.set(found[1], keys);
         });
-        expect(keysOf.get('System')).toEqual(['y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7']);
+        expect(keysOf.get('System')).toEqual([
+            'y1',
+            'y2',
+            'y3',
+            'y4',
+            'y5',
+            'y6',
+            'y7',
+            'y8',
+            'y9'
+        ]);
         expect(keysOf.get('Help')).toEqual(['h1', 'h2', 'h3', 'h4', 'h5']);
     });
 
     it("lists a group's hub documents after its views, as buttons carrying their path", () => {
         const body = draw();
         expect(button(body, 'data-doc="docs/HPC-UTwente-howto.md"')).toContain('HPC how-to');
-        expect(body.indexOf('data-view="history"')).toBeLessThan(
+        expect(body.indexOf('data-view="help"')).toBeLessThan(
             body.indexOf('data-doc="docs/HPC-UTwente-howto.md"')
         );
     });
@@ -91,7 +102,7 @@ describe('the Views catalogue', () => {
         client.registry.registerView({
             ...status,
             id: 'probe-badged',
-            group: 'info',
+            group: 'views',
             order: 99,
             badge: () => '3 5',
             badgeTone: () => 'red'

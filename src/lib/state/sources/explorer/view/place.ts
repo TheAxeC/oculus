@@ -14,7 +14,7 @@ import { fieldItemsShape, readAs } from '../../../../data/shapes/shapes.ts';
 export const HUB_ROOT = 'hub';
 
 /**
- * The key the engine's own `config/` folder is served under, which is what the Config view lists
+ * The key the engine's own `config/` folder is served under, which is what the Settings view lists
  * and opens a file of. It is the client's half of the key lib/server/files/files.ts serves that
  * folder under, since nothing client-side may import a server module;
  * tests/routes/files/file.test.ts holds the two to one another.

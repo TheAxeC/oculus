@@ -7,6 +7,41 @@ text:
         pages_glyph: pages
         settings: Settings
         settings_glyph: sliders
+    settings:
+        desc_agents: 'The composer of a new agent session: per agent, the models, efforts and permission modes it offers, each with the words it shows and the flag it passes, and each list with its default.'
+        desc_appearance: "The UI theme list with the glyph each theme is offered under, the wallpaper behind the panels, the Memories wall's folder, the CRT default, the code theme of the editors, the terminal text size and the terminal's cursor style, cursor blinking, Option key and copy on selection."
+        desc_behavior: "Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh strip, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the Files view's `files.confirm_delete` (true asks before a delete to the Trash), the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`) and chat."
+        desc_file_nesting: 'The files the Files view draws under another file when File Nesting is on: per parent name, the names nested under it, as VS Code lists them by default.'
+        desc_glyphs: 'The glyph vocabulary: each name with the ASCII stand-in, one to three characters, that a terminal theme draws in place of its icon.'
+        desc_icons: 'The line icon each glyph name is drawn as, one row per name in the glyph vocabulary.'
+        desc_layout: "How things are arranged: the rail's pages and the arrangements each starts as, the view catalogue's groups, the hub documents, the board chrome, the tab rollups and the live badges."
+        desc_local: "This machine's own values, read on their own and never merged into the configuration: the hub path, the port, the ssh alias of the cluster, the Claude command, the program an address is opened with, the account folders, the calendar accounts, the mail accounts and where the machine-local state is kept."
+        desc_manifest_schema: 'The project.yml edit form as data: its sections, its fields, the widget each field is edited by, and where a widget takes its choices from.'
+        desc_meta: 'The tool identity: the title and the subtitle the window carries.'
+        desc_options: 'Every option of every config file: what it does, its default, and the control it is set with.'
+        desc_present: 'The public deck the Present view draws: the deck slides, the domain themes, the tag tones and the order.'
+        desc_sources: "What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from (the folders of the default workspace, which the Files view's Add Folder to Workspace and Remove Folder from Workspace write, keeping the file's comments), and the language each file name opens in."
+        desc_vocab: 'Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers, the venue and dataset theme words and the radar buckets.'
+        catalogs_about: The catalog files the configuration is merged from, in config/catalogs/.
+        catalogs_title: Catalogs
+        contents_hide: Hide the table of contents
+        contents_show: Show the table of contents
+        editor_add: Add
+        editor_add_group: Add a key
+        editor_discard: Discard
+        editor_down: 'Move entry {0} down'
+        editor_field: 'Entry {0}, {1}'
+        editor_group_down: 'Move key {0} down'
+        editor_group_key: 'Key {0}'
+        editor_group_up: 'Move key {0} up'
+        editor_kept: 'Kept as the file has it:'
+        editor_remove: 'Remove entry {0}'
+        editor_remove_group: 'Remove key {0}'
+        editor_save: Save
+        editor_up: 'Move entry {0} up'
+        local_tag: This machine
+        texts_about: The words the views draw, one file per view, in config/text/ and the folders under it.
+        texts_title: Texts
     workbench:
         catalogue_hint: A click opens the view on the page you came from and shows that page; a shift-click opens it in a pane beside, on that page. Drag a view onto a pane, or right-click it, to open it on this page.
         catalogue_key: '{0}, key {1}'
@@ -72,6 +107,8 @@ text:
         settings_browser_theme_about: The colour theme of the page in this browser.
         settings_browser_wallpaper: Wallpaper
         settings_browser_wallpaper_about: The wallpaper behind the panels and the slight transparency that goes with it. Offered under the themes that show one.
+        settings_changed_since: 'The file changed since this edit was started, so it was not saved.'
+        settings_draft_dropped: 'The file now holds this setting in a form the editor does not draw, so the unsaved edit was dropped.'
         settings_choice_empty: Not chosen
         settings_clear: Clear search
         settings_contents: Settings contents
@@ -82,9 +119,12 @@ text:
         settings_default_empty: 'Default: empty'
         settings_default_item_one: 'Default: 1 item'
         settings_default_items: 'Default: {0} items'
+        settings_duplicate_key: 'Two entries are named {0}. Each needs its own name.'
         settings_edit_in: 'Edit in {0}'
         settings_edit_in_tip: 'Open {0} in a source tab'
         settings_empty: 'The field is empty, so nothing was written.'
+        settings_empty_item: 'Item {0} is empty. Fill it in or remove it.'
+        settings_empty_key: 'Entry {0} has no name. Give it one or remove it.'
         settings_failed: 'Not written: {0}'
         settings_fields: 'Each entry has:'
         settings_filter: Filter settings
@@ -93,8 +133,8 @@ text:
         settings_found_none: No Settings Found
         settings_found_one: 1 Setting Found
         settings_gear: More actions
-        settings_item_one: 1 item
-        settings_items: '{0} items'
+        settings_list_failed: 'The folder {0} could not be listed: {1}'
+        settings_list_loading: 'Reading the folder {0}...'
         settings_loading: 'Reading {0}...'
         settings_mismatch_choice: 'The file holds {0}, which is not one of the choices.'
         settings_mismatch_list: 'The file holds {0}, which is not a list.'
@@ -104,6 +144,7 @@ text:
         settings_missing: 'This key is not set in {0}.'
         settings_network: 'Not written: the server could not be reached.'
         settings_not_number: 'That is not a decimal number, so nothing was written.'
+        settings_not_yaml: 'Entry {0}, {1}: the text is not valid YAML.'
         settings_refused: 'Not written: {0}'
         settings_reset: Reset Setting
         settings_search: Search settings

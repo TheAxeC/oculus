@@ -1,12 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. The Views catalogue opens the Views and Settings page's group.
+    // Layer 3, view registration. The Views catalogue follows Account setup in the System page's
+    // group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'catalogue',
         label: 'views.catalogue',
         glyph: 'views.catalogue_glyph',
         group: 'views',
-        order: 0
+        order: 2
     };
 </script>
 
@@ -93,7 +94,7 @@
     }
 
     /**
-     * Show the page an entry opens on. From the Views and Settings page, the page the reader was on
+     * Show the page an entry opens on. From the System page, the page the reader was on
      * before it, or the first rail page, made from its arrangement when it is not made yet, when
      * there was none; from any other page the catalogue was moved onto, that page itself.
      */

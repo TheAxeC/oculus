@@ -128,5 +128,4 @@ tests/views/personal/memories.test.ts tests/views/system/audit.test.ts fb7869034
 tests/views/sessions/changes.test.ts tests/views/sessions/views-fixture.ts 7d2da620a07e the same 9 lines at 105 and 150, to fold into one place
 tests/views/sources/data.test.ts tests/views/sources/venues.test.ts 00a4e28009a2 the same 12 lines at 35 and 37, to fold into one place
 tests/views/sources/data.test.ts tests/views/sources/venues.test.ts 38bae11dc04c the same 16 lines at 50 and 52, to fold into one place
-tests/views/system/config.test.ts tests/views/system/history.test.ts e8031d1c8053 the same 10 lines at 31 and 25, to fold into one place
-tests/views/system/config.test.ts tests/views/whole/chips.test.ts e8031d1c8053 the same 10 lines at 31 and 32, to fold into one place
+tests/views/system/history.test.ts tests/views/whole/chips.test.ts e8031d1c8053 the same 10 lines at 25 and 36, to fold into one place

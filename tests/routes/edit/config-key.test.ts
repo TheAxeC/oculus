@@ -26,7 +26,9 @@ import {
     engineFile,
     request,
     scratchEngine,
-    undone
+    undone,
+    undoneBack,
+    undoneMoved
 } from './write-fixture.ts';
 
 const KEEP_BLOCK = 'changes:\n  keep: 500\n';
@@ -118,11 +120,7 @@ describe('taking a setting back', () => {
         const before = behaviorOf(into);
         await send(into, 'behavior.yml', 'changes.keep', 300);
         const [change] = changesOf(into);
-        const response = await undone(into, change);
-        expect(response.status).toBe(200);
-        expect(behaviorOf(into)).toBe(before);
-        const [back, first] = changesOf(into);
-        expect(first.at).toBe(change.at);
+        const back = await undoneBack(into, change, into.behaviorFile, before);
         expect(back).toMatchObject({
             kind: 'config-key',
             field: 'changes.keep',
@@ -137,11 +135,7 @@ describe('taking a setting back', () => {
         await send(into, 'behavior.yml', 'changes.keep', 300);
         const [change] = changesOf(into);
         await send(into, 'behavior.yml', 'changes.keep', 400);
-        const held = behaviorOf(into);
-        const response = await undone(into, change);
-        expect(response.status).toBe(409);
-        expect(await response.json()).toEqual({ error: 'moved' });
-        expect(behaviorOf(into)).toBe(held);
+        await undoneMoved(into, change, into.behaviorFile, behaviorOf(into));
     });
 
     it('is refused by the same readers, with their sentence, when it would put a refused value back', async () => {

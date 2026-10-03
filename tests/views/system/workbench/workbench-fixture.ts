@@ -63,7 +63,7 @@ export function shippedTexts(): Record<string, FileText> {
 export type FileLog = { asked: string[]; refreshed: { root: string; version: number }[] };
 
 /**
- * The client with its file browser answering `files` by name, as the Config view's suite does it:
+ * The client with its file browser answering `files` by name, as the Settings suites do it:
  * a name the map lacks is still being read, and every name asked of `fileText` is recorded.
  */
 export function withFiles(
@@ -84,4 +84,50 @@ export function withFiles(
             }
         }
     };
+}
+
+/** The shipped text of one tracked file with one line replaced. */
+export function shippedWith(name: string, from: string, to: string): Record<string, FileText> {
+    const files = shippedTexts();
+    const text = files[name].text;
+    if (!text.includes(from)) throw new Error(`${name} has no ${from}`);
+    return { ...files, [name]: read(text.replace(from, to)) };
+}
+
+/** The markup of one item, from its opening tag to the next item or group. */
+export function itemOf(body: string, id: string): string {
+    const open = new RegExp(
+        `<[a-z0-9]+[^>]*data-setting="${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`
+    );
+    const from = body.search(open);
+    if (from < 0) return '';
+    const inside = from + (open.exec(body.slice(from))?.[0].length ?? 1);
+    const rest = body.slice(inside);
+    const ends = [rest.search(/data-setting="/), rest.search(/data-settings-group="/)].filter(
+        (at) => at >= 0
+    );
+    return body.slice(from, ends.length === 0 ? body.length : inside + Math.min(...ends));
+}
+
+/** The markup of one group, from its opening to the next group. */
+export function groupOf(body: string, id: string): string {
+    const from = body.indexOf(`data-settings-group="${id}"`);
+    if (from < 0) return '';
+    const next = body.indexOf('data-settings-group="', from + 10);
+    return body.slice(from, next < 0 ? body.length : next);
+}
+
+/** The opening tag of the button carrying these words as its accessible name or label. */
+export function buttonNamed(body: string, label: string): string {
+    return (
+        [...body.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)]
+            .map(([one]) => one)
+            .find((one) => one.includes(`aria-label="${label}"`) || one.includes(`>${label}<`)) ??
+        ''
+    );
+}
+
+/** The client and the file log a Settings suite draws over, new for each case. */
+export function freshSuite(): { client: ClientState; log: FileLog } {
+    return { client: configured(), log: { asked: [], refreshed: [] } };
 }

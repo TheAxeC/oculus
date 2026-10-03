@@ -1,0 +1,81 @@
+<script lang="ts">
+    // Layer 3, view partial. The draft of a map of lists of records, which is the board tabs'
+    // roll-up buckets: one group per key, each with its key field, the controls that move it and
+    // take it away, and the list of its records (Cards.svelte); and Add a key at the end.
+
+    import TextInput from '$lib/ui/forms/TextInput.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import { t } from '$lib/state/shared/words/text';
+    import type { Draft, Edit } from '$lib/state/system/config/editors/draft';
+    import Cards from './Cards.svelte';
+
+    type Props = {
+        draft: Extract<Draft, { form: 'rollup' }>;
+        onedit: (edit: Edit) => void;
+    };
+
+    let { draft, onedit }: Props = $props();
+</script>
+
+<div class="groups">
+    {#each draft.groups as group, at (at)}
+        <section class="group" data-group={at}>
+            <div class="head">
+                <TextInput
+                    value={group.key}
+                    label={t('settings.editor_group_key', at + 1)}
+                    oninput={(key: string) => onedit({ do: 'setGroup', group: at, key })}
+                />
+                <ToolButton
+                    label={t('settings.editor_group_up', at + 1)}
+                    glyph="collapse"
+                    compact
+                    disabled={at === 0}
+                    onclick={() => onedit({ do: 'moveGroup', group: at, by: -1 })}
+                />
+                <ToolButton
+                    label={t('settings.editor_group_down', at + 1)}
+                    glyph="expand"
+                    compact
+                    disabled={at === draft.groups.length - 1}
+                    onclick={() => onedit({ do: 'moveGroup', group: at, by: 1 })}
+                />
+                <ToolButton
+                    label={t('settings.editor_remove_group', at + 1)}
+                    glyph="trash"
+                    compact
+                    onclick={() => onedit({ do: 'removeGroup', group: at })}
+                />
+            </div>
+            <Cards cards={group.cards} fields={draft.fields} form="rollup" group={at} {onedit} />
+        </section>
+    {/each}
+    <ToolButton
+        label={t('settings.editor_add_group')}
+        glyph="add"
+        onclick={() => onedit({ do: 'addGroup' })}
+    />
+</div>
+
+<style>
+    .groups {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+        max-width: 720px;
+    }
+
+    .head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+</style>

@@ -234,11 +234,14 @@ describe('the catalogue of the real config', () => {
     it('lists the manual, the photo wall and the three hub documents under Help, apart from System', () => {
         const system = sections.find((found) => found.label === 'System');
         expect(system?.items.map((view) => view.id)).toEqual([
+            'settings',
+            'account-setup',
+            'catalogue',
+            'pages',
             'status',
             'findings',
             'audit',
             'history',
-            'config',
             'gallery',
             'processes'
         ]);
@@ -258,13 +261,14 @@ describe('the catalogue of the real config', () => {
         expect(rest.map((view) => view.id)).toEqual([]);
     });
 
-    it('lists one group per rail page, in rail order, labelled with its button, and Help after System', () => {
+    it('lists one group per rail page, in rail order, labelled with its button, and System after Help', () => {
         const rail = config.rail as { label: string; page: string }[];
         expect(groups.map((group) => group.id)).toEqual(rail.map((entry) => entry.page));
         expect(groups.map((group) => group.label)).toEqual(rail.map((entry) => entry.label));
         const labels = sections.map((section) => section.label);
         expect(labels).toEqual(rail.map((entry) => entry.label));
-        expect(labels.indexOf('Help')).toBe(labels.indexOf('System') + 1);
+        expect(labels.indexOf('System')).toBe(labels.indexOf('Help') + 1);
+        expect(labels).not.toContain('Views and Settings');
     });
 
     it('gives every group a letter and a glyph, and one letter to one list', () => {
@@ -282,9 +286,8 @@ describe('the catalogue of the real config', () => {
             'Pillars:l:book',
             'References:r:venue_dist',
             'Present:t:conference',
-            'System:y:info',
             'Help:h:page',
-            'Views and Settings:w:settings'
+            'System:y:settings'
         ]);
     });
 
@@ -316,19 +319,32 @@ describe('the catalogue of the real config', () => {
             l: ['pillars', 'domains', 'map'],
             r: ['venues', 'data', 'code', 'statements'],
             t: ['present'],
-            y: ['status', 'findings', 'audit', 'history', 'config', 'gallery', 'processes'],
+            y: [
+                'settings',
+                'account-setup',
+                'catalogue',
+                'pages',
+                'status',
+                'findings',
+                'audit',
+                'history',
+                'gallery',
+                'processes'
+            ],
             h: [
                 'help',
                 'memories',
                 'doc:docs/RESEARCH-APPROACH.md',
                 'doc:docs/AGENT-APPROACH.md',
                 'doc:docs/HPC-UTwente-howto.md'
-            ],
-            w: ['catalogue', 'settings', 'account-setup', 'pages']
+            ]
         });
         expect(keyOf(order, 'calendar')).toBe('e5');
-        expect(keyOf(order, 'account-setup')).toBe('w3');
-        expect(keyOf(order, 'processes')).toBe('y7');
+        expect(keyOf(order, 'settings')).toBe('y1');
+        expect(keyOf(order, 'account-setup')).toBe('y2');
+        expect(keyOf(order, 'gallery')).toBe('y9');
+        // The tenth view of System lies past the nine keys a chord reaches.
+        expect(keyOf(order, 'processes')).toBe('');
     });
 });
 

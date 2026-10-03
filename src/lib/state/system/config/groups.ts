@@ -7,14 +7,17 @@
 //
 // The text of a tracked file comes from the function the caller hands in, asked once for each
 // described file; the machine's own file is never asked for, since its rows are its catalog
-// entries alone and its values are the machine's.
+// entries alone and its values are the machine's. After the machine's own file come the Catalogs
+// and Texts groups, one row per file of config/catalogs/ and of config/text/ and its subfolders,
+// made from the listings the caller hands in (view/folders.ts).
 
 import type { Catalog } from '../../../data/sources/config/catalog/options.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
 import { t } from '../../shared/words/text.ts';
 import type { BrowserRow } from './browser.ts';
-import { LOCAL_NAME } from './config-files.ts';
+import { LOCAL_NAME, describedAs } from './config-files.ts';
 import type { Message } from './messages.ts';
+import type { FileRow, Listed } from './view/folders.ts';
 import { fileRows, localRows, type ConfigRow, type FileStatus, type LocalRow } from './rows.ts';
 
 export { catalogOf } from '../../../data/sources/config/catalog/options.ts';
@@ -35,8 +38,12 @@ export const PAGES_ROW = 'layout.yml:arrangements';
 /** The id of the group of the per-browser values. */
 export const BROWSER_GROUP = 'this-browser';
 
+/** The ids of the groups listing the catalog files and the text files. */
+export const CATALOGS_GROUP = 'catalogs';
+export const TEXTS_GROUP = 'texts';
+
 /** Every kind of row a group holds and a search reads. */
-export type Row = ConfigRow | LocalRow | BrowserRow;
+export type Row = ConfigRow | LocalRow | BrowserRow | FileRow;
 
 /** One section of a group: its heading, a table-of-contents id, and its rows. */
 export type Section = { id: string; heading: string; rows: Row[] };
@@ -46,8 +53,10 @@ export type Group = {
     /** `this-browser` or the file's name. */
     id: string;
     title: string;
-    /** The file's name, or null for the per-browser values. */
+    /** The file's name, or null for the per-browser values and the groups listing folders. */
     file: string | null;
+    /** What the group holds, in one sentence, or the empty string. */
+    description: string;
     /** Whether the group is the machine's own file, which the view tags. */
     local: boolean;
     status: FileStatus;
@@ -72,14 +81,52 @@ function sectionsOf(group: string, rows: Row[]): Section[] {
     return [...sections.values()];
 }
 
+/** The status a group shows for each state of a folder's listing. */
+const STATUS = { rows: 'rows', loading: 'loading', failed: 'unreadable' } as const;
+
+/** The group of the files of one folder: a row per file, or the sentence of the listing. */
+function folderGroup(
+    id: string,
+    title: string,
+    about: string,
+    listed: Listed,
+    described: boolean
+): Group {
+    const rows: FileRow[] = listed.files.map((file) => ({
+        kind: 'file',
+        id: `${id}:${file}`,
+        file,
+        title: file,
+        path: file,
+        description: described ? describedAs(file) : '',
+        section: '',
+        modified: false
+    }));
+    return {
+        id,
+        title,
+        file: null,
+        description: about,
+        local: false,
+        status: STATUS[listed.status],
+        said: listed.said,
+        sections: rows.length === 0 ? [] : [{ id: `${id}#`, heading: '', rows }]
+    };
+}
+
+/** The listings of the two folders the Catalogs and Texts groups are made from. */
+export type FolderListings = { catalogs: Listed; texts: Listed };
+
 /**
  * The groups of the view. `texts` answers the text of a tracked file, and is asked for the files
- * the catalog describes and no other.
+ * the catalog describes and no other. `folders` are the listings of the catalog and text folders,
+ * and none leaves the two groups out.
  */
 export function settingsGroups(
     catalog: Catalog,
     texts: (file: string) => FileText,
-    browser: BrowserRow[]
+    browser: BrowserRow[],
+    folders?: FolderListings
 ): Group[] {
     const groups: Group[] = [];
     if (browser.length > 0) {
@@ -87,6 +134,7 @@ export function settingsGroups(
             id: BROWSER_GROUP,
             title: t('workbench.settings_this_browser'),
             file: null,
+            description: '',
             local: false,
             status: 'rows',
             said: null,
@@ -100,6 +148,7 @@ export function settingsGroups(
             id: file,
             title: file,
             file,
+            description: describedAs(file),
             local: false,
             status: result.status,
             said: result.said ?? null,
@@ -111,11 +160,30 @@ export function settingsGroups(
             id: LOCAL_NAME,
             title: LOCAL_NAME,
             file: LOCAL_NAME,
+            description: describedAs(LOCAL_NAME),
             local: true,
             status: 'rows',
             said: null,
             sections: sectionsOf(LOCAL_NAME, localRows(catalog[LOCAL_NAME]))
         });
+    }
+    if (folders !== undefined) {
+        groups.push(
+            folderGroup(
+                CATALOGS_GROUP,
+                t('settings.catalogs_title'),
+                t('settings.catalogs_about'),
+                folders.catalogs,
+                true
+            ),
+            folderGroup(
+                TEXTS_GROUP,
+                t('settings.texts_title'),
+                t('settings.texts_about'),
+                folders.texts,
+                false
+            )
+        );
     }
     return groups;
 }

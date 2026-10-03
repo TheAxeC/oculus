@@ -279,6 +279,13 @@ describe('a leaf option', () => {
             'behavior.yml: slurm.poll_min: values belong to a choice and to nothing else'
         ],
         [
+            'that carries holds',
+            (fixture) => {
+                at(fixture).holds = 'lists';
+            },
+            'behavior.yml: slurm.poll_min: holds belongs to a family and to nothing else'
+        ],
+        [
             'that is a choice whose default is outside its values',
             (fixture) => {
                 choice(fixture).default = 'huge';
@@ -422,6 +429,20 @@ describe('a family', () => {
                 tiers(fixture).fields = { key: 'a tier', value: 3 };
             },
             'behavior.yml: usage_tiers: fields is missing, empty or holds a line that is not a string'
+        ],
+        [
+            'that holds maps, which is not a word it takes',
+            (fixture) => {
+                tiers(fixture).holds = 'maps';
+            },
+            'behavior.yml: usage_tiers: holds maps is not lists, the one word it takes'
+        ],
+        [
+            'that holds lists where the file holds a table of single values',
+            (fixture) => {
+                tiers(fixture).holds = 'lists';
+            },
+            'behavior.yml: usage_tiers: holds lists, but the file holds a value here that is not a map of lists'
         ],
         [
             'given to a scalar',

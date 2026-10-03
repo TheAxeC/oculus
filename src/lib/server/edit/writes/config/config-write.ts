@@ -1,16 +1,25 @@
 // Layer 2, server. The writes of the engine's own configuration files, as one dispatch: the deck,
-// the audit's mute list, the rail, one option of a tracked config file, and the default workspace's
-// folders. Each is a file of the reader's own, and anything about it can go wrong on this machine,
-// so a writer that throws is told as `unwritable` and the file is left alone.
+// the audit's mute list, the rail, one option of a tracked config file, one list or family of one,
+// and the default workspace's folders. Each is a file of the reader's own, and anything about it
+// can go wrong on this machine, so a writer that throws is told as `unwritable` and the file is
+// left alone.
 //
 // The dispatch answers with the outcome and the kind the change log files it under, or with the
 // refusal and its status, and leaves the logging and the response to the endpoint in writes.ts,
 // which is the one place the change log is written.
 
-import { auditMuteWrite, configKeyWrite, deckWrite, railWrite, rootsWrite } from '../bodies.ts';
+import {
+    auditMuteWrite,
+    configKeyWrite,
+    configValueWrite,
+    deckWrite,
+    railWrite,
+    rootsWrite
+} from '../bodies.ts';
 import type { WriteOutcome, WriteTarget } from '../../writes.ts';
 import { writeMute } from './audit-mute.ts';
 import { writeConfigKey } from './config-key.ts';
+import { writeConfigValue } from './config-value.ts';
 import { writeDeck } from './deck.ts';
 import { writeRail } from './rail.ts';
 import { addRootTo, removeRootFrom } from './roots.ts';
@@ -60,6 +69,12 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
     if (setting !== null) {
         return settled('config-key', () =>
             writeConfigKey(into.engine, setting.file, setting.key, setting.value)
+        );
+    }
+    const family = configValueWrite(body);
+    if (family !== null) {
+        return settled('config-value', () =>
+            writeConfigValue(into.engine, family.file, family.key, family.value, family.base)
         );
     }
     const roots = rootsWrite(body);

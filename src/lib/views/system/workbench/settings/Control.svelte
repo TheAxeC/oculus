@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, view partial. The control of one option of a config file: a Checkbox for a toggle, a
     // NumberInput for a number, a TextInput for a text, a Select for a choice, and for a list or a
-    // family the count of its items and the way to edit it in the file. A row whose key is not in
-    // the file has no control and says so.
+    // family its editor (../editors/Editor.svelte). A list or family the file holds in a shape the
+    // editor does not draw has the way to edit the file instead, and so does a row whose key is not
+    // in the file, which says so.
     //
     // A text or number box keeps its unsent text in the tab's instance state under the file and
     // key (state/system/config/typed.ts), writes it on Enter and on leaving the box, and drops it
@@ -14,18 +15,23 @@
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { choiceShape, listShape, type ConfigRow } from '$lib/state/system/config/rows';
+    import { drawsEditor } from '$lib/state/system/config/editors/slots';
+    import type { EditorWriter } from '$lib/state/system/config/editors/writer';
+    import { choiceShape, type ConfigRow } from '$lib/state/system/config/rows';
     import { typedText, withTypedText } from '$lib/state/system/config/typed';
     import type { RowWriter } from '$lib/state/system/config/write';
     import { useState } from '$lib/state/client/use';
-    import { itemsWords, plainText } from './said';
+    import Editor from '../editors/Editor.svelte';
+    import { plainText } from './said';
     import EditLink from './EditLink.svelte';
 
     const {
         ui: { instanceState, setInstanceState }
     } = useState();
 
-    let { row, id, writer }: { row: ConfigRow; id: string; writer: RowWriter } = $props();
+    type Props = { row: ConfigRow; id: string; writer: RowWriter; editors: EditorWriter };
+
+    let { row, id, writer, editors }: Props = $props();
 
     /** The value the control shows: the one sent while its write is out, else the file's. */
     const held = $derived(writer.shown(row) ?? row.value);
@@ -63,8 +69,8 @@
         forget();
     }
 
-    /** The file's list as a count, or nothing when the file holds something else. */
-    const count = $derived(listShape.safeParse(row.value).data?.length);
+    /** Whether the row is a list or a family with an editor of its shape. */
+    const drawn = $derived(drawsEditor(row));
 </script>
 
 {#if row.state === 'missing'}
@@ -99,11 +105,10 @@
             onchange={(next: string) => writer.submit(row, next)}
         />
     </div>
+{:else if drawn}
+    <Editor {row} {id} {editors} />
 {:else}
     <div class="summary">
-        {#if row.control === 'list' && count !== undefined}
-            <span class="count">{itemsWords(count)}</span>
-        {/if}
         <EditLink file={row.file} line={row.line} />
     </div>
 {/if}
@@ -131,10 +136,5 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 8px;
-    }
-
-    .count {
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
     }
 </style>

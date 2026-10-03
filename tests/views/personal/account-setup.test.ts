@@ -57,10 +57,10 @@ function listOf(body: string, attribute: string): string {
 }
 
 describe('the account setup view', () => {
-    it('audits that the view sits in the Views and Settings group, after Settings', () => {
+    it('audits that the view sits in the System group, after Settings', () => {
         const registered = registration as ViewRegistration;
         expect(registered.group).toBe('views');
-        expect(registered.order).toBe(2);
+        expect(registered.order).toBe(1);
     });
 
     it('says it is reading until the setup answer has come', () => {

@@ -22,7 +22,15 @@ export const SETTINGS_MESSAGES = {
     failed: 'workbench.settings_failed',
     unwritable: 'workbench.settings_unwritable',
     network: 'workbench.settings_network',
-    timedOut: 'workbench.settings_timed_out'
+    timedOut: 'workbench.settings_timed_out',
+    duplicateKey: 'workbench.settings_duplicate_key',
+    emptyKey: 'workbench.settings_empty_key',
+    notYaml: 'workbench.settings_not_yaml',
+    emptyItem: 'workbench.settings_empty_item',
+    changedSince: 'workbench.settings_changed_since',
+    draftDropped: 'workbench.settings_draft_dropped',
+    listLoading: 'workbench.settings_list_loading',
+    listFailed: 'workbench.settings_list_failed'
 } as const;
 
 /** The name a message is answered under. */

@@ -1,0 +1,152 @@
+<script lang="ts">
+    // Layer 3, view partial. The editor of a list or a family of a config file, drawn in the item
+    // of its row: the entries as the draft's form draws them (Cards.svelte, Rollup.svelte), the
+    // problems of the draft named under them, the sentence of a refusal, and Save and Discard while
+    // a draft is held.
+    //
+    // The draft is the tab's instance state under the file and key (state/system/config/editors/
+    // slots.ts), so it is there again after a tab switch or a reload. An edit that leaves the
+    // draft equal to the file's puts the file's own back, which holds nothing. Save sends the
+    // whole value through the editors' write (state/system/config/editors/writer.ts) and waits for
+    // the watcher's push of the file to end the draft; while the write is out the draft is shown
+    // and Save waits. A draft started over a value the file no longer holds is named and cannot
+    // be saved, only discarded, since a Save would write over the other change.
+
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import { t } from '$lib/state/shared/words/text';
+    import {
+        applyEdit,
+        draftOf,
+        draftValue,
+        isEdited,
+        movedFrom,
+        type Draft,
+        type Edit
+    } from '$lib/state/system/config/editors/draft';
+    import { savedBase, savedDraft, withSavedDraft } from '$lib/state/system/config/editors/slots';
+    import type { EditorWriter } from '$lib/state/system/config/editors/writer';
+    import { message } from '$lib/state/system/config/messages';
+    import type { ConfigRow } from '$lib/state/system/config/rows';
+    import { useState } from '$lib/state/client/use';
+    import { said } from '../settings/said';
+    import Cards from './Cards.svelte';
+    import Rollup from './Rollup.svelte';
+
+    const {
+        ui: { instanceState, setInstanceState }
+    } = useState();
+
+    let { row, id, editors }: { row: ConfigRow; id: string; editors: EditorWriter } = $props();
+
+    /** The draft the tab holds, if it holds one. */
+    const held = $derived(savedDraft(instanceState(id), row.file, row.key));
+
+    /** The draft drawn: the tab's, or the file's value read into one. */
+    const draft = $derived<Draft | null>(held ?? draftOf(row));
+
+    const problems = $derived.by(() => {
+        if (draft === null) return [];
+        const made = draftValue(draft);
+        return made.ok ? [] : made.problems;
+    });
+
+    /** Whether the file now holds another value than the one the draft was started over. */
+    const stale = $derived(
+        held !== undefined && movedFrom(savedBase(instanceState(id), row.file, row.key), row)
+    );
+
+    const sending = $derived(editors.sending(row));
+    const refusal = $derived(editors.said(row));
+
+    /** Put an edited draft in the tab's state; one equal to the file's is no draft. */
+    function edit(next: Edit): void {
+        if (draft === null || sending) return;
+        editors.clear(row);
+        const changed = applyEdit(draft, next);
+        const state = instanceState(id);
+        if (!isEdited(changed, row)) {
+            setInstanceState(id, withSavedDraft(state, row.file, row.key, null));
+            return;
+        }
+        const base = held === undefined ? row.value : savedBase(state, row.file, row.key);
+        setInstanceState(id, withSavedDraft(state, row.file, row.key, changed, base));
+    }
+
+    function discard(): void {
+        editors.clear(row);
+        setInstanceState(id, withSavedDraft(instanceState(id), row.file, row.key, null));
+    }
+
+    function save(): void {
+        if (draft === null || stale) return;
+        void editors.save(row, draft);
+    }
+</script>
+
+{#if draft !== null}
+    <div class="editor" data-editor={draft.form}>
+        {#if draft.form === 'rollup'}
+            <Rollup {draft} onedit={edit} />
+        {:else}
+            <Cards cards={draft.cards} fields={draft.fields} form={draft.form} onedit={edit} />
+        {/if}
+        {#if problems.length > 0}
+            <ul class="problems">
+                {#each problems as problem, at (at)}
+                    <li role="status">{said(problem.said)}</li>
+                {/each}
+            </ul>
+        {/if}
+        {#if stale}
+            <p class="problem" role="status">{said(message('changedSince', row.file))}</p>
+        {/if}
+        {#if refusal !== null}
+            <p class="problem" role="status">{said(refusal)}</p>
+        {/if}
+        {#if held !== undefined}
+            <div class="actions">
+                <ToolButton
+                    label={t('settings.editor_save')}
+                    glyph="save"
+                    disabled={sending || stale || problems.length > 0}
+                    onclick={save}
+                />
+                <ToolButton
+                    label={t('settings.editor_discard')}
+                    glyph="dismiss"
+                    disabled={sending}
+                    onclick={discard}
+                />
+            </div>
+        {/if}
+    </div>
+{/if}
+
+<style>
+    .editor {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .problems {
+        margin: 0;
+        padding-left: 18px;
+    }
+
+    .problems,
+    .problem {
+        color: var(--c-red-txt);
+        font-size: var(--fs-md);
+    }
+
+    .problem {
+        margin: 0;
+    }
+
+    .actions {
+        display: flex;
+        gap: 6px;
+    }
+</style>

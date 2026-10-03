@@ -2,7 +2,7 @@
 // asks before it happens, and what a reset asks before it runs: its own question, then the close
 // question of each tab holding unsaved text (resetAfterAsking), each held for a dialog to draw
 // through questionFor. The shell's pane menus, page leaves and rail, and the Pages view on the
-// Views and Settings page all name a page, close one and reset one, so the rules live here, where
+// System page all name a page, close one and reset one, so the rules live here, where
 // each of them may read them.
 //
 // Whether an instance holds unsaved text is not decided here. The caller passes the ui store's

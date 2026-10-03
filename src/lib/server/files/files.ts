@@ -233,9 +233,9 @@ export function rootsFile(engine: string): string {
 export const HUB_ROOT = 'hub';
 
 /**
- * The key the engine's own `config/` folder is served under. The Config view lists that folder,
- * shows each file and opens one in a source tab, and an edit saved there is an ordinary write under
- * a root, which the config watcher sees like any other. `local.yml` is a file of that folder and is
+ * The key the engine's own `config/` folder is served under. The Settings view lists that folder's
+ * files and opens one in a source tab, and an edit saved there is an ordinary write under a root,
+ * which the config watcher sees like any other. `local.yml` is a file of that folder and is
  * served, read and saved like the tracked ones. Nothing above the folder is served: the root is the
  * folder itself, so the rest of the engine directory stays outside every route.
  */

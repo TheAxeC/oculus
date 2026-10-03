@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. Pages closes the Views and Settings page's group.
+    // Layer 3, view registration. Pages follows the Views catalogue in the System page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'pages',

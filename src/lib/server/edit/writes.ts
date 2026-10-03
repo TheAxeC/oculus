@@ -22,9 +22,10 @@
 // career host, writes/bodies.ts for the body parsers (one per kind of write), writes/file-undo.ts
 // for taking back a file operation, and the writers of the engine's own configuration files, in
 // writes/config/: deck.ts for the deck, audit-mute.ts for the audit's mute list, rail.ts for the
-// rail list, roots.ts for the default workspace's folders and config-key.ts for one option of a
-// tracked config file. What an importer of this module needs of them is re-exported here, so an
-// importer may name this module or the one that holds the function.
+// rail list, roots.ts for the default workspace's folders, config-key.ts for one option of a
+// tracked config file and config-value.ts for one list or family of one. What an importer of this
+// module needs of them is re-exported here, so an importer may name this module or the one that
+// holds the function.
 
 import { json } from '@sveltejs/kit';
 import { join } from 'node:path';
@@ -179,10 +180,12 @@ export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
 export { writeMute } from './writes/config/audit-mute.ts';
 export { writeRail } from './writes/config/rail.ts';
 export { writeConfigKey } from './writes/config/config-key.ts';
+export { writeConfigValue } from './writes/config/config-value.ts';
 export { addRootTo, removeRootFrom, writeRoots } from './writes/config/roots.ts';
 export {
     auditMuteWrite,
     configKeyWrite,
+    configValueWrite,
     deckWrite,
     deleteEntryWrite,
     entryWrite,

@@ -381,8 +381,9 @@ export function createClientState(): ClientState {
             configRail(entities.config()?.config)
         )
     );
-    // A Settings tab holding text typed into a field and not yet written is text no write has
-    // taken, which the tab's state keeps beside the rail list.
+    // A Settings tab holding text typed into a field, or an editor draft of a list or a family,
+    // that is not yet written holds work no write has taken, which the tab's state keeps beside the
+    // rail list.
     ui.registerUnsaved(
         (id) => layout.instanceView(id) === SETTINGS_VIEW && settingsTyped(ui.instanceState(id))
     );

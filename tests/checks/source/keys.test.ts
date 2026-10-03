@@ -19,7 +19,7 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { CATALOGS, LOCAL_NAME } from '../../../src/lib/state/system/config/config-files.ts';
 import { SETTINGS_MESSAGES } from '../../../src/lib/state/system/config/messages.ts';
-import { descriptionKey } from '../../../src/lib/views/system/config/files.ts';
+import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { recordedKinds } from '../../fixtures/kinds.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
@@ -147,7 +147,7 @@ const COMPUTED_PREFIXES = [
         // by the file's own name. The machine's own file is named whether or not this checkout
         // holds one, since it is described for every machine and a clone that has not made one
         // still reads the key.
-        file: 'lib/views/system/config/Config.svelte',
+        file: 'lib/state/system/config/config-files.ts',
         start: 'lookup(descriptionKey(',
         keys: () => {
             const names = [

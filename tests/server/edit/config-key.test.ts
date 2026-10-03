@@ -14,7 +14,7 @@ import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/source
 import { words } from '../../../src/lib/server/core/words.ts';
 import { writeConfigKey } from '../../../src/lib/server/edit/writes/config/config-key.ts';
 import { it } from '../../fixtures/scratch.ts';
-import { engineFile, scratchEngine } from '../../routes/edit/write-fixture.ts';
+import { engineFile, refusalOf, scratchEngine } from '../../routes/edit/write-fixture.ts';
 
 /**
  * Which calls of the docs finder throw: the writer calls it once on the merged configuration as it
@@ -106,17 +106,6 @@ function keepEngine(): string {
 /** One file of a scratch engine, as it is now. */
 function held(engine: string, file = 'behavior.yml'): string {
     return readFileSync(engineFile(engine, file), 'utf8');
-}
-
-/** The refusal an answer carries, and the proof that it changed and recorded nothing. */
-function refusedWith(
-    outcome: ReturnType<typeof writeConfigKey>,
-    field: string
-): string | undefined {
-    expect(outcome.changed).toEqual([]);
-    expect(outcome.records).toBeUndefined();
-    expect(outcome.refused.map((one) => one.field)).toEqual([field]);
-    return outcome.refused[0]?.reason;
 }
 
 /** One more option for a case's own file, added to the scratch engine's catalog. */
@@ -284,7 +273,7 @@ describe('a value the option does not take', () => {
             const engine = keepEngine();
             const before = held(engine);
             expect(
-                refusedWith(writeConfigKey(engine, 'behavior.yml', 'changes.keep', value), KEEP)
+                refusalOf(writeConfigKey(engine, 'behavior.yml', 'changes.keep', value), KEEP)
             ).toBe(sentence);
             expect(held(engine)).toBe(before);
         }
@@ -295,7 +284,7 @@ describe('a value the option does not take', () => {
             const engine = keepEngine();
             const before = held(engine);
             expect(
-                refusedWith(writeConfigKey(engine, 'behavior.yml', 'changes.keep', value), KEEP)
+                refusalOf(writeConfigKey(engine, 'behavior.yml', 'changes.keep', value), KEEP)
             ).toBe(why('not_number'));
             expect(held(engine)).toBe(before);
         }
@@ -317,13 +306,13 @@ describe('a value the option does not take', () => {
         const engine = scratchEngine();
         const before = held(engine, 'appearance.yml');
         const pick = writeConfigKey(engine, 'appearance.yml', 'wallpaper.pick', 'last');
-        expect(refusedWith(pick, 'appearance.yml:wallpaper.pick')).toBe(
+        expect(refusalOf(pick, 'appearance.yml:wallpaper.pick')).toBe(
             why('not_choice', 'first, random')
         );
         const toggle = writeConfigKey(engine, 'appearance.yml', 'crt.default', 'true');
-        expect(refusedWith(toggle, 'appearance.yml:crt.default')).toBe(why('not_boolean'));
+        expect(refusalOf(toggle, 'appearance.yml:crt.default')).toBe(why('not_boolean'));
         const text = writeConfigKey(engine, 'appearance.yml', 'wallpaper.dir', 5);
-        expect(refusedWith(text, 'appearance.yml:wallpaper.dir')).toBe(why('not_text'));
+        expect(refusalOf(text, 'appearance.yml:wallpaper.dir')).toBe(why('not_text'));
         expect(held(engine, 'appearance.yml')).toBe(before);
     });
 
@@ -336,7 +325,7 @@ describe('a value the option does not take', () => {
             ['behavior.yml', 'read_limits']
         ]) {
             const before = held(engine, file);
-            expect(refusedWith(writeConfigKey(engine, file, key, 'x'), `${file}:${key}`)).toBe(
+            expect(refusalOf(writeConfigKey(engine, file, key, 'x'), `${file}:${key}`)).toBe(
                 why('not_single')
             );
             expect(held(engine, file)).toBe(before);
@@ -351,7 +340,7 @@ describe('an option the catalog does not hold', () => {
         writeFileSync(local, 'port: 8791\n');
         const stamp = statSync(local).mtimeMs;
         const outcome = writeConfigKey(engine, 'local.yml', 'port', 8792);
-        expect(refusedWith(outcome, 'local.yml:port')).toBe(why('local'));
+        expect(refusalOf(outcome, 'local.yml:port')).toBe(why('local'));
         expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
         expect(statSync(local).mtimeMs).toBe(stamp);
     });
@@ -376,7 +365,7 @@ describe('an option the catalog does not hold', () => {
             ['catalogs/options.yml', 'options']
         ]) {
             const outcome = writeConfigKey(engine, file, key, 5);
-            expect(refusedWith(outcome, `${file}:${key}`)).toBe(why('no_entry'));
+            expect(refusalOf(outcome, `${file}:${key}`)).toBe(why('no_entry'));
         }
         expect(held(engine)).toBe(behavior);
         expect(held(engine, 'layout.yml')).toBe(layout);
@@ -390,7 +379,7 @@ describe('a file that does not hold the key', () => {
         for (const engine of [unparsed, twice]) {
             const before = held(engine);
             const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-            expect(refusedWith(outcome, KEEP)).toBe(why('not_parsed'));
+            expect(refusalOf(outcome, KEEP)).toBe(why('not_parsed'));
             expect(held(engine)).toBe(before);
         }
     });
@@ -408,7 +397,7 @@ describe('a file that does not hold the key', () => {
         const engine = engineWith('behavior.yml', (text) => text.replace(KEEP_BLOCK, block));
         const before = held(engine);
         const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(refusedWith(outcome, KEEP)).toBe(why('not_in_file'));
+        expect(refusalOf(outcome, KEEP)).toBe(why('not_in_file'));
         expect(held(engine)).toBe(before);
     });
 
@@ -418,7 +407,7 @@ describe('a file that does not hold the key', () => {
         );
         const before = held(engine);
         const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(refusedWith(outcome, KEEP)).toBe(why('not_kept'));
+        expect(refusalOf(outcome, KEEP)).toBe(why('not_kept'));
         expect(held(engine)).toBe(before);
     });
 
@@ -450,7 +439,7 @@ describe('a file that does not hold the key', () => {
         ] as const) {
             const before = held(engine);
             const outcome = writeConfigKey(engine, 'behavior.yml', key, value);
-            expect(refusedWith(outcome, `behavior.yml:${key}`)).toBe(why('not_in_file'));
+            expect(refusalOf(outcome, `behavior.yml:${key}`)).toBe(why('not_in_file'));
             expect(held(engine)).toBe(before);
         }
     });
@@ -480,7 +469,7 @@ describe('the readers of the merged configuration', () => {
             const engine = scratchEngine();
             const before = held(engine);
             const outcome = writeConfigKey(engine, 'behavior.yml', key, value);
-            expect(refusedWith(outcome, `behavior.yml:${key}`)).toBe(sentence);
+            expect(refusalOf(outcome, `behavior.yml:${key}`)).toBe(sentence);
             expect(held(engine)).toBe(before);
         }
     });
@@ -489,7 +478,7 @@ describe('the readers of the merged configuration', () => {
         const engine = scratchEngine();
         const before = held(engine, 'appearance.yml');
         const outcome = writeConfigKey(engine, 'appearance.yml', 'code_theme', 'nonesuch');
-        expect(refusedWith(outcome, 'appearance.yml:code_theme')).toBe(
+        expect(refusalOf(outcome, 'appearance.yml:code_theme')).toBe(
             findingText(CATALOG, 'findings.appearance.code_theme', '"nonesuch"')
         );
         expect(held(engine, 'appearance.yml')).toBe(before);
@@ -509,7 +498,7 @@ describe('the readers of the merged configuration', () => {
         const stuck = zero();
         const before = held(stuck);
         const outcome = writeConfigKey(stuck, 'behavior.yml', 'search.timeout_s', 0);
-        expect(refusedWith(outcome, 'behavior.yml:search.timeout_s')).toBe(
+        expect(refusalOf(outcome, 'behavior.yml:search.timeout_s')).toBe(
             'config/behavior.yml: search.max_hits must be a number above zero'
         );
         expect(held(stuck)).toBe(before);
@@ -524,7 +513,7 @@ describe('the readers of the merged configuration', () => {
         const other = writeConfigKey(engine, 'behavior.yml', 'search.max_hits', 7);
         expect(other.changed).toEqual(['behavior.yml:search.max_hits']);
         const back = writeConfigKey(engine, 'behavior.yml', 'search.max_hits', 0);
-        expect(refusedWith(back, 'behavior.yml:search.max_hits')).toBe(
+        expect(refusalOf(back, 'behavior.yml:search.max_hits')).toBe(
             'config/behavior.yml: search.max_hits must be a number above zero'
         );
     });
@@ -540,7 +529,7 @@ describe('the period of the automatic fetch', () => {
             const engine = scratchEngine();
             const before = held(engine);
             const outcome = writeConfigKey(engine, 'behavior.yml', 'git.autofetch_minutes', value);
-            expect(refusedWith(outcome, FETCH), String(value)).toBe(SENTENCE);
+            expect(refusalOf(outcome, FETCH), String(value)).toBe(SENTENCE);
             expect(held(engine)).toBe(before);
         }
     });
@@ -549,7 +538,7 @@ describe('the period of the automatic fetch', () => {
         const engine = scratchEngine();
         const before = held(engine);
         const outcome = writeConfigKey(engine, 'behavior.yml', 'git.autofetch_minutes', '5');
-        expect(refusedWith(outcome, FETCH)).toBe(why('not_number'));
+        expect(refusalOf(outcome, FETCH)).toBe(why('not_number'));
         expect(held(engine)).toBe(before);
     });
 
@@ -594,7 +583,7 @@ describe('the readers that give findings', () => {
         const engine = keepEngine();
         const before = held(engine);
         const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(refusedWith(outcome, KEEP)).toBe('docs unreadable');
+        expect(refusalOf(outcome, KEEP)).toBe('docs unreadable');
         expect(held(engine)).toBe(before);
     });
 
@@ -603,7 +592,7 @@ describe('the readers that give findings', () => {
         docsFinder.throwOn = [1, 2];
         const engine = keepEngine();
         const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(refusedWith(outcome, KEEP)).toBe('docs unreadable');
+        expect(refusalOf(outcome, KEEP)).toBe('docs unreadable');
     });
 
     it('compares nothing for a finder that threw before the edit and gives findings after it', () => {
@@ -622,7 +611,7 @@ describe('the readers that give findings', () => {
         const engine = keepEngine();
         const before = held(engine);
         const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(refusedWith(outcome, KEEP)).toBe(
+        expect(refusalOf(outcome, KEEP)).toBe(
             'ending .h is listed under c and under cpp; c keeps it'
         );
         expect(held(engine)).toBe(before);
@@ -643,7 +632,7 @@ describe('the readers that give findings', () => {
         const engine = scratchEngine();
         const before = held(engine, 'sources.yml');
         const outcome = writeConfigKey(engine, 'sources.yml', 'languages', '.h');
-        expect(refusedWith(outcome, 'sources.yml:languages')).toBe(why('not_single'));
+        expect(refusalOf(outcome, 'sources.yml:languages')).toBe(why('not_single'));
         expect(held(engine, 'sources.yml')).toBe(before);
     });
 
@@ -689,7 +678,7 @@ describe('the bounds of the cadences, the day windows and the count', () => {
         (key, value, words) => {
             const outcome = writeConfigKey(shared, 'behavior.yml', key, value);
 
-            expect(refusedWith(outcome, `behavior.yml:${key}`)).toBe(
+            expect(refusalOf(outcome, `behavior.yml:${key}`)).toBe(
                 `config/behavior.yml: ${key} must be ${words}`
             );
             expect(held(shared)).toBe(sharedBefore);

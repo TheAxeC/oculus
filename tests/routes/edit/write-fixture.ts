@@ -30,6 +30,7 @@ import type { Project, Tier } from '../../../src/lib/data/model/index.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { Change, ChangeLog, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import type { ConfigKeyOutcome } from '../../../src/lib/server/edit/writes/config/config-key.ts';
 import { present } from '../../fixtures/present.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
@@ -205,6 +206,39 @@ export function undone(into: WriteTarget, change: Change): Promise<Response> {
 }
 
 /**
+ * Undo a change and prove the file is back to `before` byte for byte and the log holds the undo
+ * above the change; answers the undo's record.
+ */
+export async function undoneBack(
+    into: WriteTarget,
+    change: Change,
+    file: string,
+    before: string
+): Promise<Change> {
+    const response = await undone(into, change);
+    expect(response.status).toBe(200);
+    expect(readFileSync(file, 'utf8')).toBe(before);
+    const [back, first] = changesOf(into);
+    expect(first.at).toBe(change.at);
+    return back;
+}
+
+/**
+ * Undo a change the file has moved on from and prove the answer is `moved` and `file` is `held`.
+ */
+export async function undoneMoved(
+    into: WriteTarget,
+    change: Change,
+    file: string,
+    held: string
+): Promise<void> {
+    const response = await undone(into, change);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'moved' });
+    expect(readFileSync(file, 'utf8')).toBe(held);
+}
+
+/**
  * A record made by hand, appended to the log as if a write had left it, and read back. `removed`
  * is whatever the case wants the line to carry, well-formed or not.
  */
@@ -333,4 +367,12 @@ export function configTarget(engine: string = scratchEngine()): WriteTarget {
         behaviorFile: engineFile(engine, 'behavior.yml'),
         layoutFile: engineFile(engine, 'layout.yml')
     };
+}
+
+/** The one refusal an outcome carries, with the proof that it changed and recorded nothing. */
+export function refusalOf(outcome: ConfigKeyOutcome, field: string): string | undefined {
+    expect(outcome.changed).toEqual([]);
+    expect(outcome.records).toBeUndefined();
+    expect(outcome.refused.map((one) => one.field)).toEqual([field]);
+    return outcome.refused[0]?.reason;
 }

@@ -1,6 +1,7 @@
 // The saved form of a layout: the invariants over a folded split, and the two older envelopes read
 // by migration. A browser that holds a workbench of two trees and a docked panel opens it as the
-// one tree a page now is, and no tab is lost on the way.
+// one tree a page now is, and no tab is lost on the way. The saved System page carried over is
+// layout-system.test.ts's.
 //
 // Nothing here touches localStorage or the DOM: every case reads a hand-built envelope.
 

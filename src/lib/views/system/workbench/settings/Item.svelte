@@ -13,8 +13,12 @@
     //
     // Each item is a stop the search's Down key can move the focus to, and the gear is drawn only
     // while the pointer is over the item or the focus is inside it, and only on a row whose menu
-    // holds something: a "This browser" row has no setting ID in a file to copy, so its menu is
-    // Reset Setting alone and exists once the row is Modified.
+    // holds something (state/system/config/view/gear.ts): a "This browser" row has no setting ID in
+    // a file to copy, so its menu is Reset Setting alone and exists once the row is Modified. A
+    // list is reset by writing its default through the editors' write; a family has no default.
+    //
+    // A list or a family the file holds in a shape the editor draws (editors/Editor.svelte) is set
+    // there; one it does not draw keeps the way to edit the file.
 
     import CodeText from '$lib/ui/display/CodeText.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -22,10 +26,13 @@
     import { sourceTabState } from '$lib/state/sessions/source.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { resetBrowserRow } from '$lib/state/system/config/browser';
+    import type { EditorWriter } from '$lib/state/system/config/editors/writer';
+    import { drawsEditor, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import { PAGES_ROW, RAIL_ROW, type Row } from '$lib/state/system/config/groups';
     import { message, type Message } from '$lib/state/system/config/messages';
     import { mismatchMessage } from '$lib/state/system/config/rows';
     import { withTypedText } from '$lib/state/system/config/typed';
+    import { gearEntries } from '$lib/state/system/config/view/gear';
     import type { RowWriter } from '$lib/state/system/config/write';
     import { useState } from '$lib/state/client/use';
     import PagesReset from '../PagesReset.svelte';
@@ -40,7 +47,14 @@
         ui
     } = useState();
 
-    let { row, id, writer }: { row: Row; id: string; writer: RowWriter } = $props();
+    type Props = {
+        row: Exclude<Row, { kind: 'file' }>;
+        id: string;
+        writer: RowWriter;
+        editors: EditorWriter;
+    };
+
+    let { row, id, writer, editors }: Props = $props();
 
     /** Whether the clipboard refused the last copy of this setting's id. */
     let copyRefused = $state(false);
@@ -65,20 +79,10 @@
             : { section: row.title.slice(0, at + 1), name: row.title.slice(at + 2) };
     });
 
-    /** Whether a write of the default can reset the option: a single value with a control. */
-    const settable = $derived(
-        row.kind === 'config' &&
-            row.state === 'set' &&
-            ['toggle', 'number', 'text', 'choice'].includes(row.control)
-    );
-
-    /**
-     * What the gear offers: Reset Setting on a Modified "This browser" row or a Modified config row
-     * with a single value, and Copy Setting ID on a config row, which alone has a key in a file.
-     * A row offering neither draws no gear.
-     */
-    const canReset = $derived(row.modified && (row.kind === 'browser' || settable));
-    const canCopy = $derived(row.kind === 'config');
+    /** What the gear offers: Reset Setting, Copy Setting ID, both or neither. */
+    const entries = $derived(gearEntries(row));
+    const canReset = $derived(entries.includes('reset'));
+    const canCopy = $derived(entries.includes('copy'));
 
     /** A family's fields, each with what it holds. */
     const fields = $derived(row.kind === 'config' ? Object.entries(row.fields) : []);
@@ -97,6 +101,8 @@
         if (mismatch !== null) found.push(said(mismatch));
         const written = writer.said(row);
         if (written !== null) found.push(said(written));
+        const listed = drawsEditor(row) ? null : editors.said(row);
+        if (listed !== null) found.push(said(listed));
         if (copyRefused) found.push(t('workbench.settings_copy_refused'));
         return found;
     });
@@ -104,6 +110,10 @@
     function reset(): void {
         if (row.kind === 'browser') {
             resetBrowserRow(ui, row);
+        } else if (row.kind === 'config' && row.control === 'list') {
+            editors.clear(row);
+            ui.setInstanceState(id, withSavedDraft(ui.instanceState(id), row.file, row.key, null));
+            void editors.reset(row);
         } else if (row.kind === 'config') {
             writer.clear(row);
             ui.setInstanceState(id, withTypedText(ui.instanceState(id), row.file, row.key, null));
@@ -176,7 +186,7 @@
         {:else if control === 'arrangements'}
             <PagesReset />
         {:else}
-            <Control {row} {id} {writer} />
+            <Control {row} {id} {writer} {editors} />
         {/if}
     {/if}
     {#each lines as line (line)}

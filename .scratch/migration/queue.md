@@ -4,7 +4,6 @@ Running on Axel's go (2026-10-03); the order is `orchestrator-state.md`, "Curren
 
 In flight:
 - D17 (project commands): refuted; lands after D18, D32, D14 and S4, with Z305 (a) and the Z304 marker fixed at landing.
-- S4 (the Settings editor finished): refuted; lands after D18, D32 and D14, with fixes at landing.
 
 Queued, in order (24 steps):
 - X3c (the tab strip as VS Code's): brief being closed; once fewer than three steps are in flight (Z291).
@@ -12,7 +11,7 @@ Queued, in order (24 steps):
 - D32b (the Search view's replace kept true after a write, Z316): brief at /spec; once fewer than three steps are in flight.
 - D14b (the LaTeX build and view kept true, Z318): brief at /spec; once fewer than three steps are in flight.
 - X3e (Files lists reordered by drag): brief being closed; once Q91 has landed.
-- D25 (the editor's options): once S4 has landed.
+- D25 (the editor's options, with the two Settings editor defects S4's look found, Z319): ready; once fewer than three steps are in flight.
 - D15 (PDF reading): once D14b has landed, since both change the LaTeX view.
 - D23 (language servers): once D25 has landed.
 - D11 (the debug client for rite): once D17 has landed.

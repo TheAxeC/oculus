@@ -83,8 +83,8 @@ describe('the Audit registration', () => {
             id: 'audit',
             label: 'views.audit',
             glyph: 'views.audit_glyph',
-            group: 'info',
-            order: 2
+            group: 'views',
+            order: 6
         });
         expect(typeof registered.badge).toBe('function');
     });

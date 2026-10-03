@@ -4,8 +4,8 @@
 //
 // It sits in the data layer because both sides paint code with it: the server renders a document
 // (server/content/docs.ts) and an assistant's turn (server/sessions/stores/turns.ts) through
-// `codeColour`, and the page paints the read-only code window the source tab and the Config view
-// draw (views/shared/code/Code.svelte) and a preview's Markdown, the window reaching it through
+// `codeColour`, and the page paints the read-only code window the source tab draws
+// (views/shared/code/Code.svelte) and a preview's Markdown, the window reaching it through
 // state/shared/words/languages.ts, which re-exports it for the page layers. The file browser's
 // state reads the extension-to-language map of config/sources.yml
 // (data/helpers/files/languages.ts), whose languages are the names registered here. Its names are

@@ -169,7 +169,7 @@ glyphs:
   # the tab strip's header actions: a pane's more-actions opener and its split control
   more: "..."
   split_right: "||"
-  # the Views and Settings page's three views
+  # the System page's rail button and its Views and Pages views
   catalogue: "[V]"
   sliders: "[S]"
   pages: "[G]"

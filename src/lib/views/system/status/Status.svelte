@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Status opens the System page's group.
+    // Layer 3, view registration. Status follows Pages in the System page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'status',
         label: 'views.status',
         glyph: 'views.status_glyph',
-        group: 'info',
-        order: 0
+        group: 'views',
+        order: 4
     };
 </script>
 

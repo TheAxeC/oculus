@@ -37,7 +37,6 @@ const VIEWS: Record<string, string> = {
     'boards/personal/Personal.svelte':
         '.source=fs-sm | .eli5=fs-md | .next=fs-md | .label=fs-xs | .links=fs-sm',
     'boards/collection/Collection.svelte': '.label=fs-xs | .said=fs-md | .sub=fs-sm',
-    'system/config/Config.svelte': '.intro, .desc=fs-md',
     'sources/data/Data.svelte': '',
     'boards/deposit/Deposit.svelte':
         '.lb=fs-xs | .mt=fs-sm | .grp-h=fs-xs | .fl=fs-md | .none=fs-md | .warn=fs-md | .outcome=fs-md',
@@ -109,16 +108,19 @@ const VIEWS: Record<string, string> = {
     'system/workbench/RailEditor.svelte':
         '.word=fs-xs | .about, .outcome=fs-sm | .empty=fs-md | .problems=fs-md',
     'system/workbench/Settings.svelte': '',
+    'system/workbench/editors/Cards.svelte': '.word=fs-sm | .kept=fs-sm | code=fs-sm',
+    'system/workbench/editors/Editor.svelte': '.problems, .problem=fs-md',
+    'system/workbench/editors/Rollup.svelte': '',
     'system/workbench/settings/BrowserControl.svelte': '.value=fs-sm',
     'system/workbench/settings/Contents.svelte': '',
-    'system/workbench/settings/Control.svelte': '.count=fs-sm',
+    'system/workbench/settings/Control.svelte': '',
     'system/workbench/settings/EditLink.svelte': '',
     'system/workbench/settings/Gear.svelte': '',
     'system/workbench/settings/Header.svelte': '.count=fs-sm',
     'system/workbench/settings/Item.svelte':
         '.title=fs-md | .description, .fields, .path=fs-sm | .field-list=fs-sm | code=fs-sm | .said=fs-md | .foot=fs-sm',
     'system/workbench/settings/List.svelte':
-        '.group-title=fs-xl | .section-title=fs-md | .note=fs-sm',
+        '.group-title=fs-xl | .section-title=fs-md | .about=fs-sm | .file-path=fs-md | .note=fs-sm',
     'sources/venues/Venues.svelte': '',
     'boards/collection/Coverage.svelte': '.label=fs-xs',
     'boards/collection/Software.svelte': '.label=fs-xs | .kind=fs-xs',

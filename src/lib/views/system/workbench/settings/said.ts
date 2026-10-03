@@ -1,6 +1,6 @@
 // Layer 3, view helper. The words of the Settings view that depend on a value: a message of the
-// rows module worded from the catalog, the default line of a row, and the count of a list. Nothing
-// here is drawn; the partials call these so each sentence is worded in one place.
+// rows module worded from the catalog and the default line of a row. Nothing here is drawn; the
+// partials call these so each sentence is worded in one place.
 
 import { t } from '$lib/state/shared/words/text';
 import type { Message } from '$lib/state/system/config/messages';
@@ -9,11 +9,6 @@ import { listShape, textShape, type ConfigRow } from '$lib/state/system/config/r
 /** A message of the rows module worded, its values put in. */
 export function said(message: Message): string {
     return t(message.key, ...message.args);
-}
-
-/** A count of list items worded: one item, or N items. */
-export function itemsWords(count: number): string {
-    return count === 1 ? t('workbench.settings_item_one') : t('workbench.settings_items', count);
 }
 
 /** A value as the words show it: a string as it is, a number or boolean spelled, else JSON. */

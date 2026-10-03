@@ -100,8 +100,8 @@ describe('the registration', () => {
             id: 'processes',
             label: 'views.processes',
             glyph: 'views.processes_glyph',
-            group: 'info',
-            order: 6
+            group: 'views',
+            order: 9
         });
         expect(t((registration as ViewRegistration).label)).toBe('Processes');
     });

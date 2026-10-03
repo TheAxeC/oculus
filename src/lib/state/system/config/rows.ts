@@ -59,6 +59,8 @@ export type ConfigRow = RowBase & {
     values: string[];
     /** A family's fields, each with what it holds. */
     fields: Record<string, string>;
+    /** `lists` when each key of a family that is a map holds a list of records. */
+    holds: 'lists' | undefined;
     default: unknown;
     /** The value the file holds, `undefined` for a missing row. */
     value: unknown;
@@ -178,6 +180,7 @@ function rowOf(
         control,
         values,
         fields: entry.fields ?? {},
+        holds: entry.holds,
         default: entry.default
     };
     const pair = pairAt(doc, key);

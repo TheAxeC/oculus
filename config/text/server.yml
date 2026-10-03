@@ -24,6 +24,26 @@ text:
             not_parsed: The file does not parse
             not_in_file: The file does not hold this key as a plain or quoted value
             not_kept: The edit would change more than this one value, so the file is left as it is
+        config_value:
+            local: local.yml is the machine's own file and is not written from here
+            no_entry: The options catalog has no list or family of that name in a tracked config file
+            own_write: The rail and the arrangements are set from the rail editor and the pages, not from here
+            single: This option is one value, so it is set one key at a time
+            not_parsed: The file does not parse
+            not_in_file: The file does not hold this key as a list or a map written in place
+            changed: The setting changed in the file since it was read, so nothing was written
+            reserved: 'A key named {0} cannot be written'
+            not_strings: This option takes a list of text
+            wrong_list: This setting is a list of records in the file, so it takes a list
+            wrong_map: This setting is a map in the file, so it takes a map
+            bad_record: 'Entry {0} is not a record of named fields'
+            bad_field: 'Entry {0} has a field {1} that this setting does not describe'
+            wants_list: 'Entry {0} must be a list of records, as every entry of this setting is'
+            wants_record: 'Entry {0} must be one record, not a list'
+            wants_scalar: 'Entry {0} must be one value or a list of values, not a record'
+            wants_value: 'Entry {0} must be one value, not a list or a record'
+            unsupported: The way this value is written in the file cannot be edited in place, so the file is left as it is
+            not_kept: The edit would change more than this value, so the file is left as it is
         export:
             agent: 'Agent: {0}'
             assistant: Agent

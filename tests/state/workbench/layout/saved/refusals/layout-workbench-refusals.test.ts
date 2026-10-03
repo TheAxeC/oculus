@@ -13,8 +13,8 @@ import {
     serialiseLayout,
     type Layout,
     type Pages
-} from '../../../../../src/lib/state/workbench/layout/index.ts';
-import { docked, pane } from '../layout-fixture.ts';
+} from '../../../../../../src/lib/state/workbench/layout/index.ts';
+import { docked, pane } from '../../layout-fixture.ts';
 import { splitOf, pagesOf, envelopeOf, parsedBench, dockedOf } from './refusal-fixture.ts';
 
 describe('parseWorkbench and the sentences of checkWorkbench and checkPages over values of the wrong type', () => {

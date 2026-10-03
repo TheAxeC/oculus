@@ -3,7 +3,7 @@
 // be shows as a row that fails. Nothing here touches localStorage or the DOM.
 
 import { describe, expect, it } from 'vitest';
-import { pane } from '../layout-fixture.ts';
+import { pane } from '../../layout-fixture.ts';
 import { problems, splitOf, paneOf, tabOf, pagesOf } from './refusal-fixture.ts';
 
 describe('the sentences checkLayout says about a tree of the wrong type', () => {

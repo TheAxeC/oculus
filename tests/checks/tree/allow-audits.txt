@@ -37,8 +37,6 @@ tests/views/shared/card/cardlinks.test.ts :: holds a kind back to SHOWN entries 
 tests/views/shared/card/cardlinks.test.ts :: leaves a kind no longer than SHOWN whole either way | the case draws nothing and asserts over shownTags(two, false)
 tests/views/shared/card/cardlinks.test.ts :: opens a cross-link entry by its label in the view of its own kind | the case draws nothing and asserts over source
 tests/views/boards/collection/collection-form.test.ts :: sends the empty string for a control the reader cleared on an entry that exists | the case draws nothing and asserts over source
-tests/views/system/config.test.ts :: hands that version to the file browser store, for the engine root and no other | the case draws nothing and asserts over source
-tests/views/system/config.test.ts :: keys a description by the file name, with a hyphen written as an underscore | the case draws nothing and asserts over descriptionKey('layout.yml')
 tests/views/shared/links/crosslinks.test.ts :: cuts a long project title inside the card and keeps the whole title in its tooltip | the case draws nothing and asserts over source
 tests/views/sources/doc.test.ts :: is the path, so one entry is one tab and another entry is another | the case draws nothing and asserts over docState(ENTRY)
 tests/views/sources/document.test.ts :: escapes each segment on its own, so a separator stays a separator | the case draws nothing and asserts over fileUrl('game-engine', 'docs/a b/read me.html')
@@ -46,7 +44,7 @@ tests/views/sources/document.test.ts :: is the root and the path under api/file 
 tests/views/sources/files/files.test.ts :: reads every mark it draws out of its own catalog group | the case draws nothing and asserts over [...new Set(keys)]
 tests/views/boards/focus-rows.test.ts :: answers from the actions alone | the case draws nothing and asserts over keptAction([{ id: 'status:done', label: 'done' }])
 tests/views/boards/focus-rows.test.ts :: is none on a snoozed project, a project deadline, a lead or an entry with no closing status | the case draws nothing and asserts over kept(row(one, ''))
-tests/views/system/help.test.ts :: describes every configuration file in the words the Config view shows | the case draws nothing and asserts over files.length
+tests/views/system/help.test.ts :: describes every configuration file in the words the Settings view shows | the case draws nothing and asserts over files.length
 tests/views/system/help.test.ts :: holds every key of the sheet in its table | the case draws nothing and asserts over missing
 tests/views/system/help.test.ts :: names every key the machine-local file may carry | the case draws nothing and asserts over keys
 tests/views/system/help.test.ts :: names every catalogue group that has a chord, by its label and its letter | the case draws nothing and asserts over groups.length

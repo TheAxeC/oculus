@@ -27,7 +27,7 @@ beforeEach(() => {
 });
 
 describe('the rail of the real config', () => {
-    it('draws the twelve pages of layout.yml in their order, Views and Settings last', () => {
+    it('draws the eleven pages of layout.yml in their order, System last', () => {
         const body = render(ActivityRail, {
             context: clientContext(client),
             props: { pages: railPages(config) }

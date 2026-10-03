@@ -124,7 +124,7 @@ describe('the store reading a file', () => {
         expect(store.client.fs.fileText(ENGINE_ROOT, 'layout.yml').text).toBe('before\n');
         const before = store.asked.length;
 
-        // The watcher's push moves the config channel's version; the Config view hands it on.
+        // The watcher's push moves the config channel's version; the Settings view hands it on.
         body = 'after\n';
         store.client.fs.refresh(ENGINE_ROOT, 7);
         store.client.fs.listing(ENGINE_ROOT, '');
