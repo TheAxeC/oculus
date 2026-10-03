@@ -1,24 +1,22 @@
-/plan-orchestration oculus/migration
+In flight:
+- X3c (the tab strip as VS Code's): building.
+- Q91 (the project view and its editor): building.
+- D25 (the editor's options): building.
 
-Running on Axel's go (2026-10-03); the order is `orchestrator-state.md`, "Current position", 2026-10-03 02:00: the owed looks first, then D18, D32, D14, S4 and D17 landed (2026-10-03), then X3c and Q91.
-
-In flight: X3c (building since 2026-10-03 07:51), Q91 (building since 07:54).
-
-Queued, in order (22 steps):
-- D32b (the Search view's replace kept true after a write, Z316): waits on Axel's ruling Z327 (a step needs his authority).
-- D14b (the LaTeX build and view kept true, Z318): waits on Axel's ruling Z327 (a step needs his authority).
-- X3e (Files lists reordered by drag): brief being closed; once Q91 has landed.
-- D25 (the editor's options, with the two Settings editor defects S4's look found, Z319): ready; once fewer than three steps are in flight.
-- D15 (PDF reading): once D14b has landed, since both change the LaTeX view.
+Queued, in order (21 steps):
+- D32b (the Search view's replace kept true): waits on Axel's approval of the step.
+- D14b (the LaTeX build and view kept true): waits on Axel's approval of the step.
+- X3e (Files lists reordered by drag): once Q91 has landed.
+- D15 (PDF reading): once D14b has landed.
 - D23 (language servers): once D25 has landed.
-- D11 (the debug client for rite): ready; once fewer than three steps are in flight.
-- D20 (an agent from a task or a worktree): ready; once fewer than three steps are in flight.
-- A3 (scheduled Update runs): ready; once fewer than three steps are in flight.
+- D11 (the debug client for rite): once fewer than three steps are in flight.
+- D20 (an agent from a task or a worktree): once fewer than three steps are in flight.
+- A3 (scheduled Update runs): once fewer than three steps are in flight.
 - D28 (saving a file as VS Code does): once D25 has landed.
 - D23b (cross-file language features): once D23 has landed.
 - D33 (the Problems view): once D23 has landed.
 - D36 (linters on save): once D33 has landed.
-- E4 (the apps): ready; once fewer than three steps are in flight.
+- E4 (the apps): once fewer than three steps are in flight.
 - Q72 (the architecture re-read): after every code step.
 - R2 (release readiness): after Q72.
 - O29 (retiring the cockpit): after R2.
@@ -28,9 +26,14 @@ Queued, in order (22 steps):
 - O34 (remote access): once O33 has landed.
 - O35 (macOS, Linux and Windows): once O33 has landed.
 
-Owed: the looks of Q79c, Q88, Q99, and Q81 and Q82's focus points (`agents/reviews/owed-looks.md`); Q99-look-1 and Q99-look-2 are booked into D20 (Z307).
+Owed: the looks of Q81 (a Confirm over the update tray) and Q79c (the Live HPC jobs table and log).
 
 Landed, newest first:
+- D17 (project commands), 2026-10-03, 76bdcd8c.
+- S4 (the Settings editor finished), 2026-10-03, ff048bf3.
+- D14 (LaTeX on any folder), 2026-10-03, 48baece1.
+- D32 (replace in the Search view), 2026-10-03, 248bb23a.
+- D18 (the Processes view), 2026-10-03, 7fc33812.
 - M3 (the resources registry), 2026-10-02, 8ef3abbe.
 - Q88c (the Source Control rows' and the pane strip's new right-click capabilities), 2026-10-02, 81f5e4fe.
 - A1 (a comment on a line of a session's diff, sent to that session), 2026-10-02, 33be30af.
