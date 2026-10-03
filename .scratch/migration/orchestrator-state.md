@@ -39,7 +39,7 @@ dispatch:   # one step in flight (2026-10-04): T1c, its repair round 1 reported 
   launched: 2026-10-03 16:27 local
   report: agents/reviews/T1c-report.md
   builder_usage: 187,752 tokens, 744 tool uses, 261.4 min (report saved 2026-10-03 19:10; four full-list runs; breaches: one read-only `git diff --stat`, reads of main's `tests/server`, and a stray file `139` written into the main ledger by a shell redirect, holding `test.ts files 138 -`, removed by the orchestrator); round 1: 368,506 tokens, 377 tool uses, 183.1 min (report saved 2026-10-04, section 11 of the report; two full-list runs; read-only git commands run against the prompt, listed in the report)
-  reviewer_report: agents/reviews/T1c-refuter.md (first run; reviewer a194094e84c8be37a, claude-opus-5-5, 79,507 tokens, 146 tool uses, 39.3 min)
+  reviewer_report: agents/reviews/T1c-refuter.md (first run; reviewer a194094e84c8be37a, claude-opus-5-5, 79,507 tokens, 146 tool uses, 39.3 min); round 1 run: reviewer a5365c1e9236a9b55, claude-opus-5-5 (served, read 2026-10-04 after launch), running
   brief_check: agents/reviews/T1c-brief-check.md; claude-opus-5-5, 204,893 tokens, 70 tool uses, 9.4 min (run on main at 4bc8983b; findings closed under Closed)
   shared_paths: with X3c, landed 2026-10-04: `tests/checks/tree/allow-duplication.txt` only (T1c lines 39-65, the entries naming a `tests/server` file; X3c's one hunk at 16-23), separate lines, so the merge is simple
   landing: not-started
