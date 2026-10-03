@@ -41,7 +41,7 @@ Queued, in order (34 steps):
 Owed: the look of Q81 (a Confirm over the update tray).
 
 Landed, newest first:
-- Q91 (the project view and its editor), 2026-10-03, the commit that carries this line.
+- Q91 (the project view and its editor), 2026-10-03, a8ba6553.
 - D17 (project commands), 2026-10-03, 76bdcd8c.
 - S4 (the Settings editor finished), 2026-10-03, ff048bf3.
 - D14 (LaTeX on any folder), 2026-10-03, 48baece1.
