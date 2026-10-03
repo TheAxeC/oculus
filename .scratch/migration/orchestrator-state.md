@@ -150,7 +150,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z370 (2026-10-03, T1a): two rulings meet. Z353 has T1a's timings and its 30 s check taken under the load the plan works at, several steps in flight; Z367 has T1a run after the four sweeps with no other step dispatched until it lands, so nothing else runs while it measures. Options: (a) T1a's builder and its landing reproduce the load: while each timing is taken, four full `npm test` runs loop in the background in scratch copies, and the load average is written beside each timing; (b) T1a's timings are taken on the quiet machine, and the 30 s is checked again under real load at the first landings after it, each landing writing the quick list's time and the load; (c) other steps are dispatched beside T1a, which reverses part of Z367. Recommendation: (a), since it measures the 30 s under the load it must hold at, before T1a lands; (b) is the lazy option, it lands a limit nobody measured under load. T1a waits on it; the sweeps do not.
 - Z314 (2026-10-03, the owed look Q81): a Confirm drawn over the update tray. It shows only while `tasks.skip_permissions` is on in `config/behavior.yml`. Axel allowed the edit for the look (2026-10-03); the Claude Code auto-mode classifier refused it again with his permission given, so the session cannot make it. Options: (a) Axel sets `skip_permissions: true` himself, the look is taken, and Axel sets it back (the session checks `git diff --exit-code -- tools/oculus/config/behavior.yml` after); (b) the point is dropped from the look. Recommendation: (a), one line each way and (b) is the lazy option.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -211,6 +210,6 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - 2026-10-03 16:30. The pause is lifted (Z367 to Z369), five steps at once. In flight: X3c (the tab strip), round 1 refuted; Q116 (the Status view's count of everything under `src/`), built. Next:
   1. `/refute` Q116; `/spec` T1b, T1c and T1d, each with its builder.
   2. X3c: dispositions of its round 1 run findings with Z361 (b), `/diagnose` the active tab out of sight on TEST, `/land` with the git breach, Z355's deletions and its `landing_merge` line.
-  3. T1e when X3c or Q116 lands; T1a after the four sweeps, once Axel rules Z370; then the queue in order, O33 to O36 paused (Z369).
+  3. T1e when X3c or Q116 lands; T1a after the four sweeps, its timings under a reproduced load (Z370 (a)); then the queue in order, O33 to O36 paused (Z369).
   4. The recurring-findings pass (Z251); D25's four owed looks (Z362); the rail reorder `/diagnose`; the Q81 look when Axel sets `skip_permissions`.
-  Open for Axel: Z370, Z314.
+  Open for Axel: Z314.

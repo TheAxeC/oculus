@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z370, ruled by Axel 2026-10-03 ("Agreed"): (a), T1a times under a reproduced load of four full test runs.
 - Z369, ruled by Axel 2026-10-03 ("Mark O33-O34-O35-O36 as paused"): those four are paused; the loop runs until a stop, his word, or only they remain.
 - Z368, ruled by Axel 2026-10-03 ("I would set workers_at_once to 5 (in both plan.yaml and state)"): five.
 - Z367, ruled by Axel 2026-10-03 ("Yes ... 4 would run the 4 sweeps and then T1a after"): T1 split into T1b to T1e and T1a.
