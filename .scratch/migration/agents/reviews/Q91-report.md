@@ -237,3 +237,170 @@ Line counts are in `$SP/q91-linecounts.txt` (109 changed or new files). Largest 
 5. `tests/server/core/paths.test.ts` "leave isMap to the guard" fails on the unchanged tree (3 files) and still does; it is not part of `npm test` and my step does not touch it.
 6. DESIGN.md's apps section referred to `views/sources/files/opening.ts` lines 47-70 and 62-70; the file moved with the tree, and the references now name the new path and lines.
 7. Z325 and Z326, listed in the open items, are untouched by this step.
+
+## Repair round 1
+
+NOT DONE: `checks.sh` did not print `checks: 7 commands passed`. It stopped at its first command with `checks: failed with exit 1: npm test`, because `tests/server/machine/commands/placeholders.test.ts` timed out at 5000 ms (load average 19.97 20.69 16.61 from `uptime` at that moment); my round does not change that file, and it passes alone (9 of 9). `checks.sh` therefore never ran the six commands after `npm test`; each of them was run once on its own afterwards and exited 0 (quoted below). All 12 rulings are built.
+
+### First runs of each new or changed test, on the unchanged tree
+
+The tests were written before any source change of the round and run with `npx vitest run`. Logs: `$SP/r1-first-b1b3.log` and `$SP/r1-first-rest.log`.
+
+`npx vitest run tests/server/edit/yaml/yaml-edit-followup.test.ts tests/routes/edit/undo-removed.test.ts`: `Test Files  2 failed (2)`, `Tests  8 failed | 48 passed (56)`.
+
+| Ruling | Test | First line of its failure on the unchanged tree |
+|---|---|---|
+| 1 B1 | keeps a comment after the key on the key line | `expected 'id: a\nfollowup:\n  do: call\n  after...' to be 'id: a\nfollowup:  # waiting on the re...'` |
+| 1 B1 | keeps a comment line before the item above the first key | `expected 'id: a\nfollowup:\n  do: call\n  after...' to be 'id: a\nfollowup:\n  # a comment\n  do...'` |
+| 1 B1 | keeps a comment after a value after that value, whether the key is set or not | `expected 'id: a\nfollowup:\n  do: call Stephani...' to be 'id: a\nfollowup:\n  do: call Stephani...'` |
+| 1 B1 | keeps a comment between the keys above the key that follows it | `expected 'id: a\nfollowup:\n  do: ring\n  after...' to be 'id: a\nfollowup:\n  do: ring\n  # the...'` |
+| 1 B1 | keeps the comments of a key that is cleared as comment lines | `expected 'id: a\nfollowup:\n  do: call  # chase...' to be 'id: a\nfollowup:\n  do: call  # the t...'` |
+| 1 B1 | refuses, writing nothing, when a comment stands inside a multi-line value | `expected [ 'followup.after' ] to deeply equal []` |
+| 3 B3 | gives a bare or one-list follow-up back as the text the file held, after an edit of it | `expected 'id: alpha\ntype: manuscript\nfollowup...' to be 'id: alpha\ntype: manuscript\nfollowup...'` (whole-file `toBe`) |
+| 3 B3 | gives the shape back when the note was written with its date, whichever field is undone | the same whole-file `toBe` failure |
+
+`npx vitest run` over `tests/state/forms`, `tests/views/boards/editor` and the other test files of the round that carry a changed test: `Test Files  3 failed | 4 passed (7)`, `Tests  5 failed | 366 passed (371)`.
+
+| Ruling | Test | First line of its failure on the unchanged tree |
+|---|---|---|
+| 2 B2 | schema-modelled: opens both fields empty for a project with no note, the text writable and the date writable only once the text is typed | `expected true to be false` |
+| 2 B2 | manifest-draft: reports nothing unsaved for a date typed for a project with no note, until the text is typed | `expected true to be false` |
+| 2 B2 | editor: opens the text of a project with no note editable and its date read-only, with the line saying a date needs a note | `expected +0 to be 1` |
+| 2 B2 | editor: opens the date of a project with no note writable once the text of the note is typed | `expected '<!--[--><section class="pane svelte-b...' not to contain 'value="" readonly'` |
+| 6 SP3 | editor: opens the follow-up fields of two notes read-only, showing both, with the sentence saying where to edit them | `expected 'this project has several follow-up no...' to match /Focus board.*project\.yml/` |
+
+Three tests were added after the source change and have no first run on the unchanged tree; each has a run with its behaviour removed instead (next section): the bare-note case of ruling 1 ("keeps the comments of a bare note: after the key, before it and after its text"), "gives a one-note list holding a map back as the list, comments included" (ruling 3), and "audits that the value is written, as a map, for the undo of one field of a two-field write on a bare note" (ruling 3; it passes with the recorded text removed, which is why its title says audit). The reader-driven waiting-on test (ruling 8) and the seven tests of `card-tree.client.test.ts` (ruling 9) test behaviour the unchanged tree already has: they pass there and have removal runs.
+
+### Runs with the behaviour removed
+
+Each was run on a scratch copy of the tree (`$SP/s1`, `node_modules` linked), one edit at a time, and the edit was undone before the next. Logs: `$SP/r1-p1-removed.log`, `$SP/r1-p2-removed.log`, `$SP/r1-p2-removed2.log`, `$SP/r1-b-removed.log`.
+
+| Behaviour removed | File run | Result |
+|---|---|---|
+| `normalise.ts`: `waitingOn: typeof manifest['waiting-on'] === 'string' ? [manifest['waiting-on']] : strings(...)` (a bare word read as a list) | `schema-modelled.test.ts` | `x opens waiting-on as the model reads it when the manifest text holds a bare word, and validate reports it`; `AssertionError: expected [ 'stephanie' ] to deeply equal []`; `Tests  1 failed \| 18 passed (19)` |
+| `expandNote` collects no comments (`const comments: Comment[] = []`) | `yaml-edit-followup.test.ts` | `Tests  7 failed \| 9 passed (16)`: the six tests above and the bare-note test |
+| `setFields` records no `replaced` text | `undo-removed.test.ts` | `Tests  3 failed \| 40 passed (43)`: the two B3 tests above and the list-holding-a-map test |
+| `ProjectTree.svelte`: the seed effect's `if (head === '') return;` made an unconditional `return;` (no card writes a record) | `card-tree.client.test.ts` | `Tests  3 failed \| 4 passed (7)`: each card writes a record of its own, the same project in two tabs, a listing landing after the close |
+| `cardTreeKey` without the tab (`${CARD_TREE}${encodeURIComponent(project)}`) | same | `Tests  4 failed \| 3 passed (7)` |
+| the seed effect overwrites a record that was opened (`if (unopened(held))` made `if (true)`) | same | `x a record saved before keeps its open folders when the card mounts again`; `Tests  1 failed \| 6 passed (7)` |
+| the seed effect reads the record with tracking (its `untrack(` wrapper removed), so the close re-seeds the record it cleared | same | `x a listing landing after the close writes nothing into the cleared record` and `x a listing landing after the close writes nothing, though it would change the selection`; `Tests  2 failed \| 5 passed (7)` |
+| `rooted-tree.svelte.ts`: `const next = selectPruned(now, held)` made `const next = now` (no pruning) | same | `x a selected row the late listing no longer holds is dropped in the record of an open tab`; `Tests  1 failed \| 6 passed (7)` |
+| `queries.svelte.ts` `markOne`: the `cancel(key)` of a superseded ask removed | same | `x the later answer is the one the tree is given`; `Tests  1 failed \| 6 passed (7)` |
+| `rooted-tree.svelte.ts`: `if (selectionChanged(now, next))` made `if (selectionChanged(now, next) \|\| true)` | same | `Tests  7 failed (7)`, each at 6770 ms to 10638 ms: the effect rewrites the record on every run and the tests time out |
+
+The seven titles of `card-tree.client.test.ts` keep their "audits that" prefix because `tests/checks/tree/audits.test.ts` names every case under `tests/views` that draws nothing an audit, which these do (the tree is replaced by a component that records its props); the removal runs above show what each one catches.
+
+### DONE / NOT DONE, by ruling
+
+| Ruling | State | Evidence |
+|---|---|---|
+| 1 B1, comments carried | DONE | `expandNote`, `commentsIn`, `placeComments` and `noteEntries` in `src/lib/server/edit/yaml-edit.ts` serve both the list of one note and the bare note. A comment after `followup:` stays on that line with its spacing; a comment line goes above the key that follows it (the first key when it stood before the item); a comment after a value stays after that value; the trailing comment of a key being cleared becomes a comment line at its place; a comment that stands after the last value on its line goes with the last key. A comment inside a value makes the write refuse with `a comment inside the value cannot be kept; edit the file by hand`, nothing written. Tests: the `the comments of a list of one note` describe of `yaml-edit-followup.test.ts` (key line, line before the item, after a value, between keys, a cleared key, the refusal, the bare note); first runs and removal run above. `npx vitest run tests/server/edit/yaml tests/routes/edit`: `Test Files  13 passed (13)`, `Tests  409 passed (409)` before the later additions, green in the full `npm test` pass. |
+| 2 B2, date needs a note | DONE | `dateNeedsNote` and `writableField(project, field, edits)` in `src/lib/state/forms/schema.ts`; `manifestDirty` in `manifest-draft.ts` and `manifestPayload` use the same rule, so a typed date no longer counts as a change Save cannot write; `Editor.svelte` draws `editor.followup_needs_note` (`a date needs a note; type the text of the follow-up first`) while the date is read-only. Tests: `schema-modelled.test.ts`, `manifest-draft.test.ts`, `editor.test.ts` (first runs above). |
+| 3 B3, undo of an expansion | DONE | `ReplacedText` and `ChangeRecord.replaced` in `server/core/changes.ts`; `setFields` reports `replaced` per field (`server/edit/yaml-edit.ts`); `insertReplaced` in `writes/restore.ts` writes the text back over the lines the write left only while the file still holds them at the recorded index, and checks the result with a bare note, a map and a list of one note read as one note; `writeManifest` (`writes/manifest.ts`) takes `replaced` beside `removed`, `undo.ts` passes `change.replaced`. Any other undo goes through the value write (the test "audits that the value is written instead when the file no longer holds what the expanding write left"). Tests: `undo-removed.test.ts`, `toBe` over the whole manifest for a bare note and a one-note list (first run above), plus a one-note list holding a map with comments. |
+| 4 SP1 | DONE | the first judgment call below |
+| 5 SP2 | DONE | the file table below, with line counts from `wc -l` taken after the last change |
+| 6 SP3 | DONE | `config/text/views/boards/editor.yml`: `followup_several: this project has several follow-up notes; edit them on the Focus board or in its project.yml`; the editor test asserts the sentence against `/Focus board.*project\.yml/` (first run above) |
+| 7 SP4 | DONE | DESIGN.md's card-tree paragraph reads `under <tab instance id>#files:<project id>, the project id percent-encoded (cardTreeKey in ...)`; the key shape is the third judgment call below |
+| 8 P1 | DONE | `schema-modelled.test.ts` "opens waiting-on as the model reads it when the manifest text holds a bare word, and validate reports it": plants a manifest holding `waiting-on: stephanie` in a scratch hub, reads it with `buildPortfolio`, opens the form values with `fieldValues`, and checks the finding `{ file, key: 'waiting-on', message: 'waiting-on must be a list, not a string' }`; red with normalise reading the bare word as a list (table above) |
+| 9 P2 | DONE | every test of `card-tree.client.test.ts` has a run with its behaviour removed (table above); "a listing landing after the close writes nothing, though it would change the selection" is the added test: a selected row in the record, the tab closed, the listing answered with different folder content, `recordsOf(tab)` stays `[]`; it is red when the seed effect reads the record with tracking |
+| 10 S1 | DONE | `CardDocs.svelte` head comment: "the matching files of the whole project are listed flat, most recent first, with their sizes", path `state/sources/explorer/view/card-tree.ts` |
+| 11 S2 | DONE | `ProjectTree.svelte`: `const dir = $derived(folderOf(item.project));`, imported from `$lib/state/client/selectors.svelte`; `absoluteOf` and `hubRoot` are no longer imported there |
+| 12 S3 | DONE | `yaml-edit.ts` is 862 lines (cap 900, 38 under). Moved: `server/edit/entry-edit/yaml-values.ts` (172 lines; the value vocabulary of a write, `FieldValue` and its parts, and how each is rendered as text) and `server/edit/entry-edit/yaml-ranges.ts` (77 lines; where a node stands in its text: `columnOf`, `lineStart`, `lineEndAfter`, `rangeOf`, `pairOf`, `valueEnd`, `pairEnd`, `mapIndent`). `ls src/lib/server/edit/entry-edit \| wc -l` gives 8 and `ls src/lib/server/edit \| wc -l` gives 10. |
+
+### The verify list
+
+`sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`, run once from `tools/oculus` after the last change. It printed:
+
+```
+$ npm test
+ FAIL  |unit| tests/server/machine/commands/placeholders.test.ts > a selection run through a real shell > creates nothing, for each line, each selection and each shell
+Error: Test timed out in 5000ms.
+ Test Files  1 failed | 572 passed | 24 skipped (597)
+      Tests  1 failed | 14045 passed | 640 skipped (14686)
+checks: failed with exit 1: npm test
+```
+
+The failing file is not one this round changes. Rerun alone, `npx vitest run tests/server/machine/commands/placeholders.test.ts`: `Test Files  1 passed (1)`, `Tests  9 passed (9)` (`$SP/r1-placeholders-alone.log`). `npm test` otherwise passed: 572 files, 14045 tests.
+
+The six commands `checks.sh` did not reach, each run once on its own, from `tools/oculus`, in the list's order (`$SP/r1-rest-commands.log`):
+
+- `npm run test:checks`: exit 0, `Test Files  31 passed | 2 skipped (33)`, `Tests  471 passed | 9 skipped (480)`.
+- `npm run check`: exit 0, `COMPLETED 3318 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run build`: exit 0.
+- `npm run format:check`: exit 0, `All matched files use Prettier code style!`.
+- `npm run lint`: exit 0, no output.
+- `! LC_ALL=C grep -rna '[^ -~]' src tests`: exit 0, no output.
+
+`npm run diagrams` was run before the list; `docs/diagrams/` is regenerated.
+
+Brief gate 2, from the worktree root: `grep -n "'followup.do'\|'priority'\|'waiting-on'\|'snooze'\|'subtasks'" tools/oculus/src/lib/state/forms/schema.ts` prints lines 66, 88, 279, 282, 359 and 361; `NOT_IN_MODEL` is at lines 57 to 62 and holds `'code_availability.description'`, `'code_availability.homepage'`, `'code_availability.topics'`, `'code_availability.visibility'` and `'paths'`, so none of the five is inside it.
+
+### Files (line counts from `wc -l` after the last change)
+
+"Outside" marks a path that "Paths this step writes" does not name, with the reason it was written. Paths inside the list (`schema.ts`, `Editor.svelte`, `yaml-edit.ts`, the card files, the explorer folder, `tests/`, the config text files, HELP.md, DESIGN.md) carry no mark.
+
+| Path | Lines | Reason if outside the list |
+|---|---|---|
+| `src/lib/server/edit/yaml-edit.ts` | 862 | in the list |
+| `src/lib/server/edit/entry-edit/yaml-values.ts` | 172 | Outside: new, the value vocabulary and renderers moved out of `yaml-edit.ts` to keep it under its cap (ruling 12) |
+| `src/lib/server/edit/entry-edit/yaml-ranges.ts` | 77 | Outside: new, the node-position helpers moved out of `yaml-edit.ts` (ruling 12) |
+| `src/lib/server/edit/entry-edit/lines.ts` | 345 | Outside: its own copies of `rangeOf`, `pairOf`, `endOffset` and `pairEnd` are removed and taken from `yaml-ranges.ts`; the copy of `endOffset` and `valueEnd` was a listed clone (`tests/checks/tree/allow-duplication.txt`) that the move would otherwise have kept |
+| `src/lib/server/edit/entry-edit/entries.ts` | 310 | Outside: import paths (`yaml-values.ts`, `yaml-ranges.ts`), `endOffset` renamed `valueEnd` |
+| `src/lib/server/edit/entry-edit/subtasks.ts` | 282 | Outside: import paths |
+| `src/lib/server/edit/entry-edit/host-status.ts` | 72 | Outside: import paths |
+| `src/lib/server/edit/entry-edit/render.ts` | 53 | Outside: import paths |
+| `src/lib/server/edit/feeds.ts` | 521 | Outside: the `FieldValue` import path |
+| `src/lib/server/edit/writes/entries.ts` | 618 | Outside: the `FieldValue` import path |
+| `src/lib/server/edit/writes/manifest.ts` | 486 | Outside: `currentOf` reads a note held as a bare text or a list of one as the map it stands for, so the change record's `before` for `followup.do` is the note's text; this round it also checks and passes the record's `replaced` text |
+| `src/lib/server/edit/writes/restore.ts` | 134 | Outside: new, the restore helpers (`splitsPair`, `placesOf`, `insertRemoved`) moved out of `yaml-edit.ts` to keep it under its cap, and `insertReplaced` (ruling 3) |
+| `src/lib/server/edit/writes/undo.ts` | 391 | Outside: passes `change.replaced` to the manifest writer (ruling 3) |
+| `src/lib/server/core/changes.ts` | 316 | Outside: `ReplacedText` and `ChangeRecord.replaced` (ruling 3) |
+| `src/lib/state/forms/schema.ts` | 383 | in the list |
+| `src/lib/state/forms/manifest-draft.ts` | 133 | Outside: `manifestDirty` asks the same writable rule as the payload, so a typed date that cannot be written is not a change (ruling 2) |
+| `src/lib/state/shared/stores/shapes.ts` | 321 | Outside: `instanceKeys(prefix)` added to the ui store's shape, which the prefix clear of the cards' tree records needs |
+| `src/lib/state/shared/stores/shell.ts` | 33 | Outside: its head comment named the old path of `row-menu.ts`, now `views/shared/explorer/tree/menu/row-menu.ts` |
+| `src/lib/state/sources/explorer/follow.ts` | 146 | Outside: `followedFilesView` restates `selection` and `anchor` as well as `selected` and `expanded`, so the Files view's selection follows a rename or a move as the cards' tree records do |
+| `src/lib/state/sources/fs.ts` | 59 | Outside: re-exports `view/card-tree.ts` |
+| `src/lib/state/sources/explorer/view/card-tree.ts` | 35 | Outside: new, `cardTreeKey`, `cardTreePrefix` and `unopened`, beside `tab-roots.ts` |
+| `src/lib/views/boards/editor/Editor.svelte` | 348 | in the list |
+| `src/lib/views/shared/card/CardDocs.svelte` | 243 | in the list |
+| `src/lib/views/shared/explorer/ProjectTree.svelte` | 105 | in the list |
+| `src/lib/views/shared/explorer/RootedTree.svelte` | 93 | in the list |
+| `src/lib/views/shared/explorer/rooted-tree.svelte.ts` | 211 | in the list |
+| `src/lib/views/shared/explorer/Outside.svelte` | 53 | in the list |
+| `src/lib/views/shared/explorer/control/tab-actions.ts` | 124 | in the list |
+| `src/lib/views/shared/explorer/control/bookmark-actions.ts` | 88 | in the list |
+| `tests/routes/edit/undo-removed.test.ts` | 450 | in the list |
+| `tests/server/edit/yaml/yaml-edit-followup.test.ts` | 190 | in the list |
+| `tests/state/forms/schema-modelled.test.ts` | 281 | in the list |
+| `tests/state/forms/manifest-draft.test.ts` | 191 | in the list |
+| `tests/views/boards/editor/editor.test.ts` | 376 | in the list |
+| `tests/views/shared/explorer/card-tree.client.test.ts` | 244 | in the list |
+| `config/text/views/boards/editor.yml` | 31 | in the list |
+| `DESIGN.md` | 434 | in the list |
+| `HELP.md` | 342 | in the list |
+
+### Judgment calls of the round
+
+1. The tree's wiring is split in three, and three further files moved with it. `rooted-tree.svelte.ts` is the model of one explorer tree (the record, the rows, the listings, git, bookmarks and the presses); `RootedTree.svelte` is the markup that draws it; `ProjectTree.svelte` is the project-rooted wrapper of a card (the owner record, the seed of the open head, the outside sentence). The Files view (`Files.svelte:80-83`) and a project card (`ProjectTree.svelte:19-21`) import the first two, so the two places build and draw one tree from one code. `control/tab-actions.ts` and `control/bookmark-actions.ts` moved from `views/sources/files/control/` into `views/shared/explorer/control/`, and `Outside.svelte` from `views/sources/files/header/` into `views/shared/explorer/`, because `rooted-tree.svelte.ts:32-33` imports the first two and `ProjectTree.svelte:19` and `Files.svelte:80` import the third, and a partial under `views/shared/` may import `ui/`, `state/` and `views/shared/` but nothing under a view's own folder (the layer rule the brief cites at `tests/checks/tree/boundaries.test.ts`).
+2. Where the S3 split went: `server/edit/` holds 10 items, the folder limit, so no new folder or file fits beside `yaml-edit.ts`; `server/edit/entry-edit/` held 6 and now holds 8, and it already holds the line-range helpers (`lines.ts`) and the renderers (`render.ts`) of the entry writers, so the value renderers and the node positions sit there. `yaml-edit.ts` imports them as runtime imports and the entry writers import them from the same folder, with no cycle (`tests/checks/imports/cycles.test.ts` is in the `test:checks` pass above).
+3. The card record's key is `<tab instance id>#files:<encodeURIComponent(project id)>` (`cardTreeKey`), so an id holding `:`, `/` or `#` cannot cross into another record's prefix. DESIGN.md says so. This is a record key shape in the ui store and the saved layout; it is listed here as a decision.
+4. The change record gains one optional field, `replaced: { offset, left, text }` (`offset` in the text the write left, `left` the lines the write put there, `text` the characters they replaced), on the record of each field whose edit rewrote a bare note or a list of one note as a map and left the rewritten lines in the file as it wrote them. The log is a file on this machine (`~/.oculus/changes.jsonl`), the field is optional so older lines still read, and a record with a malformed `replaced` is read as having none (`replacedShape` in `writes/manifest.ts`). The shape was not named by the ruling; it is listed as a decision for the orchestrator to confirm.
+5. In a write of two follow-up fields at once on a bare note (`followup.do` and `followup.after`), the first field's rewrite is touched by the second field's insertion, so neither record carries `replaced` and the undo of either writes the value, as a map (the audit test in `undo-removed.test.ts`). The note comes back in its own shape only when the expanding write was the one field.
+6. A comment inside a multi-line value refuses the write; there is no attempt to move it. The reason is `a comment inside the value cannot be kept; edit the file by hand`.
+7. First-report judgment call 10 (a follow-up date typed for a project with no note stays in the draft and is not posted) is replaced by ruling 2: the date is read-only while the note's text is empty and a line says why, and the date becomes writable once the text is typed.
+
+### Edits to existing assertions (before and after)
+
+- `tests/server/edit/yaml/yaml-edit.test.ts`, two assertions (`clearing a key` and `what is not written`): `toEqual({ text: DOC, changed: [], refused: [], removed: {} })` became `toEqual({ text: DOC, changed: [], refused: [], removed: {}, replaced: {} })`, since `setFields` answers a `replaced` map.
+- `tests/state/forms/schema-modelled.test.ts`: the waiting-on test (`fieldValues(project({ waitingOn: [] }))` only) became the reader-driven test of ruling 8; "opens both fields empty and writable for a project with no note" became "opens both fields empty for a project with no note, the text writable and the date writable only once the text is typed", with the `writableField` assertions added.
+- `tests/views/boards/editor/editor.test.ts`: "opens the follow-up fields of a project with no note empty and editable" became "opens the text of a project with no note editable and its date read-only, with the line saying a date needs a note"; the two-notes test gained the `/Focus board.*project\.yml/` assertion; the two absences of the needs-a-note line carry a reason comment (the negatives check requires one).
+- `tests/routes/edit/undo-removed.test.ts`: "records the text of a bare or one-list follow-up as the value before an edit of it, and an undo writes it back" (which asserted `toContain('do: call')` after the undo) became "gives a bare or one-list follow-up back as the text the file held, after an edit of it" with `toBe(held)` over the whole file.
+- `tests/views/shared/explorer/card-tree.client.test.ts`: the two `// Revert:` comments were rewritten to name the removals of the table above; the test titles are unchanged.
+- `tests/checks/tree/allow-duplication.txt`: the entry `src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts 22e246596d51` is removed, since `lines.ts` no longer holds the copy (`tests/checks/tree/duplication.test.ts` fails on a stale entry).
+
+### Docs and head comments changed in the round
+
+- DESIGN.md: the change-log paragraph (line 143) and the change-log bullet (line 388) gained a sentence on the replaced text and the undo of a rewritten note; the card-tree paragraph says the project id in the record's key is percent-encoded.
+- HELP.md: the History paragraph gained the same sentence; the `editor` entry says the follow-up date is read-only while the project has no note and its text is empty, and that several notes are edited on the Focus board or in `project.yml`.
+- Head comments: `yaml-edit.ts` (comment carrying, `replaced`, the two new modules), `writes/restore.ts`, `writes/manifest.ts`, `writes/undo.ts`, `server/core/changes.ts`, `CardDocs.svelte`.

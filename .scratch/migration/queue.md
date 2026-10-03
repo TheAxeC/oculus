@@ -1,6 +1,6 @@
 In flight:
 - X3c (the tab strip as VS Code's): repair round 1.
-- Q91 (the project view and its editor): repair round 1.
+- Q91 (the project view and its editor): repair round 1 in review.
 - D25 (the editor's options): repair round 1.
 
 Queued, in order (32 steps):
