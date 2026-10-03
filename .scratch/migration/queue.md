@@ -3,7 +3,8 @@ In flight:
 - Q91 (the project view and its editor): repair round 1 in review.
 - D25 (the editor's options): repair round 1 in review.
 
-Queued, in order (32 steps):
+Queued, in order (33 steps):
+- T1 (the test suite in three tiers): once fewer than three steps are in flight and Z351 is ruled.
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - M6 (the collection forms removed): once S5 has landed.
