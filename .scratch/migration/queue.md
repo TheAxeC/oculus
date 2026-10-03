@@ -3,11 +3,10 @@ In flight:
 - Q91 (the project view and its editor): building.
 - D25 (the editor's options): building.
 
-Queued, in order (21 steps):
-- D32b (the Search view's replace kept true): waits on Axel's approval of the step.
-- D14b (the LaTeX build and view kept true): waits on Axel's approval of the step.
+Queued, in order (20 steps):
+- D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - X3e (Files lists reordered by drag): once Q91 has landed.
-- D15 (PDF reading): once D14b has landed.
+- D15 (PDF reading): once D37 has landed.
 - D23 (language servers): once D25 has landed.
 - D11 (the debug client for rite): once fewer than three steps are in flight.
 - D20 (an agent from a task or a worktree): once fewer than three steps are in flight.
