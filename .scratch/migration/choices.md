@@ -997,6 +997,20 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z330 (2026-10-03, D25's brief check): the language picker's entries and the repository file read again
+
+- Chosen (a): the language picker takes VS Code 1.137's entries: Auto Detect (oculus's detection by name and extension), Configure File Association for '<ending>'... (a second list; its choice writes `sources.yml`'s `languages:` through the undoable `config-value` write), Configure '<language>' language based settings... (the Settings view at `@id:editor.languages`), each language's description `(<name>)` and the one in force `(<name>) - Configured Language`; the Marketplace entry left out. A source-tab save marks the saved file's text, so `.oculus/settings.yml` saved in oculus is read again at once; an edit outside oculus at the Files view's refresh or a reload.
+- Not chosen: (b) the brief's earlier picker ("(current)", Configure File Association opening Settings) and a reload to see a changed repository file, the lazy option; (c) a server poll of every root's `.oculus/settings.yml`, while no other Files text is watched.
+
+Where it is built: D25's brief, items 2 and 13, decisions 10 and 11. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z329 (2026-10-03, /spec D25): the editor options' keys
+
+- Chosen: `editor.tab_size` 4, `editor.insert_spaces` true, `editor.word_wrap` off (off, on, wordWrapColumn, bounded), `editor.minimap` true, `editor.render_whitespace` selection (none, boundary, selection, trailing, all), `editor.sticky_scroll` true, and the family `editor.languages` keyed by language with `tab_size`, `insert_spaces`, `word_wrap` and `rulers`, all in `config/behavior.yml`'s `editor:` block; a repository's `.oculus/settings.yml` with `languages:`, read from the Files root holding the file; a value taken from the tab's choice, the detected indentation, the root's file, `editor.languages`, then the global key; the Settings view naming each root whose file sets a language, with a link.
+- Not chosen: a separate `editor.yml`; VS Code's quoted `"[python]"` keys; a global `editor.rulers`, which the list editor cannot hold as numbers.
+
+Where it applies: D25. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z324 (2026-10-03, /spec X3c): the brief check's findings closed
 
 - Chosen: a pinned tab keeps its pin across a float, a page move and a split; Delete on a pinned tab follows VS Code's `preventPinnedEditorClose` default; Pin Editor and Unpin Editor are palette items of kind `editor` with Cmd+K Shift+Enter as a hint; the tab menu is VS Code 1.137's with Reveal in Finder, Compare, Keep Open disabled off a preview, the Split & Move submenu and the name Show in Files; `wrap_tabs` repaired to `false` with no finding, its actions at the end of the last row; the breadcrumb in the strip's title area; the tooltip's `~` from a home folder the roots answer gains; a `doc` tab read under the hub root; a new tab opens right of the active one; the strip measured against VS Code's stylesheet; the Open Editors Close All keeps pinned tabs.
