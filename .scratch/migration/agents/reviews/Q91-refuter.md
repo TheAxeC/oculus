@@ -147,3 +147,240 @@ Cases of the brief's "Cases":
 - The cherry-pick behaviour in B4 (b). It needs a trial landing, which this review may not make.
 
 Reviewer usage: tokens not measured by me (the harness records them); about 62 tool uses; about 40 minutes. Note for the orchestrator: besides `git diff` and `git status --short`, I ran `git show 2dbe1a72:<path>` (read-only) for eight moved files to compare them with their base copies. No file under the worktree or the ledger was changed. Scratch copies are in $TMPDIR/q91rev, $TMPDIR/q91base and $TMPDIR/q91probe.
+
+
+## Repair round 1, refuted (Q91, on .agents/worktrees/Q91, base 2dbe1a72, delta against the scratchpad's q91-round1-start/)
+
+**Summary.** The verify list is red on `npm test` only. The failure is one timeout in `tests/server/machine/commands/placeholders.test.ts`, a file the step does not touch, and that file passes when run alone. The other six commands pass when run one at a time.
+
+- **Rulings:** eleven of the twelve hold. Ruling 3 is partial: an undo puts the note's own text back only when the rewritten lines sit at the exact recorded offset. Any later edit above the note (for example the title) makes the undo write the map instead, even though the file still holds those lines. DESIGN.md and HELP.md say the opposite.
+- **Other findings:** all low, and each can be fixed at landing.
+- **The four things the brief asked me to check:**
+  - Ruling 1 (comments carried over): each placement and the refusal is correct, and each one's test is red when comment collection is removed.
+  - The `replaced` field on the change record: it has three readers. The probe above shows where it falls short.
+  - The S3 split, and the row removed from `allow-duplication.txt`: the row was removed because the duplicated code is gone, not to make the check pass.
+  - The date's read-only state (ruling 2): it is correct.
+
+### Verification (rerun by the reviewer)
+
+```
+$ npm run build            (alone, first, from tools/oculus)   -> exit 0, "✓ built in 15.65s"
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (from tools/oculus, once, 13:01:47-13:07:03, load averages 17.56 13.60 14.55)
+$ npm test
+ ❯ |unit| tests/server/machine/commands/placeholders.test.ts (9 tests | 1 failed) 10760ms
+     × creates nothing, for each line, each selection and each shell 7825ms
+ FAIL  |unit| tests/server/machine/commands/placeholders.test.ts > a selection run through a real shell > creates nothing, for each line, each selection and each shell
+Error: Test timed out in 5000ms.
+ Test Files  1 failed | 572 passed | 24 skipped (597)
+      Tests  1 failed | 14045 passed | 640 skipped (14686)
+checks: failed with exit 1: npm test
+
+$ npx vitest run tests/server/machine/commands/placeholders.test.ts   -> Test Files 1 passed (1), Tests 9 passed (9)
+$ git diff 2dbe1a72 --stat -- tests/server/machine vite.config.ts vitest.config.ts package.json   -> (empty)
+The remaining commands of the list, each run once alone:
+$ npm run test:checks      -> exit 0, Test Files 31 passed | 2 skipped (33), Tests 471 passed | 9 skipped (480)
+$ npm run check            -> exit 0, COMPLETED 3318 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build            -> exit 0
+$ npm run format:check     -> All matched files use Prettier code style!
+$ npm run lint             -> exit 0
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests   -> exit 0, no output
+spec.md perl ASCII gate over src tests config (local.yml excluded) -> no output
+
+The round report's evidence, rerun:
+$ wc -l (every path of the round's file table)   -> every count matches the table (yaml-edit.ts 862, yaml-values.ts 172, yaml-ranges.ts 77, lines.ts 345, manifest.ts 486, restore.ts 134, undo.ts 391, changes.ts 316, schema.ts 383, manifest-draft.ts 133, Editor.svelte 348, ProjectTree.svelte 105, the six test files 450/190/281/191/376/244, DESIGN.md 434, HELP.md 342)
+$ ls src/lib/server/edit/entry-edit | wc -l   -> 8 ;  ls src/lib/server/edit | wc -l   -> 10 ;  size.test.ts:28 LINES = 900
+$ git diff 2dbe1a72 --name-status (non-test paths)   -> every path outside "Paths this step writes" is marked in the round's file table
+Brief gate 2, from the worktree root:
+$ grep -n "'followup.do'\|'priority'\|'waiting-on'\|'snooze'\|'subtasks'" tools/oculus/src/lib/state/forms/schema.ts   -> 66, 88, 279, 282, 359, 361 (as the report says; none inside NOT_IN_MODEL)
+
+First runs: the final tests copied onto scratchpad rv-base/ (the round-start tree, node_modules linked):
+$ npx vitest run tests/server/edit/yaml/yaml-edit-followup.test.ts tests/routes/edit/undo-removed.test.ts   -> Tests 10 failed | 49 passed (59)
+   (the eight the report lists, plus "keeps the comments of a bare note..." and "gives a one-note list holding a map back as the list, comments included", which the report says have no first run)
+$ npx vitest run schema-modelled, manifest-draft, editor/editor, card-tree.client   -> Tests 5 failed | 64 passed (69), the five the report lists; card-tree.client all pass (preserved)
+
+Removal runs, each on scratchpad rv-rm/ (a copy of the final tree), one at a time, undone after each; the baseline of the four files is Tests 85 passed (85):
+ expandNote collects no comments (const comments: Comment[] = [])   -> yaml-edit-followup Tests 7 failed | 9 passed (16)   (matches)
+ setFields records no replaced (if (false) {)                       -> undo-removed Tests 3 failed | 40 passed (43)        (matches)
+ normalise reads a bare waiting-on word as a list                   -> schema-modelled 1 failed | 18 passed, "expected [ 'stephanie' ] to deeply equal []"  (matches)
+ validate.ts SHAPES row for waiting-on removed                      -> schema-modelled 1 failed, "expected [] to deeply equal [ { …(3) } ]"  (my own; the finding half is also guarded)
+ ProjectTree seed effect without untrack                            -> card-tree.client 2 failed | 5 passed, at :162 and :213  (matches)
+   same removal, the new test's out.answer(...) taken out           -> still 2 failed, at :162 and :213 (see Proof P-R1-2)
+ rooted-tree selectPruned removed (const next = now)                -> 1 failed | 6 passed  (matches)
+ rooted-tree selection effect writes always (|| true)               -> every test fails at 6.3 s to 8.3 s (six × lines in the first 20 lines of output)  (matches)
+
+Probes (node type stripping over setFields / insertReplaced in the scratch copies):
+ 'followup: "Register for FLTA 2026"  # ask' + {followup.after}, then {title} in a later save, then insertReplaced(...)
+   -> refused "the file no longer holds the lines the write left", though text.includes(span.left) is true (Behaviour B-R1-1)
+ dash comment, comment line after the item, multi-line flow map and flow list, two comment lines, a cleared key with a comment, a folded value with a header comment (refused "a comment inside the value cannot be kept; edit the file by hand"), and a two-field write: each comment carried over as the ruling says.
+ Round start against final, bare note 'followup:  # waiting\n  call' + {followup.after}: round start drops the comment, final keeps it.
+```
+
+### Rulings of the round
+
+1. **B1, comments carried over: done.**
+   - `commentsIn`, `placeComments` and `expandNote` are at `yaml-edit.ts:361-523`.
+   - Each placement holds in the tests and in my probes, and so does the refusal (the folded-value probe is refused). All seven tests are red with comment collection removed.
+   - Applying the same code to the bare-note path is justified. At round start that path dropped a comment after `followup:`, and moved a comment from the value to the `after` line (probe above). Ruling 3 also needs that path's replaced text.
+2. **B2, the date needs a note: done.**
+   - `dateNeedsNote` is at `schema.ts:80-90`, and `writableField(project, field, edits)` reads it.
+   - `manifestDirty` (`manifest-draft.ts:127`) and `manifestPayload` (`schema.ts:357`) both use that rule. `Editor.svelte:173-175` draws `editor.followup_needs_note`.
+   - The four tests are red on the round-start tree.
+3. **B3, byte-for-byte undo: partial (Behaviour B-R1-1).**
+   - For a one-field write that is undone before anything above the note changes, the whole file comes back exactly (`toBe`), for a bare note and for a one-note list. Three tests are red with `replaced` removed.
+   - `replaced` is `{ offset, left, text }` (`changes.ts:69-76`). Three places read it:
+     - `replacedShape` in `writes/manifest.ts:207-211` (malformed means none);
+     - `insertReplaced` in `writes/restore.ts:107-134`;
+     - the pass-through in `undo.ts:270`.
+   - `keptSpan` (`yaml-edit.ts:739-744`) drops or moves the span when a later field of the same write splices it.
+4. **SP1: done.** The round's judgment call 1 names the three-way split and the three extra moves, each with its reason.
+5. **SP2: done.** The file table marks every outside path and gives the reason. I checked it against `git diff --name-status`, and every line count matches `wc -l`.
+6. **SP3: done.** `editor.yml:9` now reads "edit them on the Focus board or in its project.yml".
+7. **SP4: done.**
+   - `DESIGN.md:421` reads "the project id percent-encoded".
+   - The round's judgment call 3 lists the key shape.
+8. **P1: done.** The test reads the manifest text through `buildPortfolio`. It is red when normalise is removed, and also red when the validate row is removed (my run).
+9. **P2: done, with Proof P-R1-2.** Every C23 test has a removal run that I reproduced. The added test is titled as an audit, which `tests/checks/tree/audits.test.ts` requires for these cases.
+10. **S1: done.** `CardDocs.svelte:14-16`.
+11. **S2: done.** `ProjectTree.svelte:46` is `folderOf(item.project)`.
+12. **S3: done.**
+    - `yaml-edit.ts` is 862 lines against a cap of 900.
+    - The split produced two files, each with one concern: `entry-edit/yaml-values.ts` (172 lines) and `entry-edit/yaml-ranges.ts` (77 lines).
+    - The `allow-duplication.txt` row `lines.ts / yaml-edit.ts 22e246596d51` was removed because the duplicated code is gone, not to make the check pass:
+      - `grep -rn "endOffset" src` finds nothing;
+      - `valueEnd` exists once, at `yaml-ranges.ts:46`;
+      - `duplication.test.ts:599-606` fails on a stale row.
+    - Where the files sit is Standards S-R1-1.
+
+### Verdicts for the whole diff since the base
+
+**How these were reached.** Items 2, 3, 6, 7, 8, 9 and 10 have no source change in the round. Their files are not in the `diff -rq` of the round-start copy against the worktree. Their verdicts rest on two things: the tests the first review named, which pass in my `npm test` run (572 files passed), and the first review's reading, which I treat as a lead. I did not re-read those diffs in full.
+
+**Items of the brief's "What to build":**
+
+- 1: violated, Behaviour B-R1-1.
+  - The modelled fields, `followupWritable`, the payload rule and the date rule hold.
+  - The one-note list is written as a map and carries its comments over.
+  - The emptied note clears the group.
+  - The undo shape (ruling 3) holds only at the recorded offset.
+- 2: holds. card-details tests pass, and the round did not touch them.
+- 3: holds. Same evidence as 2.
+- 4: holds.
+  - The round changed only `ProjectTree.svelte:46` (`folderOf`) and the `CardDocs` comment.
+  - card-tree, ops, layout-close and card-docs all pass in my run.
+  - The C23 removals are reproduced (above).
+- 5: holds, with Standards S-R1-2 (comment wording) and the doc sentence in B-R1-1.
+- 6: holds. Untouched.
+- 7: holds. Untouched.
+- 8: holds. Untouched.
+- 9: holds. Untouched.
+- 10: holds. Untouched; the wrap width is for the look.
+
+**Cases of the brief's "Cases":**
+
+- C1: met.
+- C2: met.
+- C3: met.
+- C4: met.
+- C5: met, as ruling 2 amends it.
+  - Both fields open empty.
+  - The text is writable.
+  - The date is read-only with `followup_needs_note` until the text is typed.
+  - The tests are in `schema-modelled.test.ts` and `editor.test.ts`, red on the round-start tree.
+- C6: met.
+- C7: met. The test is red under the R1 removal, and comments are now kept.
+- C8: met.
+- C9: met. The waiting-on half now goes through the reader, normalise and validate, and both removals are red.
+- C10 to C22: met. Unchanged by the round; tests pass.
+- C23: met. The removal runs are reproduced; see Proof P-R1-2 for what the added test distinguishes.
+- C24: met.
+  - `test:checks` is green.
+  - `boundaries.test.ts` is not in the diff.
+- C25: met.
+  - `allow-duplication.txt` loses one row, for a clone that is now gone.
+  - It renames five rows to the moved editor test.
+  - It adds no row.
+- C26 to C34: met. Unchanged by the round; tests pass.
+
+### Findings
+
+**Spec: none.**
+
+**Proof**
+
+- **P-R1-1, the report's "First runs" section.** Two tests of added behaviour are given no first run:
+  - "Three tests were added after the source change and have no first run on the unchanged tree."
+  - What is wrong: `agents/spec.md` asks for each new test's failing line on the unchanged tree. My run on the round-start copy shows two of the three are red there, as required: "keeps the comments of a bare note: after the key, before it and after its text" and "gives a one-note list holding a map back as the list, comments included". The third is an audit and passes there.
+  - Failure scenario: the landing reads the report and finds two behaviour tests with no proof that they can fail.
+  - Closure: my run above supplies it; nothing to change in code.
+  - Verdict: none.
+- **P-R1-2, `tests/views/shared/explorer/card-tree.client.test.ts:204-215`** ("audits that a listing landing after the close writes nothing, though it would change the selection"). The test's comment says: "Red when the seed effect of ProjectTree.svelte reads the record with tracking, and when the selection effect of rooted-tree.svelte.ts writes whether or not the selection changed."
+  - What is wrong:
+    - Neither quoted red isolates the late listing.
+    - With the seed effect tracked, the test is still red at `:213` when `out.answer(...)` is taken out: my variant run, 2 failed at `:162` and `:213`.
+    - The `|| true` removal fails every test of the file by an effect loop.
+    - After the close the record is empty, so the late listing has no selection left to change. The selection effect (`rooted-tree.svelte.ts:159-163`) reads it from the record.
+  - The test stays a valid audit against a future write on the listing path, and it is titled as one. The report's ruling 9 row ("it is red when the seed effect reads the record with tracking") reads as if that red came from the listing path.
+  - Failure scenario: the orchestrator takes the row as proof that the late listing path was exercised; it was not.
+  - Verdict: none.
+
+**Standards**
+
+- **S-R1-1, `src/lib/server/edit/entry-edit/yaml-values.ts` and `yaml-ranges.ts`.**
+  - `yaml-edit.ts:43-54` imports `from './entry-edit/yaml-values.ts'` and `'./entry-edit/yaml-ranges.ts'`.
+  - What is wrong: `agents/spec.md` ("What every package obeys", folder rule) says a folder at its limit is split into folders named for what they hold, and a new file goes where its concern already lives.
+    - `yaml-values.ts` is the write vocabulary of every YAML write: `FieldValue` is imported by `writes/manifest.ts`, `writes/restore.ts`, `writes/entries.ts`, `feeds.ts` and `yaml-edit.ts`.
+    - It now sits in the entry writers' folder, so the manifest writer imports its core from `entry-edit/`.
+    - The round's judgment call 2 argues the placement: `lines.ts` held copies of the range helpers.
+    - The alternative that meets the rule: a `server/edit/yaml/` folder holding `yaml-edit.ts` with its two parts, with `server/edit/` staying at ten items.
+  - Failure scenario: a reader looking for the manifest write's value rules looks in `server/edit/` and finds them under `entry-edit/`.
+  - Low. A placement call for the orchestrator.
+  - Verdict: none.
+- **S-R1-2, path split across comment lines.** Two places:
+  - `src/lib/views/shared/explorer/ProjectTree.svelte:6-7`: "(state/sources/explorer/view/" then "// card-tree.ts)";
+  - `src/lib/state/shared/stores/shell.ts:3-4`: "(views/shared/explorer/" then "// tree/menu/row-menu.ts)".
+  - What is wrong: this is the same pattern ruling 10 (S1) fixed in `CardDocs.svelte`. The path is broken at the wrap, so `grep view/card-tree.ts` and `grep explorer/tree/menu/row-menu.ts` miss these references.
+  - Failure scenario: a later move of `card-tree.ts` or `row-menu.ts` greps for the path, misses these two head comments, and leaves them false.
+  - Fix at landing: rewrap so each path sits on one line.
+  - Verdict: none.
+- **S-R1-3, `tests/routes/edit/undo-removed.test.ts:122`.** Test title: "gives the shape back when the note was written with its date, whichever field is undone".
+  - What is wrong: the test writes and undoes only `followup.after`. Its loop runs over the two note shapes, not over fields.
+  - Failure scenario: a reader takes the undo of `followup.do` after a date-only write as covered.
+  - Fix at landing: retitle to "whichever shape the note had".
+  - Verdict: none.
+
+**Behaviour**
+
+- **B-R1-1, `src/lib/server/edit/writes/restore.ts:123-126`.** The code:
+  ```ts
+  const end = replaced.offset + replaced.left.length;
+  if (source.slice(replaced.offset, end) !== replaced.left) {
+      return refusal('the file no longer holds the lines the write left');
+  }
+  ```
+  - What is wrong: ruling 3 says the undo puts the replaced text back "when the file still holds what the write left". The code needs those lines at the exact recorded offset.
+  - Any later edit that changes the length of text above the note breaks it: a later save of `title`, `status.line` or `latest`, or an undo of such a record. After any of these, `putBackNote` gets a refusal and falls through to the value write, which leaves the map shape.
+  - Probe: `id: a\ntitle: Alpha\nfollowup: "Register for FLTA 2026"  # ask\nnext: go\n`. Set `followup.after`, then in a second save set `title: Alpha, renamed`. `insertReplaced` with the recorded span is then refused, though `two.text.includes(span.left)` is `true`.
+  - Three sentences say the opposite: `DESIGN.md:143`, `DESIGN.md:388` and `HELP.md:296` all say the note returns in its own shape "while the file still holds them". The restore.ts head comment ("at the recorded index") is accurate. The existing fallback test covers only an edit inside the span.
+  - Failure scenario: on hccnet-fl, the user sets the follow-up date, then edits the status line, then undoes the date in History. The file ends as `followup:\n  do: "Register for FLTA 2026"  # ask` instead of `followup: "Register for FLTA 2026"  # ask`, against the docs.
+  - Fix, landing-sized: find `left` in the source rather than requiring the offset. Take the occurrence nearest the recorded offset, refusing when there is none, as `placesOf` does for removed text. Add one `undo-removed` test with a title edit between the write and the undo.
+  - Verdict: ruling 3 partial; item 1 violated.
+- **B-R1-2, the round's report section.** It has no before/after table for the round's visible changes.
+  - What is wrong: `agents/spec.md` says the report's before-and-after section is what the look is read against. The round changes three things a reader sees:
+    - the editor date of a project with no note becomes read-only, with "a date needs a note; type the text of the follow-up first";
+    - the several-notes sentence gains "on the Focus board or";
+    - a bare note's comment after the text now stays on the `do` line, where at round start it moved to the `after` line (my probe).
+  - Only DONE rows describe these. The first report's table (`Q91-report.md:222`) does not include them.
+  - Failure scenario: the look at landing opens the glassbox and hccnet-fl editors without the no-note state on its list, and the read-only date goes unseen.
+  - Verdict: none.
+
+**Unreachable, not a finding.** The round dropped the `typed` condition in `manifestPayload`. Run alone, it now posts `followup.do: "  "` for a project with no note (probe on both trees: `{}` at round start, `{"followup.do":"  "}` now). The editor never hands it such a field: `editDiffers` (`manifest-draft.ts:26-28`) trims, so blank text is never dirty.
+
+### Declined to judge
+
+- **What only a look on screen settles.** The read-only date box and its line in the editor, the several-notes sentence on screen, and every look item of the brief. Reason: these need TEST.
+- **Whether `replaced` should be renamed `before`/`after` at landing.** Reason: it is already the orchestrator's landing note (state file, Q91 `landing_notes`). The delta still carries `{ offset, left, text }`.
+- **A bare note that is not text (`followup: 5`).** Expanding it drops the 5 in silence, at round start and now (probe: "followup:\n  after: 2026-12-01"). Reason: the round did not introduce it. I did not run it on the base 2dbe1a72, so whether the step introduced it is not verified.
+- **The first review's B4 landing conflicts with X3c and D25.** Reason: they are landing work, outside a read and a rerun.
+- **Tokens.** Reason: the harness records them, not me.
+
+Reviewer usage: tokens not measured by me (the harness records them); about 45 tool uses; about 30 minutes (12:57 to 13:27 by `date`). Beyond `git diff 2dbe1a72` and `git status --short`, I ran no git command. No file under the worktree or the ledger was changed. The build wrote only its ignored output. Scratch copies are in the session scratchpad: `rv-base/`, `rv-rm/` and `rv-probe*.mts`.

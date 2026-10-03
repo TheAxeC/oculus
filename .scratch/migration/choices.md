@@ -997,6 +997,13 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z355 (2026-10-03, Axel's test ruling): the tests of the steps in flight
+
+- Chosen (a): the landing of X3c, Q91 and D25 reads each test the step added and deletes those that break `agents/spec.md`'s test rule, as a fix at landing.
+- Not chosen: (b) leaving them to T1, which reads the tree at its own base and misses the tests of a step that lands after it; the lazy option.
+
+Where it applies: the landings of X3c, Q91 and D25. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z352 (2026-10-03, Axel's question): T1 runs alone
 
 - Chosen (a): T1 is prepared once X3c, Q91 and D25 have landed, its timings and its landing's 30 s check are taken with nothing else running, and nothing else is dispatched until it lands.
