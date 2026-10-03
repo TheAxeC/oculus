@@ -5,8 +5,8 @@ Running on Axel's go (2026-10-03); the order is `orchestrator-state.md`, "Curren
 In flight: X3c (building since 2026-10-03 07:51), Q91 (building since 07:54).
 
 Queued, in order (22 steps):
-- D32b (the Search view's replace kept true after a write, Z316): brief at /spec; once fewer than three steps are in flight.
-- D14b (the LaTeX build and view kept true, Z318): brief at /spec; once fewer than three steps are in flight.
+- D32b (the Search view's replace kept true after a write, Z316): waits on Axel's ruling Z327 (a step needs his authority).
+- D14b (the LaTeX build and view kept true, Z318): waits on Axel's ruling Z327 (a step needs his authority).
 - X3e (Files lists reordered by drag): brief being closed; once Q91 has landed.
 - D25 (the editor's options, with the two Settings editor defects S4's look found, Z319): ready; once fewer than three steps are in flight.
 - D15 (PDF reading): once D14b has landed, since both change the LaTeX view.
