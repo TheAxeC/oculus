@@ -1041,6 +1041,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z251 (2026-10-03): the repair round stays as ruled 2026-10-01, and the findings are cut at the source: the recurring-findings pass runs, and each cause found in three or more steps ends in a rule sentence in `agents/spec.md` or a sentence every brief carries (the user).
 - Z361 (2026-10-03): the light theme's inactive tab text is `#717171` (4.60:1 on `#f8f8f8`, 4.88:1 on white) in place of VS Code's `#868686`, and the contrast check measures hand-written `-txt` tokens too; applied at X3c's landing (the user).
 - Z362 (2026-10-03): the looks D25's landing could not take are owed: a diff widened past 900 px drawn side by side, the header of Compare Selected on two files, the Settings save of `read_limits` ending its draft and its unsaved mark, and the hunk header at 300 px with its own Stage and Revert buttons on an unstaged diff (the orchestrator, automode).
+- Z363 (2026-10-03): T1's quick list runs in 30 s, a hard limit (31 s passes, 50 s does not), and holds the tests that catch the most defects within it; the sweep may cut harder than one test per behaviour (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
