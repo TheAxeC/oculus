@@ -101,6 +101,7 @@ icons:
     collab: handshake
     agents: bot
     hpc: server
+    processes: cpu
     terminal: terminal
     detail: clipboard-list
     compass: compass

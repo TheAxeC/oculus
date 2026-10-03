@@ -20,6 +20,7 @@ import {
     localFile,
     mailSettings,
     openSettings,
+    processesSettings,
     slurmSettings,
     textCatalog,
     themeFindings,
@@ -29,8 +30,8 @@ import {
 import { requirePaintLimit } from '../../data/helpers/editor.ts';
 import type { Finding, HostInfo, Snapshot } from '../../data/model/index.ts';
 import { mintToken } from '../core/auth.ts';
+import { defaultConnectDir } from '../accounts/connect/store.ts';
 import { ConnectStates } from '../accounts/connect/oauth.ts';
-import { defaultConnectDir, defaultProviderDir } from '../accounts/connect/store.ts';
 import type { AccountBook } from '../accounts/connect/actions.ts';
 import {
     watchCalendar,
@@ -62,6 +63,11 @@ import { wallpaperMemory, type WallpaperMemory } from '../content/wallpaper.ts';
 import { hostWordsOf, hpcSettingsOf, latestResources } from '../machine/hpc/host.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.ts';
 import { Terminals } from '../machine/pty/channel.ts';
+import {
+    watchProcesses,
+    type ProcessesOptions,
+    type ProcessesWatcher
+} from '../machine/processes/watch.ts';
 import { projectFolders } from '../sessions/index.ts';
 import { HookStore, sessionRecord } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
@@ -86,6 +92,7 @@ import {
     type LocalWatcher,
     type WatcherName
 } from './watch/local.ts';
+import { startPollers, usageStarters } from './watch/pollers.ts';
 import { watchPortfolio, type Watcher } from './watch/portfolio.ts';
 import { watchSessions, type SessionsWatcher } from './watch/sessions.ts';
 
@@ -194,6 +201,7 @@ export type ContextDependencies = {
     watchAutofetch: (hub: Hub, options: AutofetchOptions) => AutofetchWatcher;
     watchBookmarks: (hub: Hub, options: BookmarksWatchOptions) => Watcher;
     watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
+    watchProcesses: (hub: Hub, options: ProcessesOptions) => ProcessesWatcher;
     watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
     watchMail: (hub: Hub, options: MailOptions) => MailWatcher;
     watchLocal: (engine: string, changed: () => void) => LocalWatcher;
@@ -213,6 +221,7 @@ const dependencies: ContextDependencies = {
     watchAutofetch: (hub, options) => watchAutofetch(hub, options),
     watchBookmarks,
     watchHpc,
+    watchProcesses,
     watchCalendar,
     watchMail,
     watchLocal: (engine, changed) => watchLocal(engine, changed),
@@ -259,7 +268,7 @@ export function createServerContext(
     // live-settings.ts, and every write of local.yml is read again by `reloadLocal` below. A
     // request reads the disk again through `locals.config`, so a route never answers from this
     // copy.
-    const config = make.loadConfig(engine).config;
+    const { config, findings } = make.loadConfig(engine);
     const slurm = slurmSettings(config);
     const calendarConfig = calendarSettings(config);
     const mailConfig = mailSettings(config);
@@ -270,6 +279,7 @@ export function createServerContext(
     requirePaintLimit(config);
     requireAutofetch(config);
     openSettings(config);
+    const processesConfig = processesSettings(config, findings);
     const hub = make.createHub();
     registerFilesChannel(hub);
     const terminals = make.createTerminals(hub);
@@ -334,21 +344,6 @@ export function createServerContext(
             terminals,
             hooks: store
         });
-    const startUsageRefresh = (): UsageRefreshWatcher =>
-        make.watchUsageRefresh({
-            accounts: local.accounts,
-            hub: local.hub,
-            claudeBin: local.claudeBin,
-            ...(built.live?.held().refresh ?? refresh),
-            onChange: () => void built.parts?.usage.refresh()
-        });
-    const startUsage = (from: Pick<Parts, 'sessions' | 'usageRefresh'>): UsageWatcher =>
-        make.watchUsage(hub, {
-            accounts: local.accounts,
-            tiers: built.live?.held().tiers ?? tiers,
-            refresherFor: from.usageRefresh.state,
-            onSessionsChange: from.sessions.onChange
-        });
     // Every root the file browser serves is on the `git` channel, so the Repositories view is over
     // the repositories the reader configured and not only the ones a session is working in. The
     // configuration is read at the call and not taken from the copy above, so a root added to
@@ -374,53 +369,32 @@ export function createServerContext(
         refreshMin: config.usage_refresh_min,
         model: config.usage_refresh_model
     });
+    const { startUsageRefresh, startUsage } = usageStarters(
+        make,
+        hub,
+        local,
+        { refresh, tiers },
+        built
+    );
     const usageRefresh = startUsageRefresh();
     const usage = startUsage({ sessions, usageRefresh });
     const git = startGit();
     const autofetch = startAutofetch();
     const bookmarks = startBookmarks();
-    // One map, two writers: the log action writes what a press resolved, the watcher's prewarm what
-    // it resolved behind the page, and neither replaces the other's answer.
-    const hpcLogPaths: LogPaths = new Map();
     const hostWords = hostWordsOf(config);
-    const hpc = make.watchHpc(hub, {
-        ...hpcSettingsOf(slurm, local.hpcHost, latestResources(hub), hostWords),
-        logPaths: hpcLogPaths
-    });
-
-    // The calendar poller reads the credential files of the folder the machine's own file names, so
-    // a served test run is pointed at a directory of its own and never at the reader's. The client
-    // halves are the provider folder's under this process's HOME, which a served run makes its own.
-    // The sentences an account's row may carry are the catalog's, as the callback's are.
-    const calendarDir = local.calendarDir ?? defaultConnectDir('calendar');
-    const providerDir = defaultProviderDir();
-    const calendarWords = {
-        icsNoLink: textCatalog(config)['calendar.ics_no_link'],
-        icsFailed: textCatalog(config)['calendar.ics_failed'],
-        timedOut: textCatalog(config)['accounts.timed_out']
-    };
-    const calendar = make.watchCalendar(hub, {
-        accounts: local.calendars,
-        dir: calendarDir,
-        providerDir,
-        pollMin: calendarConfig.pollMin,
-        daysBack: calendarConfig.daysBack,
-        daysAhead: calendarConfig.daysAhead,
-        words: calendarWords
-    });
-
-    // The mail poller reads the credential files and the triage notes of the folder the machine's
-    // own file names, for the same reason: a served test run is pointed at a directory of its own.
-    const mailDir = local.mailDir ?? defaultConnectDir('mail');
-    const mailWords = { timedOut: textCatalog(config)['accounts.timed_out'] };
-    const mail = make.watchMail(hub, {
-        accounts: local.mail,
-        dir: mailDir,
-        providerDir,
-        pollMin: mailConfig.pollMin,
-        perSignal: mailConfig.perSignal,
-        words: mailWords
-    });
+    const polled = startPollers(
+        make,
+        hub,
+        local,
+        {
+            hpc: hpcSettingsOf(slurm, local.hpcHost, latestResources(hub), hostWords),
+            calendar: calendarConfig,
+            mail: mailConfig,
+            processes: processesConfig,
+            config
+        },
+        folders
+    );
 
     built.parts = { portfolio, sessions, usageRefresh, usage, git, autofetch, bookmarks };
     // The hand-off of every later config push, after the pollers it hands to. The two watchers a
@@ -437,13 +411,16 @@ export function createServerContext(
             mail: mailConfig,
             refresh,
             tiers,
-            calendarWords,
-            mailWords
+            processes: processesConfig,
+            processesText: textCatalog(config),
+            calendarWords: polled.calendarWords,
+            mailWords: polled.mailWords
         },
         {
-            hpc,
-            calendar,
-            mail,
+            hpc: polled.hpc,
+            calendar: polled.calendar,
+            mail: polled.mail,
+            processes: polled.processes,
             usageRefresh: { set: (settings) => owned().usageRefresh.set(settings) },
             usage: { setTiers: (labels) => owned().usage.setTiers(labels) }
         }
@@ -458,9 +435,9 @@ export function createServerContext(
         get git() {
             return owned().git;
         },
-        hpc,
-        calendar,
-        mail,
+        hpc: polled.hpc,
+        calendar: polled.calendar,
+        mail: polled.mail,
         get usage() {
             return owned().usage;
         },
@@ -475,12 +452,12 @@ export function createServerContext(
         opsWrites: fsWrites(),
         ignoredCache: ignoredCache(),
         folderPicker: pickerState(),
-        hpcLogPaths,
+        hpcLogPaths: polled.hpcLogPaths,
         calendarConnects: new ConnectStates(),
-        calendarDir,
+        calendarDir: polled.calendarDir,
         mailConnects: new ConnectStates(),
-        mailDir,
-        providerDir,
+        mailDir: polled.mailDir,
+        providerDir: polled.providerDir,
         accounts: { file: localFile(engine), writes, reload: () => reloadLocal() },
         opener: openerOf(local),
         openPath: macOpenPath,
@@ -495,9 +472,10 @@ export function createServerContext(
             localWatch.close();
             const held = owned();
             held.usageRefresh.close();
-            mail.close();
-            calendar.close();
-            hpc.close();
+            polled.mail.close();
+            polled.calendar.close();
+            polled.hpc.close();
+            polled.processes.close();
             held.bookmarks.close();
             held.autofetch.close();
             held.git.close();
@@ -708,11 +686,11 @@ export function createServerContext(
         if (changed.includes('hpcHost')) built.live?.hostChanged();
         if (changed.includes('calendars') || changed.includes('calendarDir')) {
             context.calendarDir = local.calendarDir ?? defaultConnectDir('calendar');
-            calendar.setAccounts(local.calendars, context.calendarDir);
+            polled.calendar.setAccounts(local.calendars, context.calendarDir);
         }
         if (changed.includes('mail') || changed.includes('mailDir')) {
             context.mailDir = local.mailDir ?? defaultConnectDir('mail');
-            mail.setAccounts(local.mail, context.mailDir);
+            polled.mail.setAccounts(local.mail, context.mailDir);
         }
         wantedPort = next.port;
         if (wantedPort === local.port) lastRefusal = undefined;

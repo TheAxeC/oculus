@@ -93,7 +93,8 @@ describe('the page subscription', () => {
             'inbox',
             'usage',
             'feeds',
-            'audit'
+            'audit',
+            'processes'
         ]);
     });
 });

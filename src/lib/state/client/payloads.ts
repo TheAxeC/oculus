@@ -60,6 +60,17 @@ const hpcShape = unchangedAs<Payloads['hpc']>(
     })
 );
 
+const processesShape = unchangedAs<Payloads['processes']>(
+    z.object({
+        status: z.enum(['ok', 'failed']),
+        updated: z.string(),
+        rows: listShape,
+        agents: anyNumberShape,
+        projects: anyNumberShape,
+        error: z.string().optional()
+    })
+);
+
 const calendarShape = unchangedAs<Payloads['calendar']>(
     z.object({
         status: z.string(),
@@ -109,6 +120,7 @@ export const payloadShapes: { [K in keyof Payloads]: z.ZodType<Payloads[K]> } = 
     feeds: feedsShape,
     git: gitShape,
     hpc: hpcShape,
+    processes: processesShape,
     calendar: calendarShape,
     inbox: inboxShape,
     usage: usageShape,

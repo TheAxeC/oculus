@@ -41,6 +41,8 @@ export class Hub {
     #latest = new Map<string, Message>();
     #subscribers = new Map<Sink, Subscriber>();
     #merges = new Map<string, Merge>();
+    /** The callbacks per channel for the change from no subscriber to one. */
+    #firstListeners = new Map<string, Set<() => void>>();
 
     /** The channel's version: 0 before anything is published on it. */
     version(channel: string): number {
@@ -65,6 +67,29 @@ export class Hub {
         return this.#subscribers.size;
     }
 
+    /** Whether at least one sink is subscribed to the channel. */
+    hasSubscriber(channel: string): boolean {
+        for (const subscriber of this.#subscribers.values()) {
+            if (subscriber.channels.has(channel)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Call a function each time the channel goes from no subscriber to one: once at that change,
+     * not for a second sink and not for a repeated subscribe message of a sink that already holds
+     * the channel. It runs after the first subscriber was sent the channel's current message.
+     * Returns the function that takes the listener off.
+     */
+    onFirstSubscriber(channel: string, listener: () => void): () => void {
+        const listeners = this.#firstListeners.get(channel) ?? new Set<() => void>();
+        listeners.add(listener);
+        this.#firstListeners.set(channel, listeners);
+        return () => {
+            listeners.delete(listener);
+        };
+    }
+
     /**
      * Add channels to a sink's subscription and send it the current message of each named channel
      * that has one. A sink that subscribes twice keeps the channels of both calls.
@@ -80,11 +105,25 @@ export class Hub {
             subscriber = { channels: new Set(), sending: false, pending: new Map() };
             this.#subscribers.set(sink, subscriber);
         }
+        const gained = [...new Set(channels)].filter((channel) => !this.hasSubscriber(channel));
         for (const channel of channels) subscriber.channels.add(channel);
-        if (!replay) return;
-        for (const channel of channels) {
-            const message = this.#latest.get(channel);
-            if (message !== undefined) this.#deliver(sink, subscriber, message);
+        if (replay) {
+            for (const channel of channels) {
+                const message = this.#latest.get(channel);
+                if (message !== undefined) this.#deliver(sink, subscriber, message);
+            }
+        }
+        for (const channel of gained) this.#announceFirst(channel);
+    }
+
+    #announceFirst(channel: string): void {
+        for (const listener of [...(this.#firstListeners.get(channel) ?? [])]) {
+            try {
+                listener();
+            } catch (error) {
+                const reason = error instanceof Error ? error.message : String(error);
+                console.error(`socket: first subscriber of ${channel} failed: ${reason}`);
+            }
         }
     }
 

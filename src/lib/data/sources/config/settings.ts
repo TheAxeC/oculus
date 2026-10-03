@@ -1,10 +1,14 @@
 // Layer 1, data. The typed readers of single settings out of the merged map: the cluster, the
-// calendar, the search, the open list, the mail, the change log's length and the usage tiers. Each
-// reads its block and falls back to the default the config file carries.
+// calendar, the search, the open list, the mail, the change log's length, the usage tiers and the
+// Processes view's program names. Each reads its block and falls back to the default the config
+// file carries.
 
 import { z } from 'zod';
 import { programApps, type ProgramApps } from '../../helpers/files/opens-in-program.ts';
+import { byKey } from '../../helpers/guards.ts';
+import type { Finding } from '../../model/index.ts';
 import { mapShape, readAs, unchangedAs, valuesOfShape } from '../../shapes/shapes.ts';
+import { catalogOf } from './catalog/options.ts';
 
 /** A text, empty or not. */
 const labelShape = z.string();
@@ -53,6 +57,9 @@ const flagShape = z.boolean();
  * was given.
  */
 const tiersShape = unchangedAs<Record<string, string>>(valuesOfShape(labelShape));
+
+/** A program name: a text with something in it and no slash and no white space. */
+const programNameShape = z.string().regex(/^[^/\s]+$/);
 
 /** The block `name` of the merged map, or a throw saying it must be a map. */
 function blockOf(config: Record<string, unknown>, name: string): Record<string, unknown> {
@@ -205,4 +212,57 @@ export function usageTiers(config: Record<string, unknown>): Record<string, stri
         throw new Error(`config/behavior.yml: usage_tiers.${refused[0]} must be a string`);
     }
     return tiersShape.parse(held);
+}
+
+/** The Processes view's settings of config/behavior.yml. */
+export type ProcessesSettings = {
+    /** The program names the view lists, each once, in the order the file first names it. */
+    patterns: string[];
+};
+
+/**
+ * The list of program names the options catalog holds as the default of `processes.patterns`, or
+ * undefined when the merged map carries no such default.
+ */
+function defaultPatterns(config: Record<string, unknown>): unknown {
+    const entries = byKey(catalogOf(config), 'behavior.yml');
+    return entries === undefined ? undefined : byKey(entries, 'processes.patterns')?.default;
+}
+
+/** The part of a finding that says which file and key it is about. */
+export type FindingAt = Pick<Finding, 'file' | 'key'>;
+
+/**
+ * Whether the merge dropped config/behavior.yml: it raised a finding about the whole file, which
+ * leaves the merged map without any of the file's keys.
+ */
+function behaviorDropped(findings: readonly FindingAt[]): boolean {
+    return findings.some(
+        (finding) => finding.key === '' && /(^|[\\/])behavior\.yml$/.test(finding.file)
+    );
+}
+
+/**
+ * Read `processes:` with its one key, or throw naming what is wrong. Without a `processes:` block
+ * in a behavior.yml the merge read, the list is the default the options catalog holds; when the
+ * merge dropped the file the block is missing for that reason, and the read refuses so the list in
+ * force is kept. An empty list is accepted and lists oculus's own processes only.
+ */
+export function processesSettings(
+    config: Record<string, unknown>,
+    findings: readonly FindingAt[]
+): ProcessesSettings {
+    const fallback =
+        config.processes === undefined && !behaviorDropped(findings)
+            ? defaultPatterns(config)
+            : undefined;
+    const block = fallback === undefined ? blockOf(config, 'processes') : { patterns: fallback };
+    const names = settingOf(
+        z.array(programNameShape),
+        block,
+        'processes',
+        'patterns',
+        'a list of program names, each without a slash or a space'
+    );
+    return { patterns: [...new Set(names)] };
 }

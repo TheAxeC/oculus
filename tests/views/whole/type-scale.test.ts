@@ -79,8 +79,10 @@ const VIEWS: Record<string, string> = {
         '.period=fs-md | footer=fs-sm | .grid :global(.ec)=fs-sm | .grid :global(.ec-event), .grid :global(.ec-day-foot), .grid :global(.ec-list .ec-event), .grid :global(.ec-list .ec-event-title)=fs-sm',
     'shared/accounts/AccountList.svelte': 'li=fs-md | .provider, .when, .hint=fs-sm | .said=fs-sm',
     'shared/accounts/ConnectorHead.svelte': '.meta=fs-sm',
-    'system/hpc/Hpc.svelte': 'footer=fs-sm',
-    'system/usage/Usage.svelte':
+    'system/machine/hpc/Hpc.svelte': 'footer=fs-sm',
+    'system/machine/processes/Processes.svelte': 'footer=fs-sm',
+    'system/machine/processes/ProcessTable.svelte': 'thead th=fs-xs',
+    'system/machine/usage/Usage.svelte':
         '.window-name=fs-xs | .refresher=fs-sm | .live h3, .history h2=fs-xs | .live-row=fs-md | .session=fs-sm',
     'feeds/inbox/Inbox.svelte': '.group h3=fs-xs',
     'feeds/leads/Leads.svelte': '.runlog=fs-sm',
@@ -135,13 +137,13 @@ const VIEWS: Record<string, string> = {
     'boards/focus/lanes/LaneHead.svelte': '.lane-title=fs-xs | .count=fs-xs',
     'boards/focus/QuickAdd.svelte': '.lbl=fs-xs',
     'boards/focus/Tasks.svelte': '.head > b=fs-md | .lbl=fs-xs',
-    'system/hpc/Capacity.svelte':
+    'system/machine/hpc/Capacity.svelte':
         '.name=fs-md | .count=fs-sm | summary=fs-sm | summary.title=fs-xs',
-    'system/hpc/Head.svelte': '.meta=fs-sm',
-    'system/hpc/Jobs.svelte': '',
-    'system/hpc/Log.svelte': 'header=fs-sm | pre=fs-sm',
-    'system/hpc/Quota.svelte': 'h3=fs-xs',
-    'system/hpc/Recent.svelte': 'summary=fs-xs',
+    'system/machine/hpc/Head.svelte': '.meta=fs-sm',
+    'system/machine/hpc/Jobs.svelte': '',
+    'system/machine/hpc/Log.svelte': 'header=fs-sm | pre=fs-sm',
+    'system/machine/hpc/Quota.svelte': 'h3=fs-xs',
+    'system/machine/hpc/Recent.svelte': 'summary=fs-xs',
     'shared/accounts/AddAccount.svelte': '.said=fs-sm | .waiting=fs-sm',
     'shared/accounts/NoAccounts.svelte': '',
     'shared/accounts/RemoveAccount.svelte': '',

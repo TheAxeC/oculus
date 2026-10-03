@@ -14,6 +14,7 @@ import { describe, expect, vi } from 'vitest';
 import {
     isSessionId,
     listArgs,
+    listPanes,
     listTerminals,
     parseTerminal,
     resizeArgs,
@@ -158,6 +159,30 @@ it.skipIf(!TMUX)('starts, lists, feeds, resizes, captures and stops a terminal',
 
     await stopTerminal(started.id, options);
     expect(await listTerminals(options)).toEqual([]);
+});
+
+it.skipIf(!TMUX)('lists the pane process of a terminal and of a hidden usage session', async () => {
+    const started = await startTerminal(
+        { kind: 'shell', cwd: dir, cols: 80, rows: 24 },
+        { ...options, command: 'cat' }
+    );
+    await run(
+        ['new-session', '-d', '-s', 'oculus-usage-probe', '-x', '80', '-y', '24', 'cat'],
+        options
+    );
+    try {
+        const panes = await listPanes(options);
+        expect(panes).toContainEqual({
+            session: sessionName(started.id),
+            terminal: started.id,
+            usage: false,
+            pid: started.pid
+        });
+        expect(panes.filter((pane) => pane.usage).map((pane) => pane.terminal)).toEqual([null]);
+    } finally {
+        await stopTerminal(started.id, options);
+        await run(['kill-session', '-t', 'oculus-usage-probe'], options);
+    }
 });
 
 it.skipIf(!TMUX)('refuses a cwd that is not an absolute existing directory', async () => {

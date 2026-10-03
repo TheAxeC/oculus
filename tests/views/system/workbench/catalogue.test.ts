@@ -57,7 +57,7 @@ describe('the Views catalogue', () => {
         expect(sessions).toMatch(/class="chord[^"]*">m</);
     });
 
-    it('draws a key beside every entry of every group, System y1 to y6 and Help h1 to h5', () => {
+    it('draws a key beside every entry of every group, System y1 to y7 and Help h1 to h5', () => {
         const body = draw();
         const focus = body.slice(body.indexOf('data-view="focus"'));
         expect(focus).toMatch(/class="key[^"]*"[^>]*>f1</);
@@ -73,7 +73,7 @@ describe('the Views catalogue', () => {
             expect([found[1], keys.length]).toEqual([found[1], entries]);
             keysOf.set(found[1], keys);
         });
-        expect(keysOf.get('System')).toEqual(['y1', 'y2', 'y3', 'y4', 'y5', 'y6']);
+        expect(keysOf.get('System')).toEqual(['y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7']);
         expect(keysOf.get('Help')).toEqual(['h1', 'h2', 'h3', 'h4', 'h5']);
     });
 

@@ -19,6 +19,7 @@ import type {
     HpcPayload,
     InboxPayload,
     Message,
+    ProcessesPayload,
     SessionsPayload,
     Snapshot,
     UsagePayload
@@ -32,6 +33,7 @@ export type Payloads = {
     feeds: FeedsPayload;
     git: GitPayload;
     hpc: HpcPayload;
+    processes: ProcessesPayload;
     calendar: CalendarPayload;
     inbox: InboxPayload;
     usage: UsagePayload;
@@ -59,6 +61,7 @@ export type EntitiesStore = {
     feeds: () => FeedsPayload | null;
     git: () => GitPayload | null;
     hpc: () => HpcPayload | null;
+    processes: () => ProcessesPayload | null;
     calendar: () => CalendarPayload | null;
     inbox: () => InboxPayload | null;
     usage: () => UsagePayload | null;

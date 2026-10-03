@@ -14,7 +14,7 @@
 src/lib/data/sources/config/merge.ts src/lib/server/transcripts/stores.ts 6ba7db2c1596 the same 10 lines at 81 and 51, to fold into one place
 src/lib/server/edit/entry-edit/lines.ts src/lib/server/edit/yaml-edit.ts 22e246596d51 the same 9 lines at 107 and 317, to fold into one place
 src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts 1910d33ebbe8 the same 27 lines at 99 and 20, to fold into one place
-src/lib/server/machine/hpc/parse.ts src/lib/state/system/hpc.ts 8ead1c0cdafe the same 7 lines at 25 and 20, to fold into one place
+src/lib/server/machine/hpc/parse.ts src/lib/state/system/machine/hpc.ts 8ead1c0cdafe the same 7 lines at 25 and 20, to fold into one place
 src/lib/state/feeds/leads.ts src/lib/state/feeds/radar.ts c0785dd03b7f the same 12 lines at 145 and 82, to fold into one place
 src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/instances.ts d3d8defb0911 the same 8 lines at 80 and 45, to fold into one place
 src/lib/state/workbench/layout.svelte.ts src/lib/state/workbench/layout/instances.ts f126c1015ffd the same 9 lines at 119 and 52, to fold into one place
@@ -105,7 +105,7 @@ tests/state/client/writes.test.ts tests/state/workbench/navigation/notice-source
 tests/state/feeds/feeds.test.ts tests/state/forms/schema.test.ts ef0d21093748 the same 18 lines at 99 and 132, to fold into one place
 tests/state/feeds/feeds.test.ts tests/views/boards/editor.test.ts 31fc27de1c1f the same 22 lines at 95 and 93, to fold into one place
 tests/state/forms/schema.test.ts tests/views/boards/editor.test.ts 7a490278351a the same 13 lines at 76 and 76, to fold into one place
-tests/state/sessions/terminals.test.ts tests/state/system/hpc.test.ts f86fb737d860 the same 11 lines at 137 and 35, to fold into one place
+tests/state/sessions/terminals.test.ts tests/state/system/machine/hpc.test.ts f86fb737d860 the same 11 lines at 137 and 35, to fold into one place
 tests/state/sources/explorer/explorer.test.ts tests/state/sources/fs/fs-shape.test.ts 20171008d2f9 the same 9 lines at 44 and 41, to fold into one place
 tests/state/sources/search.test.ts tests/views/sources/search.test.ts 29fce2fb85d5 the same 10 lines at 38 and 51, to fold into one place
 tests/state/workbench/layout/layout-close.test.ts tests/state/workbench/layout/open/preview.test.ts 575b1e88cd84 the same 9 lines at 100 and 108, to fold into one place
@@ -131,4 +131,3 @@ tests/views/sources/data.test.ts tests/views/sources/venues.test.ts 00a4e28009a2
 tests/views/sources/data.test.ts tests/views/sources/venues.test.ts 38bae11dc04c the same 16 lines at 50 and 52, to fold into one place
 tests/views/system/config.test.ts tests/views/system/history.test.ts e8031d1c8053 the same 10 lines at 31 and 25, to fold into one place
 tests/views/system/config.test.ts tests/views/whole/chips.test.ts e8031d1c8053 the same 10 lines at 31 and 32, to fold into one place
-tests/views/system/status.test.ts tests/views/system/usage.test.ts 4de31adc431f the same 9 lines at 24 and 25, to fold into one place

@@ -79,6 +79,10 @@ slurm:
   quota_min: 60
   prewarm: true
 
+# The Processes view lists the local processes whose program is one of these names, beside oculus's own terminals.
+processes:
+  patterns: [python3, codex, claude, node, latexmk]
+
 chat:
   model: "opus"
 

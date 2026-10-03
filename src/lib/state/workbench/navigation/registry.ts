@@ -18,7 +18,7 @@ import type { Instance, ViewId } from '../layout/index.ts';
 import type { LayoutStore } from '../layout.svelte.ts';
 import type { BadgeCell, RailBadgesStore } from '../rail-badges.svelte.ts';
 import type { CalendarStore } from '../../life/calendar.svelte.ts';
-import type { HpcStore } from '../../system/hpc.svelte.ts';
+import type { HpcStore } from '../../system/machine/hpc.svelte.ts';
 import { lookup, t } from '../../shared/words/text.ts';
 
 /**

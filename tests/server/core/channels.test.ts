@@ -1,6 +1,6 @@
 // The channel protocol, with sinks the test drives by hand and no socket anywhere.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import type { Sink } from '../../../src/lib/server/core/channels.ts';
 import type { Message } from '../../../src/lib/data/model/index.ts';
@@ -166,5 +166,113 @@ describe('Hub.remove', () => {
 
         expect(client.got.map((message) => message.payload)).toEqual(['before']);
         expect(hub.size).toBe(0);
+    });
+});
+
+describe('Hub.hasSubscriber', () => {
+    it('is false before anyone subscribes, true while a sink holds the channel, false after it is removed', () => {
+        const hub = new Hub();
+        const client = recorder();
+        expect(hub.hasSubscriber('processes')).toBe(false);
+
+        hub.subscribe(client.sink, ['processes', 'config']);
+        expect(hub.hasSubscriber('processes')).toBe(true);
+        expect(hub.hasSubscriber('config')).toBe(true);
+        expect(hub.hasSubscriber('hpc')).toBe(false);
+
+        hub.remove(client.sink);
+        expect(hub.hasSubscriber('processes')).toBe(false);
+    });
+
+    it('stays true while a second sink holds the channel after the first is removed', () => {
+        const hub = new Hub();
+        const first = recorder();
+        const second = recorder();
+        hub.subscribe(first.sink, ['processes']);
+        hub.subscribe(second.sink, ['processes']);
+        hub.remove(first.sink);
+        expect(hub.hasSubscriber('processes')).toBe(true);
+        hub.remove(second.sink);
+        expect(hub.hasSubscriber('processes')).toBe(false);
+    });
+});
+
+describe('Hub.onFirstSubscriber', () => {
+    it('runs once when a channel gains its first subscriber, and not for a second sink or a repeated subscribe', () => {
+        const hub = new Hub();
+        const calls: string[] = [];
+        hub.onFirstSubscriber('processes', () => calls.push('processes'));
+        const first = recorder();
+        const second = recorder();
+
+        hub.subscribe(first.sink, ['config']);
+        expect(calls).toEqual([]);
+        hub.subscribe(first.sink, ['processes']);
+        expect(calls).toEqual(['processes']);
+        hub.subscribe(first.sink, ['processes', 'config']);
+        hub.subscribe(second.sink, ['processes']);
+        expect(calls).toEqual(['processes']);
+    });
+
+    it('runs again when the channel goes from no subscriber to one a second time', () => {
+        const hub = new Hub();
+        let calls = 0;
+        hub.onFirstSubscriber('processes', () => (calls += 1));
+        const client = recorder();
+        hub.subscribe(client.sink, ['processes']);
+        hub.remove(client.sink);
+        hub.subscribe(client.sink, ['processes']);
+        expect(calls).toBe(2);
+    });
+
+    it('runs when the first of two channels named in one subscribe has no holder, and for no other channel', () => {
+        const hub = new Hub();
+        const calls: string[] = [];
+        hub.onFirstSubscriber('processes', () => calls.push('processes'));
+        hub.onFirstSubscriber('hpc', () => calls.push('hpc'));
+        hub.subscribe(recorder().sink, ['hpc', 'processes']);
+        expect(calls).toEqual(['hpc', 'processes']);
+    });
+
+    it('stops calling a listener that was taken off', () => {
+        const hub = new Hub();
+        let calls = 0;
+        const off = hub.onFirstSubscriber('processes', () => (calls += 1));
+        off();
+        hub.subscribe(recorder().sink, ['processes']);
+        expect(calls).toBe(0);
+    });
+
+    it('sends the first subscriber the current message of the channel before it calls the listener', async () => {
+        const hub = new Hub();
+        hub.publish('processes', { rows: [] });
+        const client = recorder();
+        const sentWhenCalled: number[] = [];
+        hub.onFirstSubscriber('processes', () => sentWhenCalled.push(client.got.length));
+        hub.subscribe(client.sink, ['processes']);
+        await settle();
+        expect(sentWhenCalled).toEqual([1]);
+        expect(client.got.map((message) => message.channel)).toEqual(['processes']);
+    });
+
+    it('keeps subscribing and calls the other listeners when one listener throws, and says so on stderr', () => {
+        const hub = new Hub();
+        const said = vi.spyOn(console, 'error').mockImplementation(noop);
+        try {
+            const calls: string[] = [];
+            hub.onFirstSubscriber('processes', () => {
+                throw new Error('the watcher broke');
+            });
+            hub.onFirstSubscriber('processes', () => calls.push('second'));
+            const client = recorder();
+            hub.subscribe(client.sink, ['processes']);
+            expect(calls).toEqual(['second']);
+            expect(hub.hasSubscriber('processes')).toBe(true);
+            expect(said).toHaveBeenCalledExactlyOnceWith(
+                'socket: first subscriber of processes failed: the watcher broke'
+            );
+        } finally {
+            said.mockRestore();
+        }
     });
 });

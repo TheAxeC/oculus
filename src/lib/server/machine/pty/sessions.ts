@@ -1,7 +1,9 @@
-// Layer 2, server. The terminals as records: what `tmux list-sessions` says, and the commands that
-// start, resize, stop, capture, steer and interrupt one. DESIGN.md's "PTY" puts a session inside
-// tmux so it outlives the server; the `oculus-` prefix is all that tells a session oculus
-// started from one Axel started in a terminal window, and the kind is the suffix of the same name.
+// Layer 2, server. The terminals as records: what `tmux list-sessions` says, the pane process of
+// every oculus session (`tmux list-panes`, which the Processes view walks down from), and the
+// commands that start, resize, stop, capture, steer and interrupt one. DESIGN.md's "PTY" puts a
+// session inside tmux so it outlives the server; the `oculus-` prefix is all that tells a session
+// oculus started from one Axel started in a terminal window, and the kind is the suffix of the same
+// name.
 //
 // Nothing the page sends is read by a shell on its way to tmux. A cwd is checked to be an absolute
 // existing directory, the geometry a small positive integer, and the id the shape start() gives
@@ -321,6 +323,53 @@ export function serverPid(text: string): number | null {
 export async function listTerminals(options: RunOptions = {}): Promise<Terminal[]> {
     try {
         return parseTerminals(await (options.run ?? run)(listArgs(), options));
+    } catch {
+        return [];
+    }
+}
+
+/** The pane process of one pane of an oculus session. */
+export type Pane = {
+    session: string;
+    /** The terminal id of a terminal session; null for a hidden usage session. */
+    terminal: string | null;
+    /** True for a hidden usage session. */
+    usage: boolean;
+    pid: number;
+};
+
+/** The arguments of the pane list: every pane of every session, with its session and pane pid. */
+function paneArgs(): string[] {
+    return ['list-panes', '-a', '-F', '#{session_name} #{pane_pid}'];
+}
+
+/**
+ * The panes of the terminal sessions and of the hidden usage sessions, one per line of the list.
+ * A session that is neither (not oculus's, or named `oculus-` by hand with no terminal id) and a
+ * line with no whole positive pid are left out.
+ */
+function parsePanes(text: string): Pane[] {
+    const panes: Pane[] = [];
+    for (const line of text.split('\n')) {
+        const cut = line.lastIndexOf(' ');
+        const field = line.slice(cut + 1);
+        if (cut < 0 || !/^\d+$/.test(field) || Number(field) === 0) continue;
+        const session = line.slice(0, cut);
+        const pid = Number(field);
+        if (session.startsWith(USAGE_PREFIX)) {
+            panes.push({ session, terminal: null, usage: true, pid });
+            continue;
+        }
+        const id = terminalId(session);
+        if (isTerminalId(id)) panes.push({ session, terminal: id, usage: false, pid });
+    }
+    return panes;
+}
+
+/** Every pane of every terminal and usage session; none when tmux is not running. */
+export async function listPanes(options: RunOptions = {}): Promise<Pane[]> {
+    try {
+        return parsePanes(await (options.run ?? run)(paneArgs(), options));
     } catch {
         return [];
     }

@@ -102,6 +102,7 @@ glyphs:
   collab: "><"
   agents: "[R]"
   hpc: "[:]"
+  processes: "(p)"
   terminal: "[>]"
   detail: "[i]"
   compass: "[F]"

@@ -54,7 +54,8 @@ import {
     patchedFilesView,
     type FilesForms
 } from '../sources/fs.ts';
-import { createHpc, type HpcStore } from '../system/hpc.svelte.ts';
+import { createHpc, type HpcStore } from '../system/machine/hpc.svelte.ts';
+import { createProcesses, type ProcessesStore } from '../system/machine/processes.svelte.ts';
 import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
 import { tabsOf } from '../workbench/layout/instance.ts';
 import { paneAt } from '../workbench/layout/index.ts';
@@ -83,11 +84,18 @@ import { createSearch, type SearchStore } from '../sources/search.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
 import { createSource, type SourceStore } from '../sessions/source.svelte.ts';
-import { createTerminals, type TerminalsStore } from '../sessions/terminals.svelte.ts';
+import {
+    createTerminals,
+    terminalLabel,
+    type TerminalsStore
+} from '../sessions/terminals.svelte.ts';
 import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
 import { createTranscripts, type TranscriptsStore } from '../sessions/transcript.svelte.ts';
 import { createUi, type UiStore } from '../workbench/ui.svelte.ts';
-import { createUsageRefresh, type UsageRefreshStore } from '../system/usage-refresh.svelte.ts';
+import {
+    createUsageRefresh,
+    type UsageRefreshStore
+} from '../system/machine/usage-refresh.svelte.ts';
 import { createQueries } from './queries.svelte.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { createWrites, type WritesStore } from './writes.svelte.ts';
@@ -129,6 +137,7 @@ export type ClientState = {
     manifestDraft: ManifestDraftStore;
     feeds: FeedsStore;
     hpc: HpcStore;
+    processes: ProcessesStore;
     calendar: CalendarStore;
     inbox: InboxStore;
     /** The Calendar's and the Inbox's accounts, and the account setup page. */
@@ -310,6 +319,11 @@ export function createClientState(): ClientState {
     ui.registerUnsaved(formDrafts.formsDirty);
     const feeds = createFeeds(entities);
     const hpc = createHpc(entities, writes);
+    const processes = createProcesses(entities, {
+        terminalById: terminals.terminalById,
+        label: terminalLabel,
+        endTerminals: terminals.endTerminals
+    });
     const calendar = createCalendar(entities, writes, clock);
     const inbox = createInbox(entities, writes);
     const accounts = createAccounts(entities, writes, (view) => void layout.openView(view));
@@ -414,6 +428,7 @@ export function createClientState(): ClientState {
         manifestDraft,
         feeds,
         hpc,
+        processes,
         calendar,
         inbox,
         accounts,

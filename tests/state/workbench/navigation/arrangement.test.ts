@@ -286,7 +286,7 @@ describe('the shipped pages', () => {
             pillars: [['pillars', 'domains', 'map']],
             references: [['venues', 'data', 'code', 'statements']],
             present: [['present']],
-            info: [['status', 'findings', 'audit', 'history', 'config', 'gallery']],
+            info: [['status', 'findings', 'audit', 'history', 'config', 'gallery', 'processes']],
             help: [
                 ['help', 'doc:docs/HPC-UTwente-howto.md'],
                 ['doc:docs/RESEARCH-APPROACH.md', 'doc:docs/AGENT-APPROACH.md', 'memories']
@@ -316,7 +316,7 @@ describe('the shipped pages', () => {
         const seen = [...onPages, ...onFloats];
         const pagesOf = (tab: string): string[] =>
             seen.filter((one) => one.tab === tab).map((one) => one.page);
-        expect(wanted).toHaveLength(51);
+        expect(wanted).toHaveLength(52);
         expect(wanted.filter((tab) => pagesOf(tab).length !== 1)).toEqual(['files']);
         // The one entry on two pages is the Files view: Explorer's own and the Sessions page's
         // tab that follows the selected session.

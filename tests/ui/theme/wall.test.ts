@@ -161,7 +161,7 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which segment the pointer is on',
     'src/lib/ui/tree/TreeItem.svelte .item:not(.muted, .warn, .error):hover':
         'a hover response, saying which row the pointer is on',
-    'src/lib/views/system/hpc/Capacity.svelte .bar':
+    'src/lib/views/system/machine/hpc/Capacity.svelte .bar':
         'a track, read as the proportion of it the fill covers',
     'src/lib/views/system/workbench/settings/Item.svelte .item:hover, .item:focus-within':
         'a hover response, saying which setting the pointer or the focus is on',

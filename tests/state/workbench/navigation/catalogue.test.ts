@@ -239,7 +239,8 @@ describe('the catalogue of the real config', () => {
             'audit',
             'history',
             'config',
-            'gallery'
+            'gallery',
+            'processes'
         ]);
         expect(system?.docs).toEqual([]);
         const help = sections.find((found) => found.label === 'Help');
@@ -315,7 +316,7 @@ describe('the catalogue of the real config', () => {
             l: ['pillars', 'domains', 'map'],
             r: ['venues', 'data', 'code', 'statements'],
             t: ['present'],
-            y: ['status', 'findings', 'audit', 'history', 'config', 'gallery'],
+            y: ['status', 'findings', 'audit', 'history', 'config', 'gallery', 'processes'],
             h: [
                 'help',
                 'memories',
@@ -327,6 +328,7 @@ describe('the catalogue of the real config', () => {
         });
         expect(keyOf(order, 'calendar')).toBe('e5');
         expect(keyOf(order, 'account-setup')).toBe('w3');
+        expect(keyOf(order, 'processes')).toBe('y7');
     });
 });
 

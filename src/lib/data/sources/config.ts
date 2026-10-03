@@ -59,6 +59,8 @@ export {
     type FilesSettings,
     type MailSettings,
     type OpenSettings,
+    type FindingAt,
+    type ProcessesSettings,
     type SearchSettings,
     type SlurmSettings,
     CADENCE_WORDS,
@@ -69,6 +71,7 @@ export {
     filesSettings,
     mailSettings,
     openSettings,
+    processesSettings,
     searchSettings,
     slurmSettings,
     usageTiers

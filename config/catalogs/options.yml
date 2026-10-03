@@ -247,6 +247,10 @@ options:
             description: Whether the poller resolves the log paths of finished jobs behind the page, so that opening a log is quick. false defers that resolution.
             default: true
             control: toggle
+        processes.patterns:
+            description: The program names the Processes view lists beside oculus's own terminals. A name matches a process whose program, or whose first argument, has that file name. A list that is not names is refused. A change the server refuses while it runs keeps the list in force and is logged.
+            default: [python3, codex, claude, node, latexmk]
+            control: list
         chat.model:
             description: The model an in-page chat session is started with, passed to the Claude command line. Empty leaves the choice to the command line.
             default: opus

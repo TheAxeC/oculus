@@ -90,7 +90,7 @@ arrangements:
   present:
     root: { kind: pane, view: present }
   info:
-    root: { kind: pane, view: [status, findings, audit, history, config, gallery] }
+    root: { kind: pane, view: [status, findings, audit, history, config, gallery, processes] }
   help:
     root:
       kind: split

@@ -34,6 +34,7 @@ const STORES: (keyof ClientState)[] = [
     'manifestDraft',
     'feeds',
     'hpc',
+    'processes',
     'calendar',
     'accounts',
     'inbox',

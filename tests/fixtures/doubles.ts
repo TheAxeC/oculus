@@ -1,9 +1,11 @@
 // Layer 4, test helper. The inert callbacks a case hands to a component, a fixture or a double when
-// it asserts nothing about the call, the write request a page sends, and the entries of a
-// hand-built folder listing. They exist once here so a case says "nothing happens on this
-// callback" in one word rather than writing an empty function at every prop, every route test
-// posts the same page request, and every listing is built from the same two entries.
+// it asserts nothing about the call, the write request a page sends, the entries of a hand-built
+// folder listing, and the child process a case drives in place of `ps`. They exist once here so a
+// case says "nothing happens on this callback" in one word rather than writing an empty function at
+// every prop, every route test posts the same page request, every listing is built from the same
+// two entries, and every test of the process table drives the same child.
 
+import { EventEmitter } from 'node:events';
 import type { FsEntry } from '../../src/lib/state/sources/fs.ts';
 
 /** A callback whose call the case does not read. */
@@ -33,4 +35,31 @@ export function file(name: string): FsEntry {
 /** A folder as a folder listing holds it. */
 export function dir(name: string): FsEntry {
     return { name, kind: 'dir', size: 0, mtime: 1 };
+}
+
+/**
+ * A child process the case drives: it writes to its standard output, ends with a status or a
+ * signal, and records the signal it was killed with.
+ */
+export class ChildDouble extends EventEmitter {
+    readonly stdout = new EventEmitter() as EventEmitter & { setEncoding: (value: 'utf8') => void };
+    readonly kills: string[] = [];
+
+    constructor() {
+        super();
+        this.stdout.setEncoding = () => undefined;
+    }
+
+    kill(signal: 'SIGKILL'): boolean {
+        this.kills.push(signal);
+        return true;
+    }
+
+    write(text: string): void {
+        this.stdout.emit('data', text);
+    }
+
+    end(code: number | null, signal: string | null = null): void {
+        this.emit('close', code, signal);
+    }
 }

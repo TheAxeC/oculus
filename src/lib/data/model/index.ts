@@ -496,3 +496,4 @@ export type {
 } from './model-agents.ts';
 
 export type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from './model-search.ts';
+export type { ProcessesPayload, ProcessRow } from './model-processes.ts';

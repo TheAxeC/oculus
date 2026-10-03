@@ -4,12 +4,22 @@
 
 import { render } from 'svelte/server';
 import { vi } from 'vitest';
+import type { Terminal } from '../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../src/lib/state/client/context.ts';
 import { STATE_KEY } from '../../src/lib/state/client/use.ts';
 import { TIP_KEY, createTipIds } from '../../src/lib/ui/menu/tip-ids.ts';
 import GroupContexts from '../ui/menu/GroupContexts.svelte';
 
 export { createClientState, type ClientState };
+
+/** Hands the client a `sessions` payload that holds these terminals and no session records. */
+export function holdTerminals(client: ClientState, terminals: Terminal[]): void {
+    client.entities.receive({
+        channel: 'sessions',
+        version: 1,
+        payload: { records: [], workspaces: [], terminals }
+    });
+}
 
 /**
  * The contexts the page's one tooltip group gives what it wraps, drawn fresh for each caller: every

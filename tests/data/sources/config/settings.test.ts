@@ -1,14 +1,17 @@
 // The typed readers of single settings out of the merged map (slurm, calendar, search, open, mail,
-// the change log's length and the usage tiers) over keys of every wrong shape. Each case names the
-// value the reader answers or the sentence it throws, and the order in which two wrong keys are
-// refused.
+// the change log's length, the usage tiers and the Processes view's program names) over keys of
+// every wrong shape. Each case names the value the reader answers or the sentence it throws, and
+// the order in which two wrong keys are refused.
 
 import { describe, expect, it } from 'vitest';
 import {
     calendarSettings,
     changesKeep,
+    engineDir,
+    loadConfig,
     mailSettings,
     openSettings,
+    processesSettings,
     searchSettings,
     slurmSettings,
     usageTiers
@@ -265,5 +268,116 @@ describe('usageTiers', () => {
     it('answers the map it was given', () => {
         const tiers = { max5: 'Max 5x', pro: 'Pro' };
         expect(usageTiers({ usage_tiers: tiers })).toBe(tiers);
+    });
+});
+
+describe('processesSettings', () => {
+    const WORDS = 'a list of program names, each without a slash or a space';
+    const read = (processes: unknown) => outcome(() => processesSettings({ processes }, []));
+    const catalog = (list: unknown) => ({
+        options: { 'behavior.yml': { 'processes.patterns': { default: list } } }
+    });
+
+    it.each([[[]], ['x'], [null], [3]])('refuses a processes key of %j', (processes) => {
+        expect(read(processes)).toStrictEqual(threw('processes must be a map'));
+    });
+
+    it.each([
+        [{}],
+        [{ patterns: 'node' }],
+        [{ patterns: null }],
+        [{ patterns: {} }],
+        [{ patterns: [''] }],
+        [{ patterns: ['a/b'] }],
+        [{ patterns: ['a b'] }],
+        [{ patterns: ['a\tb'] }],
+        [{ patterns: [3] }],
+        [{ patterns: ['node', null] }],
+        [{ patterns: ['node', ''] }]
+    ])('refuses a processes block of %j', (processes) => {
+        expect(read(processes)).toStrictEqual(threw(`processes.patterns must be ${WORDS}`));
+    });
+
+    it('reads a list of names', () => {
+        expect(read({ patterns: ['python3', 'node'] })).toStrictEqual({
+            value: { patterns: ['python3', 'node'] }
+        });
+    });
+
+    it('reads a name twice listed once, in the order it first stands', () => {
+        expect(read({ patterns: ['node', 'claude', 'node'] })).toStrictEqual({
+            value: { patterns: ['node', 'claude'] }
+        });
+    });
+
+    it('accepts an empty list, which lists oculus own processes only', () => {
+        expect(read({ patterns: [] })).toStrictEqual({ value: { patterns: [] } });
+    });
+
+    it('reads the default list the options catalog holds when processes: is missing', () => {
+        expect(outcome(() => processesSettings(catalog(['python3', 'codex']), []))).toStrictEqual({
+            value: { patterns: ['python3', 'codex'] }
+        });
+    });
+
+    it('refuses a default the catalog holds that is not names', () => {
+        expect(outcome(() => processesSettings(catalog(['a/b']), []))).toStrictEqual(
+            threw(`processes.patterns must be ${WORDS}`)
+        );
+    });
+
+    it('refuses a missing processes: that the catalog holds no default for', () => {
+        expect(outcome(() => processesSettings({}, []))).toStrictEqual(
+            threw('processes must be a map')
+        );
+    });
+
+    describe('when the merge dropped config/behavior.yml', () => {
+        const dropped = { file: '/hub/config/behavior.yml', key: '' };
+
+        it('refuses the missing processes: instead of reading the catalog default', () => {
+            const outcomeOf = outcome(() =>
+                processesSettings(catalog(['python3', 'codex']), [dropped])
+            );
+            expect(outcomeOf).toStrictEqual(threw('processes must be a map'));
+        });
+
+        it('reads a processes: block the merge holds', () => {
+            expect(
+                outcome(() => processesSettings({ processes: { patterns: ['node'] } }, [dropped]))
+            ).toStrictEqual({ value: { patterns: ['node'] } });
+        });
+
+        it.each([
+            [{ file: '/hub/config/other.yml', key: '' }],
+            [{ file: '/hub/config/behavior.yml', key: 'processes.patterns' }],
+            [{ file: '/hub/config/not-behavior.yml', key: '' }]
+        ])('reads the catalog default for a finding of %j', (finding) => {
+            expect(
+                outcome(() => processesSettings(catalog(['python3', 'codex']), [finding]))
+            ).toStrictEqual({ value: { patterns: ['python3', 'codex'] } });
+        });
+    });
+
+    it('refuses the shipped configuration whose behavior.yml was saved unparseable, as the merge reports it', () => {
+        const saved = { name: 'behavior.yml', text: 'slurm: [unterminated' };
+        const { config, findings } = loadConfig(engineDir(), saved);
+        expect(config.processes).toBeUndefined();
+        expect(outcome(() => processesSettings(config, findings))).toStrictEqual(
+            threw('processes must be a map')
+        );
+        const { config: whole, findings: none } = loadConfig(engineDir());
+        const { processes: _removed, ...without } = whole;
+        expect(outcome(() => processesSettings(without, none))).toStrictEqual({
+            value: { patterns: ['python3', 'codex', 'claude', 'node', 'latexmk'] }
+        });
+    });
+
+    it('reads the shipped list from config/behavior.yml, which is the default its catalog entry holds', () => {
+        const { config } = loadConfig(engineDir());
+        const shipped = ['python3', 'codex', 'claude', 'node', 'latexmk'];
+        expect(processesSettings(config, [])).toStrictEqual({ patterns: shipped });
+        const { processes: _removed, ...without } = config;
+        expect(processesSettings(without, [])).toStrictEqual({ patterns: shipped });
     });
 });

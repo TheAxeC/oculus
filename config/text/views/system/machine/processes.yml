@@ -1,0 +1,32 @@
+# Oculus text owned by the processes view.
+text:
+    views:
+        processes: Processes
+        processes_glyph: processes
+    processes:
+        col_command: Command
+        col_cpu: CPU
+        col_folder: Folder
+        col_memory: Memory
+        col_parent: Parent
+        col_pid: PID
+        col_started: Started
+        col_user: User
+        empty: No process matches the patterns.
+        failed: 'The last read failed: {0}'
+        failed_cancelled: the read was stopped
+        failed_empty: the process table is empty
+        failed_other: the processes could not be read
+        failed_output: the output of ps could not be read
+        failed_start: ps could not be started
+        failed_status: ps ended with status {0}
+        failed_timeout: the process table did not answer within {0} seconds
+        head: '{0}, {1}'
+        head_agent_one: 1 agent running
+        head_agents: '{0} agents running'
+        head_project_one: 1 project in flight
+        head_projects: '{0} projects in flight'
+        read_at: Read at {0}
+        reading: Reading the processes...
+        stop: Stop
+        stop_question: "End the terminal '{0}' ({1}, pid {2})? Every process under it ends with it, including any started there by hand."

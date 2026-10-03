@@ -58,7 +58,7 @@ tests/views/system/history.test.ts :: says a value is back in part when the writ
 tests/views/system/history.test.ts :: says nothing happened for an answer that named no field, whatever its status | the case draws nothing and asserts over undoSaid({ ok: false, changed: [], error: 'refused' }, 'x')
 tests/views/system/history.test.ts :: says the value is back only when the endpoint named a field it wrote | the case draws nothing and asserts over undoSaid({ ok: true, changed: ['status.line'] }, 'alpha / st
 tests/views/system/history.test.ts :: shows a scalar whole and says how many things a list or a map holds | the case draws nothing and asserts over shown('a line')
-tests/views/system/hpc.test.ts :: lays the disk meters out in responsive columns | the case draws nothing and asserts over source
+tests/views/system/machine/hpc.test.ts :: lays the disk meters out in responsive columns | the case draws nothing and asserts over source
 tests/views/shared/prose/intro.test.ts :: takes a catalog line as it is written and puts a hub value through the sanitiser | the case draws nothing and asserts over source
 tests/views/shared/prose/intro.test.ts :: wraps its row at every width, so a control beside a long line is not cut off | the case draws nothing and asserts over intro.slice(0, intro.indexOf('}'))
 tests/views/structure/map-labels.test.ts :: counts boxes that only touch as apart | the case draws nothing and asserts over [...shownLabels(boxes, [], [])].sort()

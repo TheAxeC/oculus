@@ -18,8 +18,8 @@
     // the Update tray through the ui store.
     //
     // The right of the heading row holds the live HPC pill: the running and pending counts from
-    // state/system/hpc.svelte.ts, drawn only while the cluster answers and the queue is not empty,
-    // and a click on it opens the Live HPC view.
+    // state/system/machine/hpc.svelte.ts, drawn only while the cluster answers and the queue is
+    // not empty, and a click on it opens the Live HPC view.
 
     import type { TickerRow } from '$lib/ui/display/ticker-rows';
     import {

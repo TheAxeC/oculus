@@ -16,11 +16,14 @@ import { z } from 'zod';
 import {
     calendarSettings,
     mailSettings,
+    processesSettings,
     slurmSettings,
     textCatalog,
     usageTiers,
     type CalendarSettings,
+    type FindingAt,
     type MailSettings,
+    type ProcessesSettings,
     type SlurmSettings
 } from '../../data/sources/config.ts';
 import type { Id, Resource } from '../../data/model/index.ts';
@@ -46,6 +49,9 @@ export type LiveStart = {
     mail: MailSettings;
     refresh: { refreshMin: number; model: string };
     tiers: Record<string, string>;
+    processes: ProcessesSettings;
+    /** The text catalog the Processes view's failures are worded from. */
+    processesText: Record<string, string>;
     calendarWords: CalendarWords;
     mailWords: MailWords;
 };
@@ -60,12 +66,19 @@ export type LiveTargets = {
     mail: { setSettings(settings: MailSettings): void; setWords(words: MailWords): void };
     usageRefresh: { set(settings: { refreshMin: number; model: string }): void };
     usage: { setTiers(tiers: Record<string, string>): void };
+    processes: {
+        set(settings: ProcessesSettings): void;
+        setText(text: Record<string, string>): void;
+    };
 };
 
 /** The message of the `config` channel, narrowed to the one field this module reads. */
 const configMessageShape = z.object({
     channel: z.literal('config'),
-    payload: z.object({ config: z.unknown() })
+    payload: z.object({
+        config: z.unknown(),
+        findings: z.array(z.object({ file: z.string(), key: z.string() })).catch([])
+    })
 });
 
 const KEPT = 'the settings in force are kept';
@@ -136,7 +149,7 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
      * subscribed. The settings in force change only after the setter took them, so a push that
      * follows a throw offers them again.
      */
-    const take = (config: Record<string, unknown>): void => {
+    const take = (config: Record<string, unknown>, findings: readonly FindingAt[]): void => {
         attempt('slurm', () => {
             pushed = slurmSettings(config);
             handHpc();
@@ -168,6 +181,12 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
             targets.usage.setTiers(tiers);
             current.tiers = tiers;
         });
+        attempt('processes', () => {
+            const processes = processesSettings(config, findings);
+            if (isDeepStrictEqual(processes, current.processes)) return;
+            targets.processes.set(processes);
+            current.processes = processes;
+        });
         if (attempt('text', () => textCatalog(config)) === undefined) return;
         attempt('hpc.words', () => {
             const next = hostWordsOf(config);
@@ -188,6 +207,12 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
             textOf(textCatalog(config)['accounts.timed_out'], 'accounts.timed_out')
         );
         if (timedOut !== undefined) words.timedOut = timedOut;
+        attempt('processes.words', () => {
+            const text = textCatalog(config);
+            if (isDeepStrictEqual(text, current.processesText)) return;
+            targets.processes.setText(text);
+            current.processesText = text;
+        });
         attempt('calendar.words', () => {
             if (isDeepStrictEqual(words, current.calendarWords)) return;
             targets.calendar.setWords(words);
@@ -217,7 +242,7 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
             return;
         }
         said.delete('map');
-        take(config);
+        take(config, message.data.payload.findings);
     };
 
     const sink: Sink = {

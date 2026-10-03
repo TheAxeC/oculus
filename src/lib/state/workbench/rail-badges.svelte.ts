@@ -9,7 +9,7 @@ import type { EntitiesStore } from '../shared/stores/shapes.ts';
 import type { FeedsStore, FeedState } from '../feeds/feeds.svelte.ts';
 import type { AuditStore } from '../system/audit.svelte.ts';
 import type { CalendarStore } from '../life/calendar.svelte.ts';
-import type { HpcStore } from '../system/hpc.svelte.ts';
+import type { HpcStore } from '../system/machine/hpc.svelte.ts';
 import type { InboxStore } from '../feeds/inbox.svelte.ts';
 import { splitPosts } from '../feeds/linkedin.ts';
 import { t } from '../shared/words/text.ts';

@@ -127,6 +127,7 @@ describe("oculus's own config directory", () => {
             'audit_ignore',
             'calendar',
             'mail',
+            'processes',
             'stale_lag_days',
             'refresh_stale_days',
             'deadline_horizon_days',
@@ -270,9 +271,10 @@ describe("oculus's own config directory", () => {
         'views/system/gallery.yml',
         'views/system/help.yml',
         'views/system/history.yml',
-        'views/system/hpc.yml',
+        'views/system/machine/hpc.yml',
+        'views/system/machine/processes.yml',
+        'views/system/machine/usage.yml',
         'views/system/status.yml',
-        'views/system/usage.yml',
         'views/system/workbench.yml'
     ];
 
@@ -389,14 +391,9 @@ describe("oculus's own config directory", () => {
     it('reads one catalog file per owner and no legacy catalog file', () => {
         const { config } = loadConfig(engineDir());
         const dir = join(engineDir(), 'config', 'text');
-        const names = [
-            ...readdirSync(dir).filter((name) => name.endsWith('.yml')),
-            ...readdirSync(join(dir, 'views')).flatMap((group) =>
-                readdirSync(join(dir, 'views', group))
-                    .filter((name) => name.endsWith('.yml'))
-                    .map((name) => `views/${group}/${name}`)
-            )
-        ].sort();
+        const names = readdirSync(dir, { recursive: true, encoding: 'utf8' })
+            .filter((name) => name.endsWith('.yml'))
+            .sort();
         expect(names).toEqual(CATALOG_FILES);
         expect(existsSync(join(engineDir(), 'config', 'text.yml'))).toBe(false);
         expect(existsSync(join(engineDir(), 'config', 'text-oculus.yml'))).toBe(false);

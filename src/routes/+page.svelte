@@ -185,7 +185,8 @@
             'inbox',
             'usage',
             'feeds',
-            'audit'
+            'audit',
+            'processes'
         ]);
         takeCarried(localStorage, window, location.origin);
         loadUi(localStorage, window);

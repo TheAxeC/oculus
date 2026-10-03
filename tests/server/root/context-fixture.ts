@@ -158,6 +158,7 @@ export function inertConfig(
         open: { program_ext: { '.docx': 'com.microsoft.Word' } },
         mail: { poll_min: 10, per_signal: 25 },
         usage_tiers: {},
+        processes: { patterns: ['node'] },
         usage_refresh_min: 5,
         usage_refresh_model: 'model',
         text: {
@@ -197,7 +198,15 @@ export function inertHpc(host: string): Record<string, unknown> {
 export function inertDependencies(
     set: Partial<
         Record<
-            'hpc' | 'calendar' | 'calendarWords' | 'mail' | 'mailWords' | 'refresh' | 'tiers',
+            | 'hpc'
+            | 'calendar'
+            | 'calendarWords'
+            | 'mail'
+            | 'mailWords'
+            | 'refresh'
+            | 'tiers'
+            | 'processes'
+            | 'processesText',
             () => void
         >
     > = {}
@@ -239,6 +248,11 @@ export function inertDependencies(
         watchAutofetch: () => ({ close: noop }),
         watchBookmarks: () => ({ close: noop }),
         watchHpc: () => ({ refresh: noopAsync, set: set.hpc ?? noop, close: noop }),
+        watchProcesses: () => ({
+            set: set.processes ?? noop,
+            setText: set.processesText ?? noop,
+            close: noop
+        }),
         watchUsageRefresh: () => ({
             ready: Promise.resolve(),
             refresh: () => Promise.resolve(true),
