@@ -60,7 +60,8 @@ const hookBodyShape = z.object({
 /**
  * One hook body turned into the event the store keeps, or null when it does not carry a
  * hook_event_name this route knows or a session_id to key the store on. Pure over its two
- * arguments, which is what lets tests/server/root/hooks.test.ts cover every case without a request.
+ * arguments, which is what lets tests/server/root/hooks.test.ts cover each of its outcomes without
+ * a request.
  */
 export function handleHook(body: unknown, now: number): HookEvent | null {
     const parsed = hookBodyShape.safeParse(body);

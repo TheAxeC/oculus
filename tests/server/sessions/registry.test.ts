@@ -19,7 +19,7 @@ afterEach(() => {
     else process.env.LANG = SAVED.LANG;
 });
 
-describe('the system probe', () => {
+describe('the system probe', { tags: ['slow'] }, () => {
     it("reads this process's start time under a locale that is not English", () => {
         process.env.LC_ALL = 'nl_NL.UTF-8';
         process.env.LANG = 'nl_NL.UTF-8';

@@ -5,6 +5,7 @@
 //
 // What this does NOT cover: the banner and the commit box the page draws over a cherry-pick in
 // progress.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { describe, expect } from 'vitest';
 import { abortMerge, cherryPick } from '../../../../src/lib/server/git/git-index.ts';

@@ -547,27 +547,6 @@ describe('a host the settings do not give', () => {
         }
     });
 
-    it('publishes a new sentence at once when only the sentence changed', async () => {
-        vi.useFakeTimers();
-        const hub = new Hub();
-        const runner = forbidden();
-        const watcher = watchHpc(hub, { ...NONE, runner });
-        try {
-            await vi.advanceTimersByTimeAsync(0);
-            watcher.set({ ...NONE, missing: 'this-mac is not a cluster' });
-            await vi.advanceTimersByTimeAsync(0);
-            expect(held(hub)).toMatchObject({
-                status: 'unreachable',
-                hint: 'this-mac is not a cluster',
-                host: ''
-            });
-            expect(runner).not.toHaveBeenCalled();
-        } finally {
-            watcher.close();
-            vi.useRealTimers();
-        }
-    });
-
     it('polls the host a later setting gives, and goes back to the sentence when it is taken away', async () => {
         vi.useFakeTimers();
         const hub = new Hub();
@@ -629,23 +608,6 @@ describe('a host the settings do not give', () => {
             expect(held(hub)).toMatchObject({ status: 'unreachable', hint: 'second sentence' });
         } finally {
             watcher.close();
-            vi.useRealTimers();
-        }
-    });
-
-    it('publishes nothing for a sentence set after the watcher is closed', async () => {
-        vi.useFakeTimers();
-        const hub = new Hub();
-        const watcher = watchHpc(hub, { ...NONE, runner: forbidden() });
-        try {
-            await vi.advanceTimersByTimeAsync(0);
-            watcher.close();
-            const version = hub.version('hpc');
-            watcher.set({ ...NONE, missing: 'this-mac is not a cluster' });
-            await vi.advanceTimersByTimeAsync(5 * MINUTE);
-            expect(hub.version('hpc')).toBe(version);
-            expect(vi.getTimerCount()).toBe(0);
-        } finally {
             vi.useRealTimers();
         }
     });

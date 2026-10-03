@@ -3,6 +3,7 @@
 // repository.
 //
 // What this does NOT cover: the source tab the page then opens on the file.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { lstatSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

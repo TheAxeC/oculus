@@ -5,9 +5,9 @@
 // file made under mkdtemp is read or written, and every path is asserted to be inside it first.
 
 import { createHash } from 'node:crypto';
-import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect, vi } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import type { CalendarAccountConfig } from '../../../../src/lib/data/model/index.ts';
 import {
     CONNECT_MS,
@@ -32,17 +32,9 @@ const ACCOUNTS = [GOOGLE, MICROSOFT];
 const REFRESH = 'the-refresh-token-the-fake-provider-issued';
 const WORDS = { ok: 'The account is connected.', bad: 'That link was not recognised.' };
 
-const made: string[] = [];
-
-afterEach(() => {
-    while (made.length > 0) rmSync(made.pop() ?? '', { recursive: true, force: true });
-});
-
 /** A calendar directory of the case's own, which scratchDir makes in the temporary directory. */
 function scratch(): string {
-    const dir = scratchDir('oculus-calendar-oauth-');
-    made.push(dir);
-    return dir;
+    return scratchDir('oculus-calendar-oauth-');
 }
 
 /** One account's client half, written where the connector reads it. */

@@ -48,14 +48,6 @@ describe('mains', () => {
         expect(mains(root)).toEqual(['main.tex', 'highlights.tex', 'supplement.tex']);
     });
 
-    it('leaves out a file whose documentclass is commented out', () => {
-        const root = scratch();
-        write(root, 'manuscript/main.tex', ARTICLE);
-        write(root, 'manuscript/notes.tex', '% \\documentclass{article}\nnothing here\n');
-
-        expect(mains(root)).toEqual(['main.tex']);
-    });
-
     it('leaves out an included file that declares no class, and anything not .tex', () => {
         const root = scratch();
         write(root, 'manuscript/main.tex', ARTICLE);

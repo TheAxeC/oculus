@@ -28,22 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # three steps in flight (2026-10-04): T1c, its repair round 1 reported and under review; T1b and T1e, building (workers_at_once: 5).
-- step: T1c
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 16:27)
-  session_id: ac23a216933c977fe (builder, launched 2026-10-03 16:27 local)
-  worktree: .agents/worktrees/T1c
-  base: d160d13f
-  launched: 2026-10-03 16:27 local
-  report: agents/reviews/T1c-report.md
-  builder_usage: 187,752 tokens, 744 tool uses, 261.4 min (report saved 2026-10-03 19:10; four full-list runs; breaches: one read-only `git diff --stat`, reads of main's `tests/server`, and a stray file `139` written into the main ledger by a shell redirect, holding `test.ts files 138 -`, removed by the orchestrator); round 1: 368,506 tokens, 377 tool uses, 183.1 min (report saved 2026-10-04, section 11 of the report; two full-list runs; read-only git commands run against the prompt, listed in the report)
-  reviewer_report: agents/reviews/T1c-refuter.md (first run; reviewer a194094e84c8be37a, claude-opus-5-5, 79,507 tokens, 146 tool uses, 39.3 min); round 1 run: reviewer a5365c1e9236a9b55, claude-opus-5-5 (served, read 2026-10-04 after launch), running
-  brief_check: agents/reviews/T1c-brief-check.md; claude-opus-5-5, 204,893 tokens, 70 tool uses, 9.4 min (run on main at 4bc8983b; findings closed under Closed)
-  shared_paths: with X3c, landed 2026-10-04: `tests/checks/tree/allow-duplication.txt` only (T1c lines 39-65, the entries naming a `tests/server` file; X3c's one hunk at 16-23), separate lines, so the merge is simple
-  landing: not-started
-  round: 1 (sent 2026-10-03, rulings agents/briefs/T1c-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's t1c-round1-start/ for the delta)
+dispatch:   # two steps in flight (2026-10-04): T1b and T1e, building; T1c landed, T1d waits for Z376 (workers_at_once: 5).
 - step: T1b
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -55,7 +40,7 @@ dispatch:   # three steps in flight (2026-10-04): T1c, its repair round 1 report
   launched: 2026-10-04 01:03 local
   report: agents/reviews/T1b-report.md
   brief_check: agents/reviews/T1b-brief-check.md; claude-opus-5-5, 249,285 tokens, 92 tool uses, 10.6 min (run on main at 1e14d279; findings closed under Closed, and T1d's brief check's points that hold for tests/state carried in)
-  shared_paths: with T1c, in flight: `tests/checks/tree/allow-duplication.txt` only (T1b lines 30 and 65-110, T1c lines 37-63), separate lines and removals only, so the merge is simple
+  shared_paths: with T1e, in flight: `tests/checks/tree/allow-duplication.txt` only (T1b lines 30 and 65-110 at its base, T1e lines 26-29, 31-36, 38 and 47), separate lines and removals only, so the merge is simple; T1c, which shared the file, landed 2026-10-04
   landing: not-started
   round: 0
 - step: T1e
@@ -69,7 +54,7 @@ dispatch:   # three steps in flight (2026-10-04): T1c, its repair round 1 report
   launched: 2026-10-04 01:07 local
   report: agents/reviews/T1e-report.md
   brief_check: agents/reviews/T1e-brief-check.md; claude-opus-5-5, 250,547 tokens, 78 tool uses, 10.2 min (run on main at 1e14d279; findings closed under Closed, the audits check booked as Z376)
-  shared_paths: with T1c and T1b, in flight: `tests/checks/tree/allow-duplication.txt` only (T1e lines 26-29, 31-36, 38 and 47; T1b line 30 and 65-110; T1c lines 37-63), separate lines and removals only, so the merge is simple
+  shared_paths: with T1b, in flight: `tests/checks/tree/allow-duplication.txt` only (T1e lines 26-29, 31-36, 38 and 47; T1b line 30 and 65-110), separate lines and removals only, so the merge is simple; T1c, which shared the file, landed 2026-10-04
   landing: not-started
   round: 0
 ```
@@ -228,9 +213,10 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-04. X3c landed (the tab strip). In flight: T1c (the sweep of `tests/server/`), its repair round 1 reported. Next:
-  1. T1c: the run over round 1 (`/refute`), then `/land` with `subscriptionChannels` removed and the `allow-duplication.txt` merge with X3c. Its report raises three points (the 100 ms boundary, a slow `paths.test.ts` case red in the slow tier, one `git-ops.test.ts` timeout under load), each judged after the run over the round.
-  2. T1b, T1d and T1e, unblocked by X3c's landing: `/spec` each.
-  3. T1a after the four sweeps, its timings under a reproduced load (Z370 (a)); then the queue in order, O33 to O36 paused (Z369).
-  4. The recurring-findings pass (Z251); the rail reorder `/diagnose`; the Q81 look when Axel sets `skip_permissions`.
+- 2026-10-04. T1c landed (the sweep of `tests/server/`). In flight: T1b (`tests/state/`) and T1e (`tests/routes/`, `data/`, `checks/`, `fixtures/`), building. T1d (`tests/views/`, `shell/`, `ui/`, `themes/`) waits for Z376. Next:
+  1. T1b and T1e: on each report, `/refute`, then `/land`.
+  2. T1d: on Axel's ruling of Z376, its brief finished by the ruling, then dispatched (after T1b lands under (b)).
+  3. At the last of the four sweeps' landings: the fixture exports they left unused removed (Booked).
+  4. T1a after the four sweeps, its timings under a reproduced load (Z370 (a)), the size check at Z377's ruling; then the queue in order, O33 to O36 paused (Z369).
+  5. The rail reorder `/diagnose`; the Q81 look when Axel sets `skip_permissions`.
   Open for Axel: Z314, Z376, Z377.

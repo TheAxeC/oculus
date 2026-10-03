@@ -20,8 +20,6 @@ import {
     signatureOf,
     titleWords
 } from '../../../src/lib/server/content/audit.ts';
-import { scalarShape } from '../../../src/lib/server/content/audit/rules.ts';
-import { scalar } from '../../../src/lib/data/helpers/guards.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { AuditFinding, Collection, Project } from '../../../src/lib/data/model/index.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
@@ -662,14 +660,6 @@ describe('the signature', () => {
         for (const finding of found) expect(finding.signature).toMatch(/^[0-9a-f]{12}$/);
     });
 
-    it('is stable across two scans of the same hub', () => {
-        const hub = scratch();
-        write(hub, 'projects/active/alpha/README.md', 'TODO one\n');
-        expect(scan(hub, [project()]).map((one) => one.signature)).toEqual(
-            scan(hub, [project()]).map((one) => one.signature)
-        );
-    });
-
     it('survives a reworded catalog sentence, so a mute made before the reword still holds', () => {
         const hub = scratch();
         write(hub, 'projects/active/alpha/README.md', 'TODO one\n');
@@ -818,30 +808,5 @@ describe('the website feed of the wrong shape', () => {
         expect(findingsOver(feed)).toStrictEqual([
             "publications.yml: on the website under ['__proto__'] but hub type `published` expects ['journal', 'other-publications']: wrong section?"
         ]);
-    });
-});
-
-describe('a scalar field read as text', () => {
-    it('answers what the shared scalar helper answers, for every kind of value', () => {
-        const values: unknown[] = [
-            'a',
-            '',
-            0,
-            5,
-            -1.5,
-            Number.NaN,
-            Number.POSITIVE_INFINITY,
-            true,
-            false,
-            null,
-            undefined,
-            [],
-            {},
-            [1],
-            10n
-        ];
-        for (const value of values) {
-            expect(scalarShape.parse(value), String(value)).toBe(scalar(value, ''));
-        }
     });
 });

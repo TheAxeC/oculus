@@ -3,6 +3,7 @@
 // that rows are missing.
 //
 // What this does NOT cover: the warning the page draws from the counts.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { describe, expect } from 'vitest';
 import { MAX_ENTRIES, statusFor } from '../../../../src/lib/server/core/git/state.ts';

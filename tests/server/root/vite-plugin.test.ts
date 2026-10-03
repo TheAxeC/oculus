@@ -1,6 +1,7 @@
 // Layer 2, server tests. The Vite development and preview hooks carry their own context through the
 // adapter emulator, and the server mover that gives them the move of their HTTP server to another
-// port, on real servers listening on ports the system chose.
+// port, on real servers listening on ports the system chose. The cases that listen on a port are
+// tagged slow; the hooks over an HTTP server that does not listen stay in npm test.
 
 import {
     createServer,
@@ -88,7 +89,7 @@ describe('the Oculus Vite plugin', () => {
     );
 });
 
-describe('the Oculus Vite plugin on a server that moves', () => {
+describe('the Oculus Vite plugin on a server that moves', { tags: ['slow'] }, () => {
     it('keeps the context and the socket through a move and closes them when the server closes', async () => {
         const context = contextFixture();
         const closeContext = vi.spyOn(context, 'close');
@@ -129,7 +130,7 @@ describe('the Oculus Vite plugin on a server that moves', () => {
     });
 });
 
-describe('serverMover on a real server', () => {
+describe('serverMover on a real server', { tags: ['slow'] }, () => {
     const open: Server[] = [];
     const clients: WebSocket[] = [];
 

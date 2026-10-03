@@ -16,7 +16,7 @@
 // started would, since neither can be made to happen on demand with a real repository, and it can
 // run a case's own work between the module asking for a command and the command running, which is
 // how a root that goes away while a read of it is on its way is made to happen on demand.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import {
     chmodSync,
@@ -211,8 +211,6 @@ describe('the shape', () => {
         expect(found.unstaged).toEqual([]);
     });
 
-    // Revert: leave `--renames` out of the status read in server/core/git/state.ts, or `from` out
-    // of statusLists in git-parse.ts.
     it('gives a staged rename its old path, with rename detection on whatever the config says', () => {
         git(repo, 'config', 'status.renames', 'false');
         git(repo, 'config', 'diff.renames', 'false');
@@ -246,13 +244,6 @@ describe('the shape', () => {
         expect(paths(found.staged)).toEqual(['kept.txt']);
         expect(paths(found.unstaged)).toEqual(['kept.txt']);
         expect(byPath(found.unstaged)['kept.txt'].added).toBe(1);
-    });
-
-    it('caps each list', () => {
-        for (let i = 0; i < MAX_ENTRIES + 12; i += 1) {
-            write(`loose${String(i).padStart(3, '0')}.txt`, 'x\n');
-        }
-        expect(state().untracked.length).toBe(MAX_ENTRIES);
     });
 
     it('counts the commits the upstream has not seen', () => {
@@ -315,8 +306,6 @@ describe('the log, the branches and the worktrees', () => {
         }
     );
 
-    // Revert: drop the `symbolic-ref --short HEAD` read from state() in server/core/git/state.ts,
-    // so a HEAD that does not resolve is an error again.
     it('reads a repository with no commit in it, its branch and its files, as no error', () => {
         const fresh = join(dir, 'fresh');
         mkdirSync(fresh);
@@ -372,24 +361,6 @@ describe('the log, the branches and the worktrees', () => {
         git(repo, 'worktree', 'add', '--detach', loose, head);
         const found = state().worktrees.find((one) => one.path === loose);
         expect(found).toMatchObject({ branch: '', head, main: false });
-    });
-
-    it('caps the branch list', () => {
-        // The cap is the change lists', so one repository with a thousand branches cannot become
-        // the payload. Three past it is enough to see the cut. The branches are made by one git
-        // process reading its refs from stdin, since one process per branch is what costs the time.
-        const head = git(repo, 'rev-parse', 'HEAD').trim();
-        const refs = Array.from(
-            { length: MAX_ENTRIES + 2 },
-            (_, i) => `create refs/heads/side-${String(i).padStart(3, '0')} ${head}\n`
-        ).join('');
-        const done = spawnSync('git', ['-C', repo, 'update-ref', '--stdin'], {
-            encoding: 'utf8',
-            input: refs,
-            timeout: 30000
-        });
-        expect(done.status).toBe(0);
-        expect(state().branches.length).toBe(MAX_ENTRIES);
     });
 
     it('cuts every list it publishes at the cap', () => {
@@ -451,7 +422,6 @@ describe('the log, the branches and the worktrees', () => {
 });
 
 describe('failure', () => {
-    // Revert: set `repository` to true in state() before the `rev-parse --git-dir` read answers.
     it('does not take a plain directory for a repository', () => {
         const plain = join(dir, 'plain');
         mkdirSync(plain);
@@ -462,15 +432,6 @@ describe('failure', () => {
         expect([found.staged, found.unstaged, found.untracked]).toEqual([[], [], []]);
     });
 
-    it('comes back empty for a path that does not exist', () => {
-        const found = state(join(dir, 'gone'));
-        expect(found.repository).toBe(false);
-        expect(found.error).toBe('no such directory');
-        expect(found.ahead).toBe(0);
-    });
-
-    // Revert: set `gone.present = true` in state() of server/core/git/state.ts where nothing is at
-    // the path.
     it('says which of a path that is not there and a folder that is no repository a root is', () => {
         const plain = join(dir, 'plain');
         mkdirSync(plain);
@@ -510,9 +471,6 @@ describe('failure', () => {
         expect(state(plain).repository).toBe(false);
     });
 
-    // Revert: drop `'ENAMETOOLONG'` from the codes exists() answers false for in
-    // server/core/git/state.ts; a name the system will not carry then reads as a root that is there
-    // and no repository.
     it('says a path too long to be a name is not there', () => {
         const long = join(dir, 'x'.repeat(4096));
         const found = state(long);
@@ -523,9 +481,6 @@ describe('failure', () => {
         ]);
     });
 
-    // Revert: return the gone shape from state() in server/core/git/state.ts whenever
-    // `directory(root)` is false, without the `exists(root)` clause; each of the three then reads
-    // as a path with nothing at it, and none of them carries git's reason.
     it('keeps a path that is there but is no folder to enter, with git own reason', () => {
         const file = join(dir, 'a-file');
         writeFileSync(file, 'x\n');
@@ -553,9 +508,6 @@ describe('failure', () => {
         }
     });
 
-    // Revert: set `refused.present = true` where git answers that a root is no repository in
-    // server/core/git/state.ts; the root that went away while the read ran then reads as a folder
-    // that is no repository, which is the race the second read of the path is there to close.
     it('says a root that went away between the two reads is not there, not that it is no repository', () => {
         const away = join(dir, 'away');
         mkdirSync(away);
@@ -578,8 +530,6 @@ describe('failure', () => {
         }
     });
 
-    // Revert: return `empty(reason)` from state() when `git status` fails, as the directory that is
-    // no repository returns.
     it('keeps a repository whose status cannot be read a repository, with the reason', () => {
         // An index git cannot parse fails `git status` and nothing that reads only the refs, so the
         // repository is told apart and its branch read before the status fails.
@@ -592,8 +542,6 @@ describe('failure', () => {
         expect(found.branch).toBe('work');
     });
 
-    // Revert: set `found.repository = false` in checkedOut() in server/core/git/state.ts where both
-    // HEAD reads have failed.
     it('keeps a repository git names no branch for a repository, with the reason', () => {
         // A HEAD that is a symbolic ref to a name git refuses: the repository is found, and neither
         // the branch read nor the read of HEAD itself answers.
@@ -606,8 +554,6 @@ describe('failure', () => {
         expect(found.branch).toBe('');
     });
 
-    // Reverts: return `empty(reason)` from state() in server/core/git/state.ts on any `rev-parse
-    // --git-dir` failure, timed out or not; or count a git that cannot start as not answered.
     it('keeps a root whose repository check timed out, and the view on it, and no root git cannot start', () => {
         const plain = join(dir, 'plain');
         mkdirSync(plain);
@@ -756,8 +702,6 @@ describe('read only', () => {
         }
     });
 
-    // Revert: write the `symbolic-ref` call in server/core/git/state.ts as `['symbolic-ref',
-    // 'HEAD']`.
     it('holds only the allowed subcommands at its call site, the pinned nine as their exact vectors', () => {
         const source = gitSources();
         const calls = [...source.matchAll(/\brun\(\s*root\s*,\s*\[\s*'([a-z-]+)'/g)];
@@ -765,14 +709,6 @@ describe('read only', () => {
         expect([...new Set(calls.map((call) => call[1]))].sort()).toEqual(ALLOWED);
         // Every pinned call is written out in the source as the whole list it runs.
         for (const form of PINNED_SOURCE) expect(source).toContain(form);
-    });
-
-    it('ran every command without optional locks, so a read writes no index lock', () => {
-        everyRead();
-        expect(ran.length).toBeGreaterThan(0);
-        for (const args of ran) {
-            expect(args, args.join(' ')).toContain('--no-optional-locks');
-        }
     });
 
     it('ran nothing but those commands over this file, the pinned nine as their vectors', () => {

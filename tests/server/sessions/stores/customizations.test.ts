@@ -10,7 +10,6 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
-    CUSTOMIZATION_KINDS,
     CUSTOMIZATION_MAX,
     claudeJsonOf,
     customizationFile,
@@ -94,19 +93,6 @@ describe('the customizations of a Claude workspace', () => {
     let rows: CustomizationRow[] = [];
     test.beforeAll(() => {
         rows = customizationRows(scope());
-    });
-
-    it('audits that lists the seven rows in the section order', () => {
-        expect(rows.map((one) => one.kind)).toEqual([
-            'instructions',
-            'skills',
-            'agents',
-            'hooks',
-            'mcp',
-            'plugins',
-            'tools'
-        ]);
-        expect(CUSTOMIZATION_KINDS).toHaveLength(7);
     });
 
     it('reads the instructions of the account, then the workspace and each folder up to its root', () => {

@@ -4,6 +4,7 @@
 //
 // What this does NOT cover: the route that answers it (tests/routes/git/head.test.ts) and the
 // source tab that shows it.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { describe, expect } from 'vitest';
 import { headFile } from '../../../../src/lib/server/core/git/compare.ts';

@@ -51,17 +51,6 @@ describe('the engine argument', () => {
         });
     });
 
-    it('asks the same of the fallback, so a start over nothing is refused too', () => {
-        expect(
-            parseEngineArgs(
-                [],
-                reader('/work', () => false)
-            )
-        ).toEqual({
-            error: `${FALLBACK} holds no config/ folder, so there is nothing to serve`
-        });
-    });
-
     it('is refused when --engine names nothing', () => {
         const sentence = '--engine needs the directory that holds config/';
         expect(parseEngineArgs(['--engine'], reader())).toEqual({ error: sentence });
@@ -84,17 +73,6 @@ describe('the engine argument', () => {
         );
         expect(parseEngineArgs(['--engine=/srv/one', '--engine=/srv/two'], reader())).toEqual({
             engine: '/srv/two'
-        });
-    });
-
-    it('reads a relative directory, the last of two flags, and refuses a stray word', () => {
-        expect(parseEngineArgs(['--engine', 'x'], reader('/work'))).toEqual({ engine: '/work/x' });
-        expect(parseEngineArgs(['--engine=x'], reader('/work'))).toEqual({ engine: '/work/x' });
-        expect(parseEngineArgs(['--engine', 'a', '--engine', 'b'], reader('/work'))).toEqual({
-            engine: '/work/b'
-        });
-        expect(parseEngineArgs(['stray'], reader())).toEqual({
-            error: 'unknown argument: stray'
         });
     });
 

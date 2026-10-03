@@ -73,11 +73,6 @@ export function parseSubscription(data: string): Subscription | null {
     return { type: 'subscribe', channels, token };
 }
 
-/** The channels of a subscribe message, or null when the message is not one. */
-export function subscriptionChannels(data: string): string[] | null {
-    return parseSubscription(data)?.channels ?? null;
-}
-
 export function attachSocket(server: Server, hub: Hub, options: SocketOptions): Attached {
     const wss = new WebSocketServer({ noServer: true });
 

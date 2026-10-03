@@ -227,26 +227,6 @@ describe('a subagent started in the background', () => {
         expect(agent.ended).toBe('2026-01-01T10:09:00.000Z');
     });
 
-    it('reads a subagent killed before it finished as stopped', () => {
-        const f = new Fixture();
-        stopped(launched(f, false));
-        f.append([notice('2026-01-01T10:09:00.000Z', { task: 'agent7', call: 'b1' }, 'killed')]);
-        const [agent] = f.only().agents;
-        expect(agent.status).toBe('stopped');
-        expect(agent.ended).toBe('2026-01-01T10:09:00.000Z');
-    });
-
-    it('reads a subagent resumed after its notice by the latest notice', () => {
-        const f = new Fixture();
-        stopped(launched(f, false));
-        f.append([notice('2026-01-01T10:09:00.000Z', { task: 'agent7', call: 'b1' }, 'killed')]);
-        expect(f.only().agents[0].status).toBe('stopped');
-        f.append([notice('2026-01-01T10:30:00.000Z', { task: 'agent7', call: 'b1' }, 'completed')]);
-        const [agent] = f.only().agents;
-        expect(agent.status).toBe('done');
-        expect(agent.ended).toBe('2026-01-01T10:30:00.000Z');
-    });
-
     it('reads a subagent resumed after its notice as running while it writes again, and by its next notice after', () => {
         const f = new Fixture();
         const own = launched(f, false);

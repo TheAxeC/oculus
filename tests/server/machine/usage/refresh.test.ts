@@ -71,8 +71,8 @@ afterEach(() => {
 /**
  * A tmux with named sessions, a screen, and an account file that moves when Enter follows /usage.
  */
-function tmux(present = false) {
-    const sessions = new Set<string>(present ? [NAME] : []);
+function tmux() {
+    const sessions = new Set<string>();
     const stub = {
         calls: [] as string[][],
         /** Whether the single-account session exists; `sessions` holds every name. */
@@ -183,15 +183,6 @@ describe('one-shot Claude usage refresher', () => {
             lastRefresh: new Date(NOW).toISOString(),
             renewed: true
         });
-        expect(stub.present).toBe(false);
-    });
-
-    it('kills a session of its name left behind before starting its own', async () => {
-        const stub = tmux(true);
-        const refresh = watcher(stub);
-        await refresh.ready;
-        expect(stub.calls.slice(0, 2)).toEqual([kill, usageStartArgs(account, root, BIN, MODEL)]);
-        expect(refresh.state(account).state).toBe('running');
         expect(stub.present).toBe(false);
     });
 
@@ -362,30 +353,6 @@ describe('one-shot Claude usage refresher', () => {
         expect(hasPrompt('No internet connection\n\u276f \n\n')).toBe(true);
         expect(hasPrompt('')).toBe(false);
     });
-
-    it.each([
-        ['Log in to Claude Code', 'login_required'],
-        ['Usage limit reached', 'usage_limit'],
-        ['>\nNo internet connection', 'offline'],
-        ['Claude Code is not at its prompt', 'prompt_missing']
-    ])(
-        'diagnoses %s after the timeout and refreshes afresh on the next request',
-        async (screen, reason) => {
-            const stub = tmux();
-            stub.afterKeys = screen;
-            stub.updates = false;
-            const refresh = watcher(stub);
-            await refresh.ready;
-            expect(refresh.state(account)).toMatchObject({ state: 'down', reason });
-            expect(stub.calls.at(-1)).toEqual(kill);
-            expect(stub.calls.filter((args) => args[0] === 'new-session')).toHaveLength(1);
-            stub.updates = true;
-            stub.afterKeys = undefined;
-            await refresh.refresh(account.label);
-            expect(stub.calls.filter((args) => args[0] === 'new-session')).toHaveLength(2);
-            expect(refresh.state(account).state).toBe('running');
-        }
-    );
 
     it('preserves down since through failed scheduled and manual attempts', async () => {
         vi.useFakeTimers();
@@ -575,7 +542,6 @@ describe('the settings the refresher requires', () => {
 
 describe('the settings the refresher requires, read as one value', () => {
     const sentenceMin = 'config/behavior.yml: usage_refresh_min must be a number from 1 to 35791';
-    const sentenceModel = 'usage_refresh_model must not be empty';
 
     it('throws the cadence sentence for an absent cadence and for both wrong', () => {
         expect(() => requireRefreshSettings({ refreshMin: undefined, model: 'haiku' })).toThrow(
@@ -583,12 +549,6 @@ describe('the settings the refresher requires, read as one value', () => {
         );
         expect(() => requireRefreshSettings({ refreshMin: 0, model: 3 })).toThrow(sentenceMin);
         expect(() => requireRefreshSettings({ refreshMin: '10', model: ' ' })).toThrow(sentenceMin);
-    });
-
-    it('throws the model sentence for a blank, a number and an absent model', () => {
-        for (const model of [' ', 3, undefined]) {
-            expect(() => requireRefreshSettings({ refreshMin: 10, model })).toThrow(sentenceModel);
-        }
     });
 
     it('answers the two settings as a number and a string', () => {

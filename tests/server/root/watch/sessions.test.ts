@@ -4,6 +4,8 @@
 // registry, the cache and the overrides are all made here, every write asserts its path is inside
 // first, and the liveness probes are stubs, so no process is signalled and `ps` is never run. Every
 // watcher a test opens is closed when the test ends.
+//
+// The cases that wait on a real file watch of a store are tagged slow.
 
 import { appendFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -298,7 +300,7 @@ describe('liveSignature', () => {
 });
 
 describe('watchSessions', () => {
-    it('publishes the store on start, at version 1', async () => {
+    it('publishes the store on start, at version 1', { tags: ['slow'] }, async () => {
         const fixture = new Fixture();
         fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
         const started = start(fixture);
@@ -313,45 +315,53 @@ describe('watchSessions', () => {
         expect(payload.workspaces.length).toBe(1);
     });
 
-    it('republishes with the new record when a transcript is appended to', async () => {
-        const fixture = new Fixture();
-        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        const started = start(fixture);
-        await until(() => started.got.length >= 1, WAIT);
-        await armed(join(fixture.store, SLUG), 'not-a-transcript.txt', started.got);
+    it(
+        'republishes with the new record when a transcript is appended to',
+        { tags: ['slow'] },
+        async () => {
+            const fixture = new Fixture();
+            fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+            const started = start(fixture);
+            await until(() => started.got.length >= 1, WAIT);
+            await armed(join(fixture.store, SLUG), 'not-a-transcript.txt', started.got);
 
-        fixture.append([
-            answer('2026-09-10T10:00:05.000Z', 'an answer'),
-            prompt('2026-09-10T10:00:09.000Z', 'second question')
-        ]);
-        await until(() => latest(started.got).records[0].prompts === 2, WAIT);
+            fixture.append([
+                answer('2026-09-10T10:00:05.000Z', 'an answer'),
+                prompt('2026-09-10T10:00:09.000Z', 'second question')
+            ]);
+            await until(() => latest(started.got).records[0].prompts === 2, WAIT);
 
-        const payload = latest(started.got);
-        expect(payload.records[0].prompts).toBe(2);
-        expect(payload.records[0].messages).toBe(3);
-    });
+            const payload = latest(started.got);
+            expect(payload.records[0].prompts).toBe(2);
+            expect(payload.records[0].messages).toBe(3);
+        }
+    );
 
-    it('tells only its own onChange listeners about a rescan, never those of another watcher', async () => {
-        const first = start(new Fixture());
-        const second = start(new Fixture());
-        first.fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        await until(() => first.got.length >= 1 && second.got.length >= 1, WAIT);
-        await armed(join(first.fixture.store, SLUG), 'not-a-transcript.txt', first.got);
-        const heard = [0, 0];
-        const off = first.watcher.onChange(() => (heard[0] += 1));
-        second.watcher.onChange(() => (heard[1] += 1));
+    it(
+        'tells only its own onChange listeners about a rescan, never those of another watcher',
+        { tags: ['slow'] },
+        async () => {
+            const first = start(new Fixture());
+            const second = start(new Fixture());
+            first.fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+            await until(() => first.got.length >= 1 && second.got.length >= 1, WAIT);
+            await armed(join(first.fixture.store, SLUG), 'not-a-transcript.txt', first.got);
+            const heard = [0, 0];
+            const off = first.watcher.onChange(() => (heard[0] += 1));
+            second.watcher.onChange(() => (heard[1] += 1));
 
-        first.fixture.append([answer('2026-09-10T10:00:05.000Z', 'an answer')]);
-        await until(() => heard[0] >= 1, WAIT);
-        expect(heard[1]).toBe(0);
+            first.fixture.append([answer('2026-09-10T10:00:05.000Z', 'an answer')]);
+            await until(() => heard[0] >= 1, WAIT);
+            expect(heard[1]).toBe(0);
 
-        off();
-        first.fixture.append([prompt('2026-09-10T10:00:09.000Z', 'second question')]);
-        await until(() => latest(first.got).records[0].prompts === 2, WAIT);
-        expect(heard).toEqual([1, 0]);
-    });
+            off();
+            first.fixture.append([prompt('2026-09-10T10:00:09.000Z', 'second question')]);
+            await until(() => latest(first.got).records[0].prompts === 2, WAIT);
+            expect(heard).toEqual([1, 0]);
+        }
+    );
 
-    it('makes the record live when a registry file appears', async () => {
+    it('makes the record live when a registry file appears', { tags: ['slow'] }, async () => {
         const fixture = new Fixture();
         fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
         const started = start(fixture);
@@ -368,85 +378,104 @@ describe('watchSessions', () => {
         expect(record.state).toBe('working');
     });
 
-    it('republishes on the liveness re-check when a process dies without touching its file', async () => {
-        const fixture = new Fixture();
-        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        fixture.enrol();
-        const started = start(fixture, 100);
-        await until(() => started.got.length >= 1, WAIT);
-        expect(latest(started.got).records[0].live).toBe(true);
+    it(
+        'republishes on the liveness re-check when a process dies without touching its file',
+        { tags: ['slow'] },
+        async () => {
+            const fixture = new Fixture();
+            fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+            fixture.enrol();
+            const started = start(fixture, 100);
+            await until(() => started.got.length >= 1, WAIT);
+            expect(latest(started.got).records[0].live).toBe(true);
 
-        // The registry file stays exactly as it is; only the process is gone.
-        fixture.alive.delete(PID);
-        await until(() => !latest(started.got).records[0].live, WAIT);
+            // The registry file stays exactly as it is; only the process is gone.
+            fixture.alive.delete(PID);
+            await until(() => !latest(started.got).records[0].live, WAIT);
 
-        const record = latest(started.got).records[0];
-        expect(record.live).toBe(false);
-        expect(record.state).toBe('ended');
-    });
+            const record = latest(started.got).records[0];
+            expect(record.live).toBe(false);
+            expect(record.state).toBe('ended');
+        }
+    );
 
-    it('publishes nothing on a re-check that finds the same live sessions', async () => {
-        const fixture = new Fixture();
-        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        fixture.enrol();
-        const started = start(fixture, 100);
-        const before = await quiet(started.got);
-        expect(before).toBeGreaterThan(0);
+    it(
+        'publishes nothing on a re-check that finds the same live sessions',
+        { tags: ['slow'] },
+        async () => {
+            const fixture = new Fixture();
+            fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+            fixture.enrol();
+            const started = start(fixture, 100);
+            const before = await quiet(started.got);
+            expect(before).toBeGreaterThan(0);
 
-        // Six re-checks at least, none of which found a live session that moved.
-        await sleep(600);
-        expect(started.got.length).toBe(before);
-    });
+            // Six re-checks at least, none of which found a live session that moved.
+            await sleep(600);
+            expect(started.got.length).toBe(before);
+        }
+    );
 
-    it('rescans when a Codex rollout appears under a new day folder', async () => {
-        const fixture = new Fixture();
-        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        const started = start(fixture);
-        await until(() => started.got.length >= 1, WAIT);
-        await armed(fixture.codexStore, 'not-a-rollout.txt', started.got);
+    it(
+        'rescans when a Codex rollout appears under a new day folder',
+        { tags: ['slow'] },
+        async () => {
+            const fixture = new Fixture();
+            fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+            const started = start(fixture);
+            await until(() => started.got.length >= 1, WAIT);
+            await armed(fixture.codexStore, 'not-a-rollout.txt', started.got);
 
-        fixture.write(
-            join('codex', '2026', '09', '10', 'rollout-2026-09-10T10-30-00-abcd1234.jsonl'),
-            JSON.stringify({
-                timestamp: '2026-09-10T10:30:00.000Z',
-                type: 'session_meta',
-                payload: { id: 'rollout-one', cwd: CONTEXT.cwd, cli_version: '1.2.3' }
-            }) + '\n'
-        );
-        await until(
-            () => latest(started.got).records.some((record) => record.id === 'rollout-one'),
-            WAIT
-        );
+            fixture.write(
+                join('codex', '2026', '09', '10', 'rollout-2026-09-10T10-30-00-abcd1234.jsonl'),
+                JSON.stringify({
+                    timestamp: '2026-09-10T10:30:00.000Z',
+                    type: 'session_meta',
+                    payload: { id: 'rollout-one', cwd: CONTEXT.cwd, cli_version: '1.2.3' }
+                }) + '\n'
+            );
+            await until(
+                () => latest(started.got).records.some((record) => record.id === 'rollout-one'),
+                WAIT
+            );
 
-        const ids = latest(started.got).records.map((record) => record.id);
-        expect(ids).toContain('rollout-one');
-        expect(ids).toContain(SID);
-    });
+            const ids = latest(started.got).records.map((record) => record.id);
+            expect(ids).toContain('rollout-one');
+            expect(ids).toContain(SID);
+        }
+    );
 
-    it('rescans when the overrides file changes, and not when the cache beside it does', async () => {
-        const fixture = new Fixture();
-        // The cache goes in the same directory as the overrides file, which is where ~/.oculus
-        // keeps both: the watch is on that directory, so only the filename keeps a scan's own cache
-        // write from causing the next scan.
-        fixture.cache = join(fixture.root, 'transcript-cache.json');
-        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        const started = start(fixture);
-        await until(() => started.got.length >= 1, WAIT);
-        expect(latest(started.got).records[0].hidden).toBe(false);
-        await armed(fixture.root, 'sessions.json', started.got);
+    it(
+        'rescans when the overrides file changes, and not when the cache beside it does',
+        { tags: ['slow'] },
+        async () => {
+            const fixture = new Fixture();
+            // The cache goes in the same directory as the overrides file, which is where ~/.oculus
+            // keeps both: the watch is on that directory, so only the filename keeps a scan's own
+            // cache write from causing the next scan.
+            fixture.cache = join(fixture.root, 'transcript-cache.json');
+            fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+            const started = start(fixture);
+            await until(() => started.got.length >= 1, WAIT);
+            expect(latest(started.got).records[0].hidden).toBe(false);
+            await armed(fixture.root, 'sessions.json', started.got);
 
-        // A dismissal, as api/write would have written it.
-        writeFileSync(fixture.overrides, JSON.stringify({ sessions: { [SID]: { hidden: true } } }));
-        await until(() => latest(started.got).records[0].hidden, WAIT);
-        expect(latest(started.got).records[0].hidden).toBe(true);
+            // A dismissal, as api/write would have written it.
+            writeFileSync(
+                fixture.overrides,
+                JSON.stringify({ sessions: { [SID]: { hidden: true } } })
+            );
+            await until(() => latest(started.got).records[0].hidden, WAIT);
+            expect(latest(started.got).records[0].hidden).toBe(true);
 
-        const before = await quiet(started.got);
-        writeFileSync(fixture.cache, JSON.stringify({ version: 99, entries: {} }));
-        await sleep(600);
-        expect(started.got.length).toBe(before);
-    });
+            const before = await quiet(started.got);
+            writeFileSync(fixture.cache, JSON.stringify({ version: 99, entries: {} }));
+            await sleep(600);
+            expect(started.got.length).toBe(before);
+        }
+    );
 
-    it("rescans when a second account's registry changes", async () => {
+    it("rescans when a second account's registry changes", { tags: ['slow'] }, async () => {
         const fixture = new Fixture();
         const second = join(fixture.root, 'second-registry');
         mkdirSync(second, { recursive: true });
@@ -466,33 +495,37 @@ describe('watchSessions', () => {
         expect(latest(started.got).records[0].live).toBe(true);
     });
 
-    it('rescans on the slow clock for a change no file event announced, and stops at close', async () => {
-        const fixture = new Fixture();
-        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        // The terminal list moves without anything under the three stores being written, which is
-        // what a missed event looks like to this watcher: only a rescan can find it.
-        // Until tmux has answered once the source has no list, and the payload carries none.
-        let terminals: Terminal[] | null = null;
-        const source: TerminalSource = { list: () => terminals, onChange: () => noop };
-        const started = start(fixture, 0, 150, source);
-        const before = await quiet(started.got);
-        expect(before).toBeGreaterThan(0);
-        expect('terminals' in latest(started.got)).toBe(false);
+    it(
+        'rescans on the slow clock for a change no file event announced, and stops at close',
+        { tags: ['slow'] },
+        async () => {
+            const fixture = new Fixture();
+            fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+            // The terminal list moves without anything under the three stores being written, which
+            // is what a missed event looks like to this watcher: only a rescan can find it. Until
+            // tmux has answered once the source has no list, and the payload carries none.
+            let terminals: Terminal[] | null = null;
+            const source: TerminalSource = { list: () => terminals, onChange: () => noop };
+            const started = start(fixture, 0, 150, source);
+            const before = await quiet(started.got);
+            expect(before).toBeGreaterThan(0);
+            expect('terminals' in latest(started.got)).toBe(false);
 
-        // The clock runs while nothing changed and publishes nothing.
-        await sleep(600);
-        expect(started.got.length).toBe(before);
+            // The clock runs while nothing changed and publishes nothing.
+            await sleep(600);
+            expect(started.got.length).toBe(before);
 
-        terminals = [terminal('a1b2c3-shell')];
-        await until(() => started.got.length > before, WAIT);
-        expect(latest(started.got).terminals?.map((one) => one.id)).toEqual(['a1b2c3-shell']);
+            terminals = [terminal('a1b2c3-shell')];
+            await until(() => started.got.length > before, WAIT);
+            expect(latest(started.got).terminals?.map((one) => one.id)).toEqual(['a1b2c3-shell']);
 
-        const after = started.got.length;
-        watchers.pop()?.close();
-        terminals = [];
-        await sleep(600);
-        expect(started.got.length).toBe(after);
-    });
+            const after = started.got.length;
+            watchers.pop()?.close();
+            terminals = [];
+            await sleep(600);
+            expect(started.got.length).toBe(after);
+        }
+    );
 
     it('debounces a burst into one rescan, waits the whole quiet again, and runs none after close', async () => {
         const fixture = new Fixture();
@@ -671,16 +704,20 @@ describe('watchSessions', () => {
         holdsQuietAndMaxWait({ quiet: QUIET, maxWait: MAX_WAIT, what: 'publish', held });
     });
 
-    it('carries no terminal list when it was given no terminal source', async () => {
-        const fixture = new Fixture();
-        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
-        const started = start(fixture);
-        await until(() => started.got.length >= 1, WAIT);
-        // A process with no terminals says nothing about any terminal, so a page ends none.
-        expect('terminals' in latest(started.got)).toBe(false);
-    });
+    it(
+        'carries no terminal list when it was given no terminal source',
+        { tags: ['slow'] },
+        async () => {
+            const fixture = new Fixture();
+            fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+            const started = start(fixture);
+            await until(() => started.got.length >= 1, WAIT);
+            // A process with no terminals says nothing about any terminal, so a page ends none.
+            expect('terminals' in latest(started.got)).toBe(false);
+        }
+    );
 
-    it('closes every handle it opened', async () => {
+    it('closes every handle it opened', { tags: ['slow'] }, async () => {
         const fixture = new Fixture();
         fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
         const started = start(fixture, 100);

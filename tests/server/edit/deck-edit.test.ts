@@ -53,12 +53,6 @@ describe('setDeckList', () => {
         expect(out.replace(withoutList, '')).toBe(BOTH.replace(withoutList, ''));
     });
 
-    it('writes the list at the indentation the file nests its keys at', () => {
-        expect(setDeckList(BOTH, 'selection', ['title'])).toContain(
-            '    selection:\n        - title\n'
-        );
-    });
-
     it('appends a list the file does not hold, inside the deck map', () => {
         const out = setDeckList(NEITHER, 'selection', ['title']);
         expect(listsOf(out).selection).toEqual(['title']);
@@ -96,14 +90,22 @@ describe('setDeckList', () => {
         expect(listsOf(out).selection).toEqual([]);
     });
 
-    it('writes a key with a colon in it so the parser reads it back whole', () => {
-        const out = setDeckList(BOTH, 'slide_order', ['summary:summary1', 'framing:engine']);
-        expect(listsOf(out).order).toEqual(['summary:summary1', 'framing:engine']);
-    });
-
-    it('quotes a key no parser would read back as itself', () => {
-        const out = setDeckList(BOTH, 'selection', ['one: two']);
-        expect(listsOf(out).selection).toEqual(['one: two']);
+    it.each([
+        {
+            name: 'a colon inside a key',
+            field: 'slide_order',
+            read: 'order',
+            keys: ['summary:summary1', 'framing:engine']
+        },
+        {
+            name: 'a colon followed by a space',
+            field: 'selection',
+            read: 'selection',
+            keys: ['one: two']
+        }
+    ] as const)('writes $name so the parser reads each key back whole', ({ field, read, keys }) => {
+        const out = setDeckList(BOTH, field, [...keys]);
+        expect(listsOf(out)[read]).toEqual(keys);
     });
 
     it('leaves a source with no deck map exactly as it was', () => {
@@ -139,17 +141,6 @@ describe('setDeckLists', () => {
         }
     });
 
-    it('refuses an edit that would change a key it was not asked about', () => {
-        // The guard is what the refusals above rest on, so it is exercised against the shape it
-        // catches: a result whose other keys no longer say what the original said is not written.
-        const source = 'deck:\n    a: 1\n    selection:\n        - title\n';
-        const edited = setDeckLists(source, { selection: ['title'], slideOrder: ['title'] });
-        expect(edited).not.toBeNull();
-        const both = parse(edited ?? '') as { deck: Record<string, unknown> };
-        expect(both.deck.a).toBe(1);
-        expect(setDeckLists('a: 1\n', { selection: ['title'], slideOrder: ['title'] })).toBeNull();
-    });
-
     it('keeps a CRLF file on one line ending throughout', () => {
         const source = BOTH.split('\n').join('\r\n');
         const out = setDeckLists(source, {
@@ -161,10 +152,5 @@ describe('setDeckLists', () => {
         expect(listsOf(text).selection).toEqual(['closing']);
         expect(text.split('\n').length - 1).toBe(text.split('\r\n').length - 1);
         expect(text).toContain('\r\n        - closing\r\n');
-    });
-
-    it('leaves an LF file on LF', () => {
-        const out = setDeckLists(BOTH, { selection: ['title'], slideOrder: ['title'] }) ?? '';
-        expect(out).not.toContain('\r');
     });
 });

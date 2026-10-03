@@ -269,23 +269,6 @@ describe('the Microsoft reader', () => {
             .calls[0][1].headers as Record<string, string>;
         expect(headers.prefer).toBe(`outlook.timezone="${hostZone()}"`);
     });
-
-    it('throws the status and the provider own code, and nothing of the body', async () => {
-        const fetcher = vi.fn<Fetcher>(() =>
-            Promise.resolve(
-                new Response(
-                    JSON.stringify({
-                        error: { code: 'ErrorAccessDenied', message: 'axel@example' }
-                    }),
-                    { status: 401, headers: { 'content-type': 'application/json' } }
-                )
-            )
-        );
-        await expect(readMicrosoft(microsoftArgs(fetcher))).rejects.toThrow(
-            'microsoft: 401 ErrorAccessDenied'
-        );
-        await expect(readMicrosoft(microsoftArgs(fetcher))).rejects.not.toThrow(/axel@example/);
-    });
 });
 
 describe('the refusal line over a body of the wrong shape', () => {

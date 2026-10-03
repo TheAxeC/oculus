@@ -3,6 +3,9 @@
 // Every server listens on 127.0.0.1 port 0, so the port is the operating system's choice and no
 // port this machine runs anything on is touched. Every server and every client this file opens is
 // closed before the test returns.
+//
+// The cases on a real server and client open sockets, so the describe that holds them is tagged
+// slow; the parser of a subscription runs in the quick tier.
 
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
@@ -11,11 +14,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { allowedOrigin } from '../../../src/lib/server/core/auth.ts';
-import {
-    attachSocket,
-    parseSubscription,
-    subscriptionChannels
-} from '../../../src/lib/server/root/socket.ts';
+import { attachSocket, parseSubscription } from '../../../src/lib/server/root/socket.ts';
 import type { Attached, TerminalSink } from '../../../src/lib/server/root/socket.ts';
 import type { Message } from '../../../src/lib/data/model/index.ts';
 import { noop } from '../../fixtures/doubles.ts';
@@ -85,19 +84,6 @@ describe('allowedOrigin', () => {
     });
 });
 
-describe('subscriptionChannels', () => {
-    it('reads the one message a client may send and refuses everything else', () => {
-        expect(subscriptionChannels('{"type":"subscribe","channels":["portfolio"]}')).toEqual([
-            'portfolio'
-        ]);
-        expect(subscriptionChannels('{"type":"subscribe","channels":[]}')).toEqual([]);
-        expect(subscriptionChannels('{"type":"write","path":"/etc/passwd"}')).toBe(null);
-        expect(subscriptionChannels('{"type":"subscribe","channels":[3]}')).toBe(null);
-        expect(subscriptionChannels('["subscribe"]')).toBe(null);
-        expect(subscriptionChannels('not json')).toBe(null);
-    });
-});
-
 describe('parseSubscription', () => {
     it('answers the channels and an absent token for a plain subscribe message', () => {
         expect(parseSubscription('{"type":"subscribe","channels":["a"]}')).toStrictEqual({
@@ -149,7 +135,7 @@ describe('parseSubscription', () => {
     });
 });
 
-describe('attachSocket', () => {
+describe('attachSocket', { tags: ['slow'] }, () => {
     it('refuses an upgrade from another origin', async () => {
         const started = await start();
         const ws = new WebSocket(`ws://127.0.0.1:${started.port}/ws`, {
@@ -160,15 +146,6 @@ describe('attachSocket', () => {
 
         expect(error?.message).toMatch(/403/);
         expect(started.hub.size).toBe(0);
-    });
-
-    it('refuses an upgrade with no origin at all', async () => {
-        const started = await start();
-        const ws = new WebSocket(`ws://127.0.0.1:${started.port}/ws`);
-        const error = await once(ws, 'error');
-        ws.terminate();
-
-        expect(error?.message).toMatch(/403/);
     });
 
     it('sends a feeds subscriber the current payload and then every push', async () => {

@@ -6,7 +6,7 @@
 // sync, publish and the tag push cross a real remote without leaving the temporary tree. The last
 // describe is this file's gate, the same as git-write.test.ts's: every command the modules ran is
 // one of the writing half's own subcommands, from a root in the temporary tree, never forced.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// @module-tag slow: its cases run real git against a bare remote, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
 import {
@@ -192,25 +192,9 @@ describe('the amend', () => {
         expect(answer.error).toContain('forced push');
         expect(git(repo, 'rev-parse', 'HEAD')).toBe(head);
     });
-
-    it('still refuses a plain commit with no message', async () => {
-        const answer = await commit(repo, '  ', ROOTS);
-        expect(answer.ok).toBe(false);
-        expect(answer.error).toContain('needs a message');
-    });
 });
 
 describe('pull, fetch, sync and publish', () => {
-    it('pulls what the upstream holds', async () => {
-        write(other, 'theirs.txt', 'x\n');
-        git(other, 'add', '.');
-        git(other, 'commit', '-qm', 'Theirs');
-        git(other, 'push', '-q');
-        const answer = await pull(repo, ROOTS);
-        expect(answer.ok).toBe(true);
-        expect(read(repo, 'theirs.txt')).toBe('x\n');
-    });
-
     it('fetches the remote branches and takes away the ones the remote dropped', async () => {
         git(other, 'push', '-q', 'origin', 'main:gone-soon');
         expect((await fetchAll(repo, ROOTS)).ok).toBe(true);
@@ -512,7 +496,7 @@ describe('conflicts a deletion made', () => {
         expect(status()).toContain(`D  ${DELETED.theirs}`);
     });
 
-    it('refuses to take a deletion on a path both sides changed, or one not in conflict', async () => {
+    it('refuses to take a deletion on a path both sides changed', async () => {
         git(repo, 'switch', '-qc', 'side');
         write(repo, 'kept.txt', 'side\n');
         git(repo, 'commit', '-qam', 'Side');

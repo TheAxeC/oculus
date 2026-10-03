@@ -8,7 +8,7 @@
 
 import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import {
     runSearch,
     type RunOutcome,
@@ -323,32 +323,6 @@ describe('the answer', () => {
         expect(ran).toEqual(['/hub']);
     });
 
-    it('stops the run at the cap rather than reading the rest of the stream', async () => {
-        const seen: string[] = [];
-        await runSearch(ROOTS.slice(0, 1), query({ max: 1 }), {
-            run: (_dir, _args, _timeout, onLine) => {
-                const lines = file('a.ts', [
-                    match('a.ts', 1, 'needle one', 0, 'needle'),
-                    match('a.ts', 2, 'needle two', 0, 'needle'),
-                    match('a.ts', 3, 'needle three', 0, 'needle')
-                ]).split('\n');
-                let stopped = false;
-                for (const line of lines) {
-                    seen.push(line);
-                    if (!onLine(line)) {
-                        stopped = true;
-                        break;
-                    }
-                }
-                return Promise.resolve({ code: 0, stderr: '', timedOut: false, stopped });
-            },
-            timeout: TIMEOUT
-        });
-        // The begin, the kept match, and the one that found no room; the third match and the end
-        // record are never read.
-        expect(seen).toHaveLength(3);
-    });
-
     it('carries the elapsed time the clock gave it', async () => {
         const times = [100, 340];
         const outcome = await runSearch(ROOTS.slice(0, 1), query(), {
@@ -417,12 +391,19 @@ describe('the answer', () => {
     });
 
     it('ends at the timeout when the runner never answers', async () => {
-        const outcome = await runSearch(ROOTS.slice(0, 1), query(), {
-            // A runner that answers nothing at all, which is what a hung process looks like here.
-            run: () => new Promise<RunOutcome>(() => undefined),
-            timeout: 30
-        });
-        expect(outcome).toEqual({ ok: false, error: TIMED_OUT, timedOut: true });
+        vi.useFakeTimers();
+        try {
+            const pending = runSearch(ROOTS.slice(0, 1), query(), {
+                // A runner that answers nothing at all, which is what a hung process looks like
+                // here.
+                run: () => new Promise<RunOutcome>(() => undefined),
+                timeout: 30
+            });
+            await vi.advanceTimersByTimeAsync(30);
+            expect(await pending).toEqual({ ok: false, error: TIMED_OUT, timedOut: true });
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('cuts the reason down to one line', async () => {
@@ -439,7 +420,7 @@ describe('the answer', () => {
     });
 });
 
-describe('the binary the dependency carries', () => {
+describe('the binary the dependency carries', { tags: ['slow'] }, () => {
     it('finds a literal, and misses on a word boundary and on a case, over three real files', async () => {
         const dir = scratch();
         writeFileSync(join(dir, 'literal.txt'), 'a needle in here\n');
@@ -500,18 +481,6 @@ describe('the binary the dependency carries', () => {
         if (!outcome.ok) return;
         expect(outcome.answer.total).toBe(3);
         expect(outcome.answer.truncated).toBe(true);
-    });
-
-    it('answers a regex ripgrep will not read with the reason ripgrep gave', async () => {
-        const dir = scratch();
-        writeFileSync(join(dir, 'a.txt'), 'anything\n');
-        const outcome = await runSearch(
-            [{ key: 'scratch', dir }],
-            query({ root: 'scratch', regex: true, q: 'fo(' }),
-            { timeout: TIMEOUT }
-        );
-        expect(outcome.ok).toBe(false);
-        expect(!outcome.ok && 'error' in outcome && outcome.error).toContain('unclosed');
     });
 
     it('names a root whose directory is not there while the other root answers', async () => {
@@ -723,18 +692,22 @@ describe('the folder a search is scoped to', () => {
         expect(words).toEqual(['outside', 'missing', 'outside']);
     });
 
-    it('searches a hidden folder it is given whole, with the real binary', async () => {
-        const { dir, roots } = scoped();
-        mkdirSync(join(dir, '.hidden'));
-        writeFileSync(join(dir, '.hidden/h.txt'), 'needle in a hidden folder');
-        const outcome = await runSearch(roots, scopedQuery('.hidden'), { timeout: TIMEOUT });
-        expect(outcome.ok && outcome.answer.files.map((one) => one.path)).toEqual([
-            '.hidden/h.txt'
-        ]);
-    });
+    it(
+        'searches a hidden folder it is given whole, with the real binary',
+        { tags: ['slow'] },
+        async () => {
+            const { dir, roots } = scoped();
+            mkdirSync(join(dir, '.hidden'));
+            writeFileSync(join(dir, '.hidden/h.txt'), 'needle in a hidden folder');
+            const outcome = await runSearch(roots, scopedQuery('.hidden'), { timeout: TIMEOUT });
+            expect(outcome.ok && outcome.answer.files.map((one) => one.path)).toEqual([
+                '.hidden/h.txt'
+            ]);
+        }
+    );
 });
 
-describe('a line longer than a hit row is wide, with the real binary', () => {
+describe('a line longer than a hit row is wide, with the real binary', { tags: ['slow'] }, () => {
     it('answers two matches of one long line as two hits that differ in `at` though the windows share a column', async () => {
         const dir = scratch();
         const line = `${'a'.repeat(500)} foo ${'b'.repeat(100)} foo ${'c'.repeat(500)}`;

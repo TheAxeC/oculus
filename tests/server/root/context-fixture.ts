@@ -20,7 +20,7 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { wallpaperMemory } from '../../../src/lib/server/content/wallpaper.ts';
 import { noop, noopAsync } from '../../fixtures/doubles.ts';
 
-export const ROUTE_TOKEN = 'the-write-token-of-this-context';
+const ROUTE_TOKEN = 'the-write-token-of-this-context';
 
 function terminalDriver(): TerminalDriver {
     return {

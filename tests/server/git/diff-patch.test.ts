@@ -4,6 +4,7 @@
 // (server/git/git-index.ts's applyHunk). Each case reads the file through GET /api/git as the pane
 // does, cuts the patch and reads what the index or the worktree holds after. Every repository is
 // made in the system temporary directory.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';

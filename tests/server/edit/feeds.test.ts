@@ -1,4 +1,7 @@
 // The feed reader and writers over fixture files in a temporary hub, never the real feeds folder.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
@@ -76,6 +79,13 @@ function fixture(): { hub: string; config: PortfolioConfig } {
 }
 
 describe('feed files', () => {
+    // The first read of a run loads the modules of the feed reader; loading them here keeps the
+    // time of the first case its own.
+    it.beforeAll(() => {
+        const into = fixture();
+        buildFeeds(into.hub, into.config);
+    });
+
     it('uses one flat post filename rule for both Markdown suffix cases', () => {
         expect(isLinkedinFile('01-post.md')).toBe(true);
         expect(isLinkedinFile('01-post.MD')).toBe(true);
@@ -410,12 +420,16 @@ describe('the shape of a feed file', () => {
         return readFeedFile(into.hub, into.config, 'leads');
     }
 
-    it('refuses a file that is no map, a meta that is no map and an entry that is no map', () => {
-        expect(() => readLeads('- a\n- b\n')).toThrow('expected a map of keys');
-        expect(() => readLeads('meta: 3\n')).toThrow('meta is not a map');
-        expect(() => readLeads('entries:\n  - 1\n')).toThrow('every entry must be a map');
-        expect(() => readLeads('entries: {}\n')).toThrow('every entry must be a map');
-    });
+    it(
+        'refuses a file that is no map, a meta that is no map and an entry that is no map',
+        { tags: ['slow'] },
+        () => {
+            expect(() => readLeads('- a\n- b\n')).toThrow('expected a map of keys');
+            expect(() => readLeads('meta: 3\n')).toThrow('meta is not a map');
+            expect(() => readLeads('entries:\n  - 1\n')).toThrow('every entry must be a map');
+            expect(() => readLeads('entries: {}\n')).toThrow('every entry must be a map');
+        }
+    );
 
     it('names the meta before the entries when both are wrong', () => {
         expect(() => readLeads('meta: [a]\nentries:\n  - 1\n')).toThrow('meta is not a map');

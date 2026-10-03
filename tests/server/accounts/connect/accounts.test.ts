@@ -451,9 +451,12 @@ function holdChain(writes: { chain: Promise<unknown> }): () => void {
     return release;
 }
 
-/** Long enough for a request's body to be read and anything not waiting on the chain to run. */
-function settle(): Promise<void> {
-    return new Promise((done) => setTimeout(done, 30));
+/**
+ * Turns of the event loop enough for a request's body to be read and for anything not waiting on
+ * the chain to run.
+ */
+async function settle(): Promise<void> {
+    for (let turn = 0; turn < 50; turn += 1) await new Promise((done) => setImmediate(done));
 }
 
 describe('the write chain', () => {

@@ -2,6 +2,7 @@
 // file (server/root/watch/portfolio.ts, `watchFile`), against a real folder under the system
 // temporary directory: a write through server/core/json.ts renames a new file over the old one,
 // and every such write, not only the first, has to reach the watcher.
+// @module-tag slow: its case waits on a real file watch, so npm test leaves it out.
 
 import { rmSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';

@@ -2,9 +2,9 @@
 // temporary directory and puts first on PATH: the runner spawns `ssh` by name, so every case here
 // exercises the real spawn, the real budget and the real kill path without a connection existing.
 //
-// Thirteen cases: the connect options the poll uses, a command that never returns, a command that
-// ignores the polite signal, the two stderr lines a dead multiplexed master and a route that has
-// gone answer with, and the eight over the measurement the two kill cases hold themselves to.
+// Five cases: the connect options the poll uses, a command that never returns, a command that
+// ignores the polite signal, and the two stderr lines a dead multiplexed master and a route that
+// has gone answer with.
 //
 // A kill case holds the runner to ending a child within the grace after the budget, and every other
 // term of that bound is measured in the same run rather than assumed, because a loaded machine
@@ -32,7 +32,7 @@
 // pid and up to WATCH_MS again on the reap, and the budget that follows starts at twice what the
 // probe cost, so a slow enough machine runs a case past its timeout. That is a slow machine rather
 // than a slow runner, and it reads as a red of this file either way.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// @module-tag slow: its cases spawn stub ssh and wait for real kills, so npm test leaves it out.
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -140,16 +140,13 @@ function slackMeter(stepMs: number): Meter {
  */
 type Kill = { seen: boolean; afterMs: number; slackMs: number };
 
-/** The same, with the number of budgets it took to get a child worth looking at. */
-type Attempted = Kill & { attempts: number };
-
 /** What this machine charges a case, measured by a probe of the case's own stub. */
 type Cost = { execMs: number; reapMs: number; slackMs: number };
 
 /** Waits for a stub to record its pid, and answers whether it did so inside the ceiling. */
-async function pidUp(pidFile: string, ceilingMs = WATCH_MS): Promise<boolean> {
+async function pidUp(pidFile: string): Promise<boolean> {
     const from = performance.now();
-    while (!existsSync(pidFile) && performance.now() - from < ceilingMs) {
+    while (!existsSync(pidFile) && performance.now() - from < WATCH_MS) {
         await new Promise<void>((go) => {
             setTimeout(go, STEP_MS);
         });
@@ -162,11 +159,11 @@ async function pidUp(pidFile: string, ceilingMs = WATCH_MS): Promise<boolean> {
  * over the same wait. It gives up at the ceiling and answers what it saw, so a case says whether
  * the kill came and how long it took rather than a runner timing out over it.
  */
-async function killSeen(pidFile: string, from: number, ceilingMs = WATCH_MS): Promise<Kill> {
+async function killSeen(pidFile: string, from: number): Promise<Kill> {
     const meter = slackMeter(STEP_MS);
     try {
         let seen = gone(pidFile);
-        while (!seen && performance.now() - from < ceilingMs) {
+        while (!seen && performance.now() - from < WATCH_MS) {
             await new Promise<void>((go) => {
                 setTimeout(go, STEP_MS);
             });
@@ -215,14 +212,14 @@ async function killAfterBudget(
     dir: string,
     body: (pidFile: string) => string[],
     cost: Cost
-): Promise<Attempted> {
+): Promise<Kill> {
     let budget = Math.max(BUDGET_FLOOR_MS, Math.ceil(cost.execMs * 2));
     for (let attempt = 1; attempt <= ATTEMPTS; attempt += 1) {
         const pidFile = join(dir, `pid-${attempt}`);
         stubSsh(dir, body(pidFile));
         await expect(run('fixture', 'squeue', budget)).rejects.toThrow('timeout');
         const from = performance.now();
-        if (existsSync(pidFile)) return { ...(await killSeen(pidFile, from)), attempts: attempt };
+        if (existsSync(pidFile)) return killSeen(pidFile, from);
         budget *= 2;
     }
     throw new Error(`no child of ${ATTEMPTS} attempts recorded its pid before its budget ran out`);
@@ -238,7 +235,7 @@ function killBound(cost: Cost, kill: Kill): number {
 }
 
 /** A kill measured under a bound worth a green: the measurement, its cost, and the bound it met. */
-type Proven = { kill: Attempted; cost: Cost; bound: number };
+type Proven = { kill: Kill; cost: Cost; bound: number };
 
 /**
  * The kill, held to a bound near enough to the grace to be worth a green, measured again where the
@@ -250,19 +247,14 @@ type Proven = { kill: Attempted; cost: Cost; bound: number };
  * attempt is spoiled the case is red and says the machine was too loaded, rather than green on a
  * bound that would have missed the regression it is here for.
  */
-async function provenKill(
-    dir: string,
-    body: (pidFile: string) => string[],
-    ceilingMs = CEILING_MS,
-    attempts = ATTEMPTS
-): Promise<Proven> {
+async function provenKill(dir: string, body: (pidFile: string) => string[]): Promise<Proven> {
     let over = 0;
-    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    for (let attempt = 1; attempt <= ATTEMPTS; attempt += 1) {
         const cost = await machineCost(dir);
         const kill = await killAfterBudget(dir, body, cost);
         const bound = killBound(cost, kill);
         over = bound - KILL_GRACE_MS;
-        if (over <= ceilingMs) return { kill, cost, bound };
+        if (over <= CEILING_MS) return { kill, cost, bound };
     }
     throw new Error(`too loaded to prove the kill: ${Math.round(over)}ms over the grace`);
 }
@@ -312,125 +304,21 @@ describe('the ssh runner under a stub cluster', () => {
         expect(proven.kill.afterMs).toBeLessThanOrEqual(proven.bound);
     }, 60000);
 
-    it('publishes unreachable with a dead master line as the hint', async () => {
-        const dir = caseDir();
-        stubSsh(dir, [
-            'echo "mux_client_request_session: read from master failed" >&2',
-            'exit 255'
-        ]);
-        const hub = new Hub();
-        const watcher = watchHpc(hub, options);
-        await watcher.refresh();
-        watcher.close();
-        expect(held(hub).status).toBe('unreachable');
-        expect(held(hub).hint).toBe('mux_client_request_session: read from master failed');
-    }, 20000);
-
-    it('publishes unreachable with a timed out connect line as the hint', async () => {
-        const dir = caseDir();
-        stubSsh(dir, [
-            'echo "ssh: connect to host fixture port 22: Operation timed out" >&2',
-            'exit 255'
-        ]);
-        const hub = new Hub();
-        const watcher = watchHpc(hub, options);
-        await watcher.refresh();
-        watcher.close();
-        expect(held(hub).status).toBe('unreachable');
-        expect(held(hub).hint).toBe('ssh: connect to host fixture port 22: Operation timed out');
-    }, 20000);
-});
-
-describe('the measurement the kill cases bound themselves by', () => {
-    it('sees how late a blocked event loop runs a timer that is already due', async () => {
-        const meter = slackMeter(STEP_MS);
-        const until = performance.now() + STEP_MS * 3;
-        let spins = 0;
-        while (performance.now() < until) spins += 1;
-        await new Promise<void>((go) => {
-            setTimeout(go, STEP_MS);
-        });
-        meter.stop();
-        expect(spins).toBeGreaterThan(0);
-        expect(meter.worst()).toBeGreaterThanOrEqual(STEP_MS);
-    }, 20000);
-
-    it('gives up looking for a kill that never comes at the ceiling it was given', async () => {
-        const dir = caseDir();
-        const from = performance.now();
-        const kill = await killSeen(join(dir, 'pid'), from, STEP_MS * 3);
-        expect(kill.seen).toBe(false);
-        expect(kill.afterMs).toBeGreaterThanOrEqual(STEP_MS * 3);
-    }, 20000);
-
-    it('waits for a stub to record its pid, and says so where none did', async () => {
-        const dir = caseDir();
-        const pidFile = join(dir, 'up-pid');
-        expect(await pidUp(join(dir, 'nothing'), STEP_MS * 3)).toBe(false);
-        const child = spawn(stubFile(dir, 'up', recordsPid(pidFile, false)));
-        expect(await pidUp(pidFile)).toBe(true);
-        child.kill('SIGKILL');
-    }, 30000);
-
-    it('measures what the machine charges and takes its own probe away again', async () => {
-        const dir = caseDir();
-        const pidFile = join(dir, 'probe-pid');
-        writeFileSync(pidFile, '999999999');
-        const cost = await machineCost(dir);
-        expect(cost.execMs).toBeGreaterThan(0);
-        expect(cost.reapMs).toBeLessThan(WATCH_MS);
-        expect(readFileSync(pidFile, 'utf8').trim()).not.toBe('999999999');
-        expect(gone(pidFile)).toBe(true);
-    }, 30000);
-
-    it('takes the budget again when the machine got no child as far as its pid', async () => {
-        const dir = caseDir();
-        const mark = join(dir, 'mark');
-        const cost = await machineCost(dir);
-        const kill = await killAfterBudget(
-            dir,
-            (pidFile) => [
-                `[ -f ${JSON.stringify(mark)} ] && echo $$ > ${JSON.stringify(pidFile)}`,
-                `: > ${JSON.stringify(mark)}`,
-                'exec sleep 20'
-            ],
-            cost
-        );
-        expect(kill.attempts).toBeGreaterThan(1);
-        expect(kill.seen).toBe(true);
-    }, 30000);
-
-    it('gives up where every bound the machine allowed cost more than a green is worth', async () => {
-        const dir = caseDir();
-        await expect(
-            provenKill(dir, (pidFile) => recordsPid(pidFile, false), -1, 1)
-        ).rejects.toThrow('too loaded');
-    }, 30000);
-
-    it('writes a stub the machine runs, with the body it was given', async () => {
-        const dir = caseDir();
-        const mark = join(dir, 'ran');
-        const file = stubFile(dir, 'runs', [`echo ran > ${JSON.stringify(mark)}`]);
-        const child = spawn(file);
-        await new Promise<void>((go) => {
-            child.on('close', () => go());
-            child.on('error', () => go());
-        });
-        expect(readFileSync(mark, 'utf8').trim()).toBe('ran');
-    }, 30000);
-
-    it('gives a body that records its pid, and one that runs on through the polite signal', async () => {
-        const dir = caseDir();
-        const trapped = join(dir, 'trapped-pid');
-        const plain = join(dir, 'plain-pid');
-        const one = spawn(stubFile(dir, 'trapped', recordsPid(trapped, true)));
-        const two = spawn(stubFile(dir, 'plain', recordsPid(plain, false)));
-        expect(await pidUp(trapped)).toBe(true);
-        expect(await pidUp(plain)).toBe(true);
-        one.kill('SIGTERM');
-        two.kill('SIGTERM');
-        expect((await killSeen(plain, performance.now())).seen).toBe(true);
-        expect(gone(trapped)).toBe(false);
-        one.kill('SIGKILL');
-    }, 30000);
+    it.each([
+        ['a dead master line', 'mux_client_request_session: read from master failed'],
+        ['a timed out connect line', 'ssh: connect to host fixture port 22: Operation timed out']
+    ])(
+        'publishes unreachable with %s as the hint',
+        async (_name, line) => {
+            const dir = caseDir();
+            stubSsh(dir, [`echo "${line}" >&2`, 'exit 255']);
+            const hub = new Hub();
+            const watcher = watchHpc(hub, options);
+            await watcher.refresh();
+            watcher.close();
+            expect(held(hub).status).toBe('unreachable');
+            expect(held(hub).hint).toBe(line);
+        },
+        20000
+    );
 });

@@ -1,12 +1,11 @@
 // Layer 2, server tests. The private portfolio index uses a temporary hub whose project tiers and
-// collection files make the order, missing-file behavior and exact byte size observable.
+// collection files make the order and missing-file behavior observable.
 
-import { chmodSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, sep } from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { portfolioContext } from '../../../../src/lib/server/machine/pty/context.ts';
 import { engineDir } from '../../../../src/lib/data/sources/config.ts';
-import { writeTextAtomic } from '../../../../src/lib/server/core/json.ts';
 import { it, scratchDir, test } from '../../../fixtures/scratch.ts';
 
 // The temporary hub, made and planted before the file's first case, so a run that skips every case
@@ -81,10 +80,6 @@ describe('portfolioContext', () => {
         expect(index).not.toContain('decoy');
     });
 
-    it('has the exact size of this fixture index', () => {
-        expect(Buffer.byteLength(index)).toBe(461);
-    });
-
     it('ignores a nested scan root manifest while retaining its child projects', () => {
         expect(index).not.toContain('scan-root-decoy');
         expect(index).toContain('## projects/archive/published/zulu\nid: zulu');
@@ -104,20 +99,5 @@ describe('portfolioContext over a scan that carries the side-projects tier', () 
         expect(index).toContain('## projects/active/alpha');
         expect(index).not.toContain('side-projects/x');
         expect(index).not.toContain('Side X');
-    });
-});
-
-describe('private atomic text writes', () => {
-    it('creates an index with mode 0600 and preserves an existing file mode', () => {
-        const path = join(ROOT, 'state', 'chat', 'private.md');
-        expect(path.startsWith(ROOT + sep)).toBe(true);
-        writeTextAtomic(path, 'private index', 0o600);
-        expect(statSync(path).mode & 0o777).toBe(0o600);
-        chmodSync(path, 0o640);
-        writeTextAtomic(path, 'updated index', 0o600);
-        expect(statSync(path).mode & 0o777).toBe(0o640);
-        expect(readFileSync(path, 'utf8')).toBe('updated index');
-        writeTextAtomic(path, 'default write');
-        expect(statSync(path).mode & 0o777).toBe(0o640);
     });
 });

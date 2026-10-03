@@ -5,6 +5,7 @@
 //
 // What this does NOT cover: the real Trash library is never called, and the route's chaining behind
 // the Files write chain is tests/routes/git/untracked.test.ts.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { mkdirSync, realpathSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -135,8 +136,6 @@ describe('trashUntracked', () => {
         expect(spy).not.toHaveBeenCalled();
     });
 
-    // Revert: refuse a path whose realPath is null in trashUntracked of server/git/git-index.ts,
-    // without the link check; both links are then refused as outside the workspace.
     it('moves an untracked link whose target is missing as the link, wherever it pointed', async () => {
         const root = scratchRepo();
         symlinkSync(join(root, 'nowhere'), join(root, 'dangling'));

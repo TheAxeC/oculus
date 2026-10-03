@@ -1,5 +1,7 @@
 // Layer 4, test. Synthetic account, rollout, transcript, cache, window, dedupe, live-hour and
 // watcher coverage.
+//
+// The two cases that wait on a real file watch or a real clock are tagged slow.
 
 import { mkdirSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -738,7 +740,7 @@ describe('usage watcher', () => {
         ]);
     });
 
-    it('rebuilds when Claude Code rewrites an account file', async () => {
+    it('rebuilds when Claude Code rewrites an account file', { tags: ['slow'] }, async () => {
         const root = scratch();
         const claude = join(root, 'claude');
         const watched = new Map<string, (filename: string | Buffer | null) => void>();
@@ -806,7 +808,7 @@ describe('usage watcher', () => {
         }
     });
 
-    it('rebuilds on its clock when nothing changes on disk', async () => {
+    it('rebuilds on its clock when nothing changes on disk', { tags: ['slow'] }, async () => {
         const root = scratch();
         const claude = join(root, 'claude');
         mkdirSync(join(claude, 'projects'), { recursive: true });

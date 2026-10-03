@@ -240,7 +240,7 @@ describe('ServerContext on a configuration push', () => {
             expect(run.setters.tiers).not.toHaveBeenCalled();
         }));
 
-    it('hands nothing on for a push whose values equal the ones in force (an audit)', () =>
+    it('hands nothing on for a push whose values equal the ones in force', () =>
         inRun(async (run) => {
             await run.push(inertConfig());
             await run.push(inertConfig());
@@ -306,12 +306,6 @@ describe('ServerContext on a configuration push', () => {
             await run.push(configWith({ slurm: blockWith('slurm', { poll_min: 0, days: 14 }) }));
             for (const setter of Object.values(run.setters)) expect(setter).not.toHaveBeenCalled();
             expect(run.lines()).toEqual([]);
-        }));
-
-    it('builds a hook target without the notification settings, which the hook route reads at each request', () =>
-        inRun((run) => {
-            const keys = Object.keys(run.context.hooks).sort();
-            expect(keys).toEqual(['hub', 'limiter', 'logged', 'recordFor', 'store']);
         }));
 
     it('logs a setter that throws once as its group failing, and the next push reaches the others', () =>

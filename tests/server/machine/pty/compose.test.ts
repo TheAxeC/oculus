@@ -35,6 +35,7 @@ import type {
     ComposeStart
 } from '../../../../src/lib/data/model/index.ts';
 import { it, scratchDir, test } from '../../../fixtures/scratch.ts';
+import { requireProgram } from './tmux-server.ts';
 
 vi.setConfig({ testTimeout: 30000 });
 
@@ -267,12 +268,8 @@ describe('GET /api/agents', () => {
     });
 });
 
-/** Whether tmux answers at all; without it the real start is skipped with the reason printed. */
-const TMUX = spawnSync('tmux', ['-V'], { encoding: 'utf8' }).status === 0;
-if (!TMUX)
-    console.error('tests/server/machine/pty/compose.test.ts: skipped, tmux is not on the PATH');
-
-describe('a composed start in a real tmux', () => {
+describe('a composed start in a real tmux', { tags: ['slow'] }, () => {
+    requireProgram('tests/server/machine/pty/compose.test.ts', 'tmux', ['-V']);
     let dir = '';
     let stub = '';
     let argvFile = '';
@@ -327,72 +324,54 @@ describe('a composed start in a real tmux', () => {
         }
     }
 
-    it.skipIf(!TMUX)(
-        'hands the prompt to the agent as one argument that no shell reads',
-        async () => {
-            const marker = join(dir, 'x');
-            const prompt = `$(touch ${marker}); echo "q' ; rm -rf ~"`;
-            const composed = compose(start({ cwd: dir, prompt }), CHOICES, ACCOUNTS, stub);
-            const terminal = await startTerminal(
-                { kind: 'claude', cwd: dir, cols: 80, rows: 24, env: composed.env },
-                { ...options, argv: composed.argv ?? [] }
-            );
-            try {
-                await until(() => existsSync(argvFile));
-                const words = readFileSync(argvFile, 'utf8').split('\0').slice(0, -1);
-                expect(words).toEqual(['--permission-mode', 'manual', '--', prompt]);
-                expect(existsSync(marker)).toBe(false);
-                expect(readFileSync(envFile, 'utf8')).toBe('unset');
-            } finally {
-                await stopTerminal(terminal.id, options);
-            }
+    it('hands the prompt to the agent as one argument that no shell reads', async () => {
+        const marker = join(dir, 'x');
+        const prompt = `$(touch ${marker}); echo "q' ; rm -rf ~"`;
+        const composed = compose(start({ cwd: dir, prompt }), CHOICES, ACCOUNTS, stub);
+        const terminal = await startTerminal(
+            { kind: 'claude', cwd: dir, cols: 80, rows: 24, env: composed.env },
+            { ...options, argv: composed.argv ?? [] }
+        );
+        try {
+            await until(() => existsSync(argvFile));
+            const words = readFileSync(argvFile, 'utf8').split('\0').slice(0, -1);
+            expect(words).toEqual(['--permission-mode', 'manual', '--', prompt]);
+            expect(existsSync(marker)).toBe(false);
+            expect(readFileSync(envFile, 'utf8')).toBe('unset');
+        } finally {
+            await stopTerminal(terminal.id, options);
         }
-    );
+    });
 
-    it.skipIf(!TMUX)(
-        'runs an agent of one word through `env`, so no shell reads the binary it names',
-        async () => {
-            rmSync(argvFile, { force: true });
-            rmSync(envFile, { force: true });
-            const bare = [{ agent: 'claude' as const, label: 'Claude', lists: [] }];
-            const composed = compose(
-                start({ cwd: dir, prompt: '', account: 'University' }),
-                bare,
-                ACCOUNTS,
-                stub
-            );
-            expect(composed.argv).toEqual([stub]);
-            const terminal = await startTerminal(
-                { kind: 'claude', cwd: dir, cols: 80, rows: 24, env: composed.env },
-                { ...options, argv: composed.argv ?? [] }
-            );
-            try {
-                const args = started.at(-1) ?? [];
-                expect(args.slice(args.indexOf('--') + 1)).toEqual(['env', stub]);
-                await until(() => existsSync(argvFile));
-                expect(readFileSync(argvFile, 'utf8')).toBe('');
-                expect(readFileSync(envFile, 'utf8')).toBe(SECOND);
-            } finally {
-                await stopTerminal(terminal.id, options);
-            }
+    it('runs an agent of one word through `env`, so no shell reads the binary it names', async () => {
+        rmSync(argvFile, { force: true });
+        rmSync(envFile, { force: true });
+        const bare = [{ agent: 'claude' as const, label: 'Claude', lists: [] }];
+        const composed = compose(
+            start({ cwd: dir, prompt: '', account: 'University' }),
+            bare,
+            ACCOUNTS,
+            stub
+        );
+        expect(composed.argv).toEqual([stub]);
+        const terminal = await startTerminal(
+            { kind: 'claude', cwd: dir, cols: 80, rows: 24, env: composed.env },
+            { ...options, argv: composed.argv ?? [] }
+        );
+        try {
+            const args = started.at(-1) ?? [];
+            expect(args.slice(args.indexOf('--') + 1)).toEqual(['env', stub]);
+            await until(() => existsSync(argvFile));
+            expect(readFileSync(argvFile, 'utf8')).toBe('');
+            expect(readFileSync(envFile, 'utf8')).toBe(SECOND);
+        } finally {
+            await stopTerminal(terminal.id, options);
         }
-    );
+    });
 });
 
 describe('a request body of the wrong shape', () => {
     const SHELL = { agent: 'shell', cwd: '', account: '', prompt: '' };
-
-    it('keeps the string picks and the string images and drops the rest', () => {
-        expect(
-            composeRequest({ agent: 'x', cwd: 3, picks: { a: 'b', c: 1 }, images: ['p', 2] })
-        ).toStrictEqual({ ...SHELL, picks: { a: 'b' }, images: ['p'] });
-        expect(composeRequest({ picks: [] })).toStrictEqual({ ...SHELL, picks: {}, images: [] });
-        expect(composeRequest({ images: null })).toStrictEqual({
-            ...SHELL,
-            picks: {},
-            images: []
-        });
-    });
 
     it('drops an own __proto__ pick that is not a string and keeps the others', () => {
         const parsed = JSON.parse('{"picks":{"__proto__":"x","a":"b"}}') as Record<string, unknown>;

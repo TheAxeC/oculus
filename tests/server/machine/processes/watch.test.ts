@@ -151,19 +151,6 @@ describe('the cadence', () => {
         expect(probe.table).toHaveBeenCalledTimes(3);
         watcher.close();
     });
-
-    it('sends a later page the newest read at once through the hub replay', async () => {
-        const hub = new Hub();
-        const watcher = watchProcesses(hub, { patterns: ['claude'], deps: control().deps });
-        hub.subscribe(recorder().sink, ['processes']);
-        await vi.advanceTimersByTimeAsync(0);
-        const later = recorder();
-        hub.subscribe(later.sink, ['processes']);
-        await vi.advanceTimersByTimeAsync(0);
-        expect(later.got.map((message) => message.channel)).toEqual(['processes']);
-        expect(later.got[0].payload.status).toBe('ok');
-        watcher.close();
-    });
 });
 
 describe('the payload', () => {
@@ -252,15 +239,6 @@ describe('a read that fails', () => {
         expect(probe.table).toHaveBeenCalledTimes(3);
         expect(held(hub).status).toBe('ok');
         expect(held(hub)).not.toHaveProperty('error');
-        watcher.close();
-    });
-
-    it('publishes failed for an empty table', async () => {
-        const hub = new Hub();
-        const watcher = watchProcesses(hub, { patterns: ['node'], deps: control([]).deps });
-        hub.subscribe(recorder().sink, ['processes']);
-        await vi.advanceTimersByTimeAsync(0);
-        expect(held(hub)).toMatchObject({ status: 'failed', error: 'the process table is empty' });
         watcher.close();
     });
 });

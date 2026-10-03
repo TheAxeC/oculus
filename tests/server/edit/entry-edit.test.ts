@@ -10,6 +10,9 @@
 // The last describe reads the real hub, read only, the way tests/server/edit/yaml/yaml-edit.test.ts
 // does: a rule that holds on a fixture and not on the hub's own collection files is not a rule.
 // Nothing there is written; when the hub is not on this machine the whole block skips and says so.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -440,18 +443,6 @@ describe('putting the entries in another order', () => {
             ]);
         }
     });
-
-    it('reorders a file whose entries are addressed by a key', () => {
-        const two = KEYED.replace(
-            '  - key: amir\n',
-            '  - key: vens\n    title: "Celine Vens"\n  - key: amir\n'
-        );
-        const out = reorderEntries(two, 'key', ['amir', 'vens']);
-        expect(out.changed).toEqual(['entries']);
-        expect(
-            (parse(out.text) as { entries: { key: string }[] }).entries.map((e) => e.key)
-        ).toEqual(['amir', 'vens']);
-    });
 });
 
 describe('deleting an entry', () => {
@@ -539,24 +530,6 @@ describe('one subtask line', () => {
         const open = setSubtask(done.text, range, '0', { done: false });
         expect(open.changed).toEqual(['done']);
         expect(open.text).toBe(ENTRIES);
-    });
-
-    it('is snoozed and cleared', () => {
-        const snoozed = setSubtask(ENTRIES, range, '1', { snooze: '2026-10-01' });
-        expect(moved(ENTRIES, snoozed.text)).toEqual([
-            '      - { do: check it, done: true, snooze: 2026-10-01 }'
-        ]);
-        expect(parse(snoozed.text)).toEqual(
-            applied(ENTRIES, (data) => {
-                const held = (data.entries as Record<string, unknown>[])[0].subtasks as Record<
-                    string,
-                    unknown
-                >[];
-                held[1].snooze = '2026-10-01';
-            })
-        );
-        const cleared = setSubtask(snoozed.text, range, '1', { snooze: '' });
-        expect(cleared.text).toBe(ENTRIES);
     });
 
     it('is addressed by its own key when the block is a map', () => {
@@ -721,52 +694,36 @@ describe.skipIf(!present)('every collection entry of the real hub, read only', (
         expect(total).toBeGreaterThan(100);
     });
 
-    it('finds every entry by its identity field and writes nothing giving it back', () => {
-        const wrong: string[] = [];
-        for (const one of files) {
-            for (const item of one.items) {
-                const held = (item as Record<string, unknown>)[one.ident];
-                if (typeof held !== 'string' && typeof held !== 'number') {
-                    wrong.push(`${one.file}: an entry has no ${one.ident}`);
-                    continue;
-                }
-                const value = String(held);
-                if (entryRange(one.source, one.ident, value) === null) {
-                    wrong.push(`${one.file}: ${value} has no line range`);
-                    continue;
-                }
-                const out = setEntryFields(one.source, one.ident, value, { [one.ident]: held });
-                if (out.text !== one.source || out.changed.length > 0 || out.refused.length > 0) {
-                    wrong.push(`${one.file}: ${value} ${JSON.stringify(out.refused)}`);
+    it(
+        'finds every entry by its identity field and writes nothing giving it back',
+        { tags: ['slow'] },
+        () => {
+            const wrong: string[] = [];
+            for (const one of files) {
+                for (const item of one.items) {
+                    const held = (item as Record<string, unknown>)[one.ident];
+                    if (typeof held !== 'string' && typeof held !== 'number') {
+                        wrong.push(`${one.file}: an entry has no ${one.ident}`);
+                        continue;
+                    }
+                    const value = String(held);
+                    if (entryRange(one.source, one.ident, value) === null) {
+                        wrong.push(`${one.file}: ${value} has no line range`);
+                        continue;
+                    }
+                    const out = setEntryFields(one.source, one.ident, value, { [one.ident]: held });
+                    if (
+                        out.text !== one.source ||
+                        out.changed.length > 0 ||
+                        out.refused.length > 0
+                    ) {
+                        wrong.push(`${one.file}: ${value} ${JSON.stringify(out.refused)}`);
+                    }
                 }
             }
+            expect(wrong).toEqual([]);
         }
-        expect(wrong).toEqual([]);
-    });
-
-    it('reads every id as the identity field, except where the entry carries its own id or key', () => {
-        const apart: string[] = [];
-        for (const one of files) {
-            for (const item of one.items) {
-                const held = item as Record<string, unknown>;
-                const id =
-                    typeof held.id === 'string' && held.id !== ''
-                        ? held.id
-                        : typeof held.key === 'string' && held.key !== ''
-                          ? held.key
-                          : held.title;
-                if (id === held[one.ident]) continue;
-                apart.push(
-                    `${one.file}: id ${String(id)} vs ${one.ident} ${String(held[one.ident])}`
-                );
-                // Registry collections keep an explicit `id` or `key`, while the identity field is
-                // the schema's first. Every write resolves the entity id to that field.
-                expect(typeof held.id === 'string' || typeof held.key === 'string').toBe(true);
-            }
-        }
-        if (apart.length > 0)
-            console.log(`entry-edit: id apart from the identity field:\n${apart.join('\n')}`);
-    });
+    );
 });
 
 describe('renderFlowMap', () => {

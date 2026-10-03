@@ -997,6 +997,10 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z379 (2026-10-04, T1c's landing): the tests near the 100 ms line
+
+Two five-run samples, the builder's and the round reviewer's, taken at different loads, put 8 tagged tests under 100 ms and one untagged test over it, and no test sat on the wrong side in both. Options: (a) the builder's measured tags stand, and T1a chooses the quick list from measured file times within its 30 s limit; (b) retag every test by the minimum over both samples; (c) tag every test near the line, the lazy option. Chosen (a): the line moves with the load, and T1a decides what runs quick.
+
 ## Z378 (2026-10-04, the recurring-findings pass): the rule sentences
 
 Nine causes recur in three or more of the 14 steps reviewed since 2026-10-02: builder git commands (8 steps), paths outside the write list unmarked (11), exports with no importer (9), files brought near the size line (9), documents made false (11), assertion edits unlisted (6), first runs not per test (5), history wording (4), reviewer git commands (7). Options: (a) the sentences adopted under Z251 (the user: each such cause ends in a rule sentence or a sentence every brief carries); (b) each raised to Axel; (c) nothing changed, the lazy option. Chosen (a): `agents/spec.md` and the standing demands now carry them, the record in `agents/reviews/recurring-2026-10-04.md`.

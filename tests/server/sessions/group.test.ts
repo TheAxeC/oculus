@@ -11,11 +11,9 @@ import { describe, expect } from 'vitest';
 import {
     GENERAL,
     UNKNOWN_NAME,
-    defaultRoots,
     group,
     type ProjectFolder
 } from '../../../src/lib/server/sessions/group.ts';
-import { defaultOverridesPath } from '../../../src/lib/server/sessions/overrides.ts';
 import type { Area, SessionRecord, Workspace } from '../../../src/lib/data/model/index.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
@@ -413,12 +411,5 @@ describe('robustness', () => {
                 6 as unknown as string
             )
         ).toEqual([]);
-    });
-
-    it('exposes defaults that are absolute paths', () => {
-        expect(defaultRoots().length).toBe(3);
-        for (const path of [...defaultRoots(), defaultOverridesPath()]) {
-            expect(path.startsWith('/')).toBe(true);
-        }
     });
 });

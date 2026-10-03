@@ -1,8 +1,8 @@
 // The control-mode protocol, on recorded text. No tmux runs here: every case feeds the parser the
 // bytes a `tmux -C attach-session` child printed on this machine, so the decoding, the reply
-// pairing and the cutting of typed input are checked without a process, a socket or a session.
-// The last cases ask whether a process is a running tmux, of this test's own process, which `ps`
-// names as node.
+// pairing and the cutting of typed input are checked without a tmux, a socket or a session. The
+// last cases ask whether a process is a running tmux, of this test's own process, which `ps` names
+// as node; the last of them runs `ps` and is tagged slow.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -121,10 +121,6 @@ describe('the input pieces', () => {
         expect(sizes(report)).toEqual([11]);
     });
 
-    it('keeps a typed line whole', () => {
-        expect(sizes(Buffer.from('ls -la\r'))).toEqual([7]);
-    });
-
     it('cuts a long text at the most one command carries', () => {
         expect(INPUT_MOST).toBe(996);
         expect(sizes(Buffer.from('a'.repeat(INPUT_MOST + 904)))).toEqual([INPUT_MOST, 904]);
@@ -195,10 +191,15 @@ describe('the command of a process that may be a tmux server', () => {
             expect(isTmuxCommand(other)).toBe(false);
         }
     });
-    it('is not a running tmux for a live process that runs another command, or for no pid', async () => {
-        // This process is alive, so kill -0 succeeds, and ps prints node: only the command tells.
-        expect(await tmuxRuns(process.pid)).toBe(false);
-        expect(await tmuxRuns(1)).toBe(false);
-        expect(await tmuxRuns(0)).toBe(false);
-    });
+    it(
+        'is not a running tmux for a live process that runs another command, or for no pid',
+        { tags: ['slow'] },
+        async () => {
+            // This process is alive, so kill -0 succeeds, and ps prints node: only the command
+            // tells.
+            expect(await tmuxRuns(process.pid)).toBe(false);
+            expect(await tmuxRuns(1)).toBe(false);
+            expect(await tmuxRuns(0)).toBe(false);
+        }
+    );
 });

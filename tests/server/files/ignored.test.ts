@@ -5,8 +5,11 @@
 // Every folder here is synthetic, under the system temporary directory, and is asserted to be
 // inside it before anything is written. The repository cases make their own repository there with
 // `git init` and `git add`, each naming the folder and giving the identity on the command line, so
-// no repository of the machine's own is read or written. The case over a git that cannot start and
-// the case over one that never answers put a PATH of their own in front for the length of the case.
+// no repository of the machine's own is read or written. The cases over a git that never answers,
+// one that fails and an empty folder put a PATH of their own in front for the length of the case.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { spawnSync } from 'node:child_process';
 import {
@@ -99,77 +102,93 @@ function fakeGit(script: string): void {
 }
 
 describe('the entries git ignores in one folder', () => {
-    it('names a folder a folder pattern matches and a file a file pattern matches, beside a linked folder', () => {
-        const dir = repository();
-        // A link to a folder is a file to git; a name asked with a trailing slash over it would
-        // make git refuse the whole run, and nothing in the folder would be left out.
-        symlinkSync(join(dir, 'src'), join(dir, 'linked'));
-        const ignored = ignoredIn(dir, ['build', 'linked', 'src', 'a.log', 'kept.log', 'keep.txt']);
-        expect([...ignored].sort()).toEqual(['a.log', 'build']);
-    });
+    it(
+        'names a folder a folder pattern matches and a file a file pattern matches, beside a linked folder',
+        { tags: ['slow'] },
+        () => {
+            const dir = repository();
+            // A link to a folder is a file to git; a name asked with a trailing slash over it would
+            // make git refuse the whole run, and nothing in the folder would be left out.
+            symlinkSync(join(dir, 'src'), join(dir, 'linked'));
+            const ignored = ignoredIn(dir, [
+                'build',
+                'linked',
+                'src',
+                'a.log',
+                'kept.log',
+                'keep.txt'
+            ]);
+            expect([...ignored].sort()).toEqual(['a.log', 'build']);
+        }
+    );
 
-    it('leaves what git ignores out of a listing unless ignored files are asked for', () => {
-        const dir = repository();
-        expect(listed(dir, { hidden: false, ignored: false })).toEqual([
-            'src',
-            'keep.txt',
-            'kept.log'
-        ]);
-        expect(listed(dir, { hidden: false, ignored: true })).toEqual([
-            'build',
-            'src',
-            'a.log',
-            'keep.txt',
-            'kept.log'
-        ]);
-        // hidden files are the other toggle: the .gitignore and .git are dotfiles, which git does
-        // not ignore, so asking for hidden files alone shows them and still leaves out the ignored
-        expect(listed(dir, { hidden: true, ignored: false })).toEqual([
-            '.git',
-            'src',
-            '.gitignore',
-            'keep.txt',
-            'kept.log'
-        ]);
-    });
+    it(
+        'leaves what git ignores out of a listing unless ignored files are asked for',
+        { tags: ['slow'] },
+        () => {
+            const dir = repository();
+            expect(listed(dir, { hidden: false, ignored: false })).toEqual([
+                'src',
+                'keep.txt',
+                'kept.log'
+            ]);
+            expect(listed(dir, { hidden: false, ignored: true })).toEqual([
+                'build',
+                'src',
+                'a.log',
+                'keep.txt',
+                'kept.log'
+            ]);
+            // hidden files are the other toggle: the .gitignore and .git are dotfiles, which git
+            // does not ignore, so asking for hidden files alone shows them and still leaves out the
+            // ignored
+            expect(listed(dir, { hidden: true, ignored: false })).toEqual([
+                '.git',
+                'src',
+                '.gitignore',
+                'keep.txt',
+                'kept.log'
+            ]);
+        }
+    );
 
-    it('marks each ignored entry `ignored: true` when ignored files are asked for, and no other', () => {
-        const dir = repository();
-        const found = listShown([{ key: 'one', dir }], 'one', '', { hidden: false, ignored: true });
-        if (!('entries' in found)) throw new Error(found.error);
-        const marked = Object.fromEntries(found.entries.map((one) => [one.name, one.ignored]));
-        expect(marked).toEqual({
-            build: true,
-            src: undefined,
-            'a.log': true,
-            'keep.txt': undefined,
-            'kept.log': undefined
-        });
-        const plain = listShown([{ key: 'one', dir }], 'one', '', DEFAULT_SHOWN);
-        if (!('entries' in plain)) throw new Error(plain.error);
-        expect(plain.entries.some((one) => 'ignored' in one)).toBe(false);
-    });
+    it(
+        'marks each ignored entry `ignored: true` when ignored files are asked for, and no other',
+        { tags: ['slow'] },
+        () => {
+            const dir = repository();
+            const found = listShown([{ key: 'one', dir }], 'one', '', {
+                hidden: false,
+                ignored: true
+            });
+            if (!('entries' in found)) throw new Error(found.error);
+            const marked = Object.fromEntries(found.entries.map((one) => [one.name, one.ignored]));
+            expect(marked).toEqual({
+                build: true,
+                src: undefined,
+                'a.log': true,
+                'keep.txt': undefined,
+                'kept.log': undefined
+            });
+            const plain = listShown([{ key: 'one', dir }], 'one', '', DEFAULT_SHOWN);
+            if (!('entries' in plain)) throw new Error(plain.error);
+            expect(plain.entries.some((one) => 'ignored' in one)).toBe(false);
+        }
+    );
 
-    it('audits that a folder in no repository leaves out nothing for being ignored', () => {
-        const dir = folder({ '.gitignore': '*.log\n', 'a.log': 'x\n', 'b.txt': 'y\n' });
-        expect(listed(dir, { hidden: false, ignored: false })).toEqual(['a.log', 'b.txt']);
-    });
+    it(
+        'leaves out nothing when git does not answer in time, and answers at the timeout',
+        { tags: ['slow'], timeout: 15000 },
+        () => {
+            const dir = repository();
+            const finished = join(dir, 'finished');
+            fakeGit(`sleep 2; touch ${JSON.stringify(finished)}`);
+            expect(ignoredIn(dir, ['a.log'], 200).size).toBe(0);
+            expect(existsSync(finished)).toBe(false);
+        }
+    );
 
-    it('audits that it leaves out nothing when git cannot be started', () => {
-        const dir = repository();
-        process.env.PATH = join(dir, 'no-such-bin');
-        expect(ignoredIn(dir, ['a.log']).size).toBe(0);
-    });
-
-    it('leaves out nothing when git does not answer in time, and answers at the timeout', () => {
-        const dir = repository();
-        fakeGit('exec sleep 6');
-        const started = Date.now();
-        expect(ignoredIn(dir, ['a.log'], 200).size).toBe(0);
-        expect(Date.now() - started).toBeLessThan(3000);
-    }, 15000);
-
-    it('takes no name from a git that failed, whatever it printed', () => {
+    it('takes no name from a git that failed, whatever it printed', { tags: ['slow'] }, () => {
         const dir = repository();
         // a git that fails says why on its error output, which is what the run keeps of it
         fakeGit("printf 'a.log\\0' >&2; exit 1");

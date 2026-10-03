@@ -8,6 +8,7 @@
 //
 // What this does NOT cover: an identity set only in the global configuration, which this file
 // replaces by an empty one on purpose.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 import { commit } from '../../../../src/lib/server/git/git-write.ts';

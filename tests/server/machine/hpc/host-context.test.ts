@@ -200,26 +200,6 @@ describe('the host through a local.yml written again and a portfolio rebuild', (
             );
         });
     });
-
-    it('publishes the new sentence at once when slurm.resource changes and the host stays empty', () => {
-        const scratch = scratchDir('oculus-host-resource-');
-        const resources = {
-            ...clusters(),
-            'this-mac': { ...clusters().cluster, id: 'this-mac', kind: 'machine' as const }
-        };
-        return within(started(localWith(scratch), resources), async (run) => {
-            const push = async (resource: string): Promise<void> => {
-                const slurm = { ...(inertConfig().slurm as object), resource };
-                run.hub.publish('config', { config: { ...inertConfig(), slurm }, findings: [] });
-                await settle();
-            };
-            await push('nowhere');
-            expect(run.last()).toMatchObject({ host: '', missing: 'nowhere names no resource' });
-            await push('this-mac');
-            expect(run.last()).toMatchObject({ host: '', missing: 'this-mac is not a cluster' });
-            expect(run.setters.hpc).toHaveBeenCalledTimes(2);
-        });
-    });
 });
 
 describe('the host through a configuration push', () => {

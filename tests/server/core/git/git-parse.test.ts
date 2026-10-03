@@ -58,7 +58,6 @@ describe('the change lists of a status', () => {
         expect(cut.held).toEqual({ staged: 2, changes: 1, untracked: 1, merge: 1 });
     });
 
-    // Revert: leave `from` out of the entry statusLists builds.
     it('gives the entry of a rename or a copy its old path, and no other entry one', () => {
         const lists = statusLists(
             statusRecords(

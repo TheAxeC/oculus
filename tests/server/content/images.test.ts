@@ -6,6 +6,9 @@
 // more, and written under the system temporary directory, asserted inside it before the write. The
 // one real picture is the smallest JPEG a camera library writes, carried as base64. What this does
 // not cover: the tile the size is drawn into, which is tests/views/personal/memories.test.ts.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync, truncateSync, writeFileSync } from 'node:fs';
@@ -477,13 +480,17 @@ describe('a file that gives no size', () => {
         expect(sizeOf(join(dir, 'folder.png'))).toBeNull();
     });
 
-    it('is a named pipe under a picture name, answered without waiting for a writer', () => {
-        const dir = scratch();
-        const pipe = join(dir, 'pipe.jpg');
-        expect(resolve(pipe).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-        execFileSync('mkfifo', [pipe]);
-        expect(sizeOf(pipe)).toBeNull();
-    });
+    it(
+        'is a named pipe under a picture name, answered without waiting for a writer',
+        { tags: ['slow'] },
+        () => {
+            const dir = scratch();
+            const pipe = join(dir, 'pipe.jpg');
+            expect(resolve(pipe).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+            execFileSync('mkfifo', [pipe]);
+            expect(sizeOf(pipe)).toBeNull();
+        }
+    );
 });
 
 describe('how far into a file the size is read', () => {

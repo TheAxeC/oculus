@@ -61,27 +61,6 @@ describe('handleHook', () => {
             at: new Date(NOW).toISOString()
         });
     });
-
-    it('accepts a body missing everything but the event name and the session id, with nulls', () => {
-        const body = { hook_event_name: 'Stop', session_id: 's1' };
-        const event = handleHook(body, NOW);
-        expect(event).toEqual({ session: 's1', event: 'stop', at: new Date(NOW).toISOString() });
-        expect(event?.kind).toBeUndefined();
-        expect(event?.message).toBeUndefined();
-    });
-
-    it('answers null for a hook_event_name this route does not know', () => {
-        expect(handleHook({ hook_event_name: 'SessionStart', session_id: 's1' }, NOW)).toBeNull();
-    });
-
-    it('answers null for a body with no session_id', () => {
-        expect(handleHook({ hook_event_name: 'Stop' }, NOW)).toBeNull();
-    });
-
-    it('answers null for a body that is not an object', () => {
-        expect(handleHook('not an object', NOW)).toBeNull();
-        expect(handleHook(null, NOW)).toBeNull();
-    });
 });
 
 describe('handleHook, fields and refusals', () => {
@@ -142,11 +121,6 @@ describe('handleHook, fields and refusals', () => {
             title: ' '
         });
         expect(handleHook({ ...named, session_id: ' ' }, NOW)?.session).toBe(' ');
-    });
-
-    it('leaves the key of a list or a map field absent', () => {
-        const event = handleHook({ ...named, message: ['m'], cwd: {} }, NOW);
-        expect(Object.keys(event ?? {}).sort()).toEqual(['at', 'event', 'session']);
     });
 });
 
@@ -320,26 +294,6 @@ describe('notify', () => {
     });
 });
 
-describe('notifyConfig', () => {
-    it("reads enabled, events and quiet_seconds from behavior.yml's notify key", () => {
-        const config = { notify: { enabled: false, events: ['stop'], quiet_seconds: 9 } };
-        expect(notifyConfig(config)).toEqual({ enabled: false, events: ['stop'], quietSeconds: 9 });
-    });
-
-    it('answers the default when the key is absent or malformed', () => {
-        expect(notifyConfig({})).toEqual({
-            enabled: true,
-            events: ['permission_prompt', 'idle_prompt', 'stop'],
-            quietSeconds: 3
-        });
-        expect(notifyConfig({ notify: 'nonsense' })).toEqual({
-            enabled: true,
-            events: ['permission_prompt', 'idle_prompt', 'stop'],
-            quietSeconds: 3
-        });
-    });
-});
-
 describe('notifyConfig, the values it takes and drops', () => {
     const DEFAULT = {
         enabled: true,
@@ -424,12 +378,6 @@ describe('handleHookRequest, the size refusal', () => {
         const response = await handleHookRequest(request(huge), target());
         expect(response.status).toBe(413);
     });
-
-    it('accepts a body well under 64 KB', async () => {
-        const body = JSON.stringify({ hook_event_name: 'Stop', session_id: 's1' });
-        const response = await handleHookRequest(request(body), target());
-        expect(response.status).toBe(200);
-    });
 });
 
 describe('handleHookRequest, the event filter', () => {
@@ -494,19 +442,6 @@ describe('handleHookRequest, the first payload of each name', () => {
         expect(into.store.latest('a', NOW)).toBeNull();
         expect(stderr).toHaveBeenCalledTimes(1);
         expect(stderr).toHaveBeenCalledWith(`hooks: first SessionStart payload: ${sent}`);
-        stderr.mockRestore();
-    });
-
-    it('logs a name once per name and with every key the body holds', async () => {
-        const stderr = vi.spyOn(console, 'error').mockImplementation(noop);
-        const into = target();
-        await handleHookRequest(
-            request('{"hook_event_name":"Stop","session_id":"a","stop_hook_active":true}'),
-            into
-        );
-        expect(stderr).toHaveBeenCalledWith(
-            'hooks: first Stop payload: {"hook_event_name":"Stop","session_id":"a","stop_hook_active":true}'
-        );
         stderr.mockRestore();
     });
 

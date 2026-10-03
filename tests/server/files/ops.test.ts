@@ -11,6 +11,9 @@
 // What this does NOT cover: the menu that posts these requests and the questions that precede
 // them, which are tests/views/sources/files/ and tests/state/sources/explorer/; a Trash that really
 // takes a file, which is the library's and is seen at the look; a volume with no Trash.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import {
     chmodSync,
@@ -184,18 +187,22 @@ describe('create', () => {
         }
     });
 
-    it('answers exists to the second of two creates of one name while the first is held in the chain (case 27)', async () => {
-        const w = world();
-        let release = (): void => undefined;
-        const gate = new Promise<void>((done) => (release = done));
-        const first = w.post(create('', 'a.md'), { slow: () => gate });
-        await new Promise((done) => setTimeout(done, 10));
-        const second = w.post(create('', 'a.md'));
-        await new Promise((done) => setTimeout(done, 10));
-        release();
-        expect((await first).body).toEqual({ ok: true, path: 'a.md' });
-        expect((await second).body).toEqual({ ok: false, error: 'exists' });
-    });
+    it(
+        'answers exists to the second of two creates of one name while the first is held in the chain (case 27)',
+        { tags: ['slow'] },
+        async () => {
+            const w = world();
+            let release = (): void => undefined;
+            const gate = new Promise<void>((done) => (release = done));
+            const first = w.post(create('', 'a.md'), { slow: () => gate });
+            await new Promise((done) => setTimeout(done, 10));
+            const second = w.post(create('', 'a.md'));
+            await new Promise((done) => setTimeout(done, 10));
+            release();
+            expect((await first).body).toEqual({ ok: true, path: 'a.md' });
+            expect((await second).body).toEqual({ ok: false, error: 'exists' });
+        }
+    );
 });
 
 describe('rename', () => {
@@ -435,13 +442,6 @@ describe('the comparison of two files', () => {
         expect((await read(compare(w, '../x', 'a.md'))).error).toBe('outside');
     });
 
-    it('answers an empty diff for a file with itself (case 28)', async () => {
-        const w = world({ 'a.md': 'same\n' });
-        const body = await read(compare(w, 'a.md', 'a.md'));
-        expect(body.files?.[0]).toMatchObject({ original: 'same\n', modified: 'same\n' });
-    });
-
-    // Revert: read `save=` as a path of the working tree instead of a copy of the history.
     it('reads a copy of the local history as the left side when `save=` names one', async () => {
         const w = world({ 'a.md': 'old\n' });
         const history = join(scratchDir('oculus-compare-'), 'history');

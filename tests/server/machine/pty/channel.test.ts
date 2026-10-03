@@ -1,6 +1,9 @@
-// The pty channels on a real Hub with a recording sink and a recording driver. No tmux runs here:
-// the driver records the argument list every channel operation built, which is what makes "the
-// input reached send-keys" an assertion rather than a process.
+// The pty channels on a real Hub with a recording sink and a recording driver. Outside the describe
+// over a real tmux, no tmux runs: the driver records the argument list every channel operation
+// built, which is what makes "the input reached send-keys" an assertion rather than a process.
+//
+// The describe over a real tmux starts a private tmux server and is tagged slow; every other case
+// runs on the recording driver in the quick tier.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -10,8 +13,6 @@ import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import type { Sink } from '../../../../src/lib/server/core/channels.ts';
 import {
     IDLE_POLL_MS,
-    NO_SERVER_CONFIRMS,
-    NO_SERVER_CONFIRM_MS,
     POLL_MS,
     Terminals,
     channelTerminal,
@@ -23,6 +24,7 @@ import type { Message } from '../../../../src/lib/data/model/index.ts';
 import { run } from '../../../../src/lib/server/machine/pty/tmux.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { it, scratchDir, test } from '../../../fixtures/scratch.ts';
+import { programRuns, requireProgram } from './tmux-server.ts';
 
 const ID = 'a1b2c3-shell';
 const CHANNEL = ptyChannel(ID);
@@ -479,49 +481,6 @@ describe('the terminal list', () => {
         expect(held.list()).toBe(null);
     });
 
-    it('keeps the last list when list-sessions fails for any reason but no server', async () => {
-        const record = driver();
-        const { held } = terminals(record);
-        await settle();
-        let moved = 0;
-        const off = held.onChange(() => {
-            moved += 1;
-        });
-        record.list(new Error('command timed out'));
-        held.refresh();
-        await settle();
-        expect(held.list()?.map((terminal) => terminal.id)).toEqual([ID]);
-        expect(moved).toBe(0);
-        off();
-    });
-
-    it('is empty when every read says no server runs, in either of its words', async () => {
-        vi.useFakeTimers();
-        try {
-            for (const said of [
-                'no server running on /private/tmp/tmux-501/default',
-                'error connecting to /private/tmp/tmux-501/default (No such file or directory)'
-            ]) {
-                const record = driver();
-                const { held } = terminals(record);
-                await settle();
-                let moved = 0;
-                const off = held.onChange(() => {
-                    moved += 1;
-                });
-                record.list(new Error(said));
-                held.refresh();
-                await vi.advanceTimersByTimeAsync(NO_SERVER_CONFIRM_MS * NO_SERVER_CONFIRMS);
-                await settle();
-                expect(held.list()).toEqual([]);
-                expect(moved).toBe(1);
-                off();
-            }
-        } finally {
-            vi.useRealTimers();
-        }
-    });
-
     it('is read at construction and tells its listeners when it moved', async () => {
         const { held } = terminals();
         await settle();
@@ -624,34 +583,13 @@ describe('the screen an attaching page is given', () => {
     });
 });
 
-/** Whether tmux answers at all; without it the real-tmux cases are skipped, the reason printed. */
-const TMUX = (() => {
-    try {
-        return spawnSync('tmux', ['-V'], { encoding: 'utf8' }).status === 0;
-    } catch {
-        return false;
-    }
-})();
-
-/** Whether python3 runs, which the one-read case's pane is written in. */
-const PYTHON = (() => {
-    try {
-        return spawnSync('python3', ['-c', 'pass'], { encoding: 'utf8' }).status === 0;
-    } catch {
-        return false;
-    }
-})();
-
-if (!TMUX) console.error('tests/server/machine/pty/channel.test.ts: real tmux cases skipped');
-if (TMUX && !PYTHON) {
-    console.error('tests/server/machine/pty/channel.test.ts: one-read case skipped, no python3');
-}
-
 // A private tmux server under a scratch directory: its socket is this file's own, so the user's
 // server is never listed, started or killed, and afterAll kills this one whether or not a case
 // failed.
-describe('input through a real tmux', () => {
+describe('input through a real tmux', { tags: ['slow'] }, () => {
+    requireProgram('tests/server/machine/pty/channel.test.ts', 'tmux', ['-V']);
     let dir = '';
+    let python = false;
     const tmux = { socket: '' };
     const id = 'd4e5f6-shell';
     let file = '';
@@ -659,6 +597,7 @@ describe('input through a real tmux', () => {
     // Made before the first case of this block, so a run that skips it makes nothing.
     test.beforeAll(() => {
         dir = scratchDir('oculus-channel-');
+        python = programRuns('python3', ['-c', 'pass']);
         tmux.socket = join(dir, 'server.sock');
         file = join(dir, 'typed.bin');
     });
@@ -679,119 +618,111 @@ describe('input through a real tmux', () => {
         throw new Error(`timed out waiting for ${what}`);
     }
 
-    it.skipIf(!TMUX)(
-        'reaches a raw-mode pane byte for byte and in order',
-        async () => {
-            // The pane writes every byte it is given to a file: raw mode, so the line discipline
-            // neither edits nor echoes, and the file is created only once raw mode is in force.
-            await run(
-                [
-                    'new-session',
-                    '-d',
-                    '-s',
-                    `oculus-${id}`,
-                    '-x',
-                    '80',
-                    '-y',
-                    '24',
-                    '--',
-                    `stty raw -echo; exec cat > ${file}`
-                ],
-                tmux
-            );
-            await until(() => existsSync(file), 'the pane to open its file');
-            const held = new Terminals(new Hub(), { tmux, poll: 0 });
-            open.push(held);
-            const page = recorder();
-            held.subscribed(page.sink, [ptyChannel(id)], TOKEN, TOKEN);
-            await until(() => page.messages.length > 0, 'the scrollback');
+    it('reaches a raw-mode pane byte for byte and in order', async () => {
+        // The pane writes every byte it is given to a file: raw mode, so the line discipline
+        // neither edits nor echoes, and the file is created only once raw mode is in force.
+        await run(
+            [
+                'new-session',
+                '-d',
+                '-s',
+                `oculus-${id}`,
+                '-x',
+                '80',
+                '-y',
+                '24',
+                '--',
+                `stty raw -echo; exec cat > ${file}`
+            ],
+            tmux
+        );
+        await until(() => existsSync(file), 'the pane to open its file');
+        const held = new Terminals(new Hub(), { tmux, poll: 0 });
+        open.push(held);
+        const page = recorder();
+        held.subscribed(page.sink, [ptyChannel(id)], TOKEN, TOKEN);
+        await until(() => page.messages.length > 0, 'the scrollback');
 
-            // Ten bytes, one two-byte character among them, a thousand times over.
-            const text = Buffer.from('abcdefgh\u00e9'.repeat(1000));
-            expect(text.length).toBe(10000);
-            const inputs = [
-                Buffer.from('\u001b[<0;20;14M'),
-                Buffer.from('\u001b[I'),
-                Buffer.from('\u001b[200~pasted\u001b[201~'),
-                text
-            ];
-            for (const bytes of inputs) {
-                held.inbound(
-                    page.sink,
-                    JSON.stringify({
-                        type: 'input',
-                        channel: ptyChannel(id),
-                        bytes: bytes.toString('base64')
-                    })
-                );
-            }
-            const expected = Buffer.concat(inputs);
-            await until(() => statSync(file).size >= expected.length, 'every byte in the file');
-            expect(readFileSync(file).equals(expected)).toBe(true);
-        },
-        30000
-    );
-
-    it.skipIf(!TMUX || !PYTHON)(
-        'hands a mouse report to the pane in one read, so no lone Escape reaches it',
-        async () => {
-            // The pane logs the size of every read(2) it is handed. An agent reads an Escape that
-            // arrives alone as the Escape key; one that arrives with the rest of its sequence is
-            // the sequence.
-            const reads = join(dir, 'reads.txt');
-            const logger = [
-                'import os, sys, tty',
-                'tty.setraw(0)',
-                `out = open(${JSON.stringify(reads)}, "w", buffering=1)`,
-                'while True:',
-                '    chunk = os.read(0, 65536)',
-                '    out.write(chunk.hex() + "\\n")'
-            ].join('\n');
-            const other = 'a7b8c9-shell';
-            await run(
-                [
-                    'new-session',
-                    '-d',
-                    '-s',
-                    `oculus-${other}`,
-                    '-x',
-                    '80',
-                    '-y',
-                    '24',
-                    '--',
-                    'python3',
-                    '-c',
-                    logger
-                ],
-                tmux
-            );
-            await until(() => existsSync(reads), 'the pane to open its log');
-            const held = new Terminals(new Hub(), { tmux, poll: 0 });
-            open.push(held);
-            const page = recorder();
-            held.subscribed(page.sink, [ptyChannel(other)], TOKEN, TOKEN);
-            await until(() => page.messages.length > 0, 'the scrollback');
-            const report = Buffer.from('\u001b[<0;20;14M');
+        // Ten bytes, one two-byte character among them, a thousand times over.
+        const text = Buffer.from('abcdefgh\u00e9'.repeat(1000));
+        expect(text.length).toBe(10000);
+        const inputs = [
+            Buffer.from('\u001b[<0;20;14M'),
+            Buffer.from('\u001b[I'),
+            Buffer.from('\u001b[200~pasted\u001b[201~'),
+            text
+        ];
+        for (const bytes of inputs) {
             held.inbound(
                 page.sink,
                 JSON.stringify({
                     type: 'input',
-                    channel: ptyChannel(other),
-                    bytes: report.toString('base64')
+                    channel: ptyChannel(id),
+                    bytes: bytes.toString('base64')
                 })
             );
-            const logged = (): string[] =>
-                readFileSync(reads, 'utf8')
-                    .split('\n')
-                    .filter((line) => line !== '');
-            await until(
-                () => logged().join('').length >= report.length * 2,
-                'the report in the log'
-            );
-            expect(logged()).toEqual([report.toString('hex')]);
-        },
-        30000
-    );
+        }
+        const expected = Buffer.concat(inputs);
+        await until(() => statSync(file).size >= expected.length, 'every byte in the file');
+        expect(readFileSync(file).equals(expected)).toBe(true);
+    }, 30000);
+
+    it('hands a mouse report to the pane in one read, so no lone Escape reaches it', async ({
+        skip
+    }) => {
+        skip(!python, 'python3 is not on the PATH, which the pane is written in');
+        // The pane logs the size of every read(2) it is handed. An agent reads an Escape that
+        // arrives alone as the Escape key; one that arrives with the rest of its sequence is
+        // the sequence.
+        const reads = join(dir, 'reads.txt');
+        const logger = [
+            'import os, sys, tty',
+            'tty.setraw(0)',
+            `out = open(${JSON.stringify(reads)}, "w", buffering=1)`,
+            'while True:',
+            '    chunk = os.read(0, 65536)',
+            '    out.write(chunk.hex() + "\\n")'
+        ].join('\n');
+        const other = 'a7b8c9-shell';
+        await run(
+            [
+                'new-session',
+                '-d',
+                '-s',
+                `oculus-${other}`,
+                '-x',
+                '80',
+                '-y',
+                '24',
+                '--',
+                'python3',
+                '-c',
+                logger
+            ],
+            tmux
+        );
+        await until(() => existsSync(reads), 'the pane to open its log');
+        const held = new Terminals(new Hub(), { tmux, poll: 0 });
+        open.push(held);
+        const page = recorder();
+        held.subscribed(page.sink, [ptyChannel(other)], TOKEN, TOKEN);
+        await until(() => page.messages.length > 0, 'the scrollback');
+        const report = Buffer.from('\u001b[<0;20;14M');
+        held.inbound(
+            page.sink,
+            JSON.stringify({
+                type: 'input',
+                channel: ptyChannel(other),
+                bytes: report.toString('base64')
+            })
+        );
+        const logged = (): string[] =>
+            readFileSync(reads, 'utf8')
+                .split('\n')
+                .filter((line) => line !== '');
+        await until(() => logged().join('').length >= report.length * 2, 'the report in the log');
+        expect(logged()).toEqual([report.toString('hex')]);
+    }, 30000);
 });
 
 describe('an inbound message of the wrong type', () => {

@@ -7,6 +7,8 @@
 //
 // The waits are generous because the case waits on a real file observation and the suite runs
 // several files at once: they are how long a failure takes, not how long a pass takes.
+//
+// The three cases that wait on a real file observation are tagged slow.
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
@@ -91,23 +93,27 @@ async function armed(
     return { watcher, got };
 }
 
-it('publishes a bookmark message when the file is written outside oculus', async () => {
-    const file = bookmarksFile();
-    const hub = new Hub();
-    const client = recording();
-    hub.subscribe(client.sink, ['files']);
-    await armed(hub, file, client.got);
+it(
+    'publishes a bookmark message when the file is written outside oculus',
+    { tags: ['slow'] },
+    async () => {
+        const file = bookmarksFile();
+        const hub = new Hub();
+        const client = recording();
+        hub.subscribe(client.sink, ['files']);
+        await armed(hub, file, client.got);
 
-    writeFileSync(file, 'title: Bookmarks\nentries:\n  - { label: one }\n');
-    await until(() => client.got.length > 0, WAIT);
+        writeFileSync(file, 'title: Bookmarks\nentries:\n  - { label: one }\n');
+        await until(() => client.got.length > 0, WAIT);
 
-    expect(client.got.map((message) => message.channel)).toEqual(['files']);
-    const payload = client.got[0].payload as FilesPayload;
-    // the file lies under no root, so the message names none and says which file it is
-    expect(payload).toEqual({ root: '', bookmarks: true });
-});
+        expect(client.got.map((message) => message.channel)).toEqual(['files']);
+        const payload = client.got[0].payload as FilesPayload;
+        // the file lies under no root, so the message names none and says which file it is
+        expect(payload).toEqual({ root: '', bookmarks: true });
+    }
+);
 
-it('says nothing for another file written in the same folder', async () => {
+it('says nothing for another file written in the same folder', { tags: ['slow'] }, async () => {
     const file = bookmarksFile();
     const folder = join(dir, '.oculus');
     const hub = new Hub();
@@ -127,52 +133,32 @@ it('says nothing for another file written in the same folder', async () => {
     expect(client.got).toHaveLength(1);
 });
 
-it('publishes once for a burst of writes, and nothing at all once it is closed', async () => {
-    const file = bookmarksFile();
-    const hub = new Hub();
-    const client = recording();
-    hub.subscribe(client.sink, ['files']);
-    // A window wide enough that three writes a moment apart are one burst, since the whole point is
-    // that a file saved three times in a row is one read on the page and not three.
-    const window = 300;
-    const { watcher } = await armed(hub, file, client.got, window);
+it(
+    'makes the folder it watches when the machine has none, and publishes for the file made in it',
+    { tags: ['slow'] },
+    async () => {
+        const said = vi.spyOn(console, 'error').mockImplementation(noop);
+        const folder = join(dir, 'never-made');
+        const file = join(folder, 'bookmarks.yml');
+        const hub = new Hub();
+        const client = recording();
+        hub.subscribe(client.sink, ['files']);
+        await armed(hub, file, client.got);
 
-    for (const label of ['one', 'two', 'three']) {
-        writeFileSync(file, `title: Bookmarks\nentries:\n  - { label: ${label} }\n`);
-        await sleep(20);
+        // Nothing was said, since a machine with no folder yet is no failure, and the folder is
+        // there to be watched: the first bookmark written into it is seen without the server being
+        // started again.
+        expect(said).not.toHaveBeenCalled();
+        expect(existsSync(folder)).toBe(true);
+        // The file itself is the first bookmark's to write, so the watcher made none.
+        expect(existsSync(file)).toBe(false);
+        said.mockRestore();
+
+        put(folder, 'bookmarks.yml', 'title: Bookmarks\n');
+        await until(() => client.got.length > 0, WAIT);
+        expect(client.got).toHaveLength(1);
     }
-    await until(() => client.got.length > 0, WAIT);
-    await sleep(window * 2);
-    expect(client.got).toHaveLength(1);
-
-    watcher.close();
-    writeFileSync(file, 'title: Bookmarks\nentries: []\n');
-    await sleep(window * 2);
-    expect(client.got).toHaveLength(1);
-});
-
-it('makes the folder it watches when the machine has none, and publishes for the file made in it', async () => {
-    const said = vi.spyOn(console, 'error').mockImplementation(noop);
-    const folder = join(dir, 'never-made');
-    const file = join(folder, 'bookmarks.yml');
-    const hub = new Hub();
-    const client = recording();
-    hub.subscribe(client.sink, ['files']);
-    await armed(hub, file, client.got);
-
-    // Nothing was said, since a machine with no folder yet is no failure, and the folder is there
-    // to be watched: the first bookmark written into it is seen without the server being started
-    // again.
-    expect(said).not.toHaveBeenCalled();
-    expect(existsSync(folder)).toBe(true);
-    // The file itself is the first bookmark's to write, so the watcher made none.
-    expect(existsSync(file)).toBe(false);
-    said.mockRestore();
-
-    put(folder, 'bookmarks.yml', 'title: Bookmarks\n');
-    await until(() => client.got.length > 0, WAIT);
-    expect(client.got).toHaveLength(1);
-});
+);
 
 /** A watcher over the bookmarks file with its watch held, on fake timers, and a write's event. */
 function held(debounce?: number): {

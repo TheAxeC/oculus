@@ -42,7 +42,6 @@ describe('rootOf', () => {
         expect(rootOf(dir, join(dir, 'sec/c.tex'))).toBe(join(dir, 'sec/only.tex'));
     });
 
-    // Revert: answer null instead of the folder rule when the root comment names a file outside.
     it('falls through to the folder rule for a root comment naming a file outside the root', () => {
         const outside = planted({ 'main.tex': ARTICLE });
         const dir = planted({

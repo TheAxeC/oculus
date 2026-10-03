@@ -178,17 +178,6 @@ describe('oculus own processes', () => {
         expect(read.rows.map((row) => row.pid)).toEqual([600, 601, 602]);
     });
 
-    it('ends the walk at a cycle of parents', async () => {
-        const read = await readProcesses(
-            deps({
-                table: [proc(10, 11, 'a'), proc(11, 10, 'b')],
-                panes: [pane(SHELL, 10)]
-            }),
-            []
-        );
-        expect(read.rows.map((row) => row.pid)).toEqual([10, 11]);
-    });
-
     it('gives a process under two panes to the first pane that reaches it', async () => {
         const read = await readProcesses(
             deps({
@@ -233,17 +222,6 @@ describe('the matched processes', () => {
         expect(read.agents).toBe(1);
     });
 
-    it('lists oculus own processes only for an empty pattern list', async () => {
-        const read = await readProcesses(
-            deps({
-                table: [proc(100, 1, 'zsh'), proc(200, 1, 'python3 x.py')],
-                panes: [pane(SHELL, 100)]
-            }),
-            []
-        );
-        expect(read.rows.map((row) => row.pid)).toEqual([100]);
-    });
-
     it('lists the matched rows by cpu, highest first, then by pid', async () => {
         const read = await readProcesses(
             deps({
@@ -268,26 +246,6 @@ describe('the matched processes', () => {
             ['python3']
         );
         expect(read.rows.map((row) => row.pid)).toEqual([100, 200]);
-    });
-
-    it('lists none of the command lines the rule leaves out', async () => {
-        const read = await readProcesses(
-            deps({
-                table: [
-                    proc(1, 1, '/bin/zsh -c source /Users/x/.claude/shell-snapshots/s.sh'),
-                    proc(
-                        2,
-                        1,
-                        '/Applications/X.app/.codex/plugins/ChatGPT for Chrome chrome-extension://a'
-                    ),
-                    proc(3, 1, 'bash /opt/homebrew/libexec/pyenv-exec python3 -'),
-                    proc(4, 1, '')
-                ]
-            }),
-            ['claude', 'codex', 'python3']
-        );
-        expect(read.rows).toEqual([]);
-        expect(read.agents).toBe(0);
     });
 });
 

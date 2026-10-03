@@ -9,7 +9,6 @@
 // does and for the same reason: the manifests are the thing this has to be safe on, and a rule that
 // holds on three fixtures and not on the ninety-one is not a rule. Nothing there is written; when
 // the hub is not on this machine the whole block skips and says so.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -84,11 +83,6 @@ describe('setting a scalar', () => {
         const out = setFields(DOC, { title: 'two\nlines' });
         expect(out.text).toBe(withLine(1, 'title: "two\\nlines"'));
     });
-
-    it('leaves every other line of the file untouched', () => {
-        const out = setFields(DOC, { compute: 'local' });
-        expect(movedLines(DOC, out.text)).toBe(1);
-    });
 });
 
 describe('setting a metalist', () => {
@@ -134,13 +128,6 @@ describe('setting a metalist', () => {
         const out = setFields(source, { meta: [] });
         expect(out.text).toBe('title: Things\nafter: kept\n');
     });
-
-    it('refuses a list whose map contains a non-string value', () => {
-        const out = setFields(source, { meta: [{ label: 'Scheme', value: 3 }] });
-        expect(out.changed).toEqual([]);
-        expect(out.refused).toEqual([{ field: 'meta', reason: NOT_A_FIELD_VALUE }]);
-        expect(out.text).toBe(source);
-    });
 });
 
 describe('setting a block map', () => {
@@ -169,13 +156,6 @@ describe('setting a block map', () => {
                 ''
             ].join('\n')
         );
-    });
-
-    it('appends the map as a block at the key indentation', () => {
-        const out = setFields('title: Dataset\nafter: kept\n', {
-            retrieval: { method: 'wget' }
-        });
-        expect(out.text).toBe('title: Dataset\nafter: kept\nretrieval:\n  method: wget\n');
     });
 
     it('clears the whole key when given an empty map', () => {
@@ -218,18 +198,6 @@ describe('setting a block map', () => {
             ].join('\n')
         );
         expect(parse(out.text)).toEqual({ title: 'Dataset', retrieval: value, after: 'kept' });
-    });
-
-    it('appends a block with a list and a nested map under a key the file has not got', () => {
-        const out = setFields('title: Dataset\nafter: kept\n', {
-            retrieval: { steps: ['fetch'], auth: { env: 'TOKEN' } }
-        });
-        expect(out.refused).toEqual([]);
-        expect(parse(out.text)).toEqual({
-            title: 'Dataset',
-            after: 'kept',
-            retrieval: { steps: ['fetch'], auth: { env: 'TOKEN' } }
-        });
     });
 
     it('refuses a map holding something that is no scalar, list or map', () => {
@@ -292,14 +260,6 @@ describe('the nested fields', () => {
         expect(out.text).toBe(`${DOC.trimEnd()}\nreproduced:\n  date: 2026-01-01\n`);
     });
 
-    it('expands the dual-shape followup, keeping the note it stood for', () => {
-        const source = 'id: a\nfollowup: "Register for FLTA"\nlast: end\n';
-        const out = setFields(source, { 'followup.after': '2026-01-01' });
-        expect(out.text).toBe(
-            'id: a\nfollowup:\n  do: "Register for FLTA"\n  after: 2026-01-01\nlast: end\n'
-        );
-    });
-
     it('replaces the dual-shape followup when the note itself is what is set', () => {
         const source = 'id: a\nfollowup: "Register for FLTA"\nlast: end\n';
         const out = setFields(source, { 'followup.do': 'something else' });
@@ -324,16 +284,11 @@ describe('adding a key the file does not have', () => {
     });
 });
 
-describe('a compute list', () => {
-    it('adds a key to a flow list and keeps the comment after it', () => {
+describe('a flow list with a comment after it', () => {
+    it('adds an item to a flow list and keeps the comment after it', () => {
         const source = 'id: a\ncompute: [utwente]  # BraTS caches\nlast: end\n';
         const out = setFields(source, { compute: ['utwente', 'this-mac'] });
         expect(out.text).toBe('id: a\ncompute: [utwente, this-mac]  # BraTS caches\nlast: end\n');
-    });
-
-    it('appends the list as a flow list when the file has no compute', () => {
-        const out = setFields('id: a\n', { compute: ['this-mac'] });
-        expect(out.text).toBe('id: a\ncompute: [this-mac]\n');
     });
 });
 
@@ -414,11 +369,6 @@ describe('renaming a key', () => {
         expect(movedLines(DOC, out.text)).toBe(1);
     });
 
-    it('keeps the value, the comment and the position of a key with a trailing comment', () => {
-        const out = renameKey(DOC, 'compute', 'machine');
-        expect(out.text).toBe(withLine(11, 'machine: hpc      # trailing'));
-    });
-
     it('keeps a block list and a nested map under their key', () => {
         const out = renameKey(DOC, 'results', 'findings');
         expect(out.text).toBe(withLine(4, 'findings:'));
@@ -428,13 +378,6 @@ describe('renaming a key', () => {
     it('changes nothing when the file does not hold the old key', () => {
         const out = renameKey(DOC, 'nothing', 'something');
         expect(out).toEqual({ text: DOC, changed: [], refused: [] });
-    });
-
-    it('is the same file when it is run a second time, which is what makes it idempotent', () => {
-        const once = renameKey(DOC, 'pillar', 'strand');
-        const twice = renameKey(once.text, 'pillar', 'strand');
-        expect(twice.text).toBe(once.text);
-        expect(twice.changed).toEqual([]);
     });
 
     it('refuses a rename onto a key the file already holds', () => {

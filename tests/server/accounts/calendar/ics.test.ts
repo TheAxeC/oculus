@@ -1,6 +1,7 @@
 // The published calendar reader on its own: the address a link is fetched at, the calendar's name,
 // the event's own page, and a text that is no calendar. The fetch, the file and the poll around it
-// are tests/server/accounts/calendar/poll.test.ts's.
+// are tests/server/accounts/calendar/poll.test.ts's, and a link that never answers is
+// tests/server/accounts/calendar/poll-timeout.test.ts's.
 
 import { describe, expect, it } from 'vitest';
 import { icsAddress, readIcsText } from '../../../../src/lib/server/accounts/calendar/ics.ts';

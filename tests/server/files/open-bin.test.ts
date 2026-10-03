@@ -1,25 +1,9 @@
-// The machine file's `open_bin`, the program an https address is handed to: the values its reader
-// refuses, and the opener refusing anything that is not an https address before any program runs.
+// The opener of an https address (server/files/open.ts): it refuses anything that is not an https
+// address before any program runs. The values the machine file's `open_bin` takes are
+// tests/data/sources/config/local.test.ts's.
 
 import { describe, expect, it } from 'vitest';
-import { checkLocal } from '../../../src/lib/data/sources/config.ts';
 import { addressOpener } from '../../../src/lib/server/files/open.ts';
-
-const FILE = '/machine/config/local.yml';
-
-describe('open_bin in the machine file', () => {
-    it('refuses an empty program, naming the key', () => {
-        expect(checkLocal('hub: /machine/hub\nopen_bin: ""\n', FILE)).toBe(
-            `${FILE}: open_bin must be a non-empty string`
-        );
-    });
-
-    it('refuses a program that is not a string, naming the key', () => {
-        expect(checkLocal('hub: /machine/hub\nopen_bin: [open]\n', FILE)).toBe(
-            `${FILE}: open_bin must be a non-empty string`
-        );
-    });
-});
 
 describe('the address opener', () => {
     it('refuses anything but an https address, and runs no program for it', async () => {

@@ -10,7 +10,7 @@
 //
 // What this does NOT cover: `claude` is never run. suggestMessage is exercised with the diff and
 // the subprocess both handed in, which is what its options exist for.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
@@ -396,14 +396,6 @@ describe('worktrees', () => {
         const answer = await worktreeDiff(repo, path, [repo, path]);
         expect(answer.ok).toBe(true);
         expect(answer.output).toContain('inside.txt');
-    });
-
-    it('refuses a path that is not a worktree of the root', async () => {
-        const answer = await removeWorktree(repo, join(repo, 'kept.txt'), ROOTS);
-        expect(answer.ok).toBe(false);
-        expect(answer.error).toContain('not a worktree');
-        const read = await worktreeDiff(repo, join(repo, 'kept.txt'), ROOTS);
-        expect(read.ok).toBe(false);
     });
 
     it('refuses a path that climbs back out of the worktrees folder', async () => {

@@ -315,27 +315,6 @@ describe('items added, removed and moved', () => {
 describe('strings and keys that YAML would read as something else', () => {
     const SOURCE = 'tiers:\n    one: a\n';
 
-    it('writes a string that holds a reserved character or reads as another type quoted', () => {
-        const strings = [
-            'a: b',
-            '#x',
-            'yes',
-            'no',
-            'null',
-            '~',
-            '20',
-            '- x',
-            '[a',
-            '{a',
-            '*a',
-            '&a',
-            '!a',
-            ' a'
-        ];
-        const written = blockOf('list: [a]\n', ['list'], strings);
-        expect(parsedKey(written, 'list')).toEqual(strings);
-    });
-
     it('reads back every string that needs quoting, set over a scalar of each style and added', () => {
         const strings = [
             '-x',
@@ -345,8 +324,16 @@ describe('strings and keys that YAML would read as something else', () => {
             '#x',
             'a #x',
             'yes',
+            'no',
             'null',
+            '~',
+            '20',
             '012',
+            '{a',
+            '*a',
+            '&a',
+            '!a',
+            ' a',
             ' lead',
             'x,y',
             "it's"
@@ -406,18 +393,6 @@ describe('strings and keys that YAML would read as something else', () => {
         expect(blockOf('list: ["a", \'b\']\n', ['list'], ['c', 'd'])).toBe('list: ["c", \'d\']\n');
         expect(blockOf('list: [a]\n', ['list'], ['a', 'two words'])).toBe('list: [a, two words]\n');
         expect(blockOf('m: {}\n', ['m'], { 'a b': 1 })).toBe('m:\n    a b: 1\n');
-    });
-
-    it("audits that the scalar writer is the yaml library's and the file holds no quoting rule of its own", () => {
-        const render = readFileSync(
-            join(engineDir(), 'src/lib/server/edit/block-render.ts'),
-            'utf8'
-        );
-        const edit = readFileSync(join(engineDir(), 'src/lib/server/edit/block-edit.ts'), 'utf8');
-        expect(render).toContain('CST.setScalarValue');
-        expect(edit).toContain('new Composer({ keepSourceTokens: true })');
-        expect(edit).toContain('new Parser()');
-        expect(render).not.toMatch(/NUMBERISH|AMBIGUOUS|PLAIN_KEY|plainOk/);
     });
 
     it('writes a key with a space, a colon, a dot, a digit or nothing quoted so it reads back', () => {

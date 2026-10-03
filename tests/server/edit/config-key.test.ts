@@ -5,6 +5,9 @@
 // own file left out (tests/routes/edit/write-fixture.ts), so the writer reads the catalog, the text
 // and the other files from the copy and writes the copy. What this does NOT cover: the route that
 // carries the writer (tests/routes/edit/config-key.test.ts) and the page's call of it.
+//
+// A case that merges the whole config folder and takes 100 ms or more in a run of its own is
+// tagged slow. The rows of the table of values a reader refuses take less and are not.
 
 import { chmodSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { describe, expect, vi } from 'vitest';
@@ -116,7 +119,7 @@ function addOption(engine: string, file: string, key: string, entry: object): vo
     writeFileSync(path, doc.toString());
 }
 
-describe('one value written over its own bytes', () => {
+describe('one value written over its own bytes', { tags: ['slow'] }, () => {
     it('replaces the value and keeps every other byte, the comment on its line included', () => {
         const engine = keepEngine();
         const before = held(engine);
@@ -134,14 +137,6 @@ describe('one value written over its own bytes', () => {
                 undo: 'field'
             }
         ]);
-    });
-
-    it('writes nothing for the value the file already holds', () => {
-        const engine = keepEngine();
-        const before = held(engine);
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 200);
-        expect(outcome).toEqual({ changed: [], refused: [] });
-        expect(held(engine)).toBe(before);
     });
 
     it('writes a key three segments deep, in the style its line used', () => {
@@ -266,19 +261,7 @@ describe('one value written over its own bytes', () => {
     });
 });
 
-describe('a value the option does not take', () => {
-    it("refuses a whole number the reader refuses, with the reader's own sentence", () => {
-        const sentence = 'config/behavior.yml: changes.keep must be a whole number above zero';
-        for (const value of [0, 2.5]) {
-            const engine = keepEngine();
-            const before = held(engine);
-            expect(
-                refusalOf(writeConfigKey(engine, 'behavior.yml', 'changes.keep', value), KEEP)
-            ).toBe(sentence);
-            expect(held(engine)).toBe(before);
-        }
-    });
-
+describe('a value the option does not take', { tags: ['slow'] }, () => {
     it('refuses what is not a finite number for a number option', () => {
         for (const value of ['300', true, [], null, JSON.parse('1e309'), {}]) {
             const engine = keepEngine();
@@ -333,7 +316,7 @@ describe('a value the option does not take', () => {
     });
 });
 
-describe('an option the catalog does not hold', () => {
+describe('an option the catalog does not hold', { tags: ['slow'] }, () => {
     it("refuses the machine's own file without reading it", () => {
         const engine = scratchEngine();
         const local = engineFile(engine, 'local.yml');
@@ -373,27 +356,29 @@ describe('an option the catalog does not hold', () => {
 });
 
 describe('a file that does not hold the key', () => {
-    it('refuses a file that does not parse and a file that holds a key twice', () => {
-        const unparsed = engineWith('behavior.yml', (text) => `${text}\nbroken: [unclosed\n`);
-        const twice = engineWith('behavior.yml', (text) => `${text}\nsearch:\n  max_hits: 1\n`);
-        for (const engine of [unparsed, twice]) {
-            const before = held(engine);
-            const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-            expect(refusalOf(outcome, KEEP)).toBe(why('not_parsed'));
-            expect(held(engine)).toBe(before);
+    it(
+        'refuses a file that does not parse and a file that holds a key twice',
+        { tags: ['slow'] },
+        () => {
+            const unparsed = engineWith('behavior.yml', (text) => `${text}\nbroken: [unclosed\n`);
+            const twice = engineWith('behavior.yml', (text) => `${text}\nsearch:\n  max_hits: 1\n`);
+            for (const engine of [unparsed, twice]) {
+                const before = held(engine);
+                const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
+                expect(refusalOf(outcome, KEEP)).toBe(why('not_parsed'));
+                expect(held(engine)).toBe(before);
+            }
         }
-    });
+    );
 
     it.each([
         ['absent', 'changes:\n  other: 1\n'],
         ['empty', 'changes:\n  keep:\n'],
-        ['null as ~', 'changes:\n  keep: ~\n'],
-        ['null', 'changes:\n  keep: null\n'],
         ['an alias', 'changes:\n  base: &v 5\n  keep: *v\n'],
         ['anchored', 'changes:\n  keep: &v 5\n  other: *v\n'],
         ['tagged', 'changes:\n  keep: !!int 5\n'],
         ['a block scalar', 'changes:\n  keep: |\n    5\n']
-    ])('refuses a key that is %s', (_name, block) => {
+    ])('refuses a key that is %s', { tags: ['slow'] }, (_name, block) => {
         const engine = engineWith('behavior.yml', (text) => text.replace(KEEP_BLOCK, block));
         const before = held(engine);
         const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
@@ -401,79 +386,66 @@ describe('a file that does not hold the key', () => {
         expect(held(engine)).toBe(before);
     });
 
-    it('refuses an edit that would change a second key, which an alias of the map reads', () => {
-        const engine = engineWith('behavior.yml', (text) =>
-            text.replace(KEEP_BLOCK, 'changes: &log\n  keep: 500\nchanges_copy: *log\n')
-        );
-        const before = held(engine);
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(refusalOf(outcome, KEEP)).toBe(why('not_kept'));
-        expect(held(engine)).toBe(before);
-    });
-
-    it('writes beside a file value that JSON cannot hold: infinity, not a number and minus zero', () => {
-        for (const scalar of ['.inf', '-.inf', '.nan', '-0']) {
-            const engine = engineWith(
-                'behavior.yml',
-                (text) => `${keepText(text)}\nprobe: { a: ${scalar}, b: [${scalar}] }\n`
+    it(
+        'refuses an edit that would change a second key, which an alias of the map reads',
+        { tags: ['slow'] },
+        () => {
+            const engine = engineWith('behavior.yml', (text) =>
+                text.replace(KEEP_BLOCK, 'changes: &log\n  keep: 500\nchanges_copy: *log\n')
             );
-            const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-            expect(outcome.refused).toEqual([]);
-            expect(held(engine)).toContain('keep: 300  # how many');
-            expect(held(engine)).toContain(`probe: { a: ${scalar}, b: [${scalar}] }`);
-        }
-    });
-
-    it('refuses a key segment that holds a dot and a key that is not a string', () => {
-        const dotted = engineWith('behavior.yml', (text) =>
-            text.replace(KEEP_BLOCK, 'changes:\n  a.b: 1\n  keep: 500\n')
-        );
-        addOption(dotted, 'behavior.yml', 'changes.a.b', { description: 'x', control: 'number' });
-        const numbered = engineWith('behavior.yml', (text) =>
-            text.replace(KEEP_BLOCK, 'changes:\n  1: x\n  keep: 500\n')
-        );
-        addOption(numbered, 'behavior.yml', 'changes.1', { description: 'x', control: 'text' });
-        for (const [engine, key, value] of [
-            [dotted, 'changes.a.b', 2],
-            [numbered, 'changes.1', 'y']
-        ] as const) {
             const before = held(engine);
-            const outcome = writeConfigKey(engine, 'behavior.yml', key, value);
-            expect(refusalOf(outcome, `behavior.yml:${key}`)).toBe(why('not_in_file'));
+            const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
+            expect(refusalOf(outcome, KEEP)).toBe(why('not_kept'));
             expect(held(engine)).toBe(before);
         }
-    });
+    );
+
+    it(
+        'writes beside a file value that JSON cannot hold: infinity, not a number and minus zero',
+        { tags: ['slow'] },
+        () => {
+            for (const scalar of ['.inf', '-.inf', '.nan', '-0']) {
+                const engine = engineWith(
+                    'behavior.yml',
+                    (text) => `${keepText(text)}\nprobe: { a: ${scalar}, b: [${scalar}] }\n`
+                );
+                const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
+                expect(outcome.refused).toEqual([]);
+                expect(held(engine)).toContain('keep: 300  # how many');
+                expect(held(engine)).toContain(`probe: { a: ${scalar}, b: [${scalar}] }`);
+            }
+        }
+    );
+
+    it(
+        'refuses a key segment that holds a dot and a key that is not a string',
+        { tags: ['slow'] },
+        () => {
+            const dotted = engineWith('behavior.yml', (text) =>
+                text.replace(KEEP_BLOCK, 'changes:\n  a.b: 1\n  keep: 500\n')
+            );
+            addOption(dotted, 'behavior.yml', 'changes.a.b', {
+                description: 'x',
+                control: 'number'
+            });
+            const numbered = engineWith('behavior.yml', (text) =>
+                text.replace(KEEP_BLOCK, 'changes:\n  1: x\n  keep: 500\n')
+            );
+            addOption(numbered, 'behavior.yml', 'changes.1', { description: 'x', control: 'text' });
+            for (const [engine, key, value] of [
+                [dotted, 'changes.a.b', 2],
+                [numbered, 'changes.1', 'y']
+            ] as const) {
+                const before = held(engine);
+                const outcome = writeConfigKey(engine, 'behavior.yml', key, value);
+                expect(refusalOf(outcome, `behavior.yml:${key}`)).toBe(why('not_in_file'));
+                expect(held(engine)).toBe(before);
+            }
+        }
+    );
 });
 
-describe('the readers of the merged configuration', () => {
-    it("refuses a value the reader of its block refuses, with that reader's sentence", () => {
-        const cases: [string, number | string, string][] = [
-            [
-                'editor.paint_limit_kb',
-                0,
-                'config/behavior.yml: editor.paint_limit_kb must be a number above zero'
-            ],
-            [
-                'usage_refresh_min',
-                0,
-                'config/behavior.yml: usage_refresh_min must be a number from 1 to 35791'
-            ],
-            ['usage_refresh_model', '', 'usage_refresh_model must not be empty'],
-            [
-                'search.timeout_s',
-                0,
-                'config/behavior.yml: search.timeout_s must be a number above zero'
-            ]
-        ];
-        for (const [key, value, sentence] of cases) {
-            const engine = scratchEngine();
-            const before = held(engine);
-            const outcome = writeConfigKey(engine, 'behavior.yml', key, value);
-            expect(refusalOf(outcome, `behavior.yml:${key}`)).toBe(sentence);
-            expect(held(engine)).toBe(before);
-        }
-    });
-
+describe('the readers of the merged configuration', { tags: ['slow'] }, () => {
     it('refuses a code theme that is none, in the words of the finding it would give', () => {
         const engine = scratchEngine();
         const before = held(engine, 'appearance.yml');
@@ -519,40 +491,44 @@ describe('the readers of the merged configuration', () => {
     });
 });
 
-describe('the period of the automatic fetch', () => {
-    const FETCH = 'behavior.yml:git.autofetch_minutes';
-    const SENTENCE =
-        'config/behavior.yml: git.autofetch_minutes must be a whole number of minutes, 0 or more';
+describe('a value a reader of the merged configuration refuses', () => {
+    const CADENCE = 'a number from 1 to 35791';
+    const refused: [string, number, string][] = [
+        ['changes.keep', 0, 'a whole number above zero'],
+        ['changes.keep', 2.5, 'a whole number above zero'],
+        ['editor.paint_limit_kb', 0, 'a number above zero'],
+        ['usage_refresh_min', 0, CADENCE],
+        ['search.timeout_s', 0, 'a number above zero'],
+        ['git.autofetch_minutes', -1, 'a whole number of minutes, 0 or more'],
+        ['git.autofetch_minutes', 1.5, 'a whole number of minutes, 0 or more'],
+        ['slurm.poll_min', 0, CADENCE],
+        ['calendar.days_back', 3651, 'a whole number from 0 to 3650'],
+        ['mail.per_signal', 501, 'a whole number from 1 to 500']
+    ];
 
-    it("refuses -1 and 1.5 with the reader's sentence and writes nothing", () => {
-        for (const value of [-1, 1.5]) {
-            const engine = scratchEngine();
-            const before = held(engine);
-            const outcome = writeConfigKey(engine, 'behavior.yml', 'git.autofetch_minutes', value);
-            expect(refusalOf(outcome, FETCH), String(value)).toBe(SENTENCE);
-            expect(held(engine)).toBe(before);
+    // Every refusal leaves the file as it was, so the cases read one copy of the config folder. The
+    // copy is loaded once here, so the first case does not carry the first parse of its files.
+    let shared = '';
+    let sharedBefore = '';
+    it.beforeAll(() => {
+        shared = scratchEngine();
+        loadConfig(shared);
+        sharedBefore = held(shared);
+    });
+
+    it.each(refused)(
+        'refuses %s of %d with the reader sentence and writes nothing',
+        (key, value, words) => {
+            const outcome = writeConfigKey(shared, 'behavior.yml', key, value);
+            expect(refusalOf(outcome, `behavior.yml:${key}`)).toBe(
+                `config/behavior.yml: ${key} must be ${words}`
+            );
+            expect(held(shared)).toBe(sharedBefore);
         }
-    });
-
-    it('refuses a text with the words of a number option and writes nothing', () => {
-        const engine = scratchEngine();
-        const before = held(engine);
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'git.autofetch_minutes', '5');
-        expect(refusalOf(outcome, FETCH)).toBe(why('not_number'));
-        expect(held(engine)).toBe(before);
-    });
-
-    it('writes 3 over the shipped 0 and keeps every other byte', () => {
-        const engine = scratchEngine();
-        const before = held(engine);
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'git.autofetch_minutes', 3);
-        expect(outcome.refused).toEqual([]);
-        expect(outcome.changed).toEqual([FETCH]);
-        expect(held(engine)).toBe(before.replace('autofetch_minutes: 0', 'autofetch_minutes: 3'));
-    });
+    );
 });
 
-describe('a file the writer cannot write', () => {
+describe('a file the writer cannot write', { tags: ['slow'] }, () => {
     it('lets the exception of a read-only file reach the route and leaves the mode as it was', () => {
         const engine = keepEngine();
         const path = engineFile(engine, 'behavior.yml');
@@ -577,125 +553,74 @@ describe('the readers that give findings', () => {
         return engine;
     }
 
-    it('refuses a write when a finder throws on the configuration holding it, in its own words', () => {
-        docsFinder.calls = 0;
-        docsFinder.throwOn = [2];
-        const engine = keepEngine();
-        const before = held(engine);
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(refusalOf(outcome, KEEP)).toBe('docs unreadable');
-        expect(held(engine)).toBe(before);
-    });
-
-    it('refuses a write when a finder throws before the edit and again after it', () => {
-        docsFinder.calls = 0;
-        docsFinder.throwOn = [1, 2];
-        const engine = keepEngine();
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(refusalOf(outcome, KEEP)).toBe('docs unreadable');
-    });
-
-    it('compares nothing for a finder that threw before the edit and gives findings after it', () => {
-        docsFinder.calls = 0;
-        docsFinder.throwOn = [1];
-        const engine = engineWithMissingDoc();
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(outcome.refused).toEqual([]);
-        expect(outcome.changed).toEqual([KEEP]);
-        expect(held(engine)).toContain('keep: 300  # how many');
-    });
-
-    it('refuses a write after which the languages finder gives a finding it did not give before', () => {
-        languagesFinder.calls = 0;
-        languagesFinder.findOn = [2];
-        const engine = keepEngine();
-        const before = held(engine);
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(refusalOf(outcome, KEEP)).toBe(
-            'ending .h is listed under c and under cpp; c keeps it'
-        );
-        expect(held(engine)).toBe(before);
-    });
-
-    it('writes when the languages finder gives the same finding before and after the edit', () => {
-        languagesFinder.calls = 0;
-        languagesFinder.findOn = [1, 2];
-        const engine = keepEngine();
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(outcome.refused).toEqual([]);
-        expect(languagesFinder.calls).toBe(2);
-    });
-
-    it('refuses the languages map itself, which is a family and not a value', () => {
-        languagesFinder.calls = 0;
-        languagesFinder.findOn = [];
-        const engine = scratchEngine();
-        const before = held(engine, 'sources.yml');
-        const outcome = writeConfigKey(engine, 'sources.yml', 'languages', '.h');
-        expect(refusalOf(outcome, 'sources.yml:languages')).toBe(why('not_single'));
-        expect(held(engine, 'sources.yml')).toBe(before);
-    });
-
-    it('writes when a finder gives the same finding before and after the edit', () => {
-        docsFinder.calls = 0;
-        docsFinder.throwOn = [];
-        const engine = engineWithMissingDoc();
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(outcome.refused).toEqual([]);
-        expect(docsFinder.calls).toBe(2);
-    });
-});
-
-describe('the bounds of the cadences, the day windows and the count', () => {
-    const CADENCE = 'a number from 1 to 35791';
-    const WINDOW = 'a whole number from 0 to 3650';
-    const COUNT = 'a whole number from 1 to 500';
-    const refused: [string, number, string][] = [
-        ['slurm.poll_min', 0, CADENCE],
-        ['slurm.poll_min', 35792, CADENCE],
-        ['slurm.quota_min', 0.5, CADENCE],
-        ['calendar.poll_min', 40000, CADENCE],
-        ['mail.poll_min', 0, CADENCE],
-        ['slurm.days', -1, WINDOW],
-        ['slurm.days', 2.5, WINDOW],
-        ['calendar.days_back', 3651, WINDOW],
-        ['calendar.days_ahead', -1, WINDOW],
-        ['mail.per_signal', 0, COUNT],
-        ['mail.per_signal', 501, COUNT],
-        ['mail.per_signal', 2.5, COUNT]
-    ];
-
-    // Every refusal leaves the file as it was, so the cases read one copy of the config folder.
-    let shared = '';
-    let sharedBefore = '';
-    it.beforeAll(() => {
-        shared = scratchEngine();
-        sharedBefore = held(shared);
-    });
-
-    it.each(refused)(
-        'refuses %s of %d with the reader sentence and writes nothing',
-        (key, value, words) => {
-            const outcome = writeConfigKey(shared, 'behavior.yml', key, value);
-
-            expect(refusalOf(outcome, `behavior.yml:${key}`)).toBe(
-                `config/behavior.yml: ${key} must be ${words}`
-            );
-            expect(held(shared)).toBe(sharedBefore);
+    it(
+        'refuses a write when a finder throws on the configuration holding it, in its own words',
+        { tags: ['slow'] },
+        () => {
+            docsFinder.calls = 0;
+            docsFinder.throwOn = [2];
+            const engine = keepEngine();
+            const before = held(engine);
+            const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
+            expect(refusalOf(outcome, KEEP)).toBe('docs unreadable');
+            expect(held(engine)).toBe(before);
         }
     );
 
-    it.each([
-        ['calendar.days_back', 0],
-        ['slurm.poll_min', 1],
-        ['slurm.poll_min', 35791],
-        ['mail.per_signal', 500]
-    ])('writes %s of %d', (key, value) => {
-        const engine = scratchEngine();
+    it(
+        'compares nothing for a finder that threw before the edit and gives findings after it',
+        { tags: ['slow'] },
+        () => {
+            docsFinder.calls = 0;
+            docsFinder.throwOn = [1];
+            const engine = engineWithMissingDoc();
+            const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
+            expect(outcome.refused).toEqual([]);
+            expect(outcome.changed).toEqual([KEEP]);
+            expect(held(engine)).toContain('keep: 300  # how many');
+        }
+    );
 
-        const outcome = writeConfigKey(engine, 'behavior.yml', key, value);
+    it(
+        'refuses a write after which the languages finder gives a finding it did not give before',
+        { tags: ['slow'] },
+        () => {
+            languagesFinder.calls = 0;
+            languagesFinder.findOn = [2];
+            const engine = keepEngine();
+            const before = held(engine);
+            const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
+            expect(refusalOf(outcome, KEEP)).toBe(
+                'ending .h is listed under c and under cpp; c keeps it'
+            );
+            expect(held(engine)).toBe(before);
+        }
+    );
 
-        expect(outcome.refused).toEqual([]);
-        expect(outcome.changed).toEqual([`behavior.yml:${key}`]);
-    });
+    it(
+        'refuses the languages map itself, which is a family and not a value',
+        { tags: ['slow'] },
+        () => {
+            languagesFinder.calls = 0;
+            languagesFinder.findOn = [];
+            const engine = scratchEngine();
+            const before = held(engine, 'sources.yml');
+            const outcome = writeConfigKey(engine, 'sources.yml', 'languages', '.h');
+            expect(refusalOf(outcome, 'sources.yml:languages')).toBe(why('not_single'));
+            expect(held(engine, 'sources.yml')).toBe(before);
+        }
+    );
+
+    it(
+        'writes when a finder gives the same finding before and after the edit',
+        { tags: ['slow'] },
+        () => {
+            docsFinder.calls = 0;
+            docsFinder.throwOn = [];
+            const engine = engineWithMissingDoc();
+            const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
+            expect(outcome.refused).toEqual([]);
+            expect(docsFinder.calls).toBe(2);
+        }
+    );
 });

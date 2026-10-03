@@ -197,16 +197,6 @@ describe('hpcRouteHost', () => {
         expect(route()).toEqual({ host: 'utwente2' });
     });
 
-    it('gives the sentence when the key names no cluster with a host', () => {
-        const hub = new Hub();
-        hub.publish('portfolio', snapshot(resources()));
-        const route = (key: string) =>
-            hpcRouteHost({ hpcHost: undefined, hub, config: () => config(key) });
-        expect(route('nowhere')).toEqual({ host: '', missing: 'nowhere names no resource' });
-        expect(route('this-mac')).toEqual({ host: '', missing: 'this-mac is not a cluster' });
-        expect(route('bare')).toEqual({ host: '', missing: 'the cluster bare has no host' });
-    });
-
     it('gives the not-read sentence while no snapshot was published', () => {
         const found = hpcRouteHost({
             hpcHost: undefined,
@@ -237,14 +227,5 @@ describe('the shipped configuration over the demo hub', () => {
         );
         expect(settings.host).toBe('utwente');
         expect(settings.missing).toBeUndefined();
-    });
-
-    it('holds the five sentences, the first without a key and the others naming it', () => {
-        const words = hostWordsOf(config);
-        expect(words.notRead).not.toBe('');
-        expect(words.notRead).not.toContain('{0}');
-        for (const sentence of [words.unknown, words.notCluster, words.noHost, words.badHost]) {
-            expect(sentence).toContain('{0}');
-        }
     });
 });

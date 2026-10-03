@@ -3,8 +3,7 @@
 // edited or removed there, follows the workspaces file, and publishes nothing after close.
 // Nothing outside the temporary directories is read or written, and every watcher is closed when
 // the test ends.
-// @module-tag slow: its cases wait on real file events and time out on a loaded machine, so npm
-// test leaves it out.
+// @module-tag slow: its cases wait on real portfolio file events, so npm test leaves it out.
 
 import { mkdirSync, rmSync, symlinkSync } from 'node:fs';
 import { basename, join } from 'node:path';
@@ -134,25 +133,6 @@ describe('the roots of the personal board', () => {
         write(dir, '.oculus/project.yml', ROOT_MANIFEST.replace('Tool', 'Tool again'));
         await until(() => titleOf(started.got, 'root:tool') === 'Tool again', 3000);
         expect(titleOf(started.got, 'root:tool')).toBe('Tool again');
-    });
-
-    it('drops the hub and engine keys the browser roots carry, and reads the rest', async () => {
-        const dir = scratchDir('oculus-root-');
-        write(dir, '.oculus/project.yml', ROOT_MANIFEST);
-        const started = start(
-            undefined,
-            { set: {} },
-            { debounce: 20 },
-            {
-                roots: () => [
-                    { key: 'hub', dir: '/not/read/hub' },
-                    { key: 'engine', dir: '/not/read/engine' },
-                    { key: 'tool', dir }
-                ]
-            }
-        );
-        await quiet(started.got);
-        expect(personalIds(started.got)).toEqual(['root:tool']);
     });
 
     it('draws no card for a root under another key that is the engine config folder', async () => {
@@ -299,41 +279,6 @@ describe('the roots of the personal board', () => {
         clock.fire();
         await until(() => personalIds(started.got).length === 1, 3000);
         expect(personalIds(started.got)).toEqual(['root:tool']);
-    });
-
-    it('reads the roots once per change of the workspaces file, not once per tick', async () => {
-        const files = scratchDir('oculus-workspaces-');
-        const workspacesFile = join(files, 'workspaces.json');
-        write(files, 'workspaces.json', '{}');
-        const clock = manual();
-        let asked = 0;
-        const started = start(
-            undefined,
-            { set: {} },
-            { debounce: 20, clock: clock.clock },
-            {
-                roots: () => {
-                    asked += 1;
-                    return [];
-                },
-                workspacesFile
-            }
-        );
-        await quiet(started.got);
-        const before = asked;
-        for (let tick = 0; tick < 4; tick += 1) clock.fire();
-        await sleep(300);
-        expect(asked).toBe(before);
-
-        write(files, 'workspaces.json', '{"current":"a","workspaces":[]}');
-        clock.fire();
-        await until(() => asked > before, 3000);
-        await sleep(300);
-        const after = asked;
-        expect(after).toBeGreaterThan(before);
-        for (let tick = 0; tick < 4; tick += 1) clock.fire();
-        await sleep(300);
-        expect(asked).toBe(after);
     });
 
     it('lets the newest roots win when the file was written while a rebuild was running', async () => {

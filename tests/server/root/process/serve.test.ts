@@ -1,6 +1,7 @@
 // Layer 2, server tests. The built entry's wiring around its HTTP server (process/serve.ts), on a
 // real server listening on a port the system chose: the context every request carries, the move of
 // the server that leaves the context and the socket open, and the close that ends both.
+// @module-tag slow: its cases listen on a loopback socket, so npm test leaves it out.
 
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';

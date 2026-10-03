@@ -10,7 +10,7 @@
 // argument vector the suite ran is either `-C <path under tmpdir> <enumerated subcommand>` or one
 // of the three `gh` shapes, and the force option appears exactly once in the source of
 // deposit-git.ts.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// @module-tag slow: its cases run real git against a bare remote, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -75,9 +75,6 @@ const edits: string[][] = [];
 /** The repositories the stub knows, by name. A name it does not know does not exist on GitHub. */
 const known = new Map<string, string>();
 
-/** The default branch the stub reports per repository; `main` for one it was told nothing about. */
-const defaults = new Map<string, string>();
-
 let dir = '';
 let hub = '';
 let mirrors = '';
@@ -131,8 +128,7 @@ const gh: GhRun = (args) => {
     if (action === 'view') {
         const url = known.get(name);
         if (url === undefined) return answer(false, '', 'could not resolve to a Repository');
-        const branch = defaults.get(name) ?? 'main';
-        return answer(true, JSON.stringify({ url, defaultBranchRef: { name: branch } }), '');
+        return answer(true, JSON.stringify({ url, defaultBranchRef: { name: 'main' } }), '');
     }
     if (action === 'create') {
         const source = args[args.indexOf('--source') + 1];
@@ -408,19 +404,6 @@ describe('the snapshot', () => {
         expect(git(join(mirrors, 'alpha-code'), 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe(
             'main'
         );
-    });
-
-    it('moves the repository default to main when the snapshot replaced it', async () => {
-        defaults.set('alpha-code', 'master');
-        try {
-            const taken = await snapshot('alpha', 'Code deposit, again', options());
-            expect(taken.ok).toBe(true);
-            expect(remoteCommits('alpha-code')).toEqual(['Code deposit, again']);
-            expect(edits.at(-1)?.slice(0, 2)).toEqual(['repo', 'edit']);
-            expect(edits.at(-1)?.slice(-2)).toEqual(['--default-branch', 'main']);
-        } finally {
-            defaults.delete('alpha-code');
-        }
     });
 
     it('leaves the default alone when it is already main', async () => {

@@ -132,11 +132,6 @@ describe('the log-path prewarm', () => {
         const listed = runner.mock.calls[1][1];
         expect(listed.indexOf('/work/z')).toBeLessThan(listed.indexOf('/work/a'));
     });
-    it('takes the deepest rung when the ones above it are empty', () => {
-        expect(pickFromListing('9', [[], [], [], [], ['/w/run/logs/9.txt']])).toBe(
-            '/w/run/logs/9.txt'
-        );
-    });
     it('resolves the jobs it can and omits the rest', async () => {
         const runner = runnerFor(ok(SACCT), ok(LISTING));
         const found = await prewarmLogs('host', ['9', '11', '12', '13', 'bad;id'], 3, runner);

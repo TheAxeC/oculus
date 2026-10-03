@@ -1,5 +1,8 @@
 // Layer 2, server tests. ServerContext constructs each dependency once, closes each owner once,
 // carries its token, and reports a missing raw-request carrier clearly.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { hostname } from 'node:os';
@@ -316,40 +319,44 @@ describe('ServerContext', () => {
         context.close();
     });
 
-    it('hands an address to the program open_bin names, and to macOS open when it names none', async () => {
-        const dir = scratchDir('oculus-open-bin-');
-        const recorded = join(dir, 'opened.txt');
-        const recorder = join(dir, 'recorder');
-        writeFileSync(recorder, `#!/bin/sh\nprintf '%s' "$1" > ${JSON.stringify(recorded)}\n`, {
-            mode: 0o755
-        });
-        const machine = (openBin?: string): LocalConfig => ({
-            hub: '/hub',
-            port: 8791,
-            claudeBin: 'claude',
-            accounts: [],
-            calendars: [],
-            mail: [],
-            ...(openBin === undefined ? {} : { openBin })
-        });
+    it(
+        'hands an address to the program open_bin names, and to macOS open when it names none',
+        { tags: ['slow'] },
+        async () => {
+            const dir = scratchDir('oculus-open-bin-');
+            const recorded = join(dir, 'opened.txt');
+            const recorder = join(dir, 'recorder');
+            writeFileSync(recorder, `#!/bin/sh\nprintf '%s' "$1" > ${JSON.stringify(recorded)}\n`, {
+                mode: 0o755
+            });
+            const machine = (openBin?: string): LocalConfig => ({
+                hub: '/hub',
+                port: 8791,
+                claudeBin: 'claude',
+                accounts: [],
+                calendars: [],
+                mail: [],
+                ...(openBin === undefined ? {} : { openBin })
+            });
 
-        const plain = createServerContext('/engine', {
-            ...inertDependencies(),
-            loadLocal: () => machine()
-        });
-        expect(plain.opener).toBe(macOpenAddress);
-        plain.close();
+            const plain = createServerContext('/engine', {
+                ...inertDependencies(),
+                loadLocal: () => machine()
+            });
+            expect(plain.opener).toBe(macOpenAddress);
+            plain.close();
 
-        const named = createServerContext('/engine', {
-            ...inertDependencies(),
-            loadLocal: () => machine(recorder)
-        });
-        await named.opener('https://accounts.example.invalid/consent?state=one');
-        expect(readFileSync(recorded, 'utf8')).toBe(
-            'https://accounts.example.invalid/consent?state=one'
-        );
-        named.close();
-    });
+            const named = createServerContext('/engine', {
+                ...inertDependencies(),
+                loadLocal: () => machine(recorder)
+            });
+            await named.opener('https://accounts.example.invalid/consent?state=one');
+            expect(readFileSync(recorded, 'utf8')).toBe(
+                'https://accounts.example.invalid/consent?state=one'
+            );
+            named.close();
+        }
+    );
 
     it('stops before building anything when open.program_ext is missing, naming the key', () => {
         const createHub = vi.fn(() => new Hub());
@@ -412,7 +419,6 @@ describe('ServerContext', () => {
         }
     });
 
-    // Revert: leave the `latexFormatting` read out of createServerContext (server/root/context.ts).
     it('stops before building anything when latex.formatter is not a formatter, naming the key', () => {
         const createHub = vi.fn(() => new Hub());
         const config = inertConfig();

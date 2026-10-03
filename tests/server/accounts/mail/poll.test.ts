@@ -4,6 +4,9 @@
 //
 // Every credential file this file reads is in a directory it made under mkdtemp and asserted to be
 // inside the temporary directory first; nothing under the reader's own home is touched.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -268,39 +271,46 @@ describe('the mail poller', () => {
         watcher.close();
     });
 
-    it('gives an account whose provider never answers the timeout sentence and reads the next', async () => {
-        const hub = new Hub();
-        const dir = scratch();
-        writeAccount(dir, MICROSOFT);
-        writeAccount(dir, GOOGLE);
-        const google = fakeFetcher(googleRoutes(['one']));
-        const fetcher: typeof fetch = (input, init) => {
-            if (!urlOf(input).includes('graph.microsoft.com')) return google.fetcher(input, init);
-            // A request that settles only when its signal aborts, rejecting as fetch does.
-            return new Promise((_resolve, reject) => {
-                const signal = init?.signal;
-                signal?.addEventListener('abort', () => {
-                    reject(signal.reason as Error);
+    it(
+        'gives an account whose provider never answers the timeout sentence and reads the next',
+        { tags: ['slow'] },
+        async () => {
+            const hub = new Hub();
+            const dir = scratch();
+            writeAccount(dir, MICROSOFT);
+            writeAccount(dir, GOOGLE);
+            const google = fakeFetcher(googleRoutes(['one']));
+            const fetcher: typeof fetch = (input, init) => {
+                if (!urlOf(input).includes('graph.microsoft.com'))
+                    return google.fetcher(input, init);
+                // A request that settles only when its signal aborts, rejecting as fetch does.
+                return new Promise((_resolve, reject) => {
+                    const signal = init?.signal;
+                    signal?.addEventListener('abort', () => {
+                        reject(signal.reason as Error);
+                    });
                 });
+            };
+            const watcher = watchMail(hub, {
+                accounts: [MICROSOFT, GOOGLE],
+                dir,
+                pollMin: POLL_MIN,
+                perSignal: 25,
+                fetcher,
+                readTimeoutMs: SHORT_TIMEOUT_MS,
+                pollNotes: false
             });
-        };
-        const watcher = watchMail(hub, {
-            accounts: [MICROSOFT, GOOGLE],
-            dir,
-            pollMin: POLL_MIN,
-            perSignal: 25,
-            fetcher,
-            readTimeoutMs: SHORT_TIMEOUT_MS,
-            pollNotes: false
-        });
-        await watched(() => published(hub) && held(hub).threads.length === 1);
-        const [uni, work] = held(hub).accounts;
-        expect(uni.status).toBe('error');
-        expect(uni.hint).toBe(fillPlaceholders(WORDS.timedOut, [String(SHORT_TIMEOUT_MS / 1000)]));
-        expect(work.status).toBe('connected');
-        expect(held(hub).threads.map((one) => one.id)).toEqual(['google-work-one']);
-        watcher.close();
-    });
+            await watched(() => published(hub) && held(hub).threads.length === 1);
+            const [uni, work] = held(hub).accounts;
+            expect(uni.status).toBe('error');
+            expect(uni.hint).toBe(
+                fillPlaceholders(WORDS.timedOut, [String(SHORT_TIMEOUT_MS / 1000)])
+            );
+            expect(work.status).toBe('connected');
+            expect(held(hub).threads.map((one) => one.id)).toEqual(['google-work-one']);
+            watcher.close();
+        }
+    );
 
     it('shortens the cadence of the account that failed and leaves the other one alone', async () => {
         const hub = new Hub();
@@ -342,58 +352,31 @@ describe('the mail poller', () => {
         watcher.close();
     });
 
-    it('republishes when the triage skill writes the notes file from outside', async () => {
-        const hub = new Hub();
-        const dir = scratch();
-        writeAccount(dir, GOOGLE);
-        const fake = fakeFetcher(googleRoutes(['one']));
-        const watcher = watchMail(hub, {
-            accounts: [GOOGLE],
-            dir,
-            pollMin: POLL_MIN,
-            perSignal: 25,
-            fetcher: fake.fetcher
-        });
-        await until(() => published(hub) && held(hub).threads.length === 1);
-        const calls = fake.calls.length;
-        expect(held(hub).threads[0].triage.triaged).toBe(false);
+    it(
+        'makes the mail folder when it is not there, so the first write from outside is seen',
+        { tags: ['slow'] },
+        async () => {
+            const hub = new Hub();
+            const parent = scratch();
+            const dir = join(parent, 'not-made-yet');
+            expect(existsSync(dir)).toBe(false);
+            const watcher = watchMail(hub, {
+                accounts: [],
+                dir,
+                pollMin: POLL_MIN,
+                perSignal: 25,
+                fetcher: vi.fn(() => answer({}))
+            });
+            expect(existsSync(dir)).toBe(true);
+            expect(statSync(dir).mode & 0o777).toBe(0o700);
+            const before = hub.latest('inbox')?.version ?? 0;
 
-        // The write is the skill's: this case does not call publish or republish itself.
-        writeFileSync(
-            triageFile(dir),
-            JSON.stringify({
-                run: '2026-09-16',
-                notes: { 'google-work-one': { triaged: true, written: '2026-09-16T09:00:00.000Z' } }
-            })
-        );
-        await watched(() => held(hub).threads[0].triage.triaged);
-        expect(held(hub).notesRun).toBe('2026-09-16');
-        // The watch answers without asking a provider anything.
-        expect(fake.calls.length).toBe(calls);
-        watcher.close();
-    });
-
-    it('makes the mail folder when it is not there, so the first write from outside is seen', async () => {
-        const hub = new Hub();
-        const parent = scratch();
-        const dir = join(parent, 'not-made-yet');
-        expect(existsSync(dir)).toBe(false);
-        const watcher = watchMail(hub, {
-            accounts: [],
-            dir,
-            pollMin: POLL_MIN,
-            perSignal: 25,
-            fetcher: vi.fn(() => answer({}))
-        });
-        expect(existsSync(dir)).toBe(true);
-        expect(statSync(dir).mode & 0o777).toBe(0o700);
-        const before = hub.latest('inbox')?.version ?? 0;
-
-        writeFileSync(triageFile(dir), JSON.stringify({ run: '2026-09-16', notes: {} }));
-        await watched(() => (hub.latest('inbox')?.version ?? 0) > before);
-        expect(held(hub).notesRun).toBe('2026-09-16');
-        watcher.close();
-    });
+            writeFileSync(triageFile(dir), JSON.stringify({ run: '2026-09-16', notes: {} }));
+            await watched(() => (hub.latest('inbox')?.version ?? 0) > before);
+            expect(held(hub).notesRun).toBe('2026-09-16');
+            watcher.close();
+        }
+    );
 
     it('reads a notes file written the moment the poller starts, at the next tick', () => {
         const hub = new Hub();

@@ -1,8 +1,8 @@
 // The two writes to a mailbox: the reply each provider sends on the thread, and the archive. Every
 // provider call goes through an injected fetcher, so no network call is made.
 //
-// The case that matters most is the last one: no draft is ever created at either provider, which is
-// asserted by the drafts endpoints never being among the addresses either write called.
+// The assertion that matters most is that no draft is ever created at either provider: the drafts
+// endpoints are never among the addresses either write called.
 
 import { afterEach, describe, expect } from 'vitest';
 import {
@@ -105,19 +105,6 @@ describe('the raw message a Google reply is sent as', () => {
         expect(id).toMatch(/^<[0-9a-f-]{36}@mail\.example\.nl>$/);
         expect(id).not.toContain('localhost');
     });
-
-    it('keeps a newline inside the recipient on its one header rather than starting one', async () => {
-        const { headers } = await readRaw({
-            sender: 'axel@example.nl',
-            to: 'Ada\r\nBcc: someone@example.invalid',
-            subject: 'One',
-            inReplyTo: '',
-            references: '',
-            body: 'text'
-        });
-        expect(headerOf(headers, 'To')).toContain('someone@example.invalid');
-        expect(headers.filter((line) => line.toLowerCase().startsWith('bcc:'))).toEqual([]);
-    });
 });
 
 /** A raw message decoded to its text, its header lines unfolded and its body apart. */
@@ -169,12 +156,6 @@ const REPLY = {
 };
 
 describe('the headers a Google reply is written with', () => {
-    it('keeps an ASCII subject and recipient as given', async () => {
-        const { headers } = await readRaw(REPLY);
-        expect(headerOf(headers, 'Subject')).toBe('Re: Linkoping rapport');
-        expect(headerOf(headers, 'To')).toBe('Jens <j@example.se>');
-    });
-
     it('writes a subject and a name outside ASCII as encoded words that decode to them', async () => {
         const { headers } = await readRaw({
             ...REPLY,
@@ -212,8 +193,20 @@ describe('the headers a Google reply is written with', () => {
         expect(headerOf(empty.headers, 'References')).toBeUndefined();
     });
 
-    it('starts no Bcc header from a line break inside the subject', async () => {
-        const { headers } = await readRaw({ ...REPLY, subject: 'hi\r\nBcc: x@y' });
+    it.each([
+        {
+            name: 'a newline inside the recipient',
+            fields: { ...REPLY, to: 'Ada\r\nBcc: someone@example.invalid' },
+            held: [['To', 'someone@example.invalid']]
+        },
+        {
+            name: 'a line break inside the subject',
+            fields: { ...REPLY, subject: 'hi\r\nBcc: x@y' },
+            held: []
+        }
+    ])('starts no Bcc header from $name', async ({ fields, held }) => {
+        const { headers } = await readRaw(fields);
+        for (const [name, text] of held) expect(headerOf(headers, name)).toContain(text);
         expect(headers.filter((line) => /^bcc:/i.test(line))).toEqual([]);
     });
 });

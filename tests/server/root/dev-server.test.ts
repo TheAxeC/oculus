@@ -18,6 +18,7 @@
 // Raw is told from compiled by the text itself: the raw file opens with `<script` and holds a
 // `<style>` tag, and compiled CSS does neither. A word of the stylesheet cannot tell them apart,
 // since the raw file holds every word of it.
+// @module-tag slow: its cases start a real server and a node process, so npm test leaves it out.
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { cpSync, mkdirSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs';

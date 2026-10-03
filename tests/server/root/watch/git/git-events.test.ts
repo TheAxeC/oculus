@@ -5,6 +5,7 @@
 //
 // Every repository is made inside a temporary directory, every watcher a case opens is closed, and
 // the reads and the throttle run on a clock the case holds.
+// @module-tag slow: its cases make real git repositories and read them, so npm test leaves it out.
 
 import { mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

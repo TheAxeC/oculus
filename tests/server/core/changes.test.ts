@@ -7,7 +7,10 @@
 // The writes go through handleWrite rather than through each writer, because the record is only
 // complete once the route has stamped the time and the body kind on it: what a case asserts is the
 // line the log holds, which is what the History view reads.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+//
+// A describe whose cases take 100 ms or more in a run of its own is tagged slow, and so is a single
+// case that does. Reading a line is quick unless the case builds a whole target hub to hold the log
+// (`logHolding`), which takes about 190 ms.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -177,7 +180,7 @@ function lines(into: WriteTarget): string[] {
         .filter((one) => one !== '');
 }
 
-describe('what each writer records', () => {
+describe('what each writer records', { tags: ['slow'] }, () => {
     it('records one manifest field with the value it had and the value written', async () => {
         const into = target();
         const rows = await written(into, {
@@ -361,6 +364,12 @@ describe('what each writer records', () => {
 });
 
 describe('reading a line of the log', () => {
+    // The first case of a run builds a target, which loads the configuration; doing that here
+    // keeps the time of the first case its own.
+    it.beforeAll(() => {
+        target();
+    });
+
     it('answers a line with its keys in the order they were written and its own __proto__ keys', () => {
         const line =
             '{"at":"a","kind":"k","file":"f","key":"q","field":"x","__proto__":{"z":1},"before":{"__proto__":{"z":1},"b":1},"after":1,"undo":"field","more":2}';
@@ -409,12 +418,16 @@ describe('reading a line of the log', () => {
         expect(rows[0]).toStrictEqual({ at: 'b', kind: 'k', file: 'f', field: 'x' });
     });
 
-    it('takes the last of a key given twice, so a number then a string is read', () => {
-        const numberFirst = '{"at":5,"at":"s","kind":"k","file":"f","field":"x"}';
-        const stringFirst = '{"at":"s","at":5,"kind":"k","file":"f","field":"x"}';
-        expect(readChanges(logHolding(`${numberFirst}\n`)).map((one) => one.at)).toEqual(['s']);
-        expect(readChanges(logHolding(`${stringFirst}\n`))).toEqual([]);
-    });
+    it(
+        'takes the last of a key given twice, so a number then a string is read',
+        { tags: ['slow'] },
+        () => {
+            const numberFirst = '{"at":5,"at":"s","kind":"k","file":"f","field":"x"}';
+            const stringFirst = '{"at":"s","at":5,"kind":"k","file":"f","field":"x"}';
+            expect(readChanges(logHolding(`${numberFirst}\n`)).map((one) => one.at)).toEqual(['s']);
+            expect(readChanges(logHolding(`${stringFirst}\n`))).toEqual([]);
+        }
+    );
 
     it('reads a line with an unknown undo word or a numeric undoes as it is', () => {
         const text = [lineOf('1', { undo: 'sideways' }), lineOf('2', { undoes: 7 })].join('\n');
@@ -423,24 +436,28 @@ describe('reading a line of the log', () => {
         expect(rows[0]).toHaveProperty('undoes', 7);
     });
 
-    it('keeps the good lines and stamps a later moment when the last line was cut off', async () => {
-        const first = new Date(Date.now() + 60_000).toISOString();
-        const second = new Date(Date.now() + 61_000).toISOString();
-        const cut = '{"at":"9999-01-01T00:00:00.0';
-        const log = logHolding(`${lineOf(first)}\n${lineOf(second)}\n${cut}`);
-        await logChanges(log, 'manifest', [
-            { file: 'a.yml', key: 'alpha', field: 'f', before: null, after: 1, undo: 'field' }
-        ]);
-        const rows = readChanges(log);
-        expect(rows.map((one) => one.at)).toEqual(expect.arrayContaining([first, second]));
-        const added = rows.find((one) => one.file === 'a.yml');
-        expect(added?.field).toBe('f');
-        expect((added?.at ?? '') > second).toBe(true);
-        expect(readFileSync(log.file, 'utf8').split('\n')).toContain(cut);
-    });
+    it(
+        'keeps the good lines and stamps a later moment when the last line was cut off',
+        { tags: ['slow'] },
+        async () => {
+            const first = new Date(Date.now() + 60_000).toISOString();
+            const second = new Date(Date.now() + 61_000).toISOString();
+            const cut = '{"at":"9999-01-01T00:00:00.0';
+            const log = logHolding(`${lineOf(first)}\n${lineOf(second)}\n${cut}`);
+            await logChanges(log, 'manifest', [
+                { file: 'a.yml', key: 'alpha', field: 'f', before: null, after: 1, undo: 'field' }
+            ]);
+            const rows = readChanges(log);
+            expect(rows.map((one) => one.at)).toEqual(expect.arrayContaining([first, second]));
+            const added = rows.find((one) => one.file === 'a.yml');
+            expect(added?.field).toBe('f');
+            expect((added?.at ?? '') > second).toBe(true);
+            expect(readFileSync(log.file, 'utf8').split('\n')).toContain(cut);
+        }
+    );
 });
 
-describe('the log file', () => {
+describe('the log file', { tags: ['slow'] }, () => {
     it('holds one JSON line per change, oldest first, each with its own moment', async () => {
         const into = target();
         await written(into, {

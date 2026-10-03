@@ -3,6 +3,9 @@
 // from the hub is the rebuild's own result; a throw from it is logged and costs nothing else; and
 // it is never called once the watcher is closed. The file system's watches are held and the clock
 // is faked, so a case fires the registry folder's event itself.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -107,30 +110,38 @@ describe('the portfolio watcher built callback', () => {
         }
     });
 
-    it('is called once per rebuild a registry edit causes, and reads the edit from the hub', async () => {
-        const { watcher, seen, edit } = begin('one');
-        try {
-            await edit('two');
-            expect(seen.map((one) => one.host)).toEqual(['one', 'two']);
-            expect(seen[1]).toMatchObject({ portfolio: 2, audit: 2 });
-        } finally {
-            watcher.close();
+    it(
+        'is called once per rebuild a registry edit causes, and reads the edit from the hub',
+        { tags: ['slow'] },
+        async () => {
+            const { watcher, seen, edit } = begin('one');
+            try {
+                await edit('two');
+                expect(seen.map((one) => one.host)).toEqual(['one', 'two']);
+                expect(seen[1]).toMatchObject({ portfolio: 2, audit: 2 });
+            } finally {
+                watcher.close();
+            }
         }
-    });
+    );
 
-    it('is called once for two edits inside one debounce, and sees the last', async () => {
-        const { watcher, seen, edit, touch } = begin('one');
-        try {
-            touch('two');
-            await vi.advanceTimersByTimeAsync(DEBOUNCE / 2);
-            await edit('three');
-            expect(seen.map((one) => one.host)).toEqual(['one', 'three']);
-        } finally {
-            watcher.close();
+    it(
+        'is called once for two edits inside one debounce, and sees the last',
+        { tags: ['slow'] },
+        async () => {
+            const { watcher, seen, edit, touch } = begin('one');
+            try {
+                touch('two');
+                await vi.advanceTimersByTimeAsync(DEBOUNCE / 2);
+                await edit('three');
+                expect(seen.map((one) => one.host)).toEqual(['one', 'three']);
+            } finally {
+                watcher.close();
+            }
         }
-    });
+    );
 
-    it('logs a throw and goes on with the next rebuild', async () => {
+    it('logs a throw and goes on with the next rebuild', { tags: ['slow'] }, async () => {
         const said = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         let thrown = false;
         const { watcher, seen, edit } = begin('one', () => {
@@ -149,26 +160,30 @@ describe('the portfolio watcher built callback', () => {
         }
     });
 
-    it('is not called when the watcher is closed while the feeds are being published', async () => {
-        const { watcher, channels, seen, touchConfig } = begin('one');
-        channels.subscribe(
-            {
-                send: () => {
-                    watcher.close();
-                    return Promise.resolve();
+    it(
+        'is not called when the watcher is closed while the feeds are being published',
+        { tags: ['slow'] },
+        async () => {
+            const { watcher, channels, seen, touchConfig } = begin('one');
+            channels.subscribe(
+                {
+                    send: () => {
+                        watcher.close();
+                        return Promise.resolve();
+                    },
+                    close: noop
                 },
-                close: noop
-            },
-            ['feeds'],
-            false
-        );
-        touchConfig();
-        await vi.advanceTimersByTimeAsync(DEBOUNCE + 1);
-        expect(channels.version('feeds')).toBe(2);
-        expect(seen).toHaveLength(1);
-    });
+                ['feeds'],
+                false
+            );
+            touchConfig();
+            await vi.advanceTimersByTimeAsync(DEBOUNCE + 1);
+            expect(channels.version('feeds')).toBe(2);
+            expect(seen).toHaveLength(1);
+        }
+    );
 
-    it('is not called after close, whatever event follows', async () => {
+    it('is not called after close, whatever event follows', { tags: ['slow'] }, async () => {
         const { watcher, seen, edit } = begin('one');
         watcher.close();
         await edit('two');

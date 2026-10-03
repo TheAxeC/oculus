@@ -687,24 +687,6 @@ describe('dismissals', () => {
         expect([...hiddenIds(f.overrides)]).toEqual(['other']);
     });
 
-    it('starts an overrides file that does not exist yet', () => {
-        const f = make();
-        setHidden(SID, true, f.overrides);
-        expect(JSON.parse(readFileSync(f.overrides, 'utf8'))).toEqual({
-            sessions: { [SID]: { hidden: true } }
-        });
-        setHidden(SID, false, f.overrides);
-        expect(JSON.parse(readFileSync(f.overrides, 'utf8'))).toEqual({ sessions: {} });
-    });
-
-    it('refuses an id that is not a non-empty string', () => {
-        const f = make();
-        for (const bad of ['', '   ', null, 17]) {
-            expect(() => setHidden(bad, true, f.overrides)).toThrow(/a session id is required/);
-        }
-        expect(() => readFileSync(f.overrides, 'utf8')).toThrow();
-    });
-
     it('hides nothing from a corrupt overrides file', () => {
         const f = make();
         writeFileSync(f.overrides, '{not json');

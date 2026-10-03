@@ -1,5 +1,6 @@
-// Layer 2, server test support for the mail connector: a scratch directory of this run's own, one
-// account's credential file in it, and a fetcher that answers from a table of addresses.
+// Layer 2, server test support for the mail and calendar connectors: a scratch directory of this
+// run's own, one account's credential file in it, and a fetcher that answers from a table of
+// addresses.
 //
 // Nothing here opens a connection and nothing reads or writes outside the directory the case made,
 // which scratchDir makes inside the system temporary directory, and each file written is asserted
@@ -32,7 +33,11 @@ export function scratch(name = 'oculus-mail-'): string {
 }
 
 /** One account's file, with the refresh token unless the case asks for the client half alone. */
-export function writeAccount(dir: string, account: MailAccountConfig, connected = true): string {
+export function writeAccount(
+    dir: string,
+    account: Parameters<typeof credentialFile>[1],
+    connected = true
+): string {
     const file = credentialFile(dir, account);
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
     writeFileSync(

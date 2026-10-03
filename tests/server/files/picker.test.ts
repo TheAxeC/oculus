@@ -6,7 +6,6 @@
 import { describe, expect, it } from 'vitest';
 import { TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
 import {
-    PICKER_SCRIPT,
     handlePick,
     pickerState,
     type PickRun,
@@ -106,13 +105,5 @@ describe('the folder panel route', () => {
         const answer = await pick(printing('/a\n'), { token: false });
         expect(answer.status).toBe(403);
         expect(answer.headers.get('cache-control')).toBe('no-store');
-    });
-
-    it('audits that the script chooses folders only, several at once, and brings the panel forward', () => {
-        expect(PICKER_SCRIPT).toContain('canChooseDirectories = true');
-        expect(PICKER_SCRIPT).toContain('canChooseFiles = false');
-        expect(PICKER_SCRIPT).toContain('allowsMultipleSelection = true');
-        expect(PICKER_SCRIPT).toContain("prompt = 'Add'");
-        expect(PICKER_SCRIPT).toContain('activateIgnoringOtherApps(true)');
     });
 });

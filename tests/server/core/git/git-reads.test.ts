@@ -8,7 +8,7 @@
 // own helpers, which confine every git command to that directory and pass the author on the command
 // line, so this machine's git config is neither read nor written. The gates over what the module
 // runs are tests/server/core/git/git.test.ts's, whose last cases run each of these reads once.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

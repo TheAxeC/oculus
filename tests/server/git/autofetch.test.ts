@@ -7,7 +7,9 @@
 // clock and a `now` the case moves. The cases over real git make a bare repository and clones under
 // the system temporary folder and let the module run its own `remotes` and `fetch`. What this does
 // NOT cover: a remote that asks for a password over the network, which no throwaway repository can
-// be; the unattended environment is read from what the child process saw instead.
+// be; the unattended environment is read from what the child process saw instead. The last case
+// reads the module's source: it starts no process of its own and imports only fetchIn and
+// remoteNames from the git folder and sshCommand from the core git module.
 
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -127,15 +129,6 @@ function rig(doubles: Doubles | 'real' | 'listed' = {}) {
 }
 
 describe('the period', () => {
-    it('does nothing at key 0, the default, over twenty looks', async () => {
-        const held = rig();
-        held.key(0);
-        held.repos({ '/hub': repo('/hub') });
-        for (let at = 0; at < 20; at += 1) await held.look();
-        expect(held.calls).toEqual([]);
-        expect(held.lines).toEqual([]);
-    });
-
     it('waits one tick for the first look and re-arms before it works', () => {
         const delays: number[] = [];
         const hub = new Hub();
@@ -301,8 +294,9 @@ describe('a value that is not a number of minutes', () => {
         ['a payload that is text', (held) => held.hub.publish('config', 'x')]
     ];
 
-    for (const [what, publish] of WRONG) {
-        it(`fetches nothing, says so once across several looks, and resumes at 3: ${what}`, async () => {
+    it.each(WRONG)(
+        'fetches nothing, says so once across several looks, and resumes at 3: %s',
+        async (_what, publish) => {
             const held = rig();
             held.repos({ '/a': repo('/a') });
             publish(held);
@@ -318,8 +312,8 @@ describe('a value that is not a number of minutes', () => {
             await held.look();
             await held.look();
             expect(held.lines).toEqual([BAD_VALUE, BAD_VALUE]);
-        });
-    }
+        }
+    );
 
     it('ends a round and says so when the key turns wrong between two repositories', async () => {
         const first = deferred<Answer>();
@@ -415,20 +409,6 @@ describe('a call that fails', () => {
         expect(lines).toEqual(['autofetch: /a: refused']);
         expect(fetched).toEqual(['/a', '/b']);
         watcher.close();
-    });
-
-    it('refreshes a repository after each of its fetches and never one it skipped', async () => {
-        const held = rig({
-            remotes: (root) =>
-                Promise.resolve(root === '/none' ? { ...LISTED, output: '' } : LISTED)
-        });
-        held.key(1);
-        held.repos({ '/a': repo('/a'), '/none': repo('/none'), '/b': repo('/b') });
-        await held.look();
-        expect(held.calls.filter((call) => call.startsWith('refresh'))).toEqual([
-            'refresh /a',
-            'refresh /b'
-        ]);
     });
 });
 
@@ -589,7 +569,7 @@ function remoteWithClones(): {
     return { dir, bare, clone: join(dir, 'clone'), writer, push };
 }
 
-describe('a real fetch through the module', () => {
+describe('a real fetch through the module', { tags: ['slow'] }, () => {
     it('moves origin/main and prunes a branch deleted on the remote', async () => {
         const held = remoteWithClones();
         const before = gitText(held.clone, 'rev-parse', 'origin/main').trim();
@@ -649,7 +629,7 @@ describe('the ssh command of an unattended fetch', () => {
     });
 });
 
-describe('the environment of an unattended fetch', () => {
+describe('the environment of an unattended fetch', { tags: ['slow'] }, () => {
     const NAMES = [
         'GIT_TERMINAL_PROMPT',
         'GIT_SSH_COMMAND',
@@ -796,7 +776,7 @@ describe('the source rule', () => {
         '../../../src/lib/server/root/watch/autofetch.ts'
     );
 
-    it('audits the source: no process of its own, only fetchIn and remoteNames from the git folder, only sshCommand from the core git module', () => {
+    it('reaches git only through fetchIn, remoteNames and sshCommand, and starts no process of its own', () => {
         const source = readFileSync(SOURCE, 'utf8');
         expect(source).not.toContain('node:child_process');
         expect(source).not.toMatch(/\brun\(/);

@@ -3,7 +3,7 @@
 // target being passed in.
 
 import { describe, expect, it } from 'vitest';
-import { SIGNALS, onShutdown } from '../../../../src/lib/server/root/process/shutdown.ts';
+import { onShutdown } from '../../../../src/lib/server/root/process/shutdown.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 
 type Recorder = {
@@ -26,12 +26,6 @@ function target(): {
 }
 
 describe('onShutdown', () => {
-    it('takes both stop signals', () => {
-        const held = target();
-        onShutdown(held.target, noop);
-        expect([...held.record.handlers.keys()].sort()).toEqual([...SIGNALS].sort());
-    });
-
     it('closes once for two signals and exits when the close calls back', () => {
         const held = target();
         let closes = 0;

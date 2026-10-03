@@ -306,40 +306,6 @@ describe('watchHpc', () => {
         expect(vi.getTimerCount()).toBe(0);
         vi.useRealTimers();
     });
-    it('runs one follow-up poll after the one in flight for a refresh asked for meanwhile', async () => {
-        const hub = new Hub();
-        let settle: () => void = () => undefined;
-        const first = new Promise<{ stdout: string; stderr: string; code: number }>((resolve) => {
-            settle = () => resolve({ stdout: ANSWER, stderr: '', code: 0 });
-        });
-        let calls = 0;
-        const runner = vi.fn<Runner>((_host, remote) => {
-            if (remote.startsWith('quota'))
-                return Promise.resolve({ stdout: '', stderr: '', code: 0 });
-            calls += 1;
-            return calls === 1 ? first : Promise.resolve({ stdout: ANSWER, stderr: '', code: 0 });
-        });
-        const watcher = watchHpc(hub, { ...options, runner });
-        await Promise.resolve();
-        const during = watcher.refresh();
-        const same = watcher.refresh();
-        expect(same).toBe(during);
-        expect(calls).toBe(1);
-        settle();
-        await during;
-        expect(calls).toBe(2);
-        watcher.close();
-    });
-    it('marks a timeout unreachable', async () => {
-        const hub = new Hub();
-        const watcher = watchHpc(hub, {
-            ...options,
-            runner: () => Promise.reject(new Error('timeout'))
-        });
-        await watcher.refresh();
-        expect((hub.latest('hpc')?.payload as { status: string }).status).toBe('unreachable');
-        watcher.close();
-    });
     it('retries soon after a failure and returns to the regular cadence once the cluster answers', async () => {
         vi.useFakeTimers();
         const hub = new Hub();

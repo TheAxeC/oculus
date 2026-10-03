@@ -6,6 +6,7 @@
 //
 // What this does NOT cover: the questions the page asks, and git run in a language other than
 // English.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { describe, expect } from 'vitest';
 import { createWorktree } from '../../../../src/lib/server/git/git-write.ts';
@@ -46,8 +47,6 @@ describe('deleteBranch', () => {
         expect(has(root, 'unmerged')).toBe(true);
     });
 
-    // Revert: match 'is not fully merged' on git's reason cut to 200 characters in deleteBranch of
-    // server/git/git-refs.ts; the long name pushes the phrase past the cut.
     it('gives the code not-merged for a branch whose long name pushes the phrase past the reason', async () => {
         const root = scratchRepo();
         const name = `unmerged-${'x'.repeat(190)}`;

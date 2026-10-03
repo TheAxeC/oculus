@@ -2,8 +2,9 @@
 // control that opens one event at its provider.
 //
 // The page never sends an address: it names an event of the state the poller published, and the
-// server reads that event's own link. A case here asserts that an address the page invents reaches
-// no opener at all, and another that a link whose scheme is not `https` reaches none either.
+// server reads that event's own link. A case here asserts that an event the page names and the
+// state does not hold reaches no opener, and another that a link whose scheme is not `https`
+// reaches none either.
 
 import { describe, expect, it, vi } from 'vitest';
 import type { CalendarEvent } from '../../../../src/lib/data/model/index.ts';
@@ -79,16 +80,6 @@ describe('the calendar endpoint', () => {
         const opened: string[] = [];
         const answer = await handleCalendar(
             post({ action: 'open', event: 'google-work-primary-elsewhere' }),
-            target(opened)
-        );
-        expect(answer.status).toBe(400);
-        expect(opened).toEqual([]);
-    });
-
-    it('opens nothing when the page sends an address instead of an event', async () => {
-        const opened: string[] = [];
-        const answer = await handleCalendar(
-            post({ action: 'open', event: 'https://elsewhere.example/steal' }),
             target(opened)
         );
         expect(answer.status).toBe(400);

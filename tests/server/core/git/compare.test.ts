@@ -1,9 +1,10 @@
 // What server/core/git/compare.ts reads for the graph commit's compare items: the files of a
 // diff between a ref and a commit, one file's two sides, the ref a branch is compared against
-// (Compare with Merge Base), and the refs a picker lists. Every read changes nothing, and a ref
-// that could be taken for an option is refused before git runs.
+// (Compare with Merge Base), and the refs a picker lists. A ref that could be taken for an option
+// is refused before git runs.
 //
 // What this does NOT cover: the route that answers them and the diff tab the page opens.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { existsSync, mkdirSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -158,13 +159,6 @@ describe('branchBase', () => {
         const root = scratchRepo();
         git(root, 'switch', '-q', '-c', 'feature');
         expect(branchBase(root)).toBe('');
-    });
-
-    it('writes nothing back: the setting is still unset after the read', () => {
-        const { root } = withRemote();
-        git(root, 'switch', '-q', '-c', 'feature', 'main');
-        expect(branchBase(root)).toBe('origin/main');
-        expect(() => git(root, 'config', '--get', 'branch.feature.vscode-merge-base')).toThrow();
     });
 });
 

@@ -4,6 +4,7 @@
 // skipped, and a configured root that is itself a repository is not scanned.
 //
 // Every folder here is made inside a temporary directory and every watcher a case opens is closed.
+// @module-tag slow: its cases make real git repositories and read them, so npm test leaves it out.
 
 import { mkdirSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';

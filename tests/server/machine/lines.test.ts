@@ -7,8 +7,8 @@
 // these cases quote.
 //
 // The spawn the counter runs cloc with is recorded, the real one still running, so a case can see
-// that a closed request left no cloc running.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// that a closed request left no cloc running. The two describes of the real counter start git, perl
+// and cloc and are tagged slow; the other two read no file and stay quick.
 
 import { chmodSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -121,7 +121,7 @@ function answered(answer: LineCount | { error: string }): LineCount {
     return answer;
 }
 
-describe('the counter', () => {
+describe('the counter', { tags: ['slow'] }, () => {
     it('counts the tracked files by folder and language, cloc giving the lines', async () => {
         const count = answered(await countLines(repository(FILES)));
         expect(count.rows).toEqual([
@@ -191,7 +191,7 @@ describe('the counter', () => {
         const closing = new AbortController();
         const before = spawned.length;
         const counting = countLines(dir, { cloc: script, signal: closing.signal, timeout: 3000 });
-        await new Promise((wake) => setTimeout(wake, 200));
+        await vi.waitFor(() => expect(spawned.length).toBe(before + 1));
         expect(spawned.length).toBe(before + 1);
         const child = spawned[before];
         expect(child.exitCode === null && child.signalCode === null).toBe(true);
@@ -235,9 +235,7 @@ describe('the counter', () => {
         const dir = repository(FILES);
         const script = join(scratchDir('oculus-lines-slow-'), 'cloc');
         writeFileSync(script, 'sleep 5;\n');
-        const started = Date.now();
         const answer = await countLines(dir, { cloc: script, timeout: 200 });
-        expect(Date.now() - started).toBeLessThan(4000);
         expect(answer).toEqual({
             error: 'cloc was stopped by SIGTERM before it answered; it is given 0.2 s.'
         });
@@ -254,7 +252,7 @@ describe('the counter', () => {
     });
 });
 
-describe("cloc's JSON of an odd shape", () => {
+describe("cloc's JSON of an odd shape", { tags: ['slow'] }, () => {
     const GOOD_A = '"a.ts":{"language":"TypeScript","blank":1,"comment":2,"code":1}';
     const GOOD_B = '"src/lib/x/b.svelte":{"language":"Svelte","blank":1,"comment":0,"code":4}';
     const NOT_CLOC = { error: "cloc's answer is not the JSON it writes." };

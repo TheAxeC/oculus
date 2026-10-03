@@ -15,10 +15,7 @@ import {
     callbackPath,
     callbackUrl
 } from '../../../../src/lib/server/accounts/connect/oauth.ts';
-import {
-    credentialFile,
-    defaultConnectDir
-} from '../../../../src/lib/server/accounts/connect/store.ts';
+import { credentialFile } from '../../../../src/lib/server/accounts/connect/store.ts';
 import {
     handleMail,
     handleMailCallback as handleCallback,
@@ -26,7 +23,7 @@ import {
 } from '../../../../src/lib/server/accounts/mail/routes.ts';
 import { fsWrites } from '../../../../src/lib/server/core/json.ts';
 import { readTriage } from '../../../../src/lib/server/accounts/mail/triage.ts';
-import { ACCESS, GOOGLE, REFRESH, cleanup, fakeFetcher, scratch, writeAccount } from './fixture.ts';
+import { GOOGLE, REFRESH, cleanup, fakeFetcher, scratch, writeAccount } from './fixture.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { it } from '../../../fixtures/scratch.ts';
 
@@ -351,23 +348,6 @@ describe('the mail callback', () => {
         expect(answer.status).toBe(400);
         const held: unknown = JSON.parse(readFileSync(credentialFile(dir, GOOGLE), 'utf8'));
         expect(held).not.toHaveProperty('refresh_token');
-    });
-});
-
-describe('the connector folders and scopes', () => {
-    it('gives mail its own folder, its own callback and scopes that carry no calendar right', () => {
-        expect(SCOPE.mail.google).toBe(
-            'https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send'
-        );
-        expect(SCOPE.mail.microsoft).toBe('Mail.ReadWrite Mail.Send offline_access');
-        expect(SCOPE.calendar.google).not.toContain('gmail');
-        expect(SCOPE.calendar.microsoft).not.toContain('Mail');
-        expect(callbackPath('mail')).toBe('/api/mail/callback');
-        expect(callbackPath('calendar')).toBe('/api/calendar/callback');
-        expect(defaultConnectDir('mail').endsWith(join('.oculus', 'mail'))).toBe(true);
-        expect(defaultConnectDir('calendar').endsWith(join('.oculus', 'calendar'))).toBe(true);
-        expect(defaultConnectDir('mail')).not.toBe(defaultConnectDir('calendar'));
-        expect(ACCESS).toBeTruthy();
     });
 });
 

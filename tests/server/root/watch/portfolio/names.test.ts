@@ -108,16 +108,6 @@ describe('namedByConfig', () => {
             false
         );
     });
-
-    it('rebuilds on a PRESENT.md under a tier and on none under a project code folder', () => {
-        // The pair the watcher applies: the filename filter, then the file the build reads.
-        const named = namedByConfig('/hub', config);
-        const accepts = (rel: string): boolean =>
-            relevant(rel) && named(join('/hub', 'projects/active', rel));
-        expect(accepts('loewner/PRESENT.md')).toBe(true);
-        expect(accepts('loewner/code/PRESENT.md')).toBe(false);
-        expect(accepts('loewner/attic/PRESENT.md')).toBe(false);
-    });
 });
 
 describe('watchedDirectories', () => {

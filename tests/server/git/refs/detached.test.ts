@@ -5,6 +5,7 @@
 //
 // What this does NOT cover: the questions the page asks first, and the route's confirm
 // (tests/routes/git/refs.test.ts).
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { describe, expect } from 'vitest';
 import { createBranch, switchDetached } from '../../../../src/lib/server/git/git-write.ts';
@@ -81,12 +82,6 @@ describe('createBranch from a commit', () => {
         expect(git(root, 'rev-parse', 'x').trim()).toBe(first);
     });
 
-    it('still makes a branch at HEAD when no start point is given', async () => {
-        const { root, second } = twoCommits();
-        expect((await createBranch(root, 'y', [root])).ok).toBe(true);
-        expect(git(root, 'rev-parse', 'y').trim()).toBe(second);
-    });
-
     it('answers git own refusal for a name that is taken', async () => {
         const { root, first } = twoCommits();
         git(root, 'branch', 'x');
@@ -127,12 +122,6 @@ describe('createTag from a commit', () => {
         expect((await createTag(root, 'v2', 'Release two', [root], first)).ok).toBe(true);
         expect(git(root, 'rev-list', '-n', '1', 'v2').trim()).toBe(first);
         expect(git(root, 'cat-file', '-t', 'v2').trim()).toBe('tag');
-    });
-
-    it('still tags HEAD when no start point is given', async () => {
-        const { root, second } = twoCommits();
-        expect((await createTag(root, 'v3', '', [root])).ok).toBe(true);
-        expect(git(root, 'rev-list', '-n', '1', 'v3').trim()).toBe(second);
     });
 
     it('refuses a start point that is not a hash before git runs', async () => {

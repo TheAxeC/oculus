@@ -1,73 +1,41 @@
-// The calendar poller with an injected fetcher only, so the unconfigured machine, the not-connected
-// account, a good poll, a failed one, one that never answers, the forced refresh, one poll at a
-// time and timer closure are all reached without the network.
+// Layer 2, server tests. The calendar poller with an injected fetcher only, so the unconfigured
+// machine, the not-connected account, a good poll, a failed one, the forced refresh, one poll at a
+// time and timer closure are all reached without the network. A provider or a link that never
+// answers is tests/server/accounts/calendar/poll-timeout.test.ts, and the accounts and answers the
+// two files share are tests/server/accounts/calendar/poll-fixture.ts.
 //
 // Every credential file this file reads is in a directory it made under mkdtemp and asserted to be
 // inside the temporary directory first; nothing under the reader's own home is touched.
 
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect, vi } from 'vitest';
-import type {
-    CalendarAccountConfig,
-    CalendarPayload
-} from '../../../../src/lib/data/model/index.ts';
+import { describe, expect, vi } from 'vitest';
+import type { CalendarAccountConfig } from '../../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { RETRY_MIN, watchCalendar } from '../../../../src/lib/server/accounts/calendar/poll.ts';
 import { credentialFile } from '../../../../src/lib/server/accounts/connect/store.ts';
 import type { Fetcher } from '../../../../src/lib/server/accounts/connect/oauth.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { fillPlaceholders } from '../../../../src/lib/data/helpers/finding-text.ts';
-import { it, scratchDir } from '../../../fixtures/scratch.ts';
+import { it } from '../../../fixtures/scratch.ts';
 import { DAYS_AHEAD, DAYS_BACK, EVENT_PAGE, ICS_TEXT, WINDOW_NOW } from './ics-fixture.ts';
+import {
+    ACCESS,
+    GOOGLE,
+    ICS,
+    LINK,
+    POLL_MIN,
+    REFRESH,
+    WORDS,
+    answer,
+    held,
+    options,
+    scratch,
+    urlOf,
+    writeAccount,
+    writeLink
+} from './poll-fixture.ts';
 
 const MINUTE = 60000;
-const POLL_MIN = 15;
-const GOOGLE: CalendarAccountConfig = { provider: 'google', label: 'work' };
-const ACCESS = 'the-access-token-no-payload-may-carry';
-const REFRESH = 'the-refresh-token-no-payload-may-carry';
-const catalog = textCatalog(loadConfig(engineDir()).config);
-/** The sentences an account's row may carry, as the server reads them. */
-const WORDS = {
-    icsNoLink: catalog['calendar.ics_no_link'],
-    icsFailed: catalog['calendar.ics_failed'],
-    timedOut: catalog['accounts.timed_out']
-};
-/** The read timeout a case shortens the poller's to, so a request that hangs ends at once. */
-const SHORT_TIMEOUT_MS = 50;
-
-const made: string[] = [];
-
-afterEach(() => {
-    while (made.length > 0) rmSync(made.pop() ?? '', { recursive: true, force: true });
-});
-
-function scratch(): string {
-    const dir = scratchDir('oculus-calendar-poll-');
-    made.push(dir);
-    return dir;
-}
-
-/** One account's file, with the refresh token unless the case asks for the client half alone. */
-function writeAccount(dir: string, account: CalendarAccountConfig, connected = true): string {
-    const file = credentialFile(dir, account);
-    expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
-    writeFileSync(
-        file,
-        JSON.stringify({
-            client_id: 'an-id',
-            client_secret: 'a-secret',
-            ...(connected ? { refresh_token: REFRESH } : {})
-        })
-    );
-    return file;
-}
-
-/** The address one fetch call was made to, whichever of the three forms it was given in. */
-function urlOf(input: RequestInfo | URL): string {
-    return typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-}
-
 /**
  * Give the event loop a turn until the condition holds, or give up. A round reaches the calendar
  * listing only after the token call and its body have been read, which is several turns, so a case
@@ -77,53 +45,6 @@ async function until(held: () => boolean): Promise<void> {
     for (let turn = 0; turn < 50 && !held(); turn += 1) {
         await new Promise((resolve) => setTimeout(resolve, 0));
     }
-}
-
-/** One good answer, in the form a fetcher hands it back. */
-function answer(body: unknown): Promise<Response> {
-    return Promise.resolve(
-        new Response(JSON.stringify(body), {
-            status: 200,
-            headers: { 'content-type': 'application/json' }
-        })
-    );
-}
-
-/**
- * A request that is never answered: it settles only when its signal aborts, rejecting with the
- * signal's reason as fetch does.
- */
-function hanging(init: RequestInit | undefined): Promise<Response> {
-    return new Promise((_resolve, reject) => {
-        const signal = init?.signal;
-        if (!signal) return;
-        signal.addEventListener('abort', () => {
-            reject(signal.reason as Error);
-        });
-    });
-}
-
-/**
- * An answer whose head arrives and whose body never does: the body ends only when the request's
- * signal aborts, with the signal's reason, as fetch's own body does.
- */
-function stalledBody(init: RequestInit | undefined): Promise<Response> {
-    const signal = init?.signal;
-    const body = new ReadableStream<Uint8Array>({
-        start(controller) {
-            signal?.addEventListener('abort', () => {
-                controller.error(signal.reason);
-            });
-        }
-    });
-    return Promise.resolve(
-        new Response(body, { status: 200, headers: { 'content-type': 'application/json' } })
-    );
-}
-
-/** The payload the hub currently holds on the calendar channel. */
-function held(hub: Hub): CalendarPayload {
-    return hub.latest('calendar')?.payload as CalendarPayload;
 }
 
 /** One Google event, in the shape the reader parses. */
@@ -160,22 +81,6 @@ function swingingFetcher(provider: { up: boolean; events: Record<string, unknown
  */
 function pollCalls(fetcher: ReturnType<typeof swingingFetcher>): number {
     return fetcher.mock.calls.filter((call) => urlOf(call[0]).includes('calendarList')).length;
-}
-
-/** The options one case runs its watcher under. */
-function options(dir: string, fetcher: Fetcher, accounts = [GOOGLE]) {
-    // A provider folder the case never fills unless it says so, inside the case's own directory.
-    const providerDir = join(dir, 'connect');
-    return {
-        accounts,
-        dir,
-        providerDir,
-        pollMin: POLL_MIN,
-        daysBack: 1,
-        daysAhead: 14,
-        fetcher,
-        words: WORDS
-    };
 }
 
 describe('the calendar poller', () => {
@@ -321,72 +226,6 @@ describe('the calendar poller', () => {
         expect(payload.retryMin).toBe(RETRY_MIN);
         expect(payload.daysBack).toBe(1);
         expect(payload.daysAhead).toBe(14);
-
-        watcher.close();
-    });
-
-    it('gives an account whose provider never answers the timeout sentence and reads the next', async () => {
-        const dir = scratch();
-        writeAccount(dir, GOOGLE);
-        const microsoft: CalendarAccountConfig = { provider: 'microsoft', label: 'uni' };
-        writeAccount(dir, microsoft);
-        const hub = new Hub();
-        const fetcher = vi.fn<Fetcher>((input, init) => {
-            const url = urlOf(input);
-            if (url.includes('oauth2.googleapis.com') || url.includes('login.microsoftonline.com'))
-                return answer({ access_token: ACCESS });
-            if (url.includes('googleapis.com')) return hanging(init);
-            return answer(
-                url.includes('calendarView')
-                    ? {
-                          value: [
-                              {
-                                  id: 'read',
-                                  subject: 'Read',
-                                  isAllDay: false,
-                                  start: { dateTime: '2031-03-02T08:00:00.0000000' },
-                                  end: { dateTime: '2031-03-02T09:00:00.0000000' }
-                              }
-                          ]
-                      }
-                    : { value: [{ id: 'cal', name: 'Uni' }] }
-            );
-        });
-        const watcher = watchCalendar(hub, {
-            ...options(dir, fetcher, [GOOGLE, microsoft]),
-            readTimeoutMs: SHORT_TIMEOUT_MS
-        });
-        await watcher.refresh();
-
-        const [google, uni] = held(hub).accounts;
-        expect(google.status).toBe('error');
-        expect(google.hint).toBe(
-            fillPlaceholders(WORDS.timedOut, [String(SHORT_TIMEOUT_MS / 1000)])
-        );
-        expect(uni.status).toBe('connected');
-        expect(held(hub).events.map((one) => one.title)).toEqual(['Read']);
-
-        watcher.close();
-    });
-
-    it('gives the timeout sentence to an account whose answer arrives with no body', async () => {
-        const dir = scratch();
-        writeAccount(dir, GOOGLE);
-        const hub = new Hub();
-        const fetcher = vi.fn<Fetcher>((input, init) =>
-            urlOf(input).includes('oauth2.googleapis.com')
-                ? answer({ access_token: ACCESS })
-                : stalledBody(init)
-        );
-        const watcher = watchCalendar(hub, {
-            ...options(dir, fetcher),
-            readTimeoutMs: SHORT_TIMEOUT_MS
-        });
-        await watcher.refresh();
-
-        const [row] = held(hub).accounts;
-        expect(row.status).toBe('error');
-        expect(row.hint).toBe(fillPlaceholders(WORDS.timedOut, [String(SHORT_TIMEOUT_MS / 1000)]));
 
         watcher.close();
     });
@@ -750,16 +589,6 @@ describe('the calendar poller', () => {
 });
 
 describe('a published calendar link', () => {
-    const LINK = 'https://secret.example/cal.ics';
-    const ICS: CalendarAccountConfig = { provider: 'ics', label: 'rooster' };
-
-    /** The account's own file, holding the link or the fields the case gives it. */
-    function writeLink(dir: string, record: Record<string, unknown> = { url: LINK }): void {
-        const file = credentialFile(dir, ICS);
-        expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
-        writeFileSync(file, JSON.stringify(record));
-    }
-
     /** The watcher over one published link, its window the fixture's own. */
     function watchLink(hub: Hub, dir: string, fetcher: Fetcher) {
         return watchCalendar(hub, {
@@ -848,24 +677,6 @@ describe('a published calendar link', () => {
         } finally {
             for (const spy of spies) spy.mockRestore();
         }
-    });
-
-    it('gives a link that never answers the timeout sentence, never the link', async () => {
-        const dir = scratch();
-        writeLink(dir);
-        const hub = new Hub();
-        const fetcher = vi.fn<Fetcher>((_input, init) => hanging(init));
-        const watcher = watchCalendar(hub, {
-            ...options(dir, fetcher, [ICS]),
-            readTimeoutMs: SHORT_TIMEOUT_MS
-        });
-        await watcher.refresh();
-
-        const [row] = held(hub).accounts;
-        expect(row.status).toBe('error');
-        expect(row.hint).toBe(fillPlaceholders(WORDS.timedOut, [String(SHORT_TIMEOUT_MS / 1000)]));
-
-        watcher.close();
     });
 
     it('is not connected, with the fixed sentence, while its file holds no link', async () => {

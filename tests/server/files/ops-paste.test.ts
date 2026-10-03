@@ -10,6 +10,9 @@
 // What this does NOT cover: the menu that posts these requests and the questions that precede
 // them, which are tests/views/sources/files/ and tests/state/sources/explorer/; a Trash that really
 // takes a file, which is the library's and is seen at the look; a volume with no Trash.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import {
     existsSync,
@@ -255,7 +258,7 @@ describe('upload', () => {
         expect(readFileSync(join(w.hub, 'f.png'), 'utf8')).toBe('old');
     });
 
-    it('refuses a file over the cap as too large', async () => {
+    it('refuses a file over the cap as too large', { tags: ['slow'] }, async () => {
         const w = world();
         const over = Buffer.alloc(MAX_UPLOAD_BYTES + 1).toString('base64');
         expect((await w.post(upload('big.bin', over))).body).toEqual({
@@ -505,27 +508,32 @@ describe("the machine's own local.yml", () => {
         }
     });
 
-    it('refuses a delete that waited in the chain while local.yml was saved over (case 24)', async () => {
-        const w = engineWorld();
-        const trashed = spy();
-        let release = (): void => undefined;
-        const gate = new Promise<void>((done) => (release = done));
-        const first = w.post(create('spare', 'a.md'), { slow: () => gate });
-        await new Promise((done) => setTimeout(done, 10));
-        const second = w.post(
-            { op: 'delete', root: 'engine', paths: ['local.yml'] },
-            { trash: trashed }
-        );
-        await new Promise((done) => setTimeout(done, 10));
-        // A save writes a temporary file and renames it over the file, which gives it a new inode.
-        writeFileSync(join(w.config, 'local.yml.tmp'), 'secret: 2\n');
-        renameSync(join(w.config, 'local.yml.tmp'), w.local);
-        release();
-        expect((await first).body.ok).toBe(true);
-        expect((await second).body).toEqual(refused('protected'));
-        expect(readFileSync(w.local, 'utf8')).toBe('secret: 2\n');
-        expect(trashed).not.toHaveBeenCalled();
-    });
+    it(
+        'refuses a delete that waited in the chain while local.yml was saved over (case 24)',
+        { tags: ['slow'] },
+        async () => {
+            const w = engineWorld();
+            const trashed = spy();
+            let release = (): void => undefined;
+            const gate = new Promise<void>((done) => (release = done));
+            const first = w.post(create('spare', 'a.md'), { slow: () => gate });
+            await new Promise((done) => setTimeout(done, 10));
+            const second = w.post(
+                { op: 'delete', root: 'engine', paths: ['local.yml'] },
+                { trash: trashed }
+            );
+            await new Promise((done) => setTimeout(done, 10));
+            // A save writes a temporary file and renames it over the file, which gives it a new
+            // inode.
+            writeFileSync(join(w.config, 'local.yml.tmp'), 'secret: 2\n');
+            renameSync(join(w.config, 'local.yml.tmp'), w.local);
+            release();
+            expect((await first).body.ok).toBe(true);
+            expect((await second).body).toEqual(refused('protected'));
+            expect(readFileSync(w.local, 'utf8')).toBe('secret: 2\n');
+            expect(trashed).not.toHaveBeenCalled();
+        }
+    );
 
     it('answers root before protected for the folder of the engine root, and protected for its copy (case 24)', async () => {
         const w = engineWorld();

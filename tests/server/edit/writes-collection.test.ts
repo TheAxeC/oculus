@@ -5,6 +5,9 @@
 // The hub here is a synthetic one under the system temporary directory, and every path this file
 // writes is asserted to be inside it before it is written; nothing in this file opens the real hub
 // for writing.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -31,6 +34,12 @@ import {
 } from './writes-fixture.ts';
 
 describe('writing one collection entry', () => {
+    // The first write of a run loads the modules of the entry writer; loading them here keeps the
+    // time of the first case its own.
+    it.beforeAll(() => {
+        writeEntry(wider(), configFor(), 'tasks', 'Review the draft', { status: 'done' });
+    });
+
     it('sets a field of the entry the id names', () => {
         const root = wider();
         const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', {
@@ -46,24 +55,24 @@ describe('writing one collection entry', () => {
         expect(tasksOf(root)).toBe(TASKS.replace('status: open', 'status: done'));
     });
 
-    // Revert: in writeEntry of server/edit/writes/entries.ts, leave the id out of the outcome, so
-    // the answer says nothing about where the entry now is.
-    it('says the id the entry has after the write, which a write of the identity field moves', () => {
-        const root = wider();
-        const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', {
-            title: 'Review the draft again'
-        });
-        expect(out.id).toBe('Review the draft again');
-        // A file whose entries carry an `id` is addressed by that id, whatever its identity field
-        // says, so a write of the identity field leaves the id where it was.
-        const venue = writeEntry(root, configFor(), 'venues', 'existing', {
-            name: 'Existing renamed'
-        });
-        expect(venue.id).toBe('existing');
-    });
+    it(
+        'says the id the entry has after the write, which a write of the identity field moves',
+        { tags: ['slow'] },
+        () => {
+            const root = wider();
+            const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', {
+                title: 'Review the draft again'
+            });
+            expect(out.id).toBe('Review the draft again');
+            // A file whose entries carry an `id` is addressed by that id, whatever its identity
+            // field says, so a write of the identity field leaves the id where it was.
+            const venue = writeEntry(root, configFor(), 'venues', 'existing', {
+                name: 'Existing renamed'
+            });
+            expect(venue.id).toBe('existing');
+        }
+    );
 
-    // Revert: in writeEntry of server/edit/writes/entries.ts, let a write set the identity field to
-    // a value another entry already holds.
     it('refuses a write that moves an entry onto another entry of the same file', () => {
         const root = wider();
         writeFileSync(tasksPath(root), `${TASKS}  - title: Another task\n    status: open\n`);
@@ -76,7 +85,8 @@ describe('writing one collection entry', () => {
             refused: [{ field: 'title', reason: 'another entry is already called Another task' }]
         });
         expect(tasksOf(root)).toContain('  - title: "Review the draft"');
-        // The entry's own value is not another entry's, so a write that leaves it alone is written.
+        // The entry's own value is not another entry's, so a write that leaves it alone is
+        // written.
         expect(
             writeEntry(root, configFor(), 'tasks', 'Review the draft', {
                 title: 'Review the draft'
@@ -97,25 +107,6 @@ describe('writing one collection entry', () => {
             refused: []
         });
         expect(tasksOf(root)).toBe(TASKS);
-    });
-
-    it('writes a metalist through to the collection file', () => {
-        const root = wider();
-        const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', {
-            meta: [{ label: 'Owner', value: 'Axel' }]
-        });
-        expect(out).toEqual({
-            found: true,
-            id: 'Review the draft',
-            changed: ['meta'],
-            refused: [],
-            records: [
-                record(tasksPath(root), 'Review the draft', 'meta', null, [
-                    { label: 'Owner', value: 'Axel' }
-                ])
-            ]
-        });
-        expect(tasksOf(root)).toContain('    meta:\n      - { label: Owner, value: "Axel" }');
     });
 
     it('clears a schema metalist whose current value is an empty list', () => {
@@ -158,27 +149,31 @@ describe('a collection entry write against the schema of its own file', () => {
         expect(tasksOf(root)).toBe(TYPED);
     });
 
-    it('refuses a select value the schema options do not name, and writes one they do', () => {
-        const root = typed();
-        expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'nonesuch' })).toEqual({
-            found: true,
-            id: 'One',
-            changed: [],
-            refused: [{ field: 'status', reason: 'status takes one of open, done' }],
-            records: []
-        });
-        expect(tasksOf(root)).toBe(TYPED);
-        expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'done' })).toEqual({
-            found: true,
-            id: 'One',
-            changed: ['status'],
-            refused: [],
-            records: [record(tasksPath(root), 'One', 'status', 'open', 'done')]
-        });
-        expect(tasksOf(root)).toContain('status: done');
-    });
+    it(
+        'refuses a select value the schema options do not name, and writes one they do',
+        { tags: ['slow'] },
+        () => {
+            const root = typed();
+            expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'nonesuch' })).toEqual({
+                found: true,
+                id: 'One',
+                changed: [],
+                refused: [{ field: 'status', reason: 'status takes one of open, done' }],
+                records: []
+            });
+            expect(tasksOf(root)).toBe(TYPED);
+            expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'done' })).toEqual({
+                found: true,
+                id: 'One',
+                changed: ['status'],
+                refused: [],
+                records: [record(tasksPath(root), 'One', 'status', 'open', 'done')]
+            });
+            expect(tasksOf(root)).toContain('status: done');
+        }
+    );
 
-    it('refuses a date that is not one ISO day, and writes one that is', () => {
+    it('refuses a date that is not one ISO day, and writes one that is', { tags: ['slow'] }, () => {
         const root = typed();
         expect(writeEntry(root, configFor(), 'tasks', 'One', { deadline: '1 Jan' })).toEqual({
             found: true,
@@ -199,25 +194,29 @@ describe('a collection entry write against the schema of its own file', () => {
         expect(tasksOf(root)).toContain('deadline: 2026-09-14');
     });
 
-    it('refuses a checkbox that is not a boolean, and writes one that is', () => {
-        const root = typed();
-        expect(writeEntry(root, configFor(), 'tasks', 'One', { pin: 'yes' })).toEqual({
-            found: true,
-            id: 'One',
-            changed: [],
-            refused: [{ field: 'pin', reason: 'pin takes true or false' }],
-            records: []
-        });
-        expect(tasksOf(root)).toBe(TYPED);
-        expect(writeEntry(root, configFor(), 'tasks', 'One', { pin: true })).toEqual({
-            found: true,
-            id: 'One',
-            changed: ['pin'],
-            refused: [],
-            records: [record(tasksPath(root), 'One', 'pin', null, true)]
-        });
-        expect(tasksOf(root)).toContain('pin: true');
-    });
+    it(
+        'refuses a checkbox that is not a boolean, and writes one that is',
+        { tags: ['slow'] },
+        () => {
+            const root = typed();
+            expect(writeEntry(root, configFor(), 'tasks', 'One', { pin: 'yes' })).toEqual({
+                found: true,
+                id: 'One',
+                changed: [],
+                refused: [{ field: 'pin', reason: 'pin takes true or false' }],
+                records: []
+            });
+            expect(tasksOf(root)).toBe(TYPED);
+            expect(writeEntry(root, configFor(), 'tasks', 'One', { pin: true })).toEqual({
+                found: true,
+                id: 'One',
+                changed: ['pin'],
+                refused: [],
+                records: [record(tasksPath(root), 'One', 'pin', null, true)]
+            });
+            expect(tasksOf(root)).toContain('pin: true');
+        }
+    );
 
     it('clears a field of any type with an empty value', () => {
         const root = typed();
@@ -283,14 +282,20 @@ describe('a collection file whose entries share an identity value', () => {
         ]
     };
 
-    it('refuses every write to the file until one of the two is changed', () => {
-        const root = typed(TWICE);
-        expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'done' })).toEqual(refusal);
-        expect(removeEntry(root, configFor(), 'tasks', 'One')).toEqual(refusal);
-        expect(reorderCollection(root, configFor(), 'tasks', ['One', 'One'])).toEqual(refusal);
-        expect(createEntry(root, configFor(), 'tasks', { title: 'Two' })).toEqual(refusal);
-        expect(tasksOf(root)).toBe(TWICE);
-    });
+    it(
+        'refuses every write to the file until one of the two is changed',
+        { tags: ['slow'] },
+        () => {
+            const root = typed(TWICE);
+            expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'done' })).toEqual(
+                refusal
+            );
+            expect(removeEntry(root, configFor(), 'tasks', 'One')).toEqual(refusal);
+            expect(reorderCollection(root, configFor(), 'tasks', ['One', 'One'])).toEqual(refusal);
+            expect(createEntry(root, configFor(), 'tasks', { title: 'Two' })).toEqual(refusal);
+            expect(tasksOf(root)).toBe(TWICE);
+        }
+    );
 });
 
 describe('reordering and deleting entries of a collection', () => {

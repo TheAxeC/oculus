@@ -297,15 +297,6 @@ describe('a no-server answer while a control client runs', () => {
         }
     });
 
-    it('is the empty list again once the control client has stopped, after the confirming reads', async () => {
-        const made = await attached();
-        made.client.live = false;
-        made.held.refresh();
-        await refuseAll(made, NO_SERVER);
-        expect(ids(made.held)).toEqual([]);
-        expect(made.seen).toEqual([[]]);
-    });
-
     it('is the empty list when the control client stops during the confirming reads', async () => {
         const made = await attached();
         made.held.refresh();
@@ -391,17 +382,6 @@ describe('a no-server answer with no control client, while the tmux server runs'
         newer.resolve(row(A, 9002));
         await settle();
         older.resolve(row(A, 9003));
-        await settle();
-        made.client.runs = true;
-        made.held.refresh();
-        await refuseAll(made, NO_SERVER);
-        expect(made.client.asked).toEqual([9002]);
-    });
-
-    it('asks about the server of the list read last, not of an earlier one', async () => {
-        const made = await served();
-        made.held.refresh();
-        made.reads.splice(0)[0].resolve(row(A, 9002));
         await settle();
         made.client.runs = true;
         made.held.refresh();

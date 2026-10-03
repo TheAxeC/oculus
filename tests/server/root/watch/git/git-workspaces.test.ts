@@ -5,6 +5,7 @@
 // and at no other moment, and nothing the machine's file events do can read the roots instead. The
 // first case runs on the wall clock, as the server does. Every repository, workspaces file and
 // folder here is made inside a temporary directory, and every watcher a case opens is closed.
+// @module-tag slow: its cases make real git repositories and read them, so npm test leaves it out.
 
 import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';

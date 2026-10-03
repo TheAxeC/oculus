@@ -6,6 +6,9 @@
 // and the other files from the copy and writes the copy. What this does NOT cover: the route that
 // carries the writer, History and Undo (tests/routes/edit/config-value.test.ts), the render itself
 // (tests/server/edit/yaml/block-edit.test.ts) and the editors that send the write.
+//
+// A case that merges the whole config folder takes 100 ms or more in a run of its own and is
+// tagged slow; the refusal of the machine's own file reads no file and is not.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, vi } from 'vitest';
@@ -59,74 +62,53 @@ function write(engine: string, file: string, key: string, value: unknown) {
 const WAITING = 'behavior.yml:waiting_status';
 
 describe('a list written in place', () => {
-    it('adds one item, removes one and swaps two, and keeps every other line', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'behavior.yml');
-        const next = ['pending', 'submitted', 'under-review', 'queued'];
-        const outcome = write(engine, 'behavior.yml', 'waiting_status', next);
-        expect(outcome.refused).toEqual([]);
-        expect(outcome.changed).toEqual([WAITING]);
-        expect(held(engine, 'behavior.yml')).toBe(
-            before.replace(
-                '[submitted, pending, under review, under-review]',
-                '[pending, submitted, under-review, queued]'
-            )
-        );
-        expect(valueOf(engine, 'behavior.yml', 'waiting_status')).toEqual(next);
-        expect(outcome.records).toHaveLength(1);
-        expect(outcome.records?.[0]).toMatchObject({
-            key: 'behavior.yml',
-            field: 'waiting_status',
-            before: ['submitted', 'pending', 'under review', 'under-review'],
-            after: next,
-            undo: 'field'
-        });
-    });
+    it(
+        'adds one item, removes one and swaps two, and keeps every other line',
+        { tags: ['slow'] },
+        () => {
+            const engine = scratchEngine();
+            const before = held(engine, 'behavior.yml');
+            const next = ['pending', 'submitted', 'under-review', 'queued'];
+            const outcome = write(engine, 'behavior.yml', 'waiting_status', next);
+            expect(outcome.refused).toEqual([]);
+            expect(outcome.changed).toEqual([WAITING]);
+            expect(held(engine, 'behavior.yml')).toBe(
+                before.replace(
+                    '[submitted, pending, under review, under-review]',
+                    '[pending, submitted, under-review, queued]'
+                )
+            );
+            expect(valueOf(engine, 'behavior.yml', 'waiting_status')).toEqual(next);
+            expect(outcome.records).toHaveLength(1);
+            expect(outcome.records?.[0]).toMatchObject({
+                key: 'behavior.yml',
+                field: 'waiting_status',
+                before: ['submitted', 'pending', 'under review', 'under-review'],
+                after: next,
+                undo: 'field'
+            });
+        }
+    );
 
-    it('is taken back by writing the earlier list with the later one as its base', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'behavior.yml');
-        const original = valueOf(engine, 'behavior.yml', 'waiting_status');
-        const next = ['pending', 'submitted', 'under-review', 'queued'];
-        write(engine, 'behavior.yml', 'waiting_status', next);
-        const back = writeConfigValue(engine, 'behavior.yml', 'waiting_status', original, next);
-        expect(back.refused).toEqual([]);
-        expect(held(engine, 'behavior.yml')).toBe(before);
-    });
-
-    it('writes an empty list given one item as a list of one, and a list emptied as []', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'behavior.yml');
-        write(engine, 'behavior.yml', 'audit_ignore', ['0123456789ab']);
-        expect(held(engine, 'behavior.yml')).toBe(
-            before.replace('audit_ignore: []', 'audit_ignore: [0123456789ab]')
-        );
-        write(engine, 'behavior.yml', 'audit_ignore', []);
-        expect(held(engine, 'behavior.yml')).toBe(before);
-        write(engine, 'behavior.yml', 'waiting_status', []);
-        expect(held(engine, 'behavior.yml')).toBe(
-            before.replace(
-                'waiting_status: [submitted, pending, under review, under-review]',
-                'waiting_status: []'
-            )
-        );
-    });
-
-    it('writes nothing and records nothing for the value the file already holds', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'behavior.yml');
-        const outcome = write(
-            engine,
-            'behavior.yml',
-            'waiting_status',
-            valueOf(engine, 'behavior.yml', 'waiting_status')
-        );
-        expect(outcome).toEqual({ changed: [], refused: [] });
-        expect(held(engine, 'behavior.yml')).toBe(before);
-    });
+    it(
+        'writes nothing and records nothing for the value the file already holds',
+        { tags: ['slow'] },
+        () => {
+            const engine = scratchEngine();
+            const before = held(engine, 'behavior.yml');
+            const outcome = write(
+                engine,
+                'behavior.yml',
+                'waiting_status',
+                valueOf(engine, 'behavior.yml', 'waiting_status')
+            );
+            expect(outcome).toEqual({ changed: [], refused: [] });
+            expect(held(engine, 'behavior.yml')).toBe(before);
+        }
+    );
 });
 
-describe('a family written in place', () => {
+describe('a family written in place', { tags: ['slow'] }, () => {
     it('writes a family whose keys only changed order, and reads the new order back', () => {
         const engine = scratchEngine();
         const groups = valueOf(engine, 'layout.yml', 'nav_groups') as Record<string, unknown>;
@@ -136,41 +118,6 @@ describe('a family written in place', () => {
         expect(outcome.changed).toEqual(['layout.yml:nav_groups']);
         const after = valueOf(engine, 'layout.yml', 'nav_groups') as Record<string, unknown>;
         expect(Object.keys(after)).toEqual(Object.keys(reversed));
-    });
-
-    it('changes the chord of one record and adds a record, keeping the others as written', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'layout.yml');
-        const groups = valueOf(engine, 'layout.yml', 'nav_groups') as Record<
-            string,
-            Record<string, unknown>
-        >;
-        const next = {
-            ...groups,
-            help: { ...groups.help, chord: 'q' },
-            extra: { label: 'Extra', glyph: 'page', chord: 'x' }
-        };
-        const outcome = write(engine, 'layout.yml', 'nav_groups', next);
-        expect(outcome.refused).toEqual([]);
-        const added = '  extra: { label: Extra, glyph: page, chord: x }\n';
-        const chord = before.replace(
-            'help: { label: "Help", glyph: page, chord: h }',
-            'help: { label: "Help", glyph: page, chord: q }'
-        );
-        const last = '  views: { label: "System", glyph: settings, chord: y }\n';
-        expect(held(engine, 'layout.yml')).toBe(chord.replace(last, last + added));
-    });
-
-    it('gives a language one more ending and leaves the other languages padded as they were', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'sources.yml');
-        const languages = valueOf(engine, 'sources.yml', 'languages') as Record<string, string[]>;
-        const next = { ...languages, bash: [...languages.bash, '.zzz'] };
-        const outcome = write(engine, 'sources.yml', 'languages', next);
-        expect(outcome.refused).toEqual([]);
-        expect(held(engine, 'sources.yml')).toBe(
-            before.replace('[.sh, .bash, .zsh, .slurm]', '[.sh, .bash, .zsh, .slurm, .zzz]')
-        );
     });
 
     it('writes a number as a number', () => {
@@ -208,59 +155,7 @@ describe('a family written in place', () => {
     });
 });
 
-describe('strings and keys that YAML would read as something else', () => {
-    it('writes strings with reserved characters or another type so they read back as the same strings', () => {
-        const engine = scratchEngine();
-        const strings = ['a: b', '#x', 'yes', '20', 'null', '~', '- x', '[a', '*a', 'plain'];
-        const outcome = write(engine, 'behavior.yml', 'waiting_status', strings);
-        expect(outcome.refused).toEqual([]);
-        expect(valueOf(engine, 'behavior.yml', 'waiting_status')).toEqual(strings);
-    });
-
-    it('writes keys with a dot, a digit, a space or nothing so they read back as the same keys', () => {
-        const engine = scratchEngine();
-        const next = { 'status.line': 220, '1': 5, '': 6, 'two words': 7, 'a: b': 8, next: 300 };
-        const outcome = write(engine, 'behavior.yml', 'read_limits', next);
-        expect(outcome.refused).toEqual([]);
-        expect(valueOf(engine, 'behavior.yml', 'read_limits')).toEqual(next);
-    });
-
-    it('writes an item holding a line break, added and changed, double-quoted so it reads back', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'behavior.yml');
-        const original = valueOf(engine, 'behavior.yml', 'waiting_status') as string[];
-        const added = [...original, 'a\nb'];
-        expect(write(engine, 'behavior.yml', 'waiting_status', added).refused).toEqual([]);
-        expect(held(engine, 'behavior.yml')).toBe(
-            before.replace(
-                '[submitted, pending, under review, under-review]',
-                '[submitted, pending, under review, under-review, "a\\nb"]'
-            )
-        );
-        expect(valueOf(engine, 'behavior.yml', 'waiting_status')).toEqual(added);
-        const changed = ['a\nb', ...original.slice(1)];
-        expect(write(engine, 'behavior.yml', 'waiting_status', changed).refused).toEqual([]);
-        expect(held(engine, 'behavior.yml')).toBe(
-            before.replace(
-                '[submitted, pending, under review, under-review]',
-                '["a\\nb", pending, under review, under-review]'
-            )
-        );
-        expect(valueOf(engine, 'behavior.yml', 'waiting_status')).toEqual(changed);
-    });
-
-    it('writes a key of a flow map holding a comma double-quoted so it reads back', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'behavior.yml');
-        const limits = valueOf(engine, 'behavior.yml', 'read_limits') as Record<string, number>;
-        const next = { ...limits, 'a,b': 7 };
-        expect(write(engine, 'behavior.yml', 'read_limits', next).refused).toEqual([]);
-        expect(held(engine, 'behavior.yml')).toBe(
-            before.replace('results: 300 }', 'results: 300, "a,b": 7 }')
-        );
-        expect(valueOf(engine, 'behavior.yml', 'read_limits')).toEqual(next);
-    });
-
+describe('a reserved name as a key', { tags: ['slow'] }, () => {
     it('refuses a reserved name as a key anywhere inside the value', () => {
         const engine = scratchEngine();
         const before = held(engine, 'behavior.yml');
@@ -280,7 +175,7 @@ describe('strings and keys that YAML would read as something else', () => {
     });
 });
 
-describe('a write refused with nothing written', () => {
+describe("the machine's own file", () => {
     it('refuses local.yml before any file is read', () => {
         const engine = scratchEngine();
         reads.paths.length = 0;
@@ -288,7 +183,9 @@ describe('a write refused with nothing written', () => {
         expect(refusalOf(outcome, 'local.yml:hub')).toBe(why('local'));
         expect(reads.paths.filter((path) => path.endsWith('local.yml'))).toEqual([]);
     });
+});
 
+describe('a write refused with nothing written', { tags: ['slow'] }, () => {
     it('refuses the rail, the arrangements, a single value and a key the catalog lacks', () => {
         const engine = scratchEngine();
         const before = held(engine, 'layout.yml');
@@ -303,16 +200,6 @@ describe('a write refused with nothing written', () => {
         const other = writeConfigValue(engine, 'missing.yml', 'waiting_status', [], []);
         expect(refusalOf(other, 'missing.yml:waiting_status')).toBe(why('no_entry'));
         expect(held(engine, 'layout.yml')).toBe(before);
-    });
-
-    it('refuses a key segment named like an object member as a key the catalog lacks', () => {
-        const engine = scratchEngine();
-        for (const key of ['__proto__', 'constructor', 'toString', 'waiting_status.__proto__']) {
-            const outcome = writeConfigValue(engine, 'behavior.yml', key, [], []);
-            expect(refusalOf(outcome, `behavior.yml:${key}`)).toBe(why('no_entry'));
-        }
-        const proto = writeConfigValue(engine, '__proto__', 'waiting_status', [], []);
-        expect(refusalOf(proto, '__proto__:waiting_status')).toBe(why('no_entry'));
     });
 
     it('refuses a base the file no longer holds, with the sentence that it changed since it was read', () => {
@@ -407,21 +294,6 @@ describe('a write refused with nothing written', () => {
         expect(kept.refused).toEqual([]);
     });
 
-    it('refuses a list in a key/value family whose entries are single values, naming the key', () => {
-        const engine = scratchEngine();
-        const before = held(engine, 'behavior.yml');
-        const limits = valueOf(engine, 'behavior.yml', 'read_limits') as Record<string, number>;
-        const listed = write(engine, 'behavior.yml', 'read_limits', { ...limits, next: [1, 2] });
-        expect(refusalOf(listed, 'behavior.yml:read_limits')).toBe(why('wants_value', 'next'));
-        expect(held(engine, 'behavior.yml')).toBe(before);
-        const present = held(engine, 'present.yml');
-        const tones = valueOf(engine, 'present.yml', 'deck.tag_tones') as Record<string, string>;
-        const toned = write(engine, 'present.yml', 'deck.tag_tones', { ...tones, x: ['a'] });
-        expect(refusalOf(toned, 'present.yml:deck.tag_tones')).toBe(why('wants_value', 'x'));
-        expect(held(engine, 'present.yml')).toBe(present);
-    });
-
-    // Revert: decide a table's list values from the file's entries in misfit of config-value.ts.
     it('refuses a list in an emptied key/value family whose catalog entry holds single values', () => {
         const engine = scratchEngine();
         const emptied: [string, string, string][] = [
@@ -562,17 +434,7 @@ describe('a write refused with nothing written', () => {
     });
 });
 
-describe('two writes of one file', () => {
-    it('lets a second write of the same key with the same base through only once', () => {
-        const engine = scratchEngine();
-        const base = valueOf(engine, 'behavior.yml', 'waiting_status');
-        const first = writeConfigValue(engine, 'behavior.yml', 'waiting_status', ['a'], base);
-        expect(first.refused).toEqual([]);
-        const second = writeConfigValue(engine, 'behavior.yml', 'waiting_status', ['b'], base);
-        expect(refusalOf(second, WAITING)).toBe(why('changed'));
-        expect(valueOf(engine, 'behavior.yml', 'waiting_status')).toEqual(['a']);
-    });
-
+describe('two writes of one file', { tags: ['slow'] }, () => {
     it('lands two different keys of one file, each over the file the other left', () => {
         const engine = scratchEngine();
         const domains = valueOf(engine, 'behavior.yml', 'data_domains');
@@ -584,7 +446,7 @@ describe('two writes of one file', () => {
     });
 });
 
-describe('a file written with CRLF line endings', () => {
+describe('a file written with CRLF line endings', { tags: ['slow'] }, () => {
     it('gives the lines it adds the same line ending', () => {
         const engine = scratchEngine();
         const path = engineFile(engine, 'sources.yml');

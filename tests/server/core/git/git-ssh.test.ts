@@ -1,6 +1,7 @@
 // Layer 2, server tests. The ssh command a repository names, `core.sshCommand`, as
 // server/core/git/reads.ts reads it for the automatic fetch. The gate over the vector it runs is
 // tests/server/core/git/git.test.ts's.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

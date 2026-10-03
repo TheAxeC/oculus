@@ -29,28 +29,27 @@ describe('matches', () => {
         expect(matches('python3 x.py', ['python3'])).toBe(true);
     });
 
-    it('matches none for an empty command line, a blank one and an empty pattern list', () => {
-        expect(matches('', ['python3'])).toBe(false);
-        expect(matches('   ', ['python3'])).toBe(false);
-        expect(matches('python3 x.py', [])).toBe(false);
-    });
-
-    it('does not list a shell that was given a path holding the name', () => {
-        expect(
-            matches('/bin/zsh -c source /Users/x/.claude/shell-snapshots/s.sh', ['claude'])
-        ).toBe(false);
-    });
-
-    it('does not list a program whose path holds the name and whose first word is split at a space', () => {
-        expect(
-            matches('/Applications/X.app/.codex/plugins/ChatGPT for Chrome chrome-extension://a', [
-                'codex'
-            ])
-        ).toBe(false);
-    });
-
-    it('does not list a wrapper that names the program as a later word', () => {
-        expect(matches('bash /opt/homebrew/libexec/pyenv-exec python3 -', ['python3'])).toBe(false);
+    it.each([
+        ['an empty command line', '', ['python3']],
+        ['a blank command line', '   ', ['python3']],
+        ['an empty pattern list', 'python3 x.py', []],
+        [
+            'a shell given a path with the name',
+            '/bin/zsh -c source /Users/x/.claude/shell-snapshots/s.sh',
+            ['claude']
+        ],
+        [
+            'a path with the name, split at a space',
+            '/Applications/X.app/.codex/plugins/ChatGPT for Chrome chrome-extension://a',
+            ['codex']
+        ],
+        [
+            'a wrapper naming it as a later word',
+            'bash /opt/homebrew/libexec/pyenv-exec python3 -',
+            ['python3']
+        ]
+    ])('matches nothing for %s', (_name, line, patterns) => {
+        expect(matches(line, patterns)).toBe(false);
     });
 
     it('matches when any pattern of the list matches', () => {

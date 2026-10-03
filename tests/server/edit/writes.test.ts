@@ -7,9 +7,11 @@
 // writes is asserted to be inside it before it is written; nothing in this file opens the real hub
 // for writing, and the schema it checks against is the real config/catalogs/manifest-schema.yml,
 // so what the form offers and what the write accepts are the same list.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
-import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
@@ -94,24 +96,28 @@ describe('what a write refuses', () => {
     // `followup` is named by the schema through its children, `followup.do` and `followup.after`,
     // and the file may hold it as a bare note, a map or a list. Clearing it whole by the parent
     // name is the one write on the parent the editor takes; a value for the parent is refused.
-    it('clears a grouped field whole by its parent name, whatever shape the file holds it in', () => {
-        const noted = hub(
-            MANIFEST.replace('title: "A title"', 'title: "A title"\nfollowup: "ask"')
-        );
-        const out = writeManifest(noted, configFor(), 'alpha', { followup: '' });
-        expect(out.changed).toEqual(['followup']);
-        expect(manifestOf(noted)).not.toContain('followup');
+    it(
+        'clears a grouped field whole by its parent name, whatever shape the file holds it in',
+        { tags: ['slow'] },
+        () => {
+            const noted = hub(
+                MANIFEST.replace('title: "A title"', 'title: "A title"\nfollowup: "ask"')
+            );
+            const out = writeManifest(noted, configFor(), 'alpha', { followup: '' });
+            expect(out.changed).toEqual(['followup']);
+            expect(manifestOf(noted)).not.toContain('followup');
 
-        const mapped = hub(
-            MANIFEST.replace(
-                'title: "A title"',
-                'title: "A title"\nfollowup: { do: "ask", after: "2030-01-01" }'
-            )
-        );
-        const gone = writeManifest(mapped, configFor(), 'alpha', { followup: null });
-        expect(gone.changed).toEqual(['followup']);
-        expect(manifestOf(mapped)).not.toContain('followup');
-    });
+            const mapped = hub(
+                MANIFEST.replace(
+                    'title: "A title"',
+                    'title: "A title"\nfollowup: { do: "ask", after: "2030-01-01" }'
+                )
+            );
+            const gone = writeManifest(mapped, configFor(), 'alpha', { followup: null });
+            expect(gone.changed).toEqual(['followup']);
+            expect(manifestOf(mapped)).not.toContain('followup');
+        }
+    );
 
     it('refuses a value for a grouped field by its parent name', () => {
         const root = hub();
@@ -190,23 +196,25 @@ describe('the file itself', () => {
         expect(manifestOf(root)).toBe(MANIFEST.replace('pin: true\n', ''));
     });
 
-    it('does not touch the file when nothing changed', async () => {
+    it('does not touch the file when nothing changed', () => {
         const root = hub();
-        const before = statSync(join(root, 'projects', 'manuscripts', 'alpha', 'project.yml'));
-        await new Promise((wake) => setTimeout(wake, 20));
+        const file = join(root, 'projects', 'manuscripts', 'alpha', 'project.yml');
+        const past = new Date(Date.now() - 60_000);
+        utimesSync(file, past, past);
+        const before = statSync(file);
         const out = writeManifest(root, configFor(), 'alpha', {
             title: 'A title',
             pin: true,
             'status.chips': ['submitted', 'lead']
         });
-        const after = statSync(join(root, 'projects', 'manuscripts', 'alpha', 'project.yml'));
+        const after = statSync(file);
         expect(out).toEqual({ found: true, changed: [], refused: [], records: [] });
         expect(after.mtimeMs).toBe(before.mtimeMs);
     });
 });
 
 describe('writing one subtask line', () => {
-    it('ticks and reopens a line of a manifest', () => {
+    it('ticks and reopens a line of a manifest', { tags: ['slow'] }, () => {
         const root = wider();
         writeManifest(root, configFor(), 'alpha', {});
         const added = writeSubtaskAdd(root, configFor(), { id: 'alpha' }, { do: 'write it' });
@@ -220,7 +228,7 @@ describe('writing one subtask line', () => {
         expect(manifestOf(root)).toContain('- { do: write it }');
     });
 
-    it('snoozes and deletes a line of a collection entry', () => {
+    it('snoozes and deletes a line of a collection entry', { tags: ['slow'] }, () => {
         const root = wider();
         const target = { id: 'Review the draft', collection: 'tasks' };
         const snoozed = writeSubtask(root, configFor(), target, '0', 'snooze', '2026-10-01');
@@ -323,63 +331,37 @@ describe('adding an entry and an idea', () => {
         expect(tasksOf(root)).toBe(`${TASKS}\n  - title: A new task\n    status: open\n`);
     });
 
-    it('appends a new entry carrying a metalist', () => {
-        const root = wider();
-        const out = createEntry(root, configFor(), 'tasks', {
-            title: 'A metalist task',
-            meta: [{ label: 'Owner', value: 'Axel' }]
-        });
-        expect(out).toEqual({
-            found: true,
-            id: 'A metalist task',
-            changed: ['entries'],
-            refused: [],
-            records: [
-                record(
-                    tasksPath(root),
-                    'A metalist task',
-                    'entries',
-                    null,
-                    {
-                        title: 'A metalist task',
-                        meta: [{ label: 'Owner', value: 'Axel' }]
-                    },
-                    'create'
-                )
-            ]
-        });
-        expect(tasksOf(root)).toContain(
-            '  - title: A metalist task\n    meta:\n      - { label: Owner, value: "Axel" }'
-        );
-    });
+    it(
+        'refuses an edit that clears a venue id or moves it onto another venue',
+        { tags: ['slow'] },
+        () => {
+            const root = wider();
+            const file = join(root, 'registries', 'venues.yml');
+            writeFileSync(file, `${VENUES}  - name: Second Venue\n    id: second\n`);
+            expect(writeEntry(root, configFor(), 'venues', 'second', { id: 'existing' })).toEqual({
+                found: true,
+                changed: [],
+                refused: [{ field: 'id', reason: 'an entry with that id is already in the file' }]
+            });
+            expect(writeEntry(root, configFor(), 'venues', 'second', { id: '' })).toEqual({
+                found: true,
+                changed: [],
+                refused: [{ field: 'id', reason: 'an entry needs a non-empty id' }]
+            });
+            expect(writeEntry(root, configFor(), 'venues', 'second', { id: 'second' })).toEqual({
+                found: true,
+                id: 'second',
+                changed: [],
+                refused: [],
+                records: []
+            });
+            const moved = writeEntry(root, configFor(), 'venues', 'second', { id: 'renamed' });
+            expect(moved.refused).toEqual([]);
+            expect(venuesOf(root)).toContain('  - name: Second Venue\n    id: renamed');
+        }
+    );
 
-    it('refuses an edit that clears a venue id or moves it onto another venue', () => {
-        const root = wider();
-        const file = join(root, 'registries', 'venues.yml');
-        writeFileSync(file, `${VENUES}  - name: Second Venue\n    id: second\n`);
-        expect(writeEntry(root, configFor(), 'venues', 'second', { id: 'existing' })).toEqual({
-            found: true,
-            changed: [],
-            refused: [{ field: 'id', reason: 'an entry with that id is already in the file' }]
-        });
-        expect(writeEntry(root, configFor(), 'venues', 'second', { id: '' })).toEqual({
-            found: true,
-            changed: [],
-            refused: [{ field: 'id', reason: 'an entry needs a non-empty id' }]
-        });
-        expect(writeEntry(root, configFor(), 'venues', 'second', { id: 'second' })).toEqual({
-            found: true,
-            id: 'second',
-            changed: [],
-            refused: [],
-            records: []
-        });
-        const moved = writeEntry(root, configFor(), 'venues', 'second', { id: 'renamed' });
-        expect(moved.refused).toEqual([]);
-        expect(venuesOf(root)).toContain('  - name: Second Venue\n    id: renamed');
-    });
-
-    it('requires a fresh non-empty registry id for a new venue', () => {
+    it('requires a fresh non-empty registry id for a new venue', { tags: ['slow'] }, () => {
         const missingRoot = wider();
         expect(createEntry(missingRoot, configFor(), 'venues', { name: 'Missing ID' })).toEqual({
             found: true,

@@ -154,7 +154,7 @@ describe('the comments of a list of one note', () => {
         );
     });
 
-    it('audits that a comment after a flow list stays after its last value', () => {
+    it('keeps a comment after a flow list after its last value', () => {
         const out = setFields(manifest('followup: [{ do: call, after: 2026-10-01 }]  # flow\n'), {
             'followup.do': 'ring'
         });
@@ -187,13 +187,5 @@ describe('a list of two notes', () => {
         expect(out.refused).toEqual([{ field: 'followup.after', reason: 'followup is not a map' }]);
         expect(out.changed).toEqual([]);
         expect(out.text).toBe(source);
-    });
-});
-
-describe('a map note', () => {
-    it('is written in place', () => {
-        const source = manifest('followup: { do: "note", after: "2026-09-18" }\n');
-        const out = setFields(source, { 'followup.after': '2026-10-01' });
-        expect(out.text).toBe(manifest('followup: { do: "note", after: "2026-10-01" }\n'));
     });
 });

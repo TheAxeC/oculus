@@ -52,7 +52,6 @@ describe('outlineOf', () => {
         expect(found).toMatchObject({ partial: [], unread: [] });
     });
 
-    // Revert: name a file past the size limit in `partial` in server/content/latex/outline.ts.
     it('names a file the parser refuses as read in part and a file past the size limit as not read', () => {
         const dir = planted({
             'main.tex': '\\section{A}\n\\input{bad}\n\\input{big}\n',

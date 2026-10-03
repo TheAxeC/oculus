@@ -5,7 +5,7 @@
 //
 // Every repository is built in a temporary directory through the git watcher's own helpers, which
 // confine each git command to it and pass the author on the command line.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';

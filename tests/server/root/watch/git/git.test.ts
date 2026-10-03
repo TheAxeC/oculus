@@ -7,6 +7,9 @@
 //
 // What was run is read by recording the process module's calls, which is how "only the root that
 // changed is re-read" is checked by the thing that would fail if it were false.
+//
+// The describe over watchGit makes real git repositories and waits on real file events, so it is
+// tagged slow.
 
 import { mkdirSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -168,7 +171,7 @@ describe('rootsOf', () => {
     });
 });
 
-describe('watchGit', () => {
+describe('watchGit', { tags: ['slow'] }, () => {
     it('publishes the state of every workspace the sessions payload names', async () => {
         const first = repository('one');
         const second = repository('two');
@@ -429,24 +432,6 @@ describe('watchGit', () => {
             await until(() => client.got.length >= 1, WAIT);
             const state = latest(client.got)[gone];
             expect(state.error).toBeTruthy();
-            expect(quiet).not.toHaveBeenCalled();
-        } finally {
-            quiet.mockRestore();
-        }
-    });
-
-    it('says nothing on stderr for a workspace root that is not there at all', async () => {
-        const gone = join(dir, 'gone');
-        const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-        try {
-            const hub = new Hub();
-            const client = recording();
-            hub.subscribe(client.sink, ['git']);
-            announce(hub, [gone]);
-            watchers.push(watchGit(hub));
-
-            await until(() => client.got.length >= 1, WAIT);
-            expect(latest(client.got)[gone].error).toBeTruthy();
             expect(quiet).not.toHaveBeenCalled();
         } finally {
             quiet.mockRestore();

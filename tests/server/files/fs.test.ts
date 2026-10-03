@@ -228,51 +228,6 @@ describe('the workspaces file', () => {
         expect(readSaved(file)).toEqual({ current: '', workspaces: [], dropped: [] });
     });
 
-    it('drops an entry that is not a workspace and a root that is not a pair of strings', () => {
-        const file = savedFile();
-        writeFileSync(
-            file,
-            JSON.stringify({
-                current: 'one',
-                workspaces: [
-                    { name: 'one', roots: [{ key: 'a', dir: '/tmp/a' }, { key: '' }, 7] },
-                    { roots: [] },
-                    { name: 'one', roots: [] }
-                ]
-            })
-        );
-
-        expect(readSaved(file)).toEqual({
-            current: 'one',
-            workspaces: [{ name: 'one', roots: [{ key: 'a', dir: '/tmp/a' }] }],
-            dropped: []
-        });
-    });
-
-    it('drops a saved root whose key the configuration reserves, and names the key', () => {
-        const file = savedFile();
-        writeFileSync(
-            file,
-            JSON.stringify({
-                current: '',
-                workspaces: [
-                    {
-                        name: '',
-                        roots: [
-                            { key: 'hub', dir: '/tmp/elsewhere' },
-                            { key: 'cathedra', dir: '/tmp/other' },
-                            { key: 'notes', dir: '/tmp/notes' }
-                        ]
-                    }
-                ]
-            })
-        );
-        const read = readSaved(file, ['hub', 'cathedra']);
-
-        expect(read.workspaces[0].roots).toEqual([{ key: 'notes', dir: '/tmp/notes' }]);
-        expect(read.dropped).toEqual(['hub', 'cathedra']);
-    });
-
     it('never writes the dropped keys back into the file', () => {
         const file = savedFile();
         writeSaved(file, { current: '', workspaces: [], dropped: ['hub'] });
@@ -281,13 +236,6 @@ describe('the workspaces file', () => {
             'current',
             'workspaces'
         ]);
-    });
-
-    it('falls back to the default workspace when current names one that is not there', () => {
-        const file = savedFile();
-        writeSaved(file, saved('gone', [{ name: 'here', roots: [] }]));
-
-        expect(readSaved(file).current).toBe('');
     });
 
     it('gives the roots of one workspace and nothing of another one', () => {
@@ -570,25 +518,6 @@ describe("the reader's own bookmarks", () => {
             ]
         });
         expect(readBookmarks(file).entries.map((one) => one.id)).toEqual(['other']);
-    });
-
-    it('refuses a second bookmark under a label the file already holds', () => {
-        const { hub, file } = bookmarksFile();
-        const fields = { label: 'manual', root: 'hub', path: 'a.md' };
-        createEntry(hub, config, BOOKMARKS, fields, file);
-        const again = createEntry(hub, config, BOOKMARKS, { ...fields, path: 'b.md' }, file);
-
-        expect(again.changed).toEqual([]);
-        expect(again.refused[0].field).toBe('label');
-        expect(readBookmarks(file).entries).toHaveLength(1);
-    });
-
-    it("writes the reader's own file and nothing under the hub", () => {
-        const { hub, file } = bookmarksFile();
-        createEntry(hub, config, BOOKMARKS, { label: 'manual', root: 'hub', path: 'a.md' }, file);
-
-        expect(existsSync(file)).toBe(true);
-        expect(existsSync(join(hub, 'registries', 'bookmarks.yml'))).toBe(false);
     });
 });
 

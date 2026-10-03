@@ -4,7 +4,7 @@
 // the command is the rest of the line. Nothing here runs `ps` or reads the machine. A start is
 // turned into an instant by the zone of the process that reads it, so each case over a zone runs
 // the reader in a child node process of its own with `TZ` set, and the suite's own zone is never
-// changed.
+// changed. Those cases start a process each and are tagged slow.
 
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -54,58 +54,17 @@ describe('entryOf', () => {
         expect(Number.isNaN(Date.parse(row?.started ?? ''))).toBe(false);
     });
 
-    it('reads a start with a one-digit day written with the space `ps` pads it with', () => {
-        expect(startedIn('UTC', [line({ start: 'Thu Oct  2 11:53:00 2026' })])).toEqual([
-            '2026-10-02T11:53:00.000Z'
-        ]);
-    });
-
     it.each([
-        ['America/New_York', '2026-09-30T12:15:42.000Z'],
-        ['Pacific/Auckland', '2026-09-29T19:15:42.000Z'],
-        ['UTC', '2026-09-30T08:15:42.000Z']
-    ])('writes started as the UTC instant of the local time in %s', (zoneName, instant) => {
-        expect(startedIn(zoneName, [line()])).toEqual([instant]);
-    });
-
-    it('turns each start into an instant with the offset in force on its own date, whatever the offset now', () => {
-        const before = line({ start: 'Sat Mar  7 12:00:00 2026' });
-        const after = line({ start: 'Sun Mar  8 12:00:00 2026' });
-        expect(startedIn('America/New_York', [before, after])).toEqual([
-            '2026-03-07T17:00:00.000Z',
-            '2026-03-08T16:00:00.000Z'
-        ]);
-        expect(
-            startedIn('Europe/Amsterdam', [
-                line({ start: 'Sat Oct 24 12:00:00 2026' }),
-                line({ start: 'Sun Oct 25 12:00:00 2026' })
-            ])
-        ).toEqual(['2026-10-24T10:00:00.000Z', '2026-10-25T11:00:00.000Z']);
-    });
-
-    it('keeps the whole command line, its spaces and its arguments', () => {
-        const rows = [
-            line({ command: 'claude --resume x' }),
-            line({ command: '/Applications/X.app/ChatGPT for Chrome chrome-extension://a' }),
-            line({ command: 'node /usr/local/bin/codex' }),
-            line({ command: 'python3 -c "print(1)"   two  spaces' })
-        ].map((text) => entryOf(text)?.command);
-        expect(rows).toEqual([
-            'claude --resume x',
-            '/Applications/X.app/ChatGPT for Chrome chrome-extension://a',
-            'node /usr/local/bin/codex',
-            'python3 -c "print(1)"   two  spaces'
-        ]);
-    });
-
-    it('keeps the arguments of command lines with a colon, a quote and a path in them', () => {
-        const commands = [
-            'node /usr/local/bin/codex --model gpt:5',
-            'codex exec "fix: the bug"',
-            'claude --resume x --add-dir http://a',
-            'python3 -m http.server --bind 127.0.0.1:8000'
-        ];
-        expect(commands.map((command) => entryOf(line({ command }))?.command)).toEqual(commands);
+        'claude --resume x',
+        '/Applications/X.app/ChatGPT for Chrome chrome-extension://a',
+        'node /usr/local/bin/codex',
+        'python3 -c "print(1)"   two  spaces',
+        'node /usr/local/bin/codex --model gpt:5',
+        'codex exec "fix: the bug"',
+        'claude --resume x --add-dir http://a',
+        'python3 -m http.server --bind 127.0.0.1:8000'
+    ])('keeps the command line %s whole', (command) => {
+        expect(entryOf(line({ command }))?.command).toBe(command);
     });
 
     it('cuts a command line at 1000 characters with an ellipsis', () => {
@@ -138,5 +97,36 @@ describe('entryOf', () => {
             9007199254740991
         );
         expect(entryOf(line({ head: '  9007199254740993     1 axel 1.5 2048' }))).toBeNull();
+    });
+});
+
+describe('the start in a zone', { tags: ['slow'] }, () => {
+    it('reads a start with a one-digit day written with the space `ps` pads it with', () => {
+        expect(startedIn('UTC', [line({ start: 'Thu Oct  2 11:53:00 2026' })])).toEqual([
+            '2026-10-02T11:53:00.000Z'
+        ]);
+    });
+
+    it.each([
+        ['America/New_York', '2026-09-30T12:15:42.000Z'],
+        ['Pacific/Auckland', '2026-09-29T19:15:42.000Z'],
+        ['UTC', '2026-09-30T08:15:42.000Z']
+    ])('writes started as the UTC instant of the local time in %s', (zoneName, instant) => {
+        expect(startedIn(zoneName, [line()])).toEqual([instant]);
+    });
+
+    it('turns each start into an instant with the offset in force on its own date, whatever the offset now', () => {
+        const before = line({ start: 'Sat Mar  7 12:00:00 2026' });
+        const after = line({ start: 'Sun Mar  8 12:00:00 2026' });
+        expect(startedIn('America/New_York', [before, after])).toEqual([
+            '2026-03-07T17:00:00.000Z',
+            '2026-03-08T16:00:00.000Z'
+        ]);
+        expect(
+            startedIn('Europe/Amsterdam', [
+                line({ start: 'Sat Oct 24 12:00:00 2026' }),
+                line({ start: 'Sun Oct 25 12:00:00 2026' })
+            ])
+        ).toEqual(['2026-10-24T10:00:00.000Z', '2026-10-25T11:00:00.000Z']);
     });
 });

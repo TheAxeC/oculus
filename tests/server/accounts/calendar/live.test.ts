@@ -6,6 +6,9 @@
 // A published link is read through a recording fetcher for the cadence and the sentences, and a
 // Google account for the window, whose request names it. Every credential file is in a directory
 // the case made under the temporary directory.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
@@ -242,29 +245,33 @@ describe('a calendar poller whose settings change', () => {
         expect(held(unread.hub).accounts[0].hint).toBe('another rooster');
     });
 
-    it('writes the pushed timeout sentence on the next row that a request without an answer leaves', async () => {
-        const dir = linked();
-        const hub = new Hub();
-        const watcher = watchCalendar(hub, {
-            accounts: [ICS],
-            dir,
-            providerDir: join(dir, 'connect'),
-            ...START,
-            fetcher: (_input, init) => hangs(init),
-            readTimeoutMs: 50,
-            words: WORDS
-        });
-        watchers.push(watcher);
-        for (let turn = 0; turn < 200 && hub.latest('calendar') === undefined; turn += 1) {
-            await new Promise((resolve) => setTimeout(resolve, 10));
+    it(
+        'writes the pushed timeout sentence on the next row that a request without an answer leaves',
+        { tags: ['slow'] },
+        async () => {
+            const dir = linked();
+            const hub = new Hub();
+            const watcher = watchCalendar(hub, {
+                accounts: [ICS],
+                dir,
+                providerDir: join(dir, 'connect'),
+                ...START,
+                fetcher: (_input, init) => hangs(init),
+                readTimeoutMs: 50,
+                words: WORDS
+            });
+            watchers.push(watcher);
+            for (let turn = 0; turn < 200 && hub.latest('calendar') === undefined; turn += 1) {
+                await new Promise((resolve) => setTimeout(resolve, 10));
+            }
+            expect(held(hub).accounts[0].hint).toBe(fillPlaceholders(WORDS.timedOut, ['0.05']));
+
+            watcher.setWords({ ...WORDS, timedOut: 'another {0}' });
+            await watcher.refresh();
+
+            expect(held(hub).accounts[0].hint).toBe('another 0.05');
         }
-        expect(held(hub).accounts[0].hint).toBe(fillPlaceholders(WORDS.timedOut, ['0.05']));
-
-        watcher.setWords({ ...WORDS, timedOut: 'another {0}' });
-        await watcher.refresh();
-
-        expect(held(hub).accounts[0].hint).toBe('another 0.05');
-    });
+    );
 
     it('does nothing once it is closed: no timer, no read, no publish', async () => {
         const fetcher = reading();

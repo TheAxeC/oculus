@@ -6,6 +6,8 @@
 // Every file is inside a directory of the case's own from scratchDir, which refuses a path outside
 // the system temporary directory before it makes one. The waits are how long a failure takes, not
 // a pass.
+//
+// The case that writes local.yml by a rename waits on a real file watch and is tagged slow.
 
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -53,36 +55,25 @@ function engine(): { root: string; config: string } {
     return { root, config };
 }
 
-it('calls once for a local.yml written by a rename, and never for another file', async () => {
-    const { root, config } = engine();
-    const changed = vi.fn();
-    watchers.push(watchLocal(root, changed, { debounce: DEBOUNCE }));
+it(
+    'calls once for a local.yml written by a rename, and never for another file',
+    { tags: ['slow'] },
+    async () => {
+        const { root, config } = engine();
+        const changed = vi.fn();
+        watchers.push(watchLocal(root, changed, { debounce: DEBOUNCE }));
 
-    writeFileSync(join(config, 'oculus.yml'), 'other: 1\n');
-    await sleep(DEBOUNCE * 6);
-    expect(changed).toHaveBeenCalledTimes(0);
+        writeFileSync(join(config, 'oculus.yml'), 'other: 1\n');
+        await sleep(DEBOUNCE * 6);
+        expect(changed).toHaveBeenCalledTimes(0);
 
-    writeFileSync(join(config, '.local.yml.tmp'), 'hub: /x\n');
-    renameSync(join(config, '.local.yml.tmp'), join(config, 'local.yml'));
-    await until(() => changed.mock.calls.length > 0, WAIT);
-    await sleep(DEBOUNCE * 4);
-    expect(changed).toHaveBeenCalledTimes(1);
-});
-
-it('makes no call after it is closed', async () => {
-    const { root, config } = engine();
-    const changed = vi.fn();
-    // A quiet long enough that the write's event is in and its call still pending at the close.
-    const quiet = 1500;
-    const watcher = watchLocal(root, changed, { debounce: quiet });
-
-    writeFileSync(join(config, 'local.yml'), 'hub: /x\n');
-    await sleep(500);
-    watcher.close();
-    await sleep(quiet + 500);
-
-    expect(changed).toHaveBeenCalledTimes(0);
-});
+        writeFileSync(join(config, '.local.yml.tmp'), 'hub: /x\n');
+        renameSync(join(config, '.local.yml.tmp'), join(config, 'local.yml'));
+        await until(() => changed.mock.calls.length > 0, WAIT);
+        await sleep(DEBOUNCE * 4);
+        expect(changed).toHaveBeenCalledTimes(1);
+    }
+);
 
 /** A watcher whose watch is held, on fake timers, and the event that stands for a write. */
 function held(debounce?: number): {

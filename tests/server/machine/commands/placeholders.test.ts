@@ -1,12 +1,12 @@
 // Layer 4, server test. The placeholders of a chain's command lines: `${file}` and its relatives
-// become `${OCULUS_ARG_<n>+"$OCULUS_ARG_<n>"}` and their values an environment, and a real
-// `/bin/sh`, `bash` and `zsh` run the lines with that environment, so a selection that holds shell
+// become `${OCULUS_ARG_<n>+"$OCULUS_ARG_<n>"}` and their values an environment. The first describe
+// reads the filled lines as text; the second, which starts processes and is tagged slow, runs them
+// in a real `/bin/sh`, `bash` and `zsh` with that environment, so a selection that holds shell
 // syntax runs nothing and arrives whole in every context the line writes the placeholder in.
 //
 // What this does NOT cover: a line that evaluates the value itself (`eval`, `sh -c`, `$((...))`
 // arithmetic in bash), which runs it by design; tmux setting the environment of a task terminal
 // (tests/server/machine/pty/task.test.ts); and the page building the context.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
@@ -127,7 +127,7 @@ function runIn(
     return { stdout: ran.stdout, made: readdirSync(folder) };
 }
 
-describe('a selection run through a real shell', () => {
+describe('a selection run through a real shell', { tags: ['slow'] }, () => {
     // Every line the review got a selection to run through, and its other cases. Arithmetic,
     // `$((${selectedText}))`, evaluates the value in bash by design and is not one of them.
     const LINES = [

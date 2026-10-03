@@ -28,10 +28,12 @@ export default defineConfig({
         strictPort: true
     },
     test: {
-        // A file tagged slow (`// @module-tag slow` in its head comment) has cases that time out or
-        // fail on a loaded machine, so npm test and npm run test:checks leave it out and npm run
-        // test:slow runs it. The tree checks under tests/checks are left out of npm test and run by
-        // npm run test:checks with no time limit, since a finding of theirs is a defect in the tree.
+        // A test tagged slow starts a process, waits on a real timer, opens a socket or takes 100
+        // ms or more in a run of its own. `// @module-tag slow` in a file's head comment tags the
+        // whole file, and `{ tags: ['slow'] }` tags a test or a describe. npm test and npm run
+        // test:checks leave tagged tests out and npm run test:slow runs them. The tree checks under
+        // tests/checks are left out of npm test and run by npm run test:checks with no time limit,
+        // since a finding of theirs is a defect in the tree.
         tags: [{ name: 'slow', description: 'Left out of npm test; npm run test:slow runs it.' }],
         expect: { requireAssertions: true },
         // seti-ui's .less files are read as text (`?raw`) by ui/display/file-icons.ts. Vitest empties

@@ -5,7 +5,7 @@
 // change log in the scratch home.
 //
 // What this does NOT cover: the origin rule, which hooks.server.ts applies to every request under
-// /api/ before a route sees it (tests/server/root/hooks.test.ts), and the page's store
+// /api/ before a route sees it (tests/server/root/hooks-server.test.ts), and the page's store
 // (tests/state/sessions/terminal/commands.test.ts).
 
 import { readFileSync, statSync } from 'node:fs';

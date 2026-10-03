@@ -160,7 +160,7 @@ function compareRepo(): { root: string; first: string; second: string } {
 
 // The record is kept over the whole file: each case below adds the commands of its reads, and the
 // last asserts that together they ran every listed subcommand.
-describe('the commands the compare reads ran', () => {
+describe('the commands the compare reads ran', { tags: ['slow'] }, () => {
     it('are the written forms for a file at HEAD, a comparison and the refs', () => {
         const { root, first, second } = compareRepo();
         expect(headFile(root, 'head', 'kept.txt').ok).toBe(true);

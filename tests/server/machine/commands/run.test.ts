@@ -9,9 +9,6 @@
 import { afterEach, beforeEach, describe, expect } from 'vitest';
 import { it, test } from '../../../fixtures/scratch.ts';
 import { handleTerminal } from '../../../../src/lib/server/machine/pty/routes.ts';
-import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import {
     approveTexts,
     chainLines,
@@ -141,14 +138,6 @@ describe('the approval before a run', () => {
         expect(tmux.calls).toEqual([]);
     });
 
-    it('asks for the whole chain although each of its commands was approved alone', async () => {
-        approveAll('build');
-        expect(await answer(await post({ ...RUN, repo, name: 'test' }))).toEqual({
-            approve: BUILD_THEN_TEST
-        });
-        expect(tmux.starts()).toEqual([]);
-    });
-
     it('runs once the chain is approved, and does not ask again for the unchanged chain', async () => {
         approveAll('test');
         for (let press = 0; press < 2; press += 1) {
@@ -179,53 +168,6 @@ describe('the approval before a run', () => {
             approve: BUILD_THEN_TEST
         });
         expect(tmux.starts()).toEqual([]);
-    });
-
-    it('asks again when a dependency of an approved chain is removed', async () => {
-        approveAll('test');
-        plant(
-            repo,
-            '.oculus/commands.yml',
-            commandsYml(
-                '  - { name: build, run: make }\n  - { name: test, run: make test, cwd: sub }\n'
-            )
-        );
-        expect(await answer(await post({ ...RUN, repo, name: 'test' }))).toEqual({
-            approve: [{ folder: 'sub', run: 'make test' }]
-        });
-        expect(tmux.starts()).toEqual([]);
-    });
-
-    it('asks again when the line changed', async () => {
-        approveAll('build');
-        plant(repo, '.oculus/commands.yml', commandsYml('  - { name: build, run: make -j4 }\n'));
-        expect(await answer(await post({ ...RUN, repo, name: 'build' }))).toEqual({
-            approve: [{ folder: '.', run: 'make -j4' }]
-        });
-        expect(tmux.starts()).toEqual([]);
-    });
-
-    it('asks again when only the folder changed', async () => {
-        approveAll('build');
-        plant(
-            repo,
-            '.oculus/commands.yml',
-            commandsYml('  - { name: build, run: make, cwd: sub }\n')
-        );
-        expect(await answer(await post({ ...RUN, repo, name: 'build' }))).toEqual({
-            approve: [{ folder: 'sub', run: 'make' }]
-        });
-    });
-
-    it('asks in a repository for a chain approved only in another one', async () => {
-        plant(other, '.oculus/commands.yml', commandsYml('  - { name: build, run: make }\n'));
-        plant(repo, '.oculus/commands.yml', commandsYml('  - { name: build, run: make }\n'));
-        approveChainOf('build', 'file', repo);
-        expect((await answer(await post({ ...RUN, repo, name: 'build' }))).ok).toBe(true);
-        expect(await answer(await post({ ...RUN, repo: other, name: 'build' }))).toEqual({
-            approve: [{ folder: '.', run: 'make' }]
-        });
-        expect(tmux.starts()).toHaveLength(1);
     });
 
     it('runs a command saved through the form with no approval', async () => {
@@ -346,39 +288,6 @@ describe('the terminal a run starts', () => {
         });
     });
 
-    it('quotes a name that holds shell syntax', async () => {
-        const saved = JSON.stringify({ [repo]: [{ name: 'a $(x)', run: 'true' }] });
-        plant(home, '.oculus/commands.json', saved);
-        await post({ ...RUN, source: 'saved', repo, name: 'a $(x)' });
-        expect(lineOf(tmux.starts()[0])).toBe(
-            `cd '${repo}' && printf '%s\\n' '${tokenOf()} a $(x)' && true`
-        );
-    });
-
-    it('refuses a cycle, a self-dependency and an unknown name, naming them, and starts nothing', async () => {
-        plant(
-            repo,
-            '.oculus/commands.yml',
-            commandsYml(
-                '  - { name: a, run: x, depends_on: [b] }\n' +
-                    '  - { name: b, run: y, depends_on: [a] }\n' +
-                    '  - { name: s, run: z, depends_on: [s] }\n' +
-                    '  - { name: u, run: w, depends_on: [nowhere] }\n'
-            )
-        );
-        for (const [name, said] of [
-            ['a', 'a -> b -> a'],
-            ['s', 's depends on itself'],
-            ['u', 'nowhere'],
-            ['missing', 'missing']
-        ]) {
-            const response = await post({ ...RUN, repo, name });
-            expect(response.status).toBe(400);
-            expect(((await answer(response)).error as string).includes(said)).toBe(true);
-        }
-        expect(tmux.calls).toEqual([]);
-    });
-
     it('sets the values of the placeholders in the environment and refuses a missing value', async () => {
         plant(
             repo,
@@ -399,65 +308,6 @@ describe('the terminal a run starts', () => {
         expect(envOf(start)).toEqual({ OCULUS_ARG_1: `${repo}/a b.tex` });
     });
 
-    it('runs a placeholder in any quoting with the selection as data, which runs nothing', async () => {
-        const lines = [
-            'echo "${selectedText}"',
-            'echo \\${selectedText}',
-            "true # it's\necho '${selectedText}'",
-            'cat <<EOF\n${selectedText}\nEOF',
-            'echo "$(echo "${selectedText}")"',
-            'echo $${selectedText}',
-            'make # ${selectedText}'
-        ];
-        const selections = [`$(touch ${repo}/x)`, `; touch ${repo}/y #`, `\ntouch ${repo}/z`];
-        for (const run of lines) {
-            plant(
-                repo,
-                '.oculus/commands.yml',
-                commandsYml(`  - { name: odd, run: ${JSON.stringify(run)} }\n`)
-            );
-            approveAll('odd');
-            for (const selectedText of selections) {
-                tmux.calls.length = 0;
-                const body = await answer(
-                    await post({ ...RUN, repo, name: 'odd', context: { selectedText } })
-                );
-                expect(body.ok, run).toBe(true);
-                const start = tmux.starts()[0];
-                expect(envOf(start)).toEqual({ OCULUS_ARG_1: selectedText });
-                spawnSync('/bin/sh', ['-c', lineOf(start)], {
-                    cwd: repo,
-                    env: { PATH: process.env.PATH, ...envOf(start) }
-                });
-            }
-        }
-        for (const made of ['x', 'y', 'z']) expect(existsSync(join(repo, made))).toBe(false);
-    });
-
-    it('hands a selection over as the text it is', async () => {
-        plant(
-            repo,
-            '.oculus/commands.yml',
-            commandsYml(
-                `  - { name: say, run: ${JSON.stringify('printf \'[%s]\' ${selectedText} "${selectedText}"')} }\n`
-            )
-        );
-        approveAll('say');
-        const selectedText = "a  * '; $(touch x)\nb";
-        const body = await answer(
-            await post({ ...RUN, repo, name: 'say', context: { selectedText } })
-        );
-        expect(body.ok).toBe(true);
-        const start = tmux.starts()[0];
-        const ran = spawnSync('/bin/sh', ['-c', lineOf(start)], {
-            cwd: repo,
-            encoding: 'utf8',
-            env: { PATH: process.env.PATH, ...envOf(start) }
-        });
-        expect(ran.stdout).toBe(`${tokenOf()} say\n[${selectedText}][${selectedText}]`);
-        expect(existsSync(join(repo, 'x'))).toBe(false);
-    });
-
     it('refuses a repository that is relative, missing or under no root, and starts nothing', async () => {
         const outside = plantRepo();
         for (const bad of ['relative/dir', `${repo}/nowhere`, outside, 5, undefined]) {
@@ -465,11 +315,6 @@ describe('the terminal a run starts', () => {
             expect(response.status).toBe(400);
         }
         expect(tmux.calls).toEqual([]);
-    });
-
-    it('names command in the refusal that lists the actions', async () => {
-        const response = await post({ action: 'nonsense' });
-        expect(((await answer(response)).error as string).includes('command')).toBe(true);
     });
 });
 

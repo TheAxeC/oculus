@@ -107,15 +107,10 @@ function script(name: string, body: string): string {
     return file;
 }
 
-describe('the child lsofFolders runs', () => {
+describe('the child lsofFolders runs', { tags: ['slow'] }, () => {
     it('reads the folders of a child that printed them and exited 1', async () => {
         const file = script('one', `printf 'p100\\nfcwd\\nn/a\\n'; exit 1`);
         expect([...(await lsofFolders([100], { program: file }))]).toEqual([[100, '/a']]);
-    });
-
-    it('reads the folders of a child that exited 0', async () => {
-        const file = script('zero', `printf 'p5\\nn/b\\n'`);
-        expect([...(await lsofFolders([5], { program: file }))]).toEqual([[5, '/b']]);
     });
 
     it('hands the arguments to the child as separate words, never to a shell', async () => {

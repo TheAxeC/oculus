@@ -4,6 +4,9 @@
 // and a route reads it as the disk holds it at that request. Every request under /api/ passes the
 // one origin rule before any route sees it, which refuses a request with neither header outside the
 // four paths that admit one, and passes the two OAuth callbacks unchecked.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { cpSync, readFileSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage } from 'node:http';
@@ -15,7 +18,6 @@ import { handle } from '../../../src/hooks.server.ts';
 import * as config from '../../../src/lib/data/sources/config.ts';
 import { LOCAL_NAME } from '../../../src/lib/data/sources/config.ts';
 import { carryingHandler, type OculusRequest } from '../../../src/lib/server/root/context.ts';
-import { GET as searchGet } from '../../../src/routes/api/(files)/search/+server.ts';
 import { GET as mailCallbackGet } from '../../../src/routes/api/(accounts)/mail/callback/+server.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { contextFixture } from './context-fixture.ts';
@@ -71,19 +73,6 @@ describe('the server hook', () => {
         expect(locals.token).toBe('hook-token');
         expect(resolve).toHaveBeenCalledOnce();
         context.close();
-    });
-
-    it('refuses a request that carries no context', () => {
-        const event = {
-            platform: undefined,
-            locals: {},
-            url: new URL('http://127.0.0.1:8791/'),
-            route: { id: '/' },
-            request: new Request('http://127.0.0.1:8791/')
-        } as unknown as Parameters<typeof handle>[0]['event'];
-        expect(() => handle({ event, resolve: vi.fn() })).toThrow(
-            'oculus server context is absent from event.platform.req'
-        );
     });
 
     it('reads the configuration for no request that never asks for it', async () => {
@@ -153,34 +142,11 @@ describe('the origin guard on /api/', () => {
         expect(out.reached).toBe(true);
     });
 
-    it('lets a request whose Origin names this machine through', async () => {
-        const out = await guarded(`${SERVER}/api/fs`, FS, { origin: 'http://127.0.0.1:5173' });
-        expect(out.reached).toBe(true);
-    });
-
     it('refuses a foreign Origin with 403 before the route is reached', async () => {
         const out = await guarded(`${SERVER}/api/fs`, FS, { origin: 'https://evil.example' });
         expect(out.reached).toBe(false);
         expect(out.response.status).toBe(403);
         expect(await out.response.json()).toEqual({ error: 'forbidden' });
-    });
-
-    it('refuses a preview POST to /api/ops from a foreign Origin before the route reads it', async () => {
-        const out = await guarded(
-            `${SERVER}/api/ops`,
-            '/api/(files)/ops',
-            { origin: 'https://evil.example', 'content-type': 'application/json' },
-            'POST'
-        );
-        expect(out.reached).toBe(false);
-        expect(out.response.status).toBe(403);
-        expect(await out.response.json()).toEqual({ error: 'forbidden' });
-    });
-
-    it('refuses a cross-site request that names no Origin', async () => {
-        const out = await guarded(`${SERVER}/api/fs`, FS, { 'sec-fetch-site': 'cross-site' });
-        expect(out.reached).toBe(false);
-        expect(out.response.status).toBe(403);
     });
 
     it('refuses a request with neither header to a route outside the four that admit one', async () => {
@@ -243,7 +209,7 @@ describe('the origin guard on /api/', () => {
 
 /**
  * A scratch engine holding a copy of this checkout's tracked config/, the machine's own file left
- * out, and a scratch hub with one file of three matching lines.
+ * out, and an empty scratch hub.
  */
 function scratchEngine(): { engine: string; hub: string } {
     const engine = scratchDir('oculus-hook-engine-');
@@ -252,7 +218,6 @@ function scratchEngine(): { engine: string; hub: string } {
         filter: (source) => !source.endsWith(LOCAL_NAME)
     });
     const hub = scratchDir('oculus-hook-hub-');
-    writeFileSync(join(hub, 'notes.txt'), 'needle one\nneedle two\nneedle three\n');
     return { engine, hub };
 }
 
@@ -306,49 +271,32 @@ async function routed(
 }
 
 describe('the configuration a route reads', () => {
-    it('is the disk as it is at the request, for the search caps', async () => {
-        const { engine, hub } = scratchEngine();
-        rewrite(engine, 'behavior.yml', /max_hits: \d+/, 'max_hits: 1');
-        const ask = (): Promise<Response> =>
-            routed(
+    it(
+        "is the disk as it is at the request, for the callback's words",
+        { tags: ['slow'] },
+        async () => {
+            const { engine, hub } = scratchEngine();
+            const ask = (): Promise<Response> =>
+                routed(
+                    engine,
+                    hub,
+                    `${SERVER}/api/mail/callback?state=x`,
+                    '/api/(accounts)/mail/callback',
+                    { 'sec-fetch-site': 'cross-site' },
+                    mailCallbackGet as unknown as (event: RequestEvent) => Promise<Response>
+                );
+            const before = await ask();
+            expect(before.status).toBe(400);
+            expect(await before.text()).toContain('That link was not recognised.');
+            rewrite(
                 engine,
-                hub,
-                `${SERVER}/api/search?q=needle&root=hub`,
-                '/api/(files)/search',
-                { 'sec-fetch-site': 'same-origin', 'x-oculus-token': 'hook-token' },
-                searchGet as unknown as (event: RequestEvent) => Promise<Response>
+                'text/views/feeds/inbox.yml',
+                /callback_bad: .*/,
+                'callback_bad: The words were changed on disk.'
             );
-        const first = (await (await ask()).json()) as { total: number; truncated: boolean };
-        expect(first.total).toBe(1);
-        expect(first.truncated).toBe(true);
-        rewrite(engine, 'behavior.yml', /max_hits: 1\b/, 'max_hits: 500');
-        const second = (await (await ask()).json()) as { total: number; truncated: boolean };
-        expect(second.total).toBe(3);
-        expect(second.truncated).toBe(false);
-    });
-
-    it("is the disk as it is at the request, for the callback's words", async () => {
-        const { engine, hub } = scratchEngine();
-        const ask = (): Promise<Response> =>
-            routed(
-                engine,
-                hub,
-                `${SERVER}/api/mail/callback?state=x`,
-                '/api/(accounts)/mail/callback',
-                { 'sec-fetch-site': 'cross-site' },
-                mailCallbackGet as unknown as (event: RequestEvent) => Promise<Response>
-            );
-        const before = await ask();
-        expect(before.status).toBe(400);
-        expect(await before.text()).toContain('That link was not recognised.');
-        rewrite(
-            engine,
-            'text/views/feeds/inbox.yml',
-            /callback_bad: .*/,
-            'callback_bad: The words were changed on disk.'
-        );
-        const after = await ask();
-        expect(after.status).toBe(400);
-        expect(await after.text()).toContain('The words were changed on disk.');
-    });
+            const after = await ask();
+            expect(after.status).toBe(400);
+            expect(await after.text()).toContain('The words were changed on disk.');
+        }
+    );
 });

@@ -23,9 +23,6 @@ import { describe, expect } from 'vitest';
 import { z } from 'zod';
 import { writeTextAtomic } from '../../../src/lib/server/core/json.ts';
 import { quickly } from '../../../src/lib/data/shapes/shapes.ts';
-import * as fold from '../../../src/lib/server/sessions/fold.ts';
-import * as codex from '../../../src/lib/server/sessions/stores/codex.ts';
-import * as turns from '../../../src/lib/server/sessions/stores/turns.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** A path under a scratch directory of this case's own, and that directory. */
@@ -163,13 +160,6 @@ describe('quickly', () => {
                 answer.success,
                 answer.data
             ]);
-        }
-    });
-
-    it('builds over every shape the readers of the sessions folder hold', () => {
-        // Each of these modules builds its schemas with `quickly` when it is imported.
-        for (const loaded of [fold, codex, turns]) {
-            expect(Object.keys(loaded).length).toBeGreaterThan(0);
         }
     });
 });

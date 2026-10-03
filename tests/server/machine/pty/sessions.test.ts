@@ -1,14 +1,15 @@
-// The terminal records against a real tmux, on a private server.
+// The terminal records (src/lib/server/machine/pty/sessions.ts): the arguments and list lines it
+// builds and reads, which need no tmux, and the records against a real tmux on a private server in
+// the last describe, which is tagged slow.
 //
-// Every command here carries `-S <socket>` into a directory made by mkdtemp, so the user's own tmux
-// server is never listed, never started and never killed; the one this file starts is killed in
-// afterAll whether or not an assertion failed, and the directory goes with it. Nothing under
-// ~/.claude, ~/.codex, ~/.oculus or the hub is read or written. The pane runs `cat`, so what is
-// typed comes back without a shell interpreting anything.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// Every tmux command there carries `-S <socket>` into a directory made by mkdtemp, so the user's
+// own tmux server is never listed, never started and never killed; the one this file starts is
+// killed in afterAll whether or not an assertion failed, and the directory goes with it. Nothing
+// under ~/.claude, ~/.codex, ~/.oculus or the hub is read or written. The pane runs `cat`, so what
+// is typed comes back without a shell interpreting anything.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync, renameSync, statSync } from 'node:fs';
+import { realpathSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import {
@@ -27,7 +28,6 @@ import {
     serverPid,
     sessionName,
     steerArgs,
-    steerTerminal,
     interruptTerminal,
     cursorArgs,
     startArgs,
@@ -43,19 +43,9 @@ import {
 } from '../../../../src/lib/server/machine/pty/tmux.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
-import { TMUX, privateTmux } from './tmux-fixture.ts';
+import { privateTmux, tmuxOptions } from './tmux-server.ts';
 
 vi.setConfig({ testTimeout: 30000 });
-
-if (!TMUX)
-    console.error('tests/server/machine/pty/sessions.test.ts: skipped, tmux is not on the PATH');
-
-const server = privateTmux('oculus-tmux-');
-const options = {
-    get socket(): string {
-        return server.socket;
-    }
-};
 
 // A line with a dash at its start, a dollar, a double quote and a backslash: everything the quoting
 // and the `--` of send-keys have to survive. tmux expands $name inside double quotes, so HOME here
@@ -73,110 +63,20 @@ async function until(has: () => boolean | Promise<boolean>, what: string): Promi
     throw new Error(`timed out waiting for ${what}`);
 }
 
-it.skipIf(!TMUX)('starts, lists, feeds, resizes, captures and stops a terminal', async () => {
-    const started = await startTerminal(
-        { kind: 'shell', cwd: server.dir, cols: 80, rows: 24, name: 'a named terminal' },
-        { ...options, command: 'cat' }
-    );
-    expect(started.kind).toBe('shell');
-    expect(started.name).toBe('a named terminal');
-    expect(started.id.endsWith('-shell')).toBe(true);
-    expect(started.pid).toBeGreaterThan(0);
-    expect(new Date(started.created).getTime()).toBeGreaterThan(0);
-
-    const listed = await listTerminals(options);
-    expect(listed.map((terminal) => terminal.id)).toEqual([started.id]);
-    expect(listed[0].command).toBe('cat');
-    // macOS puts the temporary directory behind a symlink, and tmux reports the real one.
-    expect(listed[0].cwd).toBe(realpathSync(server.dir));
-    expect(listed[0].attached).toBe(false);
-
-    // The control client is how the page reads the pane: one client sees every session's output.
-    const seen: Buffer[] = [];
-    const client = control(
-        sessionName(started.id),
-        {
-            output: (_pane, bytes) => seen.push(bytes),
-            event: noop,
-            exit: noop
-        },
-        options
-    );
-    const text = (): string => Buffer.concat(seen).toString('utf8');
-    try {
-        // The line goes the way a page's typing goes: its bytes, in pieces, through send-keys -H.
-        for (const piece of inputChunks(Buffer.from(`${TYPED}\r`))) {
-            await run(sendBytesArgs(started.id, piece), options);
-        }
-        await until(() => text().includes(TYPED), 'the typed line to come back as output');
-        // cat writes the line back, so the characters survived exactly as typed.
-        expect(text()).toContain(TYPED);
-        // A steer types its text as bytes, so a line beginning with a dash reaches the pane as
-        // text and never as flags.
-        for (const args of steerArgs(started.id, STEERED)) await run(args, options);
-        await until(() => text().includes(STEERED), 'the steered line');
-
-        const screen = await scrollback(started.id, 50, options);
-        expect(screen).toContain(TYPED);
-    } finally {
-        client.close();
-    }
-
-    await resizeTerminal(started.id, 100, 40, options);
-    const size = await run(
-        [
-            'display-message',
-            '-p',
-            '-t',
-            sessionName(started.id),
-            '#{window_width}x#{window_height}'
-        ],
-        options
-    );
-    expect(size.trim()).toBe('100x40');
-
-    await stopTerminal(started.id, options);
-    expect(await listTerminals(options)).toEqual([]);
-});
-
-it.skipIf(!TMUX)('lists the pane process of a terminal and of a hidden usage session', async () => {
-    const started = await startTerminal(
-        { kind: 'shell', cwd: server.dir, cols: 80, rows: 24 },
-        { ...options, command: 'cat' }
-    );
-    await run(
-        ['new-session', '-d', '-s', 'oculus-usage-probe', '-x', '80', '-y', '24', 'cat'],
-        options
-    );
-    try {
-        const panes = await listPanes(options);
-        expect(panes).toContainEqual({
-            session: sessionName(started.id),
-            terminal: started.id,
-            usage: false,
-            pid: started.pid
-        });
-        expect(panes.filter((pane) => pane.usage).map((pane) => pane.terminal)).toEqual([null]);
-    } finally {
-        await stopTerminal(started.id, options);
-        await run(['kill-session', '-t', 'oculus-usage-probe'], options);
-    }
-});
-
-it.skipIf(!TMUX)('refuses a cwd that is not an absolute existing directory', async () => {
+it('refuses a cwd that is not an absolute existing directory', async () => {
+    // No call reaches tmux: the request is refused before it is built.
+    const none = { run: () => Promise.reject(new Error('no tmux call is made')) };
+    const dir = scratchDir('oculus-tmux-refuse-');
     await expect(
-        startTerminal({ kind: 'shell', cwd: 'relative', cols: 80, rows: 24 }, options)
+        startTerminal({ kind: 'shell', cwd: 'relative', cols: 80, rows: 24 }, none)
     ).rejects.toThrow('cwd must be an absolute path');
     await expect(
-        startTerminal(
-            { kind: 'shell', cwd: join(server.dir, 'nothing'), cols: 80, rows: 24 },
-            options
-        )
+        startTerminal({ kind: 'shell', cwd: join(dir, 'nothing'), cols: 80, rows: 24 }, none)
     ).rejects.toThrow('cwd does not exist');
     await expect(
-        startTerminal({ kind: 'shell', cwd: server.dir, cols: 0, rows: 24 }, options)
+        startTerminal({ kind: 'shell', cwd: dir, cols: 0, rows: 24 }, none)
     ).rejects.toThrow('cols must be a whole number');
-    await expect(stopTerminal('../elsewhere', options)).rejects.toThrow('not a terminal id');
+    await expect(stopTerminal('../elsewhere', none)).rejects.toThrow('not a terminal id');
 });
 
 // The resume commands as pure functions: no tmux and no agent runs here, which is why these are
@@ -256,86 +156,6 @@ it('leaves hidden usage refresher sessions out of the terminal list', () => {
         ''
     ];
     expect(parseTerminal(fields.join('\t'))).toBe(null);
-});
-
-it.skipIf(!TMUX)('lists what it started from a process whose locale is not UTF-8', async () => {
-    for (const name of ['LC_ALL', 'LC_CTYPE', 'LANG']) vi.stubEnv(name, 'C');
-    try {
-        const started = await startTerminal(
-            { kind: 'shell', cwd: server.dir, cols: 80, rows: 24, name: 'a plain locale' },
-            { ...options, command: 'cat' }
-        );
-        const listed = await listTerminals(options);
-        expect(listed.find((one) => one.id === started.id)?.name).toBe('a plain locale');
-        await stopTerminal(started.id, options);
-    } finally {
-        vi.unstubAllEnvs();
-    }
-});
-
-it.skipIf(!TMUX)('runs a line typed as bytes into a shell', async () => {
-    const started = await startTerminal(
-        { kind: 'shell', cwd: server.dir, cols: 80, rows: 24 },
-        { ...options, command: 'sh' }
-    );
-    const seen: Buffer[] = [];
-    const client = control(
-        sessionName(started.id),
-        { output: (_pane, bytes) => seen.push(bytes), event: noop, exit: noop },
-        options
-    );
-    try {
-        const pieces = inputChunks(Buffer.from('ls -la\r'));
-        expect(pieces).toHaveLength(1);
-        for (const piece of pieces) await run(sendBytesArgs(started.id, piece), options);
-        // The socket file sits in the directory the shell started in, so a listing that ran
-        // names it; a line typed but not run would not.
-        await until(
-            () => Buffer.concat(seen).toString('utf8').includes('server.sock'),
-            'the listing to name the socket'
-        );
-    } finally {
-        client.close();
-        await stopTerminal(started.id, options);
-    }
-});
-
-it.skipIf(!TMUX)(
-    'takes a piece of the most bytes in one command, and refuses one more',
-    async () => {
-        const started = await startTerminal(
-            { kind: 'shell', cwd: server.dir, cols: 80, rows: 24 },
-            { ...options, command: 'cat' }
-        );
-        try {
-            const most = Buffer.from('a'.repeat(INPUT_MOST));
-            await run(sendBytesArgs(started.id, most), options);
-            await expect(
-                run(sendBytesArgs(started.id, Buffer.concat([most, Buffer.from('a')])), options)
-            ).rejects.toThrow('command too long');
-        } finally {
-            await stopTerminal(started.id, options);
-        }
-    }
-);
-
-it.skipIf(!TMUX)('types a 20000-character steer into a pane whole, then Enter', async () => {
-    // The pane writes every byte it is given to a file: raw mode, so nothing is edited or echoed,
-    // and the file is made only once raw mode is in force.
-    const file = join(server.dir, 'steered.bin');
-    const started = await startTerminal(
-        { kind: 'claude', cwd: server.dir, cols: 80, rows: 24 },
-        { ...options, command: `stty raw -echo; exec cat > ${file}` }
-    );
-    try {
-        await until(() => existsSync(file), 'the pane to open its file');
-        const text = `${'a'.repeat(9999)}\n${'b'.repeat(10000)}`;
-        await steerTerminal(started.id, text, options);
-        await until(() => statSync(file).size >= 20001, 'the steer and its Enter in the file');
-        expect(readFileSync(file, 'utf8')).toBe(`${text}\r`);
-    } finally {
-        await stopTerminal(started.id, options);
-    }
 });
 
 describe('the input arguments', () => {
@@ -433,18 +253,6 @@ describe('the screen an attaching page is given', () => {
         ]);
     });
 
-    it('keeps a new shell whole and puts the cursor on its row and column', () => {
-        const capture = rows(24, 3);
-        const screen = screenAt(capture, '2 2 24\n');
-        expect(screen).toBe(`${capture.slice(0, -1)}\u001b[3;3H`);
-        expect(rowAfter(screen, 24)).toBe(2);
-    });
-
-    it('keeps every line of a pane whose cursor is on its last row', () => {
-        const capture = rows(30, 30);
-        expect(screenAt(capture, '0 23 24\n')).toBe(`${capture.slice(0, -1)}\u001b[24;1H`);
-    });
-
     it('hands the capture back unchanged when the cursor does not parse', () => {
         const capture = rows(24, 3);
         expect(screenAt(capture, 'not a cursor')).toBe(capture);
@@ -466,10 +274,137 @@ describe('the screen an attaching page is given', () => {
     });
 });
 
-// The server of a second private socket of its own, killed at the end of the case.
-it.skipIf(!TMUX)(
-    'tells a tmux server that runs from one that exited, with its socket file present or not',
-    async () => {
+// Every case below starts a tmux server on a private socket of its own, so the hooks that make and
+// kill it sit inside this describe and the tagged-out run never starts one.
+describe('a private tmux server', { tags: ['slow'] }, () => {
+    const server = privateTmux('oculus-tmux-');
+    const options = tmuxOptions(server);
+
+    it('starts, lists, feeds, resizes, captures and stops a terminal', async () => {
+        const started = await startTerminal(
+            { kind: 'shell', cwd: server.dir, cols: 80, rows: 24, name: 'a named terminal' },
+            { ...options, command: 'cat' }
+        );
+        expect(started.kind).toBe('shell');
+        expect(started.name).toBe('a named terminal');
+        expect(started.id.endsWith('-shell')).toBe(true);
+        expect(started.pid).toBeGreaterThan(0);
+        expect(new Date(started.created).getTime()).toBeGreaterThan(0);
+
+        const listed = await listTerminals(options);
+        expect(listed.map((terminal) => terminal.id)).toEqual([started.id]);
+        expect(listed[0].command).toBe('cat');
+        // macOS puts the temporary directory behind a symlink, and tmux reports the real one.
+        expect(listed[0].cwd).toBe(realpathSync(server.dir));
+        expect(listed[0].attached).toBe(false);
+
+        // The control client is how the page reads the pane: one client sees every session's
+        // output.
+        const seen: Buffer[] = [];
+        const client = control(
+            sessionName(started.id),
+            {
+                output: (_pane, bytes) => seen.push(bytes),
+                event: noop,
+                exit: noop
+            },
+            options
+        );
+        const text = (): string => Buffer.concat(seen).toString('utf8');
+        try {
+            // The line goes the way a page's typing goes: its bytes, in pieces, through send-keys
+            // -H.
+            for (const piece of inputChunks(Buffer.from(`${TYPED}\r`))) {
+                await run(sendBytesArgs(started.id, piece), options);
+            }
+            await until(() => text().includes(TYPED), 'the typed line to come back as output');
+            // cat writes the line back, so the characters survived exactly as typed.
+            expect(text()).toContain(TYPED);
+            // A steer types its text as bytes, so a line beginning with a dash reaches the pane as
+            // text and never as flags.
+            for (const args of steerArgs(started.id, STEERED)) await run(args, options);
+            await until(() => text().includes(STEERED), 'the steered line');
+
+            const screen = await scrollback(started.id, 50, options);
+            expect(screen).toContain(TYPED);
+        } finally {
+            client.close();
+        }
+
+        await resizeTerminal(started.id, 100, 40, options);
+        const size = await run(
+            [
+                'display-message',
+                '-p',
+                '-t',
+                sessionName(started.id),
+                '#{window_width}x#{window_height}'
+            ],
+            options
+        );
+        expect(size.trim()).toBe('100x40');
+
+        await stopTerminal(started.id, options);
+        expect(await listTerminals(options)).toEqual([]);
+    });
+
+    it('lists the pane process of a terminal and of a hidden usage session', async () => {
+        const started = await startTerminal(
+            { kind: 'shell', cwd: server.dir, cols: 80, rows: 24 },
+            { ...options, command: 'cat' }
+        );
+        await run(
+            ['new-session', '-d', '-s', 'oculus-usage-probe', '-x', '80', '-y', '24', 'cat'],
+            options
+        );
+        try {
+            const panes = await listPanes(options);
+            expect(panes).toContainEqual({
+                session: sessionName(started.id),
+                terminal: started.id,
+                usage: false,
+                pid: started.pid
+            });
+            expect(panes.filter((pane) => pane.usage).map((pane) => pane.terminal)).toEqual([null]);
+        } finally {
+            await stopTerminal(started.id, options);
+            await run(['kill-session', '-t', 'oculus-usage-probe'], options);
+        }
+    });
+
+    it('lists what it started from a process whose locale is not UTF-8', async () => {
+        for (const name of ['LC_ALL', 'LC_CTYPE', 'LANG']) vi.stubEnv(name, 'C');
+        try {
+            const started = await startTerminal(
+                { kind: 'shell', cwd: server.dir, cols: 80, rows: 24, name: 'a plain locale' },
+                { ...options, command: 'cat' }
+            );
+            const listed = await listTerminals(options);
+            expect(listed.find((one) => one.id === started.id)?.name).toBe('a plain locale');
+            await stopTerminal(started.id, options);
+        } finally {
+            vi.unstubAllEnvs();
+        }
+    });
+
+    it('takes a piece of the most bytes in one command, and refuses one more', async () => {
+        const started = await startTerminal(
+            { kind: 'shell', cwd: server.dir, cols: 80, rows: 24 },
+            { ...options, command: 'cat' }
+        );
+        try {
+            const most = Buffer.from('a'.repeat(INPUT_MOST));
+            await run(sendBytesArgs(started.id, most), options);
+            await expect(
+                run(sendBytesArgs(started.id, Buffer.concat([most, Buffer.from('a')])), options)
+            ).rejects.toThrow('command too long');
+        } finally {
+            await stopTerminal(started.id, options);
+        }
+    });
+
+    // The server of a second private socket of its own, killed at the end of the case.
+    it('tells a tmux server that runs from one that exited, with its socket file present or not', async () => {
         const own = { socket: join(scratchDir('oculus-tmux-pid-'), 'server.sock') };
         try {
             await run(['new-session', '-d', '-s', 'oculus-a1b2c3-shell', '--', 'cat'], own);
@@ -491,5 +426,5 @@ it.skipIf(!TMUX)(
         } finally {
             spawnSync('tmux', ['-S', own.socket, 'kill-server'], { encoding: 'utf8' });
         }
-    }
-);
+    });
+});

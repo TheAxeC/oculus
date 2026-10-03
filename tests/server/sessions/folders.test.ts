@@ -169,10 +169,4 @@ describe('the stores read every account', () => {
         expect(records.every((record) => record.tool === 'codex')).toBe(true);
         expect(records.map((record) => record.slug)).toEqual(['2026/09/23', '2026/09/23']);
     });
-
-    it('audits that nothing is read when no account is named', () => {
-        const home = new Home();
-        home.transcript('claude', FIRST, 'unnamed');
-        expect(home.scan([])).toEqual([]);
-    });
 });

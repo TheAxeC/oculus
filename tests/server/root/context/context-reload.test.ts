@@ -5,6 +5,9 @@
 // Each case writes a local.yml of its own in a scratch engine and drives the watch's call, so the
 // real reader parses the file; the watchers, the pollers and the port mover are recorders. No case
 // binds a port.
+//
+// A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
+// tagged slow.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -388,26 +391,30 @@ describe('local.yml read again whenever it changes', () => {
         });
     });
 
-    it('hands the next https address to the program an open_bin written again names', async () => {
-        const scratch = scratchDir('oculus-reload-open-');
-        const recorded = join(scratch, 'opened.txt');
-        const recorder = join(scratch, 'recorder');
-        writeFileSync(recorder, `#!/bin/sh\nprintf '%s' "$1" > ${JSON.stringify(recorded)}\n`, {
-            mode: 0o755
-        });
-        await inRun(base(scratch), async (run) => {
-            const before = run.context.opener;
-            run.write(base(scratch, { open_bin: recorder }));
-            run.reload();
+    it(
+        'hands the next https address to the program an open_bin written again names',
+        { tags: ['slow'] },
+        async () => {
+            const scratch = scratchDir('oculus-reload-open-');
+            const recorded = join(scratch, 'opened.txt');
+            const recorder = join(scratch, 'recorder');
+            writeFileSync(recorder, `#!/bin/sh\nprintf '%s' "$1" > ${JSON.stringify(recorded)}\n`, {
+                mode: 0o755
+            });
+            await inRun(base(scratch), async (run) => {
+                const before = run.context.opener;
+                run.write(base(scratch, { open_bin: recorder }));
+                run.reload();
 
-            expect(run.context.opener).not.toBe(before);
-            expect(run.built()).toEqual(ONCE);
-            await run.context.opener('https://accounts.example.invalid/consent?state=two');
-            expect(readFileSync(recorded, 'utf8')).toBe(
-                'https://accounts.example.invalid/consent?state=two'
-            );
-        });
-    });
+                expect(run.context.opener).not.toBe(before);
+                expect(run.built()).toEqual(ONCE);
+                await run.context.opener('https://accounts.example.invalid/consent?state=two');
+                expect(readFileSync(recorded, 'utf8')).toBe(
+                    'https://accounts.example.invalid/consent?state=two'
+                );
+            });
+        }
+    );
 
     it('hands the poller the host an hpc_host written names, and the sentence for no host when it is removed', () => {
         const scratch = scratchDir('oculus-reload-hpc-');
@@ -516,7 +523,7 @@ describe('local.yml read again whenever it changes', () => {
         });
     });
 
-    it('builds nothing again for a file whose values equal the ones in force (an audit)', () => {
+    it('builds nothing again for a file whose values equal the ones in force', () => {
         const scratch = scratchDir('oculus-reload-equal-');
         return inRun(base(scratch), (run) => {
             run.reload();
