@@ -52,6 +52,9 @@ dispatch:   # three steps in flight (2026-10-03): X3c, Q91 and D25 building; D32
   base: 2dbe1a72
   launched: 2026-10-03 07:54 local
   report: agents/reviews/Q91-report.md
+  builder_usage: 223,331 tokens, 539 tool uses, 221.5 min (report saved 2026-10-03)
+  full_list_runs: 9 by the builder's report, against `agents/spec.md:25`'s one (Z348 (b)); booked as a breach at landing
+  reviewer_report: agents/reviews/Q91-refuter.md (first run; reviewer a7ac5b16bbf539b33, claude-opus-5-5, launched 2026-10-03, running)
   brief_check: agents/reviews/Q91-brief-check.md; claude-opus-5-5, 240,437 tokens, 84 tool uses, 11.5 min (run on main at a9c0d38d; findings closed under Closed by Z286)
   shared_paths: with X3c, `views/sources/files/Files.svelte` (X3c removes the breadcrumb nav and `crumbs`, Q91 moves the tree wiring into `RootedTree.svelte`; separate regions), `views/sources/source/Source.svelte` (Q91 one import line for the moved `Code.svelte`, X3c the header and toolbar), `config/text/views/sources/files.yml` (separate keys), `HELP.md`, `DESIGN.md` and the diagrams (separate passages, the diagrams regenerated); X3c's new imports of `views/sources/files/tree/menu/row-menu.ts` follow Q91's move to `views/shared/explorer/` at the second landing, an import line each
   landing: not-started
