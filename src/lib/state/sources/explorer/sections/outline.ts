@@ -6,7 +6,18 @@
 // A Markdown heading is a line of one to six `#` then a space, outside fenced code and outside a
 // leading front matter block; its closing `#` run is not part of its text. A LaTeX heading is
 // `\part` to `\subparagraph`, starred or not, with an optional short title, outside a `%` comment
-// and outside a verbatim block; its text is the braces' content with lines joined.
+// and outside a verbatim block; its text is the last braces' content with lines joined. The
+// LaTeX reading is data/prose/latex.ts's, over a parser the page loads as a chunk of its own the
+// first time a LaTeX file is outlined, so a LaTeX outline is an answer that arrives and a Markdown
+// outline is one that is there. The reader that holds the loaded parser is the client state's
+// (`latexReader`, made by createLatexReader), so no parser is held at module scope.
+
+import {
+    lazyReader,
+    scanSections,
+    type LazyReader,
+    type Section
+} from '../../../../data/prose/latex.ts';
 
 /** One entry of the outline: its text, its line (from one), its level and its depth in the list. */
 export type OutlineItem = { title: string; line: number; level: number; depth: number };
@@ -57,87 +68,70 @@ export function markdownOutline(text: string): OutlineItem[] {
     return nested(found);
 }
 
-/** The LaTeX sectioning commands, from the outermost to the innermost. */
-const LATEX_LEVELS = [
-    'part',
-    'chapter',
-    'section',
-    'subsection',
-    'subsubsection',
-    'paragraph',
-    'subparagraph'
-];
+/** The client state's LaTeX reader, which loads the parser on its first read. */
+export type LatexReader = { read: LazyReader };
 
-/** The environments whose lines hold no commands. */
-const VERBATIM = ['verbatim', 'lstlisting', 'minted', 'comment'];
-
-/** A line with its `%` comment taken off; a `%` after an odd run of backslashes is a letter. */
-function uncommented(line: string): string {
-    for (let at = 0; at < line.length; at += 1) {
-        if (line[at] !== '%') continue;
-        let slashes = 0;
-        while (at - 1 - slashes >= 0 && line[at - 1 - slashes] === '\\') slashes += 1;
-        if (slashes % 2 === 0) return line.slice(0, at);
-    }
-    return line;
+/**
+ * A reader of LaTeX texts with latex-utensils, which it fetches once, on its first read. The client
+ * state makes one and holds it.
+ */
+export function createLatexReader(): LatexReader {
+    return { read: lazyReader(() => import('latex-utensils')) };
 }
 
-/** The text between the brace opening at `from` and its match, or null when it never closes. */
-function braced(text: string, from: number): string | null {
-    let depth = 0;
-    for (let at = from; at < text.length; at += 1) {
-        const char = text[at];
-        const escaped = at > 0 && text[at - 1] === '\\';
-        if (char === '{' && !escaped) depth += 1;
-        else if (char === '}' && !escaped) {
-            depth -= 1;
-            if (depth === 0) return text.slice(from + 1, at);
-        }
-    }
-    return null;
-}
-
-/** The LaTeX sectioning commands of a text: `\part` to `\subparagraph`, outside comments. */
-export function latexOutline(text: string): OutlineItem[] {
-    let skipping: string | null = null;
-    const kept = text.split(/\r?\n/).map((line) => {
-        const code = uncommented(line);
-        if (skipping !== null) {
-            if (code.includes(`\\end{${skipping}}`)) skipping = null;
-            return '';
-        }
-        const begun = VERBATIM.find((name) => code.includes(`\\begin{${name}}`));
-        if (begun !== undefined && !code.includes(`\\end{${begun}}`)) {
-            skipping = begun;
-            return '';
-        }
-        return code;
-    });
-    const clean = kept.join('\n');
-    const found: Omit<OutlineItem, 'depth'>[] = [];
-    const command = new RegExp(
-        `\\\\(${LATEX_LEVELS.join('|')})\\*?\\s*(?:\\[[^\\]\\n]*\\])?\\s*\\{`,
-        'g'
+/** The outline items of a list of sections, nested by level. */
+function itemsOf(sections: Section[]): OutlineItem[] {
+    return nested(
+        sections.map((one) => ({ title: one.title, line: one.line, level: one.level + 1 }))
     );
-    for (let match = command.exec(clean); match !== null; match = command.exec(clean)) {
-        const open = match.index + match[0].length - 1;
-        const title = braced(clean, open)?.replace(/\s+/g, ' ').trim() ?? '';
-        if (title === '') continue;
-        found.push({
-            title,
-            line: clean.slice(0, match.index).split('\n').length,
-            level: LATEX_LEVELS.indexOf(match[1]) + 1
-        });
-    }
-    return nested(found);
 }
 
 /**
- * The outline of a file by its language, or null for a language that has no symbols yet. An empty
- * list is a Markdown or LaTeX file without headings.
+ * The LaTeX sectioning commands of a text: `\part` to `\subparagraph`, read by the shared reader
+ * (data/prose/latex.ts), so this list and the server's outline agree on what a heading is. A text
+ * the parser refuses has the headings the reader's line scan finds. When the parser cannot be
+ * loaded, the outline is that line scan's.
+ */
+export async function latexOutline(reader: LatexReader, text: string): Promise<OutlineItem[]> {
+    try {
+        return itemsOf((await reader.read(text)).sections);
+    } catch {
+        return itemsOf(scanSections(text));
+    }
+}
+
+/**
+ * Follows a text that changes: each `ask` starts a LaTeX outline and `deliver`s it unless a later
+ * `ask`, or `stop`, came first, so an outline that arrives late never replaces a newer one.
+ */
+export function outlineFollower(
+    reader: LatexReader,
+    deliver: (items: OutlineItem[]) => void
+): {
+    ask: (text: string) => void;
+    stop: () => void;
+} {
+    let turn = 0;
+    return {
+        ask(text) {
+            turn += 1;
+            const mine = turn;
+            void latexOutline(reader, text).then((items) => {
+                if (mine === turn) deliver(items);
+            });
+        },
+        stop() {
+            turn += 1;
+        }
+    };
+}
+
+/**
+ * The outline of a file by its language, or null for a language that has no symbols yet or whose
+ * outline arrives later (LaTeX, through `latexOutline`). An empty list is a Markdown file without
+ * headings.
  */
 export function outlineOf(language: string, text: string): OutlineItem[] | null {
     if (language === 'markdown') return markdownOutline(text);
-    if (language === 'latex') return latexOutline(text);
     return null;
 }

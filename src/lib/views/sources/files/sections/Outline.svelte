@@ -6,8 +6,10 @@
     // line. A file in another language says it has no symbols yet, and a page whose active tab
     // shows no file says there is nothing to outline.
     //
-    // The reading is outlineOf in state/sources/explorer/sections/outline.ts. This component holds
-    // nothing of its own.
+    // The reading is outlineOf in state/sources/explorer/sections/outline.ts. A LaTeX file's
+    // outline arrives after the parser is loaded and after each change of the text, through
+    // outlineFollower over the client state's LaTeX reader, and the list of the last one stays
+    // drawn while the next is read.
 
     import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
@@ -15,7 +17,11 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { languageOf } from '$lib/state/sources/fs';
     import { fileOfTab } from '$lib/state/sources/explorer/sections/open-editors';
-    import { outlineOf, type OutlineItem } from '$lib/state/sources/explorer/sections/outline';
+    import {
+        outlineFollower,
+        outlineOf,
+        type OutlineItem
+    } from '$lib/state/sources/explorer/sections/outline';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
 
@@ -30,19 +36,45 @@
         layout: { activeInstance, currentPage },
         source: { sourceDraft },
         selectors: { languages },
-        editorStatus: { ask }
+        editorStatus: { ask },
+        latexReader
     } = useState();
 
     const tab = $derived(activeInstance(currentPage().id));
     const file = $derived(tab === null ? null : fileOfTab(tab));
     const draft = $derived(tab?.view === 'source' ? sourceDraft(tab.id) : null);
 
+    const language = $derived(
+        draft === null || file === null || !draft.loaded
+            ? ''
+            : draft.language === ''
+              ? languageOf(file.path, languages())
+              : draft.language
+    );
+
+    /** The text of the active tab when it is LaTeX, whose outline is read after a load. */
+    const latexText = $derived(language === 'latex' && draft !== null ? draft.text : null);
+
+    /** The last LaTeX outline to arrive and the tab it was read for. */
+    let arrived = $state<{ tab: string; items: OutlineItem[] } | null>(null);
+
+    $effect(() => {
+        if (latexText === null || tab === null) return;
+        const id = tab.id;
+        const follow = outlineFollower(latexReader, (found) => {
+            arrived = { tab: id, items: found };
+        });
+        follow.ask(latexText);
+        return follow.stop;
+    });
+
+    /** Whether a LaTeX outline has been asked for and has not arrived for this tab. */
+    const waiting = $derived(latexText !== null && (arrived === null || arrived.tab !== tab?.id));
+
     /** The symbols of the active tab: null for a tab with none to read, else the list. */
     const items = $derived.by<OutlineItem[] | null>(() => {
-        if (draft === null || file === null || !draft.loaded) return null;
-        const language =
-            draft.language === '' ? languageOf(file.path, languages()) : draft.language;
-        return outlineOf(language, draft.text);
+        if (latexText !== null) return waiting ? [] : (arrived?.items ?? []);
+        return language === '' ? null : outlineOf(language, draft?.text ?? '');
     });
 
     /**
@@ -53,7 +85,7 @@
             ? t('files.outline_no_editor')
             : items === null
               ? t('files.outline_none')
-              : items.length === 0
+              : items.length === 0 && !waiting
                 ? t('files.outline_empty')
                 : ''
     );

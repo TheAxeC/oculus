@@ -65,6 +65,10 @@
     // file's diff at its change while a press on a line's blame opens its commit in the
     // Repositories view's graph. The editor draws them as its own decorations; the code window
     // draws them with Gutter.svelte.
+    //
+    // A LaTeX file adds to its editor the problems of its latest build as markers, the preview of
+    // math and pictures under the pointer and Format Document (`latex-editor.ts`); a save of it
+    // builds its main file when `latex.auto_build` says so (state/sessions/latex.svelte.ts).
 
     import { onDestroy, untrack } from 'svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -78,6 +82,7 @@
     import Code from '../../shared/code/Code.svelte';
     import Editor from './Editor.svelte';
     import Gutter from './Gutter.svelte';
+    import { latexEditor } from './latex-editor';
     import { readAs, readJson } from '$lib/data/shapes/shapes';
     import { languageOf, opensInProgram } from '$lib/state/sources/fs';
     import { listOf } from '$lib/state/sources/repositories/answers';
@@ -111,6 +116,7 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { shownGate, useShown, useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         editorStatus: { asked, forget, publish },
         fs: { workspaces },
@@ -128,7 +134,7 @@
             toggleSourceBlame,
             sourceDraft
         }
-    } = useState();
+    } = client;
 
     let { instance }: ViewProps = $props();
 
@@ -166,6 +172,12 @@
     /** The indentation Tab inserts: the one chosen from the status bar, or the file's own. */
     const indent = $derived(draft.indent ?? detectIndent(draft.text));
     const ending = $derived(lineEnding(draft.text));
+    /** What a LaTeX file adds to the editor: its build's markers, the preview and the formatter. */
+    const extension = $derived(
+        language === 'latex' && head === undefined
+            ? latexEditor(client, { root, path }, (words: string) => (said = words))
+            : undefined
+    );
     /** Whether the file has a rendered half, which is what a Markdown file has. */
     const markdown = $derived(language === 'markdown');
 
@@ -443,6 +455,7 @@
                 rendered={draft.rendered}
                 marks={editorMarks}
                 blame={editorBlame}
+                {extension}
                 oninput={typed}
                 oncaret={(at: Caret) => (caret = at)}
                 onmark={(mark: EditorMark) => openMark(mark.line)}

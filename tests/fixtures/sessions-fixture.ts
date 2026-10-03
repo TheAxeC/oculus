@@ -12,6 +12,7 @@ import type {
     Terminal,
     Workspace
 } from '../../src/lib/data/model/index.ts';
+import type { ClientState } from './client.ts';
 
 /** One session, everything at its quiet default and the case's own fields written over it. */
 export function record(id: string, over: Partial<GroupedSession> = {}): GroupedSession {
@@ -76,6 +77,21 @@ export function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
         resumes: null,
         ...over
     };
+}
+
+/** Hand the client a `sessions` payload that holds the terminals named, at the version given. */
+export function receiveTerminals(
+    client: ClientState,
+    version: number,
+    ids: string[],
+    name = 'latex build alpha/main.tex'
+): void {
+    const held: SessionsPayload = {
+        records: [],
+        workspaces: [],
+        terminals: ids.map((id) => terminal(id, { name }))
+    };
+    client.entities.receive({ channel: 'sessions', version, payload: held });
 }
 
 /** One area of a workspace, holding the sessions the grouping filed under it. */

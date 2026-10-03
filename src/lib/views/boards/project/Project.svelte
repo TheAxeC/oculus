@@ -18,9 +18,9 @@
     // its folder. One instance per project, and the project it is for is the `id` in its instance
     // state, exactly as the editor reads its own.
     //
-    // The LaTeX panel is project/Latex.svelte, drawn for a project whose folder holds a manuscript
-    // and drawn for no other: what it needs is the id, and everything about the files it lists
-    // comes from api/latex rather than from the snapshot.
+    // The LaTeX panel is project/Latex.svelte, drawn for a project whose manuscript folder holds a
+    // main file, or whose read failed, and for no other: what it needs is the id, and everything
+    // about the files it lists comes from api/latex rather than from the snapshot.
     //
     // The card is views/shared/card/ProjectCard.svelte, the one the board draws, with `deposit` on
     // and no `ontoggle`: this tab's card is always open, so it carries the deposit control and no

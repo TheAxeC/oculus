@@ -76,6 +76,7 @@ digraph channels {
         "state/life/accounts";
         "state/life/calendar";
         "state/life/present";
+        "state/sessions/latex";
         "state/sessions/terminals";
         "state/sources/search/search";
         "state/system/audit";
@@ -142,6 +143,7 @@ digraph channels {
     "ch config" -> "state/client/selectors";
     "ch config" -> "state/client/socket";
     "ch config" -> "state/life/present";
+    "ch config" -> "state/sessions/latex";
     "ch config" -> "state/sessions/terminals";
     "ch config" -> "state/sources/search/search";
     "ch config" -> "state/workbench/palette-source";

@@ -249,15 +249,16 @@ describe('Outline', () => {
         expect(pressable(body, 'data-fs-symbol')).toEqual(['1', '3']);
     });
 
-    // Revert: read a commented sectioning command.
-    it('audits that draws the sectioning commands of a LaTeX file outside comments', async () => {
+    // Revert: draw the empty-outline line while the LaTeX outline is still to arrive.
+    it('audits that draws neither a heading nor the no-headings line for a LaTeX file whose outline is still to arrive', async () => {
         const body = outlineDrawn(
             await withText('m.tex', 'latex', '\\section{S}\n% \\section{X}\n\\subsection*{T}\n')
         );
 
-        expect(namesOf(body)).toEqual(expect.arrayContaining(['S', 'T']));
-        // the section command after the percent sign is a comment
-        expect(namesOf(body)).not.toContain('X');
+        // The outline is read after the parser is loaded, which the render of the server never
+        // waits for; the headings themselves are state/sources/explorer/sections/outline.ts's.
+        expect(marked(body, 'data-fs-symbol')).toEqual([]);
+        expect(namesOf(body)).toEqual(['Outline']);
     });
 
     // Revert: give every language a list.

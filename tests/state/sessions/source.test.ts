@@ -335,6 +335,34 @@ describe('source tab state', () => {
     });
 });
 
+describe('a save tells the LaTeX store which file was written', () => {
+    // Revert: drop the `saved(root, path)` call after `answer.ok` in saveSource of
+    // state/sessions/source.svelte.ts.
+    it('does so once the write succeeded, with the root and the path', async () => {
+        const saved = vi.spyOn(client.latex, 'onSaved').mockResolvedValue(undefined);
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response(JSON.stringify({ ok: true }))));
+        setToken('source-token');
+
+        await saveSource('docs', 'proposal/c.tex', 'text');
+
+        expect(saved).toHaveBeenCalledExactlyOnceWith('docs', 'proposal/c.tex');
+    });
+
+    it('does not when the write was refused', async () => {
+        const saved = vi.spyOn(client.latex, 'onSaved').mockResolvedValue(undefined);
+        vi.stubGlobal('fetch', () =>
+            Promise.resolve(
+                new Response(JSON.stringify({ ok: false, error: 'readonly' }), { status: 403 })
+            )
+        );
+        setToken('source-token');
+
+        await saveSource('docs', 'proposal/c.tex', 'text');
+
+        expect(saved).not.toHaveBeenCalled();
+    });
+});
+
 describe('the unsaved-text rule a close asks', () => {
     it('answers no for an instance with no draft and for a draft nothing has edited', async () => {
         vi.stubGlobal('fetch', () => Promise.resolve(new Response('on disk\n')));

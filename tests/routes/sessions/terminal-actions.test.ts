@@ -6,12 +6,23 @@
 // the temporary directory: for the task cases, to hold an engine directory whose local.yml the
 // route reads, made once per file from the fixture's test.beforeAll.
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import {
+    chmodSync,
+    existsSync,
+    mkdirSync,
+    readFileSync,
+    readdirSync,
+    realpathSync,
+    statSync,
+    writeFileSync
+} from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { it, test } from '../../fixtures/scratch.ts';
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import {
     handleTerminal,
+    latexCommand,
     type TerminalOptions
 } from '../../../src/lib/server/machine/pty/routes.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -226,7 +237,7 @@ describe('POST /api/terminal, the task action', () => {
 });
 
 describe('POST /api/terminal, the latex action', () => {
-    /** A project of the synthetic chat hub whose manuscript holds one main file and one include. */
+    /** A project of the synthetic chat hub whose manuscript holds main files and one include. */
     const LATEX_PROJECT = 'projects/active/alpha';
     test.beforeAll(() => {
         mkdirSync(join(task.chatHub, LATEX_PROJECT, 'manuscript'), { recursive: true });
@@ -237,6 +248,10 @@ describe('POST /api/terminal, the latex action', () => {
         writeFileSync(
             join(task.chatHub, LATEX_PROJECT, 'manuscript', 'intro.tex'),
             '\\section{Intro}\n'
+        );
+        writeFileSync(
+            join(task.chatHub, LATEX_PROJECT, 'manuscript', '-v.tex'),
+            '\\documentclass{article}\n'
         );
     });
 
@@ -317,10 +332,26 @@ describe('POST /api/terminal, the latex action', () => {
                 latexOptions(driver)
             );
             expect(response.status).toBe(400);
-            expect((await answer(response)).error).toBe('main is not a main file of this project');
+            expect((await answer(response)).error).toBe('not-a-main');
             expect(driver.calls).toEqual([]);
         }
     });
+
+    it.each(['-v.tex', '/etc/passwd'])(
+        'refuses %s, a main named with a dash and an absolute path, before anything runs',
+        async (main) => {
+            const driver = tmux();
+            const response = await handleTerminal(
+                request({ action: 'latex', id: 'alpha', main, step: 'build', cols: 80, rows: 24 }),
+                TOKEN,
+                latexOptions(driver)
+            );
+
+            expect(response.status).toBe(400);
+            expect((await answer(response)).error).toBe('not-a-main');
+            expect(driver.calls).toEqual([]);
+        }
+    );
 
     it('refuses a project folder that would leave the hub, before anything runs', async () => {
         const driver = tmux();
@@ -364,7 +395,7 @@ describe('POST /api/terminal, the latex action', () => {
             latexOptions(driver)
         );
         expect(unknown.status).toBe(400);
-        expect((await answer(unknown)).error).toBe('id is not a project in the current portfolio');
+        expect((await answer(unknown)).error).toBe('no-project');
 
         const step = await handleTerminal(
             request({
@@ -379,7 +410,169 @@ describe('POST /api/terminal, the latex action', () => {
             latexOptions(driver)
         );
         expect(step.status).toBe(400);
-        expect(String((await answer(step)).error)).toContain('step must be one of');
+        expect((await answer(step)).error).toBe('not-an-action');
+        expect(driver.calls).toEqual([]);
+    });
+});
+
+describe('latexCommand', () => {
+    it.each([
+        ['pdflatex', "latexmk -pdf -interaction=nonstopmode -file-line-error 'm.tex'"],
+        ['xelatex', "latexmk -pdfxe -interaction=nonstopmode -file-line-error 'm.tex'"],
+        ['lualatex', "latexmk -pdflua -interaction=nonstopmode -file-line-error 'm.tex'"]
+    ] as const)('builds a main file with %s through its switch', (program, expected) => {
+        expect(latexCommand('build', 'm.tex', program)).toBe(expected);
+    });
+
+    it('cleans a main file whatever its program', () => {
+        expect(latexCommand('clean', 'm.tex', 'xelatex')).toBe("latexmk -c 'm.tex'");
+    });
+
+    it('quotes a main file name as one word, so a shell passes it to latexmk whole', () => {
+        const bin = realpathSync(scratchDir('oculus-latexmk-'));
+        const calls = join(bin, 'calls');
+        writeFileSync(
+            join(bin, 'latexmk'),
+            `#!/bin/sh\nfor word in "$@"; do echo "[$word]"; done > '${calls}'\n`
+        );
+        chmodSync(join(bin, 'latexmk'), 0o755);
+
+        const command = latexCommand('build', "my thesis's.tex", 'pdflatex');
+        execFileSync('sh', ['-c', command], { env: { PATH: `${bin}:/usr/bin:/bin` } });
+
+        expect(readFileSync(calls, 'utf8').trim().split('\n')).toEqual([
+            '[-pdf]',
+            '[-interaction=nonstopmode]',
+            '[-file-line-error]',
+            "[my thesis's.tex]"
+        ]);
+    });
+});
+
+describe('POST /api/terminal, the latex action over a folder of a root', () => {
+    /** The served root holds a folder with two mains, one naming xelatex, and a chapter. */
+    const FOLDER_ROOT = 'docs';
+    const roots = (): { key: string; dir: string }[] => [
+        { key: FOLDER_ROOT, dir: join(task.chatHub, 'docs-root') }
+    ];
+    test.beforeAll(() => {
+        const base = join(task.chatHub, 'docs-root', 'proposal');
+        mkdirSync(base, { recursive: true });
+        writeFileSync(
+            join(base, 'main.tex'),
+            '% !TEX program = xelatex\n\\documentclass{article}\n'
+        );
+        writeFileSync(join(base, 'response.tex'), '\\documentclass{article}\n');
+        writeFileSync(join(base, 'chapter.tex'), '\\section{One}\n');
+        writeFileSync(join(base, '-v.tex'), '\\documentclass{article}\n');
+    });
+
+    function folderOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
+        return {
+            engine: engineDir(),
+            run: driver.run,
+            hubFor: () => task.chatHub,
+            configFor: () => BASE_CHAT_CONFIG,
+            projectFor: () => null,
+            rootsFor: roots
+        };
+    }
+
+    function ask(main: string, path = 'proposal', root = FOLDER_ROOT): Request {
+        return request({ action: 'latex', root, path, main, step: 'build', cols: 80, rows: 24 });
+    }
+
+    it('starts the terminal in that folder with the program the main file names', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(ask('main.tex'), TOKEN, folderOptions(driver));
+
+        expect(response.status).toBe(200);
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(started[started.indexOf('-c') + 1]).toBe(
+            realpathSync(join(task.chatHub, 'docs-root', 'proposal'))
+        );
+        expect(started[started.length - 1]).toBe(
+            "latexmk -pdfxe -interaction=nonstopmode -file-line-error 'main.tex'"
+        );
+    });
+
+    it('refuses a file that is not a main of the folder, before anything runs', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(ask('chapter.tex'), TOKEN, folderOptions(driver));
+
+        expect(response.status).toBe(400);
+        expect((await answer(response)).error).toBe('not-a-main');
+        expect(driver.calls).toEqual([]);
+    });
+
+    it.each(['-v.tex', '/etc/passwd'])(
+        'refuses %s, a main named with a dash and an absolute path, before anything runs',
+        async (main) => {
+            const driver = tmux();
+            const response = await handleTerminal(ask(main), TOKEN, folderOptions(driver));
+
+            expect(response.status).toBe(400);
+            expect((await answer(response)).error).toBe('not-a-main');
+            expect(driver.calls).toEqual([]);
+        }
+    );
+
+    it.each([
+        ['a path outside the root', 'main.tex', '..', FOLDER_ROOT, 'outside'],
+        ['a folder that is missing', 'main.tex', 'removed', FOLDER_ROOT, 'missing'],
+        ['a root that is not served', 'main.tex', 'proposal', 'nowhere', 'outside']
+    ])('refuses %s, before anything runs', async (_name, main, path, root, word) => {
+        const driver = tmux();
+        const response = await handleTerminal(ask(main, path, root), TOKEN, folderOptions(driver));
+
+        expect(response.status).toBe(400);
+        expect((await answer(response)).error).toBe(word);
+        expect(driver.calls).toEqual([]);
+    });
+
+    it('refuses every root when the server serves none', async () => {
+        const driver = tmux();
+        const { rootsFor: _served, ...served } = folderOptions(driver);
+
+        // `src` is a folder of the working directory, which a fallback root of `.` would serve.
+        const response = await handleTerminal(ask('main.tex', 'src'), TOKEN, served);
+
+        expect(response.status).toBe(400);
+        expect((await answer(response)).error).toBe('outside');
+        expect(driver.calls).toEqual([]);
+    });
+
+    it('refuses a request that names both a project and a root, and one that names neither', async () => {
+        const driver = tmux();
+        // The project exists, so only the two names together can be why the request is refused.
+        const options = {
+            ...folderOptions(driver),
+            projectFor: () => ({ folder: 'projects/manuscripts/alpha' }) as never
+        };
+        const both = await handleTerminal(
+            request({
+                action: 'latex',
+                id: 'alpha',
+                root: FOLDER_ROOT,
+                path: 'proposal',
+                main: 'main.tex',
+                step: 'build',
+                cols: 80,
+                rows: 24
+            }),
+            TOKEN,
+            options
+        );
+        const neither = await handleTerminal(
+            request({ action: 'latex', main: 'main.tex', step: 'build', cols: 80, rows: 24 }),
+            TOKEN,
+            options
+        );
+
+        expect(both.status).toBe(400);
+        expect((await answer(both)).error).toBe('not-an-action');
+        expect(neither.status).toBe(400);
+        expect((await answer(neither)).error).toBe('not-an-action');
         expect(driver.calls).toEqual([]);
     });
 });

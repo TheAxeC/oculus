@@ -102,6 +102,7 @@ import { createQueries } from './queries.svelte.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { createWrites, type WritesStore } from './writes.svelte.ts';
 import { createGraphviz, type GraphvizLoader } from '../boards/structure/layout.ts';
+import { createLatexReader, type LatexReader } from '../sources/explorer/sections/outline.ts';
 
 /** What a tab needs of the client to hide its reads while it is hidden. */
 export type TabScopeStore = {
@@ -116,6 +117,8 @@ export type TabScopeStore = {
 /** Every store one client holds, one instance of each. */
 export type ClientState = {
     graphviz: GraphvizLoader;
+    /** The LaTeX reader the Files Outline reads with, which loads the parser on its first call. */
+    latexReader: LatexReader;
     entities: EntitiesStore;
     writes: WritesStore;
     socket: SocketStore;
@@ -312,10 +315,11 @@ export function createClientState(): ClientState {
     };
     const fs = withQueries('fs', createFs(writes, fsForms, entities, queries));
     const docs = withQueries('docs', createDocs(entities, queries));
-    const latex = withQueries('latex', createLatex(entities, terminals, fs, queries));
+    const latex = withQueries('latex', createLatex(entities, terminals, fs, queries, writes));
     const deposit = withQueries('deposit', createDeposit(queries));
     const transcripts = withQueries('transcripts', createTranscripts(queries));
-    const source = createSource(writes, ui);
+    // A saved file may be a LaTeX file whose main builds on save, which the latex store decides.
+    const source = createSource(writes, ui, (root, path) => void latex.onSaved(root, path));
     // The pane asks the instance id whether a tab holds unsaved text before it closes it, and asks
     // the ui store rather than the source store, which the shell may not read.
     ui.registerUnsaved(source.sourceDirty);
@@ -416,6 +420,7 @@ export function createClientState(): ClientState {
     };
     return {
         graphviz: createGraphviz(),
+        latexReader: createLatexReader(),
         entities,
         writes,
         socket,

@@ -320,6 +320,32 @@ describe('the four actions of /api/terminal', () => {
         });
     });
 
+    // Revert: leave `...targetFields(target)` out of the latex call in terminals.svelte.ts.
+    it('starts a LaTeX step of a project by its id and of a folder by its root and path', async () => {
+        serving(200, { ok: true, terminal: terminal({ id: 'ffee00-shell' }) });
+
+        await client.terminals.latex({ id: 'alpha' }, 'main.tex', 'build', 96, 28);
+        expect(lastBody()).toEqual({
+            action: 'latex',
+            id: 'alpha',
+            main: 'main.tex',
+            step: 'build',
+            cols: 96,
+            rows: 28
+        });
+
+        await client.terminals.latex({ root: 'docs', path: 'proposal' }, 'main.tex', 'clean');
+        expect(lastBody()).toEqual({
+            action: 'latex',
+            root: 'docs',
+            path: 'proposal',
+            main: 'main.tex',
+            step: 'clean',
+            cols: 80,
+            rows: 24
+        });
+    });
+
     it('reports a refusal in the refusal sentence, never in the text the server gave', async () => {
         serving(400, { error: 'cwd must be an absolute path' });
         const answer = await startTerminal('shell', 'relative');

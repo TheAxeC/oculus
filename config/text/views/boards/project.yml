@@ -108,23 +108,7 @@ text:
             xlink_ideas: ideas
             xlink_published: published
         latex:
-            at: '{0}:{1}'
-            at_line: line {0}
-            build: build
-            build_tip: run latexmk on this file and show it running
-            clean: clean
-            clean_tip: remove what a build left beside this file
-            errors: errors
             heading: LaTeX
-            no_errors: no errors
-            no_pdf: no PDF yet
-            open_pdf: PDF
-            open_pdf_tip: open the built PDF as a tab
-            pdf_at: 'PDF {0}'
-            read_failed: 'the manuscript was not read: {0}'
-            refused: 'the step was not started: {0}'
-            retry: Try again
-            warnings: '{0} warnings'
         no_documents: This project has no Markdown document.
         no_sessions: No session has worked in this folder.
         none: No project chosen. Open a project from the title of its card.

@@ -15,9 +15,12 @@ import {
     openIds
 } from '../../../../../src/lib/state/sources/explorer/sections/open-editors.ts';
 import {
+    createLatexReader,
     latexOutline,
     markdownOutline,
-    outlineOf
+    outlineFollower,
+    outlineOf,
+    type OutlineItem
 } from '../../../../../src/lib/state/sources/explorer/sections/outline.ts';
 import {
     sectionFlipped,
@@ -33,6 +36,9 @@ import {
     logUrl
 } from '../../../../../src/lib/state/sources/explorer/sections/timeline-reads.ts';
 import type { Instance, Pane } from '../../../../../src/lib/state/workbench/layout/model.ts';
+
+/** One reader for the LaTeX cases, as one client state holds one. */
+const READ = createLatexReader();
 
 const tab = (id: string, view: string, state: unknown): Instance => ({ id, view, state });
 const pane = (active: string, ...tabs: Instance[]): Pane => ({ tabs, active }) as Pane;
@@ -119,8 +125,8 @@ describe('Outline', () => {
     });
 
     // Revert: read the commented section.
-    it('reads LaTeX sectioning commands outside comments: S > T', () => {
-        const items = latexOutline('\\section{S}\n% \\section{X}\n\\subsection*{T}\n');
+    it('reads LaTeX sectioning commands outside comments: S > T', async () => {
+        const items = await latexOutline(READ, '\\section{S}\n% \\section{X}\n\\subsection*{T}\n');
 
         expect(items.map((one) => [one.title, one.depth, one.line])).toEqual([
             ['S', 0, 1],
@@ -129,19 +135,71 @@ describe('Outline', () => {
     });
 
     // Revert: read a sectioning command inside a verbatim block.
-    it('skips a verbatim block and takes a title that runs over two lines', () => {
-        const items = latexOutline(
+    it('skips a verbatim block and takes a title that runs over two lines', async () => {
+        const items = await latexOutline(
+            READ,
             '\\begin{verbatim}\n\\section{no}\n\\end{verbatim}\n\\section{One\ntwo}\n'
         );
 
         expect(items.map((one) => one.title)).toEqual(['One two']);
     });
 
+    // Revert: answer no headings for a text the parser refuses.
+    it('has the headings of a text the parser refuses, an unclosed brace after them', async () => {
+        const items = await latexOutline(READ, '\\section{A}\n\\subsection{B}\nprice $5\n');
+
+        expect(items.map((one) => [one.title, one.depth, one.line])).toEqual([
+            ['A', 0, 1],
+            ['B', 1, 2]
+        ]);
+    });
+
     // Revert: answer an empty list for a language without symbols.
-    it('answers null for a language without symbols and a list for the two it reads', () => {
+    it('answers null for a language without symbols or a late outline, a list for Markdown', () => {
         expect(outlineOf('python', 'def f(): pass')).toBeNull();
         expect(outlineOf('markdown', 'plain')).toEqual([]);
-        expect(outlineOf('latex', '\\section{S}')?.length).toBe(1);
+        expect(outlineOf('latex', '\\section{S}')).toBeNull();
+    });
+});
+
+describe('outlineFollower', () => {
+    const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 30));
+
+    // Revert: deliver every outline that arrives.
+    it('delivers the outline of the last text asked and not the one asked before it', async () => {
+        const got: OutlineItem[][] = [];
+        const follow = outlineFollower(READ, (items) => got.push(items));
+
+        follow.ask('\\section{First}');
+        follow.ask('\\section{Second}');
+        await settle();
+
+        expect(got.map((items) => items.map((one) => one.title))).toEqual([['Second']]);
+    });
+
+    // Revert: let stop leave an outline in flight to land.
+    it('delivers nothing for a text asked before stop', async () => {
+        const got: OutlineItem[][] = [];
+        const follow = outlineFollower(READ, (items) => got.push(items));
+
+        follow.ask('\\section{A}');
+        follow.stop();
+        await settle();
+
+        expect(got).toEqual([]);
+    });
+
+    // Revert: deliver only once, so a later text is not followed.
+    it('delivers again for a text asked after an outline arrived', async () => {
+        const got: string[][] = [];
+        const follow = outlineFollower(READ, (items) => got.push(items.map((one) => one.title)));
+
+        follow.ask('\\section{A}');
+        await settle();
+        follow.ask('\\section{B}');
+        await settle();
+
+        expect(got).toEqual([['A'], ['B']]);
     });
 });
 

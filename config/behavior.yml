@@ -118,6 +118,17 @@ editor:
   paint_limit_kb: 64
 
 
+# === LaTeX ==================================================================
+# What saving a .tex file does: on_save builds the main file the saved file belongs to, without showing the build; never does not build. Any other value counts as on_save.
+# formatter is the program Format Document runs on a .tex file: none, latexindent, tex-fmt or badness. Each *_path names where that program is; empty finds it on PATH.
+latex:
+  auto_build: on_save
+  formatter: none
+  latexindent_path: ''
+  tex_fmt_path: ''
+  badness_path: ''
+
+
 # === Writes =================================================================
 # How long a save waits for the server's answer before it is given up and its form says so, in seconds.
 writes:

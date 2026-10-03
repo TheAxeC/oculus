@@ -327,13 +327,13 @@
 <!-- folder server/content to folder server/core -->
 <g id="node36" class="node">
 <title>folder server/content to folder server/core</title>
-<polygon fill="none" stroke="none" points="117.88,-286.76 108.12,-286.76 108.12,-274.28 117.88,-274.28 117.88,-286.76"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="113" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
+<polygon fill="none" stroke="none" points="121.88,-286.76 108.12,-286.76 108.12,-274.28 121.88,-274.28 121.88,-286.76"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="115" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">10</text>
 </g>
 <!-- folder server/content&#45;&gt;folder server/content to folder server/core -->
 <g id="edge60" class="edge">
 <title>folder server/content&#45;&gt;folder server/content to folder server/core</title>
-<path fill="none" stroke="currentColor" d="M119.64,-534.46C124.19,-515.88 133,-475.38 133,-440.64 133,-440.64 133,-440.64 133,-385.6 133,-347.33 119.8,-302.54 114.85,-287.09"/>
+<path fill="none" stroke="currentColor" d="M119.64,-534.46C124.19,-515.88 133,-475.38 133,-440.64 133,-440.64 133,-440.64 133,-385.6 133,-347.46 121.12,-302.59 116.66,-287.1"/>
 </g>
 <!-- folder server/content to folder server/files -->
 <g id="node37" class="node">
@@ -350,7 +350,7 @@
 <g id="node38" class="node">
 <title>folder server/content to layer data</title>
 <polygon fill="none" stroke="none" points="181.88,-551.96 168.12,-551.96 168.12,-539.48 181.88,-539.48 181.88,-551.96"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="175" y="-543.32" font-family="Helvetica,Arial,sans-serif" font-size="8.00">15</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="175" y="-543.32" font-family="Helvetica,Arial,sans-serif" font-size="8.00">17</text>
 </g>
 <!-- folder server/content&#45;&gt;folder server/content to layer data -->
 <g id="edge64" class="edge">
@@ -407,13 +407,13 @@
 <!-- folder server/sessions to folder server/transcripts -->
 <g id="node42" class="node">
 <title>folder server/sessions to folder server/transcripts</title>
-<polygon fill="none" stroke="none" points="157.88,-286.76 148.12,-286.76 148.12,-274.28 157.88,-274.28 157.88,-286.76"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="153" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">3</text>
+<polygon fill="none" stroke="none" points="161.88,-286.76 152.12,-286.76 152.12,-274.28 161.88,-274.28 161.88,-286.76"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="157" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">3</text>
 </g>
 <!-- folder server/sessions&#45;&gt;folder server/sessions to folder server/transcripts -->
 <g id="edge72" class="edge">
 <title>folder server/sessions&#45;&gt;folder server/sessions to folder server/transcripts</title>
-<path fill="none" stroke="currentColor" d="M193.36,-322.72C182.92,-312.06 166.64,-295.44 158.3,-286.93"/>
+<path fill="none" stroke="currentColor" d="M194.13,-322.72C184.63,-312.17 169.87,-295.8 162.13,-287.21"/>
 </g>
 <!-- folder server/sessions to layer data -->
 <g id="node43" class="node">
@@ -632,8 +632,8 @@
 <!-- folder server/machine to folder server/transcripts&#45;&gt;folder server/transcripts -->
 <g id="edge57" class="edge">
 <title>folder server/machine to folder server/transcripts&#45;&gt;folder server/transcripts</title>
-<path fill="none" stroke="currentColor" d="M178.74,-380.03C173.06,-372.37 163.03,-357.98 157,-344.36 133.91,-292.2 139.01,-273.5 144,-216.68 145.9,-195.05 139.68,-187.3 150,-168.2 156.95,-155.33 169.1,-144.53 180.12,-136.66"/>
-<polygon fill="currentColor" stroke="currentColor" points="181.06,-138.56 184.84,-133.44 178.7,-135.09 181.06,-138.56"/>
+<path fill="none" stroke="currentColor" d="M178.6,-380.08C172.78,-372.48 162.58,-358.17 157,-344.36 127.65,-271.71 113.46,-237.52 150,-168.2 156.82,-155.26 168.96,-144.46 180.01,-136.6"/>
+<polygon fill="currentColor" stroke="currentColor" points="180.95,-138.5 184.74,-133.39 178.59,-135.02 180.95,-138.5"/>
 </g>
 <!-- layer data from folder server/machine -->
 <g id="node50" class="node">
@@ -650,8 +650,8 @@
 <!-- folder server/content to folder server/core&#45;&gt;folder server/core -->
 <g id="edge61" class="edge">
 <title>folder server/content to folder server/core&#45;&gt;folder server/core</title>
-<path fill="none" stroke="currentColor" d="M113.18,-273.88C113.68,-258.25 115,-213.03 115,-175.44 115,-175.44 115,-175.44 115,-120.4 115,-84.43 150.35,-57.02 176.49,-41.67"/>
-<polygon fill="currentColor" stroke="currentColor" points="177.41,-43.56 181.59,-38.77 175.34,-39.9 177.41,-43.56"/>
+<path fill="none" stroke="currentColor" d="M115.09,-273.88C115.34,-258.24 116,-213.03 116,-175.44 116,-175.44 116,-175.44 116,-120.4 116,-84.62 150.95,-57.16 176.8,-41.75"/>
+<polygon fill="currentColor" stroke="currentColor" points="177.68,-43.66 181.83,-38.84 175.59,-40.02 177.68,-43.66"/>
 </g>
 <!-- folder server/content to folder server/files&#45;&gt;folder server/files -->
 <g id="edge63" class="edge">
@@ -698,8 +698,8 @@
 <!-- folder server/sessions to folder server/transcripts&#45;&gt;folder server/transcripts -->
 <g id="edge73" class="edge">
 <title>folder server/sessions to folder server/transcripts&#45;&gt;folder server/transcripts</title>
-<path fill="none" stroke="currentColor" d="M151.84,-274.11C148.55,-257.43 140.39,-205.68 157,-168.2 162.5,-155.78 173.08,-144.99 182.81,-137.01"/>
-<polygon fill="currentColor" stroke="currentColor" points="184.07,-138.69 187.51,-133.35 181.48,-135.38 184.07,-138.69"/>
+<path fill="none" stroke="currentColor" d="M155.59,-274.13C151.53,-257.52 141.08,-205.95 157,-168.2 162.21,-155.86 172.55,-145.19 182.21,-137.26"/>
+<polygon fill="currentColor" stroke="currentColor" points="183.44,-138.96 186.89,-133.62 180.86,-135.65 183.44,-138.96"/>
 </g>
 <!-- layer data from folder server/sessions -->
 <g id="node53" class="node">

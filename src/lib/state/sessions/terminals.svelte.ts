@@ -46,6 +46,7 @@ import type {
     TerminalResume
 } from '../../data/model/index.ts';
 import { tabMarkOf } from './terminal/terminal-marks.ts';
+import { targetFields, type LatexTarget } from './terminal/latex-target.ts';
 import {
     TERMINAL_VIEW,
     composingIn,
@@ -135,7 +136,7 @@ export type TerminalsStore = {
     startTask: (kind: TaskKind, cols?: number, rows?: number) => Promise<TerminalAnswer>;
     taskSkipsPermissions: () => boolean;
     latex: (
-        id: string,
+        target: LatexTarget,
         main: string,
         step: LatexStep,
         cols?: number,
@@ -535,18 +536,18 @@ export function createTerminals(
     }
 
     /**
-     * Build or clean one main file of a project's manuscript. The page sends the project id and the
-     * file's name; the server checks the name against the project's own main files and supplies
-     * both the latexmk command and the manuscript folder it runs in.
+     * Build or clean one main file of a project's manuscript or of a folder of a served root. The
+     * page sends the folder's name and the file's; the server checks the name against the folder's
+     * own main files and supplies both the latexmk command and the folder it runs in.
      */
     async function latex(
-        id: string,
+        target: LatexTarget,
         main: string,
         step: LatexStep,
         cols: number = COLS,
         rows: number = ROWS
     ): Promise<TerminalAnswer> {
-        return post({ action: 'latex', id, main, step, cols, rows });
+        return post({ action: 'latex', ...targetFields(target), main, step, cols, rows });
     }
 
     /**

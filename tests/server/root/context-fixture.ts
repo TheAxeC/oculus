@@ -156,6 +156,13 @@ export function inertConfig(
         calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
         editor: { paint_limit_kb: 64 },
         open: { program_ext: { '.docx': 'com.microsoft.Word' } },
+        latex: {
+            auto_build: 'on_save',
+            formatter: 'none',
+            latexindent_path: '',
+            tex_fmt_path: '',
+            badness_path: ''
+        },
         mail: { poll_min: 10, per_signal: 25 },
         usage_tiers: {},
         processes: { patterns: ['node'] },

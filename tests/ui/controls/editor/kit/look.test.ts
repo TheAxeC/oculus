@@ -9,7 +9,13 @@ import type { EditorKit } from '../../../../../src/lib/ui/controls/editor/kit/lo
 
 /** A kit whose paint answers as given; nothing else of the kit is used. */
 function kitPainting(paint: EditorKit['paint']): EditorKit {
-    return { monaco: {} as never, mac: false, paint, ensureLanguage: () => Promise.resolve() };
+    return {
+        monaco: {} as never,
+        mac: false,
+        paint,
+        ensureLanguage: () => Promise.resolve(),
+        formatting: { add: () => () => undefined }
+    };
 }
 
 describe('paintCode', () => {

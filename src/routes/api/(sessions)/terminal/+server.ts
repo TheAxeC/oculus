@@ -2,6 +2,7 @@
 // lib/server/machine/pty/routes.ts and this is the two lines that join them. The token it checks is
 // the one ServerContext minted and hooks.server.ts put on the event, as with /api/write.
 
+import { browserRoots } from '$lib/server/files/roots';
 import { handleTerminal, handleTerminalList } from '$lib/server/machine/pty/routes';
 import { datasetIds, project, sessionRecord } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
@@ -15,6 +16,12 @@ export const POST: RequestHandler = ({ request, locals }) => {
         recordFor: (id) => sessionRecord(server.hub, id),
         datasetIdsFor: () => datasetIds(server.hub),
         hubFor: () => server.local.hub,
+        rootsFor: () =>
+            browserRoots({
+                config: locals.config().config,
+                engine: server.engine,
+                local: server.local
+            }),
         projectFor: (id) => project(server.hub, id),
         // The request's own read of the disk: `tasks.skip_permissions` decides both the argv here
         // and the confirmation the tray draws, and the tray reads the config channel, which

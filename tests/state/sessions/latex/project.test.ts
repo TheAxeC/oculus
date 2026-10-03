@@ -1,16 +1,21 @@
-// The LaTeX store: what one project's state reads as, when it is asked for again, and what a build
-// that has ended does to the PDF's address.
+// The LaTeX store over a project: what one project's state reads as, when it is asked for again,
+// and what a build that has ended does to the PDF's address.
 //
 // `fetch` is a stub answering the shape api/latex answers; nothing here reaches a server, and the
 // terminals the store watches are the ones the case puts in the `sessions` payload.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { terminal } from '../../fixtures/sessions-fixture.ts';
-import type { SessionsPayload } from '../../../src/lib/data/model/index.ts';
-import type { LatexState } from '../../../src/lib/state/sessions/latex.svelte.ts';
-import { createClientState, type ClientState, refused, unreadable } from '../../fixtures/client.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
+import { receiveTerminals } from '../../../fixtures/sessions-fixture.ts';
+import type { LatexState } from '../../../../src/lib/state/sessions/latex.svelte.ts';
+import {
+    createClientState,
+    refused,
+    settle,
+    unreadable,
+    type ClientState
+} from '../../../fixtures/client.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -61,41 +66,28 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-/** A sessions payload holding the terminals named, at the version given. */
-function sessions(version: number, ids: string[]): void {
-    const held: SessionsPayload = {
-        records: [],
-        workspaces: [],
-        terminals: ids.map((id) => terminal(id, { name: `latex build alpha/main.tex` }))
-    };
-    client.entities.receive({ channel: 'sessions', version, payload: held });
-}
-
-/** Let the scheduled fetch and its answer land. */
-async function settle(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
 describe("one project's LaTeX state", () => {
     it('asks once and holds what came back', async () => {
         const { state } = client.latex;
-        expect(state('alpha').loading).toBe(true);
+        expect(state({ id: 'alpha' }).loading).toBe(true);
         await settle();
 
-        const held = state('alpha');
-        expect(held.folder).toBe('projects/manuscripts/alpha');
+        const held = state({ id: 'alpha' });
+        expect(held.root).toBe('hub');
+        expect(held.dir).toBe(`${FOLDER}/manuscript`);
         expect(held.mains.map((one) => one.main)).toEqual(['main.tex']);
         expect(held.mains[0].errors).toEqual([
-            { file: 'main.tex', line: 3, message: 'Missing $ inserted.' }
+            { file: `${FOLDER}/manuscript/main.tex`, line: 3, message: 'Missing $ inserted.' }
         ]);
-        state('alpha');
+        state({ id: 'alpha' });
         expect(asks).toBe(1);
     });
 
     it('asks nothing at all for no project', () => {
-        expect(client.latex.state('')).toEqual({
+        expect(client.latex.state({ id: '' })).toEqual({
+            root: '',
+            dir: '',
             mains: [],
-            folder: '',
             error: '',
             loading: false
         });
@@ -112,41 +104,41 @@ describe("one project's LaTeX state", () => {
             )
         );
         const fresh = createClientState();
-        fresh.latex.state('ghost');
+        fresh.latex.state({ id: 'ghost' });
         await settle();
 
-        expect(fresh.latex.state('ghost').error).toBe(refused(404));
+        expect(fresh.latex.state({ id: 'ghost' }).error).toBe(refused(404));
     });
 });
 
 describe('the build the store is waiting on', () => {
     it('asks again on every sessions push while the terminal runs, and stops when it ends', async () => {
         const { state, watch } = client.latex;
-        state('alpha');
+        state({ id: 'alpha' });
         await settle();
         expect(asks).toBe(1);
 
-        watch('alpha', 'aabbcc-shell');
-        sessions(1, ['aabbcc-shell']);
-        state('alpha');
+        watch({ id: 'alpha' }, 'aabbcc-shell');
+        receiveTerminals(client, 1, ['aabbcc-shell']);
+        state({ id: 'alpha' });
         await settle();
         expect(asks).toBe(2);
 
         // A push while it is still running is the panel asking again, which is how a row that says
         // something new mid-build says it.
-        sessions(2, ['aabbcc-shell']);
-        state('alpha');
+        receiveTerminals(client, 2, ['aabbcc-shell']);
+        state({ id: 'alpha' });
         await settle();
         expect(asks).toBe(3);
 
         // The push that no longer carries it is the build having ended: one last ask, and no more.
-        sessions(3, []);
-        state('alpha');
+        receiveTerminals(client, 3, []);
+        state({ id: 'alpha' });
         await settle();
         expect(asks).toBe(4);
 
-        sessions(4, []);
-        state('alpha');
+        receiveTerminals(client, 4, []);
+        state({ id: 'alpha' });
         await settle();
         expect(asks).toBe(4);
     });
@@ -155,21 +147,21 @@ describe('the build the store is waiting on', () => {
     // version heard.
     it('asks once for two sessions messages at one version', async () => {
         const { state, watch } = client.latex;
-        state('alpha');
+        state({ id: 'alpha' });
         await settle();
-        watch('alpha', 'aabbcc-shell');
-        sessions(1, ['aabbcc-shell']);
-        state('alpha');
+        watch({ id: 'alpha' }, 'aabbcc-shell');
+        receiveTerminals(client, 1, ['aabbcc-shell']);
+        state({ id: 'alpha' });
         await settle();
         expect(asks).toBe(2);
 
-        sessions(2, ['aabbcc-shell']);
-        state('alpha');
+        receiveTerminals(client, 2, ['aabbcc-shell']);
+        state({ id: 'alpha' });
         await settle();
         expect(asks).toBe(3);
 
-        sessions(2, ['aabbcc-shell']);
-        state('alpha');
+        receiveTerminals(client, 2, ['aabbcc-shell']);
+        state({ id: 'alpha' });
         await settle();
         expect(asks).toBe(3);
     });
@@ -193,36 +185,36 @@ describe('the build the store is waiting on', () => {
             return gate.then(() => body);
         });
 
-        state('alpha');
+        state({ id: 'alpha' });
         await settle();
         expect(count).toBe(1);
 
         // The press: the ask it makes is held back, so it is still out when the list moves.
-        watch('alpha', 'aabbcc-shell');
+        watch({ id: 'alpha' }, 'aabbcc-shell');
         hold = true;
-        sessions(1, ['aabbcc-shell']);
-        state('alpha');
+        receiveTerminals(client, 1, ['aabbcc-shell']);
+        state({ id: 'alpha' });
         await settle();
         expect(count).toBe(2);
 
         // The build ends and writes its PDF while that request is still out. The read it would have
         // asked at is dropped, since a request for this project is in flight.
         built = 1757500000000;
-        sessions(2, []);
-        state('alpha');
+        receiveTerminals(client, 2, []);
+        state({ id: 'alpha' });
         await settle();
         expect(count).toBe(2);
 
         release();
         await settle();
-        state('alpha');
+        state({ id: 'alpha' });
         await settle();
 
         expect(count).toBe(3);
-        expect(state('alpha').mains[0].pdf).toBe(built);
+        expect(state({ id: 'alpha' }).mains[0].pdf).toBe(built);
         expect(client.fs.fileVersion('hub', PDF_PATH)).toBe(1);
         // The answer that settled is the current one, so nothing asks a fourth time.
-        state('alpha');
+        state({ id: 'alpha' });
         await settle();
         expect(count).toBe(3);
     });
@@ -230,17 +222,17 @@ describe('the build the store is waiting on', () => {
     it('moves the PDF address when the build wrote a new one', async () => {
         const { state, watch } = client.latex;
         const path = PDF_PATH;
-        state('alpha');
+        state({ id: 'alpha' });
         await settle();
         expect(client.fs.fileVersion('hub', path)).toBe(0);
 
-        watch('alpha', 'aabbcc-shell');
+        watch({ id: 'alpha' }, 'aabbcc-shell');
         pdf = 1757500000000;
-        sessions(1, []);
-        state('alpha');
+        receiveTerminals(client, 1, []);
+        state({ id: 'alpha' });
         await settle();
 
-        expect(state('alpha').mains[0].pdf).toBe(pdf);
+        expect(state({ id: 'alpha' }).mains[0].pdf).toBe(pdf);
         expect(client.fs.fileVersion('hub', path)).toBe(1);
     });
 
@@ -248,12 +240,12 @@ describe('the build the store is waiting on', () => {
         const { state, watch } = client.latex;
         const path = PDF_PATH;
         pdf = 1757500000000;
-        state('alpha');
+        state({ id: 'alpha' });
         await settle();
 
-        watch('alpha', 'aabbcc-shell');
-        sessions(1, []);
-        state('alpha');
+        watch({ id: 'alpha' }, 'aabbcc-shell');
+        receiveTerminals(client, 1, []);
+        state({ id: 'alpha' });
         await settle();
 
         expect(client.fs.fileVersion('hub', path)).toBe(0);
@@ -261,15 +253,19 @@ describe('the build the store is waiting on', () => {
 });
 
 describe('an answer whose fields are of the wrong type', () => {
-    const NOTHING_HELD: LatexState = { mains: [], folder: '', error: '', loading: false };
+    /** What a refused or unread request leaves: no root, no folder and no mains. */
+    const NOTHING_HELD: LatexState = { root: '', dir: '', mains: [], error: '', loading: false };
+
+    /** What an answer that holds no usable mains leaves for a project: the hub, and no mains. */
+    const NO_MAINS: LatexState = { ...NOTHING_HELD, root: 'hub' };
 
     /** The state a fresh store holds for an id once the endpoint answered `text` with `status`. */
     async function answeredWith(text: string, status = 200): Promise<LatexState> {
         vi.stubGlobal('fetch', () => Promise.resolve(new Response(text, { status })));
         const fresh = createClientState();
-        fresh.latex.state('p');
+        fresh.latex.state({ id: 'p' });
         await settle();
-        return fresh.latex.state('p');
+        return fresh.latex.state({ id: 'p' });
     }
 
     it('keeps the mains that carry a name and the issues that carry a message, each field as typed or at its fallback', async () => {
@@ -307,18 +303,34 @@ describe('an answer whose fields are of the wrong type', () => {
             ]
         };
         expect(await answeredWith(JSON.stringify(body))).toStrictEqual({
+            root: 'hub',
+            dir: '',
             mains: [
-                { main: 'm', pdfPath: '', pdf: null, log: null, errors: [], warnings: [] },
+                {
+                    main: 'm',
+                    program: 'pdflatex',
+                    pdfPath: '',
+                    pdf: null,
+                    log: null,
+                    errors: [],
+                    warnings: [],
+                    words: null,
+                    building: false
+                },
                 {
                     main: 'a',
-                    pdfPath: 'p.pdf',
+                    program: 'pdflatex',
+                    pdfPath: 'f/p.pdf',
                     pdf: 5,
                     log: 7,
-                    errors: [{ file: 'f.tex', line: 3, message: 'x' }],
-                    warnings: []
+                    errors: [{ file: 'f/f.tex', line: 3, message: 'x' }],
+                    warnings: [],
+                    words: null,
+                    building: false
                 },
                 {
                     main: 'b',
+                    program: 'pdflatex',
                     pdfPath: '',
                     pdf: null,
                     log: null,
@@ -326,10 +338,11 @@ describe('an answer whose fields are of the wrong type', () => {
                         { file: '', line: null, message: 'x' },
                         { file: '', line: 4, message: 'ok' }
                     ],
-                    warnings: []
+                    warnings: [],
+                    words: null,
+                    building: false
                 }
             ],
-            folder: 'f',
             error: '',
             loading: false
         });
@@ -339,17 +352,21 @@ describe('an answer whose fields are of the wrong type', () => {
         const text =
             '{"folder":"f","mains":[{"main":"m","pdf":1e999,"log":-1e999,"errors":[{"message":"x","line":1e999}]}]}';
         expect(await answeredWith(text)).toStrictEqual({
+            root: 'hub',
+            dir: '',
             mains: [
                 {
                     main: 'm',
+                    program: 'pdflatex',
                     pdfPath: '',
                     pdf: Infinity,
                     log: -Infinity,
                     errors: [{ file: '', line: Infinity, message: 'x' }],
-                    warnings: []
+                    warnings: [],
+                    words: null,
+                    building: false
                 }
             ],
-            folder: 'f',
             error: '',
             loading: false
         });
@@ -360,17 +377,12 @@ describe('an answer whose fields are of the wrong type', () => {
             'a folder that is a number and mains that are a map',
             '{"folder":3,"mains":{}}',
             200,
-            NOTHING_HELD
+            NO_MAINS
         ],
-        [
-            'mains that are a string',
-            '{"folder":"f","mains":"x"}',
-            200,
-            { ...NOTHING_HELD, folder: 'f' }
-        ],
-        ['a list as the body', '[]', 200, NOTHING_HELD],
-        ['an empty map as the body', '{}', 200, NOTHING_HELD],
-        ['an error that is a number on a 200', '{"error":3}', 200, NOTHING_HELD],
+        ['mains that are a string', '{"folder":"f","mains":"x"}', 200, { ...NO_MAINS, dir: 'f' }],
+        ['a list as the body', '[]', 200, NO_MAINS],
+        ['an empty map as the body', '{}', 200, NO_MAINS],
+        ['an error that is a number on a 200', '{"error":3}', 200, NO_MAINS],
         ['a list as the body of a refusal', '[]', 500, { ...NOTHING_HELD, error: refused(500) }],
         [
             'a refusal with a text of its own',
@@ -412,3 +424,5 @@ describe('an answer whose fields are of the wrong type', () => {
         }
     );
 });
+
+/** The folder every folder answer below names, against the root `docs`. */

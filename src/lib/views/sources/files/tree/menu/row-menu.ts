@@ -18,6 +18,7 @@ import {
     absoluteOf,
     languageOf,
     nameOf,
+    type FsEntry,
     type LanguageMap,
     type RowRef,
     type TreeRow
@@ -61,6 +62,7 @@ export const ROW_COPY_RELATIVE = 'copy-relative';
 export const ROW_ADD_ROOT = 'add-root';
 export const ROW_REMOVE_ROOT = 'remove-root';
 export const ROW_PREVIEW = 'preview';
+export const ROW_LATEX = 'latex';
 
 /**
  * What the menu is built from: a root's own line, a folder or a file, its path under its root,
@@ -82,9 +84,21 @@ export type RowMenuFacts = {
     /** How many of the selected rows are files; every one of them when omitted. */
     selectedFiles?: number;
     markdown: boolean;
+    /** Whether the row is a `.tex` file or a folder whose held listing has one directly in it. */
+    latex?: boolean;
     /** The key hint of an item by its id; none when omitted. */
     hints?: Readonly<Record<string, string>>;
 };
+
+/**
+ * The entries held for one folder of a root, or null when none are: what a menu reads, never asks.
+ */
+export type HeldEntries = (root: string, path: string) => FsEntry[] | null;
+
+/** Whether a name is a LaTeX source file. */
+function isTex(name: string): boolean {
+    return name.toLowerCase().endsWith('.tex');
+}
 
 /** The size of the selection a menu acts on, and how many of its rows are files. */
 export type MenuSelection = { size: number; files: number };
@@ -136,7 +150,8 @@ export function menuHints(keymap: readonly FilesChord[], words: KeyWords): Recor
 
 /**
  * The facts of one row of the tree, with the root keys a removal refuses, the selection the menu
- * acts on (the row alone when it is not given) and the hints of the items.
+ * acts on (the row alone when it is not given), the hints of the items and the entries the fs
+ * store holds, which say whether a folder has a `.tex` file in it without asking for its listing.
  */
 export function rowFacts(
     row: TreeRow,
@@ -145,7 +160,8 @@ export function rowFacts(
     explorer: Pick<ExplorerStore, 'clipboard' | 'compareFile'>,
     languages: LanguageMap,
     selection: MenuSelection = { size: 1, files: row.kind === 'file' ? 1 : 0 },
-    hints: Readonly<Record<string, string>> = {}
+    hints: Readonly<Record<string, string>> = {},
+    entriesOf: HeldEntries = () => null
 ): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
@@ -161,6 +177,12 @@ export function rowFacts(
         selection: selection.size,
         selectedFiles: selection.files,
         markdown: kind === 'file' && languageOf(row.path, languages) === 'markdown',
+        latex:
+            kind === 'file'
+                ? isTex(row.path)
+                : (entriesOf(row.root, row.path) ?? []).some(
+                      (one) => one.kind === 'file' && isTex(one.name)
+                  ),
         hints
     };
 }
@@ -168,7 +190,9 @@ export function rowFacts(
 /**
  * The row's items, in VS Code's groups. A file: Open to the Side, Reveal in Finder and Open in
  * Integrated Terminal (a shell in its folder), the compare items, Cut and Copy, Download..., the
- * two copies, Open Preview on a Markdown file, then Rename... and Delete. A folder: New File... and
+ * two copies, Open Preview on a Markdown file, then Rename... and Delete. Open LaTeX is its own
+ * group after Reveal in Finder and the terminal, on a `.tex` file and on a folder or root whose
+ * held listing has one. A folder: New File... and
  * New Folder..., Reveal in Finder and its shell, Find in Folder..., Cut, Copy and Paste, Upload...,
  * the two copies, then Rename... and Delete. A root: those of a folder without Cut, Copy, Rename...
  * and Delete, and Add Folder to Workspace... with Remove Folder from Workspace on a root the reader
@@ -188,6 +212,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         item(ROW_COPY_RELATIVE, t('files.menu_copy_relative'))
     ];
     const cutCopy = [item(ROW_CUT, t('files.menu_cut')), item(ROW_COPY, t('files.menu_copy'))];
+    const latex = facts.latex === true ? [item(ROW_LATEX, t('files.menu_latex'))] : [];
     const remove = item(ROW_DELETE, t('files.menu_delete'));
     const modify = [item(ROW_RENAME, t('files.menu_rename')), remove];
     const paste = { ...item(ROW_PASTE, t('files.menu_paste')), disabled: !facts.clipboard };
@@ -204,6 +229,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         return grouped([
             [item(ROW_OPEN_SIDE, t('files.menu_open_side'))],
             [reveal, terminal],
+            latex,
             [
                 ...(facts.compareWith !== null
                     ? [item(ROW_COMPARE_WITH, t('files.menu_compare_with'))]
@@ -227,6 +253,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         return grouped([
             created,
             [reveal, terminal],
+            latex,
             find,
             [...cutCopy, paste],
             upload,
@@ -237,6 +264,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     return grouped([
         created,
         [reveal, terminal],
+        latex,
         find,
         [paste],
         upload,
@@ -267,6 +295,7 @@ export function shellFolder(dir: string, row: Pick<TreeRow, 'kind' | 'path'>): s
 export type RowStores = {
     openBeside: ClientState['layout']['openBeside'];
     openView: ClientState['layout']['openView'];
+    rootOf: ClientState['latex']['rootOf'];
     keepPreview: ClientState['layout']['keepPreview'];
     readFileKind: ClientState['fs']['readFileKind'];
     openFile: ClientState['writes']['openFile'];
@@ -284,6 +313,7 @@ export function rowStores(client: ClientState): RowStores {
     return {
         openBeside: client.layout.openBeside,
         openView: client.layout.openView,
+        rootOf: client.latex.rootOf,
         keepPreview: client.layout.keepPreview,
         readFileKind: client.fs.readFileKind,
         openFile: client.writes.openFile,
@@ -302,10 +332,23 @@ export function rowStores(client: ClientState): RowStores {
     };
 }
 
+/**
+ * What the tree calls a root: the name of the row that draws it (the depth-0 row of the root's
+ * own folder), else the root's key.
+ */
+export function rootNameIn(rows: TreeRow[], root: string): string {
+    const own = rows.find(
+        (one) => one.root === root && one.depth === 0 && one.path === '' && one.up !== true
+    );
+    return own?.name ?? root;
+}
+
 /** What a pick needs: the stores' calls, and the view's own form, question and refusal line. */
 export type RowPickDeps = RowStores & {
     /** The folder of a root key the tree draws, or the empty string. */
     dirOf: (root: string) => string;
+    /** What the tree calls a root: its row's name, else the root's key. */
+    rootName: (root: string) => string;
     /** Say a refusal on the tree's refusal line. */
     say: (note: string) => void;
     addRoot: () => void;
@@ -344,6 +387,30 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         return rows.map((one) => rowPaths(deps.dirOf(one.root), one.path)[which]).join('\n');
     }
 
+    /** The newest Open LaTeX pick, so a pick whose root answer comes late opens nothing. */
+    let newestLatex = 0;
+
+    /**
+     * The LaTeX view on the folder a row is about: a folder's or root's own, a `.tex` file's main
+     * file's folder when the file builds through one, else the file's own folder. The tab is
+     * labelled with the folder's name, and a root with the name its row has in the tree, whichever
+     * row was picked. Only the newest pick opens a view, since the root of a file is an answer
+     * that comes after the pick.
+     */
+    async function latex(row: TreeRow): Promise<void> {
+        newestLatex += 1;
+        const mine = newestLatex;
+        const own =
+            row.kind === 'dir'
+                ? row.path
+                : row.path.slice(0, Math.max(0, row.path.lastIndexOf('/')));
+        const found = row.kind === 'dir' ? null : await deps.rootOf(row.root, row.path);
+        if (mine !== newestLatex) return;
+        const place = found ?? { root: row.root, path: own };
+        const label = place.path === '' ? deps.rootName(place.root) : nameOf(place.path);
+        deps.openView('latex', { root: place.root, path: place.path, label });
+    }
+
     return (row, pick) => {
         const dir = deps.dirOf(row.root);
         const paths = rowPaths(dir, row.path);
@@ -357,6 +424,7 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         else if (pick === ROW_COPY_RELATIVE) deps.copy(copied(row, 'relative'));
         else if (pick === ROW_ADD_ROOT) deps.addRoot();
         else if (pick === ROW_REMOVE_ROOT) deps.removeRoot(row.root);
+        else if (pick === ROW_LATEX) void latex(row);
         else if (pick === ROW_PREVIEW) {
             deps.keepPreview(deps.openView('source', sourceTabState(row.root, row.path)));
         }

@@ -1,0 +1,50 @@
+# Oculus text owned by the LaTeX view and the rows it shares with the project tab.
+text:
+    latex:
+        at: '{0}:{1}'
+        at_line: line {0}
+        build: build
+        build_tip: run latexmk on this file and show it running
+        building: building
+        clean: clean
+        clean_tip: remove what a build left beside this file
+        count: count words
+        count_refused: 'the words were not counted: {0}'
+        count_tip: count the words of this file and the files it includes
+        log: log
+        log_tip: open the log of the last build as a tab
+        no_errors: no errors
+        no_pdf: no PDF yet
+        none: This folder holds no LaTeX main file, a .tex file that declares a document class.
+        none_glyph: folder
+        open_pdf: PDF
+        open_pdf_tip: open the built PDF as a tab
+        outline: outline
+        outline_empty: The file holds no sections.
+        outline_failed: 'the outline was not read: {0}'
+        outline_partial: 'not fully read: {0}'
+        outline_unread: 'not read, over 2 MB or unreadable: {0}'
+        outline_tip: show the sections of this file and the files it includes
+        pdf_at: 'PDF {0}'
+        problem_counts: '{0} errors, {1} warnings'
+        problems: problems
+        program: built with {0}
+        read_failed: 'the folder was not read: {0}'
+        refused: 'the step was not started: {0}'
+        refused_badness_missing: badness was not found. Install it, or name it in latex.badness_path.
+        refused_count_failed: texcount could not count the file.
+        refused_count_missing: texcount is not installed. It comes with TeX Live and MacTeX.
+        refused_count_timeout: texcount did not finish in time.
+        refused_format_failed: The formatter could not format the file.
+        refused_format_none: No LaTeX formatter is chosen. Choose one under latex.formatter in Settings.
+        refused_format_timeout: The formatter did not finish in time.
+        refused_latexindent_missing: latexindent was not found. It comes with TeX Live and MacTeX, or name it in latex.latexindent_path.
+        refused_no_project: No project of the portfolio has that id.
+        refused_not_a_file: That is not a file.
+        refused_not_a_main: That is not a main file of this folder.
+        refused_tex_fmt_missing: tex-fmt was not found. Install it with brew install tex-fmt, or name it in latex.tex_fmt_path.
+        retry: Try again
+        words: '{0} words'
+    views:
+        latex: LaTeX
+        latex_glyph: journals

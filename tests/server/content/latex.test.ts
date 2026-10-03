@@ -12,9 +12,12 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
     buildState,
+    buildStateIn,
     declaresClass,
     mains,
-    parseLog
+    mainsIn,
+    parseLog,
+    programOf
 } from '../../../src/lib/server/content/latex.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
@@ -87,6 +90,49 @@ describe('mains', () => {
         write(root, 'README.md', 'x');
 
         expect(mains(root)).toEqual([]);
+    });
+});
+
+describe('mainsIn', () => {
+    it('lists main.tex first and the other mains by name, and leaves out a file with no class', () => {
+        const root = scratch();
+        write(root, 'main.tex', ARTICLE);
+        write(root, 'b.tex', ARTICLE);
+        write(root, 'a.tex', ARTICLE);
+        write(root, 'chapter.tex', '\\section{One}\n');
+
+        expect(mainsIn(root)).toEqual(['main.tex', 'a.tex', 'b.tex']);
+    });
+
+    it('answers none for a folder with no main and for a folder that is not there', () => {
+        const root = scratch();
+        write(root, 'chapter.tex', '\\section{One}\n');
+
+        expect(mainsIn(root)).toEqual([]);
+        expect(mainsIn(join(root, 'missing'))).toEqual([]);
+    });
+});
+
+describe('programOf', () => {
+    it.each([
+        ['% !TEX program = xelatex\n', 'xelatex'],
+        ['%!TeX program=LuaLaTeX\n', 'lualatex'],
+        ['% !TEX program = context\n', 'pdflatex'],
+        ['no comment\n', 'pdflatex'],
+        ['\\documentclass{article}\n% !TEX program = xelatex\n', 'pdflatex']
+    ])('reads %j as %s', (head, program) => {
+        const root = scratch();
+        const file = write(root, 'm.tex', `${head}${ARTICLE}`);
+
+        expect(programOf(file)).toBe(program);
+    });
+
+    it('is carried by the state of a main file', () => {
+        const root = scratch();
+        write(root, 'm.tex', `% !TEX program = lualatex\n${ARTICLE}`);
+
+        const prefixes = { pdf: '', files: '' };
+        expect(buildStateIn(root, 'm.tex', prefixes).program).toBe('lualatex');
     });
 });
 
@@ -208,6 +254,7 @@ describe('buildState', () => {
 
         expect(buildState(root, 'supplement.tex')).toEqual({
             main: 'supplement.tex',
+            program: 'pdflatex',
             pdfPath: 'manuscript/supplement.pdf',
             pdf: null,
             log: null,

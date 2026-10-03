@@ -42,6 +42,9 @@
 // stop the next language's load. `close` is the page's teardown: it disposes the highlighter in
 // force, and a load in flight at that moment bridges and loads nothing more.
 //
+// Format Document is answered by one provider per language (`createFormatting`), which hands the
+// model it is asked about to the formatter the model's owner gave.
+//
 // Monaco's TypeScript service checks a file against the files of its project, which an editor
 // holding one file has none of, so its semantic check is off and its syntax check stays on.
 
@@ -61,6 +64,57 @@ import type { BundledLanguage, BundledTheme, LanguageRegistration, ThemeRegistra
  */
 export type Paint = (read: (token: string) => string, code?: string) => Promise<string>;
 
+/** The edits one model's owner answers a Format Document with. */
+export type Format = (model: Monaco.editor.ITextModel) => Promise<Monaco.languages.TextEdit[]>;
+
+/**
+ * The page's document formatting: which models Format Document answers for, and by whom. Monaco
+ * keeps a language's providers in one list and runs the first that answers for the document, and a
+ * provider is told the model it is asked about, so a provider registered for each model of a
+ * language would leave the others to answer `[]` for every model but their own. One provider is
+ * registered when the first model of a language wants formatting and taken away when the last one
+ * stops, and it hands the model it is asked about to the formatter that model's owner gave.
+ */
+export type Formatting = {
+    /**
+     * Make one model formattable by `format`; the call it answers takes that away, and the
+     * language's provider with it once no model of the language is left.
+     */
+    add: (model: Monaco.editor.ITextModel, format: Format) => () => void;
+};
+
+/** One language's provider and the formatter of each model it answers for. */
+type Language = { provider: Monaco.IDisposable; formats: Map<Monaco.editor.ITextModel, Format> };
+
+/** The formatting of one Monaco. */
+export function createFormatting(monaco: typeof Monaco): Formatting {
+    const languages = new Map<string, Language>();
+    return {
+        add(model, format) {
+            const id = model.getLanguageId();
+            let held = languages.get(id);
+            if (held === undefined) {
+                const formats = new Map<Monaco.editor.ITextModel, Format>();
+                const provider = monaco.languages.registerDocumentFormattingEditProvider(id, {
+                    provideDocumentFormattingEdits: (asked) =>
+                        formats.get(asked)?.(asked) ?? Promise.resolve([])
+                });
+                held = { provider, formats };
+                languages.set(id, held);
+            }
+            held.formats.set(model, format);
+            return () => {
+                const now = languages.get(id);
+                if (now?.formats.get(model) !== format) return;
+                now.formats.delete(model);
+                if (now.formats.size > 0) return;
+                now.provider.dispose();
+                languages.delete(id);
+            };
+        }
+    };
+}
+
 /** What an editor needs of the loaded page: Monaco, and the calls that set theme and grammars. */
 export type EditorKit = {
     monaco: typeof Monaco;
@@ -77,6 +131,8 @@ export type EditorKit = {
      * grammar failed to load. Never rejects.
      */
     ensureLanguage: (name: string) => Promise<void>;
+    /** Which models of the page Format Document answers for, through one provider a language. */
+    formatting: Formatting;
 };
 
 /** The one load of the page, started by the first editor that mounts. */
@@ -160,7 +216,7 @@ async function start(): Promise<EditorKit> {
     self.addEventListener('pagehide', (event) => {
         if (!event.persisted) close();
     });
-    return { monaco, mac, paint, ensureLanguage };
+    return { monaco, mac, paint, ensureLanguage, formatting: createFormatting(monaco) };
 }
 
 /** The page's one theme name, in Shiki and in Monaco. */

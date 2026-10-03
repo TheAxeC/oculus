@@ -1,29 +1,29 @@
-// Layer 2, server. The LaTeX state of one project: which files under its `manuscript/` folder are
-// main files, what the last build left beside each, and the errors and warnings of that build's
-// log.
+// Layer 2, server. What the files of one folder say about LaTeX: which of its `.tex` files are main
+// files, which program a main file asks for, what the last build of each left beside it, and the
+// errors and warnings of that build's log.
 //
-// routes/api/(sessions)/latex/+server.ts is the endpoint and holds nothing but its GET, since a
-// route module may export only its verbs, the pattern lib/server/files/project-files.ts already
-// holds. What a build runs is not here: the two steps are terminals, started through
+// content/latex/endpoint.ts answers the requests over this module and routes/api/(sessions)/latex/
+// +server.ts is the two lines that join them, since a route module may export only its verbs. What
+// a build runs is not here: the two steps are terminals, started through
 // lib/server/machine/pty/routes.ts, and this module reads the files those terminals leave behind.
 //
-// A main file is content, not configuration: every `.tex` directly under `manuscript/` whose text
-// carries `\documentclass` outside a comment. No manifest key names one, so a manuscript that gains
-// a supplement or a highlights file is found the moment it is written, and nothing has to be kept
-// in step with the folder.
+// A main file is content, not configuration: every `.tex` directly in a folder whose text carries
+// `\documentclass` outside a comment. No manifest key names one, so a folder that gains a
+// supplement or a highlights file is found the moment it is written, and nothing has to be kept in
+// step with the folder. A project's mains sit in its `manuscript/` folder; any other folder of a
+// served root is read the same way.
 //
-// The folder read is the reader's, never the request's: the id names a project the server already
-// holds in its portfolio snapshot, and the folder that project declares is joined to the hub and
-// checked against it again before anything is opened.
+// The program a main asks for is a magic comment of its head (`% !TEX program = xelatex`), read by
+// data/prose/latex.ts, the one reader of LaTeX text the page shares, bound to the parser by
+// latex/reader.ts.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
-import { json } from '@sveltejs/kit';
 import { closeSync, openSync, readFileSync, readdirSync, readSync, statSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
-import { projectDirectory } from '../files/files.ts';
-import type { Project } from '../../data/model/index.ts';
+import { join, posix, relative, sep } from 'node:path';
+import { PROGRAMS, uncommented, type Program } from '../../data/prose/latex.ts';
 import { inside } from '../core/paths.ts';
+import { magicComments } from './latex/reader.ts';
 
 /** The folder a project's main files sit directly under. */
 export const MANUSCRIPT = 'manuscript';
@@ -40,7 +40,8 @@ const JOIN_MAX = 8;
 /** One error or warning of a build: where it is, and what it says, in one line. */
 export type LatexIssue = {
     /**
-     * The file the log named, relative to `manuscript/`, or the empty string when it named none.
+     * The file the log named, relative to the base the answer is read against, or the empty string
+     * when it named none.
      */
     file: string;
     /** The line the log named, and null when it named none. */
@@ -55,31 +56,15 @@ export type LatexLog = { errors: LatexIssue[]; warnings: LatexIssue[] };
 export type MainState = LatexLog & {
     /** The file's own name, such as `main.tex`. */
     main: string;
-    /** The PDF it builds to, relative to the project folder, whether or not it is there. */
+    /** The program its magic comment names, and `pdflatex` for any other value or none. */
+    program: Program;
+    /** The PDF it builds to, relative to the answer's base, whether or not it is there. */
     pdfPath: string;
     /** When the PDF was last written, in milliseconds, and null when there is no PDF. */
     pdf: number | null;
     /** When the log was last written, in milliseconds, and null when there is no log. */
     log: number | null;
 };
-
-/** What the endpoint answers with: the project's folder, and one state per main file. */
-export type LatexAnswer = {
-    /** The project's folder relative to the hub, which a PDF's own path is built on. */
-    folder: string;
-    mains: MainState[];
-};
-
-/**
- * What a LaTeX read needs: the hub the folder sits in, and the portfolio the id is checked against.
- */
-export type LatexTarget = {
-    hub: string;
-    project: (id: string) => Pick<Project, 'folder'> | null;
-};
-
-/** A build's files are read again whenever the panel asks, so nothing here is ever cached. */
-const NO_STORE = { 'cache-control': 'no-store' };
 
 /** When a file was last written, and null when it is not there or cannot be read. */
 function mtimeOf(path: string): number | null {
@@ -91,33 +76,16 @@ function mtimeOf(path: string): number | null {
     }
 }
 
-/**
- * One line with its comment cut off: everything from the first `%` that is not itself escaped. A
- * backslash takes the character after it, which is what makes `\%` a per-cent sign and not a
- * comment, and `\\%` a comment again.
- */
-function code(line: string): string {
-    for (let at = 0; at < line.length; at += 1) {
-        const char = line[at];
-        if (char === '\\') {
-            at += 1;
-            continue;
-        }
-        if (char === '%') return line.slice(0, at);
-    }
-    return line;
-}
-
 /** Whether the text declares a document class somewhere outside a comment. */
 export function declaresClass(text: string): boolean {
     for (const line of text.split('\n')) {
-        if (code(line).includes('\\documentclass')) return true;
+        if (uncommented(line).includes('\\documentclass')) return true;
     }
     return false;
 }
 
 /** A file as text, and the empty string when it cannot be read. */
-function readText(path: string): string {
+export function readText(path: string): string {
     try {
         return readFileSync(path, 'utf8');
     } catch {
@@ -126,7 +94,7 @@ function readText(path: string): string {
 }
 
 /** Whether the path is a file, following a link, so a main file kept as a symlink counts as one. */
-function isFile(path: string): boolean {
+export function isFile(path: string): boolean {
     try {
         return statSync(path).isFile();
     } catch {
@@ -139,7 +107,7 @@ function isFile(path: string): boolean {
  * whole book is not read to decide what it declares. The rule the text is read for is "a
  * `\documentclass` outside a comment" and nothing more, so one inside `\iffalse ... \fi` counts.
  */
-function head(path: string): string {
+export function head(path: string): string {
     let handle: number | null = null;
     try {
         handle = openSync(path, 'r');
@@ -154,12 +122,10 @@ function head(path: string): string {
 }
 
 /**
- * The main files of one project folder: every `.tex` directly under `manuscript/` that declares a
- * document class, `main.tex` first and the rest by name. A folder with no `manuscript/` has none,
- * which is a project the panel is not drawn for rather than an error.
+ * The main files directly in one folder: every `.tex` that declares a document class, `main.tex`
+ * first and the rest by name. A folder that is missing or unreadable has none.
  */
-export function mains(folder: string): string[] {
-    const dir = join(folder, MANUSCRIPT);
+export function mainsIn(dir: string): string[] {
     let entries;
     try {
         entries = readdirSync(dir, { withFileTypes: true });
@@ -183,6 +149,32 @@ export function mains(folder: string): string[] {
     return found;
 }
 
+/**
+ * Whether a name is a main file of the folder. A name starting with a dash is refused even when a
+ * file of that name is a main, since a program given it would read it as an option.
+ */
+export function isMainOf(dir: string, name: string): boolean {
+    return !name.startsWith('-') && mainsIn(dir).includes(name);
+}
+
+/**
+ * The main files of one project folder, which are those of its `manuscript/` folder. A folder with
+ * no `manuscript/` has none, which is a project the panel is not drawn for rather than an error.
+ */
+export function mains(folder: string): string[] {
+    return mainsIn(join(folder, MANUSCRIPT));
+}
+
+/**
+ * The program a main file asks for in its magic comment `% !TEX program = <name>`, in any case.
+ * Anything else, a program latexmk has no switch for among them, or no comment at all, is
+ * `pdflatex`.
+ */
+export function programOf(path: string): Program {
+    const named = magicComments(head(path)).get('program')?.toLowerCase();
+    return PROGRAMS.find((one) => one === named) ?? PROGRAMS[0];
+}
+
 /** An error row of a `-file-line-error` log: the file, the line, and the rest of the row. */
 const FILE_LINE = /^(.+?):(\d+): (.+)$/;
 
@@ -204,16 +196,22 @@ function oneLine(text: string): string {
 }
 
 /**
- * The file the log named, relative to `manuscript/`. A log built by the terminal this panel starts
- * runs in that folder and names `./main.tex`; a log built elsewhere names an absolute path, which
- * is made relative when it is inside the folder and left as it came when it is not.
+ * The file the log named, against the prefix of the answer. A log built by a terminal this view
+ * starts runs in the folder of the main file and names `./main.tex`; a log built elsewhere names an
+ * absolute path, which is made relative to the folder when it is inside it and left as it came when
+ * it is not.
  */
-function relFile(named: string, dir: string): string {
+function relFile(named: string, dir: string, prefix: string): string {
     const trimmed = named.trim();
     const cut = trimmed.startsWith('./') ? trimmed.slice(2) : trimmed;
-    if (dir === '' || !cut.startsWith('/')) return cut;
-    if (!inside(cut, dir)) return cut;
-    return relative(dir, cut).split(sep).join('/');
+    if (!cut.startsWith('/')) return placedUnder(prefix, cut);
+    if (dir === '' || !inside(cut, dir)) return cut;
+    return placedUnder(prefix, relative(dir, cut).split(sep).join('/'));
+}
+
+/** A name under a prefix with its `.` and `..` segments resolved, as a slash-separated path. */
+function placedUnder(prefix: string, name: string): string {
+    return prefix === '' ? name : posix.normalize(`${prefix}/${name}`);
 }
 
 /**
@@ -252,9 +250,10 @@ function stoppedAt(lines: string[], from: number): number | null {
  * and a warning carries the line it says it is on. Nothing is inferred from the file the log
  * happened to have open, since a wrong file and line read worse than none.
  *
- * `dir` is the folder the build ran in, for the one case a log names an absolute path.
+ * `dir` is the folder the build ran in, for the one case a log names an absolute path, and `prefix`
+ * is put in front of every file name a row names.
  */
-export function parseLog(text: string, dir = ''): LatexLog {
+export function parseLog(text: string, dir = '', prefix = ''): LatexLog {
     const lines = text.replace(/\r\n?/g, '\n').split('\n');
     const errors: LatexIssue[] = [];
     const warnings: LatexIssue[] = [];
@@ -263,7 +262,7 @@ export function parseLog(text: string, dir = ''): LatexLog {
         const placed = FILE_LINE.exec(line);
         if (placed !== null) {
             errors.push({
-                file: relFile(placed[1], dir),
+                file: relFile(placed[1], dir, prefix),
                 line: Number(placed[2]),
                 message: oneLine(placed[3])
             });
@@ -295,53 +294,33 @@ export function parseLog(text: string, dir = ''): LatexLog {
     return { errors, warnings };
 }
 
-/** What the last build of one main file left: its PDF, its log, and what that log held. */
-export function buildState(folder: string, main: string): MainState {
-    const dir = join(folder, MANUSCRIPT);
+/** What a path in an answer is joined onto: one prefix for the PDF and one for the log's files. */
+export type Prefixes = { pdf: string; files: string };
+
+/**
+ * What the last build of one main file in `dir` left: its PDF, its log, and what that log held.
+ * Each path of the answer is the prefix of its kind joined to the name, so the same read answers
+ * for a project, whose paths are against its folder, and for a folder of a root, whose paths are
+ * against the root.
+ */
+export function buildStateIn(dir: string, main: string, prefixes: Prefixes): MainState {
     const base = main.endsWith('.tex') ? main.slice(0, -'.tex'.length) : main;
     const log = mtimeOf(join(dir, `${base}.log`));
     const parsed =
         log === null
             ? { errors: [], warnings: [] }
-            : parseLog(readText(join(dir, `${base}.log`)), dir);
+            : parseLog(readText(join(dir, `${base}.log`)), dir, prefixes.files);
     return {
         main,
-        pdfPath: `${MANUSCRIPT}/${base}.pdf`,
+        program: programOf(join(dir, main)),
+        pdfPath: placedUnder(prefixes.pdf, `${base}.pdf`),
         pdf: mtimeOf(join(dir, `${base}.pdf`)),
         log,
         ...parsed
     };
 }
 
-/**
- * The LaTeX state of the project the request names. Every refusal says what was wrong: a request
- * with no id is a 400, an id the snapshot does not hold is a 404, and so is a folder that would
- * leave the hub. A project with no main file answers with none, which is the panel not being drawn.
- */
-export function latexState(into: LatexTarget, id: string): Response {
-    if (id === '') return json({ error: 'no project id' }, { status: 400, headers: NO_STORE });
-    const project = into.project(id);
-    if (project === null)
-        return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
-    // One rule for resolving a project's folder beneath the hub, the one the terminal actions run
-    // through: a folder that would leave the hub throws there and is a 404 here.
-    let folder: string;
-    try {
-        folder = projectDirectory(into.hub, project.folder);
-    } catch {
-        return json(
-            { error: 'the folder is not inside the hub' },
-            { status: 404, headers: NO_STORE }
-        );
-    }
-    const answer: LatexAnswer = {
-        folder: project.folder,
-        mains: mains(folder).map((main) => buildState(folder, main))
-    };
-    return json(answer, { headers: NO_STORE });
-}
-
-/** The whole endpoint: the build state of the project the request names. */
-export function handleLatex(request: Request, into: LatexTarget): Response {
-    return latexState(into, new URL(request.url).searchParams.get('id') ?? '');
+/** The last build of one main file of a project: paths against the project's folder. */
+export function buildState(folder: string, main: string): MainState {
+    return buildStateIn(join(folder, MANUSCRIPT), main, { pdf: MANUSCRIPT, files: '' });
 }

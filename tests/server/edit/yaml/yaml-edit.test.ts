@@ -24,6 +24,7 @@ import {
 } from '../../../../src/lib/server/edit/yaml-edit.ts';
 import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
+import { isSideTier } from '../../../../src/lib/data/sources/manifests.ts';
 import { realHub } from '../../../fixtures/real-hub.ts';
 
 const DOC = [
@@ -493,7 +494,11 @@ function manifestFiles(dir: string): string[] {
 
 describe.skipIf(!present)('every manifest of the real hub, read only', () => {
     const config = portfolioConfigFrom(loadConfig(engine).config, engine);
-    const files = config.scan.flatMap((rule) => manifestFiles(join(hub, rule.dir))).sort();
+    // A side project's manifest is never written (config/sources.yml), and its `status` is a word.
+    const files = config.scan
+        .filter((rule) => !isSideTier(rule))
+        .flatMap((rule) => manifestFiles(join(hub, rule.dir)))
+        .sort();
 
     it('finds the manifests at all', () => {
         console.log(`yaml-edit: ${files.length} manifests read from ${hub}`);

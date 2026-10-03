@@ -21,6 +21,7 @@ import {
     mailSettings,
     openSettings,
     processesSettings,
+    latexFormatting,
     slurmSettings,
     textCatalog,
     themeFindings,
@@ -274,11 +275,13 @@ export function createServerContext(
     const mailConfig = mailSettings(config);
     const tiers = usageTiers(config);
     // Read for their check alone: each value is in the merged configuration the page is sent, and
-    // the open endpoint reads `open.program_ext` again at every request, so a missing or mistyped
-    // key stops the server here with the key named rather than reaching a tab.
+    // the open and LaTeX endpoints read `open.program_ext` and the `latex:` formatter keys again at
+    // every request, so a missing or mistyped key stops the server here with the key named rather
+    // than reaching a tab.
     requirePaintLimit(config);
     requireAutofetch(config);
     openSettings(config);
+    latexFormatting(config);
     const processesConfig = processesSettings(config, findings);
     const hub = make.createHub();
     registerFilesChannel(hub);

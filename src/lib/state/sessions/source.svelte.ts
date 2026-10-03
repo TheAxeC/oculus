@@ -227,7 +227,16 @@ export type SourceStore = {
     saveSource: (root: string, path: string, content: string) => Promise<WriteAnswer>;
 };
 
-export function createSource(writes: WritesStore, ui: InstanceStates): SourceStore {
+/**
+ * The source tab's drafts and saves. `saved` is told of each file a save wrote, by its root and
+ * path, so what follows a save (a LaTeX build) is decided where that belongs and runs for a save
+ * from any tab or list.
+ */
+export function createSource(
+    writes: WritesStore,
+    ui: InstanceStates,
+    saved: (root: string, path: string) => void = () => undefined
+): SourceStore {
     const reading = new Map<string, { file: string; request: Promise<void> }>();
 
     /** Working and saved copies belong to the instance, not its currently mounted component. */
@@ -417,7 +426,9 @@ export function createSource(writes: WritesStore, ui: InstanceStates): SourceSto
 
     /** Save one file's complete current text through POST /api/source. */
     async function saveSource(root: string, path: string, content: string): Promise<WriteAnswer> {
-        return writes.send({ root, path, content }, '/api/source');
+        const answer = await writes.send({ root, path, content }, '/api/source');
+        if (answer.ok) saved(root, path);
+        return answer;
     }
 
     return {

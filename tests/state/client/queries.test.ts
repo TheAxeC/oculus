@@ -242,7 +242,7 @@ describe('an empty id, name, path or root', () => {
         expect(client.docs.document('alpha', '').loading).toBe(false);
         expect(client.docs.hubDocument('').loading).toBe(false);
         expect(client.files.files('').loading).toBe(false);
-        expect(client.latex.state('').loading).toBe(false);
+        expect(client.latex.state({ id: '' }).loading).toBe(false);
         expect(client.deposit.mirror('').loading).toBe(false);
         expect(client.transcripts.turnsFor('').pending).toBe(false);
         expect(client.fs.listing('', '').loading).toBe(false);

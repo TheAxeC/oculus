@@ -412,6 +412,26 @@ describe('ServerContext', () => {
         }
     });
 
+    // Revert: leave the `latexFormatting` read out of createServerContext (server/root/context.ts).
+    it('stops before building anything when latex.formatter is not a formatter, naming the key', () => {
+        const createHub = vi.fn(() => new Hub());
+        const config = inertConfig();
+        const latex = { ...(config.latex as object), formatter: 'prettier' };
+        const build = (): unknown =>
+            createServerContext('/engine', {
+                ...inertDependencies(),
+                loadConfig: () => ({ config: { ...config, latex }, findings: [] }),
+                createHub
+            });
+
+        expect(build).toThrow(
+            new Error(
+                'config/behavior.yml: latex.formatter must be one of none, latexindent, tex-fmt, badness'
+            )
+        );
+        expect(createHub).not.toHaveBeenCalled();
+    });
+
     it('starts the auto fetch after the git watcher, hands it the hub and the git refresh, and closes it first', () => {
         const order: string[] = [];
         const refresh = vi.fn();

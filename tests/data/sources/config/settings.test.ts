@@ -1,13 +1,14 @@
 // The typed readers of single settings out of the merged map (slurm, calendar, search, open, mail,
-// the change log's length, the usage tiers and the Processes view's program names) over keys of
-// every wrong shape. Each case names the value the reader answers or the sentence it throws, and
-// the order in which two wrong keys are refused.
+// the change log's length, the usage tiers, the Processes view's program names and the LaTeX
+// formatter) over keys of every wrong shape. Each case names the value the reader answers or the
+// sentence it throws, and the order in which two wrong keys are refused.
 
 import { describe, expect, it } from 'vitest';
 import {
     calendarSettings,
     changesKeep,
     engineDir,
+    latexFormatting,
     loadConfig,
     mailSettings,
     openSettings,
@@ -249,6 +250,50 @@ describe('openSettings', () => {
         expect(read({ program_ext: { '.PDF': 'com.apple.Preview' } })).toStrictEqual({
             value: { programApps: { '.pdf': 'com.apple.Preview' } }
         });
+    });
+});
+
+describe('latexFormatting', () => {
+    const PATHS = { latexindent_path: '', tex_fmt_path: '', badness_path: '' };
+    const read = (latex: unknown) => outcome(() => latexFormatting({ latex }));
+
+    it('reads the shipped keys from config/behavior.yml: no formatter, every program on PATH', () => {
+        const { config } = loadConfig(engineDir());
+        expect(latexFormatting(config)).toStrictEqual({
+            formatter: 'none',
+            paths: { latexindent: '', 'tex-fmt': '', badness: '' }
+        });
+    });
+
+    it.each(['none', 'latexindent', 'tex-fmt', 'badness'])(
+        'reads the formatter %s',
+        (formatter) => {
+            expect(read({ formatter, ...PATHS, tex_fmt_path: '/opt/tex-fmt' })).toStrictEqual({
+                value: {
+                    formatter,
+                    paths: { latexindent: '', 'tex-fmt': '/opt/tex-fmt', badness: '' }
+                }
+            });
+        }
+    );
+
+    it.each([['prettier'], [''], [null], [undefined]])('refuses a formatter of %j', (formatter) => {
+        expect(read({ formatter, ...PATHS })).toStrictEqual(
+            threw('latex.formatter must be one of none, latexindent, tex-fmt, badness')
+        );
+    });
+
+    it.each(['latexindent_path', 'tex_fmt_path', 'badness_path'])(
+        'refuses a %s that is not text',
+        (key) => {
+            expect(read({ formatter: 'none', ...PATHS, [key]: 3 })).toStrictEqual(
+                threw(`latex.${key} must be text, empty for the program on PATH`)
+            );
+        }
+    );
+
+    it('refuses a latex key that is not a map', () => {
+        expect(read('tex-fmt')).toStrictEqual(threw('latex must be a map'));
     });
 });
 

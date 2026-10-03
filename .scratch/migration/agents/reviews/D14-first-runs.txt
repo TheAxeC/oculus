@@ -1,0 +1,1624 @@
+# D14, the first run of each test of the final tests
+
+The builder's per-test results of its final tests, run on two trees: the unchanged tree at the base eaf8034f (first section) and the tree before repair round 1 (second section). Written by the builder's summ.py from vitest's JSON report; vitest's ellipsis is written as three dots.
+
+## On the unchanged tree (base eaf8034f)
+
+tests/checks/config/config-folder.test.ts | 3 fail / 23 pass
+    passed | oculus's own config directory merges without a finding, so no key is defined in two files
+    passed | oculus's own config directory reads the venue and dataset theme words into the vocabulary validate checks
+    passed | oculus's own config directory leaves the theme lists absent when the config holds none, or none with a key
+    passed | oculus's own config directory names the six research tiers and the side-projects folder, the software tier and the side one optional
+    passed | oculus's own config directory holds the cross-link exclusions and independent collection lane tones
+    failed | oculus's own config directory holds exactly the expected top-level keys, and no more | AssertionError: expected [ 'agents', 'arch_color', ...(101) ] to deeply equal [ 'agents', 'arch_color', ...(102) ]
+    failed | oculus's own config directory reads one catalog file per owner and no legacy catalog file | AssertionError: expected [ 'app.yml', 'findings.yml', ...(52) ] to deeply equal [ 'app.yml', 'findings.yml', ...(53) ]
+    passed | oculus's own config directory names roots that are on this machine
+    passed | oculus's own config directory names a group of its own and a path under the hub for every document
+    passed | oculus's own config directory writes one description for every config file and none for a file that is not there
+    passed | oculus's own config directory keys every catalogue group by the rail page it holds, in rail order, Help after System
+    passed | oculus's own config directory keeps view lists out of every navigation group
+    passed | oculus's own config directory names the wallpaper directory owned by oculus
+    passed | oculus's own config directory uses glyph names for every configured icon
+    passed | oculus's own config directory names one icon for every glyph and for nothing but a glyph
+    passed | oculus's own config directory names a glyph only where the source or another config file reads it
+    passed | oculus's own config directory gives every glyph name a stand-in of printable ASCII, and holds no other map
+    passed | oculus's own config directory holds every stand-in to three characters, the box a terminal theme draws it in
+    passed | oculus's own config directory reports a glyph whose stand-in is empty, not text, wider than three, or not ASCII
+    passed | oculus's own config directory ships a drawing for every one of them
+    passed | oculus's own config directory resolves a drawing through the package rather than through a path into node_modules
+    passed | oculus's own config directory reports a glyph with no icon, a row that is no glyph, and an icon the package has not
+    passed | oculus's own config directory reads glyph and icon names as own keys, so a name like constructor is no name
+    passed | oculus's own config directory gives every group a chord and a glyph, and no letter a key the workbench binds
+    passed | oculus's own config directory names a configured group and a nonnegative order in every listed registration
+    failed | oculus's own config directory reads each file on its own and finds its own keys there and nowhere else | AssertionError: expected [ 'audit_ignore', 'calendar', ...(29) ] to deeply equal [ 'audit_ignore', 'calendar', ...(30) ]
+tests/checks/tree/boundaries.test.ts | 1 fail / 10 pass
+    failed | layer boundaries holds across src/lib | Error: STACK_TRACE_ERROR
+    passed | layer boundaries holds no process-wide state under src
+    passed | layer boundaries keeps every shell file to the stores its row names
+    passed | layer boundaries catches a shell file reading a store the shell may not read
+    passed | layer boundaries catches process-wide state outside app.d.ts
+    passed | layer boundaries catches a violation of every row it can be shown one of
+    passed | layer boundaries admits the index module of a folder a row names exactly, and no other module in it
+    passed | layer boundaries lets no view or shell component style a primitive own class
+    passed | layer boundaries catches a view reaching into a primitive, and passes the theme class and its own
+    passed | layer boundaries holds every styling entry to a reason
+    passed | layer boundaries holds the styling lists to rules the tree still has
+tests/data/prose/latex.test.ts | FILE | Cannot find module '../../../src/lib/data/prose/latex.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d14/base/tests/da
+tests/routes/sessions/latex.test.ts | FILE | Cannot find module '../../../src/lib/server/content/latex/endpoint.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d14/
+tests/routes/sessions/terminal-actions.test.ts | 17 fail / 21 pass
+    passed | POST /api/terminal, the task action starts every accepted task as an interactive session, with no skip and no print-mode flags
+    passed | POST /api/terminal, the task action adds the skip flag and nothing else when tasks.skip_permissions is on
+    passed | POST /api/terminal, the task action reads a tasks.skip_permissions of any other shape, and a missing one, as off
+    passed | POST /api/terminal, the task action follows a setting the reader changed while the server runs, with no restart
+    passed | POST /api/terminal, the task action is wired to that reader by the route module, not to the context snapshot
+    passed | POST /api/terminal, the task action carries tasks.skip_permissions on the wire, off in the checked-in configuration
+    passed | POST /api/terminal, the task action refuses another task kind without starting a terminal
+    passed | POST /api/terminal, the task action uses Claude from PATH when local configuration names no binary
+    passed | POST /api/terminal, the latex action builds one main file with latexmk in the manuscript folder
+    passed | POST /api/terminal, the latex action cleans one main file with the clean command
+    passed | POST /api/terminal, the latex action refuses a file that is not a main file of the project, before anything runs
+    failed | POST /api/terminal, the latex action refuses -v.tex, a main named with a dash and an absolute path, before anything runs | AssertionError: expected 200 to be 400 // Object.is equality
+    passed | POST /api/terminal, the latex action refuses /etc/passwd, a main named with a dash and an absolute path, before anything runs
+    failed | POST /api/terminal, the latex action words its refusals from the catalog the configuration holds | AssertionError: expected 'main is not a main file of this proje...' to be '<main_not_of_scope> main is not a mai...' // Object.is equality
+    passed | POST /api/terminal, the latex action refuses a project folder that would leave the hub, before anything runs
+    passed | POST /api/terminal, the latex action refuses an id the snapshot does not hold, and a step that is neither
+    failed | latexCommand builds a main file with pdflatex through its switch | TypeError: (0 , __vite_ssr_import_5__.latexCommand) is not a function
+    failed | latexCommand builds a main file with xelatex through its switch | TypeError: (0 , __vite_ssr_import_5__.latexCommand) is not a function
+    failed | latexCommand builds a main file with lualatex through its switch | TypeError: (0 , __vite_ssr_import_5__.latexCommand) is not a function
+    failed | latexCommand cleans a main file whatever its program | TypeError: (0 , __vite_ssr_import_5__.latexCommand) is not a function
+    failed | latexCommand quotes a main file name as one word, so a shell passes it to latexmk whole | TypeError: (0 , __vite_ssr_import_5__.latexCommand) is not a function
+    failed | POST /api/terminal, the latex action over a folder of a root starts the terminal in that folder with the program the main file names | AssertionError: expected 400 to be 200 // Object.is equality
+    failed | POST /api/terminal, the latex action over a folder of a root refuses a file that is not a main of the folder, before anything runs | AssertionError: expected 'id is not a project id' to be 'main is not a main file of this folder' // Object.is equality
+    failed | POST /api/terminal, the latex action over a folder of a root refuses -v.tex, a main named with a dash and an absolute path, before anything runs | AssertionError: expected 'id is not a project id' to be 'main is not a main file of this folder' // Object.is equality
+    failed | POST /api/terminal, the latex action over a folder of a root refuses /etc/passwd, a main named with a dash and an absolute path, before anything runs | AssertionError: expected 'id is not a project id' to be 'main is not a main file of this folder' // Object.is equality
+    failed | POST /api/terminal, the latex action over a folder of a root words its refusals from the catalog the configuration holds | AssertionError: expected 'id is not a project id' to be '<folder_not_served> root and path do ...' // Object.is equality
+    failed | POST /api/terminal, the latex action over a folder of a root refuses a path outside the root, before anything runs | AssertionError: expected 'id is not a project id' to be 'root and path do not name a folder of...' // Object.is equality
+    failed | POST /api/terminal, the latex action over a folder of a root refuses a folder that is missing, before anything runs | AssertionError: expected 'id is not a project id' to be 'root and path do not name a folder of...' // Object.is equality
+    failed | POST /api/terminal, the latex action over a folder of a root refuses a root that is not served, before anything runs | AssertionError: expected 'id is not a project id' to be 'root and path do not name a folder of...' // Object.is equality
+    failed | POST /api/terminal, the latex action over a folder of a root refuses every root when the server serves none | AssertionError: expected 'id is not a project id' to be 'root and path do not name a folder of...' // Object.is equality
+    failed | POST /api/terminal, the latex action over a folder of a root refuses a request that names both a project and a root, and one that names neither | AssertionError: expected 'main is not a main file of this proje...' to be 'id and root are exclusive' // Object.is equality
+    passed | POST /api/terminal, the chat action starts a focused interactive Claude terminal and writes its private index first
+    passed | POST /api/terminal, the chat action fills a title holding a placeholder and a replacement pattern into the command as written
+    passed | POST /api/terminal, the chat action starts a numbered portfolio chat in the hub with no model argument when none is set
+    passed | POST /api/terminal, the chat action numbers a portfolio chat past an existing Chat 1
+    passed | POST /api/terminal, the chat action leaves no index when zero columns are refused
+    passed | POST /api/terminal, the chat action removes the index when the terminal runner fails to start
+    passed | POST /api/terminal, the chat action refuses an unknown project before writing an index or starting a terminal
+tests/server/content/latex-outline.test.ts | FILE | Cannot find module '../../../src/lib/server/content/latex/outline.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d14/b
+tests/server/content/latex-root.test.ts | FILE | Cannot find module '../../../src/lib/server/content/latex/root.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d14/base
+tests/server/content/latex-tools.test.ts | FILE | Cannot find module '../../../src/lib/server/content/latex/tools.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d14/bas
+tests/server/content/latex.test.ts | 9 fail / 16 pass
+    passed | mains lists every .tex under manuscript that declares a class, main.tex first
+    passed | mains leaves out a file whose documentclass is commented out
+    passed | mains leaves out an included file that declares no class, and anything not .tex
+    passed | mains does not descend: a .tex in a folder under manuscript is not a main file
+    passed | mains counts a main file kept as a symlink, which a directory entry calls a link
+    passed | mains answers none for a project with no manuscript folder
+    failed | mainsIn lists main.tex first and the other mains by name, and leaves out a file with no class | TypeError: (0 , __vite_ssr_import_3__.mainsIn) is not a function
+    failed | mainsIn answers none for a folder with no main and for a folder that is not there | TypeError: (0 , __vite_ssr_import_3__.mainsIn) is not a function
+    failed | programOf reads "% !TEX program = xelatex\n" as xelatex | TypeError: (0 , __vite_ssr_import_3__.programOf) is not a function
+    failed | programOf reads "%!TeX program=LuaLaTeX\n" as lualatex | TypeError: (0 , __vite_ssr_import_3__.programOf) is not a function
+    failed | programOf reads "% !TEX program = context\n" as pdflatex | TypeError: (0 , __vite_ssr_import_3__.programOf) is not a function
+    failed | programOf reads "no comment\n" as pdflatex | TypeError: (0 , __vite_ssr_import_3__.programOf) is not a function
+    failed | programOf reads "\\documentclass{article}\n% !TEX program = xelatex\n" as pdflatex | TypeError: (0 , __vite_ssr_import_3__.programOf) is not a function
+    failed | programOf is carried by the state of a main file | TypeError: (0 , __vite_ssr_import_3__.buildStateIn) is not a function
+    passed | declaresClass reads a class behind an escaped per-cent sign, and not one behind a comment
+    passed | parseLog reads a file:line: row as an error with its file, line and message
+    passed | parseLog reads a bang row as an error and takes its line from the context under it
+    passed | parseLog leaves the line null for a bang row with no context under it
+    passed | parseLog joins a package warning continued under its own name and reads its line
+    passed | parseLog reads a LaTeX warning that names no line
+    passed | parseLog keeps two warnings in a row apart
+    passed | parseLog makes an absolute path relative to the folder the build ran in
+    passed | parseLog finds nothing in a log that compiled clean
+    passed | buildState answers the PDF and log times and what the log held
+    failed | buildState answers null times and no errors for a file nothing has built | AssertionError: expected { main: 'supplement.tex', ...(5) } to deeply equal { main: 'supplement.tex', ...(6) }
+tests/state/client/queries.test.ts | 1 fail / 31 pass
+    passed | a read that failed is asked once and not again by the reads after it, for a fetch that rejects
+    passed | a read that failed is asked once and not again by the reads after it, for a 500
+    passed | a read that failed is still asked once where the runtime counts as a browser, which retries by default
+    passed | an answer held with no reader is still held after six minutes, and is not asked again on the next read
+    passed | a browser that says it is offline still sends the request, since the page reaches its own server
+    passed | a value put in by hand reads back at once on deposit, memories, changes and transcripts, and sends no request
+    passed | a value put in by hand reads at once while that key is being fetched, and the fetch answer then replaces it
+    passed | a reload while a request is out sends nothing more for deposit
+    passed | a reload while a request is out sends nothing more for memories
+    passed | two client states share no answer: a key held in one is asked for again by the other
+    failed | an empty id, name, path or root answers its empty reading in every keyed store, builds no query and sends no request | AssertionError: expected true to be false // Object.is equality
+    passed | the query helper on its own builds no query for an empty key, in the cache of the client that docs reads through
+    passed | the query helper on its own audit: calls a query function that throws once, where the runtime retries by default
+    passed | the query helper on its own reads a marked key as stale, keeps the mark across a hold, and asks again on the next read
+    passed | the query helper on its own applies a wait mark after the fetch in flight lands, and a drop mark not at all
+    passed | the query helper on its own never holds the answer of a fetch a replace mark cancelled, yet returns it to the awaited call
+    passed | the query helper on its own sends a fetch scheduled in this tick nowhere once its key is forgotten
+    passed | a note saved before it was read is read from the server on the next read, which ends with the disk body and time
+    passed | a read and a refetch inside a hidden scope schedules nothing for a key with nothing held, and asks once in a shown scope
+    passed | a read and a refetch inside a hidden scope answers a marked key as held and refreshing, and asks when read outside the scope
+    passed | a read and a refetch inside a hidden scope does not ask the scope whether it is shown for a key that wants nothing
+    passed | a read and a refetch inside a hidden scope nests: the inner scope hides, the outer shows again after it, and a throw restores
+    passed | a read and a refetch inside a hidden scope keeps a hidden outer scope hidden after a shown inner scope returns or throws
+    passed | a read and a refetch inside a hidden scope marks a held key on refetch and asks nothing, and a read outside the scope then asks once
+    passed | a read and a refetch inside a hidden scope builds no query and asks nothing on refetch of a key with nothing held
+    passed | a read and a refetch inside a hidden scope records a wait, not the again it was given, for a request that is out
+    passed | a read and a refetch inside a hidden scope keeps the again a live caller recorded when a hidden refetch comes after it
+    passed | a read and a refetch inside a hidden scope asks once for two readers of one key, the live one, whatever the hidden one reads and refetches
+    passed | a read and a refetch inside a hidden scope asks again with the live reader query function, not the one a hidden refetch was given
+    passed | a read and a refetch inside a hidden scope audit: leaves peek, fetch, hold and mark as they are in no scope
+    passed | a read and a refetch inside a hidden scope sends a read scheduled while shown after the scope turns hidden, once
+    passed | a read and a refetch inside a hidden scope audit: sends one request when the flag goes shown, hidden and shown inside one tick
+tests/state/sessions/source.test.ts | 2 fail / 52 pass
+    passed | source tab state identifies a tab by root and path and labels it with the file name
+    passed | source tab state carries the line a caller opened the file at, and none when no caller named one
+    passed | source tab state distinguishes roots, paths, and delimiters in file identities
+    passed | source tab state acknowledges the sent copy when typing continues during a pending save
+    passed | source tab state shares a pending initial read across remounts
+    passed | source tab state holds what the route says about the file, and locks the tab when it is read-only
+    passed | source tab state sends no save at all for a file the route called read-only, and says why
+    passed | source tab state locks the tab when a save is refused because the mode changed under it
+    passed | source tab state sends no save for a file the read had to cut, which would take the rest off the disk
+    passed | source tab state returns a path refusal without retrying it as a stale token
+    passed | source tab state keeps the rendered half per instance, on until the toggle says otherwise
+    passed | source tab state keeps the blame per instance, off until the toggle turns it on
+    passed | source tab state keeps the language and the indentation chosen from the status bar per instance, and drops them for another file
+    passed | source tab state loads complete text through the existing file route
+    passed | source tab state saves complete text through the authenticated source route
+    failed | a save tells the LaTeX store which file was written does so once the write succeeded, with the root and the path | Error: The property "onSaved" is not defined on the object.
+    failed | a save tells the LaTeX store which file was written does not when the write was refused | Error: The property "onSaved" is not defined on the object.
+    passed | the unsaved-text rule a close asks answers no for an instance with no draft and for a draft nothing has edited
+    passed | the unsaved-text rule a close asks answers yes once the working text differs from the saved text, and no again after a save
+    passed | the unsaved-text rule a close asks is what the ui store answers for an instance id, which is what the pane asks
+    passed | a save whose draft went while it was out writes nothing under a tab its pane closed
+    passed | a save whose draft went while it was out writes nothing under a closed tab whose draft was never read, so names no file
+    passed | a save whose draft went while it was out leaves the next file's draft alone in a preview tab pointed at it
+    passed | a draft read from an instance state of the wrong shape answers a text that is a number, a read-in that is null, a rendered flag that is a string as th
+    passed | a draft read from an instance state of the wrong shape answers flags that are truthy and not true as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape answers a list as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape answers a string as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape answers null as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape answers nothing held as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape answers every field of its type as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape reads an indentation of tabs and a size of 4
+    passed | a draft read from an instance state of the wrong shape reads an indentation of no tabs and a size of 1
+    passed | a draft read from an instance state of the wrong shape reads an indentation of tabs and a size of 8
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a key beyond the two
+    passed | a draft read from an instance state of the wrong shape reads an indentation of tabs that are a string
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size of 9
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size of 0
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size that is not whole
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size that is NaN
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size that is infinite
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size that is a string
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a list
+    passed | a draft read from an instance state of the wrong shape reads an indentation of null
+    passed | the answer of the route that says whether a file is locked is the answer of readonly true
+    passed | the answer of the route that says whether a file is locked is the answer of readonly the string true
+    passed | the answer of the route that says whether a file is locked is the answer of readonly absent
+    passed | the answer of the route that says whether a file is locked is the answer of a list
+    passed | the answer of the route that says whether a file is locked is the answer of null
+    passed | the answer of the route that says whether a file is locked is the answer of text that is not JSON
+    passed | the answer of the route that says whether a file is locked is the answer of a refusal that says readonly true
+    passed | a source tab over the file at HEAD or in the index is a tab of its own for each stage of one file, named for the stage
+    passed | a source tab over the file at HEAD or in the index reads the text from the head read of the git endpoint
+    passed | a source tab over the file at HEAD or in the index says a file the stage lacks is missing and a binary one is binary
+    passed | a source tab over the file at HEAD or in the index holds a draft that is read-only, and never reads the file route or the mode route
+tests/state/sessions/terminals.test.ts | 1 fail / 62 pass
+    passed | a terminal id is six hex digits and a kind, and nothing a session id could be
+    passed | a terminal id names its channel
+    passed | the terminals the payload carries reads them out of the sessions payload and finds one by id
+    passed | base64 on the wire carries bytes a string could not
+    passed | base64 on the wire reads anything that is not base64 as no bytes
+    passed | the four actions of /api/terminal starts one with its kind, its directory and a geometry
+    passed | the four actions of /api/terminal starts one at a default geometry when the pane has not been measured
+    passed | the four actions of /api/terminal stops one and resizes one by id
+    passed | the four actions of /api/terminal starts a dataset recovery with its key and geometry
+    passed | the four actions of /api/terminal starts an update task without sending a command or directory from the page
+    passed | the four actions of /api/terminal starts a focused chat without sending a command or directory from the page
+    failed | the four actions of /api/terminal starts a LaTeX step of a project by its id and of a folder by its root and path | AssertionError: expected { action: 'latex', ...(5) } to deeply equal { action: 'latex', id: 'alpha', ...(4) }
+    passed | the four actions of /api/terminal reports what the server refused it with, in the server words
+    passed | the two messages a page writes on a pty channel sends keystrokes as base64 of their UTF-8 bytes
+    passed | the two messages a page writes on a pty channel sends a resize as whole numbers
+    passed | the two messages a page writes on a pty channel writes nothing when no socket is open, and says so
+    passed | subscribing to a terminal asks for the channel and hands the scrollback over first
+    passed | subscribing to a terminal keeps the chunks out of entities, where only the latest would survive
+    passed | subscribing to a terminal stops handing them over, and stops asking for the channel on a reconnect
+    passed | subscribing to a terminal resizes the window to the grid before it asks for the channel
+    passed | subscribing to a terminal asks for the channel when the resize is refused
+    passed | subscribing to a terminal asks for nothing when the listener is taken off before the resize answered
+    passed | subscribing to a terminal posts the grid size again when it changed while the resize was out, and asks after that
+    passed | subscribing to a terminal asks for the channel at RESIZE_WAIT when the resize never answers
+    passed | subscribing to a terminal posts the resize of a second subscribe after the first one answered, ending at the later size
+    passed | subscribing to a terminal posts the resize of a remount after the one of the grid taken off, and asks for the channel once
+    passed | subscribing to a terminal holds input typed while the resize is out and writes it right after the subscribe, in order
+    passed | subscribing to a terminal drops the input held for a listener taken off, and the input given after that
+    passed | the title stripper drops a window title a shell wrote and keeps everything round it
+    passed | the title stripper carries a title cut across two chunks, and a lone escape at the end
+    passed | the frame check drops a frame whose payload is not a map, so every channel reads its own payload type
+    passed | the terminals that ended are the ones an earlier message listed and this one does not
+    passed | the terminals that ended include a terminal a tab holds when the first message does not list it
+    passed | the terminals that ended leave out a terminal started here that no message has listed yet
+    passed | the terminals that ended are none when the message carries no terminal list
+    passed | the terminals that ended name each terminal once, whether a tab holds it or an earlier message listed it
+    passed | the terminals the page hears in both shapes it is given them end none of the terminals a list keeps, after a reload, where the tabs hold them and noth
+    passed | the terminals the page hears in both shapes it is given them end none of the terminals a list keeps, after a reconnect, where the lists heard before a
+    passed | the terminals no Terminal tab owns are the listed ones no tab on any page owns, in list order
+    passed | the terminals no Terminal tab owns are none while no list has been heard
+    passed | the terminals no Terminal tab owns leave out a terminal a tab owns that the list does not name, and count none the list lacks
+    passed | the terminals no Terminal tab owns leave out a foreign terminal, as Join Terminals does
+    passed | a terminal's label is its title when it has been renamed, and its name when the title is empty
+    passed | a message with no terminal list is not the first message, so the first list that lacks the terminal of a tab it owned alone closes the tab
+    passed | a sessions payload whose terminals are of the wrong shape does not hear a terminals value of "x", so the next list is the first
+    passed | a sessions payload whose terminals are of the wrong shape does not hear a terminals value of {}, so the next list is the first
+    passed | a sessions payload whose terminals are of the wrong shape does not hear a terminals value of null, so the next list is the first
+    passed | a sessions payload whose terminals are of the wrong shape does not hear a terminals value of 3, so the next list is the first
+    passed | a sessions payload whose terminals are of the wrong shape hears the ids that are strings of a list holding anything else, and takes out the terminals 
+    passed | a sessions payload whose terminals are of the wrong shape hands on the list of the payload itself when every item is a terminal
+    passed | a sessions payload whose terminals are of the wrong shape leaves out an item of the list that is no terminal
+    passed | a pty chunk whose frame or payload is of the wrong shape hands bytes that are a number to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands bytes that are null to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands bytes that are a list to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands bytes that are not base64 to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands no bytes to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands more keys than the bytes to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands an own __proto__ key holding the bytes to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands a version of minus zero to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands an infinite version to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands a version that is a string to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands a payload that is a list to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands a payload that is null to the listener as the chunk it reads
+tests/views/academic/latex-editor.test.ts | FILE | Cannot find module '/src/lib/views/sources/source/latex-editor.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d14/base
+tests/views/academic/latex.test.ts | FILE | Cannot find module '../../../src/lib/views/academic/latex/Latex.svelte' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d14
+tests/views/boards/project.test.ts | 3 fail / 28 pass
+    passed | a project as its own tab draws the card of the board, opened out
+    passed | a project as its own tab offers Show in Files for the project's folder on the card
+    passed | a project as its own tab offers the manifest editor and the deposit on the card
+    passed | a project as its own tab offers the pin control on the card
+    passed | a project as its own tab marks the manifest as behind its documents
+    passed | a project as its own tab draws no subtasks block for a project with none, and offers adding the first on the card
+    passed | a project as its own tab draws the subtasks block for a project that has subtasks
+    passed | a project as its own tab draws the documents once: the tab lists them and the card does not
+    passed | a project as its own tab draws a known document the project has not got as the tag the card draws for it
+    passed | a project as its own tab offers the Markdown documents the project has, and no others
+    passed | a project as its own tab offers no PRESENT.md and no deck control for a project that has no slide
+    passed | a project as its own tab offers PRESENT.md after the four, and the deck control, for a project with a slide
+    passed | a project as its own tab draws the PRESENT.md the tab was left showing
+    passed | a project as its own tab waits for the chosen document rather than drawing an empty one
+    passed | a project as its own tab draws the sessions working in the project folder, and no others
+    passed | a project as its own tab starts on the first document the project has
+    passed | a project as its own tab keeps showing the document the tab was left on
+    passed | a project as its own tab falls back to the first document when the one it remembers is gone
+    passed | a project as its own tab says so when it was opened for no project, and for one the snapshot does not hold
+    failed | the LaTeX panel of a project tab draws one row per main file, with its PDF time and its error count | AssertionError: expected 'data-main="main.tex"><div class="top ...' to include undefined
+    failed | the LaTeX panel of a project tab offers a build and a clean on every row, and the PDF only where there is one | AssertionError: expected 'data-main="main.tex"><div class="top ...' to include undefined
+    passed | the LaTeX panel of a project tab draws build, clean and PDF as small buttons, the size of the 22 px row they sit in
+    failed | the LaTeX panel of a project tab draws a failed read as the error box with a retry button | TypeError: Cannot read properties of undefined (reading 'replace')
+    passed | the LaTeX panel of a project tab keeps the errors behind their count until the disclosure is opened
+    passed | the LaTeX panel of a project tab draws no panel at all for a project whose folder holds no main file
+    passed | a software project and the paper it names draws the card of a project no board holds
+    passed | a software project and the paper it names names the papers on the software's own tab
+    passed | a software project and the paper it names names the software on the paper's own tab
+    passed | a press on a session row draws the card's session row and the tab's own, in that order
+    passed | a press on a session row selects the session on the tab's own row
+    passed | a press on a session row selects the session on the card's row, and opens its detail beside the board
+tests/views/whole/type-scale.test.ts | 7 fail / 283 pass
+    failed | the view type scale lists every view file in the audit | AssertionError: expected [ ...(214) ] to deeply equal [ ...(219) ]
+    passed | the view type scale audits every local role in the section of Settings that resets the pages
+    passed | the view type scale audits that every ui component is listed in the pass-through audit
+    passed | the view type scale sets every local role in boards/personal/Personal.svelte
+    passed | the view type scale sets every local role in boards/collection/Collection.svelte
+    passed | the view type scale sets every local role in system/config/Config.svelte
+    passed | the view type scale sets every local role in sources/data/Data.svelte
+    passed | the view type scale sets every local role in boards/deposit/Deposit.svelte
+    passed | the view type scale sets every local role in sources/doc/Doc.svelte
+    passed | the view type scale sets every local role in sources/document/Document.svelte
+    passed | the view type scale sets every local role in sources/file/File.svelte
+    passed | the view type scale sets every local role in sources/files/Files.svelte
+    passed | the view type scale sets every local role in sources/note/Note.svelte
+    passed | the view type scale sets every local role in sources/files/sections/BookmarkForm.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Bookmarks.svelte
+    passed | the view type scale sets every local role in sources/files/header/Controls.svelte
+    passed | the view type scale sets every local role in sources/files/header/Filters.svelte
+    passed | the view type scale sets every local role in sources/files/header/Outside.svelte
+    passed | the view type scale sets every local role in sources/files/header/WorkspaceHeader.svelte
+    passed | the view type scale sets every local role in sources/files/sections/OpenEditors.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Outline.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Timeline.svelte
+    passed | the view type scale sets every local role in sources/files/tree/FileRow.svelte
+    passed | the view type scale sets every local role in sources/files/tree/Failed.svelte
+    passed | the view type scale sets every local role in sources/files/Questions.svelte
+    passed | the view type scale sets every local role in sources/files/tree/Follow.svelte
+    passed | the view type scale sets every local role in sources/files/tree/NameInput.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Notes.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Sections.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Section.svelte
+    passed | the view type scale sets every local role in sources/files/tree/ShowPath.svelte
+    passed | the view type scale sets every local role in sources/files/tree/Tree.svelte
+    passed | the view type scale sets every local role in structure/domains/Domains.svelte
+    passed | the view type scale sets every local role in boards/editor/Editor.svelte
+    passed | the view type scale sets every local role in system/audit/Audit.svelte
+    passed | the view type scale sets every local role in system/findings/Findings.svelte
+    passed | the view type scale sets every local role in boards/focus/Focus.svelte
+    passed | the view type scale sets every local role in system/gallery/Gallery.svelte
+    passed | the view type scale sets every local role in system/help/Diagram.svelte
+    passed | the view type scale sets every local role in system/help/Help.svelte
+    passed | the view type scale sets every local role in system/history/History.svelte
+    passed | the view type scale sets every local role in personal/calendar/Calendar.svelte
+    passed | the view type scale sets every local role in shared/accounts/AccountList.svelte
+    passed | the view type scale sets every local role in shared/accounts/ConnectorHead.svelte
+    passed | the view type scale sets every local role in system/hpc/Hpc.svelte
+    passed | the view type scale sets every local role in system/usage/Usage.svelte
+    passed | the view type scale sets every local role in feeds/inbox/Inbox.svelte
+    passed | the view type scale sets every local role in feeds/leads/Leads.svelte
+    passed | the view type scale sets every local role in feeds/linkedin/Linkedin.svelte
+    passed | the view type scale sets every local role in structure/map/Map.svelte
+    passed | the view type scale sets every local role in personal/memories/Memories.svelte
+    passed | the view type scale sets every local role in boards/person/Person.svelte
+    passed | the view type scale sets every local role in academic/present/Present.svelte
+    passed | the view type scale sets every local role in structure/pillars/Pillars.svelte
+    passed | the view type scale sets every local role in boards/project/Project.svelte
+    passed | the view type scale sets every local role in boards/projects/Projects.svelte
+    passed | the view type scale sets every local role in feeds/radar/Radar.svelte
+    passed | the view type scale sets every local role in sources/repositories/Repositories.svelte
+    passed | the view type scale sets every local role in sources/search/Search.svelte
+    passed | the view type scale sets every local role in sources/search/Query.svelte
+    passed | the view type scale sets every local role in sources/search/Results.svelte
+    passed | the view type scale sets every local role in academic/slides/Slides.svelte
+    passed | the view type scale sets every local role in sources/source/Source.svelte
+    passed | the view type scale sets every local role in system/status/Status.svelte
+    passed | the view type scale sets every local role in system/workbench/Catalogue.svelte
+    passed | the view type scale sets every local role in system/workbench/Pages.svelte
+    passed | the view type scale sets every local role in system/workbench/RailEditor.svelte
+    passed | the view type scale sets every local role in system/workbench/Settings.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/BrowserControl.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/Contents.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/Control.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/EditLink.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/Gear.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/Header.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/Item.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/List.svelte
+    passed | the view type scale sets every local role in sources/venues/Venues.svelte
+    passed | the view type scale sets every local role in boards/collection/Coverage.svelte
+    passed | the view type scale sets every local role in boards/collection/Software.svelte
+    passed | the view type scale sets every local role in boards/collection/EntryCard.svelte
+    passed | the view type scale sets every local role in sources/data/DatasetCard.svelte
+    passed | the view type scale sets every local role in structure/domains/DomainCard.svelte
+    passed | the view type scale sets every local role in boards/focus/Band.svelte
+    passed | the view type scale sets every local role in boards/focus/CareerPanel.svelte
+    passed | the view type scale sets every local role in boards/focus/CommandCenter.svelte
+    passed | the view type scale sets every local role in boards/focus/CommandCenterView.svelte
+    passed | the view type scale sets every local role in boards/focus/lanes/Lanes.svelte
+    passed | the view type scale sets every local role in boards/focus/lanes/LaneCard.svelte
+    passed | the view type scale sets every local role in boards/focus/lanes/LaneHead.svelte
+    passed | the view type scale sets every local role in boards/focus/QuickAdd.svelte
+    passed | the view type scale sets every local role in boards/focus/Tasks.svelte
+    passed | the view type scale sets every local role in system/hpc/Capacity.svelte
+    passed | the view type scale sets every local role in system/hpc/Head.svelte
+    passed | the view type scale sets every local role in system/hpc/Jobs.svelte
+    passed | the view type scale sets every local role in system/hpc/Log.svelte
+    passed | the view type scale sets every local role in system/hpc/Quota.svelte
+    passed | the view type scale sets every local role in system/hpc/Recent.svelte
+    passed | the view type scale sets every local role in shared/accounts/AddAccount.svelte
+    passed | the view type scale sets every local role in shared/accounts/NoAccounts.svelte
+    passed | the view type scale sets every local role in shared/accounts/RemoveAccount.svelte
+    passed | the view type scale sets every local role in personal/account-setup/AccountSetup.svelte
+    passed | the view type scale sets every local role in personal/account-setup/CopyValue.svelte
+    passed | the view type scale sets every local role in personal/account-setup/GoogleSteps.svelte
+    passed | the view type scale sets every local role in personal/account-setup/HalfForm.svelte
+    passed | the view type scale sets every local role in personal/account-setup/MicrosoftSteps.svelte
+    passed | the view type scale sets every local role in feeds/inbox/InboxCard.svelte
+    passed | the view type scale sets every local role in feeds/leads/LeadCard.svelte
+    passed | the view type scale sets every local role in feeds/linkedin/PostCard.svelte
+    passed | the view type scale sets every local role in structure/map/Controls.svelte
+    passed | the view type scale sets every local role in structure/map/Graph.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Closing.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Dot.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Equation.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Framing.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Ideas.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Legend.svelte
+    passed | the view type scale sets every local role in academic/present/Overview.svelte
+    passed | the view type scale sets every local role in academic/present/Panel.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Project.svelte
+    passed | the view type scale sets every local role in academic/present/Slide.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Summary.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Title.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Words.svelte
+    passed | the view type scale sets every local role in structure/pillars/ArchivalCard.svelte
+    passed | the view type scale sets every local role in structure/pillars/LineCard.svelte
+    passed | the view type scale sets every local role in structure/pillars/OrphansCard.svelte
+    failed | the view type scale sets every local role in boards/project/Latex.svelte | AssertionError: expected '.heading=fs-xs | .nm=fs-md | .ts, .cl...' to be '.heading=fs-xs' // Object.is equality
+    failed | the view type scale sets every local role in academic/latex/Latex.svelte | Error: ENOENT: no such file or directory, open 'src/lib/views/academic/latex/Latex.svelte'
+    failed | the view type scale sets every local role in shared/latex/Main.svelte | Error: ENOENT: no such file or directory, open 'src/lib/views/shared/latex/Main.svelte'
+    failed | the view type scale sets every local role in shared/latex/Outline.svelte | Error: ENOENT: no such file or directory, open 'src/lib/views/shared/latex/Outline.svelte'
+    failed | the view type scale sets every local role in shared/latex/Problems.svelte | Error: ENOENT: no such file or directory, open 'src/lib/views/shared/latex/Problems.svelte'
+    failed | the view type scale sets every local role in shared/latex/Rows.svelte | Error: ENOENT: no such file or directory, open 'src/lib/views/shared/latex/Rows.svelte'
+    passed | the view type scale sets every local role in boards/projects/NewIdea.svelte
+    passed | the view type scale sets every local role in boards/projects/Stats.svelte
+    passed | the view type scale sets every local role in feeds/radar/Bucket.svelte
+    passed | the view type scale sets every local role in feeds/radar/RadarCard.svelte
+    passed | the view type scale sets every local role in feeds/radar/RadarIntro.svelte
+    passed | the view type scale sets every local role in sources/repositories/changes/Changes.svelte
+    passed | the view type scale sets every local role in sources/repositories/changes/ChangeRow.svelte
+    passed | the view type scale sets every local role in sources/repositories/changes/FolderRow.svelte
+    passed | the view type scale sets every local role in sources/repositories/Repo.svelte
+    passed | the view type scale sets every local role in sources/repositories/refs/Worktrees.svelte
+    passed | the view type scale sets every local role in sessions/agents/Agents.svelte
+    passed | the view type scale sets every local role in sessions/changes/Changes.svelte
+    passed | the view type scale sets every local role in sessions/changes/ChangesRepo.svelte
+    passed | the view type scale sets every local role in sessions/changes/ChangesTouched.svelte
+    passed | the view type scale sets every local role in sessions/session-detail/SessionDetail.svelte
+    passed | the view type scale sets every local role in sessions/session-list/SessionList.svelte
+    passed | the view type scale sets every local role in sessions/session-list/SessionWorkspace.svelte
+    passed | the view type scale sets every local role in sessions/session-list/Customizations.svelte
+    passed | the view type scale sets every local role in sessions/customization/CustomizationView.svelte
+    passed | the view type scale sets every local role in sessions/terminal/Terminal.svelte
+    passed | the view type scale sets every local role in sessions/terminal/grid/TerminalGrid.svelte
+    passed | the view type scale sets every local role in sessions/terminal/grid/FindBar.svelte
+    passed | the view type scale sets every local role in sessions/terminal/RenameField.svelte
+    passed | the view type scale sets every local role in sessions/terminal/AttachPicker.svelte
+    passed | the view type scale sets every local role in sessions/terminal/Composer.svelte
+    passed | the view type scale sets every local role in sessions/terminal/TerminalList.svelte
+    passed | the view type scale sets every local role in sessions/terminal/TerminalTitle.svelte
+    passed | the view type scale sets every local role in sessions/terminal/TerminalFontTools.svelte
+    passed | the view type scale sets every local role in sessions/session-list/TerminalRows.svelte
+    passed | the view type scale sets every local role in sessions/timeline/Timeline.svelte
+    passed | the view type scale sets every local role in sessions/transcript/Transcript.svelte
+    passed | the view type scale sets every local role in shared/code/Code.svelte
+    passed | the view type scale sets every local role in shared/changes/ChangeCounts.svelte
+    passed | the view type scale sets every local role in shared/changes/ChangeGroups.svelte
+    passed | the view type scale sets every local role in shared/links/BookmarkStar.svelte
+    passed | the view type scale sets every local role in shared/card/Clamp.svelte
+    passed | the view type scale sets every local role in shared/links/CrossLinks.svelte
+    passed | the view type scale sets every local role in shared/card/CardActions.svelte
+    passed | the view type scale sets every local role in shared/card/CardDetails.svelte
+    passed | the view type scale sets every local role in shared/card/CardDocs.svelte
+    passed | the view type scale sets every local role in shared/card/CardLinks.svelte
+    passed | the view type scale sets every local role in shared/card/CardSessions.svelte
+    passed | the view type scale sets every local role in shared/sessions/PickSession.svelte
+    passed | the view type scale sets every local role in shared/sessions/SessionPicker.svelte
+    passed | the view type scale sets every local role in shared/sessions/SteerBox.svelte
+    passed | the view type scale sets every local role in shared/sessions/WorkspacePicker.svelte
+    passed | the view type scale sets every local role in shared/forms/EntryForm.svelte
+    passed | the view type scale sets every local role in shared/prose/Intro.svelte
+    passed | the view type scale sets every local role in shared/prose/Markdown.svelte
+    passed | the view type scale sets every local role in shared/forms/NewIdeaForm.svelte
+    passed | the view type scale sets every local role in shared/card/ProjectCard.svelte
+    passed | the view type scale sets every local role in shared/links/ProgramButton.svelte
+    passed | the view type scale sets every local role in shared/card/Reveal.svelte
+    passed | the view type scale sets every local role in shared/links/SourceButton.svelte
+    passed | the view type scale sets every local role in shared/links/SourceToolbar.svelte
+    passed | the view type scale sets every local role in shared/forms/RegistryHead.svelte
+    passed | the view type scale sets every local role in shared/forms/Subtasks.svelte
+    passed | the view type scale sets every local role in sources/source/Editor.svelte
+    passed | the view type scale sets every local role in sources/source/Preview.svelte
+    passed | the view type scale sets every local role in system/status/Hooks.svelte
+    passed | the view type scale sets every local role in system/status/LineCounts.svelte
+    passed | the view type scale sets every local role in sources/venues/Ribbon.svelte
+    passed | the view type scale sets every local role in sources/venues/VenueCard.svelte
+    passed | the view type scale sets every local role in shared/writes/AskConfirm.svelte
+    passed | the view type scale sets every local role in shared/changes/CommitBox.svelte
+    passed | the view type scale sets every local role in sources/repositories/RepoList.svelte
+    passed | the view type scale sets every local role in sources/repositories/diff/CommentBox.svelte
+    passed | the view type scale sets every local role in sources/repositories/diff/DiffBar.svelte
+    passed | the view type scale sets every local role in sources/repositories/diff/Diff.svelte
+    passed | the view type scale sets every local role in sources/repositories/diff/DiffSection.svelte
+    passed | the view type scale sets every local role in sources/repositories/diff/FileHeader.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/CommitFiles.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/CommitRow.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/GraphActions.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/GraphHead.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/Graph.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/Lanes.svelte
+    passed | the view type scale sets every local role in sources/repositories/merge/Merge.svelte
+    passed | the view type scale sets every local role in sources/repositories/merge/MergeSide.svelte
+    passed | the view type scale sets every local role in sources/repositories/refs/Branches.svelte
+    passed | the view type scale sets every local role in sources/repositories/refs/Stashes.svelte
+    passed | the view type scale sets every local role in sources/repositories/refs/Tags.svelte
+    passed | the view type scale sets every local role in sources/source/Gutter.svelte
+    passed | the view type scale sets every local role in sessions/terminal/bar/TerminalActions.svelte
+    passed | the view type scale sets every local role in shared/accounts/AccountActions.svelte
+    passed | the view type scale sets every local role in shared/forms/AddButton.svelte
+    passed | the view type scale sets every local role in shared/forms/ThemeFacets.svelte
+    passed | the view type scale sets every local role in structure/map/Legend.svelte
+    passed | the view type scale sets every local role in shared/forms/RegistryCard.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/Card.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/Chip.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/CloseQuestion.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/Disclosure.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/NameField.svelte
+    passed | the view type scale sets every pass-through role in src/lib/views/shared/prose/Intro.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/Table.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/Pane.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/Meter.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/toolbar/Toolbar.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/ToolButton.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/Empty.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tabs/Tabs.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tabs/TabFace.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/ContextMenu.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/Menu.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/MenuList.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/MenuOpener.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/Confirm.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/CodeText.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/Glyph.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/FileIcon.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/RowButton.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/text/Search.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/text/TextBoxMenu.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/Segment.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/Tag.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/editor/DiffEditor.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/editor/Editor.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/editor/LineBars.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/Ticker.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/Checkbox.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/DateInput.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/Field.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/file/FileChooser.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/GlyphDialog.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/GlyphList.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/GlyphSelect.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/MultiSelect.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/QuickPick.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/Select.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/NumberInput.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/Prompt.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/TextArea.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/TextInput.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/FloatingList.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/FloatingBar.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/Modal.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/Sash.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/keys/KeySheet.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/Tooltip.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/TooltipGroup.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tabs/Breadcrumb.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/TreeActions.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/TreeItem.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/TreeSection.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/TreeView.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/list/VirtualRows.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/rail/ActivityRail.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/rail/RailFoot.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/rail/RailPages.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/StatusBar.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/RepoItems.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/SourceItems.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/Bell.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/NoticeCentre.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/NoticeEntry.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/Toast.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/Workbench.svelte
+tests/state/sessions/latex/building.test.ts | 9 fail / 0 pass
+    failed | a main file is building from the request to the end of its terminal is true while the request is out and while the terminal is listed, and false once  | TypeError: Cannot read properties of undefined (reading 'building')
+    failed | a main file is building from the request to the end of its terminal is false again after a request the server refused | TypeError: client.latex.onSaved is not a function
+    failed | a main file is building from the request to the end of its terminal is false again after a request that never reached the server | TypeError: client.latex.onSaved is not a function
+    failed | a main file is building from the request to the end of its terminal is the same main file whichever form of target reads it, a project or a folder | TypeError: Cannot read properties of undefined (reading 'building')
+    failed | a main file is building from the request to the end of its terminal is marked for a build and not for a clean | TypeError: client.latex.run is not a function
+    failed | a main file is never built twice at once starts one build for two saves of chapters of one main before any sessions push | TypeError: client.latex.onSaved is not a function
+    failed | a main file is never built twice at once starts one build for a second save made while the first build request is still out | TypeError: client.latex.onSaved is not a function
+    failed | a main file is never built twice at once builds once more after the first ends, for the saves that came while it was out | TypeError: client.latex.onSaved is not a function
+    failed | a main file is never built twice at once starts a new build after a terminal the list never named, once pushes found it absent | TypeError: client.latex.onSaved is not a function
+tests/state/sessions/latex/folder.test.ts | 31 fail / 0 pass
+    failed | the LaTeX state of a folder of a root asks api/latex with the root and the path once, and reads every path against the root | AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]
+    failed | the LaTeX state of a folder of a root keeps a project and a folder whose names match apart | AssertionError: expected [ ...(2) ] to deeply equal [ 'GET /api/latex?id=x', ...(1) ]
+    failed | the LaTeX state of a folder of a root asks again on every sessions push while a watched build runs, and stops when it ends | AssertionError: expected [ ...(3) ] to deeply equal [ ...(3) ]
+    failed | the LaTeX state of a folder of a root asks again at once for a folder whose build is watched, before any sessions push | AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]
+    failed | the LaTeX state of a folder of a root changes nothing when the answer lands after the folder was forgotten | TypeError: latexDiagnostics is not a function
+    failed | the LaTeX state of a folder of a root reads a folder that is gone as the server said, and asks again after Retry | AssertionError: expected 'no route' to be 'proposal is missing for the root docs' // Object.is equality
+    failed | the problems of the latest build as diagnostics holds an error in an included file and a warning, the file against the root, and none after a clean bu | TypeError: latexDiagnostics is not a function
+    failed | the problems of the latest build as diagnostics reads a project target in the same form, against the hub | TypeError: client.latex.latexDiagnostics is not a function
+    failed | the outline, the word count and the root of a file reads the outline as the server answered it, and the reason when it refused | TypeError: outline is not a function
+    failed | the outline, the word count and the root of a file asks for the outline again once the main file was built again, and not before | TypeError: outline is not a function
+    failed | the outline, the word count and the root of a file changes nothing when the outline lands after the folder was forgotten | TypeError: outline is not a function
+    failed | the outline, the word count and the root of a file asks nothing for an empty target | TypeError: client.latex.outline is not a function
+    failed | the outline, the word count and the root of a file holds the words in the state until the main file is built again | TypeError: count is not a function
+    failed | the outline, the word count and the root of a file says the reason a count was refused and holds no words | TypeError: client.latex.count is not a function
+    failed | the outline, the word count and the root of a file keeps the later count when two are pressed and the first answers last | TypeError: client.latex.count is not a function
+    failed | the outline, the word count and the root of a file drops a count that lands after the folder was forgotten | TypeError: client.latex.count is not a function
+    failed | the outline, the word count and the root of a file asks for the root of a file and answers it, or none for a file that builds through none | TypeError: client.latex.rootOf is not a function
+    failed | a build after a save starts one build, not shown, of the main file the saved file builds through | TypeError: client.latex.onSaved is not a function
+    failed | a build after a save with auto_build "never" starts 0 build | TypeError: client.latex.onSaved is not a function
+    failed | a build after a save with auto_build "" starts 1 build | TypeError: client.latex.onSaved is not a function
+    failed | a build after a save with auto_build "sometimes" starts 1 build | TypeError: client.latex.onSaved is not a function
+    failed | a build after a save with auto_build "on_save" starts 1 build | TypeError: client.latex.onSaved is not a function
+    failed | a build after a save builds when the configuration holds no latex key at all | TypeError: client.latex.onSaved is not a function
+    failed | a build after a save starts nothing for a file that is not a .tex file, and nothing for a file with no main | TypeError: client.latex.onSaved is not a function
+    failed | a build after a save starts one build for two saves made while the root is still being asked | TypeError: client.latex.onSaved is not a function
+    failed | a build after a save builds once more after a build that is still running, however many saves came | TypeError: client.latex.onSaved is not a function
+    failed | a build after a save reads the folder again when the build ends, so its problems reach the editor | TypeError: client.latex.onSaved is not a function
+    failed | Format Document through the server posts the text with the write token and answers the formatted text | TypeError: client.latex.format is not a function
+    failed | Format Document through the server answers no text and the server reason when the program is missing or failed | TypeError: client.latex.format is not a function
+    failed | Format Document through the server answers no text and the status for a refusal that carries no sentence | TypeError: client.latex.format is not a function
+    failed | Format Document through the server answers no text and the reason the request threw | TypeError: client.latex.format is not a function
+tests/state/sessions/latex/project.test.ts | 18 fail / 5 pass
+    failed | one project's LaTeX state asks once and holds what came back | AssertionError: expected undefined to be 'hub' // Object.is equality
+    failed | one project's LaTeX state asks nothing at all for no project | AssertionError: expected { mains: [], folder: '', ...(2) } to deeply equal { root: '', dir: '', mains: [], ...(2) }
+    passed | one project's LaTeX state carries the reason a refused request gave
+    failed | the build the store is waiting on asks again on every sessions push while the terminal runs, and stops when it ends | AssertionError: expected 5 to be 4 // Object.is equality
+    passed | the build the store is waiting on asks once for two sessions messages at one version
+    passed | the build the store is waiting on asks again when the terminals list moved while a request was out
+    passed | the build the store is waiting on moves the PDF address when the build wrote a new one
+    passed | the build the store is waiting on leaves the address alone when the build wrote no new PDF
+    failed | an answer whose fields are of the wrong type keeps the mains that carry a name and the issues that carry a message, each field as typed or at its fall | AssertionError: expected { mains: [ ...(3) ], folder: 'f', ...(2) } to strictly equal { root: 'hub', dir: '', ...(3) }
+    failed | an answer whose fields are of the wrong type keeps a time or a line that is infinite, since a number is a number | AssertionError: expected { Object (mains, folder, ...) } to strictly equal { root: 'hub', dir: '', ...(3) }
+    failed | an answer whose fields are of the wrong type answers a folder that is a number and mains that are a map as the state it names | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: 'hub', dir: '', ...(3) }
+    failed | an answer whose fields are of the wrong type answers mains that are a string as the state it names | AssertionError: expected { mains: [], folder: 'f', ...(2) } to strictly equal { root: 'hub', dir: 'f', ...(3) }
+    failed | an answer whose fields are of the wrong type answers a list as the body as the state it names | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: 'hub', dir: '', ...(3) }
+    failed | an answer whose fields are of the wrong type answers an empty map as the body as the state it names | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: 'hub', dir: '', ...(3) }
+    failed | an answer whose fields are of the wrong type answers an error that is a number on a 200 as the state it names | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: 'hub', dir: '', ...(3) }
+    failed | an answer whose fields are of the wrong type answers a list as the body of a refusal as the state it names | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: '', dir: '', mains: [], ...(2) }
+    failed | an answer whose fields are of the wrong type answers a refusal with its sentence as the state it names | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: '', dir: '', mains: [], ...(2) }
+    failed | an answer whose fields are of the wrong type answers a refusal with an empty sentence as the state it names | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: '', dir: '', mains: [], ...(2) }
+    failed | an answer whose fields are of the wrong type answers the status for a refusal whose error is a number | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: '', dir: '', mains: [], ...(2) }
+    failed | an answer whose fields are of the wrong type answers a body that is null as the failed read with the status text | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: '', dir: '', mains: [], ...(2) }
+    failed | an answer whose fields are of the wrong type answers a body that is text that is not JSON as the failed read with the status text | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: '', dir: '', mains: [], ...(2) }
+    failed | an answer whose fields are of the wrong type answers a body that is null on a refusal as the failed read with the status text | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: '', dir: '', mains: [], ...(2) }
+    failed | an answer whose fields are of the wrong type answers a body that is text that is not JSON on a refusal as the failed read with the status text | AssertionError: expected { mains: [], folder: '', ...(2) } to strictly equal { root: '', dir: '', mains: [], ...(2) }
+tests/state/workbench/navigation/registry.test.ts | 2 fail / 28 pass
+    passed | the view registry registers a view and looks it up by id
+    passed | the view registry has nothing for an id nobody registered
+    passed | the view registry lists registrations in registration order
+    passed | the view registry replaces an earlier registration of the same id, in its place
+    passed | the view registry discovers a registered module at any nesting depth
+    passed | the view registry ignores a partial without registration metadata
+    failed | the real registrations registers every view id the application has | AssertionError: expected [ 'account-setup', 'agents', ...(59) ] to deeply equal [ 'account-setup', 'agents', ...(60) ]
+    failed | the real registrations gives every view its exact group and order | AssertionError: expected { present: { ...(2) }, ...(60) } to deeply equal { agents: { ...(2) }, ...(61) }
+    passed | the real registrations registers Data directly and excludes it from generic collections
+    passed | the real registrations registers Lit Watch directly with its catalog label and glyph
+    passed | the real registrations registers Position Leads directly with its catalog label and glyph
+    passed | the real registrations registers Inbox directly with its catalog label and glyph
+    passed | the real registrations registers LinkedIn directly with its catalog label and glyph
+    passed | the real registrations registers the manual, the configuration and a hub document with their catalog keys
+    passed | the real registrations registers the slide catalog as an unlisted view opened from the deck
+    passed | the real registrations registers the source editor as an unlisted file view
+    passed | the real registrations registers the one collection component under every collection key of sources.yml
+    passed | the real registrations registers Venues directly with its catalog label and venue glyph
+    passed | the real registrations registers Pillars, Domains and Map directly with their catalog keys
+    passed | the real registrations registers the Pillars view under that id alone, so a layout saved under the old one is an unknown view
+    passed | the real registrations keeps a collection in its first position when it is registered again
+    passed | the real registrations registers the one board component under all three of its ids
+    passed | the real registrations registers every configured rail count and its urgency tone
+    passed | the real registrations names a label key the text catalog holds
+    passed | the real registrations names a glyph key whose value is a name config/catalogs/glyphs.yml holds
+    passed | the real registrations drops the collections whose keys a later call no longer lists
+    passed | the real registrations audits that every view of the catalogue carries a glyph of its own, the collections apart
+    passed | the real registrations audits that every chorded group carries a glyph no view inside it carries
+    passed | the real registrations audits that the Agents and Changes views carry a glyph of their own in the catalogue
+    passed | the real registrations closes the tabs open on a collection it drops, so no tab is left with no body
+tests/state/sources/explorer/sections/sections.test.ts | 4 fail / 16 pass
+    passed | Open Editors reads the file a tab shows from its state, and none for a view without one
+    passed | Open Editors groups the tabs by pane: two groups, three rows, the dot on the dirty one
+    passed | Open Editors names a row by its strip and falls back to the file name, with the folder beside it
+    passed | Open Editors leaves out a pane that holds no file tab
+    passed | Outline nests Markdown headings and skips a fenced block: A > B > C, no `not`
+    passed | Outline skips front matter and strips the closing hashes
+    passed | Outline nests a skipped level one step, not two
+    passed | Outline reads LaTeX sectioning commands outside comments: S > T
+    passed | Outline skips a verbatim block and takes a title that runs over two lines
+    passed | Outline has the headings of a text the parser refuses, an unclosed brace after them
+    failed | Outline answers null for a language without symbols or a late outline, a list for Markdown | AssertionError: expected [ { title: 'S', line: 1, ...(2) } ] to be null
+    failed | outlineFollower delivers the outline of the last text asked and not the one asked before it | TypeError: (0 , __vite_ssr_import_2__.outlineFollower) is not a function
+    failed | outlineFollower delivers nothing for a text asked before stop | TypeError: (0 , __vite_ssr_import_2__.outlineFollower) is not a function
+    failed | outlineFollower delivers again for a text asked after an outline arrived | TypeError: (0 , __vite_ssr_import_2__.outlineFollower) is not a function
+    passed | which sections are open starts Bookmarks and Notes open and the three others closed
+    passed | which sections are open flips each section in the list that section belongs to
+    passed | the Timeline merges copies and commits newest first, a copy before a commit of the same time
+    passed | the Timeline reads a commit whose date does not read as time zero
+    passed | the Timeline addresses the copies of a file, one copy, and the commits that touched it
+    passed | the Timeline reads the answers and leaves out an entry that is not well formed
+tests/views/sources/files/menu/latex-menu.test.ts | 12 fail / 1 pass
+    failed | which rows offer Open LaTeX audits that it is offered on a .tex file and not on a Markdown file | AssertionError: expected undefined to be true // Object.is equality
+    failed | which rows offer Open LaTeX audits that it is offered on a folder or root whose held listing has a .tex file, and not otherwise | AssertionError: expected undefined to be true // Object.is equality
+    failed | which rows offer Open LaTeX audits that it is not offered on a folder whose listing is not held, since the fact asks for nothing | AssertionError: expected undefined to be false // Object.is equality
+    failed | where Open LaTeX sits in the menu audits that it is a group of its own right after Reveal in Finder and the terminal, on every kind of row | AssertionError: expected [ '| @files.menu_reveal', ...(2) ] to deeply equal [ '| @files.menu_reveal', ...(2) ]
+    passed | where Open LaTeX sits in the menu audits that it is not in the menu of a row without the fact, nor in the menu for a selection
+    failed | what the tree calls a root audits that is the name of the root row, else the key | TypeError: (0 , __vite_ssr_import_1__.rootNameIn) is not a function
+    failed | what the tree calls a root audits that is the key when the tree is drawn from a folder below the root | TypeError: (0 , __vite_ssr_import_1__.rootNameIn) is not a function
+    failed | what the Open LaTeX pick opens audits that the view opens on the folder of the main file a .tex file builds through | AssertionError: expected "vi.fn()" to be called once with arguments: [ 'docs', 'proposal/c.tex' ]
+    failed | what the Open LaTeX pick opens opens it on the file's own folder when the file builds through no main file | AssertionError: expected "vi.fn()" to be called once with arguments: [ 'latex', { root: 'docs', ...(2) } ]
+    failed | what the Open LaTeX pick opens audits that it opens on a folder itself without asking for a root, and on a root by its own name | AssertionError: expected [] to deeply equal [ Array(2) ]
+    failed | what the Open LaTeX pick opens audits that writes the same label for a root from the root row and from a .tex file at its top | AssertionError: expected [] to deeply equal [ ...(2) ]
+    failed | what the Open LaTeX pick opens audits that opens one view for a pick made twice on the same file | AssertionError: expected "vi.fn()" to be called 2 times, but got 0 times
+    failed | what the Open LaTeX pick opens audits that opens only the newest pick when the root of the first one is answered after the second | TypeError: answers[1] is not a function
+tests/ui/controls/editor/kit/latex-widget.test.ts | FILE | Cannot find module '/src/lib/ui/controls/editor/kit/latex-widget.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d14/ba
+tests/ui/controls/editor/kit/latex.test.ts | FILE | Cannot find module '../../../../../src/lib/ui/controls/editor/kit/latex.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad
+tests/ui/controls/editor/kit/look.test.ts | 0 fail / 2 pass
+    passed | paintCode resolves when the paint rejects, and tells the editor to forget what it painted
+    passed | paintCode leaves the painted key alone when the paint succeeds, and passes the code theme on
+tests/views/sources/files/sections/sections.test.ts | 1 fail / 17 pass
+    passed | Open Editors draws a group per pane, a row per tab, and the dot on the tab holding unsaved text
+    passed | Open Editors enables Save All only while a tab holds unsaved text
+    passed | Open Editors audits that every row carries the button Enter presses and a Close control
+    passed | Open Editors audits that Close on a row closes a saved tab at once and asks before it closes a tab with unsaved text
+    passed | Open Editors audits that Close All asks how many tabs go and names the one holding unsaved text
+    passed | Open Editors says no editor is open on a page with none
+    passed | Outline audits that draws the headings of a Markdown file in order and not the one in a fenced block
+    passed | Outline audits that every symbol row carries the button Enter presses
+    failed | Outline audits that draws neither a heading nor the no-headings line for a LaTeX file whose outline is still to arrive | AssertionError: expected [ '1', '3' ] to deeply equal []
+    passed | Outline audits that says a Python file has no symbols yet
+    passed | Outline audits that says there is nothing to outline when the active tab shows no file
+    passed | Timeline audits that draws a row per copy of the selected file, a save as File Saved and a delete as File Deleted
+    passed | Timeline audits that every copy row carries the button Enter presses
+    passed | Timeline audits that reads the file of the active tab when none is selected in the tree
+    passed | Timeline audits that says the file has no history yet when the server lists none
+    passed | Timeline audits that says the editor cannot provide a timeline when there is no file
+    passed | Bookmarks and Notes audits that every bookmark row carries the button Enter presses
+    passed | Bookmarks and Notes audits that every note row carries the button Enter presses
+
+## On the tree before repair round 1
+
+tests/checks/config/config-folder.test.ts | 0 fail / 26 pass
+    passed | oculus's own config directory merges without a finding, so no key is defined in two files
+    passed | oculus's own config directory reads the venue and dataset theme words into the vocabulary validate checks
+    passed | oculus's own config directory leaves the theme lists absent when the config holds none, or none with a key
+    passed | oculus's own config directory names the six research tiers and the side-projects folder, the software tier and the side one optional
+    passed | oculus's own config directory holds the cross-link exclusions and independent collection lane tones
+    passed | oculus's own config directory holds exactly the expected top-level keys, and no more
+    passed | oculus's own config directory reads one catalog file per owner and no legacy catalog file
+    passed | oculus's own config directory names roots that are on this machine
+    passed | oculus's own config directory names a group of its own and a path under the hub for every document
+    passed | oculus's own config directory writes one description for every config file and none for a file that is not there
+    passed | oculus's own config directory keys every catalogue group by the rail page it holds, in rail order, Help after System
+    passed | oculus's own config directory keeps view lists out of every navigation group
+    passed | oculus's own config directory names the wallpaper directory owned by oculus
+    passed | oculus's own config directory uses glyph names for every configured icon
+    passed | oculus's own config directory names one icon for every glyph and for nothing but a glyph
+    passed | oculus's own config directory names a glyph only where the source or another config file reads it
+    passed | oculus's own config directory gives every glyph name a stand-in of printable ASCII, and holds no other map
+    passed | oculus's own config directory holds every stand-in to three characters, the box a terminal theme draws it in
+    passed | oculus's own config directory reports a glyph whose stand-in is empty, not text, wider than three, or not ASCII
+    passed | oculus's own config directory ships a drawing for every one of them
+    passed | oculus's own config directory resolves a drawing through the package rather than through a path into node_modules
+    passed | oculus's own config directory reports a glyph with no icon, a row that is no glyph, and an icon the package has not
+    passed | oculus's own config directory reads glyph and icon names as own keys, so a name like constructor is no name
+    passed | oculus's own config directory gives every group a chord and a glyph, and no letter a key the workbench binds
+    passed | oculus's own config directory names a configured group and a nonnegative order in every listed registration
+    passed | oculus's own config directory reads each file on its own and finds its own keys there and nowhere else
+tests/checks/tree/boundaries.test.ts | 1 fail / 10 pass
+    failed | layer boundaries holds across src/lib | AssertionError: expected [ ...(2) ] to deeply equal []
+    passed | layer boundaries holds no process-wide state under src
+    passed | layer boundaries keeps every shell file to the stores its row names
+    passed | layer boundaries catches a shell file reading a store the shell may not read
+    passed | layer boundaries catches process-wide state outside app.d.ts
+    passed | layer boundaries catches a violation of every row it can be shown one of
+    passed | layer boundaries admits the index module of a folder a row names exactly, and no other module in it
+    passed | layer boundaries lets no view or shell component style a primitive own class
+    passed | layer boundaries catches a view reaching into a primitive, and passes the theme class and its own
+    passed | layer boundaries holds every styling entry to a reason
+    passed | layer boundaries holds the styling lists to rules the tree still has
+tests/data/prose/latex.test.ts | FILE | Cannot find module '../../../src/lib/data/prose/latex.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/d14/pre/tests/dat
+tests/server/content/latex-outline.test.ts | 1 fail / 3 pass
+    passed | outlineOf expands each include where it stands and reads a self include once
+    passed | outlineOf leaves out a missing include and an include outside the root
+    passed | outlineOf names a file the parser refuses and a file past the size limit
+    failed | outlineOf lists the sections of a file the parser refuses, names it, and follows none of its includes | AssertionError: expected [ [ 'A', 'main.tex' ], ...(1) ] to deeply equal [ [ 'A', 'main.tex' ], ...(3) ]
+tests/server/content/latex-root.test.ts | 0 fail / 7 pass
+    passed | rootOf answers a main file itself
+    passed | rootOf follows a root comment with a trailing space two folders up
+    passed | rootOf falls through to the folder rule for a root comment naming a missing file
+    passed | rootOf falls through to the folder rule for a root comment naming a file outside the root
+    passed | rootOf answers none for a root comment naming a file outside the root when the folder holds no main
+    passed | rootOf answers the only main of the folder, and none when the folder holds two
+    passed | rootOf answers none for a cycle of root comments, neither file being a main
+tests/server/content/latex-tools.test.ts | 0 fail / 5 pass
+    passed | readCount reads the first line that is only a number
+    passed | readCount reads a missing include as the reason between the marks
+    passed | readCount reads an unreadable main as its reason
+    passed | readCount reads an error mark without a reason as a failure with none
+    passed | readCount does not read a number in a name as the count
+tests/server/content/latex.test.ts | 0 fail / 25 pass
+    passed | mains lists every .tex under manuscript that declares a class, main.tex first
+    passed | mains leaves out a file whose documentclass is commented out
+    passed | mains leaves out an included file that declares no class, and anything not .tex
+    passed | mains does not descend: a .tex in a folder under manuscript is not a main file
+    passed | mains counts a main file kept as a symlink, which a directory entry calls a link
+    passed | mains answers none for a project with no manuscript folder
+    passed | mainsIn lists main.tex first and the other mains by name, and leaves out a file with no class
+    passed | mainsIn answers none for a folder with no main and for a folder that is not there
+    passed | programOf reads "% !TEX program = xelatex\n" as xelatex
+    passed | programOf reads "%!TeX program=LuaLaTeX\n" as lualatex
+    passed | programOf reads "% !TEX program = context\n" as pdflatex
+    passed | programOf reads "no comment\n" as pdflatex
+    passed | programOf reads "\\documentclass{article}\n% !TEX program = xelatex\n" as pdflatex
+    passed | programOf is carried by the state of a main file
+    passed | declaresClass reads a class behind an escaped per-cent sign, and not one behind a comment
+    passed | parseLog reads a file:line: row as an error with its file, line and message
+    passed | parseLog reads a bang row as an error and takes its line from the context under it
+    passed | parseLog leaves the line null for a bang row with no context under it
+    passed | parseLog joins a package warning continued under its own name and reads its line
+    passed | parseLog reads a LaTeX warning that names no line
+    passed | parseLog keeps two warnings in a row apart
+    passed | parseLog makes an absolute path relative to the folder the build ran in
+    passed | parseLog finds nothing in a log that compiled clean
+    passed | buildState answers the PDF and log times and what the log held
+    passed | buildState answers null times and no errors for a file nothing has built
+tests/routes/sessions/latex.test.ts | 18 fail / 31 pass
+    failed | GET /api/latex for a project refuses a request naming no project or root | Error: text key not in config: server.latex.no_id_or_root
+    failed | GET /api/latex for a project refuses an id the snapshot does not hold | Error: text key not in config: server.latex.no_project
+    passed | GET /api/latex for a project answers one row per main file, with the folder and the errors of the last build
+    passed | GET /api/latex for a project answers no rows for a project whose folder holds no manuscript
+    failed | GET /api/latex for a project refuses a folder that would leave the hub | Error: text key not in config: server.latex.outside_hub
+    passed | GET /api/latex for a folder of a root answers both mains of a folder with every path against the root
+    passed | GET /api/latex for a folder of a root reads the root itself when the path is empty
+    passed | GET /api/latex for a folder of a root refuses a path that leaves the root with 404
+    passed | GET /api/latex for a folder of a root refuses a path that is a file with 404
+    passed | GET /api/latex for a folder of a root refuses a folder that is missing with 404
+    passed | GET /api/latex for a folder of a root refuses a root key that is unknown with 404
+    passed | GET /api/latex for a folder of a root refuses a root without a path with 400
+    passed | GET /api/latex for a folder of a root refuses both an id and a root with 400
+    passed | GET /api/latex for a folder of a root refuses neither with 400
+    passed | GET /api/latex for a folder of a root refuses a path with a file with 400
+    passed | GET /api/latex for the root a file builds through answers the main of a main file, the only main of a folder, and none otherwise
+    passed | GET /api/latex for the root a file builds through refuses a file that is missing and a file outside the root
+    passed | GET /api/latex outline answers the sections of a main followed through its includes
+    failed | GET /api/latex outline of a project names the files against the project folder and carries that folder | AssertionError: expected { sections: [ ...(2) ], skipped: [] } to deeply equal { sections: [ ...(2) ], ...(2) }
+    failed | GET /api/latex outline of a project names a file past the size limit as skipped and lists none of its sections | AssertionError: expected { sections: [], ...(1) } to deeply equal { sections: [], ...(2) }
+    failed | every refusal carries the words of the catalog the endpoint was handed answers no project or root with the catalog sentence | Error: text key not in config: server.latex.no_id_or_root
+    failed | every refusal carries the words of the catalog the endpoint was handed answers an empty project id with the catalog sentence | Error: text key not in config: server.latex.no_id
+    failed | every refusal carries the words of the catalog the endpoint was handed answers both forms with the catalog sentence | Error: text key not in config: server.latex.id_and_root
+    failed | every refusal carries the words of the catalog the endpoint was handed answers a root with no path with the catalog sentence | Error: text key not in config: server.latex.path_missing
+    failed | every refusal carries the words of the catalog the endpoint was handed answers an empty root with the catalog sentence | Error: text key not in config: server.latex.root_missing
+    failed | every refusal carries the words of the catalog the endpoint was handed answers a path and a file with the catalog sentence | Error: text key not in config: server.latex.path_and_file
+    failed | every refusal carries the words of the catalog the endpoint was handed answers an outline and a count with the catalog sentence | Error: text key not in config: server.latex.outline_and_count
+    failed | every refusal carries the words of the catalog the endpoint was handed answers a folder that is a file with the catalog sentence | Error: text key not in config: server.latex.not_a_folder
+    failed | every refusal carries the words of the catalog the endpoint was handed answers a file that is a folder with the catalog sentence | Error: text key not in config: server.latex.not_a_file
+    failed | every refusal carries the words of the catalog the endpoint was handed answers a count of a chapter with the catalog sentence | Error: text key not in config: server.latex.not_a_main
+    failed | every refusal carries the words of the catalog the endpoint was handed answers an outline of a chapter with the catalog sentence | Error: text key not in config: server.latex.not_a_main
+    failed | every refusal carries the words of the catalog the endpoint was handed answers a path the root does not hold with the catalog sentence and the root na | AssertionError: expected 'nope is missing for the root docs' to match /^<server\.latex\.path_refused> nope i.../
+    passed | every main parameter is checked before a file is read or a program started answers 404 for ../x.tex and runs nothing
+    passed | every main parameter is checked before a file is read or a program started answers 404 for /etc/passwd and runs nothing
+    passed | every main parameter is checked before a file is read or a program started answers 404 for -v.tex and runs nothing
+    passed | every main parameter is checked before a file is read or a program started answers 404 for chapter.tex and runs nothing
+    passed | every main parameter is checked before a file is read or a program started answers 404 for missing.tex and runs nothing
+    passed | every main parameter is checked before a file is read or a program started refuses a name starting with a dash even when a main file has that name
+    passed | every main parameter is checked before a file is read or a program started refuses an outline and a count asked together
+    passed | GET /api/latex word count answers the number the program printed, run in the folder with the words as arguments
+    passed | GET /api/latex word count answers 502 with the reason between the marks when the program reports a failure
+    passed | GET /api/latex word count does not read a digit in the main file name as the count
+    passed | GET /api/latex word count answers 502 with the not-installed sentence when the program is missing
+    passed | GET /api/latex word count answers 504 when the program runs past the time limit
+    passed | POST /api/latex format answers the text the program printed from the text it was given on standard input
+    passed | POST /api/latex format answers 502 with the install sentence when the program is missing
+    passed | POST /api/latex format answers 502 with the first line of standard error when the program exits 1
+    passed | POST /api/latex format answers 504 past the time limit
+    failed | POST /api/latex format refuses a request without the write token and a body that is no format request | Error: text key not in config: server.latex.not_a_format
+tests/routes/sessions/terminal-actions.test.ts | 2 fail / 36 pass
+    passed | POST /api/terminal, the task action starts every accepted task as an interactive session, with no skip and no print-mode flags
+    passed | POST /api/terminal, the task action adds the skip flag and nothing else when tasks.skip_permissions is on
+    passed | POST /api/terminal, the task action reads a tasks.skip_permissions of any other shape, and a missing one, as off
+    passed | POST /api/terminal, the task action follows a setting the reader changed while the server runs, with no restart
+    passed | POST /api/terminal, the task action is wired to that reader by the route module, not to the context snapshot
+    passed | POST /api/terminal, the task action carries tasks.skip_permissions on the wire, off in the checked-in configuration
+    passed | POST /api/terminal, the task action refuses another task kind without starting a terminal
+    passed | POST /api/terminal, the task action uses Claude from PATH when local configuration names no binary
+    passed | POST /api/terminal, the latex action builds one main file with latexmk in the manuscript folder
+    passed | POST /api/terminal, the latex action cleans one main file with the clean command
+    passed | POST /api/terminal, the latex action refuses a file that is not a main file of the project, before anything runs
+    passed | POST /api/terminal, the latex action refuses -v.tex, a main named with a dash and an absolute path, before anything runs
+    passed | POST /api/terminal, the latex action refuses /etc/passwd, a main named with a dash and an absolute path, before anything runs
+    failed | POST /api/terminal, the latex action words its refusals from the catalog the configuration holds | AssertionError: expected 'main is not a main file of this proje...' to be '<main_not_of_scope> main is not a mai...' // Object.is equality
+    passed | POST /api/terminal, the latex action refuses a project folder that would leave the hub, before anything runs
+    passed | POST /api/terminal, the latex action refuses an id the snapshot does not hold, and a step that is neither
+    passed | latexCommand builds a main file with pdflatex through its switch
+    passed | latexCommand builds a main file with xelatex through its switch
+    passed | latexCommand builds a main file with lualatex through its switch
+    passed | latexCommand cleans a main file whatever its program
+    passed | latexCommand quotes a main file name as one word, so a shell passes it to latexmk whole
+    passed | POST /api/terminal, the latex action over a folder of a root starts the terminal in that folder with the program the main file names
+    passed | POST /api/terminal, the latex action over a folder of a root refuses a file that is not a main of the folder, before anything runs
+    passed | POST /api/terminal, the latex action over a folder of a root refuses -v.tex, a main named with a dash and an absolute path, before anything runs
+    passed | POST /api/terminal, the latex action over a folder of a root refuses /etc/passwd, a main named with a dash and an absolute path, before anything runs
+    failed | POST /api/terminal, the latex action over a folder of a root words its refusals from the catalog the configuration holds | AssertionError: expected 'root and path do not name a folder of...' to be '<folder_not_served> root and path do ...' // Object.is equality
+    passed | POST /api/terminal, the latex action over a folder of a root refuses a path outside the root, before anything runs
+    passed | POST /api/terminal, the latex action over a folder of a root refuses a folder that is missing, before anything runs
+    passed | POST /api/terminal, the latex action over a folder of a root refuses a root that is not served, before anything runs
+    passed | POST /api/terminal, the latex action over a folder of a root refuses every root when the server serves none
+    passed | POST /api/terminal, the latex action over a folder of a root refuses a request that names both a project and a root, and one that names neither
+    passed | POST /api/terminal, the chat action starts a focused interactive Claude terminal and writes its private index first
+    passed | POST /api/terminal, the chat action fills a title holding a placeholder and a replacement pattern into the command as written
+    passed | POST /api/terminal, the chat action starts a numbered portfolio chat in the hub with no model argument when none is set
+    passed | POST /api/terminal, the chat action numbers a portfolio chat past an existing Chat 1
+    passed | POST /api/terminal, the chat action leaves no index when zero columns are refused
+    passed | POST /api/terminal, the chat action removes the index when the terminal runner fails to start
+    passed | POST /api/terminal, the chat action refuses an unknown project before writing an index or starting a terminal
+tests/state/client/queries.test.ts | 0 fail / 32 pass
+    passed | a read that failed is asked once and not again by the reads after it, for a fetch that rejects
+    passed | a read that failed is asked once and not again by the reads after it, for a 500
+    passed | a read that failed is still asked once where the runtime counts as a browser, which retries by default
+    passed | an answer held with no reader is still held after six minutes, and is not asked again on the next read
+    passed | a browser that says it is offline still sends the request, since the page reaches its own server
+    passed | a value put in by hand reads back at once on deposit, memories, changes and transcripts, and sends no request
+    passed | a value put in by hand reads at once while that key is being fetched, and the fetch answer then replaces it
+    passed | a reload while a request is out sends nothing more for deposit
+    passed | a reload while a request is out sends nothing more for memories
+    passed | two client states share no answer: a key held in one is asked for again by the other
+    passed | an empty id, name, path or root answers its empty reading in every keyed store, builds no query and sends no request
+    passed | the query helper on its own builds no query for an empty key, in the cache of the client that docs reads through
+    passed | the query helper on its own audit: calls a query function that throws once, where the runtime retries by default
+    passed | the query helper on its own reads a marked key as stale, keeps the mark across a hold, and asks again on the next read
+    passed | the query helper on its own applies a wait mark after the fetch in flight lands, and a drop mark not at all
+    passed | the query helper on its own never holds the answer of a fetch a replace mark cancelled, yet returns it to the awaited call
+    passed | the query helper on its own sends a fetch scheduled in this tick nowhere once its key is forgotten
+    passed | a note saved before it was read is read from the server on the next read, which ends with the disk body and time
+    passed | a read and a refetch inside a hidden scope schedules nothing for a key with nothing held, and asks once in a shown scope
+    passed | a read and a refetch inside a hidden scope answers a marked key as held and refreshing, and asks when read outside the scope
+    passed | a read and a refetch inside a hidden scope does not ask the scope whether it is shown for a key that wants nothing
+    passed | a read and a refetch inside a hidden scope nests: the inner scope hides, the outer shows again after it, and a throw restores
+    passed | a read and a refetch inside a hidden scope keeps a hidden outer scope hidden after a shown inner scope returns or throws
+    passed | a read and a refetch inside a hidden scope marks a held key on refetch and asks nothing, and a read outside the scope then asks once
+    passed | a read and a refetch inside a hidden scope builds no query and asks nothing on refetch of a key with nothing held
+    passed | a read and a refetch inside a hidden scope records a wait, not the again it was given, for a request that is out
+    passed | a read and a refetch inside a hidden scope keeps the again a live caller recorded when a hidden refetch comes after it
+    passed | a read and a refetch inside a hidden scope asks once for two readers of one key, the live one, whatever the hidden one reads and refetches
+    passed | a read and a refetch inside a hidden scope asks again with the live reader query function, not the one a hidden refetch was given
+    passed | a read and a refetch inside a hidden scope audit: leaves peek, fetch, hold and mark as they are in no scope
+    passed | a read and a refetch inside a hidden scope sends a read scheduled while shown after the scope turns hidden, once
+    passed | a read and a refetch inside a hidden scope audit: sends one request when the flag goes shown, hidden and shown inside one tick
+tests/state/sessions/source.test.ts | 0 fail / 54 pass
+    passed | source tab state identifies a tab by root and path and labels it with the file name
+    passed | source tab state carries the line a caller opened the file at, and none when no caller named one
+    passed | source tab state distinguishes roots, paths, and delimiters in file identities
+    passed | source tab state acknowledges the sent copy when typing continues during a pending save
+    passed | source tab state shares a pending initial read across remounts
+    passed | source tab state holds what the route says about the file, and locks the tab when it is read-only
+    passed | source tab state sends no save at all for a file the route called read-only, and says why
+    passed | source tab state locks the tab when a save is refused because the mode changed under it
+    passed | source tab state sends no save for a file the read had to cut, which would take the rest off the disk
+    passed | source tab state returns a path refusal without retrying it as a stale token
+    passed | source tab state keeps the rendered half per instance, on until the toggle says otherwise
+    passed | source tab state keeps the blame per instance, off until the toggle turns it on
+    passed | source tab state keeps the language and the indentation chosen from the status bar per instance, and drops them for another file
+    passed | source tab state loads complete text through the existing file route
+    passed | source tab state saves complete text through the authenticated source route
+    passed | a save tells the LaTeX store which file was written does so once the write succeeded, with the root and the path
+    passed | a save tells the LaTeX store which file was written does not when the write was refused
+    passed | the unsaved-text rule a close asks answers no for an instance with no draft and for a draft nothing has edited
+    passed | the unsaved-text rule a close asks answers yes once the working text differs from the saved text, and no again after a save
+    passed | the unsaved-text rule a close asks is what the ui store answers for an instance id, which is what the pane asks
+    passed | a save whose draft went while it was out writes nothing under a tab its pane closed
+    passed | a save whose draft went while it was out writes nothing under a closed tab whose draft was never read, so names no file
+    passed | a save whose draft went while it was out leaves the next file's draft alone in a preview tab pointed at it
+    passed | a draft read from an instance state of the wrong shape answers a text that is a number, a read-in that is null, a rendered flag that is a string as th
+    passed | a draft read from an instance state of the wrong shape answers flags that are truthy and not true as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape answers a list as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape answers a string as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape answers null as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape answers nothing held as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape answers every field of its type as the draft it names, with every key present
+    passed | a draft read from an instance state of the wrong shape reads an indentation of tabs and a size of 4
+    passed | a draft read from an instance state of the wrong shape reads an indentation of no tabs and a size of 1
+    passed | a draft read from an instance state of the wrong shape reads an indentation of tabs and a size of 8
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a key beyond the two
+    passed | a draft read from an instance state of the wrong shape reads an indentation of tabs that are a string
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size of 9
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size of 0
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size that is not whole
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size that is NaN
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size that is infinite
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a size that is a string
+    passed | a draft read from an instance state of the wrong shape reads an indentation of a list
+    passed | a draft read from an instance state of the wrong shape reads an indentation of null
+    passed | the answer of the route that says whether a file is locked is the answer of readonly true
+    passed | the answer of the route that says whether a file is locked is the answer of readonly the string true
+    passed | the answer of the route that says whether a file is locked is the answer of readonly absent
+    passed | the answer of the route that says whether a file is locked is the answer of a list
+    passed | the answer of the route that says whether a file is locked is the answer of null
+    passed | the answer of the route that says whether a file is locked is the answer of text that is not JSON
+    passed | the answer of the route that says whether a file is locked is the answer of a refusal that says readonly true
+    passed | a source tab over the file at HEAD or in the index is a tab of its own for each stage of one file, named for the stage
+    passed | a source tab over the file at HEAD or in the index reads the text from the head read of the git endpoint
+    passed | a source tab over the file at HEAD or in the index says a file the stage lacks is missing and a binary one is binary
+    passed | a source tab over the file at HEAD or in the index holds a draft that is read-only, and never reads the file route or the mode route
+tests/state/sessions/terminals.test.ts | 0 fail / 63 pass
+    passed | a terminal id is six hex digits and a kind, and nothing a session id could be
+    passed | a terminal id names its channel
+    passed | the terminals the payload carries reads them out of the sessions payload and finds one by id
+    passed | base64 on the wire carries bytes a string could not
+    passed | base64 on the wire reads anything that is not base64 as no bytes
+    passed | the four actions of /api/terminal starts one with its kind, its directory and a geometry
+    passed | the four actions of /api/terminal starts one at a default geometry when the pane has not been measured
+    passed | the four actions of /api/terminal stops one and resizes one by id
+    passed | the four actions of /api/terminal starts a dataset recovery with its key and geometry
+    passed | the four actions of /api/terminal starts an update task without sending a command or directory from the page
+    passed | the four actions of /api/terminal starts a focused chat without sending a command or directory from the page
+    passed | the four actions of /api/terminal starts a LaTeX step of a project by its id and of a folder by its root and path
+    passed | the four actions of /api/terminal reports what the server refused it with, in the server words
+    passed | the two messages a page writes on a pty channel sends keystrokes as base64 of their UTF-8 bytes
+    passed | the two messages a page writes on a pty channel sends a resize as whole numbers
+    passed | the two messages a page writes on a pty channel writes nothing when no socket is open, and says so
+    passed | subscribing to a terminal asks for the channel and hands the scrollback over first
+    passed | subscribing to a terminal keeps the chunks out of entities, where only the latest would survive
+    passed | subscribing to a terminal stops handing them over, and stops asking for the channel on a reconnect
+    passed | subscribing to a terminal resizes the window to the grid before it asks for the channel
+    passed | subscribing to a terminal asks for the channel when the resize is refused
+    passed | subscribing to a terminal asks for nothing when the listener is taken off before the resize answered
+    passed | subscribing to a terminal posts the grid size again when it changed while the resize was out, and asks after that
+    passed | subscribing to a terminal asks for the channel at RESIZE_WAIT when the resize never answers
+    passed | subscribing to a terminal posts the resize of a second subscribe after the first one answered, ending at the later size
+    passed | subscribing to a terminal posts the resize of a remount after the one of the grid taken off, and asks for the channel once
+    passed | subscribing to a terminal holds input typed while the resize is out and writes it right after the subscribe, in order
+    passed | subscribing to a terminal drops the input held for a listener taken off, and the input given after that
+    passed | the title stripper drops a window title a shell wrote and keeps everything round it
+    passed | the title stripper carries a title cut across two chunks, and a lone escape at the end
+    passed | the frame check drops a frame whose payload is not a map, so every channel reads its own payload type
+    passed | the terminals that ended are the ones an earlier message listed and this one does not
+    passed | the terminals that ended include a terminal a tab holds when the first message does not list it
+    passed | the terminals that ended leave out a terminal started here that no message has listed yet
+    passed | the terminals that ended are none when the message carries no terminal list
+    passed | the terminals that ended name each terminal once, whether a tab holds it or an earlier message listed it
+    passed | the terminals the page hears in both shapes it is given them end none of the terminals a list keeps, after a reload, where the tabs hold them and noth
+    passed | the terminals the page hears in both shapes it is given them end none of the terminals a list keeps, after a reconnect, where the lists heard before a
+    passed | the terminals no Terminal tab owns are the listed ones no tab on any page owns, in list order
+    passed | the terminals no Terminal tab owns are none while no list has been heard
+    passed | the terminals no Terminal tab owns leave out a terminal a tab owns that the list does not name, and count none the list lacks
+    passed | the terminals no Terminal tab owns leave out a foreign terminal, as Join Terminals does
+    passed | a terminal's label is its title when it has been renamed, and its name when the title is empty
+    passed | a message with no terminal list is not the first message, so the first list that lacks the terminal of a tab it owned alone closes the tab
+    passed | a sessions payload whose terminals are of the wrong shape does not hear a terminals value of "x", so the next list is the first
+    passed | a sessions payload whose terminals are of the wrong shape does not hear a terminals value of {}, so the next list is the first
+    passed | a sessions payload whose terminals are of the wrong shape does not hear a terminals value of null, so the next list is the first
+    passed | a sessions payload whose terminals are of the wrong shape does not hear a terminals value of 3, so the next list is the first
+    passed | a sessions payload whose terminals are of the wrong shape hears the ids that are strings of a list holding anything else, and takes out the terminals 
+    passed | a sessions payload whose terminals are of the wrong shape hands on the list of the payload itself when every item is a terminal
+    passed | a sessions payload whose terminals are of the wrong shape leaves out an item of the list that is no terminal
+    passed | a pty chunk whose frame or payload is of the wrong shape hands bytes that are a number to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands bytes that are null to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands bytes that are a list to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands bytes that are not base64 to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands no bytes to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands more keys than the bytes to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands an own __proto__ key holding the bytes to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands a version of minus zero to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands an infinite version to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands a version that is a string to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands a payload that is a list to the listener as the chunk it reads
+    passed | a pty chunk whose frame or payload is of the wrong shape hands a payload that is null to the listener as the chunk it reads
+tests/views/boards/project.test.ts | 0 fail / 31 pass
+    passed | a project as its own tab draws the card of the board, opened out
+    passed | a project as its own tab offers Show in Files for the project's folder on the card
+    passed | a project as its own tab offers the manifest editor and the deposit on the card
+    passed | a project as its own tab offers the pin control on the card
+    passed | a project as its own tab marks the manifest as behind its documents
+    passed | a project as its own tab draws no subtasks block for a project with none, and offers adding the first on the card
+    passed | a project as its own tab draws the subtasks block for a project that has subtasks
+    passed | a project as its own tab draws the documents once: the tab lists them and the card does not
+    passed | a project as its own tab draws a known document the project has not got as the tag the card draws for it
+    passed | a project as its own tab offers the Markdown documents the project has, and no others
+    passed | a project as its own tab offers no PRESENT.md and no deck control for a project that has no slide
+    passed | a project as its own tab offers PRESENT.md after the four, and the deck control, for a project with a slide
+    passed | a project as its own tab draws the PRESENT.md the tab was left showing
+    passed | a project as its own tab waits for the chosen document rather than drawing an empty one
+    passed | a project as its own tab draws the sessions working in the project folder, and no others
+    passed | a project as its own tab starts on the first document the project has
+    passed | a project as its own tab keeps showing the document the tab was left on
+    passed | a project as its own tab falls back to the first document when the one it remembers is gone
+    passed | a project as its own tab says so when it was opened for no project, and for one the snapshot does not hold
+    passed | the LaTeX panel of a project tab draws one row per main file, with its PDF time and its error count
+    passed | the LaTeX panel of a project tab offers a build and a clean on every row, and the PDF only where there is one
+    passed | the LaTeX panel of a project tab draws build, clean and PDF as small buttons, the size of the 22 px row they sit in
+    passed | the LaTeX panel of a project tab draws a failed read as the error box with a retry button
+    passed | the LaTeX panel of a project tab keeps the errors behind their count until the disclosure is opened
+    passed | the LaTeX panel of a project tab draws no panel at all for a project whose folder holds no main file
+    passed | a software project and the paper it names draws the card of a project no board holds
+    passed | a software project and the paper it names names the papers on the software's own tab
+    passed | a software project and the paper it names names the software on the paper's own tab
+    passed | a press on a session row draws the card's session row and the tab's own, in that order
+    passed | a press on a session row selects the session on the tab's own row
+    passed | a press on a session row selects the session on the card's row, and opens its detail beside the board
+tests/views/academic/latex-editor.test.ts | 0 fail / 7 pass
+    passed | the problems a LaTeX tab hands its editor audits that the problems are those of the latest build that name this file, a missing line as the first
+    passed | the problems a LaTeX tab hands its editor audits that there are no problems for a file the build did not name, nor before any build was read
+    passed | the folder a picture path is resolved from audits that the folder is the one of the main file the tab builds through, asked once
+    passed | the folder a picture path is resolved from audits that the folder is the file's own when it builds through no main file
+    passed | what else a LaTeX tab hands its editor audits that a picture exists when the folder listing names it as a file
+    passed | what else a LaTeX tab hands its editor audits that a picture is read through the file route, each segment of the path escaped
+    passed | what else a LaTeX tab hands its editor audits that formatting goes through the store's formatter and the editor's words reach the tab
+tests/views/academic/latex.test.ts | 2 fail / 14 pass
+    passed | the LaTeX view over a folder with two main files draws a block per main file with build, clean and the controls its state allows
+    passed | the LaTeX view over a folder with two main files says the problem count and the split of errors and warnings, and keeps the lists closed
+    passed | the LaTeX view over a folder with two main files names the program a main file builds with in its tooltip
+    passed | the LaTeX view over a folder with two main files draws no sentence for a folder that has main files
+    failed | the line a main file says while it is building draws the line beside the PDF time of the main file whose build is asked for, and of no other | TypeError: client.latex.run is not a function
+    passed | the line a main file says while it is building draws no line while nothing is building
+    failed | the outline of a main file with a file it did not read in full names a file past the size limit under the sections, against the project folder | AssertionError: expected '<!--[--><!--[0--><!--[-1--><ul class=...' to contain 'not read: projects/alpha/manuscript/h...'
+    passed | the outline of a main file with a file it did not read in full draws the sections of a file the parser refused and names that file
+    passed | the LaTeX view over a folder with no main file says so
+    passed | the LaTeX view over a folder with no main file says so for an instance that names no root, without asking the server
+    passed | the LaTeX view over a folder that is gone draws the cannot-read sentence with the server reason and a retry control
+    passed | the tab of the LaTeX view is named by the label the opener wrote, else the folder, else the root
+    passed | the places the rows open audits that a problem opens at its file and line, the main for no file and the top for no line
+    passed | the places the rows open audits that every error is listed before any warning
+    passed | the places the rows open audits that the place reads as file and line, a file alone, a line alone or nothing
+    passed | the places the rows open audits that the log opens beside the main file, in the root and in a folder
+tests/views/whole/type-scale.test.ts | 0 fail / 290 pass
+    passed | the view type scale lists every view file in the audit
+    passed | the view type scale audits every local role in the section of Settings that resets the pages
+    passed | the view type scale audits that every ui component is listed in the pass-through audit
+    passed | the view type scale sets every local role in boards/personal/Personal.svelte
+    passed | the view type scale sets every local role in boards/collection/Collection.svelte
+    passed | the view type scale sets every local role in system/config/Config.svelte
+    passed | the view type scale sets every local role in sources/data/Data.svelte
+    passed | the view type scale sets every local role in boards/deposit/Deposit.svelte
+    passed | the view type scale sets every local role in sources/doc/Doc.svelte
+    passed | the view type scale sets every local role in sources/document/Document.svelte
+    passed | the view type scale sets every local role in sources/file/File.svelte
+    passed | the view type scale sets every local role in sources/files/Files.svelte
+    passed | the view type scale sets every local role in sources/note/Note.svelte
+    passed | the view type scale sets every local role in sources/files/sections/BookmarkForm.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Bookmarks.svelte
+    passed | the view type scale sets every local role in sources/files/header/Controls.svelte
+    passed | the view type scale sets every local role in sources/files/header/Filters.svelte
+    passed | the view type scale sets every local role in sources/files/header/Outside.svelte
+    passed | the view type scale sets every local role in sources/files/header/WorkspaceHeader.svelte
+    passed | the view type scale sets every local role in sources/files/sections/OpenEditors.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Outline.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Timeline.svelte
+    passed | the view type scale sets every local role in sources/files/tree/FileRow.svelte
+    passed | the view type scale sets every local role in sources/files/tree/Failed.svelte
+    passed | the view type scale sets every local role in sources/files/Questions.svelte
+    passed | the view type scale sets every local role in sources/files/tree/Follow.svelte
+    passed | the view type scale sets every local role in sources/files/tree/NameInput.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Notes.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Sections.svelte
+    passed | the view type scale sets every local role in sources/files/sections/Section.svelte
+    passed | the view type scale sets every local role in sources/files/tree/ShowPath.svelte
+    passed | the view type scale sets every local role in sources/files/tree/Tree.svelte
+    passed | the view type scale sets every local role in structure/domains/Domains.svelte
+    passed | the view type scale sets every local role in boards/editor/Editor.svelte
+    passed | the view type scale sets every local role in system/audit/Audit.svelte
+    passed | the view type scale sets every local role in system/findings/Findings.svelte
+    passed | the view type scale sets every local role in boards/focus/Focus.svelte
+    passed | the view type scale sets every local role in system/gallery/Gallery.svelte
+    passed | the view type scale sets every local role in system/help/Diagram.svelte
+    passed | the view type scale sets every local role in system/help/Help.svelte
+    passed | the view type scale sets every local role in system/history/History.svelte
+    passed | the view type scale sets every local role in personal/calendar/Calendar.svelte
+    passed | the view type scale sets every local role in shared/accounts/AccountList.svelte
+    passed | the view type scale sets every local role in shared/accounts/ConnectorHead.svelte
+    passed | the view type scale sets every local role in system/hpc/Hpc.svelte
+    passed | the view type scale sets every local role in system/usage/Usage.svelte
+    passed | the view type scale sets every local role in feeds/inbox/Inbox.svelte
+    passed | the view type scale sets every local role in feeds/leads/Leads.svelte
+    passed | the view type scale sets every local role in feeds/linkedin/Linkedin.svelte
+    passed | the view type scale sets every local role in structure/map/Map.svelte
+    passed | the view type scale sets every local role in personal/memories/Memories.svelte
+    passed | the view type scale sets every local role in boards/person/Person.svelte
+    passed | the view type scale sets every local role in academic/present/Present.svelte
+    passed | the view type scale sets every local role in structure/pillars/Pillars.svelte
+    passed | the view type scale sets every local role in boards/project/Project.svelte
+    passed | the view type scale sets every local role in boards/projects/Projects.svelte
+    passed | the view type scale sets every local role in feeds/radar/Radar.svelte
+    passed | the view type scale sets every local role in sources/repositories/Repositories.svelte
+    passed | the view type scale sets every local role in sources/search/Search.svelte
+    passed | the view type scale sets every local role in sources/search/Query.svelte
+    passed | the view type scale sets every local role in sources/search/Results.svelte
+    passed | the view type scale sets every local role in academic/slides/Slides.svelte
+    passed | the view type scale sets every local role in sources/source/Source.svelte
+    passed | the view type scale sets every local role in system/status/Status.svelte
+    passed | the view type scale sets every local role in system/workbench/Catalogue.svelte
+    passed | the view type scale sets every local role in system/workbench/Pages.svelte
+    passed | the view type scale sets every local role in system/workbench/RailEditor.svelte
+    passed | the view type scale sets every local role in system/workbench/Settings.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/BrowserControl.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/Contents.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/Control.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/EditLink.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/Gear.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/Header.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/Item.svelte
+    passed | the view type scale sets every local role in system/workbench/settings/List.svelte
+    passed | the view type scale sets every local role in sources/venues/Venues.svelte
+    passed | the view type scale sets every local role in boards/collection/Coverage.svelte
+    passed | the view type scale sets every local role in boards/collection/Software.svelte
+    passed | the view type scale sets every local role in boards/collection/EntryCard.svelte
+    passed | the view type scale sets every local role in sources/data/DatasetCard.svelte
+    passed | the view type scale sets every local role in structure/domains/DomainCard.svelte
+    passed | the view type scale sets every local role in boards/focus/Band.svelte
+    passed | the view type scale sets every local role in boards/focus/CareerPanel.svelte
+    passed | the view type scale sets every local role in boards/focus/CommandCenter.svelte
+    passed | the view type scale sets every local role in boards/focus/CommandCenterView.svelte
+    passed | the view type scale sets every local role in boards/focus/lanes/Lanes.svelte
+    passed | the view type scale sets every local role in boards/focus/lanes/LaneCard.svelte
+    passed | the view type scale sets every local role in boards/focus/lanes/LaneHead.svelte
+    passed | the view type scale sets every local role in boards/focus/QuickAdd.svelte
+    passed | the view type scale sets every local role in boards/focus/Tasks.svelte
+    passed | the view type scale sets every local role in system/hpc/Capacity.svelte
+    passed | the view type scale sets every local role in system/hpc/Head.svelte
+    passed | the view type scale sets every local role in system/hpc/Jobs.svelte
+    passed | the view type scale sets every local role in system/hpc/Log.svelte
+    passed | the view type scale sets every local role in system/hpc/Quota.svelte
+    passed | the view type scale sets every local role in system/hpc/Recent.svelte
+    passed | the view type scale sets every local role in shared/accounts/AddAccount.svelte
+    passed | the view type scale sets every local role in shared/accounts/NoAccounts.svelte
+    passed | the view type scale sets every local role in shared/accounts/RemoveAccount.svelte
+    passed | the view type scale sets every local role in personal/account-setup/AccountSetup.svelte
+    passed | the view type scale sets every local role in personal/account-setup/CopyValue.svelte
+    passed | the view type scale sets every local role in personal/account-setup/GoogleSteps.svelte
+    passed | the view type scale sets every local role in personal/account-setup/HalfForm.svelte
+    passed | the view type scale sets every local role in personal/account-setup/MicrosoftSteps.svelte
+    passed | the view type scale sets every local role in feeds/inbox/InboxCard.svelte
+    passed | the view type scale sets every local role in feeds/leads/LeadCard.svelte
+    passed | the view type scale sets every local role in feeds/linkedin/PostCard.svelte
+    passed | the view type scale sets every local role in structure/map/Controls.svelte
+    passed | the view type scale sets every local role in structure/map/Graph.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Closing.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Dot.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Equation.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Framing.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Ideas.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Legend.svelte
+    passed | the view type scale sets every local role in academic/present/Overview.svelte
+    passed | the view type scale sets every local role in academic/present/Panel.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Project.svelte
+    passed | the view type scale sets every local role in academic/present/Slide.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Summary.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Title.svelte
+    passed | the view type scale sets every local role in academic/present/parts/Words.svelte
+    passed | the view type scale sets every local role in structure/pillars/ArchivalCard.svelte
+    passed | the view type scale sets every local role in structure/pillars/LineCard.svelte
+    passed | the view type scale sets every local role in structure/pillars/OrphansCard.svelte
+    passed | the view type scale sets every local role in boards/project/Latex.svelte
+    passed | the view type scale sets every local role in academic/latex/Latex.svelte
+    passed | the view type scale sets every local role in shared/latex/Main.svelte
+    passed | the view type scale sets every local role in shared/latex/Outline.svelte
+    passed | the view type scale sets every local role in shared/latex/Problems.svelte
+    passed | the view type scale sets every local role in shared/latex/Rows.svelte
+    passed | the view type scale sets every local role in boards/projects/NewIdea.svelte
+    passed | the view type scale sets every local role in boards/projects/Stats.svelte
+    passed | the view type scale sets every local role in feeds/radar/Bucket.svelte
+    passed | the view type scale sets every local role in feeds/radar/RadarCard.svelte
+    passed | the view type scale sets every local role in feeds/radar/RadarIntro.svelte
+    passed | the view type scale sets every local role in sources/repositories/changes/Changes.svelte
+    passed | the view type scale sets every local role in sources/repositories/changes/ChangeRow.svelte
+    passed | the view type scale sets every local role in sources/repositories/changes/FolderRow.svelte
+    passed | the view type scale sets every local role in sources/repositories/Repo.svelte
+    passed | the view type scale sets every local role in sources/repositories/refs/Worktrees.svelte
+    passed | the view type scale sets every local role in sessions/agents/Agents.svelte
+    passed | the view type scale sets every local role in sessions/changes/Changes.svelte
+    passed | the view type scale sets every local role in sessions/changes/ChangesRepo.svelte
+    passed | the view type scale sets every local role in sessions/changes/ChangesTouched.svelte
+    passed | the view type scale sets every local role in sessions/session-detail/SessionDetail.svelte
+    passed | the view type scale sets every local role in sessions/session-list/SessionList.svelte
+    passed | the view type scale sets every local role in sessions/session-list/SessionWorkspace.svelte
+    passed | the view type scale sets every local role in sessions/session-list/Customizations.svelte
+    passed | the view type scale sets every local role in sessions/customization/CustomizationView.svelte
+    passed | the view type scale sets every local role in sessions/terminal/Terminal.svelte
+    passed | the view type scale sets every local role in sessions/terminal/grid/TerminalGrid.svelte
+    passed | the view type scale sets every local role in sessions/terminal/grid/FindBar.svelte
+    passed | the view type scale sets every local role in sessions/terminal/RenameField.svelte
+    passed | the view type scale sets every local role in sessions/terminal/AttachPicker.svelte
+    passed | the view type scale sets every local role in sessions/terminal/Composer.svelte
+    passed | the view type scale sets every local role in sessions/terminal/TerminalList.svelte
+    passed | the view type scale sets every local role in sessions/terminal/TerminalTitle.svelte
+    passed | the view type scale sets every local role in sessions/terminal/TerminalFontTools.svelte
+    passed | the view type scale sets every local role in sessions/session-list/TerminalRows.svelte
+    passed | the view type scale sets every local role in sessions/timeline/Timeline.svelte
+    passed | the view type scale sets every local role in sessions/transcript/Transcript.svelte
+    passed | the view type scale sets every local role in shared/code/Code.svelte
+    passed | the view type scale sets every local role in shared/changes/ChangeCounts.svelte
+    passed | the view type scale sets every local role in shared/changes/ChangeGroups.svelte
+    passed | the view type scale sets every local role in shared/links/BookmarkStar.svelte
+    passed | the view type scale sets every local role in shared/card/Clamp.svelte
+    passed | the view type scale sets every local role in shared/links/CrossLinks.svelte
+    passed | the view type scale sets every local role in shared/card/CardActions.svelte
+    passed | the view type scale sets every local role in shared/card/CardDetails.svelte
+    passed | the view type scale sets every local role in shared/card/CardDocs.svelte
+    passed | the view type scale sets every local role in shared/card/CardLinks.svelte
+    passed | the view type scale sets every local role in shared/card/CardSessions.svelte
+    passed | the view type scale sets every local role in shared/sessions/PickSession.svelte
+    passed | the view type scale sets every local role in shared/sessions/SessionPicker.svelte
+    passed | the view type scale sets every local role in shared/sessions/SteerBox.svelte
+    passed | the view type scale sets every local role in shared/sessions/WorkspacePicker.svelte
+    passed | the view type scale sets every local role in shared/forms/EntryForm.svelte
+    passed | the view type scale sets every local role in shared/prose/Intro.svelte
+    passed | the view type scale sets every local role in shared/prose/Markdown.svelte
+    passed | the view type scale sets every local role in shared/forms/NewIdeaForm.svelte
+    passed | the view type scale sets every local role in shared/card/ProjectCard.svelte
+    passed | the view type scale sets every local role in shared/links/ProgramButton.svelte
+    passed | the view type scale sets every local role in shared/card/Reveal.svelte
+    passed | the view type scale sets every local role in shared/links/SourceButton.svelte
+    passed | the view type scale sets every local role in shared/links/SourceToolbar.svelte
+    passed | the view type scale sets every local role in shared/forms/RegistryHead.svelte
+    passed | the view type scale sets every local role in shared/forms/Subtasks.svelte
+    passed | the view type scale sets every local role in sources/source/Editor.svelte
+    passed | the view type scale sets every local role in sources/source/Preview.svelte
+    passed | the view type scale sets every local role in system/status/Hooks.svelte
+    passed | the view type scale sets every local role in system/status/LineCounts.svelte
+    passed | the view type scale sets every local role in sources/venues/Ribbon.svelte
+    passed | the view type scale sets every local role in sources/venues/VenueCard.svelte
+    passed | the view type scale sets every local role in shared/writes/AskConfirm.svelte
+    passed | the view type scale sets every local role in shared/changes/CommitBox.svelte
+    passed | the view type scale sets every local role in sources/repositories/RepoList.svelte
+    passed | the view type scale sets every local role in sources/repositories/diff/CommentBox.svelte
+    passed | the view type scale sets every local role in sources/repositories/diff/DiffBar.svelte
+    passed | the view type scale sets every local role in sources/repositories/diff/Diff.svelte
+    passed | the view type scale sets every local role in sources/repositories/diff/DiffSection.svelte
+    passed | the view type scale sets every local role in sources/repositories/diff/FileHeader.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/CommitFiles.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/CommitRow.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/GraphActions.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/GraphHead.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/Graph.svelte
+    passed | the view type scale sets every local role in sources/repositories/graph/Lanes.svelte
+    passed | the view type scale sets every local role in sources/repositories/merge/Merge.svelte
+    passed | the view type scale sets every local role in sources/repositories/merge/MergeSide.svelte
+    passed | the view type scale sets every local role in sources/repositories/refs/Branches.svelte
+    passed | the view type scale sets every local role in sources/repositories/refs/Stashes.svelte
+    passed | the view type scale sets every local role in sources/repositories/refs/Tags.svelte
+    passed | the view type scale sets every local role in sources/source/Gutter.svelte
+    passed | the view type scale sets every local role in sessions/terminal/bar/TerminalActions.svelte
+    passed | the view type scale sets every local role in shared/accounts/AccountActions.svelte
+    passed | the view type scale sets every local role in shared/forms/AddButton.svelte
+    passed | the view type scale sets every local role in shared/forms/ThemeFacets.svelte
+    passed | the view type scale sets every local role in structure/map/Legend.svelte
+    passed | the view type scale sets every local role in shared/forms/RegistryCard.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/Card.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/Chip.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/CloseQuestion.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/Disclosure.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/NameField.svelte
+    passed | the view type scale sets every pass-through role in src/lib/views/shared/prose/Intro.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/Table.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/Pane.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/Meter.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/toolbar/Toolbar.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/ToolButton.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/Empty.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tabs/Tabs.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tabs/TabFace.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/ContextMenu.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/Menu.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/MenuList.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/MenuOpener.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/Confirm.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/CodeText.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/Glyph.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/FileIcon.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/RowButton.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/text/Search.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/text/TextBoxMenu.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/Segment.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/Tag.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/editor/DiffEditor.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/editor/Editor.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/controls/editor/LineBars.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/display/Ticker.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/Checkbox.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/DateInput.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/Field.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/file/FileChooser.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/GlyphDialog.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/GlyphList.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/GlyphSelect.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/MultiSelect.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/QuickPick.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/choice/Select.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/NumberInput.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/Prompt.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/TextArea.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/forms/TextInput.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/FloatingList.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/FloatingBar.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/Modal.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/frame/Sash.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/keys/KeySheet.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/Tooltip.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/menu/TooltipGroup.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tabs/Breadcrumb.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/TreeActions.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/TreeItem.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/TreeSection.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/TreeView.svelte
+    passed | the view type scale sets every pass-through role in src/lib/ui/tree/list/VirtualRows.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/rail/ActivityRail.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/rail/RailFoot.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/rail/RailPages.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/StatusBar.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/RepoItems.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/SourceItems.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/Bell.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/NoticeCentre.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/NoticeEntry.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/status/Toast.svelte
+    passed | the view type scale sets every pass-through role in src/lib/shell/Workbench.svelte
+tests/state/sessions/latex/building.test.ts | 8 fail / 1 pass
+    failed | a main file is building from the request to the end of its terminal is true while the request is out and while the terminal is listed, and false once  | AssertionError: expected undefined to be false // Object.is equality
+    failed | a main file is building from the request to the end of its terminal is false again after a request the server refused | AssertionError: expected undefined to be true // Object.is equality
+    failed | a main file is building from the request to the end of its terminal is false again after a request that never reached the server | AssertionError: expected undefined to be false // Object.is equality
+    failed | a main file is building from the request to the end of its terminal is the same main file whichever form of target reads it, a project or a folder | AssertionError: expected undefined to be false // Object.is equality
+    failed | a main file is building from the request to the end of its terminal is marked for a build and not for a clean | TypeError: client.latex.run is not a function
+    failed | a main file is never built twice at once starts one build for two saves of chapters of one main before any sessions push | AssertionError: expected [ { action: 'latex', ...(6) }, ...(1) ] to have a length of 1 but got 2
+    failed | a main file is never built twice at once starts one build for a second save made while the first build request is still out | AssertionError: expected [ { body: { ...(7) }, ...(1) }, ...(1) ] to have a length of 1 but got 2
+    failed | a main file is never built twice at once builds once more after the first ends, for the saves that came while it was out | Error: STACK_TRACE_ERROR
+    passed | a main file is never built twice at once starts a new build after a terminal the list never named, once pushes found it absent
+tests/state/sessions/latex/folder.test.ts | 0 fail / 31 pass
+    passed | the LaTeX state of a folder of a root asks api/latex with the root and the path once, and reads every path against the root
+    passed | the LaTeX state of a folder of a root keeps a project and a folder whose names match apart
+    passed | the LaTeX state of a folder of a root asks again on every sessions push while a watched build runs, and stops when it ends
+    passed | the LaTeX state of a folder of a root asks again at once for a folder whose build is watched, before any sessions push
+    passed | the LaTeX state of a folder of a root changes nothing when the answer lands after the folder was forgotten
+    passed | the LaTeX state of a folder of a root reads a folder that is gone as the server said, and asks again after Retry
+    passed | the problems of the latest build as diagnostics holds an error in an included file and a warning, the file against the root, and none after a clean bu
+    passed | the problems of the latest build as diagnostics reads a project target in the same form, against the hub
+    passed | the outline, the word count and the root of a file reads the outline as the server answered it, and the reason when it refused
+    passed | the outline, the word count and the root of a file asks for the outline again once the main file was built again, and not before
+    passed | the outline, the word count and the root of a file changes nothing when the outline lands after the folder was forgotten
+    passed | the outline, the word count and the root of a file asks nothing for an empty target
+    passed | the outline, the word count and the root of a file holds the words in the state until the main file is built again
+    passed | the outline, the word count and the root of a file says the reason a count was refused and holds no words
+    passed | the outline, the word count and the root of a file keeps the later count when two are pressed and the first answers last
+    passed | the outline, the word count and the root of a file drops a count that lands after the folder was forgotten
+    passed | the outline, the word count and the root of a file asks for the root of a file and answers it, or none for a file that builds through none
+    passed | a build after a save starts one build, not shown, of the main file the saved file builds through
+    passed | a build after a save with auto_build "never" starts 0 build
+    passed | a build after a save with auto_build "" starts 1 build
+    passed | a build after a save with auto_build "sometimes" starts 1 build
+    passed | a build after a save with auto_build "on_save" starts 1 build
+    passed | a build after a save builds when the configuration holds no latex key at all
+    passed | a build after a save starts nothing for a file that is not a .tex file, and nothing for a file with no main
+    passed | a build after a save starts one build for two saves made while the root is still being asked
+    passed | a build after a save builds once more after a build that is still running, however many saves came
+    passed | a build after a save reads the folder again when the build ends, so its problems reach the editor
+    passed | Format Document through the server posts the text with the write token and answers the formatted text
+    passed | Format Document through the server answers no text and the server reason when the program is missing or failed
+    passed | Format Document through the server answers no text and the status for a refusal that carries no sentence
+    passed | Format Document through the server answers no text and the reason the request threw
+tests/state/sessions/latex/project.test.ts | 2 fail / 21 pass
+    passed | one project's LaTeX state asks once and holds what came back
+    passed | one project's LaTeX state asks nothing at all for no project
+    passed | one project's LaTeX state carries the reason a refused request gave
+    passed | the build the store is waiting on asks again on every sessions push while the terminal runs, and stops when it ends
+    passed | the build the store is waiting on asks once for two sessions messages at one version
+    passed | the build the store is waiting on asks again when the terminals list moved while a request was out
+    passed | the build the store is waiting on moves the PDF address when the build wrote a new one
+    passed | the build the store is waiting on leaves the address alone when the build wrote no new PDF
+    failed | an answer whose fields are of the wrong type keeps the mains that carry a name and the issues that carry a message, each field as typed or at its fall | AssertionError: expected { root: 'hub', dir: '', ...(3) } to strictly equal { root: 'hub', dir: '', ...(3) }
+    failed | an answer whose fields are of the wrong type keeps a time or a line that is infinite, since a number is a number | AssertionError: expected { root: 'hub', dir: '', ...(3) } to strictly equal { root: 'hub', dir: '', ...(3) }
+    passed | an answer whose fields are of the wrong type answers a folder that is a number and mains that are a map as the state it names
+    passed | an answer whose fields are of the wrong type answers mains that are a string as the state it names
+    passed | an answer whose fields are of the wrong type answers a list as the body as the state it names
+    passed | an answer whose fields are of the wrong type answers an empty map as the body as the state it names
+    passed | an answer whose fields are of the wrong type answers an error that is a number on a 200 as the state it names
+    passed | an answer whose fields are of the wrong type answers a list as the body of a refusal as the state it names
+    passed | an answer whose fields are of the wrong type answers a refusal with its sentence as the state it names
+    passed | an answer whose fields are of the wrong type answers a refusal with an empty sentence as the state it names
+    passed | an answer whose fields are of the wrong type answers the status for a refusal whose error is a number
+    passed | an answer whose fields are of the wrong type answers a body that is null as the failed read with the status text
+    passed | an answer whose fields are of the wrong type answers a body that is text that is not JSON as the failed read with the status text
+    passed | an answer whose fields are of the wrong type answers a body that is null on a refusal as the failed read with the status text
+    passed | an answer whose fields are of the wrong type answers a body that is text that is not JSON on a refusal as the failed read with the status text
+tests/state/workbench/navigation/registry.test.ts | 0 fail / 30 pass
+    passed | the view registry registers a view and looks it up by id
+    passed | the view registry has nothing for an id nobody registered
+    passed | the view registry lists registrations in registration order
+    passed | the view registry replaces an earlier registration of the same id, in its place
+    passed | the view registry discovers a registered module at any nesting depth
+    passed | the view registry ignores a partial without registration metadata
+    passed | the real registrations registers every view id the application has
+    passed | the real registrations gives every view its exact group and order
+    passed | the real registrations registers Data directly and excludes it from generic collections
+    passed | the real registrations registers Lit Watch directly with its catalog label and glyph
+    passed | the real registrations registers Position Leads directly with its catalog label and glyph
+    passed | the real registrations registers Inbox directly with its catalog label and glyph
+    passed | the real registrations registers LinkedIn directly with its catalog label and glyph
+    passed | the real registrations registers the manual, the configuration and a hub document with their catalog keys
+    passed | the real registrations registers the slide catalog as an unlisted view opened from the deck
+    passed | the real registrations registers the source editor as an unlisted file view
+    passed | the real registrations registers the one collection component under every collection key of sources.yml
+    passed | the real registrations registers Venues directly with its catalog label and venue glyph
+    passed | the real registrations registers Pillars, Domains and Map directly with their catalog keys
+    passed | the real registrations registers the Pillars view under that id alone, so a layout saved under the old one is an unknown view
+    passed | the real registrations keeps a collection in its first position when it is registered again
+    passed | the real registrations registers the one board component under all three of its ids
+    passed | the real registrations registers every configured rail count and its urgency tone
+    passed | the real registrations names a label key the text catalog holds
+    passed | the real registrations names a glyph key whose value is a name config/catalogs/glyphs.yml holds
+    passed | the real registrations drops the collections whose keys a later call no longer lists
+    passed | the real registrations audits that every view of the catalogue carries a glyph of its own, the collections apart
+    passed | the real registrations audits that every chorded group carries a glyph no view inside it carries
+    passed | the real registrations audits that the Agents and Changes views carry a glyph of their own in the catalogue
+    passed | the real registrations closes the tabs open on a collection it drops, so no tab is left with no body
+tests/state/sources/explorer/sections/sections.test.ts | 5 fail / 15 pass
+    passed | Open Editors reads the file a tab shows from its state, and none for a view without one
+    passed | Open Editors groups the tabs by pane: two groups, three rows, the dot on the dirty one
+    passed | Open Editors names a row by its strip and falls back to the file name, with the folder beside it
+    passed | Open Editors leaves out a pane that holds no file tab
+    passed | Outline nests Markdown headings and skips a fenced block: A > B > C, no `not`
+    passed | Outline skips front matter and strips the closing hashes
+    passed | Outline nests a skipped level one step, not two
+    passed | Outline reads LaTeX sectioning commands outside comments: S > T
+    passed | Outline skips a verbatim block and takes a title that runs over two lines
+    failed | Outline has the headings of a text the parser refuses, an unclosed brace after them | AssertionError: expected [] to deeply equal [ [ 'A', +0, 1 ], [ 'B', 1, 2 ] ]
+    failed | Outline answers null for a language without symbols or a late outline, a list for Markdown | AssertionError: expected [ { title: 'S', line: 1, ...(2) } ] to be null
+    failed | outlineFollower delivers the outline of the last text asked and not the one asked before it | TypeError: (0 , __vite_ssr_import_2__.outlineFollower) is not a function
+    failed | outlineFollower delivers nothing for a text asked before stop | TypeError: (0 , __vite_ssr_import_2__.outlineFollower) is not a function
+    failed | outlineFollower delivers again for a text asked after an outline arrived | TypeError: (0 , __vite_ssr_import_2__.outlineFollower) is not a function
+    passed | which sections are open starts Bookmarks and Notes open and the three others closed
+    passed | which sections are open flips each section in the list that section belongs to
+    passed | the Timeline merges copies and commits newest first, a copy before a commit of the same time
+    passed | the Timeline reads a commit whose date does not read as time zero
+    passed | the Timeline addresses the copies of a file, one copy, and the commits that touched it
+    passed | the Timeline reads the answers and leaves out an entry that is not well formed
+tests/ui/controls/editor/kit/latex-widget.test.ts | 19 fail / 0 pass
+    failed | the markers of a build draws each problem on its line, errors and warnings apart, and clears them with the model | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | Format Document answers one edit over the whole text with the formatted text | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | Format Document answers no edit and says the reason when the program refused | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | Format Document answers no edit for another model, and for a text typed into while the program ran | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | Format Document takes the formatter away with the model | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | Format Document registers one provider for two mounted models, each formatted by its own formatter | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | Format Document keeps formatting the other model after one is closed, and drops the provider with the last | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over math appears after the pointer has rested 300 ms on a formula, typeset with KaTeX untrusted | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over math sets a display formula in display mode | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over math goes when the pointer leaves the editor, moves off the formula, the editor scrolls or the text changes | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over math stays while the pointer moves inside the same formula | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over math draws nothing for a pointer that leaves before the rest, or rests off any math | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over math drops an answer that arrives after the pointer has gone | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | a preview whose answer is still out draws the second span and not the first when the pointer moved on before the first answered | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over a picture shows the picture through the file route address, never the path in the text | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over a picture shows a PDF as its name only | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over a picture shows nothing for a path that leaves the root | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over a picture shows nothing for a path that is absolute | TypeError: __vi_import_1__.createFormatting is not a function
+    failed | the preview over a picture shows nothing for a path that names no file | TypeError: __vi_import_1__.createFormatting is not a function
+tests/ui/controls/editor/kit/latex.test.ts | 0 fail / 24 pass
+    passed | mathSpanAt finds inline math between single dollars, inline
+    passed | mathSpanAt finds display math between double dollars
+    passed | mathSpanAt finds the bracket forms, inline for parentheses and display for square brackets
+    passed | mathSpanAt finds \begin{equation} as display math typeset as equation
+    passed | mathSpanAt finds \begin{equation*} as display math typeset as equation
+    passed | mathSpanAt finds \begin{align} as display math typeset as aligned
+    passed | mathSpanAt finds \begin{align*} as display math typeset as aligned
+    passed | mathSpanAt finds \begin{gather} as display math typeset as gathered
+    passed | mathSpanAt finds \begin{multline*} as display math typeset as gathered
+    passed | mathSpanAt finds nothing on an escaped dollar sign
+    passed | mathSpanAt skips an escaped dollar sign and finds the formula after it
+    passed | mathSpanAt finds nothing outside any math
+    passed | mathSpanAt does not let a lone dollar sign reach across a blank line
+    passed | mathSpanAt does not read math inside a comment
+    passed | mathSpanAt takes the second formula when the offset is in the second
+    passed | mathSpanAt finds nothing for an opening delimiter that never closes
+    passed | pictureAt reads the braced path of an includegraphics call, with or without options
+    passed | pictureAt answers none away from a call
+    passed | pictureFile finds the file a path without an extension names, trying pdf, png, jpg, jpeg in that order
+    passed | pictureFile takes a path that names an extension as it is
+    passed | pictureFile answers nothing for a path that leaves the root
+    passed | pictureFile resolves a path with dot segments that stay inside the root
+    passed | pictureFile refuses an absolute path and a home path even when every file exists
+    passed | pictureFile answers nothing for an absolute path, a missing file and an empty path
+tests/ui/controls/editor/kit/look.test.ts | 0 fail / 2 pass
+    passed | paintCode resolves when the paint rejects, and tells the editor to forget what it painted
+    passed | paintCode leaves the painted key alone when the paint succeeds, and passes the code theme on
+tests/views/sources/files/menu/latex-menu.test.ts | 5 fail / 8 pass
+    passed | which rows offer Open LaTeX audits that it is offered on a .tex file and not on a Markdown file
+    passed | which rows offer Open LaTeX audits that it is offered on a folder or root whose held listing has a .tex file, and not otherwise
+    passed | which rows offer Open LaTeX audits that it is not offered on a folder whose listing is not held, since the fact asks for nothing
+    passed | where Open LaTeX sits in the menu audits that it is a group of its own right after Reveal in Finder and the terminal, on every kind of row
+    passed | where Open LaTeX sits in the menu audits that it is not in the menu of a row without the fact, nor in the menu for a selection
+    failed | what the tree calls a root audits that is the name of the root row, else the key | TypeError: (0 , __vite_ssr_import_1__.rootNameIn) is not a function
+    failed | what the tree calls a root audits that is the key when the tree is drawn from a folder below the root | TypeError: (0 , __vite_ssr_import_1__.rootNameIn) is not a function
+    passed | what the Open LaTeX pick opens audits that the view opens on the folder of the main file a .tex file builds through
+    passed | what the Open LaTeX pick opens opens it on the file's own folder when the file builds through no main file
+    passed | what the Open LaTeX pick opens audits that it opens on a folder itself without asking for a root, and on a root by its own name
+    failed | what the Open LaTeX pick opens audits that writes the same label for a root from the root row and from a .tex file at its top | AssertionError: expected [ ...(2) ] to deeply equal [ ...(2) ]
+    failed | what the Open LaTeX pick opens audits that opens one view for a pick made twice on the same file | AssertionError: expected "vi.fn()" to be called once, but got 2 times
+    failed | what the Open LaTeX pick opens audits that opens only the newest pick when the root of the first one is answered after the second | AssertionError: expected "vi.fn()" to be called once with arguments: [ 'latex', { root: 'docs', ...(2) } ]
+tests/views/sources/files/sections/sections.test.ts | 1 fail / 17 pass
+    passed | Open Editors draws a group per pane, a row per tab, and the dot on the tab holding unsaved text
+    passed | Open Editors enables Save All only while a tab holds unsaved text
+    passed | Open Editors audits that every row carries the button Enter presses and a Close control
+    passed | Open Editors audits that Close on a row closes a saved tab at once and asks before it closes a tab with unsaved text
+    passed | Open Editors audits that Close All asks how many tabs go and names the one holding unsaved text
+    passed | Open Editors says no editor is open on a page with none
+    passed | Outline audits that draws the headings of a Markdown file in order and not the one in a fenced block
+    passed | Outline audits that every symbol row carries the button Enter presses
+    failed | Outline audits that draws neither a heading nor the no-headings line for a LaTeX file whose outline is still to arrive | AssertionError: expected [ '1', '3' ] to deeply equal []
+    passed | Outline audits that says a Python file has no symbols yet
+    passed | Outline audits that says there is nothing to outline when the active tab shows no file
+    passed | Timeline audits that draws a row per copy of the selected file, a save as File Saved and a delete as File Deleted
+    passed | Timeline audits that every copy row carries the button Enter presses
+    passed | Timeline audits that reads the file of the active tab when none is selected in the tree
+    passed | Timeline audits that says the file has no history yet when the server lists none
+    passed | Timeline audits that says the editor cannot provide a timeline when there is no file
+    passed | Bookmarks and Notes audits that every bookmark row carries the button Enter presses
+    passed | Bookmarks and Notes audits that every note row carries the button Enter presses

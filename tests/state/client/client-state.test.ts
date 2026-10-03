@@ -27,6 +27,7 @@ const STORES: (keyof ClientState)[] = [
     'fs',
     'docs',
     'latex',
+    'latexReader',
     'deposit',
     'transcripts',
     'source',

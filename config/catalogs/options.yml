@@ -295,6 +295,28 @@ options:
             description: Size in kilobytes above which the source editor opens a file as plaintext. The editor colours a file by running its grammar over the text in the page as it is typed, and the read-only code window, painted once, colours every size. The server refuses to start unless it is above zero.
             default: 64
             control: number
+        latex.auto_build:
+            description: What saving a .tex file does. on_save builds the main file the saved file belongs to with latexmk, in the background and without showing the terminal, and the build's errors and warnings reach the editor as markers when it ends. never builds nothing. Any other value, or no value, counts as on_save.
+            default: on_save
+            control: choice
+            values: [on_save, never]
+        latex.formatter:
+            description: The program Format Document runs on a .tex file, as LaTeX Workshop's latex-workshop.formatting.latex offers them. latexindent comes with TeX Live and MacTeX, tex-fmt and badness are installed on their own. none formats nothing and says so. The program reads the text and writes the formatted text back, with no shell and a 20 second limit.
+            default: none
+            control: choice
+            values: [none, latexindent, tex-fmt, badness]
+        latex.latexindent_path:
+            description: Where latexindent is, when latex.formatter is latexindent. Empty finds it on PATH.
+            default: ''
+            control: text
+        latex.tex_fmt_path:
+            description: Where tex-fmt is, when latex.formatter is tex-fmt. Empty finds it on PATH.
+            default: ''
+            control: text
+        latex.badness_path:
+            description: Where badness is, when latex.formatter is badness. Empty finds it on PATH.
+            default: ''
+            control: text
         writes.timeout_seconds:
             description: Seconds a save waits for the server's answer before it is given up and its form says so. A value that is not above zero makes a save wait as long as the request does.
             default: 30

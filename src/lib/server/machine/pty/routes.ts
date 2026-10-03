@@ -6,8 +6,8 @@
 // A GET lists the terminals and is same-origin only, like every read. A POST starts, stops, resizes
 // or resumes a terminal, starts the composer's session, types a message into one or interrupts its
 // turn, forks a session, starts dataset recovery, starts an update task, or builds or cleans one
-// main file of a manuscript, and additionally carries the write token,
-// since it is a write in DESIGN.md's "Auth" sense: it runs a process on the machine.
+// main file of a project's manuscript or of a folder of a served root, and additionally carries the
+// write token, since it is a write in DESIGN.md's "Auth" sense: it runs a process on the machine.
 //
 // The resume action is DESIGN.md's one explicit migration: an observed session becomes a terminal
 // oculus holds by running `claude --resume <id>` or `codex resume <id>` in its own cwd. Nothing is
@@ -24,8 +24,9 @@ import { taskSkipPermissions } from '../../../data/helpers/tasks.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, loadLocalOrDefaults, textCatalog } from '../../../data/sources/config.ts';
-import { MANUSCRIPT, mains } from '../../content/latex.ts';
-import { projectDirectory } from '../../files/files.ts';
+import { MANUSCRIPT, isMainOf, programOf } from '../../content/latex.ts';
+import type { Program } from '../../../data/prose/latex.ts';
+import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
 import { startChat, type ChatOptions } from './chat.ts';
 import { words } from '../../core/words.ts';
 import {
@@ -83,6 +84,15 @@ type LatexStep = (typeof LATEX_STEPS)[number];
 /** The step of a latex request: build or clean, and anything else is refused. */
 const latexStepShape = z.literal(LATEX_STEPS);
 
+/**
+ * The folder a latex request names: a project by its id, or a folder of a served root by the root's
+ * key and the path under it. A request naming both, or neither, names no folder.
+ */
+const latexFolderShape = z.union([
+    z.object({ id: z.string().min(1), root: z.undefined().optional() }),
+    z.object({ id: z.undefined().optional(), root: z.string().min(1), path: z.string() })
+]);
+
 /** The name of a start request: text, and anything else starts the terminal with no name. */
 const startNameShape = z.string().optional().catch(undefined);
 
@@ -109,6 +119,10 @@ export type TerminalOptions = StartOptions &
         datasetIdsFor?: () => string[];
         /** The hub root in which a recovery shell starts. */
         hubFor?: () => string;
+        /**
+         * The roots the file browser serves, which a latex request for a folder is looked up in.
+         */
+        rootsFor?: () => Root[];
         /** Re-read the terminal manager after a write. */
         refresh?: () => void;
         /** The user's shell, whose base name a busy read compares a pane's command with. */
@@ -354,15 +368,23 @@ async function startTask(
     return json({ ok: true, terminal }, { headers: NO_STORE });
 }
 
+/** The latexmk switch that builds with each program. */
+const LATEX_SWITCH: Record<Program, string> = {
+    pdflatex: '-pdf',
+    xelatex: '-pdfxe',
+    lualatex: '-pdflua'
+};
+
 /**
  * The exact latexmk command one step runs. `-file-line-error` is what puts a file and a line in
  * front of every error, which is the form server/content/latex.ts reads the log back in; the flags
  * are this module's own words and the file is the one value from the page, so it is the one word
- * quoted.
+ * quoted. The program is the one the main file's magic comment names; a clean needs none.
  */
-function latexCommand(step: LatexStep, main: string): string {
+export function latexCommand(step: LatexStep, main: string, program: Program): string {
     if (step === 'clean') return `latexmk -c ${shellWord(main)}`;
-    return `latexmk -pdf -interaction=nonstopmode -file-line-error ${shellWord(main)}`;
+    const flags = `${LATEX_SWITCH[program]} -interaction=nonstopmode -file-line-error`;
+    return `latexmk ${flags} ${shellWord(main)}`;
 }
 
 /**
@@ -375,10 +397,42 @@ function latexName(options: TerminalOptions, step: LatexStep, id: string, main: 
     return words(catalog, 'server.latex.name', step, id, main).slice(0, NAME_MAX);
 }
 
+/** The folder a latex request names and what the terminal's name calls it, or the refusal. */
+function latexFolder(
+    message: Record<string, unknown>,
+    options: TerminalOptions
+): { dir: string; label: string } | Response {
+    const named = latexFolderShape.safeParse(message);
+    if (!named.success) {
+        return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
+    }
+    if (named.data.id === undefined) {
+        const found = resolveRootPath(options.rootsFor?.() ?? [], named.data.root, named.data.path);
+        if ('error' in found) {
+            return json({ error: found.error }, { status: 400, headers: NO_STORE });
+        }
+        return {
+            dir: found.path,
+            label: named.data.path === '' ? named.data.root : named.data.path
+        };
+    }
+    const project = (options.projectFor ?? (() => null))(named.data.id);
+    if (project === null) {
+        return json({ error: 'no-project' }, { status: 400, headers: NO_STORE });
+    }
+    const hub =
+        options.hubFor?.() ?? (options.localFor?.() ?? loadLocalOrDefaults(options.engine)).hub;
+    return {
+        dir: join(projectDirectory(hub, project.folder), MANUSCRIPT),
+        label: named.data.id
+    };
+}
+
 /**
- * Build or clean one main file, as a shell terminal in the project's own `manuscript/` folder. The
- * file is checked against the folder's own main files before a command is built from it, so the
- * only names that can reach latexmk are the ones the panel offered.
+ * Build or clean one main file, as a shell terminal in the folder of the main file: a project's
+ * `manuscript/` folder or a folder of a served root. The file is checked against the folder's own
+ * main files before a command is built from it, so the only names that can reach latexmk are the
+ * ones the view offered.
  */
 async function startLatex(
     message: Record<string, unknown>,
@@ -386,42 +440,24 @@ async function startLatex(
 ): Promise<Response> {
     const asked = latexStepShape.safeParse(message.step);
     if (!asked.success) {
-        return json(
-            { error: `step must be one of ${LATEX_STEPS.join(', ')}` },
-            { status: 400, headers: NO_STORE }
-        );
+        return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
     }
     const step = asked.data;
-    const id = message.id;
-    if (typeof id !== 'string' || id === '') {
-        return json({ error: 'id is not a project id' }, { status: 400, headers: NO_STORE });
-    }
-    const project = (options.projectFor ?? (() => null))(id);
-    if (project === null) {
-        return json(
-            { error: 'id is not a project in the current portfolio' },
-            { status: 400, headers: NO_STORE }
-        );
-    }
-    const hub =
-        options.hubFor?.() ?? (options.localFor?.() ?? loadLocalOrDefaults(options.engine)).hub;
-    const folder = projectDirectory(hub, project.folder);
+    const folder = latexFolder(message, options);
+    if (folder instanceof Response) return folder;
     const main = message.main;
-    if (typeof main !== 'string' || !mains(folder).includes(main)) {
-        return json(
-            { error: 'main is not a main file of this project' },
-            { status: 400, headers: NO_STORE }
-        );
+    if (typeof main !== 'string' || !isMainOf(folder.dir, main)) {
+        return json({ error: 'not-a-main' }, { status: 400, headers: NO_STORE });
     }
     const terminal = await startTerminal(
         {
             kind: 'shell',
-            cwd: join(folder, MANUSCRIPT),
+            cwd: folder.dir,
             cols: message.cols,
             rows: message.rows,
-            name: latexName(options, step, id, main)
+            name: latexName(options, step, folder.label, main)
         },
-        { ...options, command: latexCommand(step, main) }
+        { ...options, command: latexCommand(step, main, programOf(join(folder.dir, main))) }
     );
     options.refresh?.();
     return json({ ok: true, terminal }, { headers: NO_STORE });

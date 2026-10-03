@@ -1,10 +1,11 @@
 // Layer 1, data. The typed readers of single settings out of the merged map: the cluster, the
-// calendar, the search, the open list, the mail, the change log's length, the usage tiers and the
-// Processes view's program names. Each reads its block and falls back to the default the config
-// file carries.
+// calendar, the search, the open list, the mail, the change log's length, the usage tiers, the
+// Processes view's program names and the LaTeX formatter. Each reads its block and falls back to
+// the default the config file carries.
 
 import { z } from 'zod';
 import { programApps, type ProgramApps } from '../../helpers/files/opens-in-program.ts';
+import { FORMATTERS, type Formatter } from '../../prose/latex.ts';
 import { byKey } from '../../helpers/guards.ts';
 import type { Finding } from '../../model/index.ts';
 import { mapShape, readAs, unchangedAs, valuesOfShape } from '../../shapes/shapes.ts';
@@ -265,4 +266,32 @@ export function processesSettings(
         'a list of program names, each without a slash or a space'
     );
     return { patterns: [...new Set(names)] };
+}
+
+/** The LaTeX formatter of config/behavior.yml: the one Format Document runs, and each path. */
+export type LatexFormatting = {
+    formatter: Formatter;
+    /** Each program's path; empty runs the program found on PATH. */
+    paths: Record<Exclude<Formatter, 'none'>, string>;
+};
+
+/** Read `latex:`'s four formatter keys, or throw naming the key that is missing or mistyped. */
+export function latexFormatting(config: Record<string, unknown>): LatexFormatting {
+    const latex = blockOf(config, 'latex');
+    const path = (key: string): string =>
+        settingOf(labelShape, latex, 'latex', key, 'text, empty for the program on PATH');
+    return {
+        formatter: settingOf(
+            z.enum(FORMATTERS),
+            latex,
+            'latex',
+            'formatter',
+            `one of ${FORMATTERS.join(', ')}`
+        ),
+        paths: {
+            latexindent: path('latexindent_path'),
+            'tex-fmt': path('tex_fmt_path'),
+            badness: path('badness_path')
+        }
+    };
 }

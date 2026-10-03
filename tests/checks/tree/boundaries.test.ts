@@ -94,6 +94,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // doc view and in the source tab's preview. It holds no reader and no I/O. `data/prose/languages`,
 // the highlighter, is in the state row for the same reason: the server paints a document's and a
 // transcript turn's code with it, and the page reaches it through state/shared/words/languages.ts.
+// `data/prose/latex`, the reader of a LaTeX text (magic comments, sections, includes), is in the
+// state row because the server's outline and the Files Outline read the same sections through it,
+// the LaTeX store takes the list of programs from it, and the answers module takes the words a
+// LaTeX request is refused with; it takes a string and a parser and does no I/O, and imports no
+// parser of its own.
 //
 // The shell's row names the state modules the workbench is made of, one at a time, and the folder
 // `state/workbench/navigation/`, whose modules (the rail's pages, the view catalogue and its keys,
@@ -145,6 +150,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/text-kind',
         'data/helpers/files/opens-in-program',
         'data/helpers/files/languages',
+        'data/prose/latex',
         'data/helpers/files/nesting',
         'data/helpers/tasks',
         'data/helpers/editor',

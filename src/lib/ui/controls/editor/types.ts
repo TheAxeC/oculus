@@ -2,6 +2,9 @@
 // through `perform`, the one method Editor.svelte exports. They live in a module of their own so a
 // parent types the editor it binds with `EditorHandle` and imports no Svelte file for a type.
 
+import type * as Monaco from 'monaco-editor';
+import type { EditorKit } from './kit/load';
+
 /** Where the caret is, lines and columns counted from one, and how many characters are selected. */
 export type EditorCaret = { line: number; column: number; selected: number };
 
@@ -69,3 +72,17 @@ export type DiffCommand = { kind: 'action'; id: string } | { kind: 'reveal'; lin
 
 /** The diff editor as its parent holds it through `bind:this`. */
 export type DiffHandle = { perform: (command: DiffCommand) => void };
+
+/** One problem to draw as a marker on a line: an error or a warning, with its words. */
+export type EditorProblem = { line: number; severity: 'error' | 'warning'; message: string };
+
+/**
+ * What a parent adds to the editor once its model exists: it is given the loaded kit, the editor
+ * and the model, adds markers, widgets, providers or actions, and answers the call that takes them
+ * away again. The editor runs it again when the parent hands in another.
+ */
+export type EditorExtension = (
+    kit: EditorKit,
+    editor: Monaco.editor.IStandaloneCodeEditor,
+    model: Monaco.editor.ITextModel
+) => () => void;

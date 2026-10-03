@@ -373,26 +373,26 @@ describe('the LaTeX panel of a project tab', () => {
         expect(body).toContain(catalog['project.latex.heading']);
         expect(body).toContain('data-main="main.tex"');
         expect(body).toContain('data-main="supplement.tex"');
-        expect(row(body, 'main.tex')).toContain(catalog['project.latex.errors']);
-        expect(row(body, 'main.tex')).toContain('>2</strong>');
+        expect(row(body, 'main.tex')).toContain(catalog['latex.problems']);
+        expect(row(body, 'main.tex')).toContain('>3</strong>');
         expect(row(body, 'main.tex')).toContain(
-            catalog['project.latex.warnings'].replace('{0}', '1')
+            catalog['latex.problem_counts'].replace('{0}', '2').replace('{1}', '1')
         );
-        expect(row(body, 'supplement.tex')).toContain(catalog['project.latex.no_pdf']);
+        expect(row(body, 'supplement.tex')).toContain(catalog['latex.no_pdf']);
         // this main file has no log yet, so there is no error count on its row
-        expect(row(body, 'supplement.tex')).not.toContain(catalog['project.latex.errors']);
+        expect(row(body, 'supplement.tex')).not.toContain(catalog['latex.problems']);
     });
 
     it('offers a build and a clean on every row, and the PDF only where there is one', async () => {
         answering(MAINS);
         const body = await settled();
 
-        expect(row(body, 'main.tex')).toContain(catalog['project.latex.build']);
-        expect(row(body, 'main.tex')).toContain(catalog['project.latex.clean']);
-        expect(row(body, 'main.tex')).toContain(catalog['project.latex.open_pdf_tip']);
-        expect(row(body, 'supplement.tex')).toContain(catalog['project.latex.build']);
+        expect(row(body, 'main.tex')).toContain(catalog['latex.build']);
+        expect(row(body, 'main.tex')).toContain(catalog['latex.clean']);
+        expect(row(body, 'main.tex')).toContain(catalog['latex.open_pdf_tip']);
+        expect(row(body, 'supplement.tex')).toContain(catalog['latex.build']);
         // this main file has no PDF built, so there is nothing to open
-        expect(row(body, 'supplement.tex')).not.toContain(catalog['project.latex.open_pdf_tip']);
+        expect(row(body, 'supplement.tex')).not.toContain(catalog['latex.open_pdf_tip']);
     });
 
     it('draws build, clean and PDF as small buttons, the size of the 22 px row they sit in', async () => {
@@ -416,10 +416,10 @@ describe('the LaTeX panel of a project tab', () => {
         );
         const body = await settled();
         expect(body).toContain(
-            catalog['project.latex.read_failed'].replace('{0}', t('ui.answer_refused', 500))
+            catalog['latex.read_failed'].replace('{0}', t('ui.answer_refused', 500))
         );
         expect(body).toContain('role="alert"');
-        expect(body).toContain(catalog['project.latex.retry']);
+        expect(body).toContain(catalog['latex.retry']);
     });
 
     it('keeps the errors behind their count until the disclosure is opened', async () => {

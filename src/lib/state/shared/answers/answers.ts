@@ -2,12 +2,14 @@
 // it: an answer it could not read, and a refusal.
 //
 // A refusal's own text is never shown. The server answers a refusal as a word (data/file-ops.ts
-// OPS_REFUSALS), and the page says the sentence the catalog holds for that word; any other body
+// OPS_REFUSALS, and data/prose/latex.ts LATEX_REFUSALS for the LaTeX endpoint and the LaTeX
+// terminal action), and the page says the sentence the catalog holds for that word; any other body
 // text, a status with no body and a body that is no word all say the refusal with its status. The
 // status is in parentheses so the reader is told in words and a bug report still carries it.
 
 import { z } from 'zod';
 import { OPS_REFUSALS, type OpsRefusal } from '../../../data/file-ops.ts';
+import { LATEX_REFUSALS, type LatexRefusal } from '../../../data/prose/latex.ts';
 import { readAs } from '../../../data/shapes/shapes.ts';
 import { t as catalogText } from '../words/text.ts';
 
@@ -61,9 +63,44 @@ export function refusalSentence(word: OpsRefusal, t: Say = catalogText): string 
     }
 }
 
+/** The catalog's sentence for a word the LaTeX endpoint or terminal action refuses with. */
+function latexSentence(word: LatexRefusal): string {
+    switch (word) {
+        case 'no-project':
+            return catalogText('latex.refused_no_project');
+        case 'not-a-file':
+            return catalogText('latex.refused_not_a_file');
+        case 'not-a-main':
+            return catalogText('latex.refused_not_a_main');
+        case 'count-missing':
+            return catalogText('latex.refused_count_missing');
+        case 'count-timeout':
+            return catalogText('latex.refused_count_timeout');
+        case 'count-failed':
+            return catalogText('latex.refused_count_failed');
+        case 'format-none':
+            return catalogText('latex.refused_format_none');
+        case 'latexindent-missing':
+            return catalogText('latex.refused_latexindent_missing');
+        case 'tex-fmt-missing':
+            return catalogText('latex.refused_tex_fmt_missing');
+        case 'badness-missing':
+            return catalogText('latex.refused_badness_missing');
+        case 'format-timeout':
+            return catalogText('latex.refused_format_timeout');
+        case 'format-failed':
+            return catalogText('latex.refused_format_failed');
+    }
+}
+
 /** The refusal word a value is, or null for any other value. */
 export function refusalWord(value: unknown): OpsRefusal | null {
     return OPS_REFUSALS.find((one) => one === value) ?? null;
+}
+
+/** The LaTeX refusal word a value is, or null for any other value. */
+function latexWord(value: unknown): LatexRefusal | null {
+    return LATEX_REFUSALS.find((one) => one === value) ?? null;
 }
 
 /** The sentence for an answer the page could not read, with the status it came with. */
@@ -77,7 +114,9 @@ export function unreadableAnswer(status: number | string): string {
  */
 export function refusedAnswer(status: number | string, error?: unknown): string {
     const word = refusalWord(error);
-    return word === null ? catalogText('ui.answer_refused', status) : refusalSentence(word);
+    if (word !== null) return refusalSentence(word);
+    const latex = latexWord(error);
+    return latex === null ? catalogText('ui.answer_refused', status) : latexSentence(latex);
 }
 
 /** The `error` of a refused answer's body, when the body carries one that is text. */

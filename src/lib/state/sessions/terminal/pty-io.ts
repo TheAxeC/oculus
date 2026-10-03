@@ -1,7 +1,8 @@
-// Layer 2, client state. The two requests the terminals store makes of /api/terminal that carry no
-// state of their own: an action posted with the write token, answered as ok or as a sentence of the
-// catalog, and the busy read that says which terminals run a program other than their shell. Both
-// go through `fetch`, which a test replaces.
+// Layer 2, client state. The requests the terminals store and the LaTeX store make of /api/terminal
+// that carry no state of their own: an action posted with the write token, answered as ok or as a
+// sentence of the catalog, the busy read that says which terminals run a program other than their
+// shell, and the list read that says which terminals the server holds now. All go through `fetch`,
+// which a test replaces.
 
 import { z } from 'zod';
 import type { Terminal } from '../../../data/model/index.ts';
@@ -66,6 +67,9 @@ const busyListShape = z
 /** The body of a busy read. */
 const busyAnswerShape = z.object({ busy: busyListShape });
 
+/** The body of a list read: each row that names a terminal by its id, a malformed row none. */
+const listAnswerShape = z.object({ terminals: rowsShape(z.object({ id: z.string() })) });
+
 /** The action field of a request body, which is how `postTerminal` knows a start from the rest. */
 const actionShape = z.object({ action: z.string() });
 
@@ -103,6 +107,22 @@ export async function postTerminal(body: unknown, token: string): Promise<Termin
         };
     } catch (error) {
         return { ok: false, id: '', error: error instanceof Error ? error.message : String(error) };
+    }
+}
+
+/**
+ * The ids of every terminal oculus owns, from a fresh read of the server, or null when there is
+ * no fetch, the read failed or its answer could not be read.
+ */
+export async function readListed(): Promise<string[] | null> {
+    if (typeof fetch !== 'function') return null;
+    try {
+        const response = await fetch('/api/terminal');
+        if (!response.ok) return null;
+        const answer = readAs(listAnswerShape, await readJson(response));
+        return answer === null ? null : answer.terminals.map((one) => one.id);
+    } catch {
+        return null;
     }
 }
 

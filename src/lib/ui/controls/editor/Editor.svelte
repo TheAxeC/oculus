@@ -24,7 +24,8 @@
     // The keyboard reaches the quick diff marks through three editor actions, which the palette
     // lists while the text holds a mark (gutter.ts `changeActions`): Next, Previous, Open Change.
     // A parent may also tint runs of lines (`highlights`, the merge editor's conflicts) and draw
-    // bars of its own above lines (`bars`, rendered by its `bar` snippet, placed by zones.ts).
+    // bars of its own above lines (`bars`, rendered by its `bar` snippet, placed by zones.ts), and
+    // add to the model what it needs once the model exists (`extension`, types.ts).
     //
     // Tab inserts indentation. An Escape Monaco did not take arms the next Tab to move the focus
     // on (tab-out.ts): the key is read before Monaco, where a Tab that leaves is kept from it, and
@@ -61,6 +62,7 @@
         EditorCommand,
         EditorEdit,
         EditorEnding,
+        EditorExtension,
         EditorIndent
     } from './types';
 
@@ -96,6 +98,8 @@
         changeWords?: EditorChangeWords;
         /** The actions the palette lists, said once loaded and again when the labels change. */
         onactions?: (actions: EditorAction[]) => void;
+        /** Markers, widgets or providers the parent adds to the model once it exists. */
+        extension?: EditorExtension;
         /** Runs of lines tinted, each from its first line (from one) for its count. */
         highlights?: { line: number; count: number }[];
         /** Bars above lines, each drawn by `bar` with its id. */
@@ -124,6 +128,7 @@
         onglyph,
         changeWords,
         onactions,
+        extension,
         highlights = [],
         bars = [],
         bar
@@ -343,6 +348,13 @@
             lineNumbers: held[1].length === 0 ? 'on' : blameNumbers(held[1], count),
             lineNumbersMinChars: blameWidth(held[1], count)
         });
+    });
+
+    // The parent's extension, added to the model and taken away with it or when another is given.
+    $effect(() => {
+        const [add, loaded, made, held] = [extension, kit, editor, model];
+        if (add === undefined || loaded === null || made === null || held === null) return;
+        return add(loaded, made, held);
     });
 
     $effect(() => {

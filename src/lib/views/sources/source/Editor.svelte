@@ -29,6 +29,7 @@
         EditorAction,
         EditorCaret,
         EditorCommand,
+        EditorExtension,
         EditorHandle
     } from '$lib/ui/controls/editor/types';
     import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter';
@@ -69,6 +70,8 @@
         rendered?: boolean;
         marks?: EditorMark[];
         blame?: EditorBlame[];
+        /** What the tab's language adds to the editor, such as LaTeX's markers and preview. */
+        extension?: EditorExtension;
         /** Every change of the text, in the line ending the editor holds it in. */
         oninput: (value: string) => void;
         /** Where the caret is now, said on every move. */
@@ -90,6 +93,7 @@
         rendered = true,
         marks = [],
         blame = [],
+        extension,
         oninput,
         oncaret,
         onmark,
@@ -164,6 +168,7 @@
                 codeTheme={codeTheme()}
                 {marks}
                 {blame}
+                {extension}
                 {oncaret}
                 {onmark}
                 {onblame}

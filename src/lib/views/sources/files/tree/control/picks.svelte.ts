@@ -15,7 +15,7 @@ import { DIFF_VIEW } from '$lib/state/sources/repositories/repositories.svelte';
 import { t } from '$lib/state/shared/words/text';
 import { targetOf } from '../drag';
 import { rowDropper } from '../menu/row-drop';
-import { rowFacts, rowMenu, rowPicker, rowStores } from '../menu/row-menu';
+import { rootNameIn, rowFacts, rowMenu, rowPicker, rowStores } from '../menu/row-menu';
 import { holdsContents, rowNaming, rowOpsPicker } from '../menu/row-ops';
 import type { Asking } from './asking.svelte';
 import type { ViewAccess } from './view-access';
@@ -63,6 +63,7 @@ export function createPicks(deps: PicksDeps) {
         {
             ...rowStores(client),
             dirOf: (root: string) => deps.roots()?.find((one) => one.key === root)?.dir ?? '',
+            rootName: (root: string) => rootNameIn(deps.rows(), root),
             say,
             addRoot: deps.addRoot,
             removeRoot: deps.removeRoot,
@@ -148,7 +149,9 @@ export function createPicks(deps: PicksDeps) {
                 explorer,
                 client.selectors.languages(),
                 { size: group.length, files: group.filter((one) => one.kind === 'file').length },
-                deps.hints
+                deps.hints,
+                (root: string, path: string) =>
+                    client.fs.heldEntries(root, path, shownOf(view.now()))
             ),
             t
         );
