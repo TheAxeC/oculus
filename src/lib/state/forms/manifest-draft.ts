@@ -12,7 +12,7 @@
 import { z } from 'zod';
 import type { Project } from '../../data/model/index.ts';
 import { mapShape, readAs } from '../../data/shapes/shapes.ts';
-import { asText, fieldValues } from './schema.ts';
+import { asText, fieldValues, writableField } from './schema.ts';
 import type { InstanceStates } from '../shared/stores/shapes.ts';
 
 /** What one editor instance keeps: the project it was typed for, and the edits by field name. */
@@ -113,14 +113,20 @@ export function createManifestDraft(
     /**
      * Whether the instance holds an edit the project does not, which is what closing its tab asks a
      * confirmation about. A draft for a project the snapshot no longer holds is compared with
-     * nothing, so any edit with words in it is unsaved.
+     * nothing, so any edit with words in it is unsaved. An edit of a field the project's form does
+     * not write is not unsaved work, since no save posts it: a follow-up of a project with several
+     * notes, and a date with no note to hold it.
      */
     function manifestDirty(instance: string): boolean {
         const held = draft(instance);
         if (held === null) return false;
         const project = projectOf(held.project);
         const values = project === null ? {} : fieldValues(project);
-        return Object.entries(held.edits).some(([field, edit]) => editDiffers(edit, values[field]));
+        return Object.entries(held.edits).some(
+            ([field, edit]) =>
+                (project === null || writableField(project, field, held.edits)) &&
+                editDiffers(edit, values[field])
+        );
     }
 
     return { manifestEdits, editManifest, revertManifest, settleManifest, manifestDirty };

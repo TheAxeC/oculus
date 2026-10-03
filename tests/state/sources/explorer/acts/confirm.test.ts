@@ -2,7 +2,7 @@
 // `files.confirm_delete` (true until it says false) and `rememberAnswer` writes false into
 // behavior.yml only for a yes with the "Do not ask me again" box ticked.
 //
-// What this does NOT cover: the box drawn by views/sources/files/Questions.svelte and the page
+// What this does NOT cover: the box drawn by views/shared/explorer/Questions.svelte and the page
 // handing the box's state on, which need a browser.
 
 import { describe, expect, it, vi } from 'vitest';

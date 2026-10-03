@@ -1,10 +1,13 @@
 // Layer 3, view test. The Files view's right-click menu on a row, built by
-// views/sources/files/tree/row-menu.ts: which items a file, a folder and a root offer, in VS Code's
-// order with a rule between its groups, and the two paths Copy Path and Copy Relative Path put on
-// the clipboard; and what a pick runs, over the calls a view hands the picker.
+// views/shared/explorer/tree/row-menu.ts: which items a file, a folder and a root offer, in VS
+// Code's order with a rule between its groups, and the two paths Copy Path and Copy Relative Path
+// put on the clipboard; and what a pick runs, over the calls a view hands the picker.
 //
 // The words are a stand-in `t` that answers each key as `@key`, so an item is asserted by the key
 // it is worded by.
+//
+// The same menu is the one a project card's tree opens, since both build it through these
+// functions; Open in Program is asserted here for both.
 //
 // What this does NOT cover: the menu opened by a right-click or by Shift+F10 on a row, and each
 // pick's effect in a browser (a tab opened beside, a shell drawn, the clipboard written), which
@@ -19,6 +22,7 @@ import {
     ROW_COPY_PATH,
     ROW_COPY_RELATIVE,
     ROW_FIND,
+    ROW_OPEN_PROGRAM,
     ROW_RUN,
     ROW_REVEAL,
     ROW_TERMINAL,
@@ -28,7 +32,7 @@ import {
     rowPicker,
     type RowMenuFacts,
     type RowPickDeps
-} from '../../../../../src/lib/views/sources/files/tree/menu/row-menu.ts';
+} from '../../../../../src/lib/views/shared/explorer/tree/menu/row-menu.ts';
 import type { MenuItem } from '../../../../../src/lib/ui/menu/menu-items.ts';
 import type { TreeRow } from '../../../../../src/lib/state/sources/fs.ts';
 import type { ProjectCommand } from '../../../../../src/lib/state/sessions/terminal/commands.svelte.ts';
@@ -253,6 +257,14 @@ describe('what a pick from a row menu runs', () => {
     async function settled(): Promise<void> {
         for (let turn = 0; turn < 5; turn += 1) await Promise.resolve();
     }
+
+    // Revert: leave the ROW_OPEN_PROGRAM branch out of rowPicker.
+    it('audits that Open in Program hands the file to its application by its root and path', async () => {
+        const { pick, calls } = picker({ ok: true });
+        pick(note, ROW_OPEN_PROGRAM);
+        await settled();
+        expect(calls).toEqual(['openFile:r,notes/a.md']);
+    });
 
     // Revert: reveal a file through openFile(row.root, row.path) in rowPicker, which opens it.
     it('audits that reveals a root by its folder and a folder or a file by its root and path', async () => {

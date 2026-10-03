@@ -1,5 +1,5 @@
 // Layer 3, view test. What the Files row menu's file operations do over the stores
-// (views/sources/files/tree/row-ops.ts): the picks of the menu, the upload of the files a chooser
+// (views/shared/explorer/tree/row-ops.ts): the picks of the menu, the upload of the files a chooser
 // hands over, the delete question that precedes a trash, and the sentences the view says: the
 // question words and the refusal words of files.yml, and the compare refusals the diff pane says.
 //
@@ -26,7 +26,7 @@ import {
     holdsContents,
     rowOpsPicker,
     type RowOpsDeps
-} from '../../../../../src/lib/views/sources/files/tree/menu/row-ops.ts';
+} from '../../../../../src/lib/views/shared/explorer/tree/menu/row-ops.ts';
 import { createClientState, type ClientState } from '../../../../fixtures/client.ts';
 
 const catalog = textCatalog(loadConfig(engineDir()).config);

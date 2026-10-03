@@ -33,7 +33,8 @@ function manifestStore(held: unknown) {
         {
             instanceState: () => held,
             setInstanceState: (id, state) => writes.push(['set', id, state]),
-            clearInstanceState: (id) => writes.push(['clear', id])
+            clearInstanceState: (id) => writes.push(['clear', id]),
+            instanceKeys: () => []
         },
         () => null
     );

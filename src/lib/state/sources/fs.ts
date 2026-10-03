@@ -8,6 +8,7 @@
 //   view/reveal.ts          showing one path in the tree
 //   view/bookmark-rows.ts   the reader's bookmarks as tree stars and as the rail's rows
 //   view/tab-roots.ts       which roots and folder a following or a rooted tab draws
+//   view/card-tree.ts       the key a project card keeps its tree's record under
 //   rows/                   the rows of the tree: nesting, compaction, decorations, the filter
 //   acts/                   what a press, a key or a drop does to rows: selection, keys, drops,
 //                           the folder panel's answer, which log record Cmd+Z takes back
@@ -35,6 +36,7 @@ export * from './explorer/view/files-view.ts';
 export * from './explorer/view/reveal.ts';
 export * from './explorer/view/bookmark-rows.ts';
 export * from './explorer/view/tab-roots.ts';
+export * from './explorer/view/card-tree.ts';
 export * from './explorer/rows/compact.ts';
 export * from './explorer/rows/decorations.ts';
 export * from './explorer/rows/filter.ts';

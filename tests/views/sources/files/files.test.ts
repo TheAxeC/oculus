@@ -14,9 +14,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import type { ComponentProps } from 'svelte';
 import Files from '../../../../src/lib/views/sources/files/Files.svelte';
-import Tree from '../../../../src/lib/views/sources/files/tree/Tree.svelte';
+import Tree from '../../../../src/lib/views/shared/explorer/tree/Tree.svelte';
 import { rowKey, treeKey, treeRows, type FsEntry } from '../../../../src/lib/state/sources/fs.ts';
-import { rowFacts } from '../../../../src/lib/views/sources/files/tree/menu/row-menu.ts';
+import { rowFacts } from '../../../../src/lib/views/shared/explorer/tree/menu/row-menu.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { installRealText } from '../../shared/real-text.ts';
 import { instance } from './files-instance.ts';
@@ -316,7 +316,7 @@ describe('the marks the tree draws', () => {
         const source = readFileSync(
             join(
                 dirname(fileURLToPath(import.meta.url)),
-                '../../../../src/lib/views/sources/files/tree/Tree.svelte'
+                '../../../../src/lib/views/shared/explorer/tree/Tree.svelte'
             ),
             'utf8'
         );

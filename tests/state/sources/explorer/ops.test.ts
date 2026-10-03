@@ -424,6 +424,66 @@ describe('the tabs and bookmarks that follow a rename or a move', () => {
         ]);
     });
 
+    // Revert: leave the tree records of a tab out of `followTabs` in
+    // state/sources/explorer/ops.svelte.ts.
+    it('restates the open folders, the selection and the anchor of a card tree under a renamed folder', async () => {
+        const tab = sourceTab('other/c.md');
+        const key = `${tab}#files:alpha`;
+        client.ui.setInstanceState(key, {
+            expanded: [
+                'hub:projects/alpha',
+                'hub:projects/alpha/code',
+                'hub:projects/alpha/code/sub',
+                'hub:projects/alpha/codex'
+            ],
+            selected: { root: 'hub', path: 'projects/alpha/code/a.py' },
+            selection: [
+                { root: 'hub', path: 'projects/alpha/code/a.py' },
+                { root: 'hub', path: 'projects/alpha/notes.md' }
+            ],
+            anchor: { root: 'hub', path: 'projects/alpha/code/a.py' },
+            filter: ''
+        });
+        answers = [() => ({ ok: true, path: 'projects/alpha/src' })];
+
+        await client.explorer.rename({ root: 'hub', path: 'projects/alpha/code' }, 'src');
+
+        expect(client.ui.instanceState(key)).toMatchObject({
+            expanded: [
+                'hub:projects/alpha',
+                'hub:projects/alpha/src',
+                'hub:projects/alpha/src/sub',
+                'hub:projects/alpha/codex'
+            ],
+            selected: { root: 'hub', path: 'projects/alpha/src/a.py' },
+            selection: [
+                { root: 'hub', path: 'projects/alpha/src/a.py' },
+                { root: 'hub', path: 'projects/alpha/notes.md' }
+            ],
+            anchor: { root: 'hub', path: 'projects/alpha/src/a.py' }
+        });
+    });
+
+    it('restates the card tree records of every project of a tab, and leaves a record of no tab', async () => {
+        const tab = sourceTab('other/c.md');
+        const mine = `${tab}#files:alpha`;
+        const second = `${tab}#files:beta`;
+        const orphan = 'gone-tab#files:alpha';
+        for (const key of [mine, second, orphan]) {
+            client.ui.setInstanceState(key, { expanded: ['hub:projects/alpha/code'] });
+        }
+        answers = [() => ({ ok: true, path: 'projects/alpha/src' })];
+
+        await client.explorer.rename({ root: 'hub', path: 'projects/alpha/code' }, 'src');
+
+        for (const key of [mine, second]) {
+            expect(client.ui.instanceState(key)).toMatchObject({
+                expanded: ['hub:projects/alpha/src']
+            });
+        }
+        expect(client.ui.instanceState(orphan)).toEqual({ expanded: ['hub:projects/alpha/code'] });
+    });
+
     it('follows a move by a cut paste, to the path the server answered', async () => {
         const id = sourceTab('a.md');
         answers = [() => ok(['sub/a.md'])];

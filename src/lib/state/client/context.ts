@@ -46,6 +46,7 @@ import {
     snapshotEntries,
     type FormDraftsStore
 } from '../forms/form-drafts.svelte.ts';
+import { cardTreePrefix } from '../sources/explorer/view/card-tree.ts';
 import { BOOKMARK_COLLECTION, createFs, type FsStore } from '../sources/fs.svelte.ts';
 import {
     FILES_VIEW,
@@ -220,8 +221,9 @@ export function createClientState(): ClientState {
     const formDrafts = createFormDrafts(ui, snapshotEntries(entities.portfolio));
     // A tab's close, a pane's close and a page's close forget the state of every instance they take
     // away, and the layout is the one store that knows an instance closed. The entry forms of an
-    // instance keep their drafts in an entry of their own beside that state, so the layout is
-    // handed a forget that takes all three, with the entries its add forms made and the mark saying
+    // instance keep their drafts in an entry of their own beside that state, and the project cards
+    // it draws keep their file trees in records under its id, so the layout is handed a forget
+    // that takes all of them, with the entries its add forms made and the mark saying
     // a save from one of its forms is out, and the Search store lets go of a closed tab's requests.
     const layout = createLayout({
         ...ui,
@@ -229,6 +231,7 @@ export function createClientState(): ClientState {
             ui.clearInstanceState(id);
             ui.clearInstanceState(formsKey(id));
             ui.clearInstanceState(addedKey(id));
+            ui.clearInstanceStates(cardTreePrefix(id));
             formDrafts.forgetForms(id);
             search.forgetSearch(id);
         }

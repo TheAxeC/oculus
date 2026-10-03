@@ -1,8 +1,8 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/tree/Tree.svelte. The input in the row where a name
-    // is typed: a new file's or folder's, or a row's new name. It opens with the text it was given
-    // selected as far as `select` says, and says what is wrong with the text as it is typed
-    // (nameMessage in row-ops.ts), after the first key.
+    // Layer 3, partial of tree/Tree.svelte. The input in the row where a name is typed: a new
+    // file's or folder's, or a row's new name. It opens with the text it was given selected as far
+    // as `select` says, and says what is wrong with the text as it is typed (nameMessage in
+    // row-ops.ts), after the first key.
     //
     // Enter and leaving the input accept a valid name, and Escape cancels it. An empty name and an
     // unchanged name cancel. A name that is refused is kept by Enter, with its message under it,

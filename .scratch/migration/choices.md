@@ -997,6 +997,13 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z358 (2026-10-03, Q91's look): the Focus ticker's cut rows
+
+- Chosen (a): X3e is widened: a ticker row cut by its ellipsis gives its whole text as its tooltip.
+- Not chosen: (b) a new step for one tooltip, which only Axel's ruling can add; (c) leaving the cut end unreadable, the lazy option.
+
+Where it applies: X3e. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z355 (2026-10-03, Axel's test ruling): the tests of the steps in flight
 
 - Chosen (a): the landing of X3c, Q91 and D25 reads each test the step added and deletes those that break `agents/spec.md`'s test rule, as a fix at landing.

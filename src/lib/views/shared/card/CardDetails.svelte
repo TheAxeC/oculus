@@ -2,11 +2,15 @@
     // Layer 3, shared view. Expanded manifest fields and related documents live here because the
     // expanded card section changes independently of its collapsed frame. The subtasks block is the
     // card's own, drawn under this section, since adding a first subtask is a control of the closed
-    // card too.
+    // card too. Every prose field is drawn through CodeText, so a backticked word is code. The
+    // follow-up field has one line per note, and a note dated after today says when it is held
+    // until, by the same rule the ticker uses to leave it out.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import CodeText from '$lib/ui/display/CodeText.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
+    import { dueFollowups } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
     import { goto } from './card';
     import CardDocs from './CardDocs.svelte';
@@ -25,15 +29,19 @@
         onsaid: (said: string) => void;
         /** Whether the project's documents are listed; a view that draws them itself says no. */
         documents: boolean;
+        /** The moment a follow-up date is measured from. */
+        now: number;
     };
-    let { item, onsaid, documents }: Props = $props();
+    let { item, onsaid, documents, now }: Props = $props();
     const shows = $derived(disseminatedFor(item.id));
+    /** The notes that are due, so a note outside this list is held until its date. */
+    const due = $derived(dueFollowups(item.project.followups, now).map((one) => one.note));
 </script>
 
 {#snippet field(name: string, value: string)}
     <div class="field">
         <span class="label">{name}</span>
-        <p class="value">{value}</p>
+        <p class="value"><CodeText text={value} /></p>
     </div>
 {/snippet}
 
@@ -42,7 +50,7 @@
         <span class="label">{name}</span>
         <ul class="value">
             {#each values as value, at (`${at}:${value}`)}
-                <li>{value}</li>
+                <li><CodeText text={value} /></li>
             {/each}
         </ul>
     </div>
@@ -50,7 +58,8 @@
 
 <div class="more">
     {#if item.project.statusLine}
-        <p class="statusline">{item.project.statusLine}</p>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render field(t('project.card.status'), item.project.statusLine)}
     {/if}
     {#if item.project.latest}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -67,6 +76,23 @@
     {#if item.project.next}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render field(t('project.card.next'), item.project.next)}
+    {/if}
+    {#if item.project.followups.length > 0}
+        <div class="field">
+            <span class="label">{t('project.card.followup')}</span>
+            <ul class="value">
+                {#each item.project.followups as note, at (`${at}:${note.do}`)}
+                    <li>
+                        <CodeText text={note.do} />
+                        {#if !due.includes(note)}
+                            <span class="until"
+                                >{t('project.card.not_until', note.after ?? '')}</span
+                            >
+                        {/if}
+                    </li>
+                {/each}
+            </ul>
+        </div>
     {/if}
     {#if item.project.ideas.length > 0}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -127,9 +153,8 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    .statusline {
-        margin: 0 0 6px;
-        font-size: var(--fs-sm);
+    .until {
+        color: var(--muted-txt, var(--muted));
     }
 
     ul.value {

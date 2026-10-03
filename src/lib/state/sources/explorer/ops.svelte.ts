@@ -48,6 +48,7 @@ import {
 } from './acts/folders.ts';
 import { replacedPlaces, undoneMoves, type FileRecord } from './acts/undo.ts';
 import { nameOf } from './file-type.ts';
+import { cardTreePrefix } from './view/card-tree.ts';
 import { patchedFilesView } from './view/files-view.ts';
 import {
     followedAny,
@@ -314,6 +315,10 @@ export function createExplorer(
     /** Every tab over a path that moved is restated, from the tabs the layout holds now. */
     function followTabs(moves: Move[]): void {
         for (const tab of layout.tabs()) {
+            for (const key of ui.instanceKeys(cardTreePrefix(tab.id))) {
+                const kept = followedFilesView(ui.instanceState(key), moves);
+                if (kept !== null) ui.setInstanceState(key, kept);
+            }
             if (tab.view === FILES_VIEW) {
                 const next = followedFilesView(ui.instanceState(tab.id), moves);
                 if (next !== null) ui.setInstanceState(tab.id, next);

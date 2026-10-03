@@ -7,8 +7,8 @@ import {
     renderBlockMap,
     renderMetalist,
     renderScalar
-} from '../yaml-edit.ts';
-import type { FieldValue } from '../yaml-edit.ts';
+} from '../yaml/yaml-values.ts';
+import type { FieldValue } from '../yaml/yaml-values.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
 import { flowScalar, renderFlowList } from './lines.ts';
 

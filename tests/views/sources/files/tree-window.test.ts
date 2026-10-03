@@ -6,7 +6,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
-import Tree from '../../../../src/lib/views/sources/files/tree/Tree.svelte';
+import Tree from '../../../../src/lib/views/shared/explorer/tree/Tree.svelte';
 import { treeKey, treeRows } from '../../../../src/lib/state/sources/fs.ts';
 import {
     engineDir,

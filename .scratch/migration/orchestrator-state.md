@@ -38,28 +38,11 @@ dispatch:   # three steps in flight (2026-10-03): X3c, Q91 and D25 building; D32
   base: ddcd610c
   launched: 2026-10-03 07:51 local
   report: agents/reviews/X3c-report.md
-  builder_usage: 221,047 tokens, 823 tool uses, 195.1 min (report saved 2026-10-03)
-  reviewer_report: agents/reviews/X3c-refuter.md (first run; reviewer a535e06539cbd8738, claude-opus-5-5, 364,675 tokens, 113 tool uses, 33.4 min)
+  builder_usage: 221,047 tokens, 823 tool uses, 195.1 min (report saved 2026-10-03); round 1: 336,267 tokens, 375 tool uses, 117.4 min (report saved 2026-10-03, one full-list run)
+  reviewer_report: agents/reviews/X3c-refuter.md (first run; reviewer a535e06539cbd8738, claude-opus-5-5, 364,675 tokens, 113 tool uses, 33.4 min); round 1 run: reviewer afe977eb85adbd5f1, claude-opus-5-5, launched 2026-10-03, running
   brief_check: agents/reviews/X3c-brief-check.md; claude-opus-5-5, 318,282 tokens, 113 tool uses, 17.0 min (run on main at a9c0d38d; findings closed 2026-10-03 under Closed)
   landing: not-started
   round: 1 (sent 2026-10-03, rulings agents/briefs/X3c-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's x3c-round1-start/ for the delta)
-- step: Q91
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 07:54)
-  session_id: aa0dc0b58528fb2a9 (builder, launched 2026-10-03 07:54 local)
-  worktree: .agents/worktrees/Q91
-  base: 2dbe1a72
-  launched: 2026-10-03 07:54 local
-  report: agents/reviews/Q91-report.md
-  builder_usage: 223,331 tokens, 539 tool uses, 221.5 min (report saved 2026-10-03); round 1: 295,221 tokens, 166 tool uses, 58.6 min
-  full_list_runs: 9 by the builder's report, against `agents/spec.md:25`'s one (Z348 (b)); booked as a breach at landing
-  reviewer_report: agents/reviews/Q91-refuter.md (first run; reviewer a7ac5b16bbf539b33, claude-opus-5-5, 286,609 tokens, 81 tool uses, 22.3 min); round 1 run: reviewer a0e0b8588d3a75500, claude-opus-5-5, 277,277 tokens, 66 tool uses, 28.2 min, appended under "Repair round 1, refuted"
-  landing_notes: the refuter's B4: X3c's `views/sources/files/tree/control/picks.svelte.ts` (moved here to `views/shared/explorer/tree/control/`) and `Files.svelte`'s import block and `selectRow` meet at the second of the two landings and are merged by hand there; D25's `views/shared/code/source-options.ts` would make `views/shared/` eleven items after Q91 empties `code/`, ruled in D25's repair round (ruling 6). Q91 and D25 each add `ReplacedText` and `replaced?` to `server/core/changes.ts` for the same thing in two shapes (Q91 `{ offset, left, text }`, D25 `{ offset, before, after }`): fixed at Q91's landing by naming Q91's fields `before` and `after` (`after` the text the write left, `before` the text it replaced), so D25's landing meets one type and merges its doc comment
-  brief_check: agents/reviews/Q91-brief-check.md; claude-opus-5-5, 240,437 tokens, 84 tool uses, 11.5 min (run on main at a9c0d38d; findings closed under Closed by Z286)
-  shared_paths: with X3c, `views/sources/files/Files.svelte` (X3c removes the breadcrumb nav and `crumbs`, Q91 moves the tree wiring into `RootedTree.svelte`; separate regions), `views/sources/source/Source.svelte` (Q91 one import line for the moved `Code.svelte`, X3c the header and toolbar), `config/text/views/sources/files.yml` (separate keys), `HELP.md`, `DESIGN.md` and the diagrams (separate passages, the diagrams regenerated); X3c's new imports of `views/sources/files/tree/menu/row-menu.ts` follow Q91's move to `views/shared/explorer/` at the second landing, an import line each
-  landing: not-started
-  round: 1 (sent 2026-10-03, rulings agents/briefs/Q91-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's q91-round1-start/ for the delta)
 - step: D25
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -71,7 +54,7 @@ dispatch:   # three steps in flight (2026-10-03): X3c, Q91 and D25 building; D32
   report: agents/reviews/D25-report.md
   builder_usage: 262,512 tokens, 638 tool uses, 170.1 min (report saved 2026-10-03); round 1: 288,412 tokens, 188 tool uses, 63.3 min
   landing_fixes: Z349, the three test files back under `tests/state/` with their real titles
-  reviewer_report: agents/reviews/D25-refuter.md (first run; reviewer ae98977243dfc074f, claude-opus-5-5, 350,621 tokens, 94 tool uses, 26.4 min); round 1 run: reviewer af77d20984e61e372, claude-opus-5-5, launched 2026-10-03, running
+  reviewer_report: agents/reviews/D25-refuter.md (first run; reviewer ae98977243dfc074f, claude-opus-5-5, 350,621 tokens, 94 tool uses, 26.4 min); round 1 run: reviewer af77d20984e61e372, claude-opus-5-5, 305,716 tokens, 109 tool uses, 30.1 min, appended under "Repair round 1, refuted"
   landing_fixes_any: the slow tag on `tests/server/machine/commands/placeholders.test.ts` (Z350), at whichever step lands next
   full_list_runs: 4 by the builder's report, against `agents/spec.md:25`'s one (Z348 (b)); booked as a breach at landing
   brief_check: agents/reviews/D25-brief-check.md; claude-opus-5-5, 274,600 tokens, 112 tool uses, 14.5 min (run on main at 3949d212; findings closed under Closed, Z330 booked)
@@ -167,7 +150,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
 - Z314 (2026-10-03, the owed look Q81): a Confirm drawn over the update tray. It shows only while `tasks.skip_permissions` is on in `config/behavior.yml`. Axel allowed the edit for the look (2026-10-03); the Claude Code auto-mode classifier refused it again with his permission given, so the session cannot make it. Options: (a) Axel sets `skip_permissions: true` himself, the look is taken, and Axel sets it back (the session checks `git diff --exit-code -- tools/oculus/config/behavior.yml` after); (b) the point is dropped from the look. Recommendation: (a), one line each way and (b) is the lazy option.
-- Z251 (2026-10-02 09:40, all steps): fewer repair rounds. Axel asked whether the criteria for a round can be stricter so more steps land without one. Evidence: 12 of the last 13 landings had a round; each round's rulings (`agents/briefs/<step>-round1.md`) number 5 to 16, and every one of them holds rulings that change code or add a test. Options: (a) keep the round as ruled 2026-10-01 (`plan.md:773`); (b) land without a round when every first-review finding is small and inside the brief, as the refute dispositions already allow (none of the last 13 would have qualified, so it saves nothing); (c) `refute_after_repair: no` when the round stays inside its rulings, the orchestrator reading the delta in its place (saves about 185k to 270k tokens and 14 to 46 min per step; those runs found 4 to 9 findings that would then rest on the orchestrator's read; reverses part of the 2026-10-01 ruling); (d) fewer findings at the source: the overdue recurring-findings pass, its causes in three or more steps ending in a rule sentence in `agents/spec.md` or a sentence every brief carries. Recommendation: (d), with (a) kept until its effect shows; (b) and (c) are the lazy options, since they lower the bar and keep the cause. Axel, 2026-10-02: (d) taken through Z253; (a) stands meanwhile; Z251 is ruled after ten steps have landed under the new rules (count from the first landing after this line). Count at 2026-10-02 13:05: 1 of 10 (X3a, landed 11:49). Nothing is asked of Axel until the count reaches 10.
+- Z251 (2026-10-02 09:40, all steps): fewer repair rounds. Axel asked whether the criteria for a round can be stricter so more steps land without one. Evidence: 12 of the last 13 landings had a round; each round's rulings (`agents/briefs/<step>-round1.md`) number 5 to 16, and every one of them holds rulings that change code or add a test. Options: (a) keep the round as ruled 2026-10-01 (`plan.md:773`); (b) land without a round when every first-review finding is small and inside the brief, as the refute dispositions already allow (none of the last 13 would have qualified, so it saves nothing); (c) `refute_after_repair: no` when the round stays inside its rulings, the orchestrator reading the delta in its place (saves about 185k to 270k tokens and 14 to 46 min per step; those runs found 4 to 9 findings that would then rest on the orchestrator's read; reverses part of the 2026-10-01 ruling); (d) fewer findings at the source: the overdue recurring-findings pass, its causes in three or more steps ending in a rule sentence in `agents/spec.md` or a sentence every brief carries. Recommendation: (d), with (a) kept until its effect shows; (b) and (c) are the lazy options, since they lower the bar and keep the cause. Axel, 2026-10-02: (d) taken through Z253; (a) stands meanwhile; Z251 is ruled after ten steps have landed under the new rules (count from the first landing after this line). Count at 2026-10-03: 10 of 10 (X3a, A1, Q88c, M3, D18, D32, D14, S4, D17, Q91; `git log` of the landing commits), so Z251 is Axel's to rule now. Every one of the ten had a repair round, S4 and D17 two (`grep -c '^## Repair round' agents/reviews/<step>-refuter.md`); the runs over rounds kept finding real defects: D14's 18 numbered findings, D17's 16 and 12, Q91's an undo that dropped a note (B-R1-1).
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -224,9 +207,9 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-03 10:20. In flight: X3c (the tab strip), Q91 (the project view) and D25 (the editor's options), each building. Axel's rulings this morning: D32b and D14b approved as one step, D37 (Z332); the rail reorder diagnosed on TEST with rail clicks allowed (Z325 (a)); Q79c's look taken with one `sbatch` job (Z315 (a)); A1-1 and the active tab left out of sight diagnosed on TEST through `/diagnose` (Z328, Z326 closed); the state file trimmed into `orchestrator-history.md`. Open for Axel: Z314 (Q81's look, after the current discussion). S5 approved (Z333), first in the queue. D25's landing measures typing in `orchestrator-history.md` (1.09 MB, a line of 20,636 characters), since the trimmed state file is 70 KB. The order (Axel's, 2026-10-03):
-  1. Each report as it arrives through /refute and /land, with its look at landing; X3e only once Q91 has landed; at most three in flight.
-  2. `/diagnose` on TEST: A1-1 before D25 lands, the active tab out of sight before X3c lands, the rail reorder (rail clicks allowed for it).
-  3. D37 through /spec once a slot is free; D15 once D37 has landed.
-  4. The rest of `queue.md`'s queue in order, each step through /spec, /refute and /land with its look at landing.
-  Open for Axel: none; Z251 waits for its count.
+- 2026-10-03 14:20. Q91 (the project view) landed. In flight: X3c (the tab strip), repair round 1 in review by afe977eb85adbd5f1; D25 (the editor's options), round 1 refuted, its landing next. Next:
+  1. D25: `/diagnose` A1-1 on TEST, then `/land` D25 with Z349's test moves, its round findings and Z355's test-rule deletions; its `ReplacedText` meets Q91's `{ offset, before, after }`.
+  2. X3c: on its round report, `/diagnose` the active tab out of sight on TEST, then `/land` X3c with the git breach booked and Z355's deletions; it merges Q91's move of `picks.svelte.ts` to `views/shared/explorer/tree/control/` and `Files.svelte`'s imports and `selectRow`.
+  3. Q116 through /spec, now that a slot is free; X3e is unblocked by Q91 and stays in queue order; T1 held (Z356).
+  4. The rail reorder `/diagnose`; the Q81 look once Axel sets `skip_permissions`.
+  Open for Axel: Z251 (its count reached 10 with Q91); Z314.

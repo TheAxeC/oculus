@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/tree/Tree.svelte. The workspace in force as VS Code's
+    // Layer 3, partial of views/sources/files/Files.svelte. The workspace in force as VS Code's
     // Explorer heads its folders: a 22 px pane header, the workspace's name in capitals with the
     // twistie at its left, and at its right, while the pointer is over it or the focus is in it,
     // the four title actions (New File..., New Folder..., Refresh Explorer, Collapse Folders in

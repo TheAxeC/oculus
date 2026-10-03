@@ -33,7 +33,10 @@ function project(id: string, statusLine: string): Project {
         relatedIds: [],
         results: [],
         ideas: [],
-        collaborators: []
+        collaborators: [],
+        waitingOn: [],
+        followups: [],
+        subtasks: []
     };
     return fields as Project;
 }
@@ -65,6 +68,27 @@ describe('the edits', () => {
         expect(drafts.manifestDirty('ed-1')).toBe(true);
         projects.alpha = project('alpha', 'accepted');
         expect(drafts.manifestDirty('ed-1')).toBe(false);
+    });
+
+    it('reports nothing unsaved for a follow-up edit kept from before the project held two notes', () => {
+        projects.alpha = {
+            ...project('alpha', 'drafting'),
+            followups: [{ do: 'first' }, { do: 'second' }]
+        };
+        drafts.editManifest('ed-1', 'alpha', 'followup.do', 'typed earlier');
+        // No save posts the field of a project with several notes, so closing the tab loses
+        // nothing.
+        expect(drafts.manifestDirty('ed-1')).toBe(false);
+        drafts.editManifest('ed-1', 'alpha', 'next', 'go');
+        expect(drafts.manifestDirty('ed-1')).toBe(true);
+    });
+
+    it('reports nothing unsaved for a date typed for a project with no note, until the text is typed', () => {
+        drafts.editManifest('ed-1', 'alpha', 'followup.after', '2026-12-01');
+        // A date alone is not a note, so no save posts it and closing the tab loses nothing.
+        expect(drafts.manifestDirty('ed-1')).toBe(false);
+        drafts.editManifest('ed-1', 'alpha', 'followup.do', 'call');
+        expect(drafts.manifestDirty('ed-1')).toBe(true);
     });
 
     it('keeps two instances apart and never hands one project the edits of another', () => {

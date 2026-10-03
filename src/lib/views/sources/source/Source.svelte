@@ -79,7 +79,7 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import BookmarkStar from '../../shared/links/BookmarkStar.svelte';
     import ProgramButton from '../../shared/links/ProgramButton.svelte';
-    import Code from '../../shared/code/Code.svelte';
+    import Code from '../../shared/prose/Code.svelte';
     import Editor from './Editor.svelte';
     import Gutter from './Gutter.svelte';
     import { latexEditor } from './latex-editor';

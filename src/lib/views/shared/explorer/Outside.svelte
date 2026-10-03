@@ -1,7 +1,7 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/Files.svelte. The line above the tree that says the
-    // folder Open Folder found is outside every root, with the control that adds it as a root and
-    // the one that drops the line.
+    // Layer 3, shared view partial. The line above an explorer tree that says the folder Open
+    // Folder found is outside every root, with the control that adds it as a root and, when the
+    // caller gives one, the control that drops the line.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -10,7 +10,8 @@
         /** The folder found outside every root. */
         dir: string;
         onadd: () => void;
-        ondismiss: () => void;
+        /** Drops the line; a caller that gives none draws no such control. */
+        ondismiss?: () => void;
     };
 
     let { dir, onadd, ondismiss }: Props = $props();
@@ -25,7 +26,14 @@
         compact
         onclick={onadd}
     />
-    <ToolButton label={t('files.outside_dismiss')} glyph="dismiss" compact onclick={ondismiss} />
+    {#if ondismiss !== undefined}
+        <ToolButton
+            label={t('files.outside_dismiss')}
+            glyph="dismiss"
+            compact
+            onclick={ondismiss}
+        />
+    {/if}
 </div>
 
 <style>

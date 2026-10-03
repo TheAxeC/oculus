@@ -1,8 +1,8 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/Files.svelte. Follow mode's side of a Files tab: when
-    // the followed folder moves, the tree opens that folder, the head of its tree, once per
-    // move; and a line says when nothing followed names a folder, or when no root holds it, since
-    // the file server lists nothing outside its roots.
+    // Layer 3, shared view partial, drawn by views/sources/files/Files.svelte. Follow mode's side
+    // of a Files tab: when the followed folder moves, the tree opens that folder, the head of its
+    // tree, once per move; and a line says when nothing followed names a folder, or when no root
+    // holds it, since the file server lists nothing outside its roots.
 
     import { followRevealed, type FollowView } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';

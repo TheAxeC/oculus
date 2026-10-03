@@ -28,6 +28,7 @@ import {
     statusMarkTone
 } from '../../../src/lib/state/shared/words/tones.ts';
 import { emptyBoardState, type BoardState } from '../../../src/lib/state/boards/board/index.ts';
+import { cardTreeKey } from '../../../src/lib/state/sources/fs.ts';
 import { area, payload, record, workspace } from '../../fixtures/sessions-fixture.ts';
 import type {
     Id,
@@ -835,6 +836,9 @@ describe('the file finder', () => {
         // in this file opened the same card with no stub in place, and what is held is held per
         // version.
         receive({ channel: 'files', version: 2, payload: { root: '/hub' } });
+        // The listing is asked for while the finder box holds text, which the card keeps in the
+        // record it owns, under no tab here.
+        setInstanceState(cardTreeKey('', 'alpha'), { filter: 'r' });
         // The first rendering asks for the listing, the second draws what the answer left held.
         html('projects', { expanded: ['alpha'] });
         await new Promise((resolve) => setTimeout(resolve, 0));

@@ -10,6 +10,7 @@
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CardDocs from '../../../../src/lib/views/shared/card/CardDocs.svelte';
+import { INSTANCE_KEY } from '../../../../src/lib/state/client/instance-context.ts';
 import type { BoardItem } from '../../../../src/lib/state/boards/board/index.ts';
 import type { Project } from '../../../../src/lib/data/model/index.ts';
 import {
@@ -67,7 +68,7 @@ function item(): BoardItem {
         authors: '',
         bucket: '',
         code: 'public',
-        compute: [{ id: 'utwente', label: 'UTwente HPC', cluster: true, order: 0 }],
+        compute: [{ id: 'utwente', label: 'UTwente HPC', kind: 'cluster', order: 0 }],
         reproduced: true,
         year: '',
         sessions: 'none',
@@ -106,10 +107,19 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-/** The rows of the rendered list, keyed by the file's name, on the case's client or another. */
+/** The tab the card is drawn in, and the record its finder text is kept in. */
+const TAB = 'tab-1';
+
+/**
+ * The rows of the rendered list, keyed by the file's name, on the case's client or another. The
+ * finder holds a dot, which every name of the listing has, so the list shows every file.
+ */
 function rows(holder: ClientState = client): Record<string, string> {
+    holder.ui.setInstanceState(`${TAB}#files:one`, { filter: '.' });
+    const context = clientContext(holder);
+    context.set(INSTANCE_KEY, () => TAB);
     const body = render(CardDocs, {
-        context: clientContext(holder),
+        context,
         props: { item: item(), onsaid: noop, documents: true }
     }).body;
     const found: Record<string, string> = {};

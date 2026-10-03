@@ -6,14 +6,16 @@
 import { isDeepStrictEqual } from 'node:util';
 import { isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Document, Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
+import type { EditResult } from '../yaml/yaml-edit.ts';
 import {
     isBlockMap,
     isMetalist,
     renderBlockMap,
     renderMetalist,
     renderScalar
-} from '../yaml-edit.ts';
-import type { EditResult, FieldValue } from '../yaml-edit.ts';
+} from '../yaml/yaml-values.ts';
+import type { FieldValue } from '../yaml/yaml-values.ts';
+import { pairEnd, pairOf, rangeOf, valueEnd } from '../yaml/yaml-ranges.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 
 /** The collection list key whose entries the writers locate and edit. */
@@ -93,39 +95,6 @@ export function asJs(source: string): unknown {
     }
 }
 
-export function rangeOf(node: unknown): [number, number, number] | null {
-    const range = (node as Node | null)?.range;
-    return Array.isArray(range) ? range : null;
-}
-
-export function pairOf(map: YAMLMap, name: string): Pair<Scalar, Node> | undefined {
-    return map.items.find((item) => (item.key as Scalar | undefined)?.value === name) as
-        Pair<Scalar, Node> | undefined;
-}
-
-/** Where a node's value ends, before the comment or the newline its own range swallows. */
-export function endOffset(node: Node): number {
-    const range = rangeOf(node);
-    if (range === null) return 0;
-    if (isSeq(node) && node.flow !== true && node.items.length > 0) {
-        const last = rangeOf(node.items[node.items.length - 1]);
-        if (last !== null) return last[1];
-    }
-    if (isYamlMap(node) && node.flow !== true && node.items.length > 0) {
-        const last = (node.items[node.items.length - 1] as Pair<Scalar, Node>).value;
-        const end = last === null ? null : rangeOf(last);
-        if (end !== null) return end[1];
-    }
-    return range[1];
-}
-
-/** Where a pair's own text ends: its value's end, or its key's when it has no value. */
-export function pairEnd(pair: Pair<Scalar, Node>): number | null {
-    const value = pair.value;
-    if (value !== null) return endOffset(value);
-    return rangeOf(pair.key)?.[1] ?? null;
-}
-
 /** The line a byte offset sits on, counting from zero. */
 export function lineAt(text: string, at: number): number {
     let count = 0;
@@ -199,7 +168,7 @@ export function listOf(root: YAMLMap): { key: string; seq: YAMLSeq } | null {
 export function linesOf(source: string, node: YAMLMap): LineRange | null {
     const own = rangeOf(node);
     if (own === null) return null;
-    const end = endOffset(node);
+    const end = valueEnd(node);
     return {
         start: lineAt(source, own[0]),
         end: lineAt(source, Math.max(end - 1, own[0])) + 1
@@ -269,7 +238,7 @@ export function replaceIn(text: string, node: Node, value: Exclude<FieldValue, n
     const range = rangeOf(node);
     if (range === null) return fail('the value has no place in the file');
     const start = range[0];
-    const end = endOffset(node);
+    const end = valueEnd(node);
     let rendered: string;
     if (isBlockMap(value)) {
         const block = isYamlMap(node) && node.flow !== true;

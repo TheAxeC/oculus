@@ -1,5 +1,5 @@
 // Layer 3, view partial of tree/Tree.svelte. The two things the tree waits on the reader for: the
-// question a file operation asks (../Questions.svelte draws it) and the file dialog Upload...
+// question a file operation asks (../../Questions.svelte draws it) and the file dialog Upload...
 // opens. Each hands back a promise that settles when the reader answers; a new question cancels the
 // one on screen, and a tree that goes away settles whatever it waits on as a no.
 

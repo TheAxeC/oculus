@@ -9,6 +9,13 @@
     // to it would only download it; a refused or failed open is said through the card's own message
     // line. Every other file is a link the browser opens or downloads.
     //
+    // The files of the project are the Files view's tree rooted at the project's folder
+    // (shared/explorer/ProjectTree.svelte), under a finder box. While the box holds text the
+    // matching files of the whole project are listed flat, most recent first, with their sizes, and
+    // the project's file listing is asked for only then. The text lives in the card's tree record
+    // (state/sources/explorer/view/card-tree.ts), so a card keeps what was typed across a tab
+    // switch.
+    //
     // The list of the project's documents is left out where the view drawing the card draws the
     // documents itself (views/boards/project/Project.svelte), so a reader meets one Documents
     // heading.
@@ -17,21 +24,30 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ProjectTree from '../explorer/ProjectTree.svelte';
     import { humanSize, type BoardItem } from '$lib/state/boards/board';
-    import { opensInProgram } from '$lib/state/sources/fs';
+    import {
+        cardTreeKey,
+        filesViewOf,
+        opensInProgram,
+        patchedFilesView
+    } from '$lib/state/sources/fs';
     import { matchingFiles } from '$lib/state/sources/files.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { nameOf, openDocument, subOf, urlOf } from './card';
     import ProgramButton from '../links/ProgramButton.svelte';
     import { useState } from '$lib/state/client/use';
+    import { useInstance } from '$lib/state/client/instance-context';
 
     const client = useState();
 
     const {
         files: { files },
         layout: { openView },
-        selectors: { programApps }
+        selectors: { programApps },
+        ui: { instanceState, setInstanceState }
     } = client;
+    const instance = useInstance();
 
     type Props = {
         /** The joined board item whose documents and files are listed. */
@@ -45,17 +61,26 @@
 
     /** Extensions the document view can render as text. */
     const READABLE = /\.(html?|md|txt|ya?ml|py|sh|slurm|tex|bib|json|csv|r|m|cpp|h|ts|js|css)$/i;
+    /** The key of the record this card keeps its tree and its finder text under. */
+    const owner = $derived(cardTreeKey(instance?.() ?? '', item.id));
     /** The current file-name or path filter. */
-    let filter = $state('');
-    /** The file listing and its loading state for this project. */
-    const held = $derived(files(item.id));
-    const rows = $derived(matchingFiles(held.rows, filter));
+    const filter = $derived(filesViewOf(instanceState(owner)).filter);
+    /** Whether the finder box holds text, which is when the flat list replaces the tree. */
+    const finding = $derived(filter.trim() !== '');
+    /** The file listing and its loading state for this project, asked for only while finding. */
+    const held = $derived(finding ? files(item.id) : null);
+    const rows = $derived(held === null ? [] : matchingFiles(held.rows, filter));
+
+    /** Keep the finder text in the card's record, leaving the rest of the record as it is. */
+    function find(value: string): void {
+        setInstanceState(owner, patchedFilesView(instanceState(owner), { filter: value }));
+    }
 
     /** Open a readable row from the file listing. */
     function openReadable(path: string): void {
         openView('document', {
             root: 'hub',
-            path: `${held.folder}/${path}`,
+            path: `${held?.folder ?? ''}/${path}`,
             label: nameOf(path)
         });
     }
@@ -88,8 +113,15 @@
 {/if}
 
 <div class="field">
-    <span class="label">{t('project.card.files_hdr', held.rows.length)}</span>
-    {#if held.loading}
+    <span class="label">
+        {finding && held !== null
+            ? t('project.card.files_hdr', held.rows.length)
+            : t('project.card.files_title')}
+    </span>
+    <Search value={filter} placeholder={t('project.card.files_ph')} oninput={find} />
+    {#if held === null}
+        <ProjectTree {item} {owner} />
+    {:else if held.loading}
         <Empty message={t('project.card.files_loading')} />
     {:else if held.error !== ''}
         <Empty
@@ -97,14 +129,9 @@
             message={t('project.card.files_error', held.error)}
             glyph={t('board.warn_glyph')}
         />
-    {:else if rows.length === 0 && filter === ''}
+    {:else if held.rows.length === 0}
         <Empty message={t('project.card.files_none')} />
     {:else}
-        <Search
-            value={filter}
-            placeholder={t('project.card.files_ph')}
-            oninput={(value: string) => (filter = value)}
-        />
         {#if held.truncated}
             <p class="capped">{t('project.card.files_capped', held.rows.length)}</p>
         {/if}

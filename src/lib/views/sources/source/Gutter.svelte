@@ -1,6 +1,6 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/source/Source.svelte, drawn by
-    // views/shared/code/Code.svelte for a file the tab may not write; the editor draws its own
+    // views/shared/prose/Code.svelte for a file the tab may not write; the editor draws its own
     // gutter as Monaco decorations (ui/controls/editor/gutter.ts) from the same marks and blame.
     // The source tab's gutter as VS Code draws it for a file in a repository: the line numbers, and
     // beside them the quick diff marks against the index (a bar for an added or a modified run, a

@@ -1,10 +1,10 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/Files.svelte. What answers an ask to show one path,
-    // which another view writes into the instance's state through the layout store's showInFiles:
-    // the folders on the way are read here, outermost first and each only once the one above it
-    // said the next name is a folder, then the ask is settled into the open folders and the
-    // selected row, the row is scrolled into view once the tree has drawn it and takes the
-    // keyboard, and the outcome line says when the path was not found as asked.
+    // Layer 3, shared view partial, drawn by views/sources/files/Files.svelte. What answers an ask
+    // to show one path, which another view writes into the instance's state through the layout
+    // store's showInFiles: the folders on the way are read here, outermost first and each only once
+    // the one above it said the next name is a folder, then the ask is settled into the open
+    // folders and the selected row, the row is scrolled into view once the tree has drawn it and
+    // takes the keyboard, and the outcome line says when the path was not found as asked.
     //
     // Every step goes through the instance's state and is written only while that state still holds
     // the ask it was made for (state/sources/fs.ts's revealSettled and revealScrolled): an answer

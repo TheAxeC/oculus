@@ -47,7 +47,7 @@ import { requireRefreshSettings } from '../../../machine/usage/refresh.ts';
 import { requireAutofetch } from '../../../core/fetch-period.ts';
 import type { ChangeRecord } from '../../../core/changes.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
-import type { Refusal } from '../../yaml-edit.ts';
+import type { Refusal } from '../../yaml/yaml-edit.ts';
 import { readBack } from '../../list-edit.ts';
 
 /** What a config write answers with: what it changed, or the one refusal and its reason. */

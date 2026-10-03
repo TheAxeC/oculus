@@ -8,12 +8,15 @@
 // change.
 //
 // The current values come from the snapshot's Project, which carries what the model declares and no
-// more. Eleven of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens
+// more. Five of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens
 // them empty; the write itself handles them like any other, since it reads the manifest from disk.
+// The follow-up is in the model as a list of notes, and the two fields of the schema address one
+// note, so a project with two or more notes shows them read-only (followupWritable below).
 
 import { z } from 'zod';
-import type { Id, Project, Snapshot } from '../../data/model/index.ts';
+import type { Id, Project, Resource, Snapshot } from '../../data/model/index.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
+import { t } from '../shared/words/text.ts';
 import {
     filledTextShape,
     mapShape,
@@ -37,8 +40,11 @@ export type FormField = {
     options?: string[];
 };
 
-/** One choice of a select or a multi-select: the value written, and the words shown. */
-export type Choice = { id: Id; label: string };
+/**
+ * One choice of a select or a multi-select: the value written, the words shown, and the name of
+ * the glyph drawn before them when the choice has a kind that says one.
+ */
+export type Choice = { id: Id; label: string; glyph?: string };
 
 /** The three fields a write never touches, which the form therefore shows and does not edit. */
 export const NOT_WRITTEN = ['id', 'tier', 'type'];
@@ -49,18 +55,54 @@ export const NOT_WRITTEN = ['id', 'tier', 'type'];
  * on the left of the edit. Model and schema are two vocabularies, and this is where they differ.
  */
 export const NOT_IN_MODEL = [
-    'subtasks',
-    'priority',
-    'waiting-on',
-    'followup.do',
-    'followup.after',
-    'snooze',
     'code_availability.description',
     'code_availability.homepage',
     'code_availability.topics',
     'code_availability.visibility',
     'paths'
 ];
+
+/** The two schema fields that address the one note of a manifest's `followup`. */
+const FOLLOWUP_FIELDS = ['followup.do', 'followup.after'];
+
+/**
+ * Whether the two follow-up fields can write this project's notes. They address one note, so a
+ * project that holds two or more shows them read-only and the notes are edited in the file.
+ */
+export function followupWritable(project: Project): boolean {
+    return project.followups.length <= 1;
+}
+
+/**
+ * Whether the date of the follow-up has no note to belong to: the project holds none and the text
+ * of one is not typed in `edits`. A date alone is not a note, so the form keeps it read-only.
+ */
+export function dateNeedsNote(
+    project: Project,
+    field: string,
+    edits: Record<string, unknown> = {}
+): boolean {
+    return (
+        field === 'followup.after' &&
+        project.followups.length === 0 &&
+        asText(edits['followup.do']).trim() === ''
+    );
+}
+
+/**
+ * Whether the form may write a field of this project: not `id`, `tier` or `type`, not a follow-up
+ * note when the project has several, and not the date of a follow-up while no note exists to hold
+ * it (`dateNeedsNote`). `edits` are the draft's, by field name.
+ */
+export function writableField(
+    project: Project,
+    field: string,
+    edits: Record<string, unknown> = {}
+): boolean {
+    if (NOT_WRITTEN.includes(field)) return false;
+    if (dateNeedsNote(project, field, edits)) return false;
+    return !FOLLOWUP_FIELDS.includes(field) || followupWritable(project);
+}
 
 /** The word a value holds, and undefined for an empty text and for anything that is no text. */
 function filled(value: unknown): string | undefined {
@@ -141,6 +183,17 @@ function vocabChoices(raw: unknown): Choice[] {
     return readAs(vocabChoicesShape, raw) ?? [];
 }
 
+/**
+ * The glyph a resource of this kind is drawn with, or undefined for a kind outside the three. The
+ * names are the text catalog's, so the card's resource tag and the form's choice agree.
+ */
+export function resourceGlyph(kind: string): string | undefined {
+    if (kind === 'cluster') return t('project.card.hpc_glyph');
+    if (kind === 'machine') return t('project.card.machine_glyph');
+    if (kind === 'storage') return t('project.card.storage_glyph');
+    return undefined;
+}
+
 /** The entities of one kind, as choices, by id. */
 function entityChoices(
     entities: Record<Id, Record<string, unknown>> | undefined,
@@ -154,6 +207,14 @@ function entityChoices(
             const label = keys.map((key) => filled(entity[key])).find((one) => one !== undefined);
             return { id, label: label ?? id };
         });
+}
+
+/** The resources as choices, each with the glyph of its kind when the kind says one. */
+function resourceChoices(resources: Record<Id, Resource> | undefined): Choice[] {
+    return entityChoices(resources, ['name']).map((choice) => {
+        const glyph = resourceGlyph(byKey(resources ?? {}, choice.id)?.kind ?? '');
+        return glyph === undefined ? choice : { ...choice, glyph };
+    });
 }
 
 /**
@@ -178,8 +239,22 @@ export function choicesFor(
     if (from === 'projects') return entityChoices(entities?.projects, ['short', 'title']);
     if (from === 'people') return entityChoices(entities?.people, ['name']);
     if (from === 'organisations') return entityChoices(entities?.organisations, ['name']);
-    if (from === 'resources') return entityChoices(entities?.resources, ['name']);
+    if (from === 'resources') return resourceChoices(entities?.resources);
     return vocabChoices(byKey(config, from));
+}
+
+/** The words of the notes that have some, one after another, and undefined when none has. */
+function noteWords(words: (string | undefined)[]): string | undefined {
+    const held = words.filter((one): one is string => one !== undefined && one !== '');
+    return held.length === 0 ? undefined : held.join('; ');
+}
+
+/** The lines of the checklist still open, as one text; the box that shows it is read-only. */
+function openSubtasks(project: Project): string {
+    return project.subtasks
+        .filter((one) => !one.done)
+        .map((one) => one.do)
+        .join('; ');
 }
 
 /**
@@ -200,6 +275,12 @@ export function fieldValues(project: Project): Record<string, unknown> {
         'status.chips': project.chips,
         'status.line': project.statusLine,
         focus: project.focus,
+        priority: project.priority,
+        'waiting-on': project.waitingOn,
+        snooze: project.snooze,
+        subtasks: openSubtasks(project),
+        'followup.do': noteWords(project.followups.map((note) => note.do)),
+        'followup.after': noteWords(project.followups.map((note) => note.after)),
         pin: project.pin === true,
         venue_id: project.venueId,
         year: project.year,
@@ -257,4 +338,46 @@ export function asText(value: unknown): string {
 /** The fields of one section of the manifest form, in file order. */
 export function fieldsOfSection(fields: FormField[], section: string): FormField[] {
     return fields.filter((one) => one.section === section);
+}
+
+/**
+ * What a save posts, and what the draft drops once the server took it. `dirty` names the fields
+ * whose edit differs from the project; of those the three the write never touches and the follow-up
+ * fields of a project with several notes are left out, so an edit kept from before the second note
+ * was added is never sent. Emptying the text of the follow-up clears the whole follow-up, the date
+ * edit with it, and a date with no note to hold it is not sent.
+ */
+export function manifestPayload(
+    project: Project,
+    edits: Record<string, unknown>,
+    dirty: string[]
+): { body: Record<string, unknown>; taken: Record<string, unknown> } {
+    const body: Record<string, unknown> = {};
+    const taken: Record<string, unknown> = {};
+    const own = dirty.filter((field) => writableField(project, field, edits));
+    const emptied =
+        own.includes('followup.do') &&
+        project.followups.length > 0 &&
+        asText(edits['followup.do']).trim() === '';
+    for (const field of own) {
+        if (FOLLOWUP_FIELDS.includes(field) && emptied) {
+            body.followup = null;
+            taken.followup = null;
+            for (const name of FOLLOWUP_FIELDS) if (name in edits) taken[name] = edits[name];
+        } else {
+            body[field] = edits[field];
+            taken[field] = edits[field];
+        }
+    }
+    return { body, taken };
+}
+
+/**
+ * The fields of the draft a refusal covers: a refused `followup` is the clear of both follow-up
+ * fields, so the edits it covered stay in the draft.
+ */
+export function refusedEdits(refused: string[]): string[] {
+    return refused.flatMap((field) =>
+        field === 'followup' ? [field, ...FOLLOWUP_FIELDS] : [field]
+    );
 }

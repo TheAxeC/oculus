@@ -9,7 +9,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Bookmarks from '../../../../src/lib/views/sources/files/sections/Bookmarks.svelte';
-import { openBookmark } from '../../../../src/lib/views/sources/files/opening.ts';
+import { openBookmark } from '../../../../src/lib/views/shared/explorer/opening.ts';
 import { documentState } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { installRealText } from '../../shared/real-text.ts';
 import { noop } from '../../../fixtures/doubles.ts';

@@ -23,9 +23,12 @@
         glyph?: string;
         /** A hue name from state/shared/words/tones.ts. A tag with none is muted. */
         tone?: string;
+        /** Whether a label longer than the line wraps onto the next, for a tag whose whole name
+         * must stay readable with no tooltip. Without it the label is cut with an ellipsis. */
+        wrap?: boolean;
     };
 
-    let { label, glyph, tone }: Props = $props();
+    let { label, glyph, tone, wrap = false }: Props = $props();
 
     const style = $derived(tone === undefined ? undefined : `--tone-txt: var(--c-${tone}-txt)`);
 
@@ -37,7 +40,7 @@
     const bracketed = $derived(glyph !== undefined && glyph !== '' && bracketedGlyph(glyph));
 </script>
 
-<span class="tag" class:toned={tone !== undefined} class:bracketed {style}>
+<span class="tag" class:toned={tone !== undefined} class:bracketed class:wrap {style}>
     {#if glyph !== undefined && glyph !== ''}
         <Glyph name={glyph} />
     {/if}
@@ -67,6 +70,14 @@
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .tag.wrap {
+        white-space: normal;
+    }
+
+    .tag.wrap .label {
+        overflow-wrap: anywhere;
     }
 
     /* The terminal shape: a bracketed run of text, the same delimiter a chip is given there, so a

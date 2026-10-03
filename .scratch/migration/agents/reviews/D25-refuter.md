@@ -226,3 +226,260 @@ Findings:
 - `$S/base` (Standards 6) was not inspected, by the rule that keeps reviewers out of the orchestrator's scratchpad.
 
 Reviewer usage: about 336,000 tokens, about 91 tool uses, about 29 minutes.
+
+
+## Repair round 1, refuted
+
+Not settled: the verify list is red on `npm test` (two files the step does not change timed out under load, and both pass alone). I found 3 Spec, 2 Proof, 4 Standards and 0 Behaviour findings over the round. Every ruling except 15 (withdrawn by Z349) is done. No item is violated and no case is partial or unmet. Two things matter most:
+- The round moved the one DiffEditor rule that the colour check reported into a `.css` file that check does not read (Standards 1).
+- The new after-close test of `LanguageRows.svelte` cannot tell its guard from a guard that drops every answer (Proof 1).
+
+```
+$ npm run build            (alone first, from tools/oculus of the worktree)
+npm run build >  2>&1  60.83s user 7.39s system 111% cpu 1:01.38 total
+exit 0
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   -> exit 1
+$ npm test
+ ❯ |unit| tests/routes/edit/audit-mute.test.ts (10 tests | 1 failed) 11818ms
+     × brings one back, leaving the others where they were 5179ms
+ ❯ |unit| tests/server/machine/commands/placeholders.test.ts (9 tests | 2 failed) 38126ms
+     × creates nothing, for each line, each selection and each shell 27460ms
+     × hands the selection over whole, bare, inside double quotes, in a here-doc and in $(...) 8672ms
+ FAIL  |unit| tests/routes/edit/audit-mute.test.ts > the audit mute write > brings one back, leaving the others where they were
+Error: Test timed out in 5000ms.
+ FAIL  |unit| tests/server/machine/commands/placeholders.test.ts > a selection run through a real shell > creates nothing, for each line, each selection and each shell
+Error: Test timed out in 5000ms.
+ FAIL  |unit| tests/server/machine/commands/placeholders.test.ts > a selection run through a real shell > hands the selection over whole, bare, inside double quotes, in a here-doc and in $(...)
+Error: Test timed out in 5000ms.
+ Test Files  2 failed | 573 passed | 24 skipped (599)
+      Tests  3 failed | 14113 passed | 643 skipped (14759)
+   Duration  303.69s (transform 56.46s, setup 0ms, import 703.23s, tests 439.75s, environment 323ms)
+checks: failed with exit 1: npm test
+
+Neither file is changed by the step: `git diff 5f492a9b --stat` over the two files printed nothing. `uptime` gave load averages 13.35 15.44 15.52.
+The audit-mute write (`writeMute`, config/audit-mute.ts) imports none of the modules the step changed.
+$ npx vitest run tests/routes/edit/audit-mute.test.ts
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+$ npx vitest run tests/server/machine/commands/placeholders.test.ts
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+
+The remaining commands of the list, one by one:
+$ npm run test:checks
+ Test Files  31 passed | 2 skipped (33)
+      Tests  471 passed | 9 skipped (480)
+rc 0
+$ npm run check
+COMPLETED 3323 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+rc 0
+$ npm run build
+rc 0
+$ npm run format:check
+All matched files use Prettier code style!
+rc 0
+$ npm run lint
+> eslint .
+rc 0
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+rc 0   (0 lines)
+
+The step's 33 test files, run together:
+ Test Files  1 failed | 32 passed (33)
+      Tests  1 failed | 987 passed (988)
+ (the one failure is the slow-tagged "holds in every component under ui, shell, views and routes", see below)
+
+Commands the round's report quotes:
+grep -c "c-gutter-modified:" src/lib/themes/themes.css -> 16 ; grep -c "c-scm-modified:" -> 16
+ls src/lib/ui/controls/editor | wc -l -> 10 ; ls src/lib/ui/controls/editor/kit | wc -l -> 10
+wc -l: Editor.svelte 494, diff/DiffEditor.svelte 479, Diff.svelte 498, gutter/gutter.ts 403, gutter/marks.css 62, diff/read.ts 66, diff/comment-add.css 20, hunk-acts.svelte.ts 68, Source.svelte 501, DiffSection.svelte 515, Palette.svelte 515  (all as reported)
+Renamed-name greps (--exclude=local.yml, src tests config HELP.md DESIGN.md README.md), each 0 hits: views/shared/code/source-options, editor/DiffEditor, editor/gutter\.ts, editor/gutter', from './gutter', sessions/source/source-options, sessions/source/symbols, state/sources/repositories/diff/compare-header, repositories/diff-pane, GutterStyles
+grep "layoutWatch" diff/DiffEditor.svelte -> :66 (import), :224 (call)   (the report says "print nothing"; see Proof 2)
+npm run diagrams, on a scratch copy of the worktree: rc 0; diff -rq of its docs/diagrams against the worktree's -> no output
+git status --short: docs/diagrams shows the 7 .dot and 7 .svg as M, nothing new
+
+First runs (the unchanged tree is my own scratch copy: `git diff --no-renames 5f492a9b` applied in reverse, the 12 deleted files rebuilt from their deletion hunks, the untracked files removed; Editor.svelte 538, Source.svelte 528, paint_limit_kb: 64):
+ruling 8, fs-text-fresh.test.ts "ends the draft of an emptied family written as {} ...": AssertionError: expected { 'status.line': 220, next: 300 } to deeply equal {}
+ruling 5, editor-options.test.ts: TypeError: readEditorOptions is not a function (suite does not load)
+Pre-round tree (the round-start copy, with the current test files copied in):
+language-picker.test.ts: Tests 3 failed | 16 passed (19): "expected [ +0 ] to deeply equal []", "expected [ Array(1) ] to deeply equal []", "expected [ [ 'settings' ] ] to deeply equal [ [ 'settings', ...(2) ] ]"
+origins.test.ts: Tests 1 failed | 6 passed (7): "expected 'Skipped in alpha: klingon (not one of...' to be 'Skipped in alpha: klingon: not one of...'"
+editor-options.test.ts: Tests 73 passed (73)
+wrap.test.ts --reporter=verbose (worktree): 10 rows "reads a stored ... as null", including "reads a stored [] as null" and "... undefined ..."; Tests 16 passed (16)
+
+The guard of LanguageRows, on a scratch copy: `if (!drawn) return;` replaced by `if (drawn || !drawn) return;` (every answer dropped):
+npx vitest run tests/shell/keys/language-picker.test.ts -> Tests 19 passed (19)
+
+The slow colour rule:
+$ npx vitest run --tagsFilter slow tests/ui/theme/colours.test.ts
+  × holds in every component under ui, shell, views and routes
+  "lib/views/sources/files/sections/OpenEditors.svelte: .dirty: background: currentColor (not a surface or a hue)",
+  Tests 1 failed | 16 passed (17)
+  (the first review's run of this test also listed lib/ui/controls/editor/DiffEditor.svelte's .oculus-comment-add::before; that line is gone)
+```
+
+### Verdicts
+
+Rulings of `D25-round1.md`, over the delta:
+
+- 1: done. `Source.svelte:48-64` gives the indentation's whole order, the word wrap with Alt+Z and the rulers. `:75-76` names the Markdown and LaTeX symbols.
+- 2: done. The report lists the paths, each with its reason. One line is wrong: `palette-source.svelte.ts` is marked "(new)", but it exists at the base (`git status` M). It also leaves out the new edits to Gutter.svelte's head and DESIGN.md:391/404 (Spec 1).
+- 3: done (report, "Ruling 3").
+- 4: done. `workbench.yml:154` reads `'Skipped in {0}: {1}: {2}'`. `origins.test.ts:108-113` asserts the whole sentence, red on the pre-round tree.
+- 5: done.
+  - `editor-options.test.ts` "takes editor.languages over the global keys at their defaults (case 2)" asserts `{ tabs: false, size: 2 }`, then 8 tabs, then the tab's 4 spaces.
+  - The old test is retitled "combines the fields one by one ...".
+  - The tab-level test is in `source-options.test.ts`.
+  - Red on the unchanged tree (suite load).
+- 6: done. `views/shared/prose/source-options.ts` is identical to the old file (my word diff printed nothing). The old-path grep finds nothing, and `Code.svelte` stays in `views/shared/code/`. After Q91, `views/shared/` holds 10 items and `prose/` holds 6.
+- 7: done. `undo-replaced.test.ts:141,154` are titled "audits that ...", the head comment says why, and the report calls them audits.
+- 8: done. `fs-text-fresh.test.ts:101-149` writes `{}` within the cache window and checks that the draft ends. It is red on my unchanged tree.
+- 9: done as ruled. The report lists the documents, gives the after-close test and quotes the greps. The test's proof is limited (Proof 1), and one quoted grep does not reproduce literally (Proof 2).
+- 10: done. `wrap.test.ts:40` carries `[[]]`, and the run prints "reads a stored [] as null". The `[undefined]` row was added beyond the ruling. It keeps the case the old `[]` produced, and it is harmless.
+- 11: done. `Palette.svelte:16-27` is greedy-wrapped at 100 (lines 25 to 27 are 96, 93 and 22 columns, and each next word would pass 100).
+- 12: done.
+  - The head clauses, `oncaret`, `flush` and the separate indent and readOnly effects match the base (no hunk in `git diff 5f492a9b` at those places).
+  - 494 lines.
+  - One base blank line is still missing (Standards 4).
+  - The room was made with `gutter/marks.css` (Standards 1 and 2).
+- 13: done. DiffEditor.svelte is 479 and Diff.svelte 498. The parts are `diff/read.ts`, `diff/comment-add.css` and `hunk-acts.svelte.ts`, each with one concern. The importers (`DiffSection.svelte:34`, `diff-pane.test.ts`, `type-scale.test.ts:329`, `review-comment.test.ts`) and DESIGN.md:404 are updated. I read the moved code against the base and nothing is compacted. `DiffSection.svelte` is still 515 (Standards 3).
+- 14: done. `config-value.ts:280-282` and `undo-replaced.test.ts:5-8` describe the current behaviour. A grep of every added comment line for the banned wording finds no history use.
+- 15: withdrawn by Z349 and fixed at landing; not judged.
+- 16: done. `palette-source.svelte.ts:77-78` calls `openView(SETTINGS_VIEW, { reveal: 'rail' }, currentPage().id)`, destructured as `ActivityRail.svelte:53` destructures it. `language-picker.test.ts` "are opened as the rail opens Settings, on the page on screen" is red on the pre-round tree.
+- 17: done. The report's table gives six rows, each with its view, state, before and after.
+
+Items of the brief's "What to build", over the whole diff since the base (the step's 33 test files pass, with the one slow-rule exception named above):
+
+- 1: holds. `readEditorOptions`, the catalog entries and the `editorOptions` selector are in place, and `editor-options.test.ts` passes. The four finding keys are a stated departure.
+- 2: holds. See `parseRepoSettings` and `views/shared/prose/source-options.ts`; `source-options.test.ts` and `fs-text-fresh.test.ts` pass.
+- 3: holds. See `resolveEditor` (`data/helpers/editor.ts:294-314`) and the `Source.svelte` head comment. Source.svelte is 501 lines.
+- 4: holds (`origins.test.ts`, `settings-origins.test.ts`).
+- 5: holds (`wrap.test.ts`, `options.test.ts`). The keypress itself is left to the look.
+- 6: holds (`options.test.ts`). Editor.svelte is 494 lines and the folder holds 10 items. Standards 1 and 2 bear on how the room was made.
+- 7: holds (`symbols.test.ts`, `folding.test.ts`, `kit/latex/`).
+- 8: holds (`editor.test.ts`; the base has `paint_limit_kb: 64`).
+- 9: holds (`fs-text-fresh.test.ts`; fs.svelte.ts is 869 lines).
+- 10: holds in behaviour (`undo-replaced.test.ts`). Its guards are tested only by audits, now titled as such.
+- 11: holds (`paint.test.ts`).
+- 12: holds. `marks.css:19-21` and `Gutter.svelte:168` paint with `--c-gutter-modified`. The `colours.test.ts` case 19 checks pass, and the grep counts are 16 and 16.
+- 13: holds (`language-picker.test.ts`, `palette-source.svelte.ts`). Proof 1 bears on the association answer.
+- 14: holds (`diff-pane.test.ts`, `compare-header.client.test.ts`).
+- 15: holds (`settings/Header.svelte:104`). How it draws is left to the look.
+- 16: holds. `diff/DiffEditor.svelte:184-185` sets the two options, and `commentSides` is in `gutter/gutter.ts:295-302`, covered by `gutter.test.ts`.
+- 17: holds (`DiffSection.svelte:501-509`). How it draws is left to the look.
+- 18: holds (`settings.test.ts`).
+- 19: holds. HELP.md, `desc_behavior` and DESIGN.md (85, 143, 388, 391, 395-396, 404, 409, 430) are updated, and the diagrams equal a fresh `npm run diagrams`.
+
+Cases of the brief's "Cases":
+
+- 1: met (`editor-options.test.ts`, `source-options.test.ts`).
+- 2: met. The new case-2 tests give 2 spaces with the global keys at their defaults, then a tab of width 8, then 4 spaces.
+- 3, 4, 6: met.
+- 5: met through the draft and the module. The keypress and the reload on screen are left to the look.
+- 7, 8, 9, 10: met.
+- 11: met for `applyOptions` and the diff section's options. The live redraw cannot be verified here; the look settles it.
+- 12, 13, 14, 15: met.
+- 16: met for the write sequence with `{}` written (`fs-text-fresh.test.ts:101-149`). The unsaved mark going is left to the look.
+- 17: met. The stale-offset part is an audit, titled as one.
+- 18, 19: met.
+- 20: met for the entries, the hints, Auto Detect, the written association, the Settings search and its rail opening. The palette closing after an accepted association has no test (Proof 1). The History row and the tab redrawing as Markdown cannot be verified without the look.
+- 21: met (`diff-pane.test.ts`, `compare-header.client.test.ts`).
+- 22: not verifiable (CSS; the look settles it).
+- 23: met for `commentSides`. The drawn layout is left to the look.
+- 24: not verifiable (CSS; the look settles it).
+- 25: met.
+- 26: met by reading (`options.yml` `holds: lists`, `draft.ts` `pairs`).
+- 27 to 34: met.
+- 35: met in behaviour. The malformed-record cases are audits, titled as such.
+
+### Findings
+
+Spec
+
+- **Spec 1.** The round adds merge points that the state file's shared-path notes do not record.
+  - Where:
+    - `src/lib/views/sources/source/Gutter.svelte:4-8`: "gutter as Monaco decorations (ui/controls/editor/gutter/gutter.ts) from the same marks and / blame. The source tab's gutter ...". The whole paragraph is rewrapped.
+    - `DESIGN.md:391` (the gutter path).
+    - `DESIGN.md:404` (base line 403, the DiffEditor path).
+  - What is wrong: these edits follow from moving `gutter.ts` and `DiffEditor.svelte` into folders (rulings 12 and 13). They reach lines that the shared-path notes give to other steps:
+    - Q91 changes `Gutter.svelte:3`. That is the line just above the rewrapped lines 4-8.
+    - X3c changes the same `DESIGN.md:391` line ("bar's" to "strip's" and more).
+    - X3c changes base `DESIGN.md:404`, the line next to D25's 403.
+  - The state file says Gutter.svelte is "D25 near :168", and that DESIGN.md has separate passages except `:98` and `:429`. Neither the report's ruling 2 list nor its ruling 9 list flags this.
+  - Failure scenario: the second of these landings hits cherry-pick conflicts in Gutter.svelte's head comment and in DESIGN.md:391 and :403-404, which the landing notes do not list. The person merging may keep one side and lose the other step's path change or wording.
+- **Spec 2.** `tests/views/sources/repositories/diff/diff-pane.test.ts`: every relative import is now one level deeper (`'../../../../../src/...'`).
+  - What is wrong: the round moved diff-pane only to make room for `compare-header.client.test.ts` in a full folder. Z349 moves compare-header back at landing, which leaves `tests/views/sources/repositories/diff/` holding diff-pane alone. The move then has no reason left.
+  - Failure scenario: landing keeps a one-file folder and a path that changed for nothing, or moves the file back by hand and edits about 15 import lines.
+  - Verdict: none (a landing note).
+- **Spec 3.** The round's own report: "`src/lib/state/workbench/palette-source.svelte.ts` (new)".
+  - What is wrong: the file exists at the base (`git status --short` shows M; `git diff 5f492a9b --stat` gives 44 insertions and 4 deletions).
+  - Failure scenario: a reader treats a shared store that already exists as a new module. No decision rests on it.
+  - Verdict: none.
+
+Proof
+
+- **Proof 1.** `tests/shell/keys/language-picker.test.ts:163-190`: "says and closes nothing when the write %s". Under test is `src/lib/shell/keys/LanguageRows.svelte:56-67`: `let drawn = true; onDestroy(() => (drawn = false)); ... if (!drawn) return;`.
+  - What is wrong: `rowsFor` renders through `svelte/server`, which runs `onDestroy` when the render ends. So `drawn` is already false before any pick, and every answer in this file arrives as if the palette had closed.
+  - With the guard changed to drop every answer (`if (drawn || !drawn) return;`, on a scratch copy), the file still prints `Tests 19 passed (19)`.
+  - The test is red without the guard, as the report quotes and my pre-round run reproduces. But no test checks the path the guard must leave alone: with the palette open, an accepted association closes it and a refusal is said. The spec asks for an in-flight case for each asynchronous path. Ruling 9 asked only for the after-close test, so this is a gap in proof, not a missed ruling.
+  - Failure scenario: a later change drops every answer of the association write. The second list then stays open after a pick, and a refused write says nothing, while the suite stays green.
+  - Verdict: none (case 20 does not name the close).
+- **Proof 2.** The report's "Ruling 9" greps: "the removed `selected(` and `layoutWatch` in `DiffEditor.svelte` print nothing".
+  - What is wrong: `grep -n layoutWatch src/lib/ui/controls/editor/diff/DiffEditor.svelte` prints `:66` (the import) and `:224` (the call). The function moved to `diff/read.ts` and is imported, so the claim is true only of the local definition. A grep for `function selected\|function layoutWatch\|selected(` prints nothing.
+  - No decision rests on it.
+  - Failure scenario: a reader checking the quoted grep gets a different result and doubts the other quoted greps.
+  - Verdict: none.
+
+Standards
+
+- **Standards 1.** The rule now sits in `src/lib/ui/controls/editor/diff/comment-add.css:8-20`: `.diff-editor .monaco-editor .oculus-comment-add::before { ... background: linear-gradient(var(--accent), var(--accent)) center / 8px 2px no-repeat, ...`. It moved there from DiffEditor.svelte's `<style>`. `marks.css:1-62` moved out of Editor.svelte's `<style>` the same way.
+  - What is wrong: the colour rule reads only `<style>` blocks of `.svelte` files (`tests/ui/theme/colours.test.ts`, `styles()`: `source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)`).
+  - The first review's run of the slow colour test listed this DiffEditor rule as a violation; my run lists only `OpenEditors.svelte`. The rule's text is unchanged; only its file moved.
+  - So the check now passes on this rule only because it does not read `.css` under `ui/`. The same holds for the 13 mark and breakpoint rules in `marks.css`, which pass today.
+  - The report does not say the slow test's output changed.
+  - This is a known finding of the check closed by moving the code out of its reach. It goes against the spec's "a check made to pass by ... exempting" and the refute rule against a diff that satisfies a check only because the check does not read the path.
+  - Failure scenario: a raw hex or a non-surface background written in `comment-add.css` or `marks.css` passes the colour rule. The orchestrator also loses the DiffEditor violation it had on record without anyone fixing it.
+  - Verdict: none (items 6 and 13 hold in behaviour).
+- **Standards 2.** `src/lib/ui/controls/editor/gutter/marks.css:1-3`: "Monaco puts the classes on elements it makes outside any component, so each rule is held to the editor it sits in." With `.editor .monaco-editor .margin-view-overlays .line-numbers { white-space: pre; }` and the rules below it.
+  - What is wrong:
+    - In a global stylesheet, `.editor` is a plain class with no scope. It is also the class of `views/sources/repositories/diff/DiffSection.svelte:417` (the wrapper of the diff editor), `views/boards/editor/Editor.svelte:247` and `views/system/workbench/editors/Editor.svelte:87`. In Editor.svelte the Svelte hash held these rules to the primitive. Now they also match the Monaco diff editor inside every diff section, so the comment's sentence is false.
+    - Neither new `.css` file opens with its layer. The spec requires every added module to open with the head comment the tree's files open with, its layer included; `themes/code.css` opens "Layer 3, theme.".
+    - The specificity claim in the report holds: (0,3,0) and (0,4,0) as before.
+  - Failure scenario:
+    - Today the diff editor's line numbers take `white-space: pre`, which draws nothing different for digits.
+    - A decoration class named `oculus-mark*`, `oculus-highlight` or `oculus-blame*` added to the diff editor would take the source editor's look unasked.
+    - A reader trusting the comment rules that out.
+  - Verdict: none.
+- **Standards 3.** `src/lib/views/sources/repositories/diff/DiffSection.svelte`: 515 lines, against 479 at the base (`wc -l` on both trees).
+  - What is wrong: the spec's size rule says a file within 20 lines of its cap (540) is split. The step grew this file into that margin. The first review named only DiffEditor.svelte and Diff.svelte, and ruling 13 did not reach this file; the round touched it again (head comment and import).
+  - `Palette.svelte` at 515 is within the brief's own "at or under 520", which differs from the spec's rule. That difference is the orchestrator's to settle.
+  - Failure scenario: the next change to a diff section (A1-1, which is held out with Z328) starts at 515 of 540 and has to split the file inside an unrelated step.
+  - Verdict: none.
+- **Standards 4.** `src/lib/ui/controls/editor/Editor.svelte:224-225`: "const marked = $derived(marks.length > 0);" is followed directly by "// The actions over the marks, ...".
+  - What is wrong: the base has a blank line between them. Ruling 12 asked for what was compacted to be put back, and this blank line is still missing. The comment's "added again when either changes" now covers three inputs (the labels, the mark state, the wrap), so "either" is wrong.
+  - Failure scenario: a reader takes "either" to mean two inputs and misses that a change to `wrap` re-adds the actions.
+  - Verdict: none.
+
+Behaviour
+
+- None of its own. The one change of scope the round makes (the `marks.css` rules reaching the diff editor) is under Standards 2, and nothing visible is expected from it today.
+
+### Declined to judge
+
+- These on-screen points belong to the look on TEST:
+  - whether the quick diff marks, breakpoints, blame and comment `+` draw as before now that their rules are global stylesheets loaded beside Monaco's (the cascade order against Monaco's own CSS);
+  - the Settings view opening with its rail list on the page on screen;
+  - Alt+Z;
+  - the live option changes;
+  - the inline layout under 900 px;
+  - the hunk header at 300 px;
+  - the single clear button;
+  - the unsaved mark going.
+- `HunkActs` (`hunk-acts.svelte.ts`) against the code it replaced in Diff.svelte: I checked it by reading only, and it matches line for line. No test covers the revert confirmation, before or after the split (`grep -rln "revert_confirm"` over `tests` finds no Diff test).
+- Whether `views/shared/prose/` is the right concern for `source-options.ts`: ruling 6 placed it there, so that is not mine to judge.
+- The two timed-out files in `npm test` (`audit-mute.test.ts`, `placeholders.test.ts`): neither is the step's, and the spec says a reviewer does not count such a failure. Z350 already covers the placeholders file.
+- The placements and audit titles of the three test files that ruling 15 moved: Z349 covers them, as instructed.
+- My mistake: one of my greps (the renamed-name greps) put the pattern after `--`. That made this machine's grep (ugrep) read `--exclude=local.yml` as a file name, so `config/local.yml` was searched. The command printed match counts only, all 0, so none of the file's content reached any output. I reran the greps with the exclusion in force; those are the lines quoted above.
+
+Reviewer usage: about 300,000 tokens, about 80 tool uses, about 31 minutes.

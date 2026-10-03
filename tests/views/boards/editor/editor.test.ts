@@ -10,23 +10,23 @@
 // tests/server/edit/writes.test.ts and tests/routes/edit/write.test.ts.
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { NO_FEEDS, fixtureProject } from '../../fixtures/entities-fixture.ts';
+import { NO_FEEDS, fixtureProject } from '../../../fixtures/entities-fixture.ts';
 import { render } from 'svelte/server';
-import Editor from '../../../src/lib/views/boards/editor/Editor.svelte';
+import Editor from '../../../../src/lib/views/boards/editor/Editor.svelte';
 import {
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog,
     vocabCatalog
-} from '../../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs, t } from '../../../src/lib/state/shared/words/text.ts';
-import { setVocab } from '../../../src/lib/state/shared/words/tones.ts';
-import { formFields, formSections } from '../../../src/lib/state/forms/schema.ts';
-import type { Id, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
-import type { Instance } from '../../../src/lib/state/workbench/layout/index.ts';
-import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
-import { between } from '../shared/pane-parts.ts';
+} from '../../../../src/lib/data/sources/config.ts';
+import { setCatalog, setGlyphs, t } from '../../../../src/lib/state/shared/words/text.ts';
+import { setVocab } from '../../../../src/lib/state/shared/words/tones.ts';
+import { formFields, formSections } from '../../../../src/lib/state/forms/schema.ts';
+import type { Id, Project, Snapshot } from '../../../../src/lib/data/model/index.ts';
+import type { Instance } from '../../../../src/lib/state/workbench/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../../../fixtures/client.ts';
+import { between } from '../../shared/pane-parts.ts';
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -251,5 +251,19 @@ describe('where the editor puts its controls', () => {
         client.manifestDraft.editManifest('editor-one', 'alpha', 'status.line', 'typed earlier');
         const bar = between(html({ id: 'alpha' }), '<div class="viewbar', '<div class="body');
         expect(bar).toContain(t('editor.dirty', 1));
+    });
+});
+
+/** The snapshot with the fields of the project `alpha` laid over, as a later push sends it. */
+function install(over: Partial<Project>): void {
+    const next = snapshot();
+    next.entities.projects.alpha = { ...next.entities.projects.alpha, ...over };
+    receive({ channel: 'portfolio', version: 2, payload: next });
+}
+
+describe('the fields the model carries', () => {
+    it('draws a priority the levels do not hold as it is, as any select does', () => {
+        install({ priority: 'urgent' });
+        expect(html({ id: 'alpha' })).toContain('>urgent<');
     });
 });

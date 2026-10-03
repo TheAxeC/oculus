@@ -2,7 +2,7 @@
 // configuration changes independently of items, filters and statistics.
 
 import { z } from 'zod';
-import type { Id, Project, Tier, Venue } from '../../../data/model/index.ts';
+import type { Id, Project, Resource, Tier, Venue } from '../../../data/model/index.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
 import { fields, strings, text as str } from '../../../data/helpers/guards.ts';
 import { fieldItemsShape, readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
@@ -83,10 +83,10 @@ export type BoardItem = {
     code: string;
     /**
      * The resources the project's `compute:` names, in the manifest's order: the key, the entry's
-     * name, whether it is a cluster, and the entry's position in the registry, which orders two
-     * resources of one name in the facet menu.
+     * name, its kind, and the entry's position in the registry, which orders two resources of one
+     * name in the facet menu.
      */
-    compute: { id: string; label: string; cluster: boolean; order: number }[];
+    compute: { id: string; label: string; kind: Resource['kind']; order: number }[];
     reproduced: boolean;
     /** The year as text, or the empty string when the manifest has none. */
     year: string;

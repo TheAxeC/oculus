@@ -6,8 +6,10 @@
 
 import { isMap as isYamlMap, isSeq, parseDocument } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
-import { asFieldValue, sameValue } from '../yaml-edit.ts';
-import type { EditResult, FieldValue, Refusal } from '../yaml-edit.ts';
+import { asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
+import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
+import type { FieldValue } from '../yaml/yaml-values.ts';
+import { pairOf, rangeOf } from '../yaml/yaml-ranges.ts';
 import { renderFlowMap } from './render.ts';
 import {
     LABEL,
@@ -19,8 +21,6 @@ import {
     lastLineOf,
     lineAt,
     listOf,
-    pairOf,
-    rangeOf,
     refuseAll,
     verified,
     type Change,

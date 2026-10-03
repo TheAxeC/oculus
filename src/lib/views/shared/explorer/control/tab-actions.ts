@@ -1,7 +1,8 @@
-// Layer 3, view partial of Files.svelte. What a press on the Files tab writes into the tab's own
-// state: part of the state written for this tab or for the tab an answer was sent from, a folder
-// opened or closed, a row selected, one of the tab's toggles flipped, a section opened or closed,
-// every folder closed, and the name of a new file or folder started.
+// Layer 3, view partial of rooted-tree.svelte.ts. What a press on an explorer tree writes into the
+// tree's own record (a Files tab's instance state, or the record a project card keeps): part of the
+// record written for this tree or for the one an answer was sent from, a folder opened or closed, a
+// row selected, one of the tree's toggles flipped, a section opened or closed, every folder closed,
+// and the name of a new file or folder started.
 
 import type { ClientState } from '$lib/state/client/context';
 import {

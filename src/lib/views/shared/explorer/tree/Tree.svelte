@@ -1,9 +1,9 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/Files.svelte. The roots as one explorer tree, drawn
-    // as VS Code's Explorer draws it: every row carries its depth, so one `each` draws the whole
-    // thing and nothing here recurses. Which rows exist is state/sources/explorer/rows/tree-rows.ts
-    // over the listings and the open folders, or its filterRows() while a filter is typed, so what
-    // is on screen follows the state and is never something a click did to the list. Each root is a
+    // Layer 3, shared view, drawn by RootedTree.svelte. The roots as one explorer tree, drawn as VS
+    // Code's Explorer draws it: every row carries its depth, so one `each` draws the whole thing
+    // and nothing here recurses. Which rows exist is state/sources/explorer/rows/tree-rows.ts over
+    // the listings and the open folders, or its filterRows() while a filter is typed, so what is on
+    // screen follows the state and is never something a click did to the list. Each root is a
     // top-level folder row. The workspace header, when the view draws one, is the first row of this
     // same tree (the `header` snippet, handed the tree's `nav`), so the arrow keys walk from it
     // into the roots; a closed header leaves the keyboard its own row.
@@ -80,7 +80,7 @@
         /** Whether a filter draws the rows, which holds the folders it draws open. */
         filtering: boolean;
         selected: RowRef | null;
-        /** The id of the Files view this tree is drawn for, which holds the name being typed. */
+        /** The key of the record this tree is drawn for, which holds the name being typed. */
         owner: string;
         /** The root keys a removal refuses, so a configured root offers no remove control. */
         fixed: string[];

@@ -79,7 +79,7 @@ function item(): BoardItem {
         authors: '',
         bucket: '',
         code: 'public',
-        compute: [{ id: 'this-mac', label: 'This Mac', cluster: false, order: 1 }],
+        compute: [{ id: 'this-mac', label: 'This Mac', kind: 'machine', order: 1 }],
         reproduced: true,
         year: '',
         sessions: 'none',

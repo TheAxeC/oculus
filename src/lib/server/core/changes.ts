@@ -7,7 +7,9 @@
 // value it wrote at the point of the edit, and hands both back on its outcome, so nothing here
 // reads a file a second time and nothing compares one version of a file with another. A manifest
 // write that removed a field also hands back the text it removed, where it stood and the text that
-// followed it (`RemovedText`), which the record of that field keeps for the undo.
+// followed it (`RemovedText`), which the record of that field keeps for the undo. One that wrote a
+// bare note or a list of one note as a map hands back the text it replaced (`ReplacedText`), which
+// the undo puts back while the file still holds the lines the write left.
 //
 // The log is this machine's and not the researcher's data: git already holds the hub's history, and
 // what this answers is what oculus did here. It lives beside the other files under ~/.oculus, or
@@ -61,6 +63,19 @@ export type RemovedText = {
 };
 
 /**
+ * The text a manifest write replaced when it wrote a bare note or a list of one note as the map it
+ * stands for, which is what an undo puts back while the file still holds what the write left.
+ */
+export type ReplacedText = {
+    /** The index in the text the write left, counted in UTF-16 code units, where `after` begins. */
+    offset: number;
+    /** The characters the write replaced, comments included. */
+    before: string;
+    /** The lines the write put in their place. */
+    after: string;
+};
+
+/**
  * What a writer says about one thing it changed. The time and the body kind are added on append.
  */
 export type ChangeRecord = {
@@ -84,6 +99,11 @@ export type ChangeRecord = {
      * put none in, and on no other record.
      */
     removed?: RemovedText;
+    /**
+     * The note a manifest write rewrote as a map, on the record of each field whose edit did so
+     * and left the rewritten lines in the file as it wrote them, and on no other record.
+     */
+    replaced?: ReplacedText;
 };
 
 /** One line of the log. */

@@ -8,7 +8,7 @@ text:
         coverage_deposited: deposited
         coverage_none: no deposit
         delete_glyph: cross
-        edit_delete: edit / delete
+        edit_delete: Edit / Delete
         edit_glyph: edit
         empty: No entries yet - add some to the YAML.
         filters: Collection filters
@@ -35,7 +35,7 @@ text:
         no_funding: No funding
         no_funding_sub: Active and manuscript projects with no scheme attached.
         pin_glyph: pin
-        pin_to_top: pin to top
+        pin_to_top: Pin to Top
         related: Named by
         reorder_hint: drag to reorder
         save_glyph: check
@@ -49,7 +49,7 @@ text:
         status_facet: Status
         tags_hint: comma separated
         toolbar: Collection controls
-        unpin: unpin
+        unpin: Unpin
     views:
         applications: Applications
         applications_glyph: inbox

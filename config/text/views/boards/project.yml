@@ -2,7 +2,7 @@
 text:
     project:
         action:
-            add_subtask: + subtask
+            add_subtask: Add Subtask
             add_subtask_glyph: tasks
             add_subtask_tip: add a subtask
             box_off_glyph: checkbox_off
@@ -31,25 +31,27 @@ text:
             collaborators: Collaborators
             collaborator_glyph: collab
             collapse_glyph: collapse
-            copied: copied
+            copied: Copied
             copy_failed: copy failed
             dataset_glyph: data
             deadline_glyph: deadline
-            deposit: deposit
+            deposit: Deposit
             deposit_glyph: published
             disseminated_in: Disseminated in
             documents: Documents
             due_days: '{0}d'
             edit_glyph: edit
-            edit_manifest: edit manifest
+            edit_manifest: Edit Manifest
             eli5: ELI5
             expand_glyph: expand
+            followup: Follow-up
             files_capped: showing the {0} most recent
             files_error: 'files: {0}'
             files_hdr: Files ({0})
             files_loading: reading the folder ...
             files_none: No files in this project.
             files_ph: filter files in this project ...
+            files_title: Files
             folder_failed: 'The folder could not be shown in Finder: {0}'
             funding_glyph: funding
             ghost_badge_tip: no project.yml - run /project-new
@@ -57,18 +59,20 @@ text:
             hpc_glyph: hpc
             ideas: Ideas / avenues
             latest: Latest
+            machine_glyph: host
             more_actions: More
             more_glyph: disclosure
             more_tags: '+{0}'
             more_tags_tip: show the rest of {0}
             next: Next
             no_manifest: no manifest
+            not_until: not until {0}
             open_in: open in {0}
             outcome: Outcome
             overdue: overdue {0}d
             pin_glyph: pin
-            pin_to_top: pin to top
-            present: slide
+            pin_to_top: Pin to Top
+            present: Slide
             present_glyph: poster
             present_tip: open the public deck at this project's slide
             pillar_glyph: pillar
@@ -78,12 +82,14 @@ text:
             show_more: Show more
             results: Results
             software: Software
+            status: Status
+            storage_glyph: data
             software_glyph: code
             software_papers: Papers
             stale_behind: '{0}d behind'
             stale_tip: docs changed {0} | {1}d after the manifest was last touched - re-touch project.yml
-            toggle_tip: expand / collapse
-            unpin: unpin
+            toggle_tip: Expand / Collapse
+            unpin: Unpin
         doc_failed: 'the document was not read: {0}'
         doc_loading: loading the document ...
         documents: Documents
@@ -91,10 +97,10 @@ text:
             ask: Ask
             ask_tip: open a Claude terminal focused on this project
             blocked_external: blocked (external)
-            copy_context: copy context
+            copy_context: Copy Context
             copy_context_tip: copy this project as context to paste into a chat
             doc_human_tip: human-only - no agent edits this
-            folder: folder
+            folder: Folder
             folder_tip: show the project folder in Finder
             full: Full
             short: Short

@@ -193,3 +193,67 @@ describe("a page's close", () => {
         expectForgotten(['a', 'b', 'c']);
     });
 });
+
+describe('the project trees of the cards a closed tab drew', () => {
+    /** The two records a tab's cards leave: one per project, under `<tab id>#files:<project>`. */
+    const keysOf = (id: string): string[] => [`${id}#files:alpha`, `${id}#files:b%23files%3Ac`];
+
+    /** Give a tab the tree record of two of its cards. */
+    function holdTrees(id: string): void {
+        for (const key of keysOf(id)) client.ui.setInstanceState(key, { expanded: ['hub:x'] });
+    }
+
+    /** Whether a tab's two records are held in memory and in storage: both, or neither. */
+    function held(id: string): { memory: boolean[]; stored: boolean[] } {
+        return {
+            memory: keysOf(id).map((key) => client.ui.instanceState(key) !== undefined),
+            stored: keysOf(id).map((key) => written().includes(key))
+        };
+    }
+
+    const BOTH = { memory: [true, true], stored: [true, true] };
+    const NEITHER = { memory: [false, false], stored: [false, false] };
+
+    it("a tab's close forgets its tree records and keeps another tab's, and a record of no tab", () => {
+        // Revert: drop the prefix clear from the forget in state/client/context.ts.
+        client.layout.apply(bench(pane(['a', 'ab'])));
+        holdTrees('a');
+        holdTrees('ab');
+        holdTrees('gone');
+        expect(held('a')).toEqual(BOTH);
+
+        client.layout.closeInstance('a');
+
+        expect(held('a')).toEqual(NEITHER);
+        expect(held('ab')).toEqual(BOTH);
+        expect(held('gone')).toEqual(BOTH);
+    });
+
+    it("a pane's close forgets the tree records of every tab of the pane", () => {
+        // Revert: drop the prefix clear from the forget in state/client/context.ts.
+        client.layout.apply(bench(split('row', [0.5, 0.5], [pane(['a', 'b']), pane(['c'])])));
+        for (const id of ['a', 'b', 'c']) holdTrees(id);
+
+        client.layout.closePane([0]);
+
+        expect(held('a')).toEqual(NEITHER);
+        expect(held('b')).toEqual(NEITHER);
+        expect(held('c')).toEqual(BOTH);
+    });
+
+    it("a page's close forgets the tree records of its tabs and keeps the other page's", () => {
+        // Revert: drop the prefix clear from the forget in state/client/context.ts.
+        const first = client.layout.currentPage().id;
+        client.layout.openPage('Page 2');
+        const second = client.layout.currentPage().id;
+        client.layout.apply(bench(pane(['x'])), second);
+        client.layout.apply(bench(pane(['a'])), first);
+        holdTrees('a');
+        holdTrees('x');
+
+        client.layout.closePage(first);
+
+        expect(held('a')).toEqual(NEITHER);
+        expect(held('x')).toEqual(BOTH);
+    });
+});

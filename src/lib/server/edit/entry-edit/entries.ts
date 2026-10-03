@@ -8,20 +8,19 @@ import { isDeepStrictEqual } from 'node:util';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { isMap as isYamlMap, isScalar, isSeq } from 'yaml';
 import type { Node, YAMLMap } from 'yaml';
-import { NOT_A_FIELD_VALUE, asFieldValue, isBlockMap, sameValue } from '../yaml-edit.ts';
-import type { EditResult, Refusal } from '../yaml-edit.ts';
+import { NOT_A_FIELD_VALUE, asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
+import { isBlockMap } from '../yaml/yaml-values.ts';
+import { pairOf, rangeOf, valueEnd } from '../yaml/yaml-ranges.ts';
+import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
 import {
     LIST,
     applyEntryField,
     asJs,
     document,
-    endOffset,
     lineAt,
     linesOf,
     listOf,
     locate,
-    pairOf,
-    rangeOf,
     refuseAll,
     verified,
     type Change,
@@ -169,7 +168,7 @@ export function appendEntry(source: string, listKey: string, block: string): Edi
         at = lineAt(source, key[0]) + 1;
     } else {
         const last = seq.items[seq.items.length - 1] as Node;
-        const end = endOffset(last);
+        const end = valueEnd(last);
         at = lineAt(source, Math.max(end - 1, 0)) + 1;
     }
     const lines = source.split('\n');

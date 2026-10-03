@@ -2,7 +2,7 @@
 // cases that render it over rows of their own.
 
 import type { ComponentProps } from 'svelte';
-import type Tree from '../../../../src/lib/views/sources/files/tree/Tree.svelte';
+import type Tree from '../../../../src/lib/views/shared/explorer/tree/Tree.svelte';
 import type { TreeRow } from '../../../../src/lib/state/sources/fs.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 

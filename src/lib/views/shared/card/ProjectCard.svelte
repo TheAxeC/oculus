@@ -21,6 +21,7 @@
     import CardLinks from './CardLinks.svelte';
     import CardSessions from './CardSessions.svelte';
     import CommandBar from '../sessions/CommandBar.svelte';
+    import CodeText from '$lib/ui/display/CodeText.svelte';
     import Clamp from './Clamp.svelte';
     import Subtasks from '../forms/Subtasks.svelte';
     import { codeLabel, deadline, deckSlideOf, openDocument } from './card';
@@ -33,6 +34,7 @@
         type BoardItem
     } from '$lib/state/boards/board';
     import { contextText } from '$lib/state/boards/project-context';
+    import { resourceGlyph } from '$lib/state/forms/schema';
     import { personNames } from '$lib/state/boards/person';
     import { t } from '$lib/state/shared/words/text';
     import { chipGlyphName, chipLabel, statusTone } from '$lib/state/shared/words/tones';
@@ -341,10 +343,7 @@
                 <Tag label={t('board.repro_yes')} glyph={t('project.card.repro_glyph')} />
             {/if}
             {#each item.compute as resource (resource.id)}
-                <Tag
-                    label={resource.label}
-                    glyph={resource.cluster ? t('project.card.hpc_glyph') : undefined}
-                />
+                <Tag label={resource.label} glyph={resourceGlyph(resource.kind)} />
             {/each}
             {#if item.venue}
                 <span class="venue">{item.venue.text}</span>
@@ -380,10 +379,10 @@
             </div>
         {/if}
         {#if item.project.next}
-            <p class="next">{firstSentence(item.project.next, CARD_NEXT)}</p>
+            <p class="next"><CodeText text={firstSentence(item.project.next, CARD_NEXT)} /></p>
         {/if}
         {#if open && !item.project.ghost}
-            <CardDetails {item} {onsaid} {documents} />
+            <CardDetails {item} {onsaid} {documents} {now} />
         {/if}
         {#if !item.project.ghost && (open || addingSubtask)}
             <Subtasks

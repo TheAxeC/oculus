@@ -1,5 +1,5 @@
 // Layer 4, test. The Files view's name input as far as it runs without a DOM: the message under it
-// for what is typed (nameMessage in views/sources/files/tree/row-ops.ts), the Cut fade and the
+// for what is typed (nameMessage in views/shared/explorer/tree/row-ops.ts), the Cut fade and the
 // editing row a server render draws, the three questions' words, and the shared file reader.
 //
 // What this does NOT cover: the input's own behaviour, which needs a browser: its focus and its
@@ -8,12 +8,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
-import Tree from '../../../../../src/lib/views/sources/files/tree/Tree.svelte';
-import Questions from '../../../../../src/lib/views/sources/files/Questions.svelte';
+import Tree from '../../../../../src/lib/views/shared/explorer/tree/Tree.svelte';
+import Questions from '../../../../../src/lib/views/shared/explorer/Questions.svelte';
 import {
     nameMessage,
     type AskedQuestion
-} from '../../../../../src/lib/views/sources/files/tree/menu/row-ops.ts';
+} from '../../../../../src/lib/views/shared/explorer/tree/menu/row-ops.ts';
 import { base64Of, encoded } from '../../../../../src/lib/ui/forms/file/file-data.ts';
 import { treeRows, type FsEntry } from '../../../../../src/lib/state/sources/fs.ts';
 import {

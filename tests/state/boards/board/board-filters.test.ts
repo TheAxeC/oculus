@@ -87,9 +87,9 @@ describe('the compute facet', () => {
     it('carries each resource a project names, in the manifest order, with its name and kind', () => {
         const { items } = over({ alpha: { resourceIds: ['this-mac', 'utwente'] } });
         const alpha = items.find((one) => one.id === 'alpha');
-        expect(alpha?.compute.map((one) => [one.id, one.label, one.cluster])).toEqual([
-            ['this-mac', 'This Mac', false],
-            ['utwente', 'UTwente HPC', true]
+        expect(alpha?.compute.map((one) => [one.id, one.label, one.kind])).toEqual([
+            ['this-mac', 'This Mac', 'machine'],
+            ['utwente', 'UTwente HPC', 'cluster']
         ]);
         expect(item('charlie').compute).toEqual([]);
     });

@@ -174,7 +174,8 @@ export function createPicks(deps: PicksDeps) {
                     deps.hints,
                     (root: string, path: string) =>
                         client.fs.heldEntries(root, path, shownOf(view.now())),
-                    commands
+                    commands,
+                    client.selectors.programApps()
                 ),
                 t
             );

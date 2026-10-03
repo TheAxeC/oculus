@@ -4,6 +4,9 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z358, closed by the orchestrator in automode 2026-10-03: where the Focus ticker defect of Q91's look is built (a cut row hides its end and has no tooltip); options (a) widen X3e, queued and not yet specced, (b) a new step; (a) taken, since a defect goes into a queued step and X3e already takes the looks' defects.
+- Z357, ruled by Axel 2026-10-03 ("lines of code in status should also print out src/ recursive count"): booked as step Q116.
+- Z356, ruled by Axel 2026-10-03 ("Pause before launching T1, so we can discuss tests some more"): T1 held until the discussion; the other queued steps go on.
 - Z355, closed by the orchestrator in automode 2026-10-03: whether the test rule of Z354 reaches the tests X3c, Q91 and D25 have already written; options (a) the landing of each deletes its tests that break the rule, (b) T1 removes them later, which misses the tests of any step landing after T1's base, the lazy option. Taken: (a).
 - Z354, ruled by Axel 2026-10-03 ("far too many tests are being written"): T1 also removes unnecessary tests, and `agents/spec.md` carries a test rule so builders write only useful ones.
 - Z353, ruled by Axel 2026-10-03 ("But speed in heavy load matter??????"): Z352 reversed; the quick list must be fast under the plan's working load, so T1 is timed under that load and runs beside other steps.

@@ -7,13 +7,19 @@
     // choice of its own, which is how `authors` and `waiting-on` take a person the registries do
     // not hold.
     //
+    // A choice with a `glyph` draws it before its words, on its button and on its chip, so a field
+    // whose choices have a kind (the resources of a project) shows the kind on both. The choice at
+    // the cursor is drawn active only while the filter box has focus, since the cursor is the
+    // keyboard's and a box nobody is typing in has no choice to take with Enter.
+    //
     // The filter box carries the text boxes' editing menu (TextBoxMenu.svelte).
 
+    import Glyph from '../../display/Glyph.svelte';
     import TextBoxMenu from '../../controls/text/TextBoxMenu.svelte';
     import Tag from '../../controls/Tag.svelte';
     import ToolButton from '../../controls/ToolButton.svelte';
 
-    type Choice = { id: string; label: string };
+    type Choice = { id: string; label: string; glyph?: string };
 
     type Props = {
         values: string[];
@@ -50,6 +56,8 @@
 
     let typed = $state('');
     let at = $state(0);
+    /** Whether the filter box has focus. */
+    let focused = $state(false);
     let box: HTMLInputElement | null = $state(null);
 
     const matches = $derived(filtered(typed));
@@ -80,6 +88,11 @@
     /** The words a chosen value is shown by, or the value itself when it names no choice. */
     function wordsOf(id: string): string {
         return choices.find((choice) => choice.id === id)?.label ?? id;
+    }
+
+    /** The glyph of a chosen value's choice, or undefined when it names no choice or has none. */
+    function glyphOf(id: string): string | undefined {
+        return choices.find((choice) => choice.id === id)?.glyph;
     }
 
     function keys(event: KeyboardEvent): void {
@@ -117,12 +130,25 @@
     {#if values.length > 0}
         <div class="chosen">
             {#each values as value (value)}
-                <ToolButton
-                    label={wordsOf(value)}
-                    glyph={removeGlyph}
-                    title={remove}
-                    onclick={() => drop(value)}
-                />
+                {@const kind = glyphOf(value)}
+                {#if kind === undefined}
+                    <ToolButton
+                        label={wordsOf(value)}
+                        glyph={removeGlyph}
+                        title={remove}
+                        onclick={() => drop(value)}
+                    />
+                {:else}
+                    <ToolButton
+                        label={wordsOf(value)}
+                        glyph={removeGlyph}
+                        title={remove}
+                        onclick={() => drop(value)}
+                    >
+                        <Glyph name={kind} />
+                        {wordsOf(value)}
+                    </ToolButton>
+                {/if}
             {/each}
         </div>
     {/if}
@@ -135,6 +161,8 @@
             aria-label={search}
             oninput={changed}
             onkeydown={keys}
+            onfocusin={() => (focused = true)}
+            onfocusout={() => (focused = false)}
             bind:this={box}
         />
     </TextBoxMenu>
@@ -142,14 +170,19 @@
         {#each shown as choice, index (choice.id)}
             <ToolButton
                 label={choice.label}
-                active={index === at}
+                glyph={choice.glyph}
+                active={focused && index === at}
                 onclick={() => add(choice.id)}
                 title={choice.id}
             />
         {/each}
         {#if shown.length === 0}
             {#if free && typed.trim() !== ''}
-                <ToolButton label={typed.trim()} active onclick={() => add(typed.trim())} />
+                <ToolButton
+                    label={typed.trim()}
+                    active={focused}
+                    onclick={() => add(typed.trim())}
+                />
             {:else}
                 <Tag label={none} />
             {/if}

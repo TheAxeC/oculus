@@ -29,7 +29,7 @@ import { mapShape } from '../../../data/shapes/shapes.ts';
 import { insideHub } from './manifest.ts';
 import { identityOf, readCollection, saved } from './entries.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
-import type { EditResult } from '../yaml-edit.ts';
+import type { EditResult } from '../yaml/yaml-edit.ts';
 import type { LineRange } from '../entry-edit/index.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';

@@ -1,8 +1,8 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/Files.svelte. The one row a section under the trees
-    // draws in place of its list when the read failed: why it failed, in the error hue, with the
-    // control that asks for the read again beside it, drawn where every other row of the tree
-    // carries its controls.
+    // Layer 3, shared view partial, drawn by the sections of views/sources/files/sections/. The one
+    // row a section under the trees draws in place of its list when the read failed: why it failed,
+    // in the error hue, with the control that asks for the read again beside it, drawn where every
+    // other row of the tree carries its controls.
     //
     // It is one component rather than a block in each of the three sections, because what a reader
     // is offered over a read that failed is one thing and reads the same in all three.

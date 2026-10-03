@@ -118,7 +118,7 @@ function itemOf(
             const one = byKey(entities.resources, id);
             return one === undefined
                 ? []
-                : [{ id, label: one.name, cluster: one.kind === 'cluster', order: one.order }];
+                : [{ id, label: one.name, kind: one.kind, order: one.order }];
         }),
         reproduced: project.reproduced !== undefined,
         year: project.year === undefined ? '' : String(project.year),

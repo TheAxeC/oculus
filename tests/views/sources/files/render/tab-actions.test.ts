@@ -1,12 +1,12 @@
 // Layer 3, view test. What a press on the Files tab writes into the tab's own state
-// (views/sources/files/control/tab-actions.ts): an answer that lands after the tab it was sent from
-// was closed, a folder pressed while a filter draws the tree, and the toggles a tab flips.
+// (views/shared/explorer/control/tab-actions.ts): an answer that lands after the tab it was sent
+// from was closed, a folder pressed while a filter draws the tree, and the toggles a tab flips.
 //
 // The client is a fresh one; nothing reaches a server. What this does NOT cover: the presses
 // themselves, which no server rendering runs.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { tabActions } from '../../../../../src/lib/views/sources/files/control/tab-actions.ts';
+import { tabActions } from '../../../../../src/lib/views/shared/explorer/control/tab-actions.ts';
 import {
     filesViewOf,
     type FilesView,

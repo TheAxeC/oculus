@@ -14,7 +14,7 @@ import {
     rowMenu,
     rowPicker,
     type RowPickDeps
-} from '../../../../../src/lib/views/sources/files/tree/menu/row-menu.ts';
+} from '../../../../../src/lib/views/shared/explorer/tree/menu/row-menu.ts';
 import type { FsEntry, TreeRow } from '../../../../../src/lib/state/sources/fs.ts';
 import type { MenuItem } from '../../../../../src/lib/ui/menu/menu-items.ts';
 

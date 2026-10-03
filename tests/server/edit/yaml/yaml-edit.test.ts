@@ -21,7 +21,7 @@ import {
     renameKey,
     sameValue,
     setFields
-} from '../../../../src/lib/server/edit/yaml-edit.ts';
+} from '../../../../src/lib/server/edit/yaml/yaml-edit.ts';
 import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
 import { isSideTier } from '../../../../src/lib/data/sources/manifests.ts';
@@ -365,7 +365,7 @@ describe('clearing a key', () => {
 
     it('says a key that is not there is not there, and writes nothing', () => {
         const out = setFields(DOC, { doi: null });
-        expect(out).toEqual({ text: DOC, changed: [], refused: [], removed: {} });
+        expect(out).toEqual({ text: DOC, changed: [], refused: [], removed: {}, replaced: {} });
     });
 });
 
@@ -377,7 +377,7 @@ describe('what is not written', () => {
             pillar: ['tensor', 'sciml'],
             'status.line': 'the line'
         });
-        expect(out).toEqual({ text: DOC, changed: [], refused: [], removed: {} });
+        expect(out).toEqual({ text: DOC, changed: [], refused: [], removed: {}, replaced: {} });
     });
 
     it('refuses id, tier and type', () => {

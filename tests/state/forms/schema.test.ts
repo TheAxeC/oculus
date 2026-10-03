@@ -17,12 +17,14 @@ import {
     formSections,
     type FormField
 } from '../../../src/lib/state/forms/schema.ts';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import type { Id, Project, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { present } from '../../fixtures/present.ts';
 import { fieldsOfSection } from '../../../src/lib/state/forms/schema.ts';
 
 const { config } = loadConfig(engineDir());
+setCatalog(textCatalog(config));
 const fields = formFields(config);
 const sections = formSections(config);
 
@@ -216,9 +218,9 @@ describe('where the choices come from', () => {
 
     it('resolves the resources registry to every resource by its name', () => {
         expect(choicesOf('compute')).toEqual([
-            { id: 'data', label: 'Local data' },
-            { id: 'this-mac', label: 'This Mac' },
-            { id: 'utwente', label: 'UTwente HPC' }
+            { id: 'data', label: 'Local data', glyph: 'data' },
+            { id: 'this-mac', label: 'This Mac', glyph: 'host' },
+            { id: 'utwente', label: 'UTwente HPC', glyph: 'hpc' }
         ]);
     });
 

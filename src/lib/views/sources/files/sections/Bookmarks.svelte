@@ -23,7 +23,7 @@
     // The rail draws the same bookmarks as buttons, which is where they are pressed from; this is
     // where they are changed, since a form has nowhere to go in a rail of 34-pixel controls.
 
-    import Failed from '../tree/Failed.svelte';
+    import Failed from '$lib/views/shared/explorer/tree/Failed.svelte';
     import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';

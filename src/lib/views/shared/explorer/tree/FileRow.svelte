@@ -1,10 +1,9 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/tree/Tree.svelte. One row of the Files tree as VS
-    // Code's Explorer draws it: a folder (or a file with other files nested under it) with its
-    // twistie, a file with its Seti icon, the name in the colour git gives the file and the status
-    // letter at the row's right, the name of a folder chain as its segments joined by slashes, and
-    // the letters a fuzzy filter matched marked. A row's star and its new-tab control show on
-    // hover.
+    // Layer 3, partial of tree/Tree.svelte. One row of the explorer tree as VS Code's Explorer
+    // draws it: a folder (or a file with other files nested under it) with its twistie, a file with
+    // its Seti icon, the name in the colour git gives the file and the status letter at the row's
+    // right, the name of a folder chain as its segments joined by slashes, and the letters a fuzzy
+    // filter matched marked. A row's star and its new-tab control show on hover.
     //
     // A press on the row is handed up with the event, so the tree reads the modifiers, and with the
     // path of the segment it landed on when the row is a chain of folders: each segment is a target

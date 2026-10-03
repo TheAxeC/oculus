@@ -12,7 +12,9 @@
 //
 // A manifest change that removed a field carries the removed text. The manifest writer puts it
 // back where it stood, and writes the value as any value is written only when it fits nowhere: on
-// a new line, or inside its line for text removed from a flow map.
+// a new line, or inside its line for text removed from a flow map. A change that rewrote a bare
+// note or a list of one note as a map carries the text it replaced, which the manifest writer puts
+// back over the lines the write left while the file still holds them.
 
 import { isAbsolute, join, resolve } from 'node:path';
 import { z } from 'zod';
@@ -256,14 +258,16 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     if (change.kind === 'manifest') {
         // The record holds the value the file had, so it is written as that value and not read as
         // a form, which would take an empty list, an empty text or `false` out of the file. A field
-        // the write removed also holds the lines it removed, which go back where they stood.
+        // the write removed also holds the lines it removed, which go back where they stood, and a
+        // note it rewrote as a map holds the text it replaced, which goes back over its lines.
         return writeManifest(
             hub,
             config,
             change.key,
             { [change.field]: change.before },
             'record',
-            change.removed
+            change.removed,
+            change.replaced
         );
     }
     if (change.kind === 'session') {

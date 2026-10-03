@@ -32,15 +32,19 @@ export function followsSession(state: unknown): boolean {
     return isMap(state) && state.follow === true;
 }
 
-/** What a Files tab's follow mode draws: the folder followed, its root, and the roots drawn. */
-export type FollowView = {
+/** What a tree drawn from one folder shows: the root holding it, the roots drawn, and the head. */
+export type FolderView = {
+    found: { root: FsRoot; path: string } | null;
+    /** The roots the tree draws: the one holding the folder, and none when no root does. */
+    roots: FsRoot[];
+    /** The folder as the head of the tree, which is then that folder and what is in it. */
+    top: TreeTop | null;
+};
+
+/** What a Files tab's follow mode draws: the folder followed, and the view drawn from it. */
+export type FollowView = FolderView & {
     following: boolean;
     dir: string | null;
-    found: { root: FsRoot; path: string } | null;
-    /** The roots the tree draws: the one holding the followed folder, or all of them. */
-    roots: FsRoot[];
-    /** The followed folder as the head of the tree, which is then that folder and what is in it. */
-    top: TreeTop | null;
 };
 
 /** The last segment of a folder, the name a tree drawn from it shows on its head. */
@@ -48,6 +52,22 @@ function folderName(dir: string): string {
     const trimmed = dir.endsWith('/') && dir.length > 1 ? dir.slice(0, -1) : dir;
     const at = trimmed.lastIndexOf('/');
     return at < 0 ? trimmed : trimmed.slice(at + 1);
+}
+
+/**
+ * The tree of one folder given as an absolute path: the root that holds it, read through that root
+ * alone, and the folder as the head of the tree, named by its last segment (a folder that is itself
+ * a root has the path empty). A folder no root holds has no root and no head. The follow mode of a
+ * Files tab and the file tree of a project card both draw a folder this way.
+ */
+export function folderView(roots: FsRoot[], dir: string): FolderView {
+    const found = rootHolding(roots, dir);
+    if (found === null) return { found: null, roots: [], top: null };
+    return {
+        found,
+        roots: [found.root],
+        top: { path: found.path, name: folderName(dir) }
+    };
 }
 
 /**
@@ -59,17 +79,8 @@ export function followView(state: unknown, roots: FsRoot[], dir: string | null):
     if (!followsSession(state)) {
         return { following: false, dir: null, found: null, roots, top: null };
     }
-    const found = dir === null ? null : rootHolding(roots, dir);
-    if (found === null || dir === null) {
-        return { following: true, dir, found: null, roots: [], top: null };
-    }
-    return {
-        following: true,
-        dir,
-        found,
-        roots: [found.root],
-        top: { path: found.path, name: folderName(dir) }
-    };
+    if (dir === null) return { following: true, dir, found: null, roots: [], top: null };
+    return { following: true, dir, ...folderView(roots, dir) };
 }
 
 /**

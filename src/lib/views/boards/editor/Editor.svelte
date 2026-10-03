@@ -27,6 +27,11 @@
     // A save the server took drops the edits it took, keeping an edit typed while it was on its way
     // and one the server refused. The page sees its own write when the watcher pushes the rebuilt
     // snapshot; until then a field whose edit the save took shows the snapshot's value.
+    //
+    // The two follow-up fields address one note. A project with two or more notes shows them
+    // read-only with a sentence saying where to edit them, and what the draft kept for them from
+    // before is neither shown, counted nor posted (state/forms/schema.ts decides which fields
+    // write).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
@@ -44,10 +49,14 @@
     import {
         asList,
         asText,
+        dateNeedsNote,
         fieldsOfSection,
         fieldValues,
+        followupWritable,
+        manifestPayload,
         NOT_IN_MODEL,
-        NOT_WRITTEN,
+        refusedEdits,
+        writableField,
         type FormField
     } from '$lib/state/forms/schema';
     import { instanceText } from '$lib/state/workbench/layout/instance';
@@ -58,7 +67,7 @@
     const {
         manifestDraft: { editManifest, manifestEdits, revertManifest, settleManifest },
         selectors: { fieldChoices, manifestFields, manifestSections, projectOf },
-        writes: { pending, writeManifest }
+        writes: { writeManifest }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -77,12 +86,19 @@
     const edits = $derived(manifestEdits(instance.id, id));
     /** What the last save said, as lines the pane shows under the form. */
     let result = $state<string[]>([]);
+    /** Whether this editor's own save is on its way. */
+    let saving = $state(false);
 
     const dirty = $derived(fields.filter((one) => changed(one.field)));
 
+    /** Whether the form may write a field: a read-only one shows the project's value only. */
+    function writable(field: string): boolean {
+        return project !== null && writableField(project, field, edits);
+    }
+
     /** The value a control shows: the edit when there is one, the project's value otherwise. */
     function valueOf(field: string): unknown {
-        return field in edits ? edits[field] : values[field];
+        return field in edits && writable(field) ? edits[field] : values[field];
     }
 
     /**
@@ -91,7 +107,7 @@
      * written says the wrong thing.
      */
     function changed(field: string): boolean {
-        return field in edits && editDiffers(edits[field], values[field]);
+        return writable(field) && field in edits && editDiffers(edits[field], values[field]);
     }
 
     function edit(field: string, value: unknown): void {
@@ -103,19 +119,19 @@
         result = [];
     }
 
-    /** The fields the form posts: the changed ones, and the read-only ones never. */
-    function payload(): Record<string, unknown> {
-        const body: Record<string, unknown> = {};
-        for (const one of dirty) {
-            if (NOT_WRITTEN.includes(one.field)) continue;
-            body[one.field] = edits[one.field];
-        }
-        return body;
-    }
-
     /** What the toolbar says about the form: how much is waiting to be saved. */
     function summary(): string {
         return dirty.length === 0 ? t('editor.clean') : t('editor.dirty', dirty.length);
+    }
+
+    /** Post a body, with `saving` set for as long as the request is out. */
+    async function post(body: Record<string, unknown>): ReturnType<typeof writeManifest> {
+        saving = true;
+        try {
+            return await writeManifest(id, body);
+        } finally {
+            saving = false;
+        }
     }
 
     /**
@@ -123,19 +139,26 @@
      * lands after the tab was switched settles the draft it was sent from.
      */
     async function save(): Promise<void> {
-        const body = payload();
+        const { body, taken } =
+            project === null
+                ? { body: {}, taken: {} }
+                : manifestPayload(
+                      project,
+                      edits,
+                      dirty.map((one) => one.field)
+                  );
         if (Object.keys(body).length === 0) {
             result = [t('editor.saved_none')];
             return;
         }
         const from = instance.id;
-        const answer = await writeManifest(id, body);
+        const answer = await post(body);
         if (!answer.ok) {
             result = [t('editor.failed', answer.error ?? '')];
             return;
         }
-        const refused = answer.refused.map((one) => one.field);
-        settleManifest(from, body, refused);
+        const refused = refusedEdits(answer.refused.map((one) => one.field));
+        settleManifest(from, taken, refused);
         result = [
             t('editor.saved', answer.changed.join(', ')),
             ...answer.refused.map((one) => t('editor.refused', one.field, one.reason))
@@ -144,6 +167,12 @@
 
     /** A field the schema names but the snapshot does not carry: the form opens it empty. */
     function noteFor(field: FormField): string | undefined {
+        if (project !== null && !followupWritable(project) && field.field.startsWith('followup.')) {
+            return t('editor.followup_several');
+        }
+        if (project !== null && dateNeedsNote(project, field.field, edits)) {
+            return t('editor.followup_needs_note');
+        }
         return NOT_IN_MODEL.includes(field.field) ? t('editor.not_in_model') : undefined;
     }
 
@@ -154,7 +183,7 @@
 </script>
 
 {#snippet control(field: FormField)}
-    {#if field.type === 'readonly' || NOT_WRITTEN.includes(field.field)}
+    {#if field.type === 'readonly' || !writable(field.field)}
         <TextInput
             value={asText(valueOf(field.field))}
             label={field.label}
@@ -238,7 +267,7 @@
 {#snippet bar()}
     <Toolbar label={t('editor.status')}>
         <span class="status">
-            <Tag label={pending() ? t('editor.saving') : summary()} />
+            <Tag label={saving ? t('editor.saving') : summary()} />
         </span>
     </Toolbar>
 {/snippet}

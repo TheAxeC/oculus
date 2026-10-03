@@ -14,7 +14,7 @@
     // rather than a flag, so the dialog names the note it is about to remove.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
-    import Failed from '../tree/Failed.svelte';
+    import Failed from '$lib/views/shared/explorer/tree/Failed.svelte';
     import Section from './Section.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';

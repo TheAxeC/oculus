@@ -248,6 +248,8 @@ export type InstanceStates = {
     instanceState: (id: string) => unknown;
     setInstanceState: (id: string, state: unknown) => void;
     clearInstanceState: (id: string) => void;
+    /** The ids of the instance records whose id starts with a prefix. */
+    instanceKeys: (prefix: string) => string[];
 };
 
 /**

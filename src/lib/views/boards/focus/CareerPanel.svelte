@@ -276,6 +276,7 @@
         color: var(--muted-txt, var(--muted));
         background: var(--chip);
         cursor: pointer;
+        overflow-wrap: anywhere;
     }
 
     /* Inside the panel, which is already translucent: these rows keep their rules and paint
@@ -301,12 +302,14 @@
         margin: 4px 0 0;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
+        overflow-wrap: anywhere;
     }
 
     .note {
         margin: 4px 0 0;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
+        overflow-wrap: anywhere;
     }
 
     .facts,

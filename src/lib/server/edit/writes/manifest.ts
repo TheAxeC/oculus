@@ -12,7 +12,9 @@
 // A write that clears a field puts the text it removed on that field's change record. The undo
 // hands it back to `writeManifest`, which puts it where it stood when it fits the file; otherwise
 // the value is written as any value is, on a new line, or inside its line for text removed from a
-// flow map.
+// flow map. A write that rewrote a bare note or a list of one note as a map puts the text it
+// replaced on that field's record, and the undo writes that text back over the lines the write
+// left when the file still holds them, so the note returns in its own shape.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
@@ -26,9 +28,12 @@ import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
-import { insertRemoved, renderScalar, setFields } from '../yaml-edit.ts';
-import type { ChangeRecord, RemovedText } from '../../core/changes.ts';
-import type { FieldValue, Refusal, SetFieldsResult } from '../yaml-edit.ts';
+import { noteMapOf, setFields } from '../yaml/yaml-edit.ts';
+import { renderScalar } from '../yaml/yaml-values.ts';
+import { insertRemoved, insertReplaced } from './restore.ts';
+import type { ChangeRecord, RemovedText, ReplacedText } from '../../core/changes.ts';
+import type { Refusal, SetFieldsResult } from '../yaml/yaml-edit.ts';
+import type { FieldValue } from '../yaml/yaml-values.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 import { below } from '../../core/paths.ts';
@@ -156,9 +161,11 @@ function readValue(
 function currentOf(manifest: Record<string, unknown>, field: string): unknown {
     const dot = field.indexOf('.');
     if (dot < 0) return manifest[field];
-    const parent = manifest[field.slice(0, dot)];
-    if (!isMap(parent)) return undefined;
-    return parent[field.slice(dot + 1)];
+    const name = field.slice(0, dot);
+    const parent = manifest[name];
+    // A note held as a bare text or a list of one reads as the map it stands for.
+    const held = noteMapOf(name, parent) ?? (isMap(parent) ? parent : undefined);
+    return held?.[field.slice(dot + 1)];
 }
 
 /**
@@ -196,6 +203,13 @@ const removedShape = z.object({
     next: z.string()
 }) satisfies z.ZodType<RemovedText>;
 
+/** The note a record's write rewrote: where its lines stand, what they say, what they replaced. */
+const replacedShape = z.object({
+    offset: z.number().refine((at) => Number.isInteger(at) && at >= 0),
+    before: z.string().min(1),
+    after: z.string().min(1)
+}) satisfies z.ZodType<ReplacedText>;
+
 /**
  * The removed lines of a change record, or null when the record holds none that can be used: the
  * key is a map with a non-negative whole `offset`, a non-empty `text` and a `next` that is a
@@ -203,6 +217,22 @@ const removedShape = z.object({
  */
 function removedOf(raw: unknown): RemovedText | null {
     return readAs(removedShape, raw);
+}
+
+/**
+ * A rewritten note put back as the text it replaced, when the write is that one field and the file
+ * still holds the lines the rewrite left; null when the value is to be written instead.
+ */
+function putBackNote(
+    source: string,
+    wanted: Record<string, unknown>,
+    note: ReplacedText | null
+): SetFieldsResult | null {
+    const entries = Object.entries(wanted);
+    if (note === null || entries.length !== 1) return null;
+    const [[field, value]] = entries;
+    const out = insertReplaced(source, field, value, note);
+    return out.changed.length > 0 ? { ...out, removed: {}, replaced: {} } : null;
 }
 
 /**
@@ -219,7 +249,7 @@ function putBack(
     const [[field, value]] = entries;
     if (value === null) return null;
     const out = insertRemoved(source, field, value, back);
-    return out.changed.length > 0 ? { ...out, removed: {} } : null;
+    return out.changed.length > 0 ? { ...out, removed: {}, replaced: {} } : null;
 }
 
 /**
@@ -230,7 +260,10 @@ function putBack(
  * `removed` is the lines a change record kept of the one field being given back. It is used only
  * for a record's value, and when it is well formed and fits the file the lines are put back where
  * they stood instead of the value being written; a record's group name is given a value only that
- * way. Every check of the write is made first, so a record that fails one is refused as any other.
+ * way. `replaced` is the note a change record kept of a bare note or a list of one note that its
+ * write rewrote as a map: when the file still holds the lines that write left, the note goes back
+ * as the text it was, and otherwise the value is written. Every check of the write is made first,
+ * so a record that fails one is refused as any other.
  */
 export function writeManifest(
     hub: string,
@@ -238,7 +271,8 @@ export function writeManifest(
     id: string,
     fields: Record<string, unknown>,
     reading: ValueReading = 'form',
-    removed?: unknown
+    removed?: unknown,
+    replaced?: unknown
 ): WriteOutcome {
     const { manifests } = readManifests(hub, config.scan, config.text);
     const manifest = manifests.find((one) => one.id === id);
@@ -260,8 +294,9 @@ export function writeManifest(
         [...named].filter((one) => one.includes('.')).map((one) => one.slice(0, one.indexOf('.')))
     );
     const types = fieldTypes(config.schema);
-    const back =
-        reading === 'record' && Object.keys(fields).length === 1 ? removedOf(removed) : null;
+    const single = reading === 'record' && Object.keys(fields).length === 1;
+    const back = single ? removedOf(removed) : null;
+    const note = single ? readAs(replacedShape, replaced) : null;
     const refused: Refusal[] = [];
     const wanted: Record<string, unknown> = {};
     // A group given a value, which only its removed lines can write.
@@ -305,7 +340,7 @@ export function writeManifest(
         };
     }
 
-    const restored = putBack(source, wanted, back);
+    const restored = putBackNote(source, wanted, note) ?? putBack(source, wanted, back);
     if (restored === null) {
         for (const field of offered) refused.push({ field, reason: GROUP_REFUSED });
     }
@@ -328,7 +363,12 @@ export function writeManifest(
             undo: 'field'
         };
         const cut = byKey(edit.removed, field);
-        return cut === undefined ? record : { ...record, removed: cut };
+        const span = byKey(edit.replaced, field);
+        return {
+            ...record,
+            ...(cut === undefined ? {} : { removed: cut }),
+            ...(span === undefined ? {} : { replaced: span })
+        };
     });
     return {
         found: true,

@@ -428,6 +428,30 @@ describe('the appearance store', () => {
         expect(instanceState('two')).toEqual({ pick: 'b' });
     });
 
+    it('lists the instance records whose key starts with a prefix and clears them in one save', () => {
+        const storage = fakeStorage();
+        loadUi(storage);
+        setInstanceState('t1', { pick: 'a' });
+        setInstanceState('t1#files:alpha', { expanded: ['hub:a'] });
+        setInstanceState('t1#files:beta', 2);
+        setInstanceState('t10#files:alpha', 3);
+        setInstanceState('t1#forms', 4);
+
+        expect(client.ui.instanceKeys('t1#files:').sort()).toEqual([
+            't1#files:alpha',
+            't1#files:beta'
+        ]);
+        client.ui.clearInstanceStates('t1#files:');
+
+        expect(client.ui.instanceKeys('t1#files:')).toEqual([]);
+        expect(Object.keys(saved(storage).instances as object).sort()).toEqual([
+            't1',
+            't1#forms',
+            't10#files:alpha'
+        ]);
+        expect(instanceState('t1')).toEqual({ pick: 'a' });
+    });
+
     it('falls back to the default theme for a stored name the theme list does not hold', () => {
         const storage = fakeStorage({
             version: UI_VERSION,

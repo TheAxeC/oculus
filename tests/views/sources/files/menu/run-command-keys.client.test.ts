@@ -1,7 +1,7 @@
 // Layer 4, view test. The Run Command submenu of a Files row over a name two sources hold,
 // mounted in Svelte's client runtime (tests/ui/frame/client-runtime.ts) over the fake document of
 // tests/ui/frame/fake-dom.ts, where a keyed each block throws on a key it meets twice. The items
-// are the ones the row menu builds (views/sources/files/tree/menu/row-menu.ts) and the list is
+// are the ones the row menu builds (views/shared/explorer/tree/menu/row-menu.ts) and the list is
 // the real MenuList; bits-ui's menu parts and the frame around the list are replaced by
 // components that record the props they were handed.
 //
@@ -13,7 +13,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MenuList from '../../../../../src/lib/ui/menu/MenuList.svelte';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
-import { ROW_RUN, rowMenu } from '../../../../../src/lib/views/sources/files/tree/menu/row-menu.ts';
+import {
+    ROW_RUN,
+    rowMenu
+} from '../../../../../src/lib/views/shared/explorer/tree/menu/row-menu.ts';
 import type { ProjectCommand } from '../../../../../src/lib/state/sessions/terminal/commands.svelte.ts';
 import { installDom, removeDom, type FakeElement } from '../../../../ui/frame/fake-dom.ts';
 

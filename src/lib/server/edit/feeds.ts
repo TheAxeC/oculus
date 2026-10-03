@@ -25,9 +25,10 @@ import {
     startEntries
 } from './entry-edit/index.ts';
 import { saved } from './writes/entries.ts';
-import { NOT_A_FIELD_VALUE, asFieldValue } from './yaml-edit.ts';
+import { NOT_A_FIELD_VALUE, asFieldValue } from './yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../core/changes.ts';
-import type { FieldValue, Refusal } from './yaml-edit.ts';
+import type { Refusal } from './yaml/yaml-edit.ts';
+import type { FieldValue } from './yaml/yaml-values.ts';
 import type { FeedData, FeedKind, FeedsPayload, PortfolioConfig } from '../../data/model/index.ts';
 import type { WriteOutcome } from './writes.ts';
 import { inside } from '../core/paths.ts';

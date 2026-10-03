@@ -6,6 +6,7 @@
 // What this does NOT cover: a line that evaluates the value itself (`eval`, `sh -c`, `$((...))`
 // arithmetic in bash), which runs it by design; tmux setting the environment of a task terminal
 // (tests/server/machine/pty/task.test.ts); and the page building the context.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';

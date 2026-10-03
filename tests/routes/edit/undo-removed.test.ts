@@ -71,6 +71,81 @@ describe('taking a removed field back where it stood', () => {
         expect(await back(into, changes[0])).toBe(held);
     });
 
+    it('gives a follow-up back whichever shape the file held it in, after the editor cleared it', async () => {
+        for (const note of [
+            'followup: "call"\n',
+            'followup: { do: call, after: 2026-10-01 }\n',
+            'followup:\n  - call\n'
+        ]) {
+            const held = `${HEAD}${note}next: go\n`;
+            const { into, changes } = await cleared(held, { followup: null });
+            // the history keeps the clear as one change of the group, and the file holds no note
+            expect(changes).toHaveLength(1);
+            expect(changes[0]).toMatchObject({ field: 'followup', after: null });
+            expect(manifestOf(into)).not.toContain('followup');
+            expect(await back(into, changes[0])).toBe(held);
+        }
+    });
+
+    it('gives a bare or one-list follow-up back as the text the file held, after an edit of it', async () => {
+        for (const note of ['followup: "call"\n', 'followup:\n  - call\n']) {
+            const held = `${HEAD}${note}next: go\n`;
+            const { into, changes } = await cleared(held, { 'followup.do': 'ring' });
+            expect(changes[0]).toMatchObject({
+                field: 'followup.do',
+                before: 'call',
+                after: 'ring'
+            });
+            expect(await back(into, changes[0])).toBe(held);
+        }
+    });
+
+    it('gives a one-note list holding a map back as the list, comments included', async () => {
+        const held = `${HEAD}followup:  # the call\n  - do: call  # who\n    after: 2026-10-01\nnext: go\n`;
+        const { into, changes } = await cleared(held, { 'followup.do': 'ring' });
+        expect(manifestOf(into)).toContain('do: ring  # who');
+        expect(await back(into, changes[0])).toBe(held);
+    });
+
+    it('audits that the value is written, as a map, for the undo of one field of a two-field write on a bare note', async () => {
+        const held = `${HEAD}followup: "call"\nnext: go\n`;
+        const { into, changes } = await cleared(held, {
+            'followup.do': 'ring',
+            'followup.after': '2026-12-01'
+        });
+        const date = changes.find((one) => one.field === 'followup.after');
+        if (date === undefined) throw new Error('the write left no record of followup.after');
+        const after = await back(into, date);
+        expect(after).toBe(`${HEAD}followup:\n  do: ring\nnext: go\n`);
+    });
+
+    it('gives the shape back when the note was written with its date, whichever shape the note had', async () => {
+        for (const note of ['followup: "call"\n', 'followup:\n  - call\n']) {
+            const held = `${HEAD}${note}next: go\n`;
+            const { into, changes } = await cleared(held, { 'followup.after': '2026-12-01' });
+            expect(changes[0]).toMatchObject({ field: 'followup.after', before: null });
+            expect(await back(into, changes[0])).toBe(held);
+        }
+    });
+
+    it('gives a bare note back as the text the file held after a later write above it', async () => {
+        const held = `${HEAD}title: Alpha\nfollowup: "Register for FLTA 2026"  # ask\nnext: go\n`;
+        const { into, changes } = await cleared(held, { 'followup.after': '2026-12-01' });
+        await wrote(into, { title: 'Alpha, renamed' });
+        expect(await back(into, changes[0])).toBe(held.replace('Alpha', 'Alpha, renamed'));
+    });
+
+    it('audits that the value is written instead when the file no longer holds what the expanding write left', async () => {
+        const held = `${HEAD}followup: "call"\nnext: go\n`;
+        const { into, changes } = await cleared(held, { 'followup.do': 'ring' });
+        // A comment typed into the map since: the span the write left is no longer in the file.
+        hold(into, manifestOf(into).replace('followup:\n', 'followup:\n  # kept\n'));
+        const after = await back(into, changes[0]);
+        expect(after).toContain('# kept');
+        expect(after).toContain('do: call');
+        expect(after).not.toContain('followup: "call"');
+    });
+
     it('gives a key of a flow map back inside its line', async () => {
         const held = `${HEAD}status: { line: "x", chips: [a] }\n`;
         const { into, changes } = await cleared(held, { 'status.line': '' });

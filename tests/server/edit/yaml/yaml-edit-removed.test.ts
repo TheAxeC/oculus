@@ -10,7 +10,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import { insertRemoved, setFields } from '../../../../src/lib/server/edit/yaml-edit.ts';
+import { setFields } from '../../../../src/lib/server/edit/yaml/yaml-edit.ts';
+import { insertRemoved } from '../../../../src/lib/server/edit/writes/restore.ts';
 import type { RemovedText } from '../../../../src/lib/server/core/changes.ts';
 
 /** The value a field held in a document, read the way the change record keeps it. */

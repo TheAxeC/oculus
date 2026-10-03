@@ -3,7 +3,7 @@
 // reading its last segment, and a press on one of its segments acting on that segment's folder.
 //
 // The row is rendered on the server where it is drawn; the key and press handlers are called
-// directly (views/sources/files/tree/control/pressing.ts and row-index.ts, ui/tree/tree-keys.ts),
+// directly (views/shared/explorer/tree/control/pressing.ts and row-index.ts, ui/tree/tree-keys.ts),
 // as they are what the tree's events are handed to. What this does NOT cover: the keydown the
 // browser hands to the tree's machine (the machine's own Left and type-ahead, which these cases
 // feed the rows and labels it reads) and the pointer event that carries a press.
@@ -11,9 +11,9 @@
 import { getByTypeahead } from '@zag-js/dom-query';
 import { describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
-import FileRow from '../../../../../src/lib/views/sources/files/tree/FileRow.svelte';
-import { createPressed } from '../../../../../src/lib/views/sources/files/tree/control/pressing.ts';
-import { rowIndexOf } from '../../../../../src/lib/views/sources/files/tree/control/row-index.ts';
+import FileRow from '../../../../../src/lib/views/shared/explorer/tree/FileRow.svelte';
+import { createPressed } from '../../../../../src/lib/views/shared/explorer/tree/control/pressing.ts';
+import { rowIndexOf } from '../../../../../src/lib/views/shared/explorer/tree/control/row-index.ts';
 import {
     rowKey,
     treeKeyRows,

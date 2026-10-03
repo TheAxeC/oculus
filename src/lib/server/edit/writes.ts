@@ -80,7 +80,7 @@ import {
 } from './writes/bodies.ts';
 import type { ChangeLog, ChangeRecord } from '../core/changes.ts';
 import type { FsWrites } from '../core/json.ts';
-import type { Refusal } from './yaml-edit.ts';
+import type { Refusal } from './yaml/yaml-edit.ts';
 import type { CareerRules, SubtaskTarget } from './writes/subtasks.ts';
 import type { PortfolioConfig, Project } from '../../data/model/index.ts';
 

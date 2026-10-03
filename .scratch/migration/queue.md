@@ -1,10 +1,10 @@
 In flight:
-- X3c (the tab strip as VS Code's): repair round 1.
-- Q91 (the project view and its editor): repair round 1 in review.
-- D25 (the editor's options): repair round 1 in review.
+- X3c (the tab strip as VS Code's): repair round 1 in review.
+- D25 (the editor's options): repair round 1 refuted, its landing next.
 
-Queued, in order (33 steps):
-- T1 (the test suite in three tiers, unnecessary tests removed): once fewer than three steps are in flight.
+Queued, in order (34 steps):
+- T1 (the test suite in three tiers, unnecessary tests removed): held until Axel has discussed the tests further.
+- Q116 (the Status view's line count of everything under src/): next, a slot is free.
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - M6 (the collection forms removed): once S5 has landed.
@@ -14,7 +14,7 @@ Queued, in order (33 steps):
 - D42 (a file's history): once fewer than three steps are in flight.
 - D44 (Submit on a .slurm file): once fewer than three steps are in flight.
 - D41 (links in Markdown checked): once M7 has landed.
-- X3e (Files lists reordered by drag): once Q91 has landed.
+- X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): once fewer than three steps are in flight.
 - D15 (PDF reading): once D37 has landed.
 - D23 (language servers): once D25 has landed.
 - M8 (the hub's YAML checked and completed in the editor): once D23 and H3 have landed.
@@ -41,6 +41,7 @@ Queued, in order (33 steps):
 Owed: the look of Q81 (a Confirm over the update tray).
 
 Landed, newest first:
+- Q91 (the project view and its editor), 2026-10-03, the commit that carries this line.
 - D17 (project commands), 2026-10-03, 76bdcd8c.
 - S4 (the Settings editor finished), 2026-10-03, ff048bf3.
 - D14 (LaTeX on any folder), 2026-10-03, 48baece1.

@@ -1,9 +1,9 @@
 /* Layer 3, theme. The colours of the highlighter's token classes, from the palette's code hues in
    their `-txt` form, which themes/derive.ts nudges until each clears 4.5:1 on every surface. One
    global stylesheet, loaded by the page root, because highlight.js paints code in two places: the
-   read-only code window (views/shared/code/Code.svelte) and the fenced code of a rendered document,
-   preview or transcript turn (data/prose/languages.ts, `codeColour`), whose markup comes in as HTML
-   that no component's scoped style reaches. */
+   read-only code window (views/shared/prose/Code.svelte) and the fenced code of a rendered
+   document, preview or transcript turn (data/prose/languages.ts, `codeColour`), whose markup
+   comes in as HTML that no component's scoped style reaches. */
 
 .hljs-keyword,
 .hljs-built_in,

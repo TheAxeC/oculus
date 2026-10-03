@@ -20,7 +20,7 @@ import type { Scalar } from 'yaml';
 import { LOCAL_NAME, configDir, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
 import { catalogOf, type CatalogEntry } from '../../../../data/sources/config/catalog/options.ts';
 import { words } from '../../../core/words.ts';
-import { replaceValue } from '../../yaml-edit.ts';
+import { replaceValue } from '../../yaml/yaml-edit.ts';
 import {
     kept,
     optionNow,

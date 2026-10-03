@@ -1,5 +1,5 @@
 // Layer 3, view test. What the keys of the Files tree do on the focused row, through the key
-// handler of views/sources/files/tree/control/keyed.ts: Escape after Cut empties the clipboard,
+// handler of views/shared/explorer/tree/control/keyed.ts: Escape after Cut empties the clipboard,
 // Cmd+Z and Shift+Cmd+Z take the newest file operation and the newest undo back, the undo of a
 // delete asks first, and a rename started by Enter or F2 on a compacted row acts on the segment
 // the cursor is on.
@@ -18,9 +18,9 @@ import type { FileRecord } from '../../../../../src/lib/state/sources/explorer/a
 import { filesKeymap } from '../../../../../src/lib/state/sources/explorer/acts/keys.ts';
 import { patchedFilesView, type TreeRow } from '../../../../../src/lib/state/sources/fs.ts';
 import { boundAction } from '../../../../../src/lib/ui/tree/tree-keys.ts';
-import { createKeyed } from '../../../../../src/lib/views/sources/files/tree/control/keyed.ts';
-import { createPicks } from '../../../../../src/lib/views/sources/files/tree/control/picks.svelte.ts';
-import { viewAccess } from '../../../../../src/lib/views/sources/files/tree/control/view-access.ts';
+import { createKeyed } from '../../../../../src/lib/views/shared/explorer/tree/control/keyed.ts';
+import { createPicks } from '../../../../../src/lib/views/shared/explorer/tree/control/picks.svelte.ts';
+import { viewAccess } from '../../../../../src/lib/views/shared/explorer/tree/control/view-access.ts';
 import { createClientState, type ClientState } from '../../../../fixtures/client.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));

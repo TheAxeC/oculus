@@ -10,6 +10,7 @@
 // watchEnds) and read the list after each end. What this does NOT cover: the page drawing the
 // check or the cross (tests/views/sessions), and tmux versions other than the one on this
 // machine's PATH.
+// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
 
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';

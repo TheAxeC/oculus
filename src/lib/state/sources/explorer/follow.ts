@@ -1,6 +1,6 @@
 // Layer 2, client state, pure. Where a path went when a file or folder was renamed or moved, and
 // what that does to the state of the tabs that name it: a source, file or document tab, a diff pane
-// over a file or over two files, and a Files view's open folders and selected row. Nothing here
+// over a file or over two files, and a Files view's open folders and selection. Nothing here
 // reads a store or posts a request; the store that holds the answer calls these and writes what
 // they return.
 //
@@ -11,7 +11,7 @@
 
 import type { OpsPlace } from '../../../data/file-ops.ts';
 import { diffState, heldDiff, type DiffState } from '../repositories/repositories.ts';
-import { expandedOf, patchedFilesView, treeKey } from '../fs.ts';
+import { filesViewOf, patchedFilesView, treeKey } from '../fs.ts';
 import { nameOf } from './file-type.ts';
 import { t } from '../../shared/words/text.ts';
 
@@ -117,22 +117,30 @@ export function followedFileTab(view: string, state: unknown, moves: Move[]): un
     return view === 'document' ? { ...restated, id: `${next.root}/${next.path}` } : restated;
 }
 
-/** A Files view's state with its open folders and selected row at their new places, or null. */
+/**
+ * A Files view's state with its open folders, selected row, the rows selected with it and the row
+ * a range grows from at their new places, or null when none of them moved. A project card's tree
+ * keeps a record of the same shape.
+ */
 export function followedFilesView(state: unknown, moves: Move[]): Record<string, unknown> | null {
-    const expanded = expandedOf(state);
-    const moved = expanded.map((key) => {
+    const view = filesViewOf(state);
+    const expanded = view.expanded.map((key) => {
         const at = key.indexOf(':');
         const next =
             at < 0 ? null : followedAny({ root: key.slice(0, at), path: key.slice(at + 1) }, moves);
         return next === null ? key : treeKey(next.root, next.path);
     });
-    const map = mapOf(state);
-    const selected = map === null ? null : mapOf(map.selected);
-    const place = selected === null ? null : placeOf(selected);
-    const next = place === null ? null : followedAny(place, moves);
-    if (next === null && moved.every((key, at) => key === expanded[at])) return null;
+    const selected = view.selected === null ? null : followedAny(view.selected, moves);
+    const anchor = view.anchor === null ? null : followedAny(view.anchor, moves);
+    const selection = view.selection.map((one) => followedAny(one, moves) ?? one);
+    const same = (at: number): boolean => selection[at] === view.selection[at];
+    const selectionMoved = !view.selection.every((_, at) => same(at));
+    const expandedMoved = !expanded.every((key, at) => key === view.expanded[at]);
+    if (selected === null && anchor === null && !selectionMoved && !expandedMoved) return null;
     return patchedFilesView(state, {
-        expanded: moved,
-        ...(next === null ? {} : { selected: next })
+        expanded,
+        ...(selected === null ? {} : { selected }),
+        ...(anchor === null ? {} : { anchor }),
+        ...(selectionMoved ? { selection } : {})
     });
 }

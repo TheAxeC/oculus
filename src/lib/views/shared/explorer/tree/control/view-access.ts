@@ -1,6 +1,7 @@
-// Layer 3, view partial of tree/Tree.svelte. What one Files tab remembers (its instance state) as
-// the tree reads and writes it: the state now, a part of it written, the selection as the
-// selection folds take it, and a selection written back.
+// Layer 3, view partial of tree/Tree.svelte. What one explorer tree remembers (the record of its
+// owner: a Files tab's instance state, or the record of a project card) as the tree reads and
+// writes it: the state now, a part of it written, the selection as the selection folds take it, and
+// a selection written back.
 
 import type { ClientState } from '$lib/state/client/context';
 import { filesViewOf, patchedFilesView, type FilesView } from '$lib/state/sources/fs';

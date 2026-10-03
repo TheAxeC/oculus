@@ -1,6 +1,6 @@
-// Layer 3, view partial of Files.svelte. What the bookmark star on a row and the bookmark form
-// write: a file bookmarked or the bookmark on it taken away, the form opened over a bookmark or
-// closed, and the form closed once its own answer says so.
+// Layer 3, view partial of rooted-tree.svelte.ts. What the bookmark star on a row and the bookmark
+// form write: a file bookmarked or the bookmark on it taken away, the form opened over a bookmark
+// or closed, and the form closed once its own answer says so.
 //
 // A write closes its form on its answer, which may land after the reader has opened another form,
 // opened the same one again or closed the tab. The instance id and the forms are taken before the

@@ -1,12 +1,12 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/Files.svelte. The questions a file operation asks, in
-    // VS Code's words (tree/menu/row-ops.ts's `askedWords`): whether to delete one row or several
-    // (moving to the Trash, with the names listed and the unsaved-changes detail when a tab holds
-    // text that is not saved), whether to move what a drag dropped, whether to undo a delete,
-    // whether to delete for good once the Trash failed, and whether to replace a name that is
-    // taken. The delete to the Trash carries the "Do not ask me again" box, whose state the answer
-    // hands on. It holds nothing of its own: the view that asked draws it while it has a question
-    // and stops when the answer has come back.
+    // Layer 3, shared view partial, drawn by the explorer tree's views. The questions a file
+    // operation asks, in VS Code's words (tree/menu/row-ops.ts's `askedWords`): whether to delete
+    // one row or several (moving to the Trash, with the names listed and the unsaved-changes detail
+    // when a tab holds text that is not saved), whether to move what a drag dropped, whether to
+    // undo a delete, whether to delete for good once the Trash failed, and whether to replace a
+    // name that is taken. The delete to the Trash carries the "Do not ask me again" box, whose
+    // state the answer hands on. It holds nothing of its own: the view that asked draws it while it
+    // has a question and stops when the answer has come back.
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import { t } from '$lib/state/shared/words/text';

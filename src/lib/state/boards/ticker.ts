@@ -172,7 +172,10 @@ function item(
 }
 
 /** The follow-ups of one holder that are due: no `after:`, or an `after:` that has passed. */
-function dueFollowups(notes: Followup[], now: number): { note: Followup; days: number | null }[] {
+export function dueFollowups(
+    notes: Followup[],
+    now: number
+): { note: Followup; days: number | null }[] {
     const out: { note: Followup; days: number | null }[] = [];
     for (const note of notes) {
         const after = note.after ?? '';

@@ -106,7 +106,7 @@
         <span class="seg">
             <span class="seg-lbl">{label}</span>
             {#each names as name, at (`${at}:${name}`)}
-                <Tag label={name} />
+                <Tag wrap label={name} />
             {/each}
         </span>
     {/if}
@@ -138,7 +138,10 @@
                     <span class="seg">
                         <span class="seg-lbl">{t('focus.wait_people')}</span>
                         {#each strip.people as one (one.label)}
-                            <Tag label={t('focus.command.venue_count', one.label, one.count)} />
+                            <Tag
+                                wrap
+                                label={t('focus.command.venue_count', one.label, one.count)}
+                            />
                         {/each}
                     </span>
                 {/if}
@@ -147,6 +150,7 @@
                         <span class="seg-lbl">{t('focus.wait_review')}</span>
                         {#each strip.venues as one (one.label)}
                             <Tag
+                                wrap
                                 label={t(
                                     'focus.command.venue_count',
                                     one.label === '' ? t('focus.venue_unset') : one.label,
@@ -166,7 +170,7 @@
                 {#if strip.blocked > 0}
                     <span class="seg">
                         <span class="seg-lbl">{t('focus.wait_blocked')}</span>
-                        <Tag label={String(strip.blocked)} tone="red" />
+                        <Tag wrap label={String(strip.blocked)} tone="red" />
                     </span>
                 {/if}
             </section>
@@ -220,5 +224,7 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 4px;
+        min-width: 0;
+        max-width: 100%;
     }
 </style>

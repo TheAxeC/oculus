@@ -11,12 +11,22 @@
 // damaged manifest.
 //
 // A field that is cleared leaves its lines behind in the answer: setFields reports the characters
-// each clear removed, the index they stood at in the text the write left and the rest of that
-// line, and insertRemoved puts them back at the place of that line which keeps the document what
-// the earlier value says it was, under the same check. For whole lines, when no place of that line
-// passes, every other line start is tried, nearest first; text taken from inside a line tries only
-// the places of that line. That is how an undo gives a cleared field back as it was written,
-// comments, quoting and block style included.
+// each clear removed, the index they stood at in the text the write left and the rest of that line,
+// and insertRemoved (writes/restore.ts) puts them back at the place of that line which keeps the
+// document what the earlier value says it was, under the same check. For whole lines, when no place
+// of that line passes, every other line start is tried, nearest first; text taken from inside a
+// line tries only the places of that line. That is how an undo gives a cleared field back as it was
+// written, comments, quoting and block style included.
+//
+// A bare follow-up note or a list of one note that is written as the map it stands for keeps its
+// comments: one after the parent key stays on that line, one on a line of its own stays above the
+// key that follows it, and one after a value stays after that value. A comment inside a value
+// cannot go with it, and refuses the write. The text those lines replace is reported per field as
+// `replaced`, and insertReplaced (../writes/restore.ts) writes it back while the file still holds
+// those lines.
+//
+// The values a write may carry and how they are written as text are yaml-values.ts, and where a
+// node stands in its text is yaml-ranges.ts, both beside this file.
 //
 // Nothing is thrown. A path this cannot write is a refusal with a reason, which is what the write
 // route hands back to the page.
@@ -25,30 +35,34 @@
 // node test is imported as `isYamlMap`.
 
 import { isDeepStrictEqual } from 'node:util';
-import { isMap as isYamlMap, isScalar, isSeq, parseDocument, stringify } from 'yaml';
+import { Parser, isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { z } from 'zod';
-import { byKey, isMap } from '../../data/helpers/guards.ts';
-import type { RemovedText } from '../core/changes.ts';
-import { unchanged } from '../../data/shapes/shapes.ts';
-
-/** One row of a metalist: a flat map whose keys and values are strings. */
-export type FlatStringMap = Record<string, string>;
-
-/** A scalar accepted inside a raw field's map. */
-export type ScalarFieldValue = string | number | boolean | null;
-
-/** One value inside a block: a scalar, a list of values, or a map of them, at any depth. */
-export type BlockValue = ScalarFieldValue | BlockValue[] | BlockMap;
-
-/**
- * The parsed shape of a raw field: a map whose values are scalars, lists, or maps of the same. A
- * dataset's `retrieval:` block is one, and every real one holds a list or a map inside it.
- */
-export type BlockMap = { [key: string]: BlockValue };
-
-/** What a field may be set to. A raw map is a block map; null clears the field. */
-export type FieldValue = ScalarFieldValue | string[] | FlatStringMap[] | BlockMap;
+import { byKey, isMap } from '../../../data/helpers/guards.ts';
+import type { RemovedText, ReplacedText } from '../../core/changes.ts';
+import { unchanged } from '../../../data/shapes/shapes.ts';
+import {
+    DEFAULT_INDENT,
+    isBlockMap,
+    isMetalist,
+    itemStyles,
+    renderBlock,
+    renderBlockMap,
+    renderFlow,
+    renderMetalist,
+    renderScalar
+} from './yaml-values.ts';
+import type { BlockMap, FieldValue, FlatStringMap } from './yaml-values.ts';
+import {
+    columnOf,
+    lineEndAfter,
+    lineStart,
+    mapIndent,
+    pairEnd,
+    pairOf,
+    rangeOf,
+    valueEnd
+} from './yaml-ranges.ts';
 
 /** The reason a value is none of the shapes a write may carry. */
 export const NOT_A_FIELD_VALUE =
@@ -66,11 +80,16 @@ export type EditResult = {
 };
 
 /**
- * What `setFields` answers: an `EditResult`, and for each changed field whose edit took text out
- * and put none in, the text it took out. A field that was replaced or added has no entry, and
+ * What `setFields` answers: an `EditResult`, for each changed field whose edit took text out and
+ * put none in the text it took out (`removed`), and for each field whose edit wrote a bare note or
+ * a list of one note as a map the text it replaced (`replaced`), when the rest of the write left it
+ * in the file as it wrote it. A field that was replaced or added has no entry in `removed`, and
  * nothing is reported when the write is refused.
  */
-export type SetFieldsResult = EditResult & { removed: Record<string, RemovedText> };
+export type SetFieldsResult = EditResult & {
+    removed: Record<string, RemovedText>;
+    replaced: Record<string, ReplacedText>;
+};
 
 /**
  * Fields no write ever touches. `id` and `tier` are the folder's, not the form's, and `type` is the
@@ -84,15 +103,27 @@ export const BLOCK_LISTS = ['results', 'ideas'];
 
 /**
  * The one dual-shape field of the tree: `followup` is a map of `do` and `after` on two manifests
- * and a bare note on one, where the note means `do`. Setting a key under a scalar parent would drop
- * that note, so the scalar is expanded into the map it stands for and the new value written into
- * that. A scalar parent this map does not name is refused, since nothing says what its value is
- * short for.
+ * and a bare note on one, where the note means `do`; a list of exactly one note holds either.
+ * Setting a key under a scalar or a one-note list would drop that note, so it is expanded into the
+ * map it stands for and the new value written into that. A scalar parent this map does not name is
+ * refused, since nothing says what its value is short for, and a list of two or more notes is
+ * refused, since the two keys address one note.
  */
 const SHORTHAND: Record<string, string> = { followup: 'do' };
 
-/** The indentation a nested map is written at when the file holds no other one to copy. */
-const DEFAULT_INDENT = 2;
+/**
+ * The map a dual-shape parent's value stands for: a map as it is, a bare note as its `do`, and a
+ * list of one note as that note's map. Undefined for any other value, a list of two or more
+ * included, and for a parent the tree gives no shorthand.
+ */
+export function noteMapOf(parent: string, held: unknown): Record<string, unknown> | undefined {
+    const shorthand = byKey(SHORTHAND, parent);
+    if (shorthand === undefined) return undefined;
+    if (isMap(held)) return held;
+    if (typeof held === 'string') return { [shorthand]: held };
+    if (Array.isArray(held) && held.length === 1) return noteMapOf(parent, held[0]);
+    return undefined;
+}
 
 type Parsed = Record<string, unknown>;
 
@@ -104,9 +135,10 @@ type Splice = { from: number; to: number; length: number };
 
 /**
  * Either the new text with the splice that made it, or the reason there is none; every edit step
- * answers with one of the two.
+ * answers with one of the two. A bare note or a list of one note written as a map also answers the
+ * text its lines replace, as `replaced`.
  */
-type Written = { text: string; splice: Splice } | { reason: string };
+type Written = { text: string; splice: Splice; replaced?: string } | { reason: string };
 
 /** One edit that was made, kept so the verification can apply it to the parsed source. */
 type Applied = { path: string[]; value: FieldValue };
@@ -116,7 +148,7 @@ function fail(reason: string): Written {
 }
 
 /** The document as plain values, or null when it does not parse or is not a map of keys. */
-function safeParse(text: string): Parsed | null {
+export function safeParse(text: string): Parsed | null {
     let parsed: unknown;
     try {
         const doc = parseDocument(text);
@@ -140,7 +172,7 @@ export function pathOf(field: string): string[] | null {
 function currentValue(data: Parsed, path: string[]): unknown {
     const top = data[path[0]];
     if (path.length === 1) return top;
-    return isMap(top) ? top[path[1]] : undefined;
+    return (noteMapOf(path[0], top) ?? (isMap(top) ? top : undefined))?.[path[1]];
 }
 
 /** Whether a value is the one the manifest already holds; absent and null are one thing. */
@@ -175,215 +207,8 @@ export function asFieldValue(raw: unknown): FieldValue | undefined {
     return parsed.success ? parsed.data : undefined;
 }
 
-/** Whether a value is a scalar a block may hold. */
-function isBlockScalar(value: unknown): value is ScalarFieldValue {
-    return (
-        value === null ||
-        typeof value === 'string' ||
-        typeof value === 'boolean' ||
-        (typeof value === 'number' && Number.isFinite(value))
-    );
-}
-
-/** Whether a value belongs inside a block: a scalar, a list of them, or a map of either. */
-function isBlockValue(value: unknown): value is BlockValue {
-    if (isBlockScalar(value)) return true;
-    if (Array.isArray(value)) return value.every(isBlockValue);
-    return isBlockMap(value);
-}
-
-/**
- * Whether a value is a map of scalars, lists and maps, the raw field's write vocabulary. The page
- * parses a raw field into exactly this, so a dataset's `retrieval:` block round-trips through it.
- */
-export function isBlockMap(value: unknown): value is BlockMap {
-    return isMap(value) && Object.values(value).every(isBlockValue);
-}
-
-/** Whether a non-empty list is the metalist shape rather than a list of strings. */
-export function isMetalist(value: Exclude<FieldValue, null>): value is FlatStringMap[] {
-    return Array.isArray(value) && value.length > 0 && isMap(value[0]);
-}
-
-/** One scalar in YAML, on one line. `style` keeps the quoting the file already had. */
-export function renderScalar(value: ScalarFieldValue, style?: string): string {
-    if (typeof value !== 'string') return String(value);
-    // A single-quoted scalar carries no escape, so a value with a newline in it is written double
-    // quoted whatever the old style was: that is the one quoting that stays on one line.
-    const wanted = value.includes('\n')
-        ? 'QUOTE_DOUBLE'
-        : style === 'QUOTE_DOUBLE' || style === 'QUOTE_SINGLE'
-          ? style
-          : null;
-    const text =
-        wanted === null
-            ? stringify(value, { lineWidth: 0 })
-            : stringify(value, { lineWidth: 0, defaultStringType: wanted });
-    return text.replace(/\n+$/, '');
-}
-
-/** One key and its value as block lines, the key on the first of them. */
-function keyLines(key: string, value: BlockValue, indent: number): string[] {
-    const pad = ' '.repeat(indent);
-    const name = `${pad}${renderScalar(key)}:`;
-    if (isBlockMap(value)) {
-        const inner = mapLines(value, indent + DEFAULT_INDENT);
-        return inner.length === 0 ? [`${name} {}`] : [name, ...inner];
-    }
-    if (Array.isArray(value)) {
-        return value.length === 0 ? [`${name} []`] : [name, ...listLines(value, indent)];
-    }
-    return [`${name} ${renderScalar(value)}`];
-}
-
-/** Every key of a map as block lines at one indentation. */
-function mapLines(values: BlockMap, indent: number): string[] {
-    return Object.entries(values).flatMap(([key, value]) => keyLines(key, value, indent));
-}
-
-/** A block list's items at one indentation; a map item opens on its own dash line. */
-function listLines(values: BlockValue[], indent: number): string[] {
-    const pad = ' '.repeat(indent);
-    const out: string[] = [];
-    for (const item of values) {
-        if (isBlockMap(item)) {
-            const inner = mapLines(item, indent + DEFAULT_INDENT);
-            if (inner.length === 0) out.push(`${pad}- {}`);
-            else out.push(`${pad}- ${inner[0].trimStart()}`, ...inner.slice(1));
-            continue;
-        }
-        if (Array.isArray(item)) {
-            out.push(`${pad}-`, ...listLines(item, indent + DEFAULT_INDENT));
-            continue;
-        }
-        out.push(`${pad}- ${renderScalar(item)}`);
-    }
-    return out;
-}
-
-/**
- * A block map as YAML lines at the indentation of its own keys. The first line carries none of it,
- * since the caller writes it where the key it replaces already sits.
- */
-export function renderBlockMap(values: BlockMap, indent: number): string {
-    return mapLines(values, indent).join('\n').slice(indent);
-}
-
-/**
- * The quoting each item of a rewritten list is given: the style the item at that position had, and
- * the last item's style for one appended past the end. A list of quoted strings therefore stays a
- * list of quoted strings when an item is added to it.
- */
-function itemStyles(node: Node | null): (string | undefined)[] {
-    if (node === null || !isSeq(node)) return [];
-    return node.items.map((item) => (isScalar(item) ? item.type : undefined));
-}
-
-function styleAt(styles: (string | undefined)[], at: number): string | undefined {
-    if (styles.length === 0) return undefined;
-    return at < styles.length ? styles[at] : styles[styles.length - 1];
-}
-
-/** A list in the flow style the relation fields are written in. */
-function renderFlow(values: string[], styles: (string | undefined)[] = []): string {
-    const items = values.map((item, at) => renderScalar(item, styleAt(styles, at)));
-    return `[${items.join(', ')}]`;
-}
-
-/** One metalist item as a flow map, with its reader-facing value always double-quoted. */
-function renderFlowMap(value: FlatStringMap): string {
-    const fields = Object.entries(value).map(
-        ([key, item]) =>
-            `${renderScalar(key)}: ${renderScalar(item, key === 'value' ? 'QUOTE_DOUBLE' : undefined)}`
-    );
-    return `{ ${fields.join(', ')} }`;
-}
-
-/** A metalist as block-list lines, with continuation lines at the list's indentation. */
-export function renderMetalist(values: FlatStringMap[], indent: number): string {
-    const pad = ' '.repeat(indent);
-    return values.map((value) => `- ${renderFlowMap(value)}`).join(`\n${pad}`);
-}
-
-/** A list in the block style `results` and `ideas` are written in, at one indentation. */
-function renderBlock(
-    values: string[],
-    indent: number,
-    styles: (string | undefined)[] = []
-): string {
-    const items = values.map((item, at) => `- ${renderScalar(item, styleAt(styles, at))}`);
-    return items.join(`\n${' '.repeat(indent)}`);
-}
-
-/** The column a position sits at, which is the indentation of the line it is on. */
-function columnOf(text: string, at: number): number {
-    return at - (text.lastIndexOf('\n', at - 1) + 1);
-}
-
-/** The start of the line a position sits on. */
-function lineStart(text: string, at: number): number {
-    return text.lastIndexOf('\n', at - 1) + 1;
-}
-
-/**
- * The end of the line a position sits on, which is where a new line is inserted after it. A block
- * collection's range swallows the newline it ends with, so the scan steps back over trailing
- * newlines first; what it lands on is the last line the node actually occupies.
- */
-function lineEndAfter(text: string, at: number): number {
-    let end = at;
-    while (end > 0 && text[end - 1] === '\n') end -= 1;
-    const next = text.indexOf('\n', end);
-    return next < 0 ? text.length : next;
-}
-
-function rangeOf(node: unknown): [number, number, number] | null {
-    const range = (node as Node | null)?.range;
-    return Array.isArray(range) ? range : null;
-}
-
-/** The pair of a key in a map node, or undefined when the map has no such key. */
-function pairOf(map: YAMLMap, name: string): Pair<Scalar, Node> | undefined {
-    return map.items.find((item) => (item.key as Scalar | undefined)?.value === name) as
-        Pair<Scalar, Node> | undefined;
-}
-
-/** Where a node's value ends, before the comment or the newline its own range swallows. */
-function valueEnd(node: Node): number {
-    const range = rangeOf(node);
-    if (range === null) return 0;
-    if (isSeq(node) && node.flow !== true && node.items.length > 0) {
-        const last = rangeOf(node.items[node.items.length - 1]);
-        if (last !== null) return last[1];
-    }
-    if (isYamlMap(node) && node.flow !== true && node.items.length > 0) {
-        const last = rangeOf((node.items[node.items.length - 1] as Pair<Scalar, Node>).value);
-        if (last !== null) return last[1];
-    }
-    return range[1];
-}
-
-/** Where a pair's own text ends: its value's end, or its key's when it has no value. */
-function pairEnd(pair: Pair<Scalar, Node>): number | null {
-    const value = pair.value;
-    if (value !== null) return valueEnd(value);
-    return rangeOf(pair.key)?.[1] ?? null;
-}
-
-/** The indentation the file writes a nested block map at, from the first one it holds. */
-function mapIndent(root: YAMLMap, text: string): number {
-    for (const item of root.items) {
-        const value = (item as Pair<Scalar, Node>).value;
-        if (value !== null && isYamlMap(value) && value.flow !== true) {
-            const range = rangeOf(value);
-            if (range !== null && range[0] > 0) return columnOf(text, range[0]);
-        }
-    }
-    return DEFAULT_INDENT;
-}
-
 /** Replace a slice of the text. */
-function splice(text: string, from: number, to: number, insert: string): string {
+export function splice(text: string, from: number, to: number, insert: string): string {
     return text.slice(0, from) + insert + text.slice(to);
 }
 
@@ -545,6 +370,200 @@ function appendTop(
     return appendLines(text, root, `${name}: ${rendered}`);
 }
 
+/** One key of a note being rewritten as a map, with the comments that stood with it. */
+type NoteEntry = {
+    name: string;
+    text: string;
+    /** Where its value stood in the source, or null for a key the rewrite adds. */
+    at: { key: number; from: number; to: number } | null;
+    /** Comment lines that stood above it. */
+    above: string[];
+    /** The comment that followed its value on the same line, with the spaces before it. */
+    inline: string;
+    cleared: boolean;
+};
+
+/** One comment of the source: where it begins and its text, the `#` included. */
+type Comment = { offset: number; source: string };
+
+/** The comments of the source that begin in `from` up to `to`, in the order they stand. */
+function commentsIn(text: string, from: number, to: number): Comment[] {
+    const found: Comment[] = [];
+    const visit = (token: unknown): void => {
+        if (Array.isArray(token)) {
+            for (const one of token) visit(one);
+        } else if (isMap(token)) {
+            const { type, offset, source } = token;
+            if (type === 'comment' && typeof offset === 'number' && typeof source === 'string') {
+                if (offset >= from && offset < to) found.push({ offset, source });
+            } else {
+                for (const value of Object.values(token)) visit(value);
+            }
+        }
+    };
+    visit([...new Parser().parse(text)]);
+    return found.sort((one, other) => one.offset - other.offset);
+}
+
+/**
+ * Hand each comment to the key it belongs with: one that follows a value on its line stays after
+ * that value, one on the line of the parent key stays there (the returned text), and one on a line
+ * of its own goes above the key that follows it. A comment that follows no key goes last.
+ */
+function placeComments(
+    text: string,
+    keyLine: number,
+    comments: Comment[],
+    entries: NoteEntry[]
+): { keyComment: string; last: string[] } {
+    let keyComment = '';
+    const last: string[] = [];
+    for (const { offset, source } of comments) {
+        const before = text.slice(lineStart(text, offset), offset);
+        const gap = /[ \t]*$/.exec(before)?.[0] ?? '';
+        const own = before.trim() === '';
+        const same = entries.filter(
+            (one) =>
+                one.at !== null &&
+                one.at.to <= offset &&
+                !text.slice(one.at.to, offset).includes('\n')
+        );
+        if (!own && same.length > 0) {
+            same[same.length - 1].inline = `${gap}${source}`;
+        } else if (!own && lineStart(text, offset) === keyLine) {
+            keyComment = `${gap}${source}`;
+        } else {
+            const next = entries.find((one) => one.at !== null && one.at.key > offset);
+            if (next === undefined) last.push(source);
+            else next.above.push(source);
+        }
+    }
+    return { keyComment, last };
+}
+
+/**
+ * A bare note or a list of one note written as the map it stands for, with one key set or cleared.
+ * The text of every key the note already holds is copied as it stands, in its order, so the note
+ * keeps its quoting and its comments; a key that is not there is added after them. A comment that
+ * stands inside a value cannot go with it, and refuses the write. `end` is where the note's value
+ * ends; a comment after it on that line goes with the last key. The text the lines replace is
+ * handed back as `replaced`, so an undo can put the file's own shape back.
+ */
+function expandNote(
+    text: string,
+    one: {
+        parent: string;
+        top: Pair<Scalar, Node>;
+        pad: string;
+        entries: NoteEntry[];
+        end: number;
+    },
+    child: string,
+    value: FieldValue
+): Written {
+    const { parent, top, pad, entries } = one;
+    const key = rangeOf(top.key);
+    if (key === null) return fail('the key has no place in the file');
+    const rest = text.indexOf('\n', one.end);
+    const limit = rest < 0 ? text.length : rest;
+    const comments = commentsIn(text, key[1], limit);
+    for (const { offset } of comments) {
+        if (
+            entries.some(
+                (entry) => entry.at !== null && offset >= entry.at.from && offset < entry.at.to
+            )
+        ) {
+            return fail('a comment inside the value cannot be kept; edit the file by hand');
+        }
+    }
+    const { keyComment, last } = placeComments(text, lineStart(text, key[0]), comments, entries);
+    const end = Math.max(
+        one.end,
+        ...comments.filter((c) => c.offset >= one.end).map((c) => c.offset + c.source.length)
+    );
+
+    const at = entries.findIndex((entry) => entry.name === child);
+    if (value === null) {
+        if (at < 0) return fail('the key is not there');
+        entries[at].cleared = true;
+    } else {
+        const rendered = renderOneLine(value);
+        if (rendered === null) return fail('the value does not fit on one line');
+        if (at < 0) {
+            entries.push({
+                name: child,
+                text: rendered,
+                at: null,
+                above: [],
+                inline: '',
+                cleared: false
+            });
+        } else {
+            entries[at].text = rendered;
+        }
+    }
+    if (entries.every((entry) => entry.cleared)) return removePair(text, top);
+    const lines = [`${parent}:${keyComment}`];
+    for (const entry of entries) {
+        lines.push(...entry.above.map((source) => `${pad}${source}`));
+        if (!entry.cleared) lines.push(`${pad}${entry.name}: ${entry.text}${entry.inline}`);
+        else if (entry.inline !== '') lines.push(`${pad}${entry.inline.trimStart()}`);
+    }
+    lines.push(...last.map((source) => `${pad}${source}`));
+    const from = lineStart(text, key[0]);
+    return { ...spliced(text, from, end, lines.join('\n')), replaced: text.slice(from, end) };
+}
+
+/**
+ * The keys of a note held as a bare string (`bare`) or as the one item of a list, with the span of
+ * each value. A bare string that is not text holds no note. A list item that holds anything but
+ * scalars is refused, since the two keys of the schema do not describe it.
+ */
+function noteEntries(
+    text: string,
+    parent: string,
+    item: Node | null,
+    bare: boolean
+): { entries: NoteEntry[] } | { reason: string } {
+    const entry = (
+        name: string,
+        body: string,
+        node: Node | null,
+        pair?: Pair<Scalar, Node>
+    ): NoteEntry | null => {
+        const range = rangeOf(node);
+        const keyAt = rangeOf(pair?.key ?? node)?.[0];
+        if (range === null || keyAt === undefined) return null;
+        const at = { key: keyAt, from: range[0], to: range[1] };
+        return { name, text: body, at, above: [], inline: '', cleared: false };
+    };
+    if (isScalar(item)) {
+        if (bare && item.value === null) return { entries: [] };
+        if (typeof item.value !== 'string') {
+            return {
+                reason: bare
+                    ? 'the note is not text; edit the file by hand'
+                    : 'followup is not a map'
+            };
+        }
+        const only = entry(SHORTHAND[parent], renderScalar(item.value, item.type), item);
+        return only === null ? { reason: 'the key has no place in the file' } : { entries: [only] };
+    }
+    if (!isYamlMap(item)) return { reason: 'followup is not a map' };
+    const entries: NoteEntry[] = [];
+    for (const pair of item.items as Pair<Scalar, Node>[]) {
+        const name = pair.key.value;
+        const range = pair.value === null ? null : rangeOf(pair.value);
+        if (typeof name !== 'string' || range === null || !isScalar(pair.value)) {
+            return { reason: 'followup is not a map' };
+        }
+        const made = entry(name, text.slice(range[0], range[1]), pair.value, pair);
+        if (made === null) return { reason: 'followup is not a map' };
+        entries.push(made);
+    }
+    return { entries };
+}
+
 /**
  * One field written into the text, or the reason it was not. Every case of the write rule is here:
  * an existing scalar, an existing list in its own style, a nested key, a key that is not there, a
@@ -601,26 +620,42 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
         return replaceValue(text, pair.value, value);
     }
 
+    const shorthand = byKey(SHORTHAND, parent);
+    if (isSeq(holder) && holder.items.length === 1 && shorthand !== undefined) {
+        const item = holder.items[0] as Node | null;
+        const held = noteEntries(text, parent, item, false);
+        if ('reason' in held) return fail(held.reason);
+        const last = holder.flow === true ? holder : item;
+        const end = last === null ? undefined : valueEnd(last);
+        if (end === undefined) return fail('the key has no place in the file');
+        return expandNote(text, { parent, top, pad, entries: held.entries, end }, child, value);
+    }
+
     // A scalar where a map is asked for: the dual shape of `followup`, expanded so its note is
     // kept.
-    const shorthand = byKey(SHORTHAND, parent);
     if (!isScalar(holder) || shorthand === undefined) return fail(`${parent} is not a map`);
     if (value === null) return fail('the key is not there');
-    const rendered = renderOneLine(value);
-    if (rendered === null) return fail('the value does not fit on one line');
-    const held = typeof holder.value === 'string' ? holder.value : null;
-    const kept =
-        held === null || shorthand === child
-            ? ''
-            : `${pad}${shorthand}: ${renderScalar(held, holder.type)}\n`;
-    const key = rangeOf(top.key);
-    if (key === null) return fail('the key has no place in the file');
-    const lines = `${parent}:\n${kept}${pad}${child}: ${rendered}`;
-    return spliced(text, lineStart(text, key[0]), valueEnd(holder), lines);
+    const held = noteEntries(text, parent, holder, true);
+    if ('reason' in held) return fail(held.reason);
+    const one = { parent, top, pad, entries: held.entries, end: valueEnd(holder) };
+    return expandNote(text, one, child, value);
+}
+
+/**
+ * The parsed document with each dual-shape parent written as the map it stands for, so a bare note,
+ * a map and a list of one note compare as the one note they hold.
+ */
+export function normalised(data: Parsed): Parsed {
+    const out: Parsed = { ...data };
+    for (const parent of Object.keys(SHORTHAND)) {
+        const note = noteMapOf(parent, out[parent]);
+        if (note !== undefined) out[parent] = note;
+    }
+    return out;
 }
 
 /** The parsed document with one path set or cleared, which is what the new text must equal. */
-function expect(data: Parsed, path: string[], value: FieldValue): void {
+export function expect(data: Parsed, path: string[], value: FieldValue): void {
     if (path.length === 1) {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         if (value === null) delete data[path[0]];
@@ -630,23 +665,21 @@ function expect(data: Parsed, path: string[], value: FieldValue): void {
     const [parent, child] = path;
     const held = data[parent];
     if (value === null) {
-        if (!isMap(held)) return;
+        const note = isMap(held) ? held : noteMapOf(parent, held);
+        if (note === undefined) return;
+        const rest = { ...note };
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-        delete held[child];
+        delete rest[child];
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-        if (Object.keys(held).length === 0) delete data[parent];
+        if (Object.keys(rest).length === 0) delete data[parent];
+        else data[parent] = rest;
         return;
     }
     if (isMap(held)) {
         held[child] = value;
         return;
     }
-    const shorthand = byKey(SHORTHAND, parent);
-    const kept =
-        typeof held === 'string' && shorthand !== undefined && shorthand !== child
-            ? { [shorthand]: held }
-            : {};
-    data[parent] = { ...kept, [child]: value };
+    data[parent] = { ...noteMapOf(parent, held), [child]: value };
 }
 
 /**
@@ -699,14 +732,27 @@ function moved(point: number, cut: Splice): number {
     return cut.from < point ? cut.from : point;
 }
 
+/**
+ * Where the span a field's note was rewritten into stands after a later splice of the same write:
+ * moved by the change in length when the splice lies wholly before it, as it was when the splice
+ * lies wholly after it, and dropped when the splice touches it, since the file no longer holds the
+ * lines as this field's edit left them.
+ */
+function keptSpan(span: ReplacedText, cut: Splice): ReplacedText | null {
+    if (cut.to < span.offset) {
+        return { ...span, offset: span.offset + cut.length - (cut.to - cut.from) };
+    }
+    return cut.from > span.offset + span.after.length ? span : null;
+}
+
 /** The text of a file from an index to the end of its line, the line break not included. */
-function lineFrom(text: string, at: number): string {
+export function lineFrom(text: string, at: number): string {
     const end = text.indexOf('\n', at);
     return text.slice(at, end < 0 ? text.length : end);
 }
 
 /** The path of a field a write may set, or the reason it may not. */
-function settable(field: string): { path: string[] } | { reason: string } {
+export function settable(field: string): { path: string[] } | { reason: string } {
     const path = pathOf(field);
     if (path === null) return { reason: 'not a field name' };
     if (READ_ONLY.includes(path[0])) {
@@ -732,13 +778,14 @@ export function setFields(source: string, fields: Record<string, unknown>): SetF
     const refused: Refusal[] = [];
     const applied: Applied[] = [];
     const points = new Map<string, { offset: number; text: string }>();
+    const spans = new Map<string, ReplacedText>();
 
     const base = safeParse(source);
     if (base === null) {
         for (const field of Object.keys(fields)) {
             refused.push({ field, reason: 'the manifest does not parse' });
         }
-        return { text: source, changed, refused, removed: {} };
+        return { text: source, changed, refused, removed: {}, replaced: {} };
     }
 
     let text = source;
@@ -771,7 +818,19 @@ export function setFields(source: string, fields: Record<string, unknown>): SetF
             continue;
         }
         for (const point of points.values()) point.offset = moved(point.offset, out.splice);
+        for (const [name, span] of spans) {
+            const kept = keptSpan(span, out.splice);
+            if (kept === null) spans.delete(name);
+            else spans.set(name, kept);
+        }
         const { from, to, length } = out.splice;
+        if (out.replaced !== undefined) {
+            spans.set(field, {
+                offset: from,
+                before: out.replaced,
+                after: out.text.slice(from, from + length)
+            });
+        }
         if (length === 0 && to > from)
             points.set(field, { offset: from, text: text.slice(from, to) });
         text = out.text;
@@ -779,7 +838,7 @@ export function setFields(source: string, fields: Record<string, unknown>): SetF
         applied.push({ path, value });
     }
 
-    if (changed.length === 0) return { text: source, changed, refused, removed: {} };
+    if (changed.length === 0) return { text: source, changed, refused, removed: {}, replaced: {} };
 
     const after = safeParse(text);
     const wanted = safeParse(source);
@@ -792,7 +851,7 @@ export function setFields(source: string, fields: Record<string, unknown>): SetF
                     { ...point, next: lineFrom(text, point.offset) }
                 ])
             );
-            return { text, changed, refused, removed };
+            return { text, changed, refused, removed, replaced: Object.fromEntries(spans) };
         }
     }
     return {
@@ -802,74 +861,7 @@ export function setFields(source: string, fields: Record<string, unknown>): SetF
             field,
             reason: 'the edit did not verify; nothing was written'
         })),
-        removed: {}
+        removed: {},
+        replaced: {}
     };
-}
-
-/** Whether an index falls between the two halves of a surrogate pair. */
-function splitsPair(text: string, at: number): boolean {
-    const before = text.charCodeAt(at - 1);
-    const here = text.charCodeAt(at);
-    return before >= 0xd800 && before <= 0xdbff && here >= 0xdc00 && here <= 0xdfff;
-}
-
-/**
- * The indexes removed text may go back at, in the order they are tried. First the indexes where the
- * rest of the line stood: the text from there to the end of its line is `next`, and for whole lines
- * the index is also a line start. Then, for whole lines only, every line start the first group did
- * not hold. Each group is ordered by its distance from the recorded index, the earlier index first
- * at equal distance.
- */
-function placesOf(text: string, removed: RemovedText): number[] {
-    const whole = removed.text.endsWith('\n');
-    const starts: number[] = [];
-    for (let at = 0; ;) {
-        starts.push(at);
-        const end = text.indexOf('\n', at);
-        if (end < 0) break;
-        at = end + 1;
-    }
-    const followed: number[] = [];
-    for (const start of starts) {
-        const end = start + lineFrom(text, start).length;
-        const at = end - removed.next.length;
-        if (at < start || text.slice(at, end) !== removed.next) continue;
-        if ((whole && at !== start) || splitsPair(text, at)) continue;
-        followed.push(at);
-    }
-    const nearest = (one: number, other: number): number =>
-        Math.abs(one - removed.offset) - Math.abs(other - removed.offset) || one - other;
-    const elsewhere = whole ? starts.filter((start) => !followed.includes(start)) : [];
-    return [...followed.sort(nearest), ...elsewhere.sort(nearest)];
-}
-
-/**
- * Put text that a clear removed back into a manifest, as the value the field held. It goes at the
- * first place (`placesOf`) where the new text parses to the source with the field set to `before`,
- * which is the check `setFields` makes of its own result. When no place passes, the source comes
- * back unchanged with the field refused.
- */
-export function insertRemoved(
-    source: string,
-    field: string,
-    before: unknown,
-    removed: RemovedText
-): EditResult {
-    const refusal = (reason: string): EditResult => ({
-        text: source,
-        changed: [],
-        refused: [{ field, reason }]
-    });
-    const allowed = settable(field);
-    if ('reason' in allowed) return refusal(allowed.reason);
-    const wanted = safeParse(source);
-    if (wanted === null) return refusal('the manifest does not parse');
-    expect(wanted, allowed.path, before as FieldValue);
-    for (const at of placesOf(source, removed)) {
-        const text = splice(source, at, at, removed.text);
-        if (isDeepStrictEqual(safeParse(text), wanted)) {
-            return { text, changed: [field], refused: [] };
-        }
-    }
-    return refusal('the removed text does not fit the file');
 }

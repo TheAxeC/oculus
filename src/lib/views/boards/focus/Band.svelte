@@ -282,5 +282,6 @@
         font-size: var(--fs-sm);
         line-height: calc(18px * var(--text-scale, 1));
         color: var(--muted-txt, var(--muted));
+        overflow-wrap: anywhere;
     }
 </style>

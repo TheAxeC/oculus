@@ -187,6 +187,10 @@ export type UiStore = {
     setPaneStrip: (key: PaneStripKey, value: string) => void;
     setInstanceState: (id: string, state: unknown) => void;
     clearInstanceState: (id: string) => void;
+    /** The ids of the instance records whose id starts with a prefix. */
+    instanceKeys: (prefix: string) => string[];
+    /** Forget every instance record whose id starts with a prefix, in one save. */
+    clearInstanceStates: (prefix: string) => void;
 };
 
 /** The two keys of config/appearance.yml that say what a pane's top row draws. */
@@ -618,6 +622,24 @@ export function createUi(
         save({ ...store.current, instances });
     }
 
+    /** The ids of the instance records whose id starts with a prefix. */
+    function instanceKeys(prefix: string): string[] {
+        return Object.keys(store.current.instances).filter((id) => id.startsWith(prefix));
+    }
+
+    /**
+     * Forget every instance record whose id starts with a prefix, in one save: the records a view
+     * keeps under an owner of its own beside the instance's, as a project card keeps its tree.
+     */
+    function clearInstanceStates(prefix: string): void {
+        const gone = instanceKeys(prefix);
+        if (gone.length === 0) return;
+        const instances = Object.fromEntries(
+            Object.entries(store.current.instances).filter(([id]) => !gone.includes(id))
+        );
+        save({ ...store.current, instances });
+    }
+
     /** Write one pane strip setting to config/appearance.yml. */
     function setPaneStrip(key: PaneStripKey, value: string): void {
         void writeConfigKey('appearance.yml', key, value);
@@ -661,6 +683,8 @@ export function createUi(
         setStatusQuiet,
         setPaneStrip,
         setInstanceState,
-        clearInstanceState
+        clearInstanceState,
+        instanceKeys,
+        clearInstanceStates
     };
 }

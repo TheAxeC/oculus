@@ -2,12 +2,13 @@
 // builds its row menu: which items a file, a folder and a root offer, in VS Code's groups, the two
 // paths the copy items put on the clipboard, and what each pick does. Only the items oculus can run
 // are offered, and each pick runs what the view or the stores already have: a file opened as a
-// press opens it but in a pane beside (opening.ts), a file or folder revealed in Finder through the
-// open endpoint, a shell started in the folder (state/shared/stores/shell.ts, `openShell`), the
-// file's bytes saved from api/file as the file view's link saves them, the Search view opened on
-// the folder, the view's add-root form, and its removal behind its question. The items that write
-// (New File..., Cut, Paste, Rename..., Delete, Upload..., the compare items) are drawn here and
-// picked in row-ops.ts.
+// press opens it but in a pane beside (opening.ts), a file the configuration names an application
+// for (`open.program_ext`) handed to that application through the open endpoint, a file or folder
+// revealed in Finder through the open endpoint, a shell started in the folder
+// (state/shared/stores/shell.ts, `openShell`), the file's bytes saved from api/file as the file
+// view's link saves them, the Search view opened on the folder, the view's add-root form, and its
+// removal behind its question. The items that write (New File..., Cut, Paste, Rename..., Delete,
+// Upload..., the compare items) are drawn here and picked in row-ops.ts.
 //
 // The items are a pure function of the row, so which items a row offers is asserted without a
 // DOM, and the words come in as `t` so every label is a catalog key. The picks take the stores and
@@ -18,6 +19,7 @@ import {
     absoluteOf,
     languageOf,
     nameOf,
+    opensInProgram,
     type FsEntry,
     type LanguageMap,
     type RowRef,
@@ -32,10 +34,10 @@ import {
 } from '$lib/state/sources/explorer/acts/keys';
 import { sourceTabState } from '$lib/state/sessions/source.svelte';
 import type { CommandSource, ProjectCommand } from '$lib/state/sessions/terminal/commands.svelte';
-import { commandKey, commandLabel, commandTip, keyOf } from '../../../../shared/sessions/commands';
+import { commandKey, commandLabel, commandTip, keyOf } from '../../../sessions/commands';
 import type { ClientState } from '$lib/state/client/context';
 import type { ExplorerStore } from '$lib/state/sources/explorer/ops.svelte';
-import { fileUrl } from '../../../../shared/links/file-url';
+import { fileUrl } from '../../../links/file-url';
 import { openRowBeside } from '../../opening';
 import { openShell } from '$lib/state/shared/stores/shell';
 import {
@@ -55,6 +57,7 @@ import {
 type Words = (key: string, ...args: (string | number)[]) => string;
 
 export const ROW_OPEN_SIDE = 'open-side';
+export const ROW_OPEN_PROGRAM = 'open-program';
 export const ROW_REVEAL = 'reveal';
 export const ROW_TERMINAL = 'terminal';
 export const ROW_FIND = 'find';
@@ -90,6 +93,8 @@ export type RowMenuFacts = {
     /** How many of the selected rows are files; every one of them when omitted. */
     selectedFiles?: number;
     markdown: boolean;
+    /** Whether the row is a file `open.program_ext` names an application for. */
+    program?: boolean;
     /** Whether the row is a `.tex` file or a folder whose held listing has one directly in it. */
     latex?: boolean;
     /** The key hint of an item by its id; none when omitted. */
@@ -158,8 +163,9 @@ export function menuHints(keymap: readonly FilesChord[], words: KeyWords): Recor
 
 /**
  * The facts of one row of the tree, with the root keys a removal refuses, the selection the menu
- * acts on (the row alone when it is not given), the hints of the items and the entries the fs
- * store holds, which say whether a folder has a `.tex` file in it without asking for its listing.
+ * acts on (the row alone when it is not given), the hints of the items and the entries the fs store
+ * holds, which say whether a folder has a `.tex` file in it without asking for its listing, and the
+ * applications `open.program_ext` names by extension, which say whether a file opens in one.
  */
 export function rowFacts(
     row: TreeRow,
@@ -170,7 +176,8 @@ export function rowFacts(
     selection: MenuSelection = { size: 1, files: row.kind === 'file' ? 1 : 0 },
     hints: Readonly<Record<string, string>> = {},
     entriesOf: HeldEntries = () => null,
-    commands: readonly ProjectCommand[] = []
+    commands: readonly ProjectCommand[] = [],
+    programs: Readonly<Record<string, string>> = {}
 ): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
@@ -186,6 +193,7 @@ export function rowFacts(
         selection: selection.size,
         selectedFiles: selection.files,
         markdown: kind === 'file' && languageOf(row.path, languages) === 'markdown',
+        program: kind === 'file' && opensInProgram(row.path, programs),
         latex:
             kind === 'file'
                 ? isTex(row.path)
@@ -198,7 +206,8 @@ export function rowFacts(
 }
 
 /**
- * The row's items, in VS Code's groups. A file: Open to the Side, Reveal in Finder and Open in
+ * The row's items, in VS Code's groups. A file: Open to the Side, with Open in Program after it on
+ * a file `open.program_ext` names an application for, Reveal in Finder and Open in
  * Integrated Terminal (a shell in its folder), the compare items, Cut and Copy, Download..., the
  * two copies, Open Preview on a Markdown file, then Rename... and Delete. Open LaTeX is its own
  * group after Reveal in Finder and the terminal, on a `.tex` file and on a folder or root whose
@@ -239,7 +248,12 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     }
     if (facts.kind === 'file') {
         return grouped([
-            [item(ROW_OPEN_SIDE, t('files.menu_open_side'))],
+            [
+                item(ROW_OPEN_SIDE, t('files.menu_open_side')),
+                ...(facts.program === true
+                    ? [item(ROW_OPEN_PROGRAM, t('files.menu_open_program'))]
+                    : [])
+            ],
             [reveal, terminal],
             latex,
             [
@@ -404,6 +418,12 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         if (!answer.ok) deps.say(t('files.reveal_failed', answer.error ?? ''));
     }
 
+    /** The file handed to its application, a refusal said on the tree. */
+    async function program(row: TreeRow): Promise<void> {
+        const answer = await deps.openFile(row.root, row.path);
+        if (!answer.ok) deps.say(t('file.open_failed', answer.error ?? ''));
+    }
+
     /** A shell in the row's folder, by the one start-and-show path, a refusal said on the tree. */
     async function shell(row: TreeRow, dir: string): Promise<void> {
         const cwd = shellFolder(dir, row);
@@ -445,6 +465,7 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         const dir = deps.dirOf(row.root);
         const paths = rowPaths(dir, row.path);
         if (pick === ROW_OPEN_SIDE) void openRowBeside(deps, row);
+        else if (pick === ROW_OPEN_PROGRAM) void program(row);
         else if (pick === ROW_REVEAL) void reveal(row, paths.absolute);
         else if (pick === ROW_TERMINAL) void shell(row, dir);
         else if (pick === ROW_FIND)

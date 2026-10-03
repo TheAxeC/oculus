@@ -5,6 +5,8 @@ text:
         dirty: '{0} changed'
         empty_choice: (none)
         failed: 'not saved: {0}'
+        followup_needs_note: a date needs a note; type the text of the follow-up first
+        followup_several: this project has several follow-up notes; edit them on the Focus board or in its project.yml
         no_choices: no choices
         none: No project chosen. Open the editor from a project card.
         none_glyph: edit

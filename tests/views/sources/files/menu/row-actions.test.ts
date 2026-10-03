@@ -1,6 +1,6 @@
 // Layer 3, view test. What the Files row menu and the keys do with several rows selected, the
 // hints the menu shows, the delete question for one row and for several, the drops of the tree and
-// the upload of files: views/sources/files/tree/menu/row-menu.ts, row-ops.ts and row-drop.ts.
+// the upload of files: views/shared/explorer/tree/menu/row-menu.ts, row-ops.ts and row-drop.ts.
 //
 // The explorer store is a fake that records its calls; the questions are calls that answer yes or
 // no for the page; the words are the real catalog or, where a key is asserted, a stand-in `t`.
@@ -20,7 +20,7 @@ import {
 } from '../../../../../src/lib/state/sources/explorer/acts/keys.ts';
 import type { Outcome } from '../../../../../src/lib/state/sources/explorer/ops.svelte.ts';
 import type { TreeRow } from '../../../../../src/lib/state/sources/fs.ts';
-import { rowDropper } from '../../../../../src/lib/views/sources/files/tree/menu/row-drop.ts';
+import { rowDropper } from '../../../../../src/lib/views/shared/explorer/tree/menu/row-drop.ts';
 import {
     ROW_COPY_PATH,
     ROW_COPY_RELATIVE,
@@ -30,7 +30,7 @@ import {
     rowFacts,
     rowMenu,
     type RowMenuFacts
-} from '../../../../../src/lib/views/sources/files/tree/menu/row-menu.ts';
+} from '../../../../../src/lib/views/shared/explorer/tree/menu/row-menu.ts';
 import {
     ROW_COMPARE_SELECTED,
     ROW_COPY,
@@ -41,7 +41,7 @@ import {
     uploader,
     type AskedQuestion,
     type RowOpsDeps
-} from '../../../../../src/lib/views/sources/files/tree/menu/row-ops.ts';
+} from '../../../../../src/lib/views/shared/explorer/tree/menu/row-ops.ts';
 import type { MenuItem } from '../../../../../src/lib/ui/menu/menu-items.ts';
 
 const catalog = textCatalog(loadConfig(engineDir()).config);
