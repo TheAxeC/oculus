@@ -8,59 +8,43 @@ From `agents/reviews/owed-looks.md`, the Q78 look (2026-10-02, TEST, the rice pa
 
 ## Where the probes run
 
-TEST at localhost:8790, tab 812136282, which serves main at 4bc8983b8 (X3c is not served). The probes are page scripts only: no source file is changed, so the step's worktree and main are untouched. The paths redirected under `$TMPDIR`: none. From 2026-10-03 23:00 the TEST window was in front (Z371 (a)): `document.visibilityState` `visible`, 121 frames in one second; at about 23:15 it went `hidden` again and the probes stopped there.
+TEST at localhost:8790, tab 812136282, which serves main at 4bc8983b8 (X3c is not served). The probes are page scripts only: no source file is changed, so the step's worktree and main are untouched. The paths redirected under `$TMPDIR`: none. From 2026-10-03 23:00 the TEST window was in front (Z371 (a)): `document.visibilityState` `visible`, 121 frames in one second; it went `hidden` whenever Axel worked in the terminal. By Axel's ruling Z371 (b) the probes then ran headless: a detached worktree of main at 4e8d04297 under the session scratchpad (sparse to `tools/oculus`), a standalone page that mounts `ui/tabs/Tabs.svelte` alone (served by Vite on 127.0.0.1:8797 from that copy), driven by Playwright with its headless Chromium, both installed in the scratch folder only.
 
 ## Red command
 
-The earlier runs on a hidden tab (16:11) do not count: no frame was drawn, so no resize observer ran.
+None stands. Every run below carries its frame count.
 
-With the window in front, the width change alone is green: `__diagRed5` (scroll the strip's tab list so its active tab rests at the start or at the end, set `--text-scale` to 1.3, read, set it back, read) kept the active tab whole in 12 of 12 runs on the second and third strips, since the list's own width changed with the scale and the reveal ran. Activating a tab out of sight is green too: `__diagAct` and `__diagRed6` (click "Pillars" while the Focus strip shows "Focus", with the list at full width, 40 px and 0 px, then widen) left the new active tab whole in 9 of 9 runs.
+- The earlier TEST runs that looked red (`__diagRed7` and its variants, the end placement) placed the tab's inner `[role=tab]` button at the list's right edge. The strip measures a tab by its whole face (`ui/tabs/Tabs.svelte:265` binds `faces[index]` to `TabFace`'s outer element, which holds the close control too), so those runs left the face cut at the right edge before the change. The strip reads that as the reader's own scroll and correctly leaves it, by design (`tab-scroll.svelte.ts:60-64`). The runs were the probe's error, not the symptom.
+- Headless, with the probe's placement copied (`red.mjs`, the button at the edge): red three of three, 42 frames each, and the tagged log (`DIAG-4b2e`) showed `scrolled ... shownWhole=false` right after the placement, the face spanning `[416.3,534.1]` against an offset of 313 and a width of 159.
+- Headless, with the whole face placed at the right end (`red2.mjs`): the tab is brought back whole after the tabs grow, five of five (`end j0 g1.3: pre 395/159 [21,139] V | grown 452/159 [0,130] V | reveals 1 | frames 42`, and the same with a scroll away and back of 50 px).
+- Activating "Processes" from "Changes" in a strip of the left pane's nine tabs (`narrow.mjs`), with the strip 140, 200 and 260 px wide: Processes is shown from its start or whole every time (`width 260 ... post ... *Processes Pr:143/143`).
+- A strip that mounts 0, 97 or 140 px wide with Processes active and is then widened to 260 or 400 px (`mount.mjs`): Processes whole every time (`start 97 grow 400 ... widened cw 299 ... *Processes Pr:143/143`).
 
-Red: `__diagRed7(2, 1.3, 'end')`. On the third strip (the Focus pane, 32 tabs), hold the tab list at its width (`style.width` 175 px, `flex: none`), scroll it so the active tab "Focus" rests whole at the list's right end, set `--text-scale` to 1.3 (the tabs grow, as with the Text size setting or a theme's font), read whether the active tab is whole. This is the state Q78-look-1 saw: the active tab out of sight while a neighbour is shown.
+## No red command
 
-```
-end: pre sl=271 cw=175 [104,175] V | scaled sl=271 cw=175 [208,298] X | back sl=271 cw=175 [104,175] V
-end: pre sl=271 cw=175 [104,175] V | scaled sl=271 cw=175 [208,298] X | back sl=271 cw=175 [104,175] V
-end: pre sl=271 cw=175 [104,175] V | scaled sl=271 cw=175 [208,298] X | back sl=271 cw=175 [104,175] V
-```
+Ways tried, with what each gave:
 
-The same with the active tab at the start goes green (`start: pre sl=375 [0,71] V | scaled sl=479 [0,90] V`, three of three).
+- Way 4 on TEST, page scripts: a hidden tab gives no frames; while drawn, the only red came from the probe's own placement of the inner button (above).
+- Way 7 headless (Z371 (b)): the width change, the activation of a tab out of sight at four widths, and a strip mounted narrow then widened, all green once the face is placed whole.
+- Not reproduced: the Q78 look's state, "Processes" active in the left pane with the strip showing the inactive "Account setup". The look's own steps (the rice palette "mocha" with its wallpaper, then back to "vscode dark modern") were not replayed, since they change the theme on TEST, which Z290 limits.
 
-Validity, checked 2026-10-03 about 23:40 in a new tab group Axel asked for (tab 812137202, the same page: strips of 9, 17, 32 and 2 tabs): the page was `visible` for an 8 s watch, then went `hidden` within the next minute. A batch of five runs with a frame counter per run (`__diagP`) drew one frame per run, and its results flipped against the earlier ones: the end case brought the tab back once and the start case left it out once. While the page is hidden the resize observer's callbacks wait for the next drawn frame, so a run read in that state does not show what the strip does. Only the runs known to be drawn count: the page observer of hypothesis 1 fired after the scale in an end-case run, the page's own observer, made earlier, runs first in that same frame, and the offset stayed at 271 (red). The other red and green runs above carry no frame count, so which of them were drawn is not known; each is taken again with a frame count before it is used.
+Reproduced instead, on TEST and headless: a strip in a pane about 97 px wide gives its tab list 0 px (`narrow.mjs`: `width 97 ... cw 0`; TEST's left pane: list `clientWidth` 0 with nine tabs). The history arrows and the strip's controls take the whole width, so no tab, the active one included, is in sight at any scroll.
 
 ## Shrunk case
 
-- Scale 1.1 and 1.02 in place of 1.3: still red (`[139,216] X`, `[111,183] X`).
-- The active tab 5 px and 20 px inside the right end in place of at it: still red (`[202.8,293.4] X`, `[187.8,278.4] X`), so the edge allowance is not what keeps it.
-- The list's width held: needed. Without it the list narrows with the scale (175 to 144) and the reveal runs (green, `__diagRed5`).
-- The second strip (17 tabs, 509 px, its active tab second) at the end: green (`sl` 0 to 426); there the end placement could not be reached, since the list was already at offset 0.
-- Left: one strip with its list at a fixed width, a reader's scroll that brings the active tab whole somewhere other than where the strip already rested, then the tabs growing.
+Not reached: no red command.
 
 ## Hypotheses
 
-1. If the resize observer does not fire when only the tabs change width, then nothing calls `resized`. Falsified by a page observer on the same list and faces (`DIAG-4b2e`): one callback with all 33 entries, the active tab among them, on the scale.
-2. If `wholeAt`'s one pixel edge allowance judges a tab at the exact right edge not whole, then `shownWhole` is false before the scale. Falsified: insets of 5 and 20 px stay red.
-3. If the start case is green only through the browser's scroll anchoring and the strip's reveal never runs on a change of tab widths, then `overflow-anchor: none` turns the start case red. Falsified: with it the start case still moves to 478.5, and a wrapper on the list's `scrollTo` (`DIAG-4b2e`) records `scrollTo({"left":478.3})`, so the reveal runs there.
-4. If `revealOffset` returns the current offset for this geometry, then the arithmetic on the live spans gives 290.5. Falsified: the same arithmetic computed in the page from the live spans gives 478.3 as the only resting offset that shows the tab, and in the red case the `scrollTo` wrapper records no call at all, so `reveal` is not reached.
-5. Standing: `resized` reads `was` as false in the red case, so `shownWhole` is false after the reader's scroll. `scrolled` (`ui/tabs/tab-scroll.svelte.ts:100-105`) sets `shownWhole` only when `list.clientWidth === measuredWidth`. A probe that narrowed the list by 1 px after the scroll (so that `resized` runs and sets `measuredWidth` and `shownWhole` at the current width) still stayed red, so a stale `measuredWidth` alone does not explain it. The next probe was a scroll away and back by 50 px at the start position (`__diagSB2`), which separates "any scroll by the reader leaves the strip unable to reveal" from "the end position does"; it timed out when the window went hidden and has no result.
+Formed on the probe's artifact and resolved by it: hypotheses 1 to 4 above were falsified on TEST; hypothesis 5 (`shownWhole` false after the reader's scroll) is explained by the artifact: the strip never held the face whole.
 
 ## Probes
 
-All are page scripts on TEST; no source file was changed.
-
-- Rank 1: page `ResizeObserver` on the list and its 32 faces during the scale: one callback, 33 entries, the active tab included. Falsified.
-- Rank 2: insets 0, 5 and 20 px, two runs each: all red. Falsified.
-- Rank 3: `overflow-anchor: none` on the list, start and end: start green (478.5), end red. Falsified.
-- Rank 4: the reveal arithmetic recomputed from the live spans after the scale: target `[478.3,568.9]`, list 175 px, resting offsets showing it whole `478.3`; the list's `scrollTo` wrapped: start case one call to 478.3, end case none. Falsified.
-- Rank 5: a 1 px narrowing of the held list after the reader's scroll, four runs alternating with and without: all red. Leaves the hypothesis standing in another form; the scroll-away-and-back probe has no result.
-
-## Also seen
-
-The left pane (97 px, nine tabs, "Changes" active, the pane Q78-look-1 named) draws a tab list 0 px wide: the history arrows and the strip's controls take the whole width, so no tab, active or not, is in sight there at any scroll. This holds at full scale with no change of width.
+- `DIAG-4b2e` logging in the scratch copy's `tab-scroll.svelte.ts` (`scrolled`, `resized`, `reveal`), headless: with the button placed at the edge, `scrolled cw=159 mw=159 sl=313 shownWhole=false` then `resized was=false ... whole=false`; with the face placed whole, `resized was=true cw=159 sl=395 whole=false shown=3`, `reveal i=3 target=452.3,582.1 ... to=452.265625`, `scrolled ... sl=452 shownWhole=true`.
 
 ## Cause
 
-Not yet found. Every run from here carries its own frame count and is dropped when it drew fewer than 30 frames. The red command, the shrunk case and four falsified hypotheses stand; the fifth needs the scroll-away-and-back probe, which needs the TEST window in front again for about five minutes.
+Cause not found: the Q78 look's state does not reproduce on main, and the only red run came from the probe. Raised to Axel as Z372 with the zero-width tab list as the defect that does reproduce.
 
 ## Fix and test
 
@@ -68,4 +52,4 @@ Not reached.
 
 ## Cleanup
 
-Every inline style the probes set on the tab lists (`width`, `flex`, `max-width`, `overflow-anchor`) is removed, the `scrollTo` wrapper deleted, the page globals `__diag*` deleted and `--text-scale` set back to `1` (read back by a page script: the lists' `style` attributes empty or absent, no `__diag` global). The probes clicked "Pillars" and "Focus" in the Focus pane, and Focus is active again, so the page's title now names the Focus pane where it named the Changes pane before. `shasum ~/.oculus/changes.jsonl ~/.oculus/workspaces.json` prints `f3d06124`, `1bf5d57a`, as before; `ls ~/.oculus/history | wc -l` prints 3; `git diff --exit-code -- tools/oculus/config ':!tools/oculus/config/local.yml'` is clean.
+On TEST: the inline styles, the `scrollTo` wrappers and the page globals are removed and `--text-scale` is `1`, read back by page scripts. Headless: the scratch worktree is removed (`git worktree remove --force`; `git worktree list` names no diagnose folder), Vite on 8797 is stopped (no listener), and `grep -rln DIAG-4b2e tools/oculus/src tools/oculus/tests` on main prints nothing. Kept for a later probe, in the session scratchpad and nowhere in the repository: the harness and driver scripts (`x3c-harness/`) and the Playwright folder with its browser. `~/.oculus/changes.jsonl` and `workspaces.json` still hash `f3d06124` and `1bf5d57a`, history holds 3.

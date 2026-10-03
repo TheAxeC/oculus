@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z371, ruled by Axel 2026-10-03 ("(b)"): X3c's diagnosis probes run in a headless browser on a scratch copy, Playwright kept in the scratch folder.
 - Z370, ruled by Axel 2026-10-03 ("Agreed"): (a), T1a times under a reproduced load of four full test runs.
 - Z369, ruled by Axel 2026-10-03 ("Mark O33-O34-O35-O36 as paused"): those four are paused; the loop runs until a stop, his word, or only they remain.
 - Z368, ruled by Axel 2026-10-03 ("I would set workers_at_once to 5 (in both plan.yaml and state)"): five.
