@@ -1,8 +1,10 @@
 <script lang="ts">
     // Layer 3, view partial. The line counts of oculus's own files on the Status view: one row per
-    // folder with its languages under it, indented and muted, and the total last in bold, each with
-    // its files, blank, comment, code and TODO lines and their sum. The count is the lines store's,
-    // which asks the server the first time this reads it; Count again asks it once more.
+    // folder with its languages under it, indented and muted, one row labelled src/ directly above
+    // the first folder under src that sums every file under src/ at every depth, and the total last
+    // in bold, each with its files, blank, comment, code and TODO lines and their sum. The src/ row
+    // is not added into the total, which is the server's. The count is the lines store's, which
+    // asks the server the first time this reads it; Count again asks it once more.
     //
     // The table is the ui/ primitive with a cell snippet, since a row's kind (a folder, a language
     // inside one, the total) is what decides how its cells are drawn. It sits in a box of its own
@@ -11,7 +13,13 @@
     import Table from '$lib/ui/display/Table.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { Column } from '$lib/ui/display/table-rows';
-    import type { LineCount, LineTally } from '$lib/state/system/lines.svelte';
+    import {
+        isUnderSource,
+        SOURCE_FOLDER,
+        underSource,
+        type LineCount,
+        type LineTally
+    } from '$lib/state/system/lines.svelte';
     import { grouped, stamp } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -45,10 +53,20 @@
         return { key, kind, name, ...sums, lines: sums.blank + sums.comment + sums.code };
     }
 
-    /** Every folder, each followed by its languages, and the total last. */
+    /**
+     * Every folder, each followed by its languages, the src/ row directly above the first folder
+     * under src (none when no folder is), and the total last. Its key starts `sum:`, which no
+     * folder, language or total key does.
+     */
     function drawn(count: LineCount): Record<string, unknown>[] {
         const out: Record<string, unknown>[] = [];
+        const source = underSource(count.rows);
+        let sourceDrawn = false;
         for (const folder of count.rows) {
+            if (source !== null && !sourceDrawn && isUnderSource(folder.folder)) {
+                out.push(row(`sum:${SOURCE_FOLDER}/`, 'folder', `${SOURCE_FOLDER}/`, source));
+                sourceDrawn = true;
+            }
             const name = folder.folder === '' ? t('status.lines_top') : folder.folder;
             out.push(row(`folder:${folder.folder}`, 'folder', name, folder));
             for (const language of folder.languages) {

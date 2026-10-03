@@ -24,7 +24,7 @@ text:
         lines_failed: 'The line count failed: {0}'
         lines_files: Files
         lines_folder: Folder
-        lines_help: Oculus's own tracked files, counted by cloc. The plan's ledger, the lock file and the generated diagrams are left out.
+        lines_help: Oculus's own tracked files, counted by cloc. The plan's ledger, the lock file and the generated diagrams are left out. The src/ row sums every file under src/ at every depth, the rows beneath it included.
         lines_lines: Lines
         lines_recount: Count again
         lines_title: Lines of code

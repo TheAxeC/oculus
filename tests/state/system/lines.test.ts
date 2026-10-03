@@ -1,5 +1,6 @@
 // Layer 4, state test. The line count store: it asks GET /api/lines on the first read and not
-// before, asks again on a recount, and holds an answer whose shape is wrong as a failed read.
+// before, asks again on a recount, and holds an answer whose shape is wrong as a failed read. The
+// sum of the rows under src/ (underSource) is held to the rows it takes and the rows it leaves.
 //
 // The fetch is doubled, so nothing here opens a socket or counts a file: a case states what the
 // endpoint answers and asserts what the store holds after it.
@@ -8,11 +9,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     createLines,
     readCount,
+    underSource,
     type LinesStore
 } from '../../../src/lib/state/system/lines.svelte.ts';
 import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
 import { stubHeld } from '../../fixtures/client.ts';
-import { COUNT } from '../../server/machine/line-counts.ts';
+import { COUNT, folder, tally, type Sums } from '../../server/machine/line-counts.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 
@@ -400,5 +402,64 @@ describe('an answer that is not a count', () => {
             error: catalog[key].replace('{0}', String(status)),
             loading: false
         });
+    });
+});
+
+describe('the sum of the rows under src/', () => {
+    /** A row with no languages, as the sum reads only the five sums of a row. */
+    const under = (name: string, sums: Sums) => folder(name, sums, []);
+
+    /** The ten rows the real tree gives under src, each row's five sums nonzero and distinct. */
+    const SOURCE_ROWS = [
+        under('src', [6, 11, 22, 330, 4]),
+        under('src/lib/assets', [1, 2, 3, 40, 5]),
+        under('src/lib/data', [66, 101, 202, 3030, 7]),
+        under('src/lib/server', [181, 303, 404, 9090, 9]),
+        under('src/lib/shell', [38, 55, 66, 770, 8]),
+        under('src/lib/state', [207, 313, 424, 5050, 6]),
+        under('src/lib/themes', [5, 12, 23, 340, 2]),
+        under('src/lib/ui', [101, 141, 252, 2020, 3]),
+        under('src/lib/views', [289, 515, 626, 8080, 10]),
+        under('src/routes', [38, 71, 82, 960, 11])
+    ];
+
+    it.each([
+        [
+            'sums every row under src and no row beside them',
+            [
+                [
+                    under('', [3, 20, 5, 1234, 1]),
+                    under('config', [14, 15, 16, 170, 12]),
+                    ...SOURCE_ROWS,
+                    under('srcx', [2, 4, 6, 80, 13]),
+                    under('tests', [50, 60, 70, 800, 14])
+                ]
+            ],
+            tally([932, 1524, 2104, 29710, 65])
+        ],
+        [
+            'sums only a folder that is src or starts with src/',
+            [
+                [
+                    under('src-old', [2, 4, 6, 80, 13]),
+                    under('src/lib/ui', [101, 141, 252, 2020, 3]),
+                    under('srcx', [5, 7, 9, 110, 15])
+                ]
+            ],
+            tally([101, 141, 252, 2020, 3])
+        ],
+        [
+            'gives null for rows with none under src',
+            [
+                [
+                    under('', [3, 20, 5, 1234, 1]),
+                    under('srcx', [2, 4, 6, 80, 13]),
+                    under('tests', [1, 2, 3, 4, 5])
+                ]
+            ],
+            null
+        ]
+    ])('%s', (_name, inputs, expected) => {
+        for (const rows of inputs) expect(underSource(rows)).toStrictEqual(expected);
     });
 });

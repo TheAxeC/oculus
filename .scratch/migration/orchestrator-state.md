@@ -28,7 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # two steps in flight (2026-10-03): X3c refuted after round 1, Q116 built (workers_at_once: 5).
+dispatch:   # one step in flight (2026-10-03): X3c refuted after round 1 (workers_at_once: 5); T1c being prepared.
 - step: X3c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -44,20 +44,6 @@ dispatch:   # two steps in flight (2026-10-03): X3c refuted after round 1, Q116 
   landing_merge: D25 landed first; X3c's landing merges `DESIGN.md:391` (D25 moved `gutter.ts` to `ui/controls/editor/gutter/`, X3c rewords the same line) and `DESIGN.md:404` (D25's `ui/controls/editor/diff/DiffEditor.svelte` path beside X3c's change of the next line) by hand, keeping both steps' changes (D25 refuter, round 1 Spec 1)
   landing: not-started
   round: 1 (sent 2026-10-03, rulings agents/briefs/X3c-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's x3c-round1-start/ for the delta)
-- step: Q116
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 14:34)
-  session_id: a5abb57454b9e1db7 (builder, launched 2026-10-03 14:33 local)
-  worktree: .agents/worktrees/Q116
-  base: e24474a9
-  launched: 2026-10-03 14:33 local
-  report: agents/reviews/Q116-report.md
-  builder_usage: 141,310 tokens, 29 tool uses, 13.5 min (report saved 2026-10-03)
-  brief_check: agents/reviews/Q116-brief-check.md; claude-opus-5-5, 141,851 tokens, 31 tool uses, 4.8 min (run on main at 780125bf; findings closed under Closed)
-  shared_paths: with X3c and D25, `HELP.md` only (Q116 line 137; X3c's diff changes `:132`, D25's `:147`), separate lines, so the merge is simple
-  landing: not-started
-  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -151,6 +137,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
 - Z314 (2026-10-03, the owed look Q81): a Confirm drawn over the update tray. It shows only while `tasks.skip_permissions` is on in `config/behavior.yml`. Axel allowed the edit for the look (2026-10-03); the Claude Code auto-mode classifier refused it again with his permission given, so the session cannot make it. Options: (a) Axel sets `skip_permissions: true` himself, the look is taken, and Axel sets it back (the session checks `git diff --exit-code -- tools/oculus/config/behavior.yml` after); (b) the point is dropped from the look. Recommendation: (a), one line each way and (b) is the lazy option.
+- Z371 (2026-10-03, X3c's diagnosis of an active tab left out of sight, Q78-look-1): the diagnosis runs on TEST and needs the tab drawn: the TEST tab is hidden behind other windows (`document.visibilityState` is `hidden`, no frame in one second), so Chrome runs no resize observer and the strip's reveal on a change of width cannot run or be seen; the red runs taken so far do not count (`agents/reviews/X3c-diagnosis.md`). Options: (a) Axel brings the Chrome window holding TEST to the front and leaves it there for about ten minutes while the diagnosis runs, then says so; (b) the session raises the window itself (`osascript -e 'tell application "Google Chrome" to activate'`) at a moment Axel names, which could send a keystroke he is typing into the page; (c) X3c lands without the diagnosis and the defect is booked into X3e. Recommendation: (a), since X3c is the step booked to fix it (Z294) and X3c's landing waits on it; (c) is the lazy option.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -207,9 +194,9 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-03 16:30. The pause is lifted (Z367 to Z369), five steps at once. In flight: X3c (the tab strip), round 1 refuted; Q116 (the Status view's count of everything under `src/`), built. Next:
-  1. `/refute` Q116; `/spec` T1b, T1c and T1d, each with its builder.
-  2. X3c: dispositions of its round 1 run findings with Z361 (b), `/diagnose` the active tab out of sight on TEST, `/land` with the git breach, Z355's deletions and its `landing_merge` line.
-  3. T1e when X3c or Q116 lands; T1a after the four sweeps, its timings under a reproduced load (Z370 (a)); then the queue in order, O33 to O36 paused (Z369).
+- 2026-10-03 16:40. Q116 landed. In flight: X3c (the tab strip), round 1 refuted; T1c (the sweep of `tests/server/`), its brief checked. T1b, T1d and T1e wait for X3c's landing: X3c changes 23, 31 and 6 of their test files, and a sweep rewriting the same files is no simple merge (the `spec` skill's Steps 5). Next:
+  1. T1c: close the brief check's findings, the preparation commit, the worktree and its builder.
+  2. X3c: the diagnosis of the active tab out of sight once Axel has the TEST window in front (Z371), then `/land` with its round 1 run's findings disposed at landing (Z361 (b), Z355's deletions, the `landing_merge` line, the git breach).
+  3. T1b, T1d and T1e once X3c lands; T1a after the four sweeps, its timings under a reproduced load (Z370 (a)); then the queue in order, O33 to O36 paused (Z369).
   4. The recurring-findings pass (Z251); D25's four owed looks (Z362); the rail reorder `/diagnose`; the Q81 look when Axel sets `skip_permissions`.
-  Open for Axel: Z314.
+  Open for Axel: Z371, Z314.

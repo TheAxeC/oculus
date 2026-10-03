@@ -1,7 +1,8 @@
 // Layer 4, view test. The Status view's hooks section draws the block state/sessions/hooks.ts
 // builds from the page's origin, with the control that copies it, and draws nothing without an
-// origin. Its line counts draw one row per folder with that folder's languages under it and the
-// total last, say while they are counting and when they failed, and count again on the press.
+// origin. Its line counts draw one row per folder with that folder's languages under it, the src/
+// row summing everything under src above the first folder under it, and the total last, say while
+// they are counting and when they failed, and count again on the press.
 
 import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';
@@ -120,7 +121,7 @@ function draw(): string {
 }
 
 describe('the status view line counts', () => {
-    it('draws one row per folder with its languages under it, and the total last', () => {
+    it('draws one row per folder with its languages under it, the src/ sum above the first folder under src, and the total last', () => {
         holding({ count: COUNT, error: '', loading: false });
         const body = draw();
         expect(body).toContain(catalog['status.lines_title']);
@@ -129,6 +130,7 @@ describe('the status view line counts', () => {
             `${catalog['status.lines_top']}|3|20|5|1,234|1|1,259`,
             'Markdown|2|18|0|1,200|0|1,218',
             'TypeScript|1|2|5|34|1|41',
+            'src/|1|1|0|4|0|5',
             'src/lib/x|1|1|0|4|0|5',
             'Svelte|1|1|0|4|0|5',
             `${catalog['status.lines_total']}|4|21|5|1,238|1|1,264`
@@ -178,7 +180,7 @@ describe('the status view line counts', () => {
         expect(body).toContain(
             catalog['status.lines_failed'].replace('{0}', 'cloc exited with code 1.')
         );
-        expect(rows(body)).toHaveLength(6);
+        expect(rows(body)).toHaveLength(7);
         expect(body.indexOf(catalog['status.lines_failed'].split('{0}')[0])).toBeLessThan(
             body.indexOf('<table')
         );

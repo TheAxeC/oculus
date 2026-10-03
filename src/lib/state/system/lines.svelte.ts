@@ -10,6 +10,10 @@
 // An answer the server could not have meant (no list of rows, a row that is not a folder's count,
 // no total, no time) is held as a failed read naming what was wrong, never as a table with fewer
 // rows.
+//
+// underSource sums the rows of every folder under src, which the view draws as one row for
+// everything under src/ at every depth. Every counted file is in exactly one folder's row, so the
+// sum of those rows is exact.
 
 import { z } from 'zod';
 import type { FolderLines, LanguageLines, LineCount, LineTally } from '../../data/model/index.ts';
@@ -85,6 +89,29 @@ export function readCount(body: unknown): { count: LineCount } | { error: string
     const counted = readAs(countedShape, head.counted);
     if (counted === null) return { error: t('status.lines_bad_counted') };
     return { count: { rows, total, counted } };
+}
+
+/** The folder that holds the source: the count's row `src` and every row `src/<path>` under it. */
+export const SOURCE_FOLDER = 'src';
+
+/** Whether a folder of the count is `src` or starts with `src/`; `srcx` is not under `src`. */
+export function isUnderSource(folder: string): boolean {
+    return folder === SOURCE_FOLDER || folder.startsWith(`${SOURCE_FOLDER}/`);
+}
+
+/** The sum of every row whose folder is under `src`, or null when no row is. */
+export function underSource(rows: readonly FolderLines[]): LineTally | null {
+    let sum: LineTally | null = null;
+    for (const row of rows) {
+        if (!isUnderSource(row.folder)) continue;
+        sum ??= { files: 0, blank: 0, comment: 0, code: 0, todo: 0 };
+        sum.files += row.files;
+        sum.blank += row.blank;
+        sum.comment += row.comment;
+        sum.code += row.code;
+        sum.todo += row.todo;
+    }
+    return sum;
 }
 
 /** The line counts, held for one client. */

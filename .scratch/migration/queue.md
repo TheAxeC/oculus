@@ -1,12 +1,11 @@
 In flight:
-- X3c (the tab strip as VS Code's): repair round 1 refuted, its findings to dispose; paused (Axel).
-- Q116 (the Status view's line count of everything under src/): built, its review next; paused (Axel).
+- X3c (the tab strip as VS Code's): repair round 1 refuted, its findings disposed at landing; waits on the diagnosis of an active tab left out of sight, which needs the TEST window in front.
+- T1c (the test sweep of tests/server/): brief written and checked, its findings being closed.
 
-Queued, in order (37 steps):
-- T1b (the test sweep of tests/state/): next, beside T1c and T1d.
-- T1c (the test sweep of tests/server/): next, beside T1b and T1d.
-- T1d (the test sweep of tests/views/, shell/, ui/ and themes/): next, beside T1b and T1c.
-- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures): once X3c or Q116 has landed, so five are in flight at most.
+Queued, in order (36 steps):
+- T1b (the test sweep of tests/state/): once X3c has landed, since X3c changes 23 of its test files.
+- T1d (the test sweep of tests/views/, shell/, ui/ and themes/): once X3c has landed, since X3c changes 31 of its test files.
+- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures): once X3c has landed, since X3c changes 6 of its test files.
 - T1a (the test tiers): once T1b, T1c, T1d and T1e have landed; the queue below resumes after it.
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
@@ -44,6 +43,7 @@ Queued, in order (37 steps):
 Owed: the look of Q81 (a Confirm over the update tray); D25's four looks (a diff widened past 900 px drawn side by side, the Compare Selected header, the Settings save of `read_limits`, the hunk header at 300 px with its own buttons).
 
 Landed, newest first:
+- Q116 (the Status view's line count of everything under src/), 2026-10-03, this commit.
 - D25 (the editor's options), 2026-10-03, 4c7cf915.
 - Q91 (the project view and its editor), 2026-10-03, a8ba6553.
 - D17 (project commands), 2026-10-03, 76bdcd8c.
