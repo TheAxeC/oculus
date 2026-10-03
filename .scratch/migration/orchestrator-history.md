@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z366, ruled by Axel 2026-10-03 ("Agreed"): `npm run test:slow` in T1's landing list.
+- Z365, ruled by Axel 2026-10-03 ("Agreed"): the three test-rule sentences (speed, lowest level, once per behaviour) written into `agents/spec.md:57` before T1 is prepared.
 - Z364, closed by the orchestrator in automode 2026-10-03: where the slow tier's `isMap` red (three bare imports from S4's and D17's landings) is fixed; options (a) in T1, the step that owns the tiers, (b) a fix outside any step, which the plan's rules leave to landings, (c) a new step, which only Axel's ruling adds; (a) taken.
 - Z363, ruled by Axel 2026-10-03 ("30s is really a fairly hard limit, sure 31 or so is fine, but not like 50 seconds"; "You may even be stricter than this"): T1's quick list at 30 s with the defect-catching tests chosen to fit; the sweep may cut harder.
 - Z362, closed by the orchestrator in automode 2026-10-03: the four looks D25's landing did not take; options (a) owed looks in `queue.md`, taken at the next look session, (b) left to their tests, the lazy option; (a) taken.
