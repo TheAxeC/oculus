@@ -997,6 +997,13 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z349 (2026-10-03, D25's repair round 1): where three test files of D25 live
+
+- Chosen (b): `symbols.test.ts`, `source-options.test.ts` and `compare-header.client.test.ts` go back under `tests/state/` with titles that say what they assert, since `tests/checks/tree/audits.test.ts` lets a case under `tests/views/` that renders nothing stand only as an audit.
+- Not chosen: (a) 32 cases titled "audits that ..." while they assert values, the cheaper option; (c) entries in the closed `allow-audits.txt`.
+
+Where it applies: D25, fixed at its landing. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z330 (2026-10-03, D25's brief check): the language picker's entries and the repository file read again
 
 - Chosen (a): the language picker takes VS Code 1.137's entries: Auto Detect (oculus's detection by name and extension), Configure File Association for '<ending>'... (a second list; its choice writes `sources.yml`'s `languages:` through the undoable `config-value` write), Configure '<language>' language based settings... (the Settings view at `@id:editor.languages`), each language's description `(<name>)` and the one in force `(<name>) - Configured Language`; the Marketplace entry left out. A source-tab save marks the saved file's text, so `.oculus/settings.yml` saved in oculus is read again at once; an edit outside oculus at the Files view's refresh or a reload.

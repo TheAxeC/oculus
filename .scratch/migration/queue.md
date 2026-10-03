@@ -1,7 +1,7 @@
 In flight:
 - X3c (the tab strip as VS Code's): repair round 1.
 - Q91 (the project view and its editor): repair round 1 in review.
-- D25 (the editor's options): repair round 1.
+- D25 (the editor's options): repair round 1 in review.
 
 Queued, in order (32 steps):
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.

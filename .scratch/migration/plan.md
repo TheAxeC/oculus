@@ -1020,6 +1020,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z347 (2026-10-03): the six suggestions for Files approved, as D39 to D44 (the user).
 - Z348 (2026-10-03): the one full verify run per build of `agents/spec.md:25` is enforced, restated in every builder prompt and counted at each landing (the user).
 - Z348 (2026-10-03): large steps are not split (the user).
+- Z349 (2026-10-03): D25's round 1 ruling 15 is withdrawn for its three test files: `tests/checks/tree/audits.test.ts` requires a case under `tests/views/` that renders nothing to be titled as an audit, and those files assert values (`symbols.test.ts`, `source-options.test.ts`) or mount the pane in the client runtime (`compare-header.client.test.ts`). They go back under `tests/state/` with their real titles, a fix at D25's landing (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
