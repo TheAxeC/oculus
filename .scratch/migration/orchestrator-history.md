@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z378, closed by the orchestrator in automode 2026-10-04: the recurring pass's nine causes ended in rule sentences in `agents/spec.md` and the state file's standing demands; options (a) adopted under Z251, (b) each raised to Axel, (c) nothing changed, the lazy option; (a) taken.
 - Z375, closed by the orchestrator in automode 2026-10-03: D25-owed-4a booked into D42; options (a) D42, the next open step on the diff view, (b) a step of its own, which needs Axel's ruling to enter the plan, (c) left, the lazy option; (a) taken.
 - Z374, ruled by Axel 2026-10-03 ("(a) Please just do whatever you need to do to finish the looks"): a second rail click and a temporary HELP.md edit for D25's last two looks.
 - Z373, ruled by Axel 2026-10-03 ("(a)"): a TEST pane widened and put back, and one Files rail click, for D25's two looks.

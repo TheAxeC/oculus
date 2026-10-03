@@ -997,6 +997,10 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z378 (2026-10-04, the recurring-findings pass): the rule sentences
+
+Nine causes recur in three or more of the 14 steps reviewed since 2026-10-02: builder git commands (8 steps), paths outside the write list unmarked (11), exports with no importer (9), files brought near the size line (9), documents made false (11), assertion edits unlisted (6), first runs not per test (5), history wording (4), reviewer git commands (7). Options: (a) the sentences adopted under Z251 (the user: each such cause ends in a rule sentence or a sentence every brief carries); (b) each raised to Axel; (c) nothing changed, the lazy option. Chosen (a): `agents/spec.md` and the standing demands now carry them, the record in `agents/reviews/recurring-2026-10-04.md`.
+
 ## Z375 (2026-10-03, D25's owed look of the hunk bar at 300 px): where the cut Revert Block is fixed
 
 The look found Revert Block drawn under the diff's overview ruler in a pane about 300 px wide, its label cut to "Revert Bl". Options: (a) built in D42, the next open step on the diff view; (b) a step of its own, which enters the plan only by Axel's ruling; (c) left, the lazy option. Taken: (a).

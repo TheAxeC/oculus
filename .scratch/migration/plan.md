@@ -1064,6 +1064,9 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z373 (2026-10-03): (a), for D25's two owed looks that need it, one TEST pane is widened past 900 px and put back, and the Files rail button on TEST is clicked once; `workspaces.json` may then differ from its snapshot only in TEST's pane sizes (the user).
 - Z374 (2026-10-03): (a), for D25's two last looks one more rail click on the TEST browser tab (System, then back to TEST's page) and a temporary edit of `tools/oculus/HELP.md`, put back after with its checksum; Axel: "Please just do whatever you need to do to finish the looks" (the user).
 - Z375 (2026-10-03): D25-owed-4a, the hunk bar's Revert Block drawn under the diff's overview ruler in a pane about 300 px wide (label cut to "Revert Bl"), is built in D42, the next open step on the diff view (the orchestrator, automode).
+- Z376 (2026-10-04): open, Axel's: the audits check against Z354; T1d waits (`orchestrator-state.md`, Open items).
+- Z377 (2026-10-04): open, Axel's: the size check refusing 880 lines and 520 for a component (`orchestrator-state.md`, Open items).
+- Z378 (2026-10-04): the recurring-findings pass over the 14 refuter reports since 2026-10-02 (`agents/reviews/recurring-2026-10-04.md`) ends in rule sentences: `agents/spec.md:32`, `:34`, `:42`, `:45`, `:59`, `:63` and `:83` sharpened, and briefs and reviewer prompts name a base copy, the base's unused exports and the documents the step bears on, with `utils/outside-paths.mjs` run at each review and landing; options (a) the sentences adopted, (b) each cause raised to Axel, (c) nothing changed, the lazy option; (a) taken under Z251 (the orchestrator, automode).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
