@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { optionalTextShape, readAs, readJson } from '../../data/shapes/shapes.ts';
+import { WRAP_WORDS, type WordWrap } from '../../data/helpers/editor.ts';
 import { TEXT_LIMIT } from '../sources/fs.ts';
 import { headUrl } from '../sources/repositories/repositories.ts';
 import type { HeadStage } from '../sources/repositories/file-git.ts';
@@ -81,6 +82,10 @@ export type SourceDraft = {
      * file's own lines give.
      */
     indent: Indent | null;
+    /**
+     * The word wrap the reader set with Alt+Z for the tab, or null for the configured one.
+     */
+    wrap: WordWrap | null;
 };
 
 /** An indentation kept in storage: tabs or spaces, and a width of one to eight whole steps. */
@@ -109,7 +114,8 @@ const draftShape = z
         truncated: z.boolean().catch(false),
         file: z.string().catch(''),
         language: z.string().catch(''),
-        indent: indentShape.nullable().catch(null)
+        indent: indentShape.nullable().catch(null),
+        wrap: z.enum(WRAP_WORDS).nullable().catch(null)
         // A draft always carries `readIn`, with undefined when the state names none.
     })
     .transform((draft) => ({ readIn: undefined, ...draft })) satisfies z.ZodType<SourceDraft>;
@@ -224,6 +230,7 @@ export type SourceStore = {
     toggleSourceBlame: (id: string) => void;
     setSourceLanguage: (id: string, language: string) => void;
     setSourceIndent: (id: string, indent: Indent | null) => void;
+    setSourceWrap: (id: string, wrap: WordWrap | null) => void;
     saveSource: (root: string, path: string, content: string) => Promise<WriteAnswer>;
 };
 
@@ -283,9 +290,12 @@ export function createSource(
         if (held.readIn === LIFETIME && held.file === file) return;
         const pending = reading.get(id);
         if (pending?.file === file) return pending.request;
-        // A tab pointed at another file drops the language and the indentation chosen for the
-        // last, since the choice was about that file's text.
-        updateDraft(id, held.file === file ? { file } : { file, language: '', indent: null });
+        // A tab pointed at another file drops the language, the indentation and the word wrap
+        // chosen for the last, since the choice was about that file's text.
+        updateDraft(
+            id,
+            held.file === file ? { file } : { file, language: '', indent: null, wrap: null }
+        );
         // A version at HEAD or in the index is read from the git route and is never written.
         const reads: Promise<[SourceLoad, boolean]> =
             head === undefined
@@ -371,6 +381,11 @@ export function createSource(
         updateDraft(id, { indent });
     }
 
+    /** The word wrap Alt+Z set for the tab, kept with the draft; null is the configured one. */
+    function setSourceWrap(id: string, wrap: WordWrap | null): void {
+        updateDraft(id, { wrap });
+    }
+
     /**
      * A save acknowledges the exact sent copy, even if more typing follows while it is pending. A
      * draft the tab holds no complete file for is never sent: the file on disk would lose whatever
@@ -443,6 +458,7 @@ export function createSource(
         toggleSourceBlame,
         setSourceLanguage,
         setSourceIndent,
+        setSourceWrap,
         saveSource
     };
 }

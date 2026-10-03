@@ -119,6 +119,13 @@ text:
         palette_line_hint: Current line {0}, column {1}. Type a line number from 1 to {2} to go to it.
         palette_line_none: No source tab is on screen, so there is no line to go to.
         palette_language_none: No source tab is on screen, so there is no language to change.
+        palette_language_auto: Auto Detect
+        palette_language_associate: "Configure File Association for '{0}'..."
+        palette_language_associate_title: "Select Language Mode to Associate with '{0}'"
+        palette_language_configure: "Configure '{0}' language based settings..."
+        palette_language_current: '({0}) - Configured Language'
+        palette_language_hint: '({0})'
+        palette_language_refused: 'The file association was not saved: {0}'
         rail_settings: Open Settings
         notice_open: Open
         notice_permission: '{0} is waiting for you to answer a permission prompt.'

@@ -114,8 +114,19 @@ notify:
 
 # === The source editor ======================================================
 # The editor colours a file by running its grammar over the text in the page as it is typed, so a file larger than this many kilobytes opens as plaintext instead; the read-only code window, painted once, colours every size.
+# The other keys are VS Code's editor settings of the same names (editor.tabSize, editor.insertSpaces, editor.wordWrap, editor.minimap.enabled, editor.renderWhitespace, editor.stickyScroll.enabled); languages holds the records VS Code's per-language settings give, by the editor's language name, and a repository's .oculus/settings.yml overrides them for its files.
 editor:
-  paint_limit_kb: 64
+  paint_limit_kb: 20480
+  tab_size: 4
+  insert_spaces: true
+  word_wrap: 'off'
+  minimap: true
+  render_whitespace: selection
+  sticky_scroll: true
+  languages:
+    makefile: { insert_spaces: false }
+    markdown: { word_wrap: 'on' }
+    yaml: { tab_size: 2 }
 
 
 # === LaTeX ==================================================================

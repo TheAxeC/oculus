@@ -6,7 +6,7 @@ import {
     mathSpanAt,
     pictureAt,
     pictureFile
-} from '../../../../../src/lib/ui/controls/editor/kit/latex.ts';
+} from '../../../../../../src/lib/ui/controls/editor/kit/latex/latex.ts';
 
 /** The span at the offset of the first `|` in the text, with that bar taken out. */
 function at(marked: string): ReturnType<typeof mathSpanAt> {

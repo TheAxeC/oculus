@@ -19,13 +19,15 @@
     // when the editor mounts and again whenever `look` or `codeTheme` changes, one frame later,
     // after the body has taken the new theme's class; the parent hands in a `look` that changes
     // with the theme and the text size, as the terminal follows them, and the code theme (`tokens`
-    // or a Shiki theme id) whose syntax colours the theme is painted with.
+    // or a Shiki theme id) whose syntax colours the theme is painted with. The `options`
+    // (options.ts) are put on the editor when it is made and again whenever they change.
     //
     // The keyboard reaches the quick diff marks through three editor actions, which the palette
-    // lists while the text holds a mark (gutter.ts `changeActions`): Next, Previous, Open Change.
-    // A parent may also tint runs of lines (`highlights`, the merge editor's conflicts) and draw
-    // bars of its own above lines (`bars`, rendered by its `bar` snippet, placed by zones.ts), and
-    // add to the model what it needs once the model exists (`extension`, types.ts).
+    // lists while the text holds a mark (gutter/gutter.ts `changeActions`): Next, Previous, Open
+    // Change. The `wrap` prop adds the Alt+Z toggle of word wrap. A parent may also tint runs of
+    // lines (`highlights`, the merge editor's conflicts) and draw bars of its own above lines
+    // (`bars`, rendered by its `bar` snippet, placed by bars/zones.ts), and add to the model what
+    // it needs once the model exists (`extension`, types.ts).
     //
     // Tab inserts indentation. An Escape Monaco did not take arms the next Tab to move the focus
     // on (tab-out.ts): the key is read before Monaco, where a Tab that leaves is kept from it, and
@@ -49,11 +51,14 @@
         type ChangeAction,
         type EditorBlame,
         type EditorMark
-    } from './gutter';
+    } from './gutter/gutter';
     import { tabOut } from './tab-out';
     import { runCommand } from './commands';
-    import { lineBars } from './zones';
-    import LineBars from './LineBars.svelte';
+    import { applyIndent, applyOptions, monacoOptions, wrapAction, wrapListing } from './options';
+    import type { EditorOptions } from './options';
+    import { lineBars } from './bars/zones';
+    import LineBars from './bars/LineBars.svelte';
+    import './gutter/marks.css';
     import type {
         EditorAction,
         EditorBar,
@@ -76,6 +81,8 @@
         /** Whether the reader may change the text. */
         writable?: boolean;
         indent?: EditorIndent;
+        /** Word wrap, rulers, minimap, whitespace and sticky scroll; Monaco's own when absent. */
+        options?: EditorOptions;
         /** The line ending the model is written in when it is made or its text is replaced. */
         ending?: EditorEnding;
         /** A name unique to the tab instance, which names the model. */
@@ -101,6 +108,8 @@
         onglyph?: (line: number) => void;
         /** The labels of the actions over the marks; without them the editor adds none. */
         changeWords?: EditorChangeWords;
+        /** The Alt+Z action: its label, and the parent's toggle of word wrap that it runs. */
+        wrap?: { label: string; toggle: () => void };
         /** The actions the palette lists, said once loaded and again when the labels change. */
         onactions?: (actions: EditorAction[]) => void;
         /** Markers, widgets or providers the parent adds to the model once it exists. */
@@ -117,6 +126,7 @@
         language,
         writable = true,
         indent = { tabs: false, size: 4 },
+        options,
         ending = 'LF',
         model: name,
         path,
@@ -133,6 +143,7 @@
         onblame,
         onglyph,
         changeWords,
+        wrap,
         onactions,
         extension,
         highlights = [],
@@ -184,6 +195,7 @@
             detectIndentation: false,
             ariaLabel: path,
             model: null,
+            ...(options === undefined ? {} : monacoOptions(options)),
             ...font(host)
         });
         collections = {
@@ -211,8 +223,9 @@
     /** Whether the text holds a mark, which is when the actions over the marks are there. */
     const marked = $derived(marks.length > 0);
 
-    // The actions over the marks, added under the parent's labels while the text holds a mark and
-    // added again when either changes, and the palette's list said with them.
+    // The actions over the marks, added under the parent's labels while the text holds a mark, and
+    // the Alt+Z toggle of word wrap, added again when the labels, the mark state or the wrap
+    // changes, and said to the palette.
     $effect(() => {
         const loaded = kit;
         const made = editor;
@@ -224,6 +237,10 @@
             return made.addAction({ id, label, keybindings, run: () => act(made, does) });
         });
         const said = listed.map(({ id, label, hint }): EditorAction => ({ id, label, hint }));
+        if (wrap !== undefined) {
+            added.push(made.addAction(wrapAction(loaded.monaco, wrap.label, wrap.toggle)));
+            said.push(wrapListing(wrap.label));
+        }
         untrack(() => onactions?.([...said, ...chordActions(made, loaded.mac)]));
         return () => {
             for (const action of added) action.dispose();
@@ -280,11 +297,7 @@
             loaded.monaco.editor.getModel(uri)?.dispose();
             const fresh = loaded.monaco.editor.createModel(text, shikiId(language), uri);
             fresh.setEOL(eolOf(loaded.monaco, ending));
-            fresh.updateOptions({
-                tabSize: indent.size,
-                indentSize: indent.size,
-                insertSpaces: !indent.tabs
-            });
+            applyIndent(fresh, indent);
             return fresh;
         });
         const changes = created.onDidChangeContent((event) => {
@@ -337,11 +350,15 @@
 
     $effect(() => {
         const { tabs, size } = indent;
-        model?.updateOptions({ tabSize: size, indentSize: size, insertSpaces: !tabs });
+        if (model !== null) applyIndent(model, { tabs, size });
     });
 
     $effect(() => {
         editor?.updateOptions({ readOnly: !writable });
+    });
+
+    $effect(() => {
+        if (editor !== null && options !== undefined) applyOptions(editor, options);
     });
 
     // The gutter: the marks and the breakpoints as decorations, the blame in the number column.
@@ -475,64 +492,5 @@
     :global(body.wall) .editor :global(.monaco-editor-background),
     :global(body.wall) .editor :global(.monaco-editor .margin) {
         background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
-    }
-
-    /* The blame's padding is spaces, which the number column keeps only drawn as written. */
-    .editor :global(.monaco-editor .line-numbers) {
-        white-space: pre;
-    }
-
-    .editor :global(.oculus-mark) {
-        width: 3px !important;
-        margin-left: 3px;
-    }
-
-    .editor :global(.oculus-mark-added) {
-        background: var(--c-scm-added);
-    }
-
-    .editor :global(.oculus-mark-modified) {
-        background: var(--c-scm-modified);
-    }
-
-    .editor :global(.oculus-mark-deleted) {
-        border-top: 3px solid var(--c-scm-deleted);
-        box-sizing: border-box;
-    }
-
-    .editor :global(.oculus-mark-deleted-foot) {
-        border-bottom: 3px solid var(--c-scm-deleted);
-        box-sizing: border-box;
-    }
-
-    .editor :global(.oculus-mark:hover) {
-        cursor: pointer;
-    }
-
-    .editor :global(.oculus-breakpoint) {
-        cursor: pointer;
-    }
-
-    .editor :global(.oculus-breakpoint::before) {
-        content: '';
-        display: block;
-        width: 10px;
-        height: 10px;
-        margin: 4px auto 0;
-        border-radius: 50%;
-        background: var(--c-red);
-    }
-
-    .editor :global(.oculus-blame) {
-        cursor: pointer;
-    }
-
-    .editor :global(.oculus-highlight) {
-        background: var(--c-scm-conflict-bg);
-    }
-
-    .editor :global(.oculus-blame-uncommitted) {
-        cursor: default;
-        font-style: italic;
     }
 </style>

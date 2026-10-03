@@ -8,6 +8,10 @@
     // A file over `editor.paint_limit_kb` of config/behavior.yml opens as plaintext, which the
     // editor does not colour, as does any file before the configuration has delivered the limit.
     //
+    // The word wrap and the rulers are the tab's, resolved in Source.svelte; the minimap, the
+    // whitespace and sticky scroll are the configured ones, which every source editor takes alike.
+    // Alt+Z asks the tab to toggle its word wrap.
+    //
     // The editor holds the theme and the font as values, so it is handed the theme and the text
     // size in force, and builds its look again whenever either changes. It is also handed the code
     // theme, whose syntax colours the editor paints its text with.
@@ -32,19 +36,21 @@
         EditorExtension,
         EditorHandle
     } from '$lib/ui/controls/editor/types';
-    import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter';
+    import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter/gutter';
+    import type { EditorOptions } from '$lib/ui/controls/editor/options';
     import { languageOf } from '$lib/state/sources/fs';
     import {
         DEFAULT_INDENT,
         shownLanguage,
         type Indent,
-        type LineEnding
+        type LineEnding,
+        type WordWrap
     } from '$lib/state/workbench/navigation/editor-text';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
 
     const {
-        selectors: { languages, paintLimit },
+        selectors: { editorOptions, languages, paintLimit },
         ui: { codeTheme, theme, textScale }
     } = useState();
 
@@ -66,6 +72,11 @@
         /** What one step of Tab inserts, VS Code's default when the tab hands none. */
         indent?: Indent;
         ending?: LineEnding;
+        /** The word wrap and the rulers the tab resolved; no wrap and none when it hands none. */
+        wrap?: WordWrap;
+        rulers?: number[];
+        /** Asks the tab to toggle its word wrap, which Alt+Z in the editor does. */
+        ontogglewrap?: () => void;
         /** Whether the reader wants the rendered half, for a file that has one. */
         rendered?: boolean;
         marks?: EditorMark[];
@@ -92,6 +103,9 @@
         language: chosen,
         indent = DEFAULT_INDENT,
         ending = 'LF',
+        wrap = 'off',
+        rulers = [],
+        ontogglewrap,
         rendered = true,
         marks = [],
         blame = [],
@@ -116,6 +130,20 @@
     const language = $derived(chosen ?? languageOf(path, languages()));
     /** The language the editor opens the text under, plaintext past the paint limit. */
     const shown = $derived(shownLanguage(language, text, paintLimit()));
+    /** The options the editor takes: the tab's word wrap and rulers, the configured rest. */
+    const options = $derived<EditorOptions>({
+        wordWrap: wrap,
+        rulers,
+        minimap: editorOptions().minimap,
+        renderWhitespace: editorOptions().renderWhitespace,
+        stickyScroll: editorOptions().stickyScroll
+    });
+    /** The Alt+Z action, offered while the tab handles the toggle. */
+    const toggling = $derived(
+        ontogglewrap === undefined
+            ? undefined
+            : { label: t('source.toggle_word_wrap'), toggle: ontogglewrap }
+    );
     /** Whether this file has a rendered half at all, which is what a Markdown file has. */
     const markdown = $derived(language === 'markdown');
     const split = $derived(markdown && rendered);
@@ -166,6 +194,8 @@
                 {text}
                 {path}
                 {indent}
+                {options}
+                wrap={toggling}
                 {ending}
                 {look}
                 codeTheme={codeTheme()}

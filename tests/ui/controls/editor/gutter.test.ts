@@ -14,14 +14,14 @@ import {
     changeActions,
     commentActionsOn,
     commentGutter,
-    glyphMarginFor,
+    commentSides,
     listedWithComment,
     markAction,
     markAt,
     markDecorations,
     stepMark,
     type EditorMark
-} from '../../../../src/lib/ui/controls/editor/gutter.ts';
+} from '../../../../src/lib/ui/controls/editor/gutter/gutter.ts';
 import type { DiffSide } from '../../../../src/lib/ui/controls/editor/types.ts';
 import { blameRows } from '../../../../src/lib/state/sources/repositories/file-git.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
@@ -251,6 +251,7 @@ type Fire = (event: { target: Target | null }) => void;
 function fakeSide(caret = 5) {
     const listeners: Record<'move' | 'leave' | 'down', Fire[]> = { move: [], leave: [], down: [] };
     let decorated: number[] = [];
+    let classes: object[] = [];
     let disposed = 0;
     const actions: {
         id: string;
@@ -274,12 +275,14 @@ function fakeSide(caret = 5) {
         onMouseLeave: subscribe('leave'),
         onMouseDown: subscribe('down'),
         createDecorationsCollection: () => ({
-            set: (decorations: { range: { startLineNumber: number } }[]) => {
+            set: (decorations: { range: { startLineNumber: number }; options: object }[]) => {
                 decorated = decorations.map((one) => one.range.startLineNumber);
+                classes = decorations.map((one) => one.options);
                 return [];
             },
             clear: () => {
                 decorated = [];
+                classes = [];
             }
         }),
         getPosition: () => ({ lineNumber: caret, column: 1 }),
@@ -305,6 +308,7 @@ function fakeSide(caret = 5) {
     return {
         editor: editor as never,
         decorated: () => decorated,
+        classes: () => classes,
         move: (line: number, type = KINDS.CONTENT_TEXT) =>
             listeners.move.forEach((one) => one(at(line, type))),
         moveOff: (type: number | null = VIEW_ZONE) =>
@@ -314,7 +318,7 @@ function fakeSide(caret = 5) {
         pressOff: (type: number) =>
             listeners.down.forEach((one) => one({ target: { type, position: null } })),
         leave: () => listeners.leave.forEach((one) => one({ target: { type: 0, position: null } })),
-        press: (line: number, type = KINDS.GUTTER_GLYPH_MARGIN) =>
+        press: (line: number, type = KINDS.GUTTER_LINE_DECORATIONS) =>
             listeners.down.forEach((one) => one(at(line, type))),
         subscriptions: () => listeners.move.length + listeners.leave.length + listeners.down.length,
         disposed: () => disposed,
@@ -322,7 +326,7 @@ function fakeSide(caret = 5) {
     };
 }
 
-describe('the comment mark in the glyph margin of a diff', () => {
+describe('the comment mark in the line-decorations lane of a diff', () => {
     function wired(offered: (side: DiffSide) => boolean = () => true) {
         const sides = { original: fakeSide(), modified: fakeSide() };
         const pressed: [DiffSide, number][] = [];
@@ -338,12 +342,18 @@ describe('the comment mark in the glyph margin of a diff', () => {
         return { sides, pressed, watch };
     }
 
-    // Red when no mark is drawn on a hovered line, or one is left on every line the pointer
-    // crossed.
+    // Red when no mark is drawn on a hovered line, one is left on every line the pointer crossed,
+    // the mark is drawn in the glyph margin, which the inline layout puts left of the line numbers
+    // beside the original side's, or it is drawn on every row of a wrapped line.
     it('draws one mark on the hovered line, moves it with the pointer and clears it when the pointer leaves', () => {
         const { sides } = wired();
         sides.modified.move(12);
         expect(sides.modified.decorated()).toEqual([12]);
+        expect(sides.modified.classes()).toMatchObject([
+            { firstLineDecorationClassName: 'oculus-comment-add' }
+        ]);
+        expect(sides.modified.classes()[0]).not.toHaveProperty('glyphMarginClassName');
+        expect(sides.modified.classes()[0]).not.toHaveProperty('linesDecorationsClassName');
         sides.modified.move(13);
         expect(sides.modified.decorated()).toEqual([13]);
         sides.modified.leave();
@@ -376,12 +386,12 @@ describe('the comment mark in the glyph margin of a diff', () => {
     });
 
     // Red when a press anywhere in the editor, or twice, asks for a comment.
-    it('asks for a comment once on a press on the glyph margin of a line, and for none elsewhere', () => {
+    it('asks for a comment once on a press on the line-decorations lane of a line, and for none elsewhere', () => {
         const { sides, pressed } = wired();
         sides.modified.press(12);
         expect(pressed).toEqual([['modified', 12]]);
         sides.modified.press(12, KINDS.CONTENT_TEXT);
-        sides.modified.press(12, KINDS.GUTTER_LINE_DECORATIONS);
+        sides.modified.press(12, KINDS.GUTTER_GLYPH_MARGIN);
         sides.modified.press(12, KINDS.GUTTER_LINE_NUMBERS);
         sides.modified.press(12, VIEW_ZONE);
         expect(pressed).toEqual([['modified', 12]]);
@@ -431,16 +441,8 @@ describe('the comment mark in the glyph margin of a diff', () => {
         sides.modified.moveOff(null);
         expect(sides.modified.decorated()).toEqual([]);
         sides.modified.press(6, VIEW_ZONE);
-        sides.modified.pressOff(KINDS.GUTTER_GLYPH_MARGIN);
+        sides.modified.pressOff(KINDS.GUTTER_LINE_DECORATIONS);
         expect(pressed).toEqual([]);
-    });
-});
-
-describe('the glyph margin of a diff editor', () => {
-    // Red when a diff that offers no comment turns Monaco's glyph margin off.
-    it('stays on whether or not comments are offered, since Monaco draws it by default', () => {
-        expect(glyphMarginFor(false)).toBe(true);
-        expect(glyphMarginFor(true)).toBe(true);
     });
 });
 
@@ -494,5 +496,23 @@ describe('the action that adds a comment on a line', () => {
         expect(side.actions[0].contextMenuGroupId).toBeTypeOf('string');
         expect(side.actions[0].contextMenuGroupId).not.toBe('');
         expect(side.actions[0].contextMenuOrder).toBeTypeOf('number');
+    });
+});
+
+describe('the sides the comments are offered on (case 23)', () => {
+    const made = (original: object, modified: object) =>
+        ({ getOriginalEditor: () => original, getModifiedEditor: () => modified }) as never;
+
+    // Red when an inline layout still offers the original side, which is not drawn there, or a side
+    // by side layout offers the modified side alone.
+    it('are both editors side by side and the modified one inline', () => {
+        const original = { name: 'original' };
+        const modified = { name: 'modified' };
+        const diff = made(original, modified);
+        expect(commentSides(diff, 'side')).toEqual([
+            { side: 'original', editor: original },
+            { side: 'modified', editor: modified }
+        ]);
+        expect(commentSides(diff, 'inline')).toEqual([{ side: 'modified', editor: modified }]);
     });
 });

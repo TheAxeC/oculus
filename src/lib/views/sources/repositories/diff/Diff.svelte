@@ -35,8 +35,8 @@
     // (diff/FileHeader.svelte) that folds it when the diff holds several, Monaco's diff editor over
     // the file's two versions, which the server answers whole. For a file's own diff each hunk can
     // be staged, unstaged or reverted whole or for the lines the selections choose in it, the patch
-    // cut by state/sources/repositories/diff/diff-patch.ts and applied by git. A revert throws work
-    // away, so it asks first.
+    // cut by state/sources/repositories/diff/diff-patch.ts and applied by git
+    // (diff/hunk-acts.svelte.ts). A revert throws work away, so it asks first.
     //
     // The files are read when the pane opens, again when the instance is pointed at something else,
     // and again whenever the repository's state on the `git` channel moves (once, when the tab is
@@ -57,6 +57,7 @@
     import DiffBar from './DiffBar.svelte';
     import DiffSection from './DiffSection.svelte';
     import { failureSentence } from './compare-words';
+    import { HunkActs } from './hunk-acts.svelte';
     import { readPaneDiff } from './diff-read';
     import { latestRead } from '$lib/state/sources/repositories/diff/compare';
     import { diffReader } from '$lib/state/sources/repositories/answers';
@@ -71,7 +72,7 @@
         type DiffActions,
         type LineChange
     } from '$lib/state/sources/repositories/diff/diff-hunks';
-    import { sidesPatch, type PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
+    import type { PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
     import { previewKey } from '$lib/state/sources/repositories/replace-preview';
     import {
         diffActs,
@@ -133,13 +134,19 @@
     let going: 1 | -1 = 1;
     /** The line an opening asked for, already gone to. */
     let placed = $state(-1);
-    let asking: { message: string; act: () => void } | null = $state(null);
     let box: HTMLDivElement | undefined = $state();
     /** What the pane asks of a file's section: bring a hunk into view, run a palette action. */
     type Section = { reveal: (hunk: number) => void; perform: (command: DiffCommand) => void };
     const sections: (Section | undefined)[] = $state([]);
     let actions: EditorAction[] = $state([]);
     let performed = 0;
+    /** The hunk actions the sections ask for, and the revert waiting on the reader's answer. */
+    const hunkActs = new HunkActs({
+        files: () => files,
+        root: () => held.root,
+        path: () => held.path,
+        applyPatch: (root, cut, mode) => repositories.applyPatch(root, cut, mode)
+    });
     /** The view states the editors say, kept by file key in one write per pause. */
     const keeper = viewKeeper(
         () => instanceState(instance.id),
@@ -267,32 +274,6 @@
         if (event.key !== 'F5' || !event.altKey) return;
         event.preventDefault();
         step(event.shiftKey ? -1 : 1);
-    }
-
-    async function apply(index: number, cut: string, mode: PatchMode): Promise<void> {
-        if (cut === '' || index >= files.length) return;
-        await repositories.applyPatch(held.root, cut, mode);
-    }
-
-    function acted(
-        index: number,
-        drawnChanges: LineChange[],
-        rows: ChosenRows,
-        mode: PatchMode,
-        count: number
-    ): void {
-        const cut = sidesPatch(files[index], drawnChanges, rows, mode);
-        if (mode !== 'revert') {
-            void apply(index, cut, mode);
-            return;
-        }
-        asking = {
-            message:
-                count === 0
-                    ? t('repositories.hunk_revert_confirm', held.path)
-                    : t('repositories.lines_revert_confirm', count, held.path),
-            act: () => void apply(index, cut, mode)
-        };
     }
 
     /**
@@ -436,6 +417,8 @@
                         folded={view.folded.includes(keys[index])}
                         unchanged={view.unchanged === 'folded'}
                         openable={onDisk}
+                        root={held.root}
+                        compare={held.against !== undefined}
                         from={held.group === undefined
                             ? ''
                             : groupFrom(repo, held.group, pathOf(file))}
@@ -462,7 +445,7 @@
                             rows: ChosenRows,
                             mode: PatchMode,
                             count: number
-                        ) => acted(index, drawnChanges, rows, mode, count)}
+                        ) => hunkActs.acted(index, drawnChanges, rows, mode, count)}
                     />
                 {/each}
             </div>
@@ -470,18 +453,14 @@
     </div>
 </Pane>
 
-{#if asking !== null}
+{#if hunkActs.asking !== null}
     <Confirm
-        message={asking.message}
+        message={hunkActs.asking.message}
         detail={t('git.discard_detail')}
         confirm={t('ui.confirm_ok')}
         cancel={t('ui.confirm_cancel')}
-        onconfirm={() => {
-            const was = asking;
-            asking = null;
-            was?.act();
-        }}
-        oncancel={() => (asking = null)}
+        onconfirm={() => hunkActs.confirm()}
+        oncancel={() => hunkActs.cancel()}
     />
 {/if}
 

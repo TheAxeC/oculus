@@ -1,7 +1,7 @@
 // Layer 3, primitive. LaTeX in the editor: the problems of a build as markers, the preview a
 // pointer at rest shows over math and over a picture, and Format Document through a formatter the
 // parent hands in. It is an EditorExtension (types.ts), added to a LaTeX model once Monaco has
-// loaded and taken away with the model; kit/latex.ts finds the spans and the picture files.
+// loaded and taken away with the model; kit/latex/latex.ts finds the spans and the picture files.
 //
 // The preview is a Monaco content widget below the position the pointer rests on, drawn after the
 // pointer has stayed 300 ms on one span. Math is typeset by KaTeX with `trust: false`, so no
@@ -13,7 +13,7 @@
 
 import type * as Monaco from 'monaco-editor';
 import { mathSpanAt, pictureAt, pictureFile, type MathSpan } from './latex';
-import type { EditorExtension, EditorProblem } from '../types';
+import type { EditorExtension, EditorProblem } from '../../types';
 
 /** How long the pointer rests on a span before its preview is drawn, in milliseconds. */
 export const REST_MS = 300;

@@ -24,6 +24,7 @@ body.dark {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #16a34a;
     --c-scm-modified: #b45309;
+    --c-gutter-modified: #1b81a8;
     --c-scm-deleted: #dc2626;
     --c-scm-conflict: #a21caf;
     --c-scm-added-bg: #0d2e28;
@@ -53,6 +54,7 @@ body.vscode-dark-modern {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #81b88b;
     --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #0078d4;
     --c-scm-deleted: #c74e39;
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #2d382f;
@@ -73,6 +75,7 @@ body.vscode-light-modern {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #587c0c;
     --c-scm-modified: #895503;
+    --c-gutter-modified: #005fb8;
     --c-scm-deleted: #ad0707;
     --c-scm-conflict: #a31515;
     --c-scm-added-bg: #d8dfc9;
@@ -118,6 +121,7 @@ body.mocha {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #a6e3a1;
     --c-scm-modified: #fab387;
+    --c-gutter-modified: #89b4fa;
     --c-scm-deleted: #f38ba8;
     --c-scm-conflict: #dd9ce8;
     --c-scm-added-bg: #34413e;
@@ -163,6 +167,7 @@ body.gruvbox {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #b8bb26;
     --c-scm-modified: #fabd2f;
+    --c-gutter-modified: #458588;
     --c-scm-deleted: #fb4934;
     --c-scm-conflict: #d3869b;
     --c-scm-added-bg: #3c3f22;
@@ -208,6 +213,7 @@ body.nord {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #a3be8c;
     --c-scm-modified: #ebcb8b;
+    --c-gutter-modified: #5e81ac;
     --c-scm-deleted: #bf616a;
     --c-scm-conflict: #b48ead;
     --c-scm-added-bg: #45504f;
@@ -261,6 +267,7 @@ body.tokyonight {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #9ece6a;
     --c-scm-modified: #e0af68;
+    --c-gutter-modified: #7aa2f7;
     --c-scm-deleted: #f7768e;
     --c-scm-conflict: #bb9af7;
     --c-scm-added-bg: #313b2d;
@@ -314,6 +321,7 @@ body.rosepine {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #9ccfd8;
     --c-scm-modified: #f6c177;
+    --c-gutter-modified: #31748f;
     --c-scm-deleted: #eb6f92;
     --c-scm-conflict: #eb6f92;
     --c-scm-added-bg: #333c48;
@@ -367,6 +375,7 @@ body.everforest {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #a7c080;
     --c-scm-modified: #dbbc7f;
+    --c-gutter-modified: #7fbbb3;
     --c-scm-deleted: #e67e80;
     --c-scm-conflict: #d699b6;
     --c-scm-added-bg: #414b42;
@@ -420,6 +429,7 @@ body.dracula {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #50fa7b;
     --c-scm-modified: #ffb86c;
+    --c-gutter-modified: #6272a4;
     --c-scm-deleted: #ff5555;
     --c-scm-conflict: #ff79c6;
     --c-scm-added-bg: #2a4d3c;
@@ -473,6 +483,7 @@ body.latte {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #40a02b;
     --c-scm-modified: #df8e1d;
+    --c-gutter-modified: #1e66f5;
     --c-scm-deleted: #d20f39;
     --c-scm-conflict: #ea76cb;
     --c-scm-added-bg: #cce1cd;
@@ -526,6 +537,7 @@ body.solarized {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #859900;
     --c-scm-modified: #b58900;
+    --c-gutter-modified: #268bd2;
     --c-scm-deleted: #dc322f;
     --c-scm-conflict: #d33682;
     --c-scm-added-bg: #1b412b;
@@ -579,6 +591,7 @@ body.kanagawa {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #98bb6c;
     --c-scm-modified: #dca561;
+    --c-gutter-modified: #7e9cd8;
     --c-scm-deleted: #c34043;
     --c-scm-conflict: #d27e99;
     --c-scm-added-bg: #373e36;
@@ -632,6 +645,7 @@ body.gruvboxlight {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #79740e;
     --c-scm-modified: #b57614;
+    --c-gutter-modified: #076678;
     --c-scm-deleted: #9d0006;
     --c-scm-conflict: #8f3f71;
     --c-scm-added-bg: #dfdbaf;
@@ -685,6 +699,7 @@ body.synthwave {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #72f1b8;
     --c-scm-modified: #ffcc99;
+    --c-gutter-modified: #03edf9;
     --c-scm-deleted: #fe4450;
     --c-scm-conflict: #ff7edb;
     --c-scm-added-bg: #34464a;
@@ -738,6 +753,7 @@ body.tokyoneon {
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #c3e88d;
     --c-scm-modified: #ffc777;
+    --c-gutter-modified: #82aaff;
     --c-scm-deleted: #ff007c;
     --c-scm-conflict: #ff007c;
     --c-scm-added-bg: #333a2f;

@@ -1,0 +1,28 @@
+/* Layer 3, stylesheet of ui/controls/editor/diff/DiffEditor.svelte. The comment mark: a plus drawn
+   in the accent in the hovered line's line-decorations lane, between the line numbers and the
+   text, as two bars. Monaco puts the class on an element it makes outside any component, so the
+   rules are held to the diff editor they sit in. */
+.diff-editor .monaco-editor .oculus-comment-add {
+    cursor: pointer;
+    position: relative;
+}
+
+.diff-editor .monaco-editor .oculus-comment-add::before,
+.diff-editor .monaco-editor .oculus-comment-add::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: var(--accent);
+    transform: translate(-50%, -50%);
+}
+
+.diff-editor .monaco-editor .oculus-comment-add::before {
+    width: 8px;
+    height: 2px;
+}
+
+.diff-editor .monaco-editor .oculus-comment-add::after {
+    width: 2px;
+    height: 8px;
+}

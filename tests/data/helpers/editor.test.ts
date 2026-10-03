@@ -10,9 +10,9 @@ const { config } = loadConfig(engineDir());
 
 describe('the source editor cap', () => {
     it("is the checked-in configuration's own kilobytes, in bytes", () => {
-        expect((config as { editor?: Record<string, unknown> }).editor?.paint_limit_kb).toBe(64);
-        expect(paintLimit(config)).toBe(64 * 1024);
-        expect(requirePaintLimit(config)).toBe(64 * 1024);
+        expect((config as { editor?: Record<string, unknown> }).editor?.paint_limit_kb).toBe(20480);
+        expect(paintLimit(config)).toBe(20480 * 1024);
+        expect(requirePaintLimit(config)).toBe(20480 * 1024);
     });
 
     it('is null for a block that is missing, of the wrong shape, or not a size', () => {

@@ -15,12 +15,17 @@
 //
 // The function is synchronous from the read of the file to its write, which is what lets two
 // writes made at once both land: each reads the file the other has already written.
+//
+// The record of a write carries the text it replaced. An undo puts that text back over what the
+// write left (`putBackConfigValue`) when the file still holds it there, so the file comes back
+// byte for byte; any other undo is this write again with the earlier value.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { isAlias, isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Document, Pair } from 'yaml';
+import { z } from 'zod';
 import { isMap, sameInOrder } from '../../../../data/helpers/guards.ts';
 import { LOCAL_NAME, configDir, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
 import { catalogOf, type CatalogEntry } from '../../../../data/sources/config/catalog/options.ts';
@@ -260,5 +265,46 @@ export function writeConfigValue(
     const reason = refusedBy(engine, file, edited, before);
     if (reason !== null) return { changed: [], refused: [{ field: `${file}:${key}`, reason }] };
 
-    return written(path, file, key, edited, { before: held, after: value });
+    return written(path, file, key, edited, { before: held, after: value }, source);
+}
+
+/** A record's replaced text as the log holds it: a whole offset and two texts, else none. */
+const replacedShape = z.object({ offset: z.int().min(0), before: z.string(), after: z.string() });
+
+/**
+ * Take a config-value write back by putting the text it replaced over the text it left, so the
+ * file comes back byte for byte, its alignment and line ends included. It applies only when the
+ * file holds exactly the text the write left at the offset the record names and the value at the
+ * key is the one the write set; the result must read back as the file with that one key at the
+ * record's earlier value, and pass the config checks a write passes. A record without the text,
+ * one whose text is malformed, and a file that has moved on answer null, and the undo goes through
+ * the value write, which takes the key back to the record's earlier value. The file the undo
+ * writes is recorded with its own replaced text.
+ */
+export function putBackConfigValue(
+    engine: string,
+    file: string,
+    key: string,
+    values: { replaced?: unknown; before: unknown; after: unknown }
+): ConfigKeyOutcome | null {
+    const text = replacedShape.safeParse(values.replaced);
+    if (!text.success) return null;
+    const { offset, before: earlier, after: later } = text.data;
+    const loaded = loadConfig(engine);
+    if (optionOf(catalogOf(loaded.config), file, key) === null) return null;
+    const path = join(configDir(engine), file);
+    const source = readFileSync(path, 'utf8');
+    if (offset > source.length || !source.startsWith(later, offset)) return null;
+    const found = locate(source, key);
+    if (found.kind !== 'found' || !isDeepStrictEqual(found.value, values.after)) return null;
+    const edited = `${source.slice(0, offset)}${earlier}${source.slice(offset + later.length)}`;
+    if (edited === source) return null;
+    const reread = parseDocument(edited);
+    const returned = reread.errors.length === 0 ? valueAt(reread.toJS(), key) : undefined;
+    if (!kept(source, edited, key, values.before) || !sameInOrder(returned, values.before)) {
+        return null;
+    }
+    const reason = refusedBy(engine, file, edited, loaded);
+    if (reason !== null) return { changed: [], refused: [{ field: `${file}:${key}`, reason }] };
+    return written(path, file, key, edited, { before: found.value, after: values.before }, source);
 }

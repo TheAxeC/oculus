@@ -1,12 +1,12 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/repositories/diff/Diff.svelte. One file of a diff: its
     // header row (diff/FileHeader.svelte) above it when the diff holds several or is not a file's
-    // own, and Monaco's diff editor over its two versions (ui/controls/editor/DiffEditor.svelte).
-    // A folded file draws its header alone. The editor hides the unchanged runs of the file, or
-    // draws them all, as the pane says. A binary file is a note, and a file
-    // whose two texts are equal (a rename or a mode change alone, a new empty file) is git's head
-    // lines for it. A file whose line endings alone changed, which Monaco draws as no change, says
-    // so at its head and shows all its lines.
+    // own, and Monaco's diff editor over its two versions
+    // (ui/controls/editor/diff/DiffEditor.svelte). A folded file draws its header alone. The editor
+    // hides the unchanged runs of the file, or draws them all, as the pane says. A binary file is a
+    // note, and a file whose two texts are equal (a rename or a mode change alone, a new empty
+    // file) is git's head lines for it. A file whose line endings alone changed, which Monaco draws
+    // as no change, says so at its head and shows all its lines.
     //
     // In a diff of several files the section's editor is made when the section first comes within
     // one screen of the pane's view, since each is two editors, and until then the section holds
@@ -31,7 +31,7 @@
     // drops the draft. A commit, stash, worktree, compare or group diff, and a session the payload
     // no longer holds, offer none.
 
-    import DiffEditor from '$lib/ui/controls/editor/DiffEditor.svelte';
+    import DiffEditor from '$lib/ui/controls/editor/diff/DiffEditor.svelte';
     import type {
         DiffCommand,
         DiffHandle,
@@ -42,6 +42,7 @@
     import CommentBox from './CommentBox.svelte';
     import { CommentDraft } from './comment-draft.svelte';
     import FileHeader from './FileHeader.svelte';
+    import { createSourceOptions } from '$lib/views/shared/prose/source-options';
     import {
         CONTEXT,
         chosenRows,
@@ -69,6 +70,7 @@
         commentBars,
         commentTitle
     } from '$lib/state/sources/repositories/review-comment';
+    import type { EditorOptions } from '$lib/ui/controls/editor/options';
     import { languageOf } from '$lib/state/sources/fs';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
@@ -98,6 +100,10 @@
         openable: boolean;
         /** The old path of a rename the git state lists, for a file whose read shows it created. */
         from?: string;
+        /** The root the file is read from; its `.oculus/settings.yml` sets the editor's options. */
+        root?: string;
+        /** Whether the diff is the comparison of two files, whose header names both. */
+        compare?: boolean;
         /** The pane's scrolled box, which the section's nearness is read against. */
         scroller: HTMLElement | undefined;
         view: object | null;
@@ -136,6 +142,8 @@
         unchanged,
         openable,
         from = '',
+        root = '',
+        compare = false,
         scroller,
         view,
         actions,
@@ -163,7 +171,8 @@
     let selections: DiffSelections = $state({ original: [], modified: [] });
 
     const {
-        selectors: { languages, sessionById },
+        fs: { fileText },
+        selectors: { editorOptions, languages, paintLimit, sessionById },
         terminals: { steerTerminal, terminalOfSession }
     } = useState();
 
@@ -194,6 +203,23 @@
             ? file.oldPath
             : from
     );
+    /** The word wrap and rulers of the file's language, as a source tab of it resolves them. */
+    const resolved = createSourceOptions({
+        path: () => path,
+        root: () => root,
+        draft: () => ({ text: file.modified, language: '', indent: null, wrap: null }),
+        languages,
+        options: editorOptions,
+        paintLimit,
+        fileText
+    });
+    /** The options the editor takes: the configured ones, with no minimap in a diff. */
+    const options = $derived<EditorOptions>({
+        wordWrap: resolved.wrap,
+        rulers: resolved.rulers,
+        renderWhitespace: editorOptions().renderWhitespace,
+        stickyScroll: editorOptions().stickyScroll
+    });
     /** Whether the header offers Open File: the file is on disk, which a deleted file is not. */
     const present = $derived(openable && !fileDeleted(file));
     const hunks = $derived(hunksOf(changes));
@@ -367,7 +393,8 @@
     {#if headed}
         <FileHeader
             {path}
-            oldPath={renamedFrom}
+            oldPath={compare ? '' : renamedFrom}
+            against={compare ? file.oldPath : ''}
             {foldable}
             {folded}
             openable={present}
@@ -401,6 +428,7 @@
                     hideUnchanged={unchanged && !endings}
                     {look}
                     {codeTheme}
+                    {options}
                     sized={several}
                     {view}
                     {bars}
@@ -468,9 +496,17 @@
         border-top-color: var(--accent);
     }
 
+    /* A narrow pane cuts the header's text with an ellipsis and leaves the buttons whole. */
     .hunk .head {
+        min-width: 0;
         margin-right: auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
         font-family: var(--font-mono);
+    }
+
+    .hunk > :global(:not(.head)) {
+        flex: none;
     }
 
     :global(body.wall) .hunk {

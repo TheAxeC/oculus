@@ -439,7 +439,7 @@
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config/config&#45;value.ts -->
 <g id="edge62" class="edge">
-<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config/config&#45;value.ts: configValueNow, writeConfigValue</title>
+<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config/config&#45;value.ts: configValueNow, putBackConfigValue, writeConfigValue</title>
 <path fill="none" stroke="currentColor" d="M200.86,-341.93C270.13,-272.66 180.49,-491.46 254.42,-555.73 296.01,-591.89 362.64,-591.09 406.86,-585.39"/>
 <polygon fill="currentColor" stroke="currentColor" points="407.15,-587.47 412.8,-584.56 406.57,-583.31 407.15,-587.47"/>
 </g>

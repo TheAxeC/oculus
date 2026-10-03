@@ -7,8 +7,8 @@
 // system temporary directory.
 
 import { expect, describe } from 'vitest';
-import type { Change } from '../../../src/lib/server/core/changes.ts';
-import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import type { Change } from '../../../../src/lib/server/core/changes.ts';
+import type { WriteTarget } from '../../../../src/lib/server/edit/writes.ts';
 import {
     MANIFEST,
     changesOf,
@@ -18,9 +18,9 @@ import {
     target,
     undone,
     wrote
-} from './write-fixture.ts';
-import { present } from '../../fixtures/present.ts';
-import { it } from '../../fixtures/scratch.ts';
+} from '../write-fixture.ts';
+import { present } from '../../../fixtures/present.ts';
+import { it } from '../../../fixtures/scratch.ts';
 
 /** The first lines of every held manifest: the ones the reader needs to find the project. */
 const HEAD = 'id: alpha\ntype: manuscript\n';

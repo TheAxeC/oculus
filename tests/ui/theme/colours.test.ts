@@ -441,16 +441,23 @@ function svelteFiles(root: string): string[] {
     return treeFiles(root).filter((rel) => rel.endsWith('.svelte'));
 }
 
+/** The components and the stylesheets beside them, which the rule holds alike. */
+function styledFiles(root: string): string[] {
+    return treeFiles(root).filter((rel) => rel.endsWith('.svelte') || rel.endsWith('.css'));
+}
+
 /** Every declaration under `roots` that the rule refuses, as file, selector and declaration. */
 export function findColourViolations(base: string, roots: string[]): string[] {
     const violations: string[] = [];
     for (const root of roots) {
-        for (const rel of svelteFiles(join(base, root))) {
+        for (const rel of styledFiles(join(base, root))) {
             const source = normalise(readFileSync(join(base, root, rel), 'utf8'));
-            const set = assignments(source);
+            const sheet = rel.endsWith('.css');
+            const set = sheet ? {} : assignments(source);
             const found: Declaration[] = [];
-            for (const css of styles(source)) found.push(...declarations(css));
-            for (const css of inlineStyles(source)) {
+            const sheets = sheet ? [withoutComments('style.css', source)] : styles(source);
+            for (const css of sheets) found.push(...declarations(css));
+            for (const css of sheet ? [] : inlineStyles(source)) {
                 for (const one of declarations(css)) {
                     found.push({ ...one, selector: 'style attribute' });
                 }
@@ -637,7 +644,7 @@ describe('the code window palette', () => {
 });
 
 describe('the colour rule', () => {
-    it('holds in every component under ui, shell, views and routes', () => {
+    it('holds in every component and stylesheet under ui, shell, views and routes', () => {
         expect(findColourViolations(SRC, ROOTS)).toEqual([]);
     });
 
@@ -668,6 +675,7 @@ describe('the colour rule', () => {
             ].join('\n'),
             'ui/Hex.svelte': '<style>\n    .a { color: #ff0000; }\n</style>',
             'ui/Named.svelte': '<style>\n    .a { border-color: rebeccapurple; }\n</style>',
+            'ui/sheet.css': '.a { color: #ff0000; }\n.b { color: var(--c-teal-txt); }',
             'ui/Hue.svelte': '<style>\n    .a { color: var(--c-teal); }\n</style>',
             'ui/Unset.svelte': '<style>\n    .a { background: var(--nonesuch); }\n</style>',
             'ui/Indirect.svelte':
@@ -697,7 +705,8 @@ describe('the colour rule', () => {
             'ui/Mix.svelte: .c: background: color-mix(in srgb, var(--accent) var(--wall-panel), transparent) (raw colour)',
             'ui/Mix.svelte: .d: color: var(--chip-on-wall) (not a -txt or --on- token)',
             'ui/Named.svelte: .a: border-color: rebeccapurple (raw colour)',
-            'ui/Unset.svelte: .a: background: var(--nonesuch) (not a surface or a hue)'
+            'ui/Unset.svelte: .a: background: var(--nonesuch) (not a surface or a hue)',
+            'ui/sheet.css: .a: color: #ff0000 (raw colour)'
         ]);
     });
 });

@@ -10,7 +10,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as Monaco from 'monaco-editor';
-import { lineBars, type LineBars } from '../../../../src/lib/ui/controls/editor/zones.ts';
+import { lineBars, type LineBars } from '../../../../src/lib/ui/controls/editor/bars/zones.ts';
 
 type Zone = Monaco.editor.IViewZone;
 

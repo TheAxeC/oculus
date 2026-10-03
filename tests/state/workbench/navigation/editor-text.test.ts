@@ -7,7 +7,6 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    DEFAULT_INDENT,
     detectIndent,
     lineCount,
     lineEnding,
@@ -33,9 +32,9 @@ describe('the indentation a file gives', () => {
         });
     });
 
-    it('reads a file that never indents, and an empty one, as the default', () => {
-        expect(detectIndent('one\ntwo\n')).toEqual(DEFAULT_INDENT);
-        expect(detectIndent('')).toEqual(DEFAULT_INDENT);
+    it('reads a file that never indents, and an empty one, as nothing to detect', () => {
+        expect(detectIndent('one\ntwo\n')).toBeNull();
+        expect(detectIndent('')).toBeNull();
     });
 });
 

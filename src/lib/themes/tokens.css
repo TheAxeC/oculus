@@ -70,6 +70,8 @@
        against each theme's surfaces; every theme block sets its own. */
     --c-scm-added: #16a34a;
     --c-scm-modified: #b45309;
+    /* The editor's modified-line mark in the gutter, VS Code's blue, not the path hue above. */
+    --c-gutter-modified: #2090d3;
     --c-scm-deleted: #dc2626;
     --c-scm-conflict: #a21caf;
     --c-scm-added-bg: #c5e5d6;

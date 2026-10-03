@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z360, ruled by Axel 2026-10-03 ("Pause after the next landing (instead of just before T1)"): the loop pauses once D25 has landed.
+- Z359, closed by the orchestrator in automode 2026-10-03: where the slow colour rule's red on `OpenEditors.svelte`'s `.dirty` background is fixed; options (a) widen X3e, queued, (b) fix it at D25's landing, outside D25's brief, (c) let the rule accept `currentColor`, the lazy option; (a) taken.
 - Z358, closed by the orchestrator in automode 2026-10-03: where the Focus ticker defect of Q91's look is built (a cut row hides its end and has no tooltip); options (a) widen X3e, queued and not yet specced, (b) a new step; (a) taken, since a defect goes into a queued step and X3e already takes the looks' defects.
 - Z357, ruled by Axel 2026-10-03 ("lines of code in status should also print out src/ recursive count"): booked as step Q116.
 - Z356, ruled by Axel 2026-10-03 ("Pause before launching T1, so we can discuss tests some more"): T1 held until the discussion; the other queued steps go on.

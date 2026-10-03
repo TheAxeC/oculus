@@ -54,16 +54,16 @@ function valueOfDraft(draft: Draft): unknown {
 }
 
 describe('the shipped lists and families as drafts', () => {
-    it('are 8 lists and 21 families, 15 of the families records and 6 key/value', () => {
+    it('are 8 lists and 22 families, 16 of the families records and 6 key/value', () => {
         const rows = editable();
         expect(rows.filter((row) => row.control === 'list')).toHaveLength(8);
         const families = rows.filter((row) => row.control === 'family');
-        expect(families).toHaveLength(21);
+        expect(families).toHaveLength(22);
         const pairs = families.filter(
             (row) => Object.keys(row.fields).sort().join() === 'key,value'
         );
         expect(pairs).toHaveLength(6);
-        expect(families.length - pairs.length).toBe(15);
+        expect(families.length - pairs.length).toBe(16);
     });
 
     it('read into a draft, each field as flow text, and back to the value the file holds', () => {

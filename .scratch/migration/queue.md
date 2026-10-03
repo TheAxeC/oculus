@@ -1,7 +1,6 @@
 In flight:
-- X3c (the tab strip as VS Code's): repair round 1 refuted, its landing after D25's.
-- D25 (the editor's options): repair round 1 refuted, its landing next.
-- Q116 (the Status view's line count of everything under src/): building.
+- X3c (the tab strip as VS Code's): repair round 1 refuted, its findings to dispose; paused (Axel).
+- Q116 (the Status view's line count of everything under src/): built, its review next; paused (Axel).
 
 Queued, in order (33 steps):
 - T1 (the test suite in three tiers, unnecessary tests removed): held until Axel has discussed the tests further.
@@ -41,6 +40,7 @@ Queued, in order (33 steps):
 Owed: the look of Q81 (a Confirm over the update tray).
 
 Landed, newest first:
+- D25 (the editor's options), 2026-10-03, landing commit.
 - Q91 (the project view and its editor), 2026-10-03, a8ba6553.
 - D17 (project commands), 2026-10-03, 76bdcd8c.
 - S4 (the Settings editor finished), 2026-10-03, ff048bf3.

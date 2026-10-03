@@ -12,11 +12,11 @@ import {
     REST_MS,
     latexExtension,
     type LatexEditorDeps
-} from '../../../../../src/lib/ui/controls/editor/kit/latex-widget.ts';
+} from '../../../../../../src/lib/ui/controls/editor/kit/latex/latex-widget.ts';
 import {
     createFormatting,
     type EditorKit
-} from '../../../../../src/lib/ui/controls/editor/kit/load.ts';
+} from '../../../../../../src/lib/ui/controls/editor/kit/load.ts';
 
 const render = vi.fn();
 vi.mock('katex', () => ({
@@ -155,7 +155,7 @@ afterEach(() => {
 });
 
 describe('the markers of a build', () => {
-    // Revert: leave `setModelMarkers` out of latexExtension in kit/latex-widget.ts.
+    // Revert: leave `setModelMarkers` out of latexExtension in kit/latex/latex-widget.ts.
     it('draws each problem on its line, errors and warnings apart, and clears them with the model', () => {
         const f = fakes('a\nbb\nccc');
 
@@ -278,7 +278,7 @@ describe('Format Document', () => {
 describe('the preview over math', () => {
     const TEXT = 'before\n$x^2$ and more\nafter';
 
-    // Revert: draw the widget without waiting REST_MS in previewing of kit/latex-widget.ts.
+    // Revert: draw the widget without waiting REST_MS in previewing of kit/latex/latex-widget.ts.
     it('appears after the pointer has rested 300 ms on a formula, typeset with KaTeX untrusted', async () => {
         const f = fakes(TEXT);
         add(f, deps());
@@ -316,7 +316,7 @@ describe('the preview over math', () => {
         );
     });
 
-    // Revert: leave `editor.onMouseLeave(hide)` out of previewing in kit/latex-widget.ts.
+    // Revert: leave `editor.onMouseLeave(hide)` out of previewing in kit/latex/latex-widget.ts.
     it('goes when the pointer leaves the editor, moves off the formula, the editor scrolls or the text changes', async () => {
         for (const away of [
             (f: ReturnType<typeof fakes>) => f.handlers.leave(),
@@ -364,7 +364,7 @@ describe('the preview over math', () => {
         expect(f.added).toEqual([]);
     });
 
-    // Revert: drop the `mine !== turn` check after the preview resolves in kit/latex-widget.ts.
+    // Revert: drop the `mine !== turn` check after the preview resolves in latex-widget.ts.
     it('drops an answer that arrives after the pointer has gone', async () => {
         const f = fakes('\\includegraphics{fig/a}');
         let release: (found: boolean) => void = () => undefined;
@@ -389,7 +389,7 @@ describe('the preview over math', () => {
 });
 
 describe('a preview whose answer is still out', () => {
-    // Revert: drop the `mine !== turn` check after the preview resolves in kit/latex-widget.ts.
+    // Revert: drop the `mine !== turn` check after the preview resolves in latex-widget.ts.
     it('draws the second span and not the first when the pointer moved on before the first answered', async () => {
         const f = fakes('\\includegraphics{fig/a}\n\\includegraphics{fig/b}');
         const pending: { path: string; release: (found: boolean) => void }[] = [];

@@ -94,14 +94,14 @@ describe('the prompt a comment becomes', () => {
         expect(
             commentPrompt(
                 comment({
-                    path: 'src/lib/ui/controls/editor/DiffEditor.svelte',
+                    path: 'src/lib/ui/controls/editor/diff/DiffEditor.svelte',
                     line: 143,
                     side: 'original',
                     text: 'why was the menu on?'
                 })
             )
         ).toBe(
-            'src/lib/ui/controls/editor/DiffEditor.svelte:143 (before the change): why was the menu on?'
+            'src/lib/ui/controls/editor/diff/DiffEditor.svelte:143 (before the change): why was the menu on?'
         );
         expect(
             commentPrompt(

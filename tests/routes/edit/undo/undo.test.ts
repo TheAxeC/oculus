@@ -8,9 +8,9 @@ import { chmodSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:f
 import { join } from 'node:path';
 import { expect, describe } from 'vitest';
 import { parse } from 'yaml';
-import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import type { Change } from '../../../src/lib/server/core/changes.ts';
-import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import { handleWrite } from '../../../../src/lib/server/edit/writes.ts';
+import type { Change } from '../../../../src/lib/server/core/changes.ts';
+import type { WriteTarget } from '../../../../src/lib/server/edit/writes.ts';
 import {
     AREA,
     GOOD,
@@ -30,8 +30,8 @@ import {
     tasksOf,
     undone,
     wrote
-} from './write-fixture.ts';
-import { it } from '../../fixtures/scratch.ts';
+} from '../write-fixture.ts';
+import { it } from '../../../fixtures/scratch.ts';
 
 describe('taking a change back', () => {
     /** One write, and the change it left at the head of the log. */

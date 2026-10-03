@@ -47,12 +47,18 @@
     //
     // What the status bar draws for the tab is published from here to the editor status store,
     // keyed by the instance, while the tab is mounted: the caret the editor reports, the
-    // indentation (the one chosen from the bar, or the file's own), the line ending of the text,
-    // the language (the one chosen from the bar, or the file name's), whether the file may be
-    // written, and the editor's actions the palette lists. What the bar and the palette ask of the
-    // tab is performed here once per ask: an indentation and a language are kept with the draft and
-    // handed to the editor, and a line to go to, a conversion of the indentation, a line ending and
-    // an editor action are performed by the editor on its model (Editor.svelte's `perform`). A
+    // indentation in force, the line ending of the text, the language (the one chosen from the
+    // bar, or the file name's), whether the file may be written, and the editor's actions the
+    // palette lists. The indentation is the first of these that gives one: the one chosen from the
+    // bar, the file's own when it indents, the record of the language in the root's
+    // `.oculus/settings.yml`, then in `editor.languages`, then the global `editor.tab_size` and
+    // `editor.insert_spaces`. The word wrap is the tab's Alt+Z choice, kept with the draft, else
+    // the root's record, else `editor.languages`, else `editor.word_wrap`; the rulers come from the
+    // records alone. All of them are resolved in views/shared/prose/source-options.ts and handed
+    // to the editor as its options. What the bar and the palette ask of the tab is performed here
+    // once per ask: an indentation, a language and a word wrap are kept with the draft and handed
+    // to the editor, and a line to go to, a conversion of the indentation, a line ending and an
+    // editor action are performed by the editor on its model (Editor.svelte's `perform`). A
     // rewrite of the text is an edit like typing, handed back as one and unsaved until Save. The
     // editor keeps the text in the line ending it was opened in, so typing into a CRLF file is kept
     // in CRLF.
@@ -66,9 +72,11 @@
     // Repositories view's graph. The editor draws them as its own decorations; the code window
     // draws them with Gutter.svelte.
     //
-    // A LaTeX file adds to its editor the problems of its latest build as markers, the preview of
-    // math and pictures under the pointer and Format Document (`latex-editor.ts`); a save of it
-    // builds its main file when `latex.auto_build` says so (state/sessions/latex.svelte.ts).
+    // A Markdown or LaTeX file adds the headings of its text as document symbols (`symbols.ts`),
+    // which sticky scroll pins at the top of the editor. A LaTeX file adds to its editor the
+    // problems of its latest build as markers, the preview of math and pictures under the pointer
+    // and Format Document (`latex-editor.ts`); a save of it builds its main file when
+    // `latex.auto_build` says so (state/sessions/latex.svelte.ts).
 
     import { onDestroy, untrack } from 'svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -83,35 +91,29 @@
     import Editor from './Editor.svelte';
     import Gutter from './Gutter.svelte';
     import { latexEditor } from './latex-editor';
-    import { readAs, readJson } from '$lib/data/shapes/shapes';
-    import { languageOf, opensInProgram } from '$lib/state/sources/fs';
-    import { listOf } from '$lib/state/sources/repositories/answers';
+    import { createSourceGutter } from './source-gutter.svelte';
+    import { createSourceOptions } from '$lib/views/shared/prose/source-options';
+    import { symbolsExtension } from './symbols';
+    import { readAs } from '$lib/data/shapes/shapes';
+    import { opensInProgram } from '$lib/state/sources/fs';
+    import { markdownOutline } from '$lib/state/sources/explorer/sections/outline';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { headOf } from '$lib/state/sessions/source.svelte';
     import {
-        blameRows,
         blameStatus,
-        markWords,
-        marksByLine,
         repoOfFile,
         wholePath,
         type RepoFile
     } from '$lib/state/sources/repositories/file-git';
-    import {
-        blameUrl,
-        marksUrl,
-        type GitBlameLine,
-        type GitLineMark
-    } from '$lib/state/sources/repositories/repositories';
+    import type { GitBlameLine } from '$lib/state/sources/repositories/repositories';
     import {
         START,
-        detectIndent,
         lineCount,
         lineEnding,
         type Caret
     } from '$lib/state/workbench/navigation/editor-text';
     import type { EditorAction } from '$lib/state/workbench/navigation/editor-status.svelte';
-    import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter';
+    import type { EditorBlame, EditorMark } from '$lib/ui/controls/editor/gutter/gutter';
     import type { EditorHandle } from '$lib/ui/controls/editor/types';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -120,10 +122,10 @@
     const client = useState();
     const {
         editorStatus: { asked, focus, forget, publish },
-        fs: { workspaces },
+        fs: { fileText, workspaces },
         layout: { keepPreview },
         repositories,
-        selectors: { gitFor, gitRoots, languages, programApps },
+        selectors: { editorOptions, gitFor, gitRoots, languages, paintLimit, programApps },
         source: {
             revertSourceDraft,
             editSourceDraft,
@@ -131,6 +133,7 @@
             saveSourceDraft,
             setSourceIndent,
             setSourceLanguage,
+            setSourceWrap,
             toggleSourceRendered,
             toggleSourceBlame,
             sourceDraft
@@ -166,18 +169,28 @@
     );
     /** Whether the editor is drawn, which is when the text controls have text to act on. */
     const editing = $derived(error === '' && draft.loaded && locked === '');
+    /** The indentation, word wrap and rulers of the tab, in the order `resolveEditor` states. */
+    const options = createSourceOptions({
+        path: () => path,
+        root: () => root,
+        draft: () => draft,
+        languages,
+        options: editorOptions,
+        paintLimit,
+        fileText
+    });
     /** The language the tab paints in: the one chosen from the status bar, or the name's. */
-    const language = $derived(
-        draft.language === '' ? languageOf(path, languages()) : draft.language
-    );
-    /** The indentation Tab inserts: the one chosen from the status bar, or the file's own. */
-    const indent = $derived(draft.indent ?? detectIndent(draft.text));
+    const language = $derived(options.language);
+    /** The indentation Tab inserts: the tab's choice, the file's own, or the configured one. */
+    const indent = $derived(options.indent);
     const ending = $derived(lineEnding(draft.text));
     /** What a LaTeX file adds to the editor: its build's markers, the preview and the formatter. */
     const extension = $derived(
         language === 'latex' && head === undefined
             ? latexEditor(client, { root, path }, (words: string) => (said = words))
-            : undefined
+            : language === 'markdown'
+              ? symbolsExtension(markdownOutline)
+              : undefined
     );
     /** Whether the file has a rendered half, which is what a Markdown file has. */
     const markdown = $derived(language === 'markdown');
@@ -200,27 +213,21 @@
     });
     /** The repository's state, whose every move is a new read of the gutter. */
     const repoState = $derived(inRepo === null ? null : gitFor(inRepo.root));
-    /** The quick diff marks against the index, as the last read gave them. */
-    let marks: GitLineMark[] = $state([]);
-    /** Each line's blame while blame is on, and null while it is off or not read yet. */
-    let blame = $state<GitBlameLine[] | null>(null);
-    /** The moment the blame was read, which "how long ago" is counted from. */
-    let readAt = $state(Date.now());
+    const gate = shownGate(useShown());
+    /** The quick diff marks and the blame, read for a file in a repository. */
+    const gutter = createSourceGutter({
+        file: () => inRepo,
+        repoState: () => repoState,
+        loaded: () => draft.loaded,
+        text: () => draft.text,
+        saved: () => draft.saved,
+        blameOn: () => draft.blame,
+        gate
+    });
     /** How far the text is scrolled, which the gutter follows. */
     let top = $state(0);
-    /** Each gutter read takes the next number, and only the newest may write what it read. */
-    let reads = 0;
-    const lines = $derived(lineCount(draft.text));
-    const markMap = $derived(marksByLine(marks, lines));
-    const blameMap = $derived(new Map((blame ?? []).map((one) => [one.line, one])));
-    /** The quick diff marks as the editor draws them, each with the words its hover says. */
-    const editorMarks = $derived<EditorMark[]>(
-        marks.map((mark) => ({ ...mark, words: markWords({ kind: mark.kind, start: mark.line }) }))
-    );
-    /** The blame as the editor's line-number column draws it, none while blame is off. */
-    const editorBlame = $derived<EditorBlame[]>(
-        draft.blame && blame !== null ? blameRows(blame, readAt) : []
-    );
+    const markMap = $derived(gutter.markMap);
+    const blameMap = $derived(gutter.blameMap);
 
     /** Where the editor's caret is, as it last reported. */
     let caret: Caret = $state(START);
@@ -248,54 +255,12 @@
             ending,
             language,
             writable: editing,
-            blame: draft.blame ? blameStatus(blameMap.get(caret.line), readAt) : '',
+            blame: draft.blame ? blameStatus(blameMap.get(caret.line), gutter.readAt) : '',
             actions: editing ? actions : [],
             file: wholeFile,
             selection: editing ? selection : ''
         });
     });
-
-    const gate = shownGate(useShown());
-
-    // The gutter follows the repository and the file on disk: a new state on the channel, a save,
-    // and the blame turned on each read it again. A hidden tab reads it again once when it is
-    // shown, if any of these moved meanwhile.
-    $effect(() => {
-        const [file, moved, on] = [inRepo, repoState, draft.blame];
-        // The saved text is read only so that a save reads the gutter again.
-        const saved = draft.saved;
-        if (file === null || moved === null || !draft.loaded) {
-            reads += 1;
-            marks = [];
-            blame = null;
-            gate.clear();
-            return;
-        }
-        if (gate.due([file, moved, on, saved])) untrack(() => void readGutter(file, on));
-    });
-
-    /** Read one of the gutter's answers: its status and body, and a refusal when the read threw. */
-    async function readOne(url: string): Promise<{ ok: boolean; body: unknown }> {
-        try {
-            const response = await fetch(url);
-            return { ok: response.ok, body: await readJson(response) };
-        } catch {
-            return { ok: false, body: undefined };
-        }
-    }
-
-    async function readGutter(file: RepoFile, on: boolean): Promise<void> {
-        reads += 1;
-        const mine = reads;
-        const [marked, blamed] = await Promise.all([
-            readOne(marksUrl(file.root, file.path)),
-            on ? readOne(blameUrl(file.root, file.path)) : null
-        ]);
-        if (mine !== reads) return;
-        marks = listOf(marked.ok, marked.body, 'marks');
-        blame = blamed === null ? null : listOf(blamed.ok, blamed.body, 'lines');
-        readAt = Date.now();
-    }
 
     /** Open the file's diff at a change its gutter marks, as VS Code's gutter press peeks it. */
     function openMark(line: number): void {
@@ -347,6 +312,11 @@
         untrack(() => void loadSourceDraft(id, fileRoot, filePath, stage));
     });
 
+    /** Alt+Z in the editor: the tab's word wrap toggled, kept with the draft. */
+    function toggleWrap(): void {
+        setSourceWrap(instance.id, options.toggled);
+    }
+
     async function save(): Promise<void> {
         await saveSourceDraft(instance.id, root, path);
     }
@@ -363,11 +333,11 @@
 
 {#snippet margin()}
     <Gutter
-        {lines}
+        lines={gutter.lines}
         {top}
         marks={markMap}
-        blame={draft.blame ? blame : null}
-        now={readAt}
+        blame={gutter.blame}
+        now={gutter.readAt}
         onmark={openMark}
         onblame={(line: GitBlameLine) => openBlamed(line)}
     />
@@ -468,11 +438,14 @@
                 {language}
                 {indent}
                 {ending}
+                wrap={options.wrap}
+                rulers={options.rulers}
+                ontogglewrap={toggleWrap}
                 instance={instance.id}
                 text={draft.text}
                 rendered={draft.rendered}
-                marks={editorMarks}
-                blame={editorBlame}
+                marks={gutter.editorMarks}
+                blame={gutter.editorBlame}
                 {extension}
                 oninput={typed}
                 oncaret={(at: Caret) => (caret = at)}

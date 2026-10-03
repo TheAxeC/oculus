@@ -63,8 +63,11 @@ export type RemovedText = {
 };
 
 /**
- * The text a manifest write replaced when it wrote a bare note or a list of one note as the map it
- * stands for, which is what an undo puts back while the file still holds what the write left.
+ * The text a write replaced and the text it put in its place, which is what an undo puts back
+ * while the file still holds what the write left: a manifest write that wrote a bare note or a
+ * list of one note as the map it stands for, and a `config-value` write, whose two texts differ
+ * from the common prefix and suffix of the file before and after. Putting `before` over `after` at
+ * `offset` gives the earlier text.
  */
 export type ReplacedText = {
     /** The index in the text the write left, counted in UTF-16 code units, where `after` begins. */
@@ -100,8 +103,9 @@ export type ChangeRecord = {
      */
     removed?: RemovedText;
     /**
-     * The note a manifest write rewrote as a map, on the record of each field whose edit did so
-     * and left the rewritten lines in the file as it wrote them, and on no other record.
+     * The text a write replaced: on the record of each manifest field whose edit rewrote a note as
+     * a map and left the rewritten lines in the file, on the record of a `config-value` write, and
+     * on the record of an undo that put text back; on no other record.
      */
     replaced?: ReplacedText;
 };

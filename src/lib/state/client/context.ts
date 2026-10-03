@@ -326,7 +326,10 @@ export function createClientState(): ClientState {
     const deposit = withQueries('deposit', createDeposit(queries));
     const transcripts = withQueries('transcripts', createTranscripts(queries));
     // A saved file may be a LaTeX file whose main builds on save, which the latex store decides.
-    const source = createSource(writes, ui, (root, path) => void latex.onSaved(root, path));
+    const source = createSource(writes, ui, (root, path) => {
+        fs.markText(root, path);
+        void latex.onSaved(root, path);
+    });
     // The pane asks the instance id whether a tab holds unsaved text before it closes it, and asks
     // the ui store rather than the source store, which the shell may not read.
     ui.registerUnsaved(source.sourceDirty);
@@ -395,7 +398,11 @@ export function createClientState(): ClientState {
         (id) => layout.instanceView(id) === SETTINGS_VIEW && settingsTyped(ui.instanceState(id))
     );
     const railBadges = createRailBadges(entities, feeds, hpc, calendar, inbox, audit, selectors);
-    const paletteSource = createPaletteSource(entities, feeds);
+    const paletteSource = createPaletteSource(entities, feeds, {
+        writeConfigValue: writes.writeConfigValue,
+        layout,
+        ui
+    });
     const editorStatus = createEditorStatus();
     const notices = createNotices(ui);
     const commands = withQueries(

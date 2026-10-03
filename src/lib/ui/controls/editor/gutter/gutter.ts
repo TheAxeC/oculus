@@ -10,12 +10,14 @@
 // landed on, and the caret stepped from mark to mark, by the same rules.
 //
 // A diff editor's comment mark is the one decoration that follows the pointer: the hovered line of
-// a side offered for comments gets a `+` in its glyph margin, which Monaco's own diff signs leave
-// free (they hold the line-decorations lane), and a press on it asks for a comment on that line.
+// a side offered for comments gets a `+` in the line-decorations lane between its line numbers and
+// its text, where VS Code draws its comment glyph, and a press on it asks for a comment on that
+// line. The glyph margin is the editor's leftmost column, which the inline layout puts beside the
+// original side's line numbers, so a mark there would sit left of the numbers of its own line.
 
 import type { IDisposable, IMarkdownString, editor } from 'monaco-editor';
-import { chordHint, type KeyPress } from './chords';
-import type { DiffSide, EditorAction, EditorChangeWords } from './types';
+import { chordHint, type KeyPress } from '../chords';
+import type { DiffSide, EditorAction, EditorChangeWords } from '../types';
 
 /** A quick diff mark: its kind, its first line, how many lines it spans and what it says. */
 export type EditorMark = {
@@ -241,7 +243,7 @@ export function blameWidth(blame: readonly EditorBlame[], lines: number): number
     return blameText(blame, lines)(1).length;
 }
 
-/** The class of the comment mark, which the diff editor draws as a `+` in the glyph margin. */
+/** The class of the comment mark, a `+` in the line-decorations lane on a line's first row. */
 const COMMENT_MARK = 'oculus-comment-add';
 
 /** The id of the action that adds a comment on the caret's line. */
@@ -260,23 +262,24 @@ type TargetKinds = {
 type TargetAt = { type: number; position: { lineNumber: number } | null };
 
 /**
- * The line a mouse target is on, and whether it is the glyph margin, where a press asks for a
- * comment. Null for a target on no line of text, such as a bar in a view zone.
+ * The line a mouse target is on, and whether it is the line-decorations lane, where the mark is
+ * drawn and a press asks for a comment. Null for a target on no line of text, such as a bar in a
+ * view zone.
  */
 function commentTarget(
     target: TargetAt | null,
     kinds: TargetKinds
-): { line: number; glyph: boolean } | null {
+): { line: number; mark: boolean } | null {
     const line = target?.position?.lineNumber;
     if (target === null || line === undefined) return null;
-    if (target.type === kinds.GUTTER_GLYPH_MARGIN) return { line, glyph: true };
+    if (target.type === kinds.GUTTER_LINE_DECORATIONS) return { line, mark: true };
     const over = [
+        kinds.GUTTER_GLYPH_MARGIN,
         kinds.GUTTER_LINE_NUMBERS,
-        kinds.GUTTER_LINE_DECORATIONS,
         kinds.CONTENT_TEXT,
         kinds.CONTENT_EMPTY
     ];
-    return over.includes(target.type) ? { line, glyph: false } : null;
+    return over.includes(target.type) ? { line, mark: false } : null;
 }
 
 /** One side of a diff editor, with the events the comment gutter reads. */
@@ -287,6 +290,19 @@ type CommentSideEditor = {
         'onMouseMove' | 'onMouseLeave' | 'onMouseDown' | 'createDecorationsCollection'
     >;
 };
+
+/**
+ * The sides of a diff editor the parent's comments are offered on: both when the layout drawn is
+ * side by side, the modified one alone when it is inline, where the original side is not drawn.
+ */
+export function commentSides(
+    made: Pick<editor.IStandaloneDiffEditor, 'getOriginalEditor' | 'getModifiedEditor'>,
+    layout: 'side' | 'inline'
+): { side: DiffSide; editor: editor.IStandaloneCodeEditor }[] {
+    const modified = { side: 'modified' as const, editor: made.getModifiedEditor() };
+    const original = { side: 'original' as const, editor: made.getOriginalEditor() };
+    return layout === 'side' ? [original, modified] : [modified];
+}
 
 /**
  * The comment mark on each side given: one `+` on the hovered line of a side while `offered` says
@@ -315,13 +331,15 @@ export function commentGutter(
                 if (hit === null) clear();
                 else if (hit.line !== shown) {
                     shown = hit.line;
-                    mark.set([onLines(hit.line, hit.line, { glyphMarginClassName: COMMENT_MARK })]);
+                    mark.set([
+                        onLines(hit.line, hit.line, { firstLineDecorationClassName: COMMENT_MARK })
+                    ]);
                 }
             }),
             on.onMouseLeave(clear),
             on.onMouseDown((event) => {
                 const hit = offered(side) ? commentTarget(event.target, kinds) : null;
-                if (hit?.glyph === true) oncomment(side, hit.line);
+                if (hit?.mark === true) oncomment(side, hit.line);
             })
         );
     });
@@ -331,17 +349,6 @@ export function commentGutter(
             for (const mark of marks) mark.clear();
         }
     };
-}
-
-/** Monaco's own default for `glyphMargin` (editorOptions.js, `'glyphMargin', true`). */
-const MONACO_GLYPH_MARGIN = true;
-
-/**
- * Whether the diff editor draws its glyph margin. Monaco draws it by default and a diff that
- * offers no comment leaves it so; one that offers comments needs it for the `+`.
- */
-export function glyphMarginFor(offering: boolean): boolean {
-    return offering || MONACO_GLYPH_MARGIN;
 }
 
 /**

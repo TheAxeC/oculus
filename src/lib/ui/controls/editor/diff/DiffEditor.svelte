@@ -6,12 +6,16 @@
     // hands back are types.ts's.
     //
     // It draws Monaco's diff: the two sides side by side or one inline, as the parent's layout
-    // says (never switched to inline by the width), the line numbers of both, the changed words of
-    // a changed line, whitespace changes shown, and the unchanged runs hidden with `context` lines
-    // kept each side, which Monaco reveals on a press, unless the parent asks for every line.
-    // Monaco's own hunk menu and revert arrows are off, since the parent's bars (zones.ts, after
-    // lines of either side) carry the actions, and the diff always runs to its end, so a bar never
-    // acts on a diff Monaco cut short.
+    // says, and inline whenever the editor is narrower than `NARROW` pixels, as VS Code's is. The
+    // layout drawn is read off the diff editor, since the comment sides and the sizing follow it.
+    // It shows the line numbers of both, the changed words of a changed line, whitespace changes,
+    // and the unchanged runs hidden with `context` lines kept each side, which Monaco reveals on a
+    // press, unless the parent asks for every line. The `options` (options.ts, with no minimap)
+    // are put on both sides when it is made and again whenever they change.
+    //
+    // Monaco's own hunk menu and revert arrows are off, since the parent's bars (bars/zones.ts,
+    // after lines of either side) carry the actions, and the diff always runs to its end, so a bar
+    // never acts on a diff Monaco cut short.
     //
     // Given `oncomment`, each side it offers (both side by side, the modified side inline, where
     // Monaco draws removed lines as zones that take no decoration) shows a `+` on the hovered
@@ -32,23 +36,37 @@
 
     import { onDestroy, untrack, type Snippet } from 'svelte';
     import type * as Monaco from 'monaco-editor';
-    import { modelUri, type EditorKit } from './kit/load';
-    import { buildWhenHosted } from './kit/built.svelte';
-    import { shikiId } from './kit/grammars';
-    import { font, paintCode, repaint } from './kit/look';
-    import { chordActions } from './chords';
-    import { commentActionsOn, commentGutter, glyphMarginFor, listedWithComment } from './gutter';
-    import { lineBars } from './zones';
-    import LineBars from './LineBars.svelte';
+    import { modelUri, type EditorKit } from '../kit/load';
+    import { buildWhenHosted } from '../kit/built.svelte';
+    import { shikiId } from '../kit/grammars';
+    import { font, paintCode, repaint } from '../kit/look';
+    import { chordActions } from '../chords';
+    import {
+        commentActionsOn,
+        commentGutter,
+        commentSides,
+        listedWithComment
+    } from '../gutter/gutter';
+    import { applyOptions, monacoOptions } from '../options';
+    import type { EditorOptions } from '../options';
+    import { lineBars } from '../bars/zones';
+    import LineBars from '../bars/LineBars.svelte';
     import type {
         DiffCommand,
         DiffLineChange,
-        DiffSelection,
         DiffSelections,
         DiffSide,
         EditorAction,
         EditorBar
-    } from './types';
+    } from '../types';
+    import {
+        bothSelections,
+        contentHeight,
+        layoutWatch,
+        lineChangesOf,
+        type DiffLayout
+    } from './read';
+    import './comment-add.css';
 
     type Props = {
         original: string;
@@ -65,6 +83,8 @@
         mode: 'side' | 'inline';
         /** The unchanged lines kept each side of a change when Monaco hides the run between. */
         context: number;
+        /** Word wrap, rulers, whitespace and sticky scroll; Monaco's own when absent. */
+        options?: EditorOptions;
         /** Whether to hide the unchanged runs; off shows every line. */
         hideUnchanged?: boolean;
         /** A value that changes whenever the tokens or the text size do. */
@@ -99,6 +119,7 @@
         mode,
         context,
         hideUnchanged = true,
+        options,
         look = '',
         codeTheme = 'tokens',
         sized = false,
@@ -116,12 +137,17 @@
     /** A hidden run is at least one line: Monaco hides any run the kept lines leave. */
     const SHORTEST_HIDDEN = 1;
 
+    /** The width in pixels at and under which Monaco draws a side by side diff inline. */
+    const NARROW = 900;
+
     let host: HTMLDivElement | undefined = $state();
     let kit: EditorKit | null = $state.raw(null);
     let diff: Monaco.editor.IStandaloneDiffEditor | null = $state.raw(null);
     let models: { original: Monaco.editor.ITextModel; modified: Monaco.editor.ITextModel } | null =
         $state.raw(null);
     let mounted = $state(false);
+    /** The layout Monaco draws, which is inline whenever the width is narrow. */
+    let drawn: DiffLayout = $state('side');
     let height = $state(0);
     let alive = true;
     let painted: string | null = null;
@@ -154,7 +180,8 @@
             readOnly: true,
             originalEditable: false,
             renderSideBySide: mode === 'side',
-            useInlineViewWhenSpaceIsLimited: false,
+            useInlineViewWhenSpaceIsLimited: true,
+            renderSideBySideInlineBreakpoint: NARROW,
             ignoreTrimWhitespace: false,
             renderGutterMenu: false,
             renderMarginRevertIcon: false,
@@ -168,6 +195,7 @@
             ariaLabel: path,
             scrollBeyondLastLine: !sized,
             scrollbar: { alwaysConsumeMouseWheel: !sized },
+            ...(options === undefined ? {} : monacoOptions(options)),
             ...font(host)
         });
         const pair = {
@@ -180,7 +208,7 @@
         listeners.push(
             made.onDidUpdateDiff(() => updated(made)),
             ...sides.flatMap((side) => [
-                side.onDidChangeCursorSelection(() => selected(made)),
+                side.onDidChangeCursorSelection(() => onselect?.(bothSelections(made))),
                 side.onDidFocusEditorText(() => (focused = side)),
                 side.onDidContentSizeChange(() => grown(made)),
                 side.onDidScrollChange(() => save(made))
@@ -192,6 +220,7 @@
         ] as const) {
             side.mount(on, on.getOption(monaco.editor.EditorOption.lineHeight));
         }
+        listeners.push(layoutWatch(box, (layout) => (drawn = layout)));
         diff = made;
         models = pair;
         kit = loaded;
@@ -215,45 +244,18 @@
 
     /** A diff drawn: its line changes said, and a view state waiting put back. */
     function updated(made: Monaco.editor.IStandaloneDiffEditor): void {
-        const changes = made.getLineChanges();
+        const changes = lineChangesOf(made);
         if (changes === null) return;
         if (restore !== null) {
             made.restoreViewState(restore as Monaco.editor.IDiffEditorViewState);
             restore = null;
         }
-        onchanges?.(
-            changes.map((change) => ({
-                originalStartLineNumber: change.originalStartLineNumber,
-                originalEndLineNumber: change.originalEndLineNumber,
-                modifiedStartLineNumber: change.modifiedStartLineNumber,
-                modifiedEndLineNumber: change.modifiedEndLineNumber
-            }))
-        );
-    }
-
-    function selections(side: Monaco.editor.ICodeEditor): DiffSelection[] {
-        return (side.getSelections() ?? []).map((one) => ({
-            startLineNumber: one.selectionStartLineNumber,
-            startColumn: one.selectionStartColumn,
-            endLineNumber: one.positionLineNumber,
-            endColumn: one.positionColumn
-        }));
-    }
-
-    function selected(made: Monaco.editor.IStandaloneDiffEditor): void {
-        onselect?.({
-            original: selections(made.getOriginalEditor()),
-            modified: selections(made.getModifiedEditor())
-        });
+        onchanges?.(changes);
     }
 
     /** The content's height, which a sized editor takes, and the view state, which it moved. */
     function grown(made: Monaco.editor.IStandaloneDiffEditor): void {
-        if (sized) {
-            const sides = [made.getModifiedEditor()];
-            if (mode === 'side') sides.push(made.getOriginalEditor());
-            height = Math.max(...sides.map((side) => side.getContentHeight()));
-        }
+        if (sized) height = contentHeight(made, drawn);
         save(made);
     }
 
@@ -312,28 +314,30 @@
         untrack(() => grown(made));
     });
 
-    /**
-     * The sides the parent's comments are offered on: both side by side, the modified one inline.
-     */
-    function commentSides(made: Monaco.editor.IStandaloneDiffEditor, layout: 'side' | 'inline') {
-        const modified = { side: 'modified' as const, editor: made.getModifiedEditor() };
-        const original = { side: 'original' as const, editor: made.getOriginalEditor() };
-        return layout === 'side' ? [original, modified] : [modified];
-    }
+    // The sizing again when the layout drawn changes, since the original side's height counts only
+    // while it is drawn.
+    $effect(() => {
+        const [made] = [diff, drawn];
+        if (made !== null) untrack(() => grown(made));
+    });
 
-    // The glyph margin and the `+` on the hovered line, while comments are offered and again for
-    // each layout, since the original side is hidden in the inline one.
+    $effect(() => {
+        const held = options;
+        if (diff !== null && held !== undefined) applyOptions(diff, held);
+    });
+
+    // The `+` on the hovered line, while comments are offered and again for each layout, since the
+    // original side is hidden in the inline one.
     $effect(() => {
         const loaded = kit;
         const made = diff;
-        const layout = mode;
+        const layout = drawn;
         if (loaded === null || made === null) return;
-        made.updateOptions({ glyphMargin: glyphMarginFor(offering) });
         if (!offering) return;
         const watch = commentGutter(
             commentSides(made, layout),
             loaded.monaco.editor.MouseTargetType,
-            (side) => side === 'modified' || mode === 'side',
+            (side) => side === 'modified' || drawn === 'side',
             (side, line) => oncomment?.(side, line)
         );
         return () => watch.dispose();
@@ -345,7 +349,7 @@
     $effect(() => {
         const loaded = kit;
         const made = diff;
-        const layout = mode;
+        const layout = drawn;
         const label = offering ? commentLabel : undefined;
         if (loaded === null || made === null) return;
         const added =
@@ -373,7 +377,7 @@
         const made = diff;
         if (made === null) return;
         const side =
-            mode === 'inline' ? made.getModifiedEditor() : (focused ?? made.getModifiedEditor());
+            drawn === 'inline' ? made.getModifiedEditor() : (focused ?? made.getModifiedEditor());
         if (command.kind === 'action') {
             side.focus();
             void side.getAction(command.id)?.run();
@@ -455,25 +459,6 @@
     .diff-editor:not(.sized) .plain {
         position: absolute;
         inset: 0;
-    }
-
-    /* The comment mark: a plus drawn in the hovered line's glyph margin, in the accent. */
-    .diff-editor :global(.oculus-comment-add) {
-        cursor: pointer;
-    }
-
-    .diff-editor :global(.oculus-comment-add)::before {
-        content: '';
-        display: block;
-        width: 12px;
-        height: 12px;
-        margin: 3px auto 0;
-        border-radius: 2px;
-        background:
-            linear-gradient(var(--accent), var(--accent)) center / 8px 2px no-repeat,
-            linear-gradient(var(--accent), var(--accent)) center / 2px 8px no-repeat;
-        border: 1px solid var(--accent);
-        box-sizing: border-box;
     }
 
     :global(body.wall) .diff-editor {

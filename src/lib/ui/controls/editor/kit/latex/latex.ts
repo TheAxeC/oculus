@@ -1,6 +1,6 @@
 // Layer 3, primitive, pure. What the editor reads of a LaTeX text to preview it: the math span
 // under a position, the picture a position names, and the file that picture is. The page reads
-// nothing else here; the widget that draws the preview is kit/latex-widget.ts's.
+// nothing else here; the widget that draws the preview is kit/latex/latex-widget.ts's.
 //
 // A span is found by a scan from the start of the text, so a `%` comment and an escaped character
 // (`\$`, `\%`) never open or close one. A single `$` span does not cross a blank line, which is

@@ -134,7 +134,7 @@ restoreCopy"];
 restoreFeedEntry, writeFeedField"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/feeds.ts" [tooltip="FEED_RULES", style=dotted];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/config-key.ts" [tooltip="configKeyNow, writeConfigKey"];
-    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/config-value.ts" [tailport=se, tooltip="configValueNow, writeConfigValue"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/config-value.ts" [tailport=se, tooltip="configValueNow, putBackConfigValue, writeConfigValue"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/deck.ts" [tailport=s, tooltip="deckNow, writeDeck"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/rail.ts" [tailport=se, tooltip="railNow, writeRail"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/roots.ts" [tailport=ne, tooltip="rootsNow, writeRoots"];

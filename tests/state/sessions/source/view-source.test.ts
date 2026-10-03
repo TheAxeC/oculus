@@ -2,9 +2,9 @@
 // and over configurations that name nothing.
 
 import { describe, expect, it } from 'vitest';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { HUB_ROOT } from '../../../src/lib/state/sources/fs.ts';
-import { viewSourceFile } from '../../../src/lib/state/sessions/view-source.ts';
+import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
+import { HUB_ROOT } from '../../../../src/lib/state/sources/fs.ts';
+import { viewSourceFile } from '../../../../src/lib/state/sessions/view-source.ts';
 
 const { config } = loadConfig(engineDir());
 

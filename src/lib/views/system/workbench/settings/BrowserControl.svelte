@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, view partial. The control of one "This browser" row, which sets the value the ui
-    // store keeps for this browser: the theme list, the code theme menu, the text-size steps, the
-    // terminal text size box, and the toggles for the CRT overlay, the wallpaper and the glyph
-    // vocabulary. Each writes the ui store, which saves its values together, so what the page looks
-    // like comes back whole after a reload whichever control set it.
+    // store keeps for this browser: the theme list, the code theme menu, the text-size steps with
+    // the size in force, the terminal text size box, and the toggles for the CRT overlay, the
+    // wallpaper and the glyph vocabulary. Each writes the ui store, which saves its values
+    // together, so what the page looks like comes back whole after a reload whichever control set
+    // it.
     //
     // The terminal text size is a box holding the text being typed. It is applied on Enter and on
     // leaving the box: a decimal the store clamps to 6 to 40, or an empty box, which gives the size
@@ -65,6 +66,11 @@
     const canShrink = $derived((textScale() ?? 1) > 0.7);
     const canGrow = $derived((textScale() ?? 1) < 1.6);
     const canReset = $derived(textScale() !== null);
+
+    /** The text size in force as a percentage, 100% while the page follows the browser's size. */
+    const sizeNow = $derived(
+        t('workbench.settings_text_size_value', Math.round((textScale() ?? 1) * 100))
+    );
 
     /** The terminal text size being typed, or null while the box shows the size in force. */
     let typed: string | null = $state(null);
@@ -140,6 +146,7 @@
             disabled={!canGrow}
             onclick={() => stepTextScale(1)}
         />
+        <span class="value" data-text-size>{sizeNow}</span>
     </div>
 {:else if row.name === 'terminal_font'}
     <div class="size" role="presentation" onkeydown={revertSize}>

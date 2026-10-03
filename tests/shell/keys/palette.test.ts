@@ -17,7 +17,7 @@ import { noop } from '../../fixtures/doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../../fixtures/client.ts';
 import { fakeStorage } from '../../state/workbench/layout/layout-fixture.ts';
 import { editorItems, ranked } from '../../../src/lib/state/workbench/palette.ts';
-import { changeActions } from '../../../src/lib/ui/controls/editor/gutter.ts';
+import { changeActions } from '../../../src/lib/ui/controls/editor/gutter/gutter.ts';
 import type { EditorStatus } from '../../../src/lib/state/workbench/navigation/editor-status.svelte.ts';
 
 let client: ClientState;

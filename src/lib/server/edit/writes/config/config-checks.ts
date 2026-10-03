@@ -45,7 +45,7 @@ import type { Finding } from '../../../../data/model/index.ts';
 import { docFindings, layoutFile } from '../../../content/docs.ts';
 import { requireRefreshSettings } from '../../../machine/usage/refresh.ts';
 import { requireAutofetch } from '../../../core/fetch-period.ts';
-import type { ChangeRecord } from '../../../core/changes.ts';
+import type { ChangeRecord, ReplacedText } from '../../../core/changes.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
 import type { Refusal } from '../../yaml/yaml-edit.ts';
 import { readBack } from '../../list-edit.ts';
@@ -237,21 +237,56 @@ export function refusedBy(
 }
 
 /**
+ * The text that differs between a file and its edit: what lies between their common prefix and
+ * their common suffix, with the offset where it starts. Null for two equal texts.
+ */
+export function replacedText(source: string, edited: string): ReplacedText | null {
+    if (source === edited) return null;
+    const room = Math.min(source.length, edited.length);
+    let offset = 0;
+    while (offset < room && source[offset] === edited[offset]) offset += 1;
+    let tail = 0;
+    while (
+        tail < room - offset &&
+        source[source.length - 1 - tail] === edited[edited.length - 1 - tail]
+    ) {
+        tail += 1;
+    }
+    return {
+        offset,
+        before: source.slice(offset, source.length - tail),
+        after: edited.slice(offset, edited.length - tail)
+    };
+}
+
+/**
  * Write the edited text of a file and answer with the one option it changed: the last step of a
  * config write, after every check has passed. `before` and `after` are the option's value in the
- * file as it was and as it is now, which an undo restores.
+ * file as it was and as it is now, which an undo restores. Given the `source` the edit was made
+ * from, the record also carries the text the edit replaced, which an undo puts back as it was.
  */
 export function written(
     path: string,
     file: string,
     key: string,
     edited: string,
-    values: { before: unknown; after: unknown }
+    values: { before: unknown; after: unknown },
+    source?: string
 ): ConfigKeyOutcome {
     writeTextAtomic(path, edited);
+    const replaced = source === undefined ? null : replacedText(source, edited);
     return {
         changed: [`${file}:${key}`],
         refused: [],
-        records: [{ file: path, key: file, field: key, ...values, undo: 'field' }]
+        records: [
+            {
+                file: path,
+                key: file,
+                field: key,
+                ...values,
+                undo: 'field',
+                ...(replaced === null ? {} : { replaced })
+            }
+        ]
     };
 }

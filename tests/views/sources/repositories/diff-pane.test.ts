@@ -23,7 +23,7 @@ import Diff from '../../../../src/lib/views/sources/repositories/diff/Diff.svelt
 import DiffBar from '../../../../src/lib/views/sources/repositories/diff/DiffBar.svelte';
 import DiffSection from '../../../../src/lib/views/sources/repositories/diff/DiffSection.svelte';
 import CommentBox from '../../../../src/lib/views/sources/repositories/diff/CommentBox.svelte';
-import DiffEditor from '../../../../src/lib/ui/controls/editor/DiffEditor.svelte';
+import DiffEditor from '../../../../src/lib/ui/controls/editor/diff/DiffEditor.svelte';
 import TextArea from '../../../../src/lib/ui/forms/TextArea.svelte';
 import Menu from '../../../../src/lib/ui/menu/Menu.svelte';
 import ToolButton from '../../../../src/lib/ui/controls/ToolButton.svelte';
@@ -40,7 +40,7 @@ vi.mock('../../../../src/lib/ui/controls/ToolButton.svelte', async (original) =>
     (await import('./press-on-render.ts')).recorded(original)
 );
 
-vi.mock('../../../../src/lib/ui/controls/editor/DiffEditor.svelte', async (original) =>
+vi.mock('../../../../src/lib/ui/controls/editor/diff/DiffEditor.svelte', async (original) =>
     (await import('./press-on-render.ts')).recorded(original)
 );
 
@@ -509,6 +509,41 @@ function editorProps(): Record<string, unknown> {
 function skipDrawing(component: unknown): void {
     vi.mocked(component as (...args: unknown[]) => unknown).mockImplementation(() => undefined);
 }
+
+describe('the options a section hands its editor', () => {
+    // Revert: leave `{options}` off the DiffEditor in DiffSection.svelte.
+    it('are the configured word wrap, rulers, whitespace and sticky scroll of the file language, with no minimap', () => {
+        const hold = (editor: Record<string, unknown>): void => {
+            client.entities.receive({
+                channel: 'config',
+                version: 1,
+                payload: { config: { editor }, text: catalog, findings: [] }
+            });
+        };
+        hold({
+            word_wrap: 'on',
+            render_whitespace: 'all',
+            sticky_scroll: false,
+            minimap: false,
+            languages: { plaintext: { word_wrap: 'bounded', rulers: [100] } }
+        });
+        section(sides());
+        const options = editorProps().options as Record<string, unknown>;
+        expect(options).toEqual({
+            wordWrap: 'bounded',
+            rulers: [100],
+            renderWhitespace: 'all',
+            stickyScroll: false
+        });
+        expect('minimap' in options).toBe(false);
+
+        // a change of the configuration reaches the next render
+        clear(DiffEditor);
+        hold({ word_wrap: 'off', languages: {} });
+        section(sides());
+        expect(editorProps().options).toMatchObject({ wordWrap: 'off', rulers: [] });
+    });
+});
 
 describe('the comment a section offers on a line of a session diff', () => {
     // Revert: pass `oncomment` whatever the session, in DiffSection.svelte.

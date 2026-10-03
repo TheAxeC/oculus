@@ -1,0 +1,63 @@
+/* Layer 3, stylesheet of ui/controls/editor/Editor.svelte. The marks the gutter draws as Monaco
+   decorations (gutter.ts): the quick diff marks, the breakpoints, the blame and the tinted runs of
+   lines. Monaco puts the classes on elements it makes outside any component, so each rule is held
+   to the source editor by its root's data-editor-host attribute, which no other editor carries. */
+
+/* The blame's padding is spaces, which the number column keeps only drawn as written. */
+.editor[data-editor-host] .monaco-editor .margin-view-overlays .line-numbers {
+    white-space: pre;
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-mark {
+    width: 3px !important;
+    margin-left: 3px;
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-mark-added {
+    background: var(--c-scm-added);
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-mark-modified {
+    background: var(--c-gutter-modified);
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-mark-deleted {
+    border-top: 3px solid var(--c-scm-deleted);
+    box-sizing: border-box;
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-mark-deleted-foot {
+    border-bottom: 3px solid var(--c-scm-deleted);
+    box-sizing: border-box;
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-mark:hover {
+    cursor: pointer;
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-breakpoint {
+    cursor: pointer;
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-breakpoint::before {
+    content: '';
+    display: block;
+    width: 10px;
+    height: 10px;
+    margin: 4px auto 0;
+    border-radius: 50%;
+    background: var(--c-red);
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-blame {
+    cursor: pointer;
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-highlight {
+    background: var(--c-scm-conflict-bg);
+}
+
+.editor[data-editor-host] .monaco-editor .oculus-blame-uncommitted {
+    cursor: default;
+    font-style: italic;
+}

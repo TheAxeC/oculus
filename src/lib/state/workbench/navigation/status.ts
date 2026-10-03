@@ -20,6 +20,8 @@ import type {
 import type { FsRoot } from '../../sources/fs.ts';
 import { deepestHolding, joinPath } from '../../../data/helpers/files/paths.ts';
 import { readAs } from '../../../data/shapes/shapes.ts';
+import { extensionOf, nameOf } from '../../sources/explorer/file-type.ts';
+import type { WriteAnswer } from '../../shared/stores/shapes.ts';
 import { PLAIN, registered } from '../../shared/words/languages.ts';
 import { t } from '../../shared/words/text.ts';
 import { byScore, fuzzyMatches, textParts, type TextPart } from '../../shared/words/fuzzy.ts';
@@ -289,6 +291,96 @@ export function languageMatches(query: string): LanguageMatch[] {
     return fuzzyMatches(query, all, [(choice) => choice.label, (choice) => choice.name])
         .sort(byScore)
         .map((found) => ({ choice: found.row, label: textParts(found.keys[0], found.row.label) }));
+}
+
+/** The ending a file association is made for, and the title of the list that picks its language. */
+export type LanguageAssociation = { ending: string; title: string };
+
+/** One entry the language picker lists above the languages, as VS Code's language mode does. */
+export type LanguageAction =
+    | { kind: 'auto'; label: string }
+    | ({ kind: 'associate'; label: string } & LanguageAssociation)
+    | { kind: 'configure'; label: string };
+
+/**
+ * The entries above the languages for a file name and the language in force: Auto Detect, the
+ * file association for the ending the language map would hold the name by (its last extension, or
+ * its whole name lowercased when it has none), and the language's own settings. A name that starts
+ * with a dot and has no extension cannot be held by the map, which reads a leading dot as an
+ * extension, and is offered no association.
+ */
+export function languageActions(name: string, language: string): LanguageAction[] {
+    const base = nameOf(name);
+    const ending = extensionOf(base) || (base.startsWith('.') ? '' : base.toLowerCase());
+    const shown = extensionOf(base) === '' ? base : ending;
+    const associate: LanguageAction[] =
+        ending === ''
+            ? []
+            : [
+                  {
+                      kind: 'associate',
+                      label: t('statusbar.palette_language_associate', shown),
+                      ending,
+                      title: t('statusbar.palette_language_associate_title', shown)
+                  }
+              ];
+    return [
+        { kind: 'auto', label: t('statusbar.palette_language_auto') },
+        ...associate,
+        {
+            kind: 'configure',
+            label: t('statusbar.palette_language_configure', languageName(language))
+        }
+    ];
+}
+
+/** A language row's hint: its name in brackets, and that it is the one in force when it is. */
+export function languageHint(name: string, current: string): string {
+    return name === current
+        ? t('statusbar.palette_language_current', name)
+        : t('statusbar.palette_language_hint', name);
+}
+
+/** The `languages` map of config/sources.yml as the picker writes it: endings by language. */
+const endingsShape = z.record(z.string(), z.array(z.string()));
+
+/**
+ * Associate an ending with a language by writing `languages` of config/sources.yml: the ending is
+ * taken from the language that held it and added to the chosen one, which is created when the file
+ * has no entry for it. The write carries the map it was made from as its base. Null, and no write,
+ * when the map is not one or the language already holds the ending.
+ */
+export async function associateEnding(
+    write: (file: string, key: string, value: unknown, base: unknown) => Promise<WriteAnswer>,
+    languages: unknown,
+    ending: string,
+    language: string
+): Promise<WriteAnswer | null> {
+    const base = readAs(endingsShape, languages);
+    if (base === null) return null;
+    const held = Object.hasOwn(base, language) ? base[language] : undefined;
+    if (held?.includes(ending) === true) return null;
+    const entries = Object.entries(base).map(([name, endings]): [string, string[]] => [
+        name,
+        name === language ? [...endings, ending] : endings.filter((one) => one !== ending)
+    ]);
+    if (held === undefined) entries.push([language, [ending]]);
+    return write('sources.yml', 'languages', Object.fromEntries(entries), languages);
+}
+
+/**
+ * What the language list does with the answer to its association write: nothing once its rows are
+ * gone, since the palette may have been opened again for something else; close the palette when
+ * the write was made or nothing needed writing; otherwise say why the write was refused.
+ */
+export function associationOutcome(
+    answer: WriteAnswer | null,
+    drawn: boolean
+): { kind: 'none' } | { kind: 'close' } | { kind: 'say'; words: string } {
+    if (!drawn) return { kind: 'none' };
+    if (answer === null || answer.ok) return { kind: 'close' };
+    const why = answer.refused.at(0)?.reason ?? answer.error ?? '';
+    return { kind: 'say', words: t('statusbar.palette_language_refused', why) };
 }
 
 /** The kinds of entity the portfolio keeps as a map by id, which the Status view counts. */

@@ -33,7 +33,7 @@ import {
 import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
 import { deckNow, writeDeck } from './config/deck.ts';
 import { configKeyNow, writeConfigKey } from './config/config-key.ts';
-import { configValueNow, writeConfigValue } from './config/config-value.ts';
+import { configValueNow, putBackConfigValue, writeConfigValue } from './config/config-value.ts';
 import { railNow, writeRail } from './config/rail.ts';
 import { rootsNow, writeRoots } from './config/roots.ts';
 import { railRows } from '../../../data/sources/config/rail.ts';
@@ -307,13 +307,11 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         return { found: true, ...outcome };
     }
     if (change.kind === 'config-value') {
-        const outcome = writeConfigValue(
-            into.engine,
-            change.key,
-            change.field,
-            change.before,
-            change.after
-        );
+        // The text the write replaced goes back as it was when the file still holds what the write
+        // left; any other file is put right through the value write.
+        const outcome =
+            putBackConfigValue(into.engine, change.key, change.field, change) ??
+            writeConfigValue(into.engine, change.key, change.field, change.before, change.after);
         return { found: true, ...outcome };
     }
     if (change.kind === 'subtask') {

@@ -5,8 +5,9 @@
 // NOTICE_MS, and a send that ends after its box went handing nothing back. Every dependency of a
 // send is a fake, so no terminal or clipboard is reached.
 //
-// It does not cover the markup that draws the box (tests/views/sources/repositories/
-// diff-pane.test.ts) or the box inside Monaco's overlay, which the look does.
+// It does not cover the markup that draws the box
+// (tests/views/sources/repositories/diff/diff-pane.test.ts) or the box inside Monaco's overlay,
+// which the look does.
 
 import { flushSync } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

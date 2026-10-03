@@ -41,26 +41,9 @@ dispatch:   # three steps in flight (2026-10-03): X3c and D25 refuted after roun
   builder_usage: 221,047 tokens, 823 tool uses, 195.1 min (report saved 2026-10-03); round 1: 336,267 tokens, 375 tool uses, 117.4 min (report saved 2026-10-03, one full-list run)
   reviewer_report: agents/reviews/X3c-refuter.md (first run; reviewer a535e06539cbd8738, claude-opus-5-5, 364,675 tokens, 113 tool uses, 33.4 min); round 1 run: reviewer afe977eb85adbd5f1, claude-opus-5-5, 113,188 tokens, 116 tool uses, 33.9 min, appended under "Repair round 1, refuted"
   brief_check: agents/reviews/X3c-brief-check.md; claude-opus-5-5, 318,282 tokens, 113 tool uses, 17.0 min (run on main at a9c0d38d; findings closed 2026-10-03 under Closed)
+  landing_merge: D25 landed first; X3c's landing merges `DESIGN.md:391` (D25 moved `gutter.ts` to `ui/controls/editor/gutter/`, X3c rewords the same line) and `DESIGN.md:404` (D25's `ui/controls/editor/diff/DiffEditor.svelte` path beside X3c's change of the next line) by hand, keeping both steps' changes (D25 refuter, round 1 Spec 1)
   landing: not-started
   round: 1 (sent 2026-10-03, rulings agents/briefs/X3c-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's x3c-round1-start/ for the delta)
-- step: D25
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read at 08:42)
-  session_id: a5d2ad20a1f12524e (builder, launched 2026-10-03 08:41 local)
-  worktree: .agents/worktrees/D25
-  base: 5f492a9b
-  launched: 2026-10-03 08:41 local
-  report: agents/reviews/D25-report.md
-  builder_usage: 262,512 tokens, 638 tool uses, 170.1 min (report saved 2026-10-03); round 1: 288,412 tokens, 188 tool uses, 63.3 min
-  landing_fixes: Z349, the three test files back under `tests/state/` with their real titles
-  reviewer_report: agents/reviews/D25-refuter.md (first run; reviewer ae98977243dfc074f, claude-opus-5-5, 350,621 tokens, 94 tool uses, 26.4 min); round 1 run: reviewer af77d20984e61e372, claude-opus-5-5, 305,716 tokens, 109 tool uses, 30.1 min, appended under "Repair round 1, refuted"
-  landing_fixes_any: the slow tag on `tests/server/machine/commands/placeholders.test.ts` (Z350), at whichever step lands next
-  full_list_runs: 4 by the builder's report, against `agents/spec.md:25`'s one (Z348 (b)); booked as a breach at landing
-  brief_check: agents/reviews/D25-brief-check.md; claude-opus-5-5, 274,600 tokens, 112 tool uses, 14.5 min (run on main at 3949d212; findings closed under Closed, Z330 booked)
-  shared_paths: with X3c, `views/sources/source/Source.svelte` (D25 lines 45-55, 100-145, 155-345, 455-485; X3c `:149` and `:350-436`), `state/sessions/source.svelte.ts` (D25 75-90, 108-116, 220-232, 280-300, 365-375, 425-450; X3c `:93-106`), `shell/keys/Palette.svelte` (D25 the language list and its second list; X3c the row drawing, mainly in `PaletteRow.svelte`), `state/workbench/navigation/status.ts` (D25 after `:292`; X3c `:169-206`), `state/sources/fs.svelte.ts` and `fs-transport.ts` (D25 `readText` moved to the end of `fs-transport.ts`; X3c the roots answer at `:488-503`), `data/sources/config/catalogs.ts` (D25 `:155-185`; X3c `:19-34`), `config/catalogs/options.yml` (D25 `:290-300`; X3c `:92-104`), `config/text/` (separate keys), `HELP.md` and `DESIGN.md` (separate passages, except `HELP.md:98` and `DESIGN.md:429`, one line each merged by hand at the second landing); D25 adds no case to the four test files X3c changed. With Q91, `Source.svelte` (Q91 the import at `:82`), `views/sources/source/Gutter.svelte` (Q91 the comment at `:3`, D25 near `:168`), `tests/views/whole/type-scale.test.ts` (Q91 `:229`, `:237`; D25 `:330`), `HELP.md`, `DESIGN.md` and the diagrams (separate passages, the diagrams regenerated at the second landing)
-  landing: not-started
-  round: 1 (sent 2026-10-03, rulings agents/briefs/D25-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's d25-round1-start/ for the delta)
 - step: Q116
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -70,6 +53,7 @@ dispatch:   # three steps in flight (2026-10-03): X3c and D25 refuted after roun
   base: e24474a9
   launched: 2026-10-03 14:33 local
   report: agents/reviews/Q116-report.md
+  builder_usage: 141,310 tokens, 29 tool uses, 13.5 min (report saved 2026-10-03)
   brief_check: agents/reviews/Q116-brief-check.md; claude-opus-5-5, 141,851 tokens, 31 tool uses, 4.8 min (run on main at 780125bf; findings closed under Closed)
   shared_paths: with X3c and D25, `HELP.md` only (Q116 line 137; X3c's diff changes `:132`, D25's `:147`), separate lines, so the merge is simple
   landing: not-started
@@ -152,6 +136,8 @@ dispatch:   # three steps in flight (2026-10-03): X3c and D25 refuted after roun
 
 ## The pause
 
+In force from 2026-10-03 15:30, Axel: "Pause after the next landing (instead of just before T1)" (Z360). D25 has landed; nothing is dispatched, refuted, landed or prepared until he says go. Q116 is built and waits for its review; X3c waits for its round's dispositions and landing.
+
 Lifted 2026-10-03 by Axel's go ("You have the greenlight"): the order under "Current position", entry 2026-10-03 02:00, runs item by item. Before it, from 2026-10-03 01:15, Axel: "do not continue orchestration", and nothing was dispatched, refuted, landed or prepared.
 
 Lifted 2026-09-30 by Axel's green light: the two round-1 refutations are saved, Q102 and E1 land, then X3d, S3, the U2 audit and D23 are prepared, three slots kept filled, open items booked and reported without ending the turn. Before it, from 2026-09-30 08:42, nothing was dispatched, saved from a reviewer or landed. What follows is the go before that.
@@ -220,9 +206,9 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-03 14:35. Q116 (the Status view's count of everything under `src/`) prepared (e24474a9) and building, builder a5abb57454b9e1db7. In flight also: X3c (the tab strip), round 1 refuted (findings to dispose); D25 (the editor's options), round 1 refuted, its landing next; A1-1's cause diagnosed in `agents/reviews/D25-diagnosis.md`. Next:
-  1. D25: `/land` D25 with Z349's test moves, its round findings, Z355's test-rule deletions and A1-1's fix (the comment mark as a line-decorations decoration, its test red first); its `ReplacedText` meets Q91's `{ offset, before, after }`.
-  2. X3c: dispositions of its round 1 run findings, its light-tab contrast finding raised to Axel; `/diagnose` the active tab out of sight on TEST, then `/land` X3c with the git breach booked and Z355's deletions; it merges Q91's move of `picks.svelte.ts` to `views/shared/explorer/tree/control/` and `Files.svelte`'s imports and `selectRow`.
-  3. Q116: on its report, `/refute` as `review: earned` decides; X3e stays in queue order; T1 held (Z356).
+- 2026-10-03 15:30. D25 (the editor's options) landed; the loop is paused (Z360). Built and waiting: Q116 (the Status view's count of everything under `src/`), builder a5abb57454b9e1db7 done, its report saved at `agents/reviews/Q116-report.md`. In flight: X3c (the tab strip), round 1 refuted (findings to dispose). On Axel's go:
+  1. Q116: `/refute` (it touches the state layer, so `review: earned` runs it); its report shows `docs/diagrams/layer-views.*` and `layers.*` changed outside its paths, for the reviewer.
+  2. X3c: dispositions of its round 1 run findings, its light-tab contrast finding raised to Axel; `/diagnose` the active tab out of sight on TEST, then `/land` X3c with the git breach booked, Z355's deletions and the DESIGN.md merge points of its `landing_merge` line; it merges Q91's move of `picks.svelte.ts` to `views/shared/explorer/tree/control/` and `Files.svelte`'s imports and `selectRow`.
+  3. X3e stays in queue order with Z358 and Z359; T1 held (Z356).
   4. The rail reorder `/diagnose`; the Q81 look once Axel sets `skip_permissions`.
   Open for Axel: Z251 (its count reached 10 with Q91); Z314.

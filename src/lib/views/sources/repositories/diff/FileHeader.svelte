@@ -3,8 +3,9 @@
     // file of a diff, as VS Code's multi-file diff editor draws it: a chevron that folds and
     // unfolds the file when the diff holds several, the file's Seti icon, its name, its folder
     // muted after it, for a rename the letter R and the old path, and Open File at the right where
-    // the file is on disk. The chevron says whether the file is open and is a Tab stop, then Open
-    // File is.
+    // the file is on disk. In the comparison of two files the header names the left file, name and
+    // folder, and then the right file, with no rename letter. The chevron says whether the file is
+    // open and is a Tab stop, then Open File is.
     //
     // The row is one tree row high and stays at the top of the pane while its file scrolls under
     // it, on the panel colour and, under the wall theme, on the translucent surface the pane draws.
@@ -20,6 +21,8 @@
         path: string;
         /** The path the file was renamed from, or the empty string. */
         oldPath: string;
+        /** The left file of a comparison of two files, or the empty string for any other diff. */
+        against?: string;
         /** Whether the file can be folded: the diff holds several. */
         foldable: boolean;
         folded: boolean;
@@ -29,9 +32,26 @@
         onopen: () => void;
     };
 
-    let { path, oldPath, foldable, folded, openable, ontoggle, onopen }: Props = $props();
+    let {
+        path,
+        oldPath,
+        against = '',
+        foldable,
+        folded,
+        openable,
+        ontoggle,
+        onopen
+    }: Props = $props();
 
-    const folder = $derived(path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '');
+    /** The folder a path is in, or the empty string for a path in the top folder. */
+    function folderOf(of: string): string {
+        return of.includes('/') ? of.slice(0, of.lastIndexOf('/')) : '';
+    }
+
+    const folder = $derived(folderOf(path));
+    const left = $derived(
+        against === '' ? null : { name: nameOf(against), folder: folderOf(against) }
+    );
     const fold = $derived(folded ? t('repositories.file_unfold') : t('repositories.file_fold'));
 </script>
 
@@ -50,6 +70,12 @@
         </span>
     {/if}
     <FileIcon name={path} />
+    {#if left !== null}
+        <span class="name">{left.name}</span>
+        {#if left.folder !== ''}
+            <span class="folder">{left.folder}</span>
+        {/if}
+    {/if}
     <span class="name">{nameOf(path)}</span>
     {#if folder !== ''}
         <span class="folder">{folder}</span>

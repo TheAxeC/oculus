@@ -35,6 +35,7 @@
     import { gearEntries } from '$lib/state/system/config/view/gear';
     import type { RowWriter } from '$lib/state/system/config/write';
     import { useState } from '$lib/state/client/use';
+    import Origins from '../editors/Origins.svelte';
     import PagesReset from '../PagesReset.svelte';
     import RailEditor from '../RailEditor.svelte';
     import BrowserControl from './BrowserControl.svelte';
@@ -187,6 +188,9 @@
             <PagesReset />
         {:else}
             <Control {row} {id} {writer} {editors} />
+        {/if}
+        {#if row.kind === 'config' && row.key === 'editor.languages'}
+            <Origins />
         {/if}
     {/if}
     {#each lines as line (line)}

@@ -86,8 +86,8 @@ import {
     listingUrl,
     noteUrl,
     readAnswer,
-    readCapped,
     readCappedBytes,
+    readText,
     type BookmarkEntry,
     type BookmarksState,
     type FileText,
@@ -99,7 +99,6 @@ import {
 } from './fs-transport.ts';
 import {
     SHOWN_DEFAULT,
-    TEXT_LIMIT,
     editShown,
     editedGone,
     treeKey,
@@ -110,7 +109,6 @@ import {
     type FsRoot,
     type ListingShown
 } from './fs.ts';
-import { refusedAnswer } from '../shared/answers/answers.ts';
 import { t } from '../shared/words/text.ts';
 import type { GitCommit } from '../../data/model/index.ts';
 import {
@@ -268,6 +266,7 @@ export type FsStore = {
     relistFolder: (root: string, path: string, below?: boolean) => void;
     workspaces: () => WorkspacesState;
     fileText: (root: string, path: string) => FileText;
+    markText: (root: string, path: string) => void;
     /**
      * What one file opens as. The three formats a browser draws are answered from the name at once;
      * for anything else the head of the file is read and the rule over its bytes decides, so the
@@ -513,17 +512,9 @@ export function createFs(
         return data ?? NO_TEXT;
     }
 
-    async function readText(root: string, path: string): Promise<FileText> {
-        try {
-            const response = await fetch(fileBytesUrl(root, path));
-            if (!response.ok) {
-                return { ...NO_TEXT, error: refusedAnswer(response.status), loading: false };
-            }
-            const body = await readCapped(response, TEXT_LIMIT);
-            return { ...body, error: '', loading: false };
-        } catch (error) {
-            return { ...NO_TEXT, error: reasonOf(error), loading: false };
-        }
+    /** Ask again, on the next read, for one file's text: a save in a source tab changed it. */
+    function markText(root: string, path: string): void {
+        queries.mark(['fs', 'text', root, treeKey(root, path)], 'replace');
     }
 
     /** The query key of what one file opens as. */
@@ -838,6 +829,7 @@ export function createFs(
         relistFolder,
         workspaces,
         fileText,
+        markText,
         readFileKind,
         heldFileKind,
         refresh,

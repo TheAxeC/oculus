@@ -4,10 +4,10 @@
 // anything is written, the overrides file, the reader's own bookmarks and the change log included,
 // so no case of either suite reaches ~/.oculus or the checkout.
 //
-// It is its own file because the suites are made over it: tests/routes/edit/write.test.ts, which is
-// what each write kind answers, tests/routes/edit/undo.test.ts, which is what taking one of them
-// back writes, and the two config-key suites, which write a scratch copy of the engine's config
-// folder (`scratchEngine`) and never the checkout's.
+// It is its own file because the suites are made over it: tests/routes/edit/write.test.ts, which
+// is what each write kind answers, tests/routes/edit/undo/undo.test.ts, which is what taking one
+// of them back writes, and the two config-key suites, which write a scratch copy of the engine's
+// config folder (`scratchEngine`) and never the checkout's.
 
 import {
     copyFileSync,

@@ -100,6 +100,11 @@
         min-width: 0;
     }
 
+    /* The control after the count clears the search, so the field's own cancel button is hidden. */
+    .field :global(input::-webkit-search-cancel-button) {
+        display: none;
+    }
+
     .count {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));

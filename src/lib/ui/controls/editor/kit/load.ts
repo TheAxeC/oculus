@@ -45,6 +45,9 @@
 // Format Document is answered by one provider per language (`createFormatting`), which hands the
 // model it is asked about to the formatter the model's owner gave.
 //
+// The languages whose blocks are braces and that Monaco has no language service for are folded by
+// their braces, by the providers `registerFolding` registers (folding.ts).
+//
 // Monaco's TypeScript service checks a file against the files of its project, which an editor
 // holding one file has none of, so its semantic check is off and its syntax check stays on.
 
@@ -53,6 +56,7 @@ import { FIRST_LANGUAGES, PLAINTEXT, SHIKI_LANGUAGES, shikiId } from './grammars
 import { freedKeys, type KeyPress } from '../chords';
 import { RITE_GRAMMAR } from './rite/rite';
 import { registerSettings } from './rite/settings';
+import { registerFolding } from './folding';
 import { codeRules, editorTheme } from './theme';
 import type { EditorEnding } from '../types';
 import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
@@ -204,6 +208,7 @@ async function start(): Promise<EditorKit> {
         if (!known.has(id)) monaco.languages.register({ id });
     }
     registerSettings(monaco);
+    registerFolding(monaco);
     const { paint, ensureLanguage, close } = painter({
         monaco,
         createHighlighter: shiki.createHighlighter,

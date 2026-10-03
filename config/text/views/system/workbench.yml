@@ -10,7 +10,7 @@ text:
     settings:
         desc_agents: 'The composer of a new agent session: per agent, the models, efforts and permission modes it offers, each with the words it shows and the flag it passes, and each list with its default.'
         desc_appearance: "The UI theme list with the glyph each theme is offered under, the wallpaper behind the panels, the Memories wall's folder, the CRT default, the code theme of the editors, the terminal text size and the terminal's cursor style, cursor blinking, Option key and copy on selection."
-        desc_behavior: "Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh strip, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the Files view's `files.confirm_delete` (true asks before a delete to the Trash), the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`) and chat."
+        desc_behavior: "Thresholds, horizons and cadences: read limits, the `refresh_stale_days` thresholds of the refresh strip, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, `editor.tab_size`, `editor.insert_spaces`, `editor.word_wrap`, `editor.minimap`, `editor.render_whitespace`, `editor.sticky_scroll` and the per-language `editor.languages` records, the Files view's `files.confirm_delete` (true asks before a delete to the Trash), the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git (the commit-message model and the auto fetch period `git.autofetch_minutes`) and chat."
         desc_file_nesting: 'The files the Files view draws under another file when File Nesting is on: per parent name, the names nested under it, as VS Code lists them by default.'
         desc_glyphs: 'The glyph vocabulary: each name with the ASCII stand-in, one to three characters, that a terminal theme draws in place of its icon.'
         desc_icons: 'The line icon each glyph name is drawn as, one row per name in the glyph vocabulary.'
@@ -145,9 +145,19 @@ text:
         settings_network: 'Not written: the server could not be reached.'
         settings_not_number: 'That is not a decimal number, so nothing was written.'
         settings_not_yaml: 'Entry {0}, {1}: the text is not valid YAML.'
+        settings_origin_also: 'Also set in {0}: {1}'
+        settings_origin_cut: 'longer than the file window reads'
+        settings_origin_field: 'not a field of a language record'
+        settings_origin_language: 'not one of the languages that have colours'
+        settings_origin_map: 'not a map'
+        settings_origin_not_a_map: 'languages is not a map of language name to its record'
+        settings_origin_skipped: 'Skipped in {0}: {1}: {2}'
+        settings_origin_unread: 'Not read: {0}/{1}: {2}'
+        settings_origin_value: 'outside the values the field takes'
         settings_refused: 'Not written: {0}'
         settings_reset: Reset Setting
         settings_search: Search settings
+        settings_text_size_value: '{0}%'
         settings_this_browser: This browser
         settings_timed_out: 'Not written: no answer came in time, so the write may not have landed.'
         settings_unparsed: '{0} is not valid YAML, so its settings are not listed: {1}'

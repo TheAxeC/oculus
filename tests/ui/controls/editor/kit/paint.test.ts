@@ -158,6 +158,18 @@ describe('the paint through the bridge', () => {
         expect(style('markup.italic')).toBe('italic');
     });
 
+    // Red when the theme has no rule for text that is bold and italic at once: TextMate resolves
+    // ***x*** to the innermost rule, so x is drawn with one of the two styles and not both.
+    it('draws the x of ***x*** bold and italic through the markdown provider', async () => {
+        const { defined, providers, paint } = counted();
+        await paint(distinct(1));
+        const scope = scopeAt(providers.get('markdown'), 'a ***x*** b', 'x') ?? '';
+        const words = (ruleFor(defined, scope)?.fontStyle ?? '').split(' ').sort();
+        expect(words).toEqual(['bold', 'italic']);
+        const bold = ruleFor(defined, 'markup.bold');
+        expect(ruleFor(defined, scope)?.foreground).toBe(bold?.foreground);
+    });
+
     // Red when one highlighter is kept across paints: the first is never disposed and a second is
     // never made, and Shiki's cache keeps the first colours under the reused name.
     it('replaces the theme on a second paint, defining only oculus in the second colours', async () => {

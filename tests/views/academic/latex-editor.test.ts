@@ -2,18 +2,18 @@
 // the folder a picture path is resolved from, whether a picture file exists, the address it is
 // read at and the formatter. The editor kit's extension is replaced by a recorder of what it was
 // given, so what is asserted is the page's side of the hand-over; the kit's own behaviour is
-// tests/ui/controls/editor/kit/latex-widget.test.ts's.
+// tests/ui/controls/editor/kit/latex/latex-widget.test.ts's.
 //
 // What this does NOT cover: the editor drawing any of it, which needs a browser.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { latexEditor } from '../../../src/lib/views/sources/source/latex-editor.ts';
-import type { LatexEditorDeps } from '../../../src/lib/ui/controls/editor/kit/latex-widget.ts';
+import type { LatexEditorDeps } from '../../../src/lib/ui/controls/editor/kit/latex/latex-widget.ts';
 import { createClientState, json, settle, type ClientState } from '../../fixtures/client.ts';
 
 const given: LatexEditorDeps[] = [];
 
-vi.mock('../../../src/lib/ui/controls/editor/kit/latex-widget.ts', () => ({
+vi.mock('../../../src/lib/ui/controls/editor/kit/latex/latex-widget.ts', () => ({
     REST_MS: 300,
     latexExtension: (deps: LatexEditorDeps) => {
         given.push(deps);

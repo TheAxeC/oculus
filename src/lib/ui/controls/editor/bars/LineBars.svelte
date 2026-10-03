@@ -1,12 +1,12 @@
 <script lang="ts">
-    // Layer 3, primitive, partial of ui/controls/editor/Editor.svelte and DiffEditor.svelte. The
-    // bars an editor draws between its lines: each drawn by the parent's snippet inside a slot
+    // Layer 3, primitive, partial of ui/controls/editor/Editor.svelte and diff/DiffEditor.svelte.
+    // The bars an editor draws between its lines: each drawn by the parent's snippet inside a slot
     // Svelte keeps in order, and moved into the editor by zones.ts's `above`, which gives it a
     // place of its own above its line, below the bars of a lower order after the same line. The
     // container itself is never shown.
 
     import type { Snippet } from 'svelte';
-    import type { EditorBar } from './types';
+    import type { EditorBar } from '../types';
     import type { LineBars } from './zones';
 
     type Props = { bars: EditorBar[]; bar: Snippet<[string]>; placed: LineBars };

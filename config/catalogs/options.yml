@@ -293,8 +293,42 @@ options:
             control: number
         editor.paint_limit_kb:
             description: Size in kilobytes above which the source editor opens a file as plaintext. The editor colours a file by running its grammar over the text in the page as it is typed, and the read-only code window, painted once, colours every size. The server refuses to start unless it is above zero.
-            default: 64
+            default: 20480
             control: number
+        editor.tab_size:
+            description: The width of one step of indentation, from 1 to 8, VS Code's editor.tabSize. A file that indents with spaces keeps the step it is written with; this is the width for a file with no indented line and for a file indented with tabs. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it. A value outside 1 to 8, or not a whole number, counts as 4.
+            default: 4
+            control: number
+        editor.insert_spaces:
+            description: Whether a file with no indented line is indented with spaces (true) or a tab (false), VS Code's editor.insertSpaces. A file that already indents keeps its own. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it. A value that is not true or false counts as true.
+            default: true
+            control: toggle
+        editor.word_wrap:
+            description: How the editor wraps a long line, VS Code's editor.wordWrap. off never wraps, on wraps at the width of the editor, wordWrapColumn wraps at column 80, and bounded wraps at the smaller of the editor's width and column 80. Alt+Z in a source tab switches the wrap of that tab. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it. Any other value counts as off.
+            default: 'off'
+            control: choice
+            values: ['off', 'on', wordWrapColumn, bounded]
+        editor.minimap:
+            description: Whether the source editor draws the minimap, the overview of the file at its right edge, VS Code's editor.minimap.enabled. The diff editor draws its minimap as Monaco does. A value that is not true or false counts as true.
+            default: true
+            control: toggle
+        editor.render_whitespace:
+            description: Which spaces and tabs the editor draws as marks, VS Code's editor.renderWhitespace. none draws none, boundary draws all but single spaces between words, selection draws them inside a selection, trailing draws the ones at the end of a line, and all draws every one. Any other value counts as selection.
+            default: selection
+            control: choice
+            values: [none, boundary, selection, trailing, all]
+        editor.sticky_scroll:
+            description: Whether the editor keeps the headings and blocks that contain the first visible line at the top of the view, VS Code's editor.stickyScroll.enabled. The structure comes from the headings of a Markdown or LaTeX file, from the language service of TypeScript, JavaScript, JSON, CSS, SCSS, Less and HTML, and from the braces of C, C++, Java, Dart, R and Rite. A value that is not true or false counts as true.
+            default: true
+            control: toggle
+        editor.languages:
+            description: The editor options of a language, by the editor's language name, as VS Code's per-language settings give them. A record sets any of the fields below for the files of that language and overrides the global key of the same name; a repository's .oculus/settings.yml has a languages key of the same records that overrides these for the files of that repository. A language the editor does not colour, a field not listed and a value outside its words or range are not read and are listed in the Findings view.
+            fields:
+                key: the language's name as the editor and the status bar show it
+                tab_size: the width of one step of indentation, a whole number from 1 to 8
+                insert_spaces: true indents a file with no indented line with spaces, false with a tab
+                word_wrap: off, on, wordWrapColumn or bounded
+                rulers: the columns that draw a vertical line, a list of whole numbers
         latex.auto_build:
             description: What saving a .tex file does. on_save builds the main file the saved file belongs to with latexmk, in the background and without showing the terminal, and the build's errors and warnings reach the editor as markers when it ends. never builds nothing. Any other value, or no value, counts as on_save.
             default: on_save

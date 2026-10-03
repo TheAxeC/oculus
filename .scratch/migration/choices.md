@@ -997,6 +997,13 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z359 (2026-10-03, D25's landing): the open-editors dirty dot and the colour rule
+
+- Chosen (a): X3e, the Files view step, is widened: the open-editors list's dirty dot takes a colour token the slow colour rule accepts.
+- Not chosen: (b) a fix at D25's landing, outside D25's brief (the Files view is X3a's and X3e's); (c) widening the rule to accept `currentColor`, a check loosened, the lazy option.
+
+Where it applies: X3e. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z358 (2026-10-03, Q91's look): the Focus ticker's cut rows
 
 - Chosen (a): X3e is widened: a ticker row cut by its ellipsis gives its whole text as its tooltip.

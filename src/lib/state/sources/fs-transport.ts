@@ -13,9 +13,16 @@ import {
     survivorsShape,
     unchanged
 } from '../../data/shapes/shapes.ts';
-import { failedAnswer } from '../shared/answers/answers.ts';
+import { failedAnswer, refusedAnswer } from '../shared/answers/answers.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
-import { SHOWN_DEFAULT, type FsEntry, type FsRoot, type ListingShown, type TreeRow } from './fs.ts';
+import {
+    SHOWN_DEFAULT,
+    TEXT_LIMIT,
+    type FsEntry,
+    type FsRoot,
+    type ListingShown,
+    type TreeRow
+} from './fs.ts';
 
 /** One directory as the tree reads it. */
 export type Listing = {
@@ -349,4 +356,23 @@ export function rootKeysOf(saved: WorkspacesState): string[] | null {
 /** The titles the reader's bookmarks carry, which a new bookmark's label is kept apart from. */
 export function bookmarkTitles(entries: Entry[]): string[] {
     return entries.map((one) => one.title);
+}
+
+/**
+ * One file's text, read through the file route and stopped at the window's limit. The read asks
+ * the server to revalidate, since the route lets a browser keep an address for a minute, and a
+ * text read again after a save or a push must be the file as it is now.
+ */
+export async function readText(root: string, path: string): Promise<FileText> {
+    try {
+        const response = await fetch(fileBytesUrl(root, path), { cache: 'no-cache' });
+        if (!response.ok) {
+            return { ...NO_TEXT, error: refusedAnswer(response.status), loading: false };
+        }
+        const body = await readCapped(response, TEXT_LIMIT);
+        return { ...body, error: '', loading: false };
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        return { ...NO_TEXT, error: reason, loading: false };
+    }
 }

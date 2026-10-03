@@ -16,13 +16,15 @@
     // It is also the quick input of the source tab on screen, as VS Code's is of the active editor:
     // a colon and a number goes to that line, a colon alone says which line the caret is on and how
     // many there are, and `:language` lists every language the highlighter paints, the words after
-    // it narrowing the list. Both are asked of the tab through the editor status store, and with no
-    // source tab on screen the palette says there is none. While a source tab is on screen its
-    // editor's actions are listed with the other results: Go to Next Change and Go to Previous
-    // Change with their keys beside them, and Open Change, while the file has quick diff marks, and
-    // the Cmd+K chords the editor gave up so that Cmd+K opens the palette from inside it, each with
-    // its old chord beside it. Choosing one asks the tab to run it. A diff pane on screen lists its
-    // diff editor's actions the same way, and takes no line or language query.
+    // it narrowing the list, under VS Code's three entries above them (LanguageRows.svelte: Auto
+    // Detect, the file association, the language's settings). Both are asked of the tab through the
+    // editor status store, and with no source tab on screen the palette says there is none. While a
+    // source tab is on screen its editor's actions are listed with the other results: Go to Next
+    // Change and Go to Previous Change with their keys beside them, and Open Change, while the file
+    // has quick diff marks, and the Cmd+K chords the editor gave up so that Cmd+K opens the palette
+    // from inside it, each with its old chord beside it. Choosing one asks the tab to run it. A
+    // diff pane on screen lists its diff editor's actions the same way, and takes no line or
+    // language query.
     //
     // It is also where the Files view's workspace commands run: `:workspace` lists the default
     // workspace and the saved ones, the one in force marked, and a pick switches in place;
@@ -34,6 +36,7 @@
     import Modal from '$lib/ui/frame/Modal.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
+    import LanguageRows from '$lib/shell/keys/LanguageRows.svelte';
     import { focusQuietly } from '$lib/ui/frame/quiet-focus';
     import { configuredThemes, openPaletteItem } from '$lib/shell/keys/palette-open';
     import {
@@ -52,8 +55,9 @@
         type PaletteItem
     } from '$lib/state/workbench/palette';
     import {
+        languageActions,
         languageMatches,
-        type LanguageChoice,
+        type LanguageAssociation,
         type LanguageMatch
     } from '$lib/state/workbench/navigation/status';
     import {
@@ -122,6 +126,14 @@
     const languages = $derived<LanguageMatch[]>(
         languageMode && source !== null ? languageMatches(parsed?.argument ?? '') : []
     );
+    /** The association the second language list picks for, or null while the first is drawn. */
+    let associating = $state<LanguageAssociation | null>(null);
+    /** The entries above the languages: with no query, and not in the second list. */
+    const languageEntries = $derived(
+        languageMode && source !== null && associating === null && parsed?.argument.trim() === ''
+            ? languageActions(source.status.file, source.status.language)
+            : []
+    );
     /** Whether the query is the workspace list, and whether it is the save command. */
     const workspaceMode = $derived(parsed !== null && parsed.name === 'workspace');
     const saveMode = $derived(parsed !== null && parsed.name === 'workspace-save');
@@ -145,7 +157,7 @@
                   ? 0
                   : 1
               : languageMode
-                ? languages.length
+                ? languageEntries.length + languages.length
                 : workspaceMode
                   ? choices.length
                   : saveMode
@@ -162,7 +174,10 @@
                   ? []
                   : ['line']
               : languageMode
-                ? languages.map((found) => `language:${found.choice.name}`)
+                ? [
+                      ...languageEntries.map((one) => `language-action:${one.kind}`),
+                      ...languages.map((found) => `language:${found.choice.name}`)
+                  ]
                 : workspaceMode
                   ? choices.map((choice) => `workspace:${choice.name}`)
                   : saveMode
@@ -178,6 +193,15 @@
         if (!open || box === undefined) return;
         const start = prefill;
         untrack(() => typed(start));
+    });
+
+    // The second list is left with the language mode, and its first row is the selected one.
+    $effect(() => {
+        const second = associating !== null;
+        untrack(() => {
+            if (!languageMode) associating = null;
+            else if (second) chosen = values.at(0) ?? chosen;
+        });
     });
 
     /** A new query, the selection on its first row. */
@@ -216,13 +240,6 @@
     function goLine(wanted: number): void {
         if (source === null || caret === null) return;
         ask(source.instance, { kind: 'goto', line: wanted });
-        onclose();
-    }
-
-    /** Paint the source tab on screen in another language. */
-    function chooseLanguage(choice: LanguageChoice): void {
-        if (source === null) return;
-        ask(source.instance, { kind: 'language', language: choice.name });
         onclose();
     }
 
@@ -353,25 +370,20 @@
                                                         <p class="empty">
                                                             {t('statusbar.palette_language_none')}
                                                         </p>
-                                                    {/if}
-                                                    {#each languages as found (found.choice.name)}
-                                                        <PaletteRow
-                                                            row={{
-                                                                value: `language:${found.choice.name}`,
-                                                                kind: t(
-                                                                    'statusbar.palette_kind_language'
-                                                                ),
-                                                                label: found.choice.label,
-                                                                parts: found.label,
-                                                                active:
-                                                                    source?.status.language ===
-                                                                    found.choice.name,
-                                                                language: found.choice.name,
-                                                                pick: () =>
-                                                                    chooseLanguage(found.choice)
-                                                            }}
+                                                    {:else}
+                                                        <LanguageRows
+                                                            {source}
+                                                            actions={languageEntries}
+                                                            {languages}
+                                                            {associating}
+                                                            onassociate={(
+                                                                next: LanguageAssociation
+                                                            ) => (associating = next)}
+                                                            {onclose}
+                                                            onsaid={(words: string) =>
+                                                                (said = words)}
                                                         />
-                                                    {/each}
+                                                    {/if}
                                                 {:else if workspaceMode}
                                                     {#each choices as choice (choice.name)}
                                                         <PaletteRow

@@ -28,7 +28,7 @@ import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
 import { readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
-import { paintLimit } from '../../data/helpers/editor.ts';
+import { editorOptions, paintLimit, type EditorOptions } from '../../data/helpers/editor.ts';
 import { languageMap, type LanguageMap } from '../../data/helpers/files/languages.ts';
 import { programApps, type ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
@@ -96,6 +96,7 @@ const contextWindowShape = z.number().gt(0);
 export type SelectorsStore = {
     configMap: () => Record<string, unknown>;
     paintLimit: () => number | null;
+    editorOptions: () => EditorOptions;
     programApps: () => ProgramApps;
     languages: () => LanguageMap;
     boardPreset: (view: string) => BoardPreset;
@@ -149,6 +150,12 @@ export function createSelectors(
     function editorPaintLimit(): number | null {
         return paintLimit(configMap());
     }
+
+    /**
+     * The editor's options out of the merged config (`editor:` of config/behavior.yml), each
+     * missing or bad value its default and everything default until the config channel has spoken.
+     */
+    const editorOptionsNow = $derived(editorOptions(configMap()));
 
     /**
      * Each extension a file may carry to be offered to its program, with the application it opens
@@ -499,6 +506,7 @@ export function createSelectors(
     return {
         configMap,
         paintLimit: editorPaintLimit,
+        editorOptions: () => editorOptionsNow,
         programApps: programAppsOf,
         languages: () => languageMapNow,
         boardPreset,

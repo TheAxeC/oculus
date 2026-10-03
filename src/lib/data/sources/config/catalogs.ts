@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { z } from 'zod';
-import { paintLimit } from '../../helpers/editor.ts';
+import { paintLimit, readEditorOptions, type EditorProblem } from '../../helpers/editor.ts';
 import { findingText } from '../../helpers/finding-text.ts';
 import type { Finding } from '../../model/index.ts';
 import { mapOfShape, mapShape, readAs, readOr } from '../../shapes/shapes.ts';
@@ -148,13 +148,28 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
     return findings;
 }
 
+/** The finding sentence that words a reason an editor option was not read, filled with its key. */
+function editorFinding(catalog: Record<string, string>, problem: EditorProblem): string {
+    switch (problem.reason) {
+        case 'value':
+            return findingText(catalog, 'findings.config.editor_value', problem.key);
+        case 'unknown-language':
+            return findingText(catalog, 'findings.config.editor_unknown_language', problem.key);
+        case 'unknown-field':
+            return findingText(catalog, 'findings.config.editor_unknown_field', problem.key);
+        case 'not-a-map':
+            return findingText(catalog, 'findings.config.editor_not_a_map', problem.key);
+    }
+}
+
 /**
  * What is wrong with `behavior.yml` that only the reader can put right, as findings on the config
- * channel. Both are things a saved edit can introduce while the server runs, where a throw would
- * take the page down with it: a key still written under a name the tree no longer reads, which is
- * ignored where it stands so the block runs on its default, and a key the editor needs that no
- * longer names a size, which leaves the editor painting without colour and says nothing about why.
- * They are worded from the merged catalog, as iconFindings' are.
+ * channel. The first two are things a saved edit can introduce while the server runs, where a
+ * throw would take the page down with it: a key still written under a name the tree no longer
+ * reads, which is ignored where it stands so the block runs on its default, and a key the editor
+ * needs that no longer names a size, which leaves the editor painting without colour and says
+ * nothing about why. The editor's options add one finding for each value read as its default or
+ * not read, naming its key. They are worded from the merged catalog, as iconFindings' are.
  */
 export function behaviorFindings(engine: string, config: Record<string, unknown>): Finding[] {
     const file = join(configDir(engine), 'behavior.yml');
@@ -173,6 +188,13 @@ export function behaviorFindings(engine: string, config: Record<string, unknown>
             file,
             key: 'editor.paint_limit_kb',
             message: findingText(catalog, 'findings.config.paint_limit')
+        });
+    }
+    for (const problem of readEditorOptions(config).problems) {
+        findings.push({
+            file,
+            key: problem.key,
+            message: editorFinding(catalog, problem)
         });
     }
     return findings;

@@ -66,6 +66,11 @@ const RULES: ScopeRule[] = [
     },
     { scopes: ['markup.bold'], token: '--ink-txt', fontStyle: 'bold' },
     { scopes: ['markup.italic'], token: '--ink-txt', fontStyle: 'italic' },
+    {
+        scopes: ['markup.bold markup.italic', 'markup.italic markup.bold'],
+        token: '--ink-txt',
+        fontStyle: 'bold italic'
+    },
     { scopes: ['markup.inserted'], token: '--c-green-txt' },
     { scopes: ['markup.deleted'], token: '--c-red-txt' }
 ];

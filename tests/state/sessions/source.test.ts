@@ -506,7 +506,8 @@ describe('a draft read from an instance state of the wrong shape', () => {
         truncated: false,
         file: '',
         language: '',
-        indent: null
+        indent: null,
+        wrap: null
     };
 
     it.each([
@@ -556,7 +557,8 @@ describe('a draft read from an instance state of the wrong shape', () => {
                 truncated: true,
                 file: 'f',
                 language: 'l',
-                indent: { tabs: false, size: 2 }
+                indent: { tabs: false, size: 2 },
+                wrap: null
             }
         ]
     ])('answers %s as the draft it names, with every key present', (_name, held, expected) => {
