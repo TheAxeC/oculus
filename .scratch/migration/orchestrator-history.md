@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z374, ruled by Axel 2026-10-03 ("(a) Please just do whatever you need to do to finish the looks"): a second rail click and a temporary HELP.md edit for D25's last two looks.
 - Z373, ruled by Axel 2026-10-03 ("(a)"): a TEST pane widened and put back, and one Files rail click, for D25's two looks.
 - Z372, ruled by Axel 2026-10-03 ("(a)"): X3c fixes the zero-width tab list at its landing, and its landing look replays the Q78 steps.
 - Z371, ruled by Axel 2026-10-03 ("(b)"): X3c's diagnosis probes run in a headless browser on a scratch copy, Playwright kept in the scratch folder.
