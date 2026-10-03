@@ -170,3 +170,21 @@ Agent usage: claude-opus-5-5, about 210k tokens (from the context counter, not v
 
 
 Completion notice: 220,718 tokens, 70 tool uses, 11.1 min (agent a16750a87be697aae).
+
+## Closed
+
+- Names (a), The step line (b), Cases (d) and The question (c) (`audits.test.ts`, `allow-audits.txt`): booked as open item Z376 for Axel; T1d waits for his ruling, and the items, cases and verify 4 that retitle or delete non-rendering cases are settled by it before dispatch. The grep of verify 4 is then written to catch template-literal titles too.
+- Names (b): `ui/frame/client-runtime.ts` is kept, named in item 5 and a case.
+- Names (c): `DESIGN.md:223` and `:227` are named under "What is on the tree" and in Decision 5; verify 6 greps each deleted path over the documents.
+- Names, `negatives.test.ts`: named under "What is on the tree".
+- The step line (a): the shared `allow-duplication.txt` lines are removals only, merged by the orchestrator at landing, named in the path list.
+- Premises (a): `shell/workbench.test.ts`'s import is in a `beforeAll`; premise and case corrected, and the hook rule of item 3 keeps its tests slow.
+- Premises (b): `HELP.md:344` and `:346`. (c): 471, the three template-literal titles named. (d): `paint.test.ts:525` is a fixed sleep, a case and item 4. (e): `colours.test.ts` named red on main (Z359, Z364), kept with its tag. (f): `client-runtime.ts` named. (g): `tinted.test.ts:336-388`.
+- Cases (a) and The question (d) (Decision 5): rewritten; each tree check is judged on its own written rule, named per file, `sanitise` on `spec.md:67`; one with no written rule goes to Axel; where checks live is T1a's.
+- Cases (b) and The question (e) (`repositories-menu.test.ts:130`): item 1 now drops a deleted-kind assertion from a kept test and lists it.
+- Cases (c) (Decision 4 and client tests): item 1 and Decision 7 delete a client case of a press or focus under `spec.md:65`; a press through `press-on-render.ts` stays only as the one case of its wire.
+- The question (a) (import and hook time): item 3 counts a hook's time and causes; module import time outside hooks is the suite's shared cost, T1a's to measure.
+- The question (b) (holders across sweeps): item 7 names each holder by `file:line`, marked when in another sweep's folder, checked by the orchestrator when both have landed.
+- The question (f): item 7 asks a slower quick run to be explained file by file.
+- Implied inputs: client tests (Decision 7), `.svelte` probes (kept while imported; `client-runtime.ts` kept), the press harness (item 1), menu tests with a divider (item 1's paragraph), `html.test.ts:199` (a case, keep), tree-wide checks outside `views/whole/` (Decision 5), polling waits (item 4, Decision 6), the fixed sleep (item 4), hook cost (item 3), a `src/` export left with no caller (item 8, now naming the three test-only methods), a helper changed in place (item 5).
+- Declined to judge, T1b's brief disagreeing: T1d now carries the same module-load, hook, minimum-over-runs, `vi.waitFor`, client-test and holder sentences as T1b.
