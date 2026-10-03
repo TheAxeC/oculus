@@ -997,6 +997,46 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z313 (2026-10-03, the Q99 and Q79c looks): the Sessions New button into D20, the Memories exception into X3c
+
+Chosen: the New button's press opening the composer is built in D20, which changes the Sessions and Terminal views, its cause found at D20's /spec; the Memories view's exception joins Z310 in X3c, whose paths already hold `Memories.svelte`.
+
+Not chosen:
+- /diagnose by the orchestrator now: investigation outside a step.
+- A new step: it needs Axel's ruling.
+
+Where it applies: D20 and X3c. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z312 (2026-10-03, the Q88 look): the Graph's pill menus and the commit time limit into D20
+
+Chosen: built in D20, which changes the Repositories view and runs git there; a pill's right-click opens the name's own menu, and the commit's while a write is in flight; a commit with long hooks completes, and a failed git command says why. The commit Confirm's missing focus and its ground under the right pane join Z310 in X3c.
+
+Not chosen:
+- /diagnose by the orchestrator now: investigation outside a step.
+- A new step: it needs Axel's ruling.
+
+Where it applies: D20 and X3c. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z311 (2026-10-03, the Q82 look): two tree keys into X3e
+
+Chosen: built in X3e, which rebuilds the Files trees' keys and drag; Cmd+A selects a tree's rows (VS Code's `list.selectAll`) and Cmd+Enter opens a row to the side (`list.openToSide`).
+
+Not chosen:
+- X3c: its paths hold no tree.
+- A new step: it needs Axel's ruling.
+
+Where it applies: X3e. Booked in the state file's closed log and `plan.md` Rulings.
+
+## Z310 (2026-10-03, the Q81 look): four focus and overlay defects into X3c
+
+Chosen: built in X3c, which already writes the tab strip, the palette and the key sheet's text; its paths widened to the modal ground, the quiet focus helpers and the Memories view. X3c's /spec finds each cause read-only and writes it into the brief, and a cause not found goes to Axel as an open item.
+
+Not chosen:
+- /diagnose by the orchestrator now: the investigation would run in the orchestrating session, outside a step.
+- A new step: it needs Axel's ruling.
+
+Where it applies: X3c. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z309 (2026-10-03, Z280 (c)): the LaTeX formatter's keys
 
 Chosen: four keys in `behavior.yml`'s `latex:` section beside `auto_build`: `formatter`, one of `none`, `latexindent`, `tex-fmt` and `badness`, default `none`; and `latexindent_path`, `tex_fmt_path` and `badness_path`, each empty by default, meaning the program is found on PATH. They mirror LaTeX Workshop's `latex-workshop.formatting.latex` and its three `.path` settings. Built at D14's landing.

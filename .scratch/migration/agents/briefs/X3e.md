@@ -17,6 +17,8 @@ A design ruling decides what is built. It never exempts the code: every line is 
 These widenings of the step's line in `plan.md` were booked after this brief was written. Before the builder is launched, each becomes an item under "What to build", its cases under "Cases" and its files under "Paths this step writes", with its premise checked on main's head; each defect's full look record is in `agents/reviews/owed-looks.md` under its id.
 
 - Widened 2026-10-02 (Z289, the orchestrator, automode): the Files tree follows the disk (X3a-1), the breadcrumb row pushes no row (X3a-2), a deleted file's tab is marked (X3a-3), the folder-panel line clears (X3a-4), a Changes row shows its folder in Files (X3a-5), removed roots leave the tree (X3a-6), long paths show the file name first (X3a-7); the Source Control defects Q88c-1 to Q88c-14 and Q88c-19 to Q88c-22, a single click opens a text file (D27-3), a changed row offers Open File (D13a-5) and a click on it opens the diff (A1-4); the hub's Graph draws its count and rows without a 10 s wait at 0.
+- Widened 2026-10-03 (Z311, the orchestrator, automode): Cmd+A in a tree selects its rows, as VS Code's `list.selectAll`, and no longer the page's text (Q82-look-1: in the Repositories changes tree it selected 121598 characters across every pane and no row); Cmd+Enter on a row opens it to the side, as VS Code's `list.openToSide` (Q82-look-2: on a staged change it opened nothing). Files: `ui/tree/TreeView.svelte`, `ui/tree/tree-keys.ts`.
+
 
 ## What is on the tree (read on main at a9c0d38d)
 
