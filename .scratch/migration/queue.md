@@ -37,7 +37,7 @@ Queued, in order (33 steps):
 - O35 (macOS, Linux and Windows): once O33 has landed.
 - O36 (a second person in the hub): once O34 has landed.
 
-Owed: the look of Q81 (a Confirm over the update tray).
+Owed: the look of Q81 (a Confirm over the update tray); D25's four looks (a diff widened past 900 px drawn side by side, the Compare Selected header, the Settings save of `read_limits`, the hunk header at 300 px with its own buttons).
 
 Landed, newest first:
 - D25 (the editor's options), 2026-10-03, 4c7cf915.

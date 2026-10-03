@@ -4,6 +4,9 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z362, closed by the orchestrator in automode 2026-10-03: the four looks D25's landing did not take; options (a) owed looks in `queue.md`, taken at the next look session, (b) left to their tests, the lazy option; (a) taken.
+- Z361, ruled by Axel 2026-10-03 ("(b)"): the light inactive tab text `#717171`, and the contrast check widened to hand-written `-txt` tokens, at X3c's landing.
+- Z251, ruled by Axel 2026-10-03 ("Agreed with your recommendation"): the round stays; findings are cut at the source by the recurring-findings pass and the rule sentences it yields.
 - Z360, ruled by Axel 2026-10-03 ("Pause after the next landing (instead of just before T1)"): the loop pauses once D25 has landed.
 - Z359, closed by the orchestrator in automode 2026-10-03: where the slow colour rule's red on `OpenEditors.svelte`'s `.dirty` background is fixed; options (a) widen X3e, queued, (b) fix it at D25's landing, outside D25's brief, (c) let the rule accept `currentColor`, the lazy option; (a) taken.
 - Z358, closed by the orchestrator in automode 2026-10-03: where the Focus ticker defect of Q91's look is built (a cut row hides its end and has no tooltip); options (a) widen X3e, queued and not yet specced, (b) a new step; (a) taken, since a defect goes into a queued step and X3e already takes the looks' defects.
