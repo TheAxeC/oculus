@@ -232,3 +232,34 @@ Findings: none.
 Agent usage: claude-opus-5-5 (served model to be read from the runner's record), about 300,000 tokens (15,000,000 at start, 14,701,009 left at the last reading), about 108 tool uses, minutes not measured.
 
 Usage (completion notice): claude-opus-5-5, 318,282 tokens, 113 tool uses, 17.0 min.
+
+## Closed
+
+Each finding is closed in `agents/briefs/X3c.md` as rewritten at `/spec X3c` on main at 76bdcd8c, the choices among them booked as Z324 (automode).
+
+- 1.1 and 1.2: item 1 names the three version comparisons of `saved.ts` (now `:462`, `:481`, `:505`), `layout-locked.test.ts:60` and `DESIGN.md:375`; C1 holds a float, a locked pane and `needsFloats`.
+- 1.3: item 1, a pinned tab keeps its pin across a float, a page move and a split (`floats.ts:70` in the paths); C35.
+- 1.4: item 4 names `VOCAB_KEYS`, `setAppearance` and `config-folder.test.ts`; both source files in the paths.
+- 1.5: item 5 builds the segments from `crumbsOf`, kept; `place.ts` in the paths.
+- 1.6: item 1 and C3, the Open Editors Close All keeps pinned tabs; `editor-closing.ts` in the paths.
+- 2.1: item 14 (a new tab opens to the right of the active one, `tree.ts` and `opening.ts` in the paths) and item 10's HELP.md sentence; `focusRecentEditorAfterClose` is item 22; `closeEmptyGroups` and `revealIfOpen` are in "What oculus keeps".
+- 2.2: item 18, the strip measured against VS Code's stylesheet; C23.
+- 2.3: item 17 and C22, the close control in a 140px pane.
+- 3.1: item 1 names Delete, the keyboard close; no Cmd+W.
+- 3.2 and 3.3: item 1 and decision 5, palette items of kind `editor` with the chord as a hint (Z324); C15.
+- 3.4: item 6, the server's roots answer gains the home folder; its three files in the paths; C11.
+- 3.5: item 5, `fileOfTab` reads a `doc` tab under the hub root; C10.
+- 3.6: the four helpers named under "What is on the tree" and used by items 2 and 5.
+- 3.7: the full folders and near-cap files listed under "What is on the tree".
+- 3.8: `tab-strip.ts:8-34`.
+- 4.1: item 1 and decision 6, Delete on a pinned tab follows `preventPinnedEditorClose`; C36.
+- 4.2: item 2 follows VS Code 1.137's menu with Reveal in Finder, Compare, Keep Open disabled, the Split & Move submenu, and the name Show in Files; decision 1; C5.
+- 4.3: C8 follows the reader's repair rule, no finding.
+- 4.4: C15 rewritten.
+- 4.5: item 4, the actions at the end of the last row.
+- 4.6: item 5, the breadcrumb in `shell/panes/strip/`, outside `PaneBody`'s drop box.
+- 4.7: the DESIGN.md sections named in the brief's first paragraph.
+- 4.8: the section "What oculus keeps where it differs from VS Code".
+- 4.9: C8 (empty, null), C34 (`pinned` not true), C6 (the clipboard in flight and refused), C4 (the busy guard).
+- 5: C1, C9, C12, C13 and C15 rewritten as section 5 says; C7 and C13 marked audits; item 9 met by item 12.
+- 6: C34 to C37 and the extra inputs of C3, C4, C6, C10, C11, C12 and C15; the order of a version-6 pane with pinned tabs not first is restored on read (item 1).

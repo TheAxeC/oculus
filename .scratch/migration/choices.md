@@ -997,6 +997,13 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z324 (2026-10-03, /spec X3c): the brief check's findings closed
+
+- Chosen: a pinned tab keeps its pin across a float, a page move and a split; Delete on a pinned tab follows VS Code's `preventPinnedEditorClose` default; Pin Editor and Unpin Editor are palette items of kind `editor` with Cmd+K Shift+Enter as a hint; the tab menu is VS Code 1.137's with Reveal in Finder, Compare, Keep Open disabled off a preview, the Split & Move submenu and the name Show in Files; `wrap_tabs` repaired to `false` with no finding, its actions at the end of the last row; the breadcrumb in the strip's title area; the tooltip's `~` from a home folder the roots answer gains; a `doc` tab read under the hub root; a new tab opens right of the active one; the strip measured against VS Code's stylesheet; the Open Editors Close All keeps pinned tabs.
+- Not chosen: a live Cmd+K Shift+Enter chord, which changes what Cmd+K does everywhere; a pin lost on a float; the narrower menu of the first brief, the lazy option; the breadcrumb inside `PaneBody`, which enlarges its drop box.
+
+Where it applies: X3c. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z323 (2026-10-03, D17's look): a task terminal's row title
 
 - Chosen: a task terminal's row in the Terminal tab's list is titled by the project command it ran, as its tab is, a title the reader gave still winning.
