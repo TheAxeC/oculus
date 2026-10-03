@@ -1,6 +1,6 @@
 In flight:
 - X3c (the tab strip as VS Code's): repair round 1 refuted, its findings disposed at landing; waits on the diagnosis of an active tab left out of sight, which needs the TEST window in front.
-- T1c (the test sweep of tests/server/): brief written and checked, its findings being closed.
+- T1c (the test sweep of tests/server/): its builder at work, launched 16:27.
 
 Queued, in order (36 steps):
 - T1b (the test sweep of tests/state/): once X3c has landed, since X3c changes 23 of its test files.
