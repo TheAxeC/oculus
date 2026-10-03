@@ -26,6 +26,8 @@ end: pre sl=271 cw=175 [104,175] V | scaled sl=271 cw=175 [208,298] X | back sl=
 
 The same with the active tab at the start goes green (`start: pre sl=375 [0,71] V | scaled sl=479 [0,90] V`, three of three).
 
+Validity, checked 2026-10-03 about 23:40 in a new tab group Axel asked for (tab 812137202, the same page: strips of 9, 17, 32 and 2 tabs): the page was `visible` for an 8 s watch, then went `hidden` within the next minute. A batch of five runs with a frame counter per run (`__diagP`) drew one frame per run, and its results flipped against the earlier ones: the end case brought the tab back once and the start case left it out once. While the page is hidden the resize observer's callbacks wait for the next drawn frame, so a run read in that state does not show what the strip does. Only the runs known to be drawn count: the page observer of hypothesis 1 fired after the scale in an end-case run, the page's own observer, made earlier, runs first in that same frame, and the offset stayed at 271 (red). The other red and green runs above carry no frame count, so which of them were drawn is not known; each is taken again with a frame count before it is used.
+
 ## Shrunk case
 
 - Scale 1.1 and 1.02 in place of 1.3: still red (`[139,216] X`, `[111,183] X`).
@@ -58,7 +60,7 @@ The left pane (97 px, nine tabs, "Changes" active, the pane Q78-look-1 named) dr
 
 ## Cause
 
-Not yet found. The red command, the shrunk case and four falsified hypotheses stand; the fifth needs the scroll-away-and-back probe, which needs the TEST window in front again for about five minutes.
+Not yet found. Every run from here carries its own frame count and is dropped when it drew fewer than 30 frames. The red command, the shrunk case and four falsified hypotheses stand; the fifth needs the scroll-away-and-back probe, which needs the TEST window in front again for about five minutes.
 
 ## Fix and test
 
