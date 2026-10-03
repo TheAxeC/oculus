@@ -40,7 +40,7 @@ Queued, in order (33 steps):
 Owed: the look of Q81 (a Confirm over the update tray).
 
 Landed, newest first:
-- D25 (the editor's options), 2026-10-03, landing commit.
+- D25 (the editor's options), 2026-10-03, 4c7cf915.
 - Q91 (the project view and its editor), 2026-10-03, a8ba6553.
 - D17 (project commands), 2026-10-03, 76bdcd8c.
 - S4 (the Settings editor finished), 2026-10-03, ff048bf3.
