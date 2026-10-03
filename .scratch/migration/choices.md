@@ -997,6 +997,13 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z352 (2026-10-03, Axel's question): T1 runs alone
+
+- Chosen (a): T1 is prepared once X3c, Q91 and D25 have landed, its timings and its landing's 30 s check are taken with nothing else running, and nothing else is dispatched until it lands.
+- Not chosen: (b) T1 beside other steps with timings in quiet moments, which cannot be arranged.
+
+Where it applies: T1 and the queue. Booked in the state file's closed log and `plan.md` Rulings.
+
 ## Z349 (2026-10-03, D25's repair round 1): where three test files of D25 live
 
 - Chosen (b): `symbols.test.ts`, `source-options.test.ts` and `compare-header.client.test.ts` go back under `tests/state/` with titles that say what they assert, since `tests/checks/tree/audits.test.ts` lets a case under `tests/views/` that renders nothing stand only as an audit.
