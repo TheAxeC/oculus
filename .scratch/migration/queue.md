@@ -2,10 +2,9 @@
 
 Running on Axel's go (2026-10-03); the order is `orchestrator-state.md`, "Current position", 2026-10-03 02:00: the owed looks first, then D18, D32, D14, S4 and D17 landed (2026-10-03), then X3c and Q91.
 
-In flight: X3c (building since 2026-10-03 07:51).
+In flight: X3c (building since 2026-10-03 07:51), Q91 (building since 07:54).
 
-Queued, in order (23 steps):
-- Q91 (the project view and its editor): ready.
+Queued, in order (22 steps):
 - D32b (the Search view's replace kept true after a write, Z316): brief at /spec; once fewer than three steps are in flight.
 - D14b (the LaTeX build and view kept true, Z318): brief at /spec; once fewer than three steps are in flight.
 - X3e (Files lists reordered by drag): brief being closed; once Q91 has landed.

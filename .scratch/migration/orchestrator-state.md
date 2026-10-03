@@ -28,7 +28,7 @@ workers_at_once: 3           # Axel, 2026-10-02 19:25 (Z291): lowered from five,
 ```
 
 ```yaml
-dispatch:   # one step in flight (2026-10-03 07:51): X3c building; Q91 next (workers_at_once: 3).
+dispatch:   # two steps in flight (2026-10-03 07:54): X3c and Q91 building; D32b and D14b next (workers_at_once: 3).
 - step: X3c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -39,6 +39,19 @@ dispatch:   # one step in flight (2026-10-03 07:51): X3c building; Q91 next (wor
   launched: 2026-10-03 07:51 local
   report: agents/reviews/X3c-report.md
   brief_check: agents/reviews/X3c-brief-check.md; claude-opus-5-5, 318,282 tokens, 113 tool uses, 17.0 min (run on main at a9c0d38d; findings closed 2026-10-03 under Closed)
+  landing: not-started
+  round: 0
+- step: Q91
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read at 07:54)
+  session_id: aa0dc0b58528fb2a9 (builder, launched 2026-10-03 07:54 local)
+  worktree: .agents/worktrees/Q91
+  base: 2dbe1a72
+  launched: 2026-10-03 07:54 local
+  report: agents/reviews/Q91-report.md
+  brief_check: agents/reviews/Q91-brief-check.md; claude-opus-5-5, 240,437 tokens, 84 tool uses, 11.5 min (run on main at a9c0d38d; findings closed under Closed by Z286)
+  shared_paths: with X3c, `views/sources/files/Files.svelte` (X3c removes the breadcrumb nav and `crumbs`, Q91 moves the tree wiring into `RootedTree.svelte`; separate regions), `views/sources/source/Source.svelte` (Q91 one import line for the moved `Code.svelte`, X3c the header and toolbar), `config/text/views/sources/files.yml` (separate keys), `HELP.md`, `DESIGN.md` and the diagrams (separate passages, the diagrams regenerated); X3c's new imports of `views/sources/files/tree/menu/row-menu.ts` follow Q91's move to `views/shared/explorer/` at the second landing, an import line each
   landing: not-started
   round: 0
 ```
