@@ -6,10 +6,11 @@ Found with `grep -n -i "not looked\|no look\|not seen at the look\|owed" agents/
 
 ## To take
 
-- Q81: a Confirm over the update tray taking the first Escape. It shows only while `tasks.skip_permissions` is on, and turning that on for the look was refused by the session's permission classifier; it waits on Axel allowing that change for the look.
-- Q79c: the Live HPC jobs table and log, waiting on the cluster: at 02:34 on 2026-10-03 the view showed "Cluster unreachable - on UT network / EduVPN? ssh: connect to host hpc-head1.ewi.utwente.nl port 22: Operation timed out".
+- Q81: a Confirm over the update tray taking the first Escape. It shows only while `tasks.skip_permissions` is on; Axel allowed the edit, and the permission classifier refused it again, so it waits on open item Z314.
 
 ## Taken
+
+- Q79c (taken 2026-10-03 09:41 to 09:58, open item Z315 ruled (a)): the Live HPC jobs table and log. With EduVPN connected the view read live ("live | queue empty | as of 09:41 | every 20m", 25 partitions' capacity bars, the sinfo table of 96 rows). A look job, 609233, then showed in the jobs table as RUNNING with Cancel job and log on hover; the log drew both of its lines; after the end the view drew it under Recent (finished). The table scrolls sideways inside a 422 px pane, so every column is reachable.
 
 - Q99 and Q79c, 2026-10-03, TEST, dark theme. Q99: a Claude session started for the look from the composer that `n` opened in the Sessions view (opened from the palette), first message "Reply with the single word ok and do nothing else." (pid 32236, `claude --permission-mode manual -- ...`), ended with Ctrl+C; its tab closed and no process names its terminal (`ps`). The clipboard's text saved to the scratchpad, the test text put on it with `pbcopy` and the saved text put back (`cmp` equal). Seen: a click in the grid puts the focus on the terminal's input and types nothing; two Cmd+V pastes of 299 characters (p01abcdef to p30abcdef) reached Claude's prompt whole and in order, the paste event trusted and carrying all 299 characters. Q79c: the Memories view's add photo press opens the macOS open panel (Cancel, Open), closed by its pid (56119, `com.apple.appkit.xpc.openAndSavePanelService`, which a SIGTERM left running and a SIGKILL ended); the page answered after it and no photo was added. Defects:
   - Q99-look-3: a press on the Sessions view's New button ("Start a new session (n)") opens nothing (no tab, no console error); the key `n` opens the composer. Booked into D20 (Z313).

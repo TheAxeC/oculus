@@ -26,7 +26,7 @@ Queued, in order (21 steps):
 - O34 (remote access): once O33 has landed.
 - O35 (macOS, Linux and Windows): once O33 has landed.
 
-Owed: the looks of Q81 (a Confirm over the update tray) and Q79c (the Live HPC jobs table and log).
+Owed: the look of Q81 (a Confirm over the update tray).
 
 Landed, newest first:
 - D17 (project commands), 2026-10-03, 76bdcd8c.
