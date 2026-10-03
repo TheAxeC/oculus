@@ -1,5 +1,5 @@
 In flight:
-- X3c (the tab strip as VS Code's): building.
+- X3c (the tab strip as VS Code's): in review.
 - Q91 (the project view and its editor): building.
 - D25 (the editor's options): building.
 
