@@ -43,7 +43,7 @@ Queued, in order (36 steps):
 Owed: the look of Q81 (a Confirm over the update tray); D25's four looks (a diff widened past 900 px drawn side by side, the Compare Selected header, the Settings save of `read_limits`, the hunk header at 300 px with its own buttons).
 
 Landed, newest first:
-- Q116 (the Status view's line count of everything under src/), 2026-10-03, this commit.
+- Q116 (the Status view's line count of everything under src/), 2026-10-03, 5a7654bf.
 - D25 (the editor's options), 2026-10-03, 4c7cf915.
 - Q91 (the project view and its editor), 2026-10-03, a8ba6553.
 - D17 (project commands), 2026-10-03, 76bdcd8c.
