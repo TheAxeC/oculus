@@ -1,5 +1,5 @@
 In flight:
-- X3c (the tab strip as VS Code's): in review.
+- X3c (the tab strip as VS Code's): repair round 1.
 - Q91 (the project view and its editor): in review.
 - D25 (the editor's options): in review.
 

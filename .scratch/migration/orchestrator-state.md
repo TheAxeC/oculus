@@ -39,10 +39,10 @@ dispatch:   # three steps in flight (2026-10-03): X3c, Q91 and D25 building; D32
   launched: 2026-10-03 07:51 local
   report: agents/reviews/X3c-report.md
   builder_usage: 221,047 tokens, 823 tool uses, 195.1 min (report saved 2026-10-03)
-  reviewer_report: agents/reviews/X3c-refuter.md (first run; reviewer a535e06539cbd8738, claude-opus-5-5, launched 2026-10-03, running)
+  reviewer_report: agents/reviews/X3c-refuter.md (first run; reviewer a535e06539cbd8738, claude-opus-5-5, 364,675 tokens, 113 tool uses, 33.4 min)
   brief_check: agents/reviews/X3c-brief-check.md; claude-opus-5-5, 318,282 tokens, 113 tool uses, 17.0 min (run on main at a9c0d38d; findings closed 2026-10-03 under Closed)
   landing: not-started
-  round: 0
+  round: 1 (sent 2026-10-03, rulings agents/briefs/X3c-round1.md; the worktree's tools/oculus as the round was sent is copied to the session scratchpad's x3c-round1-start/ for the delta)
 - step: Q91
   executor: agent
   worker: claude:sonnet at ordo-high
