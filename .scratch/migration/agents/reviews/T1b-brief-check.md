@@ -193,3 +193,4 @@ Completion notice: 249,285 tokens, 92 tool uses, 10.6 min (agent ab9456832c5dabe
 - Implied inputs, a `src/` export left with no importer: item 5 sends it to "Doc text" for removal at landing.
 - Implied inputs, the base copy: `.agents/worktrees/T1b-base/tools/oculus/` holds `src/` and `tests/` at the base, made at preparation; "What is on the tree" names it.
 - Implied inputs, kept files near the cap: item 4 splits a changed file left at 880 lines or more.
+- From T1d's brief check, the points that hold for `tests/state/` too: a hook's time and causes count with the tests it serves (item 3); a `*.client.test.ts` case of a press or focus is deleted under `spec.md:65` (item 1); a rewritten helper keeps how it fails (item 5); a removal names its holding test by `file:line`, marked when it lies in another sweep's folder (item 7).

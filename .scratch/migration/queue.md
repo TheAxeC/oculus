@@ -1,6 +1,6 @@
 In flight:
 - T1c (the test sweep of tests/server/): repair round 1 reported; the review of the round running.
-- T1b (the test sweep of tests/state/): brief checked, being prepared.
+- T1b (the test sweep of tests/state/): building.
 - T1d (the test sweep of tests/views/, shell/, ui/ and themes/): brief check running.
 - T1e (the test sweep of tests/routes/, data/, checks/ and fixtures): brief check running.
 
