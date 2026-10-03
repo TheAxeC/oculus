@@ -1018,6 +1018,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z343 (2026-10-03): M6 is the removal of the collection form, with status, deadline and date changed in place and Add and Edit opening the file (the user).
 - Z345 (2026-10-03): the schemas completed and used by the YAML editor through yaml-language-server, as M8 (the user).
 - Z347 (2026-10-03): the six suggestions for Files approved, as D39 to D44 (the user).
+- Z348 (2026-10-03): the one full verify run per build of `agents/spec.md:25` is enforced, restated in every builder prompt and counted at each landing (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
