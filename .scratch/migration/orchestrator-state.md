@@ -41,8 +41,9 @@ dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d,
   brief_check: none (Z401)
   review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
   shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
+  builder_usage: claude-sonnet-5-5, 78,627 tokens, 103 tool uses, 17.9 min (completion notice 2026-10-04)
   landing: not-started
-  round: 0
+  round: 1 (Z413: G33 to G35 and the G6 rows, files put back from the base)
 - step: T2b
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -55,8 +56,9 @@ dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d,
   brief_check: none (Z401)
   review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
   shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
+  builder_usage: claude-sonnet-5-5, 296,409 tokens, 188 tool uses, 28.6 min (completion notice 2026-10-04)
   landing: not-started
-  round: 0
+  round: 1 (Z413: G33 to G35 and the G6 rows, files put back from the base)
 - step: T2c
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -69,6 +71,7 @@ dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d,
   brief_check: none (Z401)
   review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
   shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
+  builder_usage: claude-sonnet-5-5, 213,508 tokens, 60 tool uses, 7.0 min (completion notice 2026-10-04)
   landing: not-started
   round: 0
 - step: T2d
@@ -83,8 +86,9 @@ dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d,
   brief_check: none (Z401)
   review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
   shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
+  builder_usage: claude-sonnet-5-5, 337,205 tokens, 310 tool uses, 50.4 min (completion notice 2026-10-04)
   landing: not-started
-  round: 0
+  round: 1 (Z413: G33 to G35 and the G6 rows, files put back from the base)
 ```
 
 ## The standing demands (from Axel, in force)

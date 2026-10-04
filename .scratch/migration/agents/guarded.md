@@ -10,7 +10,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G2. A path outside the configured roots is refused.
   Code: `src/routes/api/` fs, ops, open, source, search, history, project-files, file/[root].
   Test: none named yet.
-- G3. `config/local.yml` is never served, read into a page or written.
+- G3. The content of `config/local.yml` is never served, read into a page or written.
   Code: the server modules that name it (`grep -rl local.yml src/lib/server`).
   Test: none named yet.
 - G4. A provider callback with a wrong `state` is refused.
@@ -19,7 +19,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G5. Hub or feed text reaches HTML only through the sanitiser.
   Code: `src/lib/ui/html.ts`.
   Test: none named yet.
-- G6. A git action that can lose work or move a branch needs `confirm: true`.
+- G6. A git action that can lose work or move a branch needs `confirm: true`. Each action of the `CONFIRMED` lists is a unit.
   Code: `CONFIRMED` in `src/lib/server/git/git-routes.ts` and `deposit-routes.ts`.
   Test: none named yet.
 - G7. A value that reaches a command is passed as an argument, never put into a shell string.
@@ -40,6 +40,15 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 
 - G28. An unsaved edit survives a tab switch and a reload, and closing a tab, pane or page that holds one asks first: in a form, the manifest editor, the file editor and the review comment box. Closing a Terminal tab whose terminals run asks first, and a move, a split or a reload stops none of them. A page that detaches stops the delivery and leaves the tmux session running.
   Code: `src/lib/state/forms/`, `src/lib/state/sessions/source.svelte.ts`, `src/lib/state/sources/repositories/review-comment.ts`, `src/lib/shell/panes/strip/close-question.svelte.ts`, `src/lib/state/client/context.ts`, `src/lib/state/sessions/terminal/terminal-tabs.ts`, `src/lib/server/machine/pty/channel.ts`.
+  Test: none named yet.
+- G33. Each git action does to the repository only what it names: stage changes only the paths named, discard reverts only the files named, a branch action moves only the branch named, a stash drop removes only the stash named.
+  Code: `ACTIONS` in `src/lib/server/git/git-routes.ts` (each action but `suggest` is a unit), `git-write.ts`, `git-refs.ts`, `git-index.ts`, `git-remote.ts`.
+  Test: none named yet.
+- G34. An HPC action touches only the job it names: cancel cancels only that job id, log reads only that job's log, and an id or a path that fails `validId` or `safePath` never reaches the remote command.
+  Code: `cancel` and `log` in `src/lib/server/machine/hpc/actions.ts`, `src/lib/server/machine/hpc/routes.ts`.
+  Test: none named yet.
+- G35. A terminal operation acts only on the terminal it names, and ends only what it says it ends.
+  Code: the operations of `src/lib/server/machine/pty/routes.ts` that start or end a process or send it input, each a unit: start, recover, task, latex, command, rerun, restart, chat, compose, steer, interrupt, fork, stop, clear, resume; `tmux.ts`, `sessions.ts`, `channel.ts`.
   Test: none named yet.
 - G29. A saved layout of an earlier version is read into the current one with every page and tab kept.
   Code: `src/lib/state/workbench/layout/saved/`.
