@@ -1,8 +1,7 @@
 In flight:
-- None.
+- T1a (the test tiers): building, no brief check, no reviewer, no repair round (Z416); pause before its landing commit.
 
-Queued, in order (33 steps):
-- T1a (the test tiers): next; the queue below resumes after it.
+Queued, in order (32 steps):
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
 - M6 (the collection forms removed): once S5 has landed.
