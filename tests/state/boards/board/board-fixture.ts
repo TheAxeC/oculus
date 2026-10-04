@@ -1,16 +1,13 @@
 // Layer 4, test fixture. The hand-built snapshot, config and vocabulary the board suites read, and
 // the helpers that build a project, a venue and a board item. The vocabulary is synthetic rather
 // than the real config/catalogs/vocab.yml: what is checked is that the board reads the vocabulary
-// it is given; that the real one holds the keys these lookups need is
-// tests/state/shared/words/tones.test.ts's half of the gate.
+// it is given.
 
 import { NO_FEEDS, RESOURCES, fixtureProject } from '../../../fixtures/entities-fixture.ts';
 import {
     boardItems,
-    facets,
     presetFor,
-    type BoardItem,
-    type BoardPreset
+    type BoardItem
 } from '../../../../src/lib/state/boards/board/index.ts';
 import { setVocab } from '../../../../src/lib/state/shared/words/tones.ts';
 import {
@@ -31,7 +28,7 @@ import type {
     Venue
 } from '../../../../src/lib/data/model/index.ts';
 
-export const ENGINE_CONFIG = loadConfig(engineDir()).config;
+const ENGINE_CONFIG = loadConfig(engineDir()).config;
 
 setCatalog(textCatalog(ENGINE_CONFIG));
 
@@ -51,7 +48,7 @@ setVocab({
 });
 
 /** The merged config the presets are read out of, holding one of everything they look for. */
-export const CONFIG: Record<string, unknown> = {
+const CONFIG: Record<string, unknown> = {
     board: {
         cols_project: ['Project', 'Authors', 'Venue', 'Status', 'Focus', 'Next'],
         cols_archive: ['Paper', 'Authors', 'Venue', 'Domain', 'Pillar', 'Funding'],
@@ -73,7 +70,7 @@ export const CONFIG: Record<string, unknown> = {
     archive_label_mode: 'full'
 };
 
-export const EMPTY_RELATIONS: Relations = {
+const EMPTY_RELATIONS: Relations = {
     projectVenue: [],
     projectFunding: [],
     projectDataset: [],
@@ -87,7 +84,7 @@ export const EMPTY_RELATIONS: Relations = {
     fundingOrganisation: []
 };
 
-export function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
+function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
     return fixtureProject({
         id,
         tier,
@@ -98,11 +95,11 @@ export function project(id: Id, tier: Tier, over: Partial<Project> = {}): Projec
     });
 }
 
-export function venue(id: Id, over: Partial<Venue> = {}): Venue {
+function venue(id: Id, over: Partial<Venue> = {}): Venue {
     return { id, name: id.toUpperCase(), themes: [], ...over };
 }
 
-export function jointWork(): Collection {
+function jointWork(): Collection {
     return {
         id: 'joint-work',
         title: 'Joint work',
@@ -121,10 +118,9 @@ export function jointWork(): Collection {
 
 /**
  * Six projects on the projects board, one on the archive board and one on the coauthor board.
- * `alpha` carries one distinctive word in every field the search reads, which is what the search
- * cases below look for.
+ * `alpha` carries one distinctive word in every field the search reads.
  */
-export function snapshot(): Snapshot {
+function snapshot(): Snapshot {
     const projects: Project[] = [
         project('alpha', 'active', {
             type: 'active',
@@ -226,13 +222,9 @@ export function snapshot(): Snapshot {
 
 export const SNAPSHOT = snapshot();
 
-export const PROJECTS = presetFor('projects', CONFIG);
+const PROJECTS = presetFor('projects', CONFIG);
 
 export const ITEMS = boardItems(SNAPSHOT, PROJECTS);
-
-export function ids(items: BoardItem[]): Id[] {
-    return items.map((item) => item.id);
-}
 
 export function item(id: Id): BoardItem {
     const found = ITEMS.find((one) => one.id === id);
@@ -240,15 +232,7 @@ export function item(id: Id): BoardItem {
     return found;
 }
 
-/** One facet's values as `value:count`, or nothing when the board does not offer that facet. */
-export function facet(preset: BoardPreset, items: BoardItem[], key: string): string[] | null {
-    const found = facets(items, preset).find((one) => one.key === key);
-    return found === undefined
-        ? null
-        : found.values.map((value) => `${value.value}:${value.count}`);
-}
-
-/** The board's items with some projects overwritten, for the counting cases. */
+/** The board's items with some projects overwritten. */
 export function over(
     fields: Record<Id, Partial<Project>>,
     resources?: Record<Id, Resource>

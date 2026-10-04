@@ -40,7 +40,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 
 - G28. An unsaved edit survives a tab switch and a reload, and closing a tab, pane or page that holds one asks first: in a form, the manifest editor, the file editor and the review comment box. Closing a Terminal tab whose terminals run asks first, and a move, a split or a reload stops none of them. A page that detaches stops the delivery and leaves the tmux session running.
   Code: `src/lib/state/forms/`, `src/lib/state/sessions/source.svelte.ts`, `src/lib/state/sources/repositories/review-comment.ts`, `src/lib/shell/panes/strip/close-question.svelte.ts`, `src/lib/state/client/context.ts`, `src/lib/state/sessions/terminal/terminal-tabs.ts`, `src/lib/server/machine/pty/channel.ts`.
-  Test: close question, unsaved text: `tests/shell/panes/strip/tab-menu.test.ts`, 'asks before Close Others closes a tab holding unsaved text, naming it, and No closes nothing'; close question, a running terminal: same file, 'asks about the terminal running a program among the tabs an item closes'.
+  Test: close question, unsaved text: `tests/shell/panes/strip/tab-menu.test.ts`, 'asks before Close Others closes a tab holding unsaved text, naming it, and No closes nothing'; close question, a running terminal: same file, 'asks about the terminal running a program among the tabs an item closes'.; form: `tests/state/forms/form-drafts.test.ts`, 'keeps a typed value and reads it back by instance and form', 'reads the drafts back out of the storage the ui store saved them to', 'registers the client own drafts with the close guard'; manifest editor: `tests/state/forms/manifest-draft.test.ts`, 'keeps an edit per instance and reports it unsaved while it differs', 'reads the edits back out of the storage the ui store saved them to', 'registers the client's own manifest draft with the close guard'; file editor: `tests/state/sessions/source.test.ts`, 'keeps the typed text when it is opened again', 'is unsaved once the reader types, which is what closing it asks about'; review comment box: `tests/state/sources/repositories/diff/comment-draft.client.test.ts`, 'closes keeping the text, and drops the text on Cancel'; close question for a tab, a pane, a page and a running terminal: `tests/state/workbench/navigation/pages.test.ts`, 'keeps the unsaved question for one tab holding unsaved text', 'asks one question over a pane with unsaved text and a busy terminal, the text first', 'lists every instance of every pane of a page, in the tree's own order', 'asks the busy question over one tab, naming the terminal and its program'; terminals: `tests/state/client/terminal/terminal-close.test.ts`, 'names a terminal running a program, and not an idle shell', 'ends no terminal when it moves to another pane, to another page, or is split', 'ends no terminal when the layout is loaded again'.
 - G33. Each git action does to the repository only what it names: stage changes only the paths named, discard reverts only the files named, a branch action moves only the branch named, a stash drop removes only the stash named.
   Code: `ACTIONS` in `src/lib/server/git/git-routes.ts` (each action but `suggest` is a unit), `git-write.ts`, `git-refs.ts`, `git-index.ts`, `git-remote.ts`.
   Test: none named yet.
@@ -52,7 +52,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Test: none named yet.
 - G29. A saved layout of an earlier version is read into the current one with every page and tab kept.
   Code: `src/lib/state/workbench/layout/saved/`.
-  Test: none named yet.
+  Test: `tests/state/workbench/layout/saved/layout-saved.test.ts`, 'migrates every page, and reads which one was current'.
 - G30. A deposit commit is refused while the secret scan finds a secret in it.
   Code: `src/lib/server/git/deposit.ts`.
   Test: none named yet.
@@ -67,7 +67,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Test: none named yet.
 - G12. Every shipped config file and catalog reads with no finding.
   Code: `config/`, `config/catalogs/`.
-  Test: none named yet.
+  Test: rail list of `layout.yml`: `tests/state/workbench/navigation/rail.test.ts`, 'finds nothing wrong with the shipped rail list'.
 - G13. A wrong config value is refused with a finding that names the key, and its default is used.
   Code: the config readers under `src/lib/data/sources/config/`.
   Test: none named yet.
