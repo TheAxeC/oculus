@@ -28,7 +28,59 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # no step in flight (2026-10-04): T1d stopped and its work thrown away (Z390, Axel); T1c, T1b and T1e landed (workers_at_once: 5).
+dispatch:   # four steps in flight (2026-10-04 13:05): the deletion sweeps T2a to T2d (Z396 to Z403).
+- step: T2a
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a77757591c213a6a6 (builder, launched 2026-10-04 13:05 local)
+  worktree: .agents/worktrees/T2a
+  base: ca9d1e119
+  launched: 2026-10-04 13:05 local
+  report: agents/reviews/T2a-report.md
+  brief_check: none (Z401)
+  review: none (Z402); at landing `git diff --numstat` and the named tests checked
+  landing: not-started
+  round: 0
+- step: T2b
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a518d5775c38fa0f3 (builder, launched 2026-10-04 13:05 local)
+  worktree: .agents/worktrees/T2b
+  base: ca9d1e119
+  launched: 2026-10-04 13:05 local
+  report: agents/reviews/T2b-report.md
+  brief_check: none (Z401)
+  review: none (Z402); at landing `git diff --numstat` and the named tests checked
+  landing: not-started
+  round: 0
+- step: T2c
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a69f0156ff00266f2 (builder, launched 2026-10-04 13:05 local)
+  worktree: .agents/worktrees/T2c
+  base: ca9d1e119
+  launched: 2026-10-04 13:05 local
+  report: agents/reviews/T2c-report.md
+  brief_check: none (Z401)
+  review: none (Z402); at landing `git diff --numstat` and the named tests checked
+  landing: not-started
+  round: 0
+- step: T2d
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a10c3e512d66966e2 (builder, launched 2026-10-04 13:05 local)
+  worktree: .agents/worktrees/T2d
+  base: ca9d1e119
+  launched: 2026-10-04 13:05 local
+  report: agents/reviews/T2d-report.md
+  brief_check: none (Z401)
+  review: none (Z402); at landing `git diff --numstat` and the named tests checked
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -181,8 +233,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-04. The closed list of guarantees is in force (Z392 to Z396): `agents/guarded.md` with G1 to G15, `agents/spec.md:57`, `:62`, `:63`, `:67` rewritten, the pinned `spec` and `refute` skills ask a test only under the rules file's test rule. Nothing in flight. Next:
-  1. `/spec` T2a (`state/`), T2b (`server/`) and T2c (`views/`, `shell/`, `ui/`, `themes/`), then their builders at once; T2d (`routes/`, `data/`, `checks/`, `fixtures/`) once Axel has ruled which tree checks become entries.
-  2. T1a after the four deletion sweeps.
-  3. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
-  Open for Axel: which tree checks under `tests/checks/` become entries of `agents/guarded.md` (Z395).
+- 2026-10-04 13:05. The four deletion sweeps T2a to T2d are building at once, base ca9d1e119, under Z396 to Z403: no brief check, no reviewer, no repair round, builders run nothing. Next:
+  1. On each report: read the diff, `/land` it (verify list once on main, `git diff --numstat` shows no added line outside `agents/guarded.md` and the report, each named test exists), write the kept test under its entry in `agents/guarded.md`, keep one test where two sweeps named one for the same entry.
+  2. After the last landing: delete the helpers left with no importer, and the entries with no test (Z403).
+  3. T1a after the sweeps. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
+  Open for Axel: none.

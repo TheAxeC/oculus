@@ -1,8 +1,7 @@
 In flight:
-- None. Next: T2a, T2b and T2c (the deletion sweeps under agents/guarded.md), then T2d once Axel rules on the tree checks.
+- T2a, T2b, T2c and T2d (the deletion sweeps of the test folders under agents/guarded.md): building since 13:05.
 
-Queued, in order (37 steps):
-- T2a, T2b, T2c, T2d (the deletion sweeps of the test folders under agents/guarded.md): T2d after Axel's ruling on the tree checks.
+Queued, in order (33 steps):
 - T1a (the test tiers): once T1b, T1c, T1d and T1e have landed; the queue below resumes after it.
 - S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
 - D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
