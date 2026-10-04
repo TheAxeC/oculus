@@ -20,6 +20,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 - Z469 (2026-10-05, closed in automode): X3e's brief-check closing, open item 1; `choices.md`.
 - Z470 (2026-10-05, closed in automode): X3e's brief-check closing, open item 2; `choices.md`.
 - Z471 (2026-10-05, closed in automode): X3e's brief-check closing, open item 3; `choices.md`.
+- Z474 (2026-10-05, closed in automode): D42's review Spec 1; `choices.md`.
+- Z475 (2026-10-05, closed in automode): D42's review, declined to judge; `choices.md`.
 - Z468 (2026-10-05, Axel): no step is ever added; Q118, Q119, Q121 and Q122 folded into S5 and D33.
 - Z458 (2026-10-05, closed in automode): Q118's brief O1; `choices.md`.
 - Z459 (2026-10-05, closed in automode): Q118's brief O2; `choices.md`.

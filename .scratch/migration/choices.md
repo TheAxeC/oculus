@@ -155,6 +155,24 @@ The question: X3e's brief-check closing, open item 3: D5's catalog sentences cov
 
 Booked in `plan.md` Rulings.
 
+## Z474 (2026-10-05, from D42's review)
+
+The question: D42's review Spec 1: paging by `<hash>^` walks the first parent only, so the page after a merge, or after a side-branch commit at a page boundary, leaves out commits that changed the file; `--skip` under `--follow` repeats the first page on git 2.49.0 (Z434).
+
+- Chosen: (a) the cursor and the answer keep their shape; the server reads the log from HEAD in git's order and answers the 50 rows after the cursor's row, so every page is a slice of one ordering and no commit is lost or repeated.
+- Not chosen: (b) the first-parent paging kept, which loses commits in any repository with merges (the lazy one).
+
+Booked in `plan.md` Rulings.
+
+## Z475 (2026-10-05, from D42's review)
+
+The question: D42's review, declined to judge: Open Timeline on a file while a pin holds another file releases the pin (the builder's judgment call).
+
+- Chosen: (a) kept: the reader names a file by the command, so the Timeline shows it, and HELP.md says the pin is released.
+- Not chosen: (b) the pin kept and the command showing nothing, which reads as a broken command (the lazy one).
+
+Booked in `plan.md` Rulings.
+
 ## Z468 (2026-10-05, Axel)
 
 Axel ruled that no step is ever added: the content of Q118, Q119, Q121 and Q122 is folded into S5 (Q119, Q122) and D33 (Q118, Q121), nothing dropped. Booked in `plan.md` Rulings.

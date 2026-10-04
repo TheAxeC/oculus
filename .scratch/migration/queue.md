@@ -1,28 +1,28 @@
 In flight:
 - D23 (language servers): brief being written.
-- X3f (a file row opening as VS Code's, and the tab row's actions): taken back out of main, its failures being diagnosed, then repair round 2.
-- D37 (the Search view's replace and the LaTeX build and view): repair round 1 built, its review running.
-- S5 (the Settings view's controls and headings, with the setting readers keeping G13 and the options catalog's head line): two cases ruled, building; the folded work goes as repair round 1.
-- H3 (the hub's data map): reviewed, repair round 1 building.
-- D42 (a file's history): built, its review running.
+- X3f (opening a file row, and the tab row's actions): failures being diagnosed.
+- D37 (the Search view's replace and the LaTeX build): repair round 1 under review.
+- S5 (the Settings view's controls and headings): building.
+- H3 (the hub's data map): repair round 1 built, its review next.
+- D42 (a file's history): repair round 1 written, not yet sent.
 
 Queued, in order (27 steps):
-- D11 (the debug client for rite): brief check closed; prepared once S5 and H3 have landed.
-- X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): brief check closed; prepared once D42 has landed.
+- D11 (the debug client for rite): brief ready; once S5 and H3 have landed.
+- X3e (Files lists reordered by drag): brief ready; once D42 has landed.
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D38 (the Literature search view): once D37 has landed.
 - D44 (Submit on a .slurm file): brief drafted; once X3f and D37 have landed.
 - D41 (links in Markdown checked): once M7 has landed.
 - D15 (PDF reading): once D37 has landed.
-- M8 (the hub's YAML checked and completed in the editor, with the data departures H3 found): once D23 and H3 have landed.
+- M8 (the hub's YAML checked in the editor): once D23 and H3 have landed.
 - D43 (LaTeX navigation): once D23 has landed.
 - D20 (an agent from a task or a worktree): once a slot is free.
 - A3 (scheduled Update runs): once a slot is free.
 - D28 (saving a file as VS Code does): once a slot is free.
 - D23b (cross-file language features): once D23 has landed.
 - D39 (hub keys as links): once M8 and D23b have landed.
-- D33 (the Problems view, with the Audit rows' keyboard cursor and Enter): once D23 has landed.
+- D33 (the Problems view): once D23 has landed.
 - D36 (linters on save): once D33 has landed.
 - D40 (the writing rules as editor marks): once D36 has landed.
 - E4 (the apps): once a slot is free.
@@ -35,7 +35,7 @@ Queued, in order (27 steps):
 - O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.
 - O36 (a second person in the hub): paused (Axel); once O34 has landed.
 
-Owed: Q81 (a Confirm over the update tray, waiting until Axel takes it up), listed in `agents/reviews/owed-looks.md`.
+Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.
