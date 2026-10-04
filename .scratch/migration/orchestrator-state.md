@@ -28,7 +28,19 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch: none
+dispatch:
+  - step: T1a
+    executor: agent
+    worker: claude-sonnet-5-5 (ordo-high)
+    session_id: a11b76223dcd3775f
+    worktree: .agents/worktrees/T1a
+    base: f8c8eb64f
+    launched: 2026-10-04
+    report: tools/oculus/.scratch/migration/agents/reviews/T1a-report.md
+    brief_check: none (Axel)
+    review: none (Z416)
+    landing: none (Z419)
+    round: 0
 ```
 
 ## The standing demands (from Axel, in force)
