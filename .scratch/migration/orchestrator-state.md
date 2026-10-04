@@ -28,7 +28,63 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch: []   # nothing in flight (2026-10-04): the first runs of T2a to T2d thrown away under Z405; the four are prepared again.
+dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d prepared again under Z405 and Z406.
+- step: T2a
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  worktree: .agents/worktrees/T2a
+  base: 56b23a9f4
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a0678231df22cce9f (builder, launched 2026-10-04 13:30 local)
+  launched: 2026-10-04 13:30 local
+  report: agents/reviews/T2a-report.md
+  brief_check: none (Z401)
+  review: none (Z402); at landing `git diff --numstat` and the named tests checked
+  shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so the landings remove different lines and a conflict is between adjacent deletions, resolved by keeping both
+  landing: not-started
+  round: 0
+- step: T2b
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  worktree: .agents/worktrees/T2b
+  base: 56b23a9f4
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: ab3fcd26cd54804c2 (builder, launched 2026-10-04 13:30 local)
+  launched: 2026-10-04 13:30 local
+  report: agents/reviews/T2b-report.md
+  brief_check: none (Z401)
+  review: none (Z402); at landing `git diff --numstat` and the named tests checked
+  shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so the landings remove different lines and a conflict is between adjacent deletions, resolved by keeping both
+  landing: not-started
+  round: 0
+- step: T2c
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  worktree: .agents/worktrees/T2c
+  base: 56b23a9f4
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a0a24d39cb1e38721 (builder, launched 2026-10-04 13:30 local)
+  launched: 2026-10-04 13:30 local
+  report: agents/reviews/T2c-report.md
+  brief_check: none (Z401)
+  review: none (Z402); at landing `git diff --numstat` and the named tests checked
+  shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so the landings remove different lines and a conflict is between adjacent deletions, resolved by keeping both
+  landing: not-started
+  round: 0
+- step: T2d
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  worktree: .agents/worktrees/T2d
+  base: 56b23a9f4
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a8db0e1ee31bc63d6 (builder, launched 2026-10-04 13:30 local)
+  launched: 2026-10-04 13:30 local
+  report: agents/reviews/T2d-report.md
+  brief_check: none (Z401)
+  review: none (Z402); at landing `git diff --numstat` and the named tests checked
+  shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so the landings remove different lines and a conflict is between adjacent deletions, resolved by keeping both
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -181,6 +237,11 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-04 13:30. The four deletion sweeps T2a to T2d are building again at once, base 56b23a9f4, under the widened list (Z405, Z406): no brief check, no reviewer, no repair round, builders run nothing. Next:
+  1. On each report: read the diff, `/land` it (verify list once on main, `git diff --numstat` shows no added line outside `agents/guarded.md` and the report, each named test exists), write the kept test under its entry in `agents/guarded.md`, keep one test where two sweeps named one for the same part of an entry.
+  2. After the last landing: delete the helpers left with no importer, the entries with no test (Z403), and the sentences outside `tests/` that name deleted tests (`DESIGN.md:72` among them).
+  3. Q117 (G31), then T1a. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
+  Open for Axel: none.
 - 2026-10-04 13:05. The four deletion sweeps T2a to T2d are building at once, base ca9d1e119, under Z396 to Z403: no brief check, no reviewer, no repair round, builders run nothing. Next:
   1. On each report: read the diff, `/land` it (verify list once on main, `git diff --numstat` shows no added line outside `agents/guarded.md` and the report, each named test exists), write the kept test under its entry in `agents/guarded.md`, keep one test where two sweeps named one for the same entry.
   2. After the last landing: delete the helpers left with no importer, and the entries with no test (Z403).
