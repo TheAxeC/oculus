@@ -1,5 +1,5 @@
 In flight:
-- T1d (the test sweep of tests/views/, shell/, ui/ and themes/, and the audits check rewritten): waiting for Axel's ruling on where tests of view-layer modules belong.
+- T1d (the test sweep of tests/views/, shell/, ui/ and themes/, and the audits check rewritten): building, resumed with the ruling that the check reads only view tests that import a component.
 
 Queued, in order (33 steps):
 - T1a (the test tiers): once T1b, T1c, T1d and T1e have landed; the queue below resumes after it.
