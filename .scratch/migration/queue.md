@@ -5,9 +5,9 @@ In flight:
 - S5 (the Settings view's controls and headings, with the setting readers keeping G13 and the options catalog's head line): two cases ruled, building; the folded work goes as repair round 1.
 - H3 (the hub's data map): reviewed, repair round 1 building.
 - D42 (a file's history): built, its review running.
-- D11 (the debug client for rite): brief check in, its findings being closed; prepared once S5 and H3 have landed.
 
-Queued, in order (26 steps):
+Queued, in order (27 steps):
+- D11 (the debug client for rite): brief check closed; prepared once S5 and H3 have landed.
 - X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): brief check closed; prepared once D42 has landed.
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.

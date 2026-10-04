@@ -302,4 +302,85 @@ Agent usage: ordo-high on claude-opus-5-5 (a0e68a55e2b7c6f81), 338,752 tokens, 1
 
 ## Closed (the session's change to the brief for every finding above, and each dictated line added after the check, made before the preparation commit)
 
-- <left for the session>
+Names:
+- N1: "Paths this step writes" gains `tools/oculus/package.json` (`"@vscode/debugprotocol": "1.68.0"` in `devDependencies`) and `tools/oculus/package-lock.json` (as `npm install --save-dev --save-exact @vscode/debugprotocol@1.68.0` writes it); "Libraries checked" names the entry and the two files.
+- N2: the write list gains `src/lib/server/core/channels.ts` lines 12-17, and section 10 has the head comment name `debug-console` beside `pty:` and `files` with what its merge does.
+- N3: the write list gains `DESIGN.md` line 245; section 2 says the session reads `locals.server.local.riteDapBin` afresh at each launch and dictates the clause DESIGN.md:245 gains; "What is on the tree" lists DESIGN.md:245 among the paragraphs to mark.
+- N4: the write list's `options.yml` range becomes lines 707-712; section 2 dictates the `approvals` entry's new first sentence naming debug launches.
+- N5: the write list gains `DESIGN.md` line 279; section 10 has its `routes/views.ts:68-80` citation follow `registerCollections`; "What is on the tree" lists it.
+- N6: section 7 puts the `server.debug.*` sentences in `config/text/server.yml`, a `debug:` group after `commands:`, and the page's keys alone in `debug.yml`; the write list gains `config/text/server.yml`; case 65 covers the new group.
+- N7: a new "Shared paths" section says D11 is prepared once S5 and H3 have landed (Z455) and that the line numbers of `options.yml`, `app.yml:12`, HELP.md and DESIGN.md are read again at preparation; section 2 gives the `rite_dap_bin` entry S5's `section: Programs` (`S5.md:308`, no `heading:` per `S5.md:89`), the write-list line says so.
+- N8: "Shared paths" says D11 edits `config/text/app.yml` line 12 as H3 leaves it; the write-list line says so.
+
+The step line:
+- S1: Decision 20 cites Z447 to Z450 as ruled, each (a), with the choice each fixes.
+- S2: "Libraries checked" says `@vscode/debugadapter-testsupport` is not taken as ruled by Z448 (`plan.md:1165`); the O2 wording is gone.
+- S3: "What is on the tree" gains a bullet listing Z447 to Z450 and Z454 to Z457 with where each applies; sections 2 (Z447), 3 (Z448), 6 (Z449, Z450) cite them beside the choice they fix.
+- S4: a new section "The look" says the live debug look needs `rite_dap_bin` set in `config/local.yml`, which only Axel sets, that the orchestrator raises it at landing, and that no agent opens or edits `local.yml`; by Z467 it lists the real cases the look exercises (`a.rite`, `frame.rite`, cathedra's `utils/example.rite`, a run to its end, a file that does not read, a launch with `before`).
+- S5: section 11 gives each listed 4j row a fixed choice for HELP.md, VS Code's default unless the brief already said otherwise (`closeReadonlyTabsOnEnd`, `console.closeOnEnd`, `console.collapseIdenticalLines`, `console.acceptSuggestionOnEnter`, `console.historySuggestions`, `focusWindowOnBreak`, `gutterMiddleClickAction`, `hideLauncherWhileDebugging`, `openExplorerOnEnd`, `showBreakpointsInOverviewRuler`, `showInlineBreakpointCandidates`, `showVariableTypes`, `internalConsoleOptions`); sections 6, 7 and 9 build the ones that are behaviour (`window.focus()` on a break, the history list, Enter, the collapsed lines, Start shown, middle click), and cases 84 and 85 check two of them.
+
+Premises:
+- P1: "What is on the tree" is read on main at 3dccf6a8c, the head after X3f was taken back out of main (`git log --oneline -1`); its first bullet says D11 is prepared once S5 and H3 have landed, the worktree and base copy cut at main's head after both, and every number read again then; the base copy line takes `<base>` written at preparation. With X3f off main the X3f-moved premises are as the brief had them at 6005baee6 and are now cited from 3dccf6a8c: Source.svelte 502 lines, `language` at :199, `extension` at :204-210, the mount at :437-459; sources `Editor.svelte` 266; `views/sources/source` 10 items (`git ls-tree --name-only 3dccf6a8c <folder>/ | wc -l`). Every `plan.md` line is the one `grep -n` prints at 3dccf6a8c, named by its ruling (478, 479, 480, 508, 656, 744, 759, 761, 764, 911, 1165-1168, 1173-1176, 1187); "What it must do" and the write list name 3dccf6a8c. The Z74 inventory ranges are `:1149-1188` and `:1687-1688`. "Shared paths" names X3f, back with its builder (Z465), with the lines its saved patch changes in Source.svelte, sources `Editor.svelte`, HELP.md and DESIGN.md, each apart from D11's.
+- P2: `tests/server/machine` 6 (counted with `git ls-tree --name-only 3dccf6a8c <folder>/ | wc -l`, the command now named); `LOCAL_KEYS` at `local.ts:108-127`; capabilities at `debug_dap.cpp:182-191`; `probe.mjs` 38 lines; the README line says the grep prints 9, 15 and 36, none about project commands or debugging.
+- P3: "What is on the tree" states the extension's real behaviour (`extension.js:50-59` and `:61-63`); section 1 makes `program` required in a named configuration with the finding "is required: name the .rite file to run, or ${file} for the file on screen"; Decision 4 is rewritten to that; case 70 added.
+- P4: section 7's Add Configuration creates `.oculus/` and `launch.yml` through the file operations store's `create({ root, path }, '.oculus/launch.yml', false)` (`state/sources/explorer/ops.svelte.ts:369-378`), the `/api/ops` `create` op of `data/file-ops.ts:113` (`createItem`, `server/files/fs/ops.ts:394-416`), then writes the text through `/api/source` and reads it back; "What is on the tree" records the create op and why the source route cannot create; read item 19 added; case 79 added.
+- P5: sections 4 and 6 take `repo` as `repositoryOf` decides: the deepest git repository under a served root, else the served root, so a `.rite` file under a served root with no repository launches from that root; one under neither is refused with "<path> is under no root the file browser serves, so it cannot be debugged"; "What is on the tree" records `repositoryOf`; cases 19 and 75.
+- P6: "What is on the tree" records the `<undefined>` Module entries; sections 7 and 8 apply Z457 (a): the hover evaluates only a word a scope of the selected frame holds, a watch and a console line evaluate as typed, Variables shows what the adapter answers.
+- P7: "What is on the tree" records that `finishFrame` acts as `continue` outside a debug frame and quotes `frame.rite`, a program with a debug frame of two rows, whose probe run (`scratchpad/dap/frame/step.mjs`) printed two stops with `continue` and one with `finishFrame`; case 41 is rewritten onto it.
+
+Cases and checks:
+- Case 31: its expected result is the finding `local.yml: rite_dap_bin must be a non-empty string`, as the `hpc_host` row reads; the per-key default is named as the work Z454 gave Q119, which Z468 folded into S5, so it lands with S5 before D11 is prepared, and no row of D11 asserts it.
+- Case 2: section 6 has Start post the warning notice "Open a .rite file to debug" as `commands.svelte.ts:668-671` posts `commands.no_file`; the case expects that notice; "What is on the tree" records the precedent.
+- Case 49: rewritten: a launch from the picker and by F5 while running gives "A debug session is running: stop it first"; section 3 says the refusal holds whichever surface asked, and section 9 says F5 gives it.
+- Case 3: section 4 says the relaunch after the approval does not run `before` again; case 3 expects one task terminal.
+- Case 62: section 9 says a debug key the handler answers is swallowed, that the seven keys are swallowed whenever a session is starting, running or paused or a `.rite` tab has the focus, overlay open or not, and do nothing under an overlay; case 62 is rewritten to that.
+- The G7 test: section 3 gives the session holder an injected `spawn`; the tests paragraph says the G7 test runs on a recording fake in `npm test`, and that a real-process test, if any, is tagged slow and run by `npx vitest run`; verify item 4 says how each is run.
+- Verify item 3: replaced by spec.md's perl ASCII gate, byte for byte (compared with `diff` of the two `grep -o` extracts, which printed nothing).
+- Verify item 5: it covers cases 1 to 85 and routes the DOM parts of cases 1, 2, 36, 44, 51, 52, 58, 59, 60, 61, 62 and the new 79, 82, 84, 85 to the look by name, their non-DOM parts staying quoted runs.
+
+The question:
+- Verify item 5: closed by the look routing above.
+- Case 41: closed by P7.
+- The look under Z447: closed by S4.
+- Case 53: section 5 makes `start` an absolute line number and says how a page subscribed across the cap drops its oldest lines and the dropped count; case 53 asks `first` 2,000 from the GET, and case 81 checks a subscribed page.
+
+Implied inputs:
+- I1: case 71, refused with "Only a .rite file that exists can be debugged: <path>" (section 4).
+- I2: section 1 says `cwd` takes no placeholder, as a command's does; case 72 expects `folderOf`'s "must be a folder of the repository that exists".
+- I3: section 1 has wrong types found as `typeProblems` finds them, with its sentence table passed in; case 73.
+- I4: section 1 checks `before` by `nameProblem`; case 74.
+- I5: closed by P5; case 75.
+- I6: section 4 dictates the field checks and their sentences (path, lines, 10,000 per path, empty expression, unknown frame), each a 400 `{ error }` as `refuse` answers; case 76.
+- I7: the commands store gains `afterPress(listener)` with outcomes `started`, `refused` and `dropped`, the store keeping the press each question belongs to; the debug store drops a waiting launch at a cancel ("The launch is dropped: the command <name> was not approved") and at a refusal ("The launch is dropped: the command <name> did not start"); case 29 extended, case 77 added.
+- I8: section 6 drops a waiting launch whose terminal leaves the `sessions` list with `exit` null, with "The launch is dropped: the terminal of <name> closed before the command ended"; case 78.
+- I9: closed with case 3 above.
+- I10: closed with case 53 above.
+- I11: closed by P6 (Z457); case 82.
+- I12: closed with case 62 above.
+- I13: closed by P4; case 79.
+- I14: section 6 has the store keep the text it sent to `saveSourceDraft` and read `sourceDraft(id)` after, a draft whose `saved` is not that text stopping the launch with its `message`; "What is on the tree" records why `failed` alone does not tell; case 80.
+
+Dictated text:
+- D11.md:162 (case 5): the program findings are dictated without the construction; case 5 now expects "leads above the repository; name a .rite file inside it".
+
+Declined to judge:
+- The default configuration's approval: Z456 applied in section 4, decision 21 and the DESIGN.md:153 line of section 11; cases 1, 75 and 83.
+- The `<undefined>` Module entries: Z457 applied (P6).
+- `server.debug.*` in a view fragment: closed by N6.
+- F9 to F11 on macOS: "The look" has the look press F9, F10 and F11 on macOS and say whether each reached the page.
+
+Dictated lines added or rewritten after the check, each read against spec.md's prose rules (plain, ASCII, no em dash, no "not X but Y", no history) and the hub's YAML and Markdown rules; each holds:
+- `grep -n "is required: name the .rite file"`, `grep -n "must be a path relative to the repository"`, `grep -n "leads above the repository; name"`, `grep -n "must name a file of the repository that exists"`, `grep -n "\"must name a .rite file\""`, `grep -n "may hold only the placeholders"`: the six program findings. Holds.
+- `grep -n "must not hold a tab, a line break"` and `grep -n "must be a map of the fields"`: the existing `nameProblem` and `typeProblems` sentences, quoted. Holds.
+- `grep -n "rite_dap_bin:$"`: the `options.yml` entry, description as the check held it plus `section: Programs`; `yaml.safe_load` of it parses. Holds.
+- `grep -n "texts of the project commands and debug launches"`: the `approvals` sentence. Holds.
+- `grep -n "nothing, since the debug session reads it"`: the DESIGN.md:245 clause. Holds.
+- `grep -n "path must be an absolute path"`, `grep -n "lines must be whole numbers"`, `grep -n "lines must hold at most"`, `grep -n "Type an expression to evaluate"`, `grep -n "in this pause"`: the route's field refusals. Holds.
+- `grep -n "Only a .rite file that exists"` and `grep -n "is under no root the file browser serves"`: the launch refusals. Holds.
+- `grep -n "Open a .rite file to debug"`: the Start notice. Holds.
+- `grep -n "The launch is dropped"`: the three waiting-launch sentences. Holds.
+- `grep -n "Debug the open file"`: the default configuration's question, the picker name of the created entry, and the convention list. Holds.
+- `grep -n "program: \${file}$"`: the three-line YAML Add Configuration writes; `yaml.safe_load` gives `{'configurations': [{'name': 'Debug the open file', 'program': '${file}'}]}`. Holds.
+- `grep -n "(def-trait P"`: the `frame.rite` program quoted for case 41, a code block of rite, read whole; its probe run is quoted above. Holds.
+
+The brief after these changes: 541 lines (`wc -l`), no character outside printable ASCII (`LC_ALL=C grep -c '[^ -~]'` prints 0), no inline spaced hyphen (`grep -n "[^ ] - \|[^ ] -- "` prints nothing).
