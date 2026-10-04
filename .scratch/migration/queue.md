@@ -1,7 +1,7 @@
 In flight:
 - X3f (a file tab's actions on every file tab, double click and Open Preview): reviewed after repair round 1, landing after the owed looks.
-- D37 (the Search view's replace and the LaTeX build and view): building.
-- S5 (the Settings view's controls and headings): building.
+- D37 (the Search view's replace and the LaTeX build and view): built, its review running.
+- S5 (the Settings view's controls and headings): two cases ruled, building.
 - H3 (the hub's data map): prepared, worktree being made, builder next.
 - D42 (a file's history): prepared, worktree being made, builder next.
 - X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): brief written, brief check running.

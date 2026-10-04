@@ -47,6 +47,15 @@ The question: Four details of D42's Timeline that no ruling names: a malformed p
 
 Where it is built: D42's brief, Decisions 9 to 12. Booked in `plan.md` Rulings.
 
+## Z445 (2026-10-05, step S5)
+
+The question: S5's first run: which held value passes the server's check (cases 35 and 22), the closed-groups premise of item 1.6, and the key a catalog finding names.
+
+- Chosen: a value or record equal to one the base holds passes wherever it stands; in a changed record each field is checked in full unless the base held that value at that field (same key in a map, any record in a list) and its check reads no other field, so case 35 is refused and case 22's stray at another key is refused; case 10 reads every heading open, no saved list added since none exists; a finding's key is `<file>:<key path>` with a field as one more dotted segment. In full in `agents/briefs/S5-cases.md`.
+- Not chosen: the path checked on every write (refuses untouched records whose folder went), or case 35 dropped (the lazy one), or Decision 6 (a) kept (a crafted write moves a stray to another key).
+
+Where it is built: S5, through `agents/briefs/S5-cases.md`. Booked in `plan.md` Rulings.
+
 ## Z442 (2026-10-05, step X3e)
 
 The question: The write-token sentence of `server/core/auth.ts:97` is answered by every route, so capitalising it changes routes outside git.

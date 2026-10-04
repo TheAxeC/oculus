@@ -5,6 +5,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
 - Z444 (2026-10-05, closed in automode): Four details of D42's Timeline that no ruling names: a malformed paging cursor, a pinned file that goes, the Load more row while a page is read, and Open Timeline for a root the workspace lacks.; `choices.md`.
+- Z445 (2026-10-05, closed in automode): S5's first run: which held value passes the server's check (cases 35 and 22), the closed-groups premise of item 1.6, and the key a catalog finding names.; `choices.md`.
 - Z442 (2026-10-05, closed in automode): The write-token sentence of `server/core/auth.ts:97` is answered by every route, so capitalising it changes routes outside git.; `choices.md`.
 - Z441 (2026-10-05, closed in automode): Five defects X3e holds out because no read-only look found their cause: D27-3, the hub Graph's 10 s first read, X3a-1's 5 s Delete, Q88c-19's server half, Q88c-22.; `choices.md`.
 - Z440 (2026-10-05, closed in automode): The `repository_scan_depth` reader: G13 says a wrong value is refused with a finding and its default used, while the setting readers of `settings.ts` throw naming the key.; `choices.md`.

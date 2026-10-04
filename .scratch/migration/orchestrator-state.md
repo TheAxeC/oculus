@@ -48,6 +48,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   base: ed0e6de58
   launched: 2026-10-05
   report: agents/reviews/D37-report.md
+  builder_usage: 202,552 tokens, 284 tool uses, 43.1 min, 1 full-list run
   pending_round: the Format Document undo fix from `agents/reviews/D37-diagnosis.md` (Cause, Fix, Test), sent with the refuter's findings in repair round 1 (Z427 (a))
   brief_check: agents/reviews/D37-brief-check.md, claude-opus-5-5, 259,613 tokens, 81 tool uses, 10.2 min
   landing: not-started
@@ -61,6 +62,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   base: 6005baee6
   launched: 2026-10-05
   report: agents/reviews/S5-report.md
+  builder_usage: first run handed back, 105,563 tokens, 75 tool uses, 10.0 min, 0 full-list runs
   brief_check: agents/reviews/S5-brief-check.md, claude-opus-5-5, 273,684 tokens, 104 tool uses, 12.6 min
   landing: not-started
   round: 0
