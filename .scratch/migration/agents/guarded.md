@@ -55,3 +55,22 @@ One entry per guarantee. A test exists only as the test of one entry, named unde
 - G15. A manifest with a broken field still shows its project, with a finding.
   Code: `src/lib/data/snapshot/`.
   Test: none named yet.
+
+## The repository's rules, checked by a machine
+
+Each entry is one tree check under `tests/checks/`, kept because a rule in `agents/spec.md` or `DESIGN.md` asks for it.
+
+- G16. The import graph keeps the layer boundaries of DESIGN.md. Test: `tests/checks/tree/boundaries.test.ts`.
+- G17. Inside a layer, a module imports only its own folder or a folder below. Test: `tests/checks/imports/order.test.ts`.
+- G18. No module imports itself through a chain at run time. Test: `tests/checks/imports/cycles.test.ts`.
+- G19. No module under `src` augments a module of the tree. Test: `tests/checks/imports/augments.test.ts`.
+- G20. A source file stays within the size line, 880 lines and 520 for a component. Test: `tests/checks/tree/size.test.ts`.
+- G21. A rule, a parser or a fold is written once. Test: `tests/checks/tree/duplication.test.ts`.
+- G22. A comment carries no history. Test: `tests/checks/source/history.test.ts`.
+- G23. Every comment line ends by the hundredth column. Test: `tests/checks/source/comment-width.test.ts`.
+- G24. Every catalog key has a reader and every reader names a key. Test: `tests/checks/source/keys.test.ts`.
+- G25. The committed diagrams match the source they are drawn from. Test: `tests/checks/diagrams/diagrams.test.ts`.
+- G26. Every text-on-background pair the tokens declare is readable under every theme. Test: `tests/checks/look/contrast.test.ts`.
+- G27. The Claude status-line script keeps its input and prints the usage line. Test: `tests/checks/utils/claude-usage.test.ts`.
+
+Held under the entries above: `tests/checks/config/integrity.test.ts` (G14), `tests/checks/config/config-folder.test.ts` and `tests/checks/config/config.test.ts` (G12, G13), `tests/checks/source/html-sites.test.ts` (G5).

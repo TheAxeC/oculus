@@ -1094,6 +1094,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z394 (2026-10-04): views get no entry and no unit test; the look on TEST covers them (the user).
 - Z395 (2026-10-04): each tree check under `tests/checks/` is put on `agents/guarded.md` as an entry or deleted (the user).
 - Z396 (2026-10-04): the test sweep is redone deletion only, in four steps T2a to T2d, one per folder group: for each entry the one test that holds it is kept, proven by one run with the behaviour removed and named in `agents/guarded.md`; every other test, slow-tagged tests included, and every helper nothing kept imports is deleted; nothing else changes; an entry with no test is listed in the report (the user).
+- Z397 (2026-10-04): of the 32 tree checks under `tests/checks/`, 12 become entries G16 to G27 (`tree/boundaries`, `imports/order`, `imports/cycles`, `imports/augments`, `tree/size`, `tree/duplication`, `source/history`, `source/comment-width`, `source/keys`, `diagrams/diagrams`, `look/contrast`, `utils/claude-usage`), 4 hold G5 and G12 to G14 (`config/integrity`, `config/config-folder`, `config/config`, `source/html-sites`), and the other 16 are deleted in T2d (the user).
 
 ## Blocked, and by what
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's and cathedra's local settings, written by Axel.
