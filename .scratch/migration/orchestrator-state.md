@@ -28,7 +28,21 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # one step in flight (2026-10-04): T1e, repair round 1; T1c and T1b landed; T1d is prepared next, under Z376 (b) (workers_at_once: 5).
+dispatch:   # two steps in flight (2026-10-04): T1d, building; T1e, repair round 1; T1c and T1b landed (workers_at_once: 5).
+- step: T1d
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a1b5761f69bade8b3 (builder, launched 2026-10-04 07:09 local)
+  worktree: .agents/worktrees/T1d
+  base: 570a72bcb
+  base_copy: .agents/worktrees/T1d-base/tools/oculus (src/, tests/, utils/ and config/ less local.yml at the base, from git archive; unused-exports.txt beside it, 257 exports; removed with the worktree)
+  launched: 2026-10-04 07:09 local
+  report: agents/reviews/T1d-report.md
+  brief_check: agents/reviews/T1d-brief-check.md; claude-opus-5-5 (run on main at 1e14d279; findings closed under Closed, Z376 (b) closed at this /spec)
+  shared_paths: with T1e, in flight: `tests/checks/tree/allow-duplication.txt` (T1d removes entries on lines 61-123 naming its folders, T1e entries naming its own, separate lines, removals only); `tests/data/` (T1d adds new files only, T1e changes existing ones); `tests/checks/` (T1d rewrites `tree/audits.test.ts`, deletes `tree/allow-audits.txt` and adds `views/`, three paths T1e leaves byte-identical); so the merge is simple
+  landing: not-started
+  round: 0
 - step: T1e
   executor: agent
   worker: claude:sonnet at ordo-high
