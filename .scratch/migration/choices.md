@@ -997,6 +997,14 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z387 (2026-10-04, T1b's round): same-branch rows in the failed-read table
+
+Six rows of `shared/answers.test.ts`'s failed-read table turn red only together with a kept row under every control. Options: (a) kept, the lazy option; (b) deleted at landing. Chosen (b): one test per behaviour.
+
+## Z386 (2026-10-04, T1b's round): the refusal words' mapping
+
+After the catalog-text test was deleted, nothing checks that `refusalSentence` maps each of 19 file-operation words to its own key. Options: (a) left, the lazy option; (b) a test of distinct keys over `answers.ts` with the catalog stubbed, added at landing. Chosen (b): it asserts code, not catalog text.
+
 ## Z385 (2026-10-04, T1e's review): the route-shape check
 
 `tests/routes/shape.test.ts` reads the source of every API route for structure; no written rule asks for it. Options: (a) deleted, the source-text kind the test rule removes; (b) a rule written into `DESIGN.md` and the check moved to `tests/checks`; (c) kept with no rule, the lazy option. Chosen (a).

@@ -1,12 +1,12 @@
-Everything in the brief is done. Two places depart from the brief's letter and are set out under "Judgment calls": assertions of constants were removed from kept tests (item 4 says no assertion of a kept test changes except to fold it), and the timing was taken as five whole-folder runs rather than five verbose runs per file.
+Repair round 1 is the last section of this file ("Repair round 1"). It leaves none of the ten findings undone and opens with two open items for the orchestrator, both about `tests/state/shared/answers.test.ts`: the mapping of the file-operation refusal words to their catalog keys has no test since the first test was deleted, and six rows of the failed-read table run the same branch as another row. The sweep itself: everything in the brief is done. Two places depart from the brief's letter and are set out under "Judgment calls": assertions of constants were removed from kept tests (item 4 says no assertion of a kept test changes except to fold it), and the timing was taken as five whole-folder runs rather than five verbose runs per file.
 
 # T1b report: the test sweep of `tests/state/`
 
-Worktree `.agents/worktrees/T1b`, project folder `tools/oculus`. The base copy is `.agents/worktrees/T1b-base/tools/oculus/`. No git command was run by the builder except five read-only status or rev-parse calls listed under "Judgment calls".
+Worktree `.agents/worktrees/T1b`, project folder `tools/oculus`. The base copy is `.agents/worktrees/T1b-base/tools/oculus/`. No git command was run by the builder except six read-only status, diff or rev-parse calls, all before the first version of this report, listed under "Judgment calls".
 
-## Open items from orchestrator-state.md (verbatim, line 139)
+## Open items from orchestrator-state.md (verbatim, line 157)
 
-- Z314 (2026-10-03, the owed look Q81): a Confirm drawn over the update tray. It shows only while `tasks.skip_permissions` is on in `config/behavior.yml`. Axel allowed the edit for the look (2026-10-03); the Claude Code auto-mode classifier refused it again with his permission given, so the session cannot make it. Options: (a) Axel sets `skip_permissions: true` himself, the look is taken, and Axel sets it back (the session checks `git diff --exit-code -- tools/oculus/config/behavior.yml` after); (b) the point is dropped from the look. Recommendation: (a), one line each way and (b) is the lazy option.
+None.
 
 ## The cases, first run on the unchanged tree
 
@@ -35,18 +35,18 @@ Every row names the command that proves it. All commands ran from `.agents/workt
 |---|---|---|
 | Verify list, once after the last change | DONE | `npm run diagrams` exit 0, then `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh .scratch/migration/orchestrator-state.md`, exit 0, last line `checks: 7 commands passed`. The worktree's `docs/diagrams` equals main's (`diff -rq` over it prints nothing). |
 | Number of full-list runs | 1 | One complete run of `npm run diagrams` plus `checks.sh`. |
-| Slow-tagged files pass alone | DONE | `npx vitest run tests/state/sessions/terminal/commands-pane.test.ts --tagsFilter slow` prints `Tests  1 passed (1)`; `npx vitest run tests/state/sources/repositories/diff/hunks-git.test.ts --tagsFilter slow` prints `Tests  5 passed (5)`. |
-| No quick test with a minimum of 80 ms or more, none with a Decision 1 cause | DONE | Five runs of `npx vitest run tests/state --tagsFilter '!slow' --reporter=json`; the per-test minimum over the five runs is below 80 ms for every test (the slowest is 51.7 ms, `boards/structure/forces.test.ts`). `grep -rn "child_process\|spawn\|execFile\|execSync\|createServer\|listen(" tests/state` prints lines of the two tagged files only (`commands-pane.test.ts:14,76`, `hunks-git.test.ts:9,56`); `grep -rnE "setTimeout\([^)]*[1-9][0-9]*\)|setInterval|waitFor" tests/state` prints one line, `sources/repositories/view/view-state.test.ts:136`, a `setTimeout(settle, 2)` that runs under fake timers; no `waitFor` is left. |
-| No hook of 100 ms or more | DONE | For each file of the five runs, the file's span from the JSON reporter minus the sum of its tests' durations is at most 3.1 ms (`sources/repositories/view/repositories.test.ts`, run 3), so no `beforeAll` or `beforeEach` costs 100 ms. |
+| Slow-tagged units pass alone | DONE | `npx vitest run tests/state/sessions/terminal/commands-pane.test.ts --tagsFilter slow` prints `Tests  1 passed (1)`; `npx vitest run tests/state/sources/repositories/diff/hunks-git.test.ts --tagsFilter slow` prints `Tests  5 passed (5)`; `npx vitest run tests/state/sources/explorer/explorer.test.ts --tagsFilter slow` prints `Tests  2 passed \| 19 skipped (21)`. |
+| No quick test with a minimum of 80 ms or more, none with a Decision 1 cause | DONE | Five runs of `npx vitest run tests/state --tagsFilter '!slow' --reporter=json`; the per-test minimum over the five runs is below 80 ms for every test (the slowest is 53.1 ms, `boards/structure/forces.test.ts`). `grep -rn "child_process\|spawn\|execFile\|execSync\|createServer\|listen(" tests/state` prints lines of the two tagged files only (`commands-pane.test.ts:17,64,93`, `hunks-git.test.ts:9,56`); with a logging `tmux` and `git` shim first on `PATH`, `npx vitest run <either file> --tagsFilter '!slow'` leaves the shim log empty (finding 1 of Repair round 1). `grep -rnE "setTimeout\([^)]*[1-9][0-9]*\)\|setInterval\|waitFor" tests/state` prints one line, `sources/repositories/view/view-state.test.ts:136`, a `setTimeout(settle, 2)` that runs under fake timers; no `waitFor` is left. Work at collection or in a hook counts with the tests it serves (Z382): the one hook of that kind in a quick file that reads the shipped configuration cold is moved into the slow describe of `explorer.test.ts`. |
+| No hook of 100 ms or more | DONE by the minimum rule | The JSON reporter starts a file's span at its first test, so a file-level `beforeAll` falls outside the span and the earlier method could not see one. The reviewer's verbose runs (the file's `tests` total minus the sum of its tests' times) measured two file-level hooks: `workbench/layout/open/new-text-file.test.ts:16`, 96, 115, 95, 100, 124 ms (minimum 95 ms), and `sessions/terminal/terminal-marks.test.ts:25-29`, 94, 101, 101 ms (minimum 94 ms). Both stay quick because the minimum is under 100 ms (Decision 1). No other file-level hook was measured. |
 | `grep -rn "it('audits\|it(\"audits" tests/state` | DONE | Prints nothing (exit 1). |
-| Every fold's table run passes | DONE | `npx vitest run tests/state --tagsFilter '!slow'` prints `Test Files  204 passed \| 2 skipped (206)` and `Tests  5658 passed \| 6 skipped (5664)`; the rows are listed under "Folds, old titles against rows". |
+| Every fold's table run passes | DONE | `npx vitest run tests/state --tagsFilter '!slow'` prints `Test Files  204 passed \| 2 skipped (206)` and `Tests  5655 passed \| 8 skipped (5663)`; the rows are listed under "Folds, old titles against rows". |
 | Deleted or renamed files named nowhere | DONE | `grep -rn "client/socket-timing.test.ts\|sessions/terminal/pty-io.test.ts\|sources/off-facets.ts" src tests` prints nothing; the greps for `socket-timing`, `pty-io.test`, `off-facets` over `src` and `tests` print nothing. The one remaining line that names the moved file's neighbours is `tests/state/sessions/terminal/pty/pty-io.test.ts:8`, which names `sessions/terminals.test.ts` and `pty-socket.test.ts`, both of which exist. |
 | ASCII only in the changed files | DONE | `perl` gate of `spec.md:97` over `tests/state` and `tests/checks/tree` prints nothing; `LC_ALL=C grep -rna '[^ -~]' src tests` (the last command of `checks.sh`) prints nothing. |
 | Prettier and eslint on every changed file | DONE | `npx prettier --check tests/state` is clean; `npx eslint tests/state` exits 0; `npm run format:check` and `npm run lint` are in the `checks.sh` output below. |
 | Only the writable paths changed | DONE | `diff -rq` of the worktree's `src` and `tests` against the base copy lists only files under `tests/state` and `tests/checks/tree/allow-duplication.txt`; `find tests -name node_modules -o -name .svelte-kit` prints nothing. |
 | Largest file under 900 lines, at most 10 items per folder | DONE | The largest `tests/state` file is `life/present.test.ts` at 807 lines; the folders at 10 items are `tests/state`, `workbench`, `workbench/layout`, `workbench/layout/open`, `workbench/navigation`, `sessions`, `sessions/terminal`, `client`, `system/settings` and `boards/board`; `tests/checks/tree/size.test.ts` and the item-count test pass in the `test:checks` run below. |
 | Duplication allow list | DONE | Two entries removed (the `writes.test.ts` / `notice-sources.test.ts` pair and the `terminals.test.ts` / `hpc.test.ts` pair), none added; `tests/checks/tree/duplication.test.ts` passes inside `npm run test:checks`. |
-| NOT DONE | none | Nothing in the brief is left undone. The two departures from the brief's letter are under "Judgment calls". |
+| NOT DONE | none | Nothing in the brief or in the ten findings of repair round 1 is left undone. The two open items are at the top of this file and of the last section. The two departures from the brief's letter are under "Judgment calls". |
 
 ### Output of `checks.sh`, verbatim for the lines that matter
 
@@ -54,17 +54,17 @@ Every row names the command that proves it. All commands ran from `.agents/workt
 $ npm test
 > vitest run --tagsFilter '!slow' --exclude 'tests/checks/**'
  Test Files  598 passed | 27 skipped (625)
-      Tests  12407 passed | 666 skipped (13073)
-   Duration  240.10s (transform 48.11s, setup 0ms, import 551.28s, tests 343.01s, environment 225ms)
+      Tests  12404 passed | 668 skipped (13072)
+   Duration  211.74s (transform 53.66s, setup 0ms, import 497.04s, tests 287.31s, environment 462ms)
 
 $ npm run test:checks
 > vitest run tests/checks --tagsFilter '!slow' --testTimeout 0 --hookTimeout 0
  Test Files  31 passed | 2 skipped (33)
       Tests  471 passed | 9 skipped (480)
-   Duration  47.08s (transform 19.98s, setup 0ms, import 74.77s, tests 101.52s, environment 7ms)
+   Duration  47.00s (transform 16.32s, setup 0ms, import 57.45s, tests 96.47s, environment 7ms)
 
 $ npm run check
-1791080689222 COMPLETED 3374 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+1791087721889 COMPLETED 3375 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
 
 $ npm run build
 (the vite build log, left out here; the build exits 0)
@@ -84,7 +84,7 @@ The `npm test` output of that run also holds one stderr line, `fatal: Needed a s
 
 ## Counts per folder, before and after
 
-Lines are `find tests/state/<folder> -name '*.ts' -exec cat {} + | wc -l`; test files are `*.test.ts`; `.ts` files include helpers; tests are the vitest count, base `7563` (7562 passed, 1 skipped) and after `5664` (5658 passed, 6 skipped).
+Lines are `find tests/state/<folder> -name '*.ts' -exec cat {} + | wc -l`; test files are `*.test.ts`; `.ts` files include helpers; tests are the vitest count, base `7563` (7562 passed, 1 skipped) and after `5663` (5655 passed, 8 skipped).
 
 | Folder | Lines before | Lines after | Test files before | Test files after | `.ts` files before | `.ts` files after | Tests before | Tests after |
 |---|---|---|---|---|---|---|---|---|
@@ -92,13 +92,13 @@ Lines are `find tests/state/<folder> -name '*.ts' -exec cat {} + | wc -l`; test 
 | client | 3704 | 3485 | 11 | 10 | 13 | 13 | 251 | 246 |
 | feeds | 1723 | 1628 | 8 | 8 | 8 | 8 | 214 | 211 |
 | forms | 2021 | 1853 | 5 | 5 | 5 | 5 | 332 | 325 |
-| life | 2482 | 2348 | 7 | 7 | 7 | 7 | 236 | 225 |
-| sessions | 8266 | 7992 | 23 | 24 | 25 | 27 | 622 | 603 |
-| shared | 4109 | 3076 | 11 | 12 | 12 | 13 | 1932 | 1039 |
-| sources | 13662 | 12175 | 53 | 53 | 59 | 58 | 1144 | 903 |
+| life | 2482 | 2359 | 7 | 7 | 7 | 7 | 236 | 225 |
+| sessions | 8266 | 8035 | 23 | 24 | 25 | 27 | 622 | 603 |
+| shared | 4109 | 3103 | 11 | 12 | 12 | 14 | 1932 | 1038 |
+| sources | 13662 | 12178 | 53 | 53 | 59 | 58 | 1144 | 903 |
 | system | 5215 | 4569 | 19 | 19 | 20 | 20 | 536 | 375 |
 | workbench | 18102 | 14375 | 45 | 45 | 48 | 48 | 1763 | 1242 |
-| total | 66497 | 58367 | 205 | 206 | 223 | 225 | 7563 | 5664 |
+| total | 66497 | 58451 | 205 | 206 | 223 | 226 | 7563 | 5663 |
 
 The brief's "205 test files" counts `*.test.ts`; the `.ts` column is the one that counts helpers.
 
@@ -109,266 +109,271 @@ The comparable pair is the command the brief names, `npx vitest run tests/state 
 | Run | Vitest Duration | Wall (`time`) | Load average before | Load average after |
 |---|---|---|---|---|
 | Before any change (base copy) | 73.36 s | 99.62 s | 9.20 8.40 7.45 | 11.32 9.37 7.93 |
-| After the last change | 43.53 s | 45.82 s | 8.57 10.51 11.02 | 9.24 10.39 10.94 |
+| After the last change | 64.16 s | 68.10 s | 3.45 4.17 4.72 | 10.15 5.90 5.32 |
 
 After the last change, five runs of the same command with `--reporter=json` (the runs the per-test minima below come from), wall time as the script measured it around `npx vitest`, and the span from the run's start to the last file's end in the JSON:
 
 | Run | Wall | JSON span | Load average before | Load average after |
 |---|---|---|---|---|
-| 1 | 62.66 s | 59.2 s | 7.22 10.12 10.80 | 11.44 10.76 10.99 |
-| 2 | 65.09 s | 61.6 s | 11.44 10.76 10.99 | 11.81 10.98 11.05 |
-| 3 | 80.06 s | 73.4 s | 11.81 10.98 11.05 | 11.91 11.13 11.09 |
-| 4 | 76.56 s | 72.9 s | 11.91 11.13 11.09 | 14.73 12.10 11.45 |
-| 5 | 64.61 s | 60.3 s | 14.73 12.10 11.45 | 13.31 12.21 11.54 |
+| 1 | 63.95 s | 60.5 s | 4.54 4.48 5.10 | 8.92 5.76 5.53 |
+| 2 | 57.99 s | 55.1 s | 8.92 5.76 5.53 | 9.80 6.50 5.82 |
+| 3 | 58.75 s | 55.8 s | 9.80 6.50 5.82 | 11.31 7.42 6.20 |
+| 4 | 60.80 s | 57.9 s | 11.31 7.42 6.20 | 10.89 7.95 6.48 |
+| 5 | 57.25 s | 54.3 s | 10.89 7.95 6.48 | 10.15 8.18 6.65 |
 
-Load only adds time. Run 3 overlapped two single-file runs of mine (the two `--tagsFilter slow` runs of the verify list), and the machine also ran another builder (T1e) throughout, so the five walls are upper bounds. The JSON reporter run of the base copy (load 10.56 rising to 17.96, 93.4 s span) is not comparable and is not used.
+Load only adds time. The machine also ran another builder (T1e) and its reviewer throughout, so the five walls and the single timed run are upper bounds; the single timed run (`time` around `npx vitest run tests/state --tagsFilter '!slow' --reporter=dot`) started at load 3.45 and ended at 10.15. The JSON reporter run of the base copy (load 10.56 rising to 17.96, 93.4 s span) is not comparable and is not used.
 
-Where the quick suite spends its time now: `tests` 4.86 s of the 43.53 s Duration (12.18 s at the base); the rest is transform and import.
+The five JSON runs and the single timed run were taken before one edit of the `afterAll` of `commands-pane.test.ts` (it removes the scratch directory after `kill-server`, with no `try`/`finally`); no quick run executes that file's hooks, and the full run of the verify list that follows the edit passes `npm test`.
+
+Where the quick suite spends its time now: `tests` 6.26 s of the 64.16 s Duration of the single timed run (12.18 s at the base); the rest is transform and import.
 
 ## Slow tags and the slowest quick tests
 
-Two files carry the tag, both as `// @module-tag slow: <reason>` as the last line of the head comment, and both run alone with `npx vitest run <file> --tagsFilter slow`. The base's one tagged file, `client/socket-timing.test.ts`, is deleted. Times of every tagged test over five runs of both files with `--tagsFilter slow` (load averages per run: 12.07 12.19 10.41 then 11.33 12.04 10.38; 11.33 12.04 10.38 then 10.99 11.94 10.36; 10.99 11.94 10.36 then 11.61 12.04 10.41; 11.61 12.04 10.41 then 10.44 11.77 10.34; 10.44 11.77 10.34 then 9.75 11.58 10.29):
+Three units carry the tag. Two are whole files, `sessions/terminal/commands-pane.test.ts` and `sources/repositories/diff/hunks-git.test.ts`, each as `// @module-tag slow: <reason>` as the last line of the head comment. The third is one describe, 'a typed root or workspace line as unsaved text' in `sources/explorer/explorer.test.ts`, as `describe(name, { tags: ['slow'] }, fn)`. Each runs alone with `npx vitest run <file> --tagsFilter slow`. The base's one tagged file, `client/socket-timing.test.ts`, is deleted. Times of every tagged test over five runs of the three files with `--tagsFilter slow` (load averages before each run: 2.78 4.37 5.12; 3.33 4.32 5.08; 3.45 4.31 5.07; 3.61 4.32 5.06; 3.74 4.32 5.05; after the fifth: 4.54 4.48 5.10):
 
-- `sessions/terminal/commands-pane.test.ts`, tag reason "starts a private tmux server and runs a shell task in a real pane". It starts a real tmux (through `tests/server/machine/pty/tmux-fixture.ts`, whose module load runs `tmux -V`, so the tag is on the whole file and the quick tests never load it) and runs a shell task. It is the only test of the capture action joined to the commands store; `tests/server/machine/pty/task.test.ts` covers the capture action alone (another sweep's folder, T1c's, so the orchestrator checks it is still there once both sweeps have landed).
-- `sources/repositories/diff/hunks-git.test.ts`, tag reason "starts git in a child process for each case". Its cause is `spawnSync` of git in each case (the table is one `it.each` under a whole-file tag).
+- `sessions/terminal/commands-pane.test.ts`, tag reason "starts a private tmux server and runs a shell task in a real pane". It starts a real tmux and runs a shell task. The tmux fixture (`tests/server/machine/pty/tmux-fixture.ts`, whose module load runs `tmux -V`) and the server modules are imported with `await import` inside its slow `beforeAll`; a whole-file tag alone does not keep a file's imports from loading, and with the imports inside the hook the file loads under `--tagsFilter '!slow'` without starting a process (finding 1 of Repair round 1). It is the only test of the capture action joined to the commands store; `tests/server/machine/pty/task.test.ts` covers the capture action alone (another sweep's folder, T1c's, so the orchestrator checks it is still there once both sweeps have landed).
+- `sources/repositories/diff/hunks-git.test.ts`, tag reason "starts git in a child process for each case". Its cause is `spawnSync` of git in each case (the table is one `it.each` under a whole-file tag); it starts no process at load.
+- `sources/explorer/explorer.test.ts`, describe 'a typed root or workspace line as unsaved text'. Its cause is a hook: the cold `textCatalog(loadConfig(engineDir()).config)` read, which the reviewer timed at 117.8 ms. Its two tests take about 7 ms and 3 ms. `npx vitest run tests/state/sources/explorer/explorer.test.ts --tagsFilter slow` prints `tests 113ms` for the two tests and the hook, and `--tagsFilter '!slow'` prints `tests 6ms` for the other 19 tests.
 
 Times of each tagged test:
 
-- `tests/state/sessions/terminal/commands-pane.test.ts`, "a task in a real pane, read by the commands store reads the diagnostics printed after the grid let go, each from the folder of its command": 176.1, 173.8, 180.8, 182.0, 176.0 ms (minimum 173.8)
-- `tests/state/sources/repositories/diff/hunks-git.test.ts`, "the hunks against git finds git's changes and git's hunks for a one-line change": 29.3, 27.1, 29.1, 122.4, 26.6 ms (minimum 26.6)
-- `tests/state/sources/repositories/diff/hunks-git.test.ts`, "the hunks against git finds git's changes and git's hunks for two changes six lines apart": 28.6, 21.5, 21.6, 19.5, 20.8 ms (minimum 19.5)
-- `tests/state/sources/repositories/diff/hunks-git.test.ts`, "the hunks against git finds git's changes and git's hunks for two changes seven lines apart": 23.5, 22.5, 19.4, 34.6, 180.9 ms (minimum 19.4)
-- `tests/state/sources/repositories/diff/hunks-git.test.ts`, "the hunks against git finds git's changes and git's hunks for a deletion at the top": 25.9, 28.1, 23.5, 16.0, 22.7 ms (minimum 16.0)
-- `tests/state/sources/repositories/diff/hunks-git.test.ts`, "the hunks against git finds git's changes and git's hunks for an insertion at the end": 28.8, 30.1, 225.4, 28.2, 26.7 ms (minimum 26.7)
+- `tests/state/sessions/terminal/commands-pane.test.ts`, "a task in a real pane, read by the commands store reads the diagnostics printed after the grid let go, each from the folder of its command": 175.6, 161.8, 169.7, 185.2, 176.3 ms (minimum 161.8)
+- `tests/state/sources/explorer/explorer.test.ts`, "a typed root or workspace line as unsaved text asks nothing of an instance of another view": 7.4, 7.9, 7.7, 9.1, 8.0 ms (minimum 7.4)
+- `tests/state/sources/explorer/explorer.test.ts`, "a typed root or workspace line as unsaved text reaches the tab close through the client's unsaved question, by the instance's own view": 3.4, 3.5, 3.2, 4.0, 3.6 ms (minimum 3.2)
+- `tests/state/sources/repositories/diff/hunks-git.test.ts`, "the hunks against git finds git's changes and git's hunks for a one-line change": 23.2, 21.1, 23.7, 26.9, 28.0 ms (minimum 21.1)
+- `tests/state/sources/repositories/diff/hunks-git.test.ts`, "the hunks against git finds git's changes and git's hunks for two changes six lines apart": 19.1, 17.9, 20.0, 19.7, 23.8 ms (minimum 17.9)
+- `tests/state/sources/repositories/diff/hunks-git.test.ts`, "the hunks against git finds git's changes and git's hunks for two changes seven lines apart": 20.6, 19.6, 20.2, 19.7, 23.1 ms (minimum 19.6)
+- `tests/state/sources/repositories/diff/hunks-git.test.ts`, "the hunks against git finds git's changes and git's hunks for a deletion at the top": 17.2, 19.0, 19.9, 20.2, 25.4 ms (minimum 17.2)
+- `tests/state/sources/repositories/diff/hunks-git.test.ts`, "the hunks against git finds git's changes and git's hunks for an insertion at the end": 22.9, 19.4, 21.0, 20.3, 22.6 ms (minimum 19.4)
 
-No quick test has a minimum of 80 ms or more over the five runs. The twelve slowest quick tests, with all five times (the other runs' maxima include scheduling noise: `sources/explorer/sections/sections.test.ts` 'Outline reads LaTeX sectioning commands outside comments: S > T' reached 443.6 ms once and has a minimum of 21.2 ms):
+No quick test has a minimum of 80 ms or more over the five runs. The twelve slowest quick tests, with all five times (the other runs' maxima include scheduling noise: `sessions/source/symbols.test.ts` 'the provider answers once the LaTeX parser has loaded' reached 272.4 ms once and has a minimum of 15.9 ms):
 
-- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places pushes and pulls every node on a drag of a pillar into the ": 51.7, 55.3, 52.0, 65.9, 56.3 ms (minimum 51.7)
-- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places answers the settled nodes and a cold simulation for a loade": 50.1, 49.4, 45.6, 52.8, 57.6 ms (minimum 45.6)
-- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places keeps every circle off a node with no edge dragged across t": 39.3, 39.9, 37.0, 42.3, 45.9 ms (minimum 37.0)
-- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places settles every node finite, inside the box and apart from ev": 34.4, 34.6, 33.0, 34.8, 35.6 ms (minimum 33.0)
-- `tests/state/system/settings/editors-draft.test.ts`, "the shipped lists and families as drafts read into a draft, each field as flow text, and back to the value the": 35.9, 31.5, 29.2, 30.5, 30.6 ms (minimum 29.2)
-- `tests/state/sources/search/replace.test.ts`, "replacing from a tab replaces every listed hit under the query the answer was found by and takes them out of t": 26.5, 32.6, 37.5, 31.4, 25.6 ms (minimum 25.6)
-- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places moves no node and leaves alpha as it was on a press": 25.4, 27.1, 26.4, 31.0, 28.8 ms (minimum 25.4)
-- `tests/state/sessions/latex/building.test.ts`, "a main file is building from the request to the end of its terminal is true while the request is out and while": 27.4, 26.6, 28.2, 24.4, 25.2 ms (minimum 24.4)
-- `tests/state/system/docs.test.ts`, "the documents of a project asks the endpoint once for a pair and holds the answer": 26.1, 30.0, 33.3, 28.7, 24.2 ms (minimum 24.2)
-- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places frees a node on a release after a press that did not move": 23.8, 25.1, 26.2, 29.3, 29.6 ms (minimum 23.8)
-- `tests/state/sources/fs-channel.test.ts`, "keeps a pending bookmark marker on the later root message and makes the page read again": 26.3, 42.9, 26.4, 30.3, 22.9 ms (minimum 22.9)
-- `tests/state/sessions/terminal/commands.test.ts`, "the commands of a repository asks once however often it is read, and holds the answer": 24.6, 26.8, 32.1, 32.0, 22.4 ms (minimum 22.4)
+- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places pushes and pulls every node on a drag of a pillar into the ": 53.1, 53.3, 55.6, 54.3, 54.5 ms (minimum 53.1)
+- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places answers the settled nodes and a cold simulation for a loade": 50.6, 49.5, 50.0, 51.1, 54.6 ms (minimum 49.5)
+- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places keeps every circle off a node with no edge dragged across t": 41.5, 44.9, 42.4, 43.3, 44.6 ms (minimum 41.5)
+- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places settles every node finite, inside the box and apart from ev": 49.0, 39.0, 36.4, 33.2, 43.7 ms (minimum 33.2)
+- `tests/state/system/settings/editors-draft.test.ts`, "the shipped lists and families as drafts read into a draft, each field as flow text, and back to the value the": 28.6, 27.9, 33.4, 28.7, 30.4 ms (minimum 27.9)
+- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places moves no node and leaves alpha as it was on a press": 26.3, 30.6, 26.3, 24.6, 26.1 ms (minimum 24.6)
+- `tests/state/sources/search/replace.test.ts`, "replacing from a tab replaces every listed hit under the query the answer was found by and takes them out of t": 24.5, 31.7, 23.8, 153.1, 31.9 ms (minimum 23.8)
+- `tests/state/sessions/terminal/commands.test.ts`, "the commands of a repository asks once however often it is read, and holds the answer": 24.8, 23.6, 24.7, 25.0, 40.7 ms (minimum 23.6)
+- `tests/state/boards/structure/forces.test.ts`, "the Map's forces over the dense graph neato places frees a node on a release after a press that did not move": 26.8, 23.9, 24.7, 23.8, 23.5 ms (minimum 23.5)
+- `tests/state/sources/files.test.ts`, "the files of a project asks the endpoint once for an id and holds the answer": 22.8, 24.4, 22.7, 24.7, 24.1 ms (minimum 22.7)
+- `tests/state/sources/fs-channel.test.ts`, "keeps a pending bookmark marker on the later root message and makes the page read again": 26.0, 25.2, 33.7, 22.7, 25.9 ms (minimum 22.7)
+- `tests/state/sessions/latex/building.test.ts`, "a main file is building from the request to the end of its terminal is true while the request is out and while": 24.6, 23.2, 26.3, 22.3, 27.9 ms (minimum 22.3)
 
-The slowest test of each of the 204 files that ran quick, as its minimum and its maximum over the five runs above (the load averages are those of the five-run table; the two tagged files did not run in these runs):
+The slowest test of each of the 204 files that ran quick, as its minimum and its maximum over the five runs above (the load averages are those of the five-run table; the three tagged units did not run in these runs):
 
 ```
 file                                                           min ms max ms
-boards/board/board-docs.test.ts                                   1.0    3.8
-boards/board/board-filter-menu.test.ts                            1.3    1.4
-boards/board/board-filters.test.ts                                1.3    3.1
-boards/board/board-more.test.ts                                   2.2    3.3
-boards/board/board-software.test.ts                               1.1    2.5
-boards/board/board-words.test.ts                                  0.8    1.9
-boards/board/board.test.ts                                        1.1    1.9
-boards/board/personal.test.ts                                     6.3    9.2
-boards/career.test.ts                                             1.1    1.7
-boards/collection/collection-fields.test.ts                       6.3    9.9
-boards/collection/collection.test.ts                              6.3    7.6
-boards/collection/view-reads.test.ts                              1.4    1.7
-boards/focus/focus-config.test.ts                                 0.7    1.8
-boards/focus/focus-lanes.test.ts                                  8.9   11.9
-boards/focus/focus-side-project.test.ts                          17.3   48.0
-boards/focus/focus.test.ts                                        1.0    2.2
-boards/person.test.ts                                             1.1    1.3
-boards/pins.test.ts                                               7.6   12.5
-boards/project-context.test.ts                                    0.8    0.8
-boards/structure/forces.test.ts                                  51.7   65.9
-boards/structure/graph.test.ts                                    2.0    2.5
-boards/structure/layout.test.ts                                  15.7   43.9
-boards/structure/lines.test.ts                                    1.5    2.9
-client/client-state.test.ts                                      14.8   20.5
-client/clock.test.ts                                              7.3   15.1
-client/config-seed.test.ts                                       16.5   23.1
-client/entities.test.ts                                           7.1    9.9
-client/queries.test.ts                                           17.9   42.4
-client/selectors.test.ts                                         10.9   21.9
-client/terminal/terminal-close.test.ts                           10.8   19.4
-client/terminal/terminal-start.test.ts                           12.5   15.2
-client/terminal/terminal-tabs.test.ts                            12.2   15.9
-client/writes.test.ts                                            12.6   14.9
-feeds/feeds.test.ts                                               6.2    7.6
-feeds/idents.test.ts                                              1.5    2.5
-feeds/inbox-store.test.ts                                        18.4   25.3
-feeds/inbox.test.ts                                               1.2    2.0
-feeds/lead-application.test.ts                                    1.5    2.6
-feeds/leads.test.ts                                               6.3    7.9
-feeds/linkedin.test.ts                                            7.8    9.9
-feeds/radar.test.ts                                               7.1   12.9
-forms/form-drafts.test.ts                                         8.8   16.9
-forms/form-values.test.ts                                         2.1    3.3
-forms/manifest-draft.test.ts                                      8.4    9.0
-forms/schema-modelled.test.ts                                    19.0   28.0
-forms/schema.test.ts                                              0.9    1.7
-life/accounts-store.test.ts                                      15.8   22.2
-life/calendar-store.test.ts                                      16.0   24.4
-life/calendar.test.ts                                             0.8    1.1
-life/memories-message.test.ts                                    13.1   24.4
-life/notes.test.ts                                                1.7    4.7
-life/present.test.ts                                              7.0   14.7
-life/slides.test.ts                                               1.1    2.1
-sessions/agents.test.ts                                          15.8   18.0
-sessions/changes.test.ts                                         19.8   22.7
-sessions/folds.test.ts                                            6.2    7.4
-sessions/hooks.test.ts                                            1.7    2.2
-sessions/latex/building.test.ts                                  24.4   28.2
-sessions/latex/folder.test.ts                                    20.6   26.0
-sessions/latex/project.test.ts                                   20.1   27.2
-sessions/source.test.ts                                          13.8   16.0
-sessions/source/source-options.test.ts                            1.5    3.1
-sessions/source/symbols.test.ts                                  14.6   44.3
-sessions/source/view-source.test.ts                               1.0    2.4
-sessions/source/wrap.test.ts                                     11.4   16.8
-sessions/terminal/commands-output.test.ts                        16.6   20.1
-sessions/terminal/commands.test.ts                               22.4   32.1
-sessions/terminal/composer.test.ts                               18.1   23.3
-sessions/terminal/pty/pty-io.test.ts                             12.8   23.9
-sessions/terminal/pty/pty-socket.test.ts                         15.6   23.0
-sessions/terminal/terminal-marks.test.ts                          1.1    1.5
-sessions/terminal/terminal-row.test.ts                            3.3    6.9
-sessions/terminal/terminal-tabs.test.ts                           4.1    8.3
-sessions/terminal/viewport.test.ts                                5.6   11.7
-sessions/terminals.test.ts                                       12.4   17.3
-sessions/transcript.test.ts                                      14.6   20.9
-shared/answers.test.ts                                            1.2    2.2
-shared/instance-state-feeds.test.ts                               1.5    2.3
-shared/instance-state-files.test.ts                               3.1    4.1
-shared/instance-state-sources.test.ts                             2.1    2.4
-shared/instance-state.test.ts                                     2.4    4.3
-shared/stores/shell.test.ts                                       1.0    1.4
-shared/words/appearance.test.ts                                   2.0    4.2
-shared/words/format.test.ts                                       1.0    1.2
-shared/words/generation.test.ts                                   9.2   11.7
+boards/board/board-docs.test.ts                                   1.4    1.7
+boards/board/board-filter-menu.test.ts                            1.2    2.8
+boards/board/board-filters.test.ts                                1.2    1.4
+boards/board/board-more.test.ts                                   2.2    2.4
+boards/board/board-software.test.ts                               1.1    1.6
+boards/board/board-words.test.ts                                  1.4    1.8
+boards/board/board.test.ts                                        1.1    2.2
+boards/board/personal.test.ts                                     6.3    7.3
+boards/career.test.ts                                             1.1    2.0
+boards/collection/collection-fields.test.ts                       6.3    7.2
+boards/collection/collection.test.ts                              6.1    8.2
+boards/collection/view-reads.test.ts                              1.4    2.0
+boards/focus/focus-config.test.ts                                 0.8    1.0
+boards/focus/focus-lanes.test.ts                                  9.3   10.7
+boards/focus/focus-side-project.test.ts                          13.2  124.5
+boards/focus/focus.test.ts                                        0.9    1.1
+boards/person.test.ts                                             1.0    1.4
+boards/pins.test.ts                                               7.6    8.9
+boards/project-context.test.ts                                    0.7    0.8
+boards/structure/forces.test.ts                                  53.1   55.6
+boards/structure/graph.test.ts                                    1.9    2.2
+boards/structure/layout.test.ts                                  14.6   19.8
+boards/structure/lines.test.ts                                    1.5    2.6
+client/client-state.test.ts                                      13.9   16.2
+client/clock.test.ts                                              7.3    9.0
+client/config-seed.test.ts                                       16.6   25.5
+client/entities.test.ts                                           7.4   10.2
+client/queries.test.ts                                           14.7   23.1
+client/selectors.test.ts                                         10.8   13.2
+client/terminal/terminal-close.test.ts                           10.7   20.6
+client/terminal/terminal-start.test.ts                           12.1   24.3
+client/terminal/terminal-tabs.test.ts                            12.1   16.3
+client/writes.test.ts                                            11.7   14.4
+feeds/feeds.test.ts                                               6.6    8.0
+feeds/idents.test.ts                                              1.5    3.1
+feeds/inbox-store.test.ts                                        18.0   44.2
+feeds/inbox.test.ts                                               1.3    1.6
+feeds/lead-application.test.ts                                    1.5    3.9
+feeds/leads.test.ts                                               6.2    7.5
+feeds/linkedin.test.ts                                            7.3    9.5
+feeds/radar.test.ts                                               7.3    9.2
+forms/form-drafts.test.ts                                         7.8    8.7
+forms/form-values.test.ts                                         2.3    3.1
+forms/manifest-draft.test.ts                                      7.7    8.7
+forms/schema-modelled.test.ts                                    14.3  201.0
+forms/schema.test.ts                                              0.9    1.1
+life/accounts-store.test.ts                                      16.8   20.7
+life/calendar-store.test.ts                                      18.0   31.1
+life/calendar.test.ts                                             0.7    1.5
+life/memories-message.test.ts                                    14.4   22.4
+life/notes.test.ts                                                1.8    3.8
+life/present.test.ts                                              8.2   11.6
+life/slides.test.ts                                               1.0    1.7
+sessions/agents.test.ts                                          14.8   25.1
+sessions/changes.test.ts                                         16.0   25.1
+sessions/folds.test.ts                                            6.2    7.9
+sessions/hooks.test.ts                                            1.7    2.5
+sessions/latex/building.test.ts                                  22.3   27.9
+sessions/latex/folder.test.ts                                    19.9   28.1
+sessions/latex/project.test.ts                                   20.1   26.3
+sessions/source.test.ts                                          12.8   20.5
+sessions/source/source-options.test.ts                            1.4    1.9
+sessions/source/symbols.test.ts                                  15.9  272.4
+sessions/source/view-source.test.ts                               1.0    1.1
+sessions/source/wrap.test.ts                                     10.3   18.8
+sessions/terminal/commands-output.test.ts                        15.8   19.7
+sessions/terminal/commands.test.ts                               23.6   40.7
+sessions/terminal/composer.test.ts                               18.3   21.1
+sessions/terminal/pty/pty-io.test.ts                             14.6   17.3
+sessions/terminal/pty/pty-socket.test.ts                         16.0   22.2
+sessions/terminal/terminal-marks.test.ts                          1.1    2.1
+sessions/terminal/terminal-row.test.ts                            3.3    5.7
+sessions/terminal/terminal-tabs.test.ts                           4.1    5.7
+sessions/terminal/viewport.test.ts                                5.6   11.2
+sessions/terminals.test.ts                                       11.8   17.4
+sessions/transcript.test.ts                                      15.9   22.5
+shared/answers.test.ts                                            0.9    1.2
+shared/instance-state-feeds.test.ts                               1.5    1.9
+shared/instance-state-files.test.ts                               3.1    3.8
+shared/instance-state-sources.test.ts                             2.2    4.0
+shared/instance-state.test.ts                                     2.3    2.5
+shared/stores/shell.test.ts                                       0.9    1.4
+shared/words/appearance.test.ts                                   1.9    2.2
+shared/words/format.test.ts                                       0.9    1.0
+shared/words/generation.test.ts                                   8.0   44.0
 shared/words/themes.test.ts                                       1.6    3.2
-shared/words/tones.test.ts                                        1.7    3.1
-shared/words/wrap-tabs.test.ts                                    1.6    2.8
-sources/datasets.test.ts                                          6.9   11.8
-sources/explorer/acts/confirm.test.ts                             1.4    3.4
-sources/explorer/acts/drop.test.ts                                1.1    1.9
-sources/explorer/acts/folders.test.ts                             1.3    3.2
-sources/explorer/acts/keys.test.ts                                1.1    1.2
-sources/explorer/acts/selection.test.ts                           1.1    2.9
-sources/explorer/acts/store.test.ts                              19.6   25.5
-sources/explorer/acts/undo.test.ts                                1.1    2.4
-sources/explorer/clipboard.client.test.ts                        10.5   16.3
-sources/explorer/explorer.test.ts                                 6.0    7.8
-sources/explorer/naming.test.ts                                   1.8    3.7
-sources/explorer/ops.test.ts                                     13.0   15.7
-sources/explorer/rows/rows.test.ts                                1.1    2.8
-sources/explorer/sections/open-editors-tabs.test.ts               1.8    3.8
-sources/explorer/sections/sections.test.ts                       21.2  443.6
-sources/explorer/view/card-tree.test.ts                           1.1    1.4
-sources/explorer/view/view.test.ts                                2.4    3.5
-sources/files.test.ts                                            21.1   27.7
-sources/follow.test.ts                                            2.0    3.1
-sources/fs-channel.test.ts                                       22.9   42.9
-sources/fs/file-language.test.ts                                  7.4    9.9
-sources/fs/fs-answers.test.ts                                    11.8   17.4
-sources/fs/fs-files.test.ts                                      13.2   18.4
-sources/fs/fs-notes.test.ts                                      16.3   17.1
-sources/fs/fs-shape.test.ts                                       5.8    8.9
-sources/fs/fs-text-fresh.test.ts                                 15.7   21.8
-sources/fs/fs.test.ts                                            14.3   19.1
-sources/fs/languages-selector.client.test.ts                     16.4   23.8
-sources/repositories/capabilities/open-worktree.test.ts          11.9   20.2
-sources/repositories/capabilities/repositories-badge.test.ts     14.8   20.7
-sources/repositories/capabilities/store-actions.test.ts           1.6    1.7
-sources/repositories/capabilities/store-wire.test.ts              3.7    7.2
-sources/repositories/capabilities/view-state.test.ts              0.9    1.2
-sources/repositories/diff/comment-draft.client.test.ts            3.4    5.3
-sources/repositories/diff/diff-read.test.ts                       1.3    2.0
-sources/repositories/diff/diff-view.test.ts                       2.1    4.7
-sources/repositories/diff/diff.test.ts                            1.5    2.5
-sources/repositories/diff/merge.test.ts                           1.4    3.0
-sources/repositories/diff/review-comment.test.ts                  0.8    1.9
-sources/repositories/history/change-tree.test.ts                  7.3    8.7
-sources/repositories/history/file-git.test.ts                     1.2    2.3
+shared/words/tones.test.ts                                        1.7    2.3
+shared/words/wrap-tabs.test.ts                                    1.7    2.6
+sources/datasets.test.ts                                          6.9    7.3
+sources/explorer/acts/confirm.test.ts                             1.4    3.0
+sources/explorer/acts/drop.test.ts                                1.1    1.5
+sources/explorer/acts/folders.test.ts                             1.3    1.7
+sources/explorer/acts/keys.test.ts                                1.1    2.9
+sources/explorer/acts/selection.test.ts                           1.1    1.6
+sources/explorer/acts/store.test.ts                              22.0   36.3
+sources/explorer/acts/undo.test.ts                                1.1    1.4
+sources/explorer/clipboard.client.test.ts                         8.7   12.0
+sources/explorer/explorer.test.ts                                 1.2    1.6
+sources/explorer/naming.test.ts                                   2.0    2.8
+sources/explorer/ops.test.ts                                     13.3   16.0
+sources/explorer/rows/rows.test.ts                                1.2    1.7
+sources/explorer/sections/open-editors-tabs.test.ts               1.8    2.3
+sources/explorer/sections/sections.test.ts                       19.8   23.4
+sources/explorer/view/card-tree.test.ts                           1.1    1.9
+sources/explorer/view/view.test.ts                                2.7    4.6
+sources/files.test.ts                                            22.7   24.7
+sources/follow.test.ts                                            2.1    2.9
+sources/fs-channel.test.ts                                       22.7   33.7
+sources/fs/file-language.test.ts                                  7.9   10.6
+sources/fs/fs-answers.test.ts                                    11.3   15.2
+sources/fs/fs-files.test.ts                                      13.6   16.5
+sources/fs/fs-notes.test.ts                                      15.2   18.2
+sources/fs/fs-shape.test.ts                                       5.9    9.7
+sources/fs/fs-text-fresh.test.ts                                 17.2   30.0
+sources/fs/fs.test.ts                                            13.7   16.9
+sources/fs/languages-selector.client.test.ts                     13.3   19.0
+sources/repositories/capabilities/open-worktree.test.ts          12.9   14.1
+sources/repositories/capabilities/repositories-badge.test.ts     14.3   23.7
+sources/repositories/capabilities/store-actions.test.ts           1.5    2.0
+sources/repositories/capabilities/store-wire.test.ts              3.0    3.8
+sources/repositories/capabilities/view-state.test.ts              0.9    1.0
+sources/repositories/diff/comment-draft.client.test.ts            3.5    4.1
+sources/repositories/diff/diff-read.test.ts                       1.2    1.6
+sources/repositories/diff/diff-view.test.ts                       2.0    3.3
+sources/repositories/diff/diff.test.ts                            1.5    2.1
+sources/repositories/diff/merge.test.ts                           1.3    1.4
+sources/repositories/diff/review-comment.test.ts                  0.8    1.3
+sources/repositories/history/change-tree.test.ts                  7.4    8.9
+sources/repositories/history/file-git.test.ts                     1.1    1.2
 sources/repositories/history/graph.test.ts                        1.1    1.3
-sources/repositories/view/answers.test.ts                         1.1    2.3
-sources/repositories/view/commit-action.test.ts                   0.7    1.7
-sources/repositories/view/diff-session.test.ts                    1.6    3.5
-sources/repositories/view/repositories.test.ts                   12.3   16.9
-sources/repositories/view/view-state.test.ts                      2.0    2.9
-sources/search/endpoint.test.ts                                   9.6   11.3
-sources/search/hits.test.ts                                       0.8    1.9
-sources/search/replace.test.ts                                   25.6   37.5
-sources/search/search.test.ts                                     9.8   14.7
-sources/venues.test.ts                                            7.2    9.3
-system/audit-message.test.ts                                      0.7    1.6
-system/audit.test.ts                                              7.3    9.0
-system/config-files.test.ts                                       0.7    1.1
-system/deposit.test.ts                                           19.0   23.4
-system/docs.test.ts                                              24.2   33.3
-system/lines.test.ts                                             14.8   18.8
-system/machine/hpc.test.ts                                       19.0   23.0
-system/machine/processes.test.ts                                 17.2   24.8
-system/machine/usage-refresh.test.ts                             19.1   35.0
-system/machine/usage.test.ts                                      1.0    3.0
-system/settings/browser.test.ts                                   1.0    1.7
-system/settings/contents.test.ts                                  1.0    2.2
-system/settings/editors-draft.test.ts                            29.2   35.9
-system/settings/editors-writer.test.ts                           16.2   22.4
-system/settings/folders.test.ts                                   7.0   10.0
-system/settings/origins.test.ts                                   1.5    3.8
-system/settings/rows.test.ts                                     12.4   16.8
-system/settings/search.test.ts                                    2.6    6.1
-system/settings/write.test.ts                                     7.1   16.1
-workbench/drag.test.ts                                            6.5   11.2
-workbench/layout/instance.test.ts                                 1.9    3.2
-workbench/layout/layout-close.test.ts                            11.0   16.4
-workbench/layout/layout-parts.test.ts                             2.6    5.4
-workbench/layout/layout-store.test.ts                             7.4   11.8
-workbench/layout/layout.test.ts                                   1.4    1.9
-workbench/layout/nested.test.ts                                   8.4    9.7
-workbench/layout/open/floats-store.test.ts                        9.3   14.3
-workbench/layout/open/floats.test.ts                              3.2    4.5
-workbench/layout/open/kept-panes.test.ts                          7.5    8.9
-workbench/layout/open/landing.test.ts                             7.5   11.5
-workbench/layout/open/locked.test.ts                              6.5   10.1
-workbench/layout/open/new-text-file.test.ts                       0.9    1.9
-workbench/layout/open/pinned.test.ts                              8.1   15.2
-workbench/layout/open/preview.test.ts                            12.8   17.0
-workbench/layout/open/session-lock.test.ts                        7.8   16.5
-workbench/layout/open/show-in-files.test.ts                      12.3   25.0
-workbench/layout/pages.test.ts                                    7.4   13.6
-workbench/layout/saved/layout-carry.test.ts                       0.9    1.4
-workbench/layout/saved/layout-floats.test.ts                      4.2    9.0
-workbench/layout/saved/layout-locked.test.ts                      3.9    5.4
-workbench/layout/saved/layout-pinned.test.ts                      4.1    6.2
-workbench/layout/saved/layout-saved.test.ts                       2.9    4.7
-workbench/layout/saved/layout-shared.test.ts                     10.4   13.7
-workbench/layout/saved/layout-system.test.ts                      3.8    5.8
-workbench/layout/saved/refusals/layout-parse-refusals.test.ts     2.0    3.5
-workbench/layout/saved/refusals/layout-parse-root-refusals.test.ts    3.1    4.0
-workbench/layout/saved/refusals/layout-refusals.test.ts           1.1    1.8
-workbench/layout/saved/refusals/layout-workbench-refusals.test.ts    1.6    3.5
-workbench/navigation/arrangement.test.ts                          9.9   15.1
-workbench/navigation/catalogue.test.ts                            6.3    7.7
-workbench/navigation/editor-status.test.ts                        0.8    1.6
-workbench/navigation/editor-text.test.ts                          0.9    1.6
-workbench/navigation/notice-sources.test.ts                      12.2   14.2
-workbench/navigation/notices.test.ts                              1.5    3.0
-workbench/navigation/pages.test.ts                                2.9    4.9
-workbench/navigation/rail.test.ts                                 1.2    2.6
-workbench/navigation/registry.test.ts                            15.0   34.9
-workbench/navigation/status.test.ts                               6.7    8.2
-workbench/palette.test.ts                                         7.0   12.5
-workbench/rail-badges.test.ts                                    14.1   17.7
-workbench/selection.test.ts                                       6.2   11.3
-workbench/ui-load.test.ts                                         7.4   10.4
-workbench/ui-shared.test.ts                                       8.7   12.3
-workbench/ui.test.ts                                              7.1   12.9
+sources/repositories/view/answers.test.ts                         1.2    1.8
+sources/repositories/view/commit-action.test.ts                   0.7    0.8
+sources/repositories/view/diff-session.test.ts                    1.5    1.8
+sources/repositories/view/repositories.test.ts                   12.6   17.8
+sources/repositories/view/view-state.test.ts                      1.5    3.9
+sources/search/endpoint.test.ts                                   9.8   13.2
+sources/search/hits.test.ts                                       0.8    0.8
+sources/search/replace.test.ts                                   23.8  153.1
+sources/search/search.test.ts                                     8.8   16.2
+sources/venues.test.ts                                            7.1    9.3
+system/audit-message.test.ts                                      0.7    0.9
+system/audit.test.ts                                              7.0    8.0
+system/config-files.test.ts                                       0.7    0.8
+system/deposit.test.ts                                           19.1   21.6
+system/docs.test.ts                                              20.6   47.1
+system/lines.test.ts                                             15.5   21.7
+system/machine/hpc.test.ts                                       17.2   22.7
+system/machine/processes.test.ts                                 17.1   21.6
+system/machine/usage-refresh.test.ts                             17.6   19.8
+system/machine/usage.test.ts                                      1.1    2.0
+system/settings/browser.test.ts                                   1.0    2.4
+system/settings/contents.test.ts                                  1.0    1.8
+system/settings/editors-draft.test.ts                            27.9   33.4
+system/settings/editors-writer.test.ts                           15.9   18.8
+system/settings/folders.test.ts                                   7.4    8.1
+system/settings/origins.test.ts                                   1.4    1.7
+system/settings/rows.test.ts                                     10.9   14.7
+system/settings/search.test.ts                                    2.4    3.8
+system/settings/write.test.ts                                     7.7   13.8
+workbench/drag.test.ts                                            6.6    8.6
+workbench/layout/instance.test.ts                                 1.8    2.6
+workbench/layout/layout-close.test.ts                            11.6   15.6
+workbench/layout/layout-parts.test.ts                             2.6    3.2
+workbench/layout/layout-store.test.ts                             8.6   10.9
+workbench/layout/layout.test.ts                                   1.3    2.1
+workbench/layout/nested.test.ts                                   7.9   12.4
+workbench/layout/open/floats-store.test.ts                        9.5   12.1
+workbench/layout/open/floats.test.ts                              3.3    3.9
+workbench/layout/open/kept-panes.test.ts                          7.6   13.5
+workbench/layout/open/landing.test.ts                             7.8   11.6
+workbench/layout/open/locked.test.ts                              6.2    8.4
+workbench/layout/open/new-text-file.test.ts                       0.8    2.0
+workbench/layout/open/pinned.test.ts                              8.4    8.7
+workbench/layout/open/preview.test.ts                            11.9   21.7
+workbench/layout/open/session-lock.test.ts                        7.7    9.7
+workbench/layout/open/show-in-files.test.ts                      12.9   14.9
+workbench/layout/pages.test.ts                                    7.0    9.6
+workbench/layout/saved/layout-carry.test.ts                       0.9    2.1
+workbench/layout/saved/layout-floats.test.ts                      4.1    5.1
+workbench/layout/saved/layout-locked.test.ts                      4.2    4.7
+workbench/layout/saved/layout-pinned.test.ts                      4.2    7.1
+workbench/layout/saved/layout-saved.test.ts                       3.0    3.8
+workbench/layout/saved/layout-shared.test.ts                     10.3   13.3
+workbench/layout/saved/layout-system.test.ts                      3.8    4.5
+workbench/layout/saved/refusals/layout-parse-refusals.test.ts     2.0    2.4
+workbench/layout/saved/refusals/layout-parse-root-refusals.test.ts    3.0    3.6
+workbench/layout/saved/refusals/layout-refusals.test.ts           1.1    2.3
+workbench/layout/saved/refusals/layout-workbench-refusals.test.ts    1.6    2.0
+workbench/navigation/arrangement.test.ts                          9.5   10.9
+workbench/navigation/catalogue.test.ts                            6.3    6.8
+workbench/navigation/editor-status.test.ts                        0.9    0.9
+workbench/navigation/editor-text.test.ts                          1.0    2.1
+workbench/navigation/notice-sources.test.ts                      12.0   14.2
+workbench/navigation/notices.test.ts                              1.4    1.6
+workbench/navigation/pages.test.ts                                3.0    5.1
+workbench/navigation/rail.test.ts                                 1.2    1.8
+workbench/navigation/registry.test.ts                            14.5   22.8
+workbench/navigation/status.test.ts                               6.7    7.2
+workbench/palette.test.ts                                         7.2   10.5
+workbench/rail-badges.test.ts                                    13.5   20.8
+workbench/selection.test.ts                                       6.5    8.5
+workbench/ui-load.test.ts                                         7.4   14.1
+workbench/ui-shared.test.ts                                       8.2   10.3
+workbench/ui.test.ts                                              7.2   10.4
 ```
 
 ## Every file of `tests/state`
 
-One row per `.ts` file of the worktree plus the three that are gone. "Tests before" and "Tests after" are the vitest counts of the base run and the final run; "-" means the file did not exist or holds no test. A file marked "read, kept whole" was read test by test and not edited, and its head comment is the old one (58 unchanged files keep their old head; each of the 167 changed files opens with `// Layer 2, client-state tests.` or `// Layer 2, client-state test helper.`). The detail of every changed file follows the table.
+One row per `.ts` file of the worktree plus the three that are gone. "Tests before" and "Tests after" are the vitest counts of the base run and the final run; "-" means the file did not exist or holds no test. A file marked "read, kept whole" was read test by test and not edited, and its head comment is the old one (53 unchanged files keep their old head; each of the 167 changed files and the six new or moved files (`client/fetch-record.ts`, `sessions/terminal/pty/pty-fixture.ts`, `sessions/terminal/pty/pty-io.test.ts`, `sessions/terminal/pty/pty-socket.test.ts`, `shared/answers.test.ts`, `shared/arrival.ts`) opens with `// Layer 2, client-state tests.` or `// Layer 2, client-state test helper.`). The detail of every changed file follows the table.
 
 | File | Tests before | Tests after | State |
 |---|---|---|---|
@@ -460,7 +465,8 @@ One row per `.ts` file of the worktree plus the three that are gone. "Tests befo
 | tests/state/sessions/terminal/viewport.test.ts | 9 | 9 | read, kept whole |
 | tests/state/sessions/terminals.test.ts | 64 | 33 | changed |
 | tests/state/sessions/transcript.test.ts | 27 | 26 | changed |
-| tests/state/shared/answers.test.ts | - | 14 | new test file (failedAnswer, refusedAnswer, refusalSentence once) |
+| tests/state/shared/answers.test.ts | - | 13 | new test file (failedAnswer, refusedAnswer, refusalSentence once) |
+| tests/state/shared/arrival.ts | - | - | new helper (the 1 s bounded wait of pty-fixture.ts `sentCount`, pty-socket.test.ts `gated().posted` and life/memories-message.test.ts `held`) |
 | tests/state/shared/instance-fixture.ts | - | - | helper, changed |
 | tests/state/shared/instance-state-feeds.test.ts | 280 | 146 | changed |
 | tests/state/shared/instance-state-files.test.ts | 518 | 312 | changed |
@@ -631,7 +637,7 @@ boards/structure/graph.test.ts: read, kept whole (25)
 boards/structure/layout.test.ts: DEL "leaves out an item that is null, as it does one that is a number" | guarded: null item in Graphviz answer does not throw/place | held by "places the node a position beside an item that is null names" [state/boards/structure/layout.test.ts:355] and "places no node for names that are not n and an index" ; kept 20
 boards/structure/lines.test.ts: DEL "keep a keyed row with its label and colour, label a bare key by itself, and drop the rest" | guarded: venueTiers row reading | held by "drops a row whose key is not a string and keeps a colour only when it is a string" [state/boards/structure/lines.test.ts:153] (bare key, label, colour, dropped rows) and "is empty for anything that is not a list"; kept 11
 boards/structure/map-fixture.ts: read, kept whole (helper)
-client/client-state.test.ts: DEL "holds one instance of every store it names" | guarded: every store of the type is built | held by the TypeScript type of `createClientState` (src/lib/state/client/context.ts:204, checked by `npm run check`, which prints 0 errors) and by every other test that reads a store from the client; RETITLE "audit: replaces exactly the eleven stores..." -> "replaces exactly the eleven stores handed the query client and no other"; kept 7
+client/client-state.test.ts: head and the `STORES` doc comment rewritten to say what the file tests; DEL "holds one instance of every store it names" | guarded: every store of the type is built | held by the TypeScript type of `createClientState` (src/lib/state/client/context.ts:204, checked by `npm run check`, which prints 0 errors) and by every other test that reads a store from the client; RETITLE "audit: replaces exactly the eleven stores..." -> "replaces exactly the eleven stores handed the query client and no other"; kept 7
 client/clock.test.ts: read, kept whole (4)
 client/config-seed.test.ts: read, kept whole (33)
 client/entities.test.ts: DEL "hand back the payload of the latest message" + "hands back the latest usage payload" (pass-through: entities.svelte.ts:68-71 payload() returns messages[channel].payload; the version ordering is held by 'keeps the newer message and drops an older one' [state/client/entities.test.ts:40]; the schema reads are held by config-seed.test.ts); helper snapshot() and unused usage removed; head comment rewritten; kept 5
@@ -690,7 +696,7 @@ deleted: "says nothing when the endpoint took the command" (held by "takes a com
 ### life/calendar.test.ts
 deleted: "carry the view the instance keeps" (pass-through of the view argument); assertions allDayContent/noEventsContent/height removed from "carry the payload's events..." (pass-through of catalog words and a constant), retitled "carry the payload's events, and none without a payload".
 ### life/memories-message.test.ts
-deleted: "matches the server limit" (re-export, server/content/memories.ts re-exports MAX_UPLOAD_BYTES); "names no wire word in any of its sentences" (catalog-string test; sentences asserted in "has a sentence of its own for every word" [state/life/memories-message.test.ts:30]); "reads a refusal whose error is a number as the refusal sentence" (row '{"error":3}' added to the refusal loop); "reads a body that is JSON but no map as a list that is missing, or as the refusal sentence" (held by the images_not_a_list table [state/life/memories-message.test.ts:97] and the refusal loop [state/life/memories-message.test.ts:154]). The one vi.waitFor poll (50 ms) replaced by the query cache's own subscription (queries.client.getQueryCache().subscribe) over createQueries()+createMemories(); no timer left.
+deleted: "matches the server limit" (re-export, server/content/memories.ts re-exports MAX_UPLOAD_BYTES); "names no wire word in any of its sentences" (catalog-string test; sentences asserted in "has a sentence of its own for every word" [state/life/memories-message.test.ts:31]); "reads a refusal whose error is a number as the refusal sentence" (row '{"error":3}' added to the refusal loop); "reads a body that is JSON but no map as a list that is missing, or as the refusal sentence" (held by the images_not_a_list table [state/life/memories-message.test.ts:108] and the refusal loop [state/life/memories-message.test.ts:165]). The one vi.waitFor poll (50 ms) replaced by the query cache's own subscription (queries.client.getQueryCache().subscribe) over createQueries()+createMemories(), wrapped in `arrival(...)` (shared/arrival.ts) so that a defect fails after 1 s naming the cache announcements that came.
 ### life/notes.test.ts
 deleted: "gives two notes started in two milliseconds two names" (held by the format test [state/life/notes.test.ts:53]); "is the number config/behavior.yml carries under notes" (rows of 'is the number %j when the config carries it' [state/life/notes.test.ts:122]); "is the built-in number before a configuration push, and for a broken one" (rows 'soon' [state/life/notes.test.ts:116, state/life/notes.test.ts:117] added to the built-in table, plus new "is a built-in number above zero before a configuration push"). folded: stamp 'never written' + 'infinite or before the epoch' -> it.each 5 rows; writesNow 3 tests -> it.each 4 rows.
 ### life/present.test.ts
@@ -719,7 +725,7 @@ head: Layer label.
 ### sessions/source/view-source.test.ts
 rewritten as tables, same assertions: the feed-kind and registry-kind tests folded into one it.each of 8 rows (kind, key); the collection null cases folded into one table of 9 rows; the feed-path null cases into one table of 6 rows (all on 'leads': the kind only picks the key, which the 8-row table holds). Deleted: the real-config collection test (hard-coded 'funding/funding.yml' and 'registries/venues.yml', i.e. a constant of the hub; the synthetic 'events' case holds the branch [state/sessions/source/view-source.test.ts:25]); the "[null, 'one', {key:'funding'}, {key:'funding', file}]" case (same first-row-wins branch as the 'first entry whose file is not a path' row [state/sessions/source/view-source.test.ts:35]); the extra null kinds (venues/datasets/pillars/domains/radar) on {}, blank and number (same readAs(pathShape) branch as the leads rows [state/sessions/source/view-source.test.ts:58]).
 ### sessions/terminal/commands-pane.test.ts
-TAGGED whole file slow (last line of head comment): starts a private tmux server and a shell in a real pane; also imports tmux-fixture.ts whose module load runs `tmux -V`. A whole-file tag keeps the file from loading under '!slow'. Kept (the one case joining the server's capture action with the commands store; task.test.ts covers the capture alone). Layer 4 -> Layer 2 label. Time of its one test over five runs with `--tagsFilter slow`: min 173.8 ms, max 182.0 ms.
+TAGGED whole file slow (last line of head comment): starts a private tmux server and a shell in a real pane. The tmux fixture (tests/server/machine/pty/tmux-fixture.ts, whose module load runs `tmux -V`) and the server modules `sessions.ts` and `run.ts` are imported with `await import` inside the slow `beforeAll`, so loading the file under '!slow' starts no process (the logging shim's log is empty, finding 1 of Repair round 1). Kept (the one case joining the server's capture action with the commands store; task.test.ts covers the capture alone). Layer 4 -> Layer 2 label. Time of its one test over five runs with `--tagsFilter slow`: min 161.8 ms, max 185.2 ms.
 ### sessions/terminal/commands-output.test.ts
 deleted: "reads the folders from the mark when the repository list was never read" (same input and same assertion as "reads the path an error names from the folder of the command that printed it" which already runs on an unseeded list). head label + pointer to commands-pane.test.ts.
 ### sessions/terminal/commands.test.ts: read, kept whole (46 tests; each press/answer/stale-answer case reaches its own branch of press/pressRestart/answer/settle, commands.svelte.ts:484-520).
@@ -768,7 +774,7 @@ deleted: "answers a refusal whose error is a number as the refusal sentence" (fo
 - acts/confirm, drop, selection, undo, store: read, kept whole. acts/folders: catalog literals -> t(...), literal platform sentence removed, label. acts/keys: deleted 'binds every action', 'binds Enter and F2...', 'tells Copy Path from Copy Relative Path by Shift'; hints test lost lines; 32 generated per-chord tests folded into it.each(macOS/another platform) looping chords. label.
 - clipboard.client: read, kept whole (effect timing). watch.svelte.ts helper kept.
 - ops.test.ts: deleted 'sends a second paste while one is in flight'; orphan comment removed; label.
-- explorer.test.ts: deleted filesViewOf reading test, forms reading test (held by shared/instance-state-files.test.ts [state/shared/instance-state-files.test.ts:193]), patchedFilesView test, 'marks every row fixed while a filter draws them' (held by rows/rows.test.ts "fixes the open state of every row while a filter draws them" [state/sources/explorer/rows/rows.test.ts:431]); toggles test reduced to shownOf; filesLineTyped reduced to other-view case. head rewritten.
+- explorer.test.ts: deleted filesViewOf reading test, forms reading test (held by shared/instance-state-files.test.ts [state/shared/instance-state-files.test.ts:193]), patchedFilesView test, 'marks every row fixed while a filter draws them' (held by rows/rows.test.ts "fixes the open state of every row while a filter draws them" [state/sources/explorer/rows/rows.test.ts:431]); toggles test reduced to shownOf; filesLineTyped reduced to other-view case. head rewritten. The describe 'a typed root or workspace line as unsaved text' is tagged slow and holds the cold `textCatalog(loadConfig(engineDir()).config)` in its own `beforeAll`, so the 19 other tests load no configuration.
 - naming.test.ts: bad-naming list 4 rows; filesViewOf({}).naming assertion removed; label.
 - rows/rows.test.ts: read, kept whole (435 lines; every test has a distinct branch).
 - sections/open-editors-tabs.test.ts: added the root '' row to 'names no file'; label.
@@ -796,7 +802,7 @@ deleted: "answers a refusal whose error is a number as the refusal sentence" (fo
 - replace.test.ts: read in full, kept whole (24 tests, each a distinct branch); two false titles ('writes the count line back...') retitled; Revert comments proved by controls on search.svelte.ts (pick.kind guard, dismissHits unsay, toggleMode searchRunning, replaceHits unsay each turn a test red). label.
 - hits.test.ts, search-fixture.ts: read, kept whole.
 ### cross-cutting: failedAnswer
-- NEW tests/state/shared/answers.test.ts (14 tests): holds failedAnswer/refusedAnswer/refusalSentence branches once (word sentences distinct for OPS_REFUSALS and LATEX_REFUSALS, status sentence for non-word bodies, unreadable). Controls on shared/answers/answers.ts (swap two keys, drop unreadable branch, drop latex branch, drop word branch) each turn it red. Each store test keeps one refusal row and one unreadable row as the wiring case; the stores trimmed to that are listed in the 'failedAnswer wiring tables' entry under system below.
+- NEW tests/state/shared/answers.test.ts (13 tests): holds failedAnswer/refusedAnswer/refusalSentence branches once (the sentence of a word whatever the status, the LaTeX words distinct, the catalog sentence for a word of either endpoint, the status sentence for non-word bodies, unreadable); it reads no catalog (every key answers with its own name). A control on shared/answers/answers.ts and a first-run row for each test are in finding 4 of Repair round 1. Each store test keeps one refusal row and one unreadable row as the wiring case; the stores trimmed to that are listed in the 'failedAnswer wiring tables' entry under system below.
 ### system (done)
 - audit-message: unknown-word loop -> it.each(3 rows); deleted 'names no wire word in any of its sentences' (catalog-string assertion). label.
 - audit: deleted 'belongs to one client' (fixture isolation, costs nothing in the product). label.
@@ -807,9 +813,9 @@ deleted: "answers a refusal whose error is a number as the refusal sentence" (fo
 - machine/processes: deleted 'rows that is a map' frame row, 'names a group by the label the terminal tab shows' (names asserted literally in the main arrange test), headLine rows 5->2 with t(), 'starts on cpu' (asserts a test constant), 'x' sort row, store tests 'names a terminal with no title by its name' and 'names the record command and pid for a group drawn from the record'; stop question uses t(); label.
 - machine/usage-refresh: rows 17->8 (case, empty, null, map, string/number/JSON-null bodies share a branch); label. machine/usage: read, kept whole.
 - settings/browser: decimal rule is decimalOf (write.ts), held by write.test.ts; rows trimmed to wiring (decimal trimmed, '-0' test deleted, one refusal text). settings/contents: NARROW constant assertion and 3 of the width rows deleted. settings/editors-draft: deleted shipped counts test, form-per-shipped-row test, swatch test, map-keyed duplicate/empty key test (keysOf is shared with the key/value form), flow reading duplicates; head count text removed. settings/editors-writer: default constant assertion deleted; local settle -> fixture. settings/folders: 'list no folder as a file'. settings/origins: '(cases 9, 10 and 30)' removed from the comment, label. settings/rows: deleted language map describe (catalog constants), terminal control constants, FILES constant assertion, localRows arity assertion, JS-prototype sanity asserts, 3 titleOf rows, a 'Revert' comment that named no revert. settings/search: deleted tautological holds loop, '@nonsense in the shipped catalog' (cannot fail), '@Modified' row; settings/write: non-decimal rows 7->3, empty rows 3->2, '-0' submit test (same as commit), 'writes nothing for the empty choice' (same as commit choice test), pure 'counts a state holding a typed text' (held via the ui.unsaved wiring test [state/system/settings/write.test.ts:362] and editors-writer [state/system/settings/editors-writer.test.ts:339, :345]), 2 JS-sanity asserts. settings/fixture: read, kept.
-- docs: deleted 'audit: sends one request...' (passes with its behaviour removed), hub 'says the refusal sentence' (same branch as the project one), refusal table 8 rows (held by the refusal tables of shared/answers.test.ts [state/shared/answers.test.ts:39, :51]), 6 holds() tests folded into one it.each (7 rows), tables trimmed to distinct branches, manual-run key-order row/assertion removed; controls: enabled:true and unreached-without-file turn the two Revert-commented tests red; label.
+- docs: deleted 'audit: sends one request...' (passes with its behaviour removed), hub 'says the refusal sentence' (same branch as the project one), refusal table 8 rows (held by the refusal tables of shared/answers.test.ts [state/shared/answers.test.ts:39, :52]), 6 holds() tests folded into one it.each (7 rows), tables trimmed to distinct branches, manual-run key-order row/assertion removed; controls: enabled:true and unreached-without-file turn the two Revert-commented tests red; label.
 - sessions/source/source-options, symbols: '(case N)' removed from 12 titles; label.
-- failedAnswer wiring tables trimmed (each store keeps one refusal row, one unreadable row; word cases held by [state/shared/answers.test.ts:20, :31, :39]): sessions/agents (refusal table 4 rows deleted, unreadable 7->4, '{}' row deleted), sessions/changes (refusal loop 3->1, word test deleted, unreadable loop 4->1), sessions/transcript (same), sessions/latex/project (refusal rows 4->1, unreadable 4->2), sessions/terminal/pty/pty-io (start-shape rows 5->3, refusal rows 4->1, word test deleted, unreadable 4->2), sources/files (refusal rows 3->1, word and non-text tests deleted, unreadable 4->2), life/memories-message (refusal loop->1, word test deleted, unreadable loop 4->2). sessions/latex/folder: kept (one word test per flow: state, count, format).
+- failedAnswer wiring tables trimmed (each store keeps one refusal row, one unreadable row; word cases held by [state/shared/answers.test.ts:18, :23, :39]): sessions/agents (refusal table 4 rows deleted, unreadable 7->4, '{}' row deleted), sessions/changes (refusal loop 3->1, word test deleted, unreadable loop 4->1), sessions/transcript (same), sessions/latex/project (refusal rows 4->1, unreadable 4->2), sessions/terminal/pty/pty-io (start-shape rows 5->3, refusal rows 4->1, word test deleted, unreadable 4->2), sources/files (refusal rows 3->1, word and non-text tests deleted, unreadable 4->2), life/memories-message (refusal loop->1, word test deleted, unreadable loop 4->2). sessions/latex/folder: kept (one word test per flow: state, count, format).
 
 ### workbench/
 - drag.test.ts: Alt float tests (2) folded into it.each (4 rows: no drop, middle of a body, strip, edge). Title 'floats at the pointer over %s, wherever the pointer was released'. label. 39 tests.
@@ -846,7 +852,7 @@ deleted: "answers a refusal whose error is a number as the refusal sentence" (fo
 - layout/saved/refusals/layout-workbench-refusals.test.ts: table 83 -> 33 rows (50 deleted): non-envelope undefined/array/text (shared asEnvelope, rows of layout-parse-refusals.test.ts); v2 as text; workbench null/string (kept: none, list); dock right/bottom/hidden (held by layout-saved.test.ts v2 right/bottom rows [state/workbench/layout/saved/layout-saved.test.ts:42] and the hidden-panel fold test [:50]), dock number/none/capitals (kept: 'not one'); panel share 0.25, null, none, NaN, Infinity, -Infinity, list, negative, one (kept: string, past one, zero); main tree null, panel tree null/string/empty/repeats an id of main, main with wrong size (layout-saved.test.ts refusal rows); all five valid-focus rows (layout-saved.test.ts 'carries the maximised pane of either tree', 'carries the maximised pane of the main tree when the panel is dropped', 'drops a pane maximised inside a hidden panel', 'drops a focus that named the panel when the panel held nothing') and all eleven invalid-focus rows (layout-saved.test.ts 'drops a focus that names no pane and one that is not a tree and a path'; the path element rules are rows of layout-parse-root-refusals.test.ts); checkWorkbench root not an object (layout-refusals 'a tree that is a number'), page leaf on its own page (layout-refusals 'a page leaf naming the page it is on'); checkPages two empty rail keys, empty current, own page leaf, page leaf twice, label in message. label (was 'Layer 4, test.').
 - layout/saved/layout-saved.test.ts: also deleted checkWorkbench 'names the tree a problem is in, and reports a focus that names no pane' (rows 'the sentences of a workbench with a root that is wrong' [state/workbench/layout/saved/refusals/layout-workbench-refusals.test.ts:95] and '... a focus past the tree' of layout-workbench-refusals.test.ts).
 - layout/saved/layout-system.test.ts: the two label tests (labels the page System; keeps a label the viewer gave) folded into one it.each inside the shapes describe.each (rows 'the name the rail shipped' [state/workbench/layout/saved/layout-system.test.ts:293], 'a name the viewer gave the page'; title 'labels the page for %s'); the other 34 tests read and kept whole. label.
-- navigation/arrangement.test.ts: deleted 'reads the sessions arrangement as saved' and 'makes every page as the rulings lay it out' and 'draws the eleven buttons in the ruled order' (shipped config constants), 'takes a tab written as a view with a state' / 'takes a pane naming one view' / 'refuses a tree that is not a tree' / 'refuses a split whose sizes do not add up' / 'refuses a split with a direction or a size' (rows of the wrong-type table [state/workbench/navigation/arrangement.test.ts:554]: 'a pane whose tab is a map', 'a pane naming one view', 'a map with no root', 'a root of an unknown kind', 'a split whose sizes do not sum to one', 'a split with a child under the minimum', 'a split with a direction that is not one', etc.), the describe 'a Projects page saved before the Personal tab' (its 'keeps its three tabs' is the same found-by-key branch as 'shows the page the reader rearranged on the next press'; 'shows four tabs once the pages are reset' is a shipped-config constant and resetPages is held by layout/pages.test.ts), 'renames the page without untying it from its button' (same branch as 'saves the key with the page', which renames then finds by key). Edits of kept assertions: 'turns the shipped sessions arrangement' lost the root.kind and viewsOf constant list (checkWorkbench equal [] kept); 'mints a fresh instance id' `new Set(ids).size toBe(8)` -> `ids.length > 1` and `size toBe(ids.length)`; placement test `wanted toHaveLength(51)` -> `wanted.length > 0`; 'makes the Help page' lost the shipped Help tab list. Table pruned 24 rows (type variants of one zod field: top-level string/number, root array/string, kind number, view map/null, list null/list, tab state string/number, tab view number, sizes map/null/-Infinity/hold null/three, dir number/none, children map/null/hold pane-number, plus the two extra-field rows 'a split with a folded list' and 'a root with fields it does not read' since the 'keys of' rows hold the stripping). label. 57 tests.
+- navigation/arrangement.test.ts: deleted 'reads the sessions arrangement as saved' and 'makes every page as the rulings lay it out' and 'draws the eleven buttons in the ruled order' (shipped config constants), 'takes a tab written as a view with a state' / 'takes a pane naming one view' / 'refuses a tree that is not a tree' / 'refuses a split whose sizes do not add up' / 'refuses a split with a direction or a size' (rows of the wrong-type table [state/workbench/navigation/arrangement.test.ts:554]: 'a pane whose tab is a map', 'a pane naming one view', 'a map with no root', 'a root of an unknown kind', 'a split whose sizes do not sum to one', 'a split with a child under the minimum', 'a split with a direction that is not one', etc.), the describe 'a Projects page saved before the Personal tab' (its 'keeps its three tabs' is the same found-by-key branch as 'shows the page the reader rearranged on the next press'; 'shows four tabs once the pages are reset' is a shipped-config constant and resetPages is held by layout/pages.test.ts), 'renames the page without untying it from its button' (same branch as 'saves the key with the page', which renames then finds by key). Edits of kept assertions: 'turns the shipped sessions arrangement' lost the root.kind and viewsOf constant list (checkWorkbench equal [] kept); 'mints a fresh instance id' `new Set(ids).size toBe(8)` -> `ids.length > 1` and `size toBe(ids.length)`; placement test `wanted toHaveLength(51)` -> `wanted.length > 0`; 'adds one page tied to help on the first press of the Help button, and leaves the System page its saved tabs' lost the shipped Help tab list. Table pruned 24 rows (type variants of one zod field: top-level string/number, root array/string, kind number, view map/null, list null/list, tab state string/number, tab view number, sizes map/null/-Infinity/hold null/three, dir number/none, children map/null/hold pane-number, plus the two extra-field rows 'a split with a folded list' and 'a root with fields it does not read' since the 'keys of' rows hold the stripping). label. 57 tests.
 - navigation/catalogue.test.ts: deleted describe 'the catalogue of the real config' (5 tests: shipped constants, or held by tests/checks/config/config-folder.test.ts: 'keys every catalogue group by the rail page it holds, in rail order, System after Help' [checks/config/config-folder.test.ts:479], 'gives every group a chord and a glyph, and no letter a key the workbench binds' (:623, which holds isChorded for every section and the chord list), 'names a configured group and a nonnegative order in every listed registration' (:681, which holds 'no view left out of a group' and so an empty direct list)); describe 'the readers of layout.yml' (3 tests, every sentence a row of the wrong-type table); 'carries the group's glyph when it has one' (the groupGlyph test needs arrange to carry the glyph); 'finds a view anywhere in an arrangement' (rows of the table [state/workbench/navigation/catalogue.test.ts:397]). Table pruned 33 rows (type variants of one field of readGroups/readChord/readDocs/nodeHolds/onCataloguePage). beforeEach and the application registry removed (only the real-config block used them). label. 61 tests.
 - navigation/editor-status.test.ts: deleted 'asks a tab to run one editor action by its id' (the store keeps any ask it is handed, so it is the 'asks a tab that has said something' test with another kind; its comment named it an audit that tsc gives). label. 4 tests.
 - navigation/editor-text.test.ts: read, kept whole (6 tests). label.
@@ -856,25 +862,26 @@ deleted: "answers a refusal whose error is a number as the refusal sentence" (fo
 - navigation/rail.test.ts: deleted describe 'the rule over the rail list' (6 tests: readRail/arrangementKeys are held by tests/data/sources/config/rail.test.ts:80 'keeps the buttons the rule accepts and names each it leaves out, in order' (shape, label, glyph, page, page_unknown, repeated, glyph_unknown), :101 'checks no glyph against a vocabulary when it is given none', :76 and :58 for non-list values); 'reports each refused entry in the catalog words' (data :123), 'reports a rail that is not a list, and nothing for a config without the key' (data :115, :119), 'leaves out an entry whose glyph the vocabulary does not hold, as its finding says' (row 'pages with a glyph map' [state/workbench/navigation/rail.test.ts:91] for railPages, data :123 rail[10] for the finding), 'reads the shipped list in its order, System last' (labels constant; the key list in order is tests/shell/rail/rail-config.test.ts:30, another sweep's folder), 'reads what the tab holds as three strings per row' / 'sets the list beside what else the tab holds' / 'reads the file list whole, a broken entry included' (rows of the wrong-type table [state/workbench/navigation/rail.test.ts:233]). Table pruned 24 rows (variants of rail/arrangements/rows/glyph-map/draft/state types; the readRail ones are data rail.test.ts :76/:80). Kept: the shipped railFindings == [] (no other test runs railFindings over the shipped config). Helper outside tests/state now unused: tests/shell/rail/shipped-rail.ts export SHIPPED_RAIL_LABELS (grep). label. 33 tests.
 - navigation/registry.test.ts: 30 -> 10 tests. Deleted 'registers a view and looks it up by id' (viewFor('probe-one').label is read by 'replaces an earlier registration'), 'has nothing for an id nobody registered' (viewFor('Partial') undefined in 'ignores a partial'), 'registers every view id the application has' and 'gives every view its exact group and order' (constant lists of ids, groups and orders; a configured group and nonnegative order is held by tests/checks/config/config-folder.test.ts:680 'names a configured group and a nonnegative order in every listed registration'), the registrations of Data, Lit Watch, Position Leads, Inbox, LinkedIn, the manual and a hub document, the slide catalog, the source editor, Venues, Pillars/Domains/Map, 'registers the Pillars view under that id alone' (label and glyph key constants and absences; every label and glyph resolves is 'names a label key the text catalog holds' / 'names a glyph key whose value...' which are kept), 'registers the one board component under all three of its ids' (a component identity), 'registers every configured rail count and its urgency tone' (typeof function and tone constants of Inbox.svelte:13, Leads.svelte:11, Linkedin.svelte:12; the look), 'audits that the Agents and Changes views carry a glyph of their own' (two named pairs of glyph keys). Kept test lost the constant COLLECTIONS list. Deleted the two glyph-uniqueness tests 'audits that every view of the catalogue carries a glyph of its own, the collections apart' and 'audits that every chorded group carries a glyph no view inside it carries' (the brief's cases at :505 and :522: assertions over the shipped configuration's glyph constants; two views with one glyph stop no view, key or command; no other test held the property); the unused catalogue.ts imports went with them. 30 -> 10 tests. label.
 - navigation/status.test.ts: deleted describe 'the server item' (socketWords: three catalog words), 'reads a file tab state as its root key and path' (rows of the wrong-type table [state/workbench/navigation/status.test.ts:344]: 'a root and a path', 'an empty root', 'a path alone', 'null', 'an array', 'more keys than the two'), table rows 7 (tabFile undefined/string/number/empty map, path number/null, root list). 'names a C++ file C++, the new languages by their display names, and lists every language of the map' cut to 'lists every language of the language map' (display-name lists are constants of the language catalog); 'matches a language by the letters of its name in their order' lost its first three lines (verbatim 'lists Plain Text first and the rest by name'); 'holds no repository for a folder no repository contains, and for a key that is no folder' lost the key line (verbatim in 'reads a tab holding no file as the hub'). label. 32 tests.
-- workbench/palette.test.ts: deleted 'opens the disclosure a feed entry may sit behind when it is revealed' (the state objects are in the table rows 'a lead with a title and a subject' [state/workbench/palette.test.ts:262], 'a radar entry with a title', 'a linkedin entry with a file and a subject that is a number'), 'indexes every nested string field of collection and feed entries' (rows 'a lead whose fields nest strings' [state/workbench/palette.test.ts:361], 'a collection entry with fields of every type'), describe 'the kind a result row draws' (kindWord: four catalog words), 'lists the views alone for an empty query and for one of spaces only' (its two lines are in 'lists the views alone, in index order, for no word', which now also asserts the blank query), 'lists the eleven commands, ...' (command-name list constants; the theme hint is the row 'themes in the order the list holds them' [state/workbench/palette.test.ts:257], the language availability the 'offers the language list' test), 'matches every command by two-letter prefix, ...' (the prefix filter ran in the test itself, over names). 'requires every word and ranks a title hit above a body-only hit' retitled 'requires every word of the query' (the title-first rank is 'ranks the item whose title matches above one whose text alone does'); 'parses a command prefix and its argument' lost its startsWith filter over the command list. Table pruned 14 rows (theme list type variants, lead/radar/linkedin title fallback variants). kindWord (src/lib/state/workbench/palette.ts:240) is imported by src/lib/shell/keys/Palette.svelte:48 so not unused, and is now untested (Doc text). label. 31 tests.
+- workbench/palette.test.ts: deleted 'opens the disclosure a feed entry may sit behind when it is revealed' (the state objects are in the table rows 'a lead with a title and a subject' [state/workbench/palette.test.ts:262], 'a radar entry with a title', 'a linkedin entry with a file and a subject that is a number'), 'indexes every nested string field of collection and feed entries' (rows 'a lead whose fields nest strings' [state/workbench/palette.test.ts:361], 'a collection entry with fields of every type'), describe 'the kind a result row draws' (kindWord: four catalog words), 'lists the views alone for an empty query and for one of spaces only' (its two lines are in 'lists the views alone, in index order, for no word', which now also asserts the blank query), 'lists the eleven commands, ...' (command-name list constants; the theme hint is the row 'themes in the order the list holds them' [state/workbench/palette.test.ts:257], the language availability the 'offers the language list' test), 'matches every command by two-letter prefix, ...' (the prefix filter ran in the test itself, over names). 'requires every word and ranks a title hit above a body-only hit' retitled 'requires every word of the query' (the title-first rank is 'ranks the item whose title matches above one whose text alone does'); 'parses a command prefix and its argument' lost its startsWith filter over the command list. Table pruned 14 rows (theme list type variants, lead/radar/linkedin title fallback variants). kindWord (src/lib/state/workbench/palette.ts:240) is imported by src/lib/shell/keys/Palette.svelte:48 so not unused, and is no longer tested (its four catalog words were the deleted describe). label. 31 tests.
 - workbench/rail-badges.test.ts: deleted 'reads one collection live-status rule and counts normalised entry fields' (every sentence is a row: 'a rule of a label', 'a rule of a tone', 'a rule of a match that holds numbers and words', 'entries counted by a status with spaces and capitals', 'a rule of a config with no nav_live') and 'reads split tones from config independently of type_color' (row 'a split of tones' [state/workbench/rail-badges.test.ts:661] of the projects table gives the same colors through the same branch). Tables pruned 34 rows (type variants: nav_live string/null, row null/string, match map/only numbers/blank word, label number, tone number, literal __proto__ key, status boolean/map, lead status null/list, deadline list/null/map, window Infinity, post date empty, cadence Infinity/negative, count negative/Infinity/fractional; projects badge: 'the shipped config' (constants held by 'assembles projects from the real registration hooks' [~state/workbench/rail-badges.test.ts:338]), scan string/null, type list, tier list, no tier, no type, split string/null, empty tones). rail-badges-fixture.ts read, not edited (badgeSnapshot, installBadges both still imported). 67 tests.
 - workbench/selection.test.ts: deleted describe 'the pin a view instance keeps' (both tests are rows 'a session that is a string' [state/workbench/selection.test.ts:46], 'a map with no session', 'an empty session', 'a session that is a number', 'undefined', 'an array' of the pin table); table pruned 5 rows (null/string/number state, session list/null) and the describe retitled 'the pin a view instance keeps over the state it saved'. Selection describe read, kept whole. label. 10 tests.
 - workbench/ui-shared.test.ts: deleted 'save their own records when the stored value cannot be read' (the stored value turning unreadable is 'write every record they hold when the stored value becomes unreadable after a save', which also keeps a record saved earlier). The other 9 tests read and kept. label.
 - workbench/ui-load.test.ts: deleted the setter tests 'reads %s as no text scale' (NaN/Infinity/-Infinity) and 'rounds a text scale to a tenth and reads one as the default' (setTextScale and loadUi both go through boundedTextScale at ui.svelte.ts:432 and :559; rows 'a text scale of 1.24' [state/workbench/ui-load.test.ts:223], '1.25', '1.04', 'under the bound', 'over the bound', 'of infinity' hold the same branch). Table pruned 35 rows (non-map JSON texts, version string/zero, theme null/list/capitals, wallpaper null, icons/unicode combinations, text scale null/one/negative/-infinity/list, terminal size null/negative/zero/-infinity, code theme empty/null, hidden items map/null, quiet string, instances array with items/null/number/empty, dismissed lead ids, __proto__ null/number). 'the numbers a viewer sets' keeps setTerminalFont NaN/Infinity (the setter clamps at ui.svelte.ts:579, not the load path). head was 'Layer 4, test.' -> label. 51 tests.
 - workbench/ui.test.ts: 41 -> 26 tests. Deleted (each held by a row of ui-load.test.ts's loadUi table or another kept test): 'reads a hidden list saved wrongly as the entries it can use, and one saved before it as none' (rows 'hidden items that repeat and hold empty and non-strings' [state/workbench/ui-load.test.ts:303], 'quiet that is a number', 'the version alone'), 'bounds a saved app scale and rejects a non-number' (rows 'a text scale over the bound' [state/workbench/ui-load.test.ts:238], 'a text scale that is a string'), 'bounds a saved terminal size and rejects a non-number' (rows 'a terminal size over the bound' [state/workbench/ui-load.test.ts:268], '... that is a string'), 'reads the wallpaper and the glyph mode back, each on its own' (rows 'a wallpaper that is true/false', 'icons that are true' and 'keeps a wallpaper the toggle turned off under a theme that shows one'), 'reads a choice saved under the older field name when no icons field is saved' and 'writes a choice read under the older field name back under icons at once' (rows 'icons that are absent beside unicode true/false', 'icons that are false beside unicode true'), 'takes the two flags from the config when the saved appearance predates them' (row 'the version alone' [state/workbench/ui-load.test.ts:130] and 'follows the theme while the toggle has not been pressed'), 'reads a wallpaper saved by the earlier envelope as no choice at all' (rows 'the earlier version with a wallpaper' [state/workbench/ui-load.test.ts:121], '... and instances'), 'reads back what it wrote' (row 'every field right' [state/workbench/ui-load.test.ts:152] is the envelope 'saves the seven appearance values' writes), 'saves and restores distinct source working and saved copies by instance id' and 'keeps two instances of the same view apart by their ids' (the instance records of 'saves the seven ...' and the row 'instances of every type' [state/workbench/ui-load.test.ts:328]; two-tab separation is ui-shared.test.ts), 'falls back to the default theme for a stored name the theme list does not hold' (rows 'a theme the list does not hold' [state/workbench/ui-load.test.ts:171], 'every field of the wrong type'), 'falls back whole on another version, on nothing readable, and on a broken shape' (rows 'a map with another version' [state/workbench/ui-load.test.ts:116], 'text that is not JSON', 'every field of the wrong type', 'instances that are a string'), 'loads an envelope saved before the field, every other value as saved' (subsumed by 'keeps the config default reaching a browser with a saved theme and instance state' [state/workbench/ui.test.ts:363], which also asserts theme and instance state), 'reads a saved id the list does not hold as no pick' (rows 'a code theme the list does not hold' [state/workbench/ui-load.test.ts:278], '... that is a number'). Removed EARLIER_VERSION. loadConfig is read once into SHIPPED instead of on every code-theme case. label. 26 tests.
 
-- The shipped config is read once per file (a module constant) in workbench/navigation/arrangement.test.ts (SHIPPED), workbench/layout/open/kept-panes.test.ts (SHIPPED) and sources/explorer/explorer.test.ts (the catalog read once in the describe, not in beforeEach). A loadConfig call costs about 130 to 145 ms (measured as the minimum of the first test of explorer.test.ts and of 'mints a fresh instance id' in arrangement.test.ts when each called it), so the config is read once per file.
+- The shipped config is read once per file (a module constant) in workbench/navigation/arrangement.test.ts (SHIPPED), workbench/layout/open/kept-panes.test.ts (SHIPPED) and sources/explorer/explorer.test.ts (the catalog read once in the `beforeAll` of the slow-tagged describe 'a typed root or workspace line as unsaved text', the only place in the file that reads it). A loadConfig call costs about 130 to 145 ms (measured as the minimum of the first test of explorer.test.ts and of 'mints a fresh instance id' in arrangement.test.ts when each called it), so the config is read once per file. Work at collection (a describe body, a module constant built by a call that reads files) counts with the tests it serves (Z382): the module constants in arrangement.test.ts and kept-panes.test.ts were module-level reads at the base and stay; the explorer read moved into the slow describe, where the reviewer timed it at 117.8 ms and the two tests plus the hook take `tests 113ms` against `tests 6ms` for the 19 quick tests of the file (`npx vitest run tests/state/sources/explorer/explorer.test.ts --tagsFilter slow` and `--tagsFilter '!slow'`).
 
 ### Additional rows
 - client/writes.test.ts: the table title 'is read from %s as %p' is 'is read from %s' ('%p' printed literally in the verbose output of the 11 rows).
 - client/fetch-record.ts: new helper, a stubbed fetch that records each request (`asked`, `serving`); system/machine/hpc.test.ts and sessions/terminal/pty/pty-fixture.ts import it, so the stub that sessions/terminals.test.ts and hpc.test.ts each defined is written once.
-- sessions/terminal/pty/pty-fixture.ts: FakeSocket is a class with no export (nothing imports it; `connected()` returns it).
+- sessions/terminal/pty/pty-fixture.ts: FakeSocket is a class with no export (nothing imports it; `connected()` returns it). `sentCount` waits through `arrival(...)`.
+- shared/arrival.ts: new helper, `arrival(awaited, arrived, register)`: resolves when the `wake` it hands `register` is called, and after 1 s (node's own timer, which fake timers leave alone) runs the cleanup `register` returned and rejects with `timed out after 1000 ms waiting for <awaited>; <arrived()>`. Used by pty-fixture.ts `sentCount`, pty-socket.test.ts `gated().posted` and life/memories-message.test.ts `held`.
 - shared/instance-state-feeds.test.ts: the search/reveal rows (wrong values, empty strings, blank reveal, padded search, no reveal) are kept only on the LinkedIn reader, which shares `searchRevealShape` with the inbox, leads, radar, collection, data and venues readers (the shared-shape rule above); head rewritten to say so.
 - tests/checks/tree/allow-duplication.txt: two entries removed (the writes.test.ts / notice-sources.test.ts pair, 9 lines; the terminals.test.ts / hpc.test.ts pair, 11 lines), nothing added; `tests/checks/tree/duplication.test.ts` passes in the test:checks run quoted above.
 
 ## Folds, old titles against rows
 
-Each fold's old case titles and the rows of its table as the final run prints them (every row names itself in the title, and each row asserts what the case it replaced asserted). The run is `npx vitest run tests/state --tagsFilter '!slow'`, 5658 passed, 0 failed.
+Each fold's old case titles and the rows of its table as the final run prints them (every row names itself in the title, and each row asserts what the case it replaced asserted). The run is `npx vitest run tests/state --tagsFilter '!slow'`, 5655 passed, 8 skipped, 0 failed.
 
 - tests/state/client/writes.test.ts
   - old titles: the time a write waits is the positive number of seconds the configuration names, in milliseconds; the time a write waits is none for a configuration that names no positive number; the time a write waits is read from a timeout_seconds of %p as %p (the table of six rows, whose title printed %p literally)
@@ -1098,7 +1105,7 @@ Sentences outside the step's paths that the sweep makes false, as `grep -n` prin
 
 Source comments that name a `tests/state` test and are still true after the sweep (`grep -n "tests/state" src`): `src/lib/state/shared/words/text.ts:47`, `src/lib/state/workbench/navigation/registry.ts:13` and `:102`, `src/lib/state/life/present.ts:10`, `src/lib/state/system/config/config-files.ts:13`. All 49 comments in `tests/` outside `tests/state` that name a `tests/state` path name a file that exists, and the claim each makes about it was read and holds, except one that was already false before the sweep: `tests/data/file-ops.test.ts:7:// tests/state/sources/explorer/names.test.ts, and the input drawn, which is seen at the look.` names a file that exists in neither the base nor the worktree (`naming.test.ts` is in that folder and holds no such message test); that file is T1e's, so it is named here for T1e.
 
-Sentences on the slow tier's form (`vite.config.ts:31-35`, `README.md:15`, `HELP.md:344` and `:346` on this tree, `agents/spec.md:56`): T1c's proposal (`agents/reviews/T1c-report.md`, section 9) rewrites each to the three tag forms and Decision 1's causes, which is what `tests/state` uses (two whole-file tags, no test or describe tags). It is true for this step, and T1b adds no sentence of its own. The two tags in `tests/state` use the new reason text (a cause, not "time out or fail on a loaded machine"), so T1c's note about other module tags with the old reason text does not touch them.
+Sentences on the slow tier's form (`vite.config.ts:31-35`, `README.md:15`, `HELP.md:344` and `:346` on this tree, `agents/spec.md:56`): T1c's proposal (`agents/reviews/T1c-report.md`, section 9) rewrites each to the three tag forms and Decision 1's causes, which is what `tests/state` uses (two whole-file tags and one describe tag, no test tag). It is true for this step, and T1b adds no sentence of its own. The two tags in `tests/state` use the new reason text (a cause, not "time out or fail on a loaded machine"), so T1c's note about other module tags with the old reason text does not touch them.
 
 ## Findings outside the brief
 
@@ -1107,11 +1114,295 @@ Sentences on the slow tier's form (`vite.config.ts:31-35`, `README.md:15`, `HELP
 
 ## Judgment calls
 
-1. **Assertions removed from kept tests (brief item 4 against item 1).** Item 1 deletes a test of a constant, a label or a catalog string, a type, a pass-through or a re-export. Item 4 says no assertion of a kept test is loosened, widened or rewritten except to fold it into a table. A kept test that holds one behaviour assertion beside one assertion of a shipped constant puts the two against each other. I applied item 1 to the assertion, so the constant assertion was removed and the behaviour assertions stayed. The files where this happened are the entries above that say an assertion, a constant or a line was removed from a kept test (among them `workbench/navigation/arrangement.test.ts`, `registry.test.ts`, `status.test.ts`, `palette.test.ts`, `life/present.test.ts`, `life/calendar.test.ts`, `forms/form-drafts.test.ts`, `forms/schema.test.ts`, `forms/schema-modelled.test.ts`, `system/settings/rows.test.ts`, `write.test.ts`, `sessions/terminal/terminal-marks.test.ts`, `terminal-row.test.ts`, `layout-locked.test.ts`, `layout-pinned.test.ts`, `feeds/inbox.test.ts`). Four of them replace an assertion by a weaker one rather than only removing a constant, and these are the ones that need a ruling: in `workbench/navigation/arrangement.test.ts` 'mints a fresh instance id' `expect(new Set(ids).size).toBe(8)` is now `expect(ids.length).toBeGreaterThan(1)` and `expect(new Set(ids).size).toBe(ids.length)`; the placement test's `expect(wanted).toHaveLength(51)` is now `expect(wanted.length).toBeGreaterThan(0)`; 'turns the shipped sessions arrangement' lost its `root.kind` and `viewsOf` constant list; 'makes the Help page' lost its shipped tab list. Recommendation: keep all of them, since a count of shipped tabs is a constant of the configuration and the behaviour (distinct ids, a non-empty placement) is still asserted. The lazy option would be to restore every removed assertion so the brief reads literally, which leaves tests of constants in `npm test`; the better option is to keep the removals and let the orchestrator rule on the four rewrites. Restoring any one is a one-line edit.
+1. **Assertions removed from kept tests (brief item 4 against item 1).** Item 1 deletes a test of a constant, a label or a catalog string, a type, a pass-through or a re-export. Item 4 says no assertion of a kept test is loosened, widened or rewritten except to fold it into a table. A kept test that holds one behaviour assertion beside one assertion of a shipped constant puts the two against each other. I applied item 1 to the assertion, so the constant assertion was removed and the behaviour assertions stayed. The files where this happened are the entries above that say an assertion, a constant or a line was removed from a kept test (among them `workbench/navigation/arrangement.test.ts`, `registry.test.ts`, `status.test.ts`, `palette.test.ts`, `life/present.test.ts`, `life/calendar.test.ts`, `forms/form-drafts.test.ts`, `forms/schema.test.ts`, `forms/schema-modelled.test.ts`, `system/settings/rows.test.ts`, `write.test.ts`, `sessions/terminal/terminal-marks.test.ts`, `terminal-row.test.ts`, `layout-locked.test.ts`, `layout-pinned.test.ts`, `feeds/inbox.test.ts`). Four of them replace an assertion by a weaker one rather than only removing a constant, and these are the ones that need a ruling: in `workbench/navigation/arrangement.test.ts` 'mints a fresh instance id' `expect(new Set(ids).size).toBe(8)` is now `expect(ids.length).toBeGreaterThan(1)` and `expect(new Set(ids).size).toBe(ids.length)`; the placement test's `expect(wanted).toHaveLength(51)` is now `expect(wanted.length).toBeGreaterThan(0)`; 'turns the shipped sessions arrangement' lost its `root.kind` and `viewsOf` constant list; 'adds one page tied to help on the first press of the Help button, and leaves the System page its saved tabs' lost its shipped tab list. Recommendation: keep all of them, since a count of shipped tabs is a constant of the configuration and the behaviour (distinct ids, a non-empty placement) is still asserted. The lazy option would be to restore every removed assertion so the brief reads literally, which leaves tests of constants in `npm test`; the better option is to keep the removals and let the orchestrator rule on the four rewrites. Restoring any one is a one-line edit.
 2. **Timing method.** The brief asks for five verbose runs of each file. I took five runs of the whole folder with the JSON reporter, which prints the same per-test durations the verbose reporter does, and took each test's minimum over the five. This gives five samples per test at the load of five whole-folder runs, which is higher than a single file alone would see, so the minima are upper bounds and a test over 80 ms in a lone file run would also have shown over 80 ms here.
 3. **Splitting `sessions/terminals.test.ts`.** At 893 lines it was within 20 lines of the 900-line limit, and `sessions/` and `sessions/terminal/` already held 10 items. The socket cases moved to `sessions/terminal/pty/pty-socket.test.ts` with `FakeSocket`, `connected` and `serving` in `pty/pty-fixture.ts`, and `pty-io.test.ts` moved into the new folder (`src/lib/state/sessions/terminal/pty/` has the same name) so `sessions/terminal` stays at 10 items. `terminals.test.ts` is 431 lines.
-4. **`vi.waitFor` and fixed waits.** The brief names 13 `vi.waitFor` calls in `sessions/terminals.test.ts` and 1 in `life/memories-message.test.ts`; `grep -o "waitFor"` over the base prints 12 and 1. All 13 are replaced by the code's own signal (a send count on `FakeSocket`, the fetch call that makes a count, the query cache's subscription); the three fixed waits (`terminals.test.ts` idle at 20 ms, `sections.test.ts` settle at 30 ms, `view-state.test.ts` 2 ms timer) are a one-macrotask settle, an awaited outline and fake timers. Controls for the first two are in their entries.
-5. **Tag form.** Both tagged files take the whole-file tag because every test left in them is slow; no test or describe tag is used in `tests/state`.
+4. **`vi.waitFor` and fixed waits.** The brief names 13 `vi.waitFor` calls in `sessions/terminals.test.ts` and 1 in `life/memories-message.test.ts`; `grep -o "waitFor"` over the base prints 12 and 1. All 13 are replaced by the code's own signal (a send count on `FakeSocket`, the fetch call that makes a count, the query cache's subscription), and the three waits that hold such a signal (`pty-fixture.ts` `sentCount`, `pty-socket.test.ts` `gated().posted`, `life/memories-message.test.ts` `held`) are `arrival(...)` of `tests/state/shared/arrival.ts`, which rejects after 1 s with what was awaited and what had arrived; the three fixed waits (`terminals.test.ts` idle at 20 ms, `sections.test.ts` settle at 30 ms, `view-state.test.ts` 2 ms timer) are a one-macrotask settle, an awaited outline and fake timers. Controls for the first two are in their entries.
+5. **Tag form.** `commands-pane.test.ts` and `hunks-git.test.ts` take the whole-file tag because every test left in them is slow; `sources/explorer/explorer.test.ts` tags one describe (`{ tags: ['slow'] }`), whose `beforeAll` reads the shipped configuration cold. No test tag is used in `tests/state`. A whole-file tag keeps the tests out of the quick tier but not the file's imports, so `commands-pane.test.ts` loads the tmux fixture inside its slow `beforeAll`.
 6. **`Revert:` comments.** `grep -rn "Revert:" tests/state` finds 509 (542 at the base). A revert was run as a control (the code under test changed, the test run, the change undone) for the tests named with "control" in their entries above: `instance`, `sections` follower, `file-language`, `fs-text-fresh`, `search`/`replace`, `shared/answers`, `system/lines`, `system/docs`. Also `workbench/layout/instance.test.ts` (a control on `instance.ts:184`), `sessions/terminals.test.ts` (the settle versus the 20 ms wait) and the four `shared/instance-*` files (a throw in the code for the stale and missing answers). The other `Revert:` comments were judged by reading the code path, not by running a revert, in the files I read; none of the other `workbench/` ones was run. A comment found false by reading was corrected or the test deleted.
-7. **Five read-only git calls.** The builder runs no git command. Reading my own transcript I found five read-only calls: `git -C . status >/dev/null` (twice), `git diff --stat`, `git -C <worktree> status --short` and `git -C . rev-parse --show-toplevel >/dev/null`. None wrote anything.
-8. **Brief details that did not match the tree.** The `vi.waitFor` count above; `registry.test.ts:468` and `:473` are at `:156` and `:161` after the sweep; the brief's "205 test files" counts `*.test.ts` and the `.ts` count (223) is also given in the counts table. The cases themselves matched the code, so no case was handed back.
+7. **Six read-only git calls.** The builder runs no git command. A search of the builder's transcript (`python3` over the agent's transcript file, which ends at 2026-10-04T04:05) lists six read-only calls, all before the first version of this report: `git -C . status >/dev/null 2>&1` (twice), `git diff --stat`, `git -C <worktree> status --short`, `git -C . rev-parse --show-toplevel >/dev/null 2>&1` and `git -C /dev/null status`. None wrote anything. Repair round 1 ran no git command; that sentence is not verified by a transcript search, because the transcript file ends before the round.
+8. **Brief details that did not match the tree.** The `vi.waitFor` count above; `registry.test.ts:468` and `:473` are at `:156` and `:161` after the sweep; the brief's "205 test files" counts `*.test.ts` and the `.ts` count (226 now) is also given in the counts table. The cases themselves matched the code, so no case was handed back.
+
+## Repair round 1
+
+NOT DONE: none of the ten findings. Two rulings are open for the orchestrator, both about `tests/state/shared/answers.test.ts`, and both come from the per-test controls of finding 4.
+
+**Open item 1: the mapping of the file-operation refusal words to their catalog keys has no test.** `refusalSentence` (`src/lib/state/shared/answers/answers.ts:25-66`) maps 19 words of `OPS_REFUSALS` to 19 keys. After the first test was deleted, two words are asserted: `outside` at `answers.test.ts:19` and `missing` in the row at `:32`. Control C10 below (the word `exists` returns the key of `denied`) leaves all 13 tests green. The first test was deleted because it asserted catalog text. The file now reads no catalog (every key answers with its own name), so the same test over `OPS_REFUSALS` asserts that the 19 words map to 19 distinct keys, which is a property of `answers.ts`, not of the catalog. In a scratch copy, `it('is one sentence of its own for each word the file operations refuse with', ...)` holding `expect(new Set(OPS_REFUSALS.map((word) => refusedAnswer(400, word))).size).toBe(OPS_REFUSALS.length)` prints `Tests  14 passed (14)` on the unchanged `src` and fails under C10 at `answers.test.ts:26:41`. Options: (a) leave it as ruled, so that 17 of 19 words can map to a wrong key with no test red; (b) restore the test in that form beside the LaTeX one, one test and one import. Recommendation: (b). The lazy option is (a).
+
+**Open item 2: six tests of the failed-read table run the same branch as another row.** The controls below turn red the rows 'an error that is a text of its own' and 'an error that is empty' together (C5, C6), and the six rows 'a number', 'null', 'no error', 'a list', 'a string' and 'a number body' together (C7): `failedAnswer` hands `refusedAnswer` the `error` that `readAs(refusalShape, body)` returns, and every row of the second group makes `readAs` return null (`src/lib/data/shapes/shapes.ts:209-212`). The sweep's rule deletes a test that reaches the same branch as another. Options: (a) keep the 13 tests as ruled, since each row is a body a server can send; (b) delete 'an error that is empty', 'null', 'no error', 'a body that is a list', 'a body that is a string' and 'a body that is a number', which leaves 7 tests, each red under a control no other test shares or under the one control it shares with a kept row. Recommendation: (b). The lazy option is (a).
+
+| Finding | State | Section |
+|---|---|---|
+| 1 | DONE | Behaviour 1 and Proof 4: tmux fixture imports inside the slow hook, shim log empty |
+| 2 | DONE | Spec 3 (Z382): the explorer config read moved into a slow describe |
+| 3 | DONE | Proof 1: the two file-level hook times quoted, DONE row corrected |
+| 4 | DONE | Spec 1 and Proof 2 (Z381): `answers.test.ts` first test deleted, a control and a first-run row per test |
+| 5 | DONE | Spec 2 (Z381): every removed or rewritten assertion of a kept test listed |
+| 6 | DONE | Spec 4: `client-state.test.ts` comments and the `arrangement.test.ts` title |
+| 7 | DONE | Spec 5: bounded waits in `sentCount`, `gated().posted` and `held` |
+| 8 | DONE | Standards 2: helper greps, unused-exports comparison, history-word grep |
+| 9 | DONE | Standards 3: the registry head paragraph back to the base wrapping |
+| 10 | DONE | Proof 3: report corrections |
+
+### 1. Behaviour 1 and Proof 4 (Z383)
+
+- Changed: `sessions/terminal/commands-pane.test.ts` imports `server/machine/pty/sessions.ts`, `server/machine/commands/run.ts` and `tests/server/machine/pty/tmux-fixture.ts` with `await import(...)` inside its slow `test.beforeAll`; the top of the file holds type-only imports of the first two. Its head comment says so. `sources/repositories/diff/hunks-git.test.ts` runs git inside its cases only and imports nothing that starts a process, so it needed no change.
+- `privateTmux` registers its hooks when it is called, so it cannot be called inside a hook; the file makes its scratch directory and socket in the `beforeAll` (`scratchDir`, `watchEnds` of the fixture) and removes them in its own `afterAll` (`kill-server`, then `rmSync`). `npx vitest run tests/checks/tree/duplication.test.ts` prints `Tests  18 passed (18)`, and `ls -d $TMPDIR/oculus-pane-*` lists nothing after `npx vitest run tests/state/sessions/terminal/commands-pane.test.ts --tagsFilter slow`.
+- Shown with a logging shim first on `PATH` (`$S/T1b/shim/tmux` and `.../git` append `<pid> <name> <arguments>` to `shim.log` and exec the real binary), run from `tools/oculus` in the worktree:
+
+```
+PATH=$S/T1b/shim:$PATH npx vitest run tests/state/sessions/terminal/commands-pane.test.ts --tagsFilter '!slow'
+ Test Files  1 skipped (1)
+      Tests  1 skipped (1)
+   Duration  7.47s (transform 3.16s, setup 0ms, import 7.36s, tests 0ms, environment 0ms)
+shim.log lines:        0
+PATH=$S/T1b/shim:$PATH npx vitest run tests/state/sources/repositories/diff/hunks-git.test.ts --tagsFilter '!slow'
+      Tests  5 skipped (5)
+   Duration  373ms (transform 113ms, setup 0ms, import 291ms, tests 0ms, environment 0ms)
+shim.log lines:        0
+```
+
+- The same shims under `--tagsFilter slow` fill the log: 23 lines for `commands-pane.test.ts` (the first is `tmux -V`, the second `tmux -S <private socket> new-session -d -s holds-the-server -- sleep 120`) and 10 lines for `hunks-git.test.ts` (the first is `git diff --no-index --no-color --no-ext-diff -U0 a b`). The shim therefore records the calls when they happen.
+- Import time of `commands-pane.test.ts` under `--tagsFilter '!slow'`: 7.36 s in the run above and 9.85 s in a later single-file run. A single-file run of a file that starts nothing pays the same cold start: `npx vitest run tests/state/shared/answers.test.ts --tagsFilter '!slow'` prints `import 10.86s` and `tests/state/sessions/terminal/commands-output.test.ts` prints `import 10.03s`. With the process start gone from the load, the import time of the file is the cold start of any single-file run, so the 6 s the reviewer measured was not tmux's.
+- Report corrections: the slow-tags section and the `commands-pane.test.ts` entry no longer say that the tag keeps the file from loading; both say what the file imports inside the hook. The "Tag form" judgment call says that a whole-file tag does not keep a file's imports from loading.
+
+### 2. Spec 3 (Z382)
+
+- Changed: in `sources/explorer/explorer.test.ts` the cold `textCatalog(loadConfig(engineDir()).config)` is in a `beforeAll` of the describe 'a typed root or workspace line as unsaved text' (`explorer.test.ts:276-280`), and that describe is `describe(name, { tags: ['slow'] }, ...)`. The comment above it says "Tagged slow because its hook reads the shipped configuration cold, which takes about 120 ms." The module constants of `arrangement.test.ts`, `ui.test.ts` and `kept-panes.test.ts` stay as they were.
+- Shown: `npx vitest run tests/state/sources/explorer/explorer.test.ts --tagsFilter slow --reporter=verbose` prints the two tests at 7 ms and 3 ms, `Tests  2 passed | 19 skipped (21)` and `tests 113ms`; `--tagsFilter '!slow'` prints `Tests  19 passed | 2 skipped (21)` and `tests 6ms`. The hook is the difference of about 100 ms, and the reviewer timed the read at 117.8 ms.
+
+### 3. Proof 1
+
+- The reviewer's verbose runs (the file's `tests` total minus the sum of its tests' times) measured two file-level `beforeAll` hooks: `workbench/layout/open/new-text-file.test.ts:16`, `beforeAll(() => setCatalog(textCatalog(loadConfig(...))))`, 96, 115, 95, 100 and 124 ms over five runs (minimum 95 ms, load 7.51); `sessions/terminal/terminal-marks.test.ts:25-29`, a `beforeAll` with `loadConfig`, 94, 101 and 101 ms over three runs (minimum 94 ms, load about 7). Both stay quick by the minimum rule (under 100 ms), and both are above item 7's 80 ms line, so the times are quoted beside the DONE row "No hook of 100 ms or more", which now says that the JSON span cannot see a file-level hook and rests on these two measures. Nothing more was measured.
+
+### 4. Spec 1 and Proof 2 (Z381)
+
+- Changed: the first test of `shared/answers.test.ts` (the catalog sentences of `OPS_REFUSALS` being distinct) is deleted with the imports it alone used. The file reads no catalog: it installs a catalog in which every key answers with its own name and a placeholder for the status (`setCatalog(new Proxy({}, { get: (_catalog, key) => typeof key === 'string' ? `${key} {0}` : undefined }))`), so each sentence is held to the key `answers.ts` picks. 13 tests remain (`npx vitest run tests/state/shared/answers.test.ts --reporter=verbose` prints 13 passing test lines and `Tests  13 passed (13)`).
+
+Controls: each edit below was made to `src/lib/state/shared/answers/answers.ts` in a scratch copy under `$TMPDIR/oculus-answers-ctl.IYi6ly/oculus` (its `src` and `tests` equal the worktree's, `diff -rq` prints nothing), the file run with `npx vitest run tests/state/shared/answers.test.ts --reporter=verbose`, and the original put back (`cmp` equal). The first-run column is the same file run in a second scratch copy whose `src` equals the base's `src` (`diff -rq` against `.agents/worktrees/T1b-base/tools/oculus/src` prints nothing): it prints `Tests  13 passed (13)`.
+
+| Control (behaviour removed from `answers.ts`) | Tests that fail | Failing line |
+|---|---|---|
+| C1 a refusal word's sentence also carries the status (`refusalSentence(word) + ' ' + status` at `:119`) | 'is the sentence of the word alone, whatever the status'; 'says the catalog sentence for an error that is a word of the file operations, and not the status' | `answers.test.ts:19:47`, `:40:53` |
+| C2 `outside` and `missing` return each other's key (`:27-32`) | the same two | `:19:47`, `:40:53` |
+| C3 the file-operations words are not recognised (`refusalWord` returns null, `:100`) | the same two | `:19:47`, `:40:53` |
+| C4 the LaTeX words fall to the status sentence (`:121`) | 'is one sentence of its own for each word the LaTeX endpoint refuses with'; 'says the catalog sentence for an error that is a word of the LaTeX endpoint, and not the status' | `:25:41`, `:40:53` |
+| C5 an error that is text is shown as the server wrote it (`:121`) | 'says the refusal sentence with the status for an error that is a text of its own'; '... for an error that is empty' | `:53:48` |
+| C6 an error that is not undefined is shown as `String(error)` (`:121`) | the same two (the number and null rows pass: `failedAnswer` hands `refusedAnswer` undefined for them) | `:53:48` |
+| C7 an answer with no readable error says the refusal without the status (`:134`) | '... for an error that is a number', '... is null', '... for no error', '... a body that is a list', '... a string', '... a number' | `:53:48` |
+| C8 the unreadable branch is removed (`:133`) | 'says the unreadable sentence with the status for a body that is null or not JSON' | `:57:58` |
+| C9 the unreadable sentence drops the status (`:110`) | the same | `:57:58` |
+| C10 `exists` returns the key of `denied` (`:37-38`) | none: `Tests  13 passed (13)` | none |
+
+| Test of `answers.test.ts` (13 after the first test's deletion) | First run on the base `src` | Red under |
+|---|---|---|
+| `:18` is the sentence of the word alone, whatever the status | pass | C1, C2, C3 |
+| `:23` is one sentence of its own for each word the LaTeX endpoint refuses with | pass | C4 |
+| `:31` row 'an error that is a word of the file operations' | pass | C1, C2, C3 |
+| `:31` row 'an error that is a word of the LaTeX endpoint' | pass | C4 |
+| `:43` row 'an error that is a text of its own' | pass | C5, C6 |
+| `:43` row 'an error that is empty' | pass | C5, C6 |
+| `:43` row 'an error that is a number' | pass | C7 |
+| `:43` row 'an error that is null' | pass | C7 |
+| `:43` row 'no error' | pass | C7 |
+| `:43` row 'a body that is a list' | pass | C7 |
+| `:43` row 'a body that is a string' | pass | C7 |
+| `:43` row 'a body that is a number' | pass | C7 |
+| `:56` the unreadable sentence with the status | pass | C8, C9 |
+
+Rows 'a number' to 'a body that is a number' and 'empty' are the six tests of open item 2; 'a number' and 'a text of its own' stay under option (b).
+
+### 5. Spec 2 (Z381)
+
+Method: `diff -ru` of `tests/state` in the base copy against the worktree shows every edit; the assertions of every test, base and work, were read through the TypeScript parser (`assert-diff2.cjs` in the scratch folder, run as `node assert-diff2.cjs <worktree>/tools/oculus <base>/tools/oculus/tests <worktree>/tools/oculus/tests out.json`), pairing tests by describe path and title, and a retitled test with the base test of the largest overlap of assertions. Result: 188 tests whose assertion set differs, 119 of them lose or gain an assertion (184 removed, 57 added). The table has 128 rows, one per removed or rewritten assertion group of a test, with its kind and its holder. Whole tests that were deleted are in the per-file entries above and not here. One pairing is a parser artefact and has no row: `sources/search/replace.test.ts:337` and `:347` are two retitled tests whose bodies are unchanged (`diff -u` shows only the two titles). Row 86 is the fixture input of `sessions/source.test.ts:333-352`: the 403 without a `refused` list took the stale-token retry of `exchange`, the 403 with a path refusal does not, and `workbench/navigation/notice-sources.test.ts` still takes the retry. A holder under `tests/data`, `tests/checks` or `tests/server` is another sweep's folder.
+
+1. `tests/state/client/terminal/terminal-start.test.ts:162`: `expect(starts()).toEqual([{ kind: 'shell', cwd: '/hub' }])` of the test 'posts nothing before the hub root is known, and never an empty folder'. Kind: rewritten, same assertion over the row's `count`. Holder: client/terminal/terminal-start.test.ts:159 (row 'one press').
+2. `tests/state/client/terminal/terminal-tabs.test.ts:447`: `expect(holds(t1)).toBe(false)` and `expect(stopped).toEqual([A, B])` of 'ends its terminals, and a terminal no tab owns is taken by a tab only when shown'. Kind: same branch as client/terminal/terminal-close.test.ts:132. Holder: client/terminal/terminal-close.test.ts:132.
+3. `tests/state/client/writes.test.ts:72`: `expect((await writes.send({ action: 'set' })).error).toBe(t('app.write_timed_out'))`. Kind: rewritten, same assertion over `answer`, the send now made before the clock advances. Holder: same test, client/writes.test.ts:80.
+4. `tests/state/feeds/inbox.test.ts:51`: `expect(['reply','action','info'].map(kindTone)).toEqual(['amber','red','teal'])` and `expect(kindTone(null)).toBe('slate')`. Kind: shipped constant (`kindTone`, src/lib/state/feeds/inbox.ts:61, a four-line lookup). Holder: none; the card draws it (src/lib/views/feeds/inbox/InboxCard.svelte:146).
+5. `tests/state/feeds/leads.test.ts:48`: `expect(['strong','moderate','reach','none'].map((fit) => fitTone(fit, config))).toEqual(['green','amber','grey','grey'])` over the shipped vocabulary. Kind: shipped constant (`leads_fit` and `palette` of the shipped config). Holder: none for the shipped tones (tests/checks/config/config-folder.test.ts:212 lists the key only); the branches of `fitTone` stay in feeds/leads.test.ts:271 and feeds/leads.test.ts:275.
+6. `tests/state/feeds/radar.test.ts:29`: `expect(['red','amber','grey'].map((tone, at) => relevanceTone(['high','med','low'][at]))).toEqual(['red','amber','grey'])`. Kind: same branch as feeds/radar.test.ts:231. Holder: feeds/radar.test.ts:231.
+7. `tests/state/forms/form-drafts.test.ts:306`: `expect(formsKey('one')).toBe(`one${FORMS_SUFFIX}`)`. Kind: shipped constant (`FORMS_SUFFIX`, src/lib/state/forms/form-drafts.svelte.ts:51). Holder: none; the key is read through `formsKey` by every draft test of the file.
+8. `tests/state/forms/form-drafts.test.ts:424`: `expect(addedKey('one')).toBe(`one${ADDED_SUFFIX}`)`. Kind: shipped constant (`ADDED_SUFFIX`, src/lib/state/forms/form-drafts.svelte.ts:56). Holder: none; same as the row above.
+9. `tests/state/forms/form-drafts.test.ts:696`: `expect(Object.keys(kept[ADD])).toStrictEqual(['id', 'value'])`. Kind: key order of a literal object. Holder: same test: `toStrictEqual` on the kept entry.
+10. `tests/state/forms/form-values.test.ts:75`: `expect(Object.keys((held as { label: string }[])[0])).toStrictEqual(['label', 'value'])`. Kind: key order of a literal object. Holder: same test: the `toEqual` of the rows.
+11. `tests/state/forms/schema-modelled.test.ts:98`: `expect(NOT_IN_MODEL).not.toContain('followup.do')` and `...('followup.after')`. Kind: same branch as the `writableField` assertions of the same test (the list is what `writableField` reads). Holder: same test: `writableField(one, 'followup.do')`, `writableField(one, 'followup.after')`.
+12. `tests/state/forms/schema-modelled.test.ts:64`: `expect(snapshot.findings.filter(... key === 'waiting-on' ...)).toEqual([{ ... message: 'waiting-on must be a list, not a string' }])`. Kind: same branch as the validator's own test. Holder: tests/data/snapshot/validate.test.ts:281.
+13. `tests/state/forms/schema.test.ts:235`: `expect(fields.find((one) => one.field === 'compute')).toMatchObject({ type: 'chips', from: 'resources' })`. Kind: shipped constant (the schema's declaration of the field). Holder: same test: `values.compute` is `['utwente']`.
+14. `tests/state/forms/schema.test.ts:371`: `expect(Object.keys(found[1])).toStrictEqual(['id', 'label'])`. Kind: key order of a literal object. Holder: same test: the `toStrictEqual` of the choices.
+15. `tests/state/forms/schema.test.ts:155`: `expect(sections.length).toBe(7)`. Kind: shipped constant (the number of sections of the schema). Holder: same test: every field is found in a section.
+16. `tests/state/life/calendar.test.ts:275`: `expect(options.allDayContent).toBe(WORDS.allDay)`, `expect(options.noEventsContent).toBe(WORDS.noEvents)`, `expect(options.height).toBe('100%')`. Kind: catalog text and a constant, passed through to the calendar library. Holder: none; the events the options carry stay asserted in the same test.
+17. `tests/state/life/memories-message.test.ts:165`: `wallOf('{"error":""}', 500)` and `wallOf(text, 500)` over the other refusal bodies of the loop. Kind: same branch as the one row kept; the bodies are tried once in shared/answers.test.ts:52. Holder: shared/answers.test.ts:52.
+18. `tests/state/life/memories-message.test.ts:173`: `wallOf('null', status)` and `wallOf('not json', status)` over `said`. Kind: rewritten: the loop over four statuses is two assertions with `t('ui.answer_unreadable', n)`, literal to `t()`. Holder: same test, life/memories-message.test.ts:174.
+19. `tests/state/life/notes.test.ts:99`: `expect(autosaveMs({ notes: 'soon' })).toBe(before)`, `autosaveMs({ notes: { autosave_ms: 'soon' } })` and `{ autosave_ms: -5 }`. Kind: same branch as the rows of life/notes.test.ts:118. Holder: life/notes.test.ts:116, life/notes.test.ts:117.
+20. `tests/state/life/present.test.ts:573`: `expect(Object.keys(read)).toEqual(['e','f','g','h','i','j'])`. Kind: key order of a literal object. Holder: same test: the `toEqual` of the whole value.
+21. `tests/state/life/present.test.ts:622`: `expect(Object.keys(read.e)).toEqual(['cards','legend','title','lede','hint'])`. Kind: key order of a literal object. Holder: same test: the `toEqual` of the whole value.
+22. `tests/state/life/present.test.ts:687`: `expect(Object.keys(read ?? {})).toEqual(['items','lede','hint'])`. Kind: key order of a literal object. Holder: same test: the `toEqual` of the whole value.
+23. `tests/state/life/present.test.ts:726`: `expect(Object.keys(held)).toEqual(['a'])`. Kind: key order of a literal object. Holder: same test: the `toEqual` of the whole value.
+24. `tests/state/life/present.test.ts:365`: `parsePresentState({})`, `parsePresentState(null)` and `parsePresentState({ slide: 7, overview: 'yes' })` equal to the empty state. Kind: same branch as the rows of life/present.test.ts:759. Holder: life/present.test.ts:758, life/present.test.ts:504, life/present.test.ts:757.
+25. `tests/state/life/present.test.ts:538`: `expect(Object.keys(deckOf({ meta: written }).meta)).toEqual([...nine keys in a fixed order])`. Kind: rewritten: the keys compared sorted, no order asserted (key order). Holder: same test, life/present.test.ts:554.
+26. `tests/state/sessions/changes.test.ts:229`: `expect(await heldAfter('[]', 500)).toStrictEqual(said)`, the second refusal body of the test. Kind: same branch as the body kept at sessions/changes.test.ts:231; every body is tried once in shared/answers.test.ts:52. Holder: sessions/changes.test.ts:231.
+27. `tests/state/sessions/folds.test.ts:135`: `listFilterOf({ states: ['ended','bogus'], agents: ['codex',3], query: 'x' })`, `listFilterOf(null)`, `listFilterOf([])`, `listFilterOf({ states: 'ended', query: 7 })`. Kind: same branch as the table and the test that hold them. Holder: sessions/folds.test.ts:416 (table), sessions/folds.test.ts:420.
+28. `tests/state/sessions/hooks.test.ts:41`: `expect(text).toContain('http://127.0.0.1:8793/api/hook')` of 'carries another port and never the first one'. Kind: rewritten, same assertion as a row (`${origin}/api/hook`). Holder: sessions/hooks.test.ts:38 (row 'another port').
+29. `tests/state/sessions/source/view-source.test.ts:25`: `viewSourceFile('collection', { collections: 'one' }, 'funding')` and the list `[null, 'one', { key: 'funding' }, { key: 'funding', file: 'a.yml' }]`, both null. Kind: same branch as rows of the null table. Holder: sessions/source/view-source.test.ts:39, sessions/source/view-source.test.ts:42, sessions/source/view-source.test.ts:45.
+30. `tests/state/sessions/source.test.ts:48`: `expect(stateId(sourceTabState('hub', 'feeds/literature-radar.yml'))).toBe(JSON.stringify(['hub', 'feeds/literature-radar.yml']))`. Kind: same branch as the identity test. Holder: sessions/source.test.ts:70.
+31. `tests/state/sessions/source.test.ts:264`: `expect(sourceDraft('three').indent).toBe(null)` twice, after a wrong-shape indent. Kind: same branch as rows of the indent table. Holder: sessions/source.test.ts:562, sessions/source.test.ts:563.
+32. `tests/state/sessions/source.test.ts:553`: `expect(draft).toStrictEqual(expected)` and `expect(Object.keys(draft).toSorted()).toStrictEqual(Object.keys(NO_DRAFT).toSorted())`. Kind: rewritten: one `toStrictEqual(expected)` over `sourceDraft('one')`; it compares the own keys, so the second assertion repeats it. Holder: same test, sessions/source.test.ts:555.
+33. `tests/state/sessions/terminal/composer.test.ts:70`: `expect(composerOf(state)).toBe(COMPOSER_EMPTY)` over the states `null, [], {}, { composer: 'x' }` and `composerOf({ composer: { agent: 'rm' } }).agent` is 'claude'. Kind: same branch as sessions/terminal/composer.test.ts:394 (the states) and the row 'an agent in the wrong case' of the table at sessions/terminal/composer.test.ts:413. Holder: sessions/terminal/composer.test.ts:394.
+34. `tests/state/sessions/terminal/composer.test.ts:157`: `expect('split' in composerOf({ composer: { split: 7 } })).toBe(false)`. Kind: same branch as the row 'a workspace and a split that are numbers'. Holder: sessions/terminal/composer.test.ts:413.
+35. `tests/state/sessions/terminal/composer.test.ts:386`: `expect('split' in record).toBe(false)` for an empty split. Kind: same branch as sessions/terminal/composer.test.ts:157. Holder: sessions/terminal/composer.test.ts:157.
+36. `tests/state/sessions/terminal/terminal-marks.test.ts:93`: `expect(resultMark(task(137))).toEqual({ glyph: 'fail', token: '--c-red' })`. Kind: same branch as the exit code 1 case of the same test (`resultMark` takes any non-zero code to the fail mark). Holder: same test.
+37. `tests/state/sessions/terminal/terminal-marks.test.ts:104`: `expect(tabMark(task(2))).toEqual(fail red)` and `expect(markOf(task(2))).toEqual(fail red)`. Kind: same branch as the `task(0)` assertions of the same test (both marks delegate to `resultMark`). Holder: same test, and sessions/terminal/terminal-marks.test.ts:93.
+38. `tests/state/sessions/terminal/terminal-row.test.ts:59`: `expect(ROW_MIN).toBe(80)`. Kind: shipped constant (`ROW_MIN`). Holder: same test: the widths are asserted against `ROW_MIN` and 80.
+39. `tests/state/sessions/terminal/terminal-tabs.test.ts:75`: `readTab({ terminals: [A, B], shown: A, beside: B, share: 7 }).shares` is `[0.5, 0.5]` and `share: 0.3` is `[0.3, 0.7]`. Kind: same branch as table rows. Holder: sessions/terminal/terminal-tabs.test.ts:344, sessions/terminal/terminal-tabs.test.ts:347, sessions/terminal/terminal-row.test.ts:173.
+40. `tests/state/sessions/terminals.test.ts:174`: `expect(answer).toMatchObject({ ok: true, id: ..., error: '', terminal: { id: ... } })` of the recovery start. Kind: same branch as the answer assertions of sessions/terminals.test.ts:130 (the answer of `postTerminal`). Holder: sessions/terminal/pty/pty-io.test.ts:42 (table of the answer shapes).
+41. `tests/state/sessions/terminals.test.ts:185`: `expect(answer).toMatchObject({ ok: true, id: ..., error: '', terminal: { id: ... } })` of the update task start. Kind: same branch as the answer assertions of sessions/terminals.test.ts:130 (the answer of `postTerminal`). Holder: sessions/terminal/pty/pty-io.test.ts:42 (table of the answer shapes).
+42. `tests/state/sessions/terminals.test.ts:196`: `expect(answer).toMatchObject({ ok: true, id: ..., error: '', terminal: { id: ... } })` of the focused chat start. Kind: same branch as the answer assertions of sessions/terminals.test.ts:130 (the answer of `postTerminal`). Holder: sessions/terminal/pty/pty-io.test.ts:42 (table of the answer shapes).
+43. `tests/state/sessions/transcript.test.ts:282`: `expect(await answeredWith('[]', 500)).toStrictEqual(said)`, the second refusal body of the test. Kind: same branch as the body kept in the test; every body is tried once in shared/answers.test.ts:52. Holder: sessions/transcript.test.ts:284.
+44. `tests/state/sources/explorer/acts/folders.test.ts:50`: `expect(lines[0]).toBe('The folder panel is available on macOS only.')`. Kind: catalog text. Holder: same test: `new Set(lines).size` is 5.
+45. `tests/state/sources/explorer/acts/folders.test.ts:68`: `'The folder panel is already open.'` and `'Already folders of this workspace: /a, /b'` as literals. Kind: literal to `t()`: `t('files.picker_busy')` and `t('files.add_skipped', '/a, /b')`. Holder: same test.
+46. `tests/state/sources/explorer/acts/keys.test.ts:39`: `hint('copy')` is 'Cmd+C', `hint('paste')` is 'Cmd+V', `hint('copy-path')` is 'Option+Cmd+C'. Kind: same branch as the `hint('cut')` and `hint('copy-relative')` assertions of the same test (`chordHint` joins the modifier words and the key). Holder: same test, sources/explorer/acts/keys.test.ts:42.
+47. `tests/state/sources/explorer/explorer.test.ts:171`: `filesViewOf({ hidden: true, ignored: true })` matches the toggles and `filesViewOf({ hidden: 'yes', ignored: 1 })` matches `NO_TOGGLES`. Kind: same branch as the `filesViewOf` reader table. Holder: shared/instance-state-files.test.ts:210 (rows valid, 'wrong hidden', ...).
+48. `tests/state/sources/explorer/explorer.test.ts:289`: six `filesLineTyped('files', ...)` assertions: root and workspace forms with text true; blank, empty form, bookmark form false. Kind: same branch as the `filesLineTyped` reader table. Holder: shared/instance-state-files.test.ts:539 (valid, 'typed spaces', 'form workspace', 'form bookmark', 'wrong form'); the wiring to the close guard is sources/explorer/explorer.test.ts:296.
+49. `tests/state/sources/explorer/naming.test.ts:127`: `expect(filesViewOf({}).naming).toBeNull()`. Kind: same branch as the bad-naming rows of the same test and the 'empty map' answer of the `filesViewOf` reader table. Holder: shared/instance-state-files.test.ts:210.
+50. `tests/state/sources/explorer/view/view.test.ts:127`: the first row `{ label: 'plan', root: 'hub', path: 'plan.md', view: 'file' }` of the expected `rows`. Kind: same branch as the 'page' row of the same expectation (a bookmark that is a file). Holder: sources/fs/fs-shape.test.ts:7.
+51. `tests/state/sources/files.test.ts:193`: `expect(matchingFiles(rows, '')).toEqual(rows)`. Kind: same assertion, stronger form (`toBe(rows)`). Holder: sources/files.test.ts:189.
+52. `tests/state/sources/follow.test.ts:46`: `followView({ follow: true }, ROOTS, '/hub/tools/oculus')` (a folder inside a root), `followView({ follow: true }, ROOTS, null)` and `followView({}, ROOTS, '/hub')` as whole answers. Kind: same branch as the `followView` reader tables. Holder: shared/instance-state-files.test.ts:421, shared/instance-state-files.test.ts:436; the folder inside a root is drawn by sources/follow.test.ts:84.
+53. `tests/state/sources/follow.test.ts:66`: `opened.expanded` is `['r1:oculus/src']` and `opened.filter` is 'x' after `followRevealed({ filter: 'x' }, ...)`. Kind: same branch as the `followRevealed` reader table. Holder: shared/instance-state-files.test.ts:518.
+54. `tests/state/sources/fs/file-language.test.ts:103`: `expect([...selected()]).toEqual([...MAP])`. Kind: rewritten: compared with `TRACKED`, the map the shipped config yields, since `MAP` is now a hand map. Holder: same test.
+55. `tests/state/sources/fs/file-language.test.ts:76`: `expect(languages(MAP).sort()).toEqual([...registered()].sort())`, the language list over the tracked map. Kind: shipped constant (the languages the code window registers). Holder: tests/data/helpers/files/languages.test.ts:22 and tests/data/helpers/files/languages.test.ts:157.
+56. `tests/state/sources/fs/fs-shape.test.ts:64`: `expect(typeOfFile('run.py', archive).kind).toBe('other')`. Kind: same branch as `typeOfFile('data.txt', archive)` of the same test. Holder: same test.
+57. `tests/state/sources/fs/fs-shape.test.ts:70`: `typeOfFile('empty.txt', new Uint8Array(0))` is text and `typeOfFile('data.npz')` is other. Kind: same branch as the empty-file case of the data helper and `typeOfFile('archive.tar.gz')` of the same test. Holder: tests/data/helpers/files/text-kind.test.ts:18; sources/fs/fs-shape.test.ts:71.
+58. `tests/state/sources/fs/fs-shape.test.ts:74`: `nameOf('a/b/run.py')` is 'run.py' and `nameOf('run.py')` is 'run.py'. Kind: same branch as the helper's own test. Holder: tests/data/helpers/files/paths.test.ts:4.
+59. `tests/state/sources/repositories/diff/comment-draft.client.test.ts:134`: `expect(box.notice).toBe('Sent to The live one.')`. Kind: literal to `t()`: `t('sessions.comment_sent', 'The live one')`. Holder: same test.
+60. `tests/state/sources/repositories/diff/comment-draft.client.test.ts:156`: `expect(box.notice).toBe('The live one has no oculus terminal now. The comment is on the clipboard.')`. Kind: literal to `t()`: `t('sessions.comment_copied', 'The live one')`. Holder: same test.
+61. `tests/state/sources/repositories/diff/comment-draft.client.test.ts:181`: `expect(box.failure).toBe('The clipboard refused the copy.')`. Kind: literal to `t()`: `t('sessions.comment_clipboard')`. Holder: same test.
+62. `tests/state/sources/repositories/diff/comment-draft.client.test.ts:191`: `expect(box.failure).toContain('control character')`. Kind: literal to `t()`: `toBe(t('sessions.comment_control'))`, which is stronger. Holder: same test.
+63. `tests/state/sources/repositories/diff/diff-view.test.ts:235`: `expect([request.url, request.init?.method]).toEqual(['/api/ops', 'POST'])` and the parsed body `{ op: 'preview', query, replace: 'bar', preserveCase: true, root, path, hits }`. Kind: same branch as the preview post of the read test. Holder: sources/repositories/diff/diff-read.test.ts:74.
+64. `tests/state/sources/repositories/diff/review-comment.test.ts:107`: `expect(commentRefusal(' ')).toBe('empty')`. Kind: same branch as the `' \n\t'` assertion of the same test (both texts are blank). Holder: same test.
+65. `tests/state/sources/repositories/diff/review-comment.test.ts:126`: `expect(refusalLine('control')).toContain('control character')`. Kind: literal to `t()`: `toBe(t('sessions.comment_control'))`. Holder: same test.
+66. `tests/state/sources/repositories/diff/review-comment.test.ts:258`: the literals 'Sent to The live one.' and 'The live one has no oculus terminal now. The comment is on the clipboard.'. Kind: literal to `t()`: `t('sessions.comment_sent', ...)`, `t('sessions.comment_copied', ...)`. Holder: same test.
+67. `tests/state/sources/repositories/diff/review-comment.test.ts:269`: the literal 'The terminal did not answer.'. Kind: literal to `t()`: `t('sessions.comment_silent')`. Holder: same test.
+68. `tests/state/sources/repositories/diff/review-comment.test.ts:280`: the literal 'The clipboard refused the copy.'. Kind: literal to `t()`: `t('sessions.comment_clipboard')`. Holder: same test.
+69. `tests/state/sources/repositories/diff/review-comment.test.ts:287`: the literal 'Sent to s-1.'. Kind: literal to `t()`: `t('sessions.comment_sent', 's-1')`. Holder: same test.
+70. `tests/state/sources/repositories/history/file-git.test.ts:96`: seven literals 'just now', '1 hour ago', '2 hours ago', '1 day ago', '1 week ago', '5 days ago', '1 month ago'. Kind: literal to `t()`: `t('repositories.ago_now')` ... `t('repositories.ago_month')`. Holder: same test.
+71. `tests/state/sources/repositories/history/file-git.test.ts:107`: four literals: the gutter 'Ada, 5 days ago', the title 'abcdef1 commit abcdef123 (2026-09-20). Open this commit in the graph.', the status 'Ada, 5 days ago: commit abcdef123' and 'Not Committed Yet' (twice). Kind: literal to `t()`: `t('repositories.blame_gutter', ...)`, `blame_title`, `blame_status`, `blame_uncommitted`. Holder: same test.
+72. `tests/state/sources/repositories/view/diff-session.test.ts:42`: `expect(diffState(subject, 'a.ts').id).toBe(diffState(subject, 'a.ts').id)`. Kind: tautology: the same call twice. Holder: sources/repositories/view/diff-session.test.ts:39 (exact ids).
+73. `tests/state/sources/repositories/view/repositories.test.ts:249`: `expect(statusWordKey('DU')).toBe('repositories.conflict_deleted_by_us')`. Kind: shipped constant (an entry of `CONFLICT_WORDS`, src/lib/state/sources/repositories/repositories.ts:699-700); the branch that reads it is the `statusWordKey('UU')` assertion of the same test. Holder: same test.
+74. `tests/state/sources/search/endpoint.test.ts:123`: `expect(error).not.toBe('')` and `expect(error).not.toBe('outside')`. Kind: rewritten, stronger: `expect(client.search.searchState('one').error).toBe(t('search.refused_outside'))`. Holder: same test.
+75. `tests/state/sources/search/search.test.ts:85`: the literal 'A search needs a pattern.'. Kind: literal to `t()`: `t('search.refused_empty')`. Holder: same test.
+76. `tests/state/sources/search/search.test.ts:92`: the literal 'That root is not one oculus serves.'. Kind: literal to `t()`: `t('search.refused_unknown_root')`. Holder: same test.
+77. `tests/state/system/docs.test.ts:599`: `expect(Object.keys(held.parts[0])).toStrictEqual(Object.keys(expected))`. Kind: key order of a literal object. Holder: same test: the `toStrictEqual` of the whole part.
+78. `tests/state/system/machine/hpc.test.ts:126`: the literal '1 HPC job running'. Kind: literal to `t()`: `t('hpc.pill_running_one')`. Holder: same test.
+79. `tests/state/system/machine/hpc.test.ts:130`: the literal '2 HPC jobs running'. Kind: literal to `t()`: `t('hpc.pill_running', 2)`. Holder: same test.
+80. `tests/state/system/machine/hpc.test.ts:134`: the literal '2 HPC jobs running | 3 pending'. Kind: literal to `t()`: `t('hpc.pill_running', 2) + t('hpc.pill_pending', 3)`. Holder: same test.
+81. `tests/state/system/machine/processes.test.ts:298`: the literal '1 project in flight, 1 agent running'. Kind: literal to the function: `headLine(1, 1)`, whose sentences are asserted in the `headLine` table. Holder: system/machine/processes.test.ts:231.
+82. `tests/state/system/machine/processes.test.ts:321`: the literal 'End the terminal 'My shell' (/bin/zsh -l, pid 100)? Every process under it ends with it, including any started there by hand.', and `terminalLabel(...)` is 'My shell', `group.name` equals it, `ask.message` contains it. Kind: literal to `t()`: `t('processes.stop_question', 'My shell', '/bin/zsh -l', 100)`; the label and group name assertions: same branch as the group name asserted at system/machine/processes.test.ts:294. Holder: system/machine/processes.test.ts:294.
+83. `tests/state/system/settings/browser.test.ts:14`: `terminalSizeOf('14')` is 14 and `terminalSizeOf('1e1')` is 10. Kind: same branch as the decimal rule `commit` is tested by. Holder: system/settings/write.test.ts:71.
+84. `tests/state/system/settings/browser.test.ts:18`: `terminalSizeOf('')` is `{ set: true, value: null }`. Kind: same branch as `terminalSizeOf('   ')` of the same test (the box is trimmed first). Holder: same test.
+85. `tests/state/system/settings/browser.test.ts:22`: the loop `terminalSizeOf(text)` over the refused texts of the decimal rule, each `{ set: false, said }`. Kind: same branch as the one row kept ('0x10'); the texts are tried in system/settings/write.test.ts:76. Holder: system/settings/write.test.ts:76.
+86. `tests/state/sessions/source.test.ts:333`: fixture input of the test: the refused write was `new Response(JSON.stringify({ ok: false, error: 'readonly' }), { status: 403 })`; it is now the same body with `refused: [{ field: 'path', reason: 'readonly' }]`. The assertion (`saved` not called) is unchanged. Kind: fixture input: the 403 with no `refused` list took the stale-token retry of `exchange` (src/lib/state/client/writes.svelte.ts:490-500: `await import('$app/navigation')`, `invalidateAll()`, `tick()`, a second post); the 403 with a path refusal is returned without it (writes.svelte.ts:489). Holder: the retry is still taken by workbench/navigation/notice-sources.test.ts:320 (`calls` is 2); the path refusal without a retry by sessions/source.test.ts:223.
+87. `tests/state/system/settings/editors-draft.test.ts:148`: `expect(readFlow(' #abc ')).toEqual({ ok: true, value: '#abc' })`. Kind: same branch as `readFlow('#123456')` of the same test and the trimmed `readFlow(' 8.5 ')` of system/settings/editors-draft.test.ts:139. Holder: same test.
+88. `tests/state/system/settings/editors-draft.test.ts:139`: `readFlow('8')`, `readFlow('Max 20x')`, `readFlow('[.sh, .bash]')`, `readFlow('"20"')` and `readFlow('true')`, each `{ ok: true, value }`. Kind: same branch as the round-trip table. Holder: system/settings/editors-draft.test.ts:110 (220, -3.5, true, false, null, 'Max 20x', '20', a list).
+89. `tests/state/system/settings/editors-draft.test.ts:143`: `readFlow(' ')` is `undefined` and `readFlow('null')` is `null`. Kind: same branch as `readFlow('')` and `readFlow('~')` of the same test, and the `null` value of the round-trip table. Holder: same test, system/settings/editors-draft.test.ts:110.
+90. `tests/state/system/settings/editors-writer.test.ts:423`: `expect(row.default).toEqual(['submitted', 'pending', 'under review', 'under-review'])`. Kind: shipped constant (the catalog default of the shipped row). Holder: same test: `sent.calls` carries `row.default` as the value written.
+91. `tests/state/system/settings/rows.test.ts:242`: `expect(localRows.length).toBe(1)`. Kind: shipped constant (the number of keys of the shipped `local.yml` catalog). Holder: same test: `rows.map((row) => row.path)` is asserted whole.
+92. `tests/state/system/settings/rows.test.ts:279`: `expect(({} as Record<string, unknown>).poll_min).toBeUndefined()` and `expect(Object.keys(Object.prototype)).toEqual([])`. Kind: JS built-in: an assertion over the language runtime, not over oculus code. Holder: none.
+93. `tests/state/system/settings/rows.test.ts:303`: `titleOf('terminal.font_px')`, `titleOf('wallpaper.dim')` and `titleOf('changes.keep')`. Kind: same branch as the three kept rows (`slurm.poll_min`, `rail`, `deck.meta.kicker`). Holder: same test.
+94. `tests/state/system/settings/rows.test.ts:379`: `expect(terminal.map((row) => row?.control)).toEqual(['toggle','toggle','toggle','choice'])`. Kind: shipped constant (the controls of the shipped terminal options). Holder: same test: every row exists, none is missing, mismatched or Modified.
+95. `tests/state/system/settings/rows.test.ts:331`: `expect(FILES).toEqual(['appearance.yml', 'behavior.yml', 'layout.yml', 'present.yml', 'sources.yml'])`. Kind: shipped constant (`FILES`). Holder: same test: the groups are asserted in order.
+96. `tests/state/system/settings/search.test.ts:79`: the loop that recomputes, for every row, whether title, path, section or description holds 'poll' and compares it with `idsOf(result).includes(id)`. Kind: tautology: the loop restates the predicate of `searchGroups` in the test. Holder: same test: the exact id list `idsOf(result)` and `result.count`.
+97. `tests/state/system/settings/search.test.ts:189`: `expect(searchGroups(only, '').count).toBe(7)`. Kind: shipped constant (seven rows), rewritten as `thisBrowserRows(createUi(), true).length`. Holder: same test.
+98. `tests/state/system/settings/write.test.ts:274`: `expect(({} as Record<string, unknown>).no).toBeUndefined()`. Kind: JS built-in. Holder: none.
+99. `tests/state/system/settings/write.test.ts:317`: `expect(({} as Record<string, unknown>).four).toBeUndefined()`. Kind: JS built-in. Holder: none.
+100. `tests/state/workbench/layout/layout-store.test.ts:159`: `expect(viewsOf(after)).toEqual(['status'])`. Kind: rewritten, same assertion over the row's `views`. Holder: same test.
+101. `tests/state/workbench/layout/nested.test.ts:228`: `expect(next.pages[0].workbench.root).toEqual(split('row', [0.5, 0.5], [pane(['a']), pageLeaf('two')]))`. Kind: rewritten, same assertion over the row's direction and order. Holder: same test.
+102. `tests/state/workbench/layout/nested.test.ts:262`: `expect(embedPage(deep, 'one', [0], 'right', 'three')).toBe(deep)`, the indirect half. Kind: same branch as `embeddable(held.pages, 'one', 'three')`. Holder: workbench/layout/nested.test.ts:212.
+103. `tests/state/workbench/layout/open/floats-store.test.ts:298`: `expect(id).toBe('h')`, `floats()[0].pane.active` is 'h' and the one-tab count over `'h'`. Kind: rewritten, same assertions over the row's `wanted`. Holder: same test.
+104. `tests/state/workbench/layout/open/show-in-files.test.ts:460`: `expect(hubPathsOf({ link: 3, folder: ['a'] })).toEqual([])`. Kind: same branch as the string rule of the collection reader. Holder: boards/collection/collection-fields.test.ts:182.
+105. `tests/state/workbench/layout/saved/layout-locked.test.ts:55`: `expect(JSON.parse(text).version).toBe(LAYOUT_VERSION)` and `expect(LAYOUT_VERSION).toBe(6)`. Kind: shipped constant (`LAYOUT_VERSION`). Holder: none; the version is read through every saved-layout test.
+106. `tests/state/workbench/layout/saved/layout-pinned.test.ts:56`: `expect(JSON.parse(serialiseLayout(written)).version).toBe(6)`. Kind: shipped constant (`LAYOUT_VERSION`). Holder: none.
+107. `tests/state/workbench/layout/saved/layout-saved.test.ts:222`: `expect(viewsOf(defaultWorkbench().root)).toEqual(['status'])`. Kind: shipped constant (the default workbench's first view). Holder: same test: `checkWorkbench(defaultWorkbench())` equals `[]`.
+108. `tests/state/workbench/navigation/arrangement.test.ts:78`: `expect(made.root.kind).toBe('split')` and `expect(viewsOf(made.root)).toEqual([...eight views of the shipped sessions arrangement])`. Kind: shipped constant (config/layout.yml). Holder: same test: `checkWorkbench` of the made tree equals `[]`.
+109. `tests/state/workbench/navigation/arrangement.test.ts:85`: `expect(new Set(ids(first)).size).toBe(8)`. Kind: shipped constant (eight tabs), rewritten as a relation: `ids(first).length > 1` and `new Set(ids(first)).size` equals `ids(first).length`. Holder: same test.
+110. `tests/state/workbench/navigation/arrangement.test.ts:135`: `expect(wanted).toHaveLength(51)`. Kind: shipped constant (the number of views placed), rewritten as `wanted.length > 0`. Holder: same test: each wanted view is found on exactly one page or float.
+111. `tests/state/workbench/navigation/arrangement.test.ts:252`: `expect(tabsOnScreen(browser)).toEqual([['help', 'doc:docs/HPC-UTwente-howto.md'], ['doc:docs/RESEARCH-APPROACH.md', 'doc:docs/AGENT-APPROACH.md', 'memories']])`. Kind: shipped constant (the Help arrangement of config/layout.yml). Holder: the page made from an arrangement is asserted over a synthetic arrangement at workbench/navigation/arrangement.test.ts:292, and over the shipped rail at workbench/navigation/arrangement.test.ts:371.
+112. `tests/state/workbench/navigation/registry.test.ts:143`: `expect(COLLECTIONS).toEqual(['statements','funding','events','education','applications','joint-work','tasks','code'])`. Kind: shipped constant (the collection keys of sources.yml). Holder: same test: every key `collectionKeys` returns is registered.
+113. `tests/state/workbench/navigation/status.test.ts:287`: `expect(all[0].name).toBe('plaintext')` and `expect(rest).toEqual(sorted)`. Kind: same branch as the test that lists Plain Text first and the rest by name. Holder: workbench/navigation/status.test.ts:269.
+114. `tests/state/workbench/navigation/status.test.ts:219`: `expect(repoStatus({ root: 'unknown', path: 'a.ts' }, ROOTS, git, 'hub')).toBe(null)`. Kind: same branch as the tab holding no file. Holder: workbench/navigation/status.test.ts:180.
+115. `tests/state/workbench/navigation/status.test.ts:263`: `languageName(languageOf('rite.cpp', map))` is 'C++'; the display names of 'c', 'cmake', 'lua', 'ruby', 'scss', 'java', 'dart', 'fortran', 'fortran-fixed'; and of 'jinja', 'svelte', 'rite'. Kind: shipped constant (the display names of the language catalog). Holder: same test: the languages of the map are listed.
+116. `tests/state/workbench/palette.test.ts:171`: `expect(ranked(fuzzy, '').map((found) => found.item.id)).toEqual(['view:focus', 'view:status'])`. Kind: rewritten, same assertion over `views`, now also over `' '`. Holder: same test.
+117. `tests/state/workbench/palette.test.ts:210`: `expect(parsed).toEqual({ name: 'th', argument: 'nord' })` over `parsed` and `expect(list.filter((command) => command.name.startsWith(parsed?.name ?? ''))).toHaveLength(1)`. Kind: rewritten: the `parseCommand(':th nord')` assertion stays; the `startsWith` filter ran in the test over the names, not in oculus code (tautology). Holder: same test.
+118. `tests/state/sources/repositories/diff/diff-view.test.ts:249`: the two malformed replace fields of 'keeps a well-formed replace field when it is read back, and drops a malformed one'. Kind: same branch as the `heldDiff` reader table. Holder: shared/instance-state-sources.test.ts:156.
+119. `tests/state/system/lines.test.ts:221`: `Object.keys(read.count)` equal to `['rows','total','counted']` and `Object.keys(read.count.rows[0])` equal to the seven row keys, in order. Kind: key order of a literal object (`toStrictEqual` compares the own keys, not their order). Holder: same test: the `toStrictEqual` of the whole count.
+120. `tests/state/sources/repositories/history/graph.test.ts:64`: `laneX(0)` is 11, `laneX(2)` is 33, `laneWidth(3)` is 44, `laneWidth(0)` is 22, `laneWidth(30)` is 341. Kind: shipped constant (the 22 pixel row geometry), rewritten as relations between `laneX` and `laneWidth`. Holder: same test.
+121. `tests/state/sources/fs/file-language.test.ts:37`: the expected languages over the tracked map (`MAP = languageMap(CONFIG)`) for 'Makefile', 'makefile', 'src/MAKEFILE', 'CMakeLists.txt', .... Kind: shipped constant (the tracked map of config/sources.yml), rewritten over a hand map that carries only the endings the case reads. Holder: same test.
+122. `tests/state/sources/fs/file-language.test.ts:50`: the expected languages over the tracked map for 'X.PY', 'dir.py/readme', 'a/b/x.d.ts', .... Kind: shipped constant (the tracked map), rewritten over the hand map. Holder: same test.
+123. `tests/state/sources/fs/file-language.test.ts:60`: the expected languages over the tracked map for dotfiles and names that only begin like a whole name. Kind: shipped constant (the tracked map), rewritten over the hand map. Holder: same test.
+124. `tests/state/sessions/changes.test.ts:250`: `heldAfter('null', ...)` and the `'not JSON'` body of the unreadable loop. Kind: same branch as the body kept ('nope'); every unreadable body is tried once in shared/answers.test.ts:56. Holder: sessions/changes.test.ts:251.
+125. `tests/state/sessions/transcript.test.ts:320`: `answeredWith('null', ...)` and the `'not JSON'` body of the unreadable loop. Kind: same branch as the body kept; every unreadable body is tried once in shared/answers.test.ts:56. Holder: same test.
+126. `tests/state/system/settings/contents.test.ts:27`: `expect(NARROW).toBe(700)`. Kind: shipped constant (`NARROW`, src/lib/state/system/config/view/contents.ts:7). Holder: same test and the test above it: widths 699 and 1 are not beside the list, 700 and 1200 are, at system/settings/contents.test.ts:16 and system/settings/contents.test.ts:28.
+127. `tests/state/system/settings/contents.test.ts:16`: the widths 701 and 400 of the two loops (`[700, 701, 1200]` is `[700, 1200]`, `[699, 400, 1]` is `[699, 1]`). Kind: loop input: same branch as the widths kept (`contentsPlace` compares one width with `NARROW`). Holder: same two loops.
+128. `tests/state/sources/explorer/sections/open-editors-tabs.test.ts:59`: assertion added: `expect(fileOfTab(tab('e', 'source', { root: '', path: 'x' }))).toBeNull()` in 'names no file when it holds no path, and reads a tab of another view by its root and path'. Kind: moved from the deleted fileOfTab test of sources/explorer/sections/sections.test.ts (the same call, the same input), so the case is held once. Holder: this line.
+
+### 6. Spec 4
+
+- `client/client-state.test.ts` opens with: "Layer 2, client-state tests. The client object: that two calls to createClientState() share nothing, that a store reading another reads the same client's, and the copy of the stores that a tab provides." and "What a single store does is its own test file's; this is about the wiring. A store the type names and the factory does not build is a type error, so no test here checks that every store is built." The doc comment of `STORES` (`:11`) reads "The stores the tests below walk: each is compared across two clients and across a tab's copy."
+- `workbench/navigation/arrangement.test.ts:252` is titled 'adds one page tied to help on the first press of the Help button, and leaves the System page its saved tabs'; its body opens one page with `openRailPage('help', ...)`, asserts the page count rose by one and its rail is `help`, then opens the System page and asserts its tabs are `OLD_TABS`.
+
+### 7. Spec 5
+
+- Changed: `tests/state/shared/arrival.ts` exports `arrival(awaited, arrived, register)`, a promise that resolves when the `wake` handed to `register` is called and, after 1 s on node's own timer (`node:timers`, which `vi.useFakeTimers` leaves alone), runs the cleanup `register` returned and rejects with `timed out after 1000 ms waiting for <awaited>; <arrived()>`. `sessions/terminal/pty/pty-fixture.ts` `sentCount`, `sessions/terminal/pty/pty-socket.test.ts` `gated().posted` and `life/memories-message.test.ts` `held` are written with it. (`tests/fixtures/client.ts` is T1e's and is byte-equal to the base.)
+- Shown: each edit below was made to `src` in the scratch copy that the finding 4 controls use, with the tests of the worktree, and put back (`diff -rq` of its `src` and `tests` against the worktree prints nothing):
+
+| Control (behaviour removed) | File run | Result |
+|---|---|---|
+| W1 `pty-subscribe.ts` never calls `subscribe()` after the resize settles | `pty-socket.test.ts` | 9 of 29 fail at about 1006 ms each, with `timed out after 1000 ms waiting for 1 messages sent on the socket; 0 had been sent` and `timed out after 1000 ms waiting for 3 messages sent on the socket; 2 had been sent` |
+| W2 `pty-subscribe.ts` `settle` returns true without comparing the size again | `pty-socket.test.ts` | 1 of 29 fails, 'posts the grid size again when it changed while the resize was out, and asks after that', with `timed out after 1000 ms waiting for 2 requests posted; 1 had been posted` |
+| W3 `memories.svelte.ts` `ask` awaits a promise that never settles in place of `fetch('/api/memories')` | `memories-message.test.ts` | 17 of 22 fail at about 1005 ms each, with `timed out after 1000 ms waiting for the wall's answer in the query cache; 2 cache announcements had come, none with the answer` |
+
+### 8. Standards 2
+
+Run now, from `tools/oculus` in the worktree:
+
+- Existing helper before `client/fetch-record.ts`: `grep -rn 'export function stubFetch\|export function [a-zA-Z]*[Ff]etch\|export const [a-zA-Z]*[Ff]etch' tests --include='*.ts' | grep -v '^tests/state'` prints `tests/server/accounts/mail/fixture.ts:74:export function fakeFetcher(` and `tests/fixtures/client.ts:84:export function stubFetch(`. `stubFetch` records the address only (`asked: string[]`, `tests/fixtures/client.ts:84-91`); `fakeFetcher` is the mail fixture's own fetcher. Neither keeps the request `init`, which `system/machine/hpc.test.ts:45-62` and `pty/pty-fixture.ts:110` read, so `client/fetch-record.ts` (`export let asked: { url: string; init: RequestInit }[]`, `export function serving`) is the one helper that does.
+- Existing helper before `pty/pty-fixture.ts`: `grep -rn 'class FakeSocket\|FakeSocket' tests --include='*.ts'` prints six lines, all in `pty-fixture.ts` (`:18`, `:22`, `:61`, `:79`, `:87`, `:91`), so no other socket recorder exists.
+- Existing helper before `shared/arrival.ts`: `grep -rn 'Promise.race\|vi.waitFor\|waitFor(' tests --include='*.ts'` outside `tests/views` and `tests/shell` prints `vi.waitFor` polls in `tests/server/git/autofetch.test.ts` only (lines 605, 624, 705, 757, 773), and `grep -rn 'export \(async \)\?function [a-zA-Z]*\([Ww]ait\|[Aa]rriv\|[Ee]ventually\)' tests --include='*.ts'` prints `tests/server/root/watch/probe.ts:266` and `tests/state/shared/arrival.ts:15`. No existing helper waits for a signal with a named bound.
+- Unused exports: `sh utils/unused-exports.sh` in the worktree exits 0 with 382 lines and an empty stderr. `.agents/worktrees/T1b-base/` holds only `tools/oculus/` with `src` and `tests`, so it has no `unused-exports.txt` and no `utils/`; the same command run in a scratch copy of the base (its `src` equals `T1b-base/tools/oculus/src`, `diff -rq` prints nothing) exits 0 with 382 lines, and `cmp` of the two outputs prints nothing. The worktree's `src` equals the base's (`diff -rq ../../../T1b-base/tools/oculus/src src` prints nothing), and the script runs knip with `--production`, which ignores `tests/`.
+- History words in added comments and titles: `diff -ru` of `tests/state` (base against worktree) has 1729 added lines, 841 of them comment or title lines (`//`, `/*`, ` *`, `it(`, `test(`, `describe(`, a table row opening a string). `grep -nE "previously|used to|no longer|revert(ed)?\b|earlier|originally|formerly|legacy|renamed|moved|sweep|regress|\bbug\b|\bfixed\b|any more|anymore|was (removed|dropped|changed|deleted|added)|were (removed|dropped|deleted)|\bT1[a-e]\b|\bZ[0-9]{3}\b|\bround\b|\bnow\b|\bformer|\bold\b|\bstill\b|\bhad\b"` over those 841 lines prints 14 lines, each judged: they are the existing, rewrapped sentences of the files and describe the code under test, not the work ("moved by another" seed in the forces test; "as the snapshot holds it now"; "forgotten by Revert and by" (the store's Revert action); "today's are still to come"; the title 'takes the new root s values and drops the old root s answer' (a root that changes); "a terminal added, removed or reordered"; "what is asked once a round"; "soon the view had read the file before"; 'ends the draft of a list with an item removed'; "makes the next ask read them again"; "what is still open"; "one tree a page now is"; "a theme that was dropped from that file ... a browser that still holds it"). None names the sweep, a round, a ticket or an earlier version of a test.
+
+### 9. Standards 3
+
+- `workbench/navigation/registry.test.ts:7-10` holds the base's wrapping: `diff <(sed -n 1,12p <base>/tests/state/workbench/navigation/registry.test.ts) <(sed -n 1,12p tests/state/workbench/navigation/registry.test.ts)` prints only line 1 (`1c1`: the Layer 2 label).
+
+### 10. Proof 3
+
+- "53 unchanged files" is in the heading of the file table; `cmp` over the 226 `.ts` files of `tests/state` against the base prints 53 equal, 167 changed and six without a base file (`client/fetch-record.ts`, `sessions/terminal/pty/pty-fixture.ts`, `sessions/terminal/pty/pty-io.test.ts`, `sessions/terminal/pty/pty-socket.test.ts`, `shared/answers.test.ts`, `shared/arrival.ts`), and three base files are gone (`sources/off-facets.ts`, `client/socket-timing.test.ts`, `sessions/terminal/pty-io.test.ts`).
+- "six git calls" is in the first paragraph of the report and in judgment call 7, with the six commands listed.
+- The palette entry no longer carries the dangling "(Doc text)" for `kindWord`; it says the function is no longer tested.
+
+### Verify list
+
+Run once, after the last change to any file under the worktree, from `tools/oculus` in the worktree: `npm run diagrams` exit 0 (`diff -rq docs/diagrams <main>/tools/oculus/docs/diagrams` prints nothing), then `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md`, exit 0. The lines it printed:
+
+```
+$ npm test
+fatal: Needed a single revision
+ Test Files  598 passed | 27 skipped (625)
+      Tests  12404 passed | 668 skipped (13072)
+   Duration  211.74s (transform 53.66s, setup 0ms, import 497.04s, tests 287.31s, environment 462ms)
+$ npm run test:checks
+ Test Files  31 passed | 2 skipped (33)
+      Tests  471 passed | 9 skipped (480)
+   Duration  47.00s (transform 16.32s, setup 0ms, import 57.45s, tests 96.47s, environment 7ms)
+$ npm run check
+1791087721889 COMPLETED 3375 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npm run build
+$ npm run format:check
+All matched files use Prettier code style!
+$ npm run lint
+$ ! LC_ALL=C grep -rna '[^ -~]' src tests
+checks: 7 commands passed
+```
+
+The `fatal: Needed a single revision` line comes from a test outside `tests/state`; which test prints it is not verified. What the run does not cover: `tsc --noEmit -p .` (14 errors in files outside `tests/state`, listed under "Findings outside the brief"), and the timings, which are the five JSON runs and the single timed run quoted above.

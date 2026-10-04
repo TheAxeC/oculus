@@ -28,7 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # two steps in flight (2026-10-04): T1b and T1e, building; T1c landed, T1d is prepared again after T1b lands, under Z376 (b) (workers_at_once: 5).
+dispatch:   # two steps in flight (2026-10-04): T1b and T1e, each in repair round 1; T1c landed, T1d is prepared again after T1b lands, under Z376 (b) (workers_at_once: 5).
 - step: T1b
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -39,8 +39,9 @@ dispatch:   # two steps in flight (2026-10-04): T1b and T1e, building; T1c lande
   base_copy: .agents/worktrees/T1b-base/tools/oculus (src/ and tests/ at the base, from git archive; removed with the worktree)
   launched: 2026-10-04 01:03 local
   report: agents/reviews/T1b-report.md
-  builder_usage: claude-sonnet-5-5, 331,587 tokens, 1122 tool uses, 226.4 min (completion notice 2026-10-04)
+  builder_usage: claude-sonnet-5-5, 331,587 tokens, 1122 tool uses, 226.4 min; round 1: 304,335 tokens, 270 tool uses, 66.4 min (completion notices 2026-10-04)
   reviewer_report: agents/reviews/T1b-refuter.md; reviewer a7468f675784a9dfd, claude-opus-5-5, 375,118 tokens, 129 tool uses, 28.4 min
+  reviewer_report_round1: agents/reviews/T1b-refuter.md, "Repair round 1, refuted"; reviewer a7cc996d36a42bc9e, ordo-high, running
   brief_check: agents/reviews/T1b-brief-check.md; claude-opus-5-5, 249,285 tokens, 92 tool uses, 10.6 min (run on main at 1e14d279; findings closed under Closed, and T1d's brief check's points that hold for tests/state carried in)
   shared_paths: with T1e, in flight: `tests/checks/tree/allow-duplication.txt` only (T1b lines 30 and 65-110 at its base, T1e lines 26-29, 31-36, 38 and 47), separate lines and removals only, so the merge is simple; T1c, which shared the file, landed 2026-10-04
   landing: not-started

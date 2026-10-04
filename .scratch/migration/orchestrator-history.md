@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z387, closed by the orchestrator in automode 2026-10-04: six same-branch rows of T1b's failed-read table deleted at landing; options (a) kept, the lazy option, (b) deleted; (b) taken.
+- Z386, closed by the orchestrator in automode 2026-10-04: a distinct-keys test of `refusalSentence`'s 19 words added at T1b's landing; options (a) left, the lazy option, (b) added; (b) taken.
 - Z385, closed by the orchestrator in automode 2026-10-04: `tests/routes/shape.test.ts` deleted; options (a) deleted, (b) a rule written and the check moved, (c) kept with no rule, the lazy option; (a) taken.
 - Z384, closed by the orchestrator in automode 2026-10-04: T1e's slow tags stand only on a cause or a minimum of 100 ms or more, file and describe tags only where every test meets one; options (a) moved to single tests, (b) left under Z379, the lazy option; (a) taken.
 - Z383, closed by the orchestrator in automode 2026-10-04: a file-tagged test file imports a process-starting module with `await import` in its slow `beforeAll`; T1b in its round, T1c's tmux files in T1a; options (a) dynamic imports, (b) premise left, the lazy option; (a) taken.
