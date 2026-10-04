@@ -1,10 +1,13 @@
-// Taking a manifest write that removed a field back: the removed lines return to the place they
-// stood, whatever else the file gained or lost since, and a record that carries no usable removed
-// text is undone by writing the value.
+// Layer 2, route tests. Taking a manifest write that removed a field back: the removed lines return
+// to the place they stood, whatever else the file gained or lost since, and a record that carries
+// no usable removed text is undone by writing the value.
 //
 // Each case is a write through the route and the undo of the change it left, with the whole text of
 // the manifest compared. The hub and the change log are the fixture in write-fixture.ts, under the
 // system temporary directory.
+//
+// The cases tagged slow take 100 ms or more; every other case runs in npm test. A hook loads the
+// configuration once, since the first load costs more than a later one, so no case pays for it.
 
 import { expect, describe } from 'vitest';
 import type { Change } from '../../../../src/lib/server/core/changes.ts';
@@ -17,16 +20,19 @@ import {
     recorded,
     target,
     undone,
-    wrote
+    wrote,
+    warmConfig
 } from '../write-fixture.ts';
 import { present } from '../../../fixtures/present.ts';
-import { it } from '../../../fixtures/scratch.ts';
+import { it, test } from '../../../fixtures/scratch.ts';
 
 /** The first lines of every held manifest: the ones the reader needs to find the project. */
 const HEAD = 'id: alpha\ntype: manuscript\n';
 
 /** A manifest with a quoted title and a comment after it, above the fixture's status map. */
 const TITLED = `${HEAD}title: "A title"  # the name\nstatus:\n  line: "the line"\n`;
+
+test.beforeAll(warmConfig);
 
 describe('taking a removed field back where it stood', () => {
     /** A target whose manifest holds `text`, written by `fields`; the changes are oldest first. */
@@ -71,34 +77,43 @@ describe('taking a removed field back where it stood', () => {
         expect(await back(into, changes[0])).toBe(held);
     });
 
-    it('gives a follow-up back whichever shape the file held it in, after the editor cleared it', async () => {
-        for (const note of [
-            'followup: "call"\n',
-            'followup: { do: call, after: 2026-10-01 }\n',
-            'followup:\n  - call\n'
-        ]) {
-            const held = `${HEAD}${note}next: go\n`;
-            const { into, changes } = await cleared(held, { followup: null });
-            // the history keeps the clear as one change of the group, and the file holds no note
-            expect(changes).toHaveLength(1);
-            expect(changes[0]).toMatchObject({ field: 'followup', after: null });
-            expect(manifestOf(into)).not.toContain('followup');
-            expect(await back(into, changes[0])).toBe(held);
+    it(
+        'gives a follow-up back whichever shape the file held it in, after the editor cleared it',
+        { tags: ['slow'] },
+        async () => {
+            for (const note of [
+                'followup: "call"\n',
+                'followup: { do: call, after: 2026-10-01 }\n',
+                'followup:\n  - call\n'
+            ]) {
+                const held = `${HEAD}${note}next: go\n`;
+                const { into, changes } = await cleared(held, { followup: null });
+                // the history keeps the clear as one change of the group, and the file holds no
+                // note
+                expect(changes).toHaveLength(1);
+                expect(changes[0]).toMatchObject({ field: 'followup', after: null });
+                expect(manifestOf(into)).not.toContain('followup');
+                expect(await back(into, changes[0])).toBe(held);
+            }
         }
-    });
+    );
 
-    it('gives a bare or one-list follow-up back as the text the file held, after an edit of it', async () => {
-        for (const note of ['followup: "call"\n', 'followup:\n  - call\n']) {
-            const held = `${HEAD}${note}next: go\n`;
-            const { into, changes } = await cleared(held, { 'followup.do': 'ring' });
-            expect(changes[0]).toMatchObject({
-                field: 'followup.do',
-                before: 'call',
-                after: 'ring'
-            });
-            expect(await back(into, changes[0])).toBe(held);
+    it(
+        'gives a bare or one-list follow-up back as the text the file held, after an edit of it',
+        { tags: ['slow'] },
+        async () => {
+            for (const note of ['followup: "call"\n', 'followup:\n  - call\n']) {
+                const held = `${HEAD}${note}next: go\n`;
+                const { into, changes } = await cleared(held, { 'followup.do': 'ring' });
+                expect(changes[0]).toMatchObject({
+                    field: 'followup.do',
+                    before: 'call',
+                    after: 'ring'
+                });
+                expect(await back(into, changes[0])).toBe(held);
+            }
         }
-    });
+    );
 
     it('gives a one-note list holding a map back as the list, comments included', async () => {
         const held = `${HEAD}followup:  # the call\n  - do: call  # who\n    after: 2026-10-01\nnext: go\n`;
@@ -107,7 +122,7 @@ describe('taking a removed field back where it stood', () => {
         expect(await back(into, changes[0])).toBe(held);
     });
 
-    it('audits that the value is written, as a map, for the undo of one field of a two-field write on a bare note', async () => {
+    it('writes the value, as a map, for the undo of one field of a two-field write on a bare note', async () => {
         const held = `${HEAD}followup: "call"\nnext: go\n`;
         const { into, changes } = await cleared(held, {
             'followup.do': 'ring',
@@ -119,14 +134,18 @@ describe('taking a removed field back where it stood', () => {
         expect(after).toBe(`${HEAD}followup:\n  do: ring\nnext: go\n`);
     });
 
-    it('gives the shape back when the note was written with its date, whichever shape the note had', async () => {
-        for (const note of ['followup: "call"\n', 'followup:\n  - call\n']) {
-            const held = `${HEAD}${note}next: go\n`;
-            const { into, changes } = await cleared(held, { 'followup.after': '2026-12-01' });
-            expect(changes[0]).toMatchObject({ field: 'followup.after', before: null });
-            expect(await back(into, changes[0])).toBe(held);
+    it(
+        'gives the shape back when the note was written with its date, whichever shape the note had',
+        { tags: ['slow'] },
+        async () => {
+            for (const note of ['followup: "call"\n', 'followup:\n  - call\n']) {
+                const held = `${HEAD}${note}next: go\n`;
+                const { into, changes } = await cleared(held, { 'followup.after': '2026-12-01' });
+                expect(changes[0]).toMatchObject({ field: 'followup.after', before: null });
+                expect(await back(into, changes[0])).toBe(held);
+            }
         }
-    });
+    );
 
     it('gives a bare note back as the text the file held after a later write above it', async () => {
         const held = `${HEAD}title: Alpha\nfollowup: "Register for FLTA 2026"  # ask\nnext: go\n`;
@@ -135,7 +154,7 @@ describe('taking a removed field back where it stood', () => {
         expect(await back(into, changes[0])).toBe(held.replace('Alpha', 'Alpha, renamed'));
     });
 
-    it('audits that the value is written instead when the file no longer holds what the expanding write left', async () => {
+    it('writes the value instead when the file no longer holds what the expanding write left', async () => {
         const held = `${HEAD}followup: "call"\nnext: go\n`;
         const { into, changes } = await cleared(held, { 'followup.do': 'ring' });
         // A comment typed into the map since: the span the write left is no longer in the file.
@@ -152,54 +171,73 @@ describe('taking a removed field back where it stood', () => {
         expect(await back(into, changes[0])).toBe(held);
     });
 
-    it('gives two fields of one write back in either order of the undos', async () => {
-        const held = `${HEAD}title: T\nnext: go\nshort: s\n`;
-        for (const oldestFirst of [false, true]) {
-            const { into, changes } = await cleared(held, { title: '', short: '' });
-            for (const change of oldestFirst ? changes : [...changes].reverse()) {
-                expect((await undone(into, change)).status).toBe(200);
+    it(
+        'gives two fields of one write back in either order of the undos',
+        { tags: ['slow'] },
+        async () => {
+            const held = `${HEAD}title: T\nnext: go\nshort: s\n`;
+            for (const oldestFirst of [false, true]) {
+                const { into, changes } = await cleared(held, { title: '', short: '' });
+                for (const change of oldestFirst ? changes : [...changes].reverse()) {
+                    expect((await undone(into, change)).status).toBe(200);
+                }
+                expect(manifestOf(into)).toBe(held);
             }
-            expect(manifestOf(into)).toBe(held);
         }
-    });
+    );
 
-    it('gives two neighbouring fields back exactly when the upper one is undone first', async () => {
-        const held = `${HEAD}title: T\nshort: s\nnext: go\n`;
-        const upper = await cleared(held, { title: '', short: '' });
-        for (const change of upper.changes) await back(upper.into, change);
-        expect(manifestOf(upper.into)).toBe(held);
+    it(
+        'gives two neighbouring fields back exactly when the upper one is undone first',
+        { tags: ['slow'] },
+        async () => {
+            const held = `${HEAD}title: T\nshort: s\nnext: go\n`;
+            const upper = await cleared(held, { title: '', short: '' });
+            for (const change of upper.changes) await back(upper.into, change);
+            expect(manifestOf(upper.into)).toBe(held);
 
-        // The line the upper field's record names as following it is the lower field's own, which
-        // the write removed too, so the upper field returns before the line that now follows both.
-        const lower = await cleared(held, { title: '', short: '' });
-        for (const change of [...lower.changes].reverse()) await back(lower.into, change);
-        expect(manifestOf(lower.into)).toBe(`${HEAD}short: s\ntitle: T\nnext: go\n`);
-    });
-
-    it('finds the place again after a line above it was rewritten', async () => {
-        const held = `${HEAD}short: s\ntitle: "A title"  # the name\nnext: go\n`;
-        for (const value of ['a longer value', 'ss']) {
-            const { into, changes } = await cleared(held, { title: '' });
-            await wrote(into, { short: value });
-            expect(await back(into, changes[0])).toBe(held.replace('short: s', `short: ${value}`));
+            // The line the upper field's record names as following it is the lower field's own,
+            // which the write removed too, so the upper field returns before the line that now
+            // follows both.
+            const lower = await cleared(held, { title: '', short: '' });
+            for (const change of [...lower.changes].reverse()) await back(lower.into, change);
+            expect(manifestOf(lower.into)).toBe(`${HEAD}short: s\ntitle: T\nnext: go\n`);
         }
-    });
+    );
 
-    it('finds the place again after the same write changed a field above it', async () => {
-        const held = `${HEAD}title: T\nshort: s\nnext: go\n`;
-        const grown = held.replace('title: T', 'title: a much longer title');
-        for (const fields of [
-            { short: '', title: 'a much longer title' },
-            { title: 'a much longer title', short: '' }
-        ]) {
-            const { into, changes } = await cleared(held, fields);
-            const clear = present(
-                changes.find((one) => one.field === 'short'),
-                'change of the cleared field'
-            );
-            expect(await back(into, clear)).toBe(grown);
+    it(
+        'finds the place again after a line above it was rewritten',
+        { tags: ['slow'] },
+        async () => {
+            const held = `${HEAD}short: s\ntitle: "A title"  # the name\nnext: go\n`;
+            for (const value of ['a longer value', 'ss']) {
+                const { into, changes } = await cleared(held, { title: '' });
+                await wrote(into, { short: value });
+                expect(await back(into, changes[0])).toBe(
+                    held.replace('short: s', `short: ${value}`)
+                );
+            }
         }
-    });
+    );
+
+    it(
+        'finds the place again after the same write changed a field above it',
+        { tags: ['slow'] },
+        async () => {
+            const held = `${HEAD}title: T\nshort: s\nnext: go\n`;
+            const grown = held.replace('title: T', 'title: a much longer title');
+            for (const fields of [
+                { short: '', title: 'a much longer title' },
+                { title: 'a much longer title', short: '' }
+            ]) {
+                const { into, changes } = await cleared(held, fields);
+                const clear = present(
+                    changes.find((one) => one.field === 'short'),
+                    'change of the cleared field'
+                );
+                expect(await back(into, clear)).toBe(grown);
+            }
+        }
+    );
 
     it('writes the value into the map that has come back when no place keeps one status', async () => {
         const { into, changes } = await cleared(MANIFEST, { 'status.line': '' });
@@ -441,17 +479,13 @@ describe('the offset and the text of a removed record', () => {
         return manifestOf(into);
     }
 
-    it('writes the value for an offset that is fractional or negative, or text that is empty', async () => {
-        const written = `${WITHOUT}title: A title\n`;
-        expect(await undoneWith({ offset: 1.5, text: FITS, next: '' })).toBe(written);
-        expect(await undoneWith({ offset: -1, text: FITS, next: '' })).toBe(written);
-        expect(await undoneWith({ offset: 0, text: '', next: '' })).toBe(written);
-        expect(await undoneWith({ offset: 0, text: FITS })).toBe(written);
-    });
-
-    it('puts the lines back for a whole non-negative offset, however large', async () => {
-        const back = `${WITHOUT}${FITS}`;
-        expect(await undoneWith({ offset: 0, text: FITS, next: '' })).toBe(back);
-        expect(await undoneWith({ offset: 2 ** 60, text: FITS, next: '' })).toBe(back);
-    });
+    it(
+        'puts the lines back for a whole non-negative offset, however large',
+        { tags: ['slow'] },
+        async () => {
+            const back = `${WITHOUT}${FITS}`;
+            expect(await undoneWith({ offset: 0, text: FITS, next: '' })).toBe(back);
+            expect(await undoneWith({ offset: 2 ** 60, text: FITS, next: '' })).toBe(back);
+        }
+    );
 });

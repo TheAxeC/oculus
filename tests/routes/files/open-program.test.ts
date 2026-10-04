@@ -1,9 +1,12 @@
-// What the open endpoint hands to its opener, against files and folders under system temporary
-// storage: a file only to the application `open.program_ext` names for its extension, and only when
-// it carries no execute bit and is no Finder alias; a folder always, to be revealed. And the floor
-// under macOS `open`, read as a rule and never run: nothing here runs `open`, and every case hands
-// the endpoint an opener of its own. The alias flag is written with `xattr`, which only writes an
-// attribute of a fixture file.
+// Layer 2, route tests. What the open endpoint hands to its opener, against files and folders under
+// system temporary storage: a file only to the application `open.program_ext` names for its
+// extension, and only when it carries no execute bit and is no Finder alias; a folder always, to be
+// revealed. And the floor under macOS `open`, read as a rule and never run: nothing here runs
+// `open`, and every case hands the endpoint an opener of its own. The alias flag is written with
+// `xattr`, which only writes an attribute of a fixture file.
+//
+// A case that reaches the default FinderInfo reader, which runs `xattr`, or makes a FIFO is tagged
+// slow; the other cases run in npm test.
 
 import { execFileSync } from 'node:child_process';
 import { chmodSync, mkdirSync, realpathSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
@@ -75,29 +78,30 @@ function writeFinderFlags(path: string, flags: number): void {
 }
 
 describe('a file handed to the application its extension names', () => {
-    it('opens a file of every extension the checked-in map names, with that application', async () => {
-        const { folder, roots } = withFiles();
-        expect(Object.keys(APPS).length).toBeGreaterThan(0);
-        for (const suffix of Object.keys(APPS)) {
-            const file = join(folder, `listed${suffix}`);
-            writeFileSync(file, 'PK a document', { mode: 0o644 });
-            await openedBoth(`projects/active/alpha/listed${suffix}`, file, roots);
+    it(
+        'opens a file of every extension the checked-in map names, with that application',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { folder, roots } = withFiles();
+            expect(Object.keys(APPS).length).toBeGreaterThan(0);
+            for (const suffix of Object.keys(APPS)) {
+                const file = join(folder, `listed${suffix}`);
+                writeFileSync(file, 'PK a document', { mode: 0o644 });
+                await openedBoth(`projects/active/alpha/listed${suffix}`, file, roots);
+            }
         }
-    });
+    );
 
-    it('opens a listed extension written in mixed case', async () => {
-        const { folder, roots } = withFiles();
-        const file = join(folder, 'Report.DocX');
-        writeFileSync(file, 'PK a document', { mode: 0o644 });
-        await openedBoth('projects/active/alpha/Report.DocX', file, roots);
-    });
-
-    it('still opens a .docx whose mode carries no execute bit', async () => {
-        const { report, roots } = withFiles();
-        chmodSync(report, 0o644);
-        expect(statSync(report).mode & 0o777).toBe(0o644);
-        await openedBoth('projects/active/alpha/report.docx', report, roots);
-    });
+    it(
+        'opens a listed extension written in mixed case',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { folder, roots } = withFiles();
+            const file = join(folder, 'Report.DocX');
+            writeFileSync(file, 'PK a document', { mode: 0o644 });
+            await openedBoth('projects/active/alpha/Report.DocX', file, roots);
+        }
+    );
 
     it('refuses a double extension and every type the map names no application for, in either form', async () => {
         const { folder, roots } = withFiles();
@@ -140,27 +144,35 @@ describe('a file handed to the application its extension names', () => {
         await refusedBoth('projects/active/alpha/report.docx', roots);
     });
 
-    it('opens a file that starts with book but has no mark after it', async () => {
-        const { report, roots } = withFiles();
-        const notBookmark = Buffer.concat([
-            Buffer.from('book', 'latin1'),
-            Buffer.alloc(4),
-            Buffer.from('kept', 'latin1'),
-            Buffer.alloc(52)
-        ]);
-        writeFileSync(report, notBookmark, { mode: 0o644 });
-        await openedBoth('projects/active/alpha/report.docx', report, roots);
-    });
+    it(
+        'opens a file that starts with book but has no mark after it',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { report, roots } = withFiles();
+            const notBookmark = Buffer.concat([
+                Buffer.from('book', 'latin1'),
+                Buffer.alloc(4),
+                Buffer.from('kept', 'latin1'),
+                Buffer.alloc(52)
+            ]);
+            writeFileSync(report, notBookmark, { mode: 0o644 });
+            await openedBoth('projects/active/alpha/report.docx', report, roots);
+        }
+    );
 
-    it('refuses a file whose FinderInfo carries the alias flag, and opens one whose flags do not', async () => {
-        const { folder, report, roots } = withFiles();
-        writeFinderFlags(report, 0x80);
-        await refusedBoth('projects/active/alpha/report.docx', roots);
-        const plain = join(folder, 'plain.docx');
-        writeFileSync(plain, 'PK a document', { mode: 0o644 });
-        writeFinderFlags(plain, 0x04);
-        await openedBoth('projects/active/alpha/plain.docx', plain, roots);
-    });
+    it(
+        'refuses a file whose FinderInfo carries the alias flag, and opens one whose flags do not',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { folder, report, roots } = withFiles();
+            writeFinderFlags(report, 0x80);
+            await refusedBoth('projects/active/alpha/report.docx', roots);
+            const plain = join(folder, 'plain.docx');
+            writeFileSync(plain, 'PK a document', { mode: 0o644 });
+            writeFinderFlags(plain, 0x04);
+            await openedBoth('projects/active/alpha/plain.docx', plain, roots);
+        }
+    );
 
     it('refuses a file whose FinderInfo read fails for any reason but its absence', async () => {
         const { roots } = withFiles();
@@ -168,14 +180,18 @@ describe('a file handed to the application its extension names', () => {
         await refusedBoth('projects/active/alpha/report.docx', roots, checkedIn, failing);
     });
 
-    it('reads a file with no FinderInfo as carrying none, and one with the flag as flagged', async () => {
-        const { report } = withFiles();
-        expect(await readFinderInfo(report)).toBeNull();
-        writeFinderFlags(report, 0x80);
-        const info = await readFinderInfo(report);
-        expect(info?.length).toBe(32);
-        expect(info?.[8]).toBe(0x80);
-    });
+    it(
+        'reads a file with no FinderInfo as carrying none, and one with the flag as flagged',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { report } = withFiles();
+            expect(await readFinderInfo(report)).toBeNull();
+            writeFinderFlags(report, 0x80);
+            const info = await readFinderInfo(report);
+            expect(info?.length).toBe(32);
+            expect(info?.[8]).toBe(0x80);
+        }
+    );
 
     it('refuses a symlink whose asked name has no application, pointing at a listed file', async () => {
         const { folder, report, roots } = withFiles();
@@ -202,32 +218,40 @@ describe('a file handed to the application its extension names', () => {
         }
     });
 
-    it('reads the map it is handed at the request: one naming .txt opens a .txt the checked-in map refuses', async () => {
-        const { folder, roots } = withFiles();
-        const notes = join(folder, 'notes.txt');
-        writeFileSync(notes, 'plain text\n', { mode: 0o644 });
-        const text = (): ProgramApps => ({ '.txt': 'com.apple.TextEdit' });
-        await refusedBoth('projects/active/alpha/notes.txt', roots);
-        await openedBoth('projects/active/alpha/notes.txt', notes, roots, text);
-    });
+    it(
+        'reads the map it is handed at the request: one naming .txt opens a .txt the checked-in map refuses',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { folder, roots } = withFiles();
+            const notes = join(folder, 'notes.txt');
+            writeFileSync(notes, 'plain text\n', { mode: 0o644 });
+            const text = (): ProgramApps => ({ '.txt': 'com.apple.TextEdit' });
+            await refusedBoth('projects/active/alpha/notes.txt', roots);
+            await openedBoth('projects/active/alpha/notes.txt', notes, roots, text);
+        }
+    );
 
-    it('opens a file under a root when an earlier root in the list is gone', async () => {
-        const { work, sheet } = withFiles();
-        const roots = [
-            { key: 'gone', dir: join(work, 'removed-since-it-was-saved') },
-            { key: 'work', dir: work }
-        ];
-        const opener = vi.fn();
-        const response = await handleOpen(
-            request({ path: sheet }),
-            TOKEN,
-            roots,
-            checkedIn,
-            opener
-        );
-        expect(response.status).toBe(200);
-        expect(opener.mock.calls).toEqual([[opened(realpathSync(sheet), APPS)]]);
-    });
+    it(
+        'opens a file under a root when an earlier root in the list is gone',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { work, sheet } = withFiles();
+            const roots = [
+                { key: 'gone', dir: join(work, 'removed-since-it-was-saved') },
+                { key: 'work', dir: work }
+            ];
+            const opener = vi.fn();
+            const response = await handleOpen(
+                request({ path: sheet }),
+                TOKEN,
+                roots,
+                checkedIn,
+                opener
+            );
+            expect(response.status).toBe(200);
+            expect(opener.mock.calls).toEqual([[opened(realpathSync(sheet), APPS)]]);
+        }
+    );
 });
 
 describe('a folder, revealed and never opened', () => {
@@ -270,36 +294,40 @@ describe('a folder, revealed and never opened', () => {
 });
 
 describe('a path that is neither a regular file nor a folder', () => {
-    it('refuses a FIFO inside the root in either form without calling the opener', async () => {
-        const { folder, roots } = withFiles();
-        const fifo = join(folder, 'pipe.docx');
-        execFileSync('mkfifo', [fifo]);
-        expect(statSync(fifo).isFIFO()).toBe(true);
-        const opener = vi.fn();
-        const rooted = await handleOpen(
-            request({ root: 'hub', path: 'projects/active/alpha/pipe.docx' }),
-            TOKEN,
-            roots,
-            checkedIn,
-            opener
-        );
-        const plain = await handleOpen(
-            request({ path: 'projects/active/alpha/pipe.docx' }),
-            TOKEN,
-            roots,
-            checkedIn,
-            opener
-        );
-        expect(rooted.status).toBe(404);
-        expect(((await rooted.json()) as { error: string }).error).toBe(
-            'there is no file or folder at the path'
-        );
-        expect(plain.status).toBe(403);
-        expect(((await plain.json()) as { error: string }).error).toBe(
-            'the path is outside the configured roots'
-        );
-        expect(opener).not.toHaveBeenCalled();
-    });
+    it(
+        'refuses a FIFO inside the root in either form without calling the opener',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { folder, roots } = withFiles();
+            const fifo = join(folder, 'pipe.docx');
+            execFileSync('mkfifo', [fifo]);
+            expect(statSync(fifo).isFIFO()).toBe(true);
+            const opener = vi.fn();
+            const rooted = await handleOpen(
+                request({ root: 'hub', path: 'projects/active/alpha/pipe.docx' }),
+                TOKEN,
+                roots,
+                checkedIn,
+                opener
+            );
+            const plain = await handleOpen(
+                request({ path: 'projects/active/alpha/pipe.docx' }),
+                TOKEN,
+                roots,
+                checkedIn,
+                opener
+            );
+            expect(rooted.status).toBe(404);
+            expect(((await rooted.json()) as { error: string }).error).toBe(
+                'there is no file or folder at the path'
+            );
+            expect(plain.status).toBe(403);
+            expect(((await plain.json()) as { error: string }).error).toBe(
+                'the path is outside the configured roots'
+            );
+            expect(opener).not.toHaveBeenCalled();
+        }
+    );
 });
 
 describe('what macOS open is run with and the floor under it', () => {
@@ -315,36 +343,44 @@ describe('what macOS open is run with and the floor under it', () => {
         ]);
     });
 
-    it('takes a real folder and a real listed file with a bundle id', async () => {
-        const { folder, report } = withFiles();
-        expect(await openable(opened(folder))).toBe(true);
-        expect(await openable(opened(report))).toBe(true);
-    });
+    it(
+        'takes a real folder and a real listed file with a bundle id',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { folder, report } = withFiles();
+            expect(await openable(opened(folder))).toBe(true);
+            expect(await openable(opened(report))).toBe(true);
+        }
+    );
 
-    it('refuses a file with an execute bit, a bookmark head, an alias flag or no bundle id', async () => {
-        // Every path is its own real path here, so each refusal is the rule named and not the
-        // floor's real-path check.
-        const files = withFiles();
-        const folder = realpathSync(files.folder);
-        const report = realpathSync(files.report);
-        const script = join(folder, 'reproduce.docx');
-        writeFileSync(script, 'PK\n');
-        chmodSync(script, 0o755);
-        const bookmark = join(folder, 'mark.docx');
-        writeFileSync(bookmark, Buffer.concat([Buffer.from('book\0\0\0\0mark', 'latin1')]), {
-            mode: 0o644
-        });
-        const flagged = join(folder, 'flagged.docx');
-        writeFileSync(flagged, 'PK\n', { mode: 0o644 });
-        writeFinderFlags(flagged, 0x80);
-        const word = 'com.microsoft.Word';
-        expect(await openable({ kind: 'file', path: script, app: word })).toBe(false);
-        expect(await openable({ kind: 'file', path: bookmark, app: word })).toBe(false);
-        expect(await openable({ kind: 'file', path: flagged, app: word })).toBe(false);
-        expect(await openable({ kind: 'file', path: report, app: 'Word' })).toBe(false);
-        expect(await openable({ kind: 'file', path: folder, app: word })).toBe(false);
-        expect(await openable({ kind: 'folder', path: report })).toBe(false);
-    });
+    it(
+        'refuses a file with an execute bit, a bookmark head, an alias flag or no bundle id',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            // Every path is its own real path here, so each refusal is the rule named and not the
+            // floor's real-path check.
+            const files = withFiles();
+            const folder = realpathSync(files.folder);
+            const report = realpathSync(files.report);
+            const script = join(folder, 'reproduce.docx');
+            writeFileSync(script, 'PK\n');
+            chmodSync(script, 0o755);
+            const bookmark = join(folder, 'mark.docx');
+            writeFileSync(bookmark, Buffer.concat([Buffer.from('book\0\0\0\0mark', 'latin1')]), {
+                mode: 0o644
+            });
+            const flagged = join(folder, 'flagged.docx');
+            writeFileSync(flagged, 'PK\n', { mode: 0o644 });
+            writeFinderFlags(flagged, 0x80);
+            const word = 'com.microsoft.Word';
+            expect(await openable({ kind: 'file', path: script, app: word })).toBe(false);
+            expect(await openable({ kind: 'file', path: bookmark, app: word })).toBe(false);
+            expect(await openable({ kind: 'file', path: flagged, app: word })).toBe(false);
+            expect(await openable({ kind: 'file', path: report, app: 'Word' })).toBe(false);
+            expect(await openable({ kind: 'file', path: folder, app: word })).toBe(false);
+            expect(await openable({ kind: 'folder', path: report })).toBe(false);
+        }
+    );
 
     it('resolves the path first: a symlink link.docx to a refused file is refused', async () => {
         const folder = realpathSync(withFiles().folder);

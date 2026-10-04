@@ -1,8 +1,8 @@
-// What POST /api/hook answers. The route itself is one line handing the request to
-// handleHookRequest with the request context's HookTarget and the notification settings it reads
-// at the request, which is what this calls with a fixture: every case here is one Request object
-// and a target the test owns, so nothing posts to a real server and no notification fires (the
-// target's exec is a recording stub).
+// Layer 2, route tests. What POST /api/hook answers. The route itself is one line handing the
+// request to handleHookRequest with the request context's HookTarget and the notification settings
+// it reads at the request, which is what this calls with a fixture: every case here is one Request
+// object and a target the test owns, so nothing posts to a real server and no notification fires
+// (the target's exec is a recording stub).
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -56,22 +56,11 @@ describe('POST /api/hook', () => {
         const limiter = new RateLimiter();
         const now = Date.now();
         const into = target({ limiter, now: () => now });
-        let last = new Response(null);
+        const statuses: number[] = [];
         for (let i = 0; i < 21; i += 1) {
-            last = await handleHookRequest(request(), into);
+            statuses.push((await handleHookRequest(request(), into)).status);
         }
-        expect(last.status).toBe(429);
-    });
-
-    it('answers 200 for a request with the 20th call, the one before the limit', async () => {
-        const limiter = new RateLimiter();
-        const now = Date.now();
-        const into = target({ limiter, now: () => now });
-        let last = new Response(null);
-        for (let i = 0; i < 20; i += 1) {
-            last = await handleHookRequest(request(), into);
-        }
-        expect(last.status).toBe(200);
+        expect(statuses).toEqual([...Array<number>(20).fill(200), 429]);
     });
 
     it('answers 200 and records nothing for a non-JSON body', async () => {

@@ -77,7 +77,7 @@ export function scratchMade(): string[] {
  * sweeps first. vitest reads a hook's first parameter as the fixtures it asks for, so the hook
  * given is called with none.
  */
-export function sweepingOnError(hook: () => unknown): (context: object) => Promise<void> {
+function sweepingOnError(hook: () => unknown): (context: object) => Promise<void> {
     // eslint-disable-next-line no-empty-pattern -- vitest reads a hook's fixtures from this
     return async ({}) => {
         try {

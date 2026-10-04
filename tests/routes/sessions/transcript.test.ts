@@ -1,7 +1,7 @@
-// What GET /api/transcript answers. The route itself is one line handing the request to
-// handleTranscript, which is what this calls with an options bag holding a `recordFor` the test
-// owns instead of the bridge to the last published payload: no session store, no registry and no
-// hub is read, and the only file any case opens is the one written under mkdtemp.
+// Layer 2, route tests. What GET /api/transcript answers. The route itself is one line handing the
+// request to handleTranscript, which is what this calls with an options bag holding a `recordFor`
+// the test owns instead of the bridge to the last published payload: no session store, no registry
+// and no hub is read, and the only file any case opens is the one written under mkdtemp.
 
 import { statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

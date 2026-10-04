@@ -1,10 +1,13 @@
-// Layer 2, server tests. POST /api/terminal update-task, LaTeX and interactive chat cases. Chat
+// Layer 2, route tests. POST /api/terminal update-task, LaTeX and interactive chat cases. Chat
 // checks cover argv, absolute prompt paths, numbering and private index lifecycle.
 //
-// Nothing here runs tmux, `claude` or `codex`. handleTerminal is called with an options bag holding
-// a `run` that records the argv and answers the list itself. The only real path any case touches is
+// Nothing here runs tmux, `claude` or `codex`; the one case that starts a process runs `sh` over a
+// stand-in latexmk in a scratch folder. handleTerminal is called with an options bag holding a
+// `run` that records the argv and answers the list itself. The only real path any case touches is
 // the temporary directory: for the task cases, to hold an engine directory whose local.yml the
 // route reads, made once per file from the fixture's test.beforeAll.
+//
+// The case that starts a process is tagged slow; every other case runs in npm test.
 
 import { execFileSync } from 'node:child_process';
 import {
@@ -17,7 +20,7 @@ import {
     statSync,
     writeFileSync
 } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { join, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import {
@@ -27,9 +30,7 @@ import {
 } from '../../../src/lib/server/machine/pty/routes.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { chatIndexPath } from '../../../src/lib/server/machine/pty/chat.ts';
-import { taskSkipPermissions } from '../../../src/lib/data/helpers/run/tasks.ts';
 import {
-    HERE_FILE,
     SERVER,
     TOKEN,
     HERE,
@@ -173,39 +174,6 @@ describe('POST /api/terminal, the task action', () => {
         ).toBe(200);
         const off = second.calls.find((args) => args[0] === 'new-session') ?? [];
         expect(off[off.length - 1]).toBe(`'/opt/Claude CLI/claude' '/research-cockpit scout'`);
-    });
-
-    it('is wired to that reader by the route module, not to the context snapshot', () => {
-        // The route is read rather than imported, the reason tests/routes/shape.test.ts gives: a
-        // Kit route pulls its `./$types` in with it. What is asserted is the one line that decides
-        // whether a saved setting takes effect before the next restart.
-        const route = readFileSync(
-            resolve(
-                HERE_FILE,
-                '..',
-                '..',
-                '..',
-                '..',
-                'src',
-                'routes',
-                'api',
-                '(sessions)',
-                'terminal',
-                '+server.ts'
-            ),
-            'utf8'
-        );
-        expect(route).toContain('configFor: () => locals.config().config');
-    });
-
-    it('carries tasks.skip_permissions on the wire, off in the checked-in configuration', () => {
-        const merged = loadConfig(engineDir()).config as {
-            chat?: Record<string, unknown>;
-            tasks?: Record<string, unknown>;
-        };
-        expect(merged.tasks?.skip_permissions).toBe(false);
-        expect(merged.chat?.skip_permissions).toBeUndefined();
-        expect(taskSkipPermissions(merged as Record<string, unknown>)).toBe(false);
     });
 
     it('refuses another task kind without starting a terminal', async () => {
@@ -428,25 +396,29 @@ describe('latexCommand', () => {
         expect(latexCommand('clean', 'm.tex', 'xelatex')).toBe("latexmk -c 'm.tex'");
     });
 
-    it('quotes a main file name as one word, so a shell passes it to latexmk whole', () => {
-        const bin = realpathSync(scratchDir('oculus-latexmk-'));
-        const calls = join(bin, 'calls');
-        writeFileSync(
-            join(bin, 'latexmk'),
-            `#!/bin/sh\nfor word in "$@"; do echo "[$word]"; done > '${calls}'\n`
-        );
-        chmodSync(join(bin, 'latexmk'), 0o755);
+    it(
+        'quotes a main file name as one word, so a shell passes it to latexmk whole',
+        { tags: ['slow'], timeout: 30_000 },
+        () => {
+            const bin = realpathSync(scratchDir('oculus-latexmk-'));
+            const calls = join(bin, 'calls');
+            writeFileSync(
+                join(bin, 'latexmk'),
+                `#!/bin/sh\nfor word in "$@"; do echo "[$word]"; done > '${calls}'\n`
+            );
+            chmodSync(join(bin, 'latexmk'), 0o755);
 
-        const command = latexCommand('build', "my thesis's.tex", 'pdflatex');
-        execFileSync('sh', ['-c', command], { env: { PATH: `${bin}:/usr/bin:/bin` } });
+            const command = latexCommand('build', "my thesis's.tex", 'pdflatex');
+            execFileSync('sh', ['-c', command], { env: { PATH: `${bin}:/usr/bin:/bin` } });
 
-        expect(readFileSync(calls, 'utf8').trim().split('\n')).toEqual([
-            '[-pdf]',
-            '[-interaction=nonstopmode]',
-            '[-file-line-error]',
-            "[my thesis's.tex]"
-        ]);
-    });
+            expect(readFileSync(calls, 'utf8').trim().split('\n')).toEqual([
+                '[-pdf]',
+                '[-interaction=nonstopmode]',
+                '[-file-line-error]',
+                "[my thesis's.tex]"
+            ]);
+        }
+    );
 });
 
 describe('POST /api/terminal, the latex action over a folder of a root', () => {

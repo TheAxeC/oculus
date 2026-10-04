@@ -1,8 +1,11 @@
-// Taking one recorded change back: what the writer it goes through puts in the file, what the log
-// then holds, and the refusal an address that has moved since gets.
+// Layer 2, route tests. Taking one recorded change back: what the writer it goes through puts in
+// the file, what the log then holds, and the refusal an address that has moved since gets.
 //
 // The hub, the deck file and the change log are the fixture beside this file, all under the system
 // temporary directory, so no case here reaches ~/.oculus or the checkout.
+//
+// The cases tagged slow take 100 ms or more; every other case runs in npm test. A hook loads the
+// configuration once, since the first load costs more than a later one, so no case pays for it.
 
 import { chmodSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -29,9 +32,12 @@ import {
     target,
     tasksOf,
     undone,
-    wrote
+    wrote,
+    warmConfig
 } from '../write-fixture.ts';
-import { it } from '../../../fixtures/scratch.ts';
+import { it, test } from '../../../fixtures/scratch.ts';
+
+test.beforeAll(warmConfig);
 
 describe('taking a change back', () => {
     /** One write, and the change it left at the head of the log. */
@@ -47,7 +53,7 @@ describe('taking a change back', () => {
         const change = await made(into, GOOD);
         expect(manifestOf(into)).toContain('a new line');
 
-        const response = await handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into);
+        const response = await undone(into, change);
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({
             ok: true,
@@ -56,8 +62,8 @@ describe('taking a change back', () => {
         });
         expect(manifestOf(into)).toBe(MANIFEST);
 
-        const [undone] = changesOf(into);
-        expect(undone).toMatchObject({
+        const [taken] = changesOf(into);
+        expect(taken).toMatchObject({
             kind: 'manifest',
             field: 'status.line',
             before: 'a new line',
@@ -66,9 +72,7 @@ describe('taking a change back', () => {
             undoes: change.at
         });
 
-        expect(
-            (await handleWrite(request({ kind: 'undo', at: undone.at }), TOKEN, into)).status
-        ).toBe(200);
+        expect((await undone(into, taken)).status).toBe(200);
         expect(manifestOf(into)).toContain('a new line');
     });
 
@@ -76,7 +80,11 @@ describe('taking a change back', () => {
         const into = target();
         const change = await made(into, GOOD);
         await handleWrite(
-            request({ kind: 'manifest', id: 'alpha', fields: { 'status.line': 'later still' } }),
+            request({
+                kind: 'manifest',
+                id: 'alpha',
+                fields: { 'status.line': 'later still' }
+            }),
             TOKEN,
             into
         );
@@ -214,21 +222,26 @@ describe('taking a change back', () => {
         expect(tasksOf(into)).toContain('- { do: read it }');
     });
 
-    it("puts the deck's two lists back to what the save before them left", async () => {
-        const into = deckTarget();
-        const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
-        // A deck of no slides is not a state the writer accepts, so the very first save has no
-        // earlier lists to put back; the save after it has, and that is the one an undo addresses.
-        const first = await made(into, { kind: 'deck', selection: ['title', 'alpha'], order });
-        expect(first.kind).toBe('deck');
-        const change = await made(into, { kind: 'deck', selection: ['closing'], order });
-        expect(
-            (await handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into)).status
-        ).toBe(200);
-        const deck = (parse(deckOf(into)) as { deck: Record<string, unknown> }).deck;
-        expect(deck.selection).toEqual(['title', 'alpha']);
-        expect(deck.slide_order).toEqual(order);
-    });
+    it(
+        "puts the deck's two lists back to what the save before them left",
+        { tags: ['slow'] },
+        async () => {
+            const into = deckTarget();
+            const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
+            // A deck of no slides is not a state the writer accepts, so the very first save has no
+            // earlier lists to put back; the save after it has, and that is the one an undo
+            // addresses.
+            const first = await made(into, { kind: 'deck', selection: ['title', 'alpha'], order });
+            expect(first.kind).toBe('deck');
+            const change = await made(into, { kind: 'deck', selection: ['closing'], order });
+            expect(
+                (await handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into)).status
+            ).toBe(200);
+            const deck = (parse(deckOf(into)) as { deck: Record<string, unknown> }).deck;
+            expect(deck.selection).toEqual(['title', 'alpha']);
+            expect(deck.slide_order).toEqual(order);
+        }
+    );
 
     it('puts a dismissed session back, and takes a dismissal back', async () => {
         const into = target();
@@ -286,8 +299,8 @@ describe('taking a change back', () => {
         ).toBe(200);
         expect(leads()).not.toContain('A fresh lead');
 
-        // Deleting the one lead leaves the `entries:` key with nothing under it, which is the file
-        // an undo has to write the entry back into.
+        // Deleting the one lead leaves the `entries:` key with nothing under it, which is the
+        // file an undo has to write the entry back into.
         const gone = await made(into, { kind: 'feed-delete', feed: 'leads', id: 'Lead' });
         expect(gone.before).toEqual({ title: 'Lead', status: 'open' });
         expect(leads()).not.toContain('- title: "Lead"');
@@ -577,57 +590,54 @@ arrangements:
     root: { kind: pane, view: inbox }
 `;
 
-    it('answers unwritable for a setting whose file has turned read-only', async () => {
-        const into = configTarget();
-        const body = { kind: 'config-key', file: 'behavior.yml', key: 'changes.keep', value: 300 };
-        expect((await handleWrite(request(body), TOKEN, into)).status).toBe(200);
-        const [change] = changesOf(into);
-        chmodSync(into.behaviorFile, 0o444);
-        const written = readFileSync(into.behaviorFile, 'utf8');
+    it(
+        'answers unwritable for a setting whose file has turned read-only',
+        { tags: ['slow'] },
+        async () => {
+            const into = configTarget();
+            const body = {
+                kind: 'config-key',
+                file: 'behavior.yml',
+                key: 'changes.keep',
+                value: 300
+            };
+            expect((await handleWrite(request(body), TOKEN, into)).status).toBe(200);
+            const [change] = changesOf(into);
+            chmodSync(into.behaviorFile, 0o444);
+            const written = readFileSync(into.behaviorFile, 'utf8');
 
-        const response = await undone(into, change);
-        expect(response.status).toBe(500);
-        expect(await response.json()).toEqual({ error: 'unwritable' });
-        expect(readFileSync(into.behaviorFile, 'utf8')).toBe(written);
-        expect(statSync(into.behaviorFile).mode & 0o777).toBe(0o444);
-        expect(changesOf(into)).toHaveLength(1);
-    });
-
-    it('answers unwritable for a setting whose file can no longer be read', async () => {
-        const into = configTarget();
-        const body = { kind: 'config-key', file: 'behavior.yml', key: 'changes.keep', value: 300 };
-        expect((await handleWrite(request(body), TOKEN, into)).status).toBe(200);
-        const [change] = changesOf(into);
-        chmodSync(into.behaviorFile, 0o000);
-        try {
             const response = await undone(into, change);
             expect(response.status).toBe(500);
             expect(await response.json()).toEqual({ error: 'unwritable' });
-        } finally {
-            chmodSync(into.behaviorFile, 0o644);
+            expect(readFileSync(into.behaviorFile, 'utf8')).toBe(written);
+            expect(statSync(into.behaviorFile).mode & 0o777).toBe(0o444);
+            expect(changesOf(into)).toHaveLength(1);
         }
-        expect(changesOf(into)).toHaveLength(1);
-    });
+    );
 
-    it('answers unwritable for a deck whose file has turned read-only', async () => {
-        const into = deckTarget();
-        const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
-        await handleWrite(
-            request({ kind: 'deck', selection: ['title', 'alpha'], order }),
-            TOKEN,
-            into
-        );
-        const body = { kind: 'deck', selection: ['closing'], order };
-        expect((await handleWrite(request(body), TOKEN, into)).status).toBe(200);
-        const [change] = changesOf(into);
-        chmodSync(into.config.deckFile, 0o444);
-        const written = deckOf(into);
+    it(
+        'answers unwritable for a deck whose file has turned read-only',
+        { tags: ['slow'] },
+        async () => {
+            const into = deckTarget();
+            const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
+            await handleWrite(
+                request({ kind: 'deck', selection: ['title', 'alpha'], order }),
+                TOKEN,
+                into
+            );
+            const body = { kind: 'deck', selection: ['closing'], order };
+            expect((await handleWrite(request(body), TOKEN, into)).status).toBe(200);
+            const [change] = changesOf(into);
+            chmodSync(into.config.deckFile, 0o444);
+            const written = deckOf(into);
 
-        const response = await undone(into, change);
-        expect(response.status).toBe(500);
-        expect(await response.json()).toEqual({ error: 'unwritable' });
-        expect(deckOf(into)).toBe(written);
-    });
+            const response = await undone(into, change);
+            expect(response.status).toBe(500);
+            expect(await response.json()).toEqual({ error: 'unwritable' });
+            expect(deckOf(into)).toBe(written);
+        }
+    );
 
     it('answers unwritable for a rail list whose file has turned read-only', async () => {
         const into = { ...target(), glyphs: ['compass', 'inbox'] };
@@ -647,31 +657,37 @@ arrangements:
         expect(readFileSync(into.layoutFile, 'utf8')).toBe(written);
         expect(changesOf(into)).toHaveLength(1);
     });
-    it('answers unwritable for a deck and a rail list whose file can no longer be read', async () => {
-        const deck = deckTarget();
-        const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
-        const picked = { kind: 'deck', selection: ['closing'], order };
-        expect((await handleWrite(request(picked), TOKEN, deck)).status).toBe(200);
-        const rails = { ...target(), glyphs: ['compass', 'inbox'] };
-        writeFileSync(rails.layoutFile, LAYOUT);
-        const rail = [
-            { label: 'Focus', glyph: 'compass', page: 'focus' },
-            { label: 'Inbox', glyph: 'inbox', page: 'inbox' }
-        ];
-        expect((await handleWrite(request({ kind: 'rail', rail }), TOKEN, rails)).status).toBe(200);
-        for (const [into, file] of [
-            [deck, deck.config.deckFile],
-            [rails, rails.layoutFile]
-        ] as const) {
-            const [change] = changesOf(into);
-            chmodSync(file, 0o000);
-            try {
-                const response = await undone(into, change);
-                expect(response.status).toBe(500);
-                expect(await response.json()).toEqual({ error: 'unwritable' });
-            } finally {
-                chmodSync(file, 0o644);
+    it(
+        'answers unwritable for a deck and a rail list whose file can no longer be read',
+        { tags: ['slow'] },
+        async () => {
+            const deck = deckTarget();
+            const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
+            const picked = { kind: 'deck', selection: ['closing'], order };
+            expect((await handleWrite(request(picked), TOKEN, deck)).status).toBe(200);
+            const rails = { ...target(), glyphs: ['compass', 'inbox'] };
+            writeFileSync(rails.layoutFile, LAYOUT);
+            const rail = [
+                { label: 'Focus', glyph: 'compass', page: 'focus' },
+                { label: 'Inbox', glyph: 'inbox', page: 'inbox' }
+            ];
+            expect((await handleWrite(request({ kind: 'rail', rail }), TOKEN, rails)).status).toBe(
+                200
+            );
+            for (const [into, file] of [
+                [deck, deck.config.deckFile],
+                [rails, rails.layoutFile]
+            ] as const) {
+                const [change] = changesOf(into);
+                chmodSync(file, 0o000);
+                try {
+                    const response = await undone(into, change);
+                    expect(response.status).toBe(500);
+                    expect(await response.json()).toEqual({ error: 'unwritable' });
+                } finally {
+                    chmodSync(file, 0o644);
+                }
             }
         }
-    });
+    );
 });

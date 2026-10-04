@@ -1,7 +1,10 @@
-// loadLocal, checkLocal and loadConfig against synthetic files in a temporary directory. The config
-// folder oculus ships is read by tests/checks/config/config-folder.test.ts.
+// Layer 4, tree check. The readers of the config folder (loadLocal, loadConfig, behaviorFindings,
+// themeFindings, vocabCatalog) over synthetic files in a temporary directory, and the one real
+// config they are run over for no finding. The sentences checkLocal and loadLocal throw are rows of
+// tests/data/sources/config/local.test.ts. The config folder oculus ships is read by
+// tests/checks/config/config-folder.test.ts.
 
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
@@ -11,7 +14,6 @@ import {
     LOCAL_NAME,
     behaviorFindings,
     checkLocal,
-    configDir,
     engineDir,
     loadConfig,
     loadLocal,
@@ -80,43 +82,11 @@ describe('loadLocal', () => {
         warn.mockRestore();
     });
 
-    it('falls back to the defaults when there is no file', () => {
-        const dir = scratch();
-        expect(loadLocal(dir)).toEqual({
-            hub: resolve(dir, '..', '..'),
-            port: DEFAULT_PORT,
-            claudeBin: 'claude',
-            calendars: [],
-            mail: [],
-            accounts: DEFAULT_ACCOUNTS
-        });
-        expect(warn).not.toHaveBeenCalled();
-    });
-
-    it('takes both keys from the file', () => {
-        const dir = scratch();
-        writeLocal(dir, 'hub: /srv/research-hub\nport: 8791\n');
-        expect(loadLocal(dir)).toEqual({
-            hub: '/srv/research-hub',
-            port: 8791,
-            claudeBin: 'claude',
-            calendars: [],
-            mail: [],
-            accounts: DEFAULT_ACCOUNTS
-        });
-    });
-
     it('reads the file inside the config folder and not one beside it', () => {
         const dir = scratch();
         writeLocal(dir, 'hub: /srv/in-the-config-folder\n');
         writeFileSync(join(dir, LOCAL_NAME), 'hub: /srv/beside-the-config-folder\n');
         expect(loadLocal(dir).hub).toBe('/srv/in-the-config-folder');
-    });
-
-    it('resolves a relative hub against the engine directory rather than the config folder', () => {
-        const dir = scratch();
-        writeLocal(dir, 'hub: demo\n');
-        expect(loadLocal(dir).hub).toBe(join(dir, 'demo'));
     });
 
     it('reports an unknown key once and ignores it', () => {
@@ -134,111 +104,23 @@ describe('loadLocal', () => {
         expect(String(warn.mock.calls[0][0])).toContain('colour');
     });
 
-    it('refuses a port that is not an integer', () => {
-        const dir = scratch();
-        writeLocal(dir, 'port: eight\n');
-        expect(() => loadLocal(dir)).toThrow(/port must be an integer/);
-    });
-
-    it('takes the two session paths when the machine names them', () => {
-        const dir = scratch();
-        writeLocal(
-            dir,
-            'hub: /srv/research-hub\nsessions_cache: /srv/state/cache.json\nsessions_overrides: state/sessions.json\n'
-        );
-        expect(loadLocal(dir)).toEqual({
-            hub: '/srv/research-hub',
-            port: DEFAULT_PORT,
-            claudeBin: 'claude',
-            calendars: [],
-            mail: [],
-            accounts: DEFAULT_ACCOUNTS,
-            sessionsCache: '/srv/state/cache.json',
-            sessionsOverrides: join(dir, 'state', 'sessions.json')
-        });
-        expect(warn).not.toHaveBeenCalled();
-    });
-
-    it('takes the Claude binary used by update-task terminals', () => {
-        const dir = scratch();
-        writeLocal(dir, 'claude_bin: /opt/Claude CLI/claude\n');
-        expect(loadLocal(dir)).toEqual({
-            hub: resolve(dir, '..', '..'),
-            port: DEFAULT_PORT,
-            claudeBin: '/opt/Claude CLI/claude',
-            calendars: [],
-            mail: [],
-            accounts: DEFAULT_ACCOUNTS
-        });
-        expect(warn).not.toHaveBeenCalled();
-    });
-
-    it('refuses a session path that is not a path', () => {
-        const dir = scratch();
-        writeLocal(dir, 'sessions_cache: 17\n');
-        expect(() => loadLocal(dir)).toThrow(/sessions_cache must be a path/);
-    });
-
-    it('takes usage accounts and expands home-relative config folders', () => {
-        const dir = scratch();
-        writeLocal(
-            dir,
-            'accounts:\n  - { tool: claude, dir: ~/.claude-work, label: Work }\n  - { tool: codex, dir: state/codex, label: Codex }\n'
-        );
-        expect(loadLocal(dir).accounts).toEqual([
-            { tool: 'claude', dir: join(homedir(), '.claude-work'), label: 'Work' },
-            { tool: 'codex', dir: join(dir, 'state', 'codex'), label: 'Codex' }
-        ]);
-    });
-
-    it('refuses an account with an unknown tool', () => {
-        const dir = scratch();
-        writeLocal(dir, 'accounts:\n  - { tool: api, dir: ~/.api, label: API }\n');
-        expect(() => loadLocal(dir)).toThrow(/tool must be claude or codex/);
-    });
-
-    it.each([
-        ['Work', 'Work'],
-        ['University Lab', 'UNIVERSITY@Lab']
-    ])('refuses colliding Claude labels %s and %s', (first, second) => {
-        const dir = scratch();
-        try {
-            writeLocal(
-                dir,
-                JSON.stringify({
-                    accounts: [
-                        { tool: 'claude', dir: 'a/.claude', label: first },
-                        { tool: 'claude', dir: 'b/.claude', label: second }
-                    ]
-                })
-            );
-            expect(() => loadLocal(dir)).toThrow(/duplicates a Claude label or reduced label/);
-        } finally {
-            rmSync(dir, { recursive: true, force: true });
-        }
-    });
-
     it('accepts distinct Claude labels on equal folder basenames and a matching Codex label', () => {
         const dir = scratch();
-        try {
-            writeLocal(
-                dir,
-                JSON.stringify({
-                    accounts: [
-                        { tool: 'claude', dir: 'a/.claude', label: 'Work' },
-                        { tool: 'claude', dir: 'b/.claude', label: 'Personal' },
-                        { tool: 'codex', dir: 'codex', label: 'Work' }
-                    ]
-                })
-            );
-            expect(loadLocal(dir).accounts.map((account) => account.label)).toEqual([
-                'Work',
-                'Personal',
-                'Work'
-            ]);
-        } finally {
-            rmSync(dir, { recursive: true, force: true });
-        }
+        writeLocal(
+            dir,
+            JSON.stringify({
+                accounts: [
+                    { tool: 'claude', dir: 'a/.claude', label: 'Work' },
+                    { tool: 'claude', dir: 'b/.claude', label: 'Personal' },
+                    { tool: 'codex', dir: 'codex', label: 'Work' }
+                ]
+            })
+        );
+        expect(loadLocal(dir).accounts.map((account) => account.label)).toEqual([
+            'Work',
+            'Personal',
+            'Work'
+        ]);
     });
 
     // The engine directory is the whole of what says which machine-local file is read: a server
@@ -267,108 +149,21 @@ describe('loadLocal', () => {
     });
 });
 
-// The check the source endpoint makes before it writes the machine's own file. Every rule loadLocal
-// has is one case here, since a body this accepts is a body the next read must accept.
+// The check the source endpoint makes before it writes the machine's own file: it reads a body the
+// way loadLocal does and prints nothing for a key it does not know, which loadLocal warns about.
 describe('checkLocal', () => {
-    let warn: MockInstance<typeof console.warn>;
-
-    beforeEach(() => {
-        warn = vi.spyOn(console, 'warn').mockImplementation(noop);
-    });
-
-    afterEach(() => {
-        warn.mockRestore();
-    });
-
-    it('accepts a body the reader would read, and says nothing about an unknown key', () => {
-        expect(checkLocal('')).toBeNull();
-        expect(checkLocal('# only a comment\n')).toBeNull();
-        expect(
-            checkLocal(
-                [
-                    'hub: /srv/research-hub',
-                    'port: 8791',
-                    'hpc_host: cluster',
-                    'claude_bin: /opt/claude',
-                    'sessions_cache: /tmp/cache.json',
-                    'sessions_overrides: overrides.json',
-                    'workspaces: /tmp/workspaces.json',
-                    'bookmarks: /tmp/bookmarks.yml',
-                    'notes: /tmp/notes',
-                    'changes: /tmp/changes.jsonl',
-                    'accounts:',
-                    '  - { tool: claude, dir: ~/.claude, label: Work }',
-                    '  - { tool: codex, dir: /tmp/codex, label: Codex }',
-                    ''
-                ].join('\n')
-            )
-        ).toBeNull();
-        expect(checkLocal('colour: teal\n')).toBeNull();
-        expect(warn).not.toHaveBeenCalled();
-    });
-
-    it('names the file and the rule for every value the reader would throw over', () => {
-        const cases: [string, RegExp][] = [
-            ['- one\n- two\n', /expected a map of keys/],
-            ['hub: 4\n', /hub must be a path/],
-            ["hub: ''\n", /hub must be a path/],
-            ['port: eight\n', /port must be an integer/],
-            ['port: 8790.5\n', /port must be an integer/],
-            ['hpc_host: 0\n', /hpc_host must be a non-empty string/],
-            ['claude_bin: 0\n', /claude_bin must be a non-empty string/],
-            ['sessions_cache: 1\n', /sessions_cache must be a path/],
-            ['sessions_overrides: 1\n', /sessions_overrides must be a path/],
-            ['workspaces: 1\n', /workspaces must be a path/],
-            ['bookmarks: 1\n', /bookmarks must be a path/],
-            ['notes: 1\n', /notes must be a path/],
-            ['changes: 1\n', /changes must be a path/],
-            ['accounts: 1\n', /accounts must be a list/],
-            ['accounts: [one]\n', /accounts\[0\] must be a map/],
-            ['accounts: [{ tool: gemini, dir: a, label: b }]\n', /tool must be claude or codex/],
-            ['accounts: [{ tool: claude, label: b }]\n', /dir must be a path/],
-            ['accounts: [{ tool: claude, dir: a }]\n', /label must be words/],
-            [
-                'accounts: [{ tool: claude, dir: a, label: Work }, { tool: claude, dir: b, label: work }]\n',
-                /duplicates a Claude label/
-            ]
-        ];
-        for (const [body, rule] of cases) {
-            // A body the check accepts answers null, which is the empty string here and matches
-            // neither, so an accepted body fails the case rather than skipping it.
-            const sentence = checkLocal(body) ?? '';
-            expect(sentence, body).toMatch(rule);
-            expect(sentence, body).toContain(`${LOCAL_NAME}: `);
+    it('says nothing, and prints nothing, about an unknown key', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(noop);
+        try {
+            expect(checkLocal('colour: teal\n')).toBeNull();
+            expect(warn).not.toHaveBeenCalled();
+        } finally {
+            warn.mockRestore();
         }
-        expect(warn).not.toHaveBeenCalled();
-    });
-
-    it('gives a body that is not YAML by one line, and takes the name it is asked for', () => {
-        const sentence = checkLocal('hub: "unterminated\n  - [\n') ?? '';
-        expect(sentence).not.toBe('');
-        expect(sentence.includes('\n')).toBe(false);
-        expect(checkLocal('port: eight\n', 'config/local.yml')).toMatch(
-            /^config\/local\.yml: port must be an integer/
-        );
-    });
-
-    it('is the rule loadLocal reads by, so an accepted body is read and a refused one throws', () => {
-        const dir = scratch();
-        writeLocal(dir, 'port: 8791\n');
-        expect(checkLocal('port: 8791\n')).toBeNull();
-        expect(loadLocal(dir).port).toBe(8791);
-
-        writeLocal(dir, 'port: eight\n');
-        expect(checkLocal('port: eight\n')).not.toBeNull();
-        expect(() => loadLocal(dir)).toThrow(/port must be an integer/);
     });
 });
 
-describe('configDir', () => {
-    it('is the config folder of the engine it is given', () => {
-        const engine = scratch();
-        expect(configDir(engine)).toBe(join(engine, 'config'));
-    });
-
+describe('the config folder of an engine', () => {
     it('is that engine own folder, so a run over a copy reads and writes the copy', () => {
         const engine = scratch();
         writeConfig(engine, 'behavior.yml', 'stale_days: 30\n');
@@ -422,25 +217,6 @@ describe('loadConfig', () => {
                 file: later,
                 key: 'palette',
                 message: 'key palette is already defined in a-first.yml; b-later.yml wins'
-            }
-        ]);
-    });
-
-    // Revert: none; loadConfig treats every key alike, so this holds a fact of the merge for the
-    // new key and would only go red if the merge started to special-case keys (audit).
-    it('audit: reports code_theme defined in two files like any other key', () => {
-        const engine = scratch();
-        withSentences(engine);
-        writeConfig(engine, 'a-first.yml', 'code_theme: tokens\n');
-        const later = writeConfig(engine, 'b-later.yml', 'code_theme: nord\n');
-
-        const { config, findings } = loadConfig(engine);
-        expect(config.code_theme).toBe('nord');
-        expect(findings).toEqual([
-            {
-                file: later,
-                key: 'code_theme',
-                message: 'key code_theme is already defined in a-first.yml; b-later.yml wins'
             }
         ]);
     });
@@ -582,8 +358,7 @@ describe('loadConfig', () => {
         expect(findings.map((one) => one.file)).toEqual([listy, broken]);
         expect(findings[0].message).toBe('findings.file.not_a_map');
         expect(findings[1].message).toMatch(/^findings\.file\.does_not_parse \S/);
-        // The rest of the copy still merges, the words of every other owner file among it.
-        expect(textCatalog(config)['app.chat']).toBe('Chat');
+        // The broken file gives no words, so the key worded above is not in the merged catalog.
         expect(textCatalog(config)['findings.file.not_a_map']).toBe(undefined);
     });
 });

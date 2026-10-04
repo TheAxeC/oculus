@@ -1,8 +1,9 @@
-// The catalog key gate in both directions. Every literal reader names a catalog key, and every
-// catalog key is reached by a literal, registration metadata, or one documented computed lookup.
-// The finding sentences of config/text/findings.yml are held to the source by their literals alone:
-// every `findings.` string literal under src is a key of that file and every key of it is such a
-// literal, whatever expression the formatter is handed the catalog through.
+// Layer 4, tree check. The catalog key gate in both directions. Every literal reader names a
+// catalog key, and every catalog key is reached by a literal, registration metadata, or one
+// documented computed lookup. The finding sentences of config/text/findings.yml are held to the
+// source by their literals alone: every `findings.` string literal under src is a key of that file
+// and every key of it is such a literal, whatever expression the formatter is handed the catalog
+// through.
 
 import { statusWordKey } from '../../../src/lib/state/sources/repositories/repositories.ts';
 import { registered } from '../../../src/lib/state/shared/words/languages.ts';
@@ -108,7 +109,7 @@ const WHOLE_FINDING_KEY = /^(['"])findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+\1$
 const COMPUTED_FINDING_KEYS = [{ file: 'lib/server/content/audit/rules.ts', key: 'key' }] as const;
 
 /** Every `findingText` call under `root` whose key is not one whole `findings.` literal. */
-export function computedFindingKeys(root: string): { file: string; key: string }[] {
+function computedFindingKeys(root: string): { file: string; key: string }[] {
     const found: { file: string; key: string }[] = [];
     for (const file of sources(root)) {
         const source = withoutComments(file, readFileSync(file, 'utf8'));
@@ -209,7 +210,7 @@ function sources(dir: string): string[] {
 type Call = { file: string; reader: string; key: string | null; text: string };
 
 /** Every catalog read under `root`, with its key when the argument is a literal. */
-export function calls(root: string): Call[] {
+function calls(root: string): Call[] {
     const found: Call[] = [];
     for (const file of sources(root)) {
         const source = withoutComments(file, readFileSync(file, 'utf8'));
@@ -250,7 +251,7 @@ export function calls(root: string): Call[] {
 }
 
 /** Every `findings.` string literal under `root`, comments left out, with the file it is in. */
-export function findingLiterals(root: string): { file: string; key: string }[] {
+function findingLiterals(root: string): { file: string; key: string }[] {
     const found: { file: string; key: string }[] = [];
     for (const file of sources(root)) {
         const source = withoutComments(file, readFileSync(file, 'utf8'));

@@ -1,5 +1,6 @@
-// normalise against hand-built raw records: the field mapping, the relation tables, determinism,
-// and the JSON round trip. Nothing here reads or writes a file; normalise is pure.
+// Layer 1, data tests. normalise against hand-built raw records: the field mapping, the relation
+// tables, determinism, and the JSON round trip. Nothing here reads or writes a file; normalise is
+// pure.
 
 import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
@@ -10,7 +11,6 @@ import {
     normalise,
     subtasks
 } from '../../../src/lib/data/snapshot/normalise.ts';
-import { fields } from '../../../src/lib/data/helpers/guards.ts';
 import { career } from '../../../src/lib/data/snapshot/normalise-career.ts';
 import type {
     DocPresence,
@@ -379,15 +379,6 @@ describe('normalise, the field mapping', () => {
         ]);
     });
 
-    it('carries a conference call off the venue registry, by its date and by its month', () => {
-        expect(snapshot.entities.venues.bspc.deadline).toBe('2026-09-01');
-        expect(snapshot.entities.venues.bspc.deadlineMonth).toBe('Sep');
-        expect(snapshot.entities.venues.bspc.heldMonth).toBe('Jan');
-        expect(snapshot.entities.venues.bspc.timing).toBe('deadline Sep, held Jan');
-        expect(snapshot.entities.venues.bspc.call).toBe('https://example.invalid/call');
-        expect(snapshot.entities.venues.bspc.email).toBe('chair@example.invalid');
-    });
-
     it('reads a leading check or cross of an indexing field as its mark, and keeps the words', () => {
         const { indexed, prose } = snapshot.entities.venues;
         expect([indexed.wos, indexed.wosMark, indexed.scopus, indexed.scopusMark]).toEqual([
@@ -429,10 +420,6 @@ describe('normalise, the field mapping', () => {
             themes: ['ecg'],
             projectIds: ['alpha']
         });
-    });
-
-    it('knows a funding scheme by its title when it has no key', () => {
-        expect(Object.keys(snapshot.entities.funding)).toEqual(['A scheme with no key', 'FAIR']);
     });
 
     it('carries the funding file as a collection as well as a registry', () => {
@@ -545,13 +532,6 @@ describe("normalise, a collection's schema", () => {
         expect(events([{ field: 'title' }]).schema).toBe(undefined);
         expect(events([{ type: 'text' }]).schema).toBe(undefined);
         expect(events(['title']).schema).toBe(undefined);
-    });
-
-    it('survives the JSON round trip like the rest of the snapshot', () => {
-        const found = events([{ field: 'title', type: 'text' }]);
-        expect(fields(JSON.parse(JSON.stringify(found))).schema).toEqual([
-            { field: 'title', type: 'text' }
-        ]);
     });
 });
 

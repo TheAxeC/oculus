@@ -1,5 +1,5 @@
-// Layer 4, test. No module under src augments a module of the tree, by a `declare module` block or
-// a `/// <reference path>` directive, in whichever direction the augmentation runs.
+// Layer 4, tree check. No module under src augments a module of the tree, by a `declare module`
+// block or a `/// <reference path>` directive, in whichever direction the augmentation runs.
 //
 // The first case holds the tree to none. The cases after it plant each form in a scratch tree laid
 // out as src is (the modules under lib/, `$lib/` standing for it): a block adding to a module above
@@ -34,26 +34,25 @@ describe('augmentation of a module of the tree', () => {
         expect(findAugments(SRC, 'lib/')).toEqual([]);
     });
 
-    it('is named for a block that adds to a module of a folder above its own', () => {
-        const dir = plant({
-            ...BASE,
-            'lib/state/shared/stores/merge.ts':
-                "export {};\ndeclare module '../../client/context.ts' {\n    interface Client { x: 1 }\n}\n"
-        });
-        expect(findAugments(dir, 'lib/')).toEqual([
-            'lib/state/shared/stores/merge.ts:2 augments lib/state/client/context'
-        ]);
-    });
-
-    it('is named for a block that fills an empty interface a module below declares', () => {
-        const dir = plant({
-            ...BASE,
-            'lib/state/client/fill.ts':
-                "export {};\ndeclare module '../shared/stores/slots.ts' {\n    interface Slots { y: 1 }\n}\n"
-        });
-        expect(findAugments(dir, 'lib/')).toEqual([
-            'lib/state/client/fill.ts:2 augments lib/state/shared/stores/slots'
-        ]);
+    it.each([
+        [
+            'a block that adds to a module of a folder above its own',
+            {
+                'lib/state/shared/stores/merge.ts':
+                    "export {};\ndeclare module '../../client/context.ts' {\n    interface Client { x: 1 }\n}\n"
+            },
+            ['lib/state/shared/stores/merge.ts:2 augments lib/state/client/context']
+        ],
+        [
+            'a block that fills an empty interface a module below declares',
+            {
+                'lib/state/client/fill.ts':
+                    "export {};\ndeclare module '../shared/stores/slots.ts' {\n    interface Slots { y: 1 }\n}\n"
+            },
+            ['lib/state/client/fill.ts:2 augments lib/state/shared/stores/slots']
+        ]
+    ])('is named for %s', (_row, files, expected) => {
+        expect(findAugments(plant({ ...BASE, ...files }), 'lib/')).toEqual(expected);
     });
 
     it('is named for a block across layers, in a component as in a module', () => {
@@ -69,39 +68,37 @@ describe('augmentation of a module of the tree', () => {
         ]);
     });
 
-    it('is named for a reference directive to a module of the tree', () => {
-        const dir = plant({
-            ...BASE,
-            'lib/state/client/refer.ts':
-                '/// <reference path="../shared/stores/slots.ts" />\nexport const r = 1;\n',
-            'lib/ui/bare.d.ts': "///<reference path='../state/client/context.ts'/>\n"
-        });
-        expect(findAugments(dir, 'lib/')).toEqual([
-            'lib/state/client/refer.ts:1 augments lib/state/shared/stores/slots',
-            'lib/ui/bare.d.ts:1 augments lib/state/client/context'
-        ]);
-    });
-
-    it('is named for a reference directive with preserve before its path', () => {
-        const dir = plant({
-            ...BASE,
-            'lib/state/client/kept.ts':
-                '/// <reference preserve="true" path="../shared/stores/slots.ts" />\nexport const k = 1;\n'
-        });
-        expect(findAugments(dir, 'lib/')).toEqual([
-            'lib/state/client/kept.ts:1 augments lib/state/shared/stores/slots'
-        ]);
-    });
-
-    it('is named for a reference directive with resolution-mode before its path', () => {
-        const dir = plant({
-            ...BASE,
-            'lib/ui/mode.d.ts':
-                '/// <reference resolution-mode="import" path="../state/client/context.ts" />\n'
-        });
-        expect(findAugments(dir, 'lib/')).toEqual([
-            'lib/ui/mode.d.ts:1 augments lib/state/client/context'
-        ]);
+    it.each([
+        [
+            'a reference directive to a module of the tree, written either way',
+            {
+                'lib/state/client/refer.ts':
+                    '/// <reference path="../shared/stores/slots.ts" />\nexport const r = 1;\n',
+                'lib/ui/bare.d.ts': "///<reference path='../state/client/context.ts'/>\n"
+            },
+            [
+                'lib/state/client/refer.ts:1 augments lib/state/shared/stores/slots',
+                'lib/ui/bare.d.ts:1 augments lib/state/client/context'
+            ]
+        ],
+        [
+            'a reference directive with preserve before its path',
+            {
+                'lib/state/client/kept.ts':
+                    '/// <reference preserve="true" path="../shared/stores/slots.ts" />\nexport const k = 1;\n'
+            },
+            ['lib/state/client/kept.ts:1 augments lib/state/shared/stores/slots']
+        ],
+        [
+            'a reference directive with resolution-mode before its path',
+            {
+                'lib/ui/mode.d.ts':
+                    '/// <reference resolution-mode="import" path="../state/client/context.ts" />\n'
+            },
+            ['lib/ui/mode.d.ts:1 augments lib/state/client/context']
+        ]
+    ])('is named for %s', (_row, files, expected) => {
+        expect(findAugments(plant({ ...BASE, ...files }), 'lib/')).toEqual(expected);
     });
 
     it('is not read in a comment that names a block', () => {

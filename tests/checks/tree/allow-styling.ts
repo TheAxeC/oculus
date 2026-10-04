@@ -1,5 +1,5 @@
-// Layer 4, test data. The `:global(...)` rules in a view or a shell component that style a class a
-// primitive declares as its own.
+// Layer 4, test helper. The `:global(...)` rules in a view or a shell component that style a class
+// a primitive declares as its own.
 //
 // An entry is keyed on the selector, so a second rule for the same class in a file already listed
 // is a violation of its own. DELIBERATE is for a rule that belongs where it is, its reason saying
@@ -7,7 +7,7 @@
 // check landed, each entry naming where the rule sits, so the check has a floor to work from; an
 // entry there is a coupling to undo by giving the primitive the prop or the token it is missing.
 
-export type Styling = { line: string; why: string };
+type Styling = { line: string; why: string };
 
 export const DELIBERATE: Styling[] = [];
 

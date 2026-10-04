@@ -1,6 +1,7 @@
-// What the /api/docs route answers for the slug of a side project: nothing, since the document
-// reader looks a project up in the research tiers. The hub is synthetic, under the system
-// temporary directory, and every path written is asserted to be inside it first.
+// Layer 2, route tests. What the /api/docs route answers for the slug of a side project: nothing,
+// since the document reader looks a project up in the research tiers. The hub is synthetic, under
+// the system temporary directory, and every path written is asserted to be inside it first.
+// @module-tag slow: its one case takes 100 ms or more.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';

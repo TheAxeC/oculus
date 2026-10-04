@@ -1,7 +1,8 @@
-// Synthetic session records and the tree they group into, for the tests of the six session views
-// and of the selectors they read. Nothing here touches ~/.claude, ~/.codex or ~/.oculus: what the
-// server would have folded out of a transcript is written out by hand, so a test states exactly the
-// case it is about and the store is handed a payload the same shape the socket delivers.
+// Layer 4, test helper. Synthetic session records and the tree they group into, for the tests of
+// the six session views and of the selectors they read. Nothing here touches ~/.claude, ~/.codex
+// or ~/.oculus: what the server would have folded out of a transcript is written out by hand, so a
+// test states exactly the case it is about and the store is handed a payload the same shape the
+// socket delivers.
 
 import type {
     Area,
@@ -190,9 +191,4 @@ export function sessionsGit(hub: string): GitPayload {
         [hub]: HUB_GIT,
         '/other': git({ branch: '', repository: false, error: 'not a git repository' })
     };
-}
-
-/** The `git` payload: one state per workspace root. */
-export function gitPayload(states: Record<string, GitState>): GitPayload {
-    return states;
 }

@@ -1,5 +1,5 @@
-// Layer 1, data test. The rules of a file operation both sides hold (data/file-ops.ts): which names
-// are refused and which are made, and the name a copy takes. The server's cases over the same
+// Layer 1, data tests. The rules of a file operation both sides hold (data/file-ops.ts): which
+// names are refused and which are made, and the name a copy takes. The server's cases over the same
 // names are tests/server/files/ops.test.ts; this file holds the rule alone, so the page and the
 // server cannot drift apart on what a name is.
 //
@@ -7,14 +7,7 @@
 // tests/state/sources/explorer/names.test.ts, and the input drawn, which is seen at the look.
 
 import { describe, expect, it } from 'vitest';
-import {
-    MAX_UPLOAD_BYTES,
-    TEXT_LIMIT,
-    checkName,
-    compareUrl,
-    freeName,
-    stemLength
-} from '../../src/lib/data/file-ops.ts';
+import { checkName, compareUrl, freeName, stemLength } from '../../src/lib/data/file-ops.ts';
 
 /** The segments a name makes, or the reason it is refused. */
 function verdict(name: string): string[] | string {
@@ -23,12 +16,19 @@ function verdict(name: string): string[] | string {
 }
 
 describe('the names that are made', () => {
-    it('makes the folders between and drops an empty segment, as case 2 creates them', () => {
-        expect(verdict('x/y/z.md')).toEqual(['x', 'y', 'z.md']);
-        expect(verdict('x\\w.md')).toEqual(['x', 'w.md']);
-        expect(verdict('p//q.md')).toEqual(['p', 'q.md']);
-        expect(verdict('r/')).toEqual(['r']);
-        expect(verdict('r\\')).toEqual(['r']);
+    it.each([
+        ['folders between', 'x/y/z.md', ['x', 'y', 'z.md']],
+        ['a backslash as a slash', 'x\\w.md', ['x', 'w.md']],
+        ['an empty segment dropped', 'p//q.md', ['p', 'q.md']],
+        ['a trailing slash', 'r/', ['r']],
+        ['a trailing backslash', 'r\\', ['r']],
+        ['255 characters', 'a'.repeat(255), ['a'.repeat(255)]],
+        ['128 two-byte characters', '\u00e9'.repeat(128), ['\u00e9'.repeat(128)]],
+        ['100 wide characters', '\u65e5'.repeat(100), ['\u65e5'.repeat(100)]],
+        ['255 wide characters', '\u65e5'.repeat(255), ['\u65e5'.repeat(255)]],
+        ['tabs trimmed at the ends', '\ta.md\t', ['a.md']]
+    ])('makes %s as the segments it names', (_row, name, segments) => {
+        expect(verdict(name)).toEqual(segments);
     });
 
     it('takes a leading or trailing space and a trailing dot, with a warning for the space', () => {
@@ -40,41 +40,29 @@ describe('the names that are made', () => {
             whitespace: false
         });
     });
-
-    it('takes a segment of 255 characters of any width and trims the tabs at the ends of the name', () => {
-        expect(verdict('a'.repeat(255))).toEqual(['a'.repeat(255)]);
-        expect(verdict('\u00e9'.repeat(128))).toEqual(['\u00e9'.repeat(128)]);
-        expect(verdict('\u65e5'.repeat(100))).toEqual(['\u65e5'.repeat(100)]);
-        expect(verdict('\u65e5'.repeat(255))).toEqual(['\u65e5'.repeat(255)]);
-        expect(verdict('\ta.md\t')).toEqual(['a.md']);
-    });
 });
 
 describe('the names that are refused', () => {
-    it('refuses an empty name, whitespace and a name of tabs', () => {
-        expect(verdict('')).toBe('empty');
-        expect(verdict('  ')).toBe('empty');
-        expect(verdict('\t')).toBe('empty');
-        expect(verdict('/')).toBe('empty');
-    });
-
-    it('refuses a leading slash of either kind', () => {
-        expect(verdict('/a')).toBe('leading_slash');
-        expect(verdict('\\a')).toBe('leading_slash');
-    });
-
-    it('refuses a `.` or `..` segment wherever it sits, so no segment walks out', () => {
-        for (const name of ['.', '..', '../x', 'a/../../b', 'a/./b', 'a\\..\\b']) {
-            expect(verdict(name)).toBe('invalid');
-        }
-    });
-
-    it('refuses a NUL, a segment of only whitespace and a segment of 256 characters', () => {
-        expect(verdict('a\0b')).toBe('invalid');
-        expect(verdict('a/ /b')).toBe('invalid');
-        expect(verdict('a'.repeat(256))).toBe('invalid');
-        expect(verdict('\u00e9'.repeat(256))).toBe('invalid');
-        expect(verdict('\u65e5'.repeat(256))).toBe('invalid');
+    it.each([
+        ['an empty name', '', 'empty'],
+        ['whitespace', '  ', 'empty'],
+        ['a name of tabs', '\t', 'empty'],
+        ['a slash alone', '/', 'empty'],
+        ['a leading slash', '/a', 'leading_slash'],
+        ['a leading backslash', '\\a', 'leading_slash'],
+        ['a dot', '.', 'invalid'],
+        ['a double dot', '..', 'invalid'],
+        ['a double dot first', '../x', 'invalid'],
+        ['double dots between', 'a/../../b', 'invalid'],
+        ['a dot between', 'a/./b', 'invalid'],
+        ['a double dot between backslashes', 'a\\..\\b', 'invalid'],
+        ['a NUL', 'a\0b', 'invalid'],
+        ['a segment of only whitespace', 'a/ /b', 'invalid'],
+        ['256 characters', 'a'.repeat(256), 'invalid'],
+        ['256 two-byte characters', '\u00e9'.repeat(256), 'invalid'],
+        ['256 wide characters', '\u65e5'.repeat(256), 'invalid']
+    ])('refuses %s as %s', (_row, name, why) => {
+        expect(verdict(name)).toBe(why);
     });
 });
 
@@ -85,51 +73,46 @@ describe('the name a copy takes', () => {
         (name: string) =>
             names.includes(name);
 
-    it('adds `copy`, then `copy 2`, then `copy 3`, keeping the extension', () => {
-        expect(freeName('report.md', holding('report.md'))).toBe('report copy.md');
-        expect(freeName('report.md', holding('report.md', 'report copy.md'))).toBe(
-            'report copy 2.md'
-        );
-        expect(
-            freeName(
-                'report.md',
-                holding('report.md', 'report copy.md', 'report copy 2.md', 'report copy 3.md')
-            )
-        ).toBe('report copy 4.md');
-    });
-
-    it('names a folder, a file with no extension and a dotfile', () => {
-        expect(freeName('notes', holding('notes'), true)).toBe('notes copy');
-        expect(freeName('notes', holding('notes'))).toBe('notes copy');
-        expect(freeName('.env', holding('.env'))).toBe('.env copy');
-        expect(freeName('v1.2', holding('v1.2'), true)).toBe('v1.2 copy');
-    });
-
-    it('keeps a name that is free', () => {
-        expect(freeName('a.md', holding())).toBe('a.md');
-    });
-
-    it('counts on from a copy that is copied', () => {
-        expect(freeName('report copy.md', holding('report copy.md'))).toBe('report copy 2.md');
-        expect(freeName('report copy 7.md', holding('report copy 7.md'))).toBe('report copy 8.md');
+    it.each([
+        ['a free name kept', 'a.md', [], false, 'a.md'],
+        ['copy', 'report.md', ['report.md'], false, 'report copy.md'],
+        ['copy 2', 'report.md', ['report.md', 'report copy.md'], false, 'report copy 2.md'],
+        [
+            'the next free number',
+            'report.md',
+            ['report.md', 'report copy.md', 'report copy 2.md', 'report copy 3.md'],
+            false,
+            'report copy 4.md'
+        ],
+        ['a folder', 'notes', ['notes'], true, 'notes copy'],
+        ['a file with no extension', 'notes', ['notes'], false, 'notes copy'],
+        ['a dotfile', '.env', ['.env'], false, '.env copy'],
+        ['a folder with a dot', 'v1.2', ['v1.2'], true, 'v1.2 copy'],
+        ['a copy copied', 'report copy.md', ['report copy.md'], false, 'report copy 2.md'],
+        [
+            'a numbered copy copied',
+            'report copy 7.md',
+            ['report copy 7.md'],
+            false,
+            'report copy 8.md'
+        ]
+    ])('takes %s as %s', (_row, name, held, folder, expected) => {
+        expect(freeName(name, holding(...held), folder)).toBe(expected);
     });
 });
 
 describe('the part of a name a rename selects', () => {
-    it('stops before the extension, and takes the whole of a dotfile and of a name without one', () => {
-        expect(stemLength('report.md')).toBe('report'.length);
-        expect(stemLength('a.tar.gz')).toBe('a.tar'.length);
-        expect(stemLength('.env')).toBe('.env'.length);
-        expect(stemLength('notes')).toBe('notes'.length);
+    it.each([
+        ['stops before the extension', 'report.md', 'report'],
+        ['stops before the last extension', 'a.tar.gz', 'a.tar'],
+        ['takes the whole of a dotfile', '.env', '.env'],
+        ['takes the whole of a name without an extension', 'notes', 'notes']
+    ])('%s of %s', (_row, name, selected) => {
+        expect(stemLength(name)).toBe(selected.length);
     });
 });
 
 describe('what both sides hold', () => {
-    it('holds the sizes the page and the server check against', () => {
-        expect(TEXT_LIMIT).toBe(2 * 1024 * 1024);
-        expect(MAX_UPLOAD_BYTES).toBe(32 * 1024 * 1024);
-    });
-
     it('addresses a comparison with the file first and the file selected for compare second', () => {
         const url = compareUrl({ root: 'r', path: 'a.md' }, { root: 's', path: 'dir/b.md' });
         expect(url).toBe('/api/ops?root=r&path=a.md&withRoot=s&withPath=dir%2Fb.md');

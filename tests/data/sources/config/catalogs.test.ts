@@ -1,6 +1,6 @@
-// The icon, glyph and behavior findings and the theme findings of the merged config, over a config
-// whose keys hold a value of the wrong type at each place the readers look. Findings are compared
-// whole, in order, with the file each names.
+// Layer 1, data tests. The icon, glyph and behavior findings and the theme findings of the merged
+// config, over a config whose keys hold a value of the wrong type at each place the readers look.
+// Findings are compared whole, in order, with the file each names.
 
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';

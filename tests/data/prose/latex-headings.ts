@@ -1,7 +1,7 @@
-// The sectioning lines of three real LaTeX files, each with the headings the reader must find in
-// them: one string per line in file order. Each file as a whole is refused by the parser, and the
-// tests append a stray closing brace to the lines, which the parser refuses as well, so each text
-// holds only the lines the case reads.
+// Layer 4, test helper. The sectioning lines of three real LaTeX files, each with the headings the
+// reader must find in them: one string per line in file order. Each file as a whole is refused by
+// the parser, and the tests append a stray closing brace to the lines, which the parser refuses as
+// well, so each text holds only the lines the case reads.
 
 /** The sectioning lines of a funding application main file: 20 headings. */
 export const FUNDING = {

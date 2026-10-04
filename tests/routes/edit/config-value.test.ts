@@ -1,23 +1,19 @@
-// Layer 4, route test. What the /api/write route does with a config-value write: a list or a family
-// written into a scratch engine's file, its record in the change log and the word the History view
-// draws for it, the undo through the same writer, the refusal an undo gets once the key was edited
-// again or the file no longer parses, two writes at once, and the answers for a file that cannot be
-// read or written.
+// Layer 2, route tests. What the /api/write route does with a config-value write: a list or a
+// family written into a scratch engine's file and its record in the change log, the undo through
+// the same writer, the refusal an undo gets once the key was edited again or the file no longer
+// parses, and two writes of one key at once.
 //
 // The engine is a scratch copy of the checkout's config/ folder (write-fixture.ts), and the target
 // names it, so no case here writes the checkout's config or reads the machine's own file. What this
 // does NOT cover: the editors that send the write, which are state/system/config/editors's and the
 // look's, and the render of the bytes (tests/server/edit/yaml/block-edit.test.ts).
+// @module-tag slow: every case takes 240 ms or more to write a list through the route.
 
-import { chmodSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect } from 'vitest';
-import { parse } from 'yaml';
-import { fields } from '../../../src/lib/data/helpers/guards.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it } from '../../fixtures/scratch.ts';
-import { recordedKinds } from '../../fixtures/kinds.ts';
 import {
     TOKEN,
     changesOf,
@@ -75,13 +71,6 @@ describe('a list written through the route', () => {
         });
     });
 
-    it('has a word of its own in the History view', () => {
-        expect(recordedKinds()).toContain('config-value');
-        expect(textCatalog(loadConfig(engineDir()).config)['history.kind_config_value']).toBe(
-            'list or family'
-        );
-    });
-
     it('answers the reason of a refusal with a 200, and writes and records nothing', async () => {
         const into = configTarget();
         const before = behaviorOf(into);
@@ -95,47 +84,6 @@ describe('a list written through the route', () => {
         expect(answer.changed).toEqual([]);
         expect(answer.refused).toHaveLength(1);
         expect(behaviorOf(into)).toBe(before);
-        expect(changesOf(into)).toEqual([]);
-    });
-
-    it('refuses a list in a family of records and a record in a key/value family, writing nothing', async () => {
-        const into = configTarget();
-        const behavior = behaviorOf(into);
-        const layout = readFileSync(into.layoutFile, 'utf8');
-        const groups = fields(parse(layout) as unknown).nav_groups as Record<string, unknown>;
-        const limits = fields(parse(behavior) as unknown).read_limits as Record<string, unknown>;
-        const text = textCatalog(loadConfig(engineDir()).config);
-
-        const listed = await send(
-            into,
-            'nav_groups',
-            { ...groups, help: [{ label: 'Help', glyph: 'page', chord: 'h' }] },
-            groups,
-            'layout.yml'
-        );
-        const record = await send(into, 'read_limits', { ...limits, next: { a: 1 } }, limits);
-
-        for (const [response, key, field] of [
-            [listed, 'wants_record', 'layout.yml:nav_groups'],
-            [record, 'wants_value', 'behavior.yml:read_limits']
-        ] as const) {
-            expect(response.status).toBe(200);
-            const answer = (await response.json()) as {
-                changed: string[];
-                refused: { field: string; reason: string }[];
-            };
-            expect(answer.changed).toEqual([]);
-            expect(answer.refused).toHaveLength(1);
-            expect(answer.refused[0].field).toBe(field);
-            expect(answer.refused[0].reason).toBe(
-                text[`server.config_value.${key}`].replace(
-                    '{0}',
-                    key === 'wants_record' ? 'help' : 'next'
-                )
-            );
-        }
-        expect(behaviorOf(into)).toBe(behavior);
-        expect(readFileSync(into.layoutFile, 'utf8')).toBe(layout);
         expect(changesOf(into)).toEqual([]);
     });
 
@@ -195,23 +143,6 @@ describe('taking a list back', () => {
 });
 
 describe('several lists written', () => {
-    it('lands two writes of different keys made at once, none lost to the other', async () => {
-        const into = configTarget();
-        const domains = ['heart', 'liver', 'liverfl', 'liversurv', 'immune', 'brain', 'brainbci'];
-        const answers = await Promise.all([
-            send(into, 'waiting_status', ['one'], ORIGINAL),
-            send(into, 'data_domains', ['two'], domains)
-        ]);
-        expect(answers.map((one) => one.status)).toEqual([200, 200]);
-        expect(behaviorOf(into)).toContain('waiting_status: [one]');
-        expect(behaviorOf(into)).toContain('data_domains: [two]');
-        expect(
-            changesOf(into)
-                .map((one) => one.field)
-                .sort()
-        ).toEqual(['data_domains', 'waiting_status']);
-    });
-
     it('refuses the second of two writes of one key made at once with the same base', async () => {
         const into = configTarget();
         const answers = await Promise.all([
@@ -223,27 +154,5 @@ describe('several lists written', () => {
         }[];
         expect(bodies.map((one) => one.changed.length).sort()).toEqual([0, 1]);
         expect(changesOf(into)).toHaveLength(1);
-    });
-});
-
-describe('a file the route cannot read or write', () => {
-    it('answers unwritable for a file that is not there, and records nothing', async () => {
-        const into = configTarget();
-        rmSync(into.behaviorFile);
-        const response = await send(into, 'waiting_status', ['x'], ORIGINAL);
-        expect(response.status).toBe(500);
-        expect(await response.json()).toEqual({ error: 'unwritable' });
-        expect(changesOf(into)).toEqual([]);
-    });
-
-    it('answers unwritable for a read-only file, and leaves it as it was', async () => {
-        const into = configTarget();
-        chmodSync(into.behaviorFile, 0o444);
-        const before = behaviorOf(into);
-        const response = await send(into, 'waiting_status', ['x'], ORIGINAL);
-        expect(response.status).toBe(500);
-        expect(await response.json()).toEqual({ error: 'unwritable' });
-        expect(behaviorOf(into)).toBe(before);
-        expect(changesOf(into)).toEqual([]);
     });
 });

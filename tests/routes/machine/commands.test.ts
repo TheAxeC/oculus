@@ -1,12 +1,14 @@
-// Layer 2, server test. GET and POST /api/commands: the listing of a repository's commands, the
+// Layer 2, route tests. GET and POST /api/commands: the listing of a repository's commands, the
 // approval of the chain a run asks for, and the saves and removes of the form, with the names and
-// lines a save refuses and the write that is read back. The handlers are
-// called with a scratch repository as the one served root, a scratch home, a write chain and a
-// change log in the scratch home.
+// lines a save refuses and the write that is read back. The handlers are called with a scratch
+// repository as the one served root, a scratch home, a write chain and a change log in the scratch
+// home.
 //
 // What this does NOT cover: the origin rule, which hooks.server.ts applies to every request under
 // /api/ before a route sees it (tests/server/root/hooks-server.test.ts), and the page's store
 // (tests/state/sessions/terminal/commands.test.ts).
+//
+// A case that takes 100 ms or more in a run of its own is tagged slow; the others run in npm test.
 
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -260,33 +262,37 @@ describe('POST /api/commands', () => {
         });
     });
 
-    it('replaces a saved command of the same name and removes one', async () => {
-        const save = (run: string) =>
-            handleCommandsPost(
-                post({ action: 'save', repo, command: { name: 'lint', run } }),
+    it(
+        'replaces a saved command of the same name and removes one',
+        { tags: ['slow'] },
+        async () => {
+            const save = (run: string) =>
+                handleCommandsPost(
+                    post({ action: 'save', repo, command: { name: 'lint', run } }),
+                    TOKEN,
+                    mine()
+                );
+            await save('one');
+            await save('two');
+            const file = join(home, '.oculus', 'commands.json');
+            expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({
+                [repo]: [{ name: 'lint', run: 'two' }]
+            });
+            const removed = await handleCommandsPost(
+                post({ action: 'remove', repo, name: 'lint' }),
                 TOKEN,
                 mine()
             );
-        await save('one');
-        await save('two');
-        const file = join(home, '.oculus', 'commands.json');
-        expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({
-            [repo]: [{ name: 'lint', run: 'two' }]
-        });
-        const removed = await handleCommandsPost(
-            post({ action: 'remove', repo, name: 'lint' }),
-            TOKEN,
-            mine()
-        );
-        expect(removed.status).toBe(200);
-        expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({});
-        const missing = await handleCommandsPost(
-            post({ action: 'remove', repo, name: 'lint' }),
-            TOKEN,
-            mine()
-        );
-        expect(missing.status).toBe(404);
-    });
+            expect(removed.status).toBe(200);
+            expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({});
+            const missing = await handleCommandsPost(
+                post({ action: 'remove', repo, name: 'lint' }),
+                TOKEN,
+                mine()
+            );
+            expect(missing.status).toBe(404);
+        }
+    );
 
     it('removes one command and leaves the rest of the repository and the other repositories', async () => {
         const file = join(home, '.oculus', 'commands.json');
@@ -316,77 +322,74 @@ describe('POST /api/commands', () => {
         expect(Object.keys(after)).toEqual([other, repo]);
     });
 
-    it('keeps every save of requests in flight together, in the order they came', async () => {
-        const sent = ['a', 'b', 'c', 'd'].map((name) =>
-            handleCommandsPost(
-                post({ action: 'save', repo, command: { name, run: name } }),
-                TOKEN,
-                mine()
-            )
-        );
-        expect((await Promise.all(sent)).map((one) => one.status)).toEqual([200, 200, 200, 200]);
-        const file = join(home, '.oculus', 'commands.json');
-        expect(
-            (JSON.parse(readFileSync(file, 'utf8')) as Record<string, { name: string }[]>)[
-                repo
-            ].map((one) => one.name)
-        ).toEqual(['a', 'b', 'c', 'd']);
-    });
+    it(
+        'keeps every save of requests in flight together, in the order they came',
+        { tags: ['slow'] },
+        async () => {
+            const sent = ['a', 'b', 'c', 'd'].map((name) =>
+                handleCommandsPost(
+                    post({ action: 'save', repo, command: { name, run: name } }),
+                    TOKEN,
+                    mine()
+                )
+            );
+            expect((await Promise.all(sent)).map((one) => one.status)).toEqual([
+                200, 200, 200, 200
+            ]);
+            const file = join(home, '.oculus', 'commands.json');
+            expect(
+                (JSON.parse(readFileSync(file, 'utf8')) as Record<string, { name: string }[]>)[
+                    repo
+                ].map((one) => one.name)
+            ).toEqual(['a', 'b', 'c', 'd']);
+        }
+    );
 
-    it('refuses a saved name that the repository file already holds, writing nothing', async () => {
+    it.each([
+        [
+            'the repository file already holds',
+            (): void => undefined,
+            { name: 'build', run: 'make other' },
+            'build is already a command in .oculus/commands.yml of this repository, so it cannot be saved under that name'
+        ],
+        [
+            'a command found in the repository holds',
+            (): void => plant(repo, 'package.json', JSON.stringify({ scripts: { dev: 'vite' } })),
+            { name: 'npm: dev', run: 'vite' },
+            'npm: dev is already a command found in this repository, so it cannot be saved under that name'
+        ]
+    ])('refuses a saved name that %s, writing nothing', async (_row, setup, command, error) => {
+        setup();
         const response = await handleCommandsPost(
-            post({ action: 'save', repo, command: { name: 'build', run: 'make other' } }),
+            post({ action: 'save', repo, command }),
             TOKEN,
             mine()
         );
         expect(response.status).toBe(400);
-        expect((await answer(response)).error).toBe(
-            'build is already a command in .oculus/commands.yml of this repository, so it cannot be saved under that name'
-        );
+        expect((await answer(response)).error).toBe(error);
         expect(() => readFileSync(join(home, '.oculus', 'commands.json'))).toThrow();
         expect(readChanges(log)).toEqual([]);
     });
 
-    it('refuses a saved name that a command found in the repository holds, writing nothing', async () => {
-        plant(repo, 'package.json', JSON.stringify({ scripts: { dev: 'vite' } }));
-        const response = await handleCommandsPost(
-            post({ action: 'save', repo, command: { name: 'npm: dev', run: 'vite' } }),
-            TOKEN,
-            mine()
-        );
-        expect(response.status).toBe(400);
-        expect((await answer(response)).error).toBe(
-            'npm: dev is already a command found in this repository, so it cannot be saved under that name'
-        );
-        expect(() => readFileSync(join(home, '.oculus', 'commands.json'))).toThrow();
-    });
-
-    it('saves again a name that only the saved list holds', async () => {
-        const save = (run: string) =>
-            handleCommandsPost(
-                post({ action: 'save', repo, command: { name: 'lint', run } }),
-                TOKEN,
-                mine()
-            );
-        expect((await save('one')).status).toBe(200);
-        expect((await save('two')).status).toBe(200);
-    });
-
-    it('saves a line that writes a placeholder inside quotes, after a backslash or in a comment', async () => {
-        for (const run of [
-            'echo "${selectedText}"',
-            "echo '${file}'",
-            'echo \\${selectedText}',
-            'make # ${selectedText}'
-        ]) {
-            const response = await handleCommandsPost(
-                post({ action: 'save', repo, command: { name: 'say', run } }),
-                TOKEN,
-                mine()
-            );
-            expect(response.status, run).toBe(200);
+    it(
+        'saves a line that writes a placeholder inside quotes, after a backslash or in a comment',
+        { tags: ['slow'] },
+        async () => {
+            for (const run of [
+                'echo "${selectedText}"',
+                "echo '${file}'",
+                'echo \\${selectedText}',
+                'make # ${selectedText}'
+            ]) {
+                const response = await handleCommandsPost(
+                    post({ action: 'save', repo, command: { name: 'say', run } }),
+                    TOKEN,
+                    mine()
+                );
+                expect(response.status, run).toBe(200);
+            }
         }
-    });
+    );
 
     it('refuses a save whose read-back is not what was written, answering the reason', async () => {
         const actual = await vi.importActual<typeof import('../../../src/lib/server/core/json.ts')>(

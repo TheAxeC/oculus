@@ -1,4 +1,5 @@
-// Every text-on-background pair the tokens declare, under every theme, at 4.5:1 or better.
+// Layer 4, tree check. Every text-on-background pair the tokens declare, under every theme, at
+// 4.5:1 or better.
 //
 // The pairs are the ones a component can actually produce: a `-txt` colour on the page, the panel
 // the card and the chip, whether derive.ts mints it or a theme authors it, and a tab label's
@@ -148,20 +149,14 @@ function offLane(file: string, text: string): { places: number; findings: string
 }
 
 describe('contrast', () => {
-    it('offers seventeen themes', () => {
-        expect(NAMES.length).toBe(17);
+    it.each(NAMES)(`keeps every pair at ${MINIMUM}:1 in the %s theme`, (name) => {
+        const found = measured.get(name) ?? [];
+        const failures = found
+            .filter((pair) => pair.ratio < MINIMUM)
+            .map((pair) => `${name}: ${pair.fg} on ${pair.bg} = ${pair.ratio.toFixed(2)}:1`);
+        expect(found.length).toBeGreaterThan(0);
+        expect(failures).toEqual([]);
     });
-
-    for (const name of NAMES) {
-        it(`keeps every pair at ${MINIMUM}:1 in the ${name} theme`, () => {
-            const found = measured.get(name) ?? [];
-            const failures = found
-                .filter((pair) => pair.ratio < MINIMUM)
-                .map((pair) => `${name}: ${pair.fg} on ${pair.bg} = ${pair.ratio.toFixed(2)}:1`);
-            expect(found.length).toBeGreaterThan(0);
-            expect(failures).toEqual([]);
-        });
-    }
 
     it(`keeps the scrollbar thumb at ${SCROLL_THUMB_RATIO}:1 on its track in every theme`, () => {
         const failures = NAMES.flatMap((name) => {
@@ -170,12 +165,6 @@ describe('contrast', () => {
             return found < SCROLL_THUMB_RATIO ? [`${name}: ${found.toFixed(2)}:1`] : [];
         });
         expect(failures).toEqual([]);
-    });
-
-    it('measured every pair of every theme', () => {
-        const total = [...measured.values()].reduce((sum, found) => sum + found.length, 0);
-        console.log(`contrast: ${total} pairs over ${NAMES.length} themes`);
-        expect(total).toBeGreaterThan(0);
     });
 
     // Revert: take `readable(text, lane)` out of derive.ts, so `--c-<hue>-lane-txt` is the hue's

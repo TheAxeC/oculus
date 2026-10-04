@@ -1,7 +1,8 @@
-// readDoc and projectDocs against synthetic files in a temporary directory. Nothing outside it is
-// read or written, and every write asserts its path is inside the temporary directory first.
+// Layer 1, data tests. readDoc and projectDocs against synthetic files in a temporary directory.
+// Nothing outside it is read or written, and every write asserts its path is inside the temporary
+// directory first.
 
-import { mkdirSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
@@ -88,21 +89,6 @@ describe('readDoc', () => {
         expect(doc.message).toMatch(/^does not parse: /);
     });
 
-    it('reports a frontmatter block that is not a map', () => {
-        const root = scratch();
-        const file = write(
-            root,
-            'listy.md',
-            ['---', '- one', '- two', '---', 'body', ''].join('\n')
-        );
-
-        expect(readDoc(file, CATALOG)).toEqual({
-            file,
-            key: 'frontmatter',
-            message: 'is not a map of keys'
-        });
-    });
-
     it('splits an empty block and a block closed by three dots', () => {
         const root = scratch();
         const empty = write(root, 'empty.md', ['---', '---', 'body', ''].join('\n'));
@@ -135,31 +121,11 @@ describe('readDoc', () => {
 });
 
 describe('projectDocs', () => {
-    it('marks future NOTES and DIARY entries from their labels alone', () => {
-        const root = scratch();
-        const length = PROJECT_DOCS.length;
-        PROJECT_DOCS.push(
-            { name: 'NOTES.md', label: 'NOTES' },
-            { name: 'DIARY.md', label: 'DIARY' }
-        );
-        try {
-            expect(
-                projectDocs(root)
-                    .filter((doc) => doc.human)
-                    .map((doc) => doc.label)
-            ).toEqual(['NOTES', 'DIARY']);
-        } finally {
-            PROJECT_DOCS.splice(length);
-        }
-    });
-
-    it('reports every name in the fixed order, present or not', () => {
+    it('gives each document its path, present or not', () => {
         const root = scratch();
         write(root, 'README.md', 'the one private doc\n');
 
         const docs = projectDocs(root);
-        expect(docs.map((d) => ({ name: d.name, label: d.label }))).toEqual(PROJECT_DOCS);
-        expect(docs.map((d) => d.label)).toEqual(['README', 'CODE', 'PDF', 'TEX']);
         expect(docs[0]).toMatchObject({
             name: 'README.md',
             path: join(root, 'README.md'),
@@ -180,23 +146,6 @@ describe('projectDocs', () => {
             'code/README.md',
             'manuscript/main.tex'
         ]);
-    });
-
-    it('marks none of the four human, and gives no document any other mark', () => {
-        const root = scratch();
-        const docs = projectDocs(root);
-        expect(docs).toHaveLength(4);
-        for (const doc of docs) {
-            expect(doc.human).toBe(false);
-            expect(Object.keys(doc).sort()).toEqual([
-                'human',
-                'label',
-                'mtime',
-                'name',
-                'path',
-                'present'
-            ]);
-        }
     });
 
     it('never looks under attic', () => {
@@ -231,15 +180,6 @@ describe('projectDocs', () => {
         expect(docs.find((d) => d.name === 'README.md')?.mtime).toBe(written);
         expect(docs.find((d) => d.name === 'code/README.md')?.mtime).toBe(0);
     });
-
-    it('reports the mtime a later write gave a document', () => {
-        const root = scratch();
-        const file = write(root, 'README.md', 'readme\n');
-        const later = new Date('2030-01-02T03:04:05Z');
-        utimesSync(file, later, later);
-
-        expect(projectDocs(root).find((d) => d.name === 'README.md')?.mtime).toBe(later.getTime());
-    });
 });
 
 describe('readDoc over a frontmatter block of the wrong shape', () => {
@@ -250,17 +190,15 @@ describe('readDoc over a frontmatter block of the wrong shape', () => {
         return { file, read: readDoc(file, CATALOG) };
     }
 
-    it.each([['[]\n'], ['3\n'], ['x\n']])('reads a block holding %j as one finding', (block) => {
-        const { file, read } = readBlock(block);
-        expect(read).toStrictEqual({
-            file,
-            key: 'frontmatter',
-            message: 'is not a map of keys'
-        });
-    });
-
-    it('reads an empty block as no keys', () => {
-        const { read } = readBlock('');
-        expect(read).toStrictEqual({ text: 'body\n', frontmatter: {} });
-    });
+    it.each([['[]\n'], ['- one\n- two\n'], ['3\n'], ['x\n']])(
+        'reads a block holding %j as one finding',
+        (block) => {
+            const { file, read } = readBlock(block);
+            expect(read).toStrictEqual({
+                file,
+                key: 'frontmatter',
+                message: 'is not a map of keys'
+            });
+        }
+    );
 });

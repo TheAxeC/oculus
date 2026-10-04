@@ -1,6 +1,6 @@
-// sources/feeds.ts over a synthetic hub: every feed shape, a hub with none of them, and a broken
-// one. The files are written under mkdtemp and every path is checked to be inside it before
-// anything is written; nothing here touches the real hub.
+// Layer 1, data tests. sources/feeds.ts over a synthetic hub: every feed shape, a hub with none of
+// them, and a broken one. The files are written under mkdtemp and every path is checked to be
+// inside it before anything is written; nothing here touches the real hub.
 //
 // What this does NOT cover: the feed views themselves. This reads the counts and run dates the
 // command center needs, and the Inbox, Lit Watch and Position Leads views read the entries.

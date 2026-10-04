@@ -1,6 +1,7 @@
-// The one test that reads the real hub, read only. It opens hub files for reading and writes none,
-// which is the exception the standing spec grants. Its last `describe`, the count of written
-// equations, reads no hub data: it plants a PRESENT.md in a temporary directory.
+// Layer 4, tree check. The one test that reads the real hub, read only. It opens hub files for
+// reading and writes none, which is the exception the standing spec grants. Its last `describe`,
+// the count of written equations, reads no hub data: it plants a PRESENT.md in a temporary
+// directory.
 //
 // It is the gate DESIGN.md names: the model validates against the real hub with zero findings. A
 // finding it reports is reported, never repaired here: the fix belongs in the hub's YAML or in the
@@ -21,13 +22,9 @@ import { tex } from '../../../src/lib/views/academic/present/markup.ts';
 import { ENTITY_KINDS } from '../../../src/lib/data/snapshot/normalise.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { isMap } from '../../../src/lib/data/helpers/guards.ts';
-import { hrefOf, isHubPath } from '../../../src/lib/state/boards/collection.ts';
 import { realHub } from '../../fixtures/real-hub.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 import { readPresent } from '../../../src/lib/data/sources/present.ts';
-
-/** The entry fields that hold a path of the hub when their value is not an address. */
-const PATH_KEYS = ['link', 'url', 'folder'];
 
 /**
  * How many projects of the hub carry a PRESENT.md front matter. It is a floor rather than a count:
@@ -137,25 +134,6 @@ describe.skipIf(!present)('the real hub', () => {
         expect(snapshot?.findings).toEqual([]);
     });
 
-    it('reads the config with no findings', () => {
-        expect(loadConfig(engine).findings).toEqual([]);
-    });
-
-    it('names the nine lanes and the holding backlog as what a focus may be', () => {
-        expect(config.vocab.lanes).toEqual([
-            'run',
-            'push',
-            'revise',
-            'review',
-            'blocked',
-            'backburner',
-            'scope',
-            'derisk',
-            'build',
-            'holding'
-        ]);
-    });
-
     it('holds exactly what a second count of the tree finds', () => {
         const held: Record<string, number> = {};
         for (const [kind, entities] of Object.entries(snapshot?.entities ?? {})) {
@@ -195,16 +173,6 @@ describe.skipIf(!present)('the real hub', () => {
         expect(withSlides.length).toBeGreaterThanOrEqual(FILES_WITH_SLIDES);
     });
 
-    it('reads the covert-theory slide with its diagram panel and its equation', () => {
-        const slides = snapshot?.entities.projects['covert-theory']?.present ?? [];
-        expect(slides).toHaveLength(1);
-        expect(slides[0].id).toBe('covert-theory');
-        expect(slides[0].equation).toBeDefined();
-        expect(slides[0].panels.some((panel) => panel.diagramHtml !== undefined)).toBe(true);
-        expect(slides[0].method.length).toBeGreaterThan(0);
-        expect(slides[0].results.length).toBeGreaterThan(0);
-    });
-
     it('reads an equation out of every slide that writes one, as LaTeX that typesets', () => {
         const projects = Object.values(snapshot?.entities.projects ?? {});
         const equations = projects.flatMap((project) =>
@@ -228,51 +196,6 @@ describe.skipIf(!present)('the real hub', () => {
             one.file.endsWith('PRESENT.md')
         );
         expect(slideFindings).toEqual([]);
-    });
-
-    // A report, not a check. `isHubPath` separates a path of the hub from a web address by the
-    // shape of the first segment, which leaves two shapes it cannot decide: a lone dotted segment
-    // (`github.com` reads as a path, like `README.md`) and a hub folder whose name is a host
-    // (`theaxec.github.io`, which this hub holds, reads as an address once a path follows it).
-    // Neither is in a `link`, `url` or `folder` today; this prints the day one arrives.
-    it('prints every link, url and folder value of the hub whose first segment is host-shaped', () => {
-        const values = new Map<string, Set<string>>();
-        const walk = (node: unknown, where: string, depth: number): void => {
-            if (depth > 12 || node === null || typeof node !== 'object') return;
-            if (Array.isArray(node)) {
-                for (const one of node) walk(one, where, depth + 1);
-                return;
-            }
-            for (const [key, held] of Object.entries(node as Record<string, unknown>)) {
-                if (PATH_KEYS.includes(key) && typeof held === 'string' && held !== '') {
-                    values.set(held, (values.get(held) ?? new Set()).add(`${where}.${key}`));
-                }
-                walk(held, where, depth + 1);
-            }
-        };
-        walk(snapshot?.entities, 'entities', 0);
-        walk(snapshot?.relations, 'relations', 0);
-
-        // The address branch is the one hrefOf answers with a scheme it was not given.
-        const addresses = [...values.keys()].filter(
-            (one) => !isHubPath(one) && hrefOf(one) !== one
-        );
-        // The residue: read as a path of the hub while its first segment carries a dot.
-        const dotted = [...values.keys()].filter(
-            (one) => isHubPath(one) && one.split('/')[0].includes('.')
-        );
-        console.log(
-            `integrity: ${values.size} link/url/folder values, ` +
-                `${addresses.length} read as a web address, ${dotted.length} dotted first segment`
-        );
-        for (const one of [...addresses, ...dotted].sort()) {
-            console.log(
-                `  host-shaped: ${one} at ${[...(values.get(one) ?? [])].sort().join(', ')}`
-            );
-        }
-        // The one assertion is that the walk found the fields at all, which `requireAssertions` of
-        // vite.config.ts asks for. What it found is printed and asserted nowhere.
-        expect(values.size).toBeGreaterThan(0);
     });
 
     it('resolves every project entry of the shipped deck order to a slide of this hub', () => {

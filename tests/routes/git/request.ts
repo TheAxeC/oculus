@@ -1,10 +1,13 @@
-// The requests the /api/git route tests send: the host the route is reached on and a same-origin
-// POST carrying the token.
+// Layer 4, test helper. The requests the /api/git route tests send: the host the route is reached
+// on and a same-origin POST carrying the token.
 
 /** The host of the route under test. */
 export const HOST = '127.0.0.1:8791';
 
-/** A same-origin JSON POST to /api/git with the token, `headers` laid over the usual ones. */
+/**
+ * A same-origin POST to /api/git with the token, `headers` laid over the usual ones. A body that
+ * is text is sent as it is, so a case can send what is no JSON; any other body is sent as JSON.
+ */
 export function gitPost(
     token: string,
     body: unknown,
@@ -20,6 +23,6 @@ export function gitPost(
             'x-oculus-token': token,
             ...headers
         },
-        body: JSON.stringify(body)
+        body: typeof body === 'string' ? body : JSON.stringify(body)
     });
 }

@@ -1,12 +1,11 @@
-// Layer 2, server test fixture. The synthetic hub, state folder and engine directories the terminal
-// route suites read, the tmux double that records every argv and runs nothing, and the helpers that
-// build a request and the options bag handleTerminal is called with. Nothing here runs tmux,
-// `claude` or `codex`; the only real path is the temporary directory the helper hands out.
+// Layer 4, test helper. The synthetic hub, state folder and engine directories the terminal route
+// suites read, the tmux double that records every argv and runs nothing, and the helpers that build
+// a request and the options bag handleTerminal is called with. Nothing here runs tmux, `claude` or
+// `codex`; the only real path is the temporary directory the helper hands out.
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { expect } from 'vitest';
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { type TerminalOptions } from '../../../src/lib/server/machine/pty/routes.ts';
@@ -14,9 +13,6 @@ import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/source
 import type { SessionRecord } from '../../../src/lib/data/model/index.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 import { pagePost } from '../../fixtures/doubles.ts';
-
-/** This file's own directory, for reading the route module beside the source it tests. */
-export const HERE_FILE = fileURLToPath(import.meta.url);
 
 export const HOST = '127.0.0.1:8791';
 
@@ -188,7 +184,7 @@ export function request(body: unknown, token: string = TOKEN): Request {
 }
 
 /** Quote an expected CLI argument independently of the server's command builder. */
-export function shellWord(value: string): string {
+function shellWord(value: string): string {
     return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
 

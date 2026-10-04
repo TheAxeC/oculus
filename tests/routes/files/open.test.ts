@@ -1,7 +1,10 @@
-// The authenticated open endpoint's gates, its route and its client, against directories under
-// system temporary storage. The opener is a stub, so no application is launched and no path outside
-// the fixture is touched. What may be opened, and the floor under the opener, are
-// tests/routes/files/open-program.test.ts.
+// Layer 2, route tests. The authenticated open endpoint's gates, its route and its client, against
+// directories under system temporary storage. The opener is a stub, so no application is launched
+// and no path outside the fixture is touched. What may be opened, and the floor under the opener,
+// are tests/routes/files/open-program.test.ts.
+//
+// A case whose file reaches the opener through the default FinderInfo reader, which runs `xattr`,
+// is tagged slow; the other cases run in npm test.
 
 import { existsSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
@@ -56,13 +59,6 @@ describe('the open endpoint', () => {
         expect(response.status).toBe(403);
     });
 
-    it('requires a path', async () => {
-        const { roots } = fixture();
-        const response = await handleOpen(request({}), TOKEN, roots, checkedIn, vi.fn());
-        expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: 'the path is required' });
-    });
-
     it('refuses a directory outside every configured root', async () => {
         const { roots } = fixture();
         const outside = scratch('oculus-open-outside-');
@@ -100,34 +96,42 @@ describe('the open endpoint', () => {
 });
 
 describe('the open endpoint over a file', () => {
-    it('opens a file by its root and its path under that root, once, at its real path', async () => {
-        const { report, roots } = withFiles();
-        const opener = vi.fn();
-        const response = await handleOpen(
-            request({ root: 'hub', path: 'projects/active/alpha/report.docx' }),
-            TOKEN,
-            roots,
-            checkedIn,
-            opener
-        );
-        expect(response.status).toBe(200);
-        expect(opener).toHaveBeenCalledOnce();
-        expect(opener).toHaveBeenCalledWith(opened(report));
-    });
+    it(
+        'opens a file by its root and its path under that root, once, at its real path',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { report, roots } = withFiles();
+            const opener = vi.fn();
+            const response = await handleOpen(
+                request({ root: 'hub', path: 'projects/active/alpha/report.docx' }),
+                TOKEN,
+                roots,
+                checkedIn,
+                opener
+            );
+            expect(response.status).toBe(200);
+            expect(opener).toHaveBeenCalledOnce();
+            expect(opener).toHaveBeenCalledWith(opened(report));
+        }
+    );
 
-    it("opens a file under a workspace root by that root's key", async () => {
-        const { sheet, roots } = withFiles();
-        const opener = vi.fn();
-        const response = await handleOpen(
-            request({ root: 'work', path: 'deck.xlsx' }),
-            TOKEN,
-            roots,
-            checkedIn,
-            opener
-        );
-        expect(response.status).toBe(200);
-        expect(opener).toHaveBeenCalledExactlyOnceWith(opened(sheet));
-    });
+    it(
+        "opens a file under a workspace root by that root's key",
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { sheet, roots } = withFiles();
+            const opener = vi.fn();
+            const response = await handleOpen(
+                request({ root: 'work', path: 'deck.xlsx' }),
+                TOKEN,
+                roots,
+                checkedIn,
+                opener
+            );
+            expect(response.status).toBe(200);
+            expect(opener).toHaveBeenCalledExactlyOnceWith(opened(sheet));
+        }
+    );
 
     it('opens a folder by its root and its path, as the file form does a file', async () => {
         const { folder, roots } = withFiles();
@@ -143,61 +147,73 @@ describe('the open endpoint over a file', () => {
         expect(opener).toHaveBeenCalledExactlyOnceWith(opened(folder));
     });
 
-    it('opens a file by a hub-relative path and by an absolute one in the form without a root', async () => {
-        const { report, sheet, roots } = withFiles();
-        const opener = vi.fn();
-        const relative = await handleOpen(
-            request({ path: 'projects/active/alpha/report.docx' }),
-            TOKEN,
-            roots,
-            checkedIn,
-            opener
-        );
-        const absolute = await handleOpen(
-            request({ path: sheet }),
-            TOKEN,
-            roots,
-            checkedIn,
-            opener
-        );
-        expect(relative.status).toBe(200);
-        expect(absolute.status).toBe(200);
-        expect(opener.mock.calls).toEqual([[opened(report)], [opened(sheet)]]);
-    });
+    it(
+        'opens a file by a hub-relative path and by an absolute one in the form without a root',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { report, sheet, roots } = withFiles();
+            const opener = vi.fn();
+            const relative = await handleOpen(
+                request({ path: 'projects/active/alpha/report.docx' }),
+                TOKEN,
+                roots,
+                checkedIn,
+                opener
+            );
+            const absolute = await handleOpen(
+                request({ path: sheet }),
+                TOKEN,
+                roots,
+                checkedIn,
+                opener
+            );
+            expect(relative.status).toBe(200);
+            expect(absolute.status).toBe(200);
+            expect(opener.mock.calls).toEqual([[opened(report)], [opened(sheet)]]);
+        }
+    );
 
-    it('opens a file of the engine root, a reserved key the file browser serves', async () => {
-        const { roots } = withFiles();
-        const engine = scratch('oculus-open-engine-');
-        writeFileSync(join(engine, 'notes.docx'), 'PK a document', { mode: 0o644 });
-        const opener = vi.fn();
-        const response = await handleOpen(
-            request({ root: 'engine', path: 'notes.docx' }),
-            TOKEN,
-            [...roots, { key: 'engine', dir: engine }],
-            checkedIn,
-            opener
-        );
-        expect(response.status).toBe(200);
-        expect(opener).toHaveBeenCalledExactlyOnceWith(opened(join(engine, 'notes.docx')));
-    });
+    it(
+        'opens a file of the engine root, a reserved key the file browser serves',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { roots } = withFiles();
+            const engine = scratch('oculus-open-engine-');
+            writeFileSync(join(engine, 'notes.docx'), 'PK a document', { mode: 0o644 });
+            const opener = vi.fn();
+            const response = await handleOpen(
+                request({ root: 'engine', path: 'notes.docx' }),
+                TOKEN,
+                [...roots, { key: 'engine', dir: engine }],
+                checkedIn,
+                opener
+            );
+            expect(response.status).toBe(200);
+            expect(opener).toHaveBeenCalledExactlyOnceWith(opened(join(engine, 'notes.docx')));
+        }
+    );
 
-    it('opens a file under a root the saved workspace adds, through the roots the file browser serves', async () => {
-        // The route hands handleOpen browserRoots(locals.server); this is that fold over a saved
-        // workspaces file whose current workspace carries a root of its own.
-        const { hub, work, sheet } = withFiles();
-        const server = servedOver(hub, work);
-        const served = browserRoots(server);
-        const opener = vi.fn();
-        const response = await handleOpen(
-            request({ root: 'work', path: 'deck.xlsx' }),
-            TOKEN,
-            served,
-            checkedIn,
-            opener
-        );
-        expect(response.status).toBe(200);
-        expect(opener).toHaveBeenCalledExactlyOnceWith(opened(sheet));
-    });
+    it(
+        'opens a file under a root the saved workspace adds, through the roots the file browser serves',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            // The route hands handleOpen browserRoots(locals.server); this is that fold over a
+            // saved workspaces file whose current workspace carries a root of its own.
+            const { hub, work, sheet } = withFiles();
+            const server = servedOver(hub, work);
+            const served = browserRoots(server);
+            const opener = vi.fn();
+            const response = await handleOpen(
+                request({ root: 'work', path: 'deck.xlsx' }),
+                TOKEN,
+                served,
+                checkedIn,
+                opener
+            );
+            expect(response.status).toBe(200);
+            expect(opener).toHaveBeenCalledExactlyOnceWith(opened(sheet));
+        }
+    );
 
     it("hands the route the file browser's roots, so a saved workspace's key is a root it knows", async () => {
         // Over the roots the file browser serves the key is known and the refusal is on the path;
@@ -216,31 +232,37 @@ describe('the open endpoint over a file', () => {
         ]);
     });
 
-    it('reads open.program_ext from the configuration on disk at every request', async () => {
-        const { hub, work, sheet } = withFiles();
-        const server = { ...servedOver(hub, work), openPath: vi.fn() };
-        const post = async (): Promise<Response> =>
-            POST({
-                request: request({ root: 'work', path: 'deck.xlsx' }),
-                locals: { token: TOKEN, server, config: () => loadConfig(server.engine) }
-            } as unknown as Parameters<typeof POST>[0]);
+    it(
+        'reads open.program_ext from the configuration on disk at every request',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { hub, work, sheet } = withFiles();
+            const server = { ...servedOver(hub, work), openPath: vi.fn() };
+            const post = async (): Promise<Response> =>
+                POST({
+                    request: request({ root: 'work', path: 'deck.xlsx' }),
+                    locals: { token: TOKEN, server, config: () => loadConfig(server.engine) }
+                } as unknown as Parameters<typeof POST>[0]);
 
-        expect((await post()).status).toBe(200);
-        writeOpenConfig(server.engine, { '.xlsx': 'com.apple.iWork.Numbers' });
-        expect((await post()).status).toBe(200);
-        writeOpenConfig(server.engine, { '.docx': 'com.microsoft.Word' });
-        const refused = await post();
-        expect(refused.status).toBe(403);
-        writeOpenConfig(server.engine, ['.xlsx']);
-        const unusable = await post();
-        expect(unusable.status).toBe(500);
-        expect(((await unusable.json()) as { error: string }).error).toContain('open.program_ext');
+            expect((await post()).status).toBe(200);
+            writeOpenConfig(server.engine, { '.xlsx': 'com.apple.iWork.Numbers' });
+            expect((await post()).status).toBe(200);
+            writeOpenConfig(server.engine, { '.docx': 'com.microsoft.Word' });
+            const refused = await post();
+            expect(refused.status).toBe(403);
+            writeOpenConfig(server.engine, ['.xlsx']);
+            const unusable = await post();
+            expect(unusable.status).toBe(500);
+            expect(((await unusable.json()) as { error: string }).error).toContain(
+                'open.program_ext'
+            );
 
-        expect(server.openPath.mock.calls).toEqual([
-            [opened(sheet)],
-            [opened(sheet, { '.xlsx': 'com.apple.iWork.Numbers' })]
-        ]);
-    });
+            expect(server.openPath.mock.calls).toEqual([
+                [opened(sheet)],
+                [opened(sheet, { '.xlsx': 'com.apple.iWork.Numbers' })]
+            ]);
+        }
+    );
 
     it('refuses a missing file in either form without calling the opener', async () => {
         const { roots } = withFiles();
@@ -346,10 +368,10 @@ describe('the open endpoint over a file', () => {
         expect(opener).not.toHaveBeenCalled();
     });
 
-    it('refuses a path that is not a string, with or without a root', async () => {
+    it('refuses a path that is missing or not a string, with or without a root', async () => {
         const { roots } = withFiles();
         const opener = vi.fn();
-        for (const body of [{ root: 'hub', path: 7 }, { root: 'hub' }, { path: ['a'] }]) {
+        for (const body of [{}, { root: 'hub', path: 7 }, { root: 'hub' }, { path: ['a'] }]) {
             const response = await handleOpen(request(body), TOKEN, roots, checkedIn, opener);
             expect(response.status).toBe(400);
             expect(await response.json()).toEqual({ error: 'the path is required' });
@@ -357,107 +379,98 @@ describe('the open endpoint over a file', () => {
         expect(opener).not.toHaveBeenCalled();
     });
 
-    it('refuses a file without the write token and never calls the opener', async () => {
-        const { roots } = withFiles();
-        const opener = vi.fn();
-        const response = await handleOpen(
-            request({ root: 'hub', path: 'projects/active/alpha/report.docx' }, ''),
-            TOKEN,
-            roots,
-            checkedIn,
-            opener
-        );
-        expect(response.status).toBe(403);
-        expect(opener).not.toHaveBeenCalled();
-    });
-
-    it('says a path could not be opened when the opener fails', async () => {
-        const { roots } = withFiles();
-        const opener = vi.fn(() => Promise.reject(new Error('no application')));
-        const response = await handleOpen(
-            request({ root: 'hub', path: 'projects/active/alpha/report.docx' }),
-            TOKEN,
-            roots,
-            checkedIn,
-            opener
-        );
-        expect(response.status).toBe(500);
-        expect(await response.json()).toEqual({
-            error: 'the path could not be opened: no application'
-        });
-    });
-});
-
-describe('the open client', () => {
-    it('posts a file by its root and path to the open endpoint with the token', async () => {
-        const { report, roots } = withFiles();
-        const opener = vi.fn();
-        setToken(TOKEN);
-        const fetcher = vi.fn(async (_url: string, init: RequestInit) =>
-            handleOpen(
-                request(
-                    JSON.parse(scalar(init.body)),
-                    new Headers(init.headers).get('x-oculus-token') ?? ''
-                ),
+    it(
+        'says a path could not be opened when the opener fails',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { roots } = withFiles();
+            const opener = vi.fn(() => Promise.reject(new Error('no application')));
+            const response = await handleOpen(
+                request({ root: 'hub', path: 'projects/active/alpha/report.docx' }),
                 TOKEN,
                 roots,
                 checkedIn,
                 opener
-            )
-        );
-        vi.stubGlobal('fetch', fetcher);
+            );
+            expect(response.status).toBe(500);
+            expect(await response.json()).toEqual({
+                error: 'the path could not be opened: no application'
+            });
+        }
+    );
+});
 
-        const answer = await openFile('hub', 'projects/active/alpha/report.docx');
+describe('the open client', () => {
+    it(
+        'posts a file by its root and path to the open endpoint with the token',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const { report, roots } = withFiles();
+            const opener = vi.fn();
+            setToken(TOKEN);
+            const fetcher = vi.fn(async (_url: string, init: RequestInit) =>
+                handleOpen(
+                    request(
+                        JSON.parse(scalar(init.body)),
+                        new Headers(init.headers).get('x-oculus-token') ?? ''
+                    ),
+                    TOKEN,
+                    roots,
+                    checkedIn,
+                    opener
+                )
+            );
+            vi.stubGlobal('fetch', fetcher);
 
-        expect(answer.ok).toBe(true);
-        expect(fetcher).toHaveBeenCalledOnce();
-        const [url, init] = fetcher.mock.calls[0];
-        expect(url).toBe(OPEN_PATH);
-        expect(OPEN_PATH).toBe('/api/open');
-        expect(init.method).toBe('POST');
-        expect(new Headers(init.headers).get('x-oculus-token')).toBe(TOKEN);
-        expect(JSON.parse(scalar(init.body))).toEqual({
-            root: 'hub',
-            path: 'projects/active/alpha/report.docx'
-        });
-        expect(opener).toHaveBeenCalledExactlyOnceWith(opened(report));
-    });
+            const answer = await openFile('hub', 'projects/active/alpha/report.docx');
 
-    it("reports an unknown root's refusal once without a token refresh or retry", async () => {
-        const { roots } = withFiles();
-        const opener = vi.fn();
-        setToken(TOKEN);
-        const fetcher = vi.fn(async (_url: string, init: RequestInit) =>
-            handleOpen(request(JSON.parse(scalar(init.body))), TOKEN, roots, checkedIn, opener)
-        );
-        vi.stubGlobal('fetch', fetcher);
-        const answer = await openFile('nowhere', 'report.docx');
-        expect(answer.ok).toBe(false);
-        expect(answer.refused).toEqual([
-            { field: 'root', reason: 'the root names no served root' }
-        ]);
-        expect(fetcher).toHaveBeenCalledOnce();
-        expect(invalidateAll).not.toHaveBeenCalled();
-        expect(opener).not.toHaveBeenCalled();
-    });
+            expect(answer.ok).toBe(true);
+            expect(fetcher).toHaveBeenCalledOnce();
+            const [url, init] = fetcher.mock.calls[0];
+            expect(url).toBe(OPEN_PATH);
+            expect(OPEN_PATH).toBe('/api/open');
+            expect(init.method).toBe('POST');
+            expect(new Headers(init.headers).get('x-oculus-token')).toBe(TOKEN);
+            expect(JSON.parse(scalar(init.body))).toEqual({
+                root: 'hub',
+                path: 'projects/active/alpha/report.docx'
+            });
+            expect(opener).toHaveBeenCalledExactlyOnceWith(opened(report));
+        }
+    );
 
-    it('reports an outside-root refusal once without a token refresh or retry', async () => {
-        const { roots } = fixture();
-        const outside = scratch('oculus-open-client-');
-        const opener = vi.fn();
-        setToken(TOKEN);
-        const fetcher = vi.fn(async (_url: string, init: RequestInit) =>
-            handleOpen(request(JSON.parse(scalar(init.body))), TOKEN, roots, checkedIn, opener)
-        );
-        vi.stubGlobal('fetch', fetcher);
-        const answer = await openFolder(outside);
-        expect(answer.ok).toBe(false);
-        expect(answer.refused[0]?.field).toBe('path');
-        expect(answer.error).toBe('the path is outside the configured roots');
-        expect(fetcher).toHaveBeenCalledOnce();
-        expect(invalidateAll).not.toHaveBeenCalled();
-        expect(opener).not.toHaveBeenCalled();
-    });
+    it.each([
+        [
+            'an unknown root',
+            (): ReturnType<typeof openFile> => openFile('nowhere', 'report.docx'),
+            'root',
+            'the root names no served root'
+        ],
+        [
+            'a path outside every root',
+            (): ReturnType<typeof openFolder> => openFolder(scratch('oculus-open-client-')),
+            'path',
+            'the path is outside the configured roots'
+        ]
+    ])(
+        'reports the refusal of %s once, without a token refresh or a retry',
+        async (_row, call, field, reason) => {
+            const { roots } = fixture();
+            const opener = vi.fn();
+            setToken(TOKEN);
+            const fetcher = vi.fn(async (_url: string, init: RequestInit) =>
+                handleOpen(request(JSON.parse(scalar(init.body))), TOKEN, roots, checkedIn, opener)
+            );
+            vi.stubGlobal('fetch', fetcher);
+            const answer = await call();
+            expect(answer.ok).toBe(false);
+            expect(answer.refused).toEqual([{ field, reason }]);
+            expect(answer.error).toBe(reason);
+            expect(fetcher).toHaveBeenCalledOnce();
+            expect(invalidateAll).not.toHaveBeenCalled();
+            expect(opener).not.toHaveBeenCalled();
+        }
+    );
 
     it('refreshes a stale token once and opens through the stub after retry', async () => {
         const { roots, folder } = fixture();

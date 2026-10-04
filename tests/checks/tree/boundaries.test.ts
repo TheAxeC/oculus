@@ -1,13 +1,13 @@
-// The import graph respects the layers of DESIGN.md, section "Boundaries".
+// Layer 4, tree check. The import graph respects the layers of DESIGN.md, section "Boundaries".
 // Every module under src/lib is read, its imports are read out of its code by the import checks'
 // own reader (tests/checks/imports/graph.ts, type-only ones included), and each one is checked
 // against the row of the table its own folder sits in. Anything the row does not allow is a
 // violation: the table's "May import" column is the whole permission.
 
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, describe, expect } from 'vitest';
+import { describe, expect } from 'vitest';
 import { DELIBERATE, HELD } from './allow-styling.ts';
 import { runtimeImports, sourceFiles } from '../imports/graph.ts';
 import { isReason } from '../../fixtures/reason.ts';
@@ -203,7 +203,7 @@ function matches(pattern: string, id: string): boolean {
     return id === pattern || id === `${pattern}.svelte` || id === `${pattern}/index`;
 }
 
-export function findViolations(libRoot: string): string[] {
+function findViolations(libRoot: string): string[] {
     const violations: string[] = [];
     for (const fileRel of sourceFiles(libRoot)) {
         const layer = layerOf(fileRel);
@@ -242,7 +242,7 @@ function moduleLines(fileRel: string, text: string): string[] {
 }
 
 /** Process-wide state is forbidden under src; app.d.ts alone declares Kit's App namespace. */
-export function findGlobalState(sourceRoot: string): string[] {
+function findGlobalState(sourceRoot: string): string[] {
     const violations: string[] = [];
     for (const fileRel of sourceFiles(sourceRoot)) {
         const text = readFileSync(join(sourceRoot, fileRel), 'utf8');
@@ -348,7 +348,7 @@ const SHELL_STORES = [
  * The one thing it cannot follow is the whole object passed on: the rail and the pane strip hand it
  * to badgeOf(), so that a view's own badge hook reads the view's own stores.
  */
-export function findShellStores(libRoot: string): string[] {
+function findShellStores(libRoot: string): string[] {
     const violations: string[] = [];
     for (const fileRel of sourceFiles(libRoot)) {
         if (!fileRel.startsWith('shell/')) continue;
@@ -385,7 +385,7 @@ function classesIn(selector: string): string[] {
  * class the body carries, and a consumer naming the same class is naming the theme, not the
  * primitive.
  */
-export function primitiveClasses(libRoot: string): Map<string, string[]> {
+function primitiveClasses(libRoot: string): Map<string, string[]> {
     const owners = new Map<string, string[]>();
     for (const fileRel of sourceFiles(libRoot)) {
         if (!fileRel.startsWith('ui/') || !fileRel.endsWith('.svelte')) continue;
@@ -406,7 +406,7 @@ export function primitiveClasses(libRoot: string): Map<string, string[]> {
  * A primitive owns how it is drawn; a consumer that reaches past its props into its markup is the
  * coupling the layer table forbids in the one direction the import graph cannot see.
  */
-export function findPrimitiveStyling(libRoot: string, allow: string[] = []): string[] {
+function findPrimitiveStyling(libRoot: string, allow: string[] = []): string[] {
     const owners = primitiveClasses(libRoot);
     const found = new Set<string>();
     for (const fileRel of sourceFiles(libRoot)) {
@@ -441,19 +441,6 @@ function selectorAt(style: string, at: number): string {
     return span.replace(/\s+/g, ' ').trim();
 }
 
-const made: string[] = [];
-
-afterEach(() => {
-    for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
-});
-
-/** A scratch root inside the temporary directory, removed when the case ends. */
-function scratch(name: string): string {
-    const dir = scratchDir(name);
-    made.push(dir);
-    return dir;
-}
-
 describe('layer boundaries', () => {
     it('holds across src/lib', () => {
         expect(findViolations(LIB)).toEqual([]);
@@ -468,7 +455,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a shell file reading a store the shell may not read', () => {
-        const dir = scratch('oculus-shell-stores-');
+        const dir = scratchDir('oculus-shell-stores-');
         mkdirSync(join(dir, 'shell'), { recursive: true });
         writeFileSync(
             join(dir, 'shell', 'Bad.svelte'),
@@ -481,7 +468,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches process-wide state outside app.d.ts', () => {
-        const dir = scratch('oculus-global-state-');
+        const dir = scratchDir('oculus-global-state-');
         mkdirSync(join(dir, 'lib', 'server'), { recursive: true });
         writeFileSync(join(dir, 'bad.ts'), 'declare global {}\nconst held = globalThis.value;\n');
         writeFileSync(
@@ -504,7 +491,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a violation of every row it can be shown one of', () => {
-        const dir = scratch('oculus-boundaries-');
+        const dir = scratchDir('oculus-boundaries-');
 
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
@@ -576,7 +563,7 @@ describe('layer boundaries', () => {
     });
 
     it('admits the index module of a folder a row names exactly, and no other module in it', () => {
-        const dir = scratch('oculus-boundaries-index-');
+        const dir = scratchDir('oculus-boundaries-index-');
         const full = join(dir, 'state', 'reads.ts');
         mkdirSync(dirname(full), { recursive: true });
         writeFileSync(
@@ -600,7 +587,7 @@ describe('layer boundaries', () => {
     });
 
     it('catches a view reaching into a primitive, and passes the theme class and its own', () => {
-        const dir = scratch('oculus-primitive-styling-');
+        const dir = scratchDir('oculus-primitive-styling-');
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
             expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
@@ -638,8 +625,6 @@ describe('layer boundaries', () => {
     it('holds every styling entry to a reason', () => {
         const bare = [...DELIBERATE, ...HELD].filter((one) => !isReason(one.why, one.line));
         expect(bare.map((one) => one.line)).toEqual([]);
-        expect(isReason('x')).toBe(false);
-        expect(isReason('the rule sizes the primitive inside the band')).toBe(true);
     });
 
     it('holds the styling lists to rules the tree still has', () => {

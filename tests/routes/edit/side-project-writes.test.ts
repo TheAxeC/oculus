@@ -1,7 +1,7 @@
-// The writes that look a project up by its id, over a hub whose scan carries the side-projects
-// tier: none of them finds a side project under its slug, and none touches its manifest. The hub
-// is synthetic, under the system temporary directory, and every path written is asserted to be
-// inside it first.
+// Layer 2, route tests. The writes that look a project up by its id, over a hub whose scan carries
+// the side-projects tier: none of them finds a side project under its slug, and none touches its
+// manifest. The hub is synthetic, under the system temporary directory, and every path written is
+// asserted to be inside it first.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';

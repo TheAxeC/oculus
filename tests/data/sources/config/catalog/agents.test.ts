@@ -1,5 +1,6 @@
-// The models a Codex account's models_cache.json lists, read loosely: a list of models or a map
-// holding one under `models`, each model named by `slug`, `id` or `model`. Compared whole.
+// Layer 1, data tests. The models a Codex account's models_cache.json lists, read loosely: a list
+// of models or a map holding one under `models`, each model named by `slug`, `id` or `model`.
+// Compared whole.
 
 import { describe, expect, it } from 'vitest';
 import { cacheModels } from '../../../../../src/lib/data/sources/config/catalog/agents.ts';

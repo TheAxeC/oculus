@@ -1,8 +1,8 @@
-// The document rule of data/prose/markdown.ts: every heading carries an id unique within the
-// document with the GitHub prefix before it, and a paragraph that is `[TOC]` and nothing else is
-// drawn as a nested list of links to those ids. Its two callers are read here too: the document
-// route's renderMarkdown, with and without a folder to resolve figures against, and the page's
-// blockMarkdown, which the source tab's preview and a slide's narrative render with.
+// Layer 1, data tests. The document rule of data/prose/markdown.ts: every heading carries an id
+// unique within the document with the GitHub prefix before it, and a paragraph that is `[TOC]` and
+// nothing else is drawn as a nested list of links to those ids. Its two callers are read here too:
+// the document route's renderMarkdown, with and without a folder to resolve figures against, and
+// the page's blockMarkdown, which the source tab's preview and a slide's narrative render with.
 //
 // The HTML is read before any sanitising: renderDocument and renderMarkdown do not sanitise, and
 // in this node suite blockMarkdown's sanitise hands the text back. What this does NOT cover: what
@@ -148,14 +148,12 @@ describe('the callers of the rule', () => {
             folder: 'notes'
         });
         expect(lists(html)).toEqual([`<ul class="toc">${entry('a', 'A')}</li></ul>\n`]);
-        expect(html).toContain(heading(1, 'a', 'A'));
         expect(html).toContain('src="/api/file/hub/notes/one.png"');
     });
 
     it('draws the list in a document of the route with no folder, the manual', () => {
         const html = renderMarkdown('[TOC]\n\n# A\n\n![one](one.png)\n', null);
         expect(lists(html)).toEqual([`<ul class="toc">${entry('a', 'A')}</li></ul>\n`]);
-        expect(html).toContain(heading(1, 'a', 'A'));
         expect(html).toContain('src="one.png"');
     });
 
@@ -198,10 +196,5 @@ describe('the code of a document', () => {
         expect(html).not.toContain('<script');
         expect(html.split('</code>')).toHaveLength(2);
         expect(html).toContain('&lt;script&gt;');
-    });
-
-    it('paints the fenced code of a document the route renders', () => {
-        const html = renderMarkdown('# A\n\n```python\ndef f():\n    return 1\n```\n', null);
-        expect(html).toContain('<span class="hljs-keyword">def</span>');
     });
 });

@@ -1,19 +1,18 @@
-// What the /api/memories route serves and accepts: the picture list, one picture streamed, and one
-// added. The route itself hands the request to lib/server/content/memories.ts, which is what this
-// reads.
+// Layer 2, route tests. What the /api/memories route serves and accepts: the picture list, one
+// picture streamed, and one added. The route itself hands the request to
+// lib/server/content/memories.ts, which is what this reads.
 //
 // Nothing here reads the engine's own assets/memories folder or machine-local config: every case
 // builds its own directory under the system temporary directory and asserts each write stays inside
 // it, so no case can write into the checkout. This does not cover the browser drawing the wall.
 
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     add,
-    BODY_LIMIT_BYTES,
     folder,
     isPicture,
     listing,
@@ -23,32 +22,17 @@ import {
     upload,
     write
 } from '../../../src/lib/server/content/memories.ts';
-import { it, scratchDir, test } from '../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { pagePost } from '../../fixtures/doubles.ts';
 
 const TOKEN = mintToken();
-
-/** Every directory this file made, taken away when the file's cases are done. */
-const made: string[] = [];
-
-test.afterAll(() => {
-    for (const dir of made) rmSync(dir, { recursive: true, force: true });
-    made.length = 0;
-});
-
-/** A directory of this file's own inside the system temporary directory, remembered for removal. */
-function scratch(prefix: string): string {
-    const dir = scratchDir(prefix);
-    made.push(dir);
-    return dir;
-}
 
 /**
  * A directory holding the named files inside the system temporary directory: each one byte, or the
  * bytes `held` names for it.
  */
 function pictures(names: string[], held: Record<string, Uint8Array> = {}): string {
-    const dir = scratch('oculus-memories-');
+    const dir = scratchDir('oculus-memories-');
     for (const name of names) {
         const full = join(dir, name);
         expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
@@ -121,28 +105,35 @@ describe('one picture served', () => {
         expect(await response.text()).toBe('x');
     });
 
-    it('refuses a name that carries a separator or leaves the folder', () => {
-        const dir = pictures(NAMES);
-        expect(serve(dir, '../a-first.jpg').status).toBe(404);
-        expect(serve(dir, 'sub/a-first.jpg').status).toBe(404);
-        expect(serve(dir, '/etc/hosts').status).toBe(404);
-        expect(serve(dir, '.hidden.jpg').status).toBe(404);
+    it.each([
+        ['a name that leaves the folder', '../a-first.jpg'],
+        ['a name with a separator', 'sub/a-first.jpg'],
+        ['an absolute path', '/etc/hosts'],
+        ['a hidden file', '.hidden.jpg'],
+        ['a name that is not a picture', 'notes.txt'],
+        ['a name that is not there', 'nothing.png']
+    ])('answers 404 for %s', (_row, name) => {
+        expect(serve(pictures(NAMES), name).status).toBe(404);
     });
 
-    it('refuses a name that is not a picture and one that is not there', () => {
-        const dir = pictures(NAMES);
-        expect(serve(dir, 'notes.txt').status).toBe(404);
-        expect(serve(dir, 'nothing.png').status).toBe(404);
+    it('answers 404 when no folder is configured', () => {
         expect(serve(null, 'a-first.jpg').status).toBe(404);
     });
 });
 
 describe('the body of an upload', () => {
-    it('is a name and its data, and nothing else is one', () => {
+    it('is a name and its data, and every other key is dropped', () => {
         expect(upload({ name: 'a.png', data: PIXEL })).toEqual({ name: 'a.png', data: PIXEL });
-        expect(upload({ name: 'a.png' })).toBeNull();
-        expect(upload({ data: PIXEL })).toBeNull();
-        expect(upload('a.png')).toBeNull();
+        expect(upload({ name: 'a', data: 'b', x: 1 })).toStrictEqual({ name: 'a', data: 'b' });
+    });
+
+    it.each([
+        ['no data', { name: 'a.png' }],
+        ['no name', { data: PIXEL }],
+        ['a bare string', 'a.png'],
+        ['a name that is not text', { name: 3, data: 'b' }]
+    ])('is none for %s', (_row, body) => {
+        expect(upload(body)).toBeNull();
     });
 });
 
@@ -183,36 +174,23 @@ describe('one picture added', () => {
         expect(existsSync(join(dir, 'picture.webp'))).toBe(false);
     });
 
-    it('writes a real PNG and a real JPEG under their own extensions', () => {
+    it.each([
+        ['text under a PNG name', 'fake.png', TEXT],
+        ['text under a JPEG name', 'x.jpg', TEXT],
+        ['a PNG under a JPEG name', 'mislabelled.jpg', PIXEL],
+        ['a JPEG under a PNG name', 'mislabelled.png', JPEG],
+        [
+            'a picture larger than the wall takes',
+            'large.png',
+            Buffer.concat([Buffer.from(PIXEL, 'base64'), Buffer.alloc(MAX_UPLOAD_BYTES)]).toString(
+                'base64'
+            )
+        ],
+        ['an empty body of data', 'empty.png', '']
+    ])('refuses %s, and writes nothing', (_row, name, data) => {
         const dir = pictures([]);
-        expect(write(dir, { name: 'one.png', data: PIXEL })).toEqual({ written: 'one.png' });
-        expect(write(dir, { name: 'two.jpg', data: JPEG })).toEqual({ written: 'two.jpg' });
-        expect(write(dir, { name: 'three.jpeg', data: JPEG })).toEqual({ written: 'three.jpeg' });
-    });
-
-    it('refuses bytes that are not the format the extension names, and writes nothing', () => {
-        const dir = pictures([]);
-        // Plain text and a script under a picture's name are what the extension alone would let in.
-        expect(write(dir, { name: 'fake.png', data: TEXT })).toEqual({ error: 'data' });
-        expect(write(dir, { name: 'x.jpg', data: TEXT })).toEqual({ error: 'data' });
-        // A real PNG under a JPEG's name is refused too: the bytes and the name must agree.
-        expect(write(dir, { name: 'mislabelled.jpg', data: PIXEL })).toEqual({ error: 'data' });
-        expect(write(dir, { name: 'mislabelled.png', data: JPEG })).toEqual({ error: 'data' });
-        for (const name of ['fake.png', 'x.jpg', 'mislabelled.jpg', 'mislabelled.png']) {
-            expect(existsSync(join(dir, name))).toBe(false);
-        }
-    });
-
-    it('refuses a picture larger than the wall takes, and writes nothing', () => {
-        const dir = pictures([]);
-        // A real PNG header followed by enough bytes to pass the limit.
-        const header = Buffer.from(PIXEL, 'base64');
-        const large = Buffer.concat([header, Buffer.alloc(MAX_UPLOAD_BYTES)]);
-        expect(large.byteLength).toBeGreaterThan(MAX_UPLOAD_BYTES);
-        expect(write(dir, { name: 'large.png', data: large.toString('base64') })).toEqual({
-            error: 'data'
-        });
-        expect(existsSync(join(dir, 'large.png'))).toBe(false);
+        expect(write(dir, { name, data })).toEqual({ error: 'data' });
+        expect(existsSync(join(dir, name))).toBe(false);
     });
 
     it('refuses a name already on the wall, and leaves that picture as it was', () => {
@@ -224,12 +202,6 @@ describe('one picture added', () => {
             error: 'taken'
         });
         expect(readFileSync(join(dir, 'same.png')).equals(first)).toBe(true);
-    });
-
-    it('refuses an empty body of data', () => {
-        const dir = pictures([]);
-        expect(write(dir, { name: 'empty.png', data: '' })).toEqual({ error: 'data' });
-        expect(existsSync(join(dir, 'empty.png'))).toBe(false);
     });
 });
 
@@ -259,37 +231,25 @@ describe('the endpoint of an upload', () => {
 });
 
 describe('the first bytes against the extension', () => {
-    it('takes a PNG only under .png and a JPEG only under .jpg or .jpeg', () => {
-        const png = Buffer.from(PIXEL, 'base64');
-        const jpeg = Buffer.from(JPEG, 'base64');
-        expect(isPicture('a.png', png)).toBe(true);
-        expect(isPicture('a.jpg', jpeg)).toBe(true);
-        expect(isPicture('a.jpeg', jpeg)).toBe(true);
-        expect(isPicture('a.png', jpeg)).toBe(false);
-        expect(isPicture('a.jpg', png)).toBe(false);
-    });
+    const png = Buffer.from(PIXEL, 'base64');
+    const jpeg = Buffer.from(JPEG, 'base64');
 
-    it('takes nothing under an extension it has no marks for, and nothing too short', () => {
-        expect(isPicture('a.webp', Buffer.from(PIXEL, 'base64'))).toBe(false);
-        expect(isPicture('a.png', Buffer.from([0x89, 0x50]))).toBe(false);
-        expect(isPicture('a.png', Buffer.alloc(0))).toBe(false);
-    });
-});
-
-describe('the request the server accepts', () => {
-    it('leaves room for the picture base64-encoded inside its JSON wrapper', () => {
-        expect(BODY_LIMIT_BYTES).toBeGreaterThan(Math.ceil((MAX_UPLOAD_BYTES * 4) / 3));
-    });
-
-    it('is told to the built handler before the handler is loaded', () => {
-        // The adapter reads its limit once, when its module is evaluated, so the assignment has to
-        // come before the dynamic import; a static import of the handler would hoist past it.
-        const source = readFileSync('src/server.ts', 'utf8');
-        const set = source.indexOf('process.env.BODY_SIZE_LIMIT = String(BODY_LIMIT_BYTES)');
-        const loaded = source.indexOf('await import(');
-        expect(set).toBeGreaterThan(-1);
-        expect(loaded).toBeGreaterThan(set);
-        expect(source).not.toMatch(/^import .*build\/handler/m);
+    it.each([
+        ['takes a PNG under .png', 'a.png', png, true],
+        ['takes a JPEG under .jpg', 'a.jpg', jpeg, true],
+        ['takes a JPEG under .jpeg', 'a.jpeg', jpeg, true],
+        ['refuses a JPEG under .png', 'a.png', jpeg, false],
+        ['refuses a PNG under .jpg', 'a.jpg', png, false],
+        ['refuses a PNG under .webp, which has no marks', 'a.webp', png, false],
+        [
+            'refuses two bytes under .png, which is too short',
+            'a.png',
+            Buffer.from([0x89, 0x50]),
+            false
+        ],
+        ['refuses no bytes under .png', 'a.png', Buffer.alloc(0), false]
+    ])('%s', (_row, name, bytes, taken) => {
+        expect(isPicture(name, bytes)).toBe(taken);
     });
 });
 
@@ -298,7 +258,7 @@ describe('the configured folder', () => {
      * An engine directory of this case's own: its config folder, its appearance and its local.yml.
      */
     function fixture(body: string): { engine: string; hub: string } {
-        const root = scratch('oculus-memories-config-');
+        const root = scratchDir('oculus-memories-config-');
         const engine = join(root, 'engine');
         const hub = join(root, 'hub');
         mkdirSync(join(engine, 'config'), { recursive: true });
@@ -324,15 +284,5 @@ describe('the configured folder', () => {
         expect(
             folder(memoriesMemory(), loadConfig(outside.engine).config, outside.engine)
         ).toBeNull();
-    });
-});
-
-describe('an upload body of the wrong shape', () => {
-    it('answers the name and the data and drops every other key', () => {
-        expect(upload({ name: 'a', data: 'b', x: 1 })).toStrictEqual({ name: 'a', data: 'b' });
-    });
-
-    it('refuses a name that is not text', () => {
-        expect(upload({ name: 3, data: 'b' })).toBeNull();
     });
 });

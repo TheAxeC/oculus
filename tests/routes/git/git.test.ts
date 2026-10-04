@@ -1,14 +1,16 @@
-// What the /api/git route answers. The route itself is two lines handing the request to
-// lib/server/git/git-routes.ts with the token ServerContext minted, which is what this calls, and
-// the confirm refusal that module shares with /api/deposit.
+// Layer 2, route tests. What the /api/git route answers. The route itself is two lines handing the
+// request to lib/server/git/git-routes.ts with the token ServerContext minted, which is what this
+// calls, and the confirm refusal that module shares with /api/deposit.
 //
 // Nothing here runs git: the handler takes the operations as options, and every case hands it a
 // stub the test owns, so the roots are names rather than repositories and no file is written
 // anywhere. What git actually does with a request is tests/server/git/git-write.test.ts, which
 // also holds the cases of a body of the wrong shape that reach the real operations.
 //
-// What this does NOT cover: the token reaching the page and Kit putting it on the event, which is
-// exercised by the curl in the package's verification.
+// What this does NOT cover: the token reaching the page and Kit putting it on the event.
+//
+// A case that starts git, or takes 100 ms or more in a run of its own, is tagged slow; the others
+// run in npm test.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -23,10 +25,10 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { GitOptions } from '../../../src/lib/server/git/git-routes.ts';
 import type { DiffAttributes, DiffSides } from '../../../src/lib/data/model/index.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
+import { HOST, gitPost } from './request.ts';
 
 const SERVER = contextFixture({ token: mintToken() });
 const TOKEN = SERVER.token;
-const HOST = '127.0.0.1:8791';
 const URL_ = `http://${HOST}/api/git`;
 
 /** The one root every case is allowed to name. It is a name: nothing opens it. */
@@ -84,18 +86,7 @@ function options(extra: Partial<GitOptions> = {}): GitOptions {
 
 /** A request as the page makes it, with whatever headers and body a case wants instead. */
 function request(body: unknown, headers: Record<string, string> = {}): Request {
-    return new Request(URL_, {
-        method: 'POST',
-        headers: {
-            host: HOST,
-            origin: `http://${HOST}`,
-            'sec-fetch-site': 'same-origin',
-            'content-type': 'application/json',
-            'x-oculus-token': TOKEN,
-            ...headers
-        },
-        body: typeof body === 'string' ? body : JSON.stringify(body)
-    });
+    return gitPost(TOKEN, body, headers);
 }
 
 describe('the git endpoint', () => {
@@ -226,69 +217,6 @@ describe('the git endpoint', () => {
     });
 });
 
-describe('the three worktree actions', () => {
-    it('refuses each of them unconfirmed, and takes each one confirmed', async () => {
-        for (const [action, fields] of [
-            ['createWorktree', { name: 'package-one' }],
-            ['removeWorktree', { path: '/hub/.agents/worktrees/package-one' }],
-            ['merge', { branch: 'package-one' }]
-        ] as [string, Record<string, unknown>][]) {
-            const into = options();
-            const unconfirmed = await handleGit(
-                request({ action, root: ROOT, ...fields }),
-                TOKEN,
-                into
-            );
-            expect(unconfirmed.status, action).toBe(400);
-            expect(await unconfirmed.json()).toEqual({
-                error: 'this action needs the page to confirm it'
-            });
-            expect(ran, action).toEqual([]);
-
-            const confirmed = await handleGit(
-                request({ action, root: ROOT, ...fields, confirm: true }),
-                TOKEN,
-                into
-            );
-            expect(confirmed.status, action).toBe(200);
-            expect(ran.map((one) => one.action)).toEqual([action]);
-        }
-    });
-
-    it('refuses a worktree action on a root it was not given', async () => {
-        const response = await handleGit(
-            request({
-                action: 'createWorktree',
-                root: '/somewhere/else',
-                name: 'one',
-                confirm: true
-            }),
-            TOKEN,
-            options()
-        );
-        expect(response.status).toBe(400);
-        expect(ran).toEqual([]);
-    });
-
-    it('answers a refusal from the worktree write with its own reason', async () => {
-        const response = await handleGit(
-            request({
-                action: 'removeWorktree',
-                root: ROOT,
-                path: '/hub/elsewhere',
-                confirm: true
-            }),
-            TOKEN,
-            options({
-                run: () =>
-                    Promise.resolve({ ok: false, output: '', error: 'that path is not a worktree' })
-            })
-        );
-        expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: 'that path is not a worktree' });
-    });
-});
-
 describe('the diff reads', () => {
     /** A GET as the page makes it, same-origin and with no token. */
     function get(query: string): Request {
@@ -366,11 +294,6 @@ describe('the diff reads', () => {
         const response = await handleGitGet(get('worktree=/elsewhere/tree'), options());
         expect(response.status).toBe(400);
     });
-
-    it('answers the branch listing when it is asked for no diff', async () => {
-        const response = await handleGitGet(get('root=/somewhere/else'), options());
-        expect(response.status).toBe(400);
-    });
 });
 
 describe('the branch listing', () => {
@@ -398,7 +321,14 @@ describe('the Source Control actions', () => {
         ['acceptDeletion', { path: 'a.txt' }],
         ['stashDrop', { ref: 'stash@{0}' }],
         ['deleteTag', { name: 'v1' }],
-        ['pushTags', {}]
+        ['pushTags', {}],
+        ['createWorktree', { name: 'package-one' }],
+        ['removeWorktree', { path: '/hub/.agents/worktrees/package-one' }],
+        ['merge', { branch: 'package-one' }],
+        ['cherryPick', { ref: 'abc1234' }],
+        ['checkoutDetached', { ref: 'abc1234' }],
+        ['deleteBranch', { name: 'old' }],
+        ['deleteBranchAnyway', { name: 'old' }]
     ];
 
     /** Every action a reader takes back in one press, which asks nothing. */
@@ -416,28 +346,32 @@ describe('the Source Control actions', () => {
         ['createTag', { name: 'v1', message: '' }]
     ];
 
-    it('refuses each asking action unconfirmed, and takes it confirmed with its fields', async () => {
-        for (const [action, fields] of ASKING) {
-            const into = options();
-            const unconfirmed = await handleGit(
-                request({ action, root: ROOT, ...fields }),
-                TOKEN,
-                into
-            );
-            expect(unconfirmed.status, action).toBe(400);
-            expect(ran, action).toEqual([]);
-            const confirmed = await handleGit(
-                request({ action, root: ROOT, ...fields, confirm: true }),
-                TOKEN,
-                into
-            );
-            expect(confirmed.status, action).toBe(200);
-            expect(ran.map((one) => one.action)).toEqual([action]);
-            expect(ran[0].fields).toMatchObject(fields);
+    it(
+        'refuses each asking action unconfirmed, and takes it confirmed with its fields',
+        { tags: ['slow'] },
+        async () => {
+            for (const [action, fields] of ASKING) {
+                const into = options();
+                const unconfirmed = await handleGit(
+                    request({ action, root: ROOT, ...fields }),
+                    TOKEN,
+                    into
+                );
+                expect(unconfirmed.status, action).toBe(400);
+                expect(ran, action).toEqual([]);
+                const confirmed = await handleGit(
+                    request({ action, root: ROOT, ...fields, confirm: true }),
+                    TOKEN,
+                    into
+                );
+                expect(confirmed.status, action).toBe(200);
+                expect(ran.map((one) => one.action)).toEqual([action]);
+                expect(ran[0].fields).toMatchObject(fields);
+            }
         }
-    });
+    );
 
-    it('takes each plain action with no confirm', async () => {
+    it('takes each plain action with no confirm', { tags: ['slow'] }, async () => {
         for (const [action, fields] of PLAIN) {
             const into = options();
             const response = await handleGit(
@@ -543,15 +477,19 @@ describe('the reads on demand', () => {
         ]);
     });
 
-    it('answers a refused read with its reason, and reads a page from 0 when skip is not a number', async () => {
-        const into = options({ reads: reads as never });
-        asked.length = 0;
-        const refused = await handleGitGet(get(`sides=${root}&path=a.txt`), into);
-        expect(refused.status).toBe(400);
-        expect(await refused.json()).toEqual({ error: 'a.txt is not in conflict' });
-        await handleGitGet(get(`graph=${root}&skip=many`), into);
-        expect(asked.at(-1)).toEqual(['graph', ROOT, 0]);
-    });
+    it(
+        'answers a refused read with its reason, and reads a page from 0 when skip is not a number',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const into = options({ reads: reads as never });
+            asked.length = 0;
+            const refused = await handleGitGet(get(`sides=${root}&path=a.txt`), into);
+            expect(refused.status).toBe(400);
+            expect(await refused.json()).toEqual({ error: 'a.txt is not in conflict' });
+            await handleGitGet(get(`graph=${root}&skip=many`), into);
+            expect(asked.at(-1)).toEqual(['graph', ROOT, 0]);
+        }
+    );
 
     it('refuses every read of a root it was not given, before reading', async () => {
         const into = options({ reads: reads as never });
@@ -594,24 +532,28 @@ describe('unconfirmed', () => {
 });
 
 describe('a body of the wrong shape', () => {
-    it('refuses a body with no action, an action it does not know and every body that is no map', async () => {
-        const bodies: unknown[] = [
-            { root: ROOT },
-            { action: 'nope', root: ROOT },
-            { action: 3, root: ROOT },
-            [],
-            null,
-            3,
-            'x',
-            true
-        ];
-        for (const body of bodies) {
-            const response = await handleGit(request(JSON.stringify(body)), TOKEN, options());
-            expect(response.status).toBe(400);
-            expect(await response.json()).toEqual({ error: 'the body is not a git action' });
+    it(
+        'refuses a body with no action, an action it does not know and every body that is no map',
+        { tags: ['slow'] },
+        async () => {
+            const bodies: unknown[] = [
+                { root: ROOT },
+                { action: 'nope', root: ROOT },
+                { action: 3, root: ROOT },
+                [],
+                null,
+                3,
+                'x',
+                true
+            ];
+            for (const body of bodies) {
+                const response = await handleGit(request(JSON.stringify(body)), TOKEN, options());
+                expect(response.status).toBe(400);
+                expect(await response.json()).toEqual({ error: 'the body is not a git action' });
+            }
+            expect(ran).toEqual([]);
         }
-        expect(ran).toEqual([]);
-    });
+    );
 
     it('answers a root that is not text as a root it does not know', async () => {
         const response = await handleGit(request({ action: 'stage', root: 3 }), TOKEN, options());

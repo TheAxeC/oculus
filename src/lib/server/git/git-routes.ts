@@ -136,7 +136,7 @@ export function unconfirmed(
  * a resolved path are taken back by the reader in one press, as in VS Code, and ask nothing; a
  * deletion taken removes the file from the worktree, so it asks.
  */
-export const CONFIRMED = [
+const CONFIRMED = [
     'commit',
     'push',
     'pull',

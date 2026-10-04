@@ -1,4 +1,4 @@
-// Layer 4, test support. Which characters of a source file are code, which are the inside of a
+// Layer 4, test helper. Which characters of a source file are code, which are the inside of a
 // string, a template or a regular expression, and which are a comment. The checks that read source
 // text read it through this, so a word, a bracket or a call written in a string or a comment is not
 // taken for code, and a comment is found wherever it is written.
@@ -22,7 +22,7 @@ import { parseCss } from 'svelte/compiler';
 import { component, parsed } from '../../../utils/diagrams/imports.mjs';
 
 /** What one character of a file is. */
-export type Kind = 'code' | 'string' | 'comment';
+type Kind = 'code' | 'string' | 'comment';
 
 /** A run of characters of one kind, from start up to end. */
 type Span = { start: number; end: number };

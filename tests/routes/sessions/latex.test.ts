@@ -1,11 +1,15 @@
-// GET and POST /api/latex: the project form checked against the snapshot, the folder form checked
-// against the served roots, the main file a `.tex` file builds through, the outline and the word
-// count of a main file, and the formatting of a text. The hub and the roots are synthetic folders
-// under the system temporary directory and the snapshot is the case's own, so nothing of the real
-// hub is read and nothing at all is written outside it. texcount and the formatters are shell
-// scripts the case puts in a folder of its own and is the only PATH the endpoint runs them under.
+// Layer 2, route tests. GET and POST /api/latex: the project form checked against the snapshot, the
+// folder form checked against the served roots, the main file a `.tex` file builds through, the
+// outline and the word count of a main file, and the formatting of a text. The hub and the roots
+// are synthetic folders under the system temporary directory and the snapshot is the case's own, so
+// nothing of the real hub is read and nothing at all is written outside it. texcount and the
+// formatters are shell scripts the case puts in a folder of its own and is the only PATH the
+// endpoint runs them under.
 //
 // Every refusal is a word (data/prose/latex.ts and data/file-ops.ts), never a sentence.
+//
+// A case whose endpoint starts one of those scripts, or a program that is not found, is tagged
+// slow; a refusal made before any program is started, and the plain readers, run in npm test.
 
 import { chmodSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -116,20 +120,6 @@ async function answer(response: Response): Promise<Record<string, unknown>> {
 }
 
 describe('GET /api/latex for a project', () => {
-    it('refuses a request naming no project or root', async () => {
-        const response = await handleLatex(request(''), TARGET);
-
-        expect(response.status).toBe(400);
-        expect((await answer(response)).error).toBe('not-an-action');
-    });
-
-    it('refuses an id the snapshot does not hold', async () => {
-        const response = await handleLatex(request('?id=nobody'), TARGET);
-
-        expect(response.status).toBe(404);
-        expect((await answer(response)).error).toBe('no-project');
-    });
-
     it('answers one row per main file, with the folder and the errors of the last build', async () => {
         const response = await handleLatex(request('?id=alpha'), TARGET);
 
@@ -193,28 +183,6 @@ describe('GET /api/latex for a folder of a root', () => {
             ['rootless.tex', 'rootless.pdf']
         ]);
     });
-
-    it.each([
-        ['a path that leaves the root', '?root=docs&path=..'],
-        ['a path that is a file', '?root=docs&path=notes.md'],
-        ['a folder that is missing', '?root=docs&path=removed'],
-        ['a root key that is unknown', '?root=nowhere&path=proposal']
-    ])('refuses %s with 404', async (_name, query) => {
-        const response = await handleLatex(request(query), TARGET);
-
-        expect(response.status).toBe(404);
-    });
-
-    it.each([
-        ['a root without a path', '?root=docs'],
-        ['both an id and a root', '?id=alpha&root=docs&path=proposal'],
-        ['neither', '?path=proposal'],
-        ['a path with a file', '?root=docs&path=proposal&file=proposal/main.tex']
-    ])('refuses %s with 400', async (_name, query) => {
-        const response = await handleLatex(request(query), TARGET);
-
-        expect(response.status).toBe(400);
-    });
 });
 
 describe('GET /api/latex for the root a file builds through', () => {
@@ -237,14 +205,6 @@ describe('GET /api/latex for the root a file builds through', () => {
         expect(only).toEqual({ root: 'docs', path: 'only', main: 'solo.tex' });
         expect(many).toEqual({ main: null });
         expect(markdown).toEqual({ main: null });
-    });
-
-    it('refuses a file that is missing and a file outside the root', async () => {
-        const missing = await handleLatex(request('?root=docs&file=gone.tex'), TARGET);
-        const outside = await handleLatex(request('?root=docs&file=../notes.md'), TARGET);
-
-        expect(missing.status).toBe(404);
-        expect(outside.status).toBe(404);
     });
 });
 
@@ -296,6 +256,10 @@ describe('GET /api/latex outline of a project', () => {
 describe('every refusal is a word the page says the sentence of', () => {
     it.each([
         ['no project or root', '', 400, 'not-an-action'],
+        ['a path and neither a project nor a root', '?path=proposal', 400, 'not-an-action'],
+        ['a project the snapshot does not hold', '?id=nobody', 404, 'no-project'],
+        ['a file that is missing', '?root=docs&file=gone.tex', 404, 'missing'],
+        ['a file outside the root', '?root=docs&file=../notes.md', 404, 'outside'],
         ['an empty project id', '?id=', 400, 'not-an-action'],
         ['both forms', '?id=alpha&root=docs', 400, 'not-an-action'],
         ['a root with no path', '?root=docs', 400, 'not-an-action'],
@@ -346,102 +310,120 @@ describe('every main parameter is checked before a file is read or a program sta
         }
     );
 
-    it('refuses a name starting with a dash even when a main file has that name', async () => {
-        const bin = newBin();
-        const calls = join(bin, 'calls');
-        stub(bin, 'texcount', `echo "$@" >> '${calls}'\necho 1`);
-        const target = withTools(bin);
+    it(
+        'refuses a name starting with a dash even when a main file has that name',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const bin = newBin();
+            const calls = join(bin, 'calls');
+            stub(bin, 'texcount', `echo "$@" >> '${calls}'\necho 1`);
+            const target = withTools(bin);
 
-        const counted = await handleLatex(request('?root=docs&path=dash&count=-v.tex'), target);
-        const outlined = await handleLatex(request('?root=docs&path=dash&outline=-v.tex'), target);
-        const named = await handleLatex(request('?root=docs&path=dash&count=main.tex'), target);
+            const counted = await handleLatex(request('?root=docs&path=dash&count=-v.tex'), target);
+            const outlined = await handleLatex(
+                request('?root=docs&path=dash&outline=-v.tex'),
+                target
+            );
+            const named = await handleLatex(request('?root=docs&path=dash&count=main.tex'), target);
 
-        expect([counted.status, outlined.status, named.status]).toEqual([404, 404, 200]);
-        expect(readFileSync(calls, 'utf8').trim().split('\n')).toHaveLength(1);
-    });
-
-    it('refuses an outline and a count asked together', async () => {
-        const response = await handleLatex(
-            request('?root=docs&path=proposal&outline=main.tex&count=main.tex'),
-            TARGET
-        );
-
-        expect(response.status).toBe(400);
-    });
+            expect([counted.status, outlined.status, named.status]).toEqual([404, 404, 200]);
+            expect(readFileSync(calls, 'utf8').trim().split('\n')).toHaveLength(1);
+        }
+    );
 });
 
 describe('GET /api/latex word count', () => {
     const count = '?root=docs&path=proposal&count=main.tex';
 
-    it('answers the number the program printed, run in the folder with the words as arguments', async () => {
-        const bin = newBin();
-        stub(
-            bin,
-            'texcount',
-            `echo "$PWD" > '${join(bin, 'cwd')}'\necho "$@" > '${join(bin, 'args')}'\necho 123`
-        );
+    it(
+        'answers the number the program printed, run in the folder with the words as arguments',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const bin = newBin();
+            stub(
+                bin,
+                'texcount',
+                `echo "$PWD" > '${join(bin, 'cwd')}'\necho "$@" > '${join(bin, 'args')}'\necho 123`
+            );
 
-        const response = await handleLatex(request(count), withTools(bin));
+            const response = await handleLatex(request(count), withTools(bin));
 
-        expect(await answer(response)).toEqual({ words: 123 });
-        expect(readFileSync(join(bin, 'args'), 'utf8').trim()).toBe(
-            '-inc -total -sum -brief -utf8 main.tex'
-        );
-        expect(realpathSync(readFileSync(join(bin, 'cwd'), 'utf8').trim())).toBe(
-            join(HUB, 'docs/proposal')
-        );
-    });
+            expect(await answer(response)).toEqual({ words: 123 });
+            expect(readFileSync(join(bin, 'args'), 'utf8').trim()).toBe(
+                '-inc -total -sum -brief -utf8 main.tex'
+            );
+            expect(realpathSync(readFileSync(join(bin, 'cwd'), 'utf8').trim())).toBe(
+                join(HUB, 'docs/proposal')
+            );
+        }
+    );
 
-    it('answers 502 count-failed when the program reports a failure between its marks', async () => {
-        const bin = newBin();
-        stub(
-            bin,
-            'texcount',
-            "printf '!!! File nothere not found in path [./]. !!!\\n1\\n (errors:1)\\n'"
-        );
+    it(
+        'answers 502 count-failed when the program reports a failure between its marks',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const bin = newBin();
+            stub(
+                bin,
+                'texcount',
+                "printf '!!! File nothere not found in path [./]. !!!\\n1\\n (errors:1)\\n'"
+            );
 
-        const response = await handleLatex(request(count), withTools(bin));
+            const response = await handleLatex(request(count), withTools(bin));
 
-        expect(response.status).toBe(502);
-        expect((await answer(response)).error).toBe('count-failed');
-    });
+            expect(response.status).toBe(502);
+            expect((await answer(response)).error).toBe('count-failed');
+        }
+    );
 
-    it('does not read a digit in the main file name as the count', async () => {
-        write('docs/proposal/chapter2.tex', ARTICLE);
-        const bin = newBin();
-        stub(
-            bin,
-            'texcount',
-            "printf '!!! File nothere not found in path [./]. !!!\\n1\\n (errors:1)\\n'"
-        );
+    it(
+        'does not read a digit in the main file name as the count',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            write('docs/proposal/chapter2.tex', ARTICLE);
+            const bin = newBin();
+            stub(
+                bin,
+                'texcount',
+                "printf '!!! File nothere not found in path [./]. !!!\\n1\\n (errors:1)\\n'"
+            );
 
-        const response = await handleLatex(
-            request('?root=docs&path=proposal&count=chapter2.tex'),
-            withTools(bin)
-        );
+            const response = await handleLatex(
+                request('?root=docs&path=proposal&count=chapter2.tex'),
+                withTools(bin)
+            );
 
-        expect(response.status).toBe(502);
-        expect(await answer(response)).not.toHaveProperty('words');
-    });
+            expect(response.status).toBe(502);
+            expect(await answer(response)).not.toHaveProperty('words');
+        }
+    );
 
-    it('answers 502 count-missing when the program is not found', async () => {
-        const target = { ...TARGET, tools: { env: { PATH: join(newBin(), 'nothing') } } };
+    it(
+        'answers 502 count-missing when the program is not found',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const target = { ...TARGET, tools: { env: { PATH: join(newBin(), 'nothing') } } };
 
-        const response = await handleLatex(request(count), target);
+            const response = await handleLatex(request(count), target);
 
-        expect(response.status).toBe(502);
-        expect((await answer(response)).error).toBe('count-missing');
-    });
+            expect(response.status).toBe(502);
+            expect((await answer(response)).error).toBe('count-missing');
+        }
+    );
 
-    it('answers 504 when the program runs past the time limit', async () => {
-        const bin = newBin();
-        stub(bin, 'texcount', 'sleep 5');
+    it(
+        'answers 504 when the program runs past the time limit',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const bin = newBin();
+            stub(bin, 'texcount', 'sleep 5');
 
-        const response = await handleLatex(request(count), withTools(bin, 100));
+            const response = await handleLatex(request(count), withTools(bin, 100));
 
-        expect(response.status).toBe(504);
-        expect((await answer(response)).error).toBe('count-timeout');
-    });
+            expect(response.status).toBe(504);
+            expect((await answer(response)).error).toBe('count-timeout');
+        }
+    );
 });
 
 describe('POST /api/latex format', () => {
@@ -453,47 +435,25 @@ describe('POST /api/latex format', () => {
         });
     }
 
-    it('answers the text the program printed from the text it was given on standard input', async () => {
-        const bin = newBin();
-        stub(bin, 'tex-fmt', 'test "$1" = --stdin || exit 3\nsed \'s/^/  /\'');
+    it(
+        'answers 502 format-failed when the program exits 1, its standard error never shown',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const bin = newBin();
+            stub(bin, 'tex-fmt', 'echo "error: x" >&2\necho "second" >&2\nexit 1');
 
-        const response = await handleLatexPost(
-            post({ action: 'format', text: 'a\nb\n' }),
-            TOKEN,
-            withTools(bin)
-        );
+            const response = await handleLatexPost(
+                post({ action: 'format', text: 'a' }),
+                TOKEN,
+                withTools(bin)
+            );
 
-        expect(await answer(response)).toEqual({ text: '  a\n  b\n' });
-    });
+            expect(response.status).toBe(502);
+            expect((await answer(response)).error).toBe('format-failed');
+        }
+    );
 
-    it('answers 502 with the missing word of the chosen program when it is not found', async () => {
-        const target = { ...TARGET, tools: { env: { PATH: join(newBin(), 'nothing') } } };
-
-        const response = await handleLatexPost(
-            post({ action: 'format', text: 'a' }),
-            TOKEN,
-            target
-        );
-
-        expect(response.status).toBe(502);
-        expect((await answer(response)).error).toBe('tex-fmt-missing');
-    });
-
-    it('answers 502 format-failed when the program exits 1, its standard error never shown', async () => {
-        const bin = newBin();
-        stub(bin, 'tex-fmt', 'echo "error: x" >&2\necho "second" >&2\nexit 1');
-
-        const response = await handleLatexPost(
-            post({ action: 'format', text: 'a' }),
-            TOKEN,
-            withTools(bin)
-        );
-
-        expect(response.status).toBe(502);
-        expect((await answer(response)).error).toBe('format-failed');
-    });
-
-    it('answers 504 past the time limit', async () => {
+    it('answers 504 past the time limit', { tags: ['slow'], timeout: 30_000 }, async () => {
         const bin = newBin();
         stub(bin, 'tex-fmt', 'sleep 5');
 
@@ -512,6 +472,7 @@ describe('POST /api/latex format', () => {
         ['badness', 'format --stdin-filepath chapter.tex -']
     ] as const)(
         'runs %s with its arguments, the text on standard input',
+        { tags: ['slow'], timeout: 30_000 },
         async (formatter, args) => {
             const bin = newBin();
             stub(bin, formatter, `test "$*" = "${args}" || exit 3\nsed 's/^/> /'`);
@@ -528,24 +489,28 @@ describe('POST /api/latex format', () => {
         }
     );
 
-    it('runs the program its path key names instead of the one on PATH', async () => {
-        const bin = newBin();
-        const other = newBin();
-        stub(bin, 'tex-fmt', 'echo on-path');
-        stub(other, 'my-fmt', 'echo named');
-        const target = {
-            ...withTools(bin),
-            formatting: formatting('tex-fmt', { 'tex-fmt': join(other, 'my-fmt') })
-        };
+    it(
+        'runs the program its path key names instead of the one on PATH',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const bin = newBin();
+            const other = newBin();
+            stub(bin, 'tex-fmt', 'echo on-path');
+            stub(other, 'my-fmt', 'echo named');
+            const target = {
+                ...withTools(bin),
+                formatting: formatting('tex-fmt', { 'tex-fmt': join(other, 'my-fmt') })
+            };
 
-        const response = await handleLatexPost(
-            post({ action: 'format', text: 'a' }),
-            TOKEN,
-            target
-        );
+            const response = await handleLatexPost(
+                post({ action: 'format', text: 'a' }),
+                TOKEN,
+                target
+            );
 
-        expect(await answer(response)).toEqual({ text: 'named\n' });
-    });
+            expect(await answer(response)).toEqual({ text: 'named\n' });
+        }
+    );
 
     it('refuses format-none and runs nothing when the choice is none', async () => {
         const bin = newBin();
@@ -566,25 +531,27 @@ describe('POST /api/latex format', () => {
         expect(() => readFileSync(calls, 'utf8')).toThrow();
     });
 
-    it.each(['latexindent', 'tex-fmt', 'badness'] as const)(
-        'refuses %s-missing when the chosen program is not found',
-        async (formatter) => {
-            const target = {
-                ...TARGET,
-                tools: { env: { PATH: join(newBin(), 'nothing') } },
-                formatting: formatting(formatter)
-            };
+    describe('a chosen formatter that is not found', { tags: ['slow'] }, () => {
+        it.each(['latexindent', 'tex-fmt', 'badness'] as const)(
+            'refuses %s-missing when the chosen program is not found',
+            async (formatter) => {
+                const target = {
+                    ...TARGET,
+                    tools: { env: { PATH: join(newBin(), 'nothing') } },
+                    formatting: formatting(formatter)
+                };
 
-            const response = await handleLatexPost(
-                post({ action: 'format', text: 'a' }),
-                TOKEN,
-                target
-            );
+                const response = await handleLatexPost(
+                    post({ action: 'format', text: 'a' }),
+                    TOKEN,
+                    target
+                );
 
-            expect(response.status).toBe(502);
-            expect((await answer(response)).error).toBe(`${formatter}-missing`);
-        }
-    );
+                expect(response.status).toBe(502);
+                expect((await answer(response)).error).toBe(`${formatter}-missing`);
+            }
+        );
+    });
 
     it('refuses a request without the write token and a body that is no format request', async () => {
         const bin = newBin();

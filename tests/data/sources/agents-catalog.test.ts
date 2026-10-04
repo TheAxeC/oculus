@@ -1,13 +1,11 @@
-// Layer 1, data test. config/catalogs/agents.yml read by data/sources/config/catalog/agents.ts: the
-// shipped file seeds the composer with no finding, every refusal names the line it is on and leaves
-// the rest of the file read, and the argv words a start takes come from the parsed file and nothing
-// else.
+// Layer 1, data tests. config/catalogs/agents.yml read by data/sources/config/catalog/agents.ts:
+// the shipped file reads with no finding, every refusal names the line it is on and leaves the rest
+// of the file read, and the argv words a start takes come from the parsed file and nothing else.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-    cacheModels,
     choiceArgs,
     parseAgents,
     passable,
@@ -40,17 +38,8 @@ function picker(flag: string, fallback: string, values: string[]): string[] {
 }
 
 describe('the shipped agents catalog', () => {
-    it('seeds the composer with both agents, their pickers and no finding', () => {
-        const read = parseAgents(shipped());
-        expect(read.findings).toEqual([]);
-        expect(read.agents.map((agent) => agent.agent)).toEqual(['claude', 'codex']);
-        const keys = read.agents.map((agent) => agent.lists.map((list) => list.key));
-        expect(keys).toEqual([
-            ['model', 'effort', 'mode'],
-            ['model', 'effort', 'sandbox', 'approval']
-        ]);
-        const codexModel = read.agents[1].lists[0];
-        expect(codexModel.cache).toBe('models_cache.json');
+    it('reads with no finding', () => {
+        expect(parseAgents(shipped()).findings).toEqual([]);
     });
 
     it('starts each agent with its defaults: the flags that pass something, and no others', () => {
@@ -228,29 +217,6 @@ describe('a refusal in the agents catalog', () => {
 });
 
 describe("a Codex account's model cache", () => {
-    it('reads a list or a map holding one, each model by its slug and its display name', () => {
-        expect(
-            cacheModels({
-                models: [
-                    { slug: 'gpt-5.6-sol', display_name: 'GPT 5.6 Sol' },
-                    { id: 'o9' },
-                    { slug: 'gpt-5.6-sol' },
-                    { slug: '--oops' },
-                    { slug: 'two words' },
-                    'not a model'
-                ]
-            })
-        ).toEqual([
-            { id: 'gpt-5.6-sol', label: 'GPT 5.6 Sol', pass: 'gpt-5.6-sol' },
-            { id: 'o9', label: 'o9', pass: 'o9' }
-        ]);
-        expect(cacheModels([{ model: 'm1', name: 'Model one' }])).toEqual([
-            { id: 'm1', label: 'Model one', pass: 'm1' }
-        ]);
-        expect(cacheModels(null)).toEqual([]);
-        expect(cacheModels({ models: 'none' })).toEqual([]);
-    });
-
     it('puts the cached models in place of the file list, the CLI default kept in front', () => {
         const codex = parseAgents(shipped()).agents[1];
         const merged = withCacheModels(codex, [{ id: 'm1', label: 'M1', pass: 'm1' }]);

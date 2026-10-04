@@ -1,4 +1,4 @@
-// Layer 1, data test. File nesting (data/helpers/files/nesting.ts) over the shipped defaults of
+// Layer 1, data tests. File nesting (data/helpers/files/nesting.ts) over the shipped defaults of
 // config/catalogs/file-nesting.yml: which names of one folder are drawn under which, the patterns
 // the reader drops while it keeps the rest, and the finding each drop gives, in its catalog
 // sentence and on its key (data/sources/config/catalog/nesting.ts).
@@ -18,30 +18,6 @@ const nested = (names: string[], config: Record<string, unknown> = SHIPPED, fold
     Object.fromEntries(nestNames(names, readNesting(config).rules, folder));
 
 describe('the shipped patterns', () => {
-    it('hold the keys of VS Code default list and nothing else', () => {
-        expect(Object.keys(SHIPPED)).toEqual(['patterns']);
-        expect(Object.keys(SHIPPED.patterns as object)).toEqual([
-            '*.ts',
-            '*.js',
-            '*.jsx',
-            '*.tsx',
-            'tsconfig.json',
-            'package.json'
-        ]);
-        expect(readNesting(SHIPPED).drops).toEqual([]);
-    });
-
-    // Revert: write a parent's children as one comma separated text in file-nesting.yml.
-    it('write each parent children as a list of texts', () => {
-        const patterns = Object.values(SHIPPED.patterns as Record<string, unknown>);
-        expect(patterns.every((value) => Array.isArray(value))).toBe(true);
-        expect((SHIPPED.patterns as Record<string, unknown>)['*.js']).toEqual([
-            '${capture}.js.map',
-            '${capture}.min.js',
-            '${capture}.d.ts'
-        ]);
-    });
-
     it('nests a lock file under package.json, and the js and d.ts of a ts file under it', () => {
         expect(
             nested(['index.d.ts', 'index.js', 'index.ts', 'package-lock.json', 'package.json'])

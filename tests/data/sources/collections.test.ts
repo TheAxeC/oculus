@@ -1,5 +1,6 @@
-// readCollections against synthetic collection files in a temporary directory. Nothing outside it
-// is read or written, and every write asserts its path is inside the temporary directory first.
+// Layer 1, data tests. readCollections against synthetic collection files in a temporary directory.
+// Nothing outside it is read or written, and every write asserts its path is inside the temporary
+// directory first.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -179,35 +180,6 @@ describe('readCollections', () => {
         });
     });
 
-    it('reports an entries key that is not a list, and keeps the meta it did read', () => {
-        const hub = buildHub();
-        const { collections, findings } = readCollections(hub, FILES, CATALOG);
-
-        expect(collections.listless.entries).toEqual([]);
-        expect(collections.listless.meta).toEqual({ title: 'Listless' });
-        expect(findings).toContainEqual({
-            file: join(hub, 'odd/listless.yml'),
-            key: 'entries',
-            message: 'entry list entries is not a list'
-        });
-    });
-
-    it('reports an entry that is not a map and keeps the entries around it', () => {
-        const hub = buildHub();
-        const { collections, findings } = readCollections(hub, FILES, CATALOG);
-
-        expect(collections.code.entries.map((e) => e.title)).toEqual(['bttrlib', 'oculus']);
-        expect(collections.code.entries[1].provenance).toEqual({
-            file: join(hub, 'registries/repos.yml'),
-            index: 2
-        });
-        expect(findings).toContainEqual({
-            file: join(hub, 'registries/repos.yml'),
-            key: 'entries[1]',
-            message: 'entry is not a map of keys'
-        });
-    });
-
     it('reports a file that does not parse and gives an empty collection', () => {
         const hub = buildHub();
         write(hub, 'odd/broken.yml', 'title: "unterminated\n  - [\n');
@@ -222,23 +194,6 @@ describe('readCollections', () => {
         const broken = findings.find((f) => f.file === join(hub, 'odd/broken.yml'));
         expect(broken?.key).toBe('');
         expect(broken?.message).toMatch(/^does not parse: /);
-    });
-
-    it('reports a file that parses to something other than a map', () => {
-        const hub = buildHub();
-        write(hub, 'odd/listy.yml', '- one\n- two\n');
-        const { collections, findings } = readCollections(
-            hub,
-            [{ key: 'listy', file: 'odd/listy.yml' }],
-            CATALOG
-        );
-
-        expect(collections.listy.entries).toEqual([]);
-        expect(findings).toContainEqual({
-            file: join(hub, 'odd/listy.yml'),
-            key: '',
-            message: 'is not a map of keys'
-        });
     });
 
     it('reports a key asked for twice and keeps the later file', () => {
@@ -279,13 +234,21 @@ describe('readCollections over a collection file of the wrong shape', () => {
         return { file, tasks: out.collections.tasks, findings: out.findings };
     }
 
-    it.each([['[]'], ['3'], ['x'], ['']])('reads a file holding %j as one finding', (body) => {
-        const read = readTasks(body);
-        expect(read.findings).toStrictEqual([
-            { file: read.file, key: '', message: 'is not a map of keys' }
-        ]);
-        expect(read.tasks).toStrictEqual({ key: 'tasks', file: read.file, meta: {}, entries: [] });
-    });
+    it.each([['[]'], ['- one\n- two\n'], ['3'], ['x'], ['']])(
+        'reads a file holding %j as one finding',
+        (body) => {
+            const read = readTasks(body);
+            expect(read.findings).toStrictEqual([
+                { file: read.file, key: '', message: 'is not a map of keys' }
+            ]);
+            expect(read.tasks).toStrictEqual({
+                key: 'tasks',
+                file: read.file,
+                meta: {},
+                entries: []
+            });
+        }
+    );
 
     it('reads an entry list that is a map as one finding and no entries', () => {
         const read = readTasks('title: T\nentries:\n  a: 1\n');

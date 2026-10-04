@@ -1,23 +1,18 @@
-// Layer 4, test. The citation check over a report of its own: a line that is there, a range, a
-// list, a number past the end of the file, and a path the tree does not hold.
+// Layer 4, test. The citation check over a report of its own: a line that is there, a range,
+// a list, a number past the end of the file, and a path the tree does not hold. Every case that
+// runs the command starts a node process, so those are tagged slow; the reading of the arguments
+// runs in this process and is not.
 
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { afterEach, describe, expect } from 'vitest';
+import { describe, expect } from 'vitest';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { readArgs } from '../../../utils/cited-lines.mjs';
-
-const made: string[] = [];
-
-afterEach(() => {
-    for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
-});
 
 /** A tree of one file, with the report that cites it, inside the temporary directory. */
 function fixture(report: string, more: Record<string, string> = {}): { dir: string; path: string } {
     const dir = scratchDir('oculus-cited-lines-');
-    made.push(dir);
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(
         join(dir, 'src', 'rule.ts'),
@@ -42,7 +37,7 @@ function run(dir: string, report: string): { out: string; status: number | null 
     return { out: held.stdout, status: held.status };
 }
 
-describe('the citation check', () => {
+describe('the citation check', { tags: ['slow'] }, () => {
     it('prints the line the tree holds at every citation', () => {
         const held = fixture('The rule is at `src/rule.ts:2`, and the block at src/rule.ts:1-3.\n');
         const found = run(held.dir, held.path);
@@ -63,44 +58,44 @@ describe('the citation check', () => {
         expect(found.status).toBe(0);
     });
 
-    it('calls a line past the end, and a file the tree has not, MISSING and fails', () => {
-        const held = fixture('Wrong: src/rule.ts:99, and gone: src/other.ts:4.\n');
+    it.each([
+        [
+            'a line past the end and a file the tree has not',
+            'Wrong: src/rule.ts:99, and gone: src/other.ts:4.\n',
+            {},
+            ['MISSING src/rule.ts:99 the file has 4 lines', 'MISSING src/other.ts:4 no such file'],
+            '2 cited lines, 2 missing'
+        ],
+        [
+            'a line after the last',
+            'The rule is at src/rule.ts:4, which is the line after the last.\n',
+            {},
+            ['MISSING src/rule.ts:4 the line is blank'],
+            '1 cited lines, 1 missing'
+        ],
+        [
+            'a range that is too wide, one that runs backwards and a number below one',
+            'Wide: src/rule.ts:1-9999. Back: src/rule.ts:3-1. Under: src/rule.ts:-5.\n',
+            {},
+            [
+                'MISSING src/rule.ts:1-9999 the range 1-9999 is 9999 lines wide',
+                'MISSING src/rule.ts:3-1 the range 3-1 runs backwards',
+                'MISSING src/rule.ts:-5 -5 is no line number'
+            ],
+            '3 cited lines, 3 missing'
+        ],
+        [
+            'a line of punctuation',
+            'The brace is at src/braces.ts:2.\n',
+            { 'src/braces.ts': ['const one = {', '};', 'const two = 2;', ''].join('\n') },
+            ['MISSING src/braces.ts:2 the line holds only punctuation'],
+            '1 cited lines, 1 missing'
+        ]
+    ])('calls %s MISSING and fails', (_row, report, more, missing, summary) => {
+        const held = fixture(report, more);
         const found = run(held.dir, held.path);
-        expect(found.out).toContain('MISSING src/rule.ts:99 the file has 4 lines');
-        expect(found.out).toContain('MISSING src/other.ts:4 no such file');
-        expect(found.out).toContain('2 cited lines, 2 missing');
-        expect(found.status).toBe(1);
-    });
-
-    it('calls a citation that lands on a blank line MISSING', () => {
-        const held = fixture('The rule is at src/rule.ts:4, which is the line after the last.\n');
-        const found = run(held.dir, held.path);
-        expect(found.out).toContain('MISSING src/rule.ts:4 the line is blank');
-        expect(found.out).toContain('1 cited lines, 1 missing');
-        expect(found.status).toBe(1);
-    });
-
-    it('refuses a range that runs backwards, one wider than a screenful, and a number below one', () => {
-        const held = fixture(
-            'Wide: src/rule.ts:1-9999. Back: src/rule.ts:3-1. Under: src/rule.ts:-5.\n'
-        );
-        const found = run(held.dir, held.path);
-        expect(found.out).toContain(
-            'MISSING src/rule.ts:1-9999 the range 1-9999 is 9999 lines wide'
-        );
-        expect(found.out).toContain('MISSING src/rule.ts:3-1 the range 3-1 runs backwards');
-        expect(found.out).toContain('MISSING src/rule.ts:-5 -5 is no line number');
-        expect(found.out).toContain('3 cited lines, 3 missing');
-        expect(found.status).toBe(1);
-    });
-
-    it('calls a citation landing on a line of punctuation MISSING', () => {
-        const held = fixture('The brace is at src/braces.ts:2.\n', {
-            'src/braces.ts': ['const one = {', '};', 'const two = 2;', ''].join('\n')
-        });
-        const found = run(held.dir, held.path);
-        expect(found.out).toContain('MISSING src/braces.ts:2 the line holds only punctuation');
-        expect(found.out).toContain('1 cited lines, 1 missing');
+        for (const line of missing) expect(found.out).toContain(line);
+        expect(found.out).toContain(summary);
         expect(found.status).toBe(1);
     });
 
@@ -130,19 +125,22 @@ describe('the citation check', () => {
 });
 
 describe('the command line', () => {
-    it('reads the root and the report, the last --root winning', () => {
-        expect(readArgs(['--root', '/r', 'a.md'])).toEqual({ root: '/r', report: 'a.md' });
-        expect(readArgs(['--root=/r', '--root', '/s', 'a.md'])).toEqual({
-            root: '/s',
-            report: 'a.md'
-        });
-        expect(readArgs(['a.md'])).toEqual({ root: null, report: 'a.md' });
-        expect(readArgs([])).toEqual({ root: null, report: null });
+    it.each([
+        ['the root and the report', ['--root', '/r', 'a.md'], { root: '/r', report: 'a.md' }],
+        [
+            'the last --root winning',
+            ['--root=/r', '--root', '/s', 'a.md'],
+            { root: '/s', report: 'a.md' }
+        ],
+        ['a report alone', ['a.md'], { root: null, report: 'a.md' }],
+        ['no arguments', [], { root: null, report: null }],
+        ['a --root with no value, as no report', ['--root'], { root: null, report: null }],
+        ['an unknown flag, as no report', ['--bogus', 'a.md'], { root: null, report: null }]
+    ])('reads %s', (_row, argv, expected) => {
+        expect(readArgs(argv)).toEqual(expected);
     });
 
-    it('names no report for a line that does not read, so the usage is printed', () => {
-        expect(readArgs(['--root'])).toEqual({ root: null, report: null });
-        expect(readArgs(['--bogus', 'a.md'])).toEqual({ root: null, report: null });
+    it('prints the usage for a line that does not read', { tags: ['slow'] }, () => {
         const held = spawnSync('node', ['utils/cited-lines.mjs', '--bogus'], { encoding: 'utf8' });
         expect(held.stdout).toContain('usage: node utils/cited-lines.mjs');
         expect(held.status).toBe(2);

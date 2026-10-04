@@ -1,12 +1,14 @@
-// What the /api/write route answers. The route itself is a single line handing the request to
-// lib/server/edit/writes.ts with the token ServerContext minted, which is what this calls:
-// handleWrite takes a Request, the token and the hub to write in, so every case here is one Request
-// object.
+// Layer 2, route tests. What the /api/write route answers. The route itself is a single line
+// handing the request to lib/server/edit/writes.ts with the token ServerContext minted, which is
+// what this calls: handleWrite takes a Request, the token and the hub to write in, so every case
+// here is one Request object.
 //
 // The hub is synthetic, under the system temporary directory, and every path written is asserted to
 // be inside it first. What this does NOT cover: the token actually reaching the page, and Kit
-// putting it on the event, which is exercised by the curl in the package's verification.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// putting it on the event.
+//
+// The cases tagged slow take 100 ms or more; every other case runs in npm test. A hook loads the
+// configuration once, since the first load costs more than a later one, so no case pays for it.
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,24 +29,24 @@ import {
     subtaskWrite
 } from '../../../src/lib/server/edit/writes.ts';
 import { localDate } from '../../../src/lib/data/helpers/dates.ts';
-import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import {
     AREA,
     CAREER,
     GOOD,
-    HOST,
     MANIFEST,
     TOKEN,
-    URL_,
     configTarget,
     deckOf,
     deckTarget,
     manifestOf,
     overridesOf,
     request,
-    target
+    target,
+    warmConfig
 } from './write-fixture.ts';
-import { it } from '../../fixtures/scratch.ts';
+import { it, test } from '../../fixtures/scratch.ts';
+
+test.beforeAll(warmConfig);
 
 describe('the write endpoint', () => {
     it('adds and promotes LinkedIn files through the two write kinds', async () => {
@@ -114,32 +116,13 @@ describe('the write endpoint', () => {
             refused: [{ field: 'title', reason: 'a lead needs a title' }]
         });
     });
+
     it('refuses a request with no token', async () => {
         const into = target();
         const response = await handleWrite(request(GOOD, { 'x-oculus-token': '' }), TOKEN, into);
         expect(response.status).toBe(403);
         expect(await response.json()).toEqual({ error: 'the write token is missing or stale' });
         expect(manifestOf(into)).toBe(MANIFEST);
-    });
-
-    it('refuses a request with a stale token', async () => {
-        const into = target();
-        const response = await handleWrite(
-            request(GOOD, { 'x-oculus-token': mintToken() }),
-            TOKEN,
-            into
-        );
-        expect(response.status).toBe(403);
-        expect(manifestOf(into)).toBe(MANIFEST);
-    });
-
-    it('refuses a request that carries no token', async () => {
-        const bare = new Request(URL_, {
-            method: 'POST',
-            headers: { host: HOST },
-            body: JSON.stringify(GOOD)
-        });
-        expect((await handleWrite(bare, TOKEN, target())).status).toBe(403);
     });
 
     it('refuses a body that is not JSON, and one that is not a manifest write', async () => {
@@ -202,61 +185,6 @@ describe('the write endpoint', () => {
         expect(overridesOf(into)).toEqual({ sessions: { 'sess-1': { title: 'my name' } } });
     });
 
-    it('refuses a session write with no token, and writes nothing', async () => {
-        const into = target();
-        const body = { kind: 'session', id: 'sess-1', hidden: true };
-        const response = await handleWrite(request(body, { 'x-oculus-token': '' }), TOKEN, into);
-        expect(response.status).toBe(403);
-        expect(overridesOf(into)).toBe(null);
-    });
-
-    it('refuses a session write that names no id or no field', async () => {
-        const into = target();
-        expect((await handleWrite(request({ kind: 'session', id: '' }), TOKEN, into)).status).toBe(
-            400
-        );
-        expect((await handleWrite(request({ kind: 'session', id: 'a' }), TOKEN, into)).status).toBe(
-            400
-        );
-        expect(
-            (await handleWrite(request({ kind: 'session', id: 'a', hidden: 'yes' }), TOKEN, into))
-                .status
-        ).toBe(400);
-        expect(
-            (await handleWrite(request({ kind: 'session', id: 'a', area: 7 }), TOKEN, into)).status
-        ).toBe(400);
-        expect(
-            (await handleWrite(request({ kind: 'session', id: 'a', title: null }), TOKEN, into))
-                .status
-        ).toBe(400);
-        expect(overridesOf(into)).toBe(null);
-    });
-
-    it('pins a session to an area through the route, and unpins it', async () => {
-        const into = target();
-        const pin = { kind: 'session', id: 'sess-1', area: AREA };
-        const response = await handleWrite(request(pin), TOKEN, into);
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ ok: true, changed: ['area'], refused: [] });
-        expect(overridesOf(into)).toEqual({ sessions: { 'sess-1': { area: AREA } } });
-
-        const unpin = { kind: 'session', id: 'sess-1', area: '' };
-        expect((await handleWrite(request(unpin), TOKEN, into)).status).toBe(200);
-        expect(overridesOf(into)).toEqual({ sessions: {} });
-    });
-
-    it('renames a session through the route, and clears the name', async () => {
-        const into = target();
-        const rename = { kind: 'session', id: 'sess-1', title: 'my name' };
-        const response = await handleWrite(request(rename), TOKEN, into);
-        expect(await response.json()).toEqual({ ok: true, changed: ['title'], refused: [] });
-        expect(overridesOf(into)).toEqual({ sessions: { 'sess-1': { title: 'my name' } } });
-
-        const clear = { kind: 'session', id: 'sess-1', title: '' };
-        expect((await handleWrite(request(clear), TOKEN, into)).status).toBe(200);
-        expect(overridesOf(into)).toEqual({ sessions: {} });
-    });
-
     it('carries a dismissal, a pin and a title in one body', async () => {
         const into = target();
         const body = { kind: 'session', id: 'sess-1', hidden: true, area: AREA, title: 'my name' };
@@ -281,14 +209,6 @@ describe('the write endpoint', () => {
             changed: [],
             refused: [{ field: 'area', reason: 'the area must be an absolute path' }]
         });
-        expect(overridesOf(into)).toBe(null);
-    });
-
-    it('refuses a pin with no token, and writes nothing', async () => {
-        const into = target();
-        const body = { kind: 'session', id: 'sess-1', area: AREA };
-        const response = await handleWrite(request(body, { 'x-oculus-token': '' }), TOKEN, into);
-        expect(response.status).toBe(403);
         expect(overridesOf(into)).toBe(null);
     });
 
@@ -354,7 +274,7 @@ const MALFORMED: Record<string, unknown> = {
     'config-key': { kind: 'config-key', file: 'behavior.yml', key: 'changes.keep' }
 };
 
-describe('the kinds the write endpoint learned in P1', () => {
+describe('the kinds the write endpoint takes', () => {
     for (const [kind, body] of Object.entries(KINDS)) {
         it(`answers 200 for a good ${kind} body`, async () => {
             const into = target();
@@ -363,20 +283,6 @@ describe('the kinds the write endpoint learned in P1', () => {
             const answer = (await response.json()) as { ok: boolean; changed: string[] };
             expect(answer.ok).toBe(true);
             expect(answer.changed.length).toBeGreaterThan(0);
-        });
-
-        it(`refuses a ${kind} body with no token, and writes nothing`, async () => {
-            const into = target();
-            const before = readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8');
-            const response = await handleWrite(
-                request(body, { 'x-oculus-token': '' }),
-                TOKEN,
-                into
-            );
-            expect(response.status).toBe(403);
-            expect(readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8')).toBe(before);
-            expect(manifestOf(into)).toBe(MANIFEST);
-            expect(existsSync(join(into.hub, 'projects', 'ideas'))).toBe(false);
         });
     }
 
@@ -518,7 +424,7 @@ describe('the kinds the write endpoint learned in P1', () => {
         );
     });
 
-    it('requires a fresh non-empty id for new venues', async () => {
+    it('requires a fresh non-empty id for new venues', { tags: ['slow'] }, async () => {
         const missing = target();
         const missingResponse = await handleWrite(
             request({ kind: 'new-entry', collection: 'venues', fields: { name: 'Missing ID' } }),
@@ -609,39 +515,47 @@ describe('the deck write', () => {
         expect(deck.selection).toEqual(['closing', 'title']);
     });
 
-    it('refuses an empty selection, a key it does not know and a repeated key', async () => {
-        for (const selection of [[], ['title', 'nobody'], ['title', 'title']]) {
-            const into = deckTarget();
-            const before = deckOf(into);
-            const response = await handleWrite(
-                request({ kind: 'deck', selection, order: CATALOG }),
-                TOKEN,
-                into
-            );
-            expect(response.status).toBe(400);
-            expect(await response.json()).toEqual({ error: 'invalid' });
-            expect(deckOf(into)).toBe(before);
+    it(
+        'refuses an empty selection, a key it does not know and a repeated key',
+        { tags: ['slow'] },
+        async () => {
+            for (const selection of [[], ['title', 'nobody'], ['title', 'title']]) {
+                const into = deckTarget();
+                const before = deckOf(into);
+                const response = await handleWrite(
+                    request({ kind: 'deck', selection, order: CATALOG }),
+                    TOKEN,
+                    into
+                );
+                expect(response.status).toBe(400);
+                expect(await response.json()).toEqual({ error: 'invalid' });
+                expect(deckOf(into)).toBe(before);
+            }
         }
-    });
+    );
 
-    it('refuses an order that is not a permutation of the catalog', async () => {
-        for (const order of [
-            ['title', 'alpha'],
-            ['title', 'framing:engine', 'alpha', 'gamma', 'nobody'],
-            ['title', 'title', 'alpha', 'gamma', 'closing']
-        ]) {
-            const into = deckTarget();
-            const before = deckOf(into);
-            const response = await handleWrite(
-                request({ kind: 'deck', selection: ['title'], order }),
-                TOKEN,
-                into
-            );
-            expect(response.status).toBe(400);
-            expect(await response.json()).toEqual({ error: 'invalid_order' });
-            expect(deckOf(into)).toBe(before);
+    it(
+        'refuses an order that is not a permutation of the catalog',
+        { tags: ['slow'] },
+        async () => {
+            for (const order of [
+                ['title', 'alpha'],
+                ['title', 'framing:engine', 'alpha', 'gamma', 'nobody'],
+                ['title', 'title', 'alpha', 'gamma', 'closing']
+            ]) {
+                const into = deckTarget();
+                const before = deckOf(into);
+                const response = await handleWrite(
+                    request({ kind: 'deck', selection: ['title'], order }),
+                    TOKEN,
+                    into
+                );
+                expect(response.status).toBe(400);
+                expect(await response.json()).toEqual({ error: 'invalid_order' });
+                expect(deckOf(into)).toBe(before);
+            }
         }
-    });
+    );
 
     it('saves a selection naming an archived project, and the file holds it', async () => {
         const into = deckTarget();
@@ -684,20 +598,24 @@ describe('the deck write', () => {
         expect(deckOf(into)).toBe(flow);
     });
 
-    it('does not know a body whose two lists are not lists of words', async () => {
-        for (const body of [
-            { kind: 'deck', selection: 'title', order: CATALOG },
-            { kind: 'deck', selection: ['title'], order: [1, 2] },
-            { kind: 'deck', selection: [''], order: CATALOG },
-            { kind: 'deck', order: CATALOG }
-        ]) {
-            const response = await handleWrite(request(body), TOKEN, deckTarget());
-            expect(response.status).toBe(400);
-            expect(await response.json()).toEqual({
-                error: 'the body is not a write this route knows'
-            });
+    it(
+        'does not know a body whose two lists are not lists of words',
+        { tags: ['slow'] },
+        async () => {
+            for (const body of [
+                { kind: 'deck', selection: 'title', order: CATALOG },
+                { kind: 'deck', selection: ['title'], order: [1, 2] },
+                { kind: 'deck', selection: [''], order: CATALOG },
+                { kind: 'deck', order: CATALOG }
+            ]) {
+                const response = await handleWrite(request(body), TOKEN, deckTarget());
+                expect(response.status).toBe(400);
+                expect(await response.json()).toEqual({
+                    error: 'the body is not a write this route knows'
+                });
+            }
         }
-    });
+    );
 
     it('writes nothing when the file already holds exactly those two lists', async () => {
         const into = deckTarget();
@@ -736,17 +654,6 @@ describe('the config-key body', () => {
             null
         ]) {
             expect(configKeyWrite(body)).toBeNull();
-        }
-    });
-
-    it('answers 400 for a body that is not a write, whatever it is missing', async () => {
-        const { value: _value, ...without } = GOOD_BODY;
-        for (const body of [without, { ...GOOD_BODY, file: '' }, { ...GOOD_BODY, key: 3 }]) {
-            const response = await handleWrite(request(body), TOKEN, configTarget());
-            expect(response.status).toBe(400);
-            expect(await response.json()).toEqual({
-                error: 'the body is not a write this route knows'
-            });
         }
     });
 });

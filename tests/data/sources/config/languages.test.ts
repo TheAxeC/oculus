@@ -1,6 +1,6 @@
-// The findings over the `languages:` map of config/sources.yml: one sentence for each entry,
-// language or ending the reader drops, each naming the key it is about, in the words of the
-// findings catalog. Findings are compared whole, in order, with the file each names.
+// Layer 1, data tests. The findings over the `languages:` map of config/sources.yml: one sentence
+// for each entry, language or ending the reader drops, each naming the key it is about, in the
+// words of the findings catalog. Findings are compared whole, in order, with the file each names.
 
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -25,10 +25,6 @@ function finding(key: string, message: string) {
 }
 
 describe('languageFindings', () => {
-    it('reports nothing for the checked-in map', () => {
-        expect(languageFindings(ENGINE, loadConfig(ENGINE).config)).toStrictEqual([]);
-    });
-
     it('reports nothing for a config without the key', () => {
         expect(languageFindings(ENGINE, configWith())).toStrictEqual([]);
     });

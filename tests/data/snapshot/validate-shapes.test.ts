@@ -1,6 +1,6 @@
-// validate over raw records whose fields hold values of the wrong shape, and the readers of the
-// schema's field names. Findings are compared whole and in order. Nothing here reads or writes a
-// file; validate is pure and the records are literals.
+// Layer 1, data tests. validate over raw records whose fields hold values of the wrong shape, and
+// the readers of the schema's field names. Findings are compared whole and in order. Nothing here
+// reads or writes a file; validate is pure and the records are literals.
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';

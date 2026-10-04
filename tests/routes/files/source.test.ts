@@ -1,19 +1,18 @@
-// The source endpoint against one synthetic root under the system temporary directory: what the GET
-// says about a file, and the write's authentication, root, mode and content refusals, its
-// replacement and the neighbour-rename result.
+// Layer 2, route tests. The source endpoint against one synthetic root under the system temporary
+// directory: what the GET says about a file, and the write's authentication, root, mode and content
+// refusals, its replacement and the neighbour-rename result.
 
 import {
     chmodSync,
     mkdirSync,
     readFileSync,
     readdirSync,
-    rmSync,
     statSync,
     symlinkSync,
     writeFileSync
 } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect } from 'vitest';
+import { describe, expect } from 'vitest';
 import { mintToken, TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
 import {
     handleSource,
@@ -26,15 +25,9 @@ import type { Root } from '../../../src/lib/server/files/files.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 const HOST = '127.0.0.1:8790';
-const temporary: string[] = [];
-
-afterEach(() => {
-    for (const dir of temporary.splice(0)) rmSync(dir, { recursive: true, force: true });
-});
 
 function fixture(): { dir: string; root: Root; file: string; outside: string } {
     const dir = scratchDir('oculus-source-');
-    temporary.push(dir);
     const rootDir = join(dir, 'root');
     mkdirSync(rootDir);
     const file = join(rootDir, 'notes.md');
@@ -279,7 +272,6 @@ describe('a config file of the engine', () => {
     /** An engine directory with its config folder, which is what the `engine` root serves. */
     function engineFixture(): { engine: string; file: string } {
         const dir = scratchDir('oculus-source-engine-');
-        temporary.push(dir);
         const folder = join(dir, 'config');
         mkdirSync(folder);
         const file = join(folder, 'layout.yml');

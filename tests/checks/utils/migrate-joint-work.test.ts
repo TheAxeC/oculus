@@ -2,26 +2,18 @@
 // joint-work collection, over a scratch hub: a row naming two organisations gives its person both
 // keys, a second run writes the same bytes, and `--from` carries the rows of the file it names onto
 // people the registry already holds.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// @module-tag slow: every case runs the migration, which is a node process.
 
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { parse } from 'yaml';
-import { afterEach, describe, expect } from 'vitest';
+import { describe, expect } from 'vitest';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
-const made: string[] = [];
-
 function scratch(): string {
-    const dir = scratchDir('oculus-migrate-');
-    made.push(dir);
-    return dir;
+    return scratchDir('oculus-migrate-');
 }
-
-afterEach(() => {
-    for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
-});
 
 function write(dir: string, relative: string, body: string): string {
     const file = join(dir, relative);

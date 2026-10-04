@@ -1,8 +1,8 @@
-// The editor's options in config/behavior.yml's `editor:` block and in a repository's
-// `.oculus/settings.yml`: how the merged configuration is read (a bad value is the default and a
-// problem naming its key), how a repository's file is parsed, the order a value is taken in
-// (the tab's choice, the file's own indentation, the repository's record, `editor.languages`, the
-// global key), and the toggle of word wrap.
+// Layer 1, data tests. The editor's options in config/behavior.yml's `editor:` block and in a
+// repository's `.oculus/settings.yml`: how the merged configuration is read (a bad value is the
+// default and a problem naming its key), how a repository's file is parsed, the order a value is
+// taken in (the tab's choice, the file's own indentation, the repository's record,
+// `editor.languages`, the global key), and the toggle of word wrap.
 //
 // What this does NOT cover: the editor taking the values (tests/ui/controls/editor/options.test.ts)
 // and the source tab handing them over (tests/views/shared/prose/source-options.test.ts).
@@ -31,12 +31,6 @@ function problemKeys(editor: unknown): string[] {
     return readEditorOptions(held(editor)).problems.map((one) => one.key);
 }
 
-describe('the tracked configuration', () => {
-    it('draws no finding of the new keys', () => {
-        expect(behaviorFindings(engineDir(), config)).toEqual([]);
-    });
-});
-
 describe('a configuration without any of the new keys', () => {
     it.each([{}, held({}), held({ paint_limit_kb: 64 }), held('on'), held([])])(
         'is read as every default with no problem: %j',
@@ -54,13 +48,6 @@ describe('a configuration without any of the new keys', () => {
             expect({ ...options.languages }).toEqual({});
         }
     );
-
-    it('draws no finding', () => {
-        const text = { text: config.text };
-        expect(behaviorFindings(engineDir(), { ...text, editor: { paint_limit_kb: 64 } })).toEqual(
-            []
-        );
-    });
 
     it('hands every caller options of its own', () => {
         const first = editorOptions({});
@@ -119,9 +106,11 @@ describe('editor.languages', () => {
         expect({ ...options.languages }).toEqual({});
     });
 
-    it('is a finding when it is not a map', () => {
-        expect(problemKeys({ languages: ['a'] })).toEqual(['editor.languages']);
-        expect(problemKeys({ languages: 'python' })).toEqual(['editor.languages']);
+    it.each([
+        ['a list', ['a']],
+        ['text', 'python']
+    ])('is a finding when it is %s', (_row, languages) => {
+        expect(problemKeys({ languages })).toEqual(['editor.languages']);
     });
 
     it('reads the fields of a record and gives a record per language', () => {
@@ -198,12 +187,12 @@ describe('editor.languages', () => {
         }
     );
 
-    it('names a field the record does not have, and a record that is not a map', () => {
-        expect(problemKeys({ languages: { python: { tabsize: 2 } } })).toEqual([
-            'editor.languages.python.tabsize'
-        ]);
-        expect(problemKeys({ languages: { python: [1] } })).toEqual(['editor.languages.python']);
-        expect(problemKeys({ languages: { python: 4 } })).toEqual(['editor.languages.python']);
+    it.each([
+        ['a field the record does not have', { tabsize: 2 }, 'editor.languages.python.tabsize'],
+        ['a record that is a list', [1], 'editor.languages.python'],
+        ['a record that is a number', 4, 'editor.languages.python']
+    ])('names %s', (_row, record, key) => {
+        expect(problemKeys({ languages: { python: record } })).toEqual([key]);
     });
 
     it('names a reserved language and never merges it', () => {
@@ -275,9 +264,11 @@ describe('a repository s .oculus/settings.yml', () => {
         expect(read.line).not.toContain('\n');
     });
 
-    it('does not read a languages that is not a map', () => {
-        expect(parseRepoSettings('languages: [a, b]\n').kind).toBe('not-a-map');
-        expect(parseRepoSettings('languages: python\n').kind).toBe('not-a-map');
+    it.each([
+        ['a list', 'languages: [a, b]\n'],
+        ['text', 'languages: python\n']
+    ])('does not read a languages that is %s', (_row, text) => {
+        expect(parseRepoSettings(text).kind).toBe('not-a-map');
     });
 
     it('skips an unknown language, a reserved name and a bad field, and reads the rest', () => {

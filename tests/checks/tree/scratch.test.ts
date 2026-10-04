@@ -1,6 +1,6 @@
-// Layer 4, test. The scratch helper hands back a directory inside the system temporary directory
-// and its fixture sweeps it, no test file makes one any other way, and every file that reaches the
-// helper takes its cases from the helper's `it` and `test`, which carry the sweep.
+// Layer 4, tree check. The scratch helper hands back a directory inside the system temporary
+// directory and its fixture sweeps it, no test file makes one any other way, and every file that
+// reaches the helper takes its cases from the helper's `it` and `test`, which carry the sweep.
 //
 // These are what keep a run from leaving directories behind: a file that calls mkdtempSync itself,
 // or one that takes a directory from the helper and declares its cases with vitest's own `it`, has
@@ -113,7 +113,7 @@ function importsIn(rel: string, source: ts.SourceFile, known: Set<string>): stri
  * over lines is read whole and one written in a comment or a string is none; an `x as y` is read as
  * the `x` it imports.
  */
-export function vitestNames(source: ts.SourceFile): string[] {
+function vitestNames(source: ts.SourceFile): string[] {
     return source.statements.flatMap((statement) => {
         if (!ts.isImportDeclaration(statement)) return [];
         const from = statement.moduleSpecifier;
@@ -284,7 +284,7 @@ type Held = {
  * file that reaches the helper and no suite imports is run by hand, outside vitest, and registers
  * the sweep with its own runner.
  */
-export function findUnswept(root = TESTS): string[] {
+function findUnswept(root = TESTS): string[] {
     const all = testFiles(root);
     const known = new Set(all);
     const held = new Map<string, Held>();
@@ -366,7 +366,7 @@ export function findUnswept(root = TESTS): string[] {
 }
 
 /** Every file that makes a temporary directory without the helper that sweeps it. */
-export function findOwnScratch(allow: string[] = OWN, root = TESTS): string[] {
+function findOwnScratch(allow: string[] = OWN, root = TESTS): string[] {
     const found: string[] = [];
     for (const rel of testFiles(root)) {
         if (allow.includes(rel)) continue;
@@ -587,19 +587,6 @@ describe('the fixture rule', () => {
         expect(findUnswept(dir)).toEqual([
             `tests/b.test.ts registers ${HOOK}, which the fixture holds`
         ]);
-    });
-
-    // Audit: a rule that refuses every file reaching the helper turns it red; no revert of the
-    // shipped rule does, since passing a clean file is what the rule does by doing nothing.
-    it('passes a file that plants a directory and takes it from the fixture', () => {
-        const dir = planted({
-            'c.test.ts': [
-                "import { it, plantScratch } from './fixtures/scratch.ts';",
-                "it('x', () => { plantScratch('x-', {}); });",
-                ''
-            ].join('\n')
-        });
-        expect(findUnswept(dir)).toEqual([]);
     });
 
     // Revert: in findUnswept of tests/checks/tree/scratch.test.ts, test HOOKED against the raw

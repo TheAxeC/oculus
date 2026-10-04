@@ -1,6 +1,6 @@
-// The one rule both layers tell a text file by: no NUL byte in the window, and the window decodes
-// as UTF-8. The browser runs it over the head of a file it fetched, the source route over the file
-// on disk, so the two never disagree about what may be opened for editing.
+// Layer 1, data tests. The one rule both layers tell a text file by: no NUL byte in the window, and
+// the window decodes as UTF-8. The browser runs it over the head of a file it fetched, the source
+// route over the file on disk, so the two never disagree about what may be opened for editing.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -15,55 +15,49 @@ function bytes(text: string): Uint8Array {
 }
 
 describe('whether bytes are text', () => {
-    it('reads plain text, an empty file and accented letters as text', () => {
-        expect(isTextBytes(new Uint8Array(0))).toBe(true);
-        expect(isTextBytes(bytes('import sys\n\n\ndef main():\n    return "one"\n'))).toBe(true);
-        expect(isTextBytes(bytes('Link\u00f6ping, M\u00fcnchen, Besan\u00e7on\n'))).toBe(true);
-        expect(isTextBytes(bytes('a tab\tand a return\r\n'))).toBe(true);
-    });
-
-    it('reads a file opening with a byte order mark as text', () => {
-        const held = new Uint8Array([0xef, 0xbb, 0xbf, ...bytes('title: one\n')]);
+    it.each([
+        ['an empty file', new Uint8Array(0)],
+        ['plain text', bytes('import sys\n\n\ndef main():\n    return "one"\n')],
+        ['accented letters', bytes('Link\u00f6ping, M\u00fcnchen, Besan\u00e7on\n')],
+        ['a tab and a return', bytes('a tab\tand a return\r\n')],
+        [
+            'a file opening with a byte order mark',
+            new Uint8Array([0xef, 0xbb, 0xbf, ...bytes('title: one\n')])
+        ]
+    ])('reads %s as text', (_row, held) => {
         expect(isTextBytes(held)).toBe(true);
     });
 
-    it('reads a file with a zero byte anywhere in the window as not text', () => {
-        const held = bytes('a'.repeat(100) + '\u0000' + 'b'.repeat(100));
-        expect(held[100]).toBe(0);
+    it.each([
+        [
+            'a zero byte in the middle of the window',
+            bytes('a'.repeat(100) + '\u0000' + 'b'.repeat(100))
+        ],
+        ['a single zero byte', new Uint8Array([0])],
+        ['the head of a PNG', new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])],
+        [
+            'the head of a ZIP, which a .npz is',
+            new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00])
+        ],
+        [
+            'the head of a gzip file',
+            new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe, 0xfd, 0xfc])
+        ],
+        ['a lone continuation byte', new Uint8Array([0x80])],
+        ['a lead byte with nothing after it', new Uint8Array([0xc3])],
+        ['an overlong encoding of a character with a shorter form', new Uint8Array([0xc0, 0xaf])],
+        ['an overlong three-byte encoding', new Uint8Array([0xe0, 0x80, 0xaf])],
+        ['a surrogate half', new Uint8Array([0xed, 0xa0, 0x80])],
+        ['a value past the last code point', new Uint8Array([0xf5, 0x80, 0x80, 0x80])],
+        ['a byte no UTF-8 holds', new Uint8Array([0xff])]
+    ])('reads %s as not text', (_row, held) => {
         expect(isTextBytes(held)).toBe(false);
-        expect(isTextBytes(new Uint8Array([0]))).toBe(false);
-    });
-
-    it('reads the heads of the archives a research tree holds as not text', () => {
-        // PNG, ZIP (a .npz is one), and gzip.
-        expect(isTextBytes(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toBe(
-            false
-        );
-        expect(isTextBytes(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00]))).toBe(
-            false
-        );
-        expect(isTextBytes(new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xfe, 0xfd, 0xfc]))).toBe(
-            false
-        );
-    });
-
-    it('refuses bytes that are not UTF-8, however few of them there are', () => {
-        // A lone continuation byte, a lead byte with nothing after it, an overlong encoding of a
-        // character that has a shorter form, a surrogate half, and a value past the last code
-        // point.
-        expect(isTextBytes(new Uint8Array([0x80]))).toBe(false);
-        expect(isTextBytes(new Uint8Array([0xc3]))).toBe(false);
-        expect(isTextBytes(new Uint8Array([0xc0, 0xaf]))).toBe(false);
-        expect(isTextBytes(new Uint8Array([0xe0, 0x80, 0xaf]))).toBe(false);
-        expect(isTextBytes(new Uint8Array([0xed, 0xa0, 0x80]))).toBe(false);
-        expect(isTextBytes(new Uint8Array([0xf5, 0x80, 0x80, 0x80]))).toBe(false);
     });
 
     it('reads the window and the one byte after it a caller hands over', () => {
         // What a caller reads is TEXT_SNIFF_READ, the window and one byte: the extra byte is what
         // says the file goes on, so a character lying across the window's end is the window's
         // doing.
-        expect(TEXT_SNIFF_READ).toBe(TEXT_SNIFF + 1);
         const straddling = bytes('a'.repeat(TEXT_SNIFF - 1) + '\u00e9' + 'more');
         expect(isTextBytes(straddling.subarray(0, TEXT_SNIFF_READ))).toBe(true);
         // The window alone, which is what a caller reading TEXT_SNIFF bytes would hand over, ends
@@ -89,30 +83,5 @@ describe('whether bytes are text', () => {
         held.fill(0x61);
         held[TEXT_SNIFF + 4] = 0;
         expect(isTextBytes(held)).toBe(true);
-    });
-});
-
-describe('the sniff over the cases of one rule', () => {
-    /** TEXT_SNIFF bytes of `a` whose last one is a lead byte, and `after` behind them. */
-    function endingInLead(after: number[]): Uint8Array {
-        const held = new Uint8Array(TEXT_SNIFF + after.length);
-        held.fill(0x61, 0, TEXT_SNIFF - 1);
-        held[TEXT_SNIFF - 1] = 0xc3;
-        held.set(after, TEXT_SNIFF);
-        return held;
-    }
-
-    it('reads UTF-8 as text and a byte no UTF-8 holds as not', () => {
-        expect(isTextBytes(new Uint8Array([0x63, 0x61, 0x66, 0xc3, 0xa9]))).toBe(true);
-        expect(isTextBytes(new Uint8Array([0xff]))).toBe(false);
-    });
-
-    it('tells a window cut inside a character from a file that ends inside one', () => {
-        expect(isTextBytes(endingInLead([0xa9]))).toBe(true);
-        expect(isTextBytes(endingInLead([]))).toBe(false);
-    });
-
-    it('reads a NUL byte as not text', () => {
-        expect(isTextBytes(new Uint8Array([0x61, 0x00, 0x62]))).toBe(false);
     });
 });

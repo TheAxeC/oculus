@@ -1,11 +1,14 @@
-// What the /api/write route does with the default workspace's folders: Add Folder to Workspace
-// appends `{ key, dir }` to the `roots:` list of config/sources.yml over its bytes with every other
-// line kept, a second folder with the same name is filed under another key, Remove takes the entry
-// out and refuses the hub and the engine's config folder, and the change log holds each write with
-// an undo that puts the list back.
+// Layer 2, route tests. What the /api/write route does with the default workspace's folders: Add
+// Folder to Workspace appends `{ key, dir }` to the `roots:` list of config/sources.yml over its
+// bytes with every other line kept, a second folder with the same name is filed under another key,
+// Remove takes the entry out and refuses the hub and the engine's config folder, and the change log
+// holds each write with an undo that puts the list back.
 //
 // The sources file and the folders added are under the system temporary directory, asserted to be
 // inside it before anything is written, so no case here writes the engine's own config/sources.yml.
+//
+// A hook loads the configuration once, since the first load costs more than a later one, so no case
+// pays for it.
 
 import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
@@ -14,8 +17,8 @@ import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite, rootsWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { dirAsWritten } from '../../../src/lib/server/edit/writes/config/roots.ts';
-import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { TOKEN, changesOf, request, target } from './write-fixture.ts';
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
+import { TOKEN, changesOf, request, target, warmConfig } from './write-fixture.ts';
 
 /** A sources.yml of the engine's shape, with the comments and the other keys the edit must keep. */
 const SOURCES = `# Where the projects are.
@@ -66,6 +69,8 @@ const send = (into: WriteTarget, body: unknown) => handleWrite(request(body), TO
 const add = (into: WriteTarget, dir: string) => send(into, { kind: 'roots', action: 'add', dir });
 const remove = (into: WriteTarget, key: string) =>
     send(into, { kind: 'roots', action: 'remove', key });
+
+test.beforeAll(warmConfig);
 
 describe('the roots write', () => {
     it('appends the folder as an entry under a key made from its name, keeping every other line', async () => {
@@ -129,7 +134,9 @@ describe('the roots write', () => {
         const file = join(dir, 'f.txt');
         writeFileSync(file, 'x');
         expect(await (await add(into, file)).json()).toEqual({ error: 'not-a-directory' });
-        expect(await (await add(into, 'relative/dir')).json()).toEqual({ error: 'not-absolute' });
+        expect(await (await add(into, 'relative/dir')).json()).toEqual({
+            error: 'not-absolute'
+        });
         expect(await (await add(into, '  ')).json()).toEqual({ error: 'no-dir' });
         expect(sourcesOf(into)).toBe(before);
     });

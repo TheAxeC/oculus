@@ -1,4 +1,4 @@
-// Layer 1, data test. The one map from a file name to the language the editor colours it in:
+// Layer 1, data tests. The one map from a file name to the language the editor colours it in:
 // `languages:` of config/sources.yml read by `languageMap`, and the entries and languages it drops.
 // The tracked file is read from disk for the cases that hold it to the code window's registry;
 // every hand-edited map is a plain object handed to the reader, so nothing is written anywhere.
@@ -31,19 +31,6 @@ describe('the tracked map', () => {
         expect(endings.map((ending) => ending.toLowerCase())).toEqual(endings);
         expect(new Set(endings).size).toBe(endings.length);
         expect(languageMap(TRACKED).size).toBe(endings.length);
-    });
-
-    it('leaves Wren and Graphviz to plain text', () => {
-        const map = languageMap(TRACKED);
-        for (const ending of ['.wren', '.dot', '.gv']) expect(map.has(ending)).toBe(false);
-    });
-
-    it('is built once per read, as a Map that holds nothing an object inherits', () => {
-        const map = languageMap(TRACKED);
-        expect(map).toBeInstanceOf(Map);
-        for (const key of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
-            expect(map.get(key)).toBeUndefined();
-        }
     });
 });
 

@@ -1,53 +1,33 @@
-// The `editor:` block of config/behavior.yml: the cap the source editor paints under, read
-// leniently for a page that may not have been sent a configuration yet and required at the server's
-// start.
+// Layer 1, data tests. The `editor:` block of config/behavior.yml: the cap the source editor paints
+// under, read leniently for a page that may not have been sent a configuration yet and required at
+// the server's start.
 
 import { describe, expect, it } from 'vitest';
 import { paintLimit, requirePaintLimit } from '../../../src/lib/data/helpers/editor.ts';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-
-const { config } = loadConfig(engineDir());
 
 describe('the source editor cap', () => {
-    it("is the checked-in configuration's own kilobytes, in bytes", () => {
-        expect((config as { editor?: Record<string, unknown> }).editor?.paint_limit_kb).toBe(20480);
-        expect(paintLimit(config)).toBe(20480 * 1024);
-        expect(requirePaintLimit(config)).toBe(20480 * 1024);
+    it.each([
+        ['a missing block', {}, null],
+        ['a block that is text', { editor: 'on' }, null],
+        ['a block that is a list', { editor: [] }, null],
+        ['an empty block', { editor: {} }, null],
+        ['a size in text', { editor: { paint_limit_kb: '5' } }, null],
+        ['a size of zero', { editor: { paint_limit_kb: 0 } }, null],
+        ['a negative size', { editor: { paint_limit_kb: -1 } }, null],
+        ['a size that is not a number', { editor: { paint_limit_kb: Number.NaN } }, null],
+        ['an infinite size', { editor: { paint_limit_kb: Number.POSITIVE_INFINITY } }, null],
+        ['a size with a fraction', { editor: { paint_limit_kb: 2.5 } }, 2560]
+    ])('reads %s as %j bytes', (_row, held, bytes) => {
+        expect(paintLimit(held)).toBe(bytes);
+        if (bytes !== null) expect(requirePaintLimit(held)).toBe(bytes);
     });
 
-    it('is null for a block that is missing, of the wrong shape, or not a size', () => {
-        for (const held of [
-            {},
-            { editor: 'on' },
-            { editor: [] },
-            { editor: {} },
-            { editor: { paint_limit_kb: '64' } },
-            { editor: { paint_limit_kb: 0 } },
-            { editor: { paint_limit_kb: -1 } },
-            { editor: { paint_limit_kb: Number.NaN } }
-        ]) {
-            expect(paintLimit(held as Record<string, unknown>)).toBeNull();
-        }
-    });
-
-    it('throws naming the key when it is required and the configuration has no usable one', () => {
-        expect(() => requirePaintLimit({})).toThrow(
+    it.each([
+        ['a missing block', {}],
+        ['a size of zero', { editor: { paint_limit_kb: 0 } }]
+    ])('throws naming the key when it is required and there is %s', (_row, held) => {
+        expect(() => requirePaintLimit(held)).toThrow(
             'config/behavior.yml: editor.paint_limit_kb must be a number above zero'
         );
-        expect(() => requirePaintLimit({ editor: { paint_limit_kb: 0 } })).toThrow(
-            'editor.paint_limit_kb'
-        );
-    });
-});
-
-describe('the source editor cap over sizes of every kind', () => {
-    it.each([
-        [{ editor: { paint_limit_kb: '5' } }, null],
-        [{ editor: { paint_limit_kb: 0 } }, null],
-        [{ editor: { paint_limit_kb: Number.NaN } }, null],
-        [{ editor: { paint_limit_kb: Number.POSITIVE_INFINITY } }, null],
-        [{ editor: { paint_limit_kb: 2.5 } }, 2560]
-    ])('reads %j as %j', (held, bytes) => {
-        expect(paintLimit(held)).toBe(bytes);
     });
 });

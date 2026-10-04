@@ -1,5 +1,6 @@
-// readRegistries against synthetic registry files in a temporary directory. Nothing outside it is
-// read or written, and every write asserts its path is inside the temporary directory first.
+// Layer 1, data tests. readRegistries against synthetic registry files in a temporary directory.
+// Nothing outside it is read or written, and every write asserts its path is inside the temporary
+// directory first.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';

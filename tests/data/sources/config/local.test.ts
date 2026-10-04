@@ -1,6 +1,6 @@
-// The machine's own file, read from text the case writes: checkLocal over every shape of wrong
-// value, in the order the reader refuses them, and loadLocal over a scratch engine folder. The
-// real config/local.yml is never opened.
+// Layer 1, data tests. The machine's own file, read from text the case writes: checkLocal over
+// every shape of wrong value, in the order the reader refuses them, and loadLocal over a scratch
+// engine folder. The real config/local.yml is never opened.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -95,6 +95,38 @@ describe('checkLocal', () => {
             'mail: [{ provider: ics, label: a }]',
             'local.yml: mail[0].provider must be google or microsoft'
         ],
+        ['calendars: [one]', 'local.yml: calendars[0] must be a map'],
+        [
+            'calendars: [{ provider: google }]',
+            'local.yml: calendars[0].label must be lowercase letters, digits and dashes'
+        ],
+        [
+            'calendars: [{ provider: google, label: "../escape" }]',
+            'local.yml: calendars[0].label must be lowercase letters, digits and dashes'
+        ],
+        [
+            'calendars: [{ provider: google, label: work }, { provider: google, label: work }]',
+            'local.yml: calendars[1].label repeats work for google'
+        ],
+        ['calendar_dir: 7', 'local.yml: calendar_dir must be a path'],
+        ['mail: [one]', 'local.yml: mail[0] must be a map'],
+        [
+            'mail: [{ provider: fastmail, label: work }]',
+            'local.yml: mail[0].provider must be google or microsoft'
+        ],
+        [
+            'mail: [{ provider: google }]',
+            'local.yml: mail[0].label must be lowercase letters, digits and dashes'
+        ],
+        [
+            'mail: [{ provider: google, label: "../escape" }]',
+            'local.yml: mail[0].label must be lowercase letters, digits and dashes'
+        ],
+        [
+            'mail: [{ provider: google, label: work }, { provider: google, label: work }]',
+            'local.yml: mail[1].label repeats work for google'
+        ],
+        ['mail_dir: 7', 'local.yml: mail_dir must be a path'],
         ["notes: ''", 'local.yml: notes must be a path'],
         ['workspaces: 3', 'local.yml: workspaces must be a path'],
         ["history: ''", 'local.yml: history must be a path'],

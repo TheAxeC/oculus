@@ -1,4 +1,4 @@
-// Layer 2, server tests. The actions that change a listed terminal's title, icon and colour or its
+// Layer 2, route tests. The actions that change a listed terminal's title, icon and colour or its
 // history (rename, restyle, clear), the busy read a close asks first (GET /api/terminal?busy=), and
 // the list line those options come back on.
 //
@@ -9,6 +9,8 @@
 //
 // What this does NOT cover: that a real tmux stores what the vector says, which is a look at
 // landing (a title holding `#{pane_id}` or ending in `;` is typed into the page and read back).
+//
+// A case that takes 100 ms or more in a run of its own is tagged slow; the others run in npm test.
 
 import { describe, expect } from 'vitest';
 import { it, test } from '../../fixtures/scratch.ts';
@@ -246,14 +248,18 @@ describe('the restyle action', () => {
     });
 
     // Revert: accept any string as the colour in the restyle action.
-    it('refuses a colour outside the eight names, with no tmux command', async () => {
-        for (const color of ['chartreuse', 'RED', 'red ', 'bright-red']) {
-            const driver = tmux(SESSIONS);
-            const response = await post({ action: 'restyle', id: IDLE, color }, driver);
-            expect(response.status).toBe(400);
-            expect(acted(driver.calls)).toEqual([]);
+    it(
+        'refuses a colour outside the eight names, with no tmux command',
+        { tags: ['slow'] },
+        async () => {
+            for (const color of ['chartreuse', 'RED', 'red ', 'bright-red']) {
+                const driver = tmux(SESSIONS);
+                const response = await post({ action: 'restyle', id: IDLE, color }, driver);
+                expect(response.status).toBe(400);
+                expect(acted(driver.calls)).toEqual([]);
+            }
         }
-    });
+    );
 
     // Revert: accept any string as the icon in the restyle action.
     it('sets @oculus_icon for a glyph of the vocabulary and refuses one that is not there', async () => {

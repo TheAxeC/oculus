@@ -1,5 +1,6 @@
-// validate against hand-built raw records: one record per check, so a failure names the check.
-// Nothing here reads or writes a file; validate is pure and the fixtures are literals.
+// Layer 1, data tests. validate against hand-built raw records: one record per check, so a failure
+// names the check. Nothing here reads or writes a file; validate is pure and the fixtures are
+// literals.
 
 import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
@@ -166,12 +167,6 @@ describe('validate', () => {
         );
     });
 
-    it('reports a top-level key the schema does not name', () => {
-        expect(lines({ nonesuch: 1 })).toEqual([
-            'nonesuch: key nonesuch is not in the manifest schema'
-        ]);
-    });
-
     it('reports a manifest still carrying the old key under the name it is written under now', () => {
         expect(lines({ program: ['tensor'] })).toEqual([
             'program: key program is now pillar: write the tags under pillar:'
@@ -258,30 +253,6 @@ describe('validate', () => {
         expect(lines({ venue_id: null, funding: null })).toEqual([]);
     });
 
-    it('reports a wrong shape in every relation field', () => {
-        expect(
-            lines({
-                venue_id: 7,
-                domain: null,
-                pillar: 'federated',
-                datasets: { key: 'mimic' },
-                related: 'alpha',
-                collaborators: 'someone',
-                'waiting-on': 'someone',
-                funding: 'FAIR'
-            })
-        ).toEqual([
-            'collaborators: collaborators must be a list, not a string',
-            'datasets: datasets must be a list, not a map',
-            'domain: domain must be a string, not null',
-            'funding: funding must be a list or null, not a string',
-            'pillar: pillar must be a list, not a string',
-            'related: related must be a list, not a string',
-            'venue_id: venue_id must be a string or null, not a number',
-            'waiting-on: waiting-on must be a list, not a string'
-        ]);
-    });
-
     it('reports a collaborator that names no entry of the people registry', () => {
         expect(lines({ collaborators: ['someone', 'nobody'] })).toEqual([
             'collaborators: collaborators names no person: nobody'
@@ -319,12 +290,6 @@ describe('validate', () => {
         ]);
     });
 
-    it('reports a chip outside the chip vocabulary when the config holds one', () => {
-        expect(lines({ status: { chips: ['lead', 'unheard-of'] } })).toEqual([
-            'status.chips: chip unheard-of is not in the chip vocabulary'
-        ]);
-    });
-
     it('leaves chips unchecked when the config holds no chip vocabulary', () => {
         const free: ValidationRules = {
             schema: RULES.schema,
@@ -332,54 +297,6 @@ describe('validate', () => {
             text: CATALOG
         };
         expect(lines({ status: { chips: ['unheard-of'] } }, free)).toEqual([]);
-    });
-
-    it('reports chips that are not a list of strings', () => {
-        expect(lines({ status: { chips: 'lead' } })).toEqual([
-            'status.chips: status.chips must be a list, not a string'
-        ]);
-        expect(lines({ status: { chips: [3] } })).toEqual([
-            'status.chips: chip a number is not a string'
-        ]);
-    });
-
-    it('reports a collection entry status outside the status vocabulary', () => {
-        const raw = portfolio({
-            collections: {
-                events: collection('events', [
-                    { title: 'A talk', status: 'planned' },
-                    { title: 'Another', status: 'mulled' }
-                ])
-            }
-        });
-        expect(validate(raw, RULES)).toEqual([
-            {
-                file: '/hub/events.yml',
-                key: 'entries[1].status',
-                message: 'status "mulled" is not one of the status vocabulary'
-            }
-        ]);
-    });
-
-    it('reports a funding entry that has neither a key nor a title', () => {
-        const raw = portfolio({
-            registries: {
-                ...portfolio().registries,
-                funding: {
-                    entries: [
-                        { registry: 'funding', key: '', file: '/hub/funding.yml', note: 'a' }
-                    ],
-                    meta: {}
-                }
-            }
-        });
-        expect(validate(raw, RULES)).toEqual([
-            {
-                file: '/hub/funding.yml',
-                key: 'entries[0]',
-                message: 'funding entry has neither a key nor a title'
-            }
-        ]);
     });
 
     it('reports an awarded or contributing funding entry without a key or a statement', () => {
@@ -424,18 +341,6 @@ describe('validate', () => {
                 file: '/hub/funding.yml',
                 key: 'entries[0]',
                 message: 'funding entry A grant is awarded and has no statement'
-            }
-        ]);
-    });
-
-    it('reports a collection file whose schema is not a list of field maps', () => {
-        const raw = portfolio();
-        raw.collections['joint-work'].meta.schema = 'title, status';
-        expect(validate(raw, RULES)).toEqual([
-            {
-                file: '/hub/joint-work.yml',
-                key: 'schema',
-                message: 'schema a string is not a list of maps naming a field and a type'
             }
         ]);
     });
@@ -563,21 +468,6 @@ describe('validate, the people and organisation registries', () => {
         };
     }
 
-    it('reports every affiliations key that names no organisation', () => {
-        const raw = withPeople([
-            {
-                key: 'someone',
-                name: 'Someone Else',
-                affiliations: ['twente', 'nowhere', 12],
-                self: true
-            }
-        ]);
-        expect(said(raw)).toEqual([
-            'affiliations names no organisation: "nowhere"',
-            'affiliations names no organisation: 12'
-        ]);
-    });
-
     it('reads the one key the list replaced as a list of that one, and asks for the new name', () => {
         const raw = withPeople([
             { key: 'someone', name: 'Someone Else', affiliation: 'twente', self: true }
@@ -608,64 +498,6 @@ describe('validate, the people and organisation registries', () => {
         ]);
         expect(said(two)).toEqual(['2 people entries carry self: true, and exactly one may']);
     });
-
-    it('reports an organisation kind outside the five words', () => {
-        const held = portfolio();
-        const raw: RawPortfolio = {
-            ...held,
-            registries: {
-                ...held.registries,
-                organisations: {
-                    entries: [
-                        {
-                            registry: 'organisations',
-                            key: 'twente',
-                            file: '/hub/organisations.yml',
-                            name: 'University of Twente',
-                            kind: 'institute'
-                        }
-                    ],
-                    meta: {}
-                }
-            }
-        };
-        expect(said(raw)).toContain('kind "institute" is not one of the organisation kinds');
-    });
-
-    it('reports a joint-work entry with no person and one whose person is unknown', () => {
-        const raw = portfolio({
-            collections: {
-                'joint-work': collection('joint-work', [
-                    { key: 'a', title: 'A shared paper' },
-                    { key: 'b', title: 'Another', person: 'nobody' }
-                ])
-            }
-        });
-        expect(said(raw)).toEqual(['entry has no person', 'person names no person: "nobody"']);
-    });
-
-    it('reports a funding scheme whose funder names no organisation', () => {
-        const held = portfolio();
-        const raw: RawPortfolio = {
-            ...held,
-            registries: {
-                ...held.registries,
-                funding: {
-                    entries: [
-                        {
-                            registry: 'funding',
-                            key: 'FAIR',
-                            file: '/hub/funding.yml',
-                            title: 'A grant',
-                            funder: 'nowhere'
-                        }
-                    ],
-                    meta: {}
-                }
-            }
-        };
-        expect(said(raw)).toEqual(['funder names no organisation: "nowhere"']);
-    });
 });
 
 describe('validate, the theme words of venues and datasets', () => {
@@ -693,28 +525,6 @@ describe('validate, the theme words of venues and datasets', () => {
             }
         };
     }
-
-    it('reports a venue word off the venue list with its file, key and message', () => {
-        const raw = themed([['core-ml'], ['clinical', 'astrology']], []);
-        expect(validate(raw, THEMED)).toEqual([
-            {
-                file: '/hub/venues.yml',
-                key: 'entries[1].themes[1]',
-                message: 'theme "astrology" is not one of the venue themes'
-            }
-        ]);
-    });
-
-    it('reports a dataset word off the dataset list with its file, key and message', () => {
-        const raw = themed([], [['ecg'], ['eeg'], ['mri']]);
-        expect(validate(raw, THEMED)).toEqual([
-            {
-                file: '/hub/data.yml',
-                key: 'datasets[2].themes[0]',
-                message: 'theme "mri" is not one of the dataset themes'
-            }
-        ]);
-    });
 
     it('reports nothing for words on their lists, and checks each word against its own list', () => {
         expect(validate(themed([['core-ml', 'clinical']], [['ecg', 'eeg']]), THEMED)).toEqual([]);

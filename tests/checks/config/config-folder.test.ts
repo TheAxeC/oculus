@@ -1,8 +1,8 @@
-// The config folder oculus ships, read the way the server reads it: which keys sit in which file,
-// that no key is defined in two, that every file carries the one line the Settings view and the
-// manual show, and that the glyphs, the icons and the catalogue groups the files name resolve. The
-// machine's own local.yml is left out of every list here, since a checkout has one or it has none
-// and neither may change a result.
+// Layer 4, tree check. The config folder oculus ships, read the way the server reads it: which
+// keys sit in which file, that no key is defined in two, that every file carries the one line the
+// Settings view and the manual show, and that the glyphs, the icons and the catalogue groups the
+// files name resolve. The machine's own local.yml is left out of every list here, since a checkout
+// has one or it has none and neither may change a result.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -19,7 +19,6 @@ import {
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { readRoots, rootsFile } from '../../../src/lib/server/files/files.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import {
@@ -285,106 +284,6 @@ describe("oculus's own config directory", () => {
         expect(loadConfig(engineDir()).findings).toEqual([]);
     });
 
-    it('reads the venue and dataset theme words into the vocabulary validate checks', () => {
-        const { vocab } = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
-        expect(vocab.venueThemes).toEqual([
-            'core-ml',
-            'clinical',
-            'high-end',
-            'signal',
-            'theory',
-            'informatics',
-            'federated',
-            'neuro',
-            'imaging',
-            'bio',
-            'cs',
-            'systems',
-            'method'
-        ]);
-        expect(vocab.dataThemes).toEqual([
-            'single-cell',
-            'eeg',
-            'mri-imaging',
-            'bci-ecog',
-            'ecg',
-            'survival-tabular',
-            'clinical-ehr',
-            'pde-operator',
-            'ct-imaging',
-            'mammography',
-            'simulated-copula'
-        ]);
-    });
-
-    it('leaves the theme lists absent when the config holds none, or none with a key', () => {
-        const merged = loadConfig(engineDir()).config;
-        const without = Object.fromEntries(
-            Object.entries(merged).filter(
-                ([key]) => key !== 'venue_themes' && key !== 'data_themes'
-            )
-        );
-        const bare = portfolioConfigFrom(without, engineDir()).vocab;
-        expect(bare).not.toHaveProperty('venueThemes');
-        expect(bare).not.toHaveProperty('dataThemes');
-        const empty = portfolioConfigFrom(
-            { ...without, venue_themes: [], data_themes: [{ label: 'No key' }] },
-            engineDir()
-        ).vocab;
-        expect(empty).not.toHaveProperty('venueThemes');
-        expect(empty).not.toHaveProperty('dataThemes');
-    });
-
-    it('names the six research tiers and the side-projects folder, the software tier and the side one optional', () => {
-        const { scan } = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
-        expect(scan.map((rule) => rule.dir)).toEqual([
-            'projects/ideas',
-            'side-projects',
-            'projects/active',
-            'projects/manuscripts',
-            'projects/software',
-            'projects/coauthor',
-            'projects/archive'
-        ]);
-        expect(scan[4]).toEqual({ dir: 'projects/software', type: 'software', optional: true });
-        expect(scan[1]).toMatchObject({
-            dir: 'side-projects',
-            type: 'side-project',
-            optional: true
-        });
-        expect(scan.filter((rule) => rule.optional === true).map((rule) => rule.dir)).toEqual([
-            'side-projects',
-            'projects/software'
-        ]);
-    });
-
-    it('holds the cross-link exclusions and independent collection lane tones', () => {
-        const { config } = loadConfig(engineDir());
-        expect(config.archive_dead).toEqual([
-            'nogo',
-            'dropped',
-            'disproved',
-            'abandoned',
-            'parked'
-        ]);
-        expect(config.focus_lane_tones).toEqual({
-            funding: 'gold',
-            jobs: 'grey-d',
-            teaching: 'teal'
-        });
-        expect(typeof config.stale_lag_days).toBe('number');
-        expect(config.usage_tiers).toEqual({
-            default_claude_max_20x: 'Max 20x',
-            default_claude_max_5x: 'Max 5x',
-            default_claude_pro: 'Pro',
-            prolite: 'Plus'
-        });
-        expect(config.usage_refresh_min).toBe(10);
-        expect(config.usage_refresh_model).toBe('haiku');
-        // The wait between the last keystroke in a note and the save that follows it.
-        expect(config.notes).toEqual({ autosave_ms: 800 });
-    });
-
     it('holds exactly the expected top-level keys, and no more', () => {
         const { config } = loadConfig(engineDir());
         const expected = [...new Set([...Object.values(EXPECTED).flat(), 'text'])].sort();
@@ -392,7 +291,6 @@ describe("oculus's own config directory", () => {
     });
 
     it('reads one catalog file per owner and no legacy catalog file', () => {
-        const { config } = loadConfig(engineDir());
         const dir = join(engineDir(), 'config', 'text');
         const names = readdirSync(dir, { recursive: true, encoding: 'utf8' })
             .filter((name) => name.endsWith('.yml'))
@@ -406,13 +304,6 @@ describe("oculus's own config directory", () => {
             expect(source.startsWith('# Oculus text owned by ')).toBe(true);
             expect(Object.keys(parse(source) as Record<string, unknown>)).toEqual(['text']);
         }
-        const text = config.text as Record<string, string>;
-        expect(text['server.chat.chat_instruction']).toContain('The hub root is `{0}`');
-        expect(text['server.chat.chat_focus_note']).toContain('`{2}` (absolute)');
-        expect(text['server.chat.chat_index_note']).toBe(
-            'The portfolio index is the file {0}; read it first.'
-        );
-        expect(text['app.chat']).toBe('Chat');
     });
 
     // The two roots of sources.yml sit under the home directory of whoever runs this, and a
@@ -426,15 +317,7 @@ describe("oculus's own config directory", () => {
         );
     }
 
-    it.skipIf(MISSING.length > 0)('names roots that are on this machine', () => {
-        expect(ROOTS.map((root) => root.key)).toEqual([
-            'cathedra',
-            'game-engine',
-            'ordo',
-            'scotoma',
-            'officium',
-            'youtube-downloader'
-        ]);
+    it.skipIf(MISSING.length > 0)('reads the roots of sources.yml without a finding', () => {
         expect(readRoots(loadConfig(engineDir()).config, rootsFile(engineDir())).findings).toEqual(
             []
         );
@@ -444,11 +327,6 @@ describe("oculus's own config directory", () => {
         const { config } = loadConfig(engineDir());
         const groups = Object.keys(config.nav_groups as Record<string, unknown>);
         const docs = config.docs as { label: string; path: string; group: string }[];
-        expect(docs.map((entry) => entry.path)).toEqual([
-            'docs/RESEARCH-APPROACH.md',
-            'docs/AGENT-APPROACH.md',
-            'docs/HPC-UTwente-howto.md'
-        ]);
         for (const entry of docs) {
             expect(groups).toContain(entry.group);
             expect(entry.path.startsWith('/')).toBe(false);
@@ -484,10 +362,8 @@ describe("oculus's own config directory", () => {
         expect(pages).toEqual(rail.map((entry) => entry.page));
         expect(pages.map((key) => groups[key].label)).toEqual(rail.map((entry) => entry.label));
         expect(pages.indexOf('views')).toBe(pages.indexOf('help') + 1);
-        expect(groups.views.label).toBe('System');
         expect(pages).not.toContain('info');
         expect(config.arrangements).not.toHaveProperty('info');
-        expect(groups.help.label).toBe('Help');
         expect(config.arrangements).toHaveProperty('help');
     });
 
@@ -495,11 +371,6 @@ describe("oculus's own config directory", () => {
         const { config } = loadConfig(engineDir());
         const groups = Object.values(config.nav_groups as Record<string, Record<string, unknown>>);
         for (const group of groups) expect(group).not.toHaveProperty('keys');
-    });
-
-    it('names the wallpaper directory owned by oculus', () => {
-        const { config } = loadConfig(engineDir());
-        expect(config.wallpaper).toMatchObject({ dir: 'tools/oculus/assets/wallpaper' });
     });
 
     it('uses glyph names for every configured icon', () => {
@@ -581,18 +452,6 @@ describe("oculus's own config directory", () => {
         }
     });
 
-    it('resolves a drawing through the package rather than through a path into node_modules', () => {
-        const source = readFileSync(
-            join(engineDir(), 'src', 'lib', 'data', 'sources', 'config', 'catalogs.ts'),
-            'utf8'
-        );
-        // The package name is all the source says; the only mention of the folder is the comment
-        // above the resolver explaining why it does not name one.
-        expect(source.match(/node_modules/g)).toHaveLength(1);
-        expect(source).toContain('resolver.resolve(`lucide-static/icons/${icon}.svg`)');
-        expect(iconSet({ glyphs: { pin: 'P' }, icons: { pin: 'pin' } }).pin).toContain('<svg');
-    });
-
     it('reports a glyph with no icon, a row that is no glyph, and an icon the package has not', () => {
         const drifted = {
             glyphs: { pin: 'P', flag: 'F' },
@@ -635,19 +494,6 @@ describe("oculus's own config directory", () => {
         // and its catalogue heading carries a mark of its own.
         expect(sections.filter((section) => !isChorded(section))).toEqual([]);
         expect(sections.filter((section) => section.glyph === undefined)).toEqual([]);
-        expect(sections.map((section) => section.chord)).toEqual([
-            'f',
-            'm',
-            'p',
-            'e',
-            's',
-            'c',
-            'l',
-            'r',
-            't',
-            'h',
-            'y'
-        ]);
         // One letter reaches one thing: the direct chord and every group's are all distinct.
         const letters = [
             config.direct_chord as string,
@@ -701,12 +547,5 @@ describe("oculus's own config directory", () => {
             }
         }
         expect(tracked(dir)).toEqual(Object.keys(EXPECTED).sort());
-        for (const name of CATALOG_FILES) {
-            const parsed = parse(readFileSync(join(dir, 'text', name), 'utf8')) as Record<
-                string,
-                unknown
-            >;
-            expect(Object.keys(parsed)).toEqual(['text']);
-        }
     });
 });

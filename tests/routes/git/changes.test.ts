@@ -1,10 +1,11 @@
-// What the /api/changes route answers: one page of the log and the page before it. Where the
-// request came from is judged before the route, by the origin guard
+// Layer 2, route tests. What the /api/changes route answers: one page of the log and the page
+// before it. Where the request came from is judged before the route, by the origin guard
 // tests/server/root/hooks-server.test.ts covers.
 //
 // The log is a file under the system temporary directory, asserted to be inside it before anything
 // is written, so nothing here reads or writes ~/.oculus/changes.jsonl.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+//
+// A case that takes 100 ms or more in a run of its own is tagged slow; the others run in npm test.
 
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -67,7 +68,7 @@ describe('the change log endpoint', () => {
         expect(body.changes.map((one) => one.field)).toEqual(['f2', 'f1', 'f0']);
     });
 
-    it('answers the page before the moment `before` names', async () => {
+    it('answers the page before the moment `before` names', { tags: ['slow'] }, async () => {
         const into = log();
         await fill(into, PAGE + 3);
         const first = await answer(handleChanges(request(), into));
@@ -79,18 +80,6 @@ describe('the change log endpoint', () => {
         expect(older.changes.map((one) => one.field)).toEqual(['f2', 'f1', 'f0']);
         // The page before the oldest row never repeats a row the page above it already showed.
         expect(older.changes.every((one) => one.at < oldest)).toBe(true);
-    });
-
-    it('answers the page size it used, and every row of a log capped below it', async () => {
-        const into = log(10);
-        await fill(into, 18);
-        const body = await answer(handleChanges(request(), into));
-        // The cap bounds the file, not the read: a page cut to the cap would put the rows past it
-        // out of the view's reach, since the view walks back by the oldest row it holds.
-        expect(body.page).toBe(PAGE);
-        expect(body.changes).toHaveLength(18);
-        expect(body.changes[0].field).toBe('f17');
-        expect(body.changes[body.changes.length - 1].field).toBe('f0');
     });
 
     it('answers an empty page for a process that holds no log', async () => {

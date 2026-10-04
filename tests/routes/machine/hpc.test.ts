@@ -1,5 +1,6 @@
-// The Live HPC POST route is tested at its body checks and across each of its three injected
-// actions.
+// Layer 2, route tests. The Live HPC POST route is tested at its body checks and across each of its
+// three injected actions.
+
 import { describe, expect, it, vi } from 'vitest';
 import { handleHpc, type HpcTarget } from '../../../src/lib/server/machine/hpc/routes.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
@@ -58,12 +59,6 @@ describe('HPC route', () => {
         }
         expect(none.cancel).not.toHaveBeenCalled();
         expect(none.log).not.toHaveBeenCalled();
-    });
-
-    it('refreshes while there is no host', async () => {
-        const none = target({ where: () => ({ host: '', missing: 'nowhere names no resource' }) });
-        expect((await handleHpc(request({ action: 'refresh' }), none)).status).toBe(200);
-        expect(none.refresh).toHaveBeenCalledOnce();
     });
 
     it('refreshes without reading the host, so a host that cannot be read stops no refresh', async () => {

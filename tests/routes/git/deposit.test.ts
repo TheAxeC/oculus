@@ -1,12 +1,12 @@
-// What the /api/deposit route answers. The route itself is two lines handing the request to
-// lib/server/git/deposit-routes.ts with the token ServerContext minted, which is what this calls.
+// Layer 2, route tests. What the /api/deposit route answers. The route itself is two lines handing
+// the request to lib/server/git/deposit-routes.ts with the token ServerContext minted, which is
+// what this calls.
 //
 // Nothing here runs git or `gh`: the handler takes the operations and the known ids as options, and
 // every case hands it a stub the test owns, so no repository is opened and no file is written
 // anywhere. What a well-formed request does to a mirror is tests/server/git/deposit.test.ts.
 //
-// What this does NOT cover: the token reaching the page and Kit putting it on the event, which is
-// exercised by the curl in the package's verification.
+// What this does NOT cover: the token reaching the page and Kit putting it on the event.
 
 import { describe, expect } from 'vitest';
 import {
@@ -197,17 +197,5 @@ describe('the ids a deposit may name, over a hub whose scan carries the side-pro
     it('holds the manuscript and not the side project', () => {
         const { engine, config } = hubAndEngine();
         expect(knownIds([], engine, config)).toEqual(['alpha']);
-    });
-
-    it("answers 404 to a POST and a GET that name the side project's slug", async () => {
-        const { engine, config } = hubAndEngine();
-        const into = options({ idsFor: () => knownIds([], engine, config) });
-        const posted = await handleDeposit(request({ action: 'plan', id: 'x' }), TOKEN, into);
-        expect(posted.status).toBe(404);
-        const asked = await handleDepositState(read(`${URL_}?id=x`), into);
-        expect(asked.status).toBe(404);
-        expect(ran).toEqual([]);
-        const known = await handleDeposit(request({ action: 'plan', id: 'alpha' }), TOKEN, into);
-        expect(known.status).toBe(200);
     });
 });

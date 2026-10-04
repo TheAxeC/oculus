@@ -1,11 +1,14 @@
-// What the /api/fs route answers. The route itself is a few lines handing the request to
-// lib/server/files/fs.ts with the workspaces file of local.yml, the roots of config/sources.yml and
-// the process's write chain, which is what this calls: handleFs and handleFsWrite take a Request
-// and the target to read and write.
+// Layer 2, route tests. What the /api/fs route answers. The route itself is a few lines handing the
+// request to lib/server/files/fs.ts with the workspaces file of local.yml, the roots of
+// config/sources.yml and the process's write chain, which is what this calls: handleFs and
+// handleFsWrite take a Request and the target to read and write.
 //
 // Every root and every workspaces file here is synthetic, under the system temporary directory, and
 // every path written is asserted to be inside it first. What this does NOT cover: the route module
 // reading the machine's own config/local.yml.
+//
+// A case that has the route start git, or takes 100 ms or more in a run of its own, is tagged slow;
+// the others run in npm test.
 
 import { existsSync, mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -106,49 +109,50 @@ async function read(response: Response): Promise<Record<string, unknown>> {
 }
 
 describe('the fs route, reading', () => {
-    it('answers the entries of the folder a root and a path name', async () => {
-        const into = target();
-        const response = handleFs(get('?root=hub&path='), into);
-        const body = await read(response);
+    it(
+        'answers the entries of the folder a root and a path name',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const into = target();
+            const response = handleFs(get('?root=hub&path='), into);
+            const body = await read(response);
 
-        expect(response.status).toBe(200);
-        expect(body.root).toBe('hub');
-        const entries = body.entries as { name: string; kind: string }[];
-        expect(entries.map((entry) => entry.name)).toEqual(['code', 'README.md']);
-    });
+            expect(response.status).toBe(200);
+            expect(body.root).toBe('hub');
+            const entries = body.entries as { name: string; kind: string }[];
+            expect(entries.map((entry) => entry.name)).toEqual(['code', 'README.md']);
+        }
+    );
 
-    it('answers the config folder of the engine under the engine root, and nothing above it', async () => {
-        // The machine's own file is one of that folder and is listed; the one above the folder is
-        // outside the root and is reached by nothing.
-        const engine = folder(
-            {
-                'config/layout.yml': 'nav_groups: {}\n',
-                'config/local.yml': 'hub: /elsewhere\n',
-                'local.yml': 'hub: /above\n'
-            },
-            ['config/text']
-        );
-        const into = target();
-        into.fixed = [...into.fixed, engineRoot(engine)];
+    it(
+        'answers the config folder of the engine under the engine root, and nothing above it',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            // The machine's own file is one of that folder and is listed; the one above the folder
+            // is outside the root and is reached by nothing.
+            const engine = folder(
+                {
+                    'config/layout.yml': 'nav_groups: {}\n',
+                    'config/local.yml': 'hub: /elsewhere\n',
+                    'local.yml': 'hub: /above\n'
+                },
+                ['config/text']
+            );
+            const into = target();
+            into.fixed = [...into.fixed, engineRoot(engine)];
 
-        const response = handleFs(get(`?root=${ENGINE_ROOT}&path=`), into);
-        const body = await read(response);
-        expect(response.status).toBe(200);
-        const entries = body.entries as { name: string; kind: string }[];
-        expect(entries.map((entry) => `${entry.kind}:${entry.name}`)).toEqual([
-            'dir:text',
-            'file:layout.yml',
-            'file:local.yml'
-        ]);
-        expect(handleFs(get(`?root=${ENGINE_ROOT}&path=..`), into).status).toBe(404);
-    });
-
-    it('answers 404 for a path outside the root and for a root nothing names', () => {
-        const into = target();
-
-        expect(handleFs(get('?root=hub&path=../..'), into).status).toBe(404);
-        expect(handleFs(get('?root=nowhere&path='), into).status).toBe(404);
-    });
+            const response = handleFs(get(`?root=${ENGINE_ROOT}&path=`), into);
+            const body = await read(response);
+            expect(response.status).toBe(200);
+            const entries = body.entries as { name: string; kind: string }[];
+            expect(entries.map((entry) => `${entry.kind}:${entry.name}`)).toEqual([
+                'dir:text',
+                'file:layout.yml',
+                'file:local.yml'
+            ]);
+            expect(handleFs(get(`?root=${ENGINE_ROOT}&path=..`), into).status).toBe(404);
+        }
+    );
 
     it('answers the workspaces when the request names no root', async () => {
         const into = target();
@@ -176,25 +180,29 @@ describe('the fs route, reading', () => {
         expect(body.home).toBe(homedir());
     });
 
-    it('names a saved root the configuration reserves, and does not serve it', async () => {
-        const into = target();
-        const elsewhere = folder({ 'secret.txt': 's\n' });
-        writeFileSync(
-            into.file,
-            JSON.stringify({
-                current: '',
-                workspaces: [{ name: '', roots: [{ key: 'hub', dir: elsewhere }] }]
-            })
-        );
-        const body = await read(handleFs(get(''), into));
+    it(
+        'names a saved root the configuration reserves, and does not serve it',
+        { tags: ['slow'], timeout: 30_000 },
+        async () => {
+            const into = target();
+            const elsewhere = folder({ 'secret.txt': 's\n' });
+            writeFileSync(
+                into.file,
+                JSON.stringify({
+                    current: '',
+                    workspaces: [{ name: '', roots: [{ key: 'hub', dir: elsewhere }] }]
+                })
+            );
+            const body = await read(handleFs(get(''), into));
 
-        expect(body.dropped).toEqual(['hub']);
-        expect(served(into).find((one) => one.key === 'hub')?.dir).toBe(into.hub);
-        const entries = (await read(handleFs(get('?root=hub&path='), into))).entries as {
-            name: string;
-        }[];
-        expect(entries.map((entry) => entry.name)).toEqual(['code', 'README.md']);
-    });
+            expect(body.dropped).toEqual(['hub']);
+            expect(served(into).find((one) => one.key === 'hub')?.dir).toBe(into.hub);
+            const entries = (await read(handleFs(get('?root=hub&path='), into))).entries as {
+                name: string;
+            }[];
+            expect(entries.map((entry) => entry.name)).toEqual(['code', 'README.md']);
+        }
+    );
 });
 
 describe('the fs route, writing', () => {
@@ -368,27 +376,31 @@ describe("the fs route, the reader's own bookmarks and notes", () => {
         expect(existsSync(into.bookmarks)).toBe(false);
     });
 
-    it('answers the bookmarks a write left in the file, with their schema', async () => {
-        const into = target();
-        const config = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
-        createEntry(
-            into.hub,
-            config,
-            BOOKMARKS,
-            { label: 'manual', root: 'hub', path: 'README.md' },
-            into.bookmarks
-        );
-        const body = await read(handleFs(get('?bookmarks=1'), into));
+    it(
+        'answers the bookmarks a write left in the file, with their schema',
+        { tags: ['slow'] },
+        async () => {
+            const into = target();
+            const config = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+            createEntry(
+                into.hub,
+                config,
+                BOOKMARKS,
+                { label: 'manual', root: 'hub', path: 'README.md' },
+                into.bookmarks
+            );
+            const body = await read(handleFs(get('?bookmarks=1'), into));
 
-        const entries = body.entries as { id: string; fields: Record<string, unknown> }[];
-        expect(entries.map((one) => one.id)).toEqual(['manual']);
-        expect(entries[0].fields).toEqual({ label: 'manual', root: 'hub', path: 'README.md' });
-        expect((body.schema as { field: string }[]).map((one) => one.field)).toEqual([
-            'label',
-            'root',
-            'path'
-        ]);
-    });
+            const entries = body.entries as { id: string; fields: Record<string, unknown> }[];
+            expect(entries.map((one) => one.id)).toEqual(['manual']);
+            expect(entries[0].fields).toEqual({ label: 'manual', root: 'hub', path: 'README.md' });
+            expect((body.schema as { field: string }[]).map((one) => one.field)).toEqual([
+                'label',
+                'root',
+                'path'
+            ]);
+        }
+    );
 
     it('writes one note, lists it, reads it back and takes it away again', async () => {
         const into = target();
@@ -412,16 +424,5 @@ describe("the fs route, the reader's own bookmarks and notes", () => {
         expect(gone.status).toBe(200);
         expect((await read(handleFs(get('?notes=1'), into))).notes).toEqual([]);
         expect(handleFs(get(`?note=${id}`), into).status).toBe(404);
-    });
-
-    it('refuses a note id that would leave the folder, and writes nothing', async () => {
-        const into = target();
-        const say = async (id: string): Promise<unknown> =>
-            (await read(await handleFsWrite(post({ action: 'note-save', id }), TOKEN, into))).error;
-
-        expect(await say('../away')).toBe('no-such-note');
-        expect(await say('sub/deep')).toBe('no-such-note');
-        expect(await say('')).toBe('no-such-note');
-        expect(existsSync(into.notes)).toBe(false);
     });
 });

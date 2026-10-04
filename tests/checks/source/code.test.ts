@@ -1,6 +1,7 @@
-// Layer 4, test. The code reader of the checks tells code from strings and comments by the parse of
-// each language: TypeScript's for a module and a component's scripts, svelte/compiler's for a
-// component's markup and style, parseCss for a stylesheet, and the `#` rule for a shell script.
+// Layer 4, tree check. The code reader of the checks tells code from strings and comments by the
+// parse of each language: TypeScript's for a module and a component's scripts, svelte/compiler's
+// for a component's markup and style, parseCss for a stylesheet, and the `#` rule for a shell
+// script.
 //
 // Several cases are places a scanner by delimiters reads wrong: a regular expression after
 // `return`, a `//` inside a url() of a style block, a comment inside a markup expression.
@@ -15,14 +16,6 @@ describe('the code reader', () => {
         const text = "const ok = (s: string) => {\n    return /it's/.test(s); // c\n};\n";
         expect(commentLines('a.ts', text)).toEqual([]);
         expect(fileCode('a.ts', text).split('\n')[1]).toBe('    return /    /.test(s);     ');
-    });
-
-    // Audit: no revert of the parse turns this red; a reader that takes a slash after a name for
-    // the opening of a regular expression does.
-    it('reads a division as code and a trailing comment as a comment', () => {
-        expect(fileCode('a.ts', 'const a = x / y / z; // d\n')).toBe(
-            'const a = x / y / z;   ' + '  \n'
-        );
     });
 
     // Revert: in componentKinds of tests/checks/source/code.ts, also mark each `//` of the style

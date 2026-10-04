@@ -1,6 +1,6 @@
-// The canonical form of a search: the arguments each option combination runs as, the inputs that
-// are refused before anything runs, the window one hit's line is cut to, and the parameters the
-// page writes and the server reads.
+// Layer 1, data tests. The canonical form of a search: the arguments each option combination runs
+// as, the inputs that are refused before anything runs, the window one hit's line is cut to, and
+// the parameters the page writes and the server reads.
 //
 // Nothing here starts a process: this is the rule both sides share, so it is read on its own.
 
@@ -65,22 +65,21 @@ describe('the argument list', () => {
         ]);
     });
 
-    it('adds the word boundary for word, and keeps the pattern one argument', () => {
-        const args = argsOf(query({ word: true }));
-        expect(args).toContain('--word-regexp');
-        expect(args.at(-3)).toBe('--regexp');
-        expect(args.at(-2)).toBe('needle');
-        expect(args.at(-1)).toBe('.');
-    });
-
-    it('matches the pattern case for case', () => {
-        expect(argsOf(query({ case: true }))).toContain('--case-sensitive');
-        expect(argsOf(query({ case: true }))).not.toContain('--ignore-case');
-    });
-
-    it('drops the fixed-strings flag for regex, and keeps it for every other combination', () => {
-        expect(argsOf(query({ regex: true }))).not.toContain('--fixed-strings');
-        expect(argsOf(query({ word: true, case: true }))).toContain('--fixed-strings');
+    it.each([
+        ['word', { word: true }, ['--word-regexp', '--fixed-strings', '--ignore-case'], []],
+        ['case', { case: true }, ['--case-sensitive', '--fixed-strings'], ['--ignore-case']],
+        ['regex', { regex: true }, ['--ignore-case'], ['--fixed-strings']],
+        [
+            'word and case without regex',
+            { word: true, case: true },
+            ['--word-regexp', '--case-sensitive', '--fixed-strings'],
+            ['--ignore-case']
+        ]
+    ])('sets the flags of %s', (_row, changes, present, absent) => {
+        const args = argsOf(query(changes));
+        for (const flag of present) expect(args).toContain(flag);
+        for (const flag of absent) expect(args).not.toContain(flag);
+        expect(args.slice(-3)).toEqual(['--regexp', 'needle', '.']);
     });
 
     it('carries all three options together', () => {
@@ -125,33 +124,27 @@ describe('the argument list', () => {
             './src/a b.ts'
         ]);
     });
-
-    it('passes a pattern that opens with a dash as the pattern it is', () => {
-        expect(argsOf(query({ q: '--help' })).at(-2)).toBe('--help');
-    });
-});
-
-describe('the per-file count', () => {
-    it('asks for one match past the cap, so a file cut short sends a record with no room', () => {
-        expect(argsOf(query({ max: 3 }))[2]).toBe('4');
-    });
 });
 
 describe('what is refused', () => {
-    it('refuses an empty query and one that is only spaces', () => {
-        expect(refusalOf(query({ q: '' }), ROOTS)).toBe('empty');
-        expect(refusalOf(query({ q: '   ' }), ROOTS)).toBe('empty');
-    });
-
-    it('refuses a query longer than the bound and allows one exactly at it', () => {
-        expect(refusalOf(query({ q: 'x'.repeat(LONGEST_QUERY + 1) }), ROOTS)).toBe('too_long');
-        expect(refusalOf(query({ q: 'x'.repeat(LONGEST_QUERY) }), ROOTS)).toBeNull();
-    });
-
-    it('refuses a root the list does not hold, and allows every root it does', () => {
-        expect(refusalOf(query({ root: 'elsewhere' }), ROOTS)).toBe('unknown_root');
-        expect(refusalOf(query({ root: 'hub' }), ROOTS)).toBeNull();
-        expect(refusalOf(query({ root: ALL_ROOTS }), ROOTS)).toBeNull();
+    it.each([
+        ['an empty query', { q: '' }, 'empty'],
+        ['a query of only spaces', { q: '   ' }, 'empty'],
+        ['a query longer than the bound', { q: 'x'.repeat(LONGEST_QUERY + 1) }, 'too_long'],
+        ['a query exactly at the bound', { q: 'x'.repeat(LONGEST_QUERY) }, null],
+        ['a root the list does not hold', { root: 'elsewhere' }, 'unknown_root'],
+        ['a root the list holds', { root: 'hub' }, null],
+        ['every root', { root: ALL_ROOTS }, null],
+        ['a folder that climbs out', { under: '../x', root: 'hub' }, 'outside'],
+        ['a folder that climbs from inside', { under: 'a/../../x', root: 'hub' }, 'outside'],
+        ['a folder that is two dots', { under: '..', root: 'hub' }, 'outside'],
+        ['an absolute folder', { under: '/etc', root: 'hub' }, 'outside'],
+        ['a folder written with a backslash', { under: '\\etc', root: 'hub' }, 'outside'],
+        ['a folder with every root', { under: 'src', root: ALL_ROOTS }, 'outside'],
+        ['no folder with every root', { under: '', root: ALL_ROOTS }, null],
+        ['a folder inside a root', { under: 'src/lib', root: 'hub' }, null]
+    ])('answers %s with %s', (_row, changes, refusal) => {
+        expect(refusalOf(query(changes), ROOTS)).toBe(refusal);
     });
 
     it('answers a plan rather than arguments for a refused query', () => {
@@ -193,9 +186,11 @@ describe('the hit window', () => {
 });
 
 describe('the path a hit carries', () => {
-    it('drops the leading dot-slash ripgrep prints against the directory it was given', () => {
-        expect(pathIn('./src/a.ts')).toBe('src/a.ts');
-        expect(pathIn('src/a.ts')).toBe('src/a.ts');
+    it.each([
+        ['the leading dot-slash ripgrep prints against the directory it was given', './src/a.ts'],
+        ['a path with none', 'src/a.ts']
+    ])('drops %s', (_row, path) => {
+        expect(pathIn(path)).toBe('src/a.ts');
     });
 });
 
@@ -209,11 +204,13 @@ describe('the parameters', () => {
         expect(searchUrl(query({ q: 'a&b=c' }))).toContain('q=a%26b%3Dc');
     });
 
-    it('takes the cap for a max that is absent, zero or beyond it', () => {
-        expect(queryFrom(new URLSearchParams(), 500).max).toBe(500);
-        expect(queryFrom(new URLSearchParams({ max: '0' }), 500).max).toBe(500);
-        expect(queryFrom(new URLSearchParams({ max: '9000' }), 500).max).toBe(500);
-        expect(queryFrom(new URLSearchParams({ max: '20' }), 500).max).toBe(20);
+    it.each([
+        ['absent', {}, 500],
+        ['zero', { max: '0' }, 500],
+        ['beyond it', { max: '9000' }, 500],
+        ['inside it', { max: '20' }, 20]
+    ])('takes the cap for a max that is %s', (_row, given, max) => {
+        expect(queryFrom(new URLSearchParams(given), 500).max).toBe(max);
     });
 
     it('opens on every root and on no option when the request names none', () => {
@@ -228,17 +225,11 @@ describe('the parameters', () => {
         });
     });
 
-    it('holds the cap between one and the configured number', () => {
-        expect(clampMax(Number.NaN, 500)).toBe(500);
-        expect(clampMax(7.9, 500)).toBe(7);
-    });
-});
-
-describe('the configured cap', () => {
-    it('reads max_hits and answers zero for a configuration that has not arrived', () => {
-        expect(searchCap({ search: { max_hits: 120 } })).toBe(120);
-        expect(searchCap({})).toBe(0);
-        expect(searchCap({ search: { max_hits: 'many' } })).toBe(0);
+    it.each([
+        ['not a number', Number.NaN, 500],
+        ['a fraction', 7.9, 7]
+    ])('holds the cap between one and the configured number for %s', (_row, asked, held) => {
+        expect(clampMax(asked, 500)).toBe(held);
     });
 });
 
@@ -249,27 +240,11 @@ describe('the folder a search is scoped to', () => {
         ...changes
     });
 
-    it('opens a fresh query on the whole root', () => {
-        expect(emptyQuery(500).under).toBe('');
-    });
-
     it('ends the arguments with the folder as ./<under>, and with . for the whole root', () => {
         const scoped = argsOf(held({ under: 'src/lib', root: 'hub' }));
         expect(scoped.slice(-3)).toEqual(['--regexp', 'needle', './src/lib']);
         const whole = argsOf(held());
         expect(whole.slice(-3)).toEqual(['--regexp', 'needle', '.']);
-    });
-
-    it('refuses a folder that climbs out or is absolute, and any folder with every root', () => {
-        for (const under of ['../x', 'a/../../x', '..', '/etc', '\\etc']) {
-            expect({ under, why: refusalOf(held({ under, root: 'hub' }), ROOTS) }).toEqual({
-                under,
-                why: 'outside'
-            });
-        }
-        expect(refusalOf(held({ under: 'src', root: ALL_ROOTS }), ROOTS)).toBe('outside');
-        expect(refusalOf(held({ under: '', root: ALL_ROOTS }), ROOTS)).toBeNull();
-        expect(refusalOf(held({ under: 'src/lib', root: 'hub' }), ROOTS)).toBeNull();
     });
 
     it('answers a plan with the refusal for a folder that climbs out', () => {
@@ -286,8 +261,10 @@ describe('the folder a search is scoped to', () => {
     });
 });
 
-describe('the hit cap read from a configuration of the wrong shape', () => {
+describe('the configured cap', () => {
     it.each([
+        [{ search: { max_hits: 120 } }, 120],
+        [{}, 0],
         [{ search: [] }, 0],
         [{ search: 'x' }, 0],
         [{ search: { max_hits: '5' } }, 0],

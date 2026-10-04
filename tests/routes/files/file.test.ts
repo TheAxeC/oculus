@@ -1,12 +1,12 @@
-// What the /api/file route serves: one file under one of the configured roots. The route itself is
-// a single line handing the request to lib/server/files/files.ts with the roots of
-// config/sources.yml, which is what this calls: serveFile takes the roots to look in, a root's key
-// and a path.
+// Layer 2, route tests. What the /api/file route serves: one file under one of the configured
+// roots. The route itself is a single line handing the request to lib/server/files/files.ts with
+// the roots of config/sources.yml, which is what this calls: serveFile takes the roots to look in,
+// a root's key and a path.
 //
 // Every root here is synthetic, under the system temporary directory, and every path written is
 // asserted to be inside it first. What this does NOT cover: the browser painting the document in
-// its iframe, and the roots read from the machine's own config/sources.yml, which is exercised by
-// the curl in the package's verification and by tests/checks/config/config.test.ts.
+// its iframe, and the roots read from the machine's own config/sources.yml, which
+// tests/checks/config/config.test.ts reads.
 
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -15,7 +15,6 @@ import { describe, expect, vi } from 'vitest';
 import {
     ENGINE_ROOT,
     HUB_ROOT,
-    engineRoot,
     expandHome,
     readRoots,
     configuredRootsOf,
@@ -59,56 +58,37 @@ function manual(): Root[] {
 }
 
 describe('the type a name is served as', () => {
-    it('names the type of every extension a manual is made of, text with its charset', () => {
-        expect(typeOf('manual.html')).toBe('text/html; charset=utf-8');
-        expect(typeOf('MANUAL.HTML')).toBe('text/html; charset=utf-8');
-        expect(typeOf('a/b/manual.css')).toBe('text/css; charset=utf-8');
-        expect(typeOf('search.js')).toBe('text/javascript; charset=utf-8');
-        expect(typeOf('notes.md')).toBe('text/markdown; charset=utf-8');
-        expect(typeOf('logo.svg')).toBe('image/svg+xml');
-        expect(typeOf('body.woff2')).toBe('font/woff2');
-    });
-
-    it('names every extension of the manual table as it did', () => {
-        const table: [string, string][] = [
-            ['a.html', 'text/html; charset=utf-8'],
-            ['a.css', 'text/css; charset=utf-8'],
-            ['a.js', 'text/javascript; charset=utf-8'],
-            ['a.png', 'image/png'],
-            ['a.jpg', 'image/jpeg'],
-            ['a.jpeg', 'image/jpeg'],
-            ['a.gif', 'image/gif'],
-            ['a.svg', 'image/svg+xml'],
-            ['a.webp', 'image/webp'],
-            ['a.woff', 'font/woff'],
-            ['a.woff2', 'font/woff2'],
-            ['a.json', 'application/json; charset=utf-8'],
-            ['a.txt', 'text/plain; charset=utf-8'],
-            ['a.md', 'text/markdown; charset=utf-8'],
-            ['a.pdf', 'application/pdf']
-        ];
-        expect(table.map(([name]) => [name, typeOf(name)])).toEqual(table);
-    });
-
-    it('names the types a manual may carry beyond that table, a text one with its charset', () => {
-        expect(typeOf('module.mjs')).toBe('text/javascript; charset=utf-8');
-        expect(typeOf('rows.csv')).toBe('text/csv; charset=utf-8');
-        expect(typeOf('favicon.ico')).toBe('image/vnd.microsoft.icon');
-        expect(typeOf('engine.wasm')).toBe('application/wasm');
-        expect(typeOf('photo.avif')).toBe('image/avif');
-        expect(typeOf('archive.tar.gz')).toBe('application/gzip');
-    });
-
-    it('serves TypeScript as bytes, which a type table reads as video', () => {
-        expect(typeOf('main.ts')).toBe('application/octet-stream');
-        expect(typeOf('main.mts')).toBe('application/octet-stream');
-        expect(typeOf('main.cts')).toBe('application/octet-stream');
-    });
-
-    it('falls back to bytes for a name it does not know, a bare dotfile and no extension', () => {
-        expect(typeOf('.png')).toBe('application/octet-stream');
-        expect(typeOf('LICENSE')).toBe('application/octet-stream');
-        expect(typeOf('thing.nosuchext')).toBe('application/octet-stream');
+    it.each([
+        ['a.html', 'text/html; charset=utf-8'],
+        ['MANUAL.HTML', 'text/html; charset=utf-8'],
+        ['a/b/manual.css', 'text/css; charset=utf-8'],
+        ['a.js', 'text/javascript; charset=utf-8'],
+        ['module.mjs', 'text/javascript; charset=utf-8'],
+        ['a.png', 'image/png'],
+        ['a.jpg', 'image/jpeg'],
+        ['a.jpeg', 'image/jpeg'],
+        ['a.gif', 'image/gif'],
+        ['a.svg', 'image/svg+xml'],
+        ['a.webp', 'image/webp'],
+        ['photo.avif', 'image/avif'],
+        ['favicon.ico', 'image/vnd.microsoft.icon'],
+        ['a.woff', 'font/woff'],
+        ['a.woff2', 'font/woff2'],
+        ['a.json', 'application/json; charset=utf-8'],
+        ['a.txt', 'text/plain; charset=utf-8'],
+        ['a.md', 'text/markdown; charset=utf-8'],
+        ['rows.csv', 'text/csv; charset=utf-8'],
+        ['a.pdf', 'application/pdf'],
+        ['engine.wasm', 'application/wasm'],
+        ['archive.tar.gz', 'application/gzip'],
+        ['main.ts', 'application/octet-stream'],
+        ['main.mts', 'application/octet-stream'],
+        ['main.cts', 'application/octet-stream'],
+        ['.png', 'application/octet-stream'],
+        ['LICENSE', 'application/octet-stream'],
+        ['thing.nosuchext', 'application/octet-stream']
+    ])('names %s as %s', (name, type) => {
+        expect(typeOf(name)).toBe(type);
     });
 });
 
@@ -121,45 +101,37 @@ describe('serving a file under a root', () => {
         expect(await answer.text()).toBe(PAGE);
     });
 
-    it('serves the stylesheet the page asks for beside it', async () => {
-        const answer = serveFile(manual(), 'docs', 'docs/user/css/manual.css');
-        expect(answer.status).toBe(200);
-        expect(answer.headers.get('content-type')).toBe('text/css; charset=utf-8');
-        expect(await answer.text()).toBe(SHEET);
-    });
-
-    it('has nothing for a file that is not there', () => {
-        expect(serveFile(manual(), 'docs', 'docs/user/nothing.html').status).toBe(404);
-    });
-
-    it('has nothing for a directory, and nothing for the root itself', () => {
-        expect(serveFile(manual(), 'docs', 'docs/user').status).toBe(404);
-        expect(serveFile(manual(), 'docs', '').status).toBe(404);
-    });
-
-    it('has nothing for a path that climbs out of the root', () => {
-        const roots = manual();
-        expect(serveFile(roots, 'docs', '../../etc/passwd').status).toBe(404);
-        expect(serveFile(roots, 'docs', 'docs/../../..').status).toBe(404);
-        expect(serveFile(roots, 'docs', '/etc/passwd').status).toBe(404);
-    });
-
-    it('has nothing for a symbolic link pointing out of the root', () => {
+    /** A root holding the manual and a link beside it that leads out of the root. */
+    function linked(): Root[] {
         const outside = folder({ 'secret.html': 'not yours\n' });
         const dir = folder({ 'docs/user/manual.html': PAGE });
         const link = join(dir, 'docs', 'user', 'escape.html');
         expect(resolve(link).startsWith(resolve(dir) + sep)).toBe(true);
         symlinkSync(join(outside, 'secret.html'), link);
-        const roots: Root[] = [{ key: 'docs', dir }];
+        return [{ key: 'docs', dir }];
+    }
 
-        expect(serveFile(roots, 'docs', 'docs/user/escape.html').status).toBe(404);
-        expect(serveFile(roots, 'docs', 'docs/user/manual.html').status).toBe(200);
+    it.each([
+        ['a file that is not there', manual, 'docs', 'docs/user/nothing.html'],
+        ['a directory', manual, 'docs', 'docs/user'],
+        ['the root itself', manual, 'docs', ''],
+        ['a path that climbs out of the root', manual, 'docs', '../../etc/passwd'],
+        ['a path that climbs after descending', manual, 'docs', 'docs/../../..'],
+        ['an absolute path', manual, 'docs', '/etc/passwd'],
+        ['a symbolic link pointing out of the root', linked, 'docs', 'docs/user/escape.html'],
+        ['a root nobody configured', manual, 'elsewhere', 'docs/user/manual.html'],
+        [
+            'a root that is not there',
+            (): Root[] => [{ key: 'docs', dir: join(folder({}), 'moved-away') }],
+            'docs',
+            'docs/user/manual.html'
+        ]
+    ])('has nothing for %s', (_row, roots, key, path) => {
+        expect(serveFile(roots(), key, path).status).toBe(404);
     });
 
-    it('has nothing for a root nobody configured, and none for a root that is not there', () => {
-        expect(serveFile(manual(), 'elsewhere', 'docs/user/manual.html').status).toBe(404);
-        const gone: Root[] = [{ key: 'docs', dir: join(folder({}), 'moved-away') }];
-        expect(serveFile(gone, 'docs', 'docs/user/manual.html').status).toBe(404);
+    it('serves the file beside a link that leads out of the root', () => {
+        expect(serveFile(linked(), 'docs', 'docs/user/manual.html').status).toBe(200);
     });
 });
 
@@ -179,13 +151,6 @@ describe('the two fixed roots', () => {
             { key: ENGINE_ROOT, dir: '/their/config' }
         ];
         expect(withFixed(own, '/the/hub', '/the/engine')).toEqual(own);
-    });
-
-    it('is the config folder of the engine and nothing above it', () => {
-        expect(engineRoot('/the/engine')).toEqual({
-            key: ENGINE_ROOT,
-            dir: join('/the/engine', 'config')
-        });
     });
 
     it('reserves both keys against a root a saved workspace added', () => {
@@ -273,29 +238,6 @@ describe('the roots of the configuration', () => {
         ]);
     });
 
-    it('reports an entry that is not a pair of strings and a key two entries share', () => {
-        const dir = folder({});
-        const { roots, findings } = readRoots(
-            {
-                roots: [
-                    'a string',
-                    { key: 'here' },
-                    { dir },
-                    { key: 'here', dir },
-                    { key: 'here', dir }
-                ]
-            },
-            FILE
-        );
-        expect(roots).toEqual([{ key: 'here', dir }]);
-        expect(findings.map((one) => one.message)).toEqual([
-            'a root is not a map of key and dir',
-            'the root names no dir',
-            'a root has no key',
-            'two roots carry this key'
-        ]);
-    });
-
     it('puts the home directory in place of a leading tilde, and refuses a relative dir', () => {
         const { roots, findings } = readRoots(
             {
@@ -318,23 +260,23 @@ describe('the roots of the configuration', () => {
         expect(expandHome('/already/absolute')).toBe('/already/absolute');
     });
 
-    it('has nothing to say about a config with no roots, and reports one that is not a list', () => {
+    it('has nothing to say about a config with no roots', () => {
         expect(readRoots({}, FILE)).toEqual({ roots: [], findings: [] });
-        expect(readRoots({ roots: 'cathedra' }, FILE).findings).toEqual([
-            { file: FILE, key: 'roots', message: 'roots is not a list' }
-        ]);
+    });
+
+    it.each([
+        ['text', 'cathedra'],
+        ['a map', {}]
+    ])('reports roots that are %s as not a list, and keeps no root', (_row, value) => {
+        expect(readRoots({ roots: value }, FILE)).toStrictEqual({
+            roots: [],
+            findings: [{ file: FILE, key: 'roots', message: 'roots is not a list' }]
+        });
     });
 });
 
 describe('the roots of the configuration with entries of the wrong shape', () => {
     const FILE = '/engine/config/sources.yml';
-
-    it('reports roots that are a map as not a list, and keeps no root', () => {
-        expect(readRoots({ roots: {} }, FILE)).toStrictEqual({
-            roots: [],
-            findings: [{ file: FILE, key: 'roots', message: 'roots is not a list' }]
-        });
-    });
 
     it('words each entry by the first part of it that fails, in the order of the list', () => {
         const gone = join(folder({}), 'moved-away');

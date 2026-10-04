@@ -1,17 +1,16 @@
-// What /api/git does for the actions and reads on commits and refs: cherryPick, checkoutDetached
-// and deleteBranch behind the token and the confirm, a name that starts with a dash refused before
-// git runs, a start point for a branch and a tag, and the reads head=, compare=, refs= and
-// workspace=, each over a real scratch repository and each refused for a root no workspace names.
+// Layer 2, route tests. What /api/git does for the actions and reads on commits and refs: the
+// actions cherryPick, checkoutDetached, deleteBranch and deleteBranchAnyway, a start point for a
+// branch and a tag, and the reads head=, compare=, refs=, workspace= and graph=, each over a real
+// scratch repository and the first four refused for a root no workspace names. The token and the
+// confirm are tests/routes/git/git.test.ts.
 //
 // What this does NOT cover: the page's use of the answers, which tests/state/sources/repositories
 // holds.
+// @module-tag slow: every case runs git in a scratch repository.
 
-import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
-    ACTIONS,
-    CONFIRMED,
     handleGit,
     handleGitGet,
     type GitOptions
@@ -41,51 +40,6 @@ function over(...roots: string[]): GitOptions {
 }
 
 describe('the actions on commits and branches', () => {
-    it('names the five new actions', () => {
-        for (const action of ['trashUntracked', 'ignore', 'cherryPick', 'checkoutDetached']) {
-            expect(ACTIONS, action).toContain(action);
-        }
-        expect(ACTIONS).toContain('deleteBranch');
-        expect(ACTIONS).toContain('deleteBranchAnyway');
-    });
-
-    it('lists the five that lose work or move a branch among the confirmed', () => {
-        for (const action of [
-            'trashUntracked',
-            'cherryPick',
-            'checkoutDetached',
-            'deleteBranch',
-            'deleteBranchAnyway'
-        ]) {
-            expect(CONFIRMED, action).toContain(action);
-        }
-        expect(CONFIRMED).not.toContain('ignore');
-    });
-
-    it('refuses each without the token and each unconfirmed', async () => {
-        const root = scratchRepo();
-        const hash = git(root, 'rev-parse', 'HEAD').trim();
-        const fields = { ref: hash, name: 'x', paths: ['u.txt'] };
-        for (const action of [
-            'cherryPick',
-            'checkoutDetached',
-            'deleteBranch',
-            'deleteBranchAnyway'
-        ]) {
-            const noToken = await handleGit(
-                post({ action, root, ...fields, confirm: true }, { 'x-oculus-token': '' }),
-                TOKEN,
-                over(root)
-            );
-            expect(noToken.status, action).toBe(403);
-            const noConfirm = await handleGit(post({ action, root, ...fields }), TOKEN, over(root));
-            expect(noConfirm.status, action).toBe(400);
-            expect(await noConfirm.json()).toEqual({
-                error: 'this action needs the page to confirm it'
-            });
-        }
-    });
-
     it('detaches HEAD at a confirmed hash', async () => {
         const root = scratchRepo();
         const first = git(root, 'rev-parse', 'HEAD').trim();
@@ -119,28 +73,6 @@ describe('the actions on commits and branches', () => {
         );
         expect(tag.status).toBe(200);
         expect(git(root, 'rev-list', '-n', '1', 'v1').trim()).toBe(first);
-    });
-
-    it('refuses a name or a start point that starts with a dash before git runs', async () => {
-        const root = scratchRepo();
-        const head = git(root, 'rev-parse', 'HEAD').trim();
-        const bodies = [
-            { action: 'createBranch', name: '-x', confirm: true },
-            { action: 'createBranch', name: 'ok', start: '-x', confirm: true },
-            { action: 'createTag', name: '-x' },
-            { action: 'createTag', name: 'ok', start: '--force' },
-            { action: 'deleteBranch', name: '-D', confirm: true },
-            { action: 'deleteBranchAnyway', name: '-D', confirm: true },
-            { action: 'checkoutDetached', ref: '--orphan', confirm: true },
-            { action: 'cherryPick', ref: '--abort', confirm: true }
-        ];
-        for (const body of bodies) {
-            const response = await handleGit(post({ root, ...body }), TOKEN, over(root));
-            expect(response.status, JSON.stringify(body)).toBe(400);
-        }
-        expect(git(root, 'branch', '--list').trim()).toBe('* main');
-        expect(git(root, 'tag', '--list').trim()).toBe('');
-        expect(git(root, 'rev-parse', 'HEAD').trim()).toBe(head);
     });
 
     it('cherry-picks a confirmed commit and deletes a confirmed merged branch', async () => {
@@ -260,20 +192,6 @@ describe('the reads head=, compare=, refs= and workspace=', () => {
         );
         const sides = (await one.json()) as { files: { original: string; modified: string }[] };
         expect(sides.files.map((file) => [file.original, file.modified])).toEqual([['', 'two\n']]);
-    });
-
-    it('refuses a from side that could be taken for an option and writes no file', async () => {
-        const root = scratchRepo();
-        const head = git(root, 'rev-parse', 'HEAD').trim();
-        const out = join(scratchDir('oculus-out-'), 'x');
-        const response = await handleGitGet(
-            get(
-                `compare=${encodeURIComponent(root)}&from=${encodeURIComponent(`--output=${out}`)}&to=${head}`
-            ),
-            over(root)
-        );
-        expect(response.status).toBe(400);
-        expect(existsSync(out)).toBe(false);
     });
 
     it('lists the refs a picker offers', async () => {

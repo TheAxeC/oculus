@@ -1,4 +1,4 @@
-// Layer 2, server tests. POST /api/terminal's composer actions: compose starts the session the
+// Layer 2, route tests. POST /api/terminal's composer actions: compose starts the session the
 // composer asked for, steer types a message into a running one and sends it, interrupt stops its
 // turn, and fork starts a new session carrying an old one's conversation.
 //

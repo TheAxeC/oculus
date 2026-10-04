@@ -1,5 +1,5 @@
-// Layer 4, test. An assertion that something is absent, with nothing saying what makes the absence
-// right, is how a defect gets written down as the expected result.
+// Layer 4, tree check. An assertion that something is absent, with nothing saying what makes the
+// absence right, is how a defect gets written down as the expected result.
 //
 // Every case under tests/views/ is read for the four shapes an absence is asserted in:
 // `.not.toContain(`, `.not.toHaveAttribute(`, `.not.toBeVisible(` and `toHaveCount(0)`. Each one
@@ -18,10 +18,10 @@
 // what that absence asserts, so explaining one buys no room for another, and an entry goes when its
 // absence gains its reason.
 
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, describe, expect } from 'vitest';
+import { describe, expect } from 'vitest';
 import { NEGATIVES } from './allow-negatives.ts';
 import { isReason, literalsIn } from '../../fixtures/reason.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
@@ -34,7 +34,7 @@ const TESTS = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 const ABSENCE = /\.not\.toContain\(|\.not\.toHaveAttribute\(|\.not\.toBeVisible\(|toHaveCount\(0\)/;
 
 /** Whether the comment above an absence carries a reason for it, by the rule in reason.ts. */
-export function explains(comment: string, assertion = ''): boolean {
+function explains(comment: string, assertion = ''): boolean {
     if (comment.trim() === '') return false;
     const text = comment
         .split('\n')
@@ -55,7 +55,7 @@ export function explains(comment: string, assertion = ''): boolean {
  * reader finds in the file, so a line of code that opens with a `*` or holds a `//` in a string is
  * none. A caller reading many lines of one file hands over those comment lines, read once.
  */
-export function commentAbove(
+function commentAbove(
     lines: string[],
     at: number,
     comments = new Set(commentLines('case.test.ts', lines.join('\n')))
@@ -76,13 +76,13 @@ function testFiles(root: string, folder: string): string[] {
  * The key one absence stands under: the literals it names, or the assertion's own text for one that
  * names none, so that no two absences of a file share a key and explaining one frees nothing.
  */
-export function absenceKey(line: string): string {
+function absenceKey(line: string): string {
     const named = literalsIn(line).join(' | ');
     return named === '' ? line.trim().replace(/\s+/g, ' ') : named;
 }
 
 /** The absences a file asserts with no reason above them, each under the key it stands on. */
-export function bareAbsences(root: string, folders: string[]): Record<string, string[]> {
+function bareAbsences(root: string, folders: string[]): Record<string, string[]> {
     const found: Record<string, string[]> = {};
     for (const folder of folders) {
         for (const rel of testFiles(root, folder)) {
@@ -107,7 +107,7 @@ export function bareAbsences(root: string, folders: string[]): Record<string, st
  * naming no literal long enough to key on stands under its own text, so two such absences of one
  * file are still told apart.
  */
-export function findGrowth(
+function findGrowth(
     root: string,
     folders: string[],
     allow: Record<string, string[]> = NEGATIVES
@@ -136,16 +136,9 @@ export function findGrowth(
     return found.sort();
 }
 
-const made: string[] = [];
-
-afterEach(() => {
-    for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
-});
-
 /** A scratch tree holding one spec file, checked to be inside the temporary directory. */
 function scratch(body: string): string {
     const dir = scratchDir('oculus-negatives-');
-    made.push(dir);
     mkdirSync(join(dir, 'views'), { recursive: true });
     writeFileSync(join(dir, 'views', 'planted.test.ts'), body, 'utf8');
     return dir;

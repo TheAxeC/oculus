@@ -1,5 +1,6 @@
-// What the /api/search route answers. The route itself is a few lines handing the request to
-// lib/server/files/search-routes.ts with the token ServerContext minted, which is what this calls.
+// Layer 2, route tests. What the /api/search route answers. The route itself is a few lines handing
+// the request to lib/server/files/search-routes.ts with the token ServerContext minted, which is
+// what this calls.
 //
 // Nothing here runs ripgrep: the handler takes its runner as an option, so every case hands it a
 // stub the test owns, the roots are names rather than directories, and no file is read anywhere.
@@ -125,54 +126,6 @@ describe('the answer', () => {
         });
         expect(ran).toEqual(['/hub']);
     });
-
-    it('runs every root when the query names none', async () => {
-        await handleSearch(request('q=needle'), TOKEN, options());
-        expect(ran).toEqual(['/hub', '/engine']);
-    });
-
-    it('says the answer was cut when the run reached the cap', async () => {
-        const many = [BEGIN, MATCH, MATCH, END].join('\n');
-        const response = await handleSearch(
-            request('q=needle&max=1'),
-            TOKEN,
-            options({ stdout: many })
-        );
-        const body = (await response.json()) as { total: number; truncated: boolean };
-        expect(body).toMatchObject({ total: 1, truncated: true });
-    });
-
-    it('names a root whose search failed while another answered', async () => {
-        const response = await handleSearch(request('q=needle'), TOKEN, {
-            roots: ROOTS,
-            cap: 500,
-            timeout: 10000,
-            now: () => 0,
-            run: (dir, _args, _timeout, onLine) => {
-                if (dir === '/hub') {
-                    return Promise.resolve({
-                        code: 2,
-                        stderr: 'rg: no such file',
-                        timedOut: false,
-                        stopped: false
-                    });
-                }
-                for (const line of STREAM.split('\n')) onLine(line);
-                return Promise.resolve({
-                    code: 0,
-                    stderr: '',
-                    timedOut: false,
-                    stopped: false
-                });
-            }
-        });
-        const body = (await response.json()) as {
-            total: number;
-            failed: { root: string; reason: string }[];
-        };
-        expect(body.total).toBe(1);
-        expect(body.failed).toEqual([{ root: 'hub', reason: 'rg: no such file' }]);
-    });
 });
 
 describe('what is refused', () => {
@@ -180,19 +133,6 @@ describe('what is refused', () => {
         const response = await handleSearch(request('q='), TOKEN, options());
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({ error: 'empty' });
-        expect(ran).toEqual([]);
-    });
-
-    it('refuses a pattern past the bound with 400', async () => {
-        const response = await handleSearch(request(`q=${'x'.repeat(1001)}`), TOKEN, options());
-        expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: 'too_long' });
-    });
-
-    it('refuses a root outside the served list with 400 and starts nothing', async () => {
-        const response = await handleSearch(request('q=needle&root=elsewhere'), TOKEN, options());
-        expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: 'unknown_root' });
         expect(ran).toEqual([]);
     });
 

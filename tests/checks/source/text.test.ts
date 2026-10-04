@@ -1,13 +1,12 @@
-// The catalog: flattening on the server, lookup and interpolation on the client. Then the glyph
-// vocabulary, each name with its ASCII stand-in: read from config/catalogs/glyphs.yml on the
-// server, installed on the client, and answered by glyph() as the stand-in whatever the mode, since
-// the stand-in is the only form of a glyph that may go into text.
+// Layer 4, tree check. The catalog: flattening on the server, lookup and interpolation on the
+// client, and the rule that no catalog line carries a glyph token. Then the glyph vocabulary, each
+// name with its ASCII stand-in, installed on the client and answered by glyph() as the stand-in
+// whatever the mode, since the stand-in is the only form of a glyph that may go into text.
 
 import { describe, expect, it } from 'vitest';
 import {
     engineDir,
     flattenText,
-    glyphCatalog,
     loadConfig,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
@@ -40,10 +39,6 @@ describe('textCatalog', () => {
     it('is empty when the config holds no text', () => {
         expect(textCatalog({})).toEqual({});
     });
-
-    it('reads the catalog out of the real config directory', () => {
-        expect(textCatalog(loadConfig(engineDir()).config)['app.title']).toBe('oculus');
-    });
 });
 
 describe('t', () => {
@@ -65,7 +60,7 @@ describe('t', () => {
 
     it('draws a catalog line as written, with nothing filled into a glyph-shaped token', () => {
         setCatalog({ 'radar.head': '{G.litwatch} watch' });
-        setGlyphs(GLYPHS);
+        setGlyphs(STAND_INS);
         setGlyphMode('icon');
         expect(lookup('radar.head')).toBe('{G.litwatch} watch');
         setGlyphMode('ascii');
@@ -73,19 +68,18 @@ describe('t', () => {
     });
 });
 
-const { config } = loadConfig(engineDir());
-const GLYPHS = glyphCatalog(config);
+const STAND_INS = { refresh: '(r)', check: '+', expand: '[+]' };
 
 describe('the catalog', () => {
     it('carries no glyph token in any line, since every glyph is drawn beside the words', () => {
-        const lines = Object.entries(textCatalog(config));
+        const lines = Object.entries(textCatalog(loadConfig(engineDir()).config));
         expect(lines.filter(([, line]) => line.includes('{G.')).map(([key]) => key)).toEqual([]);
     });
 });
 
 describe('glyph', () => {
-    it('answers the stand-in config/catalogs/glyphs.yml gives a name, in either mode', () => {
-        setGlyphs(GLYPHS);
+    it('answers the stand-in a name is given, in either mode', () => {
+        setGlyphs(STAND_INS);
         setGlyphMode('icon');
         expect(glyph('refresh')).toBe('(r)');
         expect(glyph('check')).toBe('+');
@@ -94,14 +88,8 @@ describe('glyph', () => {
         expect(glyph('check')).toBe('+');
     });
 
-    it('holds a dedicated glyph with a stand-in for the three appearance toggles', () => {
-        for (const name of ['crt', 'wallpaper', 'icons']) {
-            expect(GLYPHS[name]).toMatch(/^[\x20-\x7E]+$/);
-        }
-    });
-
-    it('throws on a name config/catalogs/glyphs.yml does not hold, in either mode', () => {
-        setGlyphs(GLYPHS);
+    it('throws on a name the glyphs do not hold, in either mode', () => {
+        setGlyphs(STAND_INS);
         setGlyphMode('ascii');
         expect(() => glyph('nonesuch')).toThrow(/nonesuch/);
         setGlyphMode('icon');
@@ -111,7 +99,7 @@ describe('glyph', () => {
 
 describe('bracketedGlyph', () => {
     it('reads a bracketed stand-in as a tag only while the stand-ins are drawn', () => {
-        setGlyphs(GLYPHS);
+        setGlyphs(STAND_INS);
         setGlyphMode('ascii');
         expect(bracketedGlyph('expand')).toBe(true);
         expect(bracketedGlyph('refresh')).toBe(false);

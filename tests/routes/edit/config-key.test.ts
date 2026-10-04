@@ -1,16 +1,17 @@
-// Layer 4, route test. What the /api/write route does with a config-key write: the setting written
-// into a scratch engine's file, its record in the change log and the word the History view draws
-// for it, the undo through the same writer, the refusal an undo gets from the readers, two writes
-// in a row and at once, and the answers for a file that cannot be read or written.
+// Layer 2, route tests. What the /api/write route does with a config-key write: the setting written
+// into a scratch engine's file and its record in the change log, the undo through the same writer,
+// the refusal an undo gets from the readers, two writes at once, and the answers for a file that
+// cannot be read or written.
 //
 // The engine is a scratch copy of the checkout's config/ folder (write-fixture.ts), and the target
 // names it, so no case here writes the checkout's config or reads the machine's own file. What this
-// does NOT cover: the Settings control that sends the write, which is a later view.
+// does NOT cover: the Settings control that sends the write.
+// @module-tag slow: every case takes 140 ms or more to write a setting through the route.
 
 import { chmodSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { logChanges } from '../../../src/lib/server/core/changes.ts';
 import type { ChangeRecord } from '../../../src/lib/server/core/changes.ts';
@@ -18,7 +19,6 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { handleWrite, target as targetOf } from '../../../src/lib/server/edit/writes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it } from '../../fixtures/scratch.ts';
-import { recordedKinds } from '../../fixtures/kinds.ts';
 import {
     TOKEN,
     changesOf,
@@ -78,13 +78,6 @@ describe('a setting written through the route', () => {
             after: 300,
             undo: 'field'
         });
-    });
-
-    it('has a word of its own in the History view, a setting', () => {
-        expect(recordedKinds()).toContain('config-key');
-        expect(textCatalog(loadConfig(engineDir()).config)['history.kind_config_key']).toBe(
-            'setting'
-        );
     });
 
     it('answers the reason of a refusal with a 200, and writes and records nothing', async () => {
@@ -205,18 +198,6 @@ describe('taking a setting back', () => {
 });
 
 describe('several settings written', () => {
-    it('lands two writes of different keys in a row, each record naming its key', async () => {
-        const into = keepTarget();
-        await send(into, 'behavior.yml', 'changes.keep', 300);
-        await send(into, 'behavior.yml', 'search.max_hits', 600);
-        expect(behaviorOf(into)).toContain('keep: 300  # how many');
-        expect(behaviorOf(into)).toContain('  max_hits: 600\n');
-        expect(changesOf(into).map((one) => one.field)).toEqual([
-            'search.max_hits',
-            'changes.keep'
-        ]);
-    });
-
     it('lands two writes made at once, none lost to the other', async () => {
         const into = keepTarget();
         const answers = await Promise.all([

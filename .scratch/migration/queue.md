@@ -1,6 +1,5 @@
 In flight:
 - T1d (the test sweep of tests/views/, shell/, ui/ and themes/, and the audits check rewritten): waiting for Axel's ruling on where tests of view-layer modules belong.
-- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures): review of repair round 1.
 
 Queued, in order (33 steps):
 - T1a (the test tiers): once T1b, T1c, T1d and T1e have landed; the queue below resumes after it.
@@ -40,6 +39,7 @@ Queued, in order (33 steps):
 Owed: the look of Q81 (a Confirm over the update tray), waiting until Axel takes it up.
 
 Landed, newest first:
+- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, 30838596.
 - T1b (the test sweep of tests/state/), 2026-10-04, fa5e42a2.
 - T1c (the test sweep of tests/server/), 2026-10-04, ffb4457a.
 - X3c (the tab strip as VS Code's), 2026-10-04, 1e14d279.

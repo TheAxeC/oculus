@@ -1,8 +1,9 @@
-// Layer 4, route test. The undo and the redo of a replace: what POST /api/write with the kind
+// Layer 2, route tests. The undo and the redo of a replace: what POST /api/write with the kind
 // `undo` (server/edit/writes/file-undo.ts) checks before it writes each file of a `replace` record
 // back from the copy the replace kept, and what it records so that the redo is the same path.
 //
 // What this does NOT cover: the History view that issues the undo, which is the page's.
+// @module-tag slow: every case runs ripgrep through the replace it undoes.
 
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

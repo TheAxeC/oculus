@@ -1,4 +1,5 @@
-// The synthetic hub, the deck file and the request every case of the write endpoint is made over.
+// Layer 4, test helper. The synthetic hub, the deck file and the request every case of the write
+// endpoint is made over.
 //
 // The hub is under the system temporary directory and every path is asserted to be inside it before
 // anything is written, the overrides file, the reader's own bookmarks and the change log included,
@@ -43,15 +44,15 @@ export const MANIFEST =
 export const TASKS =
     'title: Tasks\nschema:\n  - { field: title, type: text }\n  - { field: meta, type: metalist }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
 
-export const VENUES =
+const VENUES =
     'title: Venues\nschema:\n  - { field: name, type: text }\n  - { field: id, type: text }\nvenues:\n  - name: Existing Venue\n    id: existing\n';
 
-export const DATA =
+const DATA =
     'title: Data\nschema:\n  - { field: key, type: text }\n  - { field: retrieval, type: raw }\ndatasets:\n  - key: mimic-iv\n    retrieval:\n      method: curl\n';
 
 export const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
-export const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
-export const LEADS = `meta: {}
+const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
+const LEADS = `meta: {}
 schema:
   - { field: title, type: text }
   - { field: status, type: select, options: [open, applied, declined, dismissed] }
@@ -61,8 +62,8 @@ entries:
     status: open
 `;
 export const TOKEN = mintToken();
-export const HOST = '127.0.0.1:8791';
-export const URL_ = `http://${HOST}/api/write`;
+const HOST = '127.0.0.1:8791';
+const URL_ = `http://${HOST}/api/write`;
 
 export function target(): WriteTarget {
     const dir = scratchDir('oculus-route-');
@@ -106,6 +107,15 @@ export function target(): WriteTarget {
 }
 
 /**
+ * Loads the engine's configuration once. The first load of a process costs about twice a later one,
+ * so a file that loads it in every case registers this as a hook, and that cost is the hook's and
+ * not the first case's.
+ */
+export function warmConfig(): void {
+    loadConfig(engineDir());
+}
+
+/**
  * The write target over a synthetic hub whose overrides file, bookmarks and change log were
  * checked to be inside it, over the engine's own configuration with one scanned folder.
  */
@@ -114,12 +124,13 @@ export function targetOver(
     files: { overrides: string; bookmarks: string; changes: string },
     keep = 500
 ): WriteTarget {
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+    const merged = loadConfig(engineDir()).config;
+    const real = portfolioConfigFrom(merged, engineDir());
     return {
         hub: dir,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
         engine: engineDir(),
-        career: careerRules(loadConfig(engineDir()).config),
+        career: careerRules(merged),
         overrides: files.overrides,
         projects: () => [],
         bookmarks: files.bookmarks,
@@ -131,7 +142,7 @@ export function targetOver(
 }
 
 /** The change log of a target, which an undo case addresses a change of. */
-export function logOf(into: WriteTarget): ChangeLog {
+function logOf(into: WriteTarget): ChangeLog {
     const log = into.changes;
     if (log === undefined) throw new Error('the target carries no change log');
     return log;
@@ -263,7 +274,7 @@ export async function recorded(
 }
 
 /** A deck file of the same shape as config/present.yml, with comments the edit must keep. */
-export const DECK = `deck:
+const DECK = `deck:
     # the deck's own slides, in the order it shows them
     order:
         - { slide: title }
@@ -275,12 +286,12 @@ export const DECK = `deck:
 `;
 
 /** The `deck:` map of a deck file, as the portfolio config carries it. */
-export function deckMapOf(source: string): unknown {
+function deckMapOf(source: string): unknown {
     return (parse(source) as { deck: unknown }).deck;
 }
 
 /** One project with one slide, at the tier whose slides join the deck on their own. */
-export function slideProject(id: string, tier: Tier): Project {
+function slideProject(id: string, tier: Tier): Project {
     return fixtureProject({
         id,
         tier,

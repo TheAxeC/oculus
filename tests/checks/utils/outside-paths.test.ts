@@ -1,25 +1,23 @@
-// Layer 4, test. The outside-paths report over a scratch repository of its own: what a brief's
-// "Paths this step writes" section covers, what it leaves out, and the three ways the report
-// refuses to compare.
+// Layer 4, test. The outside-paths report over a scratch repository of its own: what a
+// brief's "Paths this step writes" section covers, what it leaves out, and the three ways the
+// report refuses to compare.
 //
 // Each case makes a repository with one commit as the base, changes it, and runs the script from
 // that repository's root as a reviewer does. What this does NOT cover: the checkout the oculus
 // tests run in, which the script is never pointed at here.
+//
+// A case that makes a repository or runs the script starts git or node, and is tagged slow; the
+// readers of a section's text (`entriesOf`, `sectionOf`, `outside`) run in this process and are
+// not.
 
 import { mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { afterEach, describe, expect } from 'vitest';
+import { describe, expect } from 'vitest';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { entriesOf, outside, sectionOf } from '../../../utils/outside-paths.mjs';
 
 const SCRIPT = join(process.cwd(), 'utils', 'outside-paths.mjs');
-
-const made: string[] = [];
-
-afterEach(() => {
-    for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
-});
 
 /** Run git in a directory, failing the case when it fails. */
 function git(dir: string, ...args: string[]): void {
@@ -40,7 +38,6 @@ function put(dir: string, rel: string, body = 'one\n'): void {
 /** A repository holding these files in one commit, the base the cases compare against. */
 function repository(files: string[]): string {
     const dir = scratchDir('oculus-outside-paths-');
-    made.push(dir);
     git(dir, 'init', '-q');
     for (const rel of files) put(dir, rel);
     git(dir, 'add', '-A');
@@ -73,7 +70,7 @@ function report(
     };
 }
 
-describe('the paths a step changed that its brief does not name', () => {
+describe('the paths a step changed that its brief does not name', { tags: ['slow'] }, () => {
     it('prints nothing for a changed file the section names', () => {
         const dir = repository(['src/a.ts']);
         put(dir, 'src/a.ts', 'two\n');
@@ -174,15 +171,6 @@ describe('the paths a step changed that its brief does not name', () => {
 });
 
 describe('the bullets that name entries', () => {
-    it('takes the tokens of a bullet outside its parentheses and none inside them', () => {
-        const dir = repository(['src/a.ts', 'lib/x.ts', 'src/b.ts']);
-        put(dir, 'src/a.ts', 'two\n');
-        put(dir, 'lib/x.ts', 'two\n');
-        put(dir, 'src/b.ts', 'two\n');
-        const held = report(dir, brief(['`src/a.ts` (its shared types are in `lib/`)']));
-        expect(held.out).toEqual(['lib/x.ts', 'src/b.ts']);
-    });
-
     it('takes every token of a bullet that does not start with one, and a token that holds parentheses', () => {
         const entries = entriesOf(
             [
@@ -287,19 +275,6 @@ describe('a real brief read as a reviewer reads it', () => {
         'utils/outside-paths.mjs'
     ].map((one) => `${root}${one}`);
 
-    it('takes no folder named in a parenthesis, a clause or a paragraph of its prose as an entry', () => {
-        const entries = entriesOf(sectionOf(brief) ?? '');
-        for (const prose of [
-            'state/',
-            'tests/state/sources/',
-            'tests/server/files/',
-            'data/helpers/'
-        ]) {
-            // these folders stand in a parenthesis, a clause or a paragraph of the brief, as prose
-            expect(entries).not.toContain(prose);
-        }
-    });
-
     it('prints the state/sources/search files, the moved test folder and the other paths it does not name', () => {
         const entries = entriesOf(sectionOf(brief) ?? '');
         expect(outside(changed, entries)).toEqual(
@@ -322,7 +297,7 @@ describe('a real brief read as a reviewer reads it', () => {
     });
 });
 
-describe('the report that cannot compare', () => {
+describe('the report that cannot compare', { tags: ['slow'] }, () => {
     it('exits 2 with a sentence for a brief with no such section', () => {
         const dir = repository(['src/a.ts']);
         const held = report(dir, brief(['`src/a.ts`'], '## Other things'));

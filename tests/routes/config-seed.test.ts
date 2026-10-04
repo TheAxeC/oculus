@@ -1,5 +1,5 @@
-// Layer 4, test. The server's seed of a page's `config` channel: the newest hub version the page's
-// own read is at least as new as, and the read itself only when the hub holds an older
+// Layer 2, route tests. The server's seed of a page's `config` channel: the newest hub version the
+// page's own read is at least as new as, and the read itself only when the hub holds an older
 // configuration than it.
 
 import { describe, expect, it } from 'vitest';

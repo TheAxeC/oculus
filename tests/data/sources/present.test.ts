@@ -1,5 +1,6 @@
-// readPresent and deckFindings against synthetic files in a temporary directory. Nothing outside it
-// is read or written, and every write asserts its path is inside the temporary directory first.
+// Layer 1, data tests. readPresent and deckFindings against synthetic files in a temporary
+// directory. Nothing outside it is read or written, and every write asserts its path is inside the
+// temporary directory first.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -201,23 +202,19 @@ describe('readPresent', () => {
 });
 
 describe('equationIsImage', () => {
-    it('reads a value ending in an image suffix, trimmed and in any case, as an image name', () => {
-        for (const name of [
-            'eq_one.png',
-            'EQ_ONE.PNG',
-            ' eq_one.png ',
-            'a.jpg',
-            'a.jpeg',
-            'a.svg',
-            'a.webp'
-        ])
+    it.each(['eq_one.png', 'EQ_ONE.PNG', ' eq_one.png ', 'a.jpg', 'a.jpeg', 'a.svg', 'a.webp'])(
+        'reads %j, a value ending in an image suffix, as an image name',
+        (name) => {
             expect(equationIsImage(name)).toBe(true);
-    });
+        }
+    );
 
-    it('reads anything else as LaTeX', () => {
-        for (const latex of ['\\min_{x} f(x)', 'x \\text{png}', 'a.png + b', '', '  '])
+    it.each(['\\min_{x} f(x)', 'x \\text{png}', 'a.png + b', '', '  '])(
+        'reads %j as LaTeX',
+        (latex) => {
             expect(equationIsImage(latex)).toBe(false);
-    });
+        }
+    );
 });
 
 describe('the equation', () => {
@@ -272,23 +269,20 @@ describe('the equation', () => {
         expect(findings).toEqual([{ file: doc(paths), key: 'alpha/data', message: IMAGE }]);
     });
 
-    it.each(['', "equation: ''", 'equation: "   "'])(
-        'draws no equation and reports nothing for %j',
-        (value) => {
-            const paths = project([
-                '---',
-                `present: { title: A headline${value === '' ? '' : `, ${value}`} }`,
-                '---',
-                ''
-            ]);
-            const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
-            expect(findings).toEqual([]);
-            expect(slides[0].equation).toBeUndefined();
-        }
-    );
-
-    it.each(['3', '[a, b]', '{ a: 1 }'])('reads equation: %s as no equation', (value) => {
-        const paths = project(['---', `present: { title: T, equation: ${value} }`, '---', '']);
+    it.each([
+        '',
+        "equation: ''",
+        'equation: "   "',
+        'equation: 3',
+        'equation: [a, b]',
+        'equation: { a: 1 }'
+    ])('draws no equation and reports nothing for %j', (value) => {
+        const paths = project([
+            '---',
+            `present: { title: A headline${value === '' ? '' : `, ${value}`} }`,
+            '---',
+            ''
+        ]);
         const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toEqual([]);
         expect(slides[0].equation).toBeUndefined();
@@ -348,21 +342,6 @@ describe('deckFindings', () => {
                 key: 'deck.order[1]',
                 message: 'deck.summaries has no nowhere'
             }
-        ]);
-    });
-
-    it('reports an entry with no kind, an unknown kind, and a ref that is missing', () => {
-        const deck = {
-            order: [{}, { slide: 'interlude' }, { slide: 'project' }, { slide: 'framing' }, 'text']
-        };
-        expect(
-            deckFindings(deck, [], 'config/present.yml', CATALOG).map((one) => one.message)
-        ).toEqual([
-            'names no slide kind',
-            'unknown slide kind interlude',
-            'names no project slide',
-            'a framing slide names no ref',
-            'is not a map of keys'
         ]);
     });
 

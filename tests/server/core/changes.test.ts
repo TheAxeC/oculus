@@ -20,16 +20,10 @@ import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import { PAGE, logChanges, readChanges } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
-import { parse } from 'yaml';
-import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import type { Project, Tier } from '../../../src/lib/data/model/index.ts';
 import type { Change, ChangeLog, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
-import { targetOver } from '../../routes/edit/write-fixture.ts';
-import { fixtureProject } from '../../fixtures/entities-fixture.ts';
+import { deckTarget, targetOver } from '../../routes/edit/write-fixture.ts';
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
@@ -80,54 +74,6 @@ function target(keep = 500): WriteTarget {
         expect(resolve(path).startsWith(resolve(dir) + sep)).toBe(true);
     }
     return targetOver(dir, { overrides, bookmarks, changes }, keep);
-}
-
-/** A deck file of the same shape as config/present.yml, for the deck write's own record. */
-const DECK = `deck:
-    order:
-        - { slide: title }
-        - { slide: framing, ref: engine }
-        - { slide: project, ref: alpha }
-        - { slide: closing }
-    framing:
-        engine: { title: 'The common engine' }
-`;
-
-/** One project with one slide, at the tier whose slides join the deck on their own. */
-function slideProject(id: string, tier: Tier): Project {
-    return fixtureProject({
-        id,
-        tier,
-        type: tier === 'active' ? 'active' : 'archive',
-        title: id,
-        present: [{ id, projectId: id, specs: [], panels: [], method: [], results: [] }],
-        folder: `projects/${tier}/${id}`,
-        file: `projects/${tier}/${id}/project.yml`
-    });
-}
-
-/** A target whose deck file and log are both under the system temporary directory. */
-function deckTarget(): WriteTarget {
-    const dir = scratchDir('oculus-changes-deck-');
-    const file = join(dir, 'present.yml');
-    const log = join(dir, 'changes.jsonl');
-    for (const path of [file, log]) {
-        expect(resolve(path).startsWith(resolve(dir) + sep)).toBe(true);
-    }
-    writeFileSync(file, DECK);
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
-    return {
-        hub: dir,
-        config: { ...real, deck: (parse(DECK) as { deck: unknown }).deck, deckFile: file },
-        engine: engineDir(),
-        career: careerRules(loadConfig(engineDir()).config),
-        projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
-        bookmarks: join(dir, 'bookmarks.yml'),
-        behaviorFile: join(dir, 'behavior.yml'),
-        layoutFile: join(dir, 'layout.yml'),
-        glyphs: [],
-        changes: { file: log, keep: 500, writes: fsWrites() }
-    };
 }
 
 /** The log of a target, which every case asserts is where the lines went. */

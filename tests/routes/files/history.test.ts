@@ -1,7 +1,9 @@
-// Layer 4, route test. The local history of a file: the copy POST /api/source keeps before a save
+// Layer 2, route tests. The local history of a file: the copy POST /api/source keeps before a save
 // and GET /api/history lists and reads, over one synthetic root and one history folder under the
 // system temporary directory. Both folders are asserted inside it before anything is written, so
 // no case writes ~/.oculus/history.
+//
+// A case that takes 100 ms or more in a run of its own is tagged slow; the others run in npm test.
 
 import { createHash } from 'node:crypto';
 import {
@@ -121,19 +123,23 @@ describe('the copy a save keeps', () => {
         expect(second.ok && second.kept?.id).toBe('20231114T221320123-2');
     });
 
-    it('keeps the newest 50 copies of kind save and removes the older ones', () => {
-        const one = fixture();
-        for (let at = 0; at < SAVES_KEPT + 3; at += 1) {
-            keepCopy(one.history, one.file, 'save', 1_700_000_000_000 + at * 1000);
+    it(
+        'keeps the newest 50 copies of kind save and removes the older ones',
+        { tags: ['slow'] },
+        () => {
+            const one = fixture();
+            for (let at = 0; at < SAVES_KEPT + 3; at += 1) {
+                keepCopy(one.history, one.file, 'save', 1_700_000_000_000 + at * 1000);
+            }
+            const real = realOf(one);
+            const saves = savesOf(one.history, real).saves;
+            expect(saves).toHaveLength(SAVES_KEPT);
+            expect(saves[0].at).toBe(1_700_000_000_000 + 3 * 1000);
+            expect(readdirSync(historyFolder(one.history, real))).toHaveLength(SAVES_KEPT + 1);
         }
-        const real = realOf(one);
-        const saves = savesOf(one.history, real).saves;
-        expect(saves).toHaveLength(SAVES_KEPT);
-        expect(saves[0].at).toBe(1_700_000_000_000 + 3 * 1000);
-        expect(readdirSync(historyFolder(one.history, real))).toHaveLength(SAVES_KEPT + 1);
-    });
+    );
 
-    it('does not count a copy of kind delete among the 50', () => {
+    it('does not count a copy of kind delete among the 50', { tags: ['slow'] }, () => {
         const one = fixture();
         keepCopy(one.history, one.file, 'delete', 1_700_000_000_000);
         for (let at = 1; at <= SAVES_KEPT + 2; at += 1) {
@@ -184,30 +190,37 @@ describe('the copy a save keeps', () => {
         expect(deletesListed(one.history)).toHaveLength(2);
     });
 
-    it('builds the index of delete copies again from the folders when it is gone', () => {
-        const one = fixture();
-        const dir = join(one.dir, 'root');
-        const [first, last] = [join(dir, 'first.md'), join(dir, 'last.md')];
-        writeFileSync(first, 'first\n');
-        writeFileSync(last, 'last\n');
-        keepCopy(one.history, first, 'delete', 1_700_000_000_000);
-        // 49 later delete copies written as folders, with no index naming them.
-        for (let n = 0; n < DELETES_KEPT - 1; n += 1) {
-            const folder = join(one.history, `${n}`.padStart(16, 'a'));
-            const id = `20231114T221321${String(n).padStart(3, '0')}`;
-            const saves = [{ id, at: 1_700_000_001_000 + n, size: 1, kind: 'delete' }];
-            mkdirSync(folder);
-            writeFileSync(join(folder, id), 'x');
-            writeFileSync(join(folder, 'entries.json'), JSON.stringify({ path: `/d${n}`, saves }));
+    it(
+        'builds the index of delete copies again from the folders when it is gone',
+        { tags: ['slow'] },
+        () => {
+            const one = fixture();
+            const dir = join(one.dir, 'root');
+            const [first, last] = [join(dir, 'first.md'), join(dir, 'last.md')];
+            writeFileSync(first, 'first\n');
+            writeFileSync(last, 'last\n');
+            keepCopy(one.history, first, 'delete', 1_700_000_000_000);
+            // 49 later delete copies written as folders, with no index naming them.
+            for (let n = 0; n < DELETES_KEPT - 1; n += 1) {
+                const folder = join(one.history, `${n}`.padStart(16, 'a'));
+                const id = `20231114T221321${String(n).padStart(3, '0')}`;
+                const saves = [{ id, at: 1_700_000_001_000 + n, size: 1, kind: 'delete' }];
+                mkdirSync(folder);
+                writeFileSync(join(folder, id), 'x');
+                writeFileSync(
+                    join(folder, 'entries.json'),
+                    JSON.stringify({ path: `/d${n}`, saves })
+                );
+            }
+            unlinkSync(join(one.history, 'deletes.json'));
+            keepCopy(one.history, last, 'delete', 1_700_000_100_000);
+            expect(savesOf(one.history, realpathSync(first)).saves).toEqual([]);
+            expect(savesOf(one.history, realpathSync(last)).saves).toHaveLength(1);
+            const listed = deletesListed(one.history);
+            expect(listed).toHaveLength(DELETES_KEPT);
+            expect(listed[0].at).toBe(1_700_000_001_000);
         }
-        unlinkSync(join(one.history, 'deletes.json'));
-        keepCopy(one.history, last, 'delete', 1_700_000_100_000);
-        expect(savesOf(one.history, realpathSync(first)).saves).toEqual([]);
-        expect(savesOf(one.history, realpathSync(last)).saves).toHaveLength(1);
-        const listed = deletesListed(one.history);
-        expect(listed).toHaveLength(DELETES_KEPT);
-        expect(listed[0].at).toBe(1_700_000_001_000);
-    });
+    );
 
     it('takes a forgotten delete copy out of the index', () => {
         const one = fixture();

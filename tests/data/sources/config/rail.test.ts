@@ -1,5 +1,6 @@
-// The rail list of config/layout.yml read as rows, as entries and as findings, over values of the
-// wrong type at every place the readers look. Findings and problems are compared whole, in order.
+// Layer 1, data tests. The rail list of config/layout.yml read as rows, as entries and as findings,
+// over values of the wrong type at every place the readers look. Findings and problems are compared
+// whole, in order.
 
 import { describe, expect, it } from 'vitest';
 import {

@@ -1,4 +1,4 @@
-// Layer 4, route test. Taking back a config-value write by putting the file's own text back: the
+// Layer 2, route tests. Taking back a config-value write by putting the file's own text back: the
 // record of a write carries the lines it replaced and the lines it put in their place with the
 // offset where they start, and an undo that finds exactly those lines there writes the earlier text
 // back, so a file whose columns are aligned comes back byte for byte. A record without the text
@@ -7,6 +7,7 @@
 // The engine is a scratch copy of the checkout's config/ folder (write-fixture.ts), so no case here
 // writes the checkout's config or reads the machine's own file. What this does NOT cover: the
 // editors that send the write, which the Settings tests and the look cover.
+// @module-tag slow: every case takes 410 ms or more to write and take back a value.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect } from 'vitest';

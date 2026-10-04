@@ -116,13 +116,6 @@ describe('a catalog the rules accept', () => {
     it('raises nothing over a fixture that has one key of each kind', () => {
         expect(run(sound())).toEqual([]);
     });
-
-    it('accepts an empty list as a family and as a list', () => {
-        const fixture = sound();
-        expect(fixture.files['sources.yml']).toEqual({ indexes: [] });
-        expect(fixture.files['behavior.yml']).toMatchObject({ audit_ignore: [] });
-        expect(run(fixture)).toEqual([]);
-    });
 });
 
 describe('an option and an entry that do not match', () => {
@@ -361,13 +354,6 @@ describe('a leaf option', () => {
             'behavior.yml: slurm.poll_min: field defualt is not allowed here'
         ],
         [
-            'with a minimum, which no entry has',
-            (fixture) => {
-                at(fixture).min = 1;
-            },
-            'behavior.yml: slurm.poll_min: field min is not allowed here'
-        ],
-        [
             'with an empty section',
             (fixture) => {
                 at(fixture).section = '';
@@ -513,20 +499,6 @@ describe('the machine-local keys', () => {
             'local.yml: port: field default is not allowed here'
         ],
         [
-            'an entry that carries a section',
-            (fixture) => {
-                (entriesOf(fixture, LOCAL_NAME).port as Entries).section = 'Server';
-            },
-            'local.yml: port: field section is not allowed here'
-        ],
-        [
-            'an entry that carries fields',
-            (fixture) => {
-                (entriesOf(fixture, LOCAL_NAME).port as Entries).fields = { key: 'x' };
-            },
-            'local.yml: port: field fields is not allowed here'
-        ],
-        [
             'an entry with no description',
             (fixture) => {
                 entriesOf(fixture, LOCAL_NAME).port = {};
@@ -579,22 +551,16 @@ describe('a catalog that is not the shape the types say', () => {
         });
     }
 
-    it('names an `options` that is a list', () => {
+    it.each([
+        ['an `options` that is a list', stringify({ options: [1, 2] })],
+        ['a catalog with no `options` key', stringify({ other: {} })],
+        [
+            'a catalog that holds one key path twice, which the parser refuses',
+            'options:\n    behavior.yml:\n        a: { description: x }\n        a: { description: y }\n'
+        ]
+    ])('names %s as missing or not a map of config file names', (_row, text) => {
         const fixture = sound();
-        fixture.text = stringify({ options: [1, 2] });
-        expect(run(fixture)).toEqual(['options: missing or not a map of config file names']);
-    });
-
-    it('names a catalog with no `options` key', () => {
-        const fixture = sound();
-        fixture.text = stringify({ other: {} });
-        expect(run(fixture)).toEqual(['options: missing or not a map of config file names']);
-    });
-
-    it('names a catalog that holds one key path twice, which the parser refuses', () => {
-        const fixture = sound();
-        fixture.text =
-            'options:\n    behavior.yml:\n        a: { description: x }\n        a: { description: y }\n';
+        fixture.text = text;
         expect(run(fixture)).toEqual(['options: missing or not a map of config file names']);
     });
 });

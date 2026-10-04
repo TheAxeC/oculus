@@ -1,4 +1,4 @@
-// Layer 4, route test. A file operation in the change log and its undo: what POST /api/ops
+// Layer 2, route tests. A file operation in the change log and its undo: what POST /api/ops
 // (server/files/fs/ops.ts) records for each operation that changed something, and what POST
 // /api/write with the kind `undo` (server/edit/writes/file-undo.ts) checks and does to take it
 // back.
@@ -6,6 +6,9 @@
 // The roots, the history folder and the change log are directories under the system temporary
 // directory, asserted inside it before anything is written, and the Trash is a spy, so nothing is
 // moved to the real Trash and ~/.oculus is never read or written.
+//
+// A hook loads the configuration once, since the first load costs more than a later one, so no case
+// pays for it.
 
 import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -24,9 +27,9 @@ import {
     keepCopy
 } from '../../../src/lib/server/files/fs/history.ts';
 import { listDeletes } from '../../server/files/history-fixture.ts';
-import { it } from '../../fixtures/scratch.ts';
+import { it, test } from '../../fixtures/scratch.ts';
 import { TOKEN as OPS_TOKEN, spy } from '../../server/files/ops-fixture.ts';
-import { TOKEN, changesOf, request, target } from '../edit/write-fixture.ts';
+import { TOKEN, changesOf, request, target, warmConfig } from '../edit/write-fixture.ts';
 
 const library = vi.hoisted(() => ({ trash: vi.fn() }));
 vi.mock('trash', () => ({ default: library.trash }));
@@ -82,12 +85,19 @@ async function undo(w: World, at: string, trash = spy()) {
 
 const stamps = (value: unknown) => value as FileStamp[];
 
+test.beforeAll(warmConfig);
+
 describe('what an operation records', () => {
     it('appends one files record for a create, with the path stamped after', async () => {
         const w = world({}, ['d']);
         await post(w, { op: 'create', root: 'hub', path: 'd', name: 'a.md', folder: false });
         const [one] = records(w);
-        expect(one).toMatchObject({ kind: 'files', key: 'files', field: 'create', undo: 'file' });
+        expect(one).toMatchObject({
+            kind: 'files',
+            key: 'files',
+            field: 'create',
+            undo: 'file'
+        });
         expect(one.before).toEqual([]);
         expect(stamps(one.after)).toEqual([
             {

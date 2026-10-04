@@ -1,5 +1,6 @@
-// The options catalog reader and the walk that says which key paths of a config file are options,
-// over a catalog and a file of every wrong type. Compared whole, in the walk's order.
+// Layer 1, data tests. The options catalog reader and the walk that says which key paths of a
+// config file are options, over a catalog and a file of every wrong type. Compared whole, in the
+// walk's order.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -20,11 +21,6 @@ describe('catalogOf', () => {
             expect(catalogOf(config)).toStrictEqual({});
         }
     );
-
-    it('answers the map it was given, whatever it holds', () => {
-        const options = { 'behavior.yml': 3 };
-        expect(catalogOf({ options })).toBe(options);
-    });
 });
 
 describe('optionPaths', () => {
@@ -62,6 +58,17 @@ describe('optionPaths', () => {
     it('does not take an entry that is not a map as a family', () => {
         expect(optionPaths({ num: { inner: 1 } }, entriesOf({ num: 3 }))).toStrictEqual([
             'num.inner'
+        ]);
+    });
+
+    it('returns a path once for each key that gives it', () => {
+        expect(optionPaths({ 'a.b': 1, a: { b: 2 } }, {})).toEqual(['a.b', 'a.b']);
+    });
+
+    it('is not misled by a reserved name of objects as an entry or as a key', () => {
+        expect(optionPaths({ constructor: 1, toString: { valueOf: 2 } }, {})).toEqual([
+            'constructor',
+            'toString.valueOf'
         ]);
     });
 });

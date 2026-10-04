@@ -1,5 +1,6 @@
-// readManifests against a synthetic hub in a temporary directory. Nothing outside it is read or
-// written, and every write asserts its path is inside the temporary directory first.
+// Layer 1, data tests. readManifests against a synthetic hub in a temporary directory. Nothing
+// outside it is read or written, and every write asserts its path is inside the temporary directory
+// first.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';

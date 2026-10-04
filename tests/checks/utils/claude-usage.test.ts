@@ -1,24 +1,16 @@
-// Layer 4, test. The Claude status-line command preserves its input atomically and prints only
-// present status fields.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+// Layer 4, test. The Claude status-line command preserves its input atomically and prints
+// only present status fields.
+// @module-tag slow: every case runs the command, which starts sh and python3.
 
-import { readFileSync, readdirSync, rmSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { afterEach, describe, expect } from 'vitest';
+import { describe, expect } from 'vitest';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
-const made: string[] = [];
-
 function scratch(): string {
-    const dir = scratchDir('oculus-claude-usage-');
-    made.push(dir);
-    return dir;
+    return scratchDir('oculus-claude-usage-');
 }
-
-afterEach(() => {
-    for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
-});
 
 describe('claude-usage.sh', () => {
     // Three sh + python3 spawns; under a loaded full run they pass 5 s, so the case gets 20 s.

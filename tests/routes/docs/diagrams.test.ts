@@ -1,6 +1,6 @@
-// What the /api/diagrams/<name> route serves: one `.svg` file of an engine directory's
-// docs/diagrams/, by name, and a 404 for every other name. The route itself is a single line
-// handing the request to lib/server/content/diagrams.ts, which is what this reads.
+// Layer 2, route tests. What the /api/diagrams/<name> route serves: one `.svg` file of an engine
+// directory's docs/diagrams/, by name, and a 404 for every other name. The route itself is a single
+// line handing the request to lib/server/content/diagrams.ts, which is what this reads.
 //
 // Every case builds its own engine directory under the system temporary directory and asserts each
 // write stays inside it; nothing of the checkout's own docs/ is read. This does not cover the Help

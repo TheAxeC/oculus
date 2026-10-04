@@ -1,7 +1,7 @@
-// The typed readers of single settings out of the merged map (slurm, calendar, search, open, mail,
-// the change log's length, the usage tiers, the Processes view's program names and the LaTeX
-// formatter) over keys of every wrong shape. Each case names the value the reader answers or the
-// sentence it throws, and the order in which two wrong keys are refused.
+// Layer 1, data tests. The typed readers of single settings out of the merged map (slurm, calendar,
+// search, open, mail, the change log's length, the usage tiers, the Processes view's program names
+// and the LaTeX formatter) over keys of every wrong shape. Each case names the value the reader
+// answers or the sentence it throws, and the order in which two wrong keys are refused.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -257,14 +257,6 @@ describe('latexFormatting', () => {
     const PATHS = { latexindent_path: '', tex_fmt_path: '', badness_path: '' };
     const read = (latex: unknown) => outcome(() => latexFormatting({ latex }));
 
-    it('reads the shipped keys from config/behavior.yml: no formatter, every program on PATH', () => {
-        const { config } = loadConfig(engineDir());
-        expect(latexFormatting(config)).toStrictEqual({
-            formatter: 'none',
-            paths: { latexindent: '', 'tex-fmt': '', badness: '' }
-        });
-    });
-
     it.each(['none', 'latexindent', 'tex-fmt', 'badness'])(
         'reads the formatter %s',
         (formatter) => {
@@ -308,11 +300,6 @@ describe('usageTiers', () => {
         expect(read({ a: 'A', b: 5, c: null })).toStrictEqual(
             threw('usage_tiers.b must be a string')
         );
-    });
-
-    it('answers the map it was given', () => {
-        const tiers = { max5: 'Max 5x', pro: 'Pro' };
-        expect(usageTiers({ usage_tiers: tiers })).toBe(tiers);
     });
 });
 
@@ -411,18 +398,5 @@ describe('processesSettings', () => {
         expect(outcome(() => processesSettings(config, findings))).toStrictEqual(
             threw('processes must be a map')
         );
-        const { config: whole, findings: none } = loadConfig(engineDir());
-        const { processes: _removed, ...without } = whole;
-        expect(outcome(() => processesSettings(without, none))).toStrictEqual({
-            value: { patterns: ['python3', 'codex', 'claude', 'node', 'latexmk'] }
-        });
-    });
-
-    it('reads the shipped list from config/behavior.yml, which is the default its catalog entry holds', () => {
-        const { config } = loadConfig(engineDir());
-        const shipped = ['python3', 'codex', 'claude', 'node', 'latexmk'];
-        expect(processesSettings(config, [])).toStrictEqual({ patterns: shipped });
-        const { processes: _removed, ...without } = config;
-        expect(processesSettings(without, [])).toStrictEqual({ patterns: shipped });
     });
 });

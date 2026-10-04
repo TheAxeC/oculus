@@ -1,6 +1,6 @@
-// The merge of an engine's config folder and the flattening of its text fragments, over a scratch
-// engine folder the case writes and over maps built from JSON, whose `__proto__` key is an own key.
-// The real config folder is never read here.
+// Layer 1, data tests. The merge of an engine's config folder and the flattening of its text
+// fragments, over a scratch engine folder the case writes and over maps built from JSON, whose
+// `__proto__` key is an own key. The real config folder is never read here.
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -41,28 +41,14 @@ describe('flattenText', () => {
         expect(() => flattenText(node)).toThrow(sentence);
     });
 
-    it('skips an own __proto__ key at every level', () => {
-        expect(
-            Object.keys(flattenText(JSON.parse('{"__proto__":{"a":"x"},"b":"y"}')))
-        ).toStrictEqual(['b']);
-        expect(
-            Object.keys(flattenText(JSON.parse('{"a":{"__proto__":{"c":"x"},"d":"y"}}')))
-        ).toStrictEqual(['a.d']);
-    });
-
-    it('skips an own __proto__ key holding text', () => {
-        expect(Object.keys(flattenText(JSON.parse('{"__proto__":"x","b":"y"}')))).toStrictEqual([
-            'b'
-        ]);
-    });
-
-    it('skips an own __proto__ key holding text or a number below the top', () => {
-        expect(flattenText(JSON.parse('{"a":{"__proto__":"x","b":"y"}}'))).toStrictEqual({
-            'a.b': 'y'
-        });
-        expect(Object.keys(flattenText(JSON.parse('{"k":{"a":1,"__proto__":3}}')))).toStrictEqual([
-            'k.a'
-        ]);
+    it.each([
+        ['at the top, holding a map', '{"__proto__":{"a":"x"},"b":"y"}', { b: 'y' }],
+        ['below the top, holding a map', '{"a":{"__proto__":{"c":"x"},"d":"y"}}', { 'a.d': 'y' }],
+        ['at the top, holding text', '{"__proto__":"x","b":"y"}', { b: 'y' }],
+        ['below the top, holding text', '{"a":{"__proto__":"x","b":"y"}}', { 'a.b': 'y' }],
+        ['below the top, holding a number', '{"k":{"a":1,"__proto__":3}}', { 'k.a': '1' }]
+    ])('skips an own __proto__ key %s', (_row, json, flat) => {
+        expect(flattenText(JSON.parse(json))).toStrictEqual(flat);
     });
 });
 
@@ -72,11 +58,6 @@ describe('usageTiers over an own __proto__ key', () => {
         expect(() => usageTiers({ usage_tiers: tiers })).toThrow(
             'config/behavior.yml: usage_tiers.__proto__ must be a string'
         );
-    });
-
-    it('answers the map it was given when the __proto__ key holds text', () => {
-        const tiers: unknown = JSON.parse('{"__proto__":"x","b":"y"}');
-        expect(usageTiers({ usage_tiers: tiers })).toBe(tiers);
     });
 });
 

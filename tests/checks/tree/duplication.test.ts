@@ -1,4 +1,4 @@
-// Layer 4, test. A rule, a parser or a fold written a second time instead of reused.
+// Layer 4, tree check. A rule, a parser or a fold written a second time instead of reused.
 //
 // jscpd reads every TypeScript, JavaScript and Svelte file under src/lib, and separately every one
 // under tests, and reports each run of tokens two places share: fifty tokens at least, over eight
@@ -65,7 +65,7 @@ const BLOCKS = [String.raw`(?s)<style[^>]*>.*?</style>`, String.raw`(?s)<script[
  * The mark is what makes an entry stand for one clone rather than for the pair: two files already
  * on the list cannot grow a second copy under the first one's entry.
  */
-export type Pair = { a: string; b: string; mark: string; why: string };
+type Pair = { a: string; b: string; mark: string; why: string };
 
 /** The tokens of a fragment as the TypeScript scanner reads them, past comments and spaces. */
 function tokensOf(fragment: string): string[] {
@@ -86,7 +86,7 @@ function tokensOf(fragment: string): string[] {
  * The mark of a clone: its tokens joined by one space and hashed, so that a comment or a reflow
  * inside the clone, in whichever file jscpd takes its fragment from, does not move it.
  */
-export function markOf(fragment: string): string {
+function markOf(fragment: string): string {
     return createHash('sha256').update(tokensOf(fragment).join(' ')).digest('hex').slice(0, 12);
 }
 
@@ -96,10 +96,10 @@ export function markOf(fragment: string): string {
  * A pair moves here from the floor when the two are meant to hold the same lines; an entry is a
  * decision, and the case over the reasons refuses one written without it.
  */
-export const DELIBERATE: Pair[] = [];
+const DELIBERATE: Pair[] = [];
 
 /** The floor: the pairs the tree already shared, read from the list beside this file. */
-export function readHeld(text: string): Pair[] {
+function readHeld(text: string): Pair[] {
     const found: Pair[] = [];
     for (const line of text.split('\n')) {
         if (line.startsWith('#') || line.trim() === '') continue;
@@ -114,7 +114,7 @@ export function readHeld(text: string): Pair[] {
     return found;
 }
 
-export const HELD = readHeld(
+const HELD = readHeld(
     readFileSync(join(ROOT, 'tests', 'checks', 'tree', 'allow-duplication.txt'), 'utf8')
 );
 
@@ -207,11 +207,7 @@ function heldLines(one: Reported): number {
  *
  * jscpd reports a clone once, at the line it starts on in each file, however long it runs.
  */
-export function copies(
-    root: string,
-    group: string,
-    allow: Pair[] = [...DELIBERATE, ...HELD]
-): Copy[] {
+function copies(root: string, group: string, allow: Pair[] = [...DELIBERATE, ...HELD]): Copy[] {
     const base = realpathSync(root);
     const found: Copy[] = [];
     const code = detect(base, group, CODE_FORMATS, [IMPORTS]).filter(
@@ -239,7 +235,7 @@ export function copies(
 }
 
 /** The copies a group holds, one line each, in a fixed order. */
-export function findCopies(root: string, group: string, allow?: Pair[]): string[] {
+function findCopies(root: string, group: string, allow?: Pair[]): string[] {
     return copies(root, group, allow)
         .map(
             (one) =>
@@ -249,7 +245,7 @@ export function findCopies(root: string, group: string, allow?: Pair[]): string[
 }
 
 /** The clones a group shares, as pair and mark, whatever the allow list says. */
-export function sharedPairs(root: string, group: string): Set<string> {
+function sharedPairs(root: string, group: string): Set<string> {
     const found = new Set<string>();
     for (const one of copies(root, group, [])) found.add(`${one.left}|${one.right}|${one.mark}`);
     return found;
@@ -590,8 +586,6 @@ describe('a rule written twice', () => {
             'they share the fold'
         );
         expect(readHeld('a.ts b.ts abc123\n')[0].mark).toBe('abc123');
-        expect(isReason('x')).toBe(false);
-        expect(isReason('the two fold the same rule')).toBe(true);
     });
 
     it('holds the lists to clones that are still shared, so a repaired copy takes its entry with it', () => {

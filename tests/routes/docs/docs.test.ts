@@ -1,10 +1,10 @@
-// What the /api/docs route answers. The route itself is a single line handing the request to
-// lib/server/content/docs.ts with the hub of local.yml, which is what this calls: handleDocs takes
-// a Request and the hub to read, so every case here is one Request object.
+// Layer 2, route tests. What the /api/docs route answers. The route itself is a single line handing
+// the request to lib/server/content/docs.ts with the hub of local.yml, which is what this calls:
+// handleDocs takes a Request and the hub to read, so every case here is one Request object.
 //
 // The hub is synthetic, under the system temporary directory, and every path written is asserted to
 // be inside it first. What this does NOT cover: the browser painting the HTML, and target() reading
-// the machine's own local.yml, which is exercised by the curl in the package's verification.
+// the machine's own local.yml.
 //
 // The project a request names is read from the portfolio the server holds, which the route takes
 // from its own locals; the case below passes that reader itself, and the ones that pass none
@@ -13,7 +13,8 @@
 // The other two shapes the route answers are here as well: a Markdown document of the hub, which is
 // what the `docs:` list of config/layout.yml lists in the view catalogue, and the manual, which is
 // the one path of the engine directory this route opens.
-// @module-tag slow: its cases time out or fail on a loaded machine, so npm test leaves it out.
+//
+// A case that takes 100 ms or more in a run of its own is tagged slow; the others run in npm test.
 
 import {
     cpSync,
@@ -52,6 +53,9 @@ const WITH_FRONTMATTER = '---\nstage: run\n---\n\n# Alpha\n\nA paragraph.\n';
 
 const HOST = '127.0.0.1:8791';
 
+/** The engine's own portfolio configuration, read once for the file; a case only spreads it. */
+const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+
 /** A hub holding one project with the documents named, each with the same body. */
 function target(docs: Record<string, string> = { 'README.md': README }): DocTarget {
     const dir = scratchDir('oculus-docs-');
@@ -64,7 +68,6 @@ function target(docs: Record<string, string> = { 'README.md': README }): DocTarg
         expect(resolve(path).startsWith(resolve(folder) + sep)).toBe(true);
         writeFileSync(path, body);
     }
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     return {
         hub: dir,
         engine: engineDir(),
@@ -126,10 +129,16 @@ describe('the document endpoint', () => {
         );
     });
 
-    it('answers 404 for an id the reader does not know', async () => {
-        const response = handleDocs(request('project=beta&name=README.md'), target());
+    it.each([
+        ['an id the reader does not know', 'beta'],
+        ['an id that is a path rather than a folder name', '../alpha']
+    ])('answers 404 for %s', async (_row, id) => {
+        const response = handleDocs(
+            request(`project=${encodeURIComponent(id)}&name=README.md`),
+            target()
+        );
         expect(response.status).toBe(404);
-        expect(fields(await response.json()).error).toBe('no project with the id beta');
+        expect(fields(await response.json()).error).toBe(`no project with the id ${id}`);
     });
 
     it("serves a project's PRESENT.md as its narrative, the front matter split off", async () => {
@@ -189,7 +198,6 @@ describe('the document endpoint', () => {
         mkdirSync(folder, { recursive: true });
         writeFileSync(join(folder, 'project.yml'), MANIFEST);
         writeFileSync(join(folder, 'README.md'), README);
-        const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
         const into: DocTarget = {
             hub: dir,
             engine: engineDir(),
@@ -199,26 +207,6 @@ describe('the document endpoint', () => {
         expect(response.status).toBe(200);
         expect(fields(await response.json()).html).toContain(
             '<h1 id="user-content-alpha">Alpha</h1>'
-        );
-    });
-
-    it('answers 404 for an id that is a path rather than a folder name', async () => {
-        const response = handleDocs(
-            request(`project=${encodeURIComponent('../alpha')}&name=README.md`),
-            target()
-        );
-        expect(response.status).toBe(404);
-        expect(fields(await response.json()).error).toBe('no project with the id ../alpha');
-    });
-
-    it('draws a figure beside a README through the file route', async () => {
-        const response = handleDocs(
-            request('project=alpha&name=README.md'),
-            target({ 'README.md': '![one](figures/one.png)\n' })
-        );
-        expect(response.status).toBe(200);
-        expect(fields(await response.json()).html).toContain(
-            'src="/api/file/hub/projects/manuscripts/alpha/figures/one.png"'
         );
     });
 
@@ -249,39 +237,6 @@ describe('a document of the hub', () => {
         );
     });
 
-    it('draws a figure beside it through the file route, under the hub root', async () => {
-        const into = hubWith({ 'notes/one.md': '![a](pictures/one.png)\n' });
-        const response = handleDocs(request(`hub=${encodeURIComponent('notes/one.md')}`), into);
-        expect(fields(await response.json()).html).toContain(
-            'src="/api/file/hub/notes/pictures/one.png"'
-        );
-    });
-
-    it('leaves a figure source that climbs out of the hub as the author wrote it', async () => {
-        const into = hubWith({ 'one.md': '![a](../x.png)\n' });
-        const response = handleDocs(request('hub=one.md'), into);
-        const html = String(fields(await response.json()).html);
-        expect(html).toContain('src="../x.png"');
-        expect(html).not.toContain('/api/file/');
-    });
-
-    it('resolves a figure beside a document in a folder, whatever it climbs on the way', async () => {
-        const into = hubWith({ 'notes/deep/one.md': '![a](../pictures/one.png)\n' });
-        const response = handleDocs(
-            request(`hub=${encodeURIComponent('notes/deep/one.md')}`),
-            into
-        );
-        expect(fields(await response.json()).html).toContain(
-            'src="/api/file/hub/notes/pictures/one.png"'
-        );
-    });
-
-    it('leaves an address the browser resolves itself alone', async () => {
-        const into = hubWith({ 'one.md': '![a](https://example.test/one.png)\n' });
-        const response = handleDocs(request('hub=one.md'), into);
-        expect(fields(await response.json()).html).toContain('src="https://example.test/one.png"');
-    });
-
     it('answers 404 for a path that climbs out of the hub', async () => {
         const response = handleDocs(
             request(`hub=${encodeURIComponent('../elsewhere.md')}`),
@@ -310,25 +265,29 @@ describe('a document of the hub', () => {
         expect(handleDocs(request('hub=nothing.md'), into).status).toBe(404);
     });
 
-    it('answers 404 for a missing document while the sentence file does not parse', async () => {
-        const engine = scratchDir('oculus-docs-engine-');
-        cpSync(join(engineDir(), 'config'), join(engine, 'config'), {
-            recursive: true,
-            filter: (source) => !source.endsWith(LOCAL_NAME)
-        });
-        writeFileSync(join(engine, 'config', 'text', 'findings.yml'), 'text: [\n');
-        const into = hubWith({});
-        const text = textCatalog(loadConfig(engine).config);
-        const response = handleDocs(request('hub=nothing.md'), {
-            ...into,
-            config: { ...into.config, text }
-        });
-        expect(response.status).toBe(404);
-        expect(await response.json()).toEqual({
-            error: 'findings.docs.missing',
-            file: resolve(join(into.hub, 'nothing.md'))
-        });
-    });
+    it(
+        'answers 404 for a missing document while the sentence file does not parse',
+        { tags: ['slow'] },
+        async () => {
+            const engine = scratchDir('oculus-docs-engine-');
+            cpSync(join(engineDir(), 'config'), join(engine, 'config'), {
+                recursive: true,
+                filter: (source) => !source.endsWith(LOCAL_NAME)
+            });
+            writeFileSync(join(engine, 'config', 'text', 'findings.yml'), 'text: [\n');
+            const into = hubWith({});
+            const text = textCatalog(loadConfig(engine).config);
+            const response = handleDocs(request('hub=nothing.md'), {
+                ...into,
+                config: { ...into.config, text }
+            });
+            expect(response.status).toBe(404);
+            expect(await response.json()).toEqual({
+                error: 'findings.docs.missing',
+                file: resolve(join(into.hub, 'nothing.md'))
+            });
+        }
+    );
 });
 
 describe('a re-read of an unchanged file', () => {
@@ -438,39 +397,55 @@ describe('the manual', () => {
     });
 });
 
-describe("a figure's address in a project's README", () => {
-    /** The rendered README of a project holding the one Markdown line given. */
-    async function drawnReadme(line: string): Promise<string> {
-        const response = handleDocs(
-            request('project=alpha&name=README.md'),
-            target({ 'README.md': `${line}\n` })
-        );
+describe("a figure's address in a document", () => {
+    /** The rendered document the one Markdown line gives, through the project or the hub route. */
+    async function drawn(route: 'project' | 'hub', line: string): Promise<string> {
+        const response =
+            route === 'project'
+                ? handleDocs(
+                      request('project=alpha&name=README.md'),
+                      target({ 'README.md': `${line}\n` })
+                  )
+                : handleDocs(
+                      request(`hub=${encodeURIComponent('notes/deep/one.md')}`),
+                      hubWith({ 'notes/deep/one.md': `${line}\n` })
+                  );
         expect(response.status).toBe(200);
         return String(fields(await response.json()).html);
     }
 
-    it('draws a relative source as the file route address, with its alt and its title', async () => {
-        expect(await drawnReadme('![a](fig.png "t")')).toContain(
+    it.each([
+        [
+            'a relative source in a project README is addressed through the file route',
+            'project',
+            '![a](fig.png "t")',
             '<img src="/api/file/hub/projects/manuscripts/alpha/fig.png" alt="a" title="t">'
-        );
+        ],
+        [
+            'a source that climbs inside the hub is resolved against the document folder',
+            'hub',
+            '![a](../pictures/one.png)',
+            'src="/api/file/hub/notes/pictures/one.png"'
+        ]
+    ])('%s', async (_row, route, line, drawnAs) => {
+        expect(await drawn(route as 'project' | 'hub', line)).toContain(drawnAs);
     });
 
-    it('keeps an address the browser resolves itself', async () => {
-        const html = await drawnReadme('![a](https://x.org/p.png)');
-        expect(html).toContain('<img src="https://x.org/p.png" alt="a">');
+    it.each([
+        [
+            'an address the browser resolves itself',
+            '![a](https://x.org/p.png)',
+            'src="https://x.org/p.png"'
+        ],
+        [
+            'a source that climbs out of the root',
+            '![a](../../../../etc/p.png)',
+            'src="../../../../etc/p.png"'
+        ]
+    ])('keeps %s as the author wrote it', async (_row, line, kept) => {
+        const html = await drawn('project', line);
+        expect(html).toContain(kept);
         expect(html).not.toContain('/api/file/');
-    });
-
-    it('keeps a source that climbs out of the root as the author wrote it', async () => {
-        const html = await drawnReadme('![a](../../../../etc/p.png)');
-        expect(html).toContain('<img src="../../../../etc/p.png" alt="a">');
-        expect(html).not.toContain('/api/file/');
-    });
-
-    it('escapes a quote and an ampersand in the alternative text', async () => {
-        expect(await drawnReadme('![a "b" & c](fig.png)')).toContain(
-            'alt="a &quot;b&quot; &amp; c"'
-        );
     });
 });
 

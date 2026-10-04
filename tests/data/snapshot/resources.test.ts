@@ -1,7 +1,8 @@
-// The resources registry and the manifests' `compute:` list, read the way the server reads a hub: a
-// hub planted in a scratch directory, built through buildPortfolio, and the snapshot's entities,
-// the project's resource ids and the findings asserted. Every sentence is looked up in the shipped
-// catalog, so a finding whose catalog key is missing fails the test that expects it.
+// Layer 1, data tests. The resources registry and the manifests' `compute:` list, read the way the
+// server reads a hub: a hub planted in a scratch directory, built through buildPortfolio, and the
+// snapshot's entities, the project's resource ids and the findings asserted. Every sentence is
+// looked up in the shipped catalog, so a finding whose catalog key is missing fails the test that
+// expects it.
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';

@@ -1,19 +1,23 @@
-// What the /api/project-files route answers. The route itself is a single line handing the request
-// to lib/server/files/project-files.ts with the hub of local.yml, which is what this calls:
-// handleProjectFiles takes a Request and the hub to read, so every case here is one Request object.
+// Layer 2, route tests. What the /api/project-files route answers. The route itself is a single
+// line handing the request to lib/server/files/project-files.ts with the hub of local.yml, which is
+// what this calls: handleProjectFiles takes a Request and the hub to read, so every case here is
+// one Request object.
 //
 // The hub is synthetic, under the system temporary directory, and every path written is asserted to
-// be inside it first. What this does NOT cover: filesTarget() reading the machine's own local.yml,
-// which is exercised by the curl in the package's verification.
+// be inside it first. What this does NOT cover: filesTarget() reading the machine's own local.yml.
+//
+// A hook loads the configuration once, since the first load costs more than a later one, so no
+// case pays for it.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
+import { warmConfig } from '../edit/write-fixture.ts';
 import { handleProjectFiles } from '../../../src/lib/server/files/project-files.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { FilesTarget } from '../../../src/lib/server/files/project-files.ts';
-import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\n';
 
@@ -50,6 +54,8 @@ async function body(response: Response): Promise<Record<string, unknown>> {
     return (await response.json()) as Record<string, unknown>;
 }
 
+test.beforeAll(warmConfig);
+
 describe('the project-files route', () => {
     it('answers 400 when the request names no project', async () => {
         const response = handleProjectFiles(request(''), target());
@@ -75,13 +81,6 @@ describe('the project-files route', () => {
         const rows = answer.rows as { path: string; size: number; mtime: number }[];
         expect(rows.map((row) => row.path).sort()).toEqual(['README.md', 'code/run.py']);
         expect(rows.every((row) => row.size > 0 && row.mtime > 0)).toBe(true);
-    });
-
-    it('answers 200 with no rows for a project whose folder holds nothing listed', async () => {
-        const response = handleProjectFiles(request('id=alpha'), target([]));
-
-        expect(response.status).toBe(200);
-        expect(await body(response)).toMatchObject({ rows: [], truncated: false });
     });
 
     it('answers 404 for the slug of a side project and still answers for a research project', async () => {

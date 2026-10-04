@@ -1,7 +1,7 @@
-// Layer 4, test. Inside each layer every module imports only its own folder or a folder below it
-// in the order tests/checks/imports/order.ts declares, and every folder of a layer is placed.
+// Layer 4, tree check. Inside each layer every module imports only its own folder or a folder below
+// it in the order tests/checks/imports/order.ts declares, and every folder of a layer is placed.
 //
-// One case per layer holds that layer of the tree to its order. The cases after them plant an
+// One row per layer holds that layer of the tree to its order. The cases after them plant an
 // upward import, one that climbs the inner order of state/shared, and an unplaced folder in a
 // scratch tree and show the check names each.
 
@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect } from 'vitest';
 import { moduleOf } from './graph.ts';
-import { INNER, ORDER, findUpward } from './order.ts';
+import { findUpward } from './order.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 
 const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'src', 'lib');
@@ -26,35 +26,12 @@ function plant(files: Record<string, string>): string {
 }
 
 describe('the folder order of each layer', () => {
-    it('holds the data folders', () => {
-        // The model's facade is data/model/index.ts, under every data folder that reads it.
-        expect(brokenIn('data')).toEqual([]);
-    });
-
-    it('holds the server folders', () => {
-        // The composition root heads the order and file-poll.ts sits in server/core at its foot.
-        expect(brokenIn('server')).toEqual([]);
-    });
-
-    it('holds the state folders', () => {
-        // The helpers two folders shared moved below both, so each pair imports one way.
-        expect(brokenIn('state')).toEqual([]);
-    });
-
-    it('holds the ui folders', () => {
-        // Glyph moved to ui/display, under both the controls and the menus that draw it.
-        expect(brokenIn('ui')).toEqual([]);
-    });
-
-    it('holds the shell folders', () => {
-        // The workbench title moved into shell/panes, the folder beside Workbench that reads it.
-        expect(brokenIn('shell')).toEqual([]);
-    });
-
-    it('holds the views folders', () => {
-        // Every view group imports only views/shared, and views/shared imports no group.
-        expect(brokenIn('views')).toEqual([]);
-    });
+    it.each(['data', 'server', 'state', 'ui', 'shell', 'views'])(
+        'holds the %s folders',
+        (layer) => {
+            expect(brokenIn(layer)).toEqual([]);
+        }
+    );
 });
 
 describe('the order check', () => {
@@ -104,8 +81,6 @@ describe('the order check', () => {
 
     it('places every folder of every layer the tree holds, and every sub-folder of an inner order', () => {
         expect(findUpward(LIB).filter((line) => line.includes(' placed'))).toEqual([]);
-        expect(Object.keys(ORDER)).toEqual(['data', 'server', 'state', 'ui', 'shell', 'views']);
-        expect(Object.keys(INNER)).toEqual(['state/shared']);
     });
 });
 

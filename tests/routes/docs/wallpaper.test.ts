@@ -1,5 +1,5 @@
-// What the /api/wallpaper route serves: the one image behind the panels, over a temporary directory
-// of its own. The route itself is a single line handing the request to
+// Layer 2, route tests. What the /api/wallpaper route serves: the one image behind the panels, over
+// a temporary directory of its own. The route itself is a single line handing the request to
 // lib/server/content/wallpaper.ts, which is what this reads.
 //
 // Nothing here reads the real wallpaper folder or machine-local config: every case builds its own
@@ -83,63 +83,73 @@ describe('choosing the image', () => {
 });
 
 describe('the response', () => {
-    it('serves the chosen image with its own type and a private cache header', async () => {
-        const response = serve({ dir: folder(PICTURES), pick: 'first' }, memory);
+    it.each([
+        ['a-first', 'image/jpeg'],
+        ['b-second', 'image/png'],
+        ['c-third', 'image/webp']
+    ])('serves %s with its own type and a private cache header', async (file, type) => {
+        const response = serve({ dir: folder(PICTURES), file, pick: 'first' }, memory);
         expect(response.status).toBe(200);
-        expect(response.headers.get('content-type')).toBe('image/jpeg');
+        expect(response.headers.get('content-type')).toBe(type);
         expect(response.headers.get('cache-control')).toBe('private, max-age=3600');
         expect(await response.text()).toBe('x');
     });
 
-    it('names the type by the extension', () => {
-        const dir = folder(PICTURES);
-        const type = (file: string): string | null =>
-            serve({ dir, file, pick: 'first' }, memory).headers.get('content-type');
-        expect(type('b-second')).toBe('image/png');
-        expect(type('c-third')).toBe('image/webp');
-    });
-
-    it('answers 404 with no image, no folder and no configuration', () => {
-        expect(serve({ dir: folder(['notes.txt']), pick: 'first' }, memory).status).toBe(404);
-        expect(serve({ dir: join(folder([]), 'nothing'), pick: 'first' }, memory).status).toBe(404);
-        expect(serve(null, memory).status).toBe(404);
-    });
-
-    it('answers 404 to a file that would leave the folder', () => {
-        expect(
-            serve({ dir: folder(PICTURES), file: '../a-first.jpg', pick: 'first' }, memory).status
-        ).toBe(404);
+    it.each([
+        [
+            'no picture in the folder',
+            () => ({ dir: folder(['notes.txt']), pick: 'first' as const })
+        ],
+        [
+            'a folder that is not there',
+            () => ({ dir: join(folder([]), 'nothing'), pick: 'first' as const })
+        ],
+        ['no configuration', () => null],
+        [
+            'a file that would leave the folder',
+            () => ({ dir: folder(PICTURES), file: '../a-first.jpg', pick: 'first' as const })
+        ]
+    ])('answers 404 for %s', (_row, settings) => {
+        expect(serve(settings(), memory).status).toBe(404);
     });
 });
 
-describe('the configured settings', () => {
-    /**
-     * An engine directory of this case's own: its config folder, its appearance and its local.yml.
-     */
-    function fixture(body: string): { engine: string; hub: string } {
-        const root = scratchDir('oculus-wallpaper-config-');
-        const engine = join(root, 'engine');
-        const hub = join(root, 'hub');
-        const config = join(engine, 'config');
-        mkdirSync(config, { recursive: true });
-        mkdirSync(hub, { recursive: true });
-        writeFileSync(join(config, 'appearance.yml'), body);
-        writeFileSync(join(config, 'local.yml'), `hub: ${JSON.stringify(hub)}\n`);
-        return { engine, hub };
-    }
+/**
+ * An engine directory of the case's own: its config folder, this appearance and a local.yml whose
+ * hub is inside the scratch.
+ */
+function fixture(body: string): { engine: string; hub: string } {
+    const root = scratchDir('oculus-wallpaper-config-');
+    const engine = join(root, 'engine');
+    const hub = join(root, 'hub');
+    const config = join(engine, 'config');
+    mkdirSync(config, { recursive: true });
+    mkdirSync(hub, { recursive: true });
+    writeFileSync(join(config, 'appearance.yml'), body);
+    writeFileSync(join(config, 'local.yml'), `hub: ${JSON.stringify(hub)}\n`);
+    return { engine, hub };
+}
 
+const read = (own: { engine: string }): ReturnType<typeof settings> =>
+    settings(wallpaperMemory(), loadConfig(own.engine).config, own.engine);
+
+describe('the configured settings', () => {
     it('reads the configured directory under the hub of the engine it is given', () => {
         const own = fixture('wallpaper:\n  dir: pictures\n  pick: first\n');
-        expect(settings(wallpaperMemory(), loadConfig(own.engine).config, own.engine)).toEqual({
+        expect(read(own)).toEqual({
             dir: join(own.hub, 'pictures'),
             file: undefined,
             pick: 'first'
         });
     });
 
-    it('returns null when dir is absent', () => {
-        const own = fixture('wallpaper:\n  pick: first\n');
-        expect(settings(wallpaperMemory(), loadConfig(own.engine).config, own.engine)).toBeNull();
+    it.each([
+        ['no dir', 'wallpaper:\n  pick: first\n'],
+        ['a dir that is empty', "wallpaper:\n  dir: ''\n  pick: first\n"],
+        ['a dir that is not text', 'wallpaper:\n  dir: 3\n  pick: first\n'],
+        ['a block that is a list', 'wallpaper:\n  - dir: pictures\n']
+    ])('serves nothing for %s', (_row, body) => {
+        expect(read(fixture(body))).toBeNull();
     });
 
     it('reports a missing or unknown pick once and returns null', () => {
@@ -165,30 +175,6 @@ describe('the configured settings', () => {
         } finally {
             error.mockRestore();
         }
-    });
-});
-
-describe('the configured settings of the wrong shape', () => {
-    /** An engine directory of the case's own, with this appearance and a hub inside the scratch. */
-    function fixture(body: string): { engine: string; hub: string } {
-        const root = scratchDir('oculus-wallpaper-odd-');
-        const engine = join(root, 'engine');
-        const hub = join(root, 'hub');
-        const config = join(engine, 'config');
-        mkdirSync(config, { recursive: true });
-        mkdirSync(hub, { recursive: true });
-        writeFileSync(join(config, 'appearance.yml'), body);
-        writeFileSync(join(config, 'local.yml'), `hub: ${JSON.stringify(hub)}\n`);
-        return { engine, hub };
-    }
-
-    const read = (own: { engine: string }): ReturnType<typeof settings> =>
-        settings(wallpaperMemory(), loadConfig(own.engine).config, own.engine);
-
-    it('serves nothing for a dir that is empty or not text, and for a block that is a list', () => {
-        expect(read(fixture("wallpaper:\n  dir: ''\n  pick: first\n"))).toBeNull();
-        expect(read(fixture('wallpaper:\n  dir: 3\n  pick: first\n'))).toBeNull();
-        expect(read(fixture('wallpaper:\n  - dir: pictures\n'))).toBeNull();
     });
 
     it('reads a file that is not text as no file, the key still present', () => {

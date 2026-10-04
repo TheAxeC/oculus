@@ -33,7 +33,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { importGraph } from './graph.ts';
 
-export const ORDER: Record<string, string[]> = {
+const ORDER: Record<string, string[]> = {
     data: [
         'data',
         'data/sources',
@@ -96,12 +96,12 @@ export const ORDER: Record<string, string[]> = {
  * The inner order of each listed folder that carries one, its sub-folders from the top down, read
  * as ORDER is one level down.
  */
-export const INNER: Record<string, string[]> = {
+const INNER: Record<string, string[]> = {
     'state/shared': ['state/shared/answers', 'state/shared/words', 'state/shared/stores']
 };
 
 /** The folder a lib-relative module sits in: its layer and first sub-folder, or its layer alone. */
-export function folderOf(id: string): string {
+function folderOf(id: string): string {
     const parts = id.split('/');
     return parts.length > 2 ? `${parts[0]}/${parts[1]}` : parts[0];
 }
@@ -116,7 +116,7 @@ function innerOf(id: string): string {
 }
 
 /** Every folder of each layer under a lib root: its sub-folders, and itself when it holds files. */
-export function foldersOf(libRoot: string, layers: string[]): Map<string, string[]> {
+function foldersOf(libRoot: string, layers: string[]): Map<string, string[]> {
     const found = new Map<string, string[]>();
     for (const layer of layers) {
         if (!existsSync(join(libRoot, layer))) continue;

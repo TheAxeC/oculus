@@ -1,5 +1,5 @@
-// The client-safe path helpers of data/helpers/files/paths.ts, over `/` paths as the page holds
-// them.
+// Layer 1, data tests. The client-safe path helpers of data/helpers/files/paths.ts, over `/` paths
+// as the page holds them.
 //
 // `nameOf` is the last non-empty segment, so a folder written with a trailing slash is still named;
 // `trimSlash` drops the trailing slashes a folder may be written with; `joinPath` joins a folder
@@ -18,72 +18,67 @@ import {
 } from '../../../../src/lib/data/helpers/files/paths.ts';
 
 describe('nameOf', () => {
-    it('is the last non-empty segment', () => {
-        expect(nameOf('a/b/')).toBe('b');
-        expect(nameOf('b')).toBe('b');
-        expect(nameOf('')).toBe('');
-        expect(nameOf('/a/b/c.ts')).toBe('c.ts');
+    it.each([
+        ['a folder with a trailing slash', 'a/b/', 'b'],
+        ['a bare name', 'b', 'b'],
+        ['an empty path', '', ''],
+        ['an absolute path', '/a/b/c.ts', 'c.ts']
+    ])('names %s by its last non-empty segment', (_row, path, name) => {
+        expect(nameOf(path)).toBe(name);
     });
 });
 
 describe('trimSlash', () => {
-    it('drops the trailing slashes and keeps the root', () => {
-        expect(trimSlash('/r/')).toBe('/r');
-        expect(trimSlash('/r//')).toBe('/r');
-        expect(trimSlash('/r')).toBe('/r');
-        expect(trimSlash('/')).toBe('/');
+    it.each([
+        ['one trailing slash', '/r/', '/r'],
+        ['two trailing slashes', '/r//', '/r'],
+        ['none', '/r', '/r'],
+        ['the root', '/', '/']
+    ])('drops %s and keeps the root', (_row, path, trimmed) => {
+        expect(trimSlash(path)).toBe(trimmed);
     });
 });
 
 describe('joinPath', () => {
-    it('joins by one slash, the root folder and a trailing slash included', () => {
-        expect(joinPath('/', 'work/a.txt')).toBe('/work/a.txt');
-        expect(joinPath('/r/', 'a')).toBe('/r/a');
-        expect(joinPath('/r', 'a/b')).toBe('/r/a/b');
-    });
-
-    it('is the folder itself for an empty path', () => {
-        expect(joinPath('/r', '')).toBe('/r');
-        expect(joinPath('/r/', '')).toBe('/r');
-        expect(joinPath('/', '')).toBe('/');
+    it.each([
+        ['the root folder', '/', 'work/a.txt', '/work/a.txt'],
+        ['a folder with a trailing slash', '/r/', 'a', '/r/a'],
+        ['a folder with a nested path', '/r', 'a/b', '/r/a/b'],
+        ['an empty path', '/r', '', '/r'],
+        ['an empty path under a trailing slash', '/r/', '', '/r'],
+        ['an empty path under the root folder', '/', '', '/']
+    ])('joins by one slash for %s', (_row, folder, path, joined) => {
+        expect(joinPath(folder, path)).toBe(joined);
     });
 });
 
 describe('pathUnder', () => {
-    it('is the path below the folder, or empty for the folder itself', () => {
-        expect(pathUnder('/r/', '/r/x/y')).toBe('x/y');
-        expect(pathUnder('/r', '/r')).toBe('');
-        expect(pathUnder('/r', '/r/')).toBe('');
-    });
-
-    it('is null outside the folder, a sibling sharing the prefix included', () => {
-        expect(pathUnder('/r', '/rx')).toBe(null);
-        expect(pathUnder('/r', '/')).toBe(null);
-    });
-
-    it('is null for every target when the folder is empty', () => {
-        expect(pathUnder('', '/r')).toBe(null);
-        expect(pathUnder('', '/')).toBe(null);
-        expect(pathUnder('', '')).toBe(null);
-    });
-
-    it('holds everything absolute under the root folder', () => {
-        expect(pathUnder('/', '/r/x')).toBe('r/x');
-        expect(pathUnder('/', '/')).toBe('');
+    it.each([
+        ['a target below the folder', '/r/', '/r/x/y', 'x/y'],
+        ['the folder itself', '/r', '/r', ''],
+        ['the folder with a trailing slash', '/r', '/r/', ''],
+        ['a sibling sharing the prefix', '/r', '/rx', null],
+        ['a target above the folder', '/r', '/', null],
+        ['a target when the folder is empty', '', '/r', null],
+        ['the root when the folder is empty', '', '/', null],
+        ['an empty target when the folder is empty', '', '', null],
+        ['a target below the root folder', '/', '/r/x', 'r/x'],
+        ['the root folder itself', '/', '/', '']
+    ])('reads %s as its path below the folder or null', (_row, folder, target, under) => {
+        expect(pathUnder(folder, target)).toBe(under);
     });
 });
 
 describe('deepestHolding', () => {
     const FOLDERS = [{ dir: '/r' }, { dir: '/r/sub' }];
 
-    it('picks the item whose folder holds the target most deeply', () => {
-        expect(deepestHolding(FOLDERS, (one) => one.dir, '/r/sub/f')).toEqual({
-            item: FOLDERS[1],
-            path: 'f'
-        });
-        expect(deepestHolding(FOLDERS, (one) => one.dir, '/r/g')).toEqual({
-            item: FOLDERS[0],
-            path: 'g'
+    it.each([
+        ['the deeper folder', '/r/sub/f', 1, 'f'],
+        ['the shallower folder', '/r/g', 0, 'g']
+    ])('picks %s for the folder that holds the target most deeply', (_row, target, at, path) => {
+        expect(deepestHolding(FOLDERS, (one) => one.dir, target)).toEqual({
+            item: FOLDERS[at],
+            path
         });
     });
 

@@ -1,12 +1,13 @@
-// The type guards of data/helpers/guards.ts, over the values a parsed YAML or JSON file actually
-// hands them: a map, a list, null, a number, a boolean and the empty string.
+// Layer 1, data tests. The type guards of data/helpers/guards.ts, over the values a parsed YAML or
+// JSON file actually hands them: a map, a list, null, a number, a boolean and the empty string.
 //
-// The contracts matter more than the code, because fifteen modules read their config through them:
-// `str` does not trim and does not accept a number, so a field written as `2026` is not a title and
-// a title of spaces is a title of spaces; `text` is `str` with a fallback; `strings` keeps the
-// string items of a list and has none of anything that is not a list; `fields` is a map or an empty
-// one; `scalar` writes a number or a boolean out and refuses everything that is not a scalar;
-// `byKey` and `item` answer with nothing for a key or a position the value does not hold.
+// The contracts matter more than the code, because the readers of config files and payloads all go
+// through them: `str` does not trim and does not accept a number, so a field written as `2026` is
+// not a title and a title of spaces is a title of spaces; `text` is `str` with a fallback;
+// `strings` keeps the string items of a list and has none of anything that is not a list; `fields`
+// is a map or an empty one; `scalar` writes a number or a boolean out and refuses everything that
+// is not a scalar; `byKey` and `item` answer with nothing for a key or a position the value does
+// not hold.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -23,73 +24,64 @@ import {
 } from '../../../src/lib/data/helpers/guards.ts';
 
 describe('isMap', () => {
-    it('holds for a map, empty or not', () => {
-        expect(isMap({})).toBe(true);
-        expect(isMap({ a: 1 })).toBe(true);
-    });
-
-    it('does not hold for null, a list, or anything not an object', () => {
-        expect(isMap(null)).toBe(false);
-        expect(isMap([])).toBe(false);
-        expect(isMap([{ a: 1 }])).toBe(false);
-        expect(isMap(undefined)).toBe(false);
-        expect(isMap(2026)).toBe(false);
-        expect(isMap('a')).toBe(false);
-        expect(isMap(true)).toBe(false);
+    it.each([
+        ['an empty map', {}, true],
+        ['a map', { a: 1 }, true],
+        ['null', null, false],
+        ['an empty list', [], false],
+        ['a list of maps', [{ a: 1 }], false],
+        ['undefined', undefined, false],
+        ['a number', 2026, false],
+        ['a string', 'a', false],
+        ['a boolean', true, false]
+    ])('answers %s with %s', (_row, value, held) => {
+        expect(isMap(value)).toBe(held);
     });
 });
 
 describe('str', () => {
-    it('is the value when it is a string, the empty string included', () => {
-        expect(str('a')).toBe('a');
-        expect(str('')).toBe('');
-        expect(str('  a  ')).toBe('  a  ');
-    });
-
-    it('is undefined for a number, a boolean, null, a list and a map', () => {
-        expect(str(2026)).toBeUndefined();
-        expect(str(true)).toBeUndefined();
-        expect(str(null)).toBeUndefined();
-        expect(str(undefined)).toBeUndefined();
-        expect(str([])).toBeUndefined();
-        expect(str({})).toBeUndefined();
+    it.each([
+        ['a string', 'a', 'a'],
+        ['the empty string', '', ''],
+        ['a string with spaces, untrimmed', '  a  ', '  a  '],
+        ['a number', 2026, undefined],
+        ['a boolean', true, undefined],
+        ['null', null, undefined],
+        ['undefined', undefined, undefined],
+        ['a list', [], undefined],
+        ['a map', {}, undefined]
+    ])('reads %s as the string or nothing', (_row, value, read) => {
+        expect(str(value)).toBe(read);
     });
 });
 
 describe('text', () => {
-    it('is the string, and the fallback for everything else', () => {
-        expect(text('a')).toBe('a');
-        expect(text('')).toBe('');
-        expect(text(null)).toBe('');
-        expect(text(2026)).toBe('');
-        expect(text([])).toBe('');
-    });
-
-    it('takes the fallback the caller names', () => {
-        expect(text(null, 'none')).toBe('none');
-        expect(text(2026, 'none')).toBe('none');
-        // The empty string is a string, so it is the value and not the fallback.
-        expect(text('', 'none')).toBe('');
+    it.each([
+        ['a string', 'a', undefined, 'a'],
+        ['the empty string, which is a string', '', 'none', ''],
+        ['null', null, undefined, ''],
+        ['a number', 2026, undefined, ''],
+        ['a list', [], undefined, ''],
+        ['null with a fallback named', null, 'none', 'none'],
+        ['a number with a fallback named', 2026, 'none', 'none']
+    ])('reads %s as the string or the fallback', (_row, value, fallback, read) => {
+        expect(text(value, fallback)).toBe(read);
     });
 });
 
 describe('strings', () => {
-    it('keeps the string items of a list, in order', () => {
-        expect(strings(['a', 'b'])).toEqual(['a', 'b']);
-        expect(strings([])).toEqual([]);
-        expect(strings(['a', ''])).toEqual(['a', '']);
-    });
-
-    it('drops the items of a list that are not strings', () => {
-        expect(strings(['a', 2026, null, {}, ['b'], 'c'])).toEqual(['a', 'c']);
-    });
-
-    it('has nothing for a value that is not a list', () => {
-        expect(strings(null)).toEqual([]);
-        expect(strings(undefined)).toEqual([]);
-        expect(strings('a')).toEqual([]);
-        expect(strings(2026)).toEqual([]);
-        expect(strings({ 0: 'a' })).toEqual([]);
+    it.each([
+        ['the string items in order', ['a', 'b'], ['a', 'b']],
+        ['an empty list', [], []],
+        ['an empty string item', ['a', ''], ['a', '']],
+        ['items that are not strings', ['a', 2026, null, {}, ['b'], 'c'], ['a', 'c']],
+        ['null', null, []],
+        ['undefined', undefined, []],
+        ['a string', 'a', []],
+        ['a number', 2026, []],
+        ['a map', { 0: 'a' }, []]
+    ])('keeps %s', (_row, value, kept) => {
+        expect(strings(value)).toEqual(kept);
     });
 });
 
@@ -97,44 +89,41 @@ describe('fields', () => {
     it('is the map itself, so a write through it reaches the value the caller holds', () => {
         const held = { a: 1 };
         expect(fields(held)).toBe(held);
-        expect(fields({})).toEqual({});
     });
 
-    it('is an empty map for null, a list, a string and everything else', () => {
-        expect(fields(null)).toEqual({});
-        expect(fields(undefined)).toEqual({});
-        expect(fields(['a'])).toEqual({});
-        expect(fields('a')).toEqual({});
-        expect(fields(2026)).toEqual({});
+    it.each([
+        ['null', null],
+        ['undefined', undefined],
+        ['a list', ['a']],
+        ['a string', 'a'],
+        ['a number', 2026]
+    ])('is an empty map for %s', (_row, value) => {
+        expect(fields(value)).toEqual({});
     });
 });
 
 describe('scalar', () => {
-    it('is the string, and writes a number or a boolean out', () => {
-        expect(scalar('a')).toBe('a');
-        expect(scalar('')).toBe('');
-        expect(scalar(2026)).toBe('2026');
-        expect(scalar(0)).toBe('0');
-        expect(scalar(true)).toBe('true');
-        expect(scalar(false)).toBe('false');
-    });
-
-    it('is the fallback for null, undefined, a map and a list', () => {
-        expect(scalar(null)).toBe('');
-        expect(scalar(undefined)).toBe('');
-        expect(scalar({ a: 1 })).toBe('');
-        expect(scalar(['a', 'b'])).toBe('');
-        expect(scalar(null, 'none')).toBe('none');
-        expect(scalar({ a: 1 }, 'none')).toBe('none');
-        expect(scalar(['a', 'b'], 'none')).toBe('none');
-        // A scalar is the value however a fallback was named for the rest.
-        expect(scalar(0, 'none')).toBe('0');
-        expect(scalar('', 'none')).toBe('');
+    it.each([
+        ['a string', 'a', undefined, 'a'],
+        ['the empty string', '', 'none', ''],
+        ['a number', 2026, undefined, '2026'],
+        ['zero, whatever the fallback', 0, 'none', '0'],
+        ['true', true, undefined, 'true'],
+        ['false', false, undefined, 'false'],
+        ['null', null, undefined, ''],
+        ['undefined', undefined, undefined, ''],
+        ['a map', { a: 1 }, undefined, ''],
+        ['a list', ['a', 'b'], undefined, ''],
+        ['null with a fallback named', null, 'none', 'none'],
+        ['a map with a fallback named', { a: 1 }, 'none', 'none'],
+        ['a list with a fallback named', ['a', 'b'], 'none', 'none']
+    ])('writes %s out as its text or the fallback', (_row, value, fallback, written) => {
+        expect(scalar(value, fallback)).toBe(written);
     });
 });
 
 describe('byKey', () => {
-    it('is the value under a key the record holds', () => {
+    it('is the value under a key the record holds, an undefined one included', () => {
         expect(byKey({ a: 1, b: 2 }, 'a')).toBe(1);
         expect(byKey<number | undefined>({ a: undefined }, 'a')).toBeUndefined();
     });
@@ -146,43 +135,52 @@ describe('byKey', () => {
 });
 
 describe('item', () => {
-    it('is the item at a position the list holds', () => {
-        expect(item(['a', 'b'], 0)).toBe('a');
-        expect(item(['a', 'b'], 1)).toBe('b');
-    });
-
-    it('is undefined past the end and for a negative position, which is no item from the end', () => {
-        expect(item(['a', 'b'], 2)).toBeUndefined();
-        expect(item(['a', 'b'], -1)).toBeUndefined();
-        expect(item<string>([], 0)).toBeUndefined();
+    it.each([
+        ['the first position', 0, 'a'],
+        ['the last position', 1, 'b'],
+        ['a position past the end', 2, undefined],
+        ['a negative position, which counts from nowhere', -1, undefined]
+    ])('reads %s of a list of two', (_row, index, read) => {
+        expect(item(['a', 'b'], index)).toBe(read);
     });
 });
 
 describe('numericSetting', () => {
-    it('is a finite number the config holds, and null for one it lacks or one that is not finite', () => {
-        expect(numericSetting({ leads_badge_days: 14 }, 'leads_badge_days')).toBe(14);
-        expect(numericSetting({}, 'leads_badge_days')).toBe(null);
-        expect(numericSetting({ leads_badge_days: '14' }, 'leads_badge_days')).toBe(null);
-        expect(numericSetting({ leads_badge_days: Number.NaN }, 'leads_badge_days')).toBe(null);
+    it.each([
+        ['a finite number', { leads_badge_days: 14 }, 14],
+        ['a missing key', {}, null],
+        ['a number written as text', { leads_badge_days: '14' }, null],
+        ['a number that is not finite', { leads_badge_days: Number.NaN }, null]
+    ])('reads %s as the number or null', (_row, config, read) => {
+        expect(numericSetting(config, 'leads_badge_days')).toBe(read);
     });
 });
 
 describe('sameInOrder', () => {
-    it('holds for equal values, nested maps and lists included', () => {
-        expect(
-            sameInOrder({ a: [1, { b: 2, c: 3 }], d: null }, { a: [1, { b: 2, c: 3 }], d: null })
-        ).toBe(true);
-        expect(sameInOrder([], [])).toBe(true);
-    });
-
-    it('fails for a map whose keys come in another order, at any depth', () => {
-        expect(sameInOrder({ a: 1, b: 2 }, { b: 2, a: 1 })).toBe(false);
-        expect(sameInOrder({ k: { a: 1, b: 2 } }, { k: { b: 2, a: 1 } })).toBe(false);
-        expect(sameInOrder([{ a: 1, b: 2 }], [{ b: 2, a: 1 }])).toBe(false);
-    });
-
-    it('fails for values that differ', () => {
-        expect(sameInOrder({ a: 1 }, { a: 2 })).toBe(false);
-        expect(sameInOrder([1, 2], [2, 1])).toBe(false);
+    it.each([
+        [
+            'equal nested maps and lists',
+            { a: [1, { b: 2, c: 3 }], d: null },
+            { a: [1, { b: 2, c: 3 }], d: null },
+            true
+        ],
+        ['two empty lists', [], [], true],
+        ['a map with its keys in another order', { a: 1, b: 2 }, { b: 2, a: 1 }, false],
+        [
+            'a nested map with its keys in another order',
+            { k: { a: 1, b: 2 } },
+            { k: { b: 2, a: 1 } },
+            false
+        ],
+        [
+            'a map in a list with its keys in another order',
+            [{ a: 1, b: 2 }],
+            [{ b: 2, a: 1 }],
+            false
+        ],
+        ['maps with a different value', { a: 1 }, { a: 2 }, false],
+        ['lists in another order', [1, 2], [2, 1], false]
+    ])('answers %s with %s', (_row, a, b, same) => {
+        expect(sameInOrder(a, b)).toBe(same);
     });
 });

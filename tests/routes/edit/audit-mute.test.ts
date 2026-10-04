@@ -1,14 +1,16 @@
-// What the /api/write route does with an audit mute: one finding parked, one brought back, and the
-// refusals that leave config/behavior.yml exactly as it was.
+// Layer 2, route tests. What the /api/write route does with an audit mute: one finding parked, one
+// brought back, and the refusals that leave config/behavior.yml exactly as it was.
 //
-// It is its own file rather than a block of tests/routes/edit/write.test.ts, which is at the tree's
-// thousand-line limit. The behavior file is a copy under the system temporary directory, asserted
-// to be inside it before anything is written, so no case here writes the engine's own
-// configuration.
+// The behavior file is a copy under the system temporary directory, asserted to be inside it before
+// anything is written, so no case here writes the engine's own configuration.
+//
+// The case tagged slow takes 100 ms or more; every other case runs in npm test. A hook loads the
+// configuration once, since the first load costs more than a later one, so no case pays for it.
 
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
+import { warmConfig } from './write-fixture.ts';
 import { parse } from 'yaml';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
@@ -16,7 +18,7 @@ import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { mutedSignatures } from '../../../src/lib/server/content/audit.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 
 const TOKEN = mintToken();
@@ -62,12 +64,12 @@ function muteTarget(body = BEHAVIOR): WriteTarget {
     const file = join(dir, 'behavior.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
     writeFileSync(file, body);
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+    const merged = loadConfig(engineDir()).config;
     return {
         hub: dir,
-        config: real,
+        config: portfolioConfigFrom(merged, engineDir()),
         engine: engineDir(),
-        career: careerRules(loadConfig(engineDir()).config),
+        career: careerRules(merged),
         projects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: file,
@@ -85,6 +87,8 @@ function behaviorOf(into: WriteTarget): string {
 function parked(into: WriteTarget): unknown {
     return (parse(behaviorOf(into)) as { audit_ignore: unknown }).audit_ignore;
 }
+
+test.beforeAll(warmConfig);
 
 describe('the audit mute write', () => {
     it('parks one signature and keeps every other byte of the file', async () => {
@@ -176,32 +180,25 @@ describe('the audit mute write', () => {
         expect(parked(into)).toEqual(['a-note-to-self', OTHER]);
     });
 
-    it('refuses a signature that is not twelve hex characters, and the file is byte-identical', async () => {
-        for (const signature of ['nonsense', '0123456789AB', '0123456789abc']) {
-            const into = muteTarget();
-            const before = behaviorOf(into);
-            const response = await handleWrite(
-                request({ kind: 'audit-mute', signature, muted: true }),
-                TOKEN,
-                into
-            );
-            expect(response.status).toBe(400);
-            expect(await response.json()).toEqual({ error: 'invalid' });
-            expect(behaviorOf(into)).toBe(before);
-        }
-    });
-
-    it('refuses a file whose shape the line edit cannot keep, and the file is byte-identical', async () => {
-        const flow = '{ read_limits: { next: 300 }, audit_ignore: [] }\n';
-        const into = muteTarget(flow);
+    it.each([
+        ['a signature that is not hex', BEHAVIOR, 'nonsense'],
+        ['a signature in capitals', BEHAVIOR, '0123456789AB'],
+        ['a signature of thirteen characters', BEHAVIOR, '0123456789abc'],
+        [
+            'a file whose shape the line edit cannot keep',
+            '{ read_limits: { next: 300 }, audit_ignore: [] }\n',
+            SIGNATURE
+        ]
+    ])('refuses %s, and the file is byte-identical', async (_row, body, signature) => {
+        const into = muteTarget(body);
         const response = await handleWrite(
-            request({ kind: 'audit-mute', signature: SIGNATURE, muted: true }),
+            request({ kind: 'audit-mute', signature, muted: true }),
             TOKEN,
             into
         );
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({ error: 'invalid' });
-        expect(behaviorOf(into)).toBe(flow);
+        expect(behaviorOf(into)).toBe(body);
     });
 
     it('refuses a behavior file that is not there, and says which refusal it was', async () => {
@@ -227,18 +224,22 @@ describe('the audit mute write', () => {
         expect(behaviorOf(into)).toContain('read_limits: { next: 300 }\n');
     });
 
-    it('does not know a body whose signature or flag is of the wrong shape', async () => {
-        for (const body of [
-            { kind: 'audit-mute', signature: SIGNATURE },
-            { kind: 'audit-mute', signature: '', muted: true },
-            { kind: 'audit-mute', muted: true },
-            { kind: 'audit-mute', signature: SIGNATURE, muted: 'yes' }
-        ]) {
-            const response = await handleWrite(request(body), TOKEN, muteTarget());
-            expect(response.status).toBe(400);
-            expect(await response.json()).toEqual({
-                error: 'the body is not a write this route knows'
-            });
+    it(
+        'does not know a body whose signature or flag is of the wrong shape',
+        { tags: ['slow'] },
+        async () => {
+            for (const body of [
+                { kind: 'audit-mute', signature: SIGNATURE },
+                { kind: 'audit-mute', signature: '', muted: true },
+                { kind: 'audit-mute', muted: true },
+                { kind: 'audit-mute', signature: SIGNATURE, muted: 'yes' }
+            ]) {
+                const response = await handleWrite(request(body), TOKEN, muteTarget());
+                expect(response.status).toBe(400);
+                expect(await response.json()).toEqual({
+                    error: 'the body is not a write this route knows'
+                });
+            }
         }
-    });
+    );
 });

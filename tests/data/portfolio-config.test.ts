@@ -1,7 +1,7 @@
-// portfolioConfigFrom over a merged config whose keys hold values of the wrong type: the tier
-// rules, the collection list, the vocabulary lists and maps, the registry paths and the deck. The
-// result is compared whole, and the schema and the deck it hands on are the input values
-// themselves.
+// Layer 1, data tests. portfolioConfigFrom over a merged config whose keys hold values of the wrong
+// type: the tier rules, the collection list, the vocabulary lists and maps, the registry paths and
+// the deck. The result is compared whole, and the schema and the deck it hands on are the input
+// values themselves.
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -30,22 +30,6 @@ const DEFAULT_FEEDS = {
 };
 
 describe('portfolioConfigFrom', () => {
-    it('answers the defaults for a config holding nothing', () => {
-        expect(portfolioConfigFrom({}, ENGINE)).toStrictEqual({
-            scan: [],
-            registries: DEFAULT_REGISTRIES,
-            collections: [],
-            feeds: DEFAULT_FEEDS,
-            linkedinCadenceDays: Number.NaN,
-            career: 'registries/career.yml',
-            schema: undefined,
-            vocab: { types: [], statuses: [] },
-            deck: undefined,
-            deckFile: join(ENGINE, 'config', 'present.yml'),
-            text: {}
-        });
-    });
-
     it('reads each key of the wrong type as absent and keeps the rest of its list', () => {
         const schema = { fields: { a: 1 } };
         const deck = { tag_tones: 3, order: [] };

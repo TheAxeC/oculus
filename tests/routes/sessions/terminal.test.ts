@@ -1,5 +1,5 @@
-// Layer 2, server tests. GET /api/terminal after a write, and POST /api/terminal on a session
-// oculus did not start, resume and recovery. The update-task, LaTeX and chat actions are
+// Layer 2, route tests. GET /api/terminal after a write, and POST /api/terminal on a session oculus
+// did not start, resume and recovery. The update-task, LaTeX and chat actions are
 // terminal-actions.test.ts beside this.
 //
 // Nothing here runs tmux, `claude` or `codex`. handleTerminal is called with an options bag holding
@@ -247,58 +247,40 @@ describe('POST /api/terminal, the recover action', () => {
         expect(started[started.length - 1]).toBe("python3 tools/data/redownload.py 'mimic-iv'");
     });
 
-    it('refuses an unknown dataset without starting a terminal', async () => {
-        const driver = tmux();
-        const response = await handleTerminal(
-            request({ action: 'recover', key: 'unknown', cols: 80, rows: 24 }),
-            TOKEN,
-            {
-                engine: task.engine,
-                configFor: configOf(task.engine),
-                run: driver.run,
-                datasetIdsFor: () => ['mimic-iv'],
-                hubFor: () => HERE
-            }
-        );
-        expect(response.status).toBe(400);
-        expect((await answer(response)).error).toBe(
+    it.each([
+        [
+            'a dataset the portfolio does not hold',
+            'unknown',
+            ['mimic-iv'],
             'key is not a dataset in the current portfolio'
-        );
-        expect(driver.calls).toEqual([]);
-    });
-
-    it('refuses a shell-bearing key absent from the snapshot', async () => {
+        ],
+        [
+            'a key that carries a shell command',
+            'mimic; touch nope',
+            ['mimic-iv'],
+            'key is not a dataset in the current portfolio'
+        ],
+        [
+            'a dash-prefixed key the portfolio holds',
+            '--all',
+            ['--all'],
+            'key is not a valid dataset key'
+        ]
+    ])('refuses %s without starting a terminal', async (_row, key, ids, reason) => {
         const driver = tmux();
         const response = await handleTerminal(
-            request({ action: 'recover', key: 'mimic; touch nope', cols: 80, rows: 24 }),
+            request({ action: 'recover', key, cols: 80, rows: 24 }),
             TOKEN,
             {
                 engine: task.engine,
                 configFor: configOf(task.engine),
                 run: driver.run,
-                datasetIdsFor: () => ['mimic-iv'],
+                datasetIdsFor: () => ids,
                 hubFor: () => HERE
             }
         );
         expect(response.status).toBe(400);
-        expect(driver.calls).toEqual([]);
-    });
-
-    it('refuses a dash-prefixed key even when the snapshot holds it', async () => {
-        const driver = tmux();
-        const response = await handleTerminal(
-            request({ action: 'recover', key: '--all', cols: 80, rows: 24 }),
-            TOKEN,
-            {
-                engine: task.engine,
-                configFor: configOf(task.engine),
-                run: driver.run,
-                datasetIdsFor: () => ['--all'],
-                hubFor: () => HERE
-            }
-        );
-        expect(response.status).toBe(400);
-        expect((await answer(response)).error).toBe('key is not a valid dataset key');
+        expect((await answer(response)).error).toBe(reason);
         expect(driver.calls).toEqual([]);
     });
 });

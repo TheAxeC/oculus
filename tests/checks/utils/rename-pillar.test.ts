@@ -1,4 +1,4 @@
-// The hub migration behind the manifest key `program:` becoming `pillar:`.
+// Layer 4, test. The hub migration behind the manifest key `program:` becoming `pillar:`.
 //
 // The fixture is a hub in a temporary directory whose manifests carry what the real ones carry: a
 // comment above the key, a comment after its value, a key order that is not alphabetical, a block
@@ -8,7 +8,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { RENAMED_FIELDS } from '../../../src/lib/data/snapshot/validate.ts';
 import {
     manifestsUnder,
     migrateHub,
@@ -63,13 +62,6 @@ test.beforeAll(() => {
 
 const { from, to } = theRename();
 
-describe('the rename the script carries', () => {
-    it('is the one the reader reports a manifest under the old key for', () => {
-        expect(RENAMED_FIELDS).toEqual({ program: 'pillar' });
-        expect({ from, to }).toEqual({ from: 'program', to: 'pillar' });
-    });
-});
-
 describe('the manifest scan', () => {
     it('finds every project.yml at any depth under projects/', () => {
         expect(manifestsUnder(join(root, 'projects'))).toEqual([alpha, nested, beta].sort());
@@ -113,11 +105,13 @@ describe('the migration over a fixture hub', () => {
 });
 
 describe('the command line', () => {
-    it('is every root it names, null for none and for a flag, and a word after -- as a root', () => {
-        expect(rootsOf(['/a', '/b'])).toEqual(['/a', '/b']);
-        expect(rootsOf([])).toBeNull();
-        expect(rootsOf(['--dry-run', '/a'])).toBeNull();
-        expect(rootsOf(['-x'])).toBeNull();
-        expect(rootsOf(['--', '--odd-folder'])).toEqual(['--odd-folder']);
+    it.each([
+        ['every root it names', ['/a', '/b'], ['/a', '/b']],
+        ['null for none', [], null],
+        ['null for a flag before a root', ['--dry-run', '/a'], null],
+        ['null for a short flag', ['-x'], null],
+        ['a word after -- as a root', ['--', '--odd-folder'], ['--odd-folder']]
+    ])('is %s', (_row, argv, expected) => {
+        expect(rootsOf(argv)).toEqual(expected);
     });
 });

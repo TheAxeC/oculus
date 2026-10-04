@@ -1,6 +1,7 @@
-// The replace text read as VS Code's Search view reads it: the group template ripgrep reports every
-// group through, the groups split back out of ripgrep's replacement, and the text one match is
-// replaced with. The page and the server both call these, so a preview and a write agree.
+// Layer 1, data tests. The replace text read as VS Code's Search view reads it: the group template
+// ripgrep reports every group through, the groups split back out of ripgrep's replacement, and the
+// text one match is replaced with. The page and the server both call these, so a preview and a
+// write agree.
 //
 // Every expected text below is what VS Code's own `ReplacePattern.getReplaceString` returns for the
 // same pattern, match and replace text.
@@ -64,12 +65,14 @@ describe('the group template', () => {
         );
     });
 
-    it('does not count an escaped bracket, a class, a nested class or a non-capturing group', () => {
-        expect(replaceTemplate('\\(a\\)[(]', true)).toBe('\ue0020\ue003${0}');
-        expect(replaceTemplate('[[:alpha:](]x', true)).toBe('\ue0020\ue003${0}');
-        expect(replaceTemplate('[^]()]', true)).toBe('\ue0020\ue003${0}');
-        expect(replaceTemplate('(?:a)(?i)b', true)).toBe('\ue0020\ue003${0}');
-        expect(replaceTemplate('\\\\(a)', true)).toBe('\ue0020\ue003${0}\ue0021\ue003${1}');
+    it.each([
+        ['an escaped bracket and a class', '\\(a\\)[(]', '\ue0020\ue003${0}'],
+        ['a nested class', '[[:alpha:](]x', '\ue0020\ue003${0}'],
+        ['a class that starts with a bracket', '[^]()]', '\ue0020\ue003${0}'],
+        ['a non-capturing group and a flag group', '(?:a)(?i)b', '\ue0020\ue003${0}'],
+        ['a group after an escaped backslash', '\\\\(a)', '\ue0020\ue003${0}\ue0021\ue003${1}']
+    ])('counts %s as the groups it holds', (_row, pattern, template) => {
+        expect(replaceTemplate(pattern, true)).toBe(template);
     });
 
     it('is empty for a pattern searched as text', () => {
@@ -90,9 +93,11 @@ describe('the groups split back out of ripgrep replacement', () => {
         expect(groupsFrom(replacement, pattern)).toEqual({ '0': 'a', '1': 'a', '2': '', n: '' });
     });
 
-    it('refuses a replacement that is not what the template makes', () => {
-        expect(groupsFrom('plain', pattern)).toBeNull();
-        expect(groupsFrom('\ue0020\ue003a', pattern)).toBeNull();
+    it.each([
+        ['plain text', 'plain'],
+        ['a replacement missing groups', '\ue0020\ue003a']
+    ])('refuses %s, which is not what the template makes', (_row, replacement) => {
+        expect(groupsFrom(replacement, pattern)).toBeNull();
     });
 
     it('holds no key a group of the pattern did not make', () => {
@@ -102,11 +107,14 @@ describe('the groups split back out of ripgrep replacement', () => {
 });
 
 describe('the markers', () => {
-    it('are the four private-use characters from U+E000', () => {
-        for (const marker of ['\ue000', '\ue001', '\ue002', '\ue003']) {
-            expect(hasMarker(`a${marker}b`)).toBe(true);
-        }
-        expect(hasMarker('\ue004 plain')).toBe(false);
+    it.each([
+        ['U+E000', 'a\ue000b', true],
+        ['U+E001', 'a\ue001b', true],
+        ['U+E002', 'a\ue002b', true],
+        ['U+E003', 'a\ue003b', true],
+        ['the next private-use character', '\ue004 plain', false]
+    ])('finds %s in a text', (_row, text, found) => {
+        expect(hasMarker(text)).toBe(found);
     });
 });
 
@@ -126,37 +134,24 @@ describe('a regular expression replace', () => {
         expect(regexReplaced('f(o)o', 'foo', replace)).toBe(written);
     });
 
-    it('reads a named group as $<name> only when the pattern has one', () => {
-        expect(regexReplaced('(?<n>a)(b)', 'ab', '[$<n>]-$2')).toBe('[a]-b');
-        expect(regexReplaced('(a)(b)', 'ab', '[$<n>]-$2')).toBe('[$<n>]-b');
-        expect(regexReplaced('(?<n>a)(b)', 'ab', '$<missing>|$1')).toBe('|a');
-    });
-
-    it('reads a number past the group count as one digit and the rest as typed', () => {
-        expect(regexReplaced('(a)(b)', 'ab', '$12')).toBe('a2');
-        expect(regexReplaced('(a)(b)', 'ab', '$23')).toBe('b3');
-        expect(regexReplaced('(a)', 'a', '$3')).toBe('$3');
-    });
-
-    it('reads $0 as the match and $& with a group reference beside it', () => {
-        expect(regexReplaced('(\\w+)', 'abc', '<$0>')).toBe('<abc>');
-        expect(regexReplaced('(\\w+)', 'abc', '$&$1')).toBe('abcabc');
-    });
-
-    it('turns \\n, \\t and \\\\ into a newline, a tab and one backslash', () => {
-        expect(regexReplaced('(\\w+)', 'ab', 'a\\nb')).toBe('a\nb');
-        expect(regexReplaced('(\\w+)', 'ab', 'a\\\\nb')).toBe('a\\nb');
-        expect(regexReplaced('(\\w+)', 'ab', 'a\\tb')).toBe('a\tb');
-        expect(regexReplaced('(\\w+)', 'ab', 'a\\xb')).toBe('a\\xb');
-        expect(regexReplaced('(\\w+)', 'ab', 'tail\\')).toBe('tail\\');
-    });
-
-    it('writes an empty replace text as the empty text', () => {
-        expect(regexReplaced('(\\w+)', 'ab', '')).toBe('');
-    });
-
-    it('reads a group the match did not take as the empty text', () => {
-        expect(regexReplaced('(a)(b)?(c)', 'ac', '[$2]')).toBe('[]');
+    it.each([
+        ['a named group the pattern has', '(?<n>a)(b)', 'ab', '[$<n>]-$2', '[a]-b'],
+        ['a named group the pattern lacks', '(a)(b)', 'ab', '[$<n>]-$2', '[$<n>]-b'],
+        ['a name that is not a group', '(?<n>a)(b)', 'ab', '$<missing>|$1', '|a'],
+        ['$12 over two groups', '(a)(b)', 'ab', '$12', 'a2'],
+        ['$23 over two groups', '(a)(b)', 'ab', '$23', 'b3'],
+        ['$3 over one group', '(a)', 'a', '$3', '$3'],
+        ['$0 as the match', '(\\w+)', 'abc', '<$0>', '<abc>'],
+        ['$& beside a group reference', '(\\w+)', 'abc', '$&$1', 'abcabc'],
+        ['a backslash n as a newline', '(\\w+)', 'ab', 'a\\nb', 'a\nb'],
+        ['two backslashes as one', '(\\w+)', 'ab', 'a\\\\nb', 'a\\nb'],
+        ['a backslash t as a tab', '(\\w+)', 'ab', 'a\\tb', 'a\tb'],
+        ['a backslash x as typed', '(\\w+)', 'ab', 'a\\xb', 'a\\xb'],
+        ['a trailing backslash as typed', '(\\w+)', 'ab', 'tail\\', 'tail\\'],
+        ['an empty replace text', '(\\w+)', 'ab', '', ''],
+        ['a group the match did not take', '(a)(b)?(c)', 'ac', '[$2]', '[]']
+    ])('reads %s', (_row, pattern, text, replace, written) => {
+        expect(regexReplaced(pattern, text, replace)).toBe(written);
     });
 });
 
@@ -175,12 +170,11 @@ describe('the case operations', () => {
         expect(regexReplaced('(\\w+)', matched, replace)).toBe(written);
     });
 
-    it('leaves the run and its $N as typed for a group with no text', () => {
-        expect(regexReplaced('(a)(b)?', 'a', '\\U$2')).toBe('\\U');
-    });
-
-    it('keeps the characters past the operations of a group', () => {
-        expect(regexReplaced('(\\w+)', 'abc', '\\u\\u$1')).toBe('ABc');
+    it.each([
+        ['a group with no text', '(a)(b)?', 'a', '\\U$2', '\\U'],
+        ['two operations over one group', '(\\w+)', 'abc', '\\u\\u$1', 'ABc']
+    ])('reads %s', (_row, pattern, text, replace, written) => {
+        expect(regexReplaced(pattern, text, replace)).toBe(written);
     });
 });
 
@@ -205,13 +199,12 @@ describe('Preserve Case', () => {
 });
 
 describe('a replace of text searched as text', () => {
-    it('writes the replace text as typed, a backslash and a $1 included', () => {
-        expect(literalReplaced('foo', '$1\\n')).toBe('$1\\n');
-        expect(literalReplaced('foo', '$&$$')).toBe('$&$$');
-    });
-
-    it('deletes the match for an empty replace text', () => {
-        expect(literalReplaced('foo', '')).toBe('');
+    it.each([
+        ['a backslash and a $1', '$1\\n', '$1\\n'],
+        ['a $& and a $$', '$&$$', '$&$$'],
+        ['an empty replace text', '', '']
+    ])('writes %s as typed', (_row, replace, written) => {
+        expect(literalReplaced('foo', replace)).toBe(written);
     });
 });
 

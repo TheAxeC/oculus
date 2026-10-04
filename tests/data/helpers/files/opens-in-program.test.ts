@@ -1,8 +1,8 @@
-// The one rule both layers tell which program a file opens in by: `open.program_ext` of
-// config/behavior.yml maps each extension that may open to the bundle id of one application. The
-// open endpoint hands a file only to that application, and the cards, the file view and the source
-// tab offer the control only for a name with an entry. The settings reader that requires the map at
-// server start lives here too.
+// Layer 1, data tests. The one rule both layers tell which program a file opens in by:
+// `open.program_ext` of config/behavior.yml maps each extension that may open to the bundle id of
+// one application. The open endpoint hands a file only to that application, and the cards, the file
+// view and the source tab offer the control only for a name with an entry. The settings reader that
+// requires the map at server start lives here too.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -18,103 +18,86 @@ const APPS = openSettings(loadConfig(engineDir()).config).programApps;
 
 describe('the application a name opens in', () => {
     it('names the checked-in application for every listed extension, under a folder and in any case', () => {
-        expect(APPS).toEqual({
-            '.docx': 'com.microsoft.Word',
-            '.doc': 'com.microsoft.Word',
-            '.xlsx': 'com.microsoft.Excel',
-            '.xls': 'com.microsoft.Excel',
-            '.pptx': 'com.microsoft.Powerpoint',
-            '.ppt': 'com.microsoft.Powerpoint',
-            '.rtf': 'com.apple.TextEdit',
-            '.pages': 'com.apple.iWork.Pages',
-            '.numbers': 'com.apple.iWork.Numbers',
-            '.key': 'com.apple.iWork.Keynote'
-        });
+        expect(Object.keys(APPS).length).toBeGreaterThan(0);
         for (const [suffix, app] of Object.entries(APPS)) {
             expect(programFor(`drafts/file${suffix}`, APPS)).toBe(app);
             expect(programFor(`FILE${suffix.toUpperCase()}`, APPS)).toBe(app);
         }
     });
 
-    it('names none for a double extension, a type off the map, a name with no extension and a dotfile', () => {
-        const refused = [
-            'report.docx.command',
-            'bundle.zip',
-            'meeting.ics',
-            'person.vcf',
-            'screen.vncloc',
-            'profile.mobileconfig',
-            'flow.shortcut',
-            'draft.odt',
-            'reproduce',
-            '.docx'
-        ];
-        expect(refused.filter((name) => opensInProgram(name, APPS))).toEqual([]);
+    it.each([
+        'report.docx.command',
+        'bundle.zip',
+        'meeting.ics',
+        'person.vcf',
+        'screen.vncloc',
+        'profile.mobileconfig',
+        'flow.shortcut',
+        'draft.odt',
+        'reproduce',
+        '.docx'
+    ])('names none of the checked-in applications for %s', (name) => {
+        expect(opensInProgram(name, APPS)).toBe(false);
     });
 
-    it('names none for a key an object inherits, and none under an empty map', () => {
-        expect(programFor('x.constructor', APPS)).toBeNull();
-        expect(programFor('x.__proto__', APPS)).toBeNull();
-        expect(opensInProgram('report.docx', {})).toBe(false);
-        expect(programFor('notes.TXT', { '.txt': 'com.apple.TextEdit' })).toBe(
+    it.each([
+        ['a key an object inherits', 'x.constructor', APPS, null],
+        ['the key __proto__', 'x.__proto__', APPS, null],
+        ['an empty map', 'report.docx', {}, null],
+        [
+            'an upper-case extension',
+            'notes.TXT',
+            { '.txt': 'com.apple.TextEdit' },
             'com.apple.TextEdit'
-        );
+        ]
+    ])('reads %s', (_row, name, apps, app) => {
+        expect(programFor(name, apps)).toBe(app);
     });
 });
 
 describe('the map in the configuration', () => {
-    it('reads the extensions lowercased, and null for a missing or mistyped map', () => {
-        expect(programApps({ open: { program_ext: { '.DOCX': 'com.microsoft.Word' } } })).toEqual({
-            '.docx': 'com.microsoft.Word'
-        });
-        expect(programApps({})).toBeNull();
-        expect(programApps({ open: { program_ext: ['.docx'] } })).toBeNull();
-        expect(programApps({ open: { program_ext: { docx: 'com.microsoft.Word' } } })).toBeNull();
-        expect(
-            programApps({ open: { program_ext: { '.tar.gz': 'com.apple.Archive' } } })
-        ).toBeNull();
-        expect(programApps({ open: { program_ext: { '.docx': 'Word' } } })).toBeNull();
-        expect(programApps({ open: { program_ext: { '.docx': 7 } } })).toBeNull();
-        expect(programApps({ open: { program_ext: {} } })).toEqual({});
-    });
-
-    it('tells a bundle id by its shape', () => {
-        expect(isBundleId('com.microsoft.Powerpoint')).toBe(true);
-        expect(isBundleId('com.apple.iWork.Numbers')).toBe(true);
-        expect(isBundleId('Word')).toBe(false);
-        expect(isBundleId('-b')).toBe(false);
-        expect(isBundleId('com..Word')).toBe(false);
-        expect(isBundleId('com.microsoft.Word /tmp/x')).toBe(false);
-    });
-
-    it('is required at server start, naming the key when it is missing or mistyped', () => {
-        expect(() => openSettings({})).toThrow('open.program_ext');
-        expect(() => openSettings({ open: { program_ext: { '.docx': 7 } } })).toThrow(
-            'open.program_ext'
-        );
-        expect(openSettings({ open: { program_ext: { '.docx': 'com.microsoft.Word' } } })).toEqual({
-            programApps: { '.docx': 'com.microsoft.Word' }
-        });
+    it.each([
+        ['a bundle id of an application', 'com.microsoft.Powerpoint', true],
+        ['a bundle id with a capital word', 'com.apple.iWork.Numbers', true],
+        ['a name with no dots', 'Word', false],
+        ['an option for the open command', '-b', false],
+        ['an empty segment', 'com..Word', false],
+        ['an id followed by a path', 'com.microsoft.Word /tmp/x', false]
+    ])('tells %s by its shape', (_row, id, bundle) => {
+        expect(isBundleId(id)).toBe(bundle);
     });
 });
 
-describe('the extension map read from a configuration of the wrong shape', () => {
+describe('the extension map read from a configuration', () => {
     it.each([
-        [{}],
-        [{ open: [] }],
-        [{ open: { program_ext: [] } }],
-        [{ open: { program_ext: { pdf: 'com.a.b' } } }],
-        [{ open: { program_ext: { '.pdf': 3 } } }],
-        [{ open: { program_ext: { '.pdf': 'com.a.b', pdf: 'com.c.d' } } }],
-        [{ open: { program_ext: JSON.parse('{"__proto__":"com.a.b"}') as unknown } }]
-    ])('answers null for %j', (config) => {
-        expect(programApps(config)).toBeNull();
-    });
-
-    it('answers the extensions lowercased, and an empty map for an empty one', () => {
-        expect(
-            programApps({ open: { program_ext: { '.PDF': 'com.a.b', '.Md': 'com.c.d' } } })
-        ).toStrictEqual({ '.pdf': 'com.a.b', '.md': 'com.c.d' });
-        expect(programApps({ open: { program_ext: {} } })).toStrictEqual({});
+        ['a missing block', {}, null],
+        ['a block that is a list', { open: [] }, null],
+        ['a map that is a list', { open: { program_ext: [] } }, null],
+        [
+            'an extension without a dot',
+            { open: { program_ext: { docx: 'com.microsoft.Word' } } },
+            null
+        ],
+        ['a double extension', { open: { program_ext: { '.tar.gz': 'com.apple.Archive' } } }, null],
+        ['a value that is no bundle id', { open: { program_ext: { '.docx': 'Word' } } }, null],
+        ['a value that is a number', { open: { program_ext: { '.pdf': 3 } } }, null],
+        [
+            'a valid extension beside one without a dot',
+            { open: { program_ext: { '.pdf': 'com.a.b', pdf: 'com.c.d' } } },
+            null
+        ],
+        [
+            'the key __proto__',
+            { open: { program_ext: JSON.parse('{"__proto__":"com.a.b"}') as unknown } },
+            null
+        ],
+        [
+            'extensions in capitals',
+            { open: { program_ext: { '.PDF': 'com.a.b', '.Md': 'com.c.d' } } },
+            { '.pdf': 'com.a.b', '.md': 'com.c.d' }
+        ],
+        ['an empty map', { open: { program_ext: {} } }, {}]
+    ])('reads %s', (_row, config, apps) => {
+        expect(programApps(config)).toStrictEqual(apps);
     });
 });

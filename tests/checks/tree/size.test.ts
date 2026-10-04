@@ -1,5 +1,5 @@
-// Layer 4, test. A file over the size line is on the list with the count it was recorded at, and it
-// may not grow past that count.
+// Layer 4, tree check. A file over the size line is on the list with the count it was recorded at,
+// and it may not grow past that count.
 //
 // The rule is the spec's: one source file under 1000 lines and a component under about 600, checked
 // at 900 and 540 so a file is caught while it still has room to be split. Every source file the
@@ -7,8 +7,9 @@
 // list is not a pass: an entry carries a number, the file may not pass it, a file that falls back
 // under the line comes off the list, and an entry naming a file the tree no longer holds fails too.
 //
-// utils/size-allow.txt is read by this and by the one-line command of the verification list, which
-// holds the same rule in awk; the two are checked against each other by the case at the end.
+// utils/size-allow.txt is read by this and by utils/size-check.sh, which holds the same rule in
+// awk. The verification list runs no size command, so this test is what runs the script: its last
+// case runs it over the tree and checks that it reports nothing where this reports nothing.
 //
 // The folder rule is utils/folder-check.sh's: a folder under src, tests, utils or config holds at
 // most ten items, and the last block runs it over the tree and over trees of its own.
@@ -29,7 +30,7 @@ const LINES = 900;
 const COMPONENT = 540;
 
 /** What a file of the allow list may not grow past, by path, with the lines that carry no count. */
-export function parseAllow(text: string): { cap: Record<string, number>; bad: string[] } {
+function parseAllow(text: string): { cap: Record<string, number>; bad: string[] } {
     const cap: Record<string, number> = {};
     const bad: string[] = [];
     for (const line of text.split('\n')) {
@@ -52,7 +53,7 @@ function sourceFiles(root: string, prefix: string): string[] {
 }
 
 /** Every file the size rule refuses, and every allow line that is no longer right. */
-export function findOversize(root: string, allowText: string, roots = ['src', 'tests', 'utils']) {
+function findOversize(root: string, allowText: string, roots = ['src', 'tests', 'utils']) {
     const { cap, bad } = parseAllow(allowText);
     const found = [...bad];
     const left = new Set(Object.keys(cap));
@@ -130,13 +131,11 @@ describe('a file over the size line', () => {
         expect(findOversize(small, '', ['src'])).toEqual([]);
     });
 
-    it('audits the awk of the verification list against this rule, over the tree as it stands', () => {
-        const command = readFileSync(join(ROOT, 'utils', 'size-check.sh'), 'utf8');
+    it('runs utils/size-check.sh, which only this test runs, and reports nothing over the tree as it stands', () => {
         const held = spawnSync('sh', [join(ROOT, 'utils', 'size-check.sh')], {
             cwd: ROOT,
             encoding: 'utf8'
         });
-        expect(command).toContain('size-allow.txt');
         expect(held.stdout).toBe('');
         expect(held.status).toBe(0);
     });

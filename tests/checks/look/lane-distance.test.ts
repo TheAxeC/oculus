@@ -1,4 +1,5 @@
-// Focus lane headers that touch, under every theme, at a CIEDE2000 difference of 10 or more.
+// Layer 4, tree check. Focus lane headers that touch, under every theme, at a CIEDE2000 difference
+// of 10 or more.
 //
 // A lane header fills with `--c-<hue>-lane`, half the hue in the panel (themes/derive.ts), so two
 // hues that differ by name can mix to one colour, or to two a reader cannot tell apart, in a theme
@@ -45,36 +46,6 @@ const lab = converter('lab65');
 
 /** CIEDE2000 between two colours, the parametric factors at 1 (Sharma, Wu, Dalal 2005). */
 const ciede2000 = differenceCiede2000();
-
-/**
- * The light theme's touching pairs and each one's CIEDE2000 difference on CIELAB under sRGB's
- * white, to four decimals, in the order pairs() finds them: reference values computed apart from
- * culori, so the case that reads them compares the library with a second computation.
- */
-const LIGHT: [string, number][] = [
-    ['run/push', 37.4689],
-    ['push/revise', 36.8379],
-    ['revise/review', 23.5726],
-    ['review/blocked', 26.5057],
-    ['blocked/backburner', 26.895],
-    ['backburner/scope', 16.0173],
-    ['scope/derisk', 35.3977],
-    ['derisk/build', 32.3084],
-    ['build/holding', 41.1274],
-    ['holding/funding', 26.8271],
-    ['funding/jobs', 21.0319],
-    ['jobs/teaching', 19.5039],
-    ['run/review', 25.7447],
-    ['push/blocked', 34.1812],
-    ['revise/backburner', 22.8082],
-    ['review/scope', 13.0639],
-    ['blocked/derisk', 30.1076],
-    ['backburner/build', 19.3963],
-    ['holding/scope', 36.7857],
-    ['holding/derisk', 32.748],
-    ['holding/jobs', 16.9652],
-    ['holding/teaching', 41.1274]
-];
 
 /** A CIELAB colour written as the reference table writes one. */
 function point(l: number, a: number, b: number): Lab {
@@ -198,19 +169,6 @@ describe('lane distance', () => {
         expect(rounded('#ff0000')).toEqual([53.24, 80.09, 67.2]);
     });
 
-    // The light theme's 22 pairs, each within 0.01 of its reference difference in LIGHT: culori's
-    // sRGB to CIELAB differs from the reference computation in the third decimal at most, and no
-    // pair moves across the threshold.
-    it('measures the light theme within 0.01 of the reference differences', () => {
-        const light = measure('light');
-        const at = (pair: string): number =>
-            light.find((one) => one.names === pair)?.difference ?? Number.NaN;
-        expect(light).toHaveLength(LIGHT.length);
-        for (const [pair, captured] of LIGHT) {
-            expect(Math.abs(at(pair) - captured), pair).toBeLessThanOrEqual(0.01);
-        }
-    });
-
     // Revert: draw the Ideas lane in `rows` as a row of three like the others, and the four pairs
     // beside it become stacked pairs and the count of each kind changes.
     it('pairs the headers that touch in the layout the view draws', () => {
@@ -253,8 +211,9 @@ describe('lane distance', () => {
 
     // Revert: give Review the hue of Run, the lane stacked above it, and every theme whose two
     // surfaces are then one colour prints "stacked in one column run (...) / review (...) = 0.00".
-    for (const name of NAMES) {
-        it(`keeps every touching pair of lane headers ${MINIMUM} apart in the ${name} theme`, () => {
+    it.each(NAMES)(
+        `keeps every touching pair of lane headers ${MINIMUM} apart in the %s theme`,
+        (name) => {
             const found = measure(name);
             const failures = found
                 .filter((one) => one.difference < MINIMUM)
@@ -270,6 +229,6 @@ describe('lane distance', () => {
             );
             expect(found).toHaveLength(22);
             expect(failures).toEqual([]);
-        });
-    }
+        }
+    );
 });

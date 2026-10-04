@@ -1,4 +1,4 @@
-// Layer 4, route test. GET /api/lines answers the counter's answer: 200 with the count, 500 with
+// Layer 2, route tests. GET /api/lines answers the counter's answer: 200 with the count, 500 with
 // the sentence saying what failed. The counter is handed the request's signal, so a closed request
 // stops the count.
 

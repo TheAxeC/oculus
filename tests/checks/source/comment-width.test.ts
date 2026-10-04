@@ -1,4 +1,4 @@
-// Layer 4, test. Every comment line of the tree ends by the hundredth column, the width the
+// Layer 4, tree check. Every comment line of the tree ends by the hundredth column, the width the
 // formatter holds code to (.prettierrc's printWidth). The formatter leaves comments as they are
 // written, so a comment written past the width, or rewrapped after an edit, stays past it unless
 // this finds it.
@@ -18,7 +18,7 @@ import { treeFiles } from '../walk.ts';
 const ENGINE = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
 
 /** The width a line may reach. */
-export const WIDTH = 100;
+const WIDTH = 100;
 
 /** The source files whose comments are read. */
 const SOURCE = /\.(ts|js|mjs|svelte|sh|css)$/;
@@ -27,7 +27,7 @@ const SOURCE = /\.(ts|js|mjs|svelte|sh|css)$/;
 const WHOLE = /eslint-disable|eslint-enable|prettier-ignore|svelte-ignore|@ts-expect-error/;
 
 /** Whether a long line can be wrapped: no word of it is too long to fit beside its marker. */
-export function wrappable(line: string): boolean {
+function wrappable(line: string): boolean {
     const marker = /^\s*(\/\/|\/\*\*?|\*|#|<!--)?\s*/.exec(line)?.[0].length ?? 0;
     return line
         .slice(marker)
@@ -36,7 +36,7 @@ export function wrappable(line: string): boolean {
 }
 
 /** Every comment line of one file past the width that a wrap could bring inside it. */
-export function tooWide(name: string, text: string): number[] {
+function tooWide(name: string, text: string): number[] {
     const lines = text.split('\n');
     return commentLines(name, text).filter((at) => {
         const line = lines[at - 1];

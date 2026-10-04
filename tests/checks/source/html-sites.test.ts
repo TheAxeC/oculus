@@ -1,8 +1,9 @@
-// Every place the app writes raw HTML into the page draws one of three things: the output of
-// ui/html.ts's sanitise, sanitiseSvg or sanitiseGraph, one line of inline Markdown (inlineMarkdown
-// sanitises what it renders), or a string from config/text/, which oculus wrote for itself. A site
-// that draws anything else is listed below by file and expression with the reason it is safe, or
-// this test fails. Adding a {@html} to a view is therefore a choice a reader of this file can see.
+// Layer 4, tree check. Every place the app writes raw HTML into the page draws one of three things:
+// the output of ui/html.ts's sanitise, sanitiseSvg or sanitiseGraph, one line of inline Markdown
+// (inlineMarkdown sanitises what it renders), or a string from config/text/, which oculus wrote for
+// itself. A site that draws anything else is listed below by file and expression with the reason
+// it is safe, or this test fails. Adding a {@html} to a view is therefore a choice a reader of this
+// file can see.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { byKey } from '../../../src/lib/data/helpers/guards.ts';
@@ -63,7 +64,7 @@ function htmlTags(node: unknown, found: { start: number; end: number }[]): void 
  * The expression of every {@html ...} in one component, as its source text, read from the
  * HtmlTag nodes of svelte/compiler's parse, so one written in an HTML comment or a script is none.
  */
-export function htmlSites(source: string): string[] {
+function htmlSites(source: string): string[] {
     const found: { start: number; end: number }[] = [];
     htmlTags(component(source).tree.fragment, found);
     return found.map(({ start, end }) => source.slice(start, end));
@@ -133,7 +134,7 @@ function isCatalogLine(site: string): boolean {
 }
 
 /** Every site under one folder that is neither filtered nor named in the list above. */
-export function unfilteredSites(root: string): string[] {
+function unfilteredSites(root: string): string[] {
     const loose: string[] = [];
     for (const file of svelteFiles(root)) {
         for (const site of htmlSites(readFileSync(join(root, file), 'utf8'))) {
@@ -151,7 +152,7 @@ export function unfilteredSites(root: string): string[] {
  * closes it, with the braces of its attribute expressions balanced so a `>` inside one is not the
  * end of the tag.
  */
-export function introTags(source: string): string[] {
+function introTags(source: string): string[] {
     const tags: string[] = [];
     for (const match of source.matchAll(/<Intro(?=[\s/>])/g)) {
         let at = match.index + match[0].length;
@@ -179,12 +180,12 @@ export function introTags(source: string): string[] {
  * expression at all, since a prop set to a variable is a site that may be trusted at run time and
  * is judged by its words like the rest.
  */
-export function isTrusted(tag: string): boolean {
+function isTrusted(tag: string): boolean {
     return /(^|\s)trusted(\s|$|=)/.test(tag);
 }
 
 /** The expression one attribute of a tag is given, with its braces balanced, or null for none. */
-export function attributeOf(tag: string, name: string): string | null {
+function attributeOf(tag: string, name: string): string | null {
     const opener = new RegExp(`(?:^|\\s)${name}=\\{`);
     const found = opener.exec(tag);
     if (found === null) return null;
@@ -204,7 +205,7 @@ export function attributeOf(tag: string, name: string): string | null {
  * `t('key')` with literal arguments, or that call through inlineMarkdown. Anything interpolating a
  * value is not, whatever the value is, because nothing here can tell a count from a hub string.
  */
-export function isTrustedArgument(argument: string): boolean {
+function isTrustedArgument(argument: string): boolean {
     const held = argument.trim();
     if (isCall(held, 'inlineMarkdown(')) {
         const inner = argumentsOf(held, 'inlineMarkdown(');
@@ -214,7 +215,7 @@ export function isTrustedArgument(argument: string): boolean {
 }
 
 /** Every trusted Intro site under one folder whose words are not a catalog line, by file. */
-export function looseTrustedIntros(root: string): string[] {
+function looseTrustedIntros(root: string): string[] {
     const loose: string[] = [];
     for (const file of svelteFiles(root)) {
         for (const tag of introTags(readFileSync(join(root, file), 'utf8'))) {
@@ -252,23 +253,35 @@ describe('every {@html} site', () => {
         expect(trusted.length).toBeGreaterThanOrEqual(3);
     });
 
-    it('refuses an Intro marked trusted over words that interpolate a value', () => {
-        expect(isTrustedArgument("t('venues.intro')")).toBe(true);
-        expect(isTrustedArgument("inlineMarkdown(t('domains.intro'))")).toBe(true);
-        expect(isTrustedArgument("t('leads.intro', 'one', 'two')")).toBe(true);
-        expect(isTrustedArgument("t('leads.intro', live.length, '')")).toBe(false);
-        expect(isTrustedArgument("`${t('radar.intro_head')} ${t('radar.intro_tail', run)}`")).toBe(
-            false
-        );
-        expect(isTrustedArgument('data.intro')).toBe(false);
+    it.each([
+        ['a catalog key', "t('venues.intro')"],
+        ['a catalog key through inline Markdown', "inlineMarkdown(t('domains.intro'))"],
+        ['a catalog key with literal arguments', "t('leads.intro', 'one', 'two')"]
+    ])('takes %s as the catalog own words', (_row, argument) => {
+        expect(isTrustedArgument(argument)).toBe(true);
     });
 
-    it('judges a trusted prop set to an expression by its words rather than skipping the site', () => {
-        expect(isTrusted("trusted html={t('a')}")).toBe(true);
-        expect(isTrusted("trusted={true} html={t('a')}")).toBe(true);
-        expect(isTrusted("trusted={hidden} html={t('a')}")).toBe(true);
-        expect(isTrusted("html={t('a')}")).toBe(false);
-        expect(isTrusted("untrusted html={t('a')}")).toBe(false);
+    it.each([
+        ['a value among the arguments', "t('leads.intro', live.length, '')"],
+        ['two catalog lines joined', "`${t('radar.intro_head')} ${t('radar.intro_tail', run)}`"],
+        ['a value in place of a key', 'data.intro']
+    ])('refuses an Intro marked trusted over %s', (_row, argument) => {
+        expect(isTrustedArgument(argument)).toBe(false);
+    });
+
+    it.each([
+        ['the bare attribute', "trusted html={t('a')}"],
+        ['the attribute set to true', "trusted={true} html={t('a')}"],
+        ['the attribute set to a variable', "trusted={hidden} html={t('a')}"]
+    ])('judges %s by its words rather than skipping the site', (_row, tag) => {
+        expect(isTrusted(tag)).toBe(true);
+    });
+
+    it.each([
+        ['no attribute', "html={t('a')}"],
+        ['an attribute that only ends in the word', "untrusted html={t('a')}"]
+    ])('does not read %s as trusted', (_row, tag) => {
+        expect(isTrusted(tag)).toBe(false);
     });
 
     it('carries a reason with every exception', () => {

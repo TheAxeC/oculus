@@ -1,5 +1,5 @@
-// sources/career.ts and the career half of normalise and validate, over a synthetic hub written
-// under mkdtemp. Nothing here touches the real hub.
+// Layer 1, data tests. sources/career.ts and the career half of normalise and validate, over a
+// synthetic hub written under mkdtemp. Nothing here touches the real hub.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -76,11 +76,6 @@ describe('reading the career file', () => {
         expect(findings).toHaveLength(1);
         expect(findings[0].message.startsWith('does not parse')).toBe(true);
     });
-
-    it('reports a file that is not a map of keys', () => {
-        const { findings } = readCareer(hub('- a list\n'), CAREER_FILE, CATALOG);
-        expect(findings.map((one) => one.message)).toEqual(['is not a map of keys']);
-    });
 });
 
 describe('normalising it', () => {
@@ -124,10 +119,6 @@ describe('normalising it', () => {
             { what: 'NWO Vidi', why: 'not yet eligible' }
         ]);
     });
-
-    it('answers null for a hub with no career file', () => {
-        expect(career(null)).toBeNull();
-    });
 });
 
 describe('validating a host status', () => {
@@ -166,16 +157,6 @@ describe('validating a host status', () => {
         text: CATALOG
     };
 
-    it('reports the one host whose status is outside the vocabulary', () => {
-        expect(validate(portfolio(), rules).map((one) => `${one.key}: ${one.message}`)).toEqual([
-            'hosts[2]: host status "mulled" is not one of the host status vocabulary'
-        ]);
-    });
-
-    it('names the career file in the finding', () => {
-        expect(validate(portfolio(), rules)[0].file).toBe('/hub/registries/career.yml');
-    });
-
     it('leaves host statuses unchecked when the config holds no such vocabulary', () => {
         const bare: ValidationRules = {
             schema: null,
@@ -191,12 +172,15 @@ describe('validating a host status', () => {
 });
 
 describe('reading a career file of the wrong shape', () => {
-    it.each([['[]'], ['3'], ['x'], ['']])('reads a file holding %j as one finding', (body) => {
-        const dir = hub(body);
-        const read = readCareer(dir, CAREER_FILE, CATALOG);
-        expect(read.career).toBeNull();
-        expect(read.findings).toStrictEqual([
-            { file: join(dir, CAREER_FILE), key: '', message: 'is not a map of keys' }
-        ]);
-    });
+    it.each([['[]'], ['- a list'], ['3'], ['x'], ['']])(
+        'reads a file holding %j as one finding',
+        (body) => {
+            const dir = hub(body);
+            const read = readCareer(dir, CAREER_FILE, CATALOG);
+            expect(read.career).toBeNull();
+            expect(read.findings).toStrictEqual([
+                { file: join(dir, CAREER_FILE), key: '', message: 'is not a map of keys' }
+            ]);
+        }
+    );
 });

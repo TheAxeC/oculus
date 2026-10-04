@@ -1,7 +1,7 @@
-// The shared LaTeX reader: the magic comments at the head of a file, the sections and the include
-// commands of a text, what it reads of a text the parser refuses, and the lazy binding the page
-// reads through. The server's root and outline and the Files Outline all read through it, so each
-// case here is a rule they share.
+// Layer 1, data tests. The shared LaTeX reader: the magic comments at the head of a file, the
+// sections and the include commands of a text, what it reads of a text the parser refuses, and the
+// lazy binding the page reads through. The server's root and outline and the Files Outline all read
+// through it, so each case here is a rule they share.
 
 import { latexParser } from 'latex-utensils';
 import { describe, expect, it } from 'vitest';
@@ -99,29 +99,27 @@ describe('readTex sections', () => {
         expect(readTex(text).sections).toEqual([{ level: 2, title: 'yes', line: 6 }]);
     });
 
-    it('reads the sections of a text the parser refuses by a line scan and says it refused', () => {
-        const read = readTex('\\section{B}\n\\section{A\n');
-
-        expect(read).toEqual({
-            refused: true,
-            sections: [{ level: 2, title: 'B', line: 1 }],
-            includes: []
-        });
-    });
-
-    it('reads both sections around a line the parser refuses', () => {
-        const read = readTex('\\section{A}\nprice $5\n\\section{B}\n');
-
-        expect(read.refused).toBe(true);
-        expect(read.sections).toEqual([
-            { level: 2, title: 'A', line: 1 },
-            { level: 2, title: 'B', line: 3 }
-        ]);
-    });
-
-    it('reads no includes from a text the parser refuses', () => {
-        expect(readTex('\\input{a}\nprice $5\n').includes).toEqual([]);
-    });
+    it.each([
+        [
+            'a title whose brace never closes',
+            '\\section{B}\n\\section{A\n',
+            [{ level: 2, title: 'B', line: 1 }]
+        ],
+        [
+            'a stray dollar sign',
+            '\\section{A}\nprice $5\n\\section{B}\n',
+            [
+                { level: 2, title: 'A', line: 1 },
+                { level: 2, title: 'B', line: 3 }
+            ]
+        ],
+        ['an include, which the line scan does not read', '\\input{a}\nprice $5\n', []]
+    ])(
+        'reads the sections of a text the parser refuses by a line scan: %s',
+        (_row, text, sections) => {
+            expect(readTex(text)).toEqual({ refused: true, sections, includes: [] });
+        }
+    );
 
     it('does not read a section that a per-cent sign comments out, in a refused text', () => {
         const read = readTex('% \\section{no}\n\\section{yes} % \\section{no}\nprice $5\n');

@@ -1,16 +1,20 @@
-// Layer 4, route test. POST /api/ops with the `preview` operation (handleOps of
+// Layer 2, route tests. POST /api/ops with the `preview` operation (handleOps of
 // server/files/fs/ops.ts, the previewReplace of server/files/fs/replace.ts under it): the file as
 // it is on the left and with the named matches replaced on the right, which matches it replaces,
 // the words it refuses with, and a file with thousands of hits carried over a real HTTP server.
 // Nothing is ever written.
 //
-// ripgrep is the real binary of the `@vscode/ripgrep` dependency.
+// ripgrep is the real binary of the `@vscode/ripgrep` dependency. The cases tagged slow run it or
+// start a real HTTP server; the case that refuses with the word of the check runs in npm test. A
+// hook loads the configuration once, since the first load costs more than a later one, so no case
+// pays for it.
 
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
+import { warmConfig } from '../edit/write-fixture.ts';
 import { previewRequest } from '../../../src/lib/data/file-ops.ts';
 import {
     diffRequest,
@@ -19,7 +23,7 @@ import {
 import { diffState } from '../../../src/lib/state/sources/repositories/repositories.ts';
 import { previewSubject } from '../../../src/lib/state/sources/repositories/replace-preview.ts';
 import { handleOps } from '../../../src/lib/server/files/fs/ops.ts';
-import { it } from '../../fixtures/scratch.ts';
+import { it, test } from '../../fixtures/scratch.ts';
 import { TOKEN as OPS_TOKEN } from '../../server/files/ops-fixture.ts';
 import { previewPost, queryOf, replaceWorld, type ReplaceWorld } from './replace-fixture.ts';
 
@@ -31,61 +35,72 @@ function sides(answer: { body: Record<string, unknown> }) {
     return files[0];
 }
 
+test.beforeAll(warmConfig);
+
 describe('the preview of a replace in one file', () => {
-    it('holds the file as it is on the left and the file with the named matches replaced on the right', async () => {
-        const w = replaceWorld({ 'a.txt': 'foo foo\nfoo\n' });
-        const answer = await previewPost(w, place, queryOf('foo'), 'bar', [
-            { line: 1, at: 0 },
-            { line: 1, at: 4 },
-            { line: 2, at: 0 }
-        ]);
-        expect(answer.status).toBe(200);
-        expect(sides(answer)).toMatchObject({
-            original: 'foo foo\nfoo\n',
-            modified: 'bar bar\nbar\n',
-            newPath: 'hub:a.txt'
-        });
-        expect(readFileSync(join(w.hub, 'a.txt'), 'utf8')).toBe('foo foo\nfoo\n');
-    });
+    it(
+        'holds the file as it is on the left and the file with the named matches replaced on the right',
+        { tags: ['slow'] },
+        async () => {
+            const w = replaceWorld({ 'a.txt': 'foo foo\nfoo\n' });
+            const answer = await previewPost(w, place, queryOf('foo'), 'bar', [
+                { line: 1, at: 0 },
+                { line: 1, at: 4 },
+                { line: 2, at: 0 }
+            ]);
+            expect(answer.status).toBe(200);
+            expect(sides(answer)).toMatchObject({
+                original: 'foo foo\nfoo\n',
+                modified: 'bar bar\nbar\n',
+                newPath: 'hub:a.txt'
+            });
+            expect(readFileSync(join(w.hub, 'a.txt'), 'utf8')).toBe('foo foo\nfoo\n');
+        }
+    );
 
-    it('leaves a match it was not named for unreplaced, which is how a dismissed hit stays', async () => {
-        const w = replaceWorld({ 'a.txt': 'foo foo\nfoo\n' });
-        const answer = await previewPost(w, place, queryOf('foo'), 'bar', [
-            { line: 1, at: 0 },
-            { line: 2, at: 0 }
-        ]);
-        expect(sides(answer).modified).toBe('bar foo\nbar\n');
-    });
+    it(
+        'leaves a match it was not named for unreplaced, which is how a dismissed hit stays',
+        { tags: ['slow'] },
+        async () => {
+            const w = replaceWorld({ 'a.txt': 'foo foo\nfoo\n' });
+            const answer = await previewPost(w, place, queryOf('foo'), 'bar', [
+                { line: 1, at: 0 },
+                { line: 2, at: 0 }
+            ]);
+            expect(sides(answer).modified).toBe('bar foo\nbar\n');
+        }
+    );
 
-    it('shows another replace text in a second preview of the same file', async () => {
-        const w = replaceWorld({ 'a.txt': 'foo\n' });
-        const first = await previewPost(w, place, queryOf('foo'), 'bar', [{ line: 1, at: 0 }]);
-        const second = await previewPost(w, place, queryOf('foo'), 'quux', [{ line: 1, at: 0 }]);
-        expect([sides(first).modified, sides(second).modified]).toEqual(['bar\n', 'quux\n']);
-    });
+    it(
+        'leaves a named match that is no longer in the file unreplaced instead of refusing the preview',
+        { tags: ['slow'] },
+        async () => {
+            const w = replaceWorld({ 'a.txt': 'foo\n' });
+            const answer = await previewPost(w, place, queryOf('foo'), 'bar', [
+                { line: 1, at: 0 },
+                { line: 7, at: 3 }
+            ]);
+            expect(answer.status).toBe(200);
+            expect(sides(answer).modified).toBe('bar\n');
+        }
+    );
 
-    it('leaves a named match that is no longer in the file unreplaced instead of refusing the preview', async () => {
-        const w = replaceWorld({ 'a.txt': 'foo\n' });
-        const answer = await previewPost(w, place, queryOf('foo'), 'bar', [
-            { line: 1, at: 0 },
-            { line: 7, at: 3 }
-        ]);
-        expect(answer.status).toBe(200);
-        expect(sides(answer).modified).toBe('bar\n');
-    });
-
-    it('applies the groups, the case and the line ends the write would', async () => {
-        const w = replaceWorld({ 'a.txt': 'Foo bar\r\nx\r\n' });
-        const answer = await previewPost(
-            w,
-            place,
-            queryOf('(f)oo', { regex: true }),
-            '$1\\n!',
-            [{ line: 1, at: 0 }],
-            true
-        );
-        expect(sides(answer).modified).toBe('F\r\n! bar\r\nx\r\n');
-    });
+    it(
+        'applies the groups, the case and the line ends the write would',
+        { tags: ['slow'] },
+        async () => {
+            const w = replaceWorld({ 'a.txt': 'Foo bar\r\nx\r\n' });
+            const answer = await previewPost(
+                w,
+                place,
+                queryOf('(f)oo', { regex: true }),
+                '$1\\n!',
+                [{ line: 1, at: 0 }],
+                true
+            );
+            expect(sides(answer).modified).toBe('F\r\n! bar\r\nx\r\n');
+        }
+    );
 
     it('refuses with the word of the check: binary, missing, outside, protected and bad-query', async () => {
         const w = replaceWorld({ 'bin.dat': Buffer.from([102, 0, 1]) });
@@ -145,39 +160,47 @@ async function sent(w: ReplaceWorld, request: DiffRequest) {
 }
 
 describe('the preview request', () => {
-    it('previews 2000 hits in one file through the request the pane forms, which an address of the hits could not carry', async () => {
-        const count = 2000;
-        const w = replaceWorld({ 'a.txt': `${'foo '.repeat(count)}\n` });
-        const hits = Array.from({ length: count }, (_, index) => ({ line: 1, at: index * 4 }));
-        const settings = {
-            query: { q: 'foo', word: false, case: false, regex: false, under: '' },
-            replace: 'bar',
-            preserve: false
-        };
-        const pane = diffState(previewSubject({ ...place, hits }, settings, 1), 'a.txt');
-        const request = diffRequest(pane, OPS_TOKEN);
-        const answer = await sent(w, request);
-        expect(answer.status).toBe(200);
-        expect(request.init?.method).toBe('POST');
-        expect(sides({ body: JSON.parse(answer.text) as Record<string, unknown> }).modified).toBe(
-            `${'bar '.repeat(count)}\n`
-        );
-    });
+    it(
+        'previews 2000 hits in one file through the request the pane forms, which an address of the hits could not carry',
+        { tags: ['slow'] },
+        async () => {
+            const count = 2000;
+            const w = replaceWorld({ 'a.txt': `${'foo '.repeat(count)}\n` });
+            const hits = Array.from({ length: count }, (_, index) => ({ line: 1, at: index * 4 }));
+            const settings = {
+                query: { q: 'foo', word: false, case: false, regex: false, under: '' },
+                replace: 'bar',
+                preserve: false
+            };
+            const pane = diffState(previewSubject({ ...place, hits }, settings, 1), 'a.txt');
+            const request = diffRequest(pane, OPS_TOKEN);
+            const answer = await sent(w, request);
+            expect(answer.status).toBe(200);
+            expect(request.init?.method).toBe('POST');
+            expect(
+                sides({ body: JSON.parse(answer.text) as Record<string, unknown> }).modified
+            ).toBe(`${'bar '.repeat(count)}\n`);
+        }
+    );
 
-    it('refuses a preview posted without the write token and reads nothing', async () => {
-        const w = replaceWorld({ 'a.txt': 'foo\n' });
-        const message = previewRequest(place, {
-            query: queryOf('foo'),
-            replace: 'bar',
-            preserveCase: false,
-            hits: [{ line: 1, at: 0 }]
-        });
-        const answer = await overHttp(w, message, {});
-        expect(answer.status).toBe(403);
-        expect(answer.body.error).toBe('token');
-    });
+    it(
+        'refuses a preview posted without the write token and reads nothing',
+        { tags: ['slow'] },
+        async () => {
+            const w = replaceWorld({ 'a.txt': 'foo\n' });
+            const message = previewRequest(place, {
+                query: queryOf('foo'),
+                replace: 'bar',
+                preserveCase: false,
+                hits: [{ line: 1, at: 0 }]
+            });
+            const answer = await overHttp(w, message, {});
+            expect(answer.status).toBe(403);
+            expect(answer.body.error).toBe('token');
+        }
+    );
 
-    it('refuses a preview whose hit is no line and place', async () => {
+    it('refuses a preview whose hit is no line and place', { tags: ['slow'] }, async () => {
         const w = replaceWorld({ 'a.txt': 'foo\n' });
         const answer = await overHttp(
             w,

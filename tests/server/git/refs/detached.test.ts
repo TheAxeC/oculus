@@ -4,7 +4,7 @@
 // configuration replaced by an empty file.
 //
 // What this does NOT cover: the questions the page asks first, and the route's confirm
-// (tests/routes/git/refs.test.ts).
+// (tests/routes/git/git.test.ts).
 // @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { describe, expect } from 'vitest';

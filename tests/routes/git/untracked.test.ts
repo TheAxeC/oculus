@@ -1,10 +1,11 @@
-// What POST /api/git does for the two actions on untracked files: trashUntracked, which moves
-// paths to the Trash behind the confirm and the Files view's write chain and the guard over the
-// machine's own files, and ignore, which appends to .gitignore. Both run over a real scratch
-// repository; the Trash is a spy.
+// Layer 2, route tests. What POST /api/git does for the two actions on untracked files:
+// trashUntracked, which moves paths to the Trash behind the confirm and the Files view's write
+// chain and the guard over the machine's own files, and ignore, which appends to .gitignore. Both
+// run over a real scratch repository; the Trash is a spy.
 //
 // What this does NOT cover: the real Trash library, and the route file's own wiring of the guard
 // (src/routes/api/(git)/git/+server.ts is the few lines that join Kit's request to the handler).
+// @module-tag slow: every case runs git in a scratch repository.
 
 import { realpathSync } from 'node:fs';
 import { join } from 'node:path';
@@ -46,22 +47,6 @@ function over(root: string, engine?: string, extra: Partial<GitOptions> = {}) {
 }
 
 describe('trashUntracked', () => {
-    it('refuses a request with no token', async () => {
-        const root = scratchRepo();
-        put(root, 'u.txt', 'loose\n');
-        const { trash, options } = over(root);
-        const response = await handleGit(
-            request(
-                { action: 'trashUntracked', root, paths: ['u.txt'], confirm: true },
-                { 'x-oculus-token': '' }
-            ),
-            TOKEN,
-            options
-        );
-        expect(response.status).toBe(403);
-        expect(trash).not.toHaveBeenCalled();
-    });
-
     it('refuses a request the page did not confirm', async () => {
         const root = scratchRepo();
         put(root, 'u.txt', 'loose\n');
@@ -125,13 +110,18 @@ describe('trashUntracked', () => {
         const writes = fsWrites();
         let release: () => void = () => undefined;
         void chained(writes, () => new Promise<void>((resolve) => (release = resolve)));
+        const blocked = writes.chain;
         const { trash, options } = over(root, undefined, { writes });
         const pending = handleGit(
             request({ action: 'trashUntracked', root, paths: ['u.txt'], confirm: true }),
             TOKEN,
             options
         );
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // The route has queued its work behind the blocker once it has replaced the chain's tail.
+        for (let turns = 0; turns < 1000 && writes.chain === blocked; turns += 1) {
+            await new Promise((resolve) => setImmediate(resolve));
+        }
+        expect(writes.chain).not.toBe(blocked);
         expect(trash).not.toHaveBeenCalled();
         release();
         expect((await pending).status).toBe(200);
@@ -140,17 +130,6 @@ describe('trashUntracked', () => {
 });
 
 describe('ignore', () => {
-    it('refuses a request with no token', async () => {
-        const root = scratchRepo();
-        const { options } = over(root);
-        const response = await handleGit(
-            request({ action: 'ignore', root, paths: ['a.txt'] }, { 'x-oculus-token': '' }),
-            TOKEN,
-            options
-        );
-        expect(response.status).toBe(403);
-    });
-
     it('appends the path without a confirm and answers the file it wrote', async () => {
         const root = scratchRepo();
         const { options } = over(root);

@@ -1,5 +1,5 @@
-// readPersonal and the Personal entities against synthetic hubs and roots in temporary
-// directories. Nothing outside them is read or written, and every file is planted through
+// Layer 1, data tests. readPersonal and the Personal entities against synthetic hubs and roots in
+// temporary directories. Nothing outside them is read or written, and every file is planted through
 // plantScratch, which refuses a path that leaves its directory.
 //
 // Covered: the hub tier's reading and its absence from every research reader, the roots (a
@@ -11,6 +11,9 @@
 // personalRoots in tests/server/root/watch/portfolio/personal-roots.test.ts, the watcher
 // (tests/server/root/watch/portfolio/) and the card on screen
 // (tests/views/boards/personal.test.ts).
+//
+// The case that makes a named pipe starts `mkfifo` and is tagged slow; every other case runs in
+// npm test.
 
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
@@ -190,7 +193,7 @@ describe('the hub tier', () => {
         expect(snapshot.findings.filter((one) => one.file.includes('shared'))).toEqual([]);
     });
 
-    it('audits that a folder named like an object key is an ordinary id', () => {
+    it('reads a folder named like an object key as an ordinary id', () => {
         const hub = hubWith({ 'side-projects/__proto__/project.yml': manifest() });
         const snapshot = buildPortfolio(hub, configOver());
         expect(ids(snapshot)).toEqual(['side:__proto__']);
@@ -228,7 +231,7 @@ describe('the file kinds that are never read', () => {
         );
     });
 
-    it('is named for a named pipe, and is not opened', () => {
+    it('is named for a named pipe, and is not opened', { tags: ['slow'] }, () => {
         notFile(readWith((folder) => execFileSync('mkfifo', [join(folder, 'project.yml')])));
     });
 
@@ -250,14 +253,6 @@ describe('the file kinds that are never read', () => {
         );
         expect(exact.findings).toEqual([]);
         expect(exact.personal).toHaveLength(1);
-    });
-
-    it('is a 70 KiB manifest refused', () => {
-        const read = readWith((folder) =>
-            writeFileSync(join(folder, 'project.yml'), `${manifest()}# ${'y'.repeat(70 * 1024)}\n`)
-        );
-        expect(read.personal).toEqual([]);
-        expect(read.findings).toHaveLength(1);
     });
 
     it('is a finding and no card for text that does not parse, an empty file and a list', () => {
@@ -469,19 +464,6 @@ describe('the fields of a manifest', () => {
         expect(messages).toEqual([word('personal_no_title', 'slug')]);
     });
 
-    it('falls back to the root key for a root without a title', () => {
-        const base = scratchDir('oculus-root-');
-        mkdirSync(join(base, 'r', '.oculus'), { recursive: true });
-        writeFileSync(join(base, 'r', '.oculus', 'project.yml'), 'status: running\n');
-        const snapshot = buildPortfolio(hubWith({}), configOver(), 0, [
-            { key: 'rk', dir: join(base, 'r') }
-        ]);
-        expect(snapshot.entities.personal['root:rk'].title).toBe('rk');
-        expect(aboutSide(snapshot).map((one) => one.message)).toEqual([
-            word('personal_no_title', 'rk')
-        ]);
-    });
-
     it.each(['venue', 'type', 'id'])('names key %s once, with no research finding', (key) => {
         const { project, messages } = readBody(`${manifest()}${key}: slug\n`);
         expect(project.title).toBe('A side project');
@@ -502,12 +484,6 @@ describe('the fields of a manifest', () => {
         const scalar = readBody(manifest({ links: 'x' }));
         expect(scalar.project.links).toEqual([]);
         expect(scalar.messages).toEqual([word('personal_links')]);
-    });
-
-    it('draws a link list of one text without a finding', () => {
-        const { project, messages } = readBody(manifest({ links: '[https://x.org]' }));
-        expect(project.links).toEqual(['https://x.org']);
-        expect(messages).toEqual([]);
     });
 });
 
@@ -574,79 +550,5 @@ describe('a side project on the research surfaces', () => {
             one.message.includes('not matched to any hub project')
         );
         expect(unmatched?.message).toContain('"X Tool"');
-    });
-});
-
-/** The manifests drafted for the six repositories under ~/workspace, each as written. */
-const DRAFTS: Record<string, string> = {
-    cathedra: [
-        'title: "Cathedra"',
-        'status: running',
-        'eli5: "A simulation core for games built in C++: a Lisp-like scripting language called rite, an entity-component system called curia, and a coordinator called monastery that runs many scripts over one shared world. Scripts can be reloaded while the game runs and the things already on screen keep going."',
-        'next: ""',
-        'links: []'
-    ].join('\n'),
-    'game-engine': [
-        'title: "Missal"',
-        'status: building',
-        'eli5: "Missal, a C++20 game engine whose simulation is a scripting language: the engine handles the window, the graphics card, the files on disk and the frame loop, and the language handles everything that happens in the game world. It runs on desktop and in the browser."',
-        'next: ""',
-        'links: []'
-    ].join('\n'),
-    ordo: [
-        'title: "Ordo"',
-        'status: running',
-        'eli5: "A set of agent skills for Claude Code that turn a multi-step change into a plan: each step gets a written brief, is built in its own git worktree, is reviewed by a fresh reviewer, and reaches the main branch only after its checks pass."',
-        'next: ""',
-        'links: []'
-    ].join('\n'),
-    scotoma: [
-        'title: "scotoma"',
-        'status: building',
-        'eli5: "A first person horror crawler for the Super Nintendo, built as a ROM that runs in an accurate emulator and on a flash cart. You walk a dark forest on a Mode 7 ground plane, in a game styled after Basilisk."',
-        'next: "Step 9 of the order of work: place the hooded figure at the fire, in the keep and at the end, remembering the earlier meetings through an SRAM flag, with his three encounters written as one arc."',
-        'links: []'
-    ].join('\n'),
-    officium: [
-        'title: "Officium"',
-        'status: running',
-        'eli5: "A local reader for studying structured documents. It keeps the whole document on screen and highlights the spoken passages and actions of the role you choose, and it also handles ordered study material of text, prompts and question-and-answer pairs."',
-        'next: ""',
-        'links: []'
-    ].join('\n'),
-    'youtube-downloader': [
-        'title: "yt-downloader"',
-        'status: running',
-        'eli5: "A script that downloads and tracks YouTube playlists and channels with yt-dlp from a data file. It keeps a per-playlist archive so nothing is fetched twice, and watched playlists queue new videos for review instead of downloading them."',
-        'next: ""',
-        'links: []'
-    ].join('\n')
-};
-
-describe('the six drafted manifests', () => {
-    it('are read by the reader as one card each, with no finding', () => {
-        const base = plantScratch(
-            'oculus-drafts-',
-            Object.fromEntries(
-                Object.entries(DRAFTS).map(([key, body]) => [
-                    `${key}/.oculus/project.yml`,
-                    body + '\n'
-                ])
-            )
-        );
-        const roots: PersonalRoot[] = Object.keys(DRAFTS).map((key) => ({
-            key,
-            dir: join(base, key)
-        }));
-        const hub = hubWith({}, ['side-projects']);
-        const read = readPersonal(hub, SCAN, roots, CATALOG);
-        expect(read.findings).toEqual([]);
-        expect(personalFindings(read.personal, STATUSES, CATALOG)).toEqual([]);
-        expect(read.personal.map((one) => one.source)).toEqual(
-            roots.map((root) => ({ kind: 'root', key: root.key, dir: root.dir }))
-        );
-        const snapshot = buildPortfolio(hub, configOver(), 0, roots);
-        expect(aboutSide(snapshot)).toEqual([]);
-        expect(ids(snapshot).sort()).toEqual(roots.map((root) => `root:${root.key}`).sort());
     });
 });

@@ -1,6 +1,6 @@
-// Layer 4, route test support for the open endpoint. Every file and folder is made under the system
-// temporary directory and asserted to be inside it; nothing here runs macOS `open`, and every case
-// hands the endpoint an opener of its own.
+// Layer 4, test helper. Support for the route tests of the open endpoint. Every file and folder is
+// made under the system temporary directory and asserted to be inside it; nothing here runs macOS
+// `open`, and every case hands the endpoint an opener of its own.
 
 import { mkdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

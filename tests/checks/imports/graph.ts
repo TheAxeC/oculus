@@ -26,7 +26,7 @@ export function sourceFiles(root: string): string[] {
  * names a package or something above the root. `$lib/` is the `lib` folder of the root when the
  * root is src, and the root itself when the root is src/lib, which is what `lib` says.
  */
-export function target(fileRel: string, spec: string, lib = ''): string | null {
+function target(fileRel: string, spec: string, lib = ''): string | null {
     let id: string | null = null;
     if (spec.startsWith('$lib/')) id = `${lib}${spec.slice('$lib/'.length)}`;
     else if (spec.startsWith('.')) {
@@ -40,7 +40,7 @@ export function target(fileRel: string, spec: string, lib = ''): string | null {
 }
 
 /** One import: the specifier as written, the module it names, and its line. */
-export type RuntimeImport = { spec: string; id: string; line: number };
+type RuntimeImport = { spec: string; id: string; line: number };
 
 /**
  * Every import of one module's text that names a module of the tree, in the order its lines give,
