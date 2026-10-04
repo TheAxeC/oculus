@@ -1,7 +1,7 @@
 In flight:
 - T1b (the test sweep of tests/state/): repair round 1.
 - T1d (the test sweep of tests/views/, shell/, ui/ and themes/): once T1b has landed, with the audits check rewritten.
-- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures): building.
+- T1e (the test sweep of tests/routes/, data/, checks/ and fixtures): repair round 1.
 
 Queued, in order (33 steps):
 - T1a (the test tiers): once T1b, T1c, T1d and T1e have landed; the queue below resumes after it.

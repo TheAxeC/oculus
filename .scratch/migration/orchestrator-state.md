@@ -55,10 +55,12 @@ dispatch:   # two steps in flight (2026-10-04): T1b and T1e, building; T1c lande
   base_copy: .agents/worktrees/T1e-base/tools/oculus (src/, tests/ and utils/ at the base, from git archive; removed with the worktree)
   launched: 2026-10-04 01:07 local
   report: agents/reviews/T1e-report.md
+  builder_usage: claude-sonnet-5-5, 365,620 tokens, 760 tool uses, 252.7 min (completion notice 2026-10-04)
+  reviewer_report: agents/reviews/T1e-refuter.md; reviewer a83115633ce9293bf, claude-opus-5-5, 99,803 tokens, 138 tool uses, 41.3 min
   brief_check: agents/reviews/T1e-brief-check.md; claude-opus-5-5, 250,547 tokens, 78 tool uses, 10.2 min (run on main at 1e14d279; findings closed under Closed, the audits check booked as Z376)
   shared_paths: with T1b, in flight: `tests/checks/tree/allow-duplication.txt` only (T1e lines 26-29, 31-36, 38 and 47; T1b line 30 and 65-110), separate lines and removals only, so the merge is simple; T1c, which shared the file, landed 2026-10-04
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/T1e-round1.md, sent 2026-10-04)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -211,7 +213,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-04. T1c landed (the sweep of `tests/server/`). In flight: T1b (`tests/state/`), repair round 1, and T1e (`tests/routes/`, `data/`, `checks/`, `fixtures/`), building. T1d (`tests/views/`, `shell/`, `ui/`, `themes/`) waits for T1b's landing (Z376 (b)). Next:
+- 2026-10-04. T1c landed (the sweep of `tests/server/`). In flight: T1b (`tests/state/`), repair round 1, and T1e (`tests/routes/`, `data/`, `checks/`, `fixtures/`), repair round 1. T1d (`tests/views/`, `shell/`, `ui/`, `themes/`) waits for T1b's landing (Z376 (b)). Next:
   1. T1b and T1e: on each report, `/refute`, then `/land`.
   2. T1d: once T1b lands, its brief finished by Z376 (b) (the audits check rewritten, kept non-rendering cases moved to the folder of the code they call), prepared again from main's head and dispatched.
   3. At the last of the four sweeps' landings: the fixture exports they left unused removed (Booked).

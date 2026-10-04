@@ -997,6 +997,14 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z385 (2026-10-04, T1e's review): the route-shape check
+
+`tests/routes/shape.test.ts` reads the source of every API route for structure; no written rule asks for it. Options: (a) deleted, the source-text kind the test rule removes; (b) a rule written into `DESIGN.md` and the check moved to `tests/checks`; (c) kept with no rule, the lazy option. Chosen (a).
+
+## Z384 (2026-10-04, T1e's review): slow tags under 100 ms
+
+Seven file and describe tags and three per-test tags covered tests whose minimum was under 100 ms in both the builder's runs and the reviewer's. Options: (a) a tag stands on a cause or a minimum of 100 ms or more, a file or describe tag only where every test under it meets one, the rest moved to single tests; (b) left as near-the-line tags under Z379, the lazy option, which takes passing tests out of every gate. Chosen (a).
+
 ## Z383 (2026-10-04, T1b's review): a process started at module load in a slow-tagged file
 
 The file tag keeps a file's tests out of `npm test` but not its imports, so `commands-pane.test.ts` still runs `tmux -V` and spends about 6 s on import in every quick run. Options: (a) a file-tagged file imports such a module with `await import` inside its slow `beforeAll`, T1b's file in its round and T1c's tmux files in T1a; (b) the brief's premise left as written, the lazy option. Chosen (a).

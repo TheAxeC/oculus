@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z385, closed by the orchestrator in automode 2026-10-04: `tests/routes/shape.test.ts` deleted; options (a) deleted, (b) a rule written and the check moved, (c) kept with no rule, the lazy option; (a) taken.
+- Z384, closed by the orchestrator in automode 2026-10-04: T1e's slow tags stand only on a cause or a minimum of 100 ms or more, file and describe tags only where every test meets one; options (a) moved to single tests, (b) left under Z379, the lazy option; (a) taken.
 - Z383, closed by the orchestrator in automode 2026-10-04: a file-tagged test file imports a process-starting module with `await import` in its slow `beforeAll`; T1b in its round, T1c's tmux files in T1a; options (a) dynamic imports, (b) premise left, the lazy option; (a) taken.
 - Z382, closed by the orchestrator in automode 2026-10-04: collection work counts with the tests it serves under Decision 1; options (a) counts, (b) does not, the lazy option; (a) taken.
 - Z381, closed by the orchestrator in automode 2026-10-04: T1b's assertion cuts in kept tests and `shared/answers.test.ts` accepted, each listed with its holder; options (a) accepted and listed, (b) put back, the lazy option, (c) accepted unlisted; (a) taken.
