@@ -3,14 +3,10 @@
 The orchestrator's own catch-up note for the cockpit-to-oculus migration. Rewritten at every package. Everything here is also derivable from `plan.md`, `tools/oculus/DESIGN.md`, the hub `CLAUDE.md` and `git log`, but slower. Read this, then `plan.md`, then the tail of the transcript.
 
 ```yaml
-verify:                      # from tools/oculus in the worktree and again on main, in order; all must pass.
-- npm test
-- npm run test:checks
-- npm run check
-- npm run build
-- npm run format:check
-- npm run lint
-- "! LC_ALL=C grep -rna '[^ -~]' src tests"
+verify:                      # the quick list (Z351, Z421): from tools/oculus in the worktree, by builders and reviewers; a reviewer adds `-- --base <base>`.
+- npm run test:quick
+verify_landing:              # the landing list (Z351, Z366): from tools/oculus on main, by the orchestrator at each landing.
+- npm run test:landing
 worktree_root: .agents/worktrees
 worktree_paths: [tools/oculus, tools/cockpit, feeds, registries, projects, funding, network, education, applications, tasks, side-projects, tools/present]   # as `.agents/plan.yaml` names them
 standards: [tools/oculus/.scratch/migration/agents/spec.md]
@@ -136,7 +132,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- None.
+- T1a's code reaching main (2026-10-04). The verify list is now `npm run test:quick` and the landing list `npm run test:landing`, but both scripts exist only in T1a's worktree; until T1a's code is on main, no step can be verified and nothing can land. Options: (a) land T1a's code on main now as one commit, with its eight files, its three test fixes and the `isMap` renames; for: every later step gets the quick list; against: none beyond a landing commit Z419 left to Axel. (b) keep the old seven-command verify list until Axel lands T1a; for: nothing changes on main yet; against: builders keep running the 10-minute list. Recommendation (a). Lazy option: (b).
+- T1a builder's three open items (2026-10-04). The scripts in `tests/tiers/` rather than `utils/` (`utils/folder-check.sh` refuses an eleventh item): keep. The quick list reading the changed files from git itself, written into `agents/spec.md` as not a builder's git command (option A); option B, paths as arguments only, drops prettier, eslint and the related tests from a run with no arguments and is the lazy option: keep A. The type check and the ASCII gate in the landing list (the build does not type check): keep. Recommendation: all three as written.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
