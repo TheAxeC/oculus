@@ -7,7 +7,8 @@ In flight:
 - X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): brief written, brief check running.
 - D11 (the debug client for rite): brief being written.
 
-Queued, in order (26 steps):
+Queued, in order (27 steps):
+- Q118 (the Audit rows draw the keyboard cursor): once a slot is free.
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - D38 (the Literature search view): once D37 has landed.
@@ -35,7 +36,7 @@ Queued, in order (26 steps):
 - O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.
 - O36 (a second person in the hub): paused (Axel); once O34 has landed.
 
-Owed: the looks of Q81 (a Confirm over the update tray, waiting until Axel takes it up), D17 (the project card's commands bar) and Q35 (four items), listed in `agents/reviews/owed-looks.md`; taken before the next landing, except Q81.
+Owed: the looks of Q81 (a Confirm over the update tray, waiting until Axel takes it up) and D17 (the project card's commands bar), listed in `agents/reviews/owed-looks.md`; taken before the next landing, except Q81.
 
 Landed, newest first:
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.

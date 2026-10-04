@@ -8,9 +8,10 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 - Q81: a Confirm over the update tray taking the first Escape. It shows only while `tasks.skip_permissions` is on, an edit the session's permission classifier refuses; it waits until Axel takes it up (Z380).
 - D17: the project card's commands bar (`D17-landing.md:15`). No project folder on TEST is its own repository, so the look needs one added as a root for the look and taken out after.
-- Q35: a Customizations row opened from a link, Audit with the arrow keys, the Present `#` link jump in a scaled frame, a narrow pane (`Q35-landing.md:88-92`).
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
+
+- Q35's Present `#` link jump in a scaled frame: no `PRESENT.md` on the hub holds a fragment link (`git grep -n "](#" -- 'projects/**/PRESENT.md'` prints nothing), and a slide with one needs a project written under a scan tier and placed in `present.yml`'s deck order, a write a look may not leave. No test holds it; the scale division is read in `views/shared/prose/jump.ts` (head comment and body).
 
 - Q91: the follow-up editor with several notes; no manifest holds a list of two or more notes.
 - Q98: the Audit view's code drawing; no live finding holds a backticked word.
@@ -21,6 +22,12 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 - Q97: the one-pane System arrangement. It no longer exists: S4 (ff048bf35) replaced the `info` page with the `views` page, three panes (`config/layout.yml:98-110`), and the rail's System button now opens it. That page is seen only by a rail press or a reset of Axel's System page, which a look on TEST never does; `tests/data/sources/config/rail.test.ts` holds that every rail page names an arrangement.
 
 ## Taken
+
+- Q35, taken 2026-10-05 on TEST:
+  - A Customizations row of a linked file: Sessions view, Customizations, Agents, `ordo-low` (`~/.claude/agents/ordo-low.md` links to `~/.local/share/ordo-stable/agents/ordo-low.md`) opened a tab showing the resolved path and the file's text, no `Cannot open: HTTP 404`.
+  - Audit with the arrow keys: the Audit pane focused and Down pressed, no row is marked; the view never reads `cardCursor` (`Audit.svelte:115` sets `data-card` only). Booked as Q118 (Z446).
+  - A narrow pane (the window at 760 px, the left pane 311 px): Audit's row wraps by whole lines inside the pane; Changes of `Step 9a rulings revert` cuts every path at its end with an ellipsis (every overflowing element a path span with `text-overflow: ellipsis`), verb and count columns aligned; Present letterboxes the slide centred in the pane, its words scaled. The window was put back to 1512 by 944 and the two tabs opened were closed.
+  - Snapshots after: `changes.jsonl` 00b23e5d with 39 lines, `workspaces.json` 1bf5d57a, `behavior.yml` e3bb8249; `git diff --exit-code` on the config exits 0.
 
 - Q88c, 2026-10-05, TEST, dark theme: Lock Group on an empty pane. The Help pane strip's menu New Text File opened Untitled-1, the pane menu's Split tab to the right moved it to a new pane, and closing it left an empty documents pane reading "Files and documents you open on this page appear here.". Its strip's right-click menu (Open File..., New Text File, Lock Group, Tab Bar, Editor Actions Position, Close, New Terminal) Lock Group drew a lock button on the strip, named Unlock Group; pressing it took the lock away. The pane's Close removed it, with no file written. `workspaces.json` 1bf5d57a and `changes.jsonl` 00b23e5d (39 lines) unchanged (`shasum`). Defects: none.
 

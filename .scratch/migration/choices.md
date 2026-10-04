@@ -56,6 +56,15 @@ The question: S5's first run: which held value passes the server's check (cases 
 
 Where it is built: S5, through `agents/briefs/S5-cases.md`. Booked in `plan.md` Rulings.
 
+## Z446 (2026-10-05, from Q35's owed look)
+
+The question: Q35's owed look found the Audit's arrow keys moving a card cursor that no row draws: `Audit.svelte:115` gives each row `data-card`, but the view never reads `cardCursor`, and before Q35 it passed `cursor={false}`.
+
+- Chosen: (a) a step, Q118, that draws the cursor on the Audit row, as the Inbox and the Focus lanes draw theirs; Q35's brief said the rows keep `data-card` so the keyboard reaches the findings.
+- Not chosen: (b) `data-card` taken off the Audit rows, so the arrow keys skip the Audit; (c) left as it is, the lazy one.
+
+Where it is built: step Q118. Booked in `plan.md` Rulings.
+
 ## Z442 (2026-10-05, step X3e)
 
 The question: The write-token sentence of `server/core/auth.ts:97` is answered by every route, so capitalising it changes routes outside git.
