@@ -3,34 +3,34 @@ In flight:
 
 Queued, in order (33 steps):
 - X3f (a file tab's actions on every file tab, double click and Open Preview): first.
-- S5 (the Settings view's controls and headings): once fewer than three steps are in flight.
-- D37 (the Search view's replace and the LaTeX build and view kept true): once fewer than three steps are in flight.
+- S5 (the Settings view's controls and headings): once a slot is free (seven in flight, Z423).
+- D37 (the Search view's replace and the LaTeX build and view kept true): once a slot is free (seven in flight, Z423).
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
-- H3 (the hub's data map): once fewer than three steps are in flight.
+- H3 (the hub's data map): once a slot is free (seven in flight, Z423).
 - D38 (the Literature search view): once D37 has landed.
-- D42 (a file's history): once fewer than three steps are in flight.
-- D44 (Submit on a .slurm file): once fewer than three steps are in flight.
+- D42 (a file's history): once a slot is free (seven in flight, Z423).
+- D44 (Submit on a .slurm file): once a slot is free (seven in flight, Z423).
 - D41 (links in Markdown checked): once M7 has landed.
-- X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): once fewer than three steps are in flight.
+- X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): once a slot is free (seven in flight, Z423).
 - D15 (PDF reading): once D37 has landed.
 - D23 (language servers): once D25 has landed.
 - M8 (the hub's YAML checked and completed in the editor): once D23 and H3 have landed.
 - D43 (LaTeX navigation): once D23 has landed.
-- D11 (the debug client for rite): once fewer than three steps are in flight.
-- D20 (an agent from a task or a worktree): once fewer than three steps are in flight.
-- A3 (scheduled Update runs): once fewer than three steps are in flight.
+- D11 (the debug client for rite): once a slot is free (seven in flight, Z423).
+- D20 (an agent from a task or a worktree): once a slot is free (seven in flight, Z423).
+- A3 (scheduled Update runs): once a slot is free (seven in flight, Z423).
 - D28 (saving a file as VS Code does): once D25 has landed.
 - D23b (cross-file language features): once D23 has landed.
 - D39 (hub keys as links): once M8 and D23b have landed.
 - D33 (the Problems view): once D23 has landed.
 - D36 (linters on save): once D33 has landed.
 - D40 (the writing rules as editor marks): once D36 has landed.
-- E4 (the apps): once fewer than three steps are in flight.
-- Q72 (the architecture re-read): after every code step.
-- R2 (release readiness): after Q72.
-- O29 (retiring the cockpit): after R2.
-- O30 (the native window in Electron): after O29.
+- E4 (the apps): once a slot is free (seven in flight, Z423).
+- Q72 (the architecture re-read): paused (Axel, Z425); after every code step.
+- R2 (release readiness): paused (Axel, Z425); after Q72.
+- O29 (retiring the cockpit): paused (Axel, Z425); after R2.
+- O30 (the native window in Electron): once a slot is free (seven in flight, Z423); it does not wait for O29 (Axel, Z425).
 - O33 (oculus in its own repository): paused (Axel); once O29 has landed.
 - O34 (remote access): paused (Axel); once O33 has landed.
 - O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.
