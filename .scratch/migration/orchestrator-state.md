@@ -28,22 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # one step in flight (2026-10-04): T1d, resumed with Z389 (a); T1c, T1b and T1e landed (workers_at_once: 5).
-- step: T1d
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a1b5761f69bade8b3 (builder, launched 2026-10-04 07:09 local)
-  worktree: .agents/worktrees/T1d
-  base: 570a72bcb
-  base_copy: .agents/worktrees/T1d-base/tools/oculus (src/, tests/, utils/ and config/ less local.yml at the base, from git archive; unused-exports.txt beside it, 257 exports; removed with the worktree)
-  launched: 2026-10-04 07:09 local
-  report: agents/reviews/T1d-report.md
-  builder_usage: claude-sonnet-5-5, 184,237 tokens, 36 tool uses, 5.8 min (completion notice 2026-10-04; stopped at its first run on Z389, nothing changed)
-  brief_check: agents/reviews/T1d-brief-check.md; claude-opus-5-5 (run on main at 1e14d279; findings closed under Closed, Z376 (b) closed at this /spec)
-  shared_paths: with T1e, landed 2026-10-04: `tests/checks/tree/allow-duplication.txt` (T1d removes entries on lines 61-123 naming its folders, T1e entries naming its own, separate lines, removals only); `tests/data/` (T1d adds new files only, T1e changes existing ones); `tests/checks/` (T1d rewrites `tree/audits.test.ts`, deletes `tree/allow-audits.txt` and adds `views/`, three paths T1e leaves byte-identical); so the merge is simple
-  landing: not-started
-  round: 0
+dispatch:   # no step in flight (2026-10-04): T1d stopped and its work thrown away (Z390, Axel); T1c, T1b and T1e landed (workers_at_once: 5).
 ```
 
 ## The standing demands (from Axel, in force)
@@ -196,9 +181,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-04. T1e landed (the sweep of `tests/routes/`, `data/`, `checks/`, `fixtures/`), after T1c and T1b. In flight: T1d, resumed with Z389 (a). Next:
-  1. T1d (`tests/views/`, `shell/`, `ui/`, `themes/`): building under Z389 (a), sent to its builder `a1b5761f69bade8b3` with the chips/sanitise split (scans to `tests/checks/views/`, rendered cases kept) in its brief; then `/refute` and `/land`.
-  2. At T1d's landing, the last of the four sweeps: the fixture exports they left unused removed (Booked), with `tests/shell/rail/rail-fixture.ts` `COLLECTIONS` and `tests/shell/rail/shipped-rail.ts` `SHIPPED_RAIL_LABELS` that T1b named and those T1e's report names.
-  3. T1a after the four sweeps, its timings under a reproduced load (Z370 (a)), T1c's file-tagged tmux files moved to `await import` in their slow `beforeAll` (Z383), the size check at 880 and 520 (Z377 (a)); then the queue in order, O33 to O36 paused (Z369).
-  4. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
-  Open for Axel: none.
+- 2026-10-04 11:58. T1d stopped by Axel's ruling (Z390) and its worktree, branch and base copy removed; nothing in flight. Axel ruled that T1's sweeps cut far too little (13% of test cases) and that the cut must be deletion only and done by 18:00 tonight. Next:
+  1. Axel's rulings on the rest of the proposal of 11:53: the keep rule (delete unless the only test of a listed failure, at the highest level), the ceiling (about 1,500 cases), deletion only, four builders with a two-hour limit and a review of the kept list, T1a after the cut. Nothing is prepared before he rules.
+  2. The fixture exports left unused are removed in the deletion sweep.
+  3. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
+  Open for Axel: the deletion sweep's rule, ceiling and schedule (proposal of 11:53, items 2 to 6).
