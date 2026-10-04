@@ -2,6 +2,24 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z430 (2026-10-05, step D44)
+
+The question: where Submit copies a project's code on the cluster. Only btfno's cluster folder is `~/projects/<id>`; six projects' run scripts read their code from another folder by absolute path.
+
+- Chosen (b): a manifest key `paths.cluster` in the path overrides, default `~/projects/<id>`, with D44 writing the six values read from each project's own run script; rsync copies the project's `code/` folder.
+- Not chosen: (a) always `~/projects/<id>` (the lazy one), which makes six projects' jobs run their old code; (c) a file on this machine only, which hides a project fact from its manifest; (d) reorganising the cluster folders and scripts first, a different concern.
+
+Where it is built: D44's brief. Booked in `plan.md` Rulings.
+
+## Z431 (2026-10-05, step D44)
+
+The question: which reader parses a job script for Submit's scratch check.
+
+- Chosen (a): `sh-syntax` 0.7.0, MIT, no dependencies, which reads quotes, comments and here-documents.
+- Not chosen: (b) `shell-quote`, which reads one command line and no here-document; (c) a hand-written reader (the lazy one).
+
+Where it is built: D44's brief. Booked in `plan.md` Rulings.
+
 ## Z427 (2026-10-05, step D37)
 
 The question: Cmd+Z after Format Document on a `.tex` file does not undo the format, and reading the code did not find why.

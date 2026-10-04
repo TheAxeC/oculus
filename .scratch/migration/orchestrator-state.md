@@ -48,6 +48,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   base: ed0e6de58
   launched: 2026-10-05
   report: agents/reviews/D37-report.md
+  pending_round: the Format Document undo fix from `agents/reviews/D37-diagnosis.md` (Cause, Fix, Test), sent with the refuter's findings in repair round 1 (Z427 (a))
   brief_check: agents/reviews/D37-brief-check.md, claude-opus-5-5, 259,613 tokens, 81 tool uses, 10.2 min
   landing: not-started
   round: 0
@@ -147,7 +148,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- None.
+- Z433 (2026-10-05, D44 at /spec): two new guarded tests for D44, Submit on a `.slurm` file, which add entries to `agents/guarded.md` and so need Axel's approval of what they check. (1) Submit runs only a plan the reader confirmed and that equals the plan the server computes at the press (what is copied, from where, to where, and the sbatch line), so a stale or altered confirm never reaches the cluster. (2) The scratch check: a job script whose code, with the files it sources from `code/`, never names `/local/$SLURM_JOB_ID` gets the warning before Submit. Options: (a) both guarded, tests in `tests/server/machine/hpc/submit.test.ts`; (b) neither guarded, both checked by quoted runs and the look on TEST (the lazy one: a later change can drop either check silently, and the first is what keeps an unconfirmed job off the cluster); (c) only the first. Recommended: (a), since a failure of either costs a job run against the cluster's I/O rule or one Axel did not confirm. D44 waits for X3f and D37 to land in any case, so this blocks nothing now.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
