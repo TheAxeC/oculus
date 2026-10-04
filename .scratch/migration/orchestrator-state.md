@@ -39,10 +39,12 @@ dispatch:   # two steps in flight (2026-10-04): T1b and T1e, building; T1c lande
   base_copy: .agents/worktrees/T1b-base/tools/oculus (src/ and tests/ at the base, from git archive; removed with the worktree)
   launched: 2026-10-04 01:03 local
   report: agents/reviews/T1b-report.md
+  builder_usage: claude-sonnet-5-5, 331,587 tokens, 1122 tool uses, 226.4 min (completion notice 2026-10-04)
+  reviewer_report: agents/reviews/T1b-refuter.md; reviewer a7468f675784a9dfd, claude-opus-5-5, 375,118 tokens, 129 tool uses, 28.4 min
   brief_check: agents/reviews/T1b-brief-check.md; claude-opus-5-5, 249,285 tokens, 92 tool uses, 10.6 min (run on main at 1e14d279; findings closed under Closed, and T1d's brief check's points that hold for tests/state carried in)
   shared_paths: with T1e, in flight: `tests/checks/tree/allow-duplication.txt` only (T1b lines 30 and 65-110 at its base, T1e lines 26-29, 31-36, 38 and 47), separate lines and removals only, so the merge is simple; T1c, which shared the file, landed 2026-10-04
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/T1b-round1.md, sent 2026-10-04)
 - step: T1e
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -209,10 +211,10 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-04. T1c landed (the sweep of `tests/server/`). In flight: T1b (`tests/state/`) and T1e (`tests/routes/`, `data/`, `checks/`, `fixtures/`), building. T1d (`tests/views/`, `shell/`, `ui/`, `themes/`) waits for T1b's landing (Z376 (b)). Next:
+- 2026-10-04. T1c landed (the sweep of `tests/server/`). In flight: T1b (`tests/state/`), repair round 1, and T1e (`tests/routes/`, `data/`, `checks/`, `fixtures/`), building. T1d (`tests/views/`, `shell/`, `ui/`, `themes/`) waits for T1b's landing (Z376 (b)). Next:
   1. T1b and T1e: on each report, `/refute`, then `/land`.
   2. T1d: once T1b lands, its brief finished by Z376 (b) (the audits check rewritten, kept non-rendering cases moved to the folder of the code they call), prepared again from main's head and dispatched.
   3. At the last of the four sweeps' landings: the fixture exports they left unused removed (Booked).
-  4. T1a after the four sweeps, its timings under a reproduced load (Z370 (a)), the size check at 880 and 520 (Z377 (a)); then the queue in order, O33 to O36 paused (Z369).
+  4. T1a after the four sweeps, its timings under a reproduced load (Z370 (a)), T1c's file-tagged tmux files moved to `await import` in their slow `beforeAll` (Z383), the size check at 880 and 520 (Z377 (a)); then the queue in order, O33 to O36 paused (Z369).
   5. The rail reorder `/diagnose`. The Q81 look waits until Axel takes it up (Z380).
   Open for Axel: none.

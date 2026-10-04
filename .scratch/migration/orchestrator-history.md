@@ -4,6 +4,9 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z383, closed by the orchestrator in automode 2026-10-04: a file-tagged test file imports a process-starting module with `await import` in its slow `beforeAll`; T1b in its round, T1c's tmux files in T1a; options (a) dynamic imports, (b) premise left, the lazy option; (a) taken.
+- Z382, closed by the orchestrator in automode 2026-10-04: collection work counts with the tests it serves under Decision 1; options (a) counts, (b) does not, the lazy option; (a) taken.
+- Z381, closed by the orchestrator in automode 2026-10-04: T1b's assertion cuts in kept tests and `shared/answers.test.ts` accepted, each listed with its holder; options (a) accepted and listed, (b) put back, the lazy option, (c) accepted unlisted; (a) taken.
 - Z380, closed by Axel 2026-10-04: the look of Q81 (Z314) waits until he takes it up and is no longer asked of him; landings go on.
 - Z377, closed by the orchestrator in automode 2026-10-04: the size check refuses over 880 lines and 520 for a component, built in T1a; options (a) the check moved, (b) the rule as text only, the lazy option; (a) taken.
 - Z376, closed by the orchestrator in automode 2026-10-04: T1d rewrites the audits check to fail any case under `tests/views/` reaching no render, no mount and no name bound to one, no title escape and no allow list, T1d after T1b; options (a) delete the check, (b) the rewrite, (c) keep "audits" titles, the lazy option; (b) taken.

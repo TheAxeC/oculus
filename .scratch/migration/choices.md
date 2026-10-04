@@ -997,6 +997,18 @@ Where it applies: D14, and the Files Outline and D25's sticky scroll through the
 
 Where it applies: D17, and the apps and D20 through the shared approvals module. Booked in the state file's closed log and `plan.md` Rulings.
 
+## Z383 (2026-10-04, T1b's review): a process started at module load in a slow-tagged file
+
+The file tag keeps a file's tests out of `npm test` but not its imports, so `commands-pane.test.ts` still runs `tmux -V` and spends about 6 s on import in every quick run. Options: (a) a file-tagged file imports such a module with `await import` inside its slow `beforeAll`, T1b's file in its round and T1c's tmux files in T1a; (b) the brief's premise left as written, the lazy option. Chosen (a).
+
+## Z382 (2026-10-04, T1b's review): work at collection
+
+T1b moved a cold config read (about 118 ms) from a `beforeEach` into a describe body, where it runs at collection and leaves the measured test time. Options: (a) collection work counts with the tests it serves, as a hook does; (b) it does not, the lazy option. Chosen (a): the read goes into that describe's `beforeAll`, and the describe is tagged slow.
+
+## Z381 (2026-10-04, T1b's review): assertion cuts in kept tests and a new fold file
+
+About 94 hunks cut or rewrite assertions of kept tests (shipped constants, catalog text, cases on the same branch as a kept one), and the refusal tables of eight stores moved into a new `shared/answers.test.ts`. Options: (a) accepted as deletions under the test rule and as a fold to the lowest level, each cut listed with its holder, the new file's catalog-text test deleted and its tests given failing lines; (b) every cut put back, the lazy option; (c) accepted with no listing. Chosen (a).
+
 ## Z380 (2026-10-04, Axel): the look of Q81
 
 Axel: leave the look of Q81 for later. It waits until he takes it up, is not asked of him in reports, and other landings go on.
