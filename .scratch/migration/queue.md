@@ -1,5 +1,5 @@
 In flight:
-- T2a, T2b, T2c and T2d (the deletion sweeps of the test folders under the widened agents/guarded.md): building again since 13:30.
+- T2a, T2b, T2c and T2d (the deletion sweeps, one test per unit an entry covers): building since 13:44; each waits for Axel's judgement of its counts before landing.
 
 Queued, in order (33 steps):
 - Q117 (a record file that does not read is never overwritten, G31): once T2a to T2d have landed.

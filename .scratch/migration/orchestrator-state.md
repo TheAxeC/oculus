@@ -28,7 +28,63 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch: []   # nothing in flight (2026-10-04): the second runs of T2a to T2d stopped and thrown away under Z409; the four are prepared again.
+dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d, third run, one test per unit (Z409).
+- step: T2a
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: ad33514aa4884468b (builder, launched 2026-10-04 13:44 local)
+  worktree: .agents/worktrees/T2a
+  base: 9233df8df
+  launched: 2026-10-04 13:44 local
+  report: agents/reviews/T2a-report.md
+  brief_check: none (Z401)
+  review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
+  shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
+  landing: not-started
+  round: 0
+- step: T2b
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: ac1897773aafcc063 (builder, launched 2026-10-04 13:44 local)
+  worktree: .agents/worktrees/T2b
+  base: 9233df8df
+  launched: 2026-10-04 13:44 local
+  report: agents/reviews/T2b-report.md
+  brief_check: none (Z401)
+  review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
+  shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
+  landing: not-started
+  round: 0
+- step: T2c
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: ad470a4126910170d (builder, launched 2026-10-04 13:44 local)
+  worktree: .agents/worktrees/T2c
+  base: 9233df8df
+  launched: 2026-10-04 13:44 local
+  report: agents/reviews/T2c-report.md
+  brief_check: none (Z401)
+  review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
+  shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
+  landing: not-started
+  round: 0
+- step: T2d
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a1d002e1dbd118d7a (builder, launched 2026-10-04 13:44 local)
+  worktree: .agents/worktrees/T2d
+  base: 9233df8df
+  launched: 2026-10-04 13:44 local
+  report: agents/reviews/T2d-report.md
+  brief_check: none (Z401)
+  review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
+  shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -182,6 +238,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-04 13:44. T2a to T2d build a third time, base 9233df8df, under one test per unit an entry covers (Z409). On each report: count the worktree (lines and tests deleted and left) and report it to Axel; land only after his judgement (Z408). Then the last-landing cleanup, Q117, T1a.
+  Open for Axel: none.
 - 2026-10-04 13:30. The four deletion sweeps T2a to T2d are building again at once, base 56b23a9f4, under the widened list (Z405, Z406): no brief check, no reviewer, no repair round, builders run nothing. Next:
   1. On each report: read the diff, `/land` it (verify list once on main, `git diff --numstat` shows no added line outside `agents/guarded.md` and the report, each named test exists), write the kept test under its entry in `agents/guarded.md`, keep one test where two sweeps named one for the same part of an entry.
   2. After the last landing: delete the helpers left with no importer, the entries with no test (Z403), and the sentences outside `tests/` that name deleted tests (`DESIGN.md:72` among them).
