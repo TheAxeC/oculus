@@ -40,6 +40,10 @@ Owed: the looks of Q81 (a Confirm over the update tray, waiting until Axel takes
 
 Landed, newest first:
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.
+- T2d (the deletion sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, 1d88f437.
+- T2b (the deletion sweep of tests/server/), 2026-10-04, 07cf23ea.
+- T2a (the deletion sweep of tests/state/), 2026-10-04, d11f8b6e.
+- T2c (the deletion sweep of tests/views/, shell/, ui/ and themes/), 2026-10-04, 2af5d443.
 - T1e (the test sweep of tests/routes/, data/, checks/ and fixtures/), 2026-10-04, b8f89eb1.
 - T1b (the test sweep of tests/state/), 2026-10-04, fa5e42a2.
 - T1c (the test sweep of tests/server/), 2026-10-04, ffb4457a.
