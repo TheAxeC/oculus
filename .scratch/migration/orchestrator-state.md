@@ -32,9 +32,9 @@ dispatch:
   - step: T1a
     executor: agent
     worker: claude-sonnet-5-5 (ordo-high)
-    session_id: a11b76223dcd3775f
+    session_id: a3ada2e28e73a7a4e
     worktree: .agents/worktrees/T1a
-    base: f8c8eb64f
+    base: f8c8eb64f (brief as of c9fcdb9fc)
     launched: 2026-10-04
     report: tools/oculus/.scratch/migration/agents/reviews/T1a-report.md
     brief_check: none (Axel)
