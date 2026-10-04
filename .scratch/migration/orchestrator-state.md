@@ -41,9 +41,11 @@ dispatch:   # steps in flight, up to seven (Z423)
 - step: D37
   executor: agent
   worker: claude:sonnet at ordo-high
+  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
+  session_id: a199838e70a84d39d (builder, launched 2026-10-05)
   worktree: .agents/worktrees/D37
-  base: (the preparation commit)
-  launched: (at launch)
+  base: ed0e6de58
+  launched: 2026-10-05
   report: agents/reviews/D37-report.md
   brief_check: agents/reviews/D37-brief-check.md, claude-opus-5-5, 259,613 tokens, 81 tool uses, 10.2 min
   landing: not-started

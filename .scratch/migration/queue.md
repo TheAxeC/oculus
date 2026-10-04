@@ -1,9 +1,9 @@
 In flight:
+- D37 (the Search view's replace and the LaTeX build and view): builder launched 2026-10-05, base ed0e6de58.
+- S5, H3, D42, D44, X3e: in /spec (briefs by agents, then brief checks).
 - X3f (a file tab's actions on every file tab, double click and Open Preview): builder launched 2026-10-04 23:57, base 9c7070289.
 
-Queued, in order (33 steps):
-- S5 (the Settings view's controls and headings): next; its headings ruled (Z426), /spec again.
-- D37 (the Search view's replace and the LaTeX build and view kept true): once a slot is free (seven in flight, Z423).
+Queued, in order (31 steps):
 - M6 (the collection forms removed): once S5 has landed.
 - M7 (a project folder moved in Files): once M6 has landed.
 - H3 (the hub's data map): once a slot is free (seven in flight, Z423).
