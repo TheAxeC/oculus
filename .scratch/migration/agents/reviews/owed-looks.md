@@ -7,7 +7,6 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 ## To take
 
 - Q81: a Confirm over the update tray taking the first Escape. It shows only while `tasks.skip_permissions` is on, an edit the session's permission classifier refuses; it waits until Axel takes it up (Z380).
-- D17: the project card's commands bar (`D17-landing.md:15`). No project folder on TEST is its own repository, so the look needs one added as a root for the look and taken out after.
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
@@ -22,6 +21,8 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 - Q97: the one-pane System arrangement. It no longer exists: S4 (ff048bf35) replaced the `info` page with the `views` page, three panes (`config/layout.yml:98-110`), and the rail's System button now opens it. That page is seen only by a rail press or a reset of Axel's System page, which a look on TEST never does; `tests/data/sources/config/rail.test.ts` holds that every rail page names an arrangement.
 
 ## Taken
+
+- D17, taken 2026-10-05 on TEST: a scratch idea project `projects/ideas/d17-look` (a `project.yml`, a `package.json` with two scripts, `git init` and one commit) served as the root `d17-look` in `config/sources.yml` for the look. Its card on the Projects board draws the commands bar below its chips: `npm: hello`, `npm: build` and `Add Command...`; no button was pressed. After: `sources.yml` put back from its copy (`git diff --exit-code` on the config exits 0), the folder removed (`ls` says no such file, `git status --short -- projects` prints nothing), snapshots unchanged (`changes.jsonl` 00b23e5d with 39 lines, `workspaces.json` 1bf5d57a, `behavior.yml` e3bb8249), `~/.oculus/commands.json` last written 2026-10-04 19:28. The bar's test named in `D17-landing.md`, `tests/views/shared/commands/commands.test.ts`, was removed by T2c (2af5d443a), so this look is what shows it now.
 
 - Q35, taken 2026-10-05 on TEST:
   - A Customizations row of a linked file: Sessions view, Customizations, Agents, `ordo-low` (`~/.claude/agents/ordo-low.md` links to `~/.local/share/ordo-stable/agents/ordo-low.md`) opened a tab showing the resolved path and the file's text, no `Cannot open: HTTP 404`.
