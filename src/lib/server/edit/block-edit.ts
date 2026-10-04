@@ -22,7 +22,7 @@
 // the file is read back by the caller before anything is written.
 
 import { isEqual } from 'lodash-es';
-import { CST, Composer, Parser, isAlias, isMap, isScalar, isSeq } from 'yaml';
+import { CST, Composer, Parser, isAlias, isMap as isYamlMap, isScalar, isSeq } from 'yaml';
 import type { Document, Node, Pair, Scalar } from 'yaml';
 import { flowSource, keyText, scalarSource } from './block-render.ts';
 import {
@@ -86,7 +86,8 @@ function diff(
         return [{ from: span[0], to: span[1], text: flowSource(value) }];
     }
     if (isSeq(node) && Array.isArray(value)) return rewrite(node, value, ctx, pair);
-    if (isMap(node) && kindOf(value) === 'map') return rewrite(node, value as object, ctx, pair);
+    if (isYamlMap(node) && kindOf(value) === 'map')
+        return rewrite(node, value as object, ctx, pair);
     // another kind of value in a collection's place
     if (!node.flow && pair !== null) {
         const colon = colonEnd(ctx.source, pair);
@@ -146,7 +147,7 @@ function rewrite(
 ): Edit[] | null {
     const old = heldItems(node, ctx);
     if (old === null) return null;
-    const keyed = isMap(node);
+    const keyed = isYamlMap(node);
     const next = Array.isArray(value)
         ? value.map((one: unknown) => ({ key: '', value: one }))
         : Object.entries(value as Record<string, unknown>).map(([key, one]) => ({
@@ -182,12 +183,12 @@ function rewrite(
 
 /** The pair of a map at an index. */
 function valuePair(node: Collection, at: number): Pair | null {
-    return isMap(node) ? (node.items[at] ?? null) : null;
+    return isYamlMap(node) ? (node.items[at] ?? null) : null;
 }
 
 /** A collection given no item: written as `[]` or `{}`. */
 function emptied(node: Collection, old: Held[], ctx: Ctx, pair: Pair | null): Edit[] | null {
-    const empty = isMap(node) ? '{}' : '[]';
+    const empty = isYamlMap(node) ? '{}' : '[]';
     const span = rangeOf(node);
     if (span === null) return null;
     if (node.flow) return [{ from: span[0], to: span[1], text: empty }];
@@ -239,7 +240,7 @@ function rebuildFlow(
     const parts = next.map((one, at) => {
         const from = match[at];
         if (from < 0)
-            return isMap(node)
+            return isYamlMap(node)
                 ? `${keyText(one.key, true)}: ${flowSource(one.value)}`
                 : flowSource(one.value);
         return applied(source.slice(old[from].start, old[from].end), old[from].start, edits[at]);
@@ -274,7 +275,7 @@ function rebuildBlock(
         chunkOf(held, begins[at], edits[match.indexOf(at)] ?? [], ctx)
     );
     const shared = chunks[0].shared;
-    const blocks = old.some((held) => isMap(held.node) && held.node.flow !== true);
+    const blocks = old.some((held) => isYamlMap(held.node) && held.node.flow !== true);
     const lines: string[] = [];
     for (const [slot, one] of next.entries()) {
         const from = match[slot];
@@ -320,14 +321,14 @@ export function setBlock(source: string, path: string[], value: unknown): string
     let node: unknown = doc.contents;
     let pair: Pair | null = null;
     for (const segment of path) {
-        if (!isMap(node)) return null;
+        if (!isYamlMap(node)) return null;
         pair =
             node.items.find((item) => isScalar(item.key) && String(item.key.value) === segment) ??
             null;
         if (pair === null) return null;
         node = pair.value;
     }
-    if (!(isMap(node) || isSeq(node)) || node.anchor !== undefined || node.tag !== undefined) {
+    if (!(isYamlMap(node) || isSeq(node)) || node.anchor !== undefined || node.tag !== undefined) {
         return null;
     }
     if (kindOf(value) !== (isSeq(node) ? 'seq' : 'map')) return null;

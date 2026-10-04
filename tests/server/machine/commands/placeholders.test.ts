@@ -86,19 +86,26 @@ describe('a selection run through a real shell', { tags: ['slow'] }, () => {
         'q\ntouch t'
     ];
 
-    it('creates nothing, for each line, each selection and each shell', () => {
-        const ran: string[] = [];
+    // One case per shell: the cases run apart, each inside the limit of a case, and a failure names
+    // the shell it happened under.
+    describe('creates nothing, for each line, each selection and each shell', () => {
         for (const shell of SHELLS) {
-            for (const line of LINES) {
-                for (const selectedText of SELECTIONS) {
-                    const answer = filled([line], { file: '/r/x', line: 1, selectedText });
-                    const { made } = runIn(answer.lines[0], answer.env, shell);
-                    if (made.length > 0)
-                        ran.push(`${shell} ${JSON.stringify(line)}: ${made.join(', ')}`);
+            it(`under ${shell}`, () => {
+                const ran: string[] = [];
+                for (const line of LINES) {
+                    for (const selectedText of SELECTIONS) {
+                        const answer = filled([line], { file: '/r/x', line: 1, selectedText });
+                        const { made } = runIn(answer.lines[0], answer.env, shell);
+                        if (made.length > 0)
+                            ran.push(`${JSON.stringify(line)}: ${made.join(', ')}`);
+                    }
                 }
-            }
+                expect(ran).toEqual([]);
+            });
         }
+    });
+
+    it('runs under /bin/sh', () => {
         expect(SHELLS).toContain('/bin/sh');
-        expect(ran).toEqual([]);
     });
 });

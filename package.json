@@ -11,7 +11,10 @@
         "lint": "eslint .",
         "test": "vitest run --tagsFilter '!slow' --exclude 'tests/checks/**'",
         "test:checks": "vitest run tests/checks --tagsFilter '!slow' --testTimeout 0 --hookTimeout 0",
-        "test:slow": "vitest run --tagsFilter slow",
+        "test:quick": "node tests/tiers/quick.mjs",
+        "test:landing": "node tests/tiers/landing.mjs",
+        "test:warm": "svelte-kit sync && { svelte-check --incremental --tsconfig ./tsconfig.json > /dev/null & eslint . --cache --cache-location node_modules/.cache/eslint/ > /dev/null & prettier --check --cache . > /dev/null & wait; } && { node tests/tiers/quick.mjs > /dev/null || true; }",
+        "test:slow": "vitest run --tagsFilter slow --testTimeout 20000",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "diagrams": "node utils/diagrams/diagrams.mjs"

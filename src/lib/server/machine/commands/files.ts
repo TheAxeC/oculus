@@ -10,7 +10,7 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
-import { LineCounter, isMap, isNode, isSeq, parseDocument } from 'yaml';
+import { LineCounter, isMap as isYamlMap, isNode, isSeq, parseDocument } from 'yaml';
 import { z } from 'zod';
 import type {
     CommandDefault,
@@ -211,7 +211,7 @@ export function readCommandsFile(repo: string, taken: Taken): Reading {
         return fileFinding(file, at === undefined ? 'is not YAML' : `is not YAML, at line ${at}`);
     }
     if (doc.contents === null) return { commands: [], findings: [] };
-    if (!isMap(doc.contents)) return fileFinding(file, 'must be a map with a commands list');
+    if (!isYamlMap(doc.contents)) return fileFinding(file, 'must be a map with a commands list');
     const list = doc.contents.get('commands', true);
     if (list === undefined || (isNode(list) && list.toJS(doc) === null)) {
         return { commands: [], findings: [] };

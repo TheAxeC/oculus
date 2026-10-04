@@ -1,0 +1,48 @@
+// Layer 4, test tool. npm run test:landing: the commands the orchestrator runs on main at each
+// landing, all at the same time, every one run to its end so that one red does not hide another.
+// The type check and the build run one after the other in one lane, since both write the generated
+// files under .svelte-kit. The lint keeps its cache in node_modules/.cache/eslint/, the one
+// npm run test:quick keeps.
+//
+// The list is the unit suite, the tree checks, the type check, the build, the format check, the
+// lint over the whole tree, the ASCII gate and the slow tests. The type check and the ASCII gate
+// are in it because npm run test:quick holds them and nothing else in this list does.
+//
+// Each command prints its line when it ends, and its whole output when it failed. The last line
+// names the commands that failed, and the exit code is 1 when there is one.
+
+import { ASCII_GATE, ROOT, judgeAscii, runTask, seconds, show } from './run.mjs';
+
+const NPM = 'npm';
+
+const LIST = [
+    ['npm test', NPM, ['test']],
+    ['npm run test:checks', NPM, ['run', 'test:checks']],
+    [
+        'npm run check, then npm run build',
+        'sh',
+        ['-c', 'npm run check; c=$?; npm run build; b=$?; [ $c -eq 0 ] && [ $b -eq 0 ]']
+    ],
+    ['npm run format:check', NPM, ['run', 'format:check']],
+    [
+        'npm run lint',
+        NPM,
+        ['run', 'lint', '--', '--cache', '--cache-location', 'node_modules/.cache/eslint/']
+    ],
+    ['ASCII gate', 'sh', ['-c', ASCII_GATE], judgeAscii],
+    ['npm run test:slow', NPM, ['run', 'test:slow']]
+];
+
+const started = Date.now();
+const red = [];
+console.log(`test:landing: ${LIST.length} commands, from ${ROOT}`);
+await Promise.all(
+    LIST.map(async ([name, command, args, judge = (one) => one]) => {
+        const result = judge(await runTask(name, command, args));
+        show(result);
+        if (!result.ok) red.push(name);
+    })
+);
+const verdict = red.length === 0 ? 'every command passed' : `failed: ${red.join(', ')}`;
+console.log(`test:landing: ${seconds(Date.now() - started)} s; ${verdict}`);
+process.exitCode = red.length === 0 ? 0 : 1;

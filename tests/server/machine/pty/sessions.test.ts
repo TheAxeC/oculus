@@ -59,6 +59,12 @@ describe('a private tmux server', { tags: ['slow'] }, () => {
         expect(started.pid).toBeGreaterThan(0);
         expect(new Date(started.created).getTime()).toBeGreaterThan(0);
 
+        // The pane starts as the user's shell and is replaced by `cat`, which tmux reports once the
+        // replacement has run.
+        await until(
+            async () => (await listTerminals(options)).some((one) => one.command === 'cat'),
+            'the pane to run cat'
+        );
         const listed = await listTerminals(options);
         expect(listed.map((terminal) => terminal.id)).toEqual([started.id]);
         expect(listed[0].command).toBe('cat');

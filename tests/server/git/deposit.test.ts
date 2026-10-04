@@ -11,7 +11,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { commit, sync } from '../../../src/lib/server/git/deposit.ts';
+import { adopt, commit, sync } from '../../../src/lib/server/git/deposit.ts';
 import { type GhRun, type Outcome } from '../../../src/lib/server/git/deposit-git.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
@@ -132,6 +132,7 @@ test.afterAll(() => {
 
 describe('the plan', () => {
     it('finds a secret and refuses the commit while it stands', async () => {
+        expect((await adopt('alpha', options())).ok).toBe(true);
         write(codeOf('alpha'), '.env', 'TOKEN=shhh\n');
         const planned = await sync('alpha', options());
         expect(planned.plan?.findings).toEqual([{ kind: 'secret', path: '.env', mb: 0 }]);

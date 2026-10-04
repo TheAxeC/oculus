@@ -3,7 +3,7 @@
 // source, and the replacement of offsets by text.
 
 import { isEqual } from 'lodash-es';
-import { isMap, isScalar } from 'yaml';
+import { isMap as isYamlMap, isScalar } from 'yaml';
 import type { Node, Pair, YAMLMap, YAMLSeq } from 'yaml';
 
 /** One replacement of the source: the offsets it covers and the text that takes their place. */
@@ -94,7 +94,7 @@ export function stepOf(source: string): number {
 export function heldItems(node: Collection, ctx: Ctx): Held[] | null {
     const found: Held[] = [];
     for (const item of node.items) {
-        if (isMap(node)) {
+        if (isYamlMap(node)) {
             const pair = item as Pair;
             const key = rangeOf(pair.key);
             const value = rangeOf(pair.value);

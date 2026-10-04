@@ -24,19 +24,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:
-  - step: T1a
-    executor: agent
-    worker: claude-sonnet-5-5 (ordo-high)
-    session_id: ae42b139ba787a726
-    worktree: .agents/worktrees/T1a
-    base: f8c8eb64f (brief as of d72c3dd18)
-    launched: 2026-10-04
-    report: tools/oculus/.scratch/migration/agents/reviews/T1a-report.md
-    brief_check: none (Axel)
-    review: none (Z416)
-    landing: none (Z419)
-    round: 0
+dispatch: none
 ```
 
 ## The standing demands (from Axel, in force)
@@ -132,8 +120,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- T1a's code reaching main (2026-10-04). The verify list is now `npm run test:quick` and the landing list `npm run test:landing`, but both scripts exist only in T1a's worktree; until T1a's code is on main, no step can be verified and nothing can land. Options: (a) land T1a's code on main now as one commit, with its eight files, its three test fixes and the `isMap` renames; for: every later step gets the quick list; against: none beyond a landing commit Z419 left to Axel. (b) keep the old seven-command verify list until Axel lands T1a; for: nothing changes on main yet; against: builders keep running the 10-minute list. Recommendation (a). Lazy option: (b).
-- T1a builder's three open items (2026-10-04). The scripts in `tests/tiers/` rather than `utils/` (`utils/folder-check.sh` refuses an eleventh item): keep. The quick list reading the changed files from git itself, written into `agents/spec.md` as not a builder's git command (option A); option B, paths as arguments only, drops prettier, eslint and the related tests from a run with no arguments and is the lazy option: keep A. The type check and the ASCII gate in the landing list (the build does not type check): keep. Recommendation: all three as written.
+- None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -192,6 +179,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-04 23:30. T1a landed (Z419 to Z422): the verify list is `npm run test:quick` (45 s under the load) and the landing list `npm run test:landing`; a new worktree gets `npm run test:warm` after its install. Next: X3f, then the queue in `queue.md` order, at Axel's go.
+  Open for Axel: none.
 - 2026-10-04 17:20. T2e landed, with Q117's record-file refusals (Z416); `tests/` holds 108 test files, 18,252 lines and 432 `it`/`test` calls. Every entry of `agents/guarded.md` names a test, each one existing. Next: T1a (the test tiers), then the queue in `queue.md` order; the rail reorder `/diagnose`. The owed looks in `agents/reviews/owed-looks.md` ("To take") are taken before T1a's landing commit; Q81's waits until Axel takes it up (Z380).
   Open for Axel: none.
 - 2026-10-04 16:00. T2c, T2a and T2b landed (Z414). Next: land T2d; name its kept tests under their entries in `agents/guarded.md`, keep one test per unit where two sweeps kept one, remove the entries with no test (Z403), fix the comments naming deleted tests. Then Q117 (its tests under Z415), T1a.
