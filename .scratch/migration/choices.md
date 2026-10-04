@@ -2,6 +2,51 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z438 (2026-10-05, step X3e)
+
+The question: G31 names no notes order file, so the order X3e writes has no guarded test.
+
+- Chosen: (a) G31 widened: Code names `src/lib/server/files/fs/notes.ts`, Test names one new case in the notes test file, 'refuses a write over an order file it cannot read, leaving it'; a lost order file is lost work, which the test rule covers.
+- Not chosen: (b) no test and the look alone (the lazy one), which leaves an order file that does not read to be written over unseen.
+
+Where it is built: X3e's brief and `agents/guarded.md` G31 (entered when X3e lands). Booked in `plan.md` Rulings.
+
+## Z439 (2026-10-05, step X3e)
+
+The question: The wire and file shapes X3e adds, which no ruling names.
+
+- Chosen: (a) as the brief takes them: the `files` channel payload `{ root, folders?, bookmarks?, workspaces? }`; the notes order file `{ "version": 1, "order": [...] }`; the refusal codes `roots-changed` and `notes-order-unreadable`; the body fields `keys` and `ids` on `POST /api/fs`; the glyph `head` (ASCII `@`, lucide `target`). Each follows the shape of its neighbours (the `files` payload keeps `root`, which D37's reader uses; the order file carries a version as `workspaces.json` does).
+- Not chosen: (b) one new channel per list, which doubles the socket handling for no reader; (c) leaving the shapes to the builder (the lazy one).
+
+Where it is built: X3e's brief, Decisions. Booked in `plan.md` Rulings.
+
+## Z440 (2026-10-05, step X3e)
+
+The question: The `repository_scan_depth` reader: G13 says a wrong value is refused with a finding and its default used, while the setting readers of `settings.ts` throw naming the key.
+
+- Chosen: (a) the new reader throws naming the key, as its siblings in `data/sources/config/settings.ts` do, with one case in `tests/data/sources/config/settings.test.ts` (G13: one case per setting reader); the mismatch between G13's sentence and the setting readers is older than X3e and is raised to Axel as an open item.
+- Not chosen: (b) a finding and the shipped value for this one reader, which makes it the only reader of its file to answer differently; (c) no case (the lazy one).
+
+Where it is built: X3e's brief. Booked in `plan.md` Rulings.
+
+## Z441 (2026-10-05, step X3e)
+
+The question: Five defects X3e holds out because no read-only look found their cause: D27-3, the hub Graph's 10 s first read, X3a-1's 5 s Delete, Q88c-19's server half, Q88c-22.
+
+- Chosen: (a) D27-3 is read at X3f's landing look, since its press path is X3f's; the Graph's first read, the 5 s Delete and Q88c-19's server half each go through /diagnose (brief check) on a diagnosis agent before X3e's builder starts, and a cause found joins the brief; Q88c-22 is closed, since the stray folders are gone (`ls config` at the hub root fails) and `~/.oculus/changes.jsonl` names no write that made them.
+- Not chosen: (b) the builder asked to find the causes, which a round never does; (c) the five left out with no diagnosis (the lazy one).
+
+Where it is built: X3e's brief, section G. Booked in `plan.md` Rulings.
+
+## Z442 (2026-10-05, step X3e)
+
+The question: The write-token sentence of `server/core/auth.ts:97` is answered by every route, so capitalising it changes routes outside git.
+
+- Chosen: (a) the sentence is worded once in the server catalog as the other server sentences become (Z439's neighbour, the brief's Decision 8), every route answering it changes with it, and the eleven test assertions quoting the old words follow.
+- Not chosen: (b) a second git-only sentence beside it, which says one refusal two ways; (c) leaving it lower case (the lazy one).
+
+Where it is built: X3e's brief, D5. Booked in `plan.md` Rulings.
+
 ## Z437 (2026-10-05, step S5)
 
 The question: S5's new list check would refuse the G9 route test's input `'queued'`, and its new catalog-findings test needs a guarded entry.

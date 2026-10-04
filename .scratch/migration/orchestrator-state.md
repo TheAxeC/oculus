@@ -37,7 +37,7 @@ dispatch:   # steps in flight, up to seven (Z423)
   brief_check: agents/reviews/X3f-brief-check.md, claude-opus-5-5, 220,933 tokens, 70 tool uses, 10.3 min
   landing: not-started
   round: 1 (repair round 1 sent from the refuter's findings, agents/briefs/X3f-round1.md; round 0 was the case-33 ruling, agents/briefs/X3f-cases.md, Z429)
-  reviewer_report: agents/reviews/X3f-refuter.md, claude-opus-5-5, 246,295 tokens, 57 tool uses, 11.0 min
+  reviewer_report: agents/reviews/X3f-refuter.md, claude-opus-5-5, 246,295 tokens, 57 tool uses, 11.0 min; over round 1: the same file, "Repair round 1, refuted", claude-opus-5-5, 190,712 tokens, 56 tool uses, 7.9 min
   builder_usage: first run, stopped at case 33: 213,532 tokens, 38 tool uses, 6.8 min; build after the ruling: 344,227 tokens, 87 tool uses, 18.5 min; repair round 1: 193,522 tokens, 70 tool uses, 12.1 min, 3 full-list runs
 - step: D37
   executor: agent
@@ -161,7 +161,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- None.
+- Z443 (2026-10-05, raised at X3e's /spec): `agents/guarded.md` G13 says a wrong config value "is refused with a finding that names the key, and its default is used", while the setting readers of `src/lib/data/sources/config/settings.ts` (lines 65-81) throw an error naming the key and use no default. The entry was approved by Axel, so its sentence or the readers change only by his ruling. Options: (a) the readers made to keep G13: a wrong value gives a finding naming the key and the shipped file's value is used, through a new step; (b) G13's sentence corrected to what the readers do (refused with an error naming the key, the server reporting it at start). Recommendation (a), since a typo in `behavior.yml` then costs one setting rather than the reader that throws; (b) is the lazy option.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 

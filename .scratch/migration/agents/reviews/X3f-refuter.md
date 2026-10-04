@@ -170,3 +170,139 @@ Cases of the brief's "Cases":
 - Whether `file-type.ts` should hold a view id and a tab label (`MARKDOWN_PREVIEW_VIEW`, `previewLabel`, `markdownPreviewState`). This is a cohesion judgment; the boundaries and import checks pass.
 
 Agent usage: 246,295 tokens, 57 tool uses, 11.0 min (opus, ordo-high).
+
+## Repair round 1, refuted
+
+No tree snapshot was recorded when the round was sent, so this run reads the nine items of `agents/briefs/X3f-round1.md` against the whole diff since 9c7070289 (`git diff 9c7070289`, `git status --short` in `.agents/worktrees/X3f`). The worktree copies of `briefs/X3f.md` and `briefs/X3f-cases.md` are identical to the main checkout's (`cmp` printed `SAME_BRIEF`, `SAME_CASES`). The builder's report is identical in the two checkouts (`cmp` printed `SAME_REPORT`). No file under `tests/` differs from the base copy (`diff -rq X3f-base/tools/oculus/tests X3f/tools/oculus/tests` printed `TESTS_SAME`).
+
+```
+$ npm run diagrams                     (from tools/oculus in the worktree; shasum of docs/diagrams/* before and after)
+diagrams exit 0
+DIAGRAMS_UNCHANGED
+
+$ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH sh ~/.claude/skills/land/templates/checks.sh /Users/axelfaes/workspace/research-hub/tools/oculus/.scratch/migration/orchestrator-state.md   (from tools/oculus in the worktree)
+ok      prettier (1.6 s): All matched files use Prettier code style!
+ok      ASCII gate (1.7 s)
+ok      svelte-kit sync (3.7 s)
+ok      vitest (21.7 s): Duration  15.21s (transform 39.17s, setup 0ms, import 53.28s, tests 6.45s, environment 11ms)
+ok      eslint (24.0 s)
+ok      svelte-check (24.8 s): 1791154324235 COMPLETED 358 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 29.0 s (limit 45.0 s); every command passed
+checks: 1 commands passed
+
+$ npm run test:quick -- --base 9c7070289
+test:quick: 52 changed file(s), from git since 9c7070289
+test:quick: 27 test file(s), 10 essential
+ok      svelte-check (7.8 s): 1791154334657 COMPLETED 358 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (12.0 s): Duration  8.18s (transform 19.22s, setup 0ms, import 28.56s, tests 3.31s, environment 8ms)
+test:quick: 12.8 s (limit 45.0 s); every command passed
+
+$ npx vitest run tests/checks/source/comment-width.test.ts tests/checks/tree/duplication.test.ts tests/checks/source/history.test.ts
+ Test Files  3 passed (3)
+      Tests  23 passed (23)
+
+$ npx vitest run tests/checks/tree/boundaries.test.ts tests/checks/config/config.test.ts tests/checks/source/keys.test.ts
+ Test Files  3 passed (3)
+      Tests  47 passed (47)
+
+$ npx vitest run tests/checks/tree/size.test.ts tests/checks/imports/order.test.ts tests/checks/imports/cycles.test.ts tests/checks/imports/augments.test.ts tests/checks/diagrams/diagrams.test.ts tests/checks/source/html-sites.test.ts tests/checks/config/config-folder.test.ts tests/checks/look/contrast.test.ts tests/checks/config/integrity.test.ts tests/checks/utils/claude-usage.test.ts
+ Test Files  10 passed (10)
+      Tests  157 passed (157)
+
+$ sh utils/folder-check.sh
+folder-check exit 0
+
+$ ASCII gate of agents/spec.md (perl form) over src tests config (no bin), HELP.md, DESIGN.md, docs/diagrams/*.dot and the report
+(printed nothing) ascii exit 0
+
+$ sh utils/unused-exports.sh, diffed with .agents/worktrees/X3f-base/unused-exports.txt
+UNUSED_SAME (381 lines)
+
+$ grep -rn "useTabActions()" src/lib
+src/lib/ui/tabs/tab-actions.svelte.ts:54 (definition), :61 (doc comment)
+src/lib/views/shared/links/FileTab.svelte:35:    handUp(useTabActions(), () => id, strip);
+src/lib/views/sources/source/Source.svelte:304:    handUp(useTabActions(), () => instance.id, stripActions);
+
+Commands the report quotes as evidence:
+- test:quick through checks.sh, "every command passed", "checks: 1 commands passed": reproduced (29.0 s and 12.8 s here, 11.8 s in the report; the time is no decision's basis).
+- the three round checks, "Tests  23 passed (23)": reproduced.
+- the three brief checks, "Tests  47 passed (47)": reproduced.
+- the other tree checks of G16 to G25, which the report says were not rerun after the last comment rewording: all rerun here after it, green (157 of 157, folder-check exit 0).
+- `ls -A src/lib/views/shared/links | wc -l` prints 10: reproduced.
+- `grep -rn "armed-keep.ts" src` prints nothing: reproduced (the old-names grep, which the report did not rerun after the round, also prints nothing here, exit 1).
+- unused-exports diff empty: reproduced.
+- history-word grep over the added comment lines: rerun over the added lines of the diff and the new files; every hit is a run-time condition ("before it is dropped", "the old file name" of a rename, "still a preview tab"), and "as ever" is gone. Reproduced.
+- the useTabActions grep: reproduced line for line.
+- Svelte compiles FileTab's `strip` snippet inside the component function (`strip = ($$anchor) => {` within `export default function FileTab`, from `svelte/compiler` `compile(...)`), so each FileTab instance hands up its own snippet and `clear(id, actions)` of an old view leaves a newer view's snippet, as item 2 requires.
+```
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: holds. `armed-keep.svelte.ts` (arm, `KEEP_WINDOW_MS` with its reason, disarm by owner), `layout.svelte.ts` (`armedKeep`, `armKeep`, `disarmKeep`), `PaneBody.svelte` (layer while `stillPreview` holds and the tab is active; primary `pointerdown` prevented, stopped, `keepPreview`, disarm; window capture listeners disarm on another press and on any key; an effect disarms when the tab is not active), `rooted-tree.svelte.ts` (arms nothing once destroyed), `opening.ts` (arms only for a preview open with `pressedAt`), the row's `ondblclick` kept. The round's focus call is Spec 1; item 1's own text does not ask for focus.
+- 2: holds. One `views/shared/links/StripActions.svelte` in the brief's order; File, Document, Doc and MarkdownPreview hand up through `FileTab.svelte` (`handUp`), Source through `handUp`; `TabActions.clear(id, actions)` leaves a newer snippet; no view draws a row of its own; the refusal line exists once (`SaidLine.svelte`), and duplication.test.ts is green.
+- 3: holds. `markdown-preview` registered `group: ''`, `listed: false` in `views/sources/doc/MarkdownPreview.svelte`; one `views/shared/prose/RenderedMarkdown.svelte` used by `Editor.svelte` and the new view; state `{ root, path, label }`; label `files.preview_tab`; read through `fs.fileText`; `source.cannot_open` on a failed read, `doc.markdown_none` on no root or path; `source.truncated` above a cut file (`MarkdownPreview.svelte:89-94`); `followedFileTab` follows it; `row-menu.ts` opens it kept; Open Source through `openSourceFile`.
+- 4: violated, Standards 1. HELP.md:49, 120, 159, 161, 167, DESIGN.md:391, 395, 417, 427, `layout/open/opening.ts`, `Editor.svelte`, and the head comments of `BookmarkStar.svelte` and `Markdown.svelte` are rewritten and true. `ProgramButton.svelte:9` keeps a sentence the change made false. HELP.md:167 and DESIGN.md:395 state the focus after the keep as fact, which Spec 1 says the code does not do in Chrome.
+
+Cases of the brief's "Cases":
+
+- 1: met. Reading: `pressing.ts` passes `event.timeStamp` to `onopen`; the path through `openRow` and `openOpened` is unchanged.
+- 2: not verifiable here; the look settles it with a press, a 150 to 400 ms wait and a press on the editor. Reading shows the layer built for it. The focus that follows is Spec 1.
+- 3: met. Reading: both `openRow` calls await `readFileKind`; the second, with `preview` false, keeps the tab, and the layer goes since `stillPreview` needs a preview tab.
+- 4: met. Reading: `openOpened` activates the kept tab, and `arm` refuses a tab that is not a preview (`armed-keep.svelte.ts:61`).
+- 5: not verifiable; the second press lands in a frame, the look settles it. Reading: the layer is `position: absolute; inset: 0; z-index: 1` over the body.
+- 6: not verifiable, as case 5.
+- 7: not verifiable; timing case for the look. Reading: the timer at `armed-keep.svelte.ts:63` disarms at 500 ms from the press's time stamp.
+- 8: met. Reading: the layer is drawn only in the pane whose active tab is the armed one, and a press elsewhere disarms through the window `pointerdown` listener.
+- 9: met. Reading: the row's `ondblclick` is unchanged.
+- 10: met. Reading: a folder press toggles; `ondblclick` is only for files.
+- 11: met. Reading: the owner's destroy disarms by owner in `rooted-tree.svelte.ts`, and the close press is a press outside the layer.
+- 12: met. Reading: Source's snippet passes the same props as at the base.
+- 13: met. Reading: `bookmarkable` and `program` need `head === undefined`; `editing` unchanged.
+- 14: met for what is handed up (`File.svelte:194-202`: star, browser tab, program with `openable`) and no `toolbar` on the pane; the look settles what is drawn.
+- 15: met, as case 14.
+- 16: met. Reading: `Document.svelte` hands up the star, the browser-tab control and the program control where configured, and draws no toolbar.
+- 17: met. Reading: `Doc.svelte:102-110` hands up the star and the program control on `HUB_ROOT` and `reading`.
+- 18: met. Reading: `PaneView` draws `tabActions.of(active)`; a closed tab's cleanup clears its own snippet.
+- 19: met. Reading: `FileTab.svelte` holds `said`, passes its setter to each view's `actions` snippet, which passes it to `StripActions` as `onsaid`, and draws `SaidLine` in the pane's bar for the file, document, doc and Markdown preview tabs.
+- 20: met. Reading: `row-menu.ts` opens `markdown-preview` kept, label "Preview {0}", `fileOfTab` reads `{root, path}`, strip has the star, the program control and Open Source.
+- 21: met. Reading: `stateId` is `[root, path]`, so `openOpened` activates the open tab.
+- 22: met. Reading: `FRONT_MATTER` is stripped in `RenderedMarkdown.svelte`.
+- 23: met. Reading: `readText` answers an error for a response that is not ok, drawn as `source.cannot_open`.
+- 24: met. Reading: the `fs.fileText` query is the one `markText` marks on save.
+- 25: met. Reading: `openSourceFile` opens kept and `stateId` dedupes.
+- 26: met. Reading: view id and state are saved with the layout; the registration exists.
+- 27: met. Reading: `facts.markdown` gating unchanged.
+- 28: met. Reading: `clear(id, actions)` leaves a newer snippet, and FileTab's snippet is per instance (compile output above).
+- 29: met. Reading: actions per instance, drawn per pane's active tab.
+- 30: not verifiable; a float is one `PaneView`, the look in a float settles it.
+- 31: not verifiable; whether a cancelled `pointerdown` withholds Monaco's word selection is for the look.
+- 32: not verifiable; timing case for the look. Reading: the keep has expired at 600 ms and no layer is drawn.
+- 33: met, under the ruling. Reading: `readKind` answers `missing` on a 404, `missing` is not held, `tabForKind` sends it to the source tab, Retry is `read-again.ts`.
+- 34: not verifiable; reading shows the same root and path addressing as the source tab; a symlinked file and a name with a space or `#` at the look settle it.
+- 35: met. Reading: `followedFileTab` accepts `MARKDOWN_PREVIEW_VIEW` and restates the Preview label.
+- 36: met. Reading: `named` is false and `doc.markdown_none` is drawn.
+- 37: met. Reading: the query is per file; nothing per tab lands after close.
+- The ruling (X3f-cases.md, case 33, and the accepted points): holds, built as ruled.
+
+Closures of the round's nine items: 1 closed (comment-width green); 2 closed (duplication green, `FileTab.svelte` and `SaidLine.svelte`; FileTab also takes the `handUp` line and the `Pane` from the four views, which is inside the ruling's "one small component it and the four views use"); 3 closed for the three named comments, with the next sentence of `ProgramButton.svelte` left false (Standards 1); 4 closed (grep empty); 5 closed (my grep over the added comment lines finds no comparison with an earlier state); 6 closed by reading; 7 not reproduced by reading (Spec 1); 8 closed (the before-and-after section, `read-again.ts` named, the tree checks stated, with the ones not rerun named as such); 9 no change, as ruled. No closure removes a check: no file under `tests/` changed and `allow-duplication.txt` is untouched.
+
+### Findings
+
+- Spec 1. `src/lib/shell/panes/PaneBody.svelte:146`: "view.querySelector<HTMLElement>('.monaco-editor textarea, iframe')?.focus();". What is wrong: the round's item 7 asks for the keyboard focus in the kept tab's editor, and the report (round table row 7, the "Keyboard focus after the double click" row, "the keyboard is in the editor") and HELP.md:167 and DESIGN.md:395 ("leaves the keyboard in the kept tab's editor or frame") state it as done. The editor is Monaco 0.57.0 (`package.json:81`). Its `editContext` option defaults to true (`node_modules/monaco-editor/esm/vs/editor/common/config/editorOptions.js:3211`) and takes effect where `globalThis.EditContext` is a function (`:711`, `editor/browser/config/editorConfiguration.js:106`), which is the case in Chrome; `grep -rn editContext src config --exclude=local.yml` prints nothing, so oculus keeps the default. With it, the editor's input is `div.native-edit-context`, whose focus tracker sets the editor's focus, and the only textarea in the editor is `textarea.ime-text-area`, created `readonly`, `tabindex -1`, `aria-hidden` (`editor/browser/controller/editContext/native/nativeEditContext.js:70-85`). The selector therefore focuses the readonly IME textarea: the editor's focus tracker does not fire, no caret is drawn, and typed characters do not reach the text, since input goes through the EditContext attached to the div. Found by reading Monaco's source; not seen in a browser. The fix is small and inside item 7: focus `.monaco-editor .native-edit-context` first and `textarea.inputarea` (the textarea edit context, where EditContext is absent) after it, or call the editor's own `focus()` through a path the source view owns. Under the spec heading (an item marked done whose diff does not do what the ruling says). Failure scenario: in Axel's Chrome, a reader double clicks `CLAUDE.md` in the one-pane Files tab and starts typing; no character appears in the editor, though the report, HELP.md and DESIGN.md say the keyboard is there. Verdict: makes case 2's follow-on focus unmet once looked at, and with Standards 1 makes item 4 violated (HELP.md:167, DESIGN.md:395 false as written).
+- Standards 1. `src/lib/views/shared/links/ProgramButton.svelte:9`: "It is shared because the press is the same in all four: one POST, ...". What is wrong: the round rewrote the sentence before it, which now names the source, file, document, doc and Markdown preview tabs and the project card's file list and a collection card's link, seven surfaces; "all four" counted the base's four (file view, source tab, project card, collection card). Rule: agents/spec.md "What every package obeys" (a sentence in a head comment the change makes false is a defect of the change) and the round's item 3. Failure scenario: a reader of the head comment looks for the fourth caller to change with the control and misses three. Verdict: item 4 violated.
+- Standards 2. `src/lib/shell/panes/PaneBody.svelte:22`: "The keep ends when the window closes, at any press outside the layer, at any key, ...". What is wrong: "the window" is the 500 ms double-click window (`KEEP_WINDOW_MS` in `armed-keep.svelte.ts`), and this component also adds listeners on the browser `window` in the same change, so the sentence reads as the browser window closing. Rule: agents/spec.md "The working rules" (name the actual thing). Failure scenario: a reader of the shell component looks for a close handler on the browser window that ends the keep and finds none, or misses the 500 ms timer. Verdict: none.
+
+### Declined to judge
+
+- Cases 2, 5, 6, 7, 30, 31, 32 and 34, and whether the focus call of Spec 1 lands once fixed: they need a real pointer in Chrome on TEST, and this review runs no browser.
+- Whether the default action of the press on the layer (a press on a non-focusable element blurs the active element) runs after `focusKept`'s `await tick()` and takes the focus away again, given that the `pointerdown` is cancelled: browser event order, for the look.
+- Whether one `tick()` is late enough for the editor's model remake after the keep: the report and the round both leave it to the look and to D37.
+- The race where the first press's read resolves between the second press's `pointerdown` and its `click`, and whether a non-primary press on the layer goes through (as the first refuter declined them): browser timing, for the look.
+- `.body { position: relative; }` (`PaneBody.svelte` style) as a new containing block for any absolutely positioned element a view draws: no view was checked for one; the look would show a misplaced overlay.
+- Case 33 for a name the browser draws (`.png`, `.pdf`, `.html`), whose kind is answered from the name with no request: outside the ruling's `readKind` change, the orchestrator's call.
+- The server side of DESIGN.md:334 (whether an apps-folder `.html` is refused in the Document view): ruled in round 1 item 9 as a proposal sentence; reading the server routes is a separate concern.
+- Whether `file-type.ts` should hold a view id and a tab label: a cohesion judgment; the boundary and import checks pass.
+
+Reviewer usage: ordo-high on claude-opus-5-5 (a2e13fa0838de52ab), 190,712 tokens, 56 tool uses, 7.9 min.

@@ -4,6 +4,11 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z442 (2026-10-05, closed in automode): The write-token sentence of `server/core/auth.ts:97` is answered by every route, so capitalising it changes routes outside git.; `choices.md`.
+- Z441 (2026-10-05, closed in automode): Five defects X3e holds out because no read-only look found their cause: D27-3, the hub Graph's 10 s first read, X3a-1's 5 s Delete, Q88c-19's server half, Q88c-22.; `choices.md`.
+- Z440 (2026-10-05, closed in automode): The `repository_scan_depth` reader: G13 says a wrong value is refused with a finding and its default used, while the setting readers of `settings.ts` throw naming the key.; `choices.md`.
+- Z439 (2026-10-05, closed in automode): The wire and file shapes X3e adds, which no ruling names.; `choices.md`.
+- Z438 (2026-10-05, closed in automode): G31 names no notes order file, so the order X3e writes has no guarded test.; `choices.md`.
 - Z437 (2026-10-05, closed in automode): S5's new list check would refuse the G9 route test's input `'queued'`, and its new catalog-findings test needs a guarded entry.; `choices.md`.
 - Z434 (2026-10-05, closed in automode): How D42 pages a file's history, since `--skip` under `--follow` counts the whole walk and repeats page one.; `choices.md`.
 - Z435 (2026-10-05, closed in automode): D42's user-visible shapes (menu items, row content, date, section controls, tab label) were taken in the brief without booking.; `choices.md`.

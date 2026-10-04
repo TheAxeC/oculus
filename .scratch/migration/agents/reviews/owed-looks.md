@@ -8,9 +8,7 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 - Q81: a Confirm over the update tray taking the first Escape. It shows only while `tasks.skip_permissions` is on, an edit the session's permission classifier refuses; it waits until Axel takes it up (Z380).
 - D17: the project card's commands bar (`D17-landing.md:15`). No project folder on TEST is its own repository, so the look needs one added as a root for the look and taken out after.
-- Q88c: Lock Group on an empty pane (`owed-looks.md`, Q88c's entry, "Not taken"). TEST has no empty pane; the look makes one and closes it after.
 - Q35: a Customizations row opened from a link, Audit with the arrow keys, the Present `#` link jump in a scaled frame, a narrow pane (`Q35-landing.md:88-92`).
-- Q101: a terminal dragged from one Terminal tab to another (`Q101-landing.md:30`); the tab's list, Split and a terminal's end were seen at the Q102 and L4 looks.
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
@@ -23,6 +21,10 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 - Q97: the one-pane System arrangement. It no longer exists: S4 (ff048bf35) replaced the `info` page with the `views` page, three panes (`config/layout.yml:98-110`), and the rail's System button now opens it. That page is seen only by a rail press or a reset of Axel's System page, which a look on TEST never does; `tests/data/sources/config/rail.test.ts` holds that every rail page names an arrangement.
 
 ## Taken
+
+- Q88c, 2026-10-05, TEST, dark theme: Lock Group on an empty pane. The Help pane strip's menu New Text File opened Untitled-1, the pane menu's Split tab to the right moved it to a new pane, and closing it left an empty documents pane reading "Files and documents you open on this page appear here.". Its strip's right-click menu (Open File..., New Text File, Lock Group, Tab Bar, Editor Actions Position, Close, New Terminal) Lock Group drew a lock button on the strip, named Unlock Group; pressing it took the lock away. The pane's Close removed it, with no file written. `workspaces.json` 1bf5d57a and `changes.jsonl` 00b23e5d (39 lines) unchanged (`shasum`). Defects: none.
+
+- Q101, 2026-10-05, TEST, dark theme: a terminal dragged from one Terminal tab to another. TEST's Terminal tab (the composer) started a shell with `new terminal`, then a second through the arrow's Shell, so the tab listed two rows; the Help pane strip's menu New Terminal opened a second Terminal tab with its own shell. The second row dragged from the first tab's list onto the other tab's body moved it there: the first tab then showed its one shell alone, the second tab listed two rows with the moved shell shown and named on the tab (`2b452c-shell`). The moved shell ended by its row's Kill pressed twice (the first press asks, `Press again to kill this terminal`), the other two by `exit`; each tab closed with its last terminal, and the Terminal view opened again from the palette shows the composer. `workspaces.json` 1bf5d57a and `changes.jsonl` 00b23e5d (39 lines) unchanged (`shasum`). Defects: none.
 
 - Q86, 2026-10-05, TEST, dark theme: the Map's re-tune. The Map tab on TEST drew 33 ideas, 15 manuscripts and 5 active projects with pillar hubs; a press on the header's `re-tune` control (aria-label read by JS) drew a new placement within 2.5 s, the first three nodes moving from (452,277), (376,400), (758,186) to (555,299), (446,229), (313,609); no error line. `~/.oculus/workspaces.json` 1bf5d57a and `changes.jsonl` 00b23e5d (39 lines) unchanged after it (`shasum`). Defects: none.
 

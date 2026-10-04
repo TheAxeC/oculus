@@ -1,10 +1,10 @@
 In flight:
-- X3f (a file tab's actions on every file tab, double click and Open Preview): repair round 1 in, its review running.
+- X3f (a file tab's actions on every file tab, double click and Open Preview): reviewed after repair round 1, landing after the owed looks.
 - D37 (the Search view's replace and the LaTeX build and view): building.
 - S5 (the Settings view's controls and headings): building.
-- H3 (the hub's data map): brief check in, findings being closed.
+- H3 (the hub's data map): prepared, worktree being made, builder next.
 - D42 (a file's history): brief check in, findings being closed.
-- X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): brief being written.
+- X3e (Files lists reordered by drag, and a cut Focus ticker row's tooltip): brief written, brief check running.
 - D11 (the debug client for rite): brief being written.
 
 Queued, in order (26 steps):
@@ -35,7 +35,7 @@ Queued, in order (26 steps):
 - O35 (macOS, Linux and Windows): paused (Axel); once O33 has landed.
 - O36 (a second person in the hub): paused (Axel); once O34 has landed.
 
-Owed: the looks of Q81 (a Confirm over the update tray, waiting until Axel takes it up), D17 (the project card's commands bar), Q88c (Lock Group on an empty pane), Q35 (four items) and Q101 (a terminal dragged between tabs), listed in `agents/reviews/owed-looks.md`; taken before the next landing, except Q81.
+Owed: the looks of Q81 (a Confirm over the update tray, waiting until Axel takes it up), D17 (the project card's commands bar) and Q35 (four items), listed in `agents/reviews/owed-looks.md`; taken before the next landing, except Q81.
 
 Landed, newest first:
 - T2e (the sweeps' leftovers and Q117's record-file refusals), 2026-10-04, a4c44a1f.
