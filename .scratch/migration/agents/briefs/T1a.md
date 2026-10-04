@@ -257,6 +257,10 @@ The state file's verify list, `agents/spec.md`'s run rule and the builder prompt
 
 ## What it must do
 
+The 30 s under the load is a fixed constraint, and the quick list must stay a useful test suite inside it: it catches the defects a step's change can make in the files it touches and in the behaviour `agents/guarded.md` lists. Only when the measurements show that no quick list within 30 s can catch those defects, or that it would miss a large share of them, is that handed back, with the measured evidence (which tests cannot fit and what they would have caught); slowness of a part that can be made faster is never a reason to hand back.
+
+This step deletes no test and no assertion, and weakens none. The quick list chooses which tests run while a builder works; every test in the tree still runs in `npm run test:landing` on main at every landing. A test case is changed only where items 4 and 6 say (the three slow-tier fixes, which make each case test the same behaviour as before, and the `isYamlMap` rename).
+
 Items 1 to 8. The quick list holds every part the plan line names and meets 30 s under the load on C1 to C4, measured and quoted; `test:landing` holds every check the verify list holds today plus the slow tier; the slow tier is green; no timeout, threshold or check is loosened.
 
 ## Conventions
