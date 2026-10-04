@@ -1,6 +1,6 @@
 # Brief: T1a, fast tests
 
-Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern this step, except where this brief forbids running a command: this brief's ban wins.
+Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern this step except every rule there that tells you to run a command: `spec.md:25` (running test files, `npm run diagrams`, `checks.sh`), the running of `npm run format` and `npm run format:check` in `spec.md:47`, and the whole section "Verify before you report" (`spec.md:70` onward) do not apply to this step. You run none of those commands.
 
 ## The plan line (`plan.md:247`)
 
@@ -8,7 +8,7 @@ Read `tools/oculus/.scratch/migration/agents/spec.md` first; its rules govern th
 
 ## The ban on running commands
 
-You run no command of the verify list and no test, in any form, at any time, for any reason. Not `vitest` (directly, through `npx`, through `node_modules/.bin/vitest`, or through any script or wrapper). Not `npm test`, and not any `npm run` script whose name starts with `test`. Not `npm run check`, `npm run lint`, `npm run format:check` or `npm run build`. Not `svelte-check`, `eslint`, `prettier` or `tsc`. Not the ASCII grep. Not `checks.sh`. You time no command and measure nothing. You start no background process. Where checking a change would need one of these, your report says "not run" for that change. If you are unsure whether a command falls under this ban, do not run it.
+You run no command of the verify list and no test, in any form, at any time, for any reason. Not `vitest` (directly, through `npx`, through `node_modules/.bin/vitest`, or through any script or wrapper). Not `npm test`, and not any `npm run` script whose name starts with `test`. Not `npm run check`, `npm run lint`, `npm run format:check` or `npm run build`. Not `svelte-check`, `eslint`, `prettier`, `vite` or `tsc`. Not the ASCII grep. Not `checks.sh`. You time no command and measure nothing. You start no background process. Where checking a change would need one of these, your report says "not run" for that change. If you are unsure whether a command falls under this ban, do not run it.
 
 You may read files, search them (`grep`, `find`, `ls`, `cat`, `sed -n`), and edit files. You run no git command.
 
@@ -23,7 +23,7 @@ Paths are under `tools/oculus/`.
 - 108 test files; 13 carry `@module-tag slow`.
 - The `isMap` imports from `yaml`: `src/lib/server/edit/block-source.ts:6`, `src/lib/server/edit/block-edit.ts:25`, `src/lib/server/machine/commands/files.ts:13`.
 
-Times measured earlier by the orchestrator, under the load (four full `npm test` loops, load average 15 to 24), one command at a time:
+Times measured by the orchestrator at the earlier /spec of T1a, under the load (four full `npm test` loops, load average 15 to 24), one command at a time:
 
 | Command | Time |
 | --- | --- |
@@ -35,7 +35,7 @@ Times measured earlier by the orchestrator, under the load (four full `npm test`
 | npm run build | 103 s |
 | ASCII gate | 2 s |
 
-Also measured: `svelte-check --incremental` 50 s cold, 18 s warm; `eslint --cache` 58 s cold, 8 s warm. In a vitest run of 27 test files under the load, vitest reported 69 s of import time summed over its workers against 18 s of test time: most of a test run's time is loading modules for each test file, not running tests. The full `npm test` run with `--no-isolate` took 25 s to 35 s under the load with the same 171 tests passing.
+Also measured: `svelte-check --incremental` 50 s cold, 18 s warm; `eslint --cache` 58 s cold, 8 s warm.
 
 ## What to build
 
