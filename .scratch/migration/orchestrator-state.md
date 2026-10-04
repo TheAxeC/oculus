@@ -38,6 +38,16 @@ dispatch:   # steps in flight, up to seven (Z423)
   landing: not-started
   round: 0 (the case-33 ruling sent, agents/briefs/X3f-cases.md, Z429)
   builder_usage: first run, stopped at case 33: 213,532 tokens, 38 tool uses, 6.8 min
+- step: D37
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  worktree: .agents/worktrees/D37
+  base: (the preparation commit)
+  launched: (at launch)
+  report: agents/reviews/D37-report.md
+  brief_check: agents/reviews/D37-brief-check.md, claude-opus-5-5, 259,613 tokens, 81 tool uses, 10.2 min
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -47,6 +57,7 @@ dispatch:   # steps in flight, up to seven (Z423)
 - Skills are never edited, ever (Axel, 2026-10-01): the orchestrator, its agents and every session of this plan never change a skill or any file of one (`~/.claude/skills`, `~/.local/share/ordo-stable`, `~/workspace/ordo`: its `SKILL.md`, templates, scripts such as `land/templates/checks.sh`, tests and docs), never offer to, and never put such a change to Axel as an option or an open item, whatever his go; a skill's behaviour that costs time is reported as a fact and nothing more.
 - Long commands run in the background (Axel, 2026-10-04): every command that may take more than a few seconds (an install, a test run, a build, `git archive`, a script over the tree, a worktree set-up) is started with `run_in_background`, and the orchestrator goes on with other work and reads its output when it is told it finished; a foreground command is only a quick read or a quick write.
 - Automode (Axel, 2026-09-30 22:42): every choice goes through the process as before (an open item written in full with its options, pros, cons, recommendation and the lazy option named), and the orchestrator then closes it itself with the option Axel would take, books it everywhere a ruling is booked (the closed log in `orchestrator-history.md`, `plan.md`'s Rulings as "(the orchestrator, automode)", the briefs and the steps), and adds it to `choices.md` beside `queue.md` for Axel's review; the work goes on without waiting. Axel reviews `choices.md` when he likes: an agreed entry is removed from it, and a disagreed one is discussed and, when it changes what was built, becomes a new step that changes it on top. Left open for Axel, never decided in automode: a clash between two of Axel's written rules or rulings; a reversal of a ruling Axel gave; anything that needs Axel's own hands or accounts (a login, a look he must fix, his cluster, money); anything touching a secret or deleting his data; a choice with no clear recommendation.
+- Every open item a skill says to raise to the user goes through automode first (Axel, 2026-10-05): a cause not found at /spec or /diagnose, a stop, a finding that is the user's, a case a builder hands back. The orchestrator closes it with its recommendation and books it as automode says, unless it is one of automode's exclusions. A skill's words "raised to the user" never by themselves make an item Axel's.
 - Looks and the machine, the rules every look and every command keep (Axel, in force; booked 2026-10-03 from the session's standing orders):
   - The ICS calendar link is a secret stored only in gitignored `tools/oculus/config/local.yml`. Never put it in git, the ledger or a log; never print, open, grep or hash that file; never fetch a calendar address; never open the Config view's `local.yml` card or the Settings view's `local.yml` tree node; every grep over `config/` uses `--exclude=local.yml` (`':!config/local.yml'` with git grep).
   - Never screenshot the Config view; never click TEST's "Config" tab or the Settings pane's "Config" tab; a tab beside one of them is clicked by JS (`element.click()`), never by coordinates.
@@ -133,7 +144,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
-- Z427 (2026-10-04, D37's /spec): Cmd+Z after Format Document on a `.tex` file does not undo the format (D14's look, with `latex.formatter: tex-fmt`), though typing is undone. Its cause was not found by reading: Monaco 0.57 pushes undo stops around a format's edit, the page's formatter is Monaco's own provider, the page frees only Cmd+K and Ctrl+K from Monaco, and the editor's model is made again only on a new name or path. No probe could be run without a formatter set, since the page's Monaco is not reachable from a script and `latex.formatter` is `none`. D37 is built without this defect; the other twelve go ahead. Options: (a) a diagnosis on TEST now, in parallel with D37's build: set `latex.formatter` to `tex-fmt` in `config/behavior.yml` for the probe (one write, recorded in History, put back afterwards and its hash checked, as D14's look did), format a scratch `.tex` file in `zz-look-d37/` at the hub root, and probe Cmd+Z; the found fix joins D37 as its first repair round when it is found before D37 lands, else a small step after it; pro: the cause is found while D37 is still open; con: a config write and a scratch folder on the hub for the length of the probe. (b) D37 lands first and the diagnosis runs at its landing look, which opens TEST anyway; pro: one look instead of two; con: the fix then needs its own step. (c) drop the defect; con: HELP.md keeps saying undo takes the format back, which is false. Recommendation: (a), since it finds the cause before D37 lands and keeps the fix inside D37. (c) is the lazy one.
+- None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 

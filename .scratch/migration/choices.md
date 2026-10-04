@@ -2,6 +2,15 @@
 
 Each entry is an open item the orchestrator closed itself with the option it judged Axel would take, booked everywhere a ruling is booked (the state file's closed log, `plan.md`'s Rulings, the step's brief). Axel reads this list when he likes: an entry he agrees with is removed; one he disagrees with is discussed, and when it changed what was built it becomes a new step that changes it on top. Newest first.
 
+## Z427 (2026-10-05, step D37)
+
+The question: Cmd+Z after Format Document on a `.tex` file does not undo the format, and reading the code did not find why.
+
+- Chosen (a): diagnose it on TEST with `/diagnose` while D37 builds, `latex.formatter` set to `tex-fmt` for the probe and put back; the fix joins D37 as a repair round.
+- Not chosen: (b) diagnose it at D37's landing look, which needs its own step for the fix; (c) drop it (the lazy one), which leaves HELP.md false.
+
+Where it is built: D37's Step 0 in `plan.md`. Booked in `plan.md` Rulings.
+
 ## Z429 (2026-10-05, step X3f)
 
 The question: X3f's builder found that case 33 (a removed file pressed opens the cannot-open line) has no rule in the brief; today a removed file of a name outside the named formats opens a download tab with a dead link.
