@@ -2,7 +2,7 @@
 // on and a same-origin POST carrying the token.
 
 /** The host of the route under test. */
-export const HOST = '127.0.0.1:8791';
+const HOST = '127.0.0.1:8791';
 
 /**
  * A same-origin POST to /api/git with the token, `headers` laid over the usual ones. A body that

@@ -191,15 +191,6 @@ function keeping(name: string, text: string, kept: (kind: Kind) => boolean): str
     return out;
 }
 
-/**
- * A file as code alone: the inside of every string, template and regular expression and the whole
- * of every comment turned to spaces, line breaks kept, so every line and column stays where it was.
- * The name is what says which language's comments and strings those are.
- */
-export function fileCode(name: string, text: string): string {
-    return keeping(name, text, (kind) => kind === 'code');
-}
-
 /** A file with every comment turned to spaces and every string kept, line breaks kept. */
 export function withoutComments(name: string, text: string): string {
     return keeping(name, text, (kind) => kind !== 'comment');
@@ -211,11 +202,6 @@ export function withoutComments(name: string, text: string): string {
  */
 export function commentText(name: string, text: string): string {
     return keeping(name, text, (kind) => kind === 'comment');
-}
-
-/** The same as fileCode for a module or a script, read as TypeScript. */
-export function code(text: string): string {
-    return fileCode('one.ts', text);
 }
 
 /**

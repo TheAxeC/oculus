@@ -23,7 +23,6 @@ src/lib/views/boards/focus/CommandCenter.svelte src/lib/views/boards/focus/Tasks
 src/lib/views/boards/focus/lanes/Lanes.svelte src/lib/views/shared/forms/Subtasks.svelte 2f5da5c5461b the same 13 lines at 123 and 58, to fold into one place
 src/lib/views/sessions/changes/ChangesRepo.svelte src/lib/views/sessions/changes/ChangesTouched.svelte 13f55a441e6e the same 9 lines at 72 and 23, to fold into one place
 src/lib/views/sources/data/Data.svelte src/lib/views/sources/venues/Venues.svelte 8098bb514f72 the same 15 lines at 66 and 73, to fold into one place
-tests/checks/diagrams/diagrams.test.ts tests/checks/diagrams/parsed.test.ts 1d1ce5a4f7d4 the same 9 lines at 46 and 16, to fold into one place
 tests/data/snapshot/normalise.test.ts tests/state/boards/board/board-fixture.ts c1398a1e73c9 the same 11 lines at 289 and 160, to fold into one place
 tests/data/sources/collections.test.ts tests/data/sources/manifests.test.ts 009d9fe6ad5d the same 17 lines at 26 and 26, to fold into one place
 tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts 33a8d3a93398 the same 19 lines at 26 and 15, to fold into one place

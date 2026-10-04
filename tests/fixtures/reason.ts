@@ -14,7 +14,7 @@
 /**
  * The literals a line names, long enough that a reason holding one is restating rather than saying.
  */
-export function literalsIn(text: string): string[] {
+function literalsIn(text: string): string[] {
     const found: string[] = [];
     let at = 0;
     while (at < text.length) {

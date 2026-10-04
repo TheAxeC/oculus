@@ -40,34 +40,4 @@ describe('HPC route', () => {
         ])
             expect((await handleHpc(request(body), target())).status).toBe(200);
     });
-    it('refuses a cancel and a log while there is no host, with the sentence, and runs neither', async () => {
-        const none = target({ where: () => ({ host: '', missing: 'nowhere names no resource' }) });
-        const hint = 'nowhere names no resource';
-        for (const [body, answer] of [
-            [
-                { action: 'cancel', id: '42' },
-                { status: 'error', hint }
-            ],
-            [
-                { action: 'log', id: '42' },
-                { status: 'error', hint, log: '', path: '' }
-            ]
-        ] as const) {
-            const response = await handleHpc(request(body), none);
-            expect(response.status).toBe(200);
-            expect(await response.json()).toEqual(answer);
-        }
-        expect(none.cancel).not.toHaveBeenCalled();
-        expect(none.log).not.toHaveBeenCalled();
-    });
-
-    it('refreshes without reading the host, so a host that cannot be read stops no refresh', async () => {
-        const where = vi.fn((): { host: string } => {
-            throw new Error('text catalog: hpc.host_unknown must be a string');
-        });
-        const broken = target({ where });
-        expect((await handleHpc(request({ action: 'refresh' }), broken)).status).toBe(200);
-        expect(broken.refresh).toHaveBeenCalledOnce();
-        expect(where).not.toHaveBeenCalled();
-    });
 });

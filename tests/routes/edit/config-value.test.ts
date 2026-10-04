@@ -1,7 +1,6 @@
 // Layer 2, route tests. What the /api/write route does with a config-value write: a list or a
 // family written into a scratch engine's file and its record in the change log, the undo through
-// the same writer, the refusal an undo gets once the key was edited again or the file no longer
-// parses, and two writes of one key at once.
+// the same writer, and two writes of one key at once.
 //
 // The engine is a scratch copy of the checkout's config/ folder (write-fixture.ts), and the target
 // names it, so no case here writes the checkout's config or reads the machine's own file. What this
@@ -9,20 +8,12 @@
 // look's, and the render of the bytes (tests/server/edit/yaml/block-edit.test.ts).
 // @module-tag slow: every case takes 240 ms or more to write a list through the route.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { describe, expect } from 'vitest';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it } from '../../fixtures/scratch.ts';
-import {
-    TOKEN,
-    changesOf,
-    configTarget,
-    request,
-    undone,
-    undoneBack,
-    undoneMoved
-} from './write-fixture.ts';
+import { TOKEN, changesOf, configTarget, request, undoneBack } from './write-fixture.ts';
 
 const WAITING = 'submitted, pending, under review, under-review';
 
@@ -70,38 +61,6 @@ describe('a list written through the route', () => {
             undo: 'field'
         });
     });
-
-    it('answers the reason of a refusal with a 200, and writes and records nothing', async () => {
-        const into = configTarget();
-        const before = behaviorOf(into);
-        const response = await send(into, 'waiting_status', ['x'], ['stale']);
-        expect(response.status).toBe(200);
-        const answer = (await response.json()) as {
-            ok: boolean;
-            changed: string[];
-            refused: unknown[];
-        };
-        expect(answer.changed).toEqual([]);
-        expect(answer.refused).toHaveLength(1);
-        expect(behaviorOf(into)).toBe(before);
-        expect(changesOf(into)).toEqual([]);
-    });
-
-    it('answers 400 for a body missing the base, which is not a write, where the same body with it is', async () => {
-        const into = configTarget();
-        const body = {
-            kind: 'config-value',
-            file: 'behavior.yml',
-            key: 'waiting_status',
-            value: ['one']
-        };
-        const without = await handleWrite(request(body), TOKEN, into);
-        expect(without.status).toBe(400);
-        expect(changesOf(into)).toEqual([]);
-        const withBase = await handleWrite(request({ ...body, base: ORIGINAL }), TOKEN, into);
-        expect(withBase.status).toBe(200);
-        expect(changesOf(into)).toHaveLength(1);
-    });
 });
 
 describe('taking a list back', () => {
@@ -119,26 +78,6 @@ describe('taking a list back', () => {
             after: ORIGINAL,
             undoes: change.at
         });
-    });
-
-    it('answers moved once the key was written again, and leaves the file alone', async () => {
-        const into = configTarget();
-        await send(into, 'waiting_status', ['one'], ORIGINAL);
-        const [change] = changesOf(into);
-        await send(into, 'waiting_status', ['two'], ['one']);
-        await undoneMoved(into, change, into.behaviorFile, behaviorOf(into));
-    });
-
-    it('answers gone once the file no longer parses', async () => {
-        const into = configTarget();
-        await send(into, 'waiting_status', ['one'], ORIGINAL);
-        const [change] = changesOf(into);
-        const spoiled = `${behaviorOf(into)}\nbroken: [unclosed\n`;
-        writeFileSync(into.behaviorFile, spoiled);
-        const response = await undone(into, change);
-        expect(response.status).toBe(404);
-        expect(await response.json()).toEqual({ error: 'gone' });
-        expect(behaviorOf(into)).toBe(spoiled);
     });
 });
 

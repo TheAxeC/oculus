@@ -1,10 +1,8 @@
 // Layer 2, route tests. What POST /api/git does for the two actions on untracked files:
-// trashUntracked, which moves paths to the Trash behind the confirm and the Files view's write
-// chain and the guard over the machine's own files, and ignore, which appends to .gitignore. Both
-// run over a real scratch repository; the Trash is a spy.
+// trashUntracked, which moves paths to the Trash behind the confirm, and ignore, which appends to
+// .gitignore. Both run over a real scratch repository; the Trash is a spy.
 //
-// What this does NOT cover: the real Trash library, and the route file's own wiring of the guard
-// (src/routes/api/(git)/git/+server.ts is the few lines that join Kit's request to the handler).
+// What this does NOT cover: the real Trash library.
 // @module-tag slow: every case runs git in a scratch repository.
 
 import { realpathSync } from 'node:fs';
@@ -12,7 +10,6 @@ import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { handleGit, type GitOptions } from '../../../src/lib/server/git/git-routes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
-import { chained, fsWrites } from '../../../src/lib/server/core/json.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { protectedFiles } from '../../../src/lib/server/files/fs/ops.ts';
 import { ENGINE_ROOT } from '../../../src/lib/server/files/files.ts';
@@ -74,58 +71,6 @@ describe('trashUntracked', () => {
         );
         expect(response.status).toBe(200);
         expect(trash).toHaveBeenCalledWith(join(realpathSync(root), 'u.txt'), { glob: false });
-    });
-
-    it('refuses a tracked path and a guarded file through the route', async () => {
-        const root = scratchRepo();
-        put(root, 'local.yml', 'port: 1\n');
-        const { trash, options } = over(root, root);
-        for (const paths of [['kept.txt'], ['local.yml']]) {
-            const response = await handleGit(
-                request({ action: 'trashUntracked', root, paths, confirm: true }),
-                TOKEN,
-                options
-            );
-            expect(response.status, paths.join()).toBe(400);
-        }
-        expect(trash).not.toHaveBeenCalled();
-    });
-
-    it('refuses to run without a guard over the machine files', async () => {
-        const root = scratchRepo();
-        put(root, 'u.txt', 'loose\n');
-        const { trash, options } = over(root, undefined, { guard: undefined });
-        const response = await handleGit(
-            request({ action: 'trashUntracked', root, paths: ['u.txt'], confirm: true }),
-            TOKEN,
-            options
-        );
-        expect(response.status).toBe(400);
-        expect(trash).not.toHaveBeenCalled();
-    });
-
-    it('waits behind the write chain it is given', async () => {
-        const root = scratchRepo();
-        put(root, 'u.txt', 'loose\n');
-        const writes = fsWrites();
-        let release: () => void = () => undefined;
-        void chained(writes, () => new Promise<void>((resolve) => (release = resolve)));
-        const blocked = writes.chain;
-        const { trash, options } = over(root, undefined, { writes });
-        const pending = handleGit(
-            request({ action: 'trashUntracked', root, paths: ['u.txt'], confirm: true }),
-            TOKEN,
-            options
-        );
-        // The route has queued its work behind the blocker once it has replaced the chain's tail.
-        for (let turns = 0; turns < 1000 && writes.chain === blocked; turns += 1) {
-            await new Promise((resolve) => setImmediate(resolve));
-        }
-        expect(writes.chain).not.toBe(blocked);
-        expect(trash).not.toHaveBeenCalled();
-        release();
-        expect((await pending).status).toBe(200);
-        expect(trash).toHaveBeenCalledTimes(1);
     });
 });
 

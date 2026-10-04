@@ -1,25 +1,19 @@
-// Layer 2, route tests. What /api/git does for the actions and reads on commits and refs: the
+// Layer 2, route tests. What /api/git does for the actions on commits and refs: the
 // actions cherryPick, checkoutDetached, deleteBranch and deleteBranchAnyway, a start point for a
-// branch and a tag, and the reads head=, compare=, refs=, workspace= and graph=, each over a real
-// scratch repository and the first four refused for a root no workspace names. The token and the
-// confirm are tests/routes/git/git.test.ts.
+// branch and a tag, each over a real scratch repository. The token and the confirm are
+// tests/routes/git/git.test.ts.
 //
 // What this does NOT cover: the page's use of the answers, which tests/state/sources/repositories
 // holds.
 // @module-tag slow: every case runs git in a scratch repository.
 
-import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import {
-    handleGit,
-    handleGitGet,
-    type GitOptions
-} from '../../../src/lib/server/git/git-routes.ts';
+import { handleGit, type GitOptions } from '../../../src/lib/server/git/git-routes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { HOST, gitPost } from './request.ts';
-import { commitFile, git, isolateGit, put, scratchRepo } from '../../server/git/refs/repo.ts';
+import { it } from '../../fixtures/scratch.ts';
+import { gitPost } from './request.ts';
+import { commitFile, git, isolateGit, scratchRepo } from '../../server/git/refs/repo.ts';
 
 isolateGit();
 
@@ -27,12 +21,6 @@ const TOKEN = mintToken();
 
 function post(body: unknown, headers: Record<string, string> = {}): Request {
     return gitPost(TOKEN, body, headers);
-}
-
-function get(query: string): Request {
-    return new Request(`http://${HOST}/api/git?${query}`, {
-        headers: { host: HOST, 'sec-fetch-site': 'same-origin' }
-    });
 }
 
 function over(...roots: string[]): GitOptions {
@@ -123,132 +111,5 @@ describe('the actions on commits and branches', () => {
         );
         expect(gone.status).toBe(200);
         expect(git(root, 'branch', '--list', 'unmerged').trim()).toBe('');
-    });
-
-    it('answers the checked-out branch with no code', async () => {
-        const root = scratchRepo();
-        const refused = await handleGit(
-            post({ action: 'deleteBranch', root, name: 'main', confirm: true }),
-            TOKEN,
-            over(root)
-        );
-        expect(refused.status).toBe(400);
-        expect(Object.keys((await refused.json()) as object)).toEqual(['error']);
-    });
-});
-
-describe('the reads head=, compare=, refs= and workspace=', () => {
-    it('answers the text HEAD holds, missing and binary', async () => {
-        const root = scratchRepo();
-        put(root, 'new.txt', 'loose\n');
-        put(root, 'blob.bin', Buffer.from([0, 1, 2, 0, 255]));
-        git(root, 'add', 'blob.bin');
-        git(root, 'commit', '-q', '-m', 'Binary');
-        const read = async (path: string, stage = 'head') => {
-            const response = await handleGitGet(
-                get(
-                    `head=${encodeURIComponent(root)}&path=${encodeURIComponent(path)}&stage=${stage}`
-                ),
-                over(root)
-            );
-            return { status: response.status, body: (await response.json()) as unknown };
-        };
-        expect(await read('kept.txt')).toEqual({ status: 200, body: { ok: true, text: 'one\n' } });
-        expect(await read('new.txt')).toEqual({ status: 200, body: { ok: true, missing: true } });
-        expect(await read('*.txt')).toEqual({ status: 200, body: { ok: true, missing: true } });
-        expect(await read('blob.bin')).toEqual({ status: 200, body: { ok: true, binary: true } });
-        expect((await read('.')).status).toBe(400);
-        expect((await read('kept.txt', 'nonsense')).status).toBe(400);
-    });
-
-    it('refuses a root no workspace names for each of the three reads', async () => {
-        const root = scratchRepo();
-        const other = scratchRepo();
-        for (const query of [
-            `head=${encodeURIComponent(other)}&path=kept.txt&stage=head`,
-            `compare=${encodeURIComponent(other)}&from=main&to=${'a'.repeat(7)}`,
-            `refs=${encodeURIComponent(other)}`,
-            `workspace=${encodeURIComponent(other)}&path=kept.txt`
-        ]) {
-            const response = await handleGitGet(get(query), over(root));
-            expect(response.status, query).toBe(400);
-        }
-    });
-
-    it('answers the files of a compare and one file two sides', async () => {
-        const root = scratchRepo();
-        const first = git(root, 'rev-parse', 'HEAD').trim();
-        const second = commitFile(root, 'two.txt', 'two\n', 'Second');
-        const files = await handleGitGet(
-            get(`compare=${encodeURIComponent(root)}&from=${first}&to=${second}`),
-            over(root)
-        );
-        expect(files.status).toBe(200);
-        const body = (await files.json()) as { ok: boolean; files: { path: string }[] };
-        expect(body.files.map((file) => file.path)).toEqual(['two.txt']);
-        const one = await handleGitGet(
-            get(`compare=${encodeURIComponent(root)}&from=${first}&to=${second}&path=two.txt`),
-            over(root)
-        );
-        const sides = (await one.json()) as { files: { original: string; modified: string }[] };
-        expect(sides.files.map((file) => [file.original, file.modified])).toEqual([['', 'two\n']]);
-    });
-
-    it('lists the refs a picker offers', async () => {
-        const root = scratchRepo();
-        git(root, 'tag', 'v1');
-        git(root, 'branch', 'side');
-        const response = await handleGitGet(get(`refs=${encodeURIComponent(root)}`), over(root));
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({
-            ok: true,
-            refs: [
-                { name: 'main', kind: 'branch' },
-                { name: 'side', kind: 'branch' },
-                { name: 'v1', kind: 'tag' }
-            ]
-        });
-    });
-
-    it('answers the main worktree file against this worktree file for workspace=', async () => {
-        const main = scratchRepo();
-        const tree = join(scratchDir('oculus-linked-'), 'tree');
-        git(main, 'worktree', 'add', '-q', '-b', 'tree', tree);
-        put(main, 'kept.txt', 'main text\n');
-        put(tree, 'kept.txt', 'tree text\n');
-        const response = await handleGitGet(
-            get(`workspace=${encodeURIComponent(tree)}&path=kept.txt`),
-            over(tree, main)
-        );
-        expect(response.status).toBe(200);
-        const body = (await response.json()) as { files: { original: string; modified: string }[] };
-        expect(body.files.map((file) => [file.original, file.modified])).toEqual([
-            ['main text\n', 'tree text\n']
-        ]);
-        const refused = await handleGitGet(
-            get(`workspace=${encodeURIComponent(main)}&path=kept.txt`),
-            over(main)
-        );
-        expect(refused.status).toBe(400);
-        const unlisted = await handleGitGet(
-            get(`workspace=${encodeURIComponent(tree)}&path=kept.txt`),
-            over(tree)
-        );
-        expect(unlisted.status).toBe(400);
-        expect(JSON.stringify(await unlisted.json())).not.toContain('main text');
-    });
-
-    it('adds the base of the checked-out branch to the first page of the graph', async () => {
-        const root = scratchRepo();
-        const remote = scratchDir('oculus-remote-');
-        git(remote, 'init', '-q', '--bare');
-        git(root, 'remote', 'add', 'origin', remote);
-        git(root, 'push', '-q', '-u', 'origin', 'main');
-        git(root, 'switch', '-q', '-c', 'feature', 'main');
-        const first = await handleGitGet(
-            get(`graph=${encodeURIComponent(root)}&skip=0`),
-            over(root)
-        );
-        expect(((await first.json()) as { page: { base: string } }).page.base).toBe('origin/main');
     });
 });

@@ -9,14 +9,9 @@
 // What this does NOT cover: the token reaching the page and Kit putting it on the event.
 
 import { describe, expect } from 'vitest';
-import {
-    handleDeposit,
-    handleDepositState,
-    knownIds
-} from '../../../src/lib/server/git/deposit-routes.ts';
+import { handleDeposit } from '../../../src/lib/server/git/deposit-routes.ts';
 import type { DepositOptions } from '../../../src/lib/server/git/deposit-routes.ts';
-import { loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { it } from '../../fixtures/scratch.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 
@@ -39,17 +34,6 @@ function options(extra: DepositOptions = {}): DepositOptions {
             ran.push({ action, id, fields });
             return Promise.resolve({ ok: true, output: 'done', error: '', plan: null });
         },
-        stateFor: (id) =>
-            Promise.resolve({
-                id,
-                repo: 'alpha-code',
-                mirror: '/mirrors/alpha-code',
-                exists: false,
-                branch: '',
-                remote: '',
-                ahead: 0,
-                plan: null
-            }),
         ...extra
     };
 }
@@ -67,12 +51,6 @@ function request(body: unknown, headers: Record<string, string> = {}): Request {
             ...headers
         },
         body: typeof body === 'string' ? body : JSON.stringify(body)
-    });
-}
-
-function read(url: string): Request {
-    return new Request(url, {
-        headers: { host: HOST, origin: `http://${HOST}`, 'sec-fetch-site': 'same-origin' }
     });
 }
 
@@ -96,106 +74,5 @@ describe('the deposit endpoint', () => {
             error: 'this action needs the page to confirm it'
         });
         expect(ran).toEqual([]);
-    });
-
-    it('answers 404 for a project the portfolio does not hold', async () => {
-        const into = options();
-        const response = await handleDeposit(
-            request({ action: 'plan', id: 'nothing' }),
-            TOKEN,
-            into
-        );
-        expect(response.status).toBe(404);
-        expect(ran).toEqual([]);
-    });
-
-    it('runs a plan and answers what it said', async () => {
-        const into = options();
-        const response = await handleDeposit(request({ action: 'plan', id: ID }), TOKEN, into);
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({
-            ok: true,
-            output: 'done',
-            plan: null,
-            branches: []
-        });
-        expect(ran).toEqual([{ action: 'plan', id: ID, fields: { action: 'plan', id: ID } }]);
-    });
-
-    it('runs a push the page confirmed', async () => {
-        const into = options();
-        const response = await handleDeposit(
-            request({ action: 'push', id: ID, confirm: true }),
-            TOKEN,
-            into
-        );
-        expect(response.status).toBe(200);
-        expect(ran.map((one) => one.action)).toEqual(['push']);
-    });
-
-    it('answers the mirror state to a read, and 404 to an id it does not hold', async () => {
-        const into = options();
-        const answered = await handleDepositState(read(`${URL_}?id=${ID}`), into);
-        expect(answered.status).toBe(200);
-        expect(((await answered.json()) as { state: { repo: string } }).state.repo).toBe(
-            'alpha-code'
-        );
-        const refused = await handleDepositState(read(`${URL_}?id=nothing`), into);
-        expect(refused.status).toBe(404);
-    });
-});
-
-describe('a deposit body of the wrong shape', () => {
-    it('refuses a body with no action, an action it does not know and every body that is no map', async () => {
-        const bodies: unknown[] = [
-            { id: ID },
-            { action: 'nope', id: ID },
-            { action: 3, id: ID },
-            [],
-            null,
-            3,
-            'x',
-            true
-        ];
-        for (const body of bodies) {
-            const response = await handleDeposit(request(JSON.stringify(body)), TOKEN, options());
-            expect(response.status).toBe(400);
-            expect(await response.json()).toEqual({ error: 'the body is not a deposit action' });
-        }
-        expect(ran).toEqual([]);
-    });
-
-    it('answers an id that is not text as a project the portfolio does not hold', async () => {
-        const response = await handleDeposit(request({ action: 'push', id: 3 }), TOKEN, options());
-        expect(response.status).toBe(404);
-        expect(await response.json()).toEqual({
-            error: 'the portfolio holds no project with that id'
-        });
-        expect(ran).toEqual([]);
-    });
-});
-
-describe('the ids a deposit may name, over a hub whose scan carries the side-projects tier', () => {
-    /** A hub with one manuscript and one side project, and an engine that scans both tiers. */
-    function hubAndEngine(): { engine: string; config: Record<string, unknown> } {
-        const hub = plantScratch('oculus-deposit-ids-hub-', {
-            'projects/manuscripts/alpha/project.yml': 'id: alpha\ntype: manuscript\ntitle: Alpha\n',
-            'side-projects/x/project.yml': 'title: X\nstatus: idea\neli5: ""\nnext: ""\nlinks: []\n'
-        });
-        const engine = plantScratch('oculus-deposit-ids-engine-', {
-            'config/local.yml': `hub: ${hub}\n`,
-            'config/sources.yml': [
-                'scan:',
-                '  - { dir: projects/manuscripts, type: manuscript, tier: projects }',
-                '  - { dir: side-projects, type: side-project, tier: personal, optional: true }',
-                ''
-            ].join('\n')
-        });
-        return { engine, config: loadConfig(engine).config };
-    }
-
-    it('holds the manuscript and not the side project', () => {
-        const { engine, config } = hubAndEngine();
-        expect(knownIds([], engine, config)).toEqual(['alpha']);
     });
 });

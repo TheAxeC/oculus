@@ -1,7 +1,7 @@
 // Layer 4, test helper. The world the replace tests run in: a served folder and an engine folder
 // under a scratch directory, the ops target over them with the search timeout of a real server,
-// the real ripgrep binary through the dependency, and the posts a page makes (a replace, a
-// preview, an undo).
+// the real ripgrep binary through the dependency, and the posts a page makes (a replace, an
+// undo).
 //
 // Every directory is under the system temporary directory, asserted before anything is written.
 // The engine folder holds a stand-in `local.yml` of the test's own, which the guard on the
@@ -12,12 +12,11 @@ import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
-import {
-    previewRequest,
-    type FileStamp,
-    type OpsRequest,
-    type ReplaceHit,
-    type ReplaceQuery
+import type {
+    FileStamp,
+    OpsRequest,
+    ReplaceHit,
+    ReplaceQuery
 } from '../../../src/lib/data/file-ops.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
@@ -105,18 +104,6 @@ async function opsPost(w: ReplaceWorld, message: unknown) {
         w.ops
     );
     return { status: response.status, body: (await response.json()) as Record<string, unknown> };
-}
-
-/** POST /api/ops with the `preview` operation for one file. */
-export async function previewPost(
-    w: ReplaceWorld,
-    place: { root: string; path: string },
-    query: ReplaceQuery,
-    replace: string,
-    hits: { line: number; at: number }[],
-    preserveCase = false
-) {
-    return opsPost(w, previewRequest(place, { query, replace, preserveCase, hits }));
 }
 
 /** The records the file operations left, newest first. */

@@ -66,11 +66,6 @@ export function sweepScratch(): void {
     for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
 }
 
-/** What has been made and not yet swept, for the cases over this helper. */
-export function scratchMade(): string[] {
-    return [...made];
-}
-
 /**
  * A hook that sweeps before its error goes on. vitest runs a file fixture's teardown in the same
  * `try` as the file's afterAll hooks, so a hook that throws skips the fixture's sweep; this one

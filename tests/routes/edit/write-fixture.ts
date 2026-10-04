@@ -22,14 +22,14 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import { parse } from 'yaml';
-import { logChanges, readChanges } from '../../../src/lib/server/core/changes.ts';
+import { readChanges } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { LOCAL_NAME, engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { Project, Tier } from '../../../src/lib/data/model/index.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import type { Change, ChangeLog, ChangeRecord } from '../../../src/lib/server/core/changes.ts';
+import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import type { ConfigKeyOutcome } from '../../../src/lib/server/edit/writes/config/config-key.ts';
 import { present } from '../../fixtures/present.ts';
@@ -41,7 +41,7 @@ export const MANIFEST =
     'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
 /** A collection file and a career file, at the hub paths config/sources.yml names. */
-export const TASKS =
+const TASKS =
     'title: Tasks\nschema:\n  - { field: title, type: text }\n  - { field: meta, type: metalist }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
 
 const VENUES =
@@ -50,7 +50,7 @@ const VENUES =
 const DATA =
     'title: Data\nschema:\n  - { field: key, type: text }\n  - { field: retrieval, type: raw }\ndatasets:\n  - key: mimic-iv\n    retrieval:\n      method: curl\n';
 
-export const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
+const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
 const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
 const LEADS = `meta: {}
 schema:
@@ -195,22 +195,6 @@ export function manifestOf(into: WriteTarget): string {
     return readFileSync(manifestFile(into), 'utf8');
 }
 
-/** The manifest of a target, replaced by a text that holds the value a case starts from. */
-export function hold(into: WriteTarget, text: string): void {
-    writeFileSync(manifestFile(into), text);
-}
-
-/** One manifest write through the route, and the change it left at the head of the log. */
-export async function wrote(into: WriteTarget, fields: Record<string, unknown>): Promise<Change> {
-    const response = await handleWrite(
-        request({ kind: 'manifest', id: 'alpha', fields }),
-        TOKEN,
-        into
-    );
-    expect(response.status).toBe(200);
-    return changesOf(into)[0];
-}
-
 /** The answer of the undo route for one change. */
 export function undone(into: WriteTarget, change: Change): Promise<Response> {
     return handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into);
@@ -232,45 +216,6 @@ export async function undoneBack(
     const [back, first] = changesOf(into);
     expect(first.at).toBe(change.at);
     return back;
-}
-
-/**
- * Undo a change the file has moved on from and prove the answer is `moved` and `file` is `held`.
- */
-export async function undoneMoved(
-    into: WriteTarget,
-    change: Change,
-    file: string,
-    held: string
-): Promise<void> {
-    const response = await undone(into, change);
-    expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ error: 'moved' });
-    expect(readFileSync(file, 'utf8')).toBe(held);
-}
-
-/**
- * A record made by hand, appended to the log as if a write had left it, and read back. `removed`
- * is whatever the case wants the line to carry, well-formed or not.
- */
-export async function recorded(
-    into: WriteTarget,
-    field: string,
-    before: unknown,
-    after: unknown,
-    removed?: unknown
-): Promise<Change> {
-    const record: ChangeRecord = {
-        file: join('projects', 'manuscripts', 'alpha', 'project.yml'),
-        key: 'alpha',
-        field,
-        before,
-        after,
-        undo: 'field'
-    };
-    if (removed !== undefined) record.removed = removed as ChangeRecord['removed'];
-    await logChanges(into.changes, 'manifest', [record]);
-    return changesOf(into)[0];
 }
 
 /** A deck file of the same shape as config/present.yml, with comments the edit must keep. */

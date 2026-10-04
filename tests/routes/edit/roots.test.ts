@@ -1,8 +1,7 @@
 // Layer 2, route tests. What the /api/write route does with the default workspace's folders: Add
 // Folder to Workspace appends `{ key, dir }` to the `roots:` list of config/sources.yml over its
-// bytes with every other line kept, a second folder with the same name is filed under another key,
-// Remove takes the entry out and refuses the hub and the engine's config folder, and the change log
-// holds each write with an undo that puts the list back.
+// bytes with every other line kept, and the change log holds each write with an undo that puts the
+// list back.
 //
 // The sources file and the folders added are under the system temporary directory, asserted to be
 // inside it before anything is written, so no case here writes the engine's own config/sources.yml.
@@ -11,11 +10,11 @@
 // pays for it.
 
 import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
-import { homedir, tmpdir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
-import { handleWrite, rootsWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { dirAsWritten } from '../../../src/lib/server/edit/writes/config/roots.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { TOKEN, changesOf, request, target, warmConfig } from './write-fixture.ts';
@@ -97,90 +96,6 @@ describe('the roots write', () => {
         expect(written).toContain('  bash:          [.sh, .bash]\n');
     });
 
-    it('files a second folder of the same name under another key', async () => {
-        const into = rootsTarget();
-        await add(into, folderNamed('data'));
-        const response = await add(into, folderNamed('data'));
-        expect(await response.json()).toMatchObject({ ok: true, id: 'data-2' });
-        const keys = (rootsOf(into) as { key: string }[]).map((one) => one.key);
-        expect(keys).toEqual(['cathedra', 'game-engine', 'data', 'data-2']);
-    });
-
-    it('never files a folder under the hub key or the engine key', async () => {
-        const into = rootsTarget();
-        expect(await (await add(into, folderNamed('hub'))).json()).toMatchObject({ id: 'hub-2' });
-        expect(await (await add(into, folderNamed('engine'))).json()).toMatchObject({
-            id: 'engine-2'
-        });
-    });
-
-    it('writes a folder under the home folder as ~/..., so the tracked file carries no user path', () => {
-        expect(dirAsWritten(join(homedir(), 'work', 'x'))).toBe('~/work/x');
-        expect(dirAsWritten(homedir())).toBe('~');
-        expect(dirAsWritten('/elsewhere/x')).toBe('/elsewhere/x');
-    });
-
-    it('refuses a folder already listed, one that is not there, a file and a relative path', async () => {
-        const into = rootsTarget();
-        const dir = folderNamed('once');
-        await add(into, dir);
-        const before = sourcesOf(into);
-        const again = await add(into, dir);
-        expect(again.status).toBe(400);
-        expect(await again.json()).toEqual({ error: 'root-held' });
-        expect(await (await add(into, join(dir, 'nowhere'))).json()).toEqual({
-            error: 'no-such-dir'
-        });
-        const file = join(dir, 'f.txt');
-        writeFileSync(file, 'x');
-        expect(await (await add(into, file)).json()).toEqual({ error: 'not-a-directory' });
-        expect(await (await add(into, 'relative/dir')).json()).toEqual({
-            error: 'not-absolute'
-        });
-        expect(await (await add(into, '  ')).json()).toEqual({ error: 'no-dir' });
-        expect(sourcesOf(into)).toBe(before);
-    });
-
-    it('removes an entry by its key and keeps every other line', async () => {
-        const into = rootsTarget();
-        const response = await remove(into, 'cathedra');
-        expect(await response.json()).toEqual({ ok: true, changed: ['roots'], refused: [] });
-        expect(rootsOf(into)).toEqual([{ key: 'game-engine', dir: '~/workspace/game-engine' }]);
-        expect(sourcesOf(into)).toContain('# Roots the server may serve local files from.\n');
-        expect(sourcesOf(into)).toContain('  bash:          [.sh, .bash]\n');
-    });
-
-    it('offers no removal of the hub or the engine config folder, or of a key not listed', async () => {
-        const into = rootsTarget();
-        for (const key of ['hub', 'engine']) {
-            const response = await remove(into, key);
-            expect(response.status).toBe(400);
-            expect(await response.json()).toEqual({ error: 'root-fixed' });
-        }
-        const missing = await remove(into, 'nowhere');
-        expect(await missing.json()).toEqual({ error: 'no-such-root' });
-        expect(sourcesOf(into)).toBe(SOURCES);
-    });
-
-    it('reads no write in a body that is not an add of a dir or a remove of a key', () => {
-        expect(rootsWrite({ kind: 'roots', action: 'add', dir: '/x' })).toEqual({
-            kind: 'roots',
-            action: 'add',
-            dir: '/x'
-        });
-        expect(rootsWrite({ kind: 'roots', action: 'remove', key: 'x' })).not.toBe(null);
-        expect(rootsWrite({ kind: 'roots', action: 'add' })).toBe(null);
-        expect(rootsWrite({ kind: 'roots', action: 'remove', key: 3 })).toBe(null);
-        expect(rootsWrite({ kind: 'roots', action: 'move', key: 'x' })).toBe(null);
-    });
-
-    it('answers unwritable when the target holds no sources file', async () => {
-        const { sources: _sources, ...bare } = rootsTarget();
-        const response = await add(bare, folderNamed('x'));
-        expect(response.status).toBe(500);
-        expect(await response.json()).toEqual({ error: 'unwritable' });
-    });
-
     it('records the add and the remove, and the undo of each puts the list back', async () => {
         const into = rootsTarget();
         const dir = folderNamed('thesis');
@@ -211,15 +126,5 @@ describe('the roots write', () => {
         ]);
         expect(sourcesOf(into)).toContain('# Roots the server may serve local files from.\n');
         expect(sourcesOf(into)).toContain('  bash:          [.sh, .bash]\n');
-    });
-
-    it('refuses the undo of an add once the list was changed since', async () => {
-        const into = rootsTarget();
-        await add(into, folderNamed('first'));
-        const [change] = changesOf(into);
-        await remove(into, 'cathedra');
-        const undo = await send(into, { kind: 'undo', at: change.at });
-        expect(undo.status).toBe(409);
-        expect(await undo.json()).toEqual({ error: 'moved' });
     });
 });

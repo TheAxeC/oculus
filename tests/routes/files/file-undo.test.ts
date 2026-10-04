@@ -21,12 +21,7 @@ import { logChanges } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { stampOf } from '../../../src/lib/server/files/fs/file-changes.ts';
 import { handleOps, type OpsTarget } from '../../../src/lib/server/files/fs/ops.ts';
-import {
-    DELETE_MAX_BYTES,
-    DELETES_KEPT,
-    keepCopy
-} from '../../../src/lib/server/files/fs/history.ts';
-import { listDeletes } from '../../server/files/history-fixture.ts';
+import { DELETE_MAX_BYTES } from '../../../src/lib/server/files/fs/history.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 import { TOKEN as OPS_TOKEN, spy } from '../../server/files/ops-fixture.ts';
 import { TOKEN, changesOf, request, target, warmConfig } from '../edit/write-fixture.ts';
@@ -169,26 +164,6 @@ describe('what an operation records', () => {
         );
         expect(one.after).toEqual([]);
     });
-
-    it('records nothing for an operation that was refused or changed nothing', async () => {
-        const w = world({ 'a.txt': 'a' }, ['d']);
-        await post(w, { op: 'create', root: 'hub', path: 'd', name: '', folder: false });
-        await post(w, { op: 'rename', root: 'hub', path: 'a.txt', name: 'a.txt' });
-        await post(w, { op: 'trash', root: 'hub', paths: ['nowhere.txt'] });
-        expect(records(w)).toEqual([]);
-    });
-
-    it('records the items a list did before the one it stopped at', async () => {
-        const w = world({ 'a.txt': 'a', 'b.txt': 'b' });
-        const answer = await post(w, {
-            op: 'delete',
-            root: 'hub',
-            paths: ['a.txt', 'gone.txt', 'b.txt']
-        });
-        expect(answer.status).toBe(400);
-        const [one] = records(w);
-        expect(stamps(one.before).map((s) => s.path.split('/').at(-1))).toEqual(['a.txt']);
-    });
 });
 
 describe('taking a create back', () => {
@@ -203,25 +178,6 @@ describe('taking a create back', () => {
         expect(trash.mock.calls[0][0]).toBe(join(w.hub, 'd', 'a.md'));
         const [reverse] = records(w);
         expect(reverse).toMatchObject({ field: 'trash', undoes: made.at, undo: 'file' });
-    });
-
-    it('refuses once the file was written to, and moves nothing', async () => {
-        const w = world({}, ['d']);
-        await post(w, { op: 'create', root: 'hub', path: 'd', name: 'a.md', folder: false });
-        const [made] = records(w);
-        writeFileSync(join(w.hub, 'd', 'a.md'), 'typed');
-        const trash = spy();
-        const answer = await undo(w, made.at, trash);
-        expect(answer).toEqual({ status: 409, body: { error: 'moved' } });
-        expect(trash).not.toHaveBeenCalled();
-    });
-
-    it('says gone once the file is not there', async () => {
-        const w = world({}, ['d']);
-        await post(w, { op: 'create', root: 'hub', path: 'd', name: 'a.md', folder: false });
-        const [made] = records(w);
-        rmSync(join(w.hub, 'd', 'a.md'));
-        expect((await undo(w, made.at)).body).toEqual({ error: 'gone' });
     });
 });
 
@@ -238,15 +194,6 @@ describe('taking a rename back', () => {
         const [reverse] = records(w);
         expect(reverse).toMatchObject({ field: 'rename', undoes: renamed.at });
         expect((await undo(w, reverse.at)).status).toBe(200);
-        expect(existsSync(join(w.hub, 'b.txt'))).toBe(true);
-    });
-
-    it('refuses while the old name is taken', async () => {
-        const w = world({ 'a.txt': 'aa' });
-        await post(w, { op: 'rename', root: 'hub', path: 'a.txt', name: 'b.txt' });
-        const [renamed] = records(w);
-        writeFileSync(join(w.hub, 'a.txt'), 'another');
-        expect(await undo(w, renamed.at)).toEqual({ status: 409, body: { error: 'moved' } });
         expect(existsSync(join(w.hub, 'b.txt'))).toBe(true);
     });
 
@@ -282,62 +229,9 @@ describe('taking a trash back', () => {
         expect(readFileSync(join(w.hub, 'a.txt'), 'utf8')).toBe(text);
         expect(records(w)[0]).toMatchObject({ field: 'create', undoes: trashed.at });
     });
-
-    it('says it cannot for a file over 5 MB', async () => {
-        const w = world();
-        writeFileSync(join(w.hub, 'big.bin'), Buffer.alloc(DELETE_MAX_BYTES + 1, 1));
-        await post(w, { op: 'delete', root: 'hub', paths: ['big.bin'] });
-        const [deleted] = records(w);
-        expect(await undo(w, deleted.at)).toEqual({ status: 404, body: { error: 'nothing' } });
-        expect(existsSync(join(w.hub, 'big.bin'))).toBe(false);
-    });
-
-    it('refuses the undo of a delete whose copy was pruned, and writes nothing', async () => {
-        const w = world({ 'first.txt': 'first' });
-        await post(w, { op: 'delete', root: 'hub', paths: ['first.txt'] });
-        const [deleted] = records(w);
-        // 50 later delete copies push the first delete's copy out of the newest 50.
-        const history = w.ops.history ?? '';
-        listDeletes(history, DELETES_KEPT - 1, Date.now() + 1000);
-        const later = join(w.hub, 'later.txt');
-        writeFileSync(later, 'later');
-        keepCopy(history, later, 'delete', Date.now() + 100_000);
-        const answer = await undo(w, deleted.at);
-        expect(answer).toEqual({ status: 404, body: { error: 'copy-gone' } });
-        expect(existsSync(join(w.hub, 'first.txt'))).toBe(false);
-        expect(records(w)).toHaveLength(1);
-    });
-
-    it('brings a folder back empty', async () => {
-        const w = world({ 'f/inner.txt': 'inside' });
-        await post(w, { op: 'delete', root: 'hub', paths: ['f'] });
-        const [deleted] = records(w);
-        expect((await undo(w, deleted.at)).status).toBe(200);
-        expect(existsSync(join(w.hub, 'f'))).toBe(true);
-        expect(existsSync(join(w.hub, 'f', 'inner.txt'))).toBe(false);
-    });
-
-    it('refuses while the name is taken', async () => {
-        const w = world({ 'a.txt': 'aa' });
-        await post(w, { op: 'delete', root: 'hub', paths: ['a.txt'] });
-        const [deleted] = records(w);
-        writeFileSync(join(w.hub, 'a.txt'), 'new');
-        expect(await undo(w, deleted.at)).toEqual({ status: 409, body: { error: 'moved' } });
-        expect(readFileSync(join(w.hub, 'a.txt'), 'utf8')).toBe('new');
-    });
 });
 
 describe('what an undo is held to', () => {
-    it('touches nothing outside the served roots, whatever a record in the log names', async () => {
-        const w = world({}, ['d']);
-        await post(w, { op: 'create', root: 'hub', path: 'd', name: 'a.md', folder: false });
-        const [made] = records(w);
-        w.into.files = { ...(w.into.files ?? { roots: () => [] }), roots: () => [] };
-        const trash = spy();
-        expect(await undo(w, made.at, trash)).toEqual({ status: 404, body: { error: 'gone' } });
-        expect(trash).not.toHaveBeenCalled();
-    });
-
     it('never trashes the machine own config/local.yml, even when a record names it', async () => {
         const w = world({ 'config/local.yml': 'hub: /x\n' });
         const own = join(w.hub, 'config', 'local.yml');
@@ -355,13 +249,5 @@ describe('what an undo is held to', () => {
         expect(await undo(w, forged.at, trash)).toEqual({ status: 404, body: { error: 'gone' } });
         expect(trash).not.toHaveBeenCalled();
         expect(existsSync(own)).toBe(true);
-    });
-
-    it('answers unwritable for a target built without file roots', async () => {
-        const w = world({}, ['d']);
-        await post(w, { op: 'create', root: 'hub', path: 'd', name: 'a.md', folder: false });
-        const [made] = records(w);
-        w.into.files = undefined;
-        expect((await undo(w, made.at)).status).toBe(500);
     });
 });

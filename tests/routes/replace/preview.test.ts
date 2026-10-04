@@ -1,119 +1,24 @@
 // Layer 2, route tests. POST /api/ops with the `preview` operation (handleOps of
-// server/files/fs/ops.ts, the previewReplace of server/files/fs/replace.ts under it): the file as
-// it is on the left and with the named matches replaced on the right, which matches it replaces,
-// the words it refuses with, and a file with thousands of hits carried over a real HTTP server.
-// Nothing is ever written.
+// server/files/fs/ops.ts, the previewReplace of server/files/fs/replace.ts under it). Nothing is
+// ever written.
 //
-// ripgrep is the real binary of the `@vscode/ripgrep` dependency. The cases tagged slow run it or
-// start a real HTTP server; the case that refuses with the word of the check runs in npm test. A
-// hook loads the configuration once, since the first load costs more than a later one, so no case
-// pays for it.
+// The cases tagged slow start a real HTTP server. A hook loads the configuration once, since the
+// first load costs more than a later one, so no case pays for it.
 
-import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { warmConfig } from '../edit/write-fixture.ts';
 import { previewRequest } from '../../../src/lib/data/file-ops.ts';
-import {
-    diffRequest,
-    type DiffRequest
-} from '../../../src/lib/state/sources/repositories/answers.ts';
-import { diffState } from '../../../src/lib/state/sources/repositories/repositories.ts';
-import { previewSubject } from '../../../src/lib/state/sources/repositories/replace-preview.ts';
+import type { DiffRequest } from '../../../src/lib/state/sources/repositories/answers.ts';
 import { handleOps } from '../../../src/lib/server/files/fs/ops.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 import { TOKEN as OPS_TOKEN } from '../../server/files/ops-fixture.ts';
-import { previewPost, queryOf, replaceWorld, type ReplaceWorld } from './replace-fixture.ts';
+import { queryOf, replaceWorld, type ReplaceWorld } from './replace-fixture.ts';
 
 const place = { root: 'hub', path: 'a.txt' };
 
-/** The two sides of a preview's one file, or the answer when it was refused. */
-function sides(answer: { body: Record<string, unknown> }) {
-    const files = answer.body.files as { original: string; modified: string; newPath: string }[];
-    return files[0];
-}
-
 test.beforeAll(warmConfig);
-
-describe('the preview of a replace in one file', () => {
-    it(
-        'holds the file as it is on the left and the file with the named matches replaced on the right',
-        { tags: ['slow'] },
-        async () => {
-            const w = replaceWorld({ 'a.txt': 'foo foo\nfoo\n' });
-            const answer = await previewPost(w, place, queryOf('foo'), 'bar', [
-                { line: 1, at: 0 },
-                { line: 1, at: 4 },
-                { line: 2, at: 0 }
-            ]);
-            expect(answer.status).toBe(200);
-            expect(sides(answer)).toMatchObject({
-                original: 'foo foo\nfoo\n',
-                modified: 'bar bar\nbar\n',
-                newPath: 'hub:a.txt'
-            });
-            expect(readFileSync(join(w.hub, 'a.txt'), 'utf8')).toBe('foo foo\nfoo\n');
-        }
-    );
-
-    it(
-        'leaves a match it was not named for unreplaced, which is how a dismissed hit stays',
-        { tags: ['slow'] },
-        async () => {
-            const w = replaceWorld({ 'a.txt': 'foo foo\nfoo\n' });
-            const answer = await previewPost(w, place, queryOf('foo'), 'bar', [
-                { line: 1, at: 0 },
-                { line: 2, at: 0 }
-            ]);
-            expect(sides(answer).modified).toBe('bar foo\nbar\n');
-        }
-    );
-
-    it(
-        'leaves a named match that is no longer in the file unreplaced instead of refusing the preview',
-        { tags: ['slow'] },
-        async () => {
-            const w = replaceWorld({ 'a.txt': 'foo\n' });
-            const answer = await previewPost(w, place, queryOf('foo'), 'bar', [
-                { line: 1, at: 0 },
-                { line: 7, at: 3 }
-            ]);
-            expect(answer.status).toBe(200);
-            expect(sides(answer).modified).toBe('bar\n');
-        }
-    );
-
-    it(
-        'applies the groups, the case and the line ends the write would',
-        { tags: ['slow'] },
-        async () => {
-            const w = replaceWorld({ 'a.txt': 'Foo bar\r\nx\r\n' });
-            const answer = await previewPost(
-                w,
-                place,
-                queryOf('(f)oo', { regex: true }),
-                '$1\\n!',
-                [{ line: 1, at: 0 }],
-                true
-            );
-            expect(sides(answer).modified).toBe('F\r\n! bar\r\nx\r\n');
-        }
-    );
-
-    it('refuses with the word of the check: binary, missing, outside, protected and bad-query', async () => {
-        const w = replaceWorld({ 'bin.dat': Buffer.from([102, 0, 1]) });
-        const word = async (root: string, path: string, q = 'foo') =>
-            (await previewPost(w, { root, path }, queryOf(q), 'x', [{ line: 1, at: 0 }])).body
-                .error;
-        expect(await word('hub', 'bin.dat')).toBe('binary');
-        expect(await word('hub', 'none.txt')).toBe('missing');
-        expect(await word('hub', '../x.txt')).toBe('outside');
-        expect(await word('engine', 'local.yml', 'needle')).toBe('protected');
-        expect(await word('hub', 'bin.dat', '')).toBe('bad-query');
-    });
-});
 
 /** POST a message to a real HTTP server that hands it to handleOps, as a running server would. */
 async function overHttp(w: ReplaceWorld, message: unknown, headers: Record<string, string>) {
@@ -161,29 +66,6 @@ async function sent(w: ReplaceWorld, request: DiffRequest) {
 
 describe('the preview request', () => {
     it(
-        'previews 2000 hits in one file through the request the pane forms, which an address of the hits could not carry',
-        { tags: ['slow'] },
-        async () => {
-            const count = 2000;
-            const w = replaceWorld({ 'a.txt': `${'foo '.repeat(count)}\n` });
-            const hits = Array.from({ length: count }, (_, index) => ({ line: 1, at: index * 4 }));
-            const settings = {
-                query: { q: 'foo', word: false, case: false, regex: false, under: '' },
-                replace: 'bar',
-                preserve: false
-            };
-            const pane = diffState(previewSubject({ ...place, hits }, settings, 1), 'a.txt');
-            const request = diffRequest(pane, OPS_TOKEN);
-            const answer = await sent(w, request);
-            expect(answer.status).toBe(200);
-            expect(request.init?.method).toBe('POST');
-            expect(
-                sides({ body: JSON.parse(answer.text) as Record<string, unknown> }).modified
-            ).toBe(`${'bar '.repeat(count)}\n`);
-        }
-    );
-
-    it(
         'refuses a preview posted without the write token and reads nothing',
         { tags: ['slow'] },
         async () => {
@@ -199,21 +81,4 @@ describe('the preview request', () => {
             expect(answer.body.error).toBe('token');
         }
     );
-
-    it('refuses a preview whose hit is no line and place', { tags: ['slow'] }, async () => {
-        const w = replaceWorld({ 'a.txt': 'foo\n' });
-        const answer = await overHttp(
-            w,
-            {
-                op: 'preview',
-                query: queryOf('foo'),
-                replace: 'bar',
-                preserveCase: false,
-                ...place,
-                hits: [{ line: 0, at: 0 }]
-            },
-            { 'x-oculus-token': OPS_TOKEN }
-        );
-        expect([answer.status, answer.body.error]).toEqual([400, 'not-an-action']);
-    });
 });

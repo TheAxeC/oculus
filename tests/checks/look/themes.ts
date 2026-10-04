@@ -1,6 +1,5 @@
 // Layer 4, test helper. Every theme the picker offers, read out of the two stylesheets and derived
-// the way ui/theme.ts derives it in the browser. The contrast test and the lane distance test both
-// measure these colours, so they read them from one place and cannot drift onto two derivations.
+// the way ui/theme.ts derives it in the browser.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

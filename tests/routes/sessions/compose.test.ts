@@ -122,59 +122,6 @@ describe('POST /api/terminal, the compose action', () => {
         const terminal = (await answer(response)).terminal as { id: string };
         expect(terminal.id.endsWith('-claude')).toBe(true);
     });
-
-    it("passes a second account's folder with tmux's -e, and not the tool's own", async () => {
-        const { started, argv } = await post({
-            action: 'compose',
-            agent: 'claude',
-            cwd: HERE,
-            account: 'University',
-            prompt: 'hi'
-        });
-        expect(started.slice(started.indexOf('-e'), started.indexOf('-e') + 2)).toEqual([
-            '-e',
-            `CLAUDE_CONFIG_DIR=${SECOND}`
-        ]);
-        expect(argv[0]).toBe(BIN);
-    });
-
-    it('starts a shell with no argument vector and types its prompt into it as keys, then Enter', async () => {
-        const { response, calls, argv } = await post({
-            action: 'compose',
-            agent: 'shell',
-            cwd: HERE,
-            prompt: 'ls -la; echo "$HOME"'
-        });
-        expect(response.status).toBe(200);
-        expect(argv).toHaveLength(1);
-        const keys = calls.filter((args) => args[0] === 'send-keys');
-        expect(keys.map((args) => args.slice(3))).toEqual([
-            ['-H', ...bytes('ls -la; echo "$HOME"')],
-            ['--', 'Enter']
-        ]);
-        const quiet = await post({ action: 'compose', agent: 'shell', cwd: HERE, prompt: ' ' });
-        // a blank prompt is no first command, so the shell is left at its own prompt
-        expect(quiet.calls.filter((args) => args[0] === 'send-keys')).toEqual([]);
-    });
-
-    it('refuses a pick the catalog does not offer, an account it does not hold and a cwd that is not a folder, before tmux runs', async () => {
-        for (const body of [
-            { picks: { model: 'gpt' } },
-            { account: 'Nobody' },
-            { cwd: join(HERE, 'oculus-no-such-folder-for-s2') },
-            { prompt: 'a\u001bb' }
-        ]) {
-            const { response, started } = await post({
-                action: 'compose',
-                agent: 'claude',
-                cwd: HERE,
-                prompt: 'p',
-                ...body
-            });
-            expect(response.status).toBe(400);
-            expect(started).toEqual([]);
-        }
-    });
 });
 
 describe('POST /api/terminal, the steer and interrupt actions', () => {
@@ -188,21 +135,6 @@ describe('POST /api/terminal, the steer and interrupt actions', () => {
             ['send-keys', '-t', `oculus-${ID}`, '-H', ...bytes(text)],
             ['send-keys', '-t', `oculus-${ID}`, '--', 'Enter']
         ]);
-    });
-
-    it('refuses a message holding a key of its own, an empty one and a session oculus did not start', async () => {
-        for (const body of [
-            { id: ID, text: 'stop\u001b' },
-            { id: ID, text: '\u0003' },
-            { id: ID, text: '   ' },
-            { id: ID, text: 'x'.repeat(100_001) },
-            { id: 'scratch', text: 'hello' },
-            { id: '', text: 'hello' }
-        ]) {
-            const { response, calls } = await post({ action: 'steer', ...body });
-            expect(response.status).toBe(400);
-            expect(calls).toEqual([]);
-        }
     });
 
     it('interrupts with Escape, and refuses a session oculus did not start', async () => {
@@ -236,39 +168,5 @@ describe('POST /api/terminal, the fork action', () => {
         expect(started[started.indexOf('-c') + 1]).toBe(HERE);
         const terminal = (await answer(response)).terminal as { name: string };
         expect(terminal.name).toBe('fork of A run');
-    });
-
-    it('forks a Codex session with codex fork', async () => {
-        const codex = record(SESSION, { tool: 'codex', live: false, cwd: HERE });
-        const { argv } = await post({ action: 'fork', tool: 'codex', id: SESSION }, source(codex));
-        expect(argv).toEqual(['env', '-u', 'CODEX_HOME', 'codex', 'fork', SESSION]);
-    });
-
-    it('starts a fork under the account whose folder holds the transcript', async () => {
-        const second = record(SESSION, {
-            live: false,
-            cwd: HERE,
-            path: join(SECOND, 'projects', 'x', `${SESSION}.jsonl`)
-        });
-        const { started, argv } = await post(
-            { action: 'fork', tool: 'claude', id: SESSION },
-            source(second)
-        );
-        expect(started).toContain(`CLAUDE_CONFIG_DIR=${SECOND}`);
-        expect(argv[0]).toBe('claude');
-    });
-
-    it('refuses a session it does not hold, one of the other tool, and an id of the wrong shape', async () => {
-        const codex = record(SESSION, { tool: 'codex', cwd: HERE });
-        for (const [body, held] of [
-            [{ tool: 'claude', id: SESSION }, source()],
-            [{ tool: 'claude', id: SESSION }, source(codex)],
-            [{ tool: 'claude', id: 'not-a-session' }, source(live)],
-            [{ tool: 'shell', id: SESSION }, source(live)]
-        ] as const) {
-            const { response, started } = await post({ action: 'fork', ...body }, held);
-            expect(response.status).toBe(400);
-            expect(started).toEqual([]);
-        }
     });
 });

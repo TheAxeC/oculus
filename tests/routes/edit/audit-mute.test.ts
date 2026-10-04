@@ -1,13 +1,12 @@
-// Layer 2, route tests. What the /api/write route does with an audit mute: one finding parked, one
-// brought back, and the refusals that leave config/behavior.yml exactly as it was.
+// Layer 2, route tests. What the /api/write route does with an audit mute: one finding parked.
 //
 // The behavior file is a copy under the system temporary directory, asserted to be inside it before
 // anything is written, so no case here writes the engine's own configuration.
 //
-// The case tagged slow takes 100 ms or more; every other case runs in npm test. A hook loads the
-// configuration once, since the first load costs more than a later one, so no case pays for it.
+// A hook loads the configuration once, since the first load costs more than a later one, so no case
+// pays for it.
 
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { warmConfig } from './write-fixture.ts';
@@ -16,7 +15,6 @@ import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { mutedSignatures } from '../../../src/lib/server/content/audit.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
@@ -53,7 +51,6 @@ stale_lag_days: 1
 `;
 
 const SIGNATURE = '0123456789ab';
-const OTHER = 'fedcba987654';
 
 /**
  * A target whose behavior.yml is a copy under the system temporary directory, so no case here
@@ -114,132 +111,4 @@ describe('the audit mute write', () => {
             next: 300
         });
     });
-
-    it('brings one back, leaving the others where they were', async () => {
-        const into = muteTarget(
-            BEHAVIOR.replace(
-                'audit_ignore: []',
-                `audit_ignore:\n    - ${SIGNATURE}\n    - ${OTHER}`
-            )
-        );
-        const response = await handleWrite(
-            request({ kind: 'audit-mute', signature: SIGNATURE, muted: false }),
-            TOKEN,
-            into
-        );
-        expect(response.status).toBe(200);
-        expect(parked(into)).toEqual([OTHER]);
-    });
-
-    it('parks a signature at most once', async () => {
-        const into = muteTarget();
-        const body = { kind: 'audit-mute', signature: SIGNATURE, muted: true };
-        await handleWrite(request(body), TOKEN, into);
-        const written = behaviorOf(into);
-        const again = await handleWrite(request(body), TOKEN, into);
-        expect(await again.json()).toEqual({ ok: true, changed: [], refused: [] });
-        expect(behaviorOf(into)).toBe(written);
-    });
-
-    it('writes nothing when a signature that is not parked is brought back', async () => {
-        const into = muteTarget();
-        const before = behaviorOf(into);
-        const response = await handleWrite(
-            request({ kind: 'audit-mute', signature: SIGNATURE, muted: false }),
-            TOKEN,
-            into
-        );
-        expect(await response.json()).toEqual({ ok: true, changed: [], refused: [] });
-        expect(behaviorOf(into)).toBe(before);
-    });
-
-    it('keeps a line of the list that is not a signature, and mutes nothing by it', async () => {
-        const into = muteTarget(
-            BEHAVIOR.replace(
-                'audit_ignore: []',
-                `audit_ignore:\n    - a-note-to-self\n    - ${OTHER}`
-            )
-        );
-        await handleWrite(
-            request({ kind: 'audit-mute', signature: SIGNATURE, muted: true }),
-            TOKEN,
-            into
-        );
-        expect(parked(into)).toEqual(['a-note-to-self', OTHER, SIGNATURE]);
-        // The scan reads only the signatures out of that list, so the note parks no finding.
-        expect(mutedSignatures(parse(behaviorOf(into)) as Record<string, unknown>)).toEqual([
-            OTHER,
-            SIGNATURE
-        ]);
-
-        await handleWrite(
-            request({ kind: 'audit-mute', signature: SIGNATURE, muted: false }),
-            TOKEN,
-            into
-        );
-        expect(parked(into)).toEqual(['a-note-to-self', OTHER]);
-    });
-
-    it.each([
-        ['a signature that is not hex', BEHAVIOR, 'nonsense'],
-        ['a signature in capitals', BEHAVIOR, '0123456789AB'],
-        ['a signature of thirteen characters', BEHAVIOR, '0123456789abc'],
-        [
-            'a file whose shape the line edit cannot keep',
-            '{ read_limits: { next: 300 }, audit_ignore: [] }\n',
-            SIGNATURE
-        ]
-    ])('refuses %s, and the file is byte-identical', async (_row, body, signature) => {
-        const into = muteTarget(body);
-        const response = await handleWrite(
-            request({ kind: 'audit-mute', signature, muted: true }),
-            TOKEN,
-            into
-        );
-        expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: 'invalid' });
-        expect(behaviorOf(into)).toBe(body);
-    });
-
-    it('refuses a behavior file that is not there, and says which refusal it was', async () => {
-        const into = muteTarget();
-        rmSync(into.behaviorFile);
-        const response = await handleWrite(
-            request({ kind: 'audit-mute', signature: SIGNATURE, muted: true }),
-            TOKEN,
-            into
-        );
-        expect(response.status).toBe(500);
-        expect(await response.json()).toEqual({ error: 'unwritable' });
-    });
-
-    it('adds the key to a file that does not hold it yet', async () => {
-        const into = muteTarget('read_limits: { next: 300 }\n');
-        await handleWrite(
-            request({ kind: 'audit-mute', signature: SIGNATURE, muted: true }),
-            TOKEN,
-            into
-        );
-        expect(parked(into)).toEqual([SIGNATURE]);
-        expect(behaviorOf(into)).toContain('read_limits: { next: 300 }\n');
-    });
-
-    it(
-        'does not know a body whose signature or flag is of the wrong shape',
-        { tags: ['slow'] },
-        async () => {
-            for (const body of [
-                { kind: 'audit-mute', signature: SIGNATURE },
-                { kind: 'audit-mute', signature: '', muted: true },
-                { kind: 'audit-mute', muted: true },
-                { kind: 'audit-mute', signature: SIGNATURE, muted: 'yes' }
-            ]) {
-                const response = await handleWrite(request(body), TOKEN, muteTarget());
-                expect(response.status).toBe(400);
-                expect(await response.json()).toEqual({
-                    error: 'the body is not a write this route knows'
-                });
-            }
-        }
-    );
 });

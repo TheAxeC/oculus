@@ -1,4 +1,4 @@
-// Layer 1, data tests. sources/career.ts and the career half of normalise and validate, over a
+// Layer 1, data tests. sources/career.ts and the career half of normalise, over a
 // synthetic hub written under mkdtemp. Nothing here touches the real hub.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -7,9 +7,6 @@ import { describe, expect } from 'vitest';
 import { CAREER_FILE, readCareer } from '../../../src/lib/data/sources/career.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { career } from '../../../src/lib/data/snapshot/normalise-career.ts';
-import { validate } from '../../../src/lib/data/snapshot/validate.ts';
-import { NO_FEEDS } from '../../fixtures/entities-fixture.ts';
-import type { RawPortfolio, ValidationRules } from '../../../src/lib/data/model/index.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
@@ -59,23 +56,6 @@ describe('reading the career file', () => {
         expect(findings).toEqual([]);
         expect(Object.keys(raw ?? {})).toContain('host_criteria');
     });
-
-    it('answers null with no finding when the hub holds no career file', () => {
-        const { career: raw, findings } = readCareer(hub(null), CAREER_FILE, CATALOG);
-        expect(raw).toBeNull();
-        expect(findings).toEqual([]);
-    });
-
-    it('reports a file that does not parse', () => {
-        const { career: raw, findings } = readCareer(
-            hub('title: [unclosed\n'),
-            CAREER_FILE,
-            CATALOG
-        );
-        expect(raw).toBeNull();
-        expect(findings).toHaveLength(1);
-        expect(findings[0].message.startsWith('does not parse')).toBe(true);
-    });
 });
 
 describe('normalising it', () => {
@@ -91,96 +71,4 @@ describe('normalising it', () => {
             { label: 'Now', value: 'Postdoc, U Twente' }
         ]);
     });
-
-    it('keeps every host key that is not the host itself as one of its scores', () => {
-        expect(held?.hosts[0].scores).toEqual({ proposal: 'Strong', backing: 'High' });
-        expect(held?.hosts[0].tag).toBe('transplant');
-    });
-
-    it('strips the bracketed score prefix the chips already show from a host note', () => {
-        expect(held?.hosts[0].note).toBe('Federated outcome prediction.');
-    });
-
-    it('tolerates the plain-string form of an order row', () => {
-        expect(held?.order.at(-1)).toEqual({ task: 'a plain string task' });
-        expect(held?.orderNote).toBe('the order is a priority order');
-    });
-
-    it('reads the eligibility rules, the shots and the caveat', () => {
-        expect(held?.eligibility?.shots).toEqual(['Nov 2026', 'Nov 2027']);
-        expect(held?.eligibility?.rule).toHaveLength(2);
-        expect(held?.eligibility?.caveat).toBe('a rushed try risks the second');
-    });
-
-    it('reads the not-hosts and the dropped rows with their reasons', () => {
-        expect(held?.notHosts).toEqual([{ who: 'Peeters', why: 'former advisor' }]);
-        expect(held?.dropped).toEqual([
-            { what: 'MSCA-PF 2026' },
-            { what: 'NWO Vidi', why: 'not yet eligible' }
-        ]);
-    });
-});
-
-describe('validating a host status', () => {
-    function portfolio(over: Partial<RawPortfolio> = {}): RawPortfolio {
-        return {
-            personal: [],
-            manifests: [],
-            registries: {
-                venues: { entries: [], meta: {} },
-                datasets: { entries: [], meta: {} },
-                pillars: { entries: [], meta: {} },
-                domains: { entries: [], meta: {} },
-                funding: { entries: [], meta: {} },
-                people: { entries: [], meta: {} },
-                organisations: { entries: [], meta: {} },
-                resources: { entries: [], meta: {} }
-            },
-            collections: {},
-            feeds: NO_FEEDS,
-            career: readCareer(hub(CAREER), CAREER_FILE, CATALOG).career,
-            docs: {},
-            present: {},
-            findings: [],
-            ...over
-        };
-    }
-
-    const rules: ValidationRules = {
-        schema: null,
-        vocab: {
-            types: [],
-            statuses: [],
-            hostStatuses: ['awaiting', 'warm', 'candidate', 'drafted', 'dropped']
-        },
-        careerFile: '/hub/registries/career.yml',
-        text: CATALOG
-    };
-
-    it('leaves host statuses unchecked when the config holds no such vocabulary', () => {
-        const bare: ValidationRules = {
-            schema: null,
-            vocab: { types: [], statuses: [] },
-            text: CATALOG
-        };
-        expect(validate(portfolio(), bare)).toEqual([]);
-    });
-
-    it('reports nothing when the hub holds no career file', () => {
-        expect(validate(portfolio({ career: null }), rules)).toEqual([]);
-    });
-});
-
-describe('reading a career file of the wrong shape', () => {
-    it.each([['[]'], ['- a list'], ['3'], ['x'], ['']])(
-        'reads a file holding %j as one finding',
-        (body) => {
-            const dir = hub(body);
-            const read = readCareer(dir, CAREER_FILE, CATALOG);
-            expect(read.career).toBeNull();
-            expect(read.findings).toStrictEqual([
-                { file: join(dir, CAREER_FILE), key: '', message: 'is not a map of keys' }
-            ]);
-        }
-    );
 });

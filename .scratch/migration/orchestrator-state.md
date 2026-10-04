@@ -28,22 +28,7 @@ workers_at_once: 5           # Axel, 2026-10-03 (Z368): five. Before: three (Z29
 ```
 
 ```yaml
-dispatch:   # four steps in flight (2026-10-04): the deletion sweeps T2a to T2d, third run, one test per unit (Z409).
-- step: T2d
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a1d002e1dbd118d7a (builder, launched 2026-10-04 13:44 local)
-  worktree: .agents/worktrees/T2d
-  base: 9233df8df
-  launched: 2026-10-04 13:44 local
-  report: agents/reviews/T2d-report.md
-  brief_check: none (Z401)
-  review: none (Z402); before landing the counts go to Axel and the landing waits for his judgement (Z408)
-  shared_paths: tools/oculus/tests/checks/tree/allow-duplication.txt, shared by the four sweeps; each deletes only the lines naming a file of its own folders, so a conflict is between adjacent deletions, resolved by keeping both
-  builder_usage: claude-sonnet-5-5, 337,205 tokens, 310 tool uses, 50.4 min (completion notice 2026-10-04); round 1: 268,310 tokens, 100 tool uses, 15.3 min
-  landing: not-started
-  round: 1 (Z413: G33 to G35 and the G6 rows, files put back from the base)
+dispatch: []   # none in flight
 ```
 
 ## The standing demands (from Axel, in force)
@@ -197,6 +182,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-04 16:15. T2a to T2d landed (Z414); `tests/` holds 113 test files and 18,887 lines (192,814 before). Every entry of `agents/guarded.md` names a test. Next: T2e (booked, ruling Z409, Z414): one test per unit where two sweeps kept one, and the comments and `DESIGN.md` sentences naming deleted tests; then Q117 (its tests under Z415), T1a.
+  Open for Axel: none.
 - 2026-10-04 16:00. T2c, T2a and T2b landed (Z414). Next: land T2d; name its kept tests under their entries in `agents/guarded.md`, keep one test per unit where two sweeps kept one, remove the entries with no test (Z403), fix the comments naming deleted tests. Then Q117 (its tests under Z415), T1a.
   Open for Axel: none.
 - 2026-10-04 15:45. T2c and T2a landed (Z414). Next: land T2b, then T2d; at each landing name the kept tests under their entries in `agents/guarded.md`; at T2d's landing keep one test per unit where two sweeps kept one, remove the entries with no test (Z403), fix `allow-duplication.txt` and the comments naming deleted tests. Then Q117 (its tests under Z415), T1a.

@@ -57,53 +57,10 @@ async function body(response: Response): Promise<Record<string, unknown>> {
 test.beforeAll(warmConfig);
 
 describe('the project-files route', () => {
-    it('answers 400 when the request names no project', async () => {
-        const response = handleProjectFiles(request(''), target());
-
-        expect(response.status).toBe(400);
-        expect(await body(response)).toEqual({ error: 'no project id' });
-    });
-
     it('answers 404 for an id the hub does not hold', async () => {
         const response = handleProjectFiles(request('id=no-such'), target());
 
         expect(response.status).toBe(404);
         expect((await body(response)).error).toBe('no project with the id no-such');
-    });
-
-    it('answers the rows of the project it names', async () => {
-        const response = handleProjectFiles(request('id=alpha'), target());
-        const answer = await body(response);
-
-        expect(response.status).toBe(200);
-        expect(answer.folder).toBe('projects/manuscripts/alpha');
-        expect(answer.truncated).toBe(false);
-        const rows = answer.rows as { path: string; size: number; mtime: number }[];
-        expect(rows.map((row) => row.path).sort()).toEqual(['README.md', 'code/run.py']);
-        expect(rows.every((row) => row.size > 0 && row.mtime > 0)).toBe(true);
-    });
-
-    it('answers 404 for the slug of a side project and still answers for a research project', async () => {
-        const into = target();
-        const folder = join(into.hub, 'side-projects', 'x');
-        expect(resolve(folder).startsWith(resolve(into.hub) + sep)).toBe(true);
-        mkdirSync(folder, { recursive: true });
-        writeFileSync(join(folder, 'project.yml'), 'title: X\nstatus: idea\n');
-        writeFileSync(join(folder, 'README.md'), 'a body\n');
-        const withSide: FilesTarget = {
-            ...into,
-            config: {
-                ...into.config,
-                scan: [
-                    ...into.config.scan,
-                    { dir: 'side-projects', type: 'side-project', optional: true }
-                ]
-            }
-        };
-
-        const response = handleProjectFiles(request('id=x'), withSide);
-        expect(response.status).toBe(404);
-        expect((await body(response)).error).toBe('no project with the id x');
-        expect(handleProjectFiles(request('id=alpha'), withSide).status).toBe(200);
     });
 });
